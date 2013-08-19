@@ -88,7 +88,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: allocated, mod, maxloc, dble, epsilon
+    intrinsic :: allocated, mod, maxloc, epsilon
 
     ! Parameter Constants
     real( kind = core_rknd ), parameter :: &
@@ -543,7 +543,7 @@ module latin_hypercube_driver_module
                pdf_params, delta_zm, rcm, hydromet, Lscale_vert_avg, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_stw_matrix_Cholesky_1, corr_stw_matrix_Cholesky_2, & ! In
-               precip_frac_1, precip_frac_2, & ! In
+               hydromet_pdf_params, & ! In
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
                LH_sample_point_weights ) ! Out
 
@@ -576,6 +576,9 @@ module latin_hypercube_driver_module
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
 
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter ! Type
+
     use constants_clubb, only: &
       fstderr, & ! Constant
       cm3_per_m3, &
@@ -600,7 +603,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: allocated, mod, maxloc, dble, epsilon, transpose
+    intrinsic :: allocated, mod, maxloc, epsilon, transpose
 
     ! Parameter Constants
     real( kind = core_rknd ), parameter :: &
@@ -609,6 +612,13 @@ module latin_hypercube_driver_module
     ! Find in and out of cloud points using the rejection method rather than scaling
     logical, parameter :: &
       l_use_rejection_method = .false.
+
+    integer, parameter :: &
+      d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
+                            ! the lognormal sample. Currently:
+                            !
+                            ! d_variables+1: Mixture component, for choosing PDF component
+                            ! d_variables+2: Precipitation fraction, for determining precipitation
 
     ! Input Variables
     integer, intent(in) :: &
@@ -644,7 +654,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(out), dimension(n_micro_calls) :: &
       LH_sample_point_weights
 
-    ! More input variables!
+    ! More Input Variables!
     real( kind = dp ), dimension(d_variables,d_variables,nz), intent(in) :: &
       corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_stw_matrix_Cholesky_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
@@ -655,16 +665,15 @@ module latin_hypercube_driver_module
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      precip_frac_1, & ! Precipitation fraction in PDF component 1       [-]
-      precip_frac_2    ! Precipitation fraction in PDF component 2       [-]
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
 
     ! Local variables
 
-    real( kind = dp ), dimension(nz,n_micro_calls,(d_variables+1)) :: &
+    real( kind = dp ), dimension(nz,n_micro_calls,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
-    integer :: p_matrix(n_micro_calls,d_variables+1)
+    integer :: p_matrix(n_micro_calls,d_variables+d_uniform_extra)
 
     real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
@@ -701,6 +710,12 @@ module latin_hypercube_driver_module
 
     integer, dimension(1) :: tmp_loc
 
+    logical, dimension(nz,n_micro_calls) :: &
+      l_in_precip   ! Whether sample is in precipitation
+
+    ! Precipitation fraction in a component of the PDF, for each sample
+    real( kind = dp ), dimension(n_micro_calls) :: precip_frac_n
+
     ! ---- Begin Code ----
 
     nt_repeat = n_micro_calls * sequence_length
@@ -709,7 +724,7 @@ module latin_hypercube_driver_module
       ! If this is first time latin_hypercube_driver is called, then allocate
       ! the height_time_matrix and set the prior iteration number for debugging
       ! purposes.
-      allocate( height_time_matrix(nz, nt_repeat, d_variables+1) )
+      allocate( height_time_matrix(nz, nt_repeat, d_variables+d_uniform_extra) )
 
       prior_iter = iter
 
@@ -746,8 +761,8 @@ module latin_hypercube_driver_module
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then
-      call permute_height_time( nz, nt_repeat, d_variables+1, & ! intent(in)
-                                height_time_matrix )            ! intent(out)
+      call permute_height_time( nz, nt_repeat, d_variables+d_uniform_extra, & ! intent(in)
+                                height_time_matrix )                          ! intent(out)
     end if
     ! End Latin hypercube sample generation
 
@@ -776,10 +791,10 @@ module latin_hypercube_driver_module
         + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
 
       ! Determine p_matrix at k_lh_start
-      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+      p_matrix(1:n_micro_calls,1:(d_variables+d_uniform_extra)) = &
         height_time_matrix(k_lh_start, &
         (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
-        1:(d_variables+1))
+        1:(d_variables+d_uniform_extra))
     else
       lh_start_cloud_frac = -9999.0_core_rknd
          ! This assignment eliminates a g95 compiler warning for an uninitialized variable.
@@ -790,14 +805,14 @@ module latin_hypercube_driver_module
     if ( l_lh_vert_overlap ) then
 
       ! Choose which rows of LH sample to feed into closure at the k_lh_start level
-      p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+      p_matrix(1:n_micro_calls,1:(d_variables+d_uniform_extra)) = &
         height_time_matrix(k_lh_start, &
         (n_micro_calls*i_rmd+1):(n_micro_calls*i_rmd+n_micro_calls), &
-        1:(d_variables+1))
+        1:(d_variables+d_uniform_extra))
 
       ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
-      !  X_u has one extra dimension for the mixture component.
-      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+      call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+d_uniform_extra, & ! In
+                                    p_matrix, & ! In
                                     X_u_all_levs(k_lh_start,:,:) ) ! Out
 
       do sample = 1, n_micro_calls
@@ -888,6 +903,14 @@ module latin_hypercube_driver_module
                X_u_dp1_k_lh_start(sample), X_vert_corr, & ! In
                X_u_all_levs(:,sample,d_variables+1) ) ! Out
 
+        ! Correlate the d+2 variate vertically (used to determine precipitation
+        ! later)
+        X_u_temp = X_u_all_levs(k_lh_start,sample,d_variables+2)
+        call compute_arb_overlap &
+             ( nz, k_lh_start, &  ! In
+               X_u_temp, X_vert_corr, & ! In
+               X_u_all_levs(:,sample,d_variables+2) )
+
         ! Use these lines to make all variates vertically correlated, using the
         ! same correlation we used above for s_mellor and the d+1 variate
         do ivar = 1, d_variables
@@ -911,26 +934,41 @@ module latin_hypercube_driver_module
 
       do k = 1, nz
         ! Choose which rows of LH sample to feed into closure.
-        p_matrix(1:n_micro_calls,1:(d_variables+1)) = &
+        p_matrix(1:n_micro_calls,1:(d_variables+d_uniform_extra)) = &
           height_time_matrix(k, n_micro_calls*i_rmd+1:n_micro_calls*i_rmd+n_micro_calls, &
-                             1:d_variables+1)
+                             1:d_variables+d_uniform_extra)
 
         ! Generate the uniform distribution using the Mersenne twister
         !  X_u has one extra dimension for the mixture component.
-        call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+1, p_matrix, & ! In
+        call generate_uniform_sample( n_micro_calls, nt_repeat, d_variables+d_uniform_extra, &
+                                      p_matrix, & ! In
                                       X_u_all_levs(k,:,:) ) ! Out
       end do ! 1..nz
 
     end if ! l_lh_vert_overlap
 
-    ! Determine mixture component for all levels
     do k = 1, nz
-
+      ! Determine mixture component for all levels
       where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), &
            real(pdf_params(k)%mixt_frac, kind = dp) ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
+      end where
+
+      ! Determine precipitation fraction
+      where ( X_mixt_comp_all_levs(k,:) == 1 )
+        precip_frac_n(:) = real( hydromet_pdf_params(k)%precip_frac_1, kind=dp )
+      else where
+        precip_frac_n(:) = real( hydromet_pdf_params(k)%precip_frac_2, kind=dp )
+      end where
+
+      ! Determine precipitation for all levels
+      where ( in_precipitation( X_u_all_levs(k,:,d_variables+2), &
+                  precip_frac_n(:) ) )
+        l_in_precip(k,:) = .true.
+      else where
+        l_in_precip(k,:) = .false.
       end where
 
     end do ! k = 1 .. nz
@@ -976,7 +1014,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample_mod &
-             ( d_variables, pdf_params(k)%mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, pdf_params(k)%mixt_frac, & ! In
                pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
@@ -985,7 +1023,7 @@ module latin_hypercube_driver_module
                corr_stw_matrix_Cholesky_1(:,:,k), & ! In
                corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               precip_frac_1(k), precip_frac_2(k), & ! In
+               l_in_precip(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k = k_lh_start..nz
@@ -994,7 +1032,7 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample_mod &
-             ( d_variables, pdf_params(k)%mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, pdf_params(k)%mixt_frac, & ! In
                pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
@@ -1003,7 +1041,7 @@ module latin_hypercube_driver_module
                corr_stw_matrix_Cholesky_1(:,:,k), & ! In
                corr_stw_matrix_Cholesky_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               precip_frac_1(k), precip_frac_2(k), & ! In
+               l_in_precip(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k_lh_start-1..1
@@ -1469,7 +1507,7 @@ module latin_hypercube_driver_module
     implicit none
 
     ! External
-    intrinsic :: ceiling, dble
+    intrinsic :: ceiling
 
     ! Constant parameters
     real( kind = core_rknd), parameter :: &
@@ -1584,9 +1622,6 @@ module latin_hypercube_driver_module
       dp
 
     implicit none
-
-    ! External
-    intrinsic :: dble
 
     ! Parameter Constants
     logical, parameter :: &
@@ -1724,6 +1759,41 @@ module latin_hypercube_driver_module
     return
   end function in_mixt_comp_1
 
+!-------------------------------------------------------------------------------
+  elemental function in_precipitation( rnd, precip_frac ) result( l_in_precip )
+
+  ! Description:
+  !   Determines if a sample is in precipitation
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    use clubb_precision, only: dp
+
+    implicit none
+
+    ! Input Variables
+    real( kind=dp ), intent(in) :: &
+      rnd, &         ! Random number between 0 and 1
+      precip_frac    ! Precipitation fraction
+
+    ! Output Variable
+    logical :: &
+      l_in_precip    ! Whether the sample is in precipitation
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    if ( rnd < precip_frac ) then
+      l_in_precip = .true.
+    else
+      l_in_precip = .false.
+    end if
+
+    return
+  end function in_precipitation
 !-------------------------------------------------------------------------------
   subroutine compute_arb_overlap( nz, k_lh_start, &
                                   X_u_one_var_k_lh_start, vert_corr, &

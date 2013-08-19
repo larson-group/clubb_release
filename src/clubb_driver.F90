@@ -283,7 +283,7 @@ module clubb_driver
       cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
       below_file_ext  = "_corr_array_below.in"
 
-    integer, parameter :: d_variables = 10 ! Number of correlations to be diagnosed
+    integer, parameter :: d_variables = 6 ! Number of correlations to be diagnosed
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -418,10 +418,6 @@ module clubb_driver
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
-
-    real( kind = core_rknd ), dimension(:), allocatable :: &
-      precip_frac_1, & ! Precipitation fraction in the 1st PDF component  [-]
-      precip_frac_2    ! Precipitation fraction in the 2nd PDF component  [-]
 
     real( kind = core_rknd ), dimension(:, :), allocatable :: &
       corr_array_cloud, & ! Prescribed correlation matrix (in cloud)      [-]
@@ -879,10 +875,6 @@ module clubb_driver
     allocate(sigma_x_1(d_variables, gr%nz))
     allocate(sigma_x_2(d_variables, gr%nz))
 
-    ! Allocate the precipitation fraction arrays
-    allocate( precip_frac_1(gr%nz) )
-    allocate( precip_frac_2(gr%nz) )
-
     ! Initialize all variables for the diagnose correlations code
 
     ! Path to the prescribed correlation arrays
@@ -1246,7 +1238,7 @@ module clubb_driver
             endif
          end do
 
-         Ncnm = Ncnm_initial / rho
+         Ncnm = (Ncnm_initial / rho) * cloud_frac
 
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
@@ -1258,26 +1250,25 @@ module clubb_driver
                                     corr_array_1, corr_array_2, &               ! Intent(out)
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-                                    precip_frac_1, precip_frac_2, &             ! Intent(out)
                                     hydromet_pdf_params )                       ! Intent(out)
 
       endif ! not micro_scheme == "none"
 
       ! Advance a microphysics scheme
       call advance_clubb_microphys &
-           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner,       & ! Intent(in)
-             cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,          & ! Intent(in)
-             Kh_zm, wp2_zt, Lscale, pdf_params,                 & ! Intent(in)
-             rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,             & ! Intent(in)
-             d_variables, corr_array_1, corr_array_2,           & ! Intent(in)
-             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,              & ! Intent(in)
-             corr_cholesky_mtx_1, corr_cholesky_mtx_2,          & ! Intent(in)
-             hydromet_pdf_params, precip_frac_1, precip_frac_2, & ! Intent(in)
-             Ncnm, hydromet, wphydrometp,                       & ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc,                           & ! Intent(inout)
-             wprtp_mc, wpthlp_mc,                   & ! Intent(inout)
-             rtp2_mc, thlp2_mc, rtpthlp_mc,   & ! Intent(inout)
-             err_code )                                           ! Intent(inout)
+           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner,     & ! Intent(in)
+             cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
+             Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
+             rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
+             d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
+             corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
+             hydromet_pdf_params,                             & ! Intent(in)
+             Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
+             wprtp_mc, wpthlp_mc,                             & ! Intent(inout)
+             rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(inout)
+             err_code )                                         ! Intent(inout)
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -1366,9 +1357,7 @@ module clubb_driver
     end if
 #endif
 
-    deallocate( radf )
-    deallocate( precip_frac_1 )
-    deallocate( precip_frac_2 )
+    deallocate(radf)
 
     return
   end subroutine run_clubb
@@ -3687,19 +3676,19 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_microphys &
-             ( iter, dt, rho, rho_zm, p_in_Pa, exner,             & ! Intent(in)
-               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,          & ! Intent(in)
-               Kh_zm, wp2_zt, Lscale, pdf_params,                 & ! Intent(in)
-               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,            & ! Intent(in)
-               n_variables, corr_array_1, corr_array_2,           & ! Intent(in)
-               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,              & ! Intent(in)
-               corr_cholesky_mtx_1, corr_cholesky_mtx_2,          & ! Intent(in)
-               hydromet_pdf_params, precip_frac_1, precip_frac_2, & ! Intent(in)
-               Ncnm, hydromet, wphydrometp,                       & ! Intent(inout)
-               rvm_mc, rcm_mc, thlm_mc,                           & ! Intent(inout)
-               wprtp_mc, wpthlp_mc,                               & ! Intent(inout)
-               rtp2_mc, thlp2_mc, rtpthlp_mc,                     & ! Intent(inout)
-               err_code )                                           ! Intent(inout)
+             ( iter, dt, rho, rho_zm, p_in_Pa, exner,           & ! Intent(in)
+               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
+               Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
+               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
+               n_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
+               hydromet_pdf_params,                             & ! Intent(in)
+               Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
+               rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
+               wprtp_mc, wpthlp_mc,                             & ! Intent(inout)
+               rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(inout)
+               err_code )                                         ! Intent(inout)
 
 ! Description:
 !   Advance a microphysics scheme
@@ -3832,10 +3821,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(n_variables,n_variables,gr%nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
       corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      precip_frac_1, & ! Precipitation fraction in the 1st PDF component
-      precip_frac_2    ! Precipitation fraction in the 2nd PDF component
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
@@ -3972,7 +3957,7 @@ module clubb_driver
                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
                 real( corr_cholesky_mtx_1, kind = dp ), & ! In
                 real( corr_cholesky_mtx_2, kind = dp ), & ! In
-                precip_frac_1, precip_frac_2, & ! In
+                hydromet_pdf_params, & ! In
                 X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
                 LH_sample_point_weights ) ! Out
       else

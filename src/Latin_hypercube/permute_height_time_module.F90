@@ -12,12 +12,12 @@ module permute_height_time_module
   contains
 !-----------------------------------------------------------------------
 
-  subroutine permute_height_time( nz, nt_repeat, dp1,  & 
+  subroutine permute_height_time( nz, nt_repeat, n_vars,  & 
                                   height_time_matrix )
 
 ! Description:
-!   Generates a matrix height_time_matrix, which is a nz x nt_repeat x dp1
-!   matrix whose 2nd index is random permutations of the integer sequence 
+!   Generates a matrix height_time_matrix, which is a nz x nt_repeat x n_vars
+!   matrix whose 2nd dimension is random permutations of the integer sequence 
 !   (0,...,nt_repeat-1).  from 1 to sequence_length. 
 !   k_order gives vertical ordering
 !   of sample points; generate a new k_order every nt/n time steps.
@@ -32,14 +32,14 @@ module permute_height_time_module
     ! Input Variables
 
     integer, intent(in) :: &
-      nz,       & ! Total number of vertical levels in the model timestep. 
+      nz,       & ! Total number of vertical levels in the model timestep.
       nt_repeat,  & ! Total number of sample points before sequence repeats.
-      dp1           ! The number of variates + 1
+      n_vars        ! The number of variates in the uniform sample
 
     ! Output Variables
 
-    integer, dimension(nz,nt_repeat,dp1), intent(out) :: &
-      height_time_matrix ! nz x nt_repeat x dp1 matrix of integers
+    integer, dimension(nz,nt_repeat,n_vars), intent(out) :: &
+      height_time_matrix ! nz x nt_repeat x n_vars matrix of integers
 
     ! Local Variables
 
@@ -48,7 +48,7 @@ module permute_height_time_module
     ! Choose elements of height_time_matrix, with a random integer LH sample
     ! for each altitude and for each variate
     do k = 1, nz
-      do i = 1, dp1
+      do i = 1, n_vars
         call rand_permute( nt_repeat, height_time_matrix(k,1:nt_repeat,i) )
       end do
     end do
@@ -82,7 +82,7 @@ module permute_height_time_module
 
     ! External
 
-    intrinsic :: int, dble
+    intrinsic :: int
 
     ! Input Variables
 

@@ -931,7 +931,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, real( mixt_frac, kind=dp ), &  ! intent(in
+    call sample_points( d_variables, 1, real( mixt_frac, kind=dp ), &  ! intent(in
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
@@ -950,14 +950,14 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample_mod &
-             ( d_variables, mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, mixt_frac, & ! In
                thl1, thl2, rt1, rt2, & ! In
                crt1, crt2, cthl1, cthl2, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_stw_matrix_Cholesky_1, & ! In
                corr_stw_matrix_Cholesky_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
-               precip_frac_1, precip_frac_2, & ! In
+               l_in_precip_one_lev, & ! In
                LH_rt, LH_thl, X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -994,9 +994,7 @@ module generate_lh_sample_module
     use corr_matrix_module, only: &
       iiPDF_s_mellor, &
       iiPDF_t_mellor, &
-      iiPDF_w, &
-      iiPDF_rrain, &
-      iiPDF_Nr
+      iiPDF_w
 
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
@@ -1004,15 +1002,11 @@ module generate_lh_sample_module
 
     use constants_clubb, only:  &
       max_mag_correlation, & ! Constant(s)
-      one, &
-      zero
+      one
 
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd
-
-    use model_flags, only: &
-      l_use_precip_frac
 
     implicit none
 
@@ -1021,7 +1015,8 @@ module generate_lh_sample_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables    ! `d' Number of variates (normally 3 + microphysics specific variables)
+      d_variables, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
+      d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
     real( kind = core_rknd ), intent(in) :: &
       mixt_frac,      & ! Mixture fraction                                        [-]
@@ -1044,15 +1039,14 @@ module generate_lh_sample_module
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
 
-    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
-    real( kind = core_rknd ), intent(in) :: &
-      precip_frac_1, & ! Precipitation fraction in PDF component 1       [-]
-      precip_frac_2    ! Precipitation fraction in PDF component 2       [-]
+    logical, intent(in) :: &
+      l_in_precip_one_lev ! Whether we are in precipitation   [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1084,19 +1078,6 @@ module generate_lh_sample_module
 
     logical :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
-
-    logical :: &
-      l_in_precip ! Used with l_use_precip_frac == .true., this flag is
-                  ! .true. iff we are in precipitation
-
-    real( kind = core_rknd ), dimension(d_variables) :: &
-      mu1_precip, &    ! Hydrometeor means in component 1, adjusted for precipitation
-      mu2_precip, &    ! Hydrometeor means in component 2, adjusted for precipitation
-      sigma1_precip, & ! Hydrometeor standard deviations in component 1, adjusted for precipitation
-      sigma2_precip    ! Hydrometeor standard deviations in component 2, adjusted for precipitation
-
-    logical, dimension(d_variables) :: &
-      l_rain_hydromet  ! Specifies which of the hydrometeors are rain variables
 
 !    real( kind = dp ), dimension(3) :: &
 !      temp_3_elements
@@ -1144,45 +1125,6 @@ module generate_lh_sample_module
     Sigma1_scaling = one
     Sigma2_scaling = one
 
-    mu1_precip = mu1
-    mu2_precip = mu2
-    sigma1_precip = sigma1
-    sigma2_precip = sigma2
-
-    if ( l_use_precip_frac ) then
-      ! Set means and standard deviations of rain variables (rr and Nr) to zero
-      ! if not in precipitation
-
-      do i=1, d_variables
-        if ( i == iiPDF_rrain .or. i == iiPDF_Nr ) then
-          l_rain_hydromet(i) = .true.
-        else
-          l_rain_hydromet(i) = .false.
-        end if
-      end do
-
-      if ( X_mixt_comp_one_lev == 1 ) then
-        l_in_precip = gen_rand_in_precip( precip_frac_1 )
-      else if ( X_mixt_comp_one_lev == 2 ) then
-        l_in_precip = gen_rand_in_precip( precip_frac_2 )
-      else
-        ! Something very bad has happened
-        l_in_precip = .false.
-        stop "Fatal error choosing component in generate_lh_sample"
-      end if
-
-      if ( .not. l_in_precip ) then
-        ! Zero out only rain hydrometeors
-        where ( l_rain_hydromet )
-          mu1_precip = zero
-          mu2_precip = zero
-          sigma1_precip = zero
-          sigma2_precip = zero
-        end where ! l_rain_hydromet
-      end if ! .not. l_in_precip
-
-    end if ! l_use_precip_frac
-
     if ( X_mixt_comp_one_lev == 1 ) then
 
       Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
@@ -1190,7 +1132,7 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s1, t1, and w1
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma1_precip, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
+           ( d_variables, real( sigma1, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
              Sigma1_Cholesky ) ! Out
 
     elseif ( X_mixt_comp_one_lev == 2 ) then
@@ -1199,19 +1141,19 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma2_precip, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
+           ( d_variables, real( sigma2, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
              Sigma2_Cholesky ) ! Out
 
     end if ! X_mixt_comp_one_lev == 1
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, real( mixt_frac, kind = dp ), &  ! intent(in
+    call sample_points( d_variables, d_uniform_extra, real( mixt_frac, kind = dp ), &  ! intent(in)
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
                         real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
-                        mu1_precip, mu2_precip, &  ! intent(in)
+                        mu1, mu2, &  ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
                         X_mixt_comp_one_lev, & ! intent(in)
@@ -1220,19 +1162,83 @@ module generate_lh_sample_module
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
                         LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
 
+    ! Zero rain hydrometeors if not in precipitation
+    if ( .not. l_in_precip_one_lev ) then
+
+      call zero_rain_hydromets( d_variables, & ! Intent(in)
+                                X_nl_one_lev ) ! Intent(inout)
+
+    end if
+
     return
   end subroutine generate_lh_sample_mod
 
 !---------------------------------------------------------------------------------------------------
-  subroutine sample_points( d_variables, mixt_frac, & 
-                            rt1, thl1, rt2, thl2, & 
-                            crt1, cthl1, crt2, cthl2, & 
-                            mu1, mu2,  & 
+  subroutine zero_rain_hydromets( d_variables, X_nl_one_lev )
+
+  ! Description:
+  !   Sets the means of all rain hydrometeors to zero
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    use corr_matrix_module, only: &
+      iiPDF_rrain, & ! Variable(s)
+      iiPDF_Nr
+
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
+    use constants_clubb, only: &
+      zero
+
+    implicit none
+
+    ! Input Variables
+
+    integer, intent(in) :: &
+      d_variables  ! Number of hydrometeors                                        [count]
+
+    ! Input/Output Variables
+
+    real( kind = core_rknd ), intent(inout), dimension(d_variables) :: &
+      X_nl_one_lev      ! Sample of hydrometeors (normal-lognormal space)          [units vary]
+
+    ! Local Variables
+    logical, dimension(d_variables) :: &
+      l_rain_hydromet   ! Whether the hydrometeor is a rain hydrometeor            [boolean]
+
+    integer :: &
+      i                 ! Loop counter                                             [count]
+  !-----------------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do i=1, d_variables
+      if ( i == iiPDF_rrain .or. i == iiPDF_Nr ) then
+        l_rain_hydromet(i) = .true.
+      else
+        l_rain_hydromet(i) = .false.
+      end if
+    end do
+
+    where ( l_rain_hydromet(:) )
+      X_nl_one_lev(:) = zero
+    end where
+
+  end subroutine zero_rain_hydromets
+
+!---------------------------------------------------------------------------------------------------
+  subroutine sample_points( d_variables, d_uniform_extra, mixt_frac, &
+                            rt1, thl1, rt2, thl2, &
+                            crt1, cthl1, crt2, cthl2, &
+                            mu1, mu2,  &
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
                             X_mixt_comp_one_lev, &
                             Sigma1_Cholesky, Sigma2_Cholesky, &
-                            Sigma1_scaling, Sigma2_scaling, & 
+                            Sigma1_scaling, Sigma2_scaling, &
                             l_Sigma1_scaling, l_Sigma2_scaling, &
                             LH_rt, LH_thl, X_nl_one_lev )
 
@@ -1261,7 +1267,8 @@ module generate_lh_sample_module
 
     ! Input variables
     integer, intent(in) :: &
-      d_variables      ! Number of variates (normally=5)
+      d_variables, &    ! Number of variates
+      d_uniform_extra   ! Variates included in uniform sample only  
 
     ! Weight of 1st Gaussian, 0 <= mixt_frac <= 1
     real( kind = dp ), intent(in) :: mixt_frac
@@ -1284,7 +1291,7 @@ module generate_lh_sample_module
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
-    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
     integer, intent(in) :: &
@@ -1315,7 +1322,7 @@ module generate_lh_sample_module
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, &  ! intent(in)
+    call gaus_mixt_points( d_variables, d_uniform_extra, mixt_frac, mu1, mu2, &  ! intent(in)
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                            Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
@@ -1427,7 +1434,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine generate_uniform_sample( n_micro_calls, nt_repeat, dp1, p_matrix, X_u_one_lev )
+  subroutine generate_uniform_sample( n_micro_calls, nt_repeat, n_vars, p_matrix, X_u_one_lev )
 
 ! Description:
 !   Generates a matrix X that contains a Latin Hypercube sample.
@@ -1448,15 +1455,16 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
       nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
-      dp1              !  d+1  Number of variates plus 1 (normally=6)
+      n_vars           ! Number of uniform variables to generate
 
-    integer, intent(in), dimension(n_micro_calls,dp1) :: &
-      p_matrix    !n x dp1 array of permuted integers
+    integer, intent(in), dimension(n_micro_calls,n_vars) :: &
+      p_matrix    !n_micro_calls x n_vars array of permuted integers
 
     ! Output Variables
 
-    real(kind=dp), intent(out), dimension(n_micro_calls,dp1) :: &
-      X_u_one_lev ! n by dp1 matrix, X, each row of which is a dp1-dimensional sample
+    real(kind=dp), intent(out), dimension(n_micro_calls,n_vars) :: &
+      X_u_one_lev ! n_micro_calls by n_vars matrix, X
+                  ! each row of which is a n_vars-dimensional sample
 
     ! Local Variables
 
@@ -1473,7 +1481,7 @@ module generate_lh_sample_module
 
     ! Choose values of sample using permuted vector and random number generator
     do j = 1,n_micro_calls
-      do k = 1,dp1
+      do k = 1,n_vars
         X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, p_matrix(j,k) )
       end do
     end do
@@ -1520,7 +1528,7 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( d_variables, mixt_frac, mu1, mu2, & ! Intent(in)
+  subroutine gaus_mixt_points( d_variables, d_uniform_extra, mixt_frac, mu1, mu2, & ! Intent(in)
                                Sigma1_Cholesky, Sigma2_Cholesky, & ! Intent(in)
                                Sigma1_scaling, Sigma2_scaling, & ! Intent(in)
                                l_Sigma1_scaling, l_Sigma2_scaling, & ! Intent(in)
@@ -1551,7 +1559,8 @@ module generate_lh_sample_module
     ! Input Variables
 
     integer, intent(in) :: &
-      d_variables       ! Number of variates (normally=5)
+      d_variables, &    ! Number of variates
+      d_uniform_extra   ! Variates included in uniform sample only
 
     real( kind = dp ), intent(in) :: &
       mixt_frac ! Mixture fraction of Gaussians
@@ -1560,7 +1569,7 @@ module generate_lh_sample_module
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = dp ), intent(in), dimension(d_variables+1) :: &
+    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev
 
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
@@ -2740,48 +2749,6 @@ module generate_lh_sample_module
     return
   end function sigma_LN_to_sigma_gaus
 
-  !-----------------------------------------------------------------------------
-  function gen_rand_in_precip( precip_frac ) result( l_in_precip )
-
-  ! Description:
-  !   This logical function uses the Mersenne twister algorithm to randomly
-  !   choose whether a sample is in precipitation or out of precipitation.
-  !
-  ! References:
-  !   See clubb:ticket:597
-  !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use mt95, only: &
-      genrand_real2, & ! Procedure
-      genrand_real     ! Constant
-
-    implicit none
-
-    ! Input Variable
-    real( kind = core_rknd ), intent(in) :: &
-      precip_frac  ! Precipitation fraction in the PDF component
-
-    ! Output Variable
-    logical :: l_in_precip ! True if the sample is in precipitation
-
-    ! Local Variable
-    real( kind = genrand_real ) :: &
-      rand   ! Random number, with range: 0 <= rand < 1
-
-    ! ---- Begin Code ----
-    call genrand_real2( rand ) ! rand has range [0,1)
-
-    if ( real( rand, kind=core_rknd ) < precip_frac ) then
-      l_in_precip = .true.
-    else
-      l_in_precip = .false.
-    end if
-
-    return
-  end function gen_rand_in_precip
 !-----------------------------------------------------------------------------
 
 end module generate_lh_sample_module
