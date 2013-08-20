@@ -1191,7 +1191,7 @@ module generate_lh_sample_module
       core_rknd      ! Constant
 
     use constants_clubb, only: &
-      zero
+      zero_dp
 
     implicit none
 
@@ -1202,7 +1202,7 @@ module generate_lh_sample_module
 
     ! Input/Output Variables
 
-    real( kind = core_rknd ), intent(inout), dimension(d_variables) :: &
+    real( kind = dp ), intent(inout), dimension(d_variables) :: &
       X_nl_one_lev      ! Sample of hydrometeors (normal-lognormal space)          [units vary]
 
     ! Local Variables
@@ -1224,7 +1224,7 @@ module generate_lh_sample_module
     end do
 
     where ( l_rain_hydromet(:) )
-      X_nl_one_lev(:) = zero
+      X_nl_one_lev(:) = zero_dp
     end where
 
   end subroutine zero_rain_hydromets
