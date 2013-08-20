@@ -15,4 +15,3 @@
 ../src/AiryFunction.f90
 ../src/Parabolic.f90
 ../src/text_writer.F90
-../src/CLUBB_core/diagnose_correlations_module.f90

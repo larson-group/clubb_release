@@ -26,9 +26,7 @@
 ../src/morrison_micro_driver_module.F90
 ../src/microphys_driver.F90
 ../src/microphys_interface.inc
-../src/text_writer.F90
 ../src/quicksort.F90
-../src/recl.inc
 ../src/simple_rad_module.F90
 ../src/soil_vegetation.F90
 ../src/sounding.F90

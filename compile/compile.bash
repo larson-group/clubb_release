@@ -79,9 +79,9 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_param -lclubb_bugsrad -lclubb_KK_micro -lclubb_morrison -lclubb_mg"
+REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_micro -lclubb_morrison -lclubb_param"
 
-OPT_LIBS=""
+OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
 # Append preprocessor flags and libraries as needed
 if [ -e $srcdir/COAMPS_micro ]; then
@@ -239,31 +239,32 @@ $mkmf -t $bindir/mkmf_template \
   -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" -o "${WARNINGS}" \
   -e $all_files_list $dir/file_list/latin_hypercube_files
 
+$mkmf -t $bindir/mkmf_template -p $libdir/libclubb_other.a -m Make.clubb_other -c "${CPPDEFS}" \
+  -o "${WARNINGS}" -e $all_files_list $dir/file_list/clubb_optional_files \
+  $dir/file_list/clubb_model_files
+
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_standalone \
   -m Make.clubb_standalone -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
-  $dir/file_list/clubb_standalone_files $dir/file_list/clubb_optional_files \
-  $dir/file_list/clubb_model_files
+  -e $all_files_list $dir/file_list/clubb_standalone_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_thread_test \
   -m Make.clubb_thread_test -c "${CPPDEFS}" -o "${WARNINGS}" $clubb_standalone_mods \
-  $dir/file_list/clubb_thread_test_files $dir/file_list/clubb_optional_files \
-  $dir/file_list/clubb_model_files
+  -e $all_files_list $dir/file_list/clubb_thread_test_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/clubb_tuner \
-	-m Make.clubb_tuner -c "${CPPDEFS}" $dir/file_list/clubb_tuner_files \
-	$dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files \
+	-m Make.clubb_tuner -c "${CPPDEFS}" -e $all_files_list $dir/file_list/clubb_tuner_files \
 	$dir/file_list/numerical_recipes_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/jacobian \
-  -m Make.jacobian -c "${CPPDEFS}" -o "${WARNINGS}" $dir/file_list/jacobian_files \
-  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
+  -m Make.jacobian -c "${CPPDEFS}" -o "${WARNINGS}" -e $all_files_list \
+   $dir/file_list/jacobian_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/G_unit_tests \
-  -m Make.G_unit_tests -c "${CPPDEFS}" -o "${WARNINGS}" $dir/file_list/G_unit_tests_files \
-  $dir/file_list/clubb_optional_files $dir/file_list/clubb_model_files
+  -m Make.G_unit_tests -c "${CPPDEFS}" -o "${WARNINGS}" -e $all_files_list \
+  $dir/file_list/G_unit_tests_files
 
 $mkmf -t $bindir/mkmf_template -p $bindir/int2txt -m Make.int2txt \
-  -o "${WARNINGS}" $dir/file_list/int2txt_files
+  -o "${WARNINGS}" -e $all_files_list $dir/file_list/int2txt_files
 
 cd $dir
 
@@ -297,52 +298,49 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	$CLUBBStandardsCheck_latin_hypercube
 
 libclubb_param.a:
-	cd $objdir; $gmake -f Make.clubb_param
+	cd $objdir; \$(MAKE) -f Make.clubb_param
 
 libclubb_bugsrad.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.clubb_bugsrad
+	cd $objdir; \$(MAKE) -f Make.clubb_bugsrad
 
 libclubb_KK_micro.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.clubb_KK_micro
+	cd $objdir; \$(MAKE) -f Make.clubb_KK_micro
 
 libclubb_coamps.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.clubb_coamps
+	cd $objdir; \$(MAKE) -f Make.clubb_coamps
 
 libclubb_morrison.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.clubb_morrison
+	cd $objdir; \$(MAKE) -f Make.clubb_morrison
 	
-libclubb_mg.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.clubb_mg
+libclubb_mg.a: libclubb_param.a libclubb_KK_micro.a
+	cd $objdir; \$(MAKE) -f Make.clubb_mg
 
 libclubb_gfdlact.a: 
-	cd $objdir; $gmake -f Make.clubb_gfdlact
+	cd $objdir; \$(MAKE) -f Make.clubb_gfdlact
 
-liblatin_hypercube.a: libclubb_param.a
-	cd $objdir; $gmake -f Make.latin_hypercube
+liblatin_hypercube.a: libclubb_param.a libclubb_KK_micro.a
+	cd $objdir; \$(MAKE) -f Make.latin_hypercube
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
-	-rm -f $bindir/clubb_standalone
-	cd $objdir; $gmake -f Make.clubb_standalone
+libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a liblatin_hypercube.a
+	cd $objdir; \$(MAKE) -f Make.clubb_other
 
-clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
-	-rm -f $bindir/clubb_thread_test
-	cd $objdir; $gmake -f Make.clubb_thread_test
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+	cd $objdir; \$(MAKE) -f Make.clubb_standalone
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
-	-rm -f $bindir/clubb_tuner
-	cd $objdir; $gmake -f Make.clubb_tuner
+clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+	cd $objdir; \$(MAKE) -f Make.clubb_thread_test
 
-jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
-	-rm -f $bindir/jacobian
-	cd $objdir; $gmake -f Make.jacobian
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+	cd $objdir; \$(MAKE) -f Make.clubb_tuner
 
-G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a $GFDLACT_LIB $LH_LIB
-	-rm -f $bindir/G_unit_tests
-	cd $objdir; $gmake -f Make.G_unit_tests
+jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+	cd $objdir; \$(MAKE) -f Make.jacobian
 
-int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a
-	-rm -rf $bindir/int2txt
-	cd $objdir; $gmake -f Make.int2txt
+G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+	cd $objdir; \$(MAKE) -f Make.G_unit_tests
+
+int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a
+	cd $objdir; \$(MAKE) -f Make.int2txt
 
 clean:
 	-rm -f $objdir/*.o \

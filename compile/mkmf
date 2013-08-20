@@ -275,6 +275,8 @@ foreach $target ( @targets ) {
 }
 delete $actual_source_of{''};
 
+my %obj_of_dep_module;
+
 # Eric Raut says: generate a list of dependency modules
 my @dependency_modules;
 if( $opt_e ) {
@@ -294,6 +296,10 @@ if( $opt_e ) {
               my $module_name = $1;
               if ( $module_name ne "procedure" ) {
                 push @dependency_modules, $module_name;
+                my $file_basename = $name;
+                # Remove trailing newline that seems to appear
+                $file_basename =~ s/^?+\n$//g;
+                $obj_of_dep_module{$module_name} = $file_basename . ".o";
                 last;
               }
             }
@@ -398,7 +404,8 @@ foreach $object ( sort @objects ) {
          my $dep_module;
          foreach $dep_module ( @dependency_modules ) {
            if ( $module =~/$dep_module/i ) {
-              $target = $dep_module . ".o";
+              #$target = $dep_module . ".o";
+              $target = $obj_of_dep_module{$dep_module};
               last;
            }
          }
