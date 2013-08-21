@@ -1238,7 +1238,7 @@ module clubb_driver
             endif
          end do
 
-         Ncnm = (Ncnm_initial / rho) * cloud_frac
+         Ncnm = Ncnm_initial / rho
 
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
