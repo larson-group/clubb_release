@@ -3,8 +3,8 @@
 # $Id$
 #
 # Desciption:
-#   Script to run the test whether CLUBB is still threadsafe.  
-#   We need this because not all versions of Fortran accept command line 
+#   Script to run the test whether CLUBB is still threadsafe.
+#   We need this because not all versions of Fortran accept command line
 #   arguments (a Fortran 2003 feature), and GNU Fortran has trouble with
 #   comments in namelists
 # Notes:
@@ -12,7 +12,7 @@
 #   used only works with GNU sed.
 ###############################################################################
 
-# Set the number of threads to 
+# Set the number of threads to
 export OMP_NUM_THREADS=2
 
 RUN_CASES=( fire bomex rico_LH gabls3 )
@@ -56,7 +56,7 @@ run_parallel()
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
 		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $STATS_FILE > "${NAMELISTS[$x]}"
- 
+
 
 		# Set debug level to 0
 #		sed -i 's/debug_level\s*=\s*.*/debug_level = 0/g' "${NAMELISTS[$x]}"
@@ -103,9 +103,9 @@ mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
 
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
-	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat > 'diff.txt'
-	diff $SERIAL/"${RUN_CASES[$x]}"_zm.dat $PARALLEL/"${RUN_CASES[$x]}"_zm.dat >> 'diff.txt'
-	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.dat $PARALLEL/"${RUN_CASES[$x]}"_sfc.dat >> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat &> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_zm.dat $PARALLEL/"${RUN_CASES[$x]}"_zm.dat &>> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.dat $PARALLEL/"${RUN_CASES[$x]}"_sfc.dat &>> 'diff.txt'
 done
 
 if [[ -s 'diff.txt' ]]; then
