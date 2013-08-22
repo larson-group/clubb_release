@@ -2195,14 +2195,14 @@ module generate_lh_sample_module
 
     real( kind = core_rknd ), intent(out) :: covar_xy
 
-    real( kind = core_rknd ) :: xp2_on_xm2_gaus, yp2_on_ym2_gaus
+    real( kind = core_rknd ) :: sigma_x_gaus, sigma_y_gaus
 
     ! ---- Begin Code ----
 
-    xp2_on_xm2_gaus = sigma_LN_to_sigma_gaus( xp2_on_xm2 )
-    yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
+    sigma_x_gaus = sigma_LN_to_sigma_gaus( xp2_on_xm2 )
+    sigma_y_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
 
-    covar_xy = corr_LN_to_covar_gaus( corr_xy, xp2_on_xm2_gaus, yp2_on_ym2_gaus )
+    covar_xy = corr_LN_to_covar_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
 
     return
   end subroutine construct_LN_LN_element
@@ -2262,7 +2262,7 @@ module generate_lh_sample_module
 !   assume zero correlation between w and the other variates.
 !
 !   The matrix is i.e. a mixture, where the first 3 rows contain the correlations for s,t,w and
-!   the remaining elements are LN covariances. So the matrix looks like
+!   the remaining elements are normalized covariances. So the matrix looks like
 !
 !   --                     --
 !   |   1                   |
@@ -2273,7 +2273,7 @@ module generate_lh_sample_module
 !   |      [  . . .  ]      |
 !   --                     --
 !
-!   where c = correlation, k = covariance (LN) and v = variance (LN).
+!   where c = correlation, k = covariance (normalized) and v = variance (normalized).
 !
 ! References:
 !   None.
