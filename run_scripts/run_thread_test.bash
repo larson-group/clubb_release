@@ -103,7 +103,7 @@ mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
 
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
-	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat &> 'diff.txt'
+	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat &>> 'diff.txt'
 	diff $SERIAL/"${RUN_CASES[$x]}"_zm.dat $PARALLEL/"${RUN_CASES[$x]}"_zm.dat &>> 'diff.txt'
 	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.dat $PARALLEL/"${RUN_CASES[$x]}"_sfc.dat &>> 'diff.txt'
 done
