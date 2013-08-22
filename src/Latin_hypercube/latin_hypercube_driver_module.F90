@@ -1245,7 +1245,7 @@ module latin_hypercube_driver_module
       lognormal_sample_file, & ! Instance of a type
       uniform_sample_file
 
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
       d_variables ! Variable
 
 

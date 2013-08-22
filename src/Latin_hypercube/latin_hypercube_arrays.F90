@@ -5,14 +5,14 @@ module latin_hypercube_arrays
     dp, & ! double precision
     core_rknd
 
+  use corr_matrix_module, only: &
+    d_variables
+
   implicit none
 
   public :: setup_corr_varnce_array, cleanup_latin_hypercube_arrays
 
   private
-
-  integer, public :: d_variables
-!omp threadprivate(d_variables)
 
   real( kind = core_rknd ), public, dimension(:), allocatable :: &
     xp2_on_xm2_array_cloud, &
@@ -54,9 +54,7 @@ module latin_hypercube_arrays
 
   contains
 !===============================================================================
-  subroutine setup_corr_varnce_array( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                      l_ice_micro, &
-                                      input_file_cloud, input_file_below, iunit )
+  subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, iunit )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -121,17 +119,6 @@ module latin_hypercube_arrays
 
     ! Input Variables
     integer, intent(in) :: &
-      iirrainm, & ! Index of rain water mixing ratio
-      iiNrm,    & ! Index of rain droplet number conc.
-      iiricem,  & ! Index of ice water mixing ratio
-      iiNim,    & ! Index of ice crystal number conc.
-      iirsnowm, & ! Index snow mixing ratio
-      iiNsnowm    ! Index of snow number conc.
-
-    logical, intent(in) :: &
-      l_ice_micro  ! Whether the microphysics scheme will do ice
-
-    integer, intent(in) :: &
       iunit ! The file unit
 
     character(len=*), intent(in) :: &
@@ -144,33 +131,6 @@ module latin_hypercube_arrays
     integer :: i
 
     ! ---- Begin Code ----
-
-    iiPDF_s_mellor = 1 ! Extended rcm
-    iiPDF_t_mellor = 2 ! 't' orthogonal to 's'
-    iiPDF_w        = 3 ! vertical velocity
-    iiPDF_Nc       = 4 ! Cloud droplet number concentration
-
-    i = iiPDF_Nc
-
-    call return_LH_index( iirrainm, i, iiPDF_rrain )
-    call return_LH_index( iiNrm, i, iiPDF_Nr )
-    if ( l_ice_micro ) then
-      call return_LH_index( iiricem, i, iiPDF_rice )
-      call return_LH_index( iiNim, i, iiPDF_Ni )
-      call return_LH_index( iirsnowm, i, iiPDF_rsnow )
-      call return_LH_index( iiNsnowm, i, iiPDF_Nsnow )
-    else
-      iiPDF_rice = -1
-      iiPDF_Ni = -1
-      iiPDF_rsnow = -1
-      iiPDF_Nsnow = -1
-    end if
-    ! Disabled until we have values for the correlations of graupel and
-    ! other variates in the latin hypercube sampling.
-    iiPDF_rgraupel = -1
-    iiPDF_Ngraupel = -1
-
-    d_variables = i
 
     allocate( corr_array_cloud(d_variables,d_variables) )
     allocate( corr_array_below(d_variables,d_variables) )
@@ -359,40 +319,5 @@ module latin_hypercube_arrays
 
     return
   end subroutine cleanup_latin_hypercube_arrays
-
-!-------------------------------------------------------------------------------
-  subroutine return_LH_index( hydromet_index, LH_count, LH_index )
-
-    ! Description:
-    !   Set the Latin hypercube variable index if the hydrometeor exists
-    ! References:
-    !   None
-    !-------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      hydromet_index
-
-    ! Input/Output Variables
-    integer, intent(inout) :: &
-      LH_count
-
-    ! Output Variables
-    integer, intent(out) :: &
-      LH_index
-
-    ! ---- Begin Code ----
-
-    if ( hydromet_index > 0 ) then
-      LH_count = LH_count + 1
-      LH_index = LH_count
-    else
-      LH_index = -1
-    end if
-
-    return
-  end subroutine return_LH_index
 
 end module latin_hypercube_arrays

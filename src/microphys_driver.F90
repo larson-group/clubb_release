@@ -230,6 +230,9 @@ module microphys_driver
         time_precision, & ! Variable(s)
         core_rknd
 
+    use corr_matrix_module, only: &
+        setup_pdf_indices
+
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
         setup_corr_varnce_array   ! Procedure(s)
@@ -809,7 +812,7 @@ module microphys_driver
       stop "Error determining LH_microphys_type"
 
     end select
-    
+
     ! Make sure the user didn't select LH sampling using
     ! coamps, morrison-gettelman, or simplified_ice microphysics
     ! (ticket:539)
@@ -845,6 +848,9 @@ module microphys_driver
     end if
 #endif
 
+    call setup_pdf_indices( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+                            l_ice_micro )
+
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then
 
@@ -853,9 +859,7 @@ module microphys_driver
       corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
       ! Allocate and set the arrays containing the correlations
       ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                    l_ice_micro, &
-                                    corr_file_path_cloud, corr_file_path_below, iunit )
+      call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
 #endif
 
     end if
@@ -1093,12 +1097,8 @@ module microphys_driver
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-#ifdef LATIN_HYPERCUBE
-    use latin_hypercube_arrays, only: &
+    use corr_matrix_module, only: &
         d_variables ! Variable(s)
-#else
-#define d_variables 0
-#endif /* LATIN_HYPERCUBE */
 
     implicit none
 

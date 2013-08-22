@@ -26,9 +26,13 @@ module corr_matrix_module
    iiPDF_Ncn      = -1
 !$omp threadprivate(iiPDF_Nr, iiPDF_Nsnow, iiPDF_Ni, iiPDF_Ngraupel, iiPDF_Ncn)
 
-  public :: read_correlation_matrix
+  integer, public :: &
+    d_variables
+!$omp threadprivate(d_variables)
 
-  private :: get_corr_var_index
+  public :: read_correlation_matrix, setup_pdf_indices
+
+  private :: get_corr_var_index, return_pdf_index
 
   private
 
@@ -178,4 +182,105 @@ module corr_matrix_module
     return
 
   end function get_corr_var_index
+
+  !-----------------------------------------------------------------------
+  subroutine setup_pdf_indices( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+                                l_ice_micro )
+
+  ! Description:
+  !
+  !   Setup for the iiPDF indices. These indices are used to address s, t, w
+  !   and the hydrometeors in the mean/stdev/corr arrays
+  !
+  ! References:
+  !
+  !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iirrainm, & ! Index of rain water mixing ratio
+      iiNrm,    & ! Index of rain droplet number conc.
+      iiricem,  & ! Index of ice water mixing ratio
+      iiNim,    & ! Index of ice crystal number conc.
+      iirsnowm, & ! Index snow mixing ratio
+      iiNsnowm    ! Index of snow number conc.
+
+    logical, intent(in) :: &
+      l_ice_micro  ! Whether the microphysics scheme will do ice
+
+    ! Local Variables
+    integer :: i
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    iiPDF_s_mellor = 1 ! Extended rcm
+    iiPDF_t_mellor = 2 ! 't' orthogonal to 's'
+    iiPDF_w        = 3 ! vertical velocity
+    iiPDF_Ncn      = 4 ! Cloud droplet number concentration
+
+    i = iiPDF_Ncn
+
+    call return_pdf_index( iirrainm, i, iiPDF_rrain )
+    call return_pdf_index( iiNrm, i, iiPDF_Nr )
+    if ( l_ice_micro ) then
+      call return_pdf_index( iiricem, i, iiPDF_rice )
+      call return_pdf_index( iiNim, i, iiPDF_Ni )
+      call return_pdf_index( iirsnowm, i, iiPDF_rsnow )
+      call return_pdf_index( iiNsnowm, i, iiPDF_Nsnow )
+    else
+      iiPDF_rice = -1
+      iiPDF_Ni = -1
+      iiPDF_rsnow = -1
+      iiPDF_Nsnow = -1
+    end if
+    ! Disabled until we have values for the correlations of graupel and
+    ! other variates in the latin hypercube sampling.
+    iiPDF_rgraupel = -1
+    iiPDF_Ngraupel = -1
+
+    d_variables = i
+
+    return
+  end subroutine setup_pdf_indices
+  !-----------------------------------------------------------------------
+
+  !-------------------------------------------------------------------------------
+  subroutine return_pdf_index( hydromet_index, pdf_count, pdf_index )
+
+  ! Description:
+  !   Set the Latin hypercube variable index if the hydrometeor exists
+  ! References:
+  !   None
+  !-------------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_index
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      pdf_count
+
+    ! Output Variables
+    integer, intent(out) :: &
+      pdf_index
+
+    ! ---- Begin Code ----
+
+    if ( hydromet_index > 0 ) then
+      pdf_count = pdf_count + 1
+      pdf_index = pdf_count
+    else
+      pdf_index = -1
+    end if
+
+    return
+  end subroutine return_pdf_index
+
 end module corr_matrix_module

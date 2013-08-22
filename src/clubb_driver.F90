@@ -244,13 +244,9 @@ module clubb_driver
         corr_stat_output ! Procedure(s)
 
     use corr_matrix_module, only: &
-        read_correlation_matrix, & ! Procedure(s)
-        iiPDF_w,                  & ! Variable(s)
-        iiPDF_s_mellor,           &
-        iiPDF_t_mellor,           &
-        iiPDF_Ncn,                &
-        iiPDF_rrain,              &
-        iiPDF_Nr
+        read_correlation_matrix, & ! Procedure(s
+        setup_pdf_indices, &
+        d_variables
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -282,8 +278,6 @@ module clubb_driver
       corr_input_path = "../input/case_setups/", & ! Path to correlation files
       cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
       below_file_ext  = "_corr_array_below.in"
-
-    integer, parameter :: d_variables = 10 ! Number of correlations to be diagnosed
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -889,13 +883,6 @@ module clubb_driver
     ! Note: It is assumed that if the *_corr_array_cloud.in file exists
     !       then *_corr_array_below.in also exists
     inquire( file = corr_file_path_cloud, exist = corr_file_exist )
-
-      iiPDF_s_mellor = 1
-      iiPDF_t_mellor = 2
-      iiPDF_w = 3
-      iiPDF_Ncn = 4
-      iiPDF_rrain = 5
-      iiPDF_Nr = 6
 
     if ( corr_file_exist ) then
 
@@ -3680,7 +3667,7 @@ module clubb_driver
                cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
                Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
                rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
-               n_variables, corr_array_1, corr_array_2,         & ! Intent(in)
+               d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
@@ -3739,8 +3726,7 @@ module clubb_driver
         xp2_on_xm2_array_cloud, &
         xp2_on_xm2_array_below, &
         corr_array_cloud, &
-        corr_array_below, &
-        d_variables
+        corr_array_below
 
     use parameters_microphys, only: &
         LH_microphys_type, & ! Variable(s)
@@ -3777,7 +3763,7 @@ module clubb_driver
     ! Input Variables
     integer, intent(in) :: &
       iter,       & ! Model iteration number
-      n_variables   ! Number of variables in the correlation arrays
+      d_variables   ! Number of variables in the correlation arrays
 
     real(kind=time_precision), intent(in) :: & 
       dt ! Model timestep                            [s]
@@ -3808,17 +3794,17 @@ module clubb_driver
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
 
-    real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables, d_variables, gr%nz), intent(in) :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
       corr_array_2    ! Correlation matrix for the second pdf component   [-]
 
-    real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables, gr%nz), intent(in) :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
-    real( kind = core_rknd ), dimension(n_variables,n_variables,gr%nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables,gr%nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
       corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
 
@@ -3850,7 +3836,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ncm ! Cloud droplet number concentration
 
-    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,n_variables) :: &
+    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(gr%nz,LH_microphys_calls) :: &
@@ -3952,7 +3938,7 @@ module clubb_driver
 !      print *, "In advance_clubb_microphys: Ncm = ", Ncm
       if ( l_use_modified_corr ) then
          call LH_subcolumn_generator_mod &
-              ( iter, n_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
+              ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
                 pdf_params, gr%dzt, rcm, hydromet, Lscale_vert_avg, & ! In
                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
                 real( corr_cholesky_mtx_1, kind = dp ), & ! In
@@ -3995,7 +3981,7 @@ module clubb_driver
            wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
            LH_sample_point_weights, &                                 ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-           n_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
+           d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
            hydromet_pdf_params, &                                     ! Intent(in)
            Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
