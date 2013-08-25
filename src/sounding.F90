@@ -452,7 +452,7 @@ module sounding
     end if
 
     if ( allocated(edsclr) ) then
-      deallocate( sclr )
+      deallocate( edsclr )
     end if
 
     return
