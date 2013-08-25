@@ -144,7 +144,7 @@ module sounding
       p_in_Pa, & ! Pressure                               [Pa]
       subs       ! Vertical velocity sounding             [m/s or Pa/s]
 
-    real( kind = core_rknd ), dimension(nmaxsnd, sclr_max) ::  & 
+    real( kind = core_rknd ), dimension(:,:), allocatable ::  & 
       sclr, edsclr ! Passive scalar input sounding    [units vary]
 
     type(one_dim_read_var), dimension(n_snd_var) :: &
@@ -198,6 +198,8 @@ module sounding
     end if
     ! Read in a passive scalar sounding, if enabled
     if ( sclr_dim > 0 .or. edsclr_dim > 0 ) then
+      ! Allocate large arrays
+      allocate( sclr(nmaxsnd, sclr_max), edsclr(nmaxsnd, sclr_max) )
       ! Initialize to zero
       sclr   = 0.0_core_rknd
       edsclr = 0.0_core_rknd
@@ -443,6 +445,15 @@ module sounding
     ! then we'll have a memory leak.
     call deallocate_one_dim_vars( n_snd_var, sounding_retVars )
     call deallocate_one_dim_vars( sclr_dim, sclr_sounding_retVars )
+
+    ! Deallocate sclr and edsclr arrays, iff allocated
+    if ( allocated(sclr) ) then
+      deallocate( sclr )
+    end if
+
+    if ( allocated(edsclr) ) then
+      deallocate( sclr )
+    end if
 
     return
   end subroutine read_sounding
