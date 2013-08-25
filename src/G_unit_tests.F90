@@ -17,7 +17,7 @@ program G_unit_tests
 
   ! Variables
   logical, parameter :: &
-    l_KK_unit_tests = .false.,         &
+    l_KK_unit_tests = .true.,         &
     l_corr_cholesky_mtx_tests = .true.
 
 
