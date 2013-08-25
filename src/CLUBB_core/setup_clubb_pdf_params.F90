@@ -6,11 +6,12 @@ module setup_clubb_pdf_params
 
   private
 
-  public :: setup_pdf_parameters, &
-            unpack_pdf_params,    &
-            normalize_pdf_params, &
-            compute_mean_stdev,   &
-            compute_corr
+  public :: setup_pdf_parameters,   &
+            unpack_pdf_params,      &
+            normalize_pdf_params,   &
+            compute_mean_stdev,     &
+            compute_corr,           &
+             init_precip_hm_arrays
 
   private :: component_means_hydromet, &
              precip_fraction,          &
@@ -114,13 +115,6 @@ module setup_clubb_pdf_params
 
     use matrix_operations, only: &
         Cholesky_factor ! Procedure(s)
-
-    use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud,   & ! Variable(s)
-        rrp2_on_rrm2_below,   &
-        Nrp2_on_Nrm2_cloud,   &
-        Nrp2_on_Nrm2_below,   &
-        Ncnp2_on_Ncnm2_cloud
 
     use stats_type, only: &
         stat_update_var ! Procedure(s)
@@ -307,19 +301,19 @@ module setup_clubb_pdf_params
       wpNrp_ip_zt, & ! Covar. of N_r and w (in-precip) on t-levs [(m/s)(num/kg)]
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(nz,num_hm) :: &
       hmm,   & ! Mean of a precipitating hydrometeor, hm (overall)  [units vary]
       hm1,   & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
       hm2,   & ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
       wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(nz,num_hm) :: &
       wphmp_ip_zt    ! Covar. of hm and w (in-precip) on t-levs   [(m/s)(kg/kg)]
 
-    character(len=10), dimension(:), allocatable :: &
+    character(len=10), dimension(num_hm) :: &
       hm_list    ! Names of all precipitating hydrometeors
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
+    real( kind = core_rknd ), dimension(num_hm) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
      real( kind = core_rknd ), dimension(nz) :: &
@@ -349,14 +343,8 @@ module setup_clubb_pdf_params
 
     ! Setup hydrometeor arrays out of precipitating hydrometeors, which do not
     ! include N_c or N_cn.
-    ! Note:  num_hm is set is this subroutine.
     call precip_hm_arrays( nz, hydromet, wphydrometp, &
                            hmm, wphmp, hm_list, hm_tol )
-
-    ! Allocate arrays for component mean precipitating hydrometeors.
-    allocate( hm1(1:nz,1:num_hm) )    ! Mean of Hydrometeor (1st PDF component)
-    allocate( hm2(1:nz,1:num_hm) )    ! Mean of Hydrometeor (2nd PDF component)
-    allocate( wphmp_ip_zt(1:nz,1:num_hm) ) ! Covar. of w and hm (in-precip.)
 
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
@@ -510,42 +498,18 @@ module setup_clubb_pdf_params
        !!! Calculate the means, standard deviations, and necessary correlations
        !!! involving w, s, t, r_r (in-precip), N_r (in-precip), and N_cn for
        !!! each PDF component.
-       call compute_mean_stdev( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &         ! Intent(in)
-                                rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &     ! Intent(in)
-                                rc2(k), cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
-                                precip_frac_1(k), precip_frac_2(k), &         ! Intent(in)
-                                wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
-                                wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &   ! Intent(in)
-                                pdf_params(k), &                              ! Intent(in)
-                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &     ! Intent(out)
-                                mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
-                                mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &   ! Intent(out)
-                                sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
-                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(out)
-                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )        ! Intent(out)
+       call compute_mean_stdev( Ncnm(k), rr1(k), rr2(k), Nr1(k), Nr2(k), &        ! Intent(in)
+                                rc1(k), rc2(k), cloud_frac1(k), cloud_frac2(k), & ! Intent(in)
+                                precip_frac_1(k), precip_frac_2(k), &             ! Intent(in)
+                                pdf_params(k), &                                  ! Intent(in)
+                                mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &         ! Intent(out)
+                                mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &     ! Intent(out)
+                                mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, &       ! Intent(out)
+                                sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, &     ! Intent(out)
+                                sigma_rr_1, sigma_rr_2, sigma_Nr_1, &             ! Intent(out)
+                                sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 )            ! Intent(out)
 
        if ( l_diagnose_correlations ) then
-
-!          if ( rrainm > rr_tol ) then
-!             rrp2_on_rrm2 = (sigma_rr_1/mu_rr_1)**2
-!          else
-!             ! The ratio is undefined; set it equal to 0.
-!             rrp2_on_rrm2 = zero
-!          endif
-!
-!          if ( Nrm > Nr_tol ) then
-!             Nrp2_on_Nrm2 = (sigma_Nr_1/mu_Nr_1)**2
-!          else
-!             ! The ratio is undefined; set it equal to 0.
-!             Nrp2_on_Nrm2 = zero
-!          endif
-!
-!          if ( Ncnm > Ncn_tol ) then
-!             Ncnp2_on_Ncnm2 = (sigma_Ncn_1/mu_Ncn_1)**2
-!          else
-!             ! The ratio is undefined; set it equal to 0.
-!             Ncnp2_on_Ncnm2 = zero
-!          endif
 
           if ( rcm(k) > rc_tol ) then
 
@@ -587,22 +551,20 @@ module setup_clubb_pdf_params
 
        else ! if .not. l_diagnose_correlations
 
-          call compute_corr( rcm(k), rrainm(k), Nrm(k), Ncnm(k), &         ! Intent(in)
-                             rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), &     ! Intent(in)
-                             rc2(k), cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
-                             precip_frac_1(k), precip_frac_2(k), &         ! Intent(in)
-                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
-                             wpNcnp_zt(k), w_std_dev(k), mixt_frac(k), &   ! Intent(in)
-                             sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &        ! Intent(in)
-                             pdf_params(k), &                              ! Intent(in)
-                             corr_ws_1, corr_ws_2, corr_wrr_1, &           ! Intent(out)
-                             corr_wrr_2, corr_wNr_1, corr_wNr_2, &         ! Intent(out)
-                             corr_wNcn_1, corr_wNcn_2, corr_st_1, &        ! Intent(out)
-                             corr_st_2, corr_srr_1, corr_srr_2, &          ! Intent(out)
-                             corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(out)
-                             corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(out)
-                             corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(out)
-                             corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )       ! Intent(out)
+          call compute_corr( Ncnm(k), rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
+                             rc2(k), cloud_frac1(k), cloud_frac2(k), &          ! Intent(in)
+                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &      ! Intent(in)
+                             wpNcnp_zt(k), w_std_dev(k), &                      ! Intent(in)
+                             sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &             ! Intent(in)
+                             pdf_params(k), &                                   ! Intent(in)
+                             corr_ws_1, corr_ws_2, corr_wrr_1, &                ! Intent(out)
+                             corr_wrr_2, corr_wNr_1, corr_wNr_2, &              ! Intent(out)
+                             corr_wNcn_1, corr_wNcn_2, corr_st_1, &             ! Intent(out)
+                             corr_st_2, corr_srr_1, corr_srr_2, &               ! Intent(out)
+                             corr_sNr_1, corr_sNr_2, corr_sNcn_1, &             ! Intent(out)
+                             corr_sNcn_2, corr_trr_1, corr_trr_2, &             ! Intent(out)
+                             corr_tNr_1, corr_tNr_2, corr_tNcn_1, &             ! Intent(out)
+                             corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )            ! Intent(out)
 
        endif ! l_diagnose_correlations
 
@@ -718,16 +680,6 @@ module setup_clubb_pdf_params
        endif
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
-
-
-    ! Deallocate arrays for precipitating hydrometeors.
-    deallocate( hmm )         ! Mean of Hydrometeor (overall)
-    deallocate( wphmp )       ! Covariance of w and a hydrometeor
-    deallocate( hm_list )     ! Name of hydrometeor
-    deallocate( hm_tol )      ! Tolerance value for a hydrometeor
-    deallocate( hm1 )         ! Mean of Hydrometeor (1st PDF component)
-    deallocate( hm2 )         ! Mean of Hydrometeor (2nd PDF component)
-    deallocate( wphmp_ip_zt ) ! Covar. of w and hm (in-precip.)
 
 
     return
@@ -1523,12 +1475,9 @@ module setup_clubb_pdf_params
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine compute_mean_stdev( rcm, rrainm, Nrm, Ncnm, &                     ! Intent(in)
-                                 rr1, rr2, Nr1, Nr2, rc1, &                    ! Intent(in)
-                                 rc2, cloud_frac1, cloud_frac2, &              ! Intent(in)
+  subroutine compute_mean_stdev( Ncnm, rr1, rr2, Nr1, Nr2, &                   ! Intent(in)
+                                 rc1, rc2, cloud_frac1, cloud_frac2, &         ! Intent(in)
                                  precip_frac_1, precip_frac_2, &               ! Intent(in)
-                                 wpsp, wprrp_ip, wpNrp_ip, &                   ! Intent(in)
-                                 wpNcnp, stdev_w, mixt_frac, &                 ! Intent(in)
                                  pdf_params, &                                 ! Intent(in)
                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, &     ! Intent(out)
                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
@@ -1573,9 +1522,6 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rcm,           & ! Mean cloud water mixing ratio (overall)         [kg/kg]
-      rrainm,        & ! Mean rain water mixing ratio (overall)          [kg/kg]
-      Nrm,           & ! Mean rain drop concentration (overall)         [num/kg]
       Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
       rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)    [kg/kg]
       rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)    [kg/kg]
@@ -1586,13 +1532,7 @@ module setup_clubb_pdf_params
       cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
       cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      wpsp,          & ! Covariance of w and s                      [(m/s)kg/kg]
-      wprrp_ip,      & ! Covariance of w and r_r (overall) ip       [(m/s)kg/kg]
-      wpNrp_ip,      & ! Covariance of w and N_r (overall) ip      [(m/s)num/kg]
-      wpNcnp,        & ! Covariance of w and N_cn                  [(m/s)num/kg]
-      stdev_w,       & ! Standard deviation of w                           [m/s]
-      mixt_frac        ! Mixture fraction                                    [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
@@ -1746,12 +1686,10 @@ module setup_clubb_pdf_params
   end subroutine compute_mean_stdev
 
 !=============================================================================
-  subroutine compute_corr( rcm, rrainm, Nrm, Ncnm, &               ! Intent(in)
-                           rr1, rr2, Nr1, Nr2, rc1, &              ! Intent(in)
+  subroutine compute_corr( Ncnm, rr1, rr2, Nr1, Nr2, rc1, &        ! Intent(in)
                            rc2, cloud_frac1, cloud_frac2, &        ! Intent(in)
-                           precip_frac_1, precip_frac_2, &         ! Intent(in)
                            wpsp, wprrp_ip, wpNrp_ip, &             ! Intent(in)
-                           wpNcnp, stdev_w, mixt_frac, &           ! Intent(in)
+                           wpNcnp, stdev_w, &                      ! Intent(in)
                            sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &  ! Intent(in)
                            pdf_params, &                           ! Intent(in)
                            corr_ws_1, corr_ws_2, corr_wrr_1, &     ! Intent(out)
@@ -1828,30 +1766,24 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rcm,           & ! Mean cloud water mixing ratio (overall)         [kg/kg]
-      rrainm,        & ! Mean rain water mixing ratio (overall)          [kg/kg]
-      Nrm,           & ! Mean rain drop concentration (overall)         [num/kg]
-      Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
-      rr1,           & ! Mean rain water mixing ratio (1st PDF comp.)    [kg/kg]
-      rr2,           & ! Mean rain water mixing ratio (2nd PDF comp.)    [kg/kg]
-      Nr1,           & ! Mean rain drop concentration (1st PDF comp.)   [num/kg]
-      Nr2,           & ! Mean rain drop concentration (2nd PDF comp.)   [num/kg]
-      rc1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
-      rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
-      cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
-      cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      wpsp,          & ! Covariance of w and s                      [(m/s)kg/kg]
-      wprrp_ip,      & ! Covariance of w and r_r (overall) ip       [(m/s)kg/kg]
-      wpNrp_ip,      & ! Covariance of w and N_r (overall) ip      [(m/s)num/kg]
-      wpNcnp,        & ! Covariance of w and N_cn                  [(m/s)num/kg]
-      stdev_w,       & ! Standard deviation of w                           [m/s]
-      mixt_frac        ! Mixture fraction                                    [-]
+      Ncnm,        & ! Mean cloud nuclei concentration                [num/kg]
+      rr1,         & ! Mean rain water mixing ratio (1st PDF comp.)    [kg/kg]
+      rr2,         & ! Mean rain water mixing ratio (2nd PDF comp.)    [kg/kg]
+      Nr1,         & ! Mean rain drop concentration (1st PDF comp.)   [num/kg]
+      Nr2,         & ! Mean rain drop concentration (2nd PDF comp.)   [num/kg]
+      rc1,         & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc2,         & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac2, & ! Cloud fraction (2nd PDF component)                  [-]
+      wpsp,        & ! Covariance of w and s                      [(m/s)kg/kg]
+      wprrp_ip,    & ! Covariance of w and r_r (overall) ip       [(m/s)kg/kg]
+      wpNrp_ip,    & ! Covariance of w and N_r (overall) ip      [(m/s)num/kg]
+      wpNcnp,      & ! Covariance of w and N_cn                  [(m/s)num/kg]
+      stdev_w        ! Standard deviation of w                           [m/s]
 
     real( kind = core_rknd ), intent(in) :: &
-      sigma_rr_1, &
-      sigma_Nr_1, &
+      sigma_rr_1,  &
+      sigma_Nr_1,  &
       sigma_Ncn_1
 
     type(pdf_parameter), intent(in) :: &
@@ -1886,15 +1818,12 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      rrp2_on_rrm2,    & ! Ratio of < r_r'^2 > to < r_r >^2            [-]
-      Nrp2_on_Nrm2,    & ! Ratio of < N_r'^2 > to < N_r >^2            [-]
-      Ncnp2_on_Ncnm2,  & ! Ratio of < N_cn'^2 > to < N_cn >^2          [-]
-      s_mellor_m,      & ! Mean of s_mellor                            [kg/kg]
-      stdev_s_mellor,  & ! Standard deviation of s_mellor              [kg/kg]
-      corr_ws,         & ! Correlation between w and s (overall)       [-]
-      corr_wrr,        & ! Correlation between w and rr (overall) ip   [-]
-      corr_wNr,        & ! Correlation between w and Nr (overall) ip   [-]
-      corr_wNcn          ! Correlation between w and Ncn (overall)     [-]
+      s_mellor_m,     & ! Mean of s_mellor                            [kg/kg]
+      stdev_s_mellor, & ! Standard deviation of s_mellor              [kg/kg]
+      corr_ws,        & ! Correlation between w and s (overall)       [-]
+      corr_wrr,       & ! Correlation between w and rr (overall) ip   [-]
+      corr_wNr,       & ! Correlation between w and Nr (overall) ip   [-]
+      corr_wNcn         ! Correlation between w and Ncn (overall)     [-]
 
     logical :: &
       l_limit_corr_st    ! If true, we limit the correlation between s and t [-]
@@ -1914,7 +1843,7 @@ module setup_clubb_pdf_params
        = sqrt( pdf_params%mixt_frac &
                * ( ( pdf_params%s1 - s_mellor_m )**2 &
                    + pdf_params%stdev_s1**2 ) &
-             + ( 1 - pdf_params%mixt_frac ) &
+             + ( one - pdf_params%mixt_frac ) &
                * ( ( pdf_params%s2 - s_mellor_m )**2 &
                    + pdf_params%stdev_s2**2 ) &
              )
@@ -2702,7 +2631,7 @@ module setup_clubb_pdf_params
         Ncn_tol, &
         zero
 
-    use KK_utilities, only: &
+    use PDF_utilities, only: &
         mean_L2N,   & ! Procedure(s)
         stdev_L2N,  &
         corr_NL2NN, &
@@ -3652,7 +3581,7 @@ module setup_clubb_pdf_params
 
        ! Mean (in-precip) of ln r_r in PDF component 1.
        if ( imu_rr_1_n > 0 ) then
-          if ( mu_rr_1_n > -huge( 0.0 ) ) then
+          if ( mu_rr_1_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_rr_1_n, level, mu_rr_1_n, zt )
           else
              ! When rr1 is 0 (or below tolerance value), mu_rr_1_n is -inf, and
@@ -3668,7 +3597,7 @@ module setup_clubb_pdf_params
 
        ! Mean (in-precip) of ln r_r in PDF component 2.
        if ( imu_rr_2_n > 0 ) then
-          if ( mu_rr_2_n > -huge( 0.0 ) ) then
+          if ( mu_rr_2_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_rr_2_n, level, mu_rr_2_n, zt )
           else
              ! When rr2 is 0 (or below tolerance value), mu_rr_2_n is -inf, and
@@ -3684,7 +3613,7 @@ module setup_clubb_pdf_params
 
        ! Mean (in-precip) of ln N_r in PDF component 1.
        if ( imu_Nr_1_n > 0 ) then
-          if ( mu_Nr_1_n > -huge( 0.0 ) ) then
+          if ( mu_Nr_1_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_Nr_1_n, level, mu_Nr_1_n, zt )
           else
              ! When Nr1 is 0 (or below tolerance value), mu_Nr_1_n is -inf, and
@@ -3700,7 +3629,7 @@ module setup_clubb_pdf_params
 
        ! Mean (in-precip) of ln N_r in PDF component 2.
        if ( imu_Nr_2_n > 0 ) then
-          if ( mu_Nr_2_n > -huge( 0.0 ) ) then
+          if ( mu_Nr_2_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_Nr_2_n, level, mu_Nr_2_n, zt )
           else
              ! When Nr2 is 0 (or below tolerance value), mu_Nr_2_n is -inf, and
@@ -3716,7 +3645,7 @@ module setup_clubb_pdf_params
 
        ! Mean of ln N_cn in PDF component 1.
        if ( imu_Ncn_1_n > 0 ) then
-          if ( mu_Ncn_1_n > -huge( 0.0 ) ) then
+          if ( mu_Ncn_1_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_Ncn_1_n, level, mu_Ncn_1_n, zt )
           else
              ! When Ncnm is 0 (or below tolerance value), mu_Ncn_1_n is -inf,
@@ -3732,7 +3661,7 @@ module setup_clubb_pdf_params
 
        ! Mean of ln N_cn in PDF component 2.
        if ( imu_Ncn_2_n > 0 ) then
-          if ( mu_Ncn_2_n > -huge( 0.0 ) ) then
+          if ( mu_Ncn_2_n > real( -huge( 0.0 ), kind = core_rknd ) ) then
              call stat_update_var_pt( imu_Ncn_2_n, level, mu_Ncn_2_n, zt )
           else
              ! When Ncnm is 0 (or below tolerance value), mu_Ncn_2_n is -inf,
@@ -3884,16 +3813,15 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_log_hm_stats
 
   !=============================================================================
-  subroutine precip_hm_arrays( nz, hydromet, wphydrometp, &
-                               hmm, wphmp, hm_list, hm_tol )
+  subroutine init_precip_hm_arrays( hydromet_dim )
 
     ! Description:
-    ! Makes new hydrometeor arrays out of only the precipitating hydrometeors,
-    ! which do not include N_c or N_cn.  CLUBB's PDF does not include N_c, but
-    ! rather N_cn.  However, N_cn is handled in the PDF in a different manner
-    ! than the rest of the hydrometeors.  The remaining hydrometeors (the
-    ! precipitating hydrometeors -- rain, ice, snow, etc.) need their own array
-    ! for use in the PDF parameter setup.
+    ! Precipitating hydrometeor arrays are hydrometeor arrays made out of only
+    ! the precipitating hydrometeors, which do not include N_c or N_cn.  CLUBB's
+    ! PDF does not include N_c, but rather N_cn.  However, N_cn is handled in
+    ! the PDF in a different manner than the rest of the hydrometeors.  The
+    ! remaining hydrometeors (the precipitating hydrometeors -- rain, ice, snow,
+    ! etc.) need their own array for use in the PDF parameter setup.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3909,6 +3837,96 @@ module setup_clubb_pdf_params
         iiNim,       &
         iiNgraupelm, &
         iiNcm          ! Note: Ncm is not part of CLUBB's PDF.
+
+    use clubb_precision, only: &
+        core_rknd     ! Variable(s)
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      hydromet_dim    ! Number of hydrometeor fields total
+
+    ! Local Variables
+    integer :: &
+      idx, & ! Precipitating hydrometeor index
+      i      ! Hydrometeor index
+
+
+    ! Initialize indices of precipitating hydrometeors to -1.
+    iirr = -1
+    iiNr = -1
+    iirs = -1
+    iiri = -1
+    iirg = -1
+    iiNs = -1
+    iiNi = -1
+    iiNg = -1
+
+    ! Initialize precipitating hydrometeor index to 0.
+    idx = 0
+
+    ! Count the number of precipitating hydrometeors and set indices for
+    ! precipitating hydrometeors.
+    do i = 1, hydromet_dim, 1
+       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
+
+          ! The hydrometeor is a precipitating hydrometeor, which does not
+          ! include N_c or N_cn.
+
+          ! Iterate the precipitating hydrometeor index.
+          idx = idx + 1
+
+          ! Assign indices to each hydrometeor in the precipitating hydrometeor
+          ! arrays.
+          if ( i == iirrainm ) then
+             iirr = idx
+          elseif ( i == iiNrm ) then
+             iiNr = idx
+          elseif ( i == iirsnowm ) then
+             iirs = idx
+          elseif ( i == iiricem ) then
+             iiri = idx
+          elseif ( i == iirgraupelm ) then
+             iirg = idx
+          elseif ( i == iiNsnowm ) then
+             iiNs = idx
+          elseif ( i == iiNim ) then
+             iiNi = idx
+          elseif ( i == iiNgraupelm ) then
+             iiNg = idx
+          endif
+
+       endif ! i /= iiNcm and i /= iiNcnm
+
+    enddo ! i = 1, hydromet_dim, 1
+
+    ! Total number of precipitating hydrometeors
+    num_hm = idx
+
+
+    return
+
+  end subroutine init_precip_hm_arrays
+
+  !=============================================================================
+  subroutine precip_hm_arrays( nz, hydromet, wphydrometp, &
+                               hmm, wphmp, hm_list, hm_tol )
+
+    ! Description:
+    ! Makes new hydrometeor arrays out of only the precipitating hydrometeors,
+    ! which do not include N_c or N_cn.  CLUBB's PDF does not include N_c, but
+    ! rather N_cn.  However, N_cn is handled in the PDF in a different manner
+    ! than the rest of the hydrometeors.  The remaining hydrometeors (the
+    ! precipitating hydrometeors -- rain, ice, snow, etc.) need their own array
+    ! for use in the PDF parameter setup.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use array_index, only: & 
+        iiNcnm, & ! Variable(s)
+        iiNcm     ! Note: Ncm is not part of CLUBB's PDF.
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -3931,14 +3949,14 @@ module setup_clubb_pdf_params
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(:,:), allocatable, intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,num_hm), intent(out) :: &
       hmm,   & ! Mean of a precipitating hydrometeor, hm (overall) [units vary]
       wphmp    ! Covariance of w and a precipitating hydrometeor   [(m/s)units]
 
-    character(len=10), dimension(:), allocatable, intent(out) :: &
+    character(len=10), dimension(num_hm), intent(out) :: &
       hm_list    ! Names of all precipitating hydrometeors
 
-    real( kind = core_rknd ), dimension(:), allocatable, intent(out) :: &
+    real( kind = core_rknd ), dimension(num_hm), intent(out) :: &
       hm_tol    ! Tolerance value for a precipitating hydrometeor  [units vary]
 
     ! Local Variables
@@ -3946,49 +3964,10 @@ module setup_clubb_pdf_params
       idx, & ! Precipitating hydrometeor index
       i      ! Hydrometeor index
 
-
-    ! Initialize indices of precipitating hydrometeors to -1.
-    iirr = -1
-    iiNr = -1
-    iirs = -1
-    iiri = -1
-    iirg = -1
-    iiNs = -1
-    iiNi = -1
-    iiNg = -1
-
     ! Initialize precipitating hydrometeor index to 0.
     idx = 0
 
-    ! Count the number of precipitating hydrometeors.
-    do i = 1, hydromet_dim, 1
-       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
-
-          ! The hydrometeor is a precipitating hydrometeor, which does not
-          ! include N_c or N_cn.
-
-          ! Iterate the precipitating hydrometeor index.
-          idx = idx + 1
-
-       endif ! i /= iiNcm and i /= iiNcnm
-    enddo ! i = 1, hydromet_dim, 1
-
-    ! Total number of precipitating hydrometeors
-    num_hm = idx
-
-
-    ! Allocate Precipitating Hydrometeor Arrays
-    allocate( hmm(1:nz,1:num_hm) )    ! Mean of Hydrometeor (overall)
-    allocate( wphmp(1:nz,1:num_hm) )  ! Covariance of w and a hydrometeor
-    allocate( hm_list(1:num_hm) )     ! Name of hydrometeor
-    allocate( hm_tol(1:num_hm) )      ! Tolerance value for a hydrometeor
-
-
-    ! Reinitialize precipitating hydrometeor index to 0.
-    idx = 0
-
-    ! Loop over all hydrometeors, setup precipitating hydrometeor arrays, and
-    ! setup array indices for precipitating hydrometeors.
+    ! Loop over all hydrometeors and set up precipitating hydrometeor arrays.
     do i = 1, hydromet_dim, 1
 
        if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
@@ -4010,26 +3989,6 @@ module setup_clubb_pdf_params
 
           ! Hydrometeor tolerance values
           hm_tol(idx) = hydromet_tol(i)
-
-          ! Assign indices to each hydrometeor in the precipitating hydrometeor
-          ! arrays.
-          if ( i == iirrainm ) then
-             iirr = idx
-          elseif ( i == iiNrm ) then
-             iiNr = idx
-          elseif ( i == iirsnowm ) then
-             iirs = idx
-          elseif ( i == iiricem ) then
-             iiri = idx
-          elseif ( i == iirgraupelm ) then
-             iirg = idx
-          elseif ( i == iiNsnowm ) then
-             iiNs = idx
-          elseif ( i == iiNim ) then
-             iiNi = idx
-          elseif ( i == iiNgraupelm ) then
-             iiNg = idx
-          endif
 
        endif ! i /= iiNcm and i /= iiNcnm
 

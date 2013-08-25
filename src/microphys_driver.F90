@@ -231,7 +231,10 @@ module microphys_driver
         core_rknd
 
     use corr_matrix_module, only: &
-        setup_pdf_indices
+        setup_pdf_indices  ! Procedure(s)
+
+    use setup_clubb_pdf_params, only: &
+        init_precip_hm_arrays  ! Procedure(s)
 
 #ifdef LATIN_HYPERCUBE
     use latin_hypercube_arrays, only: &
@@ -850,6 +853,8 @@ module microphys_driver
 
     call setup_pdf_indices( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
                             l_ice_micro )
+
+    call init_precip_hm_arrays( hydromet_dim )
 
     ! Setup index variables for latin hypercube sampling
     if ( LH_microphys_type_int /= LH_microphys_disabled ) then

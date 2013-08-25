@@ -1761,12 +1761,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call compute_mean_stdev( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call compute_mean_stdev( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                                 kind = core_rknd ), &
                                           real( qric(i,k) * cldmax(i,k), & ! Intent(in)
@@ -1780,8 +1775,6 @@ subroutine mmicro_pcond ( sub_column,           &
                                           real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                           one, one, & ! Intent(in)
-                                          zero, zero, zero, & ! Intent(in)
-                                          zero, zero, mixt_frac, & ! Intent(in)
                                           pdf_params(k), & ! Intent(in)
                                           mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
                                           mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
@@ -1790,12 +1783,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
                                           sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
 
-                 call compute_corr( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                          kind = core_rknd ), &
-                                    real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                          kind = core_rknd ), &
-                                    real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call compute_corr( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                           kind = core_rknd ), &
                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
@@ -1808,9 +1796,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    one, one, & ! Intent(in)
                                     zero, zero, zero, & ! Intent(in)
-                                    zero, zero, mixt_frac, & ! Intent(in)
+                                    zero, zero, & ! Intent(in)
                                     sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, & ! Intent(in)
                                     pdf_params(k), & ! Intent(in)
                                     corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)
@@ -2301,12 +2288,7 @@ subroutine mmicro_pcond ( sub_column,           &
                  mixt_frac = pdf_params(k)%mixt_frac
 
                  call compute_mean_stdev &
-                                ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                                ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                   real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                         kind = core_rknd ), &
                                   real( qric(i,k) * cldmax(i,k), & ! Intent(in)
@@ -2320,8 +2302,6 @@ subroutine mmicro_pcond ( sub_column,           &
                                   real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                   real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                   one, one, & ! Intent(in)
-                                  zero, zero, zero, & ! Intent(in)
-                                  zero, zero, mixt_frac, & ! Intent(in)
                                   pdf_params(k), & ! Intent(in)
                                   mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
                                   mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
@@ -2330,12 +2310,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                   sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
                                   sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
 
-                 call compute_corr ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                           kind = core_rknd ), &
-                                     real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                           kind = core_rknd ), &
-                                     real( nc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call compute_corr ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( qric(i,k) * cldmax(i,k), & ! Intent(in)
                                            kind = core_rknd ), &
                                      real( qric(i,k) * cldmax(i,k), & ! Intent(in)
@@ -2348,9 +2323,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                     one, one, & ! Intent(in)
                                      zero, zero, zero, & ! Intent(in)
-                                     zero, zero, mixt_frac, & ! Intent(in)
+                                     zero, zero, & ! Intent(in)
                                      sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, & ! Intent(in)
                                      pdf_params(k), & ! Intent(in)
                                      corr_ws_1, corr_ws_2, corr_wrr_1, & ! Intent(out)

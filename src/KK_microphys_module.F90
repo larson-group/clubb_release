@@ -1460,7 +1460,7 @@ module KK_microphys_module
     use KK_upscaled_variances, only: &
         variance_KK_mvr    ! Procedure(s)
 
-    use KK_utilities, only: &
+    use PDF_utilities, only: &
         calc_xp2    ! Procedure(s)
 
     use clubb_precision, only: &

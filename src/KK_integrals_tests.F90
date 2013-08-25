@@ -111,7 +111,7 @@ module KK_integrals_tests
         two_dp, &
         fstdout
 
-    use KK_utilities, only: &
+    use PDF_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)
         stdev_L2N_dp,  &
         corr_NL2NN_dp, &
@@ -463,7 +463,7 @@ module KK_integrals_tests
         zero_dp, &
         fstdout
 
-    use KK_utilities, only: &
+    use PDF_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)
         stdev_L2N_dp,  &
         corr_NL2NN_dp, &
