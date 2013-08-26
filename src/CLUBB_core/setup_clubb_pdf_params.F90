@@ -42,9 +42,11 @@ module setup_clubb_pdf_params
     iiNs, & ! Index of snow concentration: precipitating hydrometeor arrays
     iiNi, & ! Index of ice concentration: precipitating hydrometeor arrays
     iiNg    ! Index of graupel concentration: precipitating hydrometeor arrays
+!$omp threadprivate( iirr, iiNr, iirs, iiri, iirg, iiNs, iiNi, iiNg )
 
   integer, private :: &
     num_hm    ! Number of precipitating hydrometeors
+!$omp threadprivate( num_hm )
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
   ! values based on whether or not cloud water mixing ratio has a value of at
