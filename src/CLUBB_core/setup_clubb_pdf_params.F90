@@ -335,11 +335,6 @@ module setup_clubb_pdf_params
     integer :: k, i  ! Loop indices
 
     ! ---- Begin Code ----
-    ! Boundary conditions
-    mu_x_1(:,1) = zero
-    mu_x_2(:,1) = zero
-    sigma_x_1(:,1) = zero
-    sigma_x_2(:,1) = zero
 
     ! Setup hydrometeor arrays out of precipitating hydrometeors, which do not
     ! include N_c or N_cn.
@@ -493,7 +488,8 @@ module setup_clubb_pdf_params
 
     !!! Setup PDF parameters loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
-    do k = 2, nz, 1
+    ! Now also including "model lower boundary" -- Eric Raut Aug 2013
+    do k = 1, nz, 1
 
        !!! Calculate the means, standard deviations, and necessary correlations
        !!! involving w, s, t, r_r (in-precip), N_r (in-precip), and N_cn for
