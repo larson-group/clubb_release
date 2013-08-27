@@ -159,7 +159,7 @@ module model_flags
 
   ! See clubb:ticket:514 for details
   logical, parameter, public :: &
-    l_use_modified_corr = .true., & ! Use the new correlations code
+    l_use_modified_corr = .false., & ! Use the new correlations code
     l_use_hydromet_tolerance = .true.  ! Enable/Disable the zeroing of the hydrometeor
                                        ! means, stddevs. and correlations based on a tolerance
  
