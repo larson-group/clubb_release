@@ -142,7 +142,7 @@ module parameters_microphys
   ! Parameters for below-cloud.
   real( kind = core_rknd ), public :: &
     rrp2_on_rrm2_below  = 0.897_core_rknd,  & ! Prescribed below-cl ratio <r_r'^2> / <r_r>^2   [-]
-    Nrp2_on_Nrm2_below = 12.03_core_rknd,   & ! Prescribed below-cl ratio <N_r'^2> / <N_r>^2   [-]
+    Nrp2_on_Nrm2_below = 5.0_core_rknd,   & ! Prescribed below-cl ratio <N_r'^2> / <N_r>^2   [-]
     Ncnp2_on_Ncnm2_below = 0.0_core_rknd      ! Prescribed below-cl ratio <N_cn'^2> / <N_cn>^2 [-]
 
 !$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
