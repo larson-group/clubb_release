@@ -13,7 +13,7 @@
 ###############################################################################
 
 # Set the number of threads to
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=8
 
 RUN_CASES=( fire bomex rico_LH gabls3 )
 NAMELISTS=( 'clubb_1.in' 'clubb_2.in' 'clubb_3.in' 'clubb_4.in' )
@@ -25,6 +25,7 @@ PARALLEL="../output/parallel"
 
 run_serial()
 {
+	echo -n "Running CLUBB in serial... "
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
 		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $STATS_FILE > 'clubb.in'
@@ -48,11 +49,12 @@ run_serial()
 		# Remove the namelist
 		rm -f 'clubb.in'
 	done
-
+	echo "Done"'!'
 }
 
 run_parallel()
 {
+	echo -n "Running CLUBB in parallel... "
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
 		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $STATS_FILE > "${NAMELISTS[$x]}"
@@ -79,6 +81,7 @@ run_parallel()
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		rm -f "${NAMELISTS[$x]}"
 	done
+	echo 'Done!'
 }
 
 # Figure out the directory where the script is located
@@ -102,11 +105,14 @@ run_parallel
 mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
 
+echo -n "Diffing the output... "
 for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 	diff $SERIAL/"${RUN_CASES[$x]}"_zt.dat $PARALLEL/"${RUN_CASES[$x]}"_zt.dat &>> 'diff.txt'
 	diff $SERIAL/"${RUN_CASES[$x]}"_zm.dat $PARALLEL/"${RUN_CASES[$x]}"_zm.dat &>> 'diff.txt'
 	diff $SERIAL/"${RUN_CASES[$x]}"_sfc.dat $PARALLEL/"${RUN_CASES[$x]}"_sfc.dat &>> 'diff.txt'
 done
+echo -n "Done"
+echo '!'
 
 if [[ -s 'diff.txt' ]]; then
 	cat 'diff.txt'
