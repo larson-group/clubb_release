@@ -417,12 +417,28 @@ subroutine mmicro_pcond ( sub_column,           &
 
    use constants_clubb, only: &
        zero,       &  ! Constant(s)
-       one, &
-       cm3_per_m3
+       one,        &
+       cm3_per_m3, &
+       rr_tol,     &
+       Nr_tol
 
    use parameters_microphys, only: &
        KK_auto_Nc_exp,      & ! Variable(s)
        l_const_Nc_in_cloud
+
+   use parameters_microphys, only: &
+       rrp2_on_rrm2_cloud, & ! Variable(s)
+       rrp2_on_rrm2_below, &
+       Nrp2_on_Nrm2_cloud, &
+       Nrp2_on_Nrm2_below
+
+   use corr_matrix_module, only: &
+        iiPDF_w,        & ! Variable(s)
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_rrain,    &
+        iiPDF_Nr,       &
+        iiPDF_Ncn
 
    use clubb_precision, only: &
        core_rknd  ! Variable(s)
@@ -841,6 +857,26 @@ subroutine mmicro_pcond ( sub_column,           &
       real(r8), parameter :: cdnl    = 0.e6_r8    ! cloud droplet number limiter
 
     ! Upscaled KK for autoconversion and accretion
+    integer, parameter :: &
+      d_variables = 6
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
+    real( kind = core_rknd ), dimension(2) :: &
+      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
+      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
+
+    real( kind = core_rknd ), dimension(2) :: &
+      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
+
+    real( kind = core_rknd ), dimension(2) :: &
+      hmp2_on_hmm2_cloud, & ! Ratio of < hm'^2 > to < hm >^2 at cloudy levs. [-]
+      hmp2_on_hmm2_below    ! Ratio of < hm'^2 > to < hm >^2 at clear levs.  [-]
+
     real( kind = core_rknd ) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
       mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
@@ -1761,27 +1797,55 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call compute_mean_stdev( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                                kind = core_rknd ), &
-                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                          one, one, & ! Intent(in)
-                                          pdf_params(k), & ! Intent(in)
-                                          mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
-                                          mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
-                                          mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, & ! Intent(out)
-                                          sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
-                                          sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
-                                          sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
+                 hm1(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm2(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+
+                 hmp2_on_hmm2_cloud(1) = rrp2_on_rrm2_cloud
+                 hmp2_on_hmm2_below(1) = rrp2_on_rrm2_below
+                 hmp2_on_hmm2_cloud(2) = Nrp2_on_Nrm2_cloud
+                 hmp2_on_hmm2_below(2) = Nrp2_on_Nrm2_below
+
+                 hm_tol(1) = rr_tol
+                 hm_tol(2) = Nr_tol
+
+                 call compute_mean_stdev( pdf_params(k), hm1, hm2, &
+                                          real( nc(i,k), kind = core_rknd ), &
+                                          hmp2_on_hmm2_cloud, hmp2_on_hmm2_below, &
+                                          real( qc(i,k), kind = core_rknd ), &
+                                          real( qc(i,k), kind = core_rknd ), &
+                                          real( lcldm(i,k), kind = core_rknd ), &
+                                          real( lcldm(i,k), kind = core_rknd ), &
+                                          one, &
+                                          one, hm_tol, d_variables, &
+                                          mu_x_1, mu_x_2, &
+                                          sigma_x_1, sigma_x_2 )
+
+                 mu_w_1      = mu_x_1(iiPDF_w)
+                 mu_w_2      = mu_x_2(iiPDF_w)
+                 mu_s_1      = mu_x_1(iiPDF_s_mellor)
+                 mu_s_2      = mu_x_2(iiPDF_s_mellor)
+                 mu_t_1      = mu_x_1(iiPDF_t_mellor)
+                 mu_t_2      = mu_x_2(iiPDF_t_mellor)
+                 mu_rr_1     = mu_x_1(iiPDF_rrain)
+                 mu_rr_2     = mu_x_2(iiPDF_rrain)
+                 mu_Nr_1     = mu_x_1(iiPDF_Nr)
+                 mu_Nr_2     = mu_x_2(iiPDF_Nr)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
+                 sigma_w_1   = sigma_x_1(iiPDF_w)
+                 sigma_w_2   = sigma_x_2(iiPDF_w)
+                 sigma_s_1   = sigma_x_1(iiPDF_s_mellor)
+                 sigma_s_2   = sigma_x_2(iiPDF_s_mellor)
+                 sigma_t_1   = sigma_x_1(iiPDF_t_mellor)
+                 sigma_t_2   = sigma_x_2(iiPDF_t_mellor)
+                 sigma_rr_1  = sigma_x_1(iiPDF_rrain)
+                 sigma_rr_2  = sigma_x_2(iiPDF_rrain)
+                 sigma_Nr_1  = sigma_x_1(iiPDF_Nr)
+                 sigma_Nr_2  = sigma_x_2(iiPDF_Nr)
+                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
+                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  call compute_corr( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( qric(i,k) * cldmax(i,k), & ! Intent(in)
@@ -2287,28 +2351,55 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 call compute_mean_stdev &
-                                ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( qric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( nric(i,k) * cldmax(i,k), & ! Intent(in)
-                                        kind = core_rknd ), &
-                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                  one, one, & ! Intent(in)
-                                  pdf_params(k), & ! Intent(in)
-                                  mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_t_1, & ! Intent(out)
-                                  mu_t_2, mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, & ! Intent(out)
-                                  mu_Ncn_1, mu_Ncn_2, sigma_w_1, sigma_w_2, & ! Intent(out)
-                                  sigma_s_1, sigma_s_2, sigma_t_1, sigma_t_2, & ! Intent(out)
-                                  sigma_rr_1, sigma_rr_2, sigma_Nr_1, & ! Intent(out)
-                                  sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2 ) ! Intent(out)
+                 hm1(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm2(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+
+                 hmp2_on_hmm2_cloud(1) = rrp2_on_rrm2_cloud
+                 hmp2_on_hmm2_below(1) = rrp2_on_rrm2_below
+                 hmp2_on_hmm2_cloud(2) = Nrp2_on_Nrm2_cloud
+                 hmp2_on_hmm2_below(2) = Nrp2_on_Nrm2_below
+
+                 hm_tol(1) = rr_tol
+                 hm_tol(2) = Nr_tol
+
+                 call compute_mean_stdev( pdf_params(k), hm1, hm2, &
+                                          real( nc(i,k), kind = core_rknd ), &
+                                          hmp2_on_hmm2_cloud, hmp2_on_hmm2_below, &
+                                          real( qc(i,k), kind = core_rknd ), &
+                                          real( qc(i,k), kind = core_rknd ), &
+                                          real( lcldm(i,k), kind = core_rknd ), &
+                                          real( lcldm(i,k), kind = core_rknd ), &
+                                          one, &
+                                          one, hm_tol, d_variables, &
+                                          mu_x_1, mu_x_2, &
+                                          sigma_x_1, sigma_x_2 )
+
+                 mu_w_1      = mu_x_1(iiPDF_w)
+                 mu_w_2      = mu_x_2(iiPDF_w)
+                 mu_s_1      = mu_x_1(iiPDF_s_mellor)
+                 mu_s_2      = mu_x_2(iiPDF_s_mellor)
+                 mu_t_1      = mu_x_1(iiPDF_t_mellor)
+                 mu_t_2      = mu_x_2(iiPDF_t_mellor)
+                 mu_rr_1     = mu_x_1(iiPDF_rrain)
+                 mu_rr_2     = mu_x_2(iiPDF_rrain)
+                 mu_Nr_1     = mu_x_1(iiPDF_Nr)
+                 mu_Nr_2     = mu_x_2(iiPDF_Nr)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
+                 sigma_w_1   = sigma_x_1(iiPDF_w)
+                 sigma_w_2   = sigma_x_2(iiPDF_w)
+                 sigma_s_1   = sigma_x_1(iiPDF_s_mellor)
+                 sigma_s_2   = sigma_x_2(iiPDF_s_mellor)
+                 sigma_t_1   = sigma_x_1(iiPDF_t_mellor)
+                 sigma_t_2   = sigma_x_2(iiPDF_t_mellor)
+                 sigma_rr_1  = sigma_x_1(iiPDF_rrain)
+                 sigma_rr_2  = sigma_x_2(iiPDF_rrain)
+                 sigma_Nr_1  = sigma_x_1(iiPDF_Nr)
+                 sigma_Nr_2  = sigma_x_2(iiPDF_Nr)
+                 sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
+                 sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  call compute_corr ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( qric(i,k) * cldmax(i,k), & ! Intent(in)
