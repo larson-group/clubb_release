@@ -853,7 +853,8 @@ module microphys_driver
     end if
 #endif
 
-    call setup_pdf_indices( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+    call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
+                            iiricem, iiNim, iirsnowm, iiNsnowm, &
                             l_ice_micro )
 
     call init_precip_hm_arrays( hydromet_dim )

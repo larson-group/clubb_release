@@ -197,7 +197,8 @@ module corr_matrix_module
   end function get_corr_var_index
 
   !-----------------------------------------------------------------------
-  subroutine setup_pdf_indices( iirrainm, iiNrm, iiricem, iiNim, iirsnowm, iiNsnowm, &
+  subroutine setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
+                                iiricem, iiNim, iirsnowm, iiNsnowm, &
                                 l_ice_micro )
 
   ! Description:
@@ -213,51 +214,97 @@ module corr_matrix_module
 
     ! Input Variables
     integer, intent(in) :: &
+      hydromet_dim    ! Total number of hydrometeor species.
+
+    integer, intent(in) :: &
       iirrainm, & ! Index of rain water mixing ratio
-      iiNrm,    & ! Index of rain droplet number conc.
-      iiricem,  & ! Index of ice water mixing ratio
-      iiNim,    & ! Index of ice crystal number conc.
-      iirsnowm, & ! Index snow mixing ratio
-      iiNsnowm    ! Index of snow number conc.
+      iiNrm,    & ! Index of rain drop concentration
+      iiricem,  & ! Index of ice mixing ratio
+      iiNim,    & ! Index of ice crystal concentration
+      iirsnowm, & ! Index of snow mixing ratio
+      iiNsnowm    ! Index of snow concentration
 
     logical, intent(in) :: &
       l_ice_micro  ! Whether the microphysics scheme will do ice
 
     ! Local Variables
-    integer :: i
+    integer :: &
+      pdf_count, & ! Count number of PDF variables
+      i            ! Hydrometeor loop index
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
 
-    iiPDF_s_mellor = 1 ! Extended rcm
+    iiPDF_s_mellor = 1 ! Extended liquid water mixing ratio
     iiPDF_t_mellor = 2 ! 't' orthogonal to 's'
     iiPDF_w        = 3 ! vertical velocity
-    iiPDF_Ncn      = 4 ! Cloud droplet number concentration
+    iiPDF_Ncn      = 4 ! Cloud nuclei concentration or extended Nc.
 
-    i = iiPDF_Ncn
+    pdf_count = iiPDF_Ncn
 
-    call return_pdf_index( iirrainm, i, iiPDF_rrain )
-    call return_pdf_index( iiNrm, i, iiPDF_Nr )
-    if ( l_ice_micro ) then
-      call return_pdf_index( iiricem, i, iiPDF_rice )
-      call return_pdf_index( iiNim, i, iiPDF_Ni )
-      call return_pdf_index( iirsnowm, i, iiPDF_rsnow )
-      call return_pdf_index( iiNsnowm, i, iiPDF_Nsnow )
-    else
-      iiPDF_rice = -1
-      iiPDF_Ni = -1
-      iiPDF_rsnow = -1
-      iiPDF_Nsnow = -1
-    end if
+    ! Loop over hydrometeors.
+    ! Hydrometeor indices in the PDF arrays should be in the same order as
+    ! found in the hydrometeor arrays.
+    if ( hydromet_dim > 0 ) then
+
+       do i = 1, hydromet_dim, 1
+
+          if ( i == iirrainm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_rrain = pdf_count
+          endif
+
+          if ( i == iiNrm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_Nr = pdf_count
+          endif
+
+          if ( l_ice_micro ) then
+
+             if ( i == iiricem ) then
+                pdf_count = pdf_count + 1
+                iiPDF_rice = pdf_count
+             endif
+
+             if ( i == iiNim ) then
+                pdf_count = pdf_count + 1
+                iiPDF_Ni = pdf_count
+             endif
+
+             if ( i == iirsnowm ) then
+                pdf_count = pdf_count + 1
+                iiPDF_rsnow = pdf_count
+             endif
+
+             if ( i == iiNsnowm ) then
+                pdf_count = pdf_count + 1
+                iiPDF_Nsnow = pdf_count
+             endif
+
+          else
+
+             iiPDF_rice = -1
+             iiPDF_Ni = -1
+             iiPDF_rsnow = -1
+             iiPDF_Nsnow = -1
+
+          endif ! l_ice_micro
+
+       enddo ! i = 1, hydromet_dim, 1
+
+    endif ! hydromet_dim > 0
+
     ! Disabled until we have values for the correlations of graupel and
     ! other variates in the latin hypercube sampling.
     iiPDF_rgraupel = -1
     iiPDF_Ngraupel = -1
 
-    d_variables = i
+    d_variables = pdf_count
+
 
     return
+
   end subroutine setup_pdf_indices
   !-----------------------------------------------------------------------
 
