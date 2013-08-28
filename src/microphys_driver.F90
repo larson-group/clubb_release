@@ -231,15 +231,13 @@ module microphys_driver
         core_rknd
 
     use corr_matrix_module, only: &
-        setup_pdf_indices  ! Procedure(s)
+        setup_pdf_indices, &  ! Procedure(s)
+        setup_corr_varnce_array
 
     use setup_clubb_pdf_params, only: &
         init_precip_hm_arrays  ! Procedure(s)
 
 #ifdef LATIN_HYPERCUBE
-    use latin_hypercube_arrays, only: &
-        setup_corr_varnce_array   ! Procedure(s)
-
     use mt95, only: &
         genrand_intg
 #endif /* LATIN_HYPERCUBE */
@@ -282,7 +280,11 @@ module microphys_driver
     real( kind = core_rknd ), dimension( :, :, :, :, : ), allocatable :: &
       droplets, droplets2            ! Used for lookup tables with GFDL activation
 
-    character(len=128) :: corr_file_path_cloud, corr_file_path_below
+    character(len=128) :: &
+     corr_file_path_cloud, &
+     corr_file_path_below, &
+     corr_file_path_cloud_default, &
+     corr_file_path_below_default
 
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, sigma_g, &
@@ -856,18 +858,18 @@ module microphys_driver
 
     call init_precip_hm_arrays( hydromet_dim )
 
-    ! Setup index variables for latin hypercube sampling
-    if ( LH_microphys_type_int /= LH_microphys_disabled ) then
+    ! Path to the default prescribed correlation arrays ( rico case )
+    corr_file_path_cloud_default = corr_input_path//"rico"//cloud_file_ext
+    corr_file_path_below_default = corr_input_path//"rico"//below_file_ext
 
-#ifdef LATIN_HYPERCUBE
-      corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
-      corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
-      ! Allocate and set the arrays containing the correlations
-      ! and the X'^2 / X'^2 terms
-      call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
-#endif
+    corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+    corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
-    end if
+    ! Allocate and set the arrays containing the correlations
+    ! and the X'^2 / X'^2 terms
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, &
+                                  corr_file_path_cloud_default, corr_file_path_below_default, &
+                                  iunit )
 
     return
   end subroutine init_microphys

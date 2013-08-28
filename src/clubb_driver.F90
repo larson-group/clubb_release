@@ -244,8 +244,8 @@ module clubb_driver
         corr_stat_output ! Procedure(s)
 
     use corr_matrix_module, only: &
-        read_correlation_matrix, & ! Procedure(s
-        setup_pdf_indices, &
+        corr_array_cloud, & ! Variable(s)
+        corr_array_below, &
         d_variables
 
     use setup_clubb_pdf_params, only: &
@@ -257,6 +257,8 @@ module clubb_driver
 
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter ! Type(s)
+
+
 
     implicit none
 
@@ -273,11 +275,6 @@ module clubb_driver
     logical, parameter :: &
       l_host_applies_sfc_fluxes = .false., &
       l_implemented = .false.
-
-    character(len=*), parameter :: &
-      corr_input_path = "../input/case_setups/", & ! Path to correlation files
-      cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
-      below_file_ext  = "_corr_array_below.in"
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -388,7 +385,7 @@ module clubb_driver
       radf     ! Buoyancy production at CL top due to LW radiative cooling [m^2/s^3]
                ! This is currently set to zero for CLUBB standalone
 
-    logical :: l_restart_input, corr_file_exist
+    logical :: l_restart_input
 
     integer :: k ! Loop iterator
 
@@ -413,18 +410,8 @@ module clubb_driver
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
-    real( kind = core_rknd ), dimension(:, :), allocatable :: &
-      corr_array_cloud, & ! Prescribed correlation matrix (in cloud)      [-]
-      corr_array_below    ! Prescribed correlation matrix (below cloud)   [-]
-
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
-
-    character(len=128) :: &
-     corr_file_path_cloud,         &
-     corr_file_path_below,         &
-     corr_file_path_cloud_default, &
-     corr_file_path_below_default
 
     ! Definition of namelists
     namelist /model_setting/  & 
@@ -858,8 +845,6 @@ module clubb_driver
     ! Allocate the correlation arrays
     allocate(corr_array_1(d_variables, d_variables, gr%nz))
     allocate(corr_array_2(d_variables, d_variables, gr%nz))
-    allocate(corr_array_cloud(d_variables, d_variables))
-    allocate(corr_array_below(d_variables, d_variables))
     allocate(corr_cholesky_mtx_1(d_variables, d_variables, gr%nz))
     allocate(corr_cholesky_mtx_2(d_variables, d_variables, gr%nz))
 
@@ -868,39 +853,6 @@ module clubb_driver
     allocate(mu_x_2(d_variables, gr%nz))
     allocate(sigma_x_1(d_variables, gr%nz))
     allocate(sigma_x_2(d_variables, gr%nz))
-
-    ! Initialize all variables for the diagnose correlations code
-
-    ! Path to the prescribed correlation arrays
-    corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
-    corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
-
-    ! Path to the default prescribed correlation arrays ( rico case )
-    corr_file_path_cloud_default = corr_input_path//"rico"//cloud_file_ext
-    corr_file_path_below_default = corr_input_path//"rico"//below_file_ext
-
-    ! corr_file_exist is true if the *_corr_array_cloud.in file exists
-    ! Note: It is assumed that if the *_corr_array_cloud.in file exists
-    !       then *_corr_array_below.in also exists
-    inquire( file = corr_file_path_cloud, exist = corr_file_exist )
-
-    if ( corr_file_exist ) then
-
-      call read_correlation_matrix( iunit, corr_file_path_cloud, d_variables, & ! In
-                                    corr_array_cloud ) ! In/Out
- 
-      call read_correlation_matrix( iunit, corr_file_path_below, d_variables, & ! In
-                                    corr_array_below ) ! In/Out
-
-    else ! Read in default correlation matrices (from rico_corr_array_cloud)
-     
-      call read_correlation_matrix( iunit, corr_file_path_cloud_default, d_variables, & ! In
-                                    corr_array_cloud ) ! In/Out
- 
-      call read_correlation_matrix( iunit, corr_file_path_below_default, d_variables, & ! In
-                                    corr_array_below ) ! In/Out
-
-    endif
 
     ! Initialize to 0.
     rvm_mc  = zero
@@ -3721,13 +3673,14 @@ module clubb_driver
         time_current, & ! Variable(s)
         runtype
 
-#ifdef LATIN_HYPERCUBE
-    use latin_hypercube_arrays, only: &
+
+    use corr_matrix_module, only: &
         xp2_on_xm2_array_cloud, &
         xp2_on_xm2_array_below, &
         corr_array_cloud, &
         corr_array_below
 
+#ifdef LATIN_HYPERCUBE
     use parameters_microphys, only: &
         LH_microphys_type, & ! Variable(s)
         LH_microphys_disabled, &
