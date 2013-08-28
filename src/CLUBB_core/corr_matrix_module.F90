@@ -400,7 +400,7 @@ module corr_matrix_module
       input_file_cloud, & ! Path to the in cloud correlation file
       input_file_below    ! Path to the out of cloud correlation file
 
-    character(len=128), intent(in) :: &
+    character(len=*), intent(in) :: &
       input_file_cloud_default, &
       input_file_below_default
 
