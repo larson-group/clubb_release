@@ -15,7 +15,7 @@ module anl_erf
 
   contains
 
-  function dp_erf( x ) result( erfx_core_rknd )
+  pure function dp_erf( x ) result( erfx_core_rknd )
 
 !-----------------------------------------------------------------------
 ! Description:

@@ -82,6 +82,7 @@ module stats_LH_zt
       iLH_cloud_frac, &
       iLH_s_mellor, &
       iLH_t_mellor, &
+      iLH_sp2, &
       iLH_rrainm_auto, &
       iLH_rrainm_accr, &
       iLH_rrainm_evap, &
@@ -380,6 +381,12 @@ module stats_LH_zt
         iLH_t_mellor = k
         call stat_assign( iLH_t_mellor, "LH_t_mellor", &
              "Latin hypercube estimate of Mellor's t [kg/kg]", "kg/kg", LH_zt )
+        k = k + 1
+
+      case ( 'LH_sp2' )
+        iLH_sp2 = k
+        call stat_assign( iLH_sp2, "LH_sp2", &
+             "Latin hypercube estimate of variance of s [kg/kg]", "kg/kg", LH_zt )
         k = k + 1
 
       case ( 'LH_wp2_zt' )

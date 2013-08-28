@@ -1477,10 +1477,11 @@ module stats_subs
         icloud_frac2
 
     use stats_variables, only: & 
-        is1, & 
-        is2, & 
-        istdev_s1, & 
+        is1, & ! Variable(s)
+        is2, &
+        istdev_s1, &
         istdev_s2, &
+        isp2, &
         istdev_t1, &
         istdev_t2, &
         icovar_st_1, &
@@ -1494,41 +1495,41 @@ module stats_subs
         irrtthl, &
         is_mellor
 
-    use stats_variables, only: & 
+    use stats_variables, only: &
         iwp2_zt, &  ! Variable(s)
-        ithlp2_zt, & 
-        iwpthlp_zt, & 
-        iwprtp_zt, & 
-        irtp2_zt, & 
+        ithlp2_zt, &
+        iwpthlp_zt, &
+        iwprtp_zt, &
+        irtp2_zt, &
         irtpthlp_zt, &
         iup2_zt, &
         ivp2_zt, &
         iupwp_zt, &
-        ivpwp_zt, & 
-        iwp2, & 
-        irtp2, & 
-        ithlp2, & 
-        irtpthlp, & 
-        iwprtp,  & 
-        iwpthlp, & 
-        iwp4,  & 
-        iwpthvp, & 
+        ivpwp_zt, &
+        iwp2, &
+        irtp2, &
+        ithlp2, &
+        irtpthlp, &
+        iwprtp,  &
+        iwpthlp, &
+        iwp4,  &
+        iwpthvp, &
         irtpthvp
 
-    use stats_variables, only: & 
-        ithlpthvp, & 
-        itau_zm, & 
-        iKh_zm, & 
-        iwprcp, & 
+    use stats_variables, only: &
+        ithlpthvp, & ! Variable(s)
+        itau_zm, &
+        iKh_zm, &
+        iwprcp, &
         irc_coef, &
-        ithlprcp, & 
-        irtprcp, & 
-        ircp2, & 
-        iupwp, & 
-        ivpwp, & 
-        iup2, & 
-        ivp2, & 
-        irho_zm, & 
+        ithlprcp, &
+        irtprcp, &
+        ircp2, &
+        iupwp, &
+        ivpwp, &
+        iup2, &
+        ivp2, &
+        irho_zm, &
         isigma_sqd_w, &
         irho_ds_zm, &
         ithv_ds_zm, &
@@ -1747,10 +1748,12 @@ module stats_subs
     integer :: isclr, k
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K, &  ! Absolute temperature         [K]
-      rsati,  &  ! Saturation w.r.t ice         [kg/kg]
-      shear,  &  ! Wind shear production term   [m^2/s^3]
-      s_mellor   ! Mellor's 's'                 [kg/kg]
+      T_in_K, &   ! Absolute temperature         [K]
+      rsati,  &   ! Saturation w.r.t ice         [kg/kg]
+      shear,  &   ! Wind shear production term   [m^2/s^3]
+      s_mellor, & ! Mellor's 's'                 [kg/kg]
+      sp2         ! Variance of Mellor's 's'     [kg/kg]
+      
 
     real( kind = core_rknd ) :: xtmp
 
@@ -1862,6 +1865,13 @@ module stats_subs
         s_mellor(:) = pdf_params%mixt_frac * pdf_params%s1 &
                     + (1.0_core_rknd-pdf_params%mixt_frac) * pdf_params%s2
         call stat_update_var( is_mellor, s_mellor, zt )
+      end if
+
+      ! Calculate variance of s_mellor
+      if ( isp2 > 0 ) then
+        sp2 = compute_weighted_variance( pdf_params%stdev_s1, pdf_params%stdev_s2, &
+                                         pdf_params%mixt_frac )
+        call stat_update_var( isp2, sp2, zt )
       end if
 
       if ( sclr_dim > 0 ) then
@@ -2338,6 +2348,49 @@ module stats_subs
     return
   end subroutine stats_accumulate_LH_tend
 
+  !-----------------------------------------------------------------------------
+  elemental function compute_weighted_variance( stdev_x_1, stdev_x_2, mixt_frac ) result( xp2 )
+
+  ! Description:
+  !   Computes the variance of a variable, given the standard deviations of two
+  !   PDF components, and a mixing ratio
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Constant
+
+    use constants_clubb, only: &
+      one ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
+      stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
+      mixt_frac    ! Weight of the first PDF component                     [-]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: &
+      xp2          ! Variance of 'x' (overall average)                     [?^2]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      stdev_x      ! Standard deviation of 'x' (overall average)           [?]
+      
+  !-----------------------------------------------------------------------------
+
+    !----- Begin Code -----
+    stdev_x = stdev_x_1 * mixt_frac + stdev_x_2 * (one - mixt_frac)
+
+    xp2 = stdev_x ** 2
+
+    return
+  end function compute_weighted_variance
+    
   !-----------------------------------------------------------------------
   subroutine stats_finalize( )
 

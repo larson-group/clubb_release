@@ -354,6 +354,7 @@ module stats_zt
         is2, & 
         istdev_s1, & 
         istdev_s2, &
+        isp2,  &
         istdev_t1, &
         istdev_t2, &
         icovar_st_1, &
@@ -2560,6 +2561,12 @@ module stats_zt
 
         call stat_assign( istdev_s2, "stdev_s2", & 
              "pdf parameter: Std dev of s2 [kg/kg]", "kg/kg", zt )
+        k = k + 1
+
+      case ('sp2')
+        isp2 = k
+        call stat_assign( isp2, "sp2", &
+             "Variance of s (overall) [kg/kg]", "kg/kg", zt )
         k = k + 1
 
       case ('stdev_t1')

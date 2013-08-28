@@ -2056,6 +2056,7 @@ module latin_hypercube_driver_module
       iLH_wm, &
       iLH_cloud_frac, &
       iLH_s_mellor, &
+      iLH_sp2, &
       iLH_t_mellor
 
     use stats_variables, only: &
@@ -2157,7 +2158,8 @@ module latin_hypercube_driver_module
       LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
-      LH_t_mellor      ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
+      LH_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
+      LH_sp2           ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
 
     real(kind=core_rknd) :: xtmp
 
@@ -2272,6 +2274,15 @@ module latin_hypercube_driver_module
                                real( X_nl_all_levs(1:nz, 1:n_micro_calls, iiPDF_s_mellor), &
                                      kind = core_rknd ) )
         call stat_update_var( iLH_s_mellor, LH_s_mellor, LH_zt )
+      end if
+
+      ! Latin hypercube estimate of variance of s_mellor
+      if ( iLH_sp2 > 0 ) then
+        LH_sp2(1:nz) &
+        = compute_sample_variance( nz, n_micro_calls, &
+                                   real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind = core_rknd ), &
+                                   LH_sample_point_weights, LH_s_mellor(1:nz) )
+        call stat_update_var( iLH_sp2, LH_sp2, LH_zt )
       end if
 
       ! Latin hypercube estimate of t_mellor

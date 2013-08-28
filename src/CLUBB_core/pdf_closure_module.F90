@@ -1039,7 +1039,7 @@ module pdf_closure_module
   end subroutine pdf_closure
   
   !-----------------------------------------------------------------------
-  subroutine calc_cloud_frac_component(s, stdev_s, s_at_sat, cloud_fracN, rcN)
+  pure subroutine calc_cloud_frac_component(s, stdev_s, s_at_sat, cloud_fracN, rcN)
   ! Description:
   !   Given the mean and standard deviation of 's', this subroutine
   !   calculates cloud_frac<n>, where n is the PDF component (either 1 or

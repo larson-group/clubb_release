@@ -601,6 +601,7 @@ module stats_variables
      is2 = 0, &
      istdev_s1 = 0, & 
      istdev_s2 = 0, &
+     isp2 = 0, &
      istdev_t1 = 0, &
      istdev_t2 = 0, &
      icovar_st_1 = 0, &
@@ -612,7 +613,7 @@ module stats_variables
      icrt2 = 0, &
      icthl1 = 0, &
      icthl2 = 0
-!$omp  threadprivate( is1, is2, istdev_s1, istdev_s2, &
+!$omp  threadprivate( is1, is2, istdev_s1, istdev_s2, isp2, &
 !$omp    istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl, &
 !$omp    icrt1, icrt2, icthl1, icthl2 )
 
@@ -726,9 +727,10 @@ module stats_variables
     iLH_rcp2_zt = 0, &
     iLH_rtp2_zt = 0, &
     iLH_thlp2_zt = 0, &
-    iLH_rrainp2_zt = 0
-!$omp threadprivate(iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
-!$omp               iLH_thlp2_zt, iLH_rrainp2_zt)
+    iLH_rrainp2_zt = 0, &
+    iLH_sp2 = 0 ! Eric Raut
+!$omp threadprivate( iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
+!$omp                iLH_thlp2_zt, iLH_rrainp2_zt, iLH_sp2 )
 
 
   ! Indices for Morrison budgets
