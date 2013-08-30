@@ -43,7 +43,8 @@ module corr_matrix_module
 !$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
 !$omp   corr_array_cloud, corr_array_below)
 
-  public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array
+  public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
+            cleanup_corr_matrix_arrays
 
   private :: get_corr_var_index, return_pdf_index
 

@@ -246,7 +246,8 @@ module clubb_driver
     use corr_matrix_module, only: &
         corr_array_cloud, & ! Variable(s)
         corr_array_below, &
-        d_variables
+        d_variables, &
+        cleanup_corr_matrix_arrays
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -1282,6 +1283,8 @@ module clubb_driver
     call cleanup_radiation_variables( )
 
     call cleanup_microphys( )
+
+    call cleanup_corr_matrix_arrays( )
 
     if( l_input_fields ) then
       call cleanup_input_fields()
