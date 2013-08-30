@@ -129,9 +129,9 @@ module sounding
     integer :: nlevels  ! Levels in the input sounding
 
     logical :: &
-      l_sounding_exists        = .false., &
-      l_sclr_sounding_exists   = .false., &
-      l_edsclr_sounding_exists = .false.
+      l_sounding_exists, &
+      l_sclr_sounding_exists, &
+      l_edsclr_sounding_exists
 
     real( kind = core_rknd ), dimension(nmaxsnd) :: & 
       z,       & ! Altitude                               [m]
@@ -192,7 +192,7 @@ module sounding
                                alt_type, p_in_Pa, subs_type, subs, &
                                sounding_retVars )
     else
-      stop 'Cannot open <runtype>_sounding.in file'
+      stop 'Cannot open ' // trim( runtype ) // '_sounding.in file'
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
     end if
