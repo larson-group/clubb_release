@@ -192,7 +192,8 @@ module sounding
                                alt_type, p_in_Pa, subs_type, subs, &
                                sounding_retVars )
     else
-      stop 'Cannot open ' // trim( runtype ) // '_sounding.in file'
+      write(fstderr,*) 'Cannot open ' // trim( runtype ) // '_souding.in file'
+      stop 'Fatal error in read_sounding'
       ! sounding namelist is no longer used.
       ! Joshua Fasching April 2009
     end if
