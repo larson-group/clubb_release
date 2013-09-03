@@ -68,5 +68,5 @@ SHAREDFLAGS="-G"
 mkmf=$dir/mkmf
 
 # gmake command to use and options: '-j 2' enables parallel compilation
-gmake="make"
+gmake="make -j5"
 
