@@ -1,4 +1,4 @@
-! $Id: pdf_parameter_module.F90 5668 2012-01-29 03:40:28Z bmg2@uwm.edu $
+! $Id$
 module hydromet_pdf_parameter_module
 ! Description:
 !   This module defines the derived type pdf_parameter.
