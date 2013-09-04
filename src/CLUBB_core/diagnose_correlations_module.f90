@@ -19,12 +19,7 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine diagnose_correlations( d_variables, corr_array_pre, & ! Intent(in)
-                                    corr_ws, corr_wrr, &           ! Intent(out)
-                                    corr_wNr, corr_wNcn, &         ! Intent(out)
-                                    corr_st, corr_srr, &           ! Intent(out)
-                                    corr_sNr, corr_sNcn, &         ! Intent(out)
-                                    corr_trr, corr_tNr, &          ! Intent(out)
-                                    corr_tNcn, corr_rrNr )         ! Intent(out)
+                                    corr_array )                   ! Intent(out)
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
     !   into SILHS microphysics.
@@ -58,19 +53,8 @@ module diagnose_correlations_module
       corr_array_pre   ! Prescribed correlations
 
     ! Output variables
-    real( kind = core_rknd ), intent(out) :: &
-      corr_ws,     & ! Correlation between w and s (1st PDF component)     [-]
-      corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_st,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_srr,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_sNr,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNcn,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_trr,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_tNr,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNcn,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+      corr_array
 
     ! Local Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
@@ -97,14 +81,6 @@ module diagnose_correlations_module
     call rearrange_corr_array( d_variables, corr_array_pre, & ! Intent(in)
                                corr_array_pre_swapped)        ! Intent(inout)
 
-!    corr_array_pre_swapped = corr_array_pre
-!    swap_array = corr_array_pre_swapped (:,1)
-!    corr_array_pre_swapped(1:iiPDF_w, 1) = corr_array_pre_swapped(iiPDF_w, iiPDF_w:1:-1)
-!    corr_array_pre_swapped((iiPDF_w+1):d_variables, 1) = corr_array_pre_swapped( &
-!                                                         (iiPDF_w+1):d_variables, iiPDF_w)
-!    corr_array_pre_swapped(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
-!    corr_array_pre_swapped((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
-
     ! diagnose correlations
     
     if ( .not. l_calc_w_corr ) then
@@ -117,18 +93,6 @@ module diagnose_correlations_module
     ! Swap rows back
     call rearrange_corr_array( d_variables, corr_array_swapped, & ! Intent(in)
                                corr_array)        ! Intent(inout)
-
-!    swap_array = corr_array(:, 1)
-!    corr_array(1:iiPDF_w, 1) = corr_array(iiPDF_w, iiPDF_w:1:-1)
-!    corr_array((iiPDF_w+1):d_variables, 1) = corr_array((iiPDF_w+1):d_variables, iiPDF_w)
-!    corr_array(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
-!    corr_array((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
-
-    ! Unpack the corr_array to the corresponding variables
-    call unpack_correlations( d_variables, corr_array, & ! Intent(in)
-                              corr_ws, corr_wrr, corr_wNr, corr_wNcn, & ! Intent(out)
-                              corr_st, corr_srr, corr_sNr, corr_sNcn, &
-                              corr_trr, corr_tNr, corr_tNcn, corr_rrNr )  
 
   end subroutine diagnose_correlations
 

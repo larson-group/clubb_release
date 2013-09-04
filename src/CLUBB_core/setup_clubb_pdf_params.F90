@@ -11,7 +11,7 @@ module setup_clubb_pdf_params
             normalize_pdf_params,   &
             compute_mean_stdev,     &
             compute_corr,           &
-            init_precip_hm_arrays
+             init_precip_hm_arrays
 
   private :: component_means_hydromet, &
              precip_fraction,          &
@@ -44,7 +44,7 @@ module setup_clubb_pdf_params
     iiNg    ! Index of graupel concentration: precipitating hydrometeor arrays
 !$omp threadprivate( iirr, iiNr, iirs, iiri, iirg, iiNs, iiNi, iiNg )
 
-  integer, private :: &
+  integer, public :: &
     num_hm    ! Number of precipitating hydrometeors
 !$omp threadprivate( num_hm )
 
@@ -61,14 +61,14 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, hydromet, Ncnm, rho, rcm, &             ! Intent(in)
-                                   cloud_frac, w_std_dev, wphydrometp, &       ! Intent(in)
-                                   corr_array_cloud, corr_array_below, &       ! Intent(in)
-                                   pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
-                                   corr_array_1, corr_array_2, &               ! Intent(out)
-                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
-                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-                                   hydromet_pdf_params )                       ! Intent(out)
+  subroutine setup_pdf_parameters( nz, hydromet, Ncnm, rho, rcm, &                 ! Intent(in)
+                                   cloud_frac, w_std_dev, wphydrometp, &           ! Intent(in)
+                                   corr_array_cloud, corr_array_below, &           ! Intent(in)
+                                   pdf_params, l_stats_samp, d_variables, &        ! Intent(in)
+                                   corr_array_1_n, corr_array_2_n, &               ! Intent(out)
+                                   mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
+                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2, &     ! Intent(out)
+                                   hydromet_pdf_params )                           ! Intent(out)
 
     ! Description:
 
@@ -118,20 +118,6 @@ module setup_clubb_pdf_params
     use matrix_operations, only: &
         Cholesky_factor ! Procedure(s)
 
-    use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud,       & ! Variable(s)
-        rrp2_on_rrm2_below,       &
-        Nrp2_on_Nrm2_cloud,       &
-        Nrp2_on_Nrm2_below,       &
-        ricep2_on_ricem2_cloud,   &
-        ricep2_on_ricem2_below,   &
-        Nicep2_on_Nicem2_cloud,   &
-        Nicep2_on_Nicem2_below,   &
-        rsnowp2_on_rsnowm2_cloud, &
-        rsnowp2_on_rsnowm2_below, &
-        Nsnowp2_on_Nsnowm2_cloud, &
-        Nsnowp2_on_Nsnowm2_below
-
     use stats_type, only: &
         stat_update_var ! Procedure(s)
 
@@ -153,12 +139,14 @@ module setup_clubb_pdf_params
         calc_cholesky_corr_mtx_approx
 
     use corr_matrix_module, only: &
-        iiPDF_w,        & ! Variable(s)
+        xp2_on_xm2_array_cloud, & ! Variable(s)
+        xp2_on_xm2_array_below, &
+        iiPDF_rrain, &
+        iiPDF_Nr, &
+        iiPDF_Ncn, &
         iiPDF_s_mellor, &
         iiPDF_t_mellor, &
-        iiPDF_rrain,    &
-        iiPDF_Nr,       &
-        iiPDF_Ncn
+        iiPDF_w
 
     implicit none
 
@@ -189,18 +177,17 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
-    ! Input/Output Variables
+    ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
     intent(out) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+      corr_array_1_n, & ! Correlation array for the 1st PDF component   [-]
+      corr_array_2_n    ! Correlation array for the 2nd PDF component   [-]
 
-    ! Output Variables
     real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
-      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
-      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
-      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
-      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+      mu_x_1_n,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2_n,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1_n, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2_n    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
@@ -231,92 +218,6 @@ module setup_clubb_pdf_params
       cloud_frac2, & ! Cloud fraction (2nd PDF component)           [-]
       mixt_frac      ! Mixture fraction                             [-]
 
-    real( kind = core_rknd ) :: &
-      mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
-      mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_t_1,        & ! Mean of t (1st PDF component)                   [kg/kg]
-      mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
-      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
-      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
-      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
-      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
-      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
-      sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
-      sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
-      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
-      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
-      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
-      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
-
-    real( kind = core_rknd ) :: &
-      corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
-      corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
-      corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
-      corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
-      corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
-      corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
-
-    real( kind = core_rknd ) :: &
-      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-
     real( kind = core_rknd ), dimension(nz) ::  &
       wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
       wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
@@ -340,10 +241,6 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(num_hm) :: &
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
-    real( kind = core_rknd ), dimension(num_hm) :: &
-      hmp2_on_hmm2_cloud, & ! Ratio of < hm'^2 > to < hm >^2 at cloudy levs. [-]
-      hmp2_on_hmm2_below    ! Ratio of < hm'^2 > to < hm >^2 at clear levs.  [-]
-
      real( kind = core_rknd ), dimension(nz) :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
       rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
@@ -354,6 +251,16 @@ module setup_clubb_pdf_params
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
+
+    real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
+      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
+      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+
+    real( kind = core_rknd ), dimension(d_variables) :: &
+      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
+      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
+      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
+      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     real( kind = dp ), dimension(d_variables) :: &
       corr_array_scaling
@@ -368,36 +275,6 @@ module setup_clubb_pdf_params
     ! include N_c or N_cn.
     call precip_hm_arrays( nz, hydromet, wphydrometp, &
                            hmm, wphmp, hm_list, hm_tol )
-
-    ! Initialize arrays for < hm'^2 > / < hm >^2.
-    hmp2_on_hmm2_cloud = one
-    hmp2_on_hmm2_below = one
-
-    ! Setup within cloud and outside cloud arrays for < hm'^2 > / < hm >^2.
-    if ( iirr > 0 ) then
-       hmp2_on_hmm2_cloud(iirr) = rrp2_on_rrm2_cloud
-       hmp2_on_hmm2_below(iirr) = rrp2_on_rrm2_below
-    endif
-    if ( iiNr > 0 ) then
-       hmp2_on_hmm2_cloud(iiNr) = Nrp2_on_Nrm2_cloud
-       hmp2_on_hmm2_below(iiNr) = Nrp2_on_Nrm2_below
-    endif
-    if ( iiri > 0 ) then
-       hmp2_on_hmm2_cloud(iiri) = ricep2_on_ricem2_cloud
-       hmp2_on_hmm2_below(iiri) = ricep2_on_ricem2_below
-    endif
-    if ( iiNi > 0 ) then
-       hmp2_on_hmm2_cloud(iiNi) = Nicep2_on_Nicem2_cloud
-       hmp2_on_hmm2_below(iiNi) = Nicep2_on_Nicem2_below
-    endif
-    if ( iirs > 0 ) then
-       hmp2_on_hmm2_cloud(iirs) = rsnowp2_on_rsnowm2_cloud
-       hmp2_on_hmm2_below(iirs) = rsnowp2_on_rsnowm2_below
-    endif
-    if ( iiNs > 0 ) then
-       hmp2_on_hmm2_cloud(iiNs) = Nsnowp2_on_Nsnowm2_cloud
-       hmp2_on_hmm2_below(iiNs) = Nsnowp2_on_Nsnowm2_below
-    endif
 
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
@@ -549,203 +426,153 @@ module setup_clubb_pdf_params
     ! Now also including "model lower boundary" -- Eric Raut Aug 2013
     do k = 1, nz, 1
 
-       !!! Calculate the means and standard deviations involving w, s, t, N_cn,
-       !!! and all precipitating hydrometeors (in-precip) in each PDF component.
-       call compute_mean_stdev( pdf_params(k), hm1(k,:), hm2(k,:), Ncnm(k), &
-                                hmp2_on_hmm2_cloud, hmp2_on_hmm2_below, &
-                                rc1(k), rc2(k), cloud_frac1(k), &
-                                cloud_frac2(k), precip_frac_1(k), &
-                                precip_frac_2(k), hm_tol, d_variables, &
-                                mu_x_1(:,k), mu_x_2(:,k), &
-                                sigma_x_1(:,k), sigma_x_2(:,k) )
+       !!! Calculate the means, standard deviations, and necessary correlations
+       !!! involving w, s, t, r_r (in-precip), N_r (in-precip), and N_cn for
+       !!! each PDF component.
+       call compute_mean_stdev( Ncnm(k), rc1(k), rc2(k), &            ! Intent(in)
+                                cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
+                                hm1(k,:), hm2(k,:), hm_tol, &         ! Intent(in)
+                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                xp2_on_xm2_array_cloud, &             ! Intent(in)
+                                xp2_on_xm2_array_below, &             ! Intent(in)
+                                pdf_params(k), d_variables, &         ! Intent(in)
+                                mu_x_1, mu_x_2, &                     ! Intent(out)
+                                sigma_x_1, sigma_x_2 )      ! Intent(out)
 
-       mu_w_1      = mu_x_1(iiPDF_w,k)
-       mu_w_2      = mu_x_2(iiPDF_w,k)
-       mu_s_1      = mu_x_1(iiPDF_s_mellor,k)
-       mu_s_2      = mu_x_2(iiPDF_s_mellor,k)
-       mu_t_1      = mu_x_1(iiPDF_t_mellor,k)
-       mu_t_2      = mu_x_2(iiPDF_t_mellor,k)
-       mu_rr_1     = mu_x_1(iiPDF_rrain,k)
-       mu_rr_2     = mu_x_2(iiPDF_rrain,k)
-       mu_Nr_1     = mu_x_1(iiPDF_Nr,k)
-       mu_Nr_2     = mu_x_2(iiPDF_Nr,k)
-       mu_Ncn_1    = mu_x_1(iiPDF_Ncn,k)
-       mu_Ncn_2    = mu_x_2(iiPDF_Ncn,k)
-       sigma_w_1   = sigma_x_1(iiPDF_w,k)
-       sigma_w_2   = sigma_x_2(iiPDF_w,k)
-       sigma_s_1   = sigma_x_1(iiPDF_s_mellor,k)
-       sigma_s_2   = sigma_x_2(iiPDF_s_mellor,k)
-       sigma_t_1   = sigma_x_1(iiPDF_t_mellor,k)
-       sigma_t_2   = sigma_x_2(iiPDF_t_mellor,k)
-       sigma_rr_1  = sigma_x_1(iiPDF_rrain,k)
-       sigma_rr_2  = sigma_x_2(iiPDF_rrain,k)
-       sigma_Nr_1  = sigma_x_1(iiPDF_Nr,k)
-       sigma_Nr_2  = sigma_x_2(iiPDF_Nr,k)
-       sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn,k)
-       sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn,k)
 
        if ( l_diagnose_correlations ) then
 
           if ( rcm(k) > rc_tol ) then
 
              call diagnose_correlations( d_variables, corr_array_cloud, & ! Intent(in)
-                                         corr_ws_1, corr_wrr_1, &         ! Intent(out)
-                                         corr_wNr_1, corr_wNcn_1, &       ! Intent(out)
-                                         corr_st_1, corr_srr_1, &         ! Intent(out)
-                                         corr_sNr_1, corr_sNcn_1, &       ! Intent(out)
-                                         corr_trr_1, corr_tNr_1, &        ! Intent(out)
-                                         corr_tNcn_1, corr_rrNr_1 )       ! Intent(out)
+                                         corr_array_1 )       ! Intent(out)
 
              call diagnose_correlations( d_variables, corr_array_cloud, & ! Intent(in)
-                                         corr_ws_2, corr_wrr_2, &         ! Intent(out)
-                                         corr_wNr_2, corr_wNcn_2, &       ! Intent(out)
-                                         corr_st_2, corr_srr_2, &         ! Intent(out)
-                                         corr_sNr_2, corr_sNcn_2, &       ! Intent(out)
-                                         corr_trr_2, corr_tNr_2, &        ! Intent(out)
-                                         corr_tNcn_2, corr_rrNr_2 )       ! Intent(out)
+                                         corr_array_2 )       ! Intent(out)
 
           else
 
              call diagnose_correlations( d_variables, corr_array_below, & ! Intent(in)
-                                         corr_ws_1, corr_wrr_1, &         ! Intent(out)
-                                         corr_wNr_1, corr_wNcn_1, &       ! Intent(out)
-                                         corr_st_1, corr_srr_1, &         ! Intent(out)
-                                         corr_sNr_1, corr_sNcn_1, &       ! Intent(out)
-                                         corr_trr_1, corr_tNr_1, &        ! Intent(out)
-                                         corr_tNcn_1, corr_rrNr_1 )       ! Intent(out)
+                                         corr_array_1 )       ! Intent(out)
 
              call diagnose_correlations( d_variables, corr_array_below, & ! Intent(in)
-                                         corr_ws_2, corr_wrr_2, &         ! Intent(out)
-                                         corr_wNr_2, corr_wNcn_2, &       ! Intent(out)
-                                         corr_st_2, corr_srr_2, &         ! Intent(out)
-                                         corr_sNr_2, corr_sNcn_2, &       ! Intent(out)
-                                         corr_trr_2, corr_tNr_2, &        ! Intent(out)
-                                         corr_tNcn_2, corr_rrNr_2 )       ! Intent(out)
+                                         corr_array_2 )       ! Intent(out)
 
           endif
 
        else ! if .not. l_diagnose_correlations
 
-          call compute_corr( Ncnm(k), rr1(k), rr2(k), Nr1(k), Nr2(k), rc1(k), & ! Intent(in)
-                             rc2(k), cloud_frac1(k), cloud_frac2(k), &          ! Intent(in)
-                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), &      ! Intent(in)
-                             wpNcnp_zt(k), w_std_dev(k), &                      ! Intent(in)
-                             sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &             ! Intent(in)
-                             pdf_params(k), &                                   ! Intent(in)
-                             corr_ws_1, corr_ws_2, corr_wrr_1, &                ! Intent(out)
-                             corr_wrr_2, corr_wNr_1, corr_wNr_2, &              ! Intent(out)
-                             corr_wNcn_1, corr_wNcn_2, corr_st_1, &             ! Intent(out)
-                             corr_st_2, corr_srr_1, corr_srr_2, &               ! Intent(out)
-                             corr_sNr_1, corr_sNr_2, corr_sNcn_1, &             ! Intent(out)
-                             corr_sNcn_2, corr_trr_1, corr_trr_2, &             ! Intent(out)
-                             corr_tNr_1, corr_tNr_2, corr_tNcn_1, &             ! Intent(out)
-                             corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 )            ! Intent(out)
+          call compute_corr( Ncnm(k), rc1(k), rc2(k), &                    ! Intent(in)
+                             cloud_frac1(k), cloud_frac2(k), &             ! Intent(in)
+                             hm1(k,:), hm2(k,:), hm_tol, &                 ! Intent(in)
+                             wpsp_zt(k), wprrp_ip_zt(k), wpNrp_ip_zt(k), & ! Intent(in)
+                             wpNcnp_zt(k), w_std_dev(k), &                 ! Intent(in)
+                             sigma_x_1, &        ! Intent(in)
+                             corr_array_cloud, corr_array_below, &   ! Intent(in)
+                             pdf_params(k), d_variables, &                 ! Intent(in)
+                             corr_array_1, corr_array_2 )    ! Intent(out)
 
        endif ! l_diagnose_correlations
 
-       !!! Calculate the mean, standard deviations, and correlations involving
-       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
-       call normalize_pdf_params( rr1(k), rr2(k), Nr1(k), Nr2(k), Ncnm(k), &     ! Intent(in)
-                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &         ! Intent(in)
-                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
-                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &        ! Intent(in)
-                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &        ! Intent(in)
-                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &        ! Intent(in)
-                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &        ! Intent(in)
-                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(in)
-                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(in)
-                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(in)
-                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &      ! Intent(in)
-                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(out)
-                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(out)
-                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(out)
-                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
-                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(out)
-                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
-                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(out)
-                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
-                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(out)
-                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
-                                   corr_rrNr_1_n, corr_rrNr_2_n )                ! Intent(out)
-
        !!! Statistics
-       call pdf_param_hm_stats(  mu_rr_1, mu_rr_2, mu_Nr_1, &
-                                 mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
-                                 sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
-                                 sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                 corr_wrr_1, corr_wrr_2, corr_wNr_1, &
-                                 corr_wNr_2, corr_wNcn_1, corr_wNcn_2, &
-                                 corr_srr_1, corr_srr_2, corr_sNr_1, &
-                                 corr_sNr_2, corr_sNcn_1, corr_sNcn_2, &
-                                 corr_trr_1, corr_trr_2, corr_tNr_1, &
-                                 corr_tNr_2, corr_tNcn_1, corr_tNcn_2, &
-                                 corr_rrNr_1, corr_rrNr_2, &
+       !!! We should generalize the statistics output to write all the hydrometeor species to disk.
+       call pdf_param_hm_stats(  mu_x_1(iiPDF_rrain), mu_x_2(iiPDF_rrain), &
+                                 mu_x_1(iiPDF_Nr), mu_x_2(iiPDF_Nr), &
+                                 mu_x_1(iiPDF_Ncn), mu_x_2(iiPDF_Ncn), &
+                                 sigma_x_1(iiPDF_rrain), sigma_x_2(iiPDF_rrain), &
+                                 sigma_x_1(iiPDF_Nr), sigma_x_2(iiPDF_Nr), &
+                                 sigma_x_1(iiPDF_Ncn), sigma_x_2(iiPDF_Ncn), &
+                                 corr_array_1(iiPDF_rrain, iiPDF_w), &
+                                 corr_array_2(iiPDF_rrain, iiPDF_w), &
+                                 corr_array_1(iiPDF_Nr, iiPDF_w), &
+                                 corr_array_2(iiPDF_Nr, iiPDF_w), &
+                                 corr_array_1(iiPDF_Ncn, iiPDF_w), &
+                                 corr_array_2(iiPDF_Ncn, iiPDF_w), &
+                                 corr_array_1(iiPDF_rrain, iiPDF_s_mellor), &
+                                 corr_array_2(iiPDF_rrain, iiPDF_s_mellor), &
+                                 corr_array_1(iiPDF_Nr, iiPDF_s_mellor), &
+                                 corr_array_2(iiPDF_Nr, iiPDF_s_mellor), &
+                                 corr_array_1(iiPDF_Ncn, iiPDF_s_mellor), &
+                                 corr_array_2(iiPDF_Ncn, iiPDF_s_mellor), &
+                                 corr_array_1(iiPDF_rrain, iiPDF_t_mellor), &
+                                 corr_array_2(iiPDF_rrain, iiPDF_t_mellor), &
+                                 corr_array_1(iiPDF_Nr, iiPDF_t_mellor), &
+                                 corr_array_2(iiPDF_Nr, iiPDF_t_mellor), &
+                                 corr_array_1(iiPDF_Ncn, iiPDF_t_mellor), &
+                                 corr_array_2(iiPDF_Ncn, iiPDF_t_mellor), &
+                                 corr_array_1(iiPDF_Nr, iiPDF_rrain), &
+                                 corr_array_2(iiPDF_Nr, iiPDF_rrain), &
                                  k, l_stats_samp )
 
-       call pdf_param_log_hm_stats( mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                    mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                    sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                    sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                    corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &
-                                    corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &
-                                    corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
-                                    corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                                    corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &
-                                    corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &
-                                    corr_rrNr_1_n, corr_rrNr_2_n, k, &
-                                    l_stats_samp )
+       !!! Calculate the mean, standard deviations, and correlations involving
+       !!! ln r_r, ln N_r, and ln N_cn for each PDF component.
+       call normalize_pdf_params( hm1(k,:), hm2(k,:), hm_tol, &           ! Intent(in)
+                                  Ncnm(k), d_variables, &                 ! Intent(in)
+                                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                  corr_array_1, corr_array_2, &           ! Intent(in)
+                                  mu_x_1_n(:,k), mu_x_2_n(:,k), &             ! Intent(out)
+                                  sigma_x_1_n(:,k), sigma_x_2_n(:,k), &       ! Intent(out)
+                                  corr_array_1_n(:,:,k), corr_array_2_n(:,:,k) ) ! Intent(out)
 
-       !!! Pack the PDF parameters
-       call pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &                     ! Intent(in)
-                             mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &                   ! Intent(in)
-                             mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &               ! Intent(in)
-                             mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &                    ! Intent(in)
-                             mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &                  ! Intent(in)
-                             sigma_w_1, sigma_w_2, sigma_s_1, &                    ! Intent(in)
-                             sigma_s_2, sigma_t_1, sigma_t_2, &                    ! Intent(in)
-                             sigma_rr_1, sigma_rr_2, sigma_Nr_1, &                 ! Intent(in)
-                             sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &               ! Intent(in)
-                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &           ! Intent(in)
-                             sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, &         ! Intent(in)
-                             corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, &         ! Intent(in)
-                             corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &           ! Intent(in)
-                             corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, &         ! Intent(in)
-                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &           ! Intent(in)
-                             corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &         ! Intent(in)
-                             corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &           ! Intent(in)
-                             corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, &         ! Intent(in)
-                             corr_rrNr_1_n, corr_rrNr_2_n, &                       ! Intent(in)
-                             rr1(k), rr2(k), Nr1(k), Nr2(k), &                     ! Intent(in)
-                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                             d_variables, &                                        ! Intent(in)
-                             corr_array_1(:,:,k), corr_array_2(:,:,k), &           ! Intent(out)
-                             mu_x_1(:,k), mu_x_2(:,k), &                           ! Intent(out)
-                             sigma_x_1(:,k), sigma_x_2(:,k), &                     ! Intent(out)
-                             hydromet_pdf_params(k) )                              ! Intent(out)
+       !!! Statistics
+       !!! We should generalize the statistics output to write all the hydrometeor species to disk.
+       call pdf_param_log_hm_stats(  mu_x_1_n(iiPDF_rrain, k), mu_x_2_n(iiPDF_rrain, k), &
+                                     mu_x_1_n(iiPDF_Nr, k), mu_x_2_n(iiPDF_Nr, k), &
+                                     mu_x_1_n(iiPDF_Ncn, k), mu_x_2_n(iiPDF_Ncn, k), &
+                                     sigma_x_1_n(iiPDF_rrain, k), sigma_x_2_n(iiPDF_rrain, k), &
+                                     sigma_x_1_n(iiPDF_Nr, k), sigma_x_2_n(iiPDF_Nr, k), &
+                                     sigma_x_1_n(iiPDF_Ncn, k), sigma_x_2_n(iiPDF_Ncn, k), &
+                                     corr_array_1_n(iiPDF_rrain, iiPDF_w, k), &
+                                     corr_array_2_n(iiPDF_rrain, iiPDF_w, k), &
+                                     corr_array_1_n(iiPDF_Nr, iiPDF_w, k), &
+                                     corr_array_2_n(iiPDF_Nr, iiPDF_w, k), &
+                                     corr_array_1_n(iiPDF_Ncn, iiPDF_w, k), &
+                                     corr_array_2_n(iiPDF_Ncn, iiPDF_w, k), &
+                                     corr_array_1_n(iiPDF_rrain, iiPDF_s_mellor, k), &
+                                     corr_array_2_n(iiPDF_rrain, iiPDF_s_mellor, k), &
+                                     corr_array_1_n(iiPDF_Nr, iiPDF_s_mellor, k), &
+                                     corr_array_2_n(iiPDF_Nr, iiPDF_s_mellor, k), &
+                                     corr_array_1_n(iiPDF_Ncn, iiPDF_s_mellor, k), &
+                                     corr_array_2_n(iiPDF_Ncn, iiPDF_s_mellor, k), &
+                                     corr_array_1_n(iiPDF_rrain, iiPDF_t_mellor, k), &
+                                     corr_array_2_n(iiPDF_rrain, iiPDF_t_mellor, k), &
+                                     corr_array_1_n(iiPDF_Nr, iiPDF_t_mellor, k), &
+                                     corr_array_2_n(iiPDF_Nr, iiPDF_t_mellor, k), &
+                                     corr_array_1_n(iiPDF_Ncn, iiPDF_t_mellor, k), &
+                                     corr_array_2_n(iiPDF_Ncn, iiPDF_t_mellor, k), &
+                                     corr_array_1_n(iiPDF_Nr, iiPDF_rrain, k), &
+                                     corr_array_2_n(iiPDF_Nr, iiPDF_rrain, k), &
+                                     k, l_stats_samp )
+
+       !!! Has to be generalized
+       call pack_pdf_params( hm1(k,:), hm2(k,:), mu_x_1, mu_x_2, &       ! Intent(in)
+                             sigma_x_1, sigma_x_2, d_variables, & ! Intent(in)
+                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), &  ! Intent(in)
+                             hydromet_pdf_params(k) )                         ! Intent(out)
 
        if ( l_use_modified_corr ) then
 
           if ( l_diagnose_correlations ) then
 
              call calc_cholesky_corr_mtx_approx &
-                            ( d_variables, corr_array_1(:,:,k), &                    ! intent(in)
+                            ( d_variables, corr_array_1_n(:,:,k), &                    ! intent(in)
                               corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
 
              call calc_cholesky_corr_mtx_approx &
-                            ( d_variables, corr_array_2(:,:,k), &                    ! intent(in)
+                            ( d_variables, corr_array_2_n(:,:,k), &                    ! intent(in)
                               corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
 
-             corr_array_1(:,:,k) = corr_mtx_approx_1
-             corr_array_2(:,:,k) = corr_mtx_approx_2
+             corr_array_1_n(:,:,k) = corr_mtx_approx_1
+             corr_array_2_n(:,:,k) = corr_mtx_approx_2
 
           else
 
              ! Compute choleksy factorization for the correlation matrix (out of cloud)
-             call Cholesky_factor( d_variables, real(corr_array_1(:,:,k), kind = dp), & ! In
+             call Cholesky_factor( d_variables, real(corr_array_1_n(:,:,k), kind = dp), & ! In
                                    corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
                                    l_corr_array_scaling ) ! Out
 
-             call Cholesky_factor( d_variables, real(corr_array_2(:,:,k), kind = dp), & ! In
+             call Cholesky_factor( d_variables, real(corr_array_2_n(:,:,k), kind = dp), & ! In
                                    corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
                                    l_corr_array_scaling ) ! Out
              corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
@@ -1550,278 +1377,17 @@ module setup_clubb_pdf_params
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine compute_mean_stdev( pdf_params, hm1, hm2, Ncnm, &
-                                 hmp2_on_hmm2_cloud, hmp2_on_hmm2_below, &
-                                 rc1, rc2, cloud_frac1, &
-                                 cloud_frac2, precip_frac_1, &
-                                 precip_frac_2, hm_tol, d_variables, &
-                                 mu_x_1, mu_x_2, &
-                                 sigma_x_1, sigma_x_2 )
+  subroutine compute_mean_stdev( Ncnm, rc1, rc2, &                      ! Intent(in)
+                                 cloud_frac1, cloud_frac2, &            ! Intent(in)
+                                 hm1, hm2, hm_tol, &                    ! Intent(in)
+                                 precip_frac_1, precip_frac_2, &        ! Intent(in)
+                                 xp2_on_xm2_array_cloud, &              ! Intent(in)
+                                 xp2_on_xm2_array_below, &              ! Intent(in)
+                                 pdf_params, d_variables, &             ! Intent(in)
+                                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2 ) ! Intent(out)
        
-    ! Description:
-    ! Setup the PDF mean vector and the PDF standard deviation vector for each
-    ! PDF component.  PDF variables that are precipitating hydrometeors use an
-    ! in-precip mean and an in-precip standard deviation.
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only:  &
-        one,     & ! Constant(s)
-        zero,    &
-        Ncn_tol
-
-    use corr_matrix_module, only: &
-        iiPDF_w, & ! Constant(s)
-        iiPDF_s => iiPDF_s_mellor, &
-        iiPDF_t => iiPDF_t_mellor, &
-        iiPDF_Ncn
-
-    use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2_cloud  ! Variable(s) 
-
-    use clubb_precision, only: &
-        core_rknd  ! Variable(s)
-
-    use pdf_parameter_module, only: &
-        pdf_parameter  ! Variable(s) type
-
-    implicit none
-
-    ! Input Variables
-    type(pdf_parameter), intent(in) :: &
-      pdf_params    ! PDF parameters                                [units vary]
-
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm1, & ! Mean of a precipitating hydrometeor (1st PDF comp.)  [units vary]
-      hm2    ! Mean of a precipitating hydrometeor (2nd PDF comp.)  [units vary]
-
-    real( kind = core_rknd ), intent(in) :: &
-      Ncnm    ! Mean cloud nuclei concentration                     [num/kg]
-
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hmp2_on_hmm2_cloud, & ! Ratio of < hm'^2 > to < hm >^2 at cloudy levs. [-]
-      hmp2_on_hmm2_below    ! Ratio of < hm'^2 > to < hm >^2 at clear levs.  [-]
-
-    real( kind = core_rknd ), intent(in) :: &
-      rc1,           & ! Mean of r_c (1st PDF component)                [kg/kg]
-      rc2,           & ! Mean of r_c (2nd PDF component)                [kg/kg]
-      cloud_frac1,   & ! Cloud fraction (1st PDF component)             [-]
-      cloud_frac2,   & ! Cloud fraction (2nd PDF component)             [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
-
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm_tol    ! Tolerance value for the hydrometeor               [units vary]
-
-    integer, intent(in) :: &
-      d_variables    ! Number of PDF variables
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
-      mu_x_1,    & ! Means of PDF-variables (1st PDF component)     [units vary]
-      mu_x_2,    & ! Means of PDF-variables (2nd PDF component)     [units vary]
-      sigma_x_1, & ! Standard devs. of PDF-vars. (1st PDF comp.)    [units vary]
-      sigma_x_2    ! Standard devs. of PDF-vars. (2nd PDF comp.)    [units vary]
-
-    ! Local Variable
-    integer :: i    ! Loop index
-
-
-    !!! Enter the PDF parameters.
-
-    !!! Means.
-
-    ! Vertical Velocity, w.
-
-    ! Mean of vertical velocity, w, in PDF component 1.
-    ! Note:  mu_x_1(iiPDF_w) and mu_w_1 denote the same thing.
-    mu_x_1(iiPDF_w) = pdf_params%w1
-
-    ! Mean of vertical velocity, w, in PDF component 2.
-    ! Note:  mu_x_2(iiPDF_w) and mu_w_2 denote the same thing.
-    mu_x_2(iiPDF_w) = pdf_params%w2
-
-
-    ! Extended liquid water mixing ratio, s.
-
-    ! Mean of extended liquid water mixing ratio, s, in PDF component 1.
-    ! Note:  mu_x_1(iiPDF_s) and mu_s_1 denote the same thing.
-    mu_x_1(iiPDF_s) = pdf_params%s1
-
-    ! Mean of extended liquid water mixing ratio, s, in PDF component 2.
-    ! Note:  mu_x_2(iiPDF_s) and mu_s_2 denote the same thing.
-    mu_x_2(iiPDF_s) = pdf_params%s2
-
-
-    ! PDF variable t (where s and t replace r_t and theta_l in the PDF).
-
-    ! Mean of t in PDF component 1.
-    ! Set the component mean values of t to 0.
-    ! The component mean values of t are not important.  They can be set to
-    ! anything.  They cancel out in the model code.  However, the best thing to
-    ! do is to set them to 0 and avoid any kind of numerical error.
-    ! Note:  mu_x_1(iiPDF_t) and mu_t_1 denote the same thing.
-    mu_x_1(iiPDF_t) = zero
-
-    ! Mean of t in PDF component 2.
-    ! Set the component mean values of t to 0.
-    ! The component mean values of t are not important.  They can be set to
-    ! anything.  They cancel out in the model code.  However, the best thing to
-    ! do is to set them to 0 and avoid any kind of numerical error.
-    ! Note:  mu_x_2(iiPDF_t) and mu_t_2 denote the same thing.
-    mu_x_2(iiPDF_t) = zero
-
-
-    ! Cloud nuclei concentration, N_cn.
-
-    ! Mean of cloud nuclei concentration in PDF component 1.
-    ! Note:  mu_x_1(iiPDF_Ncn) and mu_Ncn_1 denote the same thing.
-    ! Note:  Ncn does not use an in-precip mean, but rather an overall mean,
-    !        so 1 is sent in for precip_frac in this function call.
-    mu_x_1(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
-
-    ! Mean of cloud nuclei concentration in PDF component 2.
-    ! Note:  mu_x_2(iiPDF_Ncn) and mu_Ncn_2 denote the same thing.
-    ! Note:  Ncn does not use an in-precip mean, but rather an overall mean,
-    !        so 1 is sent in for precip_frac in this function call.
-    mu_x_2(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
-
-
-    ! Precipitating hydrometeors, hm.
-    if ( num_hm > 0 ) then
-
-       do i = 1, num_hm, 1
-
-          ! Mean of hydrometeor (in-precip) in PDF component 1.
-          ! Note:  mu_x_1(iiPDF_rr) and mu_rr_1 denote the same thing;
-          !        mu_x_1(iiPDF_Nr) and mu_Nr_1 denote the same thing; etc.
-          mu_x_1(i+4) &
-          = component_mean_hm_ip( hm1(i), precip_frac_1, hm_tol(i) )
-
-          ! Mean of hydrometeor (in-precip) in PDF component 2.
-          ! Note:  mu_x_2(iiPDF_rr) and mu_rr_2 denote the same thing;
-          !        mu_x_2(iiPDF_Nr) and mu_Nr_2 denote the same thing; etc.
-          mu_x_2(i+4) &
-          = component_mean_hm_ip( hm2(i), precip_frac_2, hm_tol(i) )
-
-       enddo ! i = 1, num_hm, 1
-
-    endif ! num_hm > 0
-
-
-    !!! Standard deviations.
-
-    ! Vertical Velocity, w.
-
-    ! Standard deviation of vertical velocity, w, in PDF component 1.
-    ! Note:  sigma_x_1(iiPDF_w) and sigma_w_1 denote the same thing.
-    sigma_x_1(iiPDF_w) = sqrt( pdf_params%varnce_w1 )
-
-    ! Standard deviation of vertical velocity, w, in PDF component 2.
-    ! Note:  sigma_x_2(iiPDF_w) and sigma_w_2 denote the same thing.
-    sigma_x_2(iiPDF_w) = sqrt( pdf_params%varnce_w2 )
-
-
-    ! Extended liquid water mixing ratio, s.
-
-    ! Standard deviation of extended liquid water mixing ratio, s,
-    ! in PDF component 1.
-    ! Note:  sigma_x_1(iiPDF_s) and sigma_s_1 denote the same thing.
-    sigma_x_1(iiPDF_s) = pdf_params%stdev_s1
-
-    ! Standard deviation of extended liquid water mixing ratio, s,
-    ! in PDF component 2.
-    ! Note:  sigma_x_2(iiPDF_s) and sigma_s_2 denote the same thing.
-    sigma_x_2(iiPDF_s) = pdf_params%stdev_s2
-
-
-    ! PDF variable t (where s and t replace r_t and theta_l in the PDF).
-
-    ! Standard deviation of t in PDF component 1.
-    ! Note:  sigma_x_1(iiPDF_t) and sigma_t_1 denote the same thing.
-    sigma_x_1(iiPDF_t) = pdf_params%stdev_t1
-
-    ! Standard deviation of t in PDF component 2.
-    ! Note:  sigma_x_2(iiPDF_t) and sigma_t_2 denote the same thing.
-    sigma_x_2(iiPDF_t) = pdf_params%stdev_t2
-
-    ! Set up the values of the statistical correlations and variances.  Since we
-    ! currently do not have enough variables to compute the correlations and
-    ! variances directly, we have obtained these values by analyzing LES runs of
-    ! certain cases.  We have divided those results into an inside-cloud average
-    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
-    ! software architecture in place in case we ever have the variables in place
-    ! to compute these values directly.  It also allows us to use separate
-    ! inside-cloud and outside-cloud parameter values.
-    ! Brian Griffin; February 3, 2007.
-
-    ! Cloud nuclei concentration, N_cn.
-
-    ! Standard deviation of cloud nuclei concentration in PDF component 1.
-    ! Note:  sigma_x_1(iiPDF_Ncn) and sigma_Ncn_1 denote the same thing.
-    ! Note:  Ncn does not use an in-precip mean, but rather an overall mean,
-    !        so 1 is sent in for cloud_frac in this function call.
-    sigma_x_1(iiPDF_Ncn) &
-    = component_stdev_hm_ip( Ncnm, mu_x_1(iiPDF_Ncn), rc1, one, Ncn_tol, &
-                             Ncnp2_on_Ncnm2_cloud, Ncnp2_on_Ncnm2_cloud )
-
-    ! Standard deviation of cloud nuclei concentration in PDF component 2.
-    ! Note:  sigma_x_2(iiPDF_Ncn) and sigma_Ncn_2 denote the same thing.
-    ! Note:  Ncn does not use an in-precip mean, but rather an overall mean,
-    !        so 1 is sent in for cloud_frac in this function call.
-    sigma_x_2(iiPDF_Ncn) &
-    = component_stdev_hm_ip( Ncnm, mu_x_2(iiPDF_Ncn), rc2, one, Ncn_tol, &
-                             Ncnp2_on_Ncnm2_cloud, Ncnp2_on_Ncnm2_cloud )
-
-
-    ! Precipitating hydrometeors, hm.
-    if ( num_hm > 0 ) then
-
-       do i = 1, num_hm, 1
-
-          ! Standard deviation of hydrometeor (in-precip) in PDF component 1.
-          ! Note:  sigma_x_1(iiPDF_rr) and sigma_rr_1 denote the same thing;
-          !        sigma_x_1(iiPDF_Nr) and sigma_Nr_1 denote the same thing;
-          !        etc.
-          sigma_x_1(i+4) &
-          = component_stdev_hm_ip( hm1(i), mu_x_1(i+4), rc1, cloud_frac1, hm_tol(i), &
-                                   hmp2_on_hmm2_cloud(i), hmp2_on_hmm2_below(i) )
-
-          ! Standard deviation of hydrometeor (in-precip) in PDF component 2.
-          ! Note:  sigma_x_2(iiPDF_rr) and sigma_rr_2 denote the same thing;
-          !        sigma_x_2(iiPDF_Nr) and sigma_Nr_2 denote the same thing;
-          !        etc.
-          sigma_x_2(i+4) &
-          = component_stdev_hm_ip( hm2(i), mu_x_2(i+4), rc2, cloud_frac2, hm_tol(i), &
-                                   hmp2_on_hmm2_cloud(i), hmp2_on_hmm2_below(i) )
-
-       enddo ! i = 1, num_hm, 1
-
-    endif ! num_hm > 0
-
-
-    return
-
-  end subroutine compute_mean_stdev
-
-!=============================================================================
-  subroutine compute_corr( Ncnm, rr1, rr2, Nr1, Nr2, rc1, &        ! Intent(in)
-                           rc2, cloud_frac1, cloud_frac2, &        ! Intent(in)
-                           wpsp, wprrp_ip, wpNrp_ip, &             ! Intent(in)
-                           wpNcnp, stdev_w, &                      ! Intent(in)
-                           sigma_rr_1, sigma_Nr_1, sigma_Ncn_1, &  ! Intent(in)
-                           pdf_params, &                           ! Intent(in)
-                           corr_ws_1, corr_ws_2, corr_wrr_1, &     ! Intent(out)
-                           corr_wrr_2, corr_wNr_1, corr_wNr_2, &   ! Intent(out)
-                           corr_wNcn_1, corr_wNcn_2, corr_st_1, &  ! Intent(out)
-                           corr_st_2, corr_srr_1, corr_srr_2, &    ! Intent(out)
-                           corr_sNr_1, corr_sNr_2, corr_sNcn_1, &  ! Intent(out)
-                           corr_sNcn_2, corr_trr_1, corr_trr_2, &  ! Intent(out)
-                           corr_tNr_1, corr_tNr_2, corr_tNcn_1, &  ! Intent(out)
-                           corr_tNcn_2, corr_rrNr_1, corr_rrNr_2 ) ! Intent(out)
-       
-    ! Description:
+    ! Description: Computes the in precip means and standard deviations of s, t, w,
+    !              Ncn and the hydrometeors.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -1837,39 +1403,214 @@ module setup_clubb_pdf_params
         zero
 
     use parameters_microphys, only: &
-        l_fix_s_t_correlations ! Variable(s)
+      l_fix_s_t_correlations, & ! Variables
+      Ncp2_on_Ncm2_cloud => Ncnp2_on_Ncnm2_cloud, &
+      Ncp2_on_Ncm2_below => Ncnp2_on_Ncnm2_below
 
-    use fixed_correlations, only: &
-        corr_sw_NN_cloud,   & ! Variable(s)
-        corr_wrr_NL_cloud,  &
-        corr_wNr_NL_cloud,  &
-        corr_wNcn_NL_cloud, &
-        corr_st_NN_cloud,   &
-        corr_srr_NL_cloud,  &
-        corr_sNr_NL_cloud,  &
-        corr_sNcn_NL_cloud, &
-        corr_trr_NL_cloud,  &
-        corr_tNr_NL_cloud,  &
-        corr_tNcn_NL_cloud, &
-        corr_rrNr_LL_cloud
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
 
-    use fixed_correlations, only: &
-        corr_sw_NN_below,   & ! Variable(s)
-        corr_wrr_NL_below,  &
-        corr_wNr_NL_below,  &
-        corr_wNcn_NL_below, &
-        corr_st_NN_below,   &
-        corr_srr_NL_below,  &
-        corr_sNr_NL_below,  &
-        corr_sNcn_NL_below, &
-        corr_trr_NL_below,  &
-        corr_tNr_NL_below,  &
-        corr_tNcn_NL_below, &
-        corr_rrNr_LL_below
+    use pdf_parameter_module, only: &
+        pdf_parameter  ! Variable(s) type
+
+    use model_flags, only: &
+        l_use_hydromet_tolerance
+
+    use array_index, only: &
+        hm_idx ! Procedure(s)
+
+    use corr_matrix_module, only: &
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_w, &
+        iiPDF_Ncn
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: d_variables ! Number of variables in the mean/stdev/correlation arrays
+
+    real( kind = core_rknd ), intent(in) :: &
+      Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
+      rc1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      xp2_on_xm2_array_cloud, &
+      xp2_on_xm2_array_below
+
+
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
+      hm1, &
+      hm2, &
+      hm_tol
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params    ! PDF parameters                                [units vary]
+
+    ! Output Variables
+    !!! This code assumes to be these arrays in the same order as the correlation arrays etc.
+    !!! which is determined by the iiPDF indices. The order should be as follows:
+    !!! s, t, w, <hydrometeors> (indices increasing from left to right)
+    real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
+      mu_x_1, &    ! Hydrometeor means 1st component
+      mu_x_2, &    ! Hydrometeor means 2nd component
+      sigma_x_1, & ! Hydrometeor standard deviations 1st component
+      sigma_x_2    ! Hydrometeor standard deviations 2nd component
+
+    ! Local Variables
+    integer :: ivar ! Loop iterator
+
+    ! ---- Begin Code ----
+
+    !!! Enter the PDF parameters.
+
+    !!! Means.
+
+    ! Mean of vertical velocity, w, in PDF component 1.
+    mu_x_1(iiPDF_w) = pdf_params%w1
+
+    ! Mean of vertical velocity, w, in PDF component 2.
+    mu_x_2(iiPDF_w) = pdf_params%w2
+
+    ! Mean of extended liquid water mixing ratio, s, in PDF component 1.
+    mu_x_1(iiPDF_s_mellor) = pdf_params%s1
+
+    ! Mean of extended liquid water mixing ratio, s, in PDF component 2.
+    mu_x_2(iiPDF_s_mellor) = pdf_params%s2
+
+    ! Mean of t in PDF component 1.
+    ! Set the component mean values of t to 0.
+    ! The component mean values of t are not important.  They can be set to
+    ! anything.  They cancel out in the model code.  However, the best thing to
+    ! do is to set them to 0 and avoid any kind of numerical error.
+    mu_x_1(iiPDF_t_mellor) = zero
+
+    ! Mean of t in PDF component 2.
+    ! Set the component mean values of t to 0.
+    ! The component mean values of t are not important.  They can be set to
+    ! anything.  They cancel out in the model code.  However, the best thing to
+    ! do is to set them to 0 and avoid any kind of numerical error.
+    mu_x_2(iiPDF_t_mellor) = zero
+
+    ! Mean of cloud nuclei concentration in PDF component 1.
+    mu_x_1(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
+
+    ! Mean of cloud nuclei concentration in PDF component 2.
+    mu_x_2(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
+
+    ! Mean of the hydrometeor species
+    do ivar = iiPDF_Ncn+1, d_variables
+
+       mu_x_1(ivar) = component_mean_hm_ip( hm1(hm_ip_idx(ivar)), precip_frac_1, &
+                                            hm_tol(hm_ip_idx(ivar)) )
+
+       mu_x_2(ivar) = component_mean_hm_ip( hm2(hm_ip_idx(ivar)), precip_frac_2, &
+                                            hm_tol(hm_ip_idx(ivar)) )
+
+    enddo
+
+
+    !!! Standard deviations.
+
+    ! Standard deviation of vertical velocity, w, in PDF component 1.
+    sigma_x_1(iiPDF_w) = sqrt( pdf_params%varnce_w1 )
+
+    ! Standard deviation of vertical velocity, w, in PDF component 2.
+    sigma_x_2(iiPDF_w) = sqrt( pdf_params%varnce_w2 )
+
+    ! Standard deviation of extended liquid water mixing ratio, s,
+    ! in PDF component 1.
+    sigma_x_1(iiPDF_s_mellor) = pdf_params%stdev_s1
+
+    ! Standard deviation of extended liquid water mixing ratio, s,
+    ! in PDF component 2.
+    sigma_x_2(iiPDF_s_mellor) = pdf_params%stdev_s2
+
+    ! Standard deviation of t in PDF component 1.
+    sigma_x_1(iiPDF_t_mellor) = pdf_params%stdev_t1
+
+    ! Standard deviation of t in PDF component 2.
+    sigma_x_2(iiPDF_t_mellor) = pdf_params%stdev_t2
+
+    ! Standard deviation of cloud nuclei concentration in PDF component 1.
+    sigma_x_1(iiPDF_Ncn) &
+    = component_stdev_hm_ip( Ncnm, mu_x_1(iiPDF_Ncn), rc1, one, &
+                             Ncn_tol, &
+                             Ncp2_on_Ncm2_cloud, &
+                             Ncp2_on_Ncm2_cloud )
+
+    ! Standard deviation of cloud nuclei concentration in PDF component 2.
+    sigma_x_2(iiPDF_Ncn) &
+    = component_stdev_hm_ip( Ncnm, mu_x_2(iiPDF_Ncn), rc2, one, &
+                             Ncn_tol, &
+                             Ncp2_on_Ncm2_cloud, &
+                             Ncp2_on_Ncm2_cloud )
+
+    ! Set up the values of the statistical correlations and variances.  Since we
+    ! currently do not have enough variables to compute the correlations and
+    ! variances directly, we have obtained these values by analyzing LES runs of
+    ! certain cases.  We have divided those results into an inside-cloud average
+    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
+    ! software architecture in place in case we ever have the variables in place
+    ! to compute these values directly.  It also allows us to use separate
+    ! inside-cloud and outside-cloud parameter values.
+    ! Brian Griffin; February 3, 2007.
+
+    do ivar = iiPDF_Ncn+1, d_variables
+
+       sigma_x_1(ivar) &
+       =  component_stdev_hm_ip( hm1(hm_ip_idx(ivar)), mu_x_1(ivar), &
+                                 rc1, cloud_frac1, &
+                                 hm_tol(hm_ip_idx(ivar)), &
+                                 xp2_on_xm2_array_cloud(ivar), &
+                                 xp2_on_xm2_array_below(ivar) )
+
+       sigma_x_2(ivar) &
+       =  component_stdev_hm_ip( hm2(hm_ip_idx(ivar)), mu_x_2(ivar), &
+                                 rc2, cloud_frac2, &
+                                 hm_tol(hm_ip_idx(ivar)), &
+                                 xp2_on_xm2_array_cloud(ivar), &
+                                 xp2_on_xm2_array_below(ivar) )
+
+    enddo
+
+    return
+
+  end subroutine compute_mean_stdev
+
+  !=============================================================================
+  subroutine compute_corr( Ncnm, rc1, rc2, &                       ! Intent(in)
+                           cloud_frac1, cloud_frac2, &             ! Intent(in)
+                           hm1, hm2, hm_tol, &                     ! Intent(in)
+                           wpsp, wprrp_ip, wpNrp_ip, &             ! Intent(in)
+                           wpNcnp, stdev_w, &                      ! Intent(in)
+                           sigma_x_1, &  ! Intent(in)
+                           corr_array_cloud, corr_array_below, &   ! Intent(in)
+                           pdf_params, d_variables, &              ! Intent(in)
+                           corr_array_1, corr_array_2 )            ! Intent(out)
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        rc_tol,       & ! Constant(s)
+        rr_tol,       &
+        Nr_tol,       &
+        Ncn_tol,      &
+        w_tol,        & ! [m/s]
+        s_mellor_tol, & ! [kg/kg]
+        one,          &
+        zero
 
     use model_flags, only: &
         l_calc_w_corr, &
-        l_use_hydromet_tolerance, &
         l_use_modified_corr
 
     use diagnose_correlations_module, only: &
@@ -1882,15 +1623,21 @@ module setup_clubb_pdf_params
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
+    use corr_matrix_module, only: &
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_w, &
+        iiPDF_Ncn, &
+        iiPDF_rrain, &
+        iiPDF_Nr
+
     implicit none
 
     ! Input Variables
+    integer, intent(in) :: d_variables ! Number of variables in the corr/mean/stdev arrays
+
     real( kind = core_rknd ), intent(in) :: &
       Ncnm,        & ! Mean cloud nuclei concentration                [num/kg]
-      rr1,         & ! Mean rain water mixing ratio (1st PDF comp.)    [kg/kg]
-      rr2,         & ! Mean rain water mixing ratio (2nd PDF comp.)    [kg/kg]
-      Nr1,         & ! Mean rain drop concentration (1st PDF comp.)   [num/kg]
-      Nr2,         & ! Mean rain drop concentration (2nd PDF comp.)   [num/kg]
       rc1,         & ! Mean of r_c (1st PDF component)                 [kg/kg]
       rc2,         & ! Mean of r_c (2nd PDF component)                 [kg/kg]
       cloud_frac1, & ! Cloud fraction (1st PDF component)                  [-]
@@ -1901,42 +1648,32 @@ module setup_clubb_pdf_params
       wpNcnp,      & ! Covariance of w and N_cn                  [(m/s)num/kg]
       stdev_w        ! Standard deviation of w                           [m/s]
 
-    real( kind = core_rknd ), intent(in) :: &
-      sigma_rr_1,  &
-      sigma_Nr_1,  &
-      sigma_Ncn_1
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      sigma_x_1
+
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
+      hm1, & ! Mean of hydrometeor 1st component        [units vary]
+      hm2, & ! Mean of hydrometeor 2nd component        [units vary]
+      hm_tol
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array_cloud, & ! Prescribed correlation array in cloud        [-]
+      corr_array_below    ! Prescribed correlation array below cloud     [-]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      corr_ws_1,   & ! Correlation between w and s (1st PDF component)       [-]
-      corr_ws_2,   & ! Correlation between w and s (2nd PDF component)       [-]
-      corr_wrr_1,  & ! Correlation between w and rr (1st PDF component) ip   [-]
-      corr_wrr_2,  & ! Correlation between w and rr (2nd PDF component) ip   [-]
-      corr_wNr_1,  & ! Correlation between w and Nr (1st PDF component) ip   [-]
-      corr_wNr_2,  & ! Correlation between w and Nr (2nd PDF component) ip   [-]
-      corr_wNcn_1, & ! Correlation between w and Ncn (1st PDF component)     [-]
-      corr_wNcn_2, & ! Correlation between w and Ncn (2nd PDF component)     [-]
-      corr_st_1,   & ! Correlation between s and t (1st PDF component)       [-]
-      corr_st_2,   & ! Correlation between s and t (2nd PDF component)       [-]
-      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
-      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
-      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
-      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
-      corr_sNcn_1, & ! Correlation between s and Ncn (1st PDF component)     [-]
-      corr_sNcn_2, & ! Correlation between s and Ncn (2nd PDF component)     [-]
-      corr_trr_1,  & ! Correlation between t and rr (1st PDF component) ip   [-]
-      corr_trr_2,  & ! Correlation between t and rr (2nd PDF component) ip   [-]
-      corr_tNr_1,  & ! Correlation between t and Nr (1st PDF component) ip   [-]
-      corr_tNr_2,  & ! Correlation between t and Nr (2nd PDF component) ip   [-]
-      corr_tNcn_1, & ! Correlation between t and Ncn (1st PDF component)     [-]
-      corr_tNcn_2, & ! Correlation between t and Ncn (2nd PDF component)     [-]
-      corr_rrNr_1, & ! Correlation between rr and Nr (1st PDF component) ip  [-]
-      corr_rrNr_2    ! Correlation between rr and Nr (2nd PDF component) ip  [-]
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+      corr_array_1, & ! Correlation array 1st component (order: s,t,w,Ncn <hydrometeors>)   [-]
+      corr_array_2    ! Correlation array 2nd component (order: s,t,w,Ncn <hydrometeors>)   [-]
 
     ! Local Variables
+    real( kind = core_rknd ) :: &
+      sigma_rr_1,  &
+      sigma_Nr_1,  &
+      sigma_Ncn_1
+
     real( kind = core_rknd ) :: &
       s_mellor_m,     & ! Mean of s_mellor                            [kg/kg]
       stdev_s_mellor, & ! Standard deviation of s_mellor              [kg/kg]
@@ -1948,7 +1685,14 @@ module setup_clubb_pdf_params
     logical :: &
       l_limit_corr_st    ! If true, we limit the correlation between s and t [-]
 
+    integer :: ivar, jvar ! Loop iterators
+
+    ! ---- Begin Code ----
+
     !!! Enter the PDF parameters.
+    sigma_rr_1 = sigma_x_1(iiPDF_rrain)
+    sigma_Nr_1 = sigma_x_1(iiPDF_Nr)
+    sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
 
     !!! Correlations
 
@@ -1979,46 +1723,6 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! Correlation between w and s in PDF component 1.
-    corr_ws_1 &
-    = component_corr_wx( corr_ws, rc1, cloud_frac1, &
-                         corr_sw_NN_cloud, corr_sw_NN_below )
-
-    ! Correlation between w and s in PDF component 2.
-    corr_ws_2 &
-    = component_corr_wx( corr_ws, rc2, cloud_frac2, &
-                         corr_sw_NN_cloud, corr_sw_NN_below )
-
-    ! Correlation (in-precip) between w and r_r in PDF component 1.
-    corr_wrr_1 &
-    = component_corr_whm_ip( rr1, corr_wrr, rc1, cloud_frac1, rr_tol, &
-                             corr_wrr_NL_cloud, corr_wrr_NL_below )
-
-    ! Correlation (in-precip) between w and r_r in PDF component 2.
-    corr_wrr_2 &
-    = component_corr_whm_ip( rr2, corr_wrr, rc2, cloud_frac2, rr_tol, &
-                             corr_wrr_NL_cloud, corr_wrr_NL_below )
-
-    ! Correlation (in-precip) between w and N_r in PDF component 1.
-    corr_wNr_1 &
-    = component_corr_whm_ip( Nr1, corr_wNr, rc1, cloud_frac1, Nr_tol, &
-                             corr_wNr_NL_cloud, corr_wNr_NL_below )
-
-    ! Correlation (in-precip) between w and N_r in PDF component 2.
-    corr_wNr_2 &
-    = component_corr_whm_ip( Nr2, corr_wNr, rc2, cloud_frac2, Nr_tol, &
-                             corr_wNr_NL_cloud, corr_wNr_NL_below )
-
-    ! Correlation between w and N_cn in PDF component 1.
-    corr_wNcn_1 &
-    = component_corr_whm_ip( Ncnm, corr_wNcn, rc1, one, Ncn_tol, &
-                             corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
-
-    ! Correlation between w and N_cn in PDF component 2.
-    corr_wNcn_2 &
-    = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
-                             corr_wNcn_NL_cloud, corr_wNcn_NL_cloud )
-
     ! In order to decompose the correlation matrix that we may or may not make
     ! (l_use_modified_corr), we must not have a perfect correlation between s
     ! and t. Thus, we impose a limitation.
@@ -2028,118 +1732,255 @@ module setup_clubb_pdf_params
       l_limit_corr_st = .false.
     end if
 
-    ! Correlation between s and t in PDF component 1.
-    corr_st_1 &
+    ! Initialize the correlation arrays
+    corr_array_1 = zero
+    corr_array_2 = zero
+
+    !!! The corr_arrays are assumed to be lower triangular matrices
+    ! Set diagonal elements to 1
+    do ivar=1, d_variables
+      corr_array_1(ivar, ivar) = one
+      corr_array_2(ivar, ivar) = one
+    end do
+
+
+    !!! This code assumes the following order in the prescribed correlation arrays (iiPDF indices):
+    !!! s, t, w, Ncn, <hydrometeors> (indices increasing from left to right)
+
+    ! Correlation between s and t
+    corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) &
     = component_corr_st( pdf_params%corr_st_1, rc1, cloud_frac1, &
-                         corr_st_NN_cloud, corr_st_NN_below, &
+                         corr_array_cloud(iiPDF_t_mellor, iiPDF_s_mellor), &
+                         corr_array_below(iiPDF_t_mellor, iiPDF_s_mellor), &
                          l_limit_corr_st )
 
-    ! Correlation between s and t in PDF component 2.
-    corr_st_2 &
+    corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor) &
     = component_corr_st( pdf_params%corr_st_2, rc2, cloud_frac2, &
-                         corr_st_NN_cloud, corr_st_NN_below, &
+                         corr_array_cloud(iiPDF_t_mellor, iiPDF_s_mellor), &
+                         corr_array_below(iiPDF_t_mellor, iiPDF_s_mellor), &
                          l_limit_corr_st )
 
-    ! Correlation (in-precip) between s and r_r in PDF component 1.
-    corr_srr_1 &
-    = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
-                             corr_srr_NL_cloud, corr_srr_NL_below )
+    ! Correlation between s and w
+    corr_array_1(iiPDF_w, iiPDF_s_mellor) &
+    = component_corr_wx( corr_ws, rc1, cloud_frac1, &
+                         corr_array_cloud(iiPDF_w, iiPDF_s_mellor), &
+                         corr_array_below(iiPDF_w, iiPDF_s_mellor) )
 
-    ! Correlation (in-precip) between s and r_r in PDF component 2.
-    corr_srr_2 &
-    = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
-                             corr_srr_NL_cloud, corr_srr_NL_below )
+    corr_array_2(iiPDF_w, iiPDF_s_mellor) &
+    = component_corr_wx( corr_ws, rc2, cloud_frac2, &
+                         corr_array_cloud(iiPDF_w, iiPDF_s_mellor), &
+                         corr_array_below(iiPDF_w, iiPDF_s_mellor) )
 
-    ! Correlation (in-precip) between s and N_r in PDF component 1.
-    corr_sNr_1 &
-    = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
-                             corr_sNr_NL_cloud, corr_sNr_NL_below )
 
-    ! Correlation (in-precip) between s and N_r in PDF component 2.
-    corr_sNr_2 &
-    = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
-                             corr_sNr_NL_cloud, corr_sNr_NL_below )
-
-    ! Correlation between s and N_cn in PDF component 1.
-    corr_sNcn_1 &
+    ! Correlation between s and Ncn
+    corr_array_1(iiPDF_Ncn, iiPDF_s_mellor) &
     = component_corr_xhm_ip( Ncnm, rc1, one, Ncn_tol, &
-                             corr_sNcn_NL_cloud, corr_sNcn_NL_cloud )
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor), &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor) )
 
-    ! Correlation between s and N_cn in PDF component 2.
-    corr_sNcn_2 &
+    corr_array_2(iiPDF_Ncn, iiPDF_s_mellor) &
     = component_corr_xhm_ip( Ncnm, rc2, one, Ncn_tol, &
-                             corr_sNcn_NL_cloud, corr_sNcn_NL_cloud )
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor), &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor) )
 
-    if ( l_use_modified_corr ) then
+    ! Correlation between s and the hydrometeors
+    ivar = iiPDF_s_mellor
+    do jvar = iiPDF_Ncn+1, d_variables
+       corr_array_1(jvar, ivar) &
+       = component_corr_xhm_ip( hm1(hm_ip_idx(jvar)), rc1, cloud_frac1,&
+                                hm_tol(hm_ip_idx(jvar)), &
+                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
 
-      ! Correlation (in-precip) between t and r_r in PDF component 1.
-      corr_trr_1 &
-      = component_corr_thm_ip( corr_st_1, corr_srr_1 )
+       corr_array_2(jvar, ivar) &
+       = component_corr_xhm_ip( hm2(hm_ip_idx(jvar)), rc2, cloud_frac2,&
+                                hm_tol(hm_ip_idx(jvar)), &
+                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+    enddo
 
-      ! Correlation (in-precip) between t and r_r in PDF component 2.
-      corr_trr_2 &
-      = component_corr_thm_ip( corr_st_2, corr_srr_2 )
+    ! Correlation between t and w
+    corr_array_1(iiPDF_w, iiPDF_t_mellor) = zero
+    corr_array_2(iiPDF_w, iiPDF_t_mellor) = zero
 
-      ! Correlation (in-precip) between t and N_r in PDF component 1.
-      corr_tNr_1 &
-      = component_corr_thm_ip( corr_st_1, corr_sNr_1 )
-
-      ! Correlation (in-precip) between t and N_r in PDF component 2.
-      corr_tNr_2 &
-      = component_corr_thm_ip( corr_st_2, corr_sNr_2 )
-
-    else ! .not. l_use_modified_corr
-
-      ! Correlation (in-precip) between t and r_r in PDF component 1.
-      corr_trr_1 &
-      = component_corr_xhm_ip( rr1, rc1, cloud_frac1, rr_tol, &
-                               corr_trr_NL_cloud, corr_trr_NL_below )
-
-      ! Correlation (in-precip) between t and r_r in PDF component 2.
-      corr_trr_2 &
-      = component_corr_xhm_ip( rr2, rc2, cloud_frac2, rr_tol, &
-                               corr_trr_NL_cloud, corr_trr_NL_below )
-
-      ! Correlation (in-precip) between t and N_r in PDF component 1.
-      corr_tNr_1 &
-      = component_corr_xhm_ip( Nr1, rc1, cloud_frac1, Nr_tol, &
-                               corr_tNr_NL_cloud, corr_tNr_NL_below )
-
-      ! Correlation (in-precip) between t and N_r in PDF component 2.
-      corr_tNr_2 &
-      = component_corr_xhm_ip( Nr2, rc2, cloud_frac2, Nr_tol, &
-                               corr_tNr_NL_cloud, corr_tNr_NL_below )
-
-    end if ! l_use_modified_corr
-
-    ! Correlation between t and N_cn in PDF component 1.
-    corr_tNcn_1 &
+    ! Correlation between t and Ncn
+    corr_array_1(iiPDF_Ncn, iiPDF_t_mellor) &
     = component_corr_xhm_ip( Ncnm, rc1, one, Ncn_tol, &
-                             corr_tNcn_NL_cloud, corr_tNcn_NL_cloud )
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_t_mellor), &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_t_mellor) )
 
-    ! Correlation between t and N_cn in PDF component 2.
-    corr_tNcn_2 &
+    corr_array_2(iiPDF_Ncn, iiPDF_t_mellor) &
     = component_corr_xhm_ip( Ncnm, rc2, one, Ncn_tol, &
-                             corr_tNcn_NL_cloud, corr_tNcn_NL_cloud )
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_t_mellor), &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_t_mellor) )
 
-    ! Correlation (in-precip) between r_r and N_r in PDF component 1.
-    corr_rrNr_1 &
-    = component_corr_hmxhmy_ip( rr1, Nr1, rc1, cloud_frac1, &
-                                rr_tol, Nr_tol, &
-                                corr_rrNr_LL_cloud, &
-                                corr_rrNr_LL_below )
+    ! Correlation between t and the hydrometeors
+    ivar = iiPDF_t_mellor
+    do jvar = iiPDF_Ncn+1, d_variables
 
-    ! Correlation (in-precip) between r_r and N_r in PDF component 2.
-    corr_rrNr_2 &
-    = component_corr_hmxhmy_ip( rr2, Nr2, rc2, cloud_frac2, &
-                                rr_tol, Nr_tol, &
-                                corr_rrNr_LL_cloud, &
-                                corr_rrNr_LL_below )
+       if ( l_use_modified_corr ) then
 
+          corr_array_1(jvar, ivar) &
+          = component_corr_thm_ip( corr_array_1( iiPDF_t_mellor, iiPDF_s_mellor), &
+                                   corr_array_1( jvar, iiPDF_s_mellor) )
+
+          corr_array_2(jvar, ivar) &
+          = component_corr_thm_ip( corr_array_2( iiPDF_t_mellor, iiPDF_s_mellor), &
+                                   corr_array_2( jvar, iiPDF_s_mellor) )
+
+       else ! .not. l_use_modified_corr
+
+          corr_array_1(jvar, ivar) &
+          = component_corr_xhm_ip( hm1(hm_ip_idx(jvar)), rc1, cloud_frac1, &
+                                   hm_tol(hm_ip_idx(jvar)), &
+                                   corr_array_cloud(jvar, ivar), &
+                                   corr_array_below(jvar, ivar) )
+
+          corr_array_2(jvar, ivar) &
+          = component_corr_xhm_ip( hm2(hm_ip_idx(jvar)), rc2, cloud_frac2, &
+                                   hm_tol(hm_ip_idx(jvar)), &
+                                   corr_array_cloud(jvar, ivar), &
+                                   corr_array_below(jvar, ivar) )
+
+       endif ! l_use_modified_corr
+
+    enddo
+
+
+    ! Correlation between w and Ncn
+    corr_array_1(iiPDF_Ncn, iiPDF_w) &
+    = component_corr_whm_ip( Ncnm, corr_wNcn, rc1, one, Ncn_tol, &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
+                             corr_array_below(iiPDF_Ncn, iiPDF_w) )
+
+    corr_array_2(iiPDF_Ncn, iiPDF_w) &
+    = component_corr_whm_ip( Ncnm, corr_wNcn, rc2, one, Ncn_tol, &
+                             corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
+                             corr_array_below(iiPDF_Ncn, iiPDF_w) )
+
+    ! Correlation between w and the hydrometeors
+    ivar = iiPDF_w
+    do jvar = iiPDF_Ncn+1, d_variables
+
+       corr_array_1(jvar, ivar) & !!! corr_wrr not needed yet; should be replaced later
+       = component_corr_whm_ip( hm1(hm_ip_idx(jvar)), corr_wrr, rc1, cloud_frac1, &
+                                hm_tol(hm_ip_idx(jvar)), &
+                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+
+       corr_array_2(jvar, ivar) & !!! corr_wrr not needed yet; should be replaced later
+       = component_corr_whm_ip( hm2(hm_ip_idx(jvar)), corr_wrr, rc2, cloud_frac2, &
+                                hm_tol(hm_ip_idx(jvar)), &
+                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+
+    enddo
+
+    ! Correlation between Ncn and the hydrometeors
+    ivar = iiPDF_Ncn
+    do jvar = iiPDF_Ncn+1, d_variables
+       corr_array_1(jvar, ivar) &
+       = component_corr_hmxhmy_ip( Ncnm, hm1(hm_ip_idx(jvar)), &
+                                   rc1, cloud_frac1, Ncn_tol, &
+                                   hm_tol(hm_ip_idx(jvar)), &
+                                   corr_array_cloud(jvar, ivar), &
+                                   corr_array_below(jvar, ivar) )
+
+       corr_array_2(jvar, ivar) &
+       = component_corr_hmxhmy_ip( Ncnm, hm2(hm_ip_idx(jvar)), &
+                                   rc2, cloud_frac2, Ncn_tol, &
+                                   hm_tol(hm_ip_idx(jvar)), &
+                                   corr_array_cloud(jvar, ivar), &
+                                   corr_array_below(jvar, ivar) )
+    enddo
+
+    ! Correlation between two hydrometeors
+    do ivar = iiPDF_Ncn+1, d_variables-1
+       do jvar = ivar+1, d_variables
+
+          corr_array_1(jvar, ivar) &
+          = component_corr_hmxhmy_ip( hm1(hm_ip_idx(ivar)), &
+                                      hm1(hm_ip_idx(jvar)), &
+                                      rc1, cloud_frac1, &
+                                      hm_tol(hm_ip_idx(ivar)), &
+                                      hm_tol(hm_ip_idx(jvar)), &
+                                      corr_array_cloud(jvar, ivar), &
+                                      corr_array_below(jvar, ivar) )
+
+          corr_array_2(jvar, ivar) &
+          = component_corr_hmxhmy_ip( hm2(hm_ip_idx(ivar)), &
+                                      hm2(hm_ip_idx(jvar)), &
+                                      rc2, cloud_frac2, &
+                                      hm_tol(hm_ip_idx(ivar)), &
+                                      hm_tol(hm_ip_idx(jvar)), &
+                                      corr_array_cloud(jvar, ivar), &
+                                      corr_array_below(jvar, ivar) )
+
+       enddo ! jvar
+    enddo ! ivar
 
     return
 
   end subroutine compute_corr
+
+  !=============================================================================
+  function hm_ip_idx( iiPDF_idx )  &
+  result( hmip_idx )
+
+    ! Description:
+    ! Returns the position of a specific hydrometeor corresponding to the iiPDF index
+    ! in the hm_ip arrays
+    !
+    ! This code assumes that the iiPDF indices are ordered like: s, t, w, Ncn, <hydromets>
+    ! and that the hm_ip arrays contain the same <hydromets> as reflected by the iiPDF indices.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use corr_matrix_module, only: &
+        d_variables, &
+        iiPDF_rrain, &
+        iiPDF_rsnow, &
+        iiPDF_rice, &
+        iiPDF_rgraupel, &
+        iiPDF_Nr, &
+        iiPDF_Nsnow, &
+        iiPDF_Ni, &
+        iiPDF_Ngraupel
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iiPDF_idx ! iiPDF index
+
+    ! Return Variable
+    integer :: hmip_idx
+
+    if ( iiPDF_idx == iiPDF_rrain ) then
+       hmip_idx = iirr
+
+    elseif (  iiPDF_idx == iiPDF_Nr ) then
+       hmip_idx = iiNr
+
+    elseif (  iiPDF_idx == iiPDF_rsnow ) then
+       hmip_idx = iirs
+
+    elseif (  iiPDF_idx == iiPDF_Nsnow ) then
+       hmip_idx = iiNs
+
+    elseif (  iiPDF_idx == iiPDF_rgraupel ) then
+       hmip_idx = iirg
+
+    elseif (  iiPDF_idx == iiPDF_Ngraupel ) then
+       hmip_idx = iiNg
+
+    elseif (  iiPDF_idx == iiPDF_rice ) then
+       hmip_idx = iiri
+
+    elseif (  iiPDF_idx == iiPDF_Ni ) then
+       hmip_idx = iiNi
+
+    endif
+
+    return
+
+  end function hm_ip_idx
 
   !=============================================================================
   function component_mean_hm_ip( hmi, precip_frac_i, hm_tol )  &
@@ -2717,28 +2558,14 @@ module setup_clubb_pdf_params
   end function component_corr_thm_ip
 
   !=============================================================================
-  subroutine normalize_pdf_params( rr1, rr2, Nr1, Nr2, Ncnm, &                   ! Intent(in)
-                                   mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, &         ! Intent(in)
-                                   mu_Ncn_1, mu_Ncn_2, sigma_rr_1, sigma_rr_2, & ! Intent(in)
-                                   sigma_Nr_1, sigma_Nr_2, sigma_Ncn_1, &        ! Intent(in)
-                                   sigma_Ncn_2, corr_wrr_1, corr_wrr_2, &        ! Intent(in)
-                                   corr_wNr_1, corr_wNr_2, corr_wNcn_1, &        ! Intent(in)
-                                   corr_wNcn_2, corr_srr_1, corr_srr_2, &        ! Intent(in)
-                                   corr_sNr_1, corr_sNr_2, corr_sNcn_1, &        ! Intent(in)
-                                   corr_sNcn_2, corr_trr_1, corr_trr_2, &        ! Intent(in)
-                                   corr_tNr_1, corr_tNr_2, corr_tNcn_1, &        ! Intent(in)
-                                   corr_tNcn_2, corr_rrNr_1, corr_rrNr_2, &      ! Intent(in)
-                                   mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(out)
-                                   mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(out)
-                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(out)
-                                   sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(out)
-                                   corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(out)
-                                   corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(out)
-                                   corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(out)
-                                   corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(out)
-                                   corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(out)
-                                   corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(out)
-                                   corr_rrNr_1_n, corr_rrNr_2_n )                ! Intent(out)
+  subroutine normalize_pdf_params( hm1, hm2, hm_tol, &                 ! Intent(in)
+                                   Ncnm, d_variables, &                ! Intent(in)
+                                   mu_x_1_in, mu_x_2_in, &             ! Intent(in)
+                                   sigma_x_1_in, sigma_x_2_in, &       ! Intent(in)
+                                   corr_array_1_in, corr_array_2_in, & ! Intent(in)
+                                   mu_x_1, mu_x_2, &                   ! Intent(out)
+                                   sigma_x_1, sigma_x_2, &             ! Intent(out)
+                                   corr_array_1, corr_array_2 )        ! Intent(out)
 
     ! Description:
 
@@ -2757,249 +2584,125 @@ module setup_clubb_pdf_params
         corr_NL2NN, &
         corr_LL2NN
 
+    use corr_matrix_module, only: &
+        iiPDF_s_mellor, &
+        iiPDF_t_mellor, &
+        iiPDF_w, &
+        iiPDF_Ncn
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
     implicit none
 
     ! Input Variables
+    integer, intent(in) :: d_variables ! Number of variables in the mean/stdev/corr arrays
+
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
+      hm1, &
+      hm2, &
+      hm_tol
+
     real( kind = core_rknd ), intent(in) :: &
-      rr1,         & ! Mean rain water mixing ratio (1st PDF component)  [kg/kg]
-      rr2,         & ! Mean rain water mixing ratio (2nd PDF component)  [kg/kg]
-      Nr1,         & ! Mean rain drop concentration (1st PDF component) [num/kg]
-      Nr2,         & ! Mean rain drop concentration (2nd PDF component) [num/kg]
-      Ncnm,        & ! Mean cloud nuclei concentration (overall)        [num/kg]
-      mu_rr_1,     & ! Mean of rr (1st PDF component) in-precip (ip)     [kg/kg]
-      mu_rr_2,     & ! Mean of rr (2nd PDF component) ip                 [kg/kg]
-      mu_Nr_1,     & ! Mean of Nr (1st PDF component) ip                [num/kg]
-      mu_Nr_2,     & ! Mean of Nr (2nd PDF component) ip                [num/kg]
-      mu_Ncn_1,    & ! Mean of Ncn (1st PDF component)                  [num/kg]
-      mu_Ncn_2,    & ! Mean of Ncn (2nd PDF component)                  [num/kg]
-      sigma_rr_1,  & ! Standard deviation of rr (1st PDF component) ip   [kg/kg]
-      sigma_rr_2,  & ! Standard deviation of rr (2nd PDF component) ip   [kg/kg]
-      sigma_Nr_1,  & ! Standard deviation of Nr (1st PDF component) ip  [num/kg]
-      sigma_Nr_2,  & ! Standard deviation of Nr (2nd PDF component) ip  [num/kg]
-      sigma_Ncn_1, & ! Standard deviation of Ncn (1st PDF component)    [num/kg]
-      sigma_Ncn_2, & ! Standard deviation of Ncn (2nd PDF component)    [num/kg]
-      corr_wrr_1,  & ! Correlation between w and rr (1st PDF component) ip   [-]
-      corr_wrr_2,  & ! Correlation between w and rr (2nd PDF component) ip   [-]
-      corr_wNr_1,  & ! Correlation between w and Nr (1st PDF component) ip   [-]
-      corr_wNr_2,  & ! Correlation between w and Nr (2nd PDF component) ip   [-]
-      corr_wNcn_1, & ! Correlation between w and Ncn (1st PDF component)     [-]
-      corr_wNcn_2, & ! Correlation between w and Ncn (2nd PDF component)     [-]
-      corr_srr_1,  & ! Correlation between s and rr (1st PDF component) ip   [-]
-      corr_srr_2,  & ! Correlation between s and rr (2nd PDF component) ip   [-]
-      corr_sNr_1,  & ! Correlation between s and Nr (1st PDF component) ip   [-]
-      corr_sNr_2,  & ! Correlation between s and Nr (2nd PDF component) ip   [-]
-      corr_sNcn_1, & ! Correlation between s and Ncn (1st PDF component)     [-]
-      corr_sNcn_2, & ! Correlation between s and Ncn (2nd PDF component)     [-]
-      corr_trr_1,  & ! Correlation between t and rr (1st PDF component) ip   [-]
-      corr_trr_2,  & ! Correlation between t and rr (2nd PDF component) ip   [-]
-      corr_tNr_1,  & ! Correlation between t and Nr (1st PDF component) ip   [-]
-      corr_tNr_2,  & ! Correlation between t and Nr (2nd PDF component) ip   [-]
-      corr_tNcn_1, & ! Correlation between t and Ncn (1st PDF component)     [-]
-      corr_tNcn_2, & ! Correlation between t and Ncn (2nd PDF component)     [-]
-      corr_rrNr_1, & ! Correlation between rr & Nr (1st PDF component) ip    [-]
-      corr_rrNr_2    ! Correlation between rr & Nr (2nd PDF component) ip    [-]
+      Ncnm
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      mu_x_1_in, &
+      mu_x_2_in, &
+      sigma_x_1_in, &
+      sigma_x_2_in
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+      corr_array_1_in, &
+      corr_array_2_in
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-      sigma_Ncn_2_n, & ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
-      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
+    real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
+      mu_x_1, &
+      mu_x_2, &
+      sigma_x_1, &
+      sigma_x_2
 
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+      corr_array_1, &
+      corr_array_2
+
+    ! Local Variables
+    integer :: ivar, jvar ! Loop iterators
 
     ! --- Begin Code ---
 
     !!! Calculate the normalized mean of variables that have an assumed
     !!! lognormal distribution, given the mean and variance of those variables.
 
-    ! Normalized mean of in-precip rain water mixing ratio in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       mu_rr_1_n = mean_L2N( mu_rr_1, sigma_rr_1**2 )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
-       ! value of mu_rr_1_n should be -inf.  It will be set to -huge for
-       ! purposes of assigning it a value.
-       mu_rr_1_n = -huge( mu_rr_1_n )
-    endif
-
-    ! Normalized mean of in-precip rain water mixing ratio in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       mu_rr_2_n = mean_L2N( mu_rr_2, sigma_rr_2**2 )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
-       ! value of mu_rr_2_n should be -inf.  It will be set to -huge for
-       ! purposes of assigning it a value.
-       mu_rr_2_n = -huge( mu_rr_2_n )
-    endif
-
-    ! Normalized mean of in-precip rain drop concentration in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       mu_Nr_1_n = mean_L2N( mu_Nr_1, sigma_Nr_1**2 )
-    else
-       ! Mean rain drop concentration in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
-       ! value of mu_Nr_1_n should be -inf.  It will be set to -huge for
-       ! purposes of assigning it a value.
-       mu_Nr_1_n = -huge( mu_Nr_1_n )
-    endif
-
-    ! Normalized mean of in-precip rain drop concentration in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       mu_Nr_2_n = mean_L2N( mu_Nr_2, sigma_Nr_2**2 )
-    else
-       ! Mean rain drop concentration in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
-       ! value of mu_Nr_2_n should be -inf.  It will be set to -huge for
-       ! purposes of assigning it a value.
-       mu_Nr_2_n = -huge( mu_Nr_2_n )
-    endif
+    mu_x_1 = mu_x_1_in
+    mu_x_2 = mu_x_2_in
+    sigma_x_1 = sigma_x_1_in
+    sigma_x_2 = sigma_x_2_in
+    corr_array_1 = corr_array_1_in
+    corr_array_2 = corr_array_2_in
 
     ! Normalized mean of cloud nuclei concentration in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
-       mu_Ncn_1_n = mean_L2N( mu_Ncn_1, sigma_Ncn_1**2 )
+
+       mu_x_1(iiPDF_Ncn) = mean_L2N( mu_x_1_in(iiPDF_Ncn), sigma_x_1_in(iiPDF_Ncn)**2 )
+       sigma_x_1(iiPDF_Ncn) = stdev_L2N( mu_x_1_in(iiPDF_Ncn), sigma_x_1_in(iiPDF_Ncn)**2 )
+
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.  The value of mu_Ncn_1_n should be -inf.  It
        ! will be set to -huge for purposes of assigning it a value.
-       mu_Ncn_1_n = -huge( mu_Ncn_1_n )
+       mu_x_1(iiPDF_Ncn) = -huge( mu_x_1_in(iiPDF_Ncn) )
+       sigma_x_1(iiPDF_Ncn) = zero
     endif
 
-    ! Normalized mean of cloud nuclei concentration in PDF component 2.
+    ! Normalized mean and stdev of cloud nuclei concentration in PDF component 2.
     if ( Ncnm > Ncn_tol ) then
-       mu_Ncn_2_n = mean_L2N( mu_Ncn_2, sigma_Ncn_2**2 )
+
+       mu_x_2(iiPDF_Ncn) = mean_L2N( mu_x_2_in(iiPDF_Ncn), sigma_x_2_in(iiPDF_Ncn)**2 )
+       sigma_x_2(iiPDF_Ncn) = stdev_L2N( mu_x_2_in(iiPDF_Ncn), sigma_x_2_in(iiPDF_Ncn)**2 )
+
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.  The value of mu_Ncn_2_n should be -inf.  It
        ! will be set to -huge for purposes of assigning it a value.
-       mu_Ncn_2_n = -huge( mu_Ncn_2_n )
+       mu_x_2(iiPDF_Ncn) = -huge( mu_x_2_in(iiPDF_Ncn) )
+       sigma_x_2(iiPDF_Ncn) = zero
+
     endif
 
-    !!! Calculate the normalized standard deviation of variables that have
-    !!! an assumed lognormal distribution, given the mean and variance of
-    !!! those variables.
+    ! Normalize hydrometeor means and standard deviations
+    do ivar = iiPDF_Ncn+1, d_variables
 
-    ! Normalized standard deviation of in-precip rain water mixing ratio
-    ! in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       sigma_rr_1_n = stdev_L2N( mu_rr_1, sigma_rr_1**2 )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
-       ! standard deviation is simply 0 since rain water mixing ratio does not
-       ! vary in this component at this grid level.
-       sigma_rr_1_n = zero
-    endif
+       ! Normalized mean and stdev of in-precip hydrometeors in PDF component 1.
+       if ( hm1(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) ) then
 
-    ! Normalized standard deviation of in-precip rain water mixing ratio
-    ! in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       sigma_rr_2_n = stdev_L2N( mu_rr_2, sigma_rr_2**2 )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
-       ! standard deviation is simply 0 since rain water mixing ratio does not
-       ! vary in this component at this grid level.
-       sigma_rr_2_n = zero
-    endif
+          mu_x_1(ivar) = mean_L2N( mu_x_1_in(ivar), sigma_x_1_in(ivar)**2 )
+          sigma_x_1(ivar) = stdev_L2N( mu_x_1_in(ivar), sigma_x_1_in(ivar)**2 )
 
-    ! Normalized standard deviation of in-precip rain drop concentration
-    ! in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       sigma_Nr_1_n = stdev_L2N( mu_Nr_1, sigma_Nr_1**2 )
-    else
-       ! Mean rain drop concentration in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
-       ! standard deviation is simply 0 since rain water mixing ratio does not
-       ! vary in this component at this grid level.
-       sigma_Nr_1_n = zero
-    endif
+       else
 
-    ! Normalized standard deviation of in-precip rain drop concentration
-    ! in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       sigma_Nr_2_n = stdev_L2N( mu_Nr_2, sigma_Nr_2**2 )
-    else
-       ! Mean rain drop concentration in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
-       ! standard deviation is simply 0 since rain water mixing ratio does not
-       ! vary in this component at this grid level.
-       sigma_Nr_2_n = zero
-    endif
+          mu_x_1(ivar) = -huge( mu_x_1_in(ivar) )
+          sigma_x_1(ivar) = zero
 
-    ! Normalized standard deviation of cloud nuclei concentration
-    ! in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
-       sigma_Ncn_1_n = stdev_L2N( mu_Ncn_1, sigma_Ncn_1**2 )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The standard deviation is simply 0 since
-       ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_1_n = zero
-    endif
+       endif
 
-    ! Normalized standard deviation of cloud nuclei concentration
-    ! in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
-       sigma_Ncn_2_n = stdev_L2N( mu_Ncn_2, sigma_Ncn_2**2 )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The standard deviation is simply 0 since
-       ! cloud nuclei concentration does not vary at this grid level.
-       sigma_Ncn_2_n = zero
-    endif
+       ! Normalized mean and stdev of in-precip hydrometeors in PDF component 2.
+       if ( hm2(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) ) then
+
+          mu_x_2(ivar) = mean_L2N( mu_x_2_in(ivar), sigma_x_2_in(ivar)**2 )
+          sigma_x_2(ivar) = stdev_L2N( mu_x_2_in(ivar), sigma_x_2_in(ivar)**2 )
+
+       else
+
+          mu_x_2(ivar) = -huge( mu_x_2_in(ivar) )
+          sigma_x_2(ivar) = zero
+
+       endif
+
+    enddo
 
     !!! Calculate the normalized correlation between variables that have
     !!! an assumed normal distribution and variables that have an assumed
@@ -3007,294 +2710,144 @@ module setup_clubb_pdf_params
     !!! correlation and the normalized standard deviation of the variable with
     !!! the assumed lognormal distribution.
 
-    ! Normalize the correlation (in-precip) between w and r_r
-    ! in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       corr_wrr_1_n = corr_NL2NN( corr_wrr_1, sigma_rr_1_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (1st PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_wrr_1_n = zero
-    endif
-
-    ! Normalize the correlation (in-precip) between w and r_r
-    ! in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       corr_wrr_2_n = corr_NL2NN( corr_wrr_2, sigma_rr_2_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (2nd PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_wrr_2_n = zero
-    endif
-
-    ! Normalize the correlation (in-precip) between w and N_r
-    ! in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       corr_wNr_1_n = corr_NL2NN( corr_wNr_1, sigma_Nr_1_n )
-    else
-       ! Mean rain drop concentration in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (1st PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_wNr_1_n = zero
-    endif
-
-    ! Normalize the correlation (in-precip) between w and N_r
-    ! in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       corr_wNr_2_n = corr_NL2NN( corr_wNr_2, sigma_Nr_2_n )
-    else
-       ! Mean rain drop concentration in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (2nd PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_wNr_2_n = zero
-    endif
-
-    ! Normalize the correlation between w and N_cn in PDF component 1.
+    ! Normalize the correlation between s/t/w and N_cn in PDF component 1 and 2.
     if ( Ncnm > Ncn_tol ) then
-       corr_wNcn_1_n = corr_NL2NN( corr_wNcn_1, sigma_Ncn_1_n )
+
+       ! Correlation between w and Ncn
+       corr_array_1(iiPDF_Ncn, iiPDF_w) &
+       = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_w), sigma_x_1(iiPDF_Ncn) )
+
+       corr_array_2(iiPDF_Ncn, iiPDF_w) &
+       = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_w), sigma_x_2(iiPDF_Ncn) )
+
+       ! Correlation between s and Ncn
+       corr_array_1(iiPDF_Ncn, iiPDF_s_mellor) &
+       = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_1(iiPDF_Ncn) )
+
+       corr_array_2(iiPDF_Ncn, iiPDF_s_mellor) &
+       = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_2(iiPDF_Ncn) )
+
+       ! Correlation between t and Ncn
+       corr_array_1(iiPDF_Ncn, iiPDF_t_mellor) &
+       = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_1(iiPDF_Ncn) )
+
+       corr_array_2(iiPDF_Ncn, iiPDF_t_mellor) &
+       = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_2(iiPDF_Ncn) )
+
     else
        ! Mean cloud nuclei concentration is less than the tolerance amount.  It
        ! is considered to have a value of 0.  There are not any cloud nuclei or
        ! cloud at this grid level.  The correlations involving cloud nuclei
        ! concentration are 0 since cloud nuclei concentration does not vary at
        ! this grid level.
-       corr_wNcn_1_n = zero
+       corr_array_1(iiPDF_Ncn, iiPDF_w) = zero
+       corr_array_1(iiPDF_Ncn, iiPDF_w) = zero
+
+       corr_array_1(iiPDF_Ncn, iiPDF_s_mellor) = zero
+       corr_array_1(iiPDF_Ncn, iiPDF_s_mellor) = zero
+
+       corr_array_1(iiPDF_Ncn, iiPDF_t_mellor) = zero
+       corr_array_1(iiPDF_Ncn, iiPDF_t_mellor) = zero
+
     endif
 
-    ! Normalize the correlation between w and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
-       corr_wNcn_2_n = corr_NL2NN( corr_wNcn_2, sigma_Ncn_2_n )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_wNcn_2_n = zero
-    endif
+    ! Normalize the correlations between s/t/w and the hydrometeors
+    do ivar = iiPDF_s_mellor, iiPDF_w
+       do jvar = iiPDF_Ncn+1, d_variables
 
-    ! Normalize the correlation (in-precip) between s and r_r
-    ! in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       corr_srr_1_n = corr_NL2NN( corr_srr_1, sigma_rr_1_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (1st PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_srr_1_n = zero
-    endif
+          if ( hm1(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
 
-    ! Normalize the correlation (in-precip) between s and r_r
-    ! in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       corr_srr_2_n = corr_NL2NN( corr_srr_2, sigma_rr_2_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (2nd PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_srr_2_n = zero
-    endif
+             corr_array_1(jvar, ivar) &
+              = corr_NL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(jvar) )
 
-    ! Normalize the correlation (in-precip) between s and N_r
-    ! in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       corr_sNr_1_n = corr_NL2NN( corr_sNr_1, sigma_Nr_1_n )
-    else
-       ! Mean rain drop concentration in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (1st PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_sNr_1_n = zero
-    endif
+          else
+             ! Mean rain water mixing ratio in PDF component 1 is less than the
+             ! tolerance amount.  It is considered to have a value of 0.  There is
+             ! not any rain in the 1st PDF component at this grid level.  The mean
+             ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
+             ! correlations involving in-precip rain water mixing ratio (1st PDF
+             ! component) are 0 since in-precip rain water mixing ratio does not vary
+             ! in this component at this grid level.
+             corr_array_1(jvar, ivar) = zero
+          endif
 
-    ! Normalize the correlation (in-precip) between s and N_r
-    ! in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       corr_sNr_2_n = corr_NL2NN( corr_sNr_2, sigma_Nr_2_n )
-    else
-       ! Mean rain drop concentration in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (2nd PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_sNr_2_n = zero
-    endif
+          if ( hm2(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
 
-    ! Normalize the correlation between s and N_cn in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
-       corr_sNcn_1_n = corr_NL2NN( corr_sNcn_1, sigma_Ncn_1_n )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_sNcn_1_n = zero
-    endif
+             corr_array_2(jvar, ivar) &
+             = corr_NL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(jvar) )
 
-    ! Normalize the correlation between s and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
-       corr_sNcn_2_n = corr_NL2NN( corr_sNcn_2, sigma_Ncn_2_n )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_sNcn_2_n = zero
-    endif
+          else
+            ! Mean rain water mixing ratio in PDF component 1 is less than the
+            ! tolerance amount.  It is considered to have a value of 0.  There is
+             ! not any rain in the 1st PDF component at this grid level.  The mean
+             ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
+             ! correlations involving in-precip rain water mixing ratio (1st PDF
+             ! component) are 0 since in-precip rain water mixing ratio does not vary
+             ! in this component at this grid level.
+             corr_array_2(jvar, ivar) = zero
+          endif
 
-    ! Normalize the correlation (in-precip) between t and r_r
-    ! in PDF component 1.
-    if ( rr1 > rr_tol ) then
-       corr_trr_1_n = corr_NL2NN( corr_trr_1, sigma_rr_1_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (1st PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_trr_1_n = zero
-    endif
+       enddo ! jvar = 5, d_variables
+    enddo ! ivar = iiPDF_s_mellor, iiPDF_w
 
-    ! Normalize the correlation (in-precip) between t and r_r
-    ! in PDF component 2.
-    if ( rr2 > rr_tol ) then
-       corr_trr_2_n = corr_NL2NN( corr_trr_2, sigma_rr_2_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain water mixing ratio (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain water mixing ratio (2nd PDF
-       ! component) are 0 since in-precip rain water mixing ratio does not vary
-       ! in this component at this grid level.
-       corr_trr_2_n = zero
-    endif
+    ! Normalize the correlations between Ncn and the hydrometeors
+    ivar = iiPDF_Ncn
+    do jvar = ivar+1, d_variables
 
-    ! Normalize the correlation (in-precip) between t and N_r
-    ! in PDF component 1.
-    if ( Nr1 > Nr_tol ) then
-       corr_tNr_1_n = corr_NL2NN( corr_tNr_1, sigma_Nr_1_n )
-    else
-       ! Mean rain drop concentration in PDF component 1 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 1st PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (1st PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (1st PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_tNr_1_n = zero
-    endif
+       if ( Ncnm > Ncn_tol .and. hm1(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
 
-    ! Normalize the correlation (in-precip) between t and N_r
-    ! in PDF component 2.
-    if ( Nr2 > Nr_tol ) then
-       corr_tNr_2_n = corr_NL2NN( corr_tNr_2, sigma_Nr_2_n )
-    else
-       ! Mean rain drop concentration in PDF component 2 is less than the
-       ! tolerance amount.  It is considered to have a value of 0.  There is
-       ! not any rain in the 2nd PDF component at this grid level.  The mean
-       ! in-precip rain drop concentration (2nd PDF component) is also 0.  The
-       ! correlations involving in-precip rain drop concentration (2nd PDF
-       ! component) are 0 since in-precip rain drop concentration does not vary
-       ! in this component at this grid level.
-       corr_tNr_2_n = zero
-    endif
+          corr_array_1(jvar, ivar) &
+          = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar) )
 
-    ! Normalize the correlation between t and N_cn in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
-       corr_tNcn_1_n = corr_NL2NN( corr_tNcn_1, sigma_Ncn_1_n )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_tNcn_1_n = zero
-    endif
+       else
 
-    ! Normalize the correlation between t and N_cn in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
-       corr_tNcn_2_n = corr_NL2NN( corr_tNcn_2, sigma_Ncn_2_n )
-    else
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The correlations involving cloud nuclei
-       ! concentration are 0 since cloud nuclei concentration does not vary at
-       ! this grid level.
-       corr_tNcn_2_n = zero
-    endif
+          corr_array_1(jvar, ivar) = zero
 
-    !!! Calculate the normalized correlation between two variables that both
-    !!! have an assumed lognormal distribution, given their correlation and both
-    !!! of their normalized standard deviations.
+       endif
 
-    ! Normalize the correlation (in-precip) between r_r and N_r
-    ! in PDF component 1.
-    if ( rr1 > rr_tol .and. Nr1 > Nr_tol ) then
-       corr_rrNr_1_n = corr_LL2NN( corr_rrNr_1, sigma_rr_1_n, sigma_Nr_1_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 1 and (or) mean rain drop
-       ! concentration in PDF component 1 are (is) less than their (its)
-       ! respective tolerance amount(s), and are (is) considered to have a value
-       ! of 0.  There is not any rain at this grid level.  The mean in-precip
-       ! rain water mixing ratio (1st PDF component) and (or) mean in-precip
-       ! rain drop concentration (1st PDF component) are also considered to have
-       ! a value of 0.  The correlation is 0 since rain does not vary in this
-       ! component at this grid level.
-       corr_rrNr_1_n = zero
-    endif
+       if ( Ncnm > Ncn_tol .and. hm2(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
 
-    ! Normalize the correlation (in-precip) between r_r and N_r
-    ! in PDF component 2.
-    if ( rr2 > rr_tol .and. Nr2 > Nr_tol ) then
-       corr_rrNr_2_n = corr_LL2NN( corr_rrNr_2, sigma_rr_2_n, sigma_Nr_2_n )
-    else
-       ! Mean rain water mixing ratio in PDF component 2 and (or) mean rain drop
-       ! concentration in PDF component 2 are (is) less than their (its)
-       ! respective tolerance amount(s), and are (is) considered to have a value
-       ! of 0.  There is not any rain at this grid level.  The mean in-precip
-       ! rain water mixing ratio (2nd PDF component) and (or) mean in-precip
-       ! rain drop concentration (2nd PDF component) are also considered to have
-       ! a value of 0.  The correlation is 0 since rain does not vary in this
-       ! component at this grid level.
-       corr_rrNr_2_n = zero
-    endif
+          corr_array_2(jvar, ivar) &
+          = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar) )
 
+       else
+
+          corr_array_2(jvar, ivar) = zero
+
+       endif
+
+    enddo ! jvar
+
+    ! Normalize the correlations between two hydrometeors
+    do ivar = iiPDF_Ncn+1, d_variables-1
+       do jvar = ivar+1, d_variables
+
+       if ( hm1(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) .and. &
+            hm1(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
+
+          corr_array_1(jvar, ivar) &
+          = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar) )
+
+       else
+
+          corr_array_1(jvar, ivar) = zero
+
+       endif
+
+       if ( hm2(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) .and. &
+            hm2(hm_ip_idx(jvar)) > hm_tol(hm_ip_idx(jvar)) ) then
+
+          corr_array_2(jvar, ivar) &
+          = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar) )
+
+       else
+
+          corr_array_2(jvar, ivar) = zero
+
+       endif
+
+       enddo ! jvar
+    enddo ! ivar
 
     return
 
@@ -3989,13 +3542,10 @@ module setup_clubb_pdf_params
     ! Count the number of precipitating hydrometeors and set indices for
     ! precipitating hydrometeors.
     do i = 1, hydromet_dim, 1
-       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) &
-            .and. ( i /= iirgraupelm ) .and. ( i /= iiNgraupelm ) ) then
+       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
 
           ! The hydrometeor is a precipitating hydrometeor, which does not
           ! include N_c or N_cn.
-          ! This currently, for use in setting up the PDF arrays, does not
-          ! include graupel.
 
           ! Iterate the precipitating hydrometeor index.
           idx = idx + 1
@@ -4010,14 +3560,14 @@ module setup_clubb_pdf_params
              iirs = idx
           elseif ( i == iiricem ) then
              iiri = idx
-!          elseif ( i == iirgraupelm ) then
-!             iirg = idx
+          elseif ( i == iirgraupelm ) then
+             iirg = idx
           elseif ( i == iiNsnowm ) then
              iiNs = idx
           elseif ( i == iiNim ) then
              iiNi = idx
-!          elseif ( i == iiNgraupelm ) then
-!             iiNg = idx
+          elseif ( i == iiNgraupelm ) then
+             iiNg = idx
           endif
 
        endif ! i /= iiNcm and i /= iiNcnm
@@ -4050,10 +3600,6 @@ module setup_clubb_pdf_params
     use array_index, only: & 
         iiNcnm, & ! Variable(s)
         iiNcm     ! Note: Ncm is not part of CLUBB's PDF.
-
-    use array_index, only: & 
-        iirgraupelm, & ! Variable(s)
-        iiNgraupelm    ! Note: graupel is not currently part of CLUBB's PDF.
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -4097,13 +3643,10 @@ module setup_clubb_pdf_params
     ! Loop over all hydrometeors and set up precipitating hydrometeor arrays.
     do i = 1, hydromet_dim, 1
 
-       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) &
-            .and. ( i /= iirgraupelm ) .and. ( i /= iiNgraupelm ) ) then
+       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
 
           ! The hydrometeor is a precipitating hydrometeor, which does not
-          ! include N_c or N_cn.
-          ! This currently, for use in setting up the PDF arrays, does not
-          ! include graupel.
+          ! include N_c or N_cn. 
 
           ! Iterate the precipitating hydrometeor index.
           idx = idx + 1
@@ -4130,33 +3673,15 @@ module setup_clubb_pdf_params
   end subroutine precip_hm_arrays
 
   !=============================================================================
-  subroutine pack_pdf_params( mu_w_1, mu_w_2, mu_s_1, mu_s_2, &             ! Intent(in)
-                              mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &           ! Intent(in)
-                              mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &       ! Intent(in)
-                              mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &            ! Intent(in)
-                              mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &          ! Intent(in)
-                              sigma_w_1, sigma_w_2, sigma_s_1, &            ! Intent(in)
-                              sigma_s_2, sigma_t_1, sigma_t_2, &            ! Intent(in)
-                              sigma_rr_1, sigma_rr_2, sigma_Nr_1, &         ! Intent(in)
-                              sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &       ! Intent(in)
-                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &   ! Intent(in)
-                              sigma_Nr_2_n, sigma_Ncn_1_n, sigma_Ncn_2_n, & ! Intent(in)
-                              corr_ws_1, corr_ws_2, corr_st_1, corr_st_2, & ! Intent(in)
-                              corr_wrr_1_n, corr_wrr_2_n, corr_wNr_1_n, &   ! Intent(in)
-                              corr_wNr_2_n, corr_wNcn_1_n, corr_wNcn_2_n, & ! Intent(in)
-                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &   ! Intent(in)
-                              corr_sNr_2_n, corr_sNcn_1_n, corr_sNcn_2_n, & ! Intent(in)
-                              corr_trr_1_n, corr_trr_2_n, corr_tNr_1_n, &   ! Intent(in)
-                              corr_tNr_2_n, corr_tNcn_1_n, corr_tNcn_2_n, & ! Intent(in)
-                              corr_rrNr_1_n, corr_rrNr_2_n, &               ! Intent(in)
-                              rr1, rr2, Nr1, Nr2, &                         ! Intent(in)
+  subroutine pack_pdf_params( hm1, hm2, mu_x_1, mu_x_2, &                   ! Intent(in)
+                              sigma_x_1, sigma_x_2, d_variables, &          ! Intent(in)
                               precip_frac, precip_frac_1, precip_frac_2, &  ! Intent(in)
-                              d_variables, &                                ! Intent(in)
-                              corr_array_1, corr_array_2, &                 ! Intent(out)
-                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! Intent(out)
                               hydromet_pdf_params )                         ! Intent(out)
 
-    ! Description:
+    ! Description: Setup the structure hydromet_pdf_params.
+
+    !!! This code still has to be generalized to deal with an arbitrary set of
+    !!! hydrometeors.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -4164,117 +3689,35 @@ module setup_clubb_pdf_params
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)
 
-    use corr_matrix_module, only: &
-        iiPDF_w,        & ! Variable(s)
-        iiPDF_s_mellor, &
-        iiPDF_t_mellor, &
-        iiPDF_rrain,    &
-        iiPDF_Nr,       &
-        iiPDF_Ncn
-
     use clubb_precision, only: &
         core_rknd    ! Constant
 
-    use constants_clubb, only: &
-        zero, &      ! Constant(s)
-        one
+    use corr_matrix_module, only: &
+        iiPDF_rrain, &
+        iiPDF_Nr, &
+        iiPDF_Ncn
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
-      mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_t_1,        & ! Mean of t (1st PDF component)                   [kg/kg]
-      mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
-      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
-      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
-      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
-      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
-      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
-      mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
-      mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
-      sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
-      sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
-      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
-      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
-      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
-      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF comp.) ip    [num/kg]
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_rr_1_n,  & ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-      sigma_rr_2_n,  & ! Standard dev. of ln rr (2nd PDF comp.) ip   [ln(kg/kg)]
-      sigma_Nr_1_n,  & ! Standard dev. of ln Nr (1st PDF comp.) ip  [ln(num/kg)]
-      sigma_Nr_2_n,  & ! Standard dev. of ln Nr (2nd PDF comp.) ip  [ln(num/kg)]
-      sigma_Ncn_1_n, & ! Standard dev. of ln Ncn (1st PDF comp.)    [ln(num/kg)]
-      sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
+    integer, intent(in) :: d_variables ! Numeber of variables in the mean/stdev arrays
 
-    real( kind = core_rknd ), intent(in) :: &
-      corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
-      corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2        ! Correlation between s and t (2nd PDF component)     [-]
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      mu_x_1,       & ! Mean array (1st PDF component) in-precip (ip)   [units vary]
+      mu_x_2,       & ! Mean array (2nd PDF component) ip               [units vary]
+      sigma_x_1,    & ! Standard deviation array (1st PDF component) ip [units vary]
+      sigma_x_2       ! Standard deviation array (2nd PDF component) ip [units vary]
 
-    real( kind = core_rknd ), intent(in) :: &
-      corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
-      corr_wrr_2_n,  & ! Correlation between w and ln rr (2nd PDF comp.) ip  [-]
-      corr_wNr_1_n,  & ! Correlation between w and ln Nr (1st PDF comp.) ip  [-]
-      corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
-      corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
-      corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n    ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-
-    real( kind = core_rknd ), intent(in) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
+      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
+      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
-
-    integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array.
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(out) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
-
     ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
-      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
-      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
-      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
-      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
-
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
@@ -4282,97 +3725,36 @@ module setup_clubb_pdf_params
     integer :: i ! Loop variable
 
     ! ---- Begin Code ----
-    ! Initialize output variables
-    mu_x_1 = zero
-    mu_x_2 = zero
-    sigma_x_1 = zero
-    sigma_x_2 = zero
-    corr_array_1 = zero
-    corr_array_2 = zero
-
-    ! Pack Means and Standard Deviations into arrays
-    mu_x_1(iiPDF_w)        = mu_w_1
-    mu_x_2(iiPDF_w)        = mu_w_2
-    mu_x_1(iiPDF_s_mellor) = mu_s_1
-    mu_x_2(iiPDF_s_mellor) = mu_s_2
-    mu_x_1(iiPDF_t_mellor) = mu_t_1
-    mu_x_2(iiPDF_t_mellor) = mu_t_2
-    mu_x_1(iiPDF_rrain)    = mu_rr_1_n
-    mu_x_2(iiPDF_rrain)    = mu_rr_2_n
-    mu_x_1(iiPDF_Nr)       = mu_Nr_1_n
-    mu_x_2(iiPDF_Nr)       = mu_Nr_2_n
-    mu_x_1(iiPDF_Ncn)      = mu_Ncn_1_n
-    mu_x_2(iiPDF_Ncn)      = mu_Ncn_2_n
-    sigma_x_1(iiPDF_w)        = sigma_w_1
-    sigma_x_2(iiPDF_w)        = sigma_w_2
-    sigma_x_1(iiPDF_s_mellor) = sigma_s_1
-    sigma_x_2(iiPDF_s_mellor) = sigma_s_2
-    sigma_x_1(iiPDF_t_mellor) = sigma_t_1
-    sigma_x_2(iiPDF_t_mellor) = sigma_t_2
-    sigma_x_1(iiPDF_rrain)    = sigma_rr_1_n
-    sigma_x_2(iiPDF_rrain)    = sigma_rr_2_n
-    sigma_x_1(iiPDF_Nr)       = sigma_Nr_1_n
-    sigma_x_2(iiPDF_Nr)       = sigma_Nr_2_n
-    sigma_x_1(iiPDF_Ncn)      = sigma_Ncn_1_n
-    sigma_x_2(iiPDF_Ncn)      = sigma_Ncn_2_n
 
     ! Pack remaining variables into hydromet_pdf_params
-    hydromet_pdf_params%mu_rr_1     = mu_rr_1
-    hydromet_pdf_params%mu_rr_2     = mu_rr_2
-    hydromet_pdf_params%mu_Nr_1     = mu_Nr_1
-    hydromet_pdf_params%mu_Nr_2     = mu_Nr_2
-    hydromet_pdf_params%mu_Ncn_1    = mu_Ncn_1
-    hydromet_pdf_params%mu_Ncn_2    = mu_Ncn_2
-    hydromet_pdf_params%sigma_rr_1  = sigma_rr_1
-    hydromet_pdf_params%sigma_rr_2  = sigma_rr_2
-    hydromet_pdf_params%sigma_Nr_1  = sigma_Nr_1
-    hydromet_pdf_params%sigma_Nr_2  = sigma_Nr_2
-    hydromet_pdf_params%sigma_Ncn_1 = sigma_Ncn_1
-    hydromet_pdf_params%sigma_Ncn_2 = sigma_Ncn_2
+    if ( iirr > 0 ) then
+       hydromet_pdf_params%rr1           = hm1(iirr)
+       hydromet_pdf_params%rr2           = hm2(iirr)
 
-    hydromet_pdf_params%rr1           = rr1
-    hydromet_pdf_params%rr2           = rr2
-    hydromet_pdf_params%Nr1           = Nr1
-    hydromet_pdf_params%Nr2           = Nr2
+       hydromet_pdf_params%mu_rr_1     = mu_x_1(iiPDF_rrain)
+       hydromet_pdf_params%mu_rr_2     = mu_x_2(iiPDF_rrain)
+       hydromet_pdf_params%sigma_rr_1  = sigma_x_1(iiPDF_rrain)
+       hydromet_pdf_params%sigma_rr_2  = sigma_x_2(iiPDF_rrain)
+    endif
+
+    if ( iiNr > 0 ) then
+       hydromet_pdf_params%Nr1           = hm1(iiNr)
+       hydromet_pdf_params%Nr2           = hm2(iiNr)
+
+       hydromet_pdf_params%mu_Nr_1     = mu_x_1(iiPDF_Nr)
+       hydromet_pdf_params%mu_Nr_2     = mu_x_2(iiPDF_Nr)
+       hydromet_pdf_params%sigma_Nr_1  = sigma_x_1(iiPDF_Nr)
+       hydromet_pdf_params%sigma_Nr_2  = sigma_x_2(iiPDF_Nr)
+    endif
+
+    hydromet_pdf_params%mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
+    hydromet_pdf_params%mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
+    hydromet_pdf_params%sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
+    hydromet_pdf_params%sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
+
     hydromet_pdf_params%precip_frac   = precip_frac
     hydromet_pdf_params%precip_frac_1 = precip_frac_1
     hydromet_pdf_params%precip_frac_2 = precip_frac_2
-
-
-    !!! The corr_arrays are assumed to be lower triangular matrices
-    ! Set diagonal elements to 1
-    do i=1, d_variables
-      corr_array_1(i, i) = one
-      corr_array_2(i, i) = one
-    end do
-
-    ! Pack correlations (1st PDF component) into corr_array_1.
-    corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_1
-    corr_array_1(iiPDF_w,iiPDF_s_mellor)         = corr_ws_1
-    corr_array_1(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_1_n
-    corr_array_1(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_1_n
-    corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_1_n
-    corr_array_1(iiPDF_rrain, iiPDF_t_mellor)    = corr_trr_1_n
-    corr_array_1(iiPDF_Nr, iiPDF_t_mellor)       = corr_tNr_1_n
-    corr_array_1(iiPDF_Ncn, iiPDF_t_mellor)      = corr_tNcn_1_n
-    corr_array_1(iiPDF_rrain, iiPDF_w)           = corr_wrr_1_n
-    corr_array_1(iiPDF_Nr, iiPDF_w)              = corr_wNr_1_n
-    corr_array_1(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_1_n
-    corr_array_1(iiPDF_Nr,iiPDF_rrain)           = corr_rrNr_1_n
-
-    ! Pack correlations (2nd PDF component) into corr_array_2.
-    corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor) = corr_st_2
-    corr_array_2(iiPDF_w,iiPDF_s_mellor)         = corr_ws_2
-    corr_array_2(iiPDF_rrain, iiPDF_s_mellor)    = corr_srr_2_n
-    corr_array_2(iiPDF_Nr, iiPDF_s_mellor)       = corr_sNr_2_n
-    corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)      = corr_sNcn_2_n
-    corr_array_2(iiPDF_rrain, iiPDF_t_mellor)    = corr_trr_2_n
-    corr_array_2(iiPDF_Nr, iiPDF_t_mellor)       = corr_tNr_2_n
-    corr_array_2(iiPDF_Ncn, iiPDF_t_mellor)      = corr_tNcn_2_n
-    corr_array_2(iiPDF_rrain, iiPDF_w)           = corr_wrr_2_n
-    corr_array_2(iiPDF_Nr, iiPDF_w)              = corr_wNr_2_n
-    corr_array_2(iiPDF_Ncn, iiPDF_w)             = corr_wNcn_2_n
-    corr_array_2(iiPDF_Nr,iiPDF_rrain)           = corr_rrNr_2_n
 
     return
 
