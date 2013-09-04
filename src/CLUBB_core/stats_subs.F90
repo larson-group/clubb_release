@@ -1869,7 +1869,8 @@ module stats_subs
 
       ! Calculate variance of s_mellor
       if ( isp2 > 0 ) then
-        sp2 = compute_weighted_variance( pdf_params%stdev_s1, pdf_params%stdev_s2, &
+        sp2 = compute_variance_binormal( s_mellor, pdf_params%s1, pdf_params%s2, &
+                                         pdf_params%stdev_s1, pdf_params%stdev_s2, &
                                          pdf_params%mixt_frac )
         call stat_update_var( isp2, sp2, zt )
       end if
@@ -2349,11 +2350,11 @@ module stats_subs
   end subroutine stats_accumulate_LH_tend
 
   !-----------------------------------------------------------------------------
-  elemental function compute_weighted_variance( stdev_x_1, stdev_x_2, mixt_frac ) result( xp2 )
+  elemental function compute_variance_binormal( x_mean, x1, x2, stdev_x_1, stdev_x_2, mixt_frac ) &
+        result( xp2 )
 
   ! Description:
-  !   Computes the variance of a variable, given the standard deviations of two
-  !   PDF components, and a mixing ratio
+  !   Computes the variance of a variable from a double gaussian distribution.
 
   ! References:
   !   None
@@ -2369,6 +2370,9 @@ module stats_subs
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
+      x_mean,    & ! Overall mean of 'x'                                   [?]
+      x1,        & ! First PDF component of 'x'                            [?]
+      x2,        & ! Second PDF component of 'x'                           [?]
       stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
       stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
       mixt_frac    ! Weight of the first PDF component                     [-]
@@ -2377,19 +2381,14 @@ module stats_subs
     real( kind = core_rknd ) :: &
       xp2          ! Variance of 'x' (overall average)                     [?^2]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      stdev_x      ! Standard deviation of 'x' (overall average)           [?]
-      
   !-----------------------------------------------------------------------------
 
     !----- Begin Code -----
-    stdev_x = stdev_x_1 * mixt_frac + stdev_x_2 * (one - mixt_frac)
-
-    xp2 = stdev_x ** 2
+    xp2 = mixt_frac * ( (x1 - x_mean)**2 + stdev_x_1**2 ) &
+            + (one - mixt_frac) * ( (x2 - x_mean)**2 + stdev_x_2**2 )
 
     return
-  end function compute_weighted_variance
+  end function compute_variance_binormal
     
   !-----------------------------------------------------------------------
   subroutine stats_finalize( )
