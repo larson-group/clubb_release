@@ -905,6 +905,7 @@ sub buildMatlabStringStd()
 	                my $lineStyle = $lineStyles[$lineStyleCounter];
 	                my $lineColor = $lineColors[$lineColorCounter];
 	                $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+			incrementLineTypes();
 		    }
 		}
             }
