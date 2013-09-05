@@ -131,7 +131,7 @@ module estimate_scm_microphys_module
 
     ! Output Variables
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 

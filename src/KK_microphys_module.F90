@@ -113,9 +113,9 @@ module KK_microphys_module
     target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
-    ! Input / Output Variables
+    ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(inout) :: &
+    target, intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
@@ -490,13 +490,13 @@ module KK_microphys_module
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
-    ! Input / Output Variables
+    ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(inout) :: &
+    target, intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    ! Output Variables
+    ! More Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -1022,8 +1022,7 @@ module KK_microphys_module
     target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
@@ -1058,6 +1057,9 @@ module KK_microphys_module
 
     KK_Nrm_evap_tndcy = zero
     KK_Nrm_auto_tndcy = zero
+
+    hydromet_mc(:,:) = zero
+    hydromet_vel(:,:) = zero
 
     !!! Assign pointers for hydrometeor variables.
 

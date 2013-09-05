@@ -1167,8 +1167,8 @@ module latin_hypercube_driver_module
       ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
       Nc_in_cloud
 
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       LH_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
       LH_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
@@ -1203,7 +1203,7 @@ module latin_hypercube_driver_module
            X_nl_all_levs, LH_sample_point_weights, &                 ! Intent(in) 
            p_in_Pa, exner, rho, cloud_frac, w_std_dev, &             ! Intent(in)
            delta_zt, pdf_params, hydromet, rcm, Nc_in_cloud, &       ! Intent(in)
-           lh_hydromet_mc, lh_hydromet_vel, &                        ! Intent(inout)
+           lh_hydromet_mc, lh_hydromet_vel, &                        ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
            LH_rtp2_mc, LH_thlp2_mc, LH_wprtp_mc, &                   ! Intent(out)
            LH_wpthlp_mc, LH_rtpthlp_mc, &                            ! Intent(out)

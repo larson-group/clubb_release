@@ -189,9 +189,8 @@ module morrison_micro_driver_module
     target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(inout) :: &
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 
@@ -318,12 +317,6 @@ module morrison_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
-    real( kind = core_rknd ), pointer, dimension(:,:) :: &
-      dummy
-
-    real( kind = core_rknd ), pointer, dimension(:) :: &
-      dummy_1D
-
     real :: Morr_snow_rate, Morr_rain_rate
 
     real, dimension(nz,hydromet_dim) :: &
@@ -354,17 +347,6 @@ module morrison_micro_driver_module
       rrainm_evap_r4
 
     ! ---- Begin Code ----
-
-    ! Some dummy assignments to make compiler warnings go away...
-    if ( .false. ) then
-      dummy => hydromet
-      dummy => hydromet_vel_zt
-      dummy => hydromet_mc
-      dummy_1D => pdf_params(:)%cloud_frac1
-      rcm_in_cloud = dummy(:,1)
-      rcm_in_cloud = s_mellor
-      rcm_in_cloud = dummy_1D
-    end if
 
     ! Determine temperature
     T_in_K = real( thlm2T_in_K( thlm, exner, rcm ) )

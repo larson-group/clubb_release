@@ -52,7 +52,7 @@ interface
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
-    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(inout) :: &
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(out) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 

@@ -887,9 +887,9 @@ module microphys_driver
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,                    & ! Intent(in)
                hydromet_pdf_params,                                     & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                             & ! Intent(inout)
-               rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(inout)
-               wprtp_mc, wpthlp_mc,                                     & ! Intent(inout)
-               rtp2_mc, thlp2_mc, rtpthlp_mc,                           & ! Intent(inout)
+               rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(out)
+               wprtp_mc, wpthlp_mc,                                     & ! Intent(out)
+               rtp2_mc, thlp2_mc, rtpthlp_mc,                           & ! Intent(out)
                err_code )                                                 ! Intent(out)
 
     ! Description:
@@ -1184,12 +1184,12 @@ module microphys_driver
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
       thlm_mc    ! Microphysics contributions to liquid potential temp. [K/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
@@ -1520,7 +1520,7 @@ module microphys_driver
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm_morr, wtmp, delta_zt, cloud_frac_morr, & ! In
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
-               hydromet_mc, hydromet_vel_zt, & ! In/Out
+               hydromet_mc, hydromet_vel_zt, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                wpthlp_mc, rtpthlp_mc, & ! Out
@@ -1606,12 +1606,6 @@ module microphys_driver
 
     case ( "khairoutdinov_kogan" )
 
-      ! Initialize tendencies to zero
-      hydromet_mc(:,:) = zero
-      rcm_mc(:) = zero
-      rvm_mc(:) = zero
-      thlm_mc(:) = zero
-
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 #ifdef LATIN_HYPERCUBE
@@ -1621,7 +1615,7 @@ module microphys_driver
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, wtmp, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
-               hydromet_mc, hydromet_vel_zt, & ! In/Out
+               hydromet_mc, hydromet_vel_zt, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                wpthlp_mc, rtpthlp_mc, & ! Out               
@@ -1675,7 +1669,7 @@ module microphys_driver
                                          n_variables, corr_array_1, corr_array_2, & ! Intent(in)
                                          mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
                                          hydromet_pdf_params,                     & ! Intent(in)
-                                         hydromet_mc, hydromet_vel_zt,            & ! Intent(inout)
+                                         hydromet_mc, hydromet_vel_zt,            & ! Intent(out)
                                          rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
                                          hydromet_vel_covar_zt_impc,              & ! Intent(out)
                                          hydromet_vel_covar_zt_expc,              & ! Intent(out)

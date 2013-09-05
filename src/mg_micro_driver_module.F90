@@ -158,7 +158,7 @@ module mg_micro_driver_module
       hydromet      ! Hydrometeor species    [units vary]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc, &  ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
