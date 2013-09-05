@@ -151,6 +151,7 @@ cat > mkmf_template << EOF
 F77 = ${F77}
 F90 = ${F90}
 LD = ${LD}
+AR = ${AR}
 CPPFLAGS = ${CPPFLAGS}
 FFLAGS = ${FFLAGS}
 LDFLAGS = ${LDFLAGS}
