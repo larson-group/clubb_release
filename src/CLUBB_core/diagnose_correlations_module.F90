@@ -8,13 +8,14 @@ module diagnose_correlations_module
 
   public :: calc_mean, calc_varnce, calc_w_corr, &
             corr_stat_output, calc_cholesky_corr_mtx_approx, &
-            cholesky_to_corr_mtx_approx, setup_corr_cholesky_mtx
+            cholesky_to_corr_mtx_approx, setup_corr_cholesky_mtx, &
+            diagnose_correlations
             
 
   private :: diagnose_corr, rearrange_corr_array, &
              corr_array_assertion_checks
 
-
+  private ! Default scope
   contains 
 
 !-----------------------------------------------------------------------
@@ -173,8 +174,8 @@ module diagnose_correlations_module
         ! If the predicting c1i's are small then cij will be closer to the prescribed value. If
         ! the c1i's are bigger, then cij will be closer to formular (15) from the ref. paper. See
         ! clubb:ticket:514:comment:61 for details.
-        !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
-        !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
+      !f_ij = (1-abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j)))*corr_matrix_prescribed(i,j) &
+      !       + abs(corr_matrix_approx(1,i)*corr_matrix_approx(1,j))*f_ij_o
 
         f_ij = corr_matrix_prescribed(i,j)
 
