@@ -61,9 +61,6 @@ module diagnose_correlations_module
       corr_array_pre_swapped, &
       corr_array_swapped
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
-      corr_array
-
     ! We actually don't need this right now
     real( kind = core_rknd ), dimension(d_variables) :: &
       xp2_on_xm2_array   ! ratios of x_variance over x_mean^2
@@ -92,7 +89,7 @@ module diagnose_correlations_module
 
     ! Swap rows back
     call rearrange_corr_array( d_variables, corr_array_swapped, & ! Intent(in)
-                               corr_array)        ! Intent(inout)
+                               corr_array)        ! Intent(out)
 
   end subroutine diagnose_correlations
 
@@ -858,7 +855,7 @@ module diagnose_correlations_module
 
 !-----------------------------------------------------------------------
   subroutine rearrange_corr_array( d_variables, corr_array, & ! Intent(in)
-                                   corr_array_swapped)        ! Intent(inout)
+                                   corr_array_swapped)        ! Intent(out)
     ! Description:
     !   This subroutine swaps the w-correlations to the first row if the input
     !   matrix is in the same order as the *_corr_array_cloud.in files. It swaps
@@ -886,8 +883,8 @@ module diagnose_correlations_module
     real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
       corr_array   ! Correlation matrix
 
-    ! Input/Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(inout) :: &
+    ! Output variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
       corr_array_swapped   ! Swapped correlation matrix
 
     ! Local Variables
