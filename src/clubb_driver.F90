@@ -1205,9 +1205,9 @@ module clubb_driver
              corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
              hydromet_pdf_params,                             & ! Intent(in)
              Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
-             wprtp_mc, wpthlp_mc,                             & ! Intent(inout)
-             rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
+             wprtp_mc, wpthlp_mc,                             & ! Intent(out)
+             rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(out)
              err_code )                                         ! Intent(inout)
 
       ! Radiation is always called on the first timestep in order to ensure
@@ -3627,9 +3627,9 @@ module clubb_driver
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
                Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
-               rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(inout)
-               wprtp_mc, wpthlp_mc,                             & ! Intent(inout)
-               rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(inout)
+               rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
+               wprtp_mc, wpthlp_mc,                             & ! Intent(out)
+               rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(out)
                err_code )                                         ! Intent(inout)
 
 ! Description:
@@ -3772,12 +3772,12 @@ module clubb_driver
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       thlm_mc,   & ! theta_l microphysical tendency [K/s]
       rcm_mc,    & ! r_c microphysical tendency     [(kg/kg)/s]
       rvm_mc       ! r_v microphysical tendency     [(kg/kg)/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
       wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
@@ -3813,16 +3813,6 @@ module clubb_driver
     integer :: err_code_microphys
 
     ! ---- Begin Code ----
-
-    rcm_mc  = zero
-    rvm_mc  = zero
-    thlm_mc = zero
-
-    wprtp_mc   = zero
-    wpthlp_mc  = zero
-    rtp2_mc    = zero
-    thlp2_mc   = zero
-    rtpthlp_mc = zero
 
 #ifdef LATIN_HYPERCUBE
     !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
@@ -3941,9 +3931,9 @@ module clubb_driver
            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
            hydromet_pdf_params, &                                     ! Intent(in)
            Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
-           rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(inout)
-           wprtp_mc, wpthlp_mc, &                         ! Intent(inout)
-           rtp2_mc, thlp2_mc, rtpthlp_mc, &         ! Intent(inout)
+           rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
+           wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
+           rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
            err_code_microphys )                                       ! Intent(out)
 
     if ( fatal_error( err_code_microphys ) ) then

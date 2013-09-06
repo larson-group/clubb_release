@@ -1284,6 +1284,18 @@ module microphys_driver
 
     ! ---- Begin code ----
 
+    ! We must initialize intent(out) variables. If we do not, and they do not
+    ! otherwise get assigned (e.g. microphys_scheme=="none"), then we are not
+    ! within the realms of Fortran standards compliance.
+    rvm_mc = zero
+    rcm_mc = zero
+    thlm_mc = zero
+    wprtp_mc = zero
+    wpthlp_mc = zero
+    rtp2_mc = zero
+    thlp2_mc = zero
+    rtpthlp_mc = zero
+
     Ndrop_max = zero
     ! Set the value of the aerosol mass array to a constant
     aeromass = aeromass_value
@@ -1494,12 +1506,6 @@ module microphys_driver
 
     case ( "morrison" )
 
-      ! Initialize tendencies to zero
-      hydromet_mc(:,:) = zero
-      rcm_mc(:) = zero
-      rvm_mc(:) = zero
-      thlm_mc(:) = zero
-
       rcm_morr(:) = rcm(:)
       cloud_frac_morr(:) = cloud_frac(:)
 
@@ -1581,15 +1587,6 @@ module microphys_driver
       end if ! LH_microphys_type /= interactive
 
     case ( "morrison_gettelman" )
-
-      ! Initialize tendencies to zero
-      hydromet_mc(:,:) = zero
-      rcm_mc(:) = zero
-      rvm_mc(:) = zero
-      thlm_mc(:) = zero
-
-      hydromet_vel = zero
-      hydromet_vel_zt = zero
 
       ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
       ! Placed here because parameters cannot be changed on mg_microphys_driver with
@@ -1673,9 +1670,9 @@ module microphys_driver
                                          rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
                                          hydromet_vel_covar_zt_impc,              & ! Intent(out)
                                          hydromet_vel_covar_zt_expc,              & ! Intent(out)
-                                         wprtp_mc, wpthlp_mc,         & ! Intent(out)
-                                         rtp2_mc, thlp2_mc,           & ! Intent(out)
-                                         rtpthlp_mc )                         ! Intent(out)
+                                         wprtp_mc, wpthlp_mc,         &             ! Intent(out)
+                                         rtp2_mc, thlp2_mc,           &             ! Intent(out)
+                                         rtpthlp_mc )                               ! Intent(out)
 
         endif
 
@@ -1698,7 +1695,6 @@ module microphys_driver
 
     case default
       ! Do nothing
-
     end select ! micro_scheme
 
 
