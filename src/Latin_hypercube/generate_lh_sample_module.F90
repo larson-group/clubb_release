@@ -37,7 +37,7 @@ module generate_lh_sample_module
                crt1, crt2, cthl1, cthl2, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, &
-               X_u_one_lev, X_mixt_comp_one_lev, hgt_level, &
+               X_u_one_lev, X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
@@ -149,8 +149,7 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: &
       d_variables,   & ! `d' Number of variates (normally 3 + microphysics specific variables)
-      hydromet_dim,  & ! Number of hydrometeor species
-      hgt_level        ! current height level (for stats output)
+      hydromet_dim     ! Number of hydrometeor species
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species [units vary]
@@ -302,9 +301,6 @@ module generate_lh_sample_module
 
     real( kind = dp ), dimension(d_variables,d_variables) :: &
       Corr_stw_1, Corr_stw_2 ! Correlation matrix for Sigma_stw_1,2
-
-    real( kind = core_rknd ), dimension(d_variables,d_variables), target :: &
-      corr_matrix_approx ! Correlation matrix for the diagnose corr. algorithm
 
     real( kind = dp ), dimension(:,:), allocatable :: &
       corr_stw_matrix ! Correlation matrix      [-]
@@ -931,7 +927,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, 1, real( mixt_frac, kind=dp ), &  ! intent(in
+    call sample_points( d_variables, 1, &  ! intent(in
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
@@ -950,7 +946,7 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample_mod &
-             ( d_variables, d_uniform_extra, mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, & ! In
                thl1, thl2, rt1, rt2, & ! In
                crt1, crt2, cthl1, cthl2, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
@@ -1019,7 +1015,6 @@ module generate_lh_sample_module
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
     real( kind = core_rknd ), intent(in) :: &
-      mixt_frac,      & ! Mixture fraction                                        [-]
       rt1,         & ! Mean of r_t for 1st normal distribution                 [kg/kg]
       rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
       thl1,           & ! Mean of th_l for 1st normal distribution                [K]
@@ -1148,7 +1143,7 @@ module generate_lh_sample_module
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
-    call sample_points( d_variables, d_uniform_extra, real( mixt_frac, kind = dp ), &  ! intent(in)
+    call sample_points( d_variables, d_uniform_extra, &  ! intent(in)
                         real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
                         real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
                         real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
@@ -1230,7 +1225,7 @@ module generate_lh_sample_module
   end subroutine zero_rain_hydromets
 
 !---------------------------------------------------------------------------------------------------
-  subroutine sample_points( d_variables, d_uniform_extra, mixt_frac, &
+  subroutine sample_points( d_variables, d_uniform_extra, &
                             rt1, thl1, rt2, thl2, &
                             crt1, cthl1, crt2, cthl2, &
                             mu1, mu2,  &
@@ -1269,9 +1264,6 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       d_variables, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only  
-
-    ! Weight of 1st Gaussian, 0 <= mixt_frac <= 1
-    real( kind = dp ), intent(in) :: mixt_frac
 
     !rt1, thl1 = mean of rt, thl for Gaus comp 1
     !rt2, thl2 = mean of rt, thl for Gaus comp 2
@@ -1322,7 +1314,7 @@ module generate_lh_sample_module
 
     ! Generate n samples of a d-variate Gaussian mixture
     ! by transforming Latin hypercube points, X_u_one_lev.
-    call gaus_mixt_points( d_variables, d_uniform_extra, mixt_frac, mu1, mu2, &  ! intent(in)
+    call gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, &  ! intent(in)
                            Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                            Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
@@ -1336,7 +1328,7 @@ module generate_lh_sample_module
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
 !            X_nl_one_lev(2), &
 !            X_u_one_lev, rtp, thlp )
-    call st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & ! intent(in)
+    call st_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
                      real(mu1(iiPDF_s_mellor), kind = dp), & ! intent(in)
                      real(mu2(iiPDF_s_mellor), kind = dp), & ! intent(in)
@@ -1528,7 +1520,7 @@ module generate_lh_sample_module
   end function choose_permuted_random
 
 !----------------------------------------------------------------------
-  subroutine gaus_mixt_points( d_variables, d_uniform_extra, mixt_frac, mu1, mu2, & ! Intent(in)
+  subroutine gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, & ! Intent(in)
                                Sigma1_Cholesky, Sigma2_Cholesky, & ! Intent(in)
                                Sigma1_scaling, Sigma2_scaling, & ! Intent(in)
                                l_Sigma1_scaling, l_Sigma2_scaling, & ! Intent(in)
@@ -1561,9 +1553,6 @@ module generate_lh_sample_module
     integer, intent(in) :: &
       d_variables, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only
-
-    real( kind = dp ), intent(in) :: &
-      mixt_frac ! Mixture fraction of Gaussians
 
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
@@ -1978,7 +1967,7 @@ module generate_lh_sample_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine st_2_rtthl( mixt_frac, rt1, thl1, rt2, thl2, & 
+  subroutine st_2_rtthl( rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
                          mu_s1, mu_s2, &
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
@@ -2019,7 +2008,6 @@ module generate_lh_sample_module
     ! Input Variables
 
     real( kind = dp ), intent(in) :: &
-      mixt_frac,   & ! Mixture fraction of Gaussians 'mixt_frac' [-]
       rt1, rt2,    & ! n dimensional column vector of rt         [kg/kg]
       thl1, thl2,  & ! n dimensional column vector of thetal     [K]
       crt1, crt2,  & ! Constants from plumes 1 & 2 of rt

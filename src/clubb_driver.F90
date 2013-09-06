@@ -3895,7 +3895,7 @@ module clubb_driver
       if ( l_use_modified_corr ) then
          call LH_subcolumn_generator_mod &
               ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-                pdf_params, gr%dzt, rcm, hydromet, Lscale_vert_avg, & ! In
+                pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
                 real( corr_cholesky_mtx_1, kind = dp ), & ! In
                 real( corr_cholesky_mtx_2, kind = dp ), & ! In

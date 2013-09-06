@@ -480,7 +480,7 @@ module latin_hypercube_driver_module
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
                corr_array_cloud, corr_array_below, & ! In
-               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), k, & ! In
+               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k = k_lh_start..nz
@@ -506,7 +506,7 @@ module latin_hypercube_driver_module
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
                corr_array_cloud, corr_array_below, & ! In
-               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), k, & ! In
+               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
     end do ! k_lh_start-1..1
@@ -540,7 +540,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine LH_subcolumn_generator_mod &
              ( iter, d_variables, n_micro_calls, sequence_length, nz, & ! In
-               pdf_params, delta_zm, rcm, hydromet, Lscale_vert_avg, & ! In
+               pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_stw_matrix_Cholesky_1, corr_stw_matrix_Cholesky_2, & ! In
                hydromet_pdf_params, & ! In
@@ -634,9 +634,6 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       delta_zm, &  ! Difference in moment. altitudes    [m]
       rcm          ! Liquid water mixing ratio          [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
@@ -1014,7 +1011,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample_mod &
-             ( d_variables, d_uniform_extra, pdf_params(k)%mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, & ! In
                pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
@@ -1032,7 +1029,7 @@ module latin_hypercube_driver_module
     do k = k_lh_start-1, 1, -1
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample_mod &
-             ( d_variables, d_uniform_extra, pdf_params(k)%mixt_frac, & ! In
+             ( d_variables, d_uniform_extra, & ! In
                pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In

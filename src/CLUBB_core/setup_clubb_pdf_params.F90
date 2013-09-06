@@ -3721,9 +3721,6 @@ module setup_clubb_pdf_params
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
-    ! Local variables
-    integer :: i ! Loop variable
-
     ! ---- Begin Code ----
 
     ! Pack remaining variables into hydromet_pdf_params
