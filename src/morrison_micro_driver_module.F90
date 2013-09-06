@@ -190,7 +190,7 @@ module morrison_micro_driver_module
       hydromet ! Hydrometeor species    [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 
