@@ -438,7 +438,10 @@ module corr_matrix_module
        call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, & ! In
                                      corr_array_below ) ! Out
 
-    else ! Read in default correlation matrices (from rico_corr_array_cloud)
+    else ! Read in default correlation matrices (from arm_97_corr_array_cloud)
+
+       write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
+                        "The default correlation arrays (from arm_97) will be used."
 
        call read_correlation_matrix( iunit, input_file_cloud_default, d_variables, & ! In
                                      corr_array_cloud ) ! In/Out
