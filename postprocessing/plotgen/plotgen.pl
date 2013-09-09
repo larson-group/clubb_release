@@ -8,34 +8,30 @@
 
 package Plotgen;
 
-my $dirPrefix = "";
-# This is only needed when installing globally to ensure additional perl 
-# modules can be found.
+
+##This was added to allow this script to function from outside its own directory.
+##See other:274
+my $dirPrefix;
+use Cwd;
+use Cwd 'abs_path';
+use File::Basename;
 BEGIN
 {
-    # Only do this if plotgen was executed from a path other than the plotgen directory
-    if($0 ne "./plotgen.pl")
-    {
-        push @INC,"/home/matlabuser/plotgen";
-    }
-}
-
-# Add the path to the plotgen directory for executing external scripts
-if($0 ne "./plotgen.pl")
-{
-    $dirPrefix = "/home/matlabuser/plotgen/";
+(undef, $dirPrefix) = fileparse(abs_path($0));
+##print STDERR "absolute path is " . $dirPrefix;
+push @INC,$dirPrefix;
+#my $dirOrig = getcwd();
+##print STDERR "original folder is " . $dirOrig;
 }
 
 use strict;
-use CaseReader;
-use OutputWriter;
-use Cwd 'abs_path';
-use Cwd;
 use Switch;
 use Getopt::Std;
-use File::Basename;
-use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
 use File::Path;
+use CaseReader;
+use OutputWriter;
+use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
+
 
 # The location of MATLAB. External users probably will not need the 
 # sudo -u matlabuser part.
@@ -340,7 +336,7 @@ sub main()
 ###############################################################################
 sub getCasePath()
 {
-    my $casePath = "cases";
+    my $casePath = $dirPrefix . "cases";
 
     if($plotgenMode eq "plotgen")
     {
@@ -664,7 +660,6 @@ sub buildMatlabStringBudget()
 
             my $matlabArgs = "\'$caseName\', \'$CASE::CASE{'type'}\', \'$plotTitle\', $totPlotNum, \'$type\', $startTime, $endTime, $startHeight, $endHeight, \'$units\', $randInt";
             my $tempMatlabArgs = $matlabArgs;
-        
             my @lines;
             push(@lines, @{$plots[$plotNum]{'lines'}});
             
@@ -683,7 +678,6 @@ sub buildMatlabStringBudget()
                     my $lineColor = $lineColors[$lineColorCounter];
                             
                     $matlabArgs = "$matlabArgs, \'$file\', \'$expression\', \'$name\', $lineWidth, \'$lineStyle\', \'$lineColor\'";        
-
                     incrementLineTypes();
                 }
             }
@@ -969,7 +963,7 @@ sub executeMatlab()
 
     my $args = "PlotCreator\"($matlabArgs)\"";
 
-    #print("\n$args\n\n");
+#    print("\n$args\n\n");
 
     system("echo $args > $matlabPipe");
 }
@@ -1139,7 +1133,6 @@ sub dataExists()
             }
         }
     }
-
     return 0;
 }
 
@@ -1288,19 +1281,10 @@ sub readArgs()
         }
         mkdir $outputTemp;
 
-        # The following was added to allow us to install plotgen globally.
-        # This will follow the symlink to the actual plotgen.pl script.
-        my $plotgenDirectory = readlink($0);
-
-        print("$plotgenDirectory\n");
-
-        if($plotgenDirectory ne "")
-        {
-            $plotgenDirectory = dirname(abs_path($plotgenDirectory));
+        my $plotgenDirectory = $dirPrefix;
             
-            # In case we aren't already in the directory that plotgen.pl is, goto it.
-            chdir($plotgenDirectory);
-        }
+        # In case we aren't already in the directory that plotgen.pl is, goto it.
+        chdir($plotgenDirectory);
     }
 }
 
