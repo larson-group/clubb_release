@@ -264,6 +264,7 @@ sub main()
     }
     else # Parent
     {
+	sleep(1);
         # Now fork to create images in the background. This should hopefully
         # speed things up a little
         my $convertPid = fork();
