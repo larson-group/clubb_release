@@ -662,7 +662,12 @@ module clip_explicit
     ! clipping code does not need to be invoked at the lower boundary.
     ! Likewise, the value of x'^2 is set at the upper boundary, so the variance
     ! clipping code does not need to be invoked at the upper boundary.
-    do k = 2, gr%nz-1, 1
+    !
+    ! charlass on 09/11/2013: I changed the clipping so that also the surface
+    ! level is clipped. I did this because we discovered that there are slightly
+    ! negative values in thlp2(1) and rtp2(1) when running quarter_ss case with
+    ! WRF-CLUBB (see wrf:ticket:51#comment:33) 
+    do k = 1, gr%nz-1, 1
       if ( xp2(k) < threshold ) then
         xp2(k) = threshold
       endif
