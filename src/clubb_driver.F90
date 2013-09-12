@@ -3772,6 +3772,8 @@ module clubb_driver
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
+    ! Output Variables
+
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
       thlm_mc,   & ! theta_l microphysical tendency [K/s]
       rcm_mc,    & ! r_c microphysical tendency     [(kg/kg)/s]

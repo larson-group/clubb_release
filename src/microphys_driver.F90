@@ -1185,6 +1185,8 @@ module microphys_driver
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
+    ! Output Variables
+
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
       rcm_mc,  & ! Microphysics contributions to liquid water           [kg/kg/s]
       rvm_mc,  & ! Microphysics contributions to vapor water            [kg/kg/s]
@@ -1196,8 +1198,6 @@ module microphys_driver
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
-
-    ! Output Variables
 
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
