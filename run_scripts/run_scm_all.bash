@@ -176,14 +176,22 @@ if [ $NIGHTLY == true ] ; then
     # Make the CLUBB_previous and CLUBB_current directories if they don't exist
     mkdir -p $OUTPUT_DIR"/CLUBB_current"
     mkdir -p $OUTPUT_DIR"/CLUBB_previous"
-  
+
+    # Copy the previous results if there is not a matching filename in the current folder
+    # This allows us to keep the previous plots even if new lines fail to plot.
+
+    cp -n -v $OUTPUT_DIR/CLUBB_previous/*.ctl $OUTPUT_DIR/CLUBB_current/
+    cp -n -v $OUTPUT_DIR/CLUBB_previous/*.dat $OUTPUT_DIR/CLUBB_current/
+
     # Eliminate the previous CLUBB results.
     # This prevents spurious profile generation resulting from
     # previous profiles not getting overwritten
+
     rm -f $OUTPUT_DIR"/CLUBB_previous/*"
 
     mv $OUTPUT_DIR/CLUBB_current/*.ctl $OUTPUT_DIR/CLUBB_previous/
     mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
+
 elif [ $SHORT_CASES == true ] ; then
     echo -e "\nPerforming short-cases run\n"
 elif [ $PRIORITY_CASES == true ] ; then
@@ -194,6 +202,7 @@ fi
 
 # This will loop over all runs in sequence 
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); 
+
 do
     echo -e "Running ${RUN_CASE[$x]}"
 
@@ -222,10 +231,10 @@ EXIT_STATUS=0
 
 # Print the results and copy files for a nightly run
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
-  if [ "${EXIT_CODES[$x]}" != 0 ]; then
+    if [ "${EXIT_CODES[$x]}" != 0 ]; then
     echo "${RUN_CASE[$x]}"' failure'
         EXIT_STATUS=1
-   fi
+    fi
 done
 
 exit $EXIT_STATUS
