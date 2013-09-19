@@ -178,12 +178,13 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'lwpmean ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Total precip fallout rate from Morrison scheme', 'axisLabel' => 'morr\_rain\_rate[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-         {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'PRECIP', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'}, 
-         {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'morr_rain_rate', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PREC', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UseFirstArgIfNonZero( morr_rain_rate, rain_rate_sfc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+	{'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_vert_avg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
