@@ -1184,7 +1184,7 @@ module latin_hypercube_driver_module
 
     ! Perform LH and analytic microphysical calculations
     ! As a test of SILHS, compute an estimate of Kessler microphysics
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 2 ) .or. .true. ) then
        call est_kessler_microphys &
             ( nz, n_micro_calls, d_variables, &                  ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
