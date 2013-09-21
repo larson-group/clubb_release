@@ -990,7 +990,8 @@ module generate_lh_sample_module
     use corr_matrix_module, only: &
       iiPDF_s_mellor, &
       iiPDF_t_mellor, &
-      iiPDF_w
+      iiPDF_w, &
+      iiPDF_Ncn
 
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
@@ -1163,6 +1164,11 @@ module generate_lh_sample_module
       call zero_rain_hydromets( d_variables, & ! Intent(in)
                                 X_nl_one_lev ) ! Intent(inout)
 
+    end if
+
+    ! Zero Nc if not in cloud
+    if ( X_nl_one_lev(iiPDF_s_mellor) < 0.0_dp ) then
+      X_nl_one_lev(iiPDF_Ncn) = 0.0_dp
     end if
 
     return
