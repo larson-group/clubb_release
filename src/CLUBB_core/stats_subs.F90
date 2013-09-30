@@ -1002,14 +1002,16 @@ module stats_subs
       ii, & ! Number of points in X (i.e. latitude) dimension
       jj, & ! Number of points in Y (i.e. longitude) dimension
       kk, & ! Number of levels in vertical (i.e. Z) dimension
-      nn    ! Number of variables being sampled in x
+      nn    ! Number of variables being output to disk (e.g. cloud_frac, rain rate, etc.)
 
     integer(kind=stat_nknd), dimension(ii,jj,kk,nn), intent(in) :: &
-      n ! The variable n is the number of samples per x per kk
+      n ! n is the number of samples for each of the nn fields 
+        ! and each of the kk vertical levels
 
     ! Output Variable(s)
     real(kind=stat_rknd), dimension(ii,jj,kk,nn), intent(inout) :: &
-      x ! The variable x is a set of nn variables being averaged over n
+      x ! The variable x contains the cumulative sums of n sample values of each of
+        ! the nn output fields (e.g. the sum of the sampled rain rate values)
 
     ! ---- Begin Code ----
 

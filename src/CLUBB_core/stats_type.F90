@@ -35,7 +35,8 @@ module stats_type
   type stats
 
     ! Number of fields to sample
-    integer :: nn
+    integer :: nn    ! Number of variables being output to disk (e.g.
+                     ! cloud_frac, rain rate, etc.)
 
     integer :: &
       ii, & ! Horizontal extent of the variables (Usually 1 for the single-column model)
@@ -48,8 +49,12 @@ module stats_type
     ! Array to store sampled fields
 
     real(kind=stat_rknd), pointer, dimension(:,:,:,:) :: x
+        ! The variable x contains the cumulative sums of n sample values of each
+        ! of the nn output fields (e.g. the sum of the sampled rain rate values)
 
     integer(kind=stat_nknd), pointer, dimension(:,:,:,:) :: n
+        ! n is the number of samples for each of the nn fields 
+        ! and each of the kk vertical levels
 
     ! Tracks if a field is in the process of an update
     logical, pointer, dimension(:,:,:,:) :: l_in_update
