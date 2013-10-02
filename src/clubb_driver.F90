@@ -1204,11 +1204,10 @@ module clubb_driver
              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
              corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
              hydromet_pdf_params,                             & ! Intent(in)
-             Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
+             Ncnm, hydromet, wphydrometp, err_code,           & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
              wprtp_mc, wpthlp_mc,                             & ! Intent(out)
-             rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(out)
-             err_code )                                         ! Intent(inout)
+             rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -3626,11 +3625,10 @@ module clubb_driver
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
-               Ncnm, hydromet, wphydrometp,                     & ! Intent(inout)
+               Ncnm, hydromet, wphydrometp, err_code,           & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
                wprtp_mc, wpthlp_mc,                             & ! Intent(out)
-               rtp2_mc, thlp2_mc, rtpthlp_mc,                   & ! Intent(out)
-               err_code )                                         ! Intent(inout)
+               rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
 
 ! Description:
 !   Advance a microphysics scheme
@@ -3772,6 +3770,9 @@ module clubb_driver
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
+    integer, intent(inout) :: &
+      err_code
+
     ! Output Variables
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
@@ -3785,9 +3786,6 @@ module clubb_driver
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
-
-    integer, intent(inout) :: & 
-      err_code ! Error code from the microphysics
 
     ! Local Variables
 
