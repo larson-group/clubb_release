@@ -2230,21 +2230,6 @@ module latin_hypercube_driver_module
         end forall ! 1..hydromet_dim
       end if
 
-      if ( iLH_rrainm + iLH_Nrm + iLH_ricem + iLH_Nim + iLH_rsnowm + iLH_Nsnowm + &
-           iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
-
-        LH_hydromet = 0._core_rknd
-        call copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, & ! In
-                                      X_nl_all_levs, &  ! In
-                                      LH_hydromet, & ! In
-                                      hydromet_all_points, &  ! Out
-                                      Nc_all_points )
-        forall ( ivar = 1:hydromet_dim )
-          LH_hydromet(:,ivar) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights,&
-                                                     hydromet_all_points(:,:,ivar) )
-        end forall ! 1..hydromet_dim
-      end if
-
       if ( iLH_Ncm > 0 ) then
         LH_Ncm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                       Nc_all_points(:,:) )
