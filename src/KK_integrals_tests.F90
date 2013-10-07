@@ -241,11 +241,12 @@ module KK_integrals_tests
     sigma_x3_n = stdev_L2N_dp( (sigma_x3/mu_x3)**2 )
     sigma_x4_n = stdev_L2N_dp( (sigma_x4/mu_x4)**2 )
 
-    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n )
-    rho_x1x4_n = corr_NL2NN_dp( rho_x1x4, sigma_x4_n )
-    rho_x2x3_n = corr_NL2NN_dp( rho_x2x3, sigma_x3_n )
-    rho_x2x4_n = corr_NL2NN_dp( rho_x2x4, sigma_x4_n )
-    rho_x3x4_n = corr_LL2NN_dp( rho_x3x4, sigma_x3_n, sigma_x4_n )
+    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n, (sigma_x3/mu_x3)**2 )
+    rho_x1x4_n = corr_NL2NN_dp( rho_x1x4, sigma_x4_n, (sigma_x4/mu_x4)**2 )
+    rho_x2x3_n = corr_NL2NN_dp( rho_x2x3, sigma_x3_n, (sigma_x3/mu_x3)**2 )
+    rho_x2x4_n = corr_NL2NN_dp( rho_x2x4, sigma_x4_n, (sigma_x4/mu_x4)**2 )
+    rho_x3x4_n = corr_LL2NN_dp( rho_x3x4, sigma_x3_n, sigma_x4_n, &
+                                (sigma_x3/mu_x3)**2, (sigma_x4/mu_x4)**2  )
 
     ! Overall mean of x1.
     x1_mean = -0.5_dp
@@ -365,8 +366,8 @@ module KK_integrals_tests
 
     sigma_x3_n = stdev_L2N_dp( (sigma_x3/mu_x3)**2 )
 
-    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n )
-    rho_x2x3_n = corr_NL2NN_dp( rho_x2x3, sigma_x3_n )
+    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n, (sigma_x3/mu_x3)**2 )
+    rho_x2x3_n = corr_NL2NN_dp( rho_x2x3, sigma_x3_n, (sigma_x3/mu_x3)**2 )
 
     ! Overall mean of x1.
     x1_mean = -0.5_dp
@@ -580,9 +581,10 @@ module KK_integrals_tests
     sigma_x2_n = stdev_L2N_dp( (sigma_x2/mu_x2)**2 )
     sigma_x3_n = stdev_L2N_dp( (sigma_x3/mu_x3)**2 )
 
-    rho_x1x2_n = corr_NL2NN_dp( rho_x1x2, sigma_x2_n )
-    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n )
-    rho_x2x3_n = corr_LL2NN_dp( rho_x2x3, sigma_x2_n, sigma_x3_n )
+    rho_x1x2_n = corr_NL2NN_dp( rho_x1x2, sigma_x2_n, (sigma_x2/mu_x2)**2 )
+    rho_x1x3_n = corr_NL2NN_dp( rho_x1x3, sigma_x3_n, (sigma_x3/mu_x3)**2 )
+    rho_x2x3_n = corr_LL2NN_dp( rho_x2x3, sigma_x2_n, sigma_x3_n, &
+                                (sigma_x2/mu_x2)**2, (sigma_x3/mu_x3)**2 )
 
     ! Exponent corresponding to x1.
     alpha_exp = one_dp
@@ -664,7 +666,7 @@ module KK_integrals_tests
 
     sigma_x2_n = stdev_L2N_dp( (sigma_x2/mu_x2)**2 )
 
-    rho_x1x2_n = corr_NL2NN_dp( rho_x1x2, sigma_x2_n )
+    rho_x1x2_n = corr_NL2NN_dp( rho_x1x2, sigma_x2_n, (sigma_x2/mu_x2)**2 )
 
     ! Exponent corresponding to x1.
     alpha_exp = 1.15_dp
@@ -726,7 +728,8 @@ module KK_integrals_tests
        sigma_x1_n = stdev_L2N_dp( (sigma_x1/mu_x1)**2 )
        sigma_x2_n = stdev_L2N_dp( (sigma_x2/mu_x2)**2 )
 
-       rho_x1x2_n = corr_LL2NN_dp( rho_x1x2, sigma_x1_n, sigma_x2_n )
+       rho_x1x2_n = corr_LL2NN_dp( rho_x1x2, sigma_x1_n, sigma_x2_n, &
+                                   (sigma_x1/mu_x1)**2, (sigma_x2/mu_x2)**2 )
 
        ! Exponent corresponding to x1.
        alpha_exp = one_dp/3.0_dp

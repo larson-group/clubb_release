@@ -178,7 +178,7 @@ module PDF_utilities
   end function stdev_L2N_dp
 
   !=============================================================================
-  pure function corr_NL2NN( corr_xy, sigma_y_n )  &
+  pure function corr_NL2NN( corr_xy, sigma_y_n, yp2_on_ym2 )  &
   result( corr_xy_n )
 
     ! Description:
@@ -205,21 +205,22 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
-      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+      corr_xy,    & ! Correlation between x and y (ith PDF component)  [-]
+      yp2_on_ym2, & ! Variance of y over mean squared of y             [-]
+      sigma_y_n     ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - one ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( yp2_on_ym2 ) / sigma_y_n
 
     return
   end function corr_NL2NN
 
   !=============================================================================
-  pure function corr_NL2NN_dp( corr_xy, sigma_y_n )  &
+  pure function corr_NL2NN_dp( corr_xy, sigma_y_n, yp2_on_ym2 )  &
   result( corr_xy_n )
 
     ! Description:
@@ -247,21 +248,22 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = dp ), intent(in) :: &
-      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
-      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+      corr_xy,    & ! Correlation between x and y (ith PDF component)  [-]
+      yp2_on_ym2, & ! Variance of y over squared mean of y             [-]
+      sigma_y_n     ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = dp ) ::  &
       corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
 
     ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( exp( sigma_y_n**2 ) - one_dp ) / sigma_y_n 
+    corr_xy_n = corr_xy * sqrt( yp2_on_ym2 ) / sigma_y_n
 
     return
   end function corr_NL2NN_dp
 
   !=============================================================================
-  function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n )  &
+  pure function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n, xp2_on_xm2, yp2_on_ym2 )  &
   result( corr_xy_n )
 
     ! Description:
@@ -293,9 +295,11 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
-      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
-      sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
-      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+      corr_xy,    & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_x_n,  & ! Standard deviation of ln x (ith PDF component)   [-]
+      sigma_y_n,  & ! Standard deviation of ln y (ith PDF component)   [-]
+      xp2_on_xm2, & ! Standard deviation of ln x (ith PDF component)   [-]
+      yp2_on_ym2    ! Standard deviation of ln y (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
@@ -306,8 +310,7 @@ module PDF_utilities
       log_arg    ! Input into the ln function    [-]
 
 
-    log_arg = one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
-                            * sqrt( exp( sigma_y_n**2 ) - one )
+    log_arg = one + corr_xy * sqrt( xp2_on_xm2 * yp2_on_ym2 )
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
 !    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
@@ -332,7 +335,7 @@ module PDF_utilities
   end function corr_LL2NN
 
   !=============================================================================
-  pure function corr_LL2NN_dp( corr_xy, sigma_x_n, sigma_y_n )  &
+  pure function corr_LL2NN_dp( corr_xy, sigma_x_n, sigma_y_n, xp2_on_xm2, yp2_on_ym2 )  &
   result( corr_xy_n )
 
     ! Description:
@@ -360,9 +363,12 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = dp ), intent(in) ::  &
-      corr_xy,   & ! Correlation between x and y (ith PDF component)  [-]
-      sigma_x_n, & ! Standard deviation of ln x (ith PDF component)   [-]
-      sigma_y_n    ! Standard deviation of ln y (ith PDF component)   [-]
+      corr_xy,    & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_x_n,  & ! Standard deviation of ln x (ith PDF component)   [-]
+      sigma_y_n,  & ! Standard deviation of ln y (ith PDF component)   [-]
+      xp2_on_xm2, & ! Standard deviation of ln x (ith PDF component)   [-]
+      yp2_on_ym2    ! Standard deviation of ln y (ith PDF component)   [-]
+
 
     ! Return Variable
     real( kind = dp ) ::  &
@@ -370,9 +376,7 @@ module PDF_utilities
 
     ! Find the correlation between ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n = log( one_dp  &
-                     + corr_xy * sqrt( exp( sigma_x_n**2 ) - one_dp )  &
-                               * sqrt( exp( sigma_y_n**2 ) - one_dp )  )  &
+    corr_xy_n = log( one_dp + corr_xy * sqrt( xp2_on_xm2 * yp2_on_ym2 ) ) &
                 / ( sigma_x_n * sigma_y_n )
 
     return

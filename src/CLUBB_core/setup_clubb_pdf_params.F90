@@ -2634,34 +2634,40 @@ module setup_clubb_pdf_params
 
     ! Correlation between w and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_w) &
-    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_w), sigma_x_1(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_w), sigma_x_1(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     corr_array_2(iiPDF_Ncn, iiPDF_w) &
-    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_w), sigma_x_2(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_w), sigma_x_2(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     ! Correlation between s and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_s_mellor) &
-    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_1(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_1(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     corr_array_2(iiPDF_Ncn, iiPDF_s_mellor) &
-    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_2(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_s_mellor), sigma_x_2(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     ! Correlation between t and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_t_mellor) &
-    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_1(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_1_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_1(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     corr_array_2(iiPDF_Ncn, iiPDF_t_mellor) &
-    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_2(iiPDF_Ncn) )
+    = corr_NL2NN( corr_array_2_in(iiPDF_Ncn, iiPDF_t_mellor), sigma_x_2(iiPDF_Ncn), &
+                  Ncp2_on_Ncm2_cloud )
 
     ! Normalize the correlations between s/t/w and the hydrometeors
     do ivar = iiPDF_s_mellor, iiPDF_w
        do jvar = iiPDF_Ncn+1, d_variables
 
              corr_array_1(jvar, ivar) &
-              = corr_NL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(jvar) )
+              = corr_NL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(jvar), xp2_on_xm2_1(jvar) )
 
              corr_array_2(jvar, ivar) &
-             = corr_NL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(jvar) )
+             = corr_NL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(jvar), xp2_on_xm2_2(jvar) )
 
        enddo ! jvar = 5, d_variables
     enddo ! ivar = iiPDF_s_mellor, iiPDF_w
@@ -2671,10 +2677,12 @@ module setup_clubb_pdf_params
     do jvar = ivar+1, d_variables
 
        corr_array_1(jvar, ivar) &
-       = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar) )
+       = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar), &
+                     Ncp2_on_Ncm2_cloud, xp2_on_xm2_1(jvar) )
 
        corr_array_2(jvar, ivar) &
-       = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar) )
+       = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar), &
+                     Ncp2_on_Ncm2_cloud, xp2_on_xm2_2(jvar) )
 
     enddo ! jvar
 
@@ -2683,10 +2691,12 @@ module setup_clubb_pdf_params
        do jvar = ivar+1, d_variables
 
           corr_array_1(jvar, ivar) &
-          = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar) )
+          = corr_LL2NN( corr_array_1_in(jvar, ivar), sigma_x_1(ivar), sigma_x_1(jvar), &
+                        xp2_on_xm2_1(ivar), xp2_on_xm2_1(jvar) )
 
           corr_array_2(jvar, ivar) &
-          = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar) )
+          = corr_LL2NN( corr_array_2_in(jvar, ivar), sigma_x_2(ivar), sigma_x_2(jvar), &
+                        xp2_on_xm2_2(ivar), xp2_on_xm2_2(jvar) )
 
        enddo ! jvar
     enddo ! ivar
