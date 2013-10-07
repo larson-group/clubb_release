@@ -20,7 +20,7 @@ module PDF_utilities
   contains
 
   !=============================================================================
-  pure function mean_L2N( mu_x, sigma_sqd_x )  &
+  pure function mean_L2N( mu_x, xp2_on_xm2 )  &
   result( mu_x_n )
   
     ! Description:
@@ -46,20 +46,20 @@ module PDF_utilities
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
-      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+      xp2_on_xm2     ! Variance of x over squared mean of x (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( one + sigma_sqd_x / mu_x**2 ) )
+    mu_x_n = log( mu_x / sqrt( one + xp2_on_xm2 ) )
 
     return
   end function mean_L2N
 
   !=============================================================================
-  pure function mean_L2N_dp( mu_x, sigma_sqd_x )  &
+  pure function mean_L2N_dp( mu_x, xp2_on_xm2 )  &
   result( mu_x_n )
   
     ! Description:
@@ -86,20 +86,20 @@ module PDF_utilities
     ! Input Variables
     real( kind = dp ), intent(in) ::  &
       mu_x,        & ! Mean of x (ith PDF component)       [-]
-      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+      xp2_on_xm2     ! Variance of x over squared mean of x (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = dp ) ::  &
       mu_x_n  ! Mean of ln x (ith PDF component)           [-]
 
     ! Find the mean of ln x for the ith component of the PDF.
-    mu_x_n = log( mu_x / sqrt( one_dp + sigma_sqd_x / mu_x**2 ) )
+    mu_x_n = log( mu_x / sqrt( one_dp + xp2_on_xm2 ) )
 
     return
   end function mean_L2N_dp
 
   !=============================================================================
-  pure function stdev_L2N( mu_x, sigma_sqd_x )  &
+  pure function stdev_L2N( xp2_on_xm2 )  &
   result( sigma_x_n )
 
     ! Description:
@@ -125,21 +125,20 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
-      mu_x,        & ! Mean of x (ith PDF component)       [-]
-      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+      xp2_on_xm2    ! Variance of x over squared mean of x (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( one + sigma_sqd_x / mu_x**2 ) )
+    sigma_x_n = sqrt( log( one + xp2_on_xm2 ) )
 
     return
   end function stdev_L2N
 
   !=============================================================================
-  pure function stdev_L2N_dp( mu_x, sigma_sqd_x )  &
+  pure function stdev_L2N_dp( xp2_on_xm2 )  &
   result( sigma_x_n )
 
     ! Description:
@@ -166,15 +165,14 @@ module PDF_utilities
 
     ! Input Variables
     real( kind = dp ), intent(in) ::  &
-      mu_x,        & ! Mean of x (ith PDF component)       [-]
-      sigma_sqd_x    ! Variance of x (ith PDF component)   [-]
+      xp2_on_xm2  ! Variance of x over squared mean of x (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = dp ) ::  &
       sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
 
     ! Find the standard deviation of ln x for the ith component of the PDF.
-    sigma_x_n = sqrt( log( one_dp + sigma_sqd_x / mu_x**2 ) )
+    sigma_x_n = sqrt( log( one_dp + xp2_on_xm2 ) )
 
     return
   end function stdev_L2N_dp
@@ -315,20 +313,20 @@ module PDF_utilities
 !    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
 !                                   * sqrt( exp( sigma_y_n**2 ) - one )  )  &
 !                / ( sigma_x_n * sigma_y_n )
-    if ( log_arg >= epsilon( log_arg ) ) then
+!    if ( log_arg >= epsilon( log_arg ) ) then
 
        corr_xy_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
 
-    else
-
-       corr_xy_n = zero
-
-       if ( clubb_at_least_debug_level( 2 ) ) then
-          write(fstdout,*) "Warning: Values clipped in function corr_LL2NN, " &
-                           // "since the argument of log was <= 0."
-       endif
-
-    endif
+!    else
+!
+!       corr_xy_n = zero
+!
+!       if ( clubb_at_least_debug_level( 2 ) ) then
+!          write(fstdout,*) "Warning: Values clipped in function corr_LL2NN, " &
+!                           // "since the argument of log was <= 0."
+!       endif
+!
+!    endif
 
     return
   end function corr_LL2NN

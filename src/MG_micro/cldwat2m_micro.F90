@@ -422,7 +422,8 @@ subroutine mmicro_pcond ( sub_column,           &
        one, &
        cm3_per_m3, &
        rr_tol, &
-       Nr_tol
+       Nr_tol, &
+       rc_tol
 
    use parameters_microphys, only: &
        KK_auto_Nc_exp,      & ! Variable(s)
@@ -957,7 +958,8 @@ subroutine mmicro_pcond ( sub_column,           &
       mu_x_1, &
       mu_x_2, &
       sigma_x_1, &
-      sigma_x_2
+      sigma_x_2, &
+      xp2_on_xm2
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
       mu_x_1_n, &
@@ -970,6 +972,7 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_array_2, &
       corr_array_1_n, &
       corr_array_2_n
+
    !----
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1810,6 +1813,12 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm_tol(1) = rr_tol
                  hm_tol(2) = Nr_tol
 
+                 if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
+                    xp2_on_xm2 = xp2_on_xm2_array_cloud
+                 else
+                    xp2_on_xm2 = xp2_on_xm2_array_below
+                 endif
+
                  call compute_mean_stdev( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( qc(i,k), kind = core_rknd ), & ! Intent(in)
@@ -1823,12 +1832,10 @@ subroutine mmicro_pcond ( sub_column,           &
                                           mu_x_1, mu_x_2, & ! Intent(out)
                                           sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call compute_corr( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call compute_corr( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    hm1, hm2, hm_tol, & ! Intent(in)
                                     zero, zero, zero, & ! Intent(in)
                                     zero, zero, & ! Intent(in)
                                     sigma_x_1, & ! Intent(in)
@@ -1840,6 +1847,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                 ( hm1, hm2, hm_tol, & ! Intent(in)
                                   real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                   d_variables, & ! Intent(in)
+                                  xp2_on_xm2, xp2_on_xm2, & ! Intent(in)
                                   mu_x_1, mu_x_2, & ! Intent(in)
                                   sigma_x_1, sigma_x_2, & ! Intent(in)
                                   corr_array_1, corr_array_2, & ! Intent(in)
@@ -2360,6 +2368,12 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm_tol(1) = rr_tol
                  hm_tol(2) = Nr_tol
 
+                 if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
+                    xp2_on_xm2 = xp2_on_xm2_array_cloud
+                 else
+                    xp2_on_xm2 = xp2_on_xm2_array_below
+                 endif
+
                  call compute_mean_stdev &
                                 ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                   real( qc(i,k), kind = core_rknd ), & ! Intent(in)
@@ -2374,12 +2388,10 @@ subroutine mmicro_pcond ( sub_column,           &
                                   mu_x_1, mu_x_2, & ! Intent(out)
                                   sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call compute_corr ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call compute_corr ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                     hm1, hm2, hm_tol, & ! Intent(in)
                                      zero, zero, zero, & ! Intent(in)
                                      zero, zero, & ! Intent(in)
                                      sigma_x_1, & ! Intent(in)
@@ -2387,10 +2399,11 @@ subroutine mmicro_pcond ( sub_column,           &
                                      pdf_params(k), d_variables, & ! Intent(in)
                                      corr_array_1, corr_array_2 )    ! Intent(out)
 
-                 call normalize_PDF_params &
+                 call normalize_pdf_params &
                                 ( hm1, hm2, hm_tol, & ! Intent(in)
                                   real( nc(i,k), kind = core_rknd ), & ! Intent(in)
                                   d_variables, & ! Intent(in)
+                                  xp2_on_xm2, xp2_on_xm2, & ! Intent(in)
                                   mu_x_1, mu_x_2, & ! Intent(in)
                                   sigma_x_1, sigma_x_2, & ! Intent(in)
                                   corr_array_1, corr_array_2, & ! Intent(in)
