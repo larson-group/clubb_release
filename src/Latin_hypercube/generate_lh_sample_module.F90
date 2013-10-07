@@ -2377,7 +2377,7 @@ module generate_lh_sample_module
       end do
     end do
 
-    ! Correlations involving s,t and the lognormal variates
+    ! Correlations involving s, t, w and the lognormal variates
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
            ( d_variables, iiPDF_s_mellor, & ! In
