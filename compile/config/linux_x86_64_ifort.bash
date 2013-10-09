@@ -29,6 +29,7 @@ DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
 OPTIMIZE="-O3 -vec-report0"
+#OPTIMIZE="-O3 -vec-report0 -ipo" # Interprocedural optimization
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-intel64"
@@ -60,6 +61,7 @@ CPPFLAGS="-I$MKLPATH/../../include -I$NETCDF/include"
 
 # == Static library processing ==
 AR=ar
+#AR=xiar # Interprocedural optimization archive tool
 ARFLAGS=cru
 RANLIB=ranlib
 
