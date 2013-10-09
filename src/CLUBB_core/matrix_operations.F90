@@ -305,8 +305,12 @@ module matrix_operations
 
 !----------------------------------------------------------------------
   subroutine Symm_matrix_eigenvalues( ndim, a_input, a_eigenvalues )
+
 !   Description:
+!     Computes the eigevalues of a_input
+!
 !   References:
+!     None
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -459,7 +463,7 @@ module matrix_operations
 
 !-------------------------------------------------------------------------------
   subroutine get_lower_triangular_matrix( d_variables, index1, index2, matrix, &
-                                             xpyp )
+                                          xpyp )
 ! Description:
 !   Returns a value from the lower triangular portion of a matrix.
 ! References:

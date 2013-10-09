@@ -71,6 +71,9 @@ module KK_fixed_correlations
     use text_writer, only: &
         write_text ! Procedure(s)
 
+    use matrix_operations, only: &
+        get_lower_triangular_matrix ! Procedure(s)
+
     implicit none
 
     ! Constant Parameters
@@ -111,55 +114,100 @@ module KK_fixed_correlations
 
     ! Note: Since corr_matrix contains only the lower elements of the matrix,
     ! the 2nd index must be the smaller of the 2 indices (set above)
-    ! e.g. iiPDF_s_mellor < iiPDF_rrain.
-    corr_wrr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_w)
-    corr_wNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_w)
-    corr_wNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_w)
+    ! e.g. iiPDF_s_mellor < iiPDF_rrain.  
+    ! The subroutine get_lower_triangular_matrix handles this automatically.
 
-    corr_sw_NN_cloud   = corr_matrix(iiPDF_w,iiPDF_s_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_w, corr_matrix, & ! In
+                                 corr_wrr_NL_cloud ) ! Out
 
-    corr_srr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_s_mellor)
-    corr_sNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_s_mellor)
-    corr_sNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_s_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_w, corr_matrix, & ! In
+                                 corr_wNr_NL_cloud ) ! Out
 
-    corr_trr_NL_cloud  = corr_matrix(iiPDF_rrain,iiPDF_t_mellor)
-    corr_tNr_NL_cloud  = corr_matrix(iiPDF_Nr,iiPDF_t_mellor)
-    corr_tNcn_NL_cloud = corr_matrix(iiPDF_Ncn,iiPDF_t_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_w, corr_matrix, & ! In
+                                 corr_wNcn_NL_cloud ) ! Out
 
-    corr_rrNr_LL_cloud = corr_matrix(iiPDF_Nr,iiPDF_rrain)
+    call get_lower_triangular_matrix( d_variables, iiPDF_w, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sw_NN_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_srr_NL_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sNr_NL_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sNcn_NL_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_trr_NL_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_tNr_NL_cloud ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_tNcn_NL_cloud ) ! Out
+
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_rrain, corr_matrix, & ! In
+                                 corr_rrNr_LL_cloud ) ! Out
 
     if ( l_fix_s_t_correlations ) then
-       corr_st_NN_cloud = corr_matrix(iiPDF_t_mellor,iiPDF_s_mellor)
+       call get_lower_triangular_matrix( d_variables, iiPDF_t_mellor, iiPDF_s_mellor, corr_matrix, &
+                                    corr_st_NN_cloud ) ! Out
     else
         ! Don't fix the value of the correlation
        corr_st_NN_cloud = -999._core_rknd
-    endif
 
+    end if ! l_fix_s_t_correlations
+
+    ! Below cloud
     call read_correlation_matrix( iunit, input_file_below, d_variables, & ! In
                                   corr_matrix ) ! In/Out
 
-    corr_wrr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_w)
-    corr_wNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_w)
-    corr_wNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_w)
 
-    corr_sw_NN_below   = corr_matrix(iiPDF_w,iiPDF_s_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_w, corr_matrix, & ! In
+                                 corr_wrr_NL_below ) ! Out
 
-    corr_srr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_s_mellor)
-    corr_sNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_s_mellor)
-    corr_sNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_s_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_w, corr_matrix, & ! In
+                                 corr_wNr_NL_below ) ! Out
 
-    corr_trr_NL_below  = corr_matrix(iiPDF_rrain,iiPDF_t_mellor)
-    corr_tNr_NL_below  = corr_matrix(iiPDF_Nr,iiPDF_t_mellor)
-    corr_tNcn_NL_below = corr_matrix(iiPDF_Ncn,iiPDF_t_mellor)
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_w, corr_matrix, & ! In
+                                 corr_wNcn_NL_below ) ! Out
 
-    corr_rrNr_LL_below = corr_matrix(iiPDF_Nr,iiPDF_rrain)
+    call get_lower_triangular_matrix( d_variables, iiPDF_w, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sw_NN_below ) ! Out
+
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_srr_NL_below ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sNr_NL_below ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_s_mellor, corr_matrix, & ! In
+                                 corr_sNcn_NL_below ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_rrain, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_trr_NL_below ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_tNr_NL_below ) ! Out
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Ncn, iiPDF_t_mellor, corr_matrix, & ! In
+                                 corr_tNcn_NL_below ) ! Out
+
+
+    call get_lower_triangular_matrix( d_variables, iiPDF_Nr, iiPDF_rrain, corr_matrix, & ! In
+                                 corr_rrNr_LL_below ) ! Out
 
     if ( l_fix_s_t_correlations ) then
-       corr_st_NN_below = corr_matrix(iiPDF_t_mellor,iiPDF_s_mellor)
+       call get_lower_triangular_matrix( d_variables, iiPDF_t_mellor, iiPDF_s_mellor, corr_matrix, &
+                                    corr_st_NN_below ) ! Out
     else
-       ! As above, we let this vary in space and time
+        ! Don't fix the value of the correlation
        corr_st_NN_below = -999._core_rknd
-    endif
+
+    end if ! l_fix_s_t_correlations
 
     ! Set all indices back to -1, to avoid the introduction of bugs
     iiPDF_s_mellor = -1
