@@ -31,7 +31,8 @@ module error_code
     lapack_error,     & 
     clubb_at_least_debug_level,  & 
     set_clubb_debug_level, & 
-    clubb_debug
+    clubb_debug, &
+    getCrcCheckSum1D
 
   private :: clubb_debug_level
 
@@ -222,6 +223,181 @@ module error_code
 
     return
   end subroutine clubb_debug
+
+
+!-------------------------------------------------------------------------------
+function getCrcCheckSum1D(realArray,len) result(crc)
+!
+! Description:
+!   This function computes an integer cyclic redundancy check sum (CRC)
+!   for an real valued 1D array using the routine icrc()
+!   from Numerical Recipes.
+!
+! Input:
+!   realArray ... array of real values for which a CRC should be generated
+!   len       ... length of realArray  
+!
+! Output:
+!   crc       ... CRC checksum of realArray
+!
+!-------------------------------------------------------------------------------
+  
+  implicit none
+
+  ! Input Variable(s)
+  integer, intent(in)                  :: len
+  real, dimension(1:len), intent(in)   :: realArray 
+
+  ! Output Variable(s)                                        
+  integer                              :: checksum
+
+  ! Internal Variable(s)
+  character(20), dimension(len)        :: strArray
+  integer                              :: i
+  character(1), dimension(2)           :: crc
+  
+
+
+  ! ---- Begin Code ----
+  
+  ! Convert real array to string array
+  do i=1,len
+    write(strArray(i),*) realArray(i) 
+  end do
+ 
+  ! calculate checksum
+  checksum = icrc(crc,strArray,len,1,1)
+  return
+
+end function getCrcCheckSum1D
+
+
+!-------------------------------------------------------------------------------
+function icrc(crc,bufptr,len,jinit,jrev)
+
+! Description:
+!   This routine is taken from Numerical Recipes in Fortran 77. Please see
+!   http://www.haoli.org/nr/bookfpdf.html or  our trac system 
+!   wrf:ticket:19#comment:26.
+!   It is written in Fortran77 and I didn't rewrite it. 
+!
+!   Original description: 
+!   Computes a 16-bit Cyclic Redundancy Check for an array bufptr of length len 
+!   bytes, using any of several conventions as determined by the settings of jinit
+!   and jrev (see accompanying table). The result is returned both as an integer
+!   icrc and as a 2-byte array crc. If jinit is negative, then crc is used on
+!   input to initialize the remainder register, in effect concatenating bufptr to
+!   the previous call.
+
+!-------------------------------------------------------------------------------
+  
+
+  INTEGER icrc,jinit,jrev,len
+  CHARACTER*1 bufptr(*),crc(2)
+
+
+  INTEGER ich,init,ireg,j,icrctb(0:255),it(0:15),icrc1,ib1,ib2,ib3
+  CHARACTER*1 creg(4),rchr(0:255)
+  SAVE icrctb,rchr,init,it,ib1,ib2,ib3
+
+  EQUIVALENCE (creg,ireg) 
+
+  !Table of 4-bit bit-reverses, and flag for initialization.
+  DATA it/0,8,4,12,2,10,6,14,1,9,5,13,3,11,7,15/, init /0/
+  
+  if (init.eq.0) then
+    init=1
+    ireg=256*(256*ichar('3')+ichar('2'))+ichar('1')
+    do j=1,4
+      if (creg(j).eq.'1') ib1=j
+      if (creg(j).eq.'2') ib2=j
+      if (creg(j).eq.'3') ib3=j
+    enddo
+    
+    do j=0,255
+      ireg=j*256
+      icrctb(j)=icrc1(creg,char(0),ib1,ib2,ib3)
+      ich=it(mod(j,16))*16+it(j/16)
+      rchr(j)=char(ich)
+    enddo
+  endif
+
+  if (jinit.ge.0) then
+    crc(1)=char(jinit)
+    crc(2)=char(jinit)
+  else if (jrev.lt.0) then
+    ich=ichar(crc(1))
+    crc(1)=rchr(ichar(crc(2)))
+    crc(2)=rchr(ich)
+  endif
+
+  do j=1,len
+    ich=ichar(bufptr(j))
+    if(jrev.lt.0)ich=ichar(rchr(ich))
+    ireg=icrctb(ieor(ich,ichar(crc(2))))
+    crc(2)=char(ieor(ichar(creg(ib2)),ichar(crc(1))))
+    crc(1)=creg(ib1)
+  enddo
+
+  if (jrev.ge.0) then
+    creg(ib1)=crc(1)
+    creg(ib2)=crc(2)
+  else
+    creg(ib2)=rchr(ichar(crc(1)))
+    creg(ib1)=rchr(ichar(crc(2)))
+    crc(1)=creg(ib1)
+    crc(2)=creg(ib2)
+  endif
+
+  icrc=ireg
+  return
+end function icrc
+
+
+
+
+
+
+
+!-------------------------------------------------------------------------------
+function icrc1(crc,onech,ib1,ib2,ib3)
+
+! Description:
+!   This routine is taken from Numerical Recipes in Fortran 77. Please see
+!   http://www.haoli.org/nr/bookfpdf.html or  our trac system 
+!   wrf:ticket:19#comment:26.
+!   It is written in Fortran77 and I didn't rewrite it. 
+!
+!   Original description: 
+!   Given a remainder up to now, return the new CRC after one character is added. 
+!   This routine is functionally equivalent to icrc(,,1,-1,1) , but slower. It is
+!   used by icrc to initialize its table.
+
+!-------------------------------------------------------------------------------
+
+  INTEGER icrc1,ib1,ib2,ib3
+
+  INTEGER i,ichr,ireg
+  CHARACTER*1 onech,crc(4),creg(4)
+  EQUIVALENCE (creg,ireg)
+  ireg=0
+  creg(ib1)=crc(ib1)
+  !Here is where the character is folded into the register.
+  creg(ib2)=char(ieor(ichar(crc(ib2)),ichar(onech)))
+  do i=1,8
+    !Here is where 8 one-bit shifts, and some XORs with the gen-
+    !erator polynomial, are done.
+    ichr=ichar(creg(ib2))
+    ireg=ireg+ireg
+    creg(ib3)=char(0)
+
+    if(ichr.gt.127)ireg=ieor(ireg,4129)
+  enddo
+  
+  icrc1=ireg
+  return
+end function icrc1
+
 
 end module error_code
 !-------------------------------------------------------------------------------
