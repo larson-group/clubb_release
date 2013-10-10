@@ -236,6 +236,9 @@ module clubb_driver
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
 
+    use soil_vegetation, only: &
+      initialize_soil_veg ! Procedure(s)
+
     use parameters_model, only: &
       rtm_min, &
       rtm_nudge_max_altitude
@@ -504,6 +507,9 @@ module clubb_driver
     ! module stats_variables
     fname_prefix = ''
     stats_fmt    = ''
+
+    ! Default values for the soil scheme
+    call initialize_soil_veg()
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP

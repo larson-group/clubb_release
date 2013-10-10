@@ -6,17 +6,17 @@ module soil_vegetation
 
   implicit none
 
-  public :: advance_soil_veg
+  public :: advance_soil_veg, initialize_soil_veg
 
   ! These default values are the values for gabls3
   real( kind = core_rknd ), public :: &
-    deep_soil_T_in_K = 288.58_core_rknd, &
-    sfc_soil_T_in_K  = 300._core_rknd, &
-    veg_T_in_K       = 300._core_rknd
+    deep_soil_T_in_K, &
+    sfc_soil_T_in_K, &
+    veg_T_in_K       
 
 !$omp threadprivate(deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K)
 
-  logical, public :: l_soil_veg = .false.
+  logical, public :: l_soil_veg
 
 !$omp threadprivate(l_soil_veg)
 
@@ -172,5 +172,27 @@ module soil_vegetation
     return
   end subroutine advance_soil_veg
 
+  !-----------------------------------------------------------------------------
+  subroutine initialize_soil_veg
+  ! Description:
+  !   Sets some default values for the soil scheme
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! ---- Begin Code ----
+
+    ! These default values are the values for gabls3
+    deep_soil_T_in_K = 288.58_core_rknd
+    sfc_soil_T_in_K  = 300._core_rknd
+    veg_T_in_K       = 300._core_rknd
+
+    ! Disable this for most cases
+    l_soil_veg       = .false.
+
+    return
+  end subroutine initialize_soil_veg
 
 end module soil_vegetation
