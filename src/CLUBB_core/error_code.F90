@@ -226,7 +226,7 @@ module error_code
 
 
 !-------------------------------------------------------------------------------
-function getCrcCheckSum1D(realArray,len) result(crc)
+function getCrcCheckSum1D(realArray,len) result(crcint)
 !
 ! Description:
 !   This function computes an integer cyclic redundancy check sum (CRC)
@@ -249,7 +249,7 @@ function getCrcCheckSum1D(realArray,len) result(crc)
   real, dimension(1:len), intent(in)   :: realArray 
 
   ! Output Variable(s)                                        
-  integer                              :: checksum
+  integer                              :: crcint
 
   ! Internal Variable(s)
   character(20), dimension(len)        :: strArray
@@ -266,7 +266,7 @@ function getCrcCheckSum1D(realArray,len) result(crc)
   end do
  
   ! calculate checksum
-  checksum = icrc(crc,strArray,len,1,1)
+  crcint = icrc(crc,strArray,len,1,1)
   return
 
 end function getCrcCheckSum1D
