@@ -457,6 +457,9 @@ module clubb_driver
     ts_nudge  = 86400._core_rknd
 
     forcings_file_path = ''
+    l_t_dependent   = .false. 
+    l_input_xpwp_sfc = .false. 
+    l_ignore_forcings = .false. 
 
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
