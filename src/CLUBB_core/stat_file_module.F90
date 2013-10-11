@@ -23,18 +23,22 @@ module stat_file_module
 !$omp threadprivate(clubb_i, clubb_j)
 
    private ! Default scope
-   
+
   ! Structure to hold the description of a variable
 
    type variable
      ! Pointer to the array
-     real(kind=stat_rknd), dimension(:,:,:), pointer :: ptr 
+     real(kind=stat_rknd), dimension(:,:,:), pointer :: ptr
 
      character(len = 30) :: name        ! Variable name
      character(len = 100) :: description ! Variable description
      character(len = 20) :: units       ! Variable units
 
      integer :: indx ! NetCDF module Id for var / GrADS index
+
+     logical :: l_silhs ! If true, we sample this variable once for each SILHS
+                        ! sample point per timestep, rather than just once per
+                        ! timestep.
    end type variable
 
   ! Structure to hold the description of a NetCDF output file
@@ -45,12 +49,12 @@ module stat_file_module
 
      ! File information
 
-     character(len = 200) ::  & 
+     character(len = 200) ::  &
        fname,   & ! File name without suffix
        fdir    ! Path where fname resides
 
-     integer :: iounit  ! This number is used internally by the 
-                        ! NetCDF module to track the data set, or by 
+     integer :: iounit  ! This number is used internally by the
+                        ! NetCDF module to track the data set, or by
                         ! GrADS to track the actual file unit.
      integer :: &
        nrecord, & ! Number of records written

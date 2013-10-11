@@ -61,18 +61,62 @@ module stats_type
 
     ! Data for GrADS / netCDF output
 
-    type (stat_file) f
+    type (stat_file) ::  f
 
   end type stats
+
+  interface stat_assign
+    module procedure stat_assign_no_silhs, stat_assign_maybe_silhs
+  end interface stat_assign
 
   contains
 
   !=============================================================================
-  subroutine stat_assign( var_index, var_name,  & 
-                          var_description, var_units, grid_kind )
+  subroutine stat_assign_no_silhs( var_index, var_name, &
+                                   var_description, var_units, grid_kind )
+
+  ! Description:
+  !   Assigns pointers for statistics variables in grid. This version is to be
+  !   called for non-SILHS variables.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! Local Constants
+    logical, parameter :: l_not_silhs = .false. ! This is not a SILHS variable
+
+    ! Input Variables
+    integer,intent(in) :: var_index
+    character(len = *), intent(in) :: var_name
+    character(len = *), intent(in) :: var_description
+    character(len = *), intent(in) :: var_units
+
+    ! Input/Output Variables
+    type(stats), intent(inout) :: grid_kind
+
+  !-----------------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    call stat_assign_maybe_silhs( var_index, var_name, &
+                                  var_description, var_units, &
+                                  l_not_silhs, grid_kind )
+    return
+  end subroutine stat_assign_no_silhs
+
+  !=============================================================================
+  subroutine stat_assign_maybe_silhs( var_index, var_name,  &
+                                      var_description, var_units, &
+                                      l_silhs, grid_kind )
 
     ! Description: 
-    !   Assigns pointers for statistics variables in grid.
+    !   Assigns pointers for statistics variables in grid. This version has an
+    !   option to make the variable a SILHS variable (updated n_micro_calls
+    !   times per timestep rather than just once).
+
     !
     ! References:
     !   None
@@ -87,15 +131,19 @@ module stats_type
     character(len = *), intent(in) :: var_description ! Variable description []
     character(len = *), intent(in) :: var_units       ! Variable units       []
 
-    ! Output Variable
+    logical, intent(in) :: l_silhs                    ! SILHS variable       [boolean]
 
-    ! Which grid the variable is located on (zt, zm, or sfc )
+    ! Input/Output Variable
+
+    ! Which grid the variable is located on (e.g., zt, zm, sfc)
     type(stats), intent(inout) :: grid_kind
 
     grid_kind%f%var(var_index)%ptr => grid_kind%x(:,:,:,var_index)
     grid_kind%f%var(var_index)%name = var_name
     grid_kind%f%var(var_index)%description = var_description
     grid_kind%f%var(var_index)%units = var_units
+
+    grid_kind%f%var(var_index)%l_silhs = l_silhs
 
     !Example of the old format
     !changed by Joshua Fasching 23 August 2007
@@ -107,7 +155,7 @@ module stats_type
 
     return
 
-  end subroutine stat_assign
+  end subroutine stat_assign_maybe_silhs
 
   !=============================================================================
   subroutine stat_update_var( var_index, value, grid_kind )
