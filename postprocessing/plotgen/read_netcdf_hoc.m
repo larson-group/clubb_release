@@ -1,13 +1,15 @@
 
 function avg_field = read_netcdf_hoc(filename,nzmax,t1,t2,varnum,numvars)
 
-% Reads and time-averages profiles from 3D NETCDF *.nc files.
-% thlm = read_netcdf_hoc('tune/arm_zt.dat',110,1,1,1,28)
+% Reads and time-averages profiles from 4-D netCDF *.nc files 
+%   with 2 singleton dimensions and averages of the time dimension
+% e.g.: thlm = read_netcdf_hoc('tune/arm_zt.nc',110,1,1,1,28)
 % nzmax = number of z levels in profile
 % t1 = beginning timestep to look at
 % t2 = ending timestep to look at
-% varnum = which variable to read (see .ctl file)
-% numvars = total number of variables in grads file (see .ctl file)
+% varnum = which variable to read
+% numvars = total number of variables in the netCDF file (can be determined with
+%   the commands ncdump -h <filename> from the commend line.
 
 % open NETCDF file
 fid = netcdf.open(filename,'NC_NOWRITE');
