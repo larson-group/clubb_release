@@ -44,6 +44,9 @@ module stats_LH_sfc
     ! External
     intrinsic :: trim
 
+    ! Local Constants
+    logical, parameter :: l_yes_silhs = .true. ! All these are considered "SILHS variables"
+
     ! Input Variable
     character(len= * ), dimension(nvarmax_LH_sfc), intent(in) :: vars_LH_sfc
 
@@ -68,25 +71,27 @@ module stats_LH_sfc
       case ( 'LH_morr_rain_rate' )
         iLH_morr_rain_rate = k
         call stat_assign( iLH_morr_rain_rate, "LH_morr_rain_rate", & 
-             "Total precip fallout rate from Morrison scheme [mm/day]","mm/day", LH_sfc )
+             "Total precip fallout rate from Morrison scheme [mm/day]", &
+                "mm/day", l_yes_silhs,  LH_sfc )
         k = k + 1
 
       case ( 'LH_morr_snow_rate' )
         iLH_morr_snow_rate = k
         call stat_assign( iLH_morr_snow_rate, "LH_morr_snow_rate", & 
-             "Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]","mm/day", LH_sfc )
+             "Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]", &
+                "mm/day", l_yes_silhs, LH_sfc )
         k = k + 1
 
       case ( 'LH_vwp' )
         iLH_vwp = k
         call stat_assign( iLH_vwp, "LH_vwp", & 
-             "Vapor water path [kg/m^2]","kg/m^2", LH_sfc )
+             "Vapor water path [kg/m^2]","kg/m^2", l_yes_silhs, LH_sfc )
         k = k + 1
 
       case ( 'LH_lwp' )
         iLH_lwp = k
         call stat_assign( iLH_lwp, "LH_lwp", & 
-             "Liquid water path [kg/m^2]","kg/m^2", LH_sfc )
+             "Liquid water path [kg/m^2]","kg/m^2", l_yes_silhs, LH_sfc )
         k = k + 1
 
       case default
