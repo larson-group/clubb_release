@@ -205,6 +205,9 @@ module clubb_driver
     use text_writer, only: write_text, write_date ! Procedure(s)
 
     use clubb_model_settings, only: &
+      initialize_clubb_model_settings ! Procedure(s)
+
+    use clubb_model_settings, only: &
       time_initial, & ! Variable(s)
       time_final, &
       time_current, &
@@ -513,6 +516,9 @@ module clubb_driver
 
     ! Default values for the soil scheme
     call initialize_soil_veg()
+
+    ! Default values for generic model settings
+    call initialize_clubb_model_settings()
 
     ! Figure out which I/O unit to use for OpenMP runs
 #ifdef _OPENMP

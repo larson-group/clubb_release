@@ -7,12 +7,14 @@ module clubb_model_settings
 
   private ! Default scope
 
+  public :: initialize_clubb_model_settings ! Initialization subroutine
+
   ! Model settings
 
   ! Grid definition
   integer, public ::  & 
-    nzmax = 100,   & ! Vertical extent in levels( relevant for grid type 2 and 3 only )  [#]
-    grid_type = 1! 1 ==> evenly-spaced grid levels
+    nzmax, &     ! Vertical extent in levels( relevant for grid type 2 and 3 only )  [#]
+    grid_type    ! 1 ==> evenly-spaced grid levels
   !                2 ==> stretched (unevenly-spaced) grid entered on
   !                      thermodynamic grid levels; momentum levels
   !                      halfway between thermodynamic levels (style
@@ -27,9 +29,9 @@ module clubb_model_settings
 
   ! Radiation variables
   integer, public :: &
-    extend_atmos_bottom_level = 0, & ! Bottom level of the extended atmosphere
-    extend_atmos_top_level    = 0, & ! Top level of the extended atmosphere
-    extend_atmos_range_size   = 0    ! The number of levels in the extended atmosphere
+    extend_atmos_bottom_level, & ! Bottom level of the extended atmosphere
+    extend_atmos_top_level,    & ! Top level of the extended atmosphere
+    extend_atmos_range_size      ! The number of levels in the extended atmosphere
 
 !$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level, &
 !$omp               extend_atmos_range_size)
@@ -37,63 +39,114 @@ module clubb_model_settings
   ! The number of interpolated levels between the computational grid
   ! and the extended atmosphere
   integer, public :: &
-    lin_int_buffer = 0
+    lin_int_buffer
 
 !$omp threadprivate(lin_int_buffer)
 
   real( kind = core_rknd ), public ::  & 
-    deltaz  = 40._core_rknd, & ! Change in altitude per grid level     [m]
-    zm_init = 0._core_rknd,  & ! Initial point on the momentum grid    [m]
-    zm_top  = 1000._core_rknd  ! Maximum point on the momentum grid    [m]
+    deltaz,  & ! Change in altitude per grid level     [m]
+    zm_init, & ! Initial point on the momentum grid    [m]
+    zm_top     ! Maximum point on the momentum grid    [m]
 
 !$omp threadprivate(deltaz, zm_init, zm_top)
 
   ! For grid_type 2 or 3 (stretched grid cases)
   character(len=100), public :: & 
-    zt_grid_fname = "", & ! Path and filename of thermodynamic level altitudes
-    zm_grid_fname = ""    ! Path and filename of momentum level altitudes
+    zt_grid_fname,  & ! Path and filename of thermodynamic level altitudes
+    zm_grid_fname     ! Path and filename of momentum level altitudes
 
 !$omp threadprivate(zt_grid_fname, zm_grid_fname)
 
   integer, public ::  & 
-    day = 1, month = 1, year = 1900 ! Day of start of simulation
+    day, month, year ! Start time the of simulation
 
 !$omp threadprivate(day, month, year)
 
   real( kind = core_rknd ), public ::  & 
-    rlat = 0._core_rknd, & ! Latitude  [Degrees North]
-    rlon = 0._core_rknd    ! Longitude [Degrees East]
+    rlat, & ! Latitude  [Degrees North]
+    rlon    ! Longitude [Degrees East]
 
 !$omp threadprivate(rlat, rlon)
 
   real( kind = core_rknd ), public ::  &
-    sfc_elevation = 0._core_rknd ! Elevation of ground level  [m AMSL]
+    sfc_elevation ! Elevation of ground level  [m AMSL]
 
 !$omp threadprivate(sfc_elevation)
 
   character(len=50), public ::  & 
-    runtype = "generic" ! String identifying the model case; e.g. bomex
+    runtype ! String identifying the model case; e.g. bomex
 
 !$omp threadprivate(runtype)
 
   integer, public :: &
-    sfctype = 0 ! 0: fixed sfc sensible and latent heat fluxes as
+    sfctype ! 0: fixed sfc sensible and latent heat fluxes as
   !                  given in namelist
-  !               1: bulk formula: uses given surface temperature
+  !           1: bulk formula: uses given surface temperature
   !                  and assumes over ocean
 
 !$omp threadprivate(sfctype)
 
   real(kind=time_precision), public :: & 
-    time_initial = 0._time_precision, &    ! Time of start of simulation     [s]
-    time_final   = 3600._time_precision, & ! Time end of simulation          [s]
-    time_current = 0._time_precision       ! Current time of simulation      [s]
+    time_initial, & ! Time of start of simulation     [s]
+    time_final,   & ! Time end of simulation          [s]
+    time_current   !  Current time of simulation      [s]
 !$omp threadprivate(time_initial, time_final, &
 !$omp               time_current)
 
   real(kind=time_precision), public ::  & 
-    dt_main = 60._time_precision, & ! Main model timestep                    [s]
-    dt_rad  = 600._time_precision   ! Closure model timestep                 [s]
+    dt_main,  & ! Main model timestep                    [s]
+    dt_rad      ! Closure model timestep                 [s]
 !$omp threadprivate(dt_main, dt_rad)
+
+  contains
+
+!-------------------------------------------------------------------------------
+  subroutine initialize_clubb_model_settings( )
+
+! Description:
+!   Sets all variables to a default setting.
+
+! References:
+!   None
+!-------------------------------------------------------------------------------
+
+    implicit none
+
+    nzmax     = 75
+    grid_type = 1
+
+    extend_atmos_bottom_level = 0
+    extend_atmos_top_level    = 0
+    extend_atmos_range_size   = 0
+
+    lin_int_buffer = 0
+
+    deltaz  = 40._core_rknd
+    zm_init = 0._core_rknd
+    zm_top  = 3500._core_rknd
+
+    zt_grid_fname = ""
+    zm_grid_fname = ""
+
+    day = 22; month = 6; year = 1969
+
+    rlat = 15._core_rknd
+    rlon = -56.5_core_rknd
+
+    sfc_elevation = 0._core_rknd
+
+    runtype = "bomex"
+
+    sfctype = 0 
+
+    time_initial = 0._time_precision
+    time_final   = 21600._time_precision
+    time_current = 0._time_precision
+
+    dt_main = 60._time_precision
+    dt_rad  = 600._time_precision
+
+    return
+  end subroutine initialize_clubb_model_settings
 
 end module clubb_model_settings  
