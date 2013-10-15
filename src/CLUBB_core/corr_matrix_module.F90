@@ -44,7 +44,7 @@ module corr_matrix_module
 !$omp   corr_array_cloud, corr_array_below)
 
   public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
-            cleanup_corr_matrix_arrays
+            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays
 
   private :: get_corr_var_index, return_pdf_index
 
@@ -603,5 +603,125 @@ module corr_matrix_module
 
     return
   end subroutine cleanup_corr_matrix_arrays
+
+ !-----------------------------------------------------------------------------
+  subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
+                                iiricem, iiNcm, iiNsnowm, iiNim, &
+                                l_ice_micro, iunit )
+
+    ! Description: This subroutine sets up arrays that are necessary for WRF.
+    !   
+    !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! Constant Parameter(s)
+    character(len=*), parameter :: &
+      LH_file_path_below = "./clubb_corr_array_below.in", &
+      LH_file_path_cloud = "./clubb_corr_array_cloud.in"    
+
+    ! Input Variables
+    integer, intent(in) :: &
+      hydromet_dim, &
+      iirrainm, &
+      iiNrm, &
+      iirsnowm, & 
+      iiricem, & 
+      iiNcm, & 
+      iiNsnowm, & 
+      iiNim, &
+      iunit
+
+    logical, intent(in) :: l_ice_micro
+
+    ! ---- Begin Code ----
+
+    call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
+                            iiricem, iiNim, iirsnowm, iiNsnowm, &
+                            l_ice_micro )
+
+    ! Setup the arrays and indexes containing the correlations, etc.
+    call setup_corr_varnce_array( LH_file_path_cloud, LH_file_path_below, &
+                                  LH_file_path_cloud, LH_file_path_below, iunit )
+
+    return    
+
+  end subroutine init_clubb_arrays
+
+  !-----------------------------------------------------------------------
+  function hm_idx(iiPDF_idx) result(ii_idx)
+  ! Description:
+  ! Returns the position of a certain hydrometeor within the hydromet arrays
+  ! according to its iiPDF index.
+
+  ! References:
+  !
+  !-----------------------------------------------------------------------
+
+    use array_index, only: &
+        iiNcnm, &
+        iirrainm, &
+        iiNrm, &
+        iirsnowm, &
+        iiNsnowm, &
+        iiricem, &
+        iiNim, &
+        iirgraupelm, &
+        iiNgraupelm
+
+      implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iiPDF_idx
+
+    ! Return Variable
+    integer :: ii_idx
+
+    ! Local Variables
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    if ( iiPDF_idx == iiPDF_Ncn ) then
+       ii_idx = iiNcnm
+    endif
+
+    if ( iiPDF_idx == iiPDF_rrain ) then
+       ii_idx = iirrainm
+    endif
+
+    if ( iiPDF_idx == iiPDF_Nr ) then
+       ii_idx = iiNrm
+    endif
+
+    if ( iiPDF_idx == iiPDF_rsnow ) then
+       ii_idx = iirsnowm
+    endif
+
+    if ( iiPDF_idx == iiPDF_Nsnow ) then
+       ii_idx = iiNsnowm
+    endif
+
+    if ( iiPDF_idx == iiPDF_rice ) then
+       ii_idx = iiricem
+    endif
+
+    if ( iiPDF_idx == iiPDF_Ni ) then
+       ii_idx = iiNim
+    endif
+
+    if ( iiPDF_idx == iiPDF_rgraupel ) then
+       ii_idx = iirgraupelm
+    endif
+
+    if ( iiPDF_idx == iiPDF_Ngraupel ) then
+       ii_idx = iiNgraupelm
+    endif
+
+    return
+
+  end function hm_idx
+  !-----------------------------------------------------------------------
 
 end module corr_matrix_module

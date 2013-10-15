@@ -1432,7 +1432,7 @@ module setup_clubb_pdf_params
     use model_flags, only: &
         l_use_hydromet_tolerance
 
-    use array_index, only: &
+    use corr_matrix_module, only: &
         hm_idx ! Procedure(s)
 
     use corr_matrix_module, only: &
