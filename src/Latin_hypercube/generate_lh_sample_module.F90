@@ -1161,7 +1161,7 @@ module generate_lh_sample_module
     ! Zero rain hydrometeors if not in precipitation
     if ( .not. l_in_precip_one_lev ) then
 
-      call zero_rain_hydromets( d_variables, & ! Intent(in)
+      call zero_precip_hydromets( d_variables, & ! Intent(in)
                                 X_nl_one_lev ) ! Intent(inout)
 
     end if
@@ -1175,24 +1175,23 @@ module generate_lh_sample_module
   end subroutine generate_lh_sample_mod
 
 !---------------------------------------------------------------------------------------------------
-  subroutine zero_rain_hydromets( d_variables, X_nl_one_lev )
+  subroutine zero_precip_hydromets( d_variables, X_nl_one_lev )
 
   ! Description:
-  !   Sets the means of all rain hydrometeors to zero
+  !   Sets the sample values of the precipitating hydrometeors to zero
 
   ! References:
   !   None
   !-----------------------------------------------------------------------------
-
-    use corr_matrix_module, only: &
-      iiPDF_rrain, & ! Variable(s)
-      iiPDF_Nr
 
     use clubb_precision, only: &
       core_rknd      ! Constant
 
     use constants_clubb, only: &
       zero_dp
+
+    use corr_matrix_module, only: &
+      iiPDF_Ncn ! Variable(s)
 
     implicit none
 
@@ -1207,28 +1206,17 @@ module generate_lh_sample_module
       X_nl_one_lev      ! Sample of hydrometeors (normal-lognormal space)          [units vary]
 
     ! Local Variables
-    logical, dimension(d_variables) :: &
-      l_rain_hydromet   ! Whether the hydrometeor is a rain hydrometeor            [boolean]
-
     integer :: &
-      i                 ! Loop counter                                             [count]
+      ivar              ! Loop counter                                             [count]
   !-----------------------------------------------------------------------------
 
     !----- Begin Code -----
 
-    do i=1, d_variables
-      if ( i == iiPDF_rrain .or. i == iiPDF_Nr ) then
-        l_rain_hydromet(i) = .true.
-      else
-        l_rain_hydromet(i) = .false.
-      end if
+    do ivar = iiPDF_Ncn+1, d_variables
+      X_nl_one_lev(ivar) = zero_dp
     end do
 
-    where ( l_rain_hydromet(:) )
-      X_nl_one_lev(:) = zero_dp
-    end where
-
-  end subroutine zero_rain_hydromets
+  end subroutine zero_precip_hydromets
 
 !---------------------------------------------------------------------------------------------------
   subroutine sample_points( d_variables, d_uniform_extra, &

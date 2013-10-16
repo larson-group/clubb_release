@@ -1193,14 +1193,14 @@ module clubb_driver
             endif
          end do
 
-         Ncnm = Ncnm_initial / rho
+         Ncnm = Ncnm_initial / rho 
 
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, hydromet, Ncnm, rho, rcm, &          ! Intent(in)
-                                    cloud_frac, sqrt(wp2_zt), wphydrometp, &    ! Intent(in)
-                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                    cloud_frac, ice_supersat_frac, sqrt(wp2_zt), & ! Intent(in)
+                                    wphydrometp, corr_array_cloud, corr_array_below,& ! Intent(in)
                                     pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
                                     corr_array_1, corr_array_2, &               ! Intent(out)
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)

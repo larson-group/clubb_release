@@ -62,8 +62,8 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, hydromet, Ncnm, rho, rcm, &                 ! Intent(in)
-                                   cloud_frac, w_std_dev, wphydrometp, &           ! Intent(in)
-                                   corr_array_cloud, corr_array_below, &           ! Intent(in)
+                                   cloud_frac, ice_supersat_frac, w_std_dev, &     ! Intent(in)
+                                   wphydrometp, corr_array_cloud, corr_array_below, & ! Intent(in)
                                    pdf_params, l_stats_samp, d_variables, &        ! Intent(in)
                                    corr_array_1_n, corr_array_2_n, &               ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
@@ -160,6 +160,7 @@ module setup_clubb_pdf_params
       rho,        & ! Density                                         [kg/m^3]
       rcm,        & ! Mean cloud water mixing ratio, < r_c >          [kg/kg]
       cloud_frac, & ! Cloud fraction                                  [-]
+      ice_supersat_frac, & ! Ice cloud fraction                       [-]
       w_std_dev     ! Standard deviation of vertical velocity, w      [m/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -296,6 +297,7 @@ module setup_clubb_pdf_params
 
        call precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
                              cloud_frac, cloud_frac1, mixt_frac, &
+                             ice_supersat_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
@@ -943,6 +945,7 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
                               cloud_frac, cloud_frac1, mixt_frac, &
+                              ice_supersat_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -979,9 +982,10 @@ module setup_clubb_pdf_params
       hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      cloud_frac,  & ! Cloud fraction (overall)                         [-] 
-      cloud_frac1, & ! Cloud fraction (1st PDF component)               [-]
-      mixt_frac      ! Mixture fraction                                 [-]
+      cloud_frac,  &     ! Cloud fraction (overall)                     [-] 
+      cloud_frac1, &     ! Cloud fraction (1st PDF component)           [-]
+      mixt_frac, &       ! Mixture fraction                             [-]
+      ice_supersat_frac  ! Ice cloud fraction                           [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -1044,6 +1048,11 @@ module setup_clubb_pdf_params
        endif
 
     enddo ! Overall precipitation fraction loop: k = nz, 1, -1.
+
+    !!! Account for ice cloud fraction
+    do k = nz, 1, -1
+      precip_frac(k) = max( precip_frac(k), ice_supersat_frac(k) )
+    enddo
 
 
     !!! Find precipitation fraction within each PDF component.
