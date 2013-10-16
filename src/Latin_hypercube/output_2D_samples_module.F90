@@ -96,11 +96,11 @@ module output_2D_samples_module
 
     rlon = 1.0_core_rknd ! Also made up
 
-    forall( i=1:n_2D_variables )
+    do i=1, n_2D_variables
       sample_file%var(i)%name = trim( variable_names(i) )
       sample_file%var(i)%description = trim( variable_descriptions(i) )
       sample_file%var(i)%units = trim( variable_units(i) )
-    end forall
+    end do
 
 #ifdef NETCDF
     call open_netcdf( nlat, nlon, fdir, fname, 1, nz, zgrid, &
