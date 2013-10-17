@@ -2573,7 +2573,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
         end if ! clubb_at_lest_debug_level 1
 
 
-      end if ! n /= 0 and n /= stats_tout/stats_tsamp
+      end if ! .not. l_proper_sample
 
     end do ! kvar = 1 .. stats_grid%kk
   end do ! ivar = 1 .. stats_grid%nn
