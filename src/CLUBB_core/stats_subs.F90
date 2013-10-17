@@ -10,7 +10,7 @@ module stats_subs
     stats_accumulate, stats_finalize, stats_accumulate_hydromet, &
     stats_accumulate_LH_tend
 
-  private :: stats_zero, stats_avg
+  private :: stats_zero, stats_avg, stats_check_num_samples
 
   contains
 
@@ -1134,8 +1134,6 @@ module stats_subs
 
     ! Local Variables
 
-    integer :: ivar, k
-
     logical :: l_error
 
     ! ---- Begin Code ----
@@ -1147,167 +1145,17 @@ module stats_subs
     ! Initialize
     l_error = .false.
 
-    ! Look for errors by checking the number of sampling points
-    ! for each variable in the zt statistics at each vertical level.
-    do ivar = 1, zt%nn
-      do k = 1, zt%kk
-
-        if ( zt%n(1,1,k,ivar) /= 0 .and.  &
-             zt%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
-
-          l_error = .true.  ! This will stop the run
-
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(zt%f%var(ivar)%name), ' in zt ',  &
-                             'at k = ', k,  &
-                             '; zt%n(',k,',',ivar,') = ', zt%n(1,1,k,ivar)
-          end if ! clubb_at_lest_debug_level 1
-
-        end if ! n /= 0 and n /= stats_tout/stats_tsamp
-
-      end do ! k = 1 .. zt%kk
-    end do ! ivar = 1 .. zt%nn
-
-    ! Look for errors by checking the number of sampling points
-    ! for each variable in the zm statistics at each vertical level.
-    do ivar = 1, zm%nn
-      do k = 1, zm%kk
-
-        if ( zm%n(1,1,k,ivar) /= 0 .and.  &
-             zm%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
-
-          l_error = .true.  ! This will stop the run
-
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(zm%f%var(ivar)%name), ' in zm ',  &
-                             'at k = ', k,  &
-                             '; zm%n(',k,',',ivar,') = ', zm%n(1,1,k,ivar)
-          end if ! clubb_at_least_debug_level 1
-
-        end if ! n /= 0 and n /= stats_tout/stats_tsamp
-
-      end do ! k = 1 .. zm%kk
-    end do ! ivar = 1 .. zm%nn
-
+    call stats_check_num_samples( zt, l_error )
+    call stats_check_num_samples( zm, l_error )
+    call stats_check_num_samples( sfc, l_error )
     if ( LH_microphys_type /= LH_microphys_disabled ) then
-      ! Look for errors by checking the number of sampling points
-      ! for each variable in the LH_zt statistics at each vertical level.
-      do ivar = 1, LH_zt%nn
-        do k = 1, LH_zt%kk
-
-          if ( LH_zt%n(1,1,k,ivar) /= 0 .and.  &
-               LH_zt%n(1,1,k,ivar) /= floor( stats_tout/stats_tsamp ) .and. &
-               LH_zt%n(1,1,k,ivar) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
-
-            l_error = .true.  ! This will stop the run
-
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              write(fstderr,*) 'Possible sampling error for variable ',  &
-                trim(LH_zt%f%var(ivar)%name), ' in LH_zt ',  &
-                'at k = ', k,  &
-                '; LH_zt%n(',k,',',ivar,') = ', LH_zt%n(1,1,k,ivar)
-            end if ! clubb_at_lest_debug_level 1
-
-          end if ! n /= 0 and n /= LH_microphys_calls * stats_tout/stats_tsamp
-
-        end do ! k = 1 .. LH_zt%kk
-      end do ! ivar = 1 .. LH_zt%nn
-
-      ! Look for errors by checking the number of sampling points
-      ! for each variable in the LH_zt statistics at each vertical level.
-      do ivar = 1, LH_sfc%nn
-        do k = 1, LH_sfc%kk
-
-          if ( LH_sfc%n(1,1,k,ivar) /= 0 .and.  &
-               LH_sfc%n(1,1,k,ivar) /= floor( stats_tout/stats_tsamp ) .and. &
-               LH_sfc%n(1,1,k,ivar) /= LH_microphys_calls * floor( stats_tout/stats_tsamp ) ) then
-
-            l_error = .true.  ! This will stop the run
-
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              write(fstderr,*) 'Possible sampling error for variable ',  &
-                trim(LH_sfc%f%var(ivar)%name), ' in LH_sfc ',  &
-                'at k = ', k,  &
-                '; LH_sfc%n(',k,',',ivar,') = ', LH_sfc%n(1,1,k,ivar)
-            end if ! clubb_at_lest_debug_level 1
-
-          end if ! n /= 0 and n /= LH_microphys_calls * stats_tout/stats_tsamp
-
-        end do ! k = 1 .. LH_sfc%kk
-      end do ! ivar = 1 .. LH_sfc%nn
-    end if ! LH_microphys_type /= LH_microphys_disabled
-
-
+      call stats_check_num_samples( LH_zt, l_error )
+      call stats_check_num_samples( LH_sfc, l_error )
+    end if
     if ( l_output_rad_files ) then
-      ! Look for errors by checking the number of sampling points
-      ! for each variable in the rad_zt statistics at each vertical level.
-      do ivar = 1, rad_zt%nn
-        do k = 1, rad_zt%kk
-
-          if ( rad_zt%n(1,1,k,ivar) /= 0 .and.  &
-               rad_zt%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
-
-            l_error = .true.  ! This will stop the run
-
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              write(fstderr,*) 'Possible sampling error for variable ',  &
-                               trim(rad_zt%f%var(ivar)%name), ' in rad_zt ',  &
-                               'at k = ', k,  &
-                               '; rad_zt%n(',k,',',ivar,') = ', rad_zt%n(1,1,k,ivar)
-            end if ! clubb_at_lest_debug_level 1
-
-          end if ! n /= 0 and n /= stats_tout/stats_tsamp
-
-        end do ! k = 1 .. rad_zt%kk
-      end do !  ivar = 1 .. rad_zt%nn
-
-      ! Look for errors by checking the number of sampling points
-      ! for each variable in the rad_zm statistics at each vertical level.
-      do ivar = 1, rad_zm%nn
-        do k = 1, rad_zm%kk
-
-          if ( rad_zm%n(1,1,k,ivar) /= 0 .and.  &
-               rad_zm%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
-
-            l_error = .true.  ! This will stop the run
-
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              write(fstderr,*) 'Possible sampling error for variable ',  &
-                               trim(rad_zm%f%var(ivar)%name), ' in rad_zm ',  &
-                               'at k = ', k,  &
-                               '; rad_zm%n(',k,',',ivar,') = ', rad_zm%n(1,1,k,ivar)
-            end if ! clubb_at_lest_debug_level 1
-
-          end if ! n /= 0 and n /= stats_tout/stats_tsamp
-
-        end do ! k = 1 .. rad_zm%kk
-      end do !  ivar = 1 .. rad_zm%nn
-
-    end if ! l_output_rad_files
-
-    ! Look for errors by checking the number of sampling points
-    ! for each variable in the sfc statistics at each vertical level.
-    do ivar = 1, sfc%nn
-      do k = 1, sfc%kk
-
-        if ( sfc%n(1,1,k,ivar) /= 0 .and.  &
-             sfc%n(1,1,k,ivar) /= floor(stats_tout/stats_tsamp) ) then
-
-          l_error = .true.  ! This will stop the run
-
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) 'Possible sampling error for variable ',  &
-                             trim(sfc%f%var(ivar)%name), ' in sfc ',  &
-                             'at k = ', k,  &
-                             '; sfc%n(',k,',',ivar,') = ', sfc%n(1,1,k,ivar)
-          end if ! clubb_at_lest_debug_level 1
-
-        end if ! n /= 0 and n /= stats_tout/stats_tsamp
-
-      end do ! k = 1 .. sfc%kk
-    end do !  ivar = 1 .. sfc%nn
+      call stats_check_num_samples( rad_zt, l_error )
+      call stats_check_num_samples( rad_zm, l_error )
+    end if
 
     ! Stop the run if errors are found.
     if ( l_error ) then
@@ -2656,5 +2504,82 @@ module stats_subs
   end subroutine stats_finalize
 
 !===============================================================================
+
+!-----------------------------------------------------------------------
+subroutine stats_check_num_samples( stats_grid, l_error )
+
+! Description:
+!   Ensures that each variable in a stats grid is sampled the correct
+!   number of times.
+! References:
+!   None
+!-----------------------------------------------------------------------
+
+  use constants_clubb, only: &
+    fstderr ! Constant
+
+  use parameters_microphys, only: &
+    LH_microphys_calls
+
+  use stats_type, only: &
+    stats ! Type
+
+  use stats_variables, only: &
+    stats_tsamp, & ! Variable(s)
+    stats_tout
+
+  use error_code, only: &
+    clubb_at_least_debug_level ! Procedure
+
+  implicit none
+
+  ! Input Variables
+  type (stats), intent(in) :: &
+    stats_grid               ! Grid type              [grid]
+
+  ! Input/Output Variables
+  logical, intent(inout) :: &
+    l_error                  ! Indicates an error     [boolean]
+
+  ! Local Variables
+  integer :: ivar, kvar      ! Loop variable          [index]
+
+  logical :: l_proper_sample
+
+!-----------------------------------------------------------------------
+
+  !----- Begin Code -----
+
+  ! Look for errors by checking the number of sampling points
+  ! for each variable in the statistics grid at each vertical level.
+  do ivar = 1, stats_grid%nn
+    do kvar = 1, stats_grid%kk
+
+      l_proper_sample = ( stats_grid%n(1,1,kvar,ivar) == 0 .or. &
+                          stats_grid%n(1,1,kvar,ivar) == floor(stats_tout/stats_tsamp) .or. &
+                          ( stats_grid%f%var(ivar)%l_silhs .and. &
+                                  stats_grid%n(1,1,kvar,ivar) == LH_microphys_calls * &
+                                        floor( stats_tout/stats_tsamp ) ) )
+
+      if ( .not. l_proper_sample ) then
+
+        l_error = .true.  ! This will stop the run
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) 'Possible sampling error for variable ',  &
+                           trim(stats_grid%f%var(ivar)%name), ' in stats_grid ',  &
+                           'at k = ', kvar,  &
+                           '; stats_grid%n(',kvar,',',ivar,') = ', stats_grid%n(1,1,kvar,ivar)
+        end if ! clubb_at_lest_debug_level 1
+
+
+      end if ! n /= 0 and n /= stats_tout/stats_tsamp
+
+    end do ! kvar = 1 .. stats_grid%kk
+  end do ! ivar = 1 .. stats_grid%nn
+
+  return
+end subroutine stats_check_num_samples
+!-----------------------------------------------------------------------
 
 end module stats_subs
