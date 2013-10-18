@@ -181,7 +181,7 @@ module morrison_micro_driver_module
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,          & ! Cloud water mixing ratio                  [kg/kg]
-      Ncm,          & ! In cloud value for cloud droplet conc.    [#/kg]
+      Ncm,          & ! Grid mean value for cloud droplet conc.    [#/kg]
       s_mellor,     & ! The variable 's' from Mellor              [kg/kg]
       rvm             ! Vapor water mixing ratio                  [kg/kg]
 
