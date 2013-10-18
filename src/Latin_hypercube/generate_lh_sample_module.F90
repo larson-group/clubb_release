@@ -1158,7 +1158,7 @@ module generate_lh_sample_module
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
                         LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
 
-    ! Zero rain hydrometeors if not in precipitation
+    ! Zero precipitation hydrometeors if not in precipitation
     if ( .not. l_in_precip_one_lev ) then
 
       call zero_precip_hydromets( d_variables, & ! Intent(in)

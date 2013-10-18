@@ -1050,7 +1050,8 @@ module latin_hypercube_driver_module
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, n_micro_calls, d_variables+1, &
-                                        real(X_u_all_levs, kind = genrand_real), &
+                                        real(X_u_all_levs(:,:,1:d_variables+1), &
+                                         kind = genrand_real), &
                                         X_mixt_comp_all_levs, p_matrix )
     end if
 
@@ -2054,7 +2055,8 @@ module latin_hypercube_driver_module
       iLH_cloud_frac, &
       iLH_s_mellor, &
       iLH_sp2, &
-      iLH_t_mellor
+      iLH_t_mellor, &
+      iLH_precip_frac
 
     use stats_variables, only: &
       iLH_wp2_zt, &  ! Variable(s)
@@ -2156,7 +2158,9 @@ module latin_hypercube_driver_module
       LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
       LH_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
-      LH_sp2           ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
+      LH_sp2,        & ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
+      LH_precip_frac   ! Average value of the latin hypercube est. of precip fraction   [-]
+
 
     real(kind=core_rknd) :: xtmp
 
@@ -2247,6 +2251,14 @@ module latin_hypercube_driver_module
         LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls, kind = core_rknd )
 
         call stat_update_var( iLH_cloud_frac, LH_cloud_frac, LH_zt )
+      end if
+
+      ! Latin hypercube estimate of precipitation fraction
+      if ( iLH_precip_frac > 0 ) then
+        LH_precip_frac(:) = 0._core_rknd
+        do sample = 1, n_micro_calls
+          
+        end do
       end if
 
       ! Latin hypercube estimate of s_mellor
