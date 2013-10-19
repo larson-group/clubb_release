@@ -2566,7 +2566,7 @@ module stats_zt
       case ('sp2')
         isp2 = k
         call stat_assign( isp2, "sp2", &
-             "Variance of s (overall) [kg/kg]", "kg/kg", zt )
+             "Variance of s (overall) [(kg/kg)^2]", "(kg/kg)^2", zt )
         k = k + 1
 
       case ('stdev_t1')
@@ -2679,7 +2679,7 @@ module stats_zt
         irtp2_zt = k
 
         call stat_assign( irtp2_zt, "rtp2_zt", & 
-             "rt'^2 interpolated to thermodynamic levels [kg/kg]", "kg/kg", zt )
+             "rt'^2 interpolated to thermodynamic levels [(kg/kg)^2]", "(kg/kg)^2", zt )
         k = k + 1
 
       case('rtpthlp_zt')
