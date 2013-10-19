@@ -95,6 +95,9 @@ module stats_LH_zt
       iLH_Nrm_src_adj,     &
       iLH_Nrm_cond_adj
 
+    use stats_variables, only: &
+      iLH_precip_frac
+
     use stats_type, only: & 
       stat_assign ! Procedure
 
@@ -505,6 +508,12 @@ module stats_LH_zt
         call stat_assign( iLH_Nrm_cond_adj, "LH_Nrm_cond_adj", &
              "Latin hypercube estimate of Nrm evap adjustment (KK only!) [kg/kg/s]", &
              "kg/kg/s", l_yes_silhs, LH_zt )
+        k = k + 1
+
+      case ( 'LH_precip_frac' )
+        iLH_precip_frac = k
+        call stat_assign( iLH_precip_frac, "LH_precip_frac", &
+             "Latin hypercube estimate of precipitation fraction [-]", "-", l_yes_silhs, LH_zt )
         k = k + 1
 
       case default

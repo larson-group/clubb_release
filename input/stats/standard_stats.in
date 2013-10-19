@@ -107,7 +107,7 @@ vars_LH_zt =
 'LH_Nrm', 'LH_Nim', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm', 'LH_rcm_avg',
 'LH_rrainm_auto', 'LH_rrainm_accr', 'LH_rrainm_evap', 'LH_Nrm_auto', 'LH_Nrm_cond',
 'LH_rrainm_src_adj', 'LH_rrainm_cond_adj',
-'LH_Nrm_src_adj', 'LH_Nrm_cond_adj',
+'LH_Nrm_src_adj', 'LH_Nrm_cond_adj', 'LH_precip_frac',
 ''
 
 vars_LH_sfc =

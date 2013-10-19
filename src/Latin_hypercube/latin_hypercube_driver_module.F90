@@ -24,6 +24,8 @@ module latin_hypercube_driver_module
   public :: LH_subcolumn_generator, LH_microphys_driver, latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_LH, LH_subcolumn_generator_mod
 
+  private :: stats_accumulate_uniform_LH
+
   contains
 
 !-------------------------------------------------------------------------------
@@ -1005,6 +1007,8 @@ module latin_hypercube_driver_module
       end if
 
     end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
+
+    call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip )
 
     ! Upwards loop
     do k = k_lh_start, nz, 1
@@ -2055,8 +2059,7 @@ module latin_hypercube_driver_module
       iLH_cloud_frac, &
       iLH_s_mellor, &
       iLH_sp2, &
-      iLH_t_mellor, &
-      iLH_precip_frac
+      iLH_t_mellor
 
     use stats_variables, only: &
       iLH_wp2_zt, &  ! Variable(s)
@@ -2158,8 +2161,7 @@ module latin_hypercube_driver_module
       LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
       LH_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
-      LH_sp2,        & ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
-      LH_precip_frac   ! Average value of the latin hypercube est. of precip fraction   [-]
+      LH_sp2           ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
 
 
     real(kind=core_rknd) :: xtmp
@@ -2251,14 +2253,6 @@ module latin_hypercube_driver_module
         LH_cloud_frac(:) = LH_cloud_frac(:) / real( n_micro_calls, kind = core_rknd )
 
         call stat_update_var( iLH_cloud_frac, LH_cloud_frac, LH_zt )
-      end if
-
-      ! Latin hypercube estimate of precipitation fraction
-      if ( iLH_precip_frac > 0 ) then
-        LH_precip_frac(:) = 0._core_rknd
-        do sample = 1, n_micro_calls
-          
-        end do
       end if
 
       ! Latin hypercube estimate of s_mellor
@@ -2373,6 +2367,66 @@ module latin_hypercube_driver_module
 
     return
   end subroutine stats_accumulate_LH
+
+  !-----------------------------------------------------------------------
+  subroutine stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip_all_levs )
+
+  ! Description:
+  !   Samples statistics that cannot be deduced from the normal-lognormal
+  !   SILHS sample (X_nl_all_levs)
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd
+
+    use stats_type, only: &
+      stat_update_var
+
+    use stats_variables, only: &
+      iLH_precip_frac, &
+      LH_zt
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &         ! Number of vertical levels
+      n_micro_calls ! Number of SILHS sample points
+
+    logical, dimension(nz,n_micro_calls), intent(in) :: &
+      l_in_precip_all_levs
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      LH_precip_frac
+
+    integer :: ivar, kvar
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do kvar = 1, nz
+
+      LH_precip_frac(kvar) = 0.0_core_rknd
+
+      do ivar = 1, n_micro_calls
+        if ( l_in_precip_all_levs(kvar,ivar) ) then
+          LH_precip_frac(kvar) = LH_precip_frac(kvar) + 1.0_core_rknd
+        end if
+      end do ! ivar = 1, n_micro_calls
+
+      LH_precip_frac(kvar) = LH_precip_frac(kvar) / real( n_micro_calls, kind = core_rknd )
+
+    end do ! kvar = 1, nz
+
+    call stat_update_var( iLH_precip_frac, LH_precip_frac, LH_zt )
+
+    return
+  end subroutine stats_accumulate_uniform_LH
 
 #endif /*LATIN_HYPERCUBE*/
 
