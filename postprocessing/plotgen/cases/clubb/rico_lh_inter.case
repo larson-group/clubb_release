@@ -129,6 +129,14 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'rico_LH_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_LH_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_LH_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QPL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},

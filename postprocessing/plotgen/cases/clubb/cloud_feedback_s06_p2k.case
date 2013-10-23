@@ -129,6 +129,14 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6_p2K/p2k_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cloud_feedback_s6_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s6_p2K/p2k_s6_96x96x128_100m_DRZ_N100_tqndg.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QPL ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},

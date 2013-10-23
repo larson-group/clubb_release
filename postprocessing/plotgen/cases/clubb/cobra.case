@@ -112,6 +112,14 @@
        [
           {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cobra_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}

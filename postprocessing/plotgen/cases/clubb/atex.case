@@ -167,6 +167,14 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'radht', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'atex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'atex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Ice Fraction', 'axisLabel' => 'ice\_supersat\_frac [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'atex_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_supersat_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/atex_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
