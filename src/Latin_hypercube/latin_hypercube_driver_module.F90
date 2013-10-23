@@ -2386,6 +2386,7 @@ module latin_hypercube_driver_module
       stat_update_var
 
     use stats_variables, only: &
+      l_stats_samp, &
       iLH_precip_frac, &
       LH_zt
 
@@ -2408,22 +2409,25 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
+    if ( l_stats_samp ) then
+      ! Estimate of LH_precip_frac
+      do kvar = 1, nz
 
-    do kvar = 1, nz
+        LH_precip_frac(kvar) = 0.0_core_rknd
 
-      LH_precip_frac(kvar) = 0.0_core_rknd
+        do ivar = 1, n_micro_calls
+          if ( l_in_precip_all_levs(kvar,ivar) ) then
+            LH_precip_frac(kvar) = LH_precip_frac(kvar) + 1.0_core_rknd
+          end if
+        end do ! ivar = 1, n_micro_calls
 
-      do ivar = 1, n_micro_calls
-        if ( l_in_precip_all_levs(kvar,ivar) ) then
-          LH_precip_frac(kvar) = LH_precip_frac(kvar) + 1.0_core_rknd
-        end if
-      end do ! ivar = 1, n_micro_calls
+        LH_precip_frac(kvar) = LH_precip_frac(kvar) / real( n_micro_calls, kind = core_rknd )
 
-      LH_precip_frac(kvar) = LH_precip_frac(kvar) / real( n_micro_calls, kind = core_rknd )
+      end do ! kvar = 1, nz
 
-    end do ! kvar = 1, nz
+      call stat_update_var( iLH_precip_frac, LH_precip_frac, LH_zt )
 
-    call stat_update_var( iLH_precip_frac, LH_precip_frac, LH_zt )
+    end if
 
     return
   end subroutine stats_accumulate_uniform_LH
