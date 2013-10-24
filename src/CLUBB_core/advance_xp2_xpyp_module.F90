@@ -3385,28 +3385,28 @@ module advance_xp2_xpyp_module
       wprtp_mc_tndcy_zt, &  !Calculated on the zt grid             [m*(kg/kg)/s^2]
       wpthlp_mc_tndcy_zt, & !Calcualted on the zt grid             [m*K/s^2]
       rtpthlp_mc_tndcy_zt,& !Calculated on the zt grid             [K*(kg/kg)/s]
-      precip_frac, &        !Precipitation fraction                [-]
+      precip_frac_double_delta, &!Precipitation fraction for a double delta [-]
       pf_const              ! ( 1 - pf )/( pf )                    [-]
 
     integer :: k
 
     ! ---- Begin Code ----
 
-    ! Calculate precip_frac
-    precip_frac(nz) = 0.0_core_rknd
+    ! Calculate precip_frac_double_delta
+    precip_frac_double_delta(nz) = 0.0_core_rknd
     do k = nz-1, 1, -1
       if ( cloud_frac(k) > cloud_frac_min ) then
-        precip_frac(k) = cloud_frac(k)
+        precip_frac_double_delta(k) = cloud_frac(k)
       else
-        precip_frac(k) = precip_frac(k+1)
+        precip_frac_double_delta(k) = precip_frac_double_delta(k+1)
       end if
     end do
 
 
-    !pf_const is calculated so that when precip_frac = 0, rtp2_mc_tndcy and 
+    !pf_const is calculated so that when precip_frac_double_delta = 0, rtp2_mc_tndcy and 
     !thlp2_mc_tndcy will both be zero.  This also avoids a divide by zero error
-    where ( precip_frac > cloud_frac_min )
-      pf_const = ( 1.0_core_rknd - precip_frac ) / precip_frac
+    where ( precip_frac_double_delta > cloud_frac_min )
+      pf_const = ( 1.0_core_rknd - precip_frac_double_delta ) / precip_frac_double_delta
     else where
       pf_const = 0.0_core_rknd
     end where
