@@ -5,7 +5,7 @@ interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, pdf_params, w_std_dev, &
-                            dzq, rcm, Nc, s_mellor, rvm, hydromet, &
+                            dzq, rcm, Nc, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rtp2_mc, thlp2_mc, &
@@ -19,6 +19,8 @@ interface
     use parameters_model, only: hydromet_dim
 
     use clubb_precision, only: core_rknd, time_precision
+
+    ! Input Variables
 
     real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
 
@@ -51,6 +53,11 @@ interface
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lh_stat_sample_weight ! The weight of this sample, if using SILHS.
+
+    ! Output Variables
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(out) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]

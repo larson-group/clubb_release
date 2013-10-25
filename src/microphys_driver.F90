@@ -1111,6 +1111,10 @@ module microphys_driver
 
     implicit none
 
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      lh_const_stat_sample_weight = 1.0_core_rknd ! Weight of a single sample with SILHS disabled
+
     ! Input Variables
 
     integer, intent(in) :: &
@@ -1572,7 +1576,7 @@ module microphys_driver
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac_morr, pdf_params, wtmp, &
-               delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, &
+               delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, lh_const_stat_sample_weight, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc, thlp2_mc, &
@@ -1648,7 +1652,7 @@ module microphys_driver
                                       p_in_Pa, exner, rho, cloud_frac, &
                                       pdf_params, wtmp, delta_zt, rcm, &
                                       Ncm, s_mellor, rvm, &
-                                      hydromet, &
+                                      hydromet, lh_const_stat_sample_weight, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
                                       rtp2_mc, thlp2_mc, &

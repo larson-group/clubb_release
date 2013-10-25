@@ -351,7 +351,7 @@ module estimate_scm_microphys_module
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
              dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
-             hydromet_all_points, & ! In
+             hydromet_all_points, LH_sample_point_weights(sample), & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
              rtp2_mc, thlp2_mc, & ! Out

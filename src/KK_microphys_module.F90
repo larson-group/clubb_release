@@ -26,7 +26,7 @@ module KK_microphys_module
                                     p_in_Pa, exner, rho, cloud_frac, &
                                     pdf_params, w_std_dev, dzq, rcm, &
                                     Ncm, s_mellor, rvm, &
-                                    hydromet, &
+                                    hydromet, lh_stat_sample_weight, &
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     rtp2_mc_tndcy, thlp2_mc_tndcy, &
@@ -112,6 +112,9 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lh_stat_sample_weight ! The weight of this sample, if using SILHS  [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &

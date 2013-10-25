@@ -13,7 +13,7 @@ module morrison_micro_driver_module
              ( dt, nz, l_stats_samp, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, pdf_params, w_std_dev, &
-               dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
+               dzq, rcm, Ncm, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rtp2_mc, thlp2_mc, &
@@ -188,6 +188,9 @@ module morrison_micro_driver_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), &
     target, intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      lh_stat_sample_weight
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(out) :: &
@@ -581,60 +584,62 @@ module morrison_micro_driver_module
       call stat_update_var( irrainm_auto, real( rrainm_auto, kind=core_rknd ), zt )
       call stat_update_var( irrainm_accr, real( rrainm_accr, kind=core_rknd ), zt )
       call stat_update_var( irrainm_cond, rrainm_evap, zt )
+    end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
-      call stat_update_var( iPSMLT, real( PSMLT, kind=core_rknd ), zt )
-      call stat_update_var( iEVPMS, real( EVPMS, kind=core_rknd ), zt )
-      call stat_update_var( iPRACS, real( PRACS, kind=core_rknd ), zt )
-      call stat_update_var( iEVPMG, real( EVPMG, kind=core_rknd ), zt )
-      call stat_update_var( iPRACG, real( PRACG, kind=core_rknd ), zt )
-      call stat_update_var( iPGMLT, real( PGMLT, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCC, real( MNUCCC, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWS, real( PSACWS, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWI, real( PSACWI, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTS, real( QMULTS, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTG, real( QMULTG, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWG, real( PSACWG, kind=core_rknd ), zt )
-      call stat_update_var( iPGSACW, real( PGSACW, kind=core_rknd ), zt )
-      call stat_update_var( iPRD, real( PRD, kind=core_rknd ), zt )
-      call stat_update_var( iPRCI, real( PRCI, kind=core_rknd ), zt )
-      call stat_update_var( iPRAI, real( PRAI, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTR, real( QMULTR, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTRG, real( QMULTRG, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCD, real( MNUCCD, kind=core_rknd ), zt )
-      call stat_update_var( iPRACI, real( PRACI, kind=core_rknd ), zt )
-      call stat_update_var( iPRACIS, real( PRACIS, kind=core_rknd ), zt )
-      call stat_update_var( iEPRD, real( EPRD, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCR, real( MNUCCR, kind=core_rknd ), zt )
-      call stat_update_var( iPIACR, real( PIACR, kind=core_rknd ), zt )
-      call stat_update_var( iPIACRS, real( PIACRS, kind=core_rknd ), zt )
-      call stat_update_var( iPGRACS, real( PGRACS, kind=core_rknd ), zt )
-      call stat_update_var( iPRDS, real( PRDS, kind=core_rknd ), zt )
-      call stat_update_var( iEPRDS, real( EPRDS, kind=core_rknd ), zt )
-      call stat_update_var( iPSACR, real( PSACR, kind=core_rknd ), zt )
-      call stat_update_var( iPRDG, real( PRDG, kind=core_rknd ), zt )
-      call stat_update_var( iEPRDG, real( EPRDG, kind=core_rknd ), zt )
+    call stat_update_var( iPSMLT, lh_stat_sample_weight*real( PSMLT, kind=core_rknd ), zt )
+    call stat_update_var( iEVPMS, lh_stat_sample_weight*real( EVPMS, kind=core_rknd ), zt )
+    call stat_update_var( iPRACS, lh_stat_sample_weight*real( PRACS, kind=core_rknd ), zt )
+    call stat_update_var( iEVPMG, lh_stat_sample_weight*real( EVPMG, kind=core_rknd ), zt )
+    call stat_update_var( iPRACG, lh_stat_sample_weight*real( PRACG, kind=core_rknd ), zt )
+    call stat_update_var( iPGMLT, lh_stat_sample_weight*real( PGMLT, kind=core_rknd ), zt )
+    call stat_update_var( iMNUCCC, lh_stat_sample_weight*real( MNUCCC, kind=core_rknd ), zt )
+    call stat_update_var( iPSACWS, lh_stat_sample_weight*real( PSACWS, kind=core_rknd ), zt )
+    call stat_update_var( iPSACWI, lh_stat_sample_weight*real( PSACWI, kind=core_rknd ), zt )
+    call stat_update_var( iQMULTS, lh_stat_sample_weight*real( QMULTS, kind=core_rknd ), zt )
+    call stat_update_var( iQMULTG, lh_stat_sample_weight*real( QMULTG, kind=core_rknd ), zt )
+    call stat_update_var( iPSACWG, lh_stat_sample_weight*real( PSACWG, kind=core_rknd ), zt )
+    call stat_update_var( iPGSACW, lh_stat_sample_weight*real( PGSACW, kind=core_rknd ), zt )
+    call stat_update_var( iPRD, lh_stat_sample_weight*real( PRD, kind=core_rknd ), zt )
+    call stat_update_var( iPRCI, lh_stat_sample_weight*real( PRCI, kind=core_rknd ), zt )
+    call stat_update_var( iPRAI, lh_stat_sample_weight*real( PRAI, kind=core_rknd ), zt )
+    call stat_update_var( iQMULTR, lh_stat_sample_weight*real( QMULTR, kind=core_rknd ), zt )
+    call stat_update_var( iQMULTRG, lh_stat_sample_weight*real( QMULTRG, kind=core_rknd ), zt )
+    call stat_update_var( iMNUCCD, lh_stat_sample_weight*real( MNUCCD, kind=core_rknd ), zt )
+    call stat_update_var( iPRACI, lh_stat_sample_weight*real( PRACI, kind=core_rknd ), zt )
+    call stat_update_var( iPRACIS, lh_stat_sample_weight*real( PRACIS, kind=core_rknd ), zt )
+    call stat_update_var( iEPRD, lh_stat_sample_weight*real( EPRD, kind=core_rknd ), zt )
+    call stat_update_var( iMNUCCR, lh_stat_sample_weight*real( MNUCCR, kind=core_rknd ), zt )
+    call stat_update_var( iPIACR, lh_stat_sample_weight*real( PIACR, kind=core_rknd ), zt )
+    call stat_update_var( iPIACRS, lh_stat_sample_weight*real( PIACRS, kind=core_rknd ), zt )
+    call stat_update_var( iPGRACS, lh_stat_sample_weight*real( PGRACS, kind=core_rknd ), zt )
+    call stat_update_var( iPRDS, lh_stat_sample_weight*real( PRDS, kind=core_rknd ), zt )
+    call stat_update_var( iEPRDS, lh_stat_sample_weight*real( EPRDS, kind=core_rknd ), zt )
+    call stat_update_var( iPSACR, lh_stat_sample_weight*real( PSACR, kind=core_rknd ), zt )
+    call stat_update_var( iPRDG, lh_stat_sample_weight*real( PRDG, kind=core_rknd ), zt )
+    call stat_update_var( iEPRDG, lh_stat_sample_weight*real( EPRDG, kind=core_rknd ), zt )
       
-      ! Update more Morrison budgets
-      call stat_update_var( iNGSTEN, real( NGSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNRSTEN, real( NRSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNISTEN, real( NISTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNSSTEN, real( NSSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNCSTEN, real( NCSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNPRC1, real( NPRC1, kind=core_rknd ), zt )
-      call stat_update_var( iNRAGG, real( NRAGG, kind=core_rknd ), zt )
-      call stat_update_var( iNPRACG, real( NPRACG, kind=core_rknd ), zt )
-      call stat_update_var( iNSUBR, real( NSUBR, kind=core_rknd ), zt )
-      call stat_update_var( iNSMLTR, real( NSMLTR, kind=core_rknd ), zt )
-      call stat_update_var( iNGMLTR, real( NGMLTR, kind=core_rknd ), zt )
-      call stat_update_var( iNPRACS, real( NPRACS, kind=core_rknd ), zt )
-      call stat_update_var( iNNUCCR, real( NNUCCR, kind=core_rknd ), zt )
-      call stat_update_var( iNIACR, real( NIACR, kind=core_rknd ), zt )
-      call stat_update_var( iNIACRS, real( NIACRS, kind=core_rknd ), zt )
-      call stat_update_var( iNGRACS, real( NGRACS, kind=core_rknd ), zt )
+    ! Update more Morrison budgets
+    call stat_update_var( iNGSTEN, lh_stat_sample_weight*real( NGSTEN, kind=core_rknd ), zt )
+    call stat_update_var( iNRSTEN, lh_stat_sample_weight*real( NRSTEN, kind=core_rknd ), zt )
+    call stat_update_var( iNISTEN, lh_stat_sample_weight*real( NISTEN, kind=core_rknd ), zt )
+    call stat_update_var( iNSSTEN, lh_stat_sample_weight*real( NSSTEN, kind=core_rknd ), zt )
+    call stat_update_var( iNCSTEN, lh_stat_sample_weight*real( NCSTEN, kind=core_rknd ), zt )
+    call stat_update_var( iNPRC1, lh_stat_sample_weight*real( NPRC1, kind=core_rknd ), zt )
+    call stat_update_var( iNRAGG, lh_stat_sample_weight*real( NRAGG, kind=core_rknd ), zt )
+    call stat_update_var( iNPRACG, lh_stat_sample_weight*real( NPRACG, kind=core_rknd ), zt )
+    call stat_update_var( iNSUBR, lh_stat_sample_weight*real( NSUBR, kind=core_rknd ), zt )
+    call stat_update_var( iNSMLTR, lh_stat_sample_weight*real( NSMLTR, kind=core_rknd ), zt )
+    call stat_update_var( iNGMLTR, lh_stat_sample_weight*real( NGMLTR, kind=core_rknd ), zt )
+    call stat_update_var( iNPRACS, lh_stat_sample_weight*real( NPRACS, kind=core_rknd ), zt )
+    call stat_update_var( iNNUCCR, lh_stat_sample_weight*real( NNUCCR, kind=core_rknd ), zt )
+    call stat_update_var( iNIACR, lh_stat_sample_weight*real( NIACR, kind=core_rknd ), zt )
+    call stat_update_var( iNIACRS, lh_stat_sample_weight*real( NIACRS, kind=core_rknd ), zt )
+    call stat_update_var( iNGRACS, lh_stat_sample_weight*real( NGRACS, kind=core_rknd ), zt )
+
 
       ! --- Number concentrations ---
       ! No budgets for sedimentation are output
-
+    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
       ! Effective radii of hydrometeor species
       call stat_update_var( ieff_rad_cloud, real( effc(:), kind = core_rknd ), zt )
       call stat_update_var( ieff_rad_ice, real( effi(:), kind = core_rknd ), zt )
@@ -656,11 +661,11 @@ module morrison_micro_driver_module
     if ( l_latin_hypercube .and. l_stats_samp ) then
       ! Snow and Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( iLH_morr_rain_rate, 1, &
-        real( Morr_rain_rate, kind = core_rknd ) * &
+        lh_stat_sample_weight*real( Morr_rain_rate, kind = core_rknd ) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
 
       call stat_update_var_pt( iLH_morr_snow_rate, 1, &
-        real( Morr_snow_rate, kind = core_rknd ) * &
+        lh_stat_sample_weight*real( Morr_snow_rate, kind = core_rknd ) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
 
     end if ! l_latin_hypercube .and. l_stats_samp
