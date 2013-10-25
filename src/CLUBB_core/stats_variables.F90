@@ -715,7 +715,8 @@ module stats_variables
     iLH_cloud_frac = 0, &
     iLH_s_mellor = 0, &
     iLH_t_mellor = 0, &
-    iLH_precip_frac
+    iLH_precip_frac = 0, &
+    iLH_mixt_frac = 0
 
 !$omp threadprivate(iLH_rrainm, iLH_Nrm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
 !$omp   iLH_rgraupelm, iLH_Ngraupelm, &

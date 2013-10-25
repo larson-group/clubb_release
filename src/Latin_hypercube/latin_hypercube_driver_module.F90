@@ -1008,7 +1008,7 @@ module latin_hypercube_driver_module
 
     end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
 
-    call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip )
+    call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip, X_mixt_comp_all_levs )
 
     ! Upwards loop
     do k = k_lh_start, nz, 1
@@ -2369,7 +2369,8 @@ module latin_hypercube_driver_module
   end subroutine stats_accumulate_LH
 
   !-----------------------------------------------------------------------
-  subroutine stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip_all_levs )
+  subroutine stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip_all_levs, &
+                                          X_mixt_comp_all_levs )
 
   ! Description:
   !   Samples statistics that cannot be deduced from the normal-lognormal
@@ -2388,6 +2389,7 @@ module latin_hypercube_driver_module
     use stats_variables, only: &
       l_stats_samp, &
       iLH_precip_frac, &
+      iLH_mixt_frac, &
       LH_zt
 
     implicit none
@@ -2398,11 +2400,17 @@ module latin_hypercube_driver_module
       n_micro_calls ! Number of SILHS sample points
 
     logical, dimension(nz,n_micro_calls), intent(in) :: &
-      l_in_precip_all_levs
+      l_in_precip_all_levs ! Boolean variables indicating whether a sample is in
+                           ! precipitation at a given height level
+
+    integer, dimension(nz,n_micro_calls), intent(in) :: &
+      X_mixt_comp_all_levs ! Integers indicating which mixture component a
+                           ! sample is in at a given height level
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      LH_precip_frac
+      LH_precip_frac, &
+      LH_mixt_frac
 
     integer :: ivar, kvar
 
@@ -2427,7 +2435,24 @@ module latin_hypercube_driver_module
 
       call stat_update_var( iLH_precip_frac, LH_precip_frac, LH_zt )
 
-    end if
+      ! Estimate of LH_mixt_frac
+      do kvar = 1, nz
+
+        LH_mixt_frac(kvar) = 0.0_core_rknd
+
+        do ivar = 1, n_micro_calls
+          if ( X_mixt_comp_all_levs(kvar,ivar) == 1 ) then
+            LH_mixt_frac(kvar) = LH_mixt_frac(kvar) + 1.0_core_rknd
+          end if
+        end do
+
+        LH_mixt_frac(kvar) = LH_mixt_frac(kvar) / real( n_micro_calls, kind = core_rknd )
+
+      end do ! kvar = 1, nz
+
+      call stat_update_var( iLH_mixt_frac, LH_mixt_frac, LH_zt )
+
+    end if ! l_stats_samp
 
     return
   end subroutine stats_accumulate_uniform_LH
