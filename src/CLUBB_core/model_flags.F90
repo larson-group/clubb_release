@@ -40,7 +40,7 @@ module model_flags
                                 ! predictive equations.  The predictive
                                 ! equations are anelastic by default.
 
-  logical, parameter, public :: &
+  logical, public :: &
     l_use_precip_frac = .true.   ! Flag to use precipitation fraction in KK
                                  ! microphysics.  The precipitation fraction
                                  ! is automatically set to 1 when this flag
