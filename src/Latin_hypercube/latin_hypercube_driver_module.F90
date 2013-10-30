@@ -1008,7 +1008,8 @@ module latin_hypercube_driver_module
 
     end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
 
-    call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip, X_mixt_comp_all_levs )
+    call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip, X_mixt_comp_all_levs, &
+                                      LH_sample_point_weights)
 
     ! Upwards loop
     do k = k_lh_start, nz, 1
@@ -2370,7 +2371,8 @@ module latin_hypercube_driver_module
 
   !-----------------------------------------------------------------------
   subroutine stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip_all_levs, &
-                                          X_mixt_comp_all_levs )
+                                          X_mixt_comp_all_levs, &
+                                          LH_sample_point_weights )
 
   ! Description:
   !   Samples statistics that cannot be deduced from the normal-lognormal
@@ -2392,6 +2394,10 @@ module latin_hypercube_driver_module
       iLH_mixt_frac, &
       LH_zt
 
+    use math_utilities, only: &
+      compute_sample_mean
+      
+
     implicit none
 
     ! Input Variables
@@ -2406,50 +2412,41 @@ module latin_hypercube_driver_module
     integer, dimension(nz,n_micro_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Integers indicating which mixture component a
                            ! sample is in at a given height level
+    
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
+      LH_sample_point_weights ! The weight of each sample
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
       LH_precip_frac, &
       LH_mixt_frac
 
-    integer :: ivar, kvar
+    real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
+      int_in_precip, & ! '1' for samples in precipitation, '0' otherwise
+      int_mixt_comp    ! '1' for samples in the first PDF component, '0' otherwise
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
     if ( l_stats_samp ) then
       ! Estimate of LH_precip_frac
-      do kvar = 1, nz
-
-        LH_precip_frac(kvar) = 0.0_core_rknd
-
-        do ivar = 1, n_micro_calls
-          if ( l_in_precip_all_levs(kvar,ivar) ) then
-            LH_precip_frac(kvar) = LH_precip_frac(kvar) + 1.0_core_rknd
-          end if
-        end do ! ivar = 1, n_micro_calls
-
-        LH_precip_frac(kvar) = LH_precip_frac(kvar) / real( n_micro_calls, kind = core_rknd )
-
-      end do ! kvar = 1, nz
-
+      where ( l_in_precip_all_levs )
+        int_in_precip = 1.0_core_rknd
+      else where
+        int_in_precip = 0.0_core_rknd
+      end where
+      LH_precip_frac(:) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                               int_in_precip )
       call stat_update_var( iLH_precip_frac, LH_precip_frac, LH_zt )
 
       ! Estimate of LH_mixt_frac
-      do kvar = 1, nz
-
-        LH_mixt_frac(kvar) = 0.0_core_rknd
-
-        do ivar = 1, n_micro_calls
-          if ( X_mixt_comp_all_levs(kvar,ivar) == 1 ) then
-            LH_mixt_frac(kvar) = LH_mixt_frac(kvar) + 1.0_core_rknd
-          end if
-        end do
-
-        LH_mixt_frac(kvar) = LH_mixt_frac(kvar) / real( n_micro_calls, kind = core_rknd )
-
-      end do ! kvar = 1, nz
-
+      where ( X_mixt_comp_all_levs == 1 )
+        int_mixt_comp = 1.0_core_rknd
+      else where
+        int_mixt_comp = 0.0_core_rknd
+      end where
+      LH_mixt_frac(:) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                             int_mixt_comp )
       call stat_update_var( iLH_mixt_frac, LH_mixt_frac, LH_zt )
 
     end if ! l_stats_samp
