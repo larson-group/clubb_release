@@ -869,9 +869,7 @@ module microphys_driver
 
     ! Allocate and set the arrays containing the correlations
     ! and the X'^2 / X'^2 terms
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, &
-                                  corr_file_path_cloud_default, corr_file_path_below_default, &
-                                  iunit )
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
 
     return
   end subroutine init_microphys

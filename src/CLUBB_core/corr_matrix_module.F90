@@ -29,6 +29,9 @@ module corr_matrix_module
    iiPDF_Ncn      = -1
 !$omp threadprivate(iiPDF_Nr, iiPDF_Nsnow, iiPDF_Ni, iiPDF_Ngraupel, iiPDF_Ncn)
 
+  integer, parameter, public :: &
+    d_var_total = 12 ! Size of the default correlation arrays
+
   integer, public :: &
     d_variables
 !$omp threadprivate(d_variables)
@@ -43,14 +46,195 @@ module corr_matrix_module
 !$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
 !$omp   corr_array_cloud, corr_array_below)
 
-  public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
-            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays
-
-  private :: get_corr_var_index, return_pdf_index
+  real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
+      corr_array_cloud_def, &
+      corr_array_below_def
 
   private
 
+  public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
+            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays
+
+  private :: get_corr_var_index, return_pdf_index, def_corr_idx
+
+
   contains
+
+  !-----------------------------------------------------------------------------
+  subroutine init_default_corr_arrays(  ) 
+
+    ! Description:
+    !   Initializes the default correlation arrays with correlations from the 
+    !   arm_97 case.
+    !-----------------------------------------------------------------------------
+  
+    implicit none
+
+    ! ---- Begin Code ----
+ 
+    allocate( corr_array_cloud_def(d_var_total,d_var_total) )
+    allocate( corr_array_below_def(d_var_total,d_var_total) )
+
+    corr_array_cloud_def = &
+    reshape((/ 1.0, 0.3, 0.09 , 0.09 , 0.242 , 0.285 , -0.08 , 0.28 , 0.06 , 0.04 , 0.0, 0.0, &! s
+               0.0, 1.0, 0.027, 0.027, 0.0726, 0.0855, -0.024, 0.084, 0.018, 0.012, 0.0, 0.0, &! t
+               0.0, 0.0, 1.0  , 0.34 , 0.0   , 0.0   ,  0.44 , 0.55 , 0.65 , 0.73 , 0.0, 0.0, &! w
+               0.0, 0.0, 0.0  , 1.0  , 0.0   , 0.0   ,  0.39 , 0.29 , 0.14 , 0.21 , 0.0, 0.0, &! Ncn
+               0.0, 0.0, 0.0  , 0.0  , 1.0   , 0.768 ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 0.0, &! rr
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 1.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 0.0, &! Nr
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  1.0  , 0.77 , 0.29 , 0.49 , 0.0, 0.0, &! ri
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 1.0  , 0.43 , 0.60 , 0.0, 0.0, &! Ni
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 1.0  , 0.95 , 0.0, 0.0, &! rs
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 1.0  , 0.0, 0.0, &! Ns
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 1.0, 0.0, &! rg
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 1.0/),&!Ng
+    shape(corr_array_cloud_def))
+             !  s    t    w      Ncn    rr      Nr       ri     Ni     rs     Ns     rg   Ng 
+
+    corr_array_cloud_def = transpose( corr_array_cloud_def )
+
+
+    corr_array_below_def = &
+    reshape((/ 1.0, 0.3, 0.09 , 0.09 , 0.056 , 0.015 , -0.08 , 0.28 , 0.06 , 0.04 , 0.0, 0.0, &! s
+               0.0, 1.0, 0.027, 0.027, 0.168 , 0.0045, -0.024, 0.084, 0.018, 0.012, 0.0, 0.0, &! t
+               0.0, 0.0, 1.0  , 0.34 , 0.0   , 0.0   ,  0.44 , 0.55 , 0.65 , 0.73 , 0.0, 0.0, &! w
+               0.0, 0.0, 0.0  , 1.0  , 0.0   , 0.0   ,  0.39 , 0.29 , 0.14 , 0.21 , 0.0, 0.0, &! Ncn
+               0.0, 0.0, 0.0  , 0.0  , 1.0   , 0.886 ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 0.0, &! rr
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 1.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 0.0, &! Nr
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  1.0  , 0.77 , 0.29 , 0.49 , 0.0, 0.0, &! ri
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 1.0  , 0.43 , 0.60 , 0.0, 0.0, &! Ni
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 1.0  , 0.95 , 0.0, 0.0, &! rs
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 1.0  , 0.0, 0.0, &! Ns
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 1.0, 0.0, &! rg
+               0.0, 0.0, 0.0  , 0.0  , 0.0   , 0.0   ,  0.0  , 0.0  , 0.0  , 0.0  , 0.0, 1.0/),&!Ng
+    shape(corr_array_below_def))
+             !  s    t    w      Ncn    rr      Nr       ri     Ni     rs     Ns     rg   Ng 
+
+    corr_array_below_def = transpose( corr_array_below_def )
+
+  end subroutine init_default_corr_arrays
+
+  !-----------------------------------------------------------------------------
+  pure function def_corr_idx( iiPDF_x ) result(ii_def_corr)
+
+    ! Description:
+    !   Map from a iiPDF index to the corresponding index in the default 
+    !   correlation arrays.
+    !-----------------------------------------------------------------------------
+
+    implicit none
+
+    ! Constant Parameters
+
+    ! Indices that represent the order in the default corr arrays
+    ! (s, t, w, Ncn, rr, Nr, ri, Ni, rs, Ns, rg, Ng)
+    integer, parameter :: &
+    ii_s = 1, &
+    ii_t = 2, &
+    ii_w = 3, &
+    ii_Ncn = 4, &
+    ii_rr = 5, &
+    ii_Nr = 6, &
+    ii_ri = 7, &
+    ii_Ni = 8, &
+    ii_rs = 9, &
+    ii_Ns = 10, &
+    ii_rg = 11, &
+    ii_Ng = 12
+
+    ! Input Variables
+
+    integer, intent(in) :: iiPDF_x
+
+    ! Return Variable
+
+    integer :: ii_def_corr
+
+    ! ---- Begin Code ----
+
+    ii_def_corr = -1
+
+      if (iiPDF_x == iiPDF_s_mellor) then
+         ii_def_corr = ii_s
+
+      elseif (iiPDF_x == iiPDF_t_mellor) then
+        ii_def_corr = ii_t
+
+      elseif (iiPDF_x == iiPDF_w) then
+        ii_def_corr = ii_w
+
+      elseif (iiPDF_x == iiPDF_Ncn) then
+        ii_def_corr = ii_Ncn
+
+      elseif (iiPDF_x == iiPDF_rrain) then
+        ii_def_corr = ii_rr
+
+      elseif (iiPDF_x == iiPDF_Nr) then
+        ii_def_corr = ii_Nr
+
+      elseif (iiPDF_x == iiPDF_rice) then
+        ii_def_corr = ii_ri
+
+      elseif (iiPDF_x == iiPDF_Ni) then
+        ii_def_corr = ii_Ni
+
+      elseif (iiPDF_x == iiPDF_rsnow) then
+        ii_def_corr = ii_rs
+
+      elseif (iiPDF_x == iiPDF_Nsnow) then
+        ii_def_corr = ii_Ns
+
+      elseif (iiPDF_x == iiPDF_rgraupel) then
+        ii_def_corr = ii_rg
+
+      elseif (iiPDF_x == iiPDF_Ngraupel) then
+        ii_def_corr = ii_Ng
+
+      endif
+  end function def_corr_idx
+
+  !-----------------------------------------------------------------------------
+  subroutine set_corr_arrays_to_default(  ) 
+
+    ! Description:
+    !   If there are no corr_array.in files for the current case, default 
+    !   correlations from arm_97 are used (e.g. in WRF_CLUBB). 
+    !-----------------------------------------------------------------------------
+  
+    use constants_clubb, only: &
+        zero, &
+        one
+
+    implicit none
+
+    ! Local Variables
+    integer :: i, j ! Loop iterators
+
+
+    ! ---- Begin Code ----
+
+    corr_array_cloud = zero
+    corr_array_below = zero
+
+    do i = 1, d_variables
+       corr_array_cloud(i,i) = one
+       corr_array_below(i,i) = one
+    enddo
+
+    do i = 1, d_variables-1
+       do j = i+1, d_variables
+          if ( def_corr_idx(i) > def_corr_idx(j) ) then
+             corr_array_cloud(j, i) = corr_array_cloud_def(def_corr_idx(j), def_corr_idx(i))
+             corr_array_below(j, i) = corr_array_below_def(def_corr_idx(j), def_corr_idx(i))
+          else
+             corr_array_cloud(j, i) = corr_array_cloud_def(def_corr_idx(i), def_corr_idx(j))
+             corr_array_below(j, i) = corr_array_below_def(def_corr_idx(i), def_corr_idx(j))
+          endif
+       enddo
+    enddo
+
+  end subroutine set_corr_arrays_to_default
+
 
   !-----------------------------------------------------------------------------
   subroutine read_correlation_matrix( iunit, input_file, d_variables, &
@@ -346,7 +530,6 @@ module corr_matrix_module
 
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
-                                      input_file_cloud_default, input_file_below_default, &
                                       iunit )
 
 ! Description:
@@ -401,10 +584,6 @@ module corr_matrix_module
       input_file_cloud, & ! Path to the in cloud correlation file
       input_file_below    ! Path to the out of cloud correlation file
 
-    character(len=*), intent(in) :: &
-      input_file_cloud_default, &
-      input_file_below_default
-
     ! Local variables
     integer :: iiPDF_Nc
 
@@ -441,13 +620,11 @@ module corr_matrix_module
     else ! Read in default correlation matrices (from arm_97_corr_array_cloud)
 
        write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                        "The default correlation arrays (from arm_97) will be used."
+                        "The default correlation arrays (hardwired from arm_97) will be used."
 
-       call read_correlation_matrix( iunit, input_file_cloud_default, d_variables, & ! In
-                                     corr_array_cloud ) ! In/Out
+       call init_default_corr_arrays( )
 
-       call read_correlation_matrix( iunit, input_file_below_default, d_variables, & ! In
-                                     corr_array_below ) ! In/Out
+       call set_corr_arrays_to_default( )
 
     endif
 
@@ -640,9 +817,8 @@ module corr_matrix_module
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
                             l_ice_micro )
 
-    ! Setup the arrays and indexes containing the correlations, etc.
-    call setup_corr_varnce_array( LH_file_path_cloud, LH_file_path_below, &
-                                  LH_file_path_cloud, LH_file_path_below, iunit )
+    ! Setup the arrays and indices containing the correlations, etc.
+    call setup_corr_varnce_array( LH_file_path_cloud, LH_file_path_below, iunit )
 
     return    
 
