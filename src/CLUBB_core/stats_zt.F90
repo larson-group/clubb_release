@@ -503,7 +503,13 @@ module stats_zt
       iNNUCCR, &
       iNIACR,  &
       iNIACRS, &
-      iNGRACS
+      iNGRACS, &    
+      iNSMLTS, &
+      iNSAGG,  &
+      iNPRCI, &
+      iNSCNG, &
+      iNSUBS
+
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -2239,6 +2245,46 @@ module stats_zt
 
         call stat_assign( iNGRACS, "NGRACS", &
              "Collection of rain by snow, +Ngraupelm, -Nrm, -Nsnowm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NSMLTS')
+        iNSMLTS= k
+
+        call stat_assign( iNSMLTS, "NSMLTS", &
+             "Melting  of snow, +Nsnowm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NSAGG')
+        iNSAGG= k
+
+        call stat_assign( iNSAGG, "NSAGG", &
+             "Self collection of snow, +Nsnowm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+
+        k = k + 1
+
+      case ('NPRCI')
+        iNPRCI= k
+
+        call stat_assign( iNPRCI, "NPRCI", &
+             "Autoconversion of cloud ice to snow, -Nim, +Nsnowm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NSCNG')
+        iNSCNG= k
+
+        call stat_assign( iNSCNG, "NSCNG", &
+             "Conversion of snow to graupel, +Ngraupelm, -Nsnowm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+      case ('NSUBS')
+        iNSUBS= k
+
+        call stat_assign( iNSUBS, "NSUBS", &
+             "Loss of snow due to sublimation, +Nsnowm [(#/kg/s)]", &
                 "(#/kg/s)", l_silhs_var, zt )
         k = k + 1
 

@@ -720,7 +720,8 @@ module stats_variables
 
 !$omp threadprivate(iLH_rrainm, iLH_Nrm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
 !$omp   iLH_rgraupelm, iLH_Ngraupelm, &
-!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac )
+!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac, &
+!$omp   iLH_s_mellor, iLH_t_mellor, iLH_precip_frac, iLH_mixt_frac )
 
   integer, public :: &
     iLH_wp2_zt = 0, &
@@ -772,7 +773,7 @@ module stats_variables
 !$omp threadprivate( iPSMLT, iEVPMS, iPRACS, iEVPMG, iPRACG, iPGMLT, iMNUCCC, iPSACWS, iPSACWI, &
 !$omp   iQMULTS, iQMULTG, iPSACWG, iPGSACW, iPRD, iPRCI, iPRAI, iQMULTR, &
 !$omp   iQMULTRG, iMNUCCD, iPRACI, iPRACIS, iEPRD, iMNUCCR, iPIACR, iPIACRS, &
-!$omp   iPGRACS, iPRDS, iEPRDS, iPSACR, iPRDG, iEPRDG )
+!$omp   iPGRACS, iPRDS, iEPRDS, iPSACR, iPRDG, iEPRDG  )
 
   ! More indices for Morrison budgets!!
   integer, public :: &
@@ -791,10 +792,16 @@ module stats_variables
     iNNUCCR = 0, &
     iNIACR = 0,  &
     iNIACRS = 0, &
-    iNGRACS = 0
+    iNGRACS = 0, &
+    iNSMLTS = 0, &
+    iNSAGG = 0,  &
+    iNPRCI = 0, &
+    iNSCNG = 0, &
+    iNSUBS = 0
+
 !$omp threadprivate( iNGSTEN, iNRSTEN, iNISTEN, iNSSTEN, iNCSTEN, iNPRC1, iNRAGG, &
 !$omp   iNPRACG, iNSUBR,  iNSMLTR, iNGMLTR, iNPRACS, iNNUCCR, iNIACR, &
-!$omp   iNIACRS, iNGRACS )
+!$omp   iNIACRS, iNGRACS, iNSMLTS, iNSAGG, iNPRCI, iNSCNG, iNSUBS )
 
   ! Indices for statistics in zm file
   integer, public :: & 
