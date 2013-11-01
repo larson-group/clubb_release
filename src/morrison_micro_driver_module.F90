@@ -121,7 +121,13 @@ module morrison_micro_driver_module
       iNNUCCR, &
       iNIACR,  &
       iNIACRS, &
-      iNGRACS
+      iNGRACS, &
+      iNSMLTS, &
+      iNSAGG, &
+      iNPRCI, &
+      iNSCNG, &
+      iNSUBS
+
 
     use stats_type, only:  & 
         stat_update_var, stat_update_var_pt  ! Procedure(s)
@@ -314,8 +320,19 @@ module morrison_micro_driver_module
                 !    Adds to Ngraupelm, subtracts from Nrm and Nim [#/kg/s] 
       NIACRS, & ! Collection of cloud ice by rain.
                 !    Adds to Nsnowm, subtracts from Nrm and Nim [#/kg/s]
-      NGRACS    ! Collection of rain by snow.
+      NGRACS, & ! Collection of rain by snow.
                 !    Adds to Ngraupelm, subtracts from Nrm and Nsnowm [#/kg/s]
+      NSMLTS, & ! Melting of snow
+                !    Adds to Nsnowm [#/kg/s]
+      NSAGG, &  ! Self collection of snow
+                !    Adds to Nsnowm [#/kg/s]
+      NPRCI, &  ! Autoconversion of cloud ice to snow
+                !    Adds to Nsnowm, subtracts from Nim [#/kg/s]
+      NSCNG, &  ! Conversion of snow to graupel
+                !    Adds to Ngraupelm, subtracts from Nsnowm [#/kg/s]
+      NSUBS     ! Loss of Nsnowm due to sublimation
+                !    Adds to Nsnowm [#/kg/s]
+
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -454,6 +471,11 @@ module morrison_micro_driver_module
     NIACR = 0.0
     NIACRS = 0.0
     NGRACS = 0.0
+    NSMLTS = 0.0
+    NSAGG = 0.0
+    NPRCI = 0.0
+    NSCNG = 0.0
+    NSUBS = 0.0
 
 
     hydromet_mc_r4 = real( hydromet_mc )
@@ -492,8 +514,8 @@ module morrison_micro_driver_module
            PIACR, PIACRS, PGRACS, PRDS, &
            EPRDS, PSACR, PRDG, EPRDG, &
            NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, NGMLTR, NPRACS, NNUCCR, NIACR, &
-           NIACRS, NGRACS )
-           
+           NIACRS, NGRACS, NSMLTS, NSAGG, NPRCI, NSCNG, NSUBS )
+    print*, 'test', minval(NSAGG)           
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -636,6 +658,11 @@ module morrison_micro_driver_module
       call stat_update_var( iNIACR, lh_stat_sample_weight*real( NIACR, kind=core_rknd ), zt )
       call stat_update_var( iNIACRS, lh_stat_sample_weight*real( NIACRS, kind=core_rknd ), zt )
       call stat_update_var( iNGRACS, lh_stat_sample_weight*real( NGRACS, kind=core_rknd ), zt )
+      call stat_update_var( iNSMLTS, lh_stat_sample_weight*real( NSMLTS, kind=core_rknd ), zt )
+      call stat_update_var( iNSAGG, lh_stat_sample_weight*real( NSAGG, kind=core_rknd ), zt )
+      call stat_update_var( iNSCNG, lh_stat_sample_weight*real( NSCNG, kind=core_rknd ), zt )
+      call stat_update_var( iNSUBS, lh_stat_sample_weight*real( NSUBS, kind=core_rknd ), zt )
+
     end if ! l_stats_samp
 
       ! --- Number concentrations ---
