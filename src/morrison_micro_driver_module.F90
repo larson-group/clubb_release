@@ -515,7 +515,6 @@ module morrison_micro_driver_module
            EPRDS, PSACR, PRDG, EPRDG, &
            NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, NGMLTR, NPRACS, NNUCCR, NIACR, &
            NIACRS, NGRACS, NSMLTS, NSAGG, NPRCI, NSCNG, NSUBS )
-    print*, 'test', minval(NSAGG)           
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
