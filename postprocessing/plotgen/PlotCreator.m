@@ -27,7 +27,7 @@ end
 optargin = size(varargin,2);
 
 %Optional argument format is as follows:
-%'/PATH/TO/FILE', 'timeseries or profile', 'varname', 'title', 'units', 'lineWidth', 'lineType', 'lineColor'
+%'/PATH/TO/FILE', 'timeseries, profile, or profile_corr', 'varname', 'title', 'units', 'lineWidth', 'lineType', 'lineColor'
 
 %Declare font size for budget plot axis and title
 budgetFontSize = 20;
@@ -95,7 +95,7 @@ for i=1:numLines
 	end
 
 	%Figure out indicies for start and end height
-	if strcmp(plotType, 'profile')	
+	if ( strcmp(plotType, 'profile') || strcmp(plotType, 'profile_corr') )
 		bottomIndex = find(levels >= startHeight, 1, 'first');
 		topIndex = find(levels <= endHeight, 1, 'last');
 	elseif strcmp(plotType, 'timeseries')
@@ -126,7 +126,7 @@ for i=1:numLines
 	%At this point, the value of the expression is contained in valueToPlot
 
 	%Add a the line to the plot
-	if strcmp(plotType, 'profile')
+	if ( strcmp(plotType, 'profile') || strcmp(plotType, 'profile_corr') )
 		%If no variables were found, expand the profile to the right size and plot a line of zeroes
 		if max(size(valueToPlot)) == 1
 			bottomIndex = 1;
@@ -147,7 +147,7 @@ for i=1:numLines
 	end
 	
 	%Store values needed for axis scaling
-	if strcmp(plotType, 'profile')
+	if ( strcmp(plotType, 'profile') || strcmp(plotType, 'profile_corr') )
 		minVals(i) = min(valueToPlot(bottomIndex:topIndex));
 		maxVals(i) = max(valueToPlot(bottomIndex:topIndex));
 	elseif strcmp(plotType, 'timeseries')
@@ -160,7 +160,7 @@ for i=1:numLines
 end
 
 %Add a legend and scale the axis
-if strcmp(plotType, 'profile')
+if ( strcmp(plotType, 'profile') || strcmp(plotType, 'profile_corr') )
 	minVal = min(minVals);
 	maxVal = max(maxVals);
 	if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')

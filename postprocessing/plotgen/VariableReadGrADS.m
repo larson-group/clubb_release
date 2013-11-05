@@ -54,6 +54,12 @@ for i = 1:numVars
 			elseif strcmp(endianness, 'LITTLE_ENDIAN')
 				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nzmax, t_start, t_end, i, numVars);
 			end
+		elseif strcmp(plotType, 'profile_corr')
+			if strcmp(endianness, 'BIG_ENDIAN')
+				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-be', nzmax, t_start, t_end, i, numVars);
+			elseif strcmp(endianness, 'LITTLE_ENDIAN')
+				varData = read_grads_hoc_endian([dataFilePath, dataFileName], 'ieee-le', nzmax, t_start, t_end, i, numVars);
+			end
 		elseif strcmp(plotType, 'timeseries')
 			if strcmp(endianness, 'BIG_ENDIAN')
 				varData = read_grads_hoc_sfc_endian([dataFilePath, dataFileName], 'ieee-be', nzmax, t_start, t_end, i, numVars);

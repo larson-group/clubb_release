@@ -31,6 +31,8 @@ varNum = netcdf.inqVarID(fid, variableToRead);
 	
 if strcmp(plotType, 'profile')
 	varData = read_netcdf_hoc(filePath, nzmax, t_start, t_end, varNum, numVars);
+elseif strcmp(plotType, 'profile_corr')
+	varData = read_netcdf_hoc_corr(filePath, nzmax, t_start, t_end, varNum, numVars);
 elseif strcmp(plotType, 'timeseries')
 	varData = read_netcdf_hoc_timeseries(filePath, nzmax, t_start, t_end, varNum, numVars);
 end
