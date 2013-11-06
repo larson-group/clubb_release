@@ -49,6 +49,8 @@ module corr_matrix_module
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
       corr_array_cloud_def, &
       corr_array_below_def
+!$omp threadprivate( corr_array_cloud_def, corr_array_below_def )
+
 
   private
 
