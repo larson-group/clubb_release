@@ -24,6 +24,10 @@
 #
 # Modified by David Schanen UW Milwaukee to allow for compiling a mix of 
 # .F and .F90 with XL Fortran (IBM AIX).
+#
+# Modified by Eric Raut UW Milwaukee - added a new flag, -e, used to pass
+# a file containing a list of all source files for the purpose of
+# dependency analysis (see clubb:ticket:593 for details).
 #-----------------------------------------------------------------------
 
 $ENV{'LANG'} = 'C';
@@ -275,10 +279,9 @@ foreach $target ( @targets ) {
 }
 delete $actual_source_of{''};
 
-my %obj_of_dep_module;
-
 # Eric Raut says: generate a list of dependency modules
 my @dependency_modules;
+my %obj_of_dep_module;
 if( $opt_e ) {
     open DEP_FILE, $opt_e or die "\aERROR opening dependency file $opt_e: $!\n";
     while ( <DEP_FILE> ) {
@@ -309,6 +312,8 @@ if( $opt_e ) {
     }
     close DEP_FILE;
 }
+# end Eric Raut's change
+
 # sort scanned directories by scan order
 sub ascendingScanOrder { $scanned{$a} <=> $scanned{$b}; }
 my @dirs = sort ascendingScanOrder keys %scanned;
@@ -399,7 +404,7 @@ foreach $object ( sort @objects ) {
 #we need to check target ne '' also below, since it is not mkmf's privilege
 #to complain about modules not found. That should be left to the compiler.
 #
-#     Eric says: check for dependencies elsewhere if not found above
+#     Eric Raut says: check for dependencies elsewhere if not found above
       if ( $module and ! $target ) {
          my $dep_module;
          foreach $dep_module ( @dependency_modules ) {
@@ -410,6 +415,7 @@ foreach $object ( sort @objects ) {
            }
          }
       }
+#     End Eric Raut's change
 
       if( $target and !$is_used{$target} ) {
 	 $is_used{$target} = 1;
