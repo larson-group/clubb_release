@@ -662,16 +662,6 @@ module microphys_driver
       call ini_micro()
       call pbuf_init()
 
-      if ( l_use_CLUBB_pdf_in_mg ) then
-
-         corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
-         corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
-
-         call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below, & ! In
-                             l_write_to_file, case_info_file ) ! In
-
-      endif
-
     case ( "coamps" )
       if ( .not. l_predictnc ) then
         write(fstderr,*) "COAMPS microphysics does not support l_predictnc = F"
@@ -740,12 +730,6 @@ module microphys_driver
 
       l_hydromet_sed(iirrainm) = .true.
       l_hydromet_sed(iiNrm)    = .true.
-
-      corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
-      corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
-
-      call setup_KK_corr( iunit, corr_file_path_cloud, corr_file_path_below, & ! In
-                          l_write_to_file, case_info_file ) ! In
 
     case ( "simplified_ice", "none" )
       iirrainm    = -1
@@ -870,6 +854,12 @@ module microphys_driver
     ! Allocate and set the arrays containing the correlations
     ! and the X'^2 / X'^2 terms
     call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
+
+    if ( l_use_CLUBB_pdf_in_mg .or. ( trim( micro_scheme ) == "khairoutdinov_kogan" )) then
+
+       call setup_KK_corr( iunit, l_write_to_file, case_info_file ) ! In
+
+    endif
 
     return
   end subroutine init_microphys
