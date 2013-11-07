@@ -79,6 +79,9 @@ module clubb_core
 #if defined(CLUBB_CAM) || defined(GFDL)
                khzm, khzt, &                                        ! intent(out)
 #endif
+#ifdef CLUBB_CAM
+               qclvar, &                                            ! intent(out)                     
+#endif
                pdf_params )                                         ! intent(out)
 
     ! Description:
@@ -482,6 +485,11 @@ module clubb_core
     real( kind = core_rknd ), intent(out), dimension(gr%nz) :: &
       khzt, &       ! eddy diffusivity on thermo levels
       khzm          ! eddy diffusivity on momentum levels
+#endif
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
+      qclvar        ! cloud water variance 
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -1014,10 +1022,14 @@ module clubb_core
         wp4(gr%nz)  = 0.0_core_rknd
       end if
 
+#ifndef CLUBB_CAM  ! CAM-CLUBB needs cloud water variance thus always compute this
       if ( ircp2 > 0 ) then
+#endif
         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
+#ifndef CLUBB_CAM
         rcp2(gr%nz) = 0.0_core_rknd
       end if
+#endif
 
       wpthvp            = zt2zm( wpthvp_zt )
       wpthvp(gr%nz)   = 0.0_core_rknd
@@ -1443,6 +1455,10 @@ module clubb_core
 #if defined(CLUBB_CAM) || defined(GFDL)
       khzt(:) = Kh_zt(:)
       khzm(:) = Kh_zm(:)
+#endif
+
+#ifdef CLUBB_CAM
+      qclvar(:) = rcp2_zt(:)
 #endif
 
       !----------------------------------------------------------------
