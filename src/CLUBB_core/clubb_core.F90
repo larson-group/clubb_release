@@ -80,7 +80,7 @@ module clubb_core
                khzm, khzt, &                                        ! intent(out)
 #endif
 #ifdef CLUBB_CAM
-               qclvar, &                                            ! intent(out)                     
+               qclvar, &                                            ! intent(out)
 #endif
                pdf_params )                                         ! intent(out)
 
@@ -1022,7 +1022,8 @@ module clubb_core
         wp4(gr%nz)  = 0.0_core_rknd
       end if
 
-#ifndef CLUBB_CAM  ! CAM-CLUBB needs cloud water variance thus always compute this
+#ifndef CLUBB_CAM
+      ! CAM-CLUBB needs cloud water variance thus always compute this
       if ( ircp2 > 0 ) then
 #endif
         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity

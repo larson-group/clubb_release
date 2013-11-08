@@ -872,7 +872,9 @@ module pdf_closure_module
     end if
     ! Compute variance of liquid water mixing ratio.
     ! This is not needed for closure.  Statistical Analysis only.
-#ifndef CLUBB_CAM  !  if CLUBB is used in CAM we want this variable computed no matter what
+
+#ifndef CLUBB_CAM
+    !  if CLUBB is used in CAM we want this variable computed no matter what
     if ( ircp2 > 0 ) then
 #endif
 
@@ -880,7 +882,8 @@ module pdf_closure_module
              + ( 1._core_rknd-mixt_frac ) * ( s2*rc2 + cloud_frac2*stdev_s2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )
 
-#ifndef CLUBB_CAM !  if CLUBB is used in CAM we want this variable computed no matter what
+#ifndef CLUBB_CAM
+    !  if CLUBB is used in CAM we want this variable computed no matter what
     end if
 #endif
 
