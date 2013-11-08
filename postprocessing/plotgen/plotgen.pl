@@ -829,7 +829,7 @@ sub buildMatlabStringStd()
 		                my $lineStyle = $lineStyles[$lineStyleCounter];
 		                my $lineColor = $lineColors[$lineColorCounter];
 		                
-		                $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+		                $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
 
 				# Used for ensemble runs to make a group of plots all the same color
 				# The five(5) is used to set the number of files per group
@@ -900,7 +900,7 @@ sub buildMatlabStringStd()
 	                my $lineWidth = $lineWidths[$lineWidthCounter];
 	                my $lineStyle = $lineStyles[$lineStyleCounter];
 	                my $lineColor = $lineColors[$lineColorCounter];
-	                $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+	                $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
 			incrementLineTypes();
 		    }
 		}
@@ -935,7 +935,7 @@ sub buildMatlabStringStd()
 			incrementLineTypes();
 		    }
 
-                    $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\'";
+                    $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
                 }                
             }
         }
