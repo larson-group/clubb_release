@@ -104,7 +104,7 @@ module parameters_tunable
 #else 
     mu          = 1.000E-3_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
 #endif
-    mult_coef   = 1.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
+    mult_coef   = 0.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd, & ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
     lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
