@@ -659,6 +659,7 @@ module morrison_micro_driver_module
       call stat_update_var( iNGRACS, lh_stat_sample_weight*real( NGRACS, kind=core_rknd ), zt )
       call stat_update_var( iNSMLTS, lh_stat_sample_weight*real( NSMLTS, kind=core_rknd ), zt )
       call stat_update_var( iNSAGG, lh_stat_sample_weight*real( NSAGG, kind=core_rknd ), zt )
+      call stat_update_var( iNPRCI, lh_stat_sample_weight*real( NPRCI, kind=core_rknd ), zt )
       call stat_update_var( iNSCNG, lh_stat_sample_weight*real( NSCNG, kind=core_rknd ), zt )
       call stat_update_var( iNSUBS, lh_stat_sample_weight*real( NSUBS, kind=core_rknd ), zt )
 
