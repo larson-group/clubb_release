@@ -120,7 +120,7 @@
        [
           {'filename' => 'cgils_s12_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rc_coef .* rtprcp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'timeseries', 'lines' =>
+       {'plotTitle' => 'Mixing Length', 'axisLabel' => 'Lscale [m]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'cgils_s12_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
