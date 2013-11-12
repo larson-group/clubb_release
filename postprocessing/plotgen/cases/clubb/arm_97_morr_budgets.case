@@ -196,6 +196,30 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
+       {'plotTitle' => 'nsnowm budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_bt', 'expression' => 'nsnowm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ma', 'expression' => 'nsnowm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_sd', 'expression' => 'nsnowm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ta', 'expression' => 'nsnowm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_fill\_clip', 'expression' => 'nsnowm_hf + nsnowm_wvhf + nsnowm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_mc', 'expression' => 'nsnowm_mc - NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_sd\_morr', 'expression' => 'NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_residual', 'expression' => 'nsnowm_bt - (nsnowm_ma + nsnowm_sd + nsnowm_ta + nsnowm_hf + nsnowm_wvhf + nsnowm_cl + nsnowm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'Nsnowm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => '-NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
        {'plotTitle' => 'rgraupelm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_bt', 'expression' => 'rgraupelm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
