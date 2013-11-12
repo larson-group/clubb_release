@@ -1,0 +1,263 @@
+# Morrison Micro Budget Template
+
+%CASE = 
+(
+    'name' => 'mc3e_morr_budgets',
+    'enabled' => 'true',
+    'type' => 'morrbudget',
+    'headerText' => 'MC3E Morrison Budgets Minutes 1-64800',
+    'startTime' => 1.0,  # [minutes]
+    'endTime' => 64800.0,    # [minutes]
+    'startHeight' => 0.0,   # [m]
+    'endHeight' => 18000.0, # [m]
+    'plots' =>
+    [
+
+       {'plotTitle' => 'thlm budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'thlm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ma', 'expression' => 'thlm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'thlm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_clipping', 'expression' => 'thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'lsforcing', 'expression' => 'thlm_forcing-radht-thlm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'radht', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => 'thlm_bt-(thlm_ma+thlm_ta+thlm_mfl+thlm_cl+thlm_tacl+thlm_sdmp+thlm_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'thlm Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'LV\_TERMS', 'expression' => ' ( rrainm_cond * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'LS\_TERMS', 'expression' => ' (( PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'LF\_TERMS', 'expression' => '(( PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_sum', 'expression' => '( rrainm_cond * 2.5e6) / 1005 + (( PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005 + (( PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005 ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'thlm LV\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRE', 'expression' => ' (rrainm_cond * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'thlm LS\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRD', 'expression' => ' (PRD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRDS', 'expression' => ' (PRDS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => ' (MNUCCD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRD', 'expression' => ' (EPRD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRDS', 'expression' => ' (EPRDS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRDG', 'expression' => ' (PRDG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRDG', 'expression' => ' (EPRDG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'thlm LF\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => '(PSACWS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWI', 'expression' => '(PSACWI * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCC', 'expression' => '(MNUCCC * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCR', 'expression' => '(MNUCCR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTS', 'expression' => '(QMULTS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTG', 'expression' => '(QMULTG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTR', 'expression' => '(QMULTR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTRG', 'expression' => '(QMULTRG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACS', 'expression' => '(PRACS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWG', 'expression' => '(PSACWG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACG', 'expression' => '(PRACG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PGSACW', 'expression' => '(PGSACW * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PGRACS', 'expression' => '(PGRACS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PIACR', 'expression' => '(PIACR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => '(PIACRS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'rtm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_bt', 'expression' => 'rtm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ma', 'expression' => 'rtm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_ta', 'expression' => 'rtm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_mc', 'expression' => 'rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_clipping', 'expression' => 'rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_forcing', 'expression' => 'rtm_forcing-rtm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_pd', 'expression' => 'rtm_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rtm\_residual', 'expression' => 'rtm_bt-(rtm_ma+rtm_ta+rtm_mfl+rtm_cl+rtm_tacl+rtm_sdmp+rtm_forcing+rtm_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'rvm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRE', 'expression' => '-rrainm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRD', 'expression' => '-PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRDS', 'expression' => '-PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCD', 'expression' => '-MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-EPRD', 'expression' => '-EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-EPRDS', 'expression' => '-EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRDG', 'expression' => '-PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-EPRDG', 'expression' => '-EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rvm\_sum', 'expression' => '-rrainm_cond - PRD - PRDS - MNUCCD - EPRD - EPRDS - PRDG - EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'rcm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+	  {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRA', 'expression' => '-rrainm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRC', 'expression' => '-rrainm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCC', 'expression' => '-MNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PSACWS', 'expression' => '-PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PSACWI', 'expression' => '-PSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-QMULTS', 'expression' => '-QMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PSACWG', 'expression' => '-PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PGSACW', 'expression' => '-PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-rrainm_accr - rrainm_auto - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'ricem budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_bt', 'expression' => 'ricem_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_ma', 'expression' => 'ricem_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd', 'expression' => 'ricem_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_ta', 'expression' => 'ricem_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_fill\_clip', 'expression' => 'ricem_hf + ricem_wvhf + ricem_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd\_mg\_morr', 'expression' => 'ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_residual', 'expression' => ' ricem_bt - ( ricem_ma + ricem_sd + ricem_ta + ricem_hf + ricem_wvhf + ricem_cl + ricem_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'ricem Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRD', 'expression' => 'PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRD', 'expression' => 'EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWI', 'expression' => 'PSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCC', 'expression' => 'MNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRCI', 'expression' => '-PRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRAI', 'expression' => '-PRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTS', 'expression' => 'QMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTG', 'expression' => 'QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTR', 'expression' => 'QMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'QMULTRG', 'expression' => 'QMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => 'MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRACI', 'expression' => '-PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRACIS', 'expression' => '-PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'rrainm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_bt', 'expression' => 'rrainm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ma', 'expression' => 'rrainm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd', 'expression' => 'rrainm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ta', 'expression' => 'rrainm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ts', 'expression' => 'rrainm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_fill\_clip', 'expression' => 'rrainm_hf + rrainm_wvhf + rrainm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc - rrainm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd\_morr', 'expression' => 'rrainm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_residual', 'expression' => 'rrainm_bt - (rrainm_ma + rrainm_sd + rrainm_ta + rrainm_ts + rrainm_hf + rrainm_wvhf + rrainm_cl + rrainm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'rrainm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRE', 'expression' => 'rrainm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRA', 'expression' => 'rrainm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRC', 'expression' => 'rrainm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRACS', 'expression' => '-PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCR', 'expression' => '-MNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-QMULTR', 'expression' => '-QMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-QMULTRG', 'expression' => '-QMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PIACR', 'expression' => '-PIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PIACRS', 'expression' => '-PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PRACG', 'expression' => '-PRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PGRACS', 'expression' => '-PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'rrainm_cond + rrainm_accr + rrainm_auto - PRACS - MNUCCR - QMULTR - QMULTG - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'rsnowm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_bt', 'expression' => 'rsnowm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_ma', 'expression' => 'rsnowm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sd', 'expression' => 'rsnowm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_ta', 'expression' => 'rsnowm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_fill\_clip', 'expression' => 'rsnowm_hf + rsnowm_wvhf + rsnowm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_mc', 'expression' => 'rsnowm_mc - rsnowm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sd\_morr', 'expression' => 'rsnowm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_residual', 'expression' => 'rsnowm_bt - (rsnowm_ma + rsnowm_sd + rsnowm_ta + rsnowm_hf + rsnowm_wvhf + rsnowm_cl + rsnowm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'rsnowm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRAI', 'expression' => 'PRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => 'PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRDS', 'expression' => 'PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACS', 'expression' => 'PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRCI', 'expression' => 'PRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRDS', 'expression' => 'EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACR', 'expression' => '-PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => 'PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACIS', 'expression' => 'PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'Nsnowm budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_bt', 'expression' => 'Nsnowm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_ma', 'expression' => 'Nsnowm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sd', 'expression' => 'Nsnowm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_ta', 'expression' => 'Nsnowm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_fill\_clip', 'expression' => 'Nsnowm_hf + Nsnowm_wvhf + Nsnowm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_mc', 'expression' => 'Nsnowm_mc - NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sd\_morr', 'expression' => 'NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_residual', 'expression' => 'Nsnowm_bt - (Nsnowm_ma + Nsnowm_sd + Nsnowm_ta + Nsnowm_hf + Nsnowm_wvhf + Nsnowm_cl + Nsnowm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'Nsnowm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => '-NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nicetosnow', 'expression' => 'nicetosnow', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+
+       {'plotTitle' => 'rgraupelm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_bt', 'expression' => 'rgraupelm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_ma', 'expression' => 'rgraupelm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd', 'expression' => 'rgraupelm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_ta', 'expression' => 'rgraupelm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_fill\_clip', 'expression' => 'rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd\_morr', 'expression' => 'rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_residual', 'expression' => 'rgraupelm_bt - (rgraupelm_ma + rgraupelm_sd + rgraupelm_ta  + rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl + rgraupelm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'rgraupelm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACG', 'expression' => 'PRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACWG', 'expression' => 'PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PGSACW', 'expression' => 'PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PGRACS', 'expression' => 'PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRDG', 'expression' => 'PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'EPRDG', 'expression' => 'EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCR', 'expression' => 'MNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PIACR', 'expression' => 'PIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PRACI', 'expression' => 'PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PSACR', 'expression' => 'PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'mc3e_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
