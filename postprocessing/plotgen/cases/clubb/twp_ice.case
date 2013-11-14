@@ -5,8 +5,8 @@
     'name' => 'twp_ice',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'TWP ICE Minutes 8460-9900',
-    'startTime' => 8460,  # [minutes]
+    'headerText' => 'TWP ICE Minutes 1-9900',
+    'startTime' => 1,  # [minutes]
     'endTime' => 9900,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 19000.0, # [m]
