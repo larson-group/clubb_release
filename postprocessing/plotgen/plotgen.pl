@@ -116,20 +116,26 @@ my $thinLines = 0;
 # Default (0) is no
 my $ensembleTuner = 0;
 
-# Custom Color Definitions for "CLUBB_current" and "CLUBB_previous"
-my $lt_blue = "[ 0.00, 0.63, 1.00 ]";
-my $orange = "[ 0.94, 0.50, 0.16 ]";
-# Custom Colors (taken from splotgen)
-my $goldenRod = "[ 0.80, 0.80, 0.10 ]";
-my $grey = "[ 0.40, 0.40, 0.40 ]";
-my $purple = "[ 0.50, 0., 0.50 ]";
-my $peach = "[ 1.00, 0.90, 0.40 ]";
-my $darkGreen = "[ 0.00, 0.40, 0.00 ]";
 # Arrays to cycle through when auto is set for lines
 my @lineStyles = ("--", "-", "-.", "-");
-my @lineColors = ($orange, $lt_blue, $purple, "blue", $darkGreen, "cyan", "magenta", "green", "red", $peach, $goldenRod, $grey, "yellow");
-#my @lineWidths = (4.5, 3, 2.5, 1.5, 1, 0.5);
-my @lineWidths = (4.5, 3, 2.5, 1.5);
+
+# These colors were stolen from http://www.colorbrewer2.org/
+my @lineColors = (
+"[ 1.000, 0.498, 0.000 ]", # orange
+"[ 0.216, 0.494, 0.722 ]", # blue
+"[ 0.596, 0.306, 0.639 ]", # purple
+"[ 0.471, 0.471, 0.471 ]", # gray
+"[ 0.969, 0.506, 0.749 ]", # pink
+"[ 0.302, 0.686, 0.290 ]", # green
+"[ 0.651, 0.337, 0.157 ]", # brown
+"[ 0.894, 0.102, 0.110 ]", # red
+"[ 1.000, 1.000, 0.200 ]"  # yellow
+);
+
+my @lineWidthsNormal = (4.5, 3, 2.5, 1.5);
+# We apply a constant budget width for budget cases.
+my @lineWidthsBudget = (3);
+my @lineWidths;
 
 # Counters for automatic lines
 my $lineStyleCounter = 0;
@@ -742,6 +748,18 @@ sub buildMatlabStringStd()
     # Get plots from .case file
     for(my $count = 0; $count < @plots; $count++)
     {
+        # Adjust the widths if not using thinLines
+        if ($thinLines == 0)
+        {
+           if ($CASE::CASE{'type'} eq "budget" || $CASE::CASE{'type'} eq "morrbudget")
+           {
+                @lineWidths = @lineWidthsBudget;
+           }
+           else
+           {
+                @lineWidths = @lineWidthsNormal;
+           }
+        }
         # Counters for automatic lines
         $lineStyleCounter = 0;
         $lineColorCounter = 0;

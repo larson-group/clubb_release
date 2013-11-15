@@ -39,6 +39,7 @@ numLines = optargin / argsPerLine;
 %Create a blank plot of the proper type so we have somewhere to draw lines
 fig_height = 220;
 fig_width = 250;
+
 if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
 	fig_height = 440;
 	fig_width = 500;
@@ -66,9 +67,11 @@ for i=1:numLines
 	varExpression = varargin{3 + ((i - 1) * argsPerLine)};
 
 	lineName = ['\fontsize{6}', varargin{4 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+
 	if strcmp(caseType, 'budget') || strcmp(caseType, 'morrbudget')
-		lineName = ['\fontsize{10}', varargin{4 + ((i - 1) * argsPerLine)}]; %Font size is set here as well
+		lineName = ['\fontsize{10}', varargin{4 + ((i - 1) * argsPerLine)}];
 	end
+
 	lineWidth = varargin{5 + ((i - 1) * argsPerLine)};
 	lineType = varargin{6 + ((i - 1) * argsPerLine)};
 	lineColor = varargin{7 + ((i - 1) * argsPerLine)};
