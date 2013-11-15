@@ -155,6 +155,8 @@ module estimate_scm_microphys_module
       lh_rrainm_auto_sum,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
       lh_rrainm_accr_sum,  & ! LH est of time tendency of accretion                    [kg/kg/s]
       lh_rrainm_evap_sum,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
+      lh_Nrm_auto_sum,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
+      lh_Nrm_evap_sum,     & ! LH_est of time tendency of Nrm evaporation              [#/kg/s]
       lh_rcm_mc_sum,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_sum,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_sum         ! LH est of time tendency of liquid potential temperature     [K/s]
@@ -267,6 +269,9 @@ module estimate_scm_microphys_module
     lh_rrainm_auto_sum(:) = 0._dp
     lh_rrainm_accr_sum(:) = 0._dp
     lh_rrainm_evap_sum(:) = 0._dp
+
+    lh_Nrm_auto_sum(:) = 0._dp
+    lh_Nrm_evap_sum(:) = 0._dp
 
     lh_rtp2_mc(:) = 0.0_core_rknd
     lh_thlp2_mc(:) = 0.0_core_rknd
@@ -400,6 +405,8 @@ module estimate_scm_microphys_module
       lh_rrainm_auto_sum(:) = lh_rrainm_auto_sum(:) + real( lh_rrainm_auto(:), kind=dp )
       lh_rrainm_accr_sum(:) = lh_rrainm_accr_sum(:) + real( lh_rrainm_accr(:), kind=dp )
       lh_rrainm_evap_sum(:) = lh_rrainm_evap_sum(:) + real( lh_rrainm_evap(:), kind=dp )
+      lh_Nrm_auto_sum(:) = lh_Nrm_auto_sum(:) + real( lh_Nrm_auto(:), kind=dp )
+      lh_Nrm_evap_sum(:) = lh_Nrm_evap_sum(:) + real( lh_Nrm_evap(:), kind=dp )
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
@@ -437,6 +444,10 @@ module estimate_scm_microphys_module
                                      real( n_micro_calls, kind=core_rknd )
     lh_rrainm_evap = real( lh_rrainm_evap_sum, kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
+    lh_Nrm_auto = real( lh_Nrm_auto_sum / real( n_micro_calls, kind=dp ), &
+                                     kind = core_rknd )
+    lh_Nrm_evap = real( lh_Nrm_evap_sum / real( n_micro_calls, kind=dp ), &
+                                     kind = core_rknd )
 
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
