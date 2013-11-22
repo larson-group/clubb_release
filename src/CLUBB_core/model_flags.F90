@@ -97,7 +97,6 @@ module model_flags
     l_rtm_nudge = .false., & ! For rtm nudging
     l_tke_aniso = .true.     ! For anisotropic turbulent kinetic energy, 
                              ! i.e. TKE = 1/2 (u'^2 + v'^2 + w'^2)
-! OpenMP directives.
 !$omp threadprivate(l_uv_nudge, l_tke_aniso, l_rtm_nudge)
 
   ! Use 2 calls to pdf_closure and the trapezoidal rule to  compute the 
@@ -156,14 +155,18 @@ module model_flags
   logical, public :: &
     l_diagnose_correlations, & ! Diagnose correlations instead of using fixed ones
     l_calc_w_corr    ! Calculate the correlations between w and the hydrometeors
+!$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
 
   ! See clubb:ticket:514 for details
   logical, parameter, public :: &
     l_use_modified_corr = .true., & ! Use the new correlations code
     l_use_hydromet_tolerance = .true.  ! Enable/Disable the zeroing of the hydrometeor
                                        ! means, stddevs. and correlations based on a tolerance
- 
-!$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
+
+  ! See clubb:ticket:632 for details
+  logical, public :: &
+    l_calc_thlp2_rad             ! Include the contribution of radiation to thlp2
+!$omp threadprivate( l_calc_thlp2_rad )
 
 #ifdef GFDL
   logical, public :: &

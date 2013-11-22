@@ -234,7 +234,8 @@ module clubb_driver
       read_model_flags_from_file, &
       l_rtm_nudge, &
       l_diagnose_correlations, &
-      l_calc_w_corr
+      l_calc_w_corr, &
+      l_calc_thlp2_rad
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -436,7 +437,7 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations, l_calc_w_corr
+      l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad
 
 
     namelist /stats_setting/ & 
@@ -493,6 +494,8 @@ module clubb_driver
 
     l_calc_w_corr = .false.
     l_diagnose_correlations = .false.
+
+    l_calc_thlp2_rad = .false.
 
     ! Use the Flatau polynomial approximation for computing saturation in clubb_core
     saturation_formula = "flatau"
@@ -1144,10 +1147,11 @@ module clubb_driver
 
       ! Call the parameterization one timestep
       call advance_clubb_core & 
-           ( l_implemented, dt_main, fcor, sfc_elevation, &            ! Intent(in)
+           ( l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
-             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
+             wpthlp_forcing, rtp2_forcing, &                      ! Intent(in)
+             thlp2_forcing, &                                     ! Intent(inout)
              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)

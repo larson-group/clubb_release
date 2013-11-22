@@ -36,6 +36,8 @@ module clubb_core
     cleanup_clubb_core, &
     set_Lscale_max
 
+  private :: calculate_thlp2_rad
+
   private ! Default Scope
 
   contains
@@ -53,7 +55,8 @@ module clubb_core
              ( l_implemented, dt, fcor, sfc_elevation, &            ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
-               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
+               wpthlp_forcing, rtp2_forcing, &                      ! intent(in)
+               thlp2_forcing, &                                     ! intent(inout)
                rtpthlp_forcing, wm_zm, wm_zt, &                     ! intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
@@ -139,7 +142,8 @@ module clubb_core
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
       l_use_cloud_cover, &
-      l_rtm_nudge
+      l_rtm_nudge, &
+      l_calc_thlp2_rad
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -377,6 +381,11 @@ module clubb_core
       fcor,  &          ! Coriolis forcing             [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
+    ! Input/Output Variables
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: &
+      thlp2_forcing      ! <th_l'^2> forcing (momentum levels)   [K^2/s]
+
+    ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
       rtm_forcing,     & ! r_t forcing (thermodynamic levels)        [(kg/kg)/s]
@@ -385,7 +394,6 @@ module clubb_core
       wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
       wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
       rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
-      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
       rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
@@ -1645,6 +1653,12 @@ module clubb_core
 
       ! We found that certain cases require a time tendency to run
       ! at shorter timesteps so these are prognosed now.
+
+      ! Add effects of radiation on thlp2
+      if ( l_calc_thlp2_rad ) then
+        call calculate_thlp2_rad( gr%nz, cloud_frac_zm, thlprcp, & ! intent(in)
+                                  thlp2_forcing )                  ! intent(inout)
+      end if
 
       ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
       if ( l_use_ice_latent) then
@@ -3124,6 +3138,67 @@ module clubb_core
     end subroutine set_Lscale_max
 
 !===============================================================================
+  pure subroutine calculate_thlp2_rad &
+                  ( nz, cloud_frac_zm, thlprcp, & ! Intent(in)
+                    thlp2_forcing )               ! Intent(inout)
 
+  ! Description:
+  !   Computes the contribution of radiative cooling to thlp2
+
+  ! References:
+  !   See clubb:ticket:632
+  !----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use constants_clubb, only: &
+    ten, &
+    two, &
+    one
+
+  use parameters_tunable, only: &
+    thlp2_rad_coef, &             ! Variable(s)
+    thlp2_rad_cloud_frac_thresh
+
+  implicit none
+
+  ! Input Variables
+  integer, intent(in) :: &
+    nz                    ! Number of vertical levels                      [-]
+
+  real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    cloud_frac_zm, &      ! Cloud fraction on momentum grid                [-]
+    thlprcp               ! thl'rc'                                        [K kg/kg]
+
+  ! Input/Output Variables
+  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+
+  ! Local Variables
+  integer :: &
+    max_k_cloud, &        ! The highest vertical level that contains cloud [-]
+    k                     ! Loop iterator                                  [-]
+
+  !----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    max_k_cloud = 1
+
+    do k = nz, 1, -1
+      if ( cloud_frac_zm(k) > thlp2_rad_cloud_frac_thresh ) then
+        max_k_cloud = k
+        exit
+      end if
+    end do
+
+    if ( max_k_cloud > 2 ) then
+      ! Update thlp2_forcing
+      thlp2_forcing(max_k_cloud-1:max_k_cloud) = thlp2_forcing(max_k_cloud-1:max_k_cloud) + &
+                    thlp2_rad_coef * ( -two ) * ten * thlprcp(max_k_cloud-1:max_k_cloud)
+    end if
+
+    return
+  end subroutine calculate_thlp2_rad
+!===============================================================================
   end module clubb_core
-! vim: set expandtab tabstop=2 shiftwidth=2 textwidth=100 autoindent:

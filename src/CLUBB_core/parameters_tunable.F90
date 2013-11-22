@@ -180,13 +180,20 @@ module parameters_tunable
     Skw_denom_coef = 4.0_core_rknd
 #endif
 
-!$omp threadprivate(Skw_denom_coef)
+!$omp threadprivate( Skw_denom_coef )
 
   ! Coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
     c_K10 = 0.6_core_rknd
 
-!$omp threadprivate(c_K10)
+!$omp threadprivate( c_K10 )
+
+  real( kind = core_rknd ), public :: &
+    thlp2_rad_coef = 1.0_core_rknd, &            ! Coefficient of thlp2_rad                   [-]
+    thlp2_rad_cloud_frac_thresh = 0.05_core_rknd ! Minimum cloud fraction for computation
+                                                 ! of thlp2_rad                               [-]
+
+!$omp threadprivate( thlp2_rad_coef, thlp2_rad_cloud_frac_thresh )
 
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 #ifdef GFDL
@@ -209,7 +216,7 @@ module parameters_tunable
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
-    alpha_corr, Skw_denom_coef, c_K10
+    alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -238,7 +245,8 @@ module parameters_tunable
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
        "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
-       "alpha_corr      ", "Skw_denom_coef  ", "c_K10           " /)
+       "alpha_corr      ", "Skw_denom_coef  ", "c_K10           ", "thlp2_rad_coef  ", &
+       "thlp2_rad_cloud_" /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -325,7 +333,8 @@ module parameters_tunable
                             c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                            Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10 )
+                            Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                            thlp2_rad_cloud_frac_thresh )
 
 
     ! It was decided after some experimentation, that the best
@@ -658,7 +667,8 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, params )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          thlp2_rad_cloud_frac_thresh, params )
 
     l_error = .false.
 
@@ -727,7 +737,8 @@ module parameters_tunable
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+      thlp2_rad_cloud_frac_thresh
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -749,7 +760,8 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, param_spread )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          thlp2_rad_cloud_frac_thresh, param_spread )
 
     l_error = .false.
 
@@ -792,7 +804,8 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10,  params )
+               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               thlp2_rad_cloud_frac_thresh, params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -871,6 +884,8 @@ module parameters_tunable
       ialpha_corr, &
       iSkw_denom_coef, &
       ic_K10, &
+      ithlp2_rad_coef, &
+      ithlp2_rad_cloud_frac_thresh, &
       nparams
 
     implicit none
@@ -886,7 +901,7 @@ module parameters_tunable
       c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
       taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-      Skw_denom_coef, c_K10
+      Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -962,6 +977,8 @@ module parameters_tunable
     params(ialpha_corr) = alpha_corr
     params(iSkw_denom_coef) = Skw_denom_coef
     params(ic_K10) = c_K10
+    params(ithlp2_rad_coef) = thlp2_rad_coef
+    params(ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
 
     return
   end subroutine pack_parameters
@@ -978,7 +995,8 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10 )
+               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               thlp2_rad_cloud_frac_thresh )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1057,6 +1075,8 @@ module parameters_tunable
       ialpha_corr, &
       iSkw_denom_coef, &
       ic_K10, &
+      ithlp2_rad_coef, &
+      ithlp2_rad_cloud_frac_thresh, &
       nparams
 
     implicit none
@@ -1075,7 +1095,8 @@ module parameters_tunable
       c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+      thlp2_rad_cloud_frac_thresh
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1149,6 +1170,9 @@ module parameters_tunable
     Skw_denom_coef = params(iSkw_denom_coef)
     c_K10 = params(ic_K10)
 
+    thlp2_rad_coef = params(ithlp2_rad_coef)
+    thlp2_rad_cloud_frac_thresh = params(ithlp2_rad_cloud_frac_thresh)
+
     return
   end subroutine unpack_parameters
 
@@ -1176,7 +1200,8 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, params )
+                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          thlp2_rad_cloud_frac_thresh, params )
 
     return
 
@@ -1263,6 +1288,8 @@ module parameters_tunable
     nu_hd_vert_res_dep = init_value
     Skw_denom_coef     = init_value
     c_K10              = init_value
+    thlp2_rad_coef     = init_value
+    thlp2_rad_cloud_frac_thresh=init_value
 
     return
   end subroutine init_parameters_999
