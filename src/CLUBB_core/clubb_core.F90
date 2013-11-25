@@ -3194,8 +3194,8 @@ module clubb_core
 
     if ( max_k_cloud > 2 ) then
       ! Update thlp2_forcing
-      thlp2_forcing(max_k_cloud-1:max_k_cloud) = thlp2_forcing(max_k_cloud-1:max_k_cloud) + &
-                    thlp2_rad_coef * ( -two ) * ten * thlprcp(max_k_cloud-1:max_k_cloud)
+      thlp2_forcing(max_k_cloud-0:max_k_cloud) = thlp2_forcing(max_k_cloud-0:max_k_cloud) + &
+                    thlp2_rad_coef * ( -two ) * ten * thlprcp(max_k_cloud-0:max_k_cloud)
     end if
 
     return

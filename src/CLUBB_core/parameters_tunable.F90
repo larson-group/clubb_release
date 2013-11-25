@@ -190,7 +190,7 @@ module parameters_tunable
 
   real( kind = core_rknd ), public :: &
     thlp2_rad_coef = 1.0_core_rknd, &            ! Coefficient of thlp2_rad                   [-]
-    thlp2_rad_cloud_frac_thresh = 0.05_core_rknd ! Minimum cloud fraction for computation
+    thlp2_rad_cloud_frac_thresh = 0.1_core_rknd ! Minimum cloud fraction for computation
                                                  ! of thlp2_rad                               [-]
 
 !$omp threadprivate( thlp2_rad_coef, thlp2_rad_cloud_frac_thresh )
