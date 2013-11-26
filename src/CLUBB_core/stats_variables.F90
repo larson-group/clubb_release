@@ -803,6 +803,30 @@ module stats_variables
 !$omp   iNPRACG, iNSUBR,  iNSMLTR, iNGMLTR, iNPRACS, iNNUCCR, iNIACR, &
 !$omp   iNIACRS, iNGRACS, iNSMLTS, iNSAGG, iNPRCI, iNSCNG, iNSUBS )
 
+  ! More indices for Morrison budgets!!
+  integer, public :: &
+    iPCC = 0, & 
+    iNNUCCC = 0, & 
+    iNPSACWS = 0, &
+    iNPRA = 0, & 
+    iNPRC = 0, & 
+    iNPSACWI = 0, &
+    iNPSACWG = 0, &
+    iNPRAI = 0, &
+    iNMULTS = 0, & 
+    iNMULTG = 0, & 
+    iNMULTR = 0, & 
+    iNMULTRG = 0, & 
+    iNNUCCD = 0, & 
+    iNSUBI = 0, & 
+    iNGMLTG = 0, &
+    iNSUBG = 0, &
+    iNACT = 0, &
+    iT_in_K_mc = 0
+
+!$omp threadprivate(iPCC, iNNUCCC, iNPSACWS, iNPRA, iNPRC, iNPSACWI, iNPSACWG, iNPRAI, &
+!$omp   iNMULTS, iNMULTG, iNMULTR, iNMULTRG, iNNUCCD, iNSUBI, iNGMLTG, iNSUBG, iNACT, iT_in_k_mc  )
+
   ! Indices for statistics in zm file
   integer, public :: & 
      iwp2 = 0, & 

@@ -510,6 +510,26 @@ module stats_zt
       iNSCNG, &
       iNSUBS
 
+    use stats_variables, only: &
+      iPCC, &
+      iNNUCCC, &
+      iNPSACWS, &
+      iNPRA, &
+      iNPRC, &
+      iNPSACWI, &
+      iNPSACWG, &
+      iNPRAI, &
+      iNMULTS, &
+      iNMULTG, &
+      iNMULTR, &
+      iNMULTRG, &
+      iNNUCCD, &
+      iNSUBI, &
+      iNGMLTG, &
+      iNSUBG, &
+      iNACT, &
+      iT_in_K_mc
+
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -1895,7 +1915,7 @@ module stats_zt
         iEVPMS = k
 
         call stat_assign( iEVPMS, "EVPMS", & 
-             "Depositional growth of snow, +rsnowm, -rvm [(kg/kg)/s]", "(kg/kg)/s", &
+             "Evaporation of melted snow, +rsnowm, -rvm [(kg/kg)/s]", "(kg/kg)/s", &
                 l_silhs_var, zt )
         k = k + 1
 
@@ -1911,7 +1931,7 @@ module stats_zt
         iEVPMG = k
 
         call stat_assign( iEVPMG, "EVPMG", & 
-             "Depositional growth of graupel, +rgraupelm, -rvm [(kg/kg)/s]", "(kg/kg)/s", &
+             "Evaporation of melted graupel, +rgraupelm, -rvm [(kg/kg)/s]", "(kg/kg)/s", &
                 l_silhs_var, zt )
         k = k + 1
 
@@ -1991,7 +2011,7 @@ module stats_zt
         iPRD = k
 
         call stat_assign( iPRD, "PRD", & 
-             "Depositional growth of cloud ice, +ricem, -rcm [(kg/kg)/s]", "(kg/kg)/s", &
+             "Depositional growth of cloud ice, +ricem, -rvm [(kg/kg)/s]", "(kg/kg)/s", &
                 l_silhs_var, zt )
         k = k + 1
 
@@ -2280,12 +2300,157 @@ module stats_zt
              "Conversion of snow to graupel, +Ngraupelm, -Nsnowm [(#/kg/s)]", &
                 "(#/kg/s)", l_silhs_var, zt )
         k = k + 1
+
       case ('NSUBS')
         iNSUBS= k
 
         call stat_assign( iNSUBS, "NSUBS", &
              "Loss of snow due to sublimation, +Nsnowm [(#/kg/s)]", &
                 "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('PCC')
+        iPCC= k
+
+        call stat_assign( iPCC, "PCC", &
+             "Satuation adjustment -rvm +rcm [(kg/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NNUCCC')
+        iNNUCCC= k
+
+        call stat_assign( iNNUCCC, "NNUCCC", &
+             "Contact freezing of drops, -Ncm + Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPSACWS')
+        iNPSACWS= k
+
+        call stat_assign( iNPSACWS, "NPSACWS", &
+             "Droplet accretion by snow, -Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPRA')
+        iNPRA= k
+
+        call stat_assign( iNPRA, "NPRA", &
+             "Droplet accretion by rain, -Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPRC')
+        iNPRC= k
+
+        call stat_assign( iNPRC, "NPRC", &
+             "Autoconversion of cloud drops, -Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPSACWI')
+        iNPSACWI= k
+
+        call stat_assign( iNPSACWI, "NPSACWI", &
+             "Droplet accretion by cloud ice, -Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPSACWG')
+        iNPSACWG= k
+
+        call stat_assign( iNPSACWG, "NPSACWG", &
+             "Collection of cloud droplets by graupel, -Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NPRAI')
+        iNPRAI= k
+
+        call stat_assign( iNPRAI, "NPRAI", &
+             "Accretion of cloud ice by snow, -Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NMULTS')
+        iNMULTS= k
+
+        call stat_assign( iNMULTS, "NMULTS", &
+             "Ice multiplication due to riming of cloud droplets by snow, +Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NMULTG')
+        iNMULTG= k
+
+        call stat_assign( iNMULTG, "NMULTG", &
+             "Ice multiplication due to accretion of droplets by graupel, +Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NMULTR')
+        iNMULTR= k
+
+        call stat_assign( iNMULTR, "NMULTR", &
+             "Ice multiplication due to riming of rain by snow, +Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NMULTRG')
+        iNMULTRG= k
+
+        call stat_assign( iNMULTRG, "NMULTRG", &
+             "Ice multiplication due to accretion of rain by graupel, +Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NNUCCD')
+        iNNUCCD= k
+
+        call stat_assign( iNNUCCD, "NNUCCD", &
+             "Primary ice nucleation, freezing of aerosol, +Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NSUBI')
+        iNSUBI= k
+
+        call stat_assign( iNSUBI, "NSUBI", &
+             "Loss of ice due to sublimation, -Nim [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NGMLTG')
+        iNGMLTG= k
+
+        call stat_assign( iNGMLTG, "NGMLTG", &
+             "Loss of graupel due to melting, -Ngraupelm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NSUBG')
+        iNSUBG= k
+
+        call stat_assign( iNSUBG, "NSUBG", &
+             "Loss of graupel due to sublimation, -Ngraupelm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('NACT')
+        iNACT= k
+
+        call stat_assign( iNACT, "NACT", &
+             "Cloud drop formation by aerosol activation, +Ncm [(#/kg/s)]", &
+                "(#/kg/s)", l_silhs_var, zt )
+        k = k + 1
+
+      case ('T_in_K_mc')
+        iT_in_K_mc= k
+
+        call stat_assign( iT_in_K_mc, "T_in_K_mc", &
+             "Temperature tendency from Morrison microphysics [(K/s)]", &
+                "(K/s)", l_silhs_var, zt )
         k = k + 1
 
       case ('w_KK_evap_covar_zt')
