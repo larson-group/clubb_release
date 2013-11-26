@@ -153,8 +153,8 @@ module model_flags
 
   ! See clubb:ticket:514 for details
   logical, public :: &
-    l_diagnose_correlations, & ! Diagnose correlations instead of using fixed ones
-    l_calc_w_corr    ! Calculate the correlations between w and the hydrometeors
+    l_diagnose_correlations = .false., & ! Diagnose correlations instead of using fixed ones
+    l_calc_w_corr = .false.    ! Calculate the correlations between w and the hydrometeors
 !$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
 
   ! See clubb:ticket:514 for details
@@ -165,7 +165,7 @@ module model_flags
 
   ! See clubb:ticket:632 for details
   logical, public :: &
-    l_calc_thlp2_rad             ! Include the contribution of radiation to thlp2
+    l_calc_thlp2_rad = .false.         ! Include the contribution of radiation to thlp2
 !$omp threadprivate( l_calc_thlp2_rad )
 
 #ifdef GFDL

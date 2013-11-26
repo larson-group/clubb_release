@@ -492,11 +492,6 @@ module clubb_driver
     rtm_min = 0.0_core_rknd
     rtm_nudge_max_altitude = 0.0_core_rknd
 
-    l_calc_w_corr = .false.
-    l_diagnose_correlations = .false.
-
-    l_calc_thlp2_rad = .false.
-
     ! Use the Flatau polynomial approximation for computing saturation in clubb_core
     saturation_formula = "flatau"
 
