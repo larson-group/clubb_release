@@ -162,6 +162,10 @@
        [
           {'filename' => 'mpace_b_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Lscale', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Dissipation Time Scale', 'axisLabel' => 'tau\_zm [s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'mpace_b_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'tau_zm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'radht', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
