@@ -253,9 +253,7 @@ module morrison_micro_driver_module
       morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics [m/s] 
       cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
       rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
-      rrainm_accr_r4, &   ! Accretion rate         [kg/kg/s]
-      ncmbefore, &
-      diff
+      rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
 
     ! In the comments below, by "adds to" we mean that if the quantity is
     ! positive, it adds positively to the prognostic variable, but if the
@@ -543,7 +541,6 @@ module morrison_micro_driver_module
     rho_r4 = real( rho )
     dzq_r4 = real( dzq )
 
-    ncmbefore=Ncm_r4
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
