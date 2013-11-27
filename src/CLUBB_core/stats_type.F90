@@ -65,55 +65,15 @@ module stats_type
 
   end type stats
 
-  interface stat_assign
-    module procedure stat_assign_no_silhs, stat_assign_maybe_silhs
-  end interface stat_assign
-
   contains
 
   !=============================================================================
-  subroutine stat_assign_no_silhs( var_index, var_name, &
-                                   var_description, var_units, grid_kind )
-
-  ! Description:
-  !   Assigns pointers for statistics variables in grid. This version is to be
-  !   called for non-SILHS variables.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
-
-    implicit none
-
-    ! Local Constants
-    logical, parameter :: l_not_silhs = .false. ! This is not a SILHS variable
-
-    ! Input Variables
-    integer,intent(in) :: var_index
-    character(len = *), intent(in) :: var_name
-    character(len = *), intent(in) :: var_description
-    character(len = *), intent(in) :: var_units
-
-    ! Input/Output Variables
-    type(stats), intent(inout) :: grid_kind
-
-  !-----------------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    call stat_assign_maybe_silhs( var_index, var_name, &
-                                  var_description, var_units, &
-                                  l_not_silhs, grid_kind )
-    return
-  end subroutine stat_assign_no_silhs
-
-  !=============================================================================
-  subroutine stat_assign_maybe_silhs( var_index, var_name,  &
-                                      var_description, var_units, &
-                                      l_silhs, grid_kind )
+  subroutine stat_assign( var_index, var_name,  &
+                          var_description, var_units, &
+                          l_silhs, grid_kind )
 
     ! Description: 
-    !   Assigns pointers for statistics variables in grid. This version has an
+    !   Assigns pointers for statistics variables in grid. There is an
     !   option to make the variable a SILHS variable (updated n_micro_calls
     !   times per timestep rather than just once).
 
@@ -155,7 +115,7 @@ module stats_type
 
     return
 
-  end subroutine stat_assign_maybe_silhs
+  end subroutine stat_assign
 
   !=============================================================================
   subroutine stat_update_var( var_index, value, grid_kind )

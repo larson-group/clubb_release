@@ -70,28 +70,30 @@ module stats_LH_sfc
 
       case ( 'LH_morr_rain_rate' )
         iLH_morr_rain_rate = k
-        call stat_assign( iLH_morr_rain_rate, "LH_morr_rain_rate", & 
-             "Total precip fallout rate from Morrison scheme [mm/day]", &
-                "mm/day", l_yes_silhs,  LH_sfc )
+        call stat_assign( var_index=iLH_morr_rain_rate, var_name="LH_morr_rain_rate", &
+             var_description="Total precip fallout rate from Morrison scheme [mm/day]", &
+             var_units="mm/day", l_silhs=.true., grid_kind=LH_sfc )
         k = k + 1
 
       case ( 'LH_morr_snow_rate' )
         iLH_morr_snow_rate = k
-        call stat_assign( iLH_morr_snow_rate, "LH_morr_snow_rate", & 
-             "Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]", &
-                "mm/day", l_yes_silhs, LH_sfc )
+        call stat_assign( var_index=iLH_morr_snow_rate, var_name="LH_morr_snow_rate", &
+             var_description="Snow+Ice+Graupel fallout rate from Morrison scheme [mm/day]", &
+             var_units="mm/day", l_silhs=.true., grid_kind=LH_sfc )
         k = k + 1
 
       case ( 'LH_vwp' )
         iLH_vwp = k
-        call stat_assign( iLH_vwp, "LH_vwp", & 
-             "Vapor water path [kg/m^2]","kg/m^2", l_yes_silhs, LH_sfc )
+        call stat_assign( var_index=iLH_vwp, var_name="LH_vwp", &
+             var_description="Vapor water path [kg/m^2]", var_units="kg/m^2", l_silhs=.true., &
+             grid_kind=LH_sfc )
         k = k + 1
 
       case ( 'LH_lwp' )
         iLH_lwp = k
-        call stat_assign( iLH_lwp, "LH_lwp", & 
-             "Liquid water path [kg/m^2]","kg/m^2", l_yes_silhs, LH_sfc )
+        call stat_assign( var_index=iLH_lwp, var_name="LH_lwp", &
+             var_description="Liquid water path [kg/m^2]", var_units="kg/m^2", l_silhs=.true., &
+             grid_kind=LH_sfc )
         k = k + 1
 
       case default
