@@ -27,19 +27,22 @@
 
        {'plotTitle' => 'thlm Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LV\_TERMS', 'expression' => ' ( rrainm_cond * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LS\_TERMS', 'expression' => ' (( PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LF\_TERMS', 'expression' => '(( PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_sum', 'expression' => '( rrainm_cond * 2.5e6) / 1005 + (( PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005 + (( PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005 ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LV\_TERMS', 'expression' => ' (( rrainm_cond + PCC ) * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LS\_TERMS', 'expression' => ' (( EVPMS + EVPMG + PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'LF\_TERMS', 'expression' => '(( PSMLT + PGMLT + PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'thlm\_sum', 'expression' => '(( rrainm_cond + PCC )* 2.5e6) / 1005 + (( EVPMS + EVPMG + PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005 + (( PSMLT + PGMLT + PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005 ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'thlm LV\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRE', 'expression' => ' (rrainm_cond * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PCC', 'expression' => ' (PCC * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'thlm LS\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => ' (EVPMS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => ' (EVPMG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRD', 'expression' => ' (PRD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRDS', 'expression' => ' (PRDS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => ' (MNUCCD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -51,6 +54,8 @@
 
        {'plotTitle' => 'thlm LF\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => '(PSMLT * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => '(PGMLT * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => '(PSACWS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSACWI', 'expression' => '(PSACWI * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCC', 'expression' => '(MNUCCC * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -83,6 +88,9 @@
        {'plotTitle' => 'rvm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRE', 'expression' => '-rrainm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-EVPMS', 'expression' => '-EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-EVPMG', 'expression' => '-EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PCC', 'expression' => '-PCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRD', 'expression' => '-PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRDS', 'expression' => '-PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCD', 'expression' => '-MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -90,13 +98,14 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-EPRDS', 'expression' => '-EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRDG', 'expression' => '-PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-EPRDG', 'expression' => '-EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rvm\_sum', 'expression' => '-rrainm_cond - PRD - PRDS - MNUCCD - EPRD - EPRDS - PRDG - EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rvm\_sum', 'expression' => '-1*(rrainm_cond+evpms+evpmg+pcc+prd+prds+mnuccd+eprd+eprds+prdg+eprdg)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rcm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
 	  {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRA', 'expression' => '-rrainm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRC', 'expression' => '-rrainm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PCC', 'expression' => 'PCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCC', 'expression' => '-MNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PSACWS', 'expression' => '-PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PSACWI', 'expression' => '-PSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -104,8 +113,30 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PSACWG', 'expression' => '-PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PGSACW', 'expression' => '-PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-rrainm_accr - rrainm_auto - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-rrainm_accr - rrainm_auto + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
+
+{'plotTitle' => 'Ncm budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_bt', 'expression' => 'Ncm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_ma', 'expression' => 'Ncm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_ta', 'expression' => 'Ncm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_cl', 'expression' => 'Ncm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_mc', 'expression' => 'Ncm_mc-NCSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sd\_morr', 'expression' => 'NCSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_residual', 'expression' => ' Ncm_bt - ( Ncm_ma + Ncm_ta + Ncm_cl + Ncm_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+{'plotTitle' => 'Ncm Morrison budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NNUCCC', 'expression' => '-NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWS', 'expression' => '-NPSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRA', 'expression' => '-NPRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRC', 'expression' => '-NPRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWI', 'expression' => '-NPSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWG', 'expression' => '-NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => '-NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
 
        {'plotTitle' => 'ricem budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
@@ -137,6 +168,35 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
+       {'plotTitle' => 'Nim budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_bt', 'expression' => 'Nim_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_ma', 'expression' => 'Nim_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sd', 'expression' => 'Nim_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_ta', 'expression' => 'Nim_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_fill\_clip', 'expression' => 'Nim_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_mc', 'expression' => 'Nim_mc-Nim_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NISTEN', 'expression' => 'NISTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_residual', 'expression' => ' Nim_bt - ( Nim_ma + Nim_sd + Nim_ta + Nim_cl + Nim_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'Nim Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NNUCCC', 'expression' => 'NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRCI', 'expression' => '-NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRAI', 'expression' => '-NPRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NMULTS', 'expression' => 'NMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NMULTG', 'expression' => 'NMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NMULTR', 'expression' => 'NMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NMULTRG', 'expression' => 'NMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NNUCCD', 'expression' => 'NNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBI', 'expression' => 'NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NULTRG + NNUCCD - NIACR - NIACRS + NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+
        {'plotTitle' => 'rrainm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_bt', 'expression' => 'rrainm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -158,7 +218,6 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PRACS', 'expression' => '-PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-MNUCCR', 'expression' => '-MNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-QMULTR', 'expression' => '-QMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-QMULTRG', 'expression' => '-QMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PIACR', 'expression' => '-PIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PIACRS', 'expression' => '-PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -166,8 +225,38 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PGRACS', 'expression' => '-PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'rrainm_cond + rrainm_accr + rrainm_auto - PRACS - MNUCCR - QMULTR - QMULTG - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'rrainm_cond + rrainm_accr + rrainm_auto - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
+
+       {'plotTitle' => 'Nrm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_bt', 'expression' => 'Nrm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_ma', 'expression' => 'Nrm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sd', 'expression' => 'Nrm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_ta', 'expression' => 'Nrm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_ts', 'expression' => 'Nrm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_cl', 'expression' => 'Nrm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_mc', 'expression' => 'Nrm_mc - NRSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NRSTEN', 'expression' => 'NRSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_residual', 'expression' => 'Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'Nrm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBR', 'expression' => 'NSUBR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NSMLTR', 'expression' => '-NSMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NGMLTR', 'expression' => '-NGMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NPRC1', 'expression' => 'NPRC1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRACS', 'expression' => '-NPRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NNUCCR', 'expression' => '-NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NRAGG', 'expression' => 'NRAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPRACG', 'expression' => '-NPRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sum', 'expression' => 'NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
 
        {'plotTitle' => 'rsnowm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
@@ -189,11 +278,12 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRACS', 'expression' => 'PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRCI', 'expression' => 'PRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'EPRDS', 'expression' => 'EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSACR', 'expression' => '-PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-PSACR', 'expression' => '-PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => 'PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRACIS', 'expression' => 'PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => 'EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'nsnowm budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -213,8 +303,8 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => '-NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NSCNG', 'expression' => '-NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -245,8 +335,35 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PRACI', 'expression' => 'PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PSACR', 'expression' => 'PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => 'EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
+
+       {'plotTitle' => 'Ngraupelm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_bt', 'expression' => 'Ngraupelm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_ma', 'expression' => 'Ngraupelm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sd', 'expression' => 'Ngraupelm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_ta', 'expression' => 'Ngraupelm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_cl', 'expression' => 'Ngraupelm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_mc', 'expression' => 'Ngraupelm_mc - NGSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NGSTEN', 'expression' => 'NGSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_residual', 'expression' => 'Ngraupelm_bt - (Ngraupelm_ma + Ngraupelm_sd + Ngraupelm_ta  + Ngraupelm_cl + Ngraupelm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+       {'plotTitle' => 'Ngraupelm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NGMLTG', 'expression' => 'NGMLTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => 'NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => 'NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NNUCCR', 'expression' => 'NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NIACR', 'expression' => 'NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBG', 'expression' => 'NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+    
+
+
     ],
     'nightlyOutput' =>
     {
