@@ -8,7 +8,7 @@ vars_zt =
 ''
 
 vars_zm =
-'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp',
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
 'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp', 'wprcp', 'rc_coef', 'thlprcp', 'rtprcp',
 ''
 
