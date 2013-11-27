@@ -107,11 +107,6 @@ module stats_LH_zt
     ! External
     intrinsic :: trim
 
-    ! Local Constants
-    logical, parameter :: &
-      l_yes_silhs = .true.  ! These are all going to be considered "SILHS"
-                            ! variables.
-
     ! Input Variable
     character(len= * ), dimension(nvarmax_LH_zt), intent(in) :: vars_LH_zt
 

@@ -44,9 +44,6 @@ module stats_LH_sfc
     ! External
     intrinsic :: trim
 
-    ! Local Constants
-    logical, parameter :: l_yes_silhs = .true. ! All these are considered "SILHS variables"
-
     ! Input Variable
     character(len= * ), dimension(nvarmax_LH_sfc), intent(in) :: vars_LH_sfc
 
