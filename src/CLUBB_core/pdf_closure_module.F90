@@ -1096,16 +1096,16 @@ module pdf_closure_module
       zetaN = (s - s_at_sat) / stdev_s
       cloud_fracN  = 0.5_core_rknd*( 1._core_rknd + erf( zetaN/sqrt_2 )  )
       if (present(rcN)) &
-        rcN        = s*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
+        rcN       = (s - s_at_sat)*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
     else
-      if ( s < 0.0_core_rknd ) then
+      if ( (s - s_at_sat) < 0.0_core_rknd ) then
         cloud_fracN  = 0.0_core_rknd
         if (present(rcN)) &
           rcN        = 0.0_core_rknd
       else
         cloud_fracN  = 1.0_core_rknd
         if (present(rcN)) &
-          rcN        = s
+          rcN        = s - s_at_sat
       end if ! s < 0
     end if ! stdev_s > s_mellor_tol
     
