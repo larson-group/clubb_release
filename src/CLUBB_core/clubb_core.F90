@@ -1656,8 +1656,8 @@ module clubb_core
 
       ! Add effects of radiation on thlp2
       if ( l_calc_thlp2_rad ) then
-        call calculate_thlp2_rad( gr%nz, cloud_frac_zm, thlprcp, & ! intent(in)
-                                  thlp2_forcing )                  ! intent(inout)
+        call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, & ! intent(in)
+                                  thlp2_forcing )                          ! intent(inout)
       end if
 
       ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
@@ -3139,8 +3139,8 @@ module clubb_core
 
 !===============================================================================
   pure subroutine calculate_thlp2_rad &
-                  ( nz, cloud_frac_zm, thlprcp, & ! Intent(in)
-                    thlp2_forcing )               ! Intent(inout)
+                  ( nz, rcm_zm, thlprcp, & ! Intent(in)
+                    thlp2_forcing )                       ! Intent(inout)
 
   ! Description:
   !   Computes the contribution of radiative cooling to thlp2
@@ -3152,14 +3152,21 @@ module clubb_core
   use clubb_precision, only: &
     core_rknd                     ! Constant(s)
 
+  use grid_class, only:  &
+    zt2zm                         ! Procedure
+
   use constants_clubb, only: &
     ten, &
     two, &
-    one
+    one, &
+    rc_tol
 
   use parameters_tunable, only: &
-    thlp2_rad_coef, &             ! Variable(s)
-    thlp2_rad_cloud_frac_thresh
+    thlp2_rad_coef                 ! Variable(s)
+
+  use variables_diagnostic_module, only: &
+    radht                         ! Variable(s)  (we should refactor to feed
+                                  ! through an argument list)
 
   implicit none
 
@@ -3168,7 +3175,7 @@ module clubb_core
     nz                    ! Number of vertical levels                      [-]
 
   real( kind = core_rknd ), dimension(nz), intent(in) :: &
-    cloud_frac_zm, &      ! Cloud fraction on momentum grid                [-]
+    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
     thlprcp               ! thl'rc'                                        [K kg/kg]
 
   ! Input/Output Variables
@@ -3177,26 +3184,22 @@ module clubb_core
 
   ! Local Variables
   integer :: &
-    max_k_cloud, &        ! The highest vertical level that contains cloud [-]
     k                     ! Loop iterator                                  [-]
 
   !----------------------------------------------------------------------
 
-    !----- Begin Code -----
-    max_k_cloud = 1
 
-    do k = nz, 1, -1
-      if ( cloud_frac_zm(k) > thlp2_rad_cloud_frac_thresh ) then
-        max_k_cloud = k
-        exit
-      end if
+    do k = 1, nz
+
+       if ( rcm_zm(k) > rc_tol ) then
+ 
+          thlp2_forcing(k) = thlp2_forcing(k) + &
+                    thlp2_rad_coef * ( two ) * ( zt2zm( radht, k ) / rcm_zm(k) )  * thlprcp(k)
+
+       end if
+
     end do
 
-    if ( max_k_cloud > 2 ) then
-      ! Update thlp2_forcing
-      thlp2_forcing(max_k_cloud-0:max_k_cloud) = thlp2_forcing(max_k_cloud-0:max_k_cloud) + &
-                    thlp2_rad_coef * ( -two ) * ten * thlprcp(max_k_cloud-0:max_k_cloud)
-    end if
 
     return
   end subroutine calculate_thlp2_rad
