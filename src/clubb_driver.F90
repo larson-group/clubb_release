@@ -50,7 +50,7 @@ module clubb_driver
       um_ref, vm_ref, Ncnm, wp2_zt, &
       hydromet, wphydrometp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
-      Frad_LW_up, Frad_SW_down, Frad_LW_down
+      Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
 
     use variables_prognostic_module, only:  & 
       T_sfc, p_sfc, sens_ht, latent_ht, thlm, rtm,     & ! Variable(s)
@@ -87,7 +87,8 @@ module clubb_driver
     use clubb_core, only: & 
       setup_clubb_core,  & ! Procedure(s) 
       cleanup_clubb_core, & 
-      advance_clubb_core
+      advance_clubb_core, &
+      calculate_thlp2_rad
 
     use constants_clubb, only: &
       fstdout, fstderr, zero, one, eps, zero_dp, one_dp, & ! Constant(s)
@@ -120,7 +121,7 @@ module clubb_driver
       l_pos_def, l_hole_fill, & ! Constants
       l_single_C2_Skw, l_gamma_Skw, l_byteswap_io, &
       l_use_precip_frac, &
-      l_use_hydromet_tolerance
+      l_use_hydromet_tolerance, l_calc_thlp2_rad
 
     use stats_variables, only: l_stats_last, l_stats_samp, & ! Variable(s)
       l_output_rad_files
@@ -234,8 +235,7 @@ module clubb_driver
       read_model_flags_from_file, &
       l_rtm_nudge, &
       l_diagnose_correlations, &
-      l_calc_w_corr, &
-      l_calc_thlp2_rad
+      l_calc_w_corr
 
     use soil_vegetation, only: &
       l_soil_veg ! Variable(s)
@@ -417,6 +417,10 @@ module clubb_driver
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      radht_zm, &
+      rcm_zm
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
@@ -891,6 +895,8 @@ module clubb_driver
     allocate( rfrzm(gr%nz) )
     rfrzm = zero
 
+    allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
+
     if ( .not. l_restart ) then
 
       time_current = time_initial
@@ -1140,13 +1146,23 @@ module clubb_driver
         rfrzm = rfrzm + hydromet(:,iirgraupelm)
       end if
 
+      rcm_zm = zt2zm( rcm )
+      radht_zm = zt2zm( radht )
+
+      ! Add effects of radiation on thlp2
+      if ( l_calc_thlp2_rad ) then
+
+        call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, radht_zm, & ! intent(in)
+                                  thlp2_forcing )                     ! intent(inout)
+
+      end if
+
       ! Call the parameterization one timestep
-      call advance_clubb_core & 
+      call advance_clubb_core &
            ( l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
-             wpthlp_forcing, rtp2_forcing, &                      ! Intent(in)
-             thlp2_forcing, &                                     ! Intent(inout)
+             wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
              rtpthlp_forcing, wm_zm, wm_zt, &                     ! Intent(in)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! Intent(in)
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
@@ -1312,7 +1328,7 @@ module clubb_driver
     end if
 #endif
 
-    deallocate(radf)
+    deallocate( radf, rcm_zm, radht_zm )
 
     return
   end subroutine run_clubb

@@ -165,7 +165,7 @@ module model_flags
 
   ! See clubb:ticket:632 for details
   logical, public :: &
-    l_calc_thlp2_rad = .false.         ! Include the contribution of radiation to thlp2
+    l_calc_thlp2_rad = .true.         ! Include the contribution of radiation to thlp2
 !$omp threadprivate( l_calc_thlp2_rad )
 
 #ifdef GFDL

@@ -30,13 +30,12 @@ module clubb_core
 
   implicit none
 
-  public ::  & 
-    setup_clubb_core, & 
-    advance_clubb_core, & 
+  public ::  &
+    setup_clubb_core, &
+    advance_clubb_core, &
     cleanup_clubb_core, &
-    set_Lscale_max
-
-  private :: calculate_thlp2_rad
+    set_Lscale_max, &
+    calculate_thlp2_rad
 
   private ! Default Scope
 
@@ -55,8 +54,7 @@ module clubb_core
              ( l_implemented, dt, fcor, sfc_elevation, &            ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
-               wpthlp_forcing, rtp2_forcing, &                      ! intent(in)
-               thlp2_forcing, &                                     ! intent(inout)
+               wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
                rtpthlp_forcing, wm_zm, wm_zt, &                     ! intent(in)
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, &         ! intent(in)
                wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
@@ -142,8 +140,7 @@ module clubb_core
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
       l_use_cloud_cover, &
-      l_rtm_nudge, &
-      l_calc_thlp2_rad
+      l_rtm_nudge
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -381,10 +378,6 @@ module clubb_core
       fcor,  &          ! Coriolis forcing             [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
-    ! Input/Output Variables
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) :: &
-      thlp2_forcing      ! <th_l'^2> forcing (momentum levels)   [K^2/s]
-
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
       thlm_forcing,    & ! theta_l forcing (thermodynamic levels)    [K/s]
@@ -394,6 +387,7 @@ module clubb_core
       wprtp_forcing,   & ! <w'r_t'> forcing (momentum levels)    [m*K/s^2]
       wpthlp_forcing,  & ! <w'th_l'> forcing (momentum levels)   [m*(kg/kg)/s^2]
       rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
+      thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
       rtpthlp_forcing, & ! <r_t'th_l'> forcing (momentum levels) [K*(kg/kg)/s]
       wm_zm,           & ! w mean wind component on momentum levels  [m/s]
       wm_zt,           & ! w mean wind component on thermo. levels   [m/s]
@@ -1653,12 +1647,6 @@ module clubb_core
 
       ! We found that certain cases require a time tendency to run
       ! at shorter timesteps so these are prognosed now.
-
-      ! Add effects of radiation on thlp2
-      if ( l_calc_thlp2_rad ) then
-        call calculate_thlp2_rad( gr%nz, rcm_zm, thlprcp, & ! intent(in)
-                                  thlp2_forcing )                          ! intent(inout)
-      end if
 
       ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
       if ( l_use_ice_latent) then
@@ -3139,7 +3127,7 @@ module clubb_core
 
 !===============================================================================
   pure subroutine calculate_thlp2_rad &
-                  ( nz, rcm_zm, thlprcp, & ! Intent(in)
+                  ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
                     thlp2_forcing )                       ! Intent(inout)
 
   ! Description:
@@ -3164,10 +3152,6 @@ module clubb_core
   use parameters_tunable, only: &
     thlp2_rad_coef                 ! Variable(s)
 
-  use variables_diagnostic_module, only: &
-    radht                         ! Variable(s)  (we should refactor to feed
-                                  ! through an argument list)
-
   implicit none
 
   ! Input Variables
@@ -3176,7 +3160,8 @@ module clubb_core
 
   real( kind = core_rknd ), dimension(nz), intent(in) :: &
     rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
-    thlprcp               ! thl'rc'                                        [K kg/kg]
+    thlprcp, &            ! thl'rc'                                        [K kg/kg]
+    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
 
   ! Input/Output Variables
   real( kind = core_rknd ), dimension(nz), intent(inout) :: &
@@ -3194,7 +3179,7 @@ module clubb_core
        if ( rcm_zm(k) > rc_tol ) then
  
           thlp2_forcing(k) = thlp2_forcing(k) + &
-                    thlp2_rad_coef * ( two ) * ( zt2zm( radht, k ) / rcm_zm(k) )  * thlprcp(k)
+                    thlp2_rad_coef * ( two ) * radht_zm(k) / rcm_zm(k) * thlprcp(k)
 
        end if
 
