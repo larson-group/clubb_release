@@ -1001,7 +1001,8 @@ module latin_hypercube_driver_module
       ! -dschanen 19 Nov 2010
       write(0,*) abs( mean_weight - 1.0_dp )
       if ( abs( mean_weight - 1.0_dp ) > &
-          real( n_micro_calls, kind=dp ) * epsilon( mean_weight ) ) then
+          real( n_micro_calls, kind=dp ) * max( epsilon( mean_weight ), &
+            real( epsilon( LH_sample_point_weights ), kind=dp ) ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
