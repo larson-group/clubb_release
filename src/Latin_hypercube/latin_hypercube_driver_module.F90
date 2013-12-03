@@ -999,9 +999,9 @@ module latin_hypercube_driver_module
       ! n_micro_calls, but the formula below seems to be an ok approximation
       ! when we're using 4 or 8 byte precision floats.
       ! -dschanen 19 Nov 2010
+      write(0,*) abs( mean_weight - 1.0_dp )
       if ( abs( mean_weight - 1.0_dp ) > &
-          real(real( n_micro_calls, kind=core_rknd ) &
-          * epsilon( LH_sample_point_weights ), kind = dp) ) then
+          real( n_micro_calls, kind=dp ) * epsilon( mean_weight ) ) then
         write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
         stop
       end if
