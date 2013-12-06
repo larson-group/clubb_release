@@ -5,7 +5,7 @@
     'name' => 'dycoms2_rf02_do',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'DYCOMS II RF 02 D0 Hour 6',
+    'headerText' => 'DYCOMS II RF 02 DO Hour 6',
     'startTime' => 300.0,  # [minutes]
     'endTime' => 360.0,    # [minutes]
     'startHeight' => 0.0,   # [m]
