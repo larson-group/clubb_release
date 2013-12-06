@@ -42,6 +42,7 @@ echo "-b -- run the script in the background"
 echo "-m -- merge the eps-graphics to a pdf-file"
 echo "-n -- job name of the hd1 job  <name>"
 echo "-H -- run the script on HD1"
+echo "-Y -- run the script on Yellowstone"
 echo "------------------------------------------------------------------------------------"
 }
 
@@ -57,11 +58,12 @@ lat=''
 background=false
 merge=false
 hd1=false
+yellowstone=false
 hd1name=MatlabJob
 timestr=''
 l_valid_time=false
 
-while getopts hHbmn:a:f:d:o:l:t: opt
+while getopts hHYbmn:a:f:d:o:l:t: opt
 do
   case "$opt" in
     f) infile="$OPTARG";;
@@ -72,12 +74,14 @@ do
     b) background=true;;
     m) merge=true;;
     H) hd1=true;;
+    Y) yellowstone=true;;
     n) hd1name="$OPTARG";;
     t) timestr="$OPTARG";;
     h) myhelp; exit;;
     \?) echo "Error: Unknown option."; myhelp;;
   esac
 done
+
 
 # check parameters
 if [ "$action" != "plot" ] && [ "$action" != "write" ] && [ "$action" != "keyboard" ]; then
@@ -222,7 +226,30 @@ else # foreground run
 		#echo "Moving output to $path"
   	#mv 'MatlabJob_'$hd1name'_'* $path
 
-	# usual run		
+	# usual run
+        elif [ $yellowstone = true ]; then # yellowstone run
+
+                echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+                echo '!!! Do not forget to load the Matlab module !!!'
+                echo '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+
+		if [ -f $jobfilename ]; then
+			rm $jobfilename
+		fi
+
+		touch $jobfilename
+
+                echo '#BSUB -J '$hd1name>>$jobfilename
+                echo '#BSUB -o MatlabJob_'$hd1name'_%J'>>$jobfilename
+                echo '#BSUB -K'>>$jobfilename
+                echo '#BSUB -P P36741010'>>$jobfilename
+                echo '#BSUB -n 1'>>$jobfilename
+                echo '#BSUB -W 1:00'>>$jobfilename
+                echo '#BSUB -q regular'>>$jobfilename
+
+		echo 'matlab -nodisplay -nosplash -nojvm -r '"voca_output_creater\($arg_list\)">>$jobfilename
+
+		bsub < $jobfilename
 	else
 			matlab -r "voca_output_creater\($arg_list\)"
       echo "If matlab did not run the script, use this command: "
