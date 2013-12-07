@@ -780,6 +780,14 @@ module corr_matrix_module
       deallocate( xp2_on_xm2_array_below )
     end if
 
+    if ( allocated( corr_array_cloud_def ) ) then
+      deallocate( corr_array_cloud_def )
+    end if
+
+    if ( allocated( corr_array_below_def ) ) then
+      deallocate( corr_array_below_def )
+    end if
+
     return
   end subroutine cleanup_corr_matrix_arrays
 
