@@ -364,8 +364,9 @@ module KK_microphys_module
   end subroutine KK_local_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, thlm, wm_zt,       & ! Intent(in)
-                                       p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
+  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, &
+                                       wm_zt, rtm, thlm, p_in_Pa, &
+                                       exner, rho, cloud_frac, & ! Intent(in)
                                        pdf_params, w_std_dev, rcm, Ncnm,        & ! Intent(in)
                                        s_mellor, Nc_in_cloud,                   & ! Intent(in)
                                        hydromet, wphydrometp,                   & ! Intent(in)
@@ -456,8 +457,9 @@ module KK_microphys_module
       l_stats_samp    ! Flag to sample statistics
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      thlm,       & ! Mean liquid water potential temperature         [K]
       wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      rtm,        & ! Mean total water mixing ratio                   [kg/kg]
+      thlm,       & ! Mean liquid water potential temperature         [K]
       p_in_Pa,    & ! Pressure                                        [Pa]
       exner,      & ! Exner function                                  [-]
       rho,        & ! Density                                         [kg/m^3]
@@ -769,7 +771,7 @@ module KK_microphys_module
 
        if ( l_var_covar_src ) then
 
-          call KK_upscaled_covar_driver( wm_zt(k), exner(k), &
+          call KK_upscaled_covar_driver( wm_zt(k), rtm(k), thlm(k), exner(k), &
                                          rrainm(k), Nrm(k), Ncnm(k), &
                                          mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                          mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &

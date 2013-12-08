@@ -24,7 +24,7 @@ module KK_upscaled_covariances
   contains
 
   !=============================================================================
-  subroutine KK_upscaled_covar_driver( w_mean, exner, &
+  subroutine KK_upscaled_covar_driver( w_mean, rtm, thlm, exner, &
                                        rrainm, Nrm, Ncnm, &
                                        mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                        mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
@@ -105,11 +105,13 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      w_mean, & ! Mean vertical velocity                        [m/s]
-      exner,  & ! Exner function                                [-]
-      rrainm, & ! Mean rain water mixing ratio (overall)        [kg/kg]
-      Nrm,    & ! Mean rain drop concentration (overall)        [num/kg]
-      Ncnm      ! Mean cloud nuclei concentration               [num/kg]
+      w_mean, & ! Mean vertical velocity, w (overall)               [m/s]
+      rtm,    & ! Mean total water mixing ratio, rt (overall)       [kg/kg]
+      thlm,   & ! Mean liquid water potential temp., thl (overall)  [K]
+      exner,  & ! Exner function                                    [-]
+      rrainm, & ! Mean rain water mixing ratio (overall)            [kg/kg]
+      Nrm,    & ! Mean rain drop concentration (overall)            [num/kg]
+      Ncnm      ! Mean cloud nuclei concentration                   [num/kg]
 
     real( kind = core_rknd ), intent(in) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
@@ -209,10 +211,14 @@ module KK_upscaled_covariances
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      crt1,  & ! Coefficient c_rt (1st PDF component)    [-]
-      crt2,  & ! Coefficient c_rt (2nd PDF component)    [-]
-      cthl1, & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
-      cthl2    ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
+      mu_rt_1,  & ! Mean of rt (PDF component 1)            [kg/kg]
+      mu_rt_2,  & ! Mean of rt (PDF component 2)            [kg/kg]
+      mu_thl_1, & ! Mean of thl (PDF component 1)           [K]
+      mu_thl_2, & ! Mean of thl (PDF component 2)           [K]
+      crt1,     & ! Coefficient c_rt (1st PDF component)    [-]
+      crt2,     & ! Coefficient c_rt (2nd PDF component)    [-]
+      cthl1,    & ! Coefficient c_thl (1st PDF component)   [(kg/kg)/K]
+      cthl2       ! Coefficient c_thl (2nd PDF component)   [(kg/kg)/K]
 
     real( kind = core_rknd ) :: &
       w_KK_evap_covar,   & ! Covar. btw. w and KK evap. tend.    [m*(kg/kg)/s^2]
@@ -227,10 +233,14 @@ module KK_upscaled_covariances
 
 
     ! Enter the PDF parameters.
-    crt1  = pdf_params%crt1
-    crt2  = pdf_params%crt2
-    cthl1 = pdf_params%cthl1
-    cthl2 = pdf_params%cthl2
+    mu_rt_1  = pdf_params%rt1
+    mu_rt_2  = pdf_params%rt2
+    mu_thl_1 = pdf_params%thl1
+    mu_thl_2 = pdf_params%thl2
+    crt1     = pdf_params%crt1
+    crt2     = pdf_params%crt2
+    cthl1    = pdf_params%cthl1
+    cthl2    = pdf_params%cthl2
 
     
     ! Calculate the covariance of vertical velocity and KK evaporation tendency.
@@ -270,7 +280,8 @@ module KK_upscaled_covariances
                            corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                            corr_sNr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                            mixt_frac, precip_frac_1, precip_frac_2, &
-                           KK_evap_tndcy, KK_evap_coef, t_tol, crt1, crt2 )
+                           rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
+                           KK_evap_coef, t_tol, crt1, crt2 )
 
     else  ! r_r or N_r = 0.
 
@@ -294,7 +305,8 @@ module KK_upscaled_covariances
                             corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                             corr_sNr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                             mixt_frac, precip_frac_1, precip_frac_2, &
-                            KK_evap_tndcy, KK_evap_coef, t_tol, cthl1, cthl2 )
+                            thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
+                            KK_evap_coef, t_tol, cthl1, cthl2 )
 
     else  ! r_r or N_r = 0.
 
@@ -644,7 +656,8 @@ module KK_upscaled_covariances
                              corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                              corr_sNr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                              mixt_frac, precip_frac_1, precip_frac_2, &
-                             KK_evap_tndcy, KK_evap_coef, t_tol, crt1, crt2 )
+                             rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
+                             KK_evap_coef, t_tol, crt1, crt2 )
 
     ! Description:
 
@@ -678,10 +691,10 @@ module KK_upscaled_covariances
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip                [-]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
       sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
       sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
@@ -711,21 +724,26 @@ module KK_upscaled_covariances
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     real( kind = core_rknd ), intent(in) :: &
+      rtm,           & ! Mean of total water mixing ratio, rt (overall)  [kg/kg]
+      mu_rt_1,       & ! Mean of rt (1st PDF component)                  [kg/kg]
+      mu_rt_2,       & ! Mean of rt (2nd PDF component)                  [kg/kg]
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
-      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
-      t_tol,         & ! Tolerance value of t                                [-]
+      KK_evap_coef,  & ! KK evap. coef.  [(kg/kg)^(1-alpha-beta)(#/kg)^-gamma/s]
+      t_tol,         & ! Tolerance value of t                            [kg/kg]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2             ! Coefficient c_rt (2nd PDF component)                [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      covar_rt_KK_evap  ! Covariance between r_t and KK evaporation tendency [-]
+      covar_rt_KK_evap  ! Covariance of r_t and KK evap. tendency  [(kg/kg)^2/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha_exp, & ! Exponent on s                                           [-]
-      beta_exp,  & ! Exponent on r_r                                         [-]
-      gamma_exp    ! Exponent on N_r                                         [-]
+      alpha_exp,      & ! Exponent on s                                      [-]
+      beta_exp,       & ! Exponent on r_r                                    [-]
+      gamma_exp,      & ! Exponent on N_r                                    [-]
+      comp_1_contrib, & ! Contribution to rt'KKevap' (PDF comp. 1) [(kg/kg)^2/s]
+      comp_2_contrib    ! Contribution to rt'KKevap' (PDF comp. 2) [(kg/kg)^2/s]
 
 
     ! Values of the KK exponents.
@@ -733,10 +751,11 @@ module KK_upscaled_covariances
     beta_exp  = KK_evap_rr_exp
     gamma_exp = KK_evap_Nr_exp
 
-    ! Calculate the covariance of r_t and KK evaporation tendency.
-    covar_rt_KK_evap  &
-    = KK_evap_coef  &
-      * ( mixt_frac * precip_frac_1 * ( one / ( two * crt1 ) )  &
+    ! Calculate the contribution from PDF component 1 to the covariance of
+    ! r_t and KK evaporation tendency.
+    comp_1_contrib  &
+    = KK_evap_coef * precip_frac_1 &
+      * ( ( one / ( two * crt1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_1_n, &
                                        sigma_Nr_1_n, corr_ts_1, corr_trr_1_n, &
@@ -744,19 +763,25 @@ module KK_upscaled_covariances
                                        corr_sNr_1_n, corr_rrNr_1_n, mu_t_1, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
-            + trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
-                                  mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
-                                  sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
-                                  alpha_exp + one, beta_exp, gamma_exp )  &
-            - mu_s_1  &
-              * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+              + trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
                                     sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
                                     corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
-                                    alpha_exp, beta_exp, gamma_exp )  &
-            )  &
-        + ( one - mixt_frac ) * precip_frac_2 * ( one / ( two * crt2 ) )  &
+                                    alpha_exp + one, beta_exp, gamma_exp )  &
+            ) &
+          + ( mu_rt_1 - rtm - mu_s_1 / ( two * crt1 ) )  &
+            * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+                                  mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
+                                  sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
+                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
+                                  alpha_exp, beta_exp, gamma_exp )  &
+        )
+
+    ! Calculate the contribution from PDF component 2 to the covariance of
+    ! r_t and KK evaporation tendency.
+    comp_2_contrib  &
+    = KK_evap_coef * precip_frac_2 &
+      * ( ( one / ( two * crt2 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
                                        sigma_t_2, sigma_s_2, sigma_rr_2_n, &
                                        sigma_Nr_2_n, corr_ts_2, corr_trr_2_n, &
@@ -764,19 +789,23 @@ module KK_upscaled_covariances
                                        corr_sNr_2_n, corr_rrNr_2_n, mu_t_2, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
-            + trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
-                                  mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
-                                  sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
-                                  alpha_exp + one, beta_exp, gamma_exp )  &
-            - mu_s_2  &
-              * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+              + trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
                                     sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
                                     corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
-                                    alpha_exp, beta_exp, gamma_exp )  &
-            )  &
+                                    alpha_exp + one, beta_exp, gamma_exp )  &
+            ) &
+          + ( mu_rt_2 - rtm - mu_s_2 / ( two * crt2 ) )  &
+            * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+                                  mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
+                                  sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
+                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
+                                  alpha_exp, beta_exp, gamma_exp )  &
         )
+
+    ! Calculate the covariance of r_t and KK evaporation tendency.
+    covar_rt_KK_evap  &
+    = mixt_frac * comp_1_contrib + ( one - mixt_frac ) * comp_2_contrib
 
 
     return
@@ -795,7 +824,8 @@ module KK_upscaled_covariances
                               corr_srr_1_n, corr_srr_2_n, corr_sNr_1_n, &
                               corr_sNr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
                               mixt_frac, precip_frac_1, precip_frac_2, &
-                              KK_evap_tndcy, KK_evap_coef, t_tol, cthl1, cthl2 )
+                              thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
+                              KK_evap_coef, t_tol, cthl1, cthl2 )
 
     ! Description:
 
@@ -829,10 +859,10 @@ module KK_upscaled_covariances
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
       mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip                [-]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
       sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
       sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
       sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
@@ -862,21 +892,26 @@ module KK_upscaled_covariances
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     real( kind = core_rknd ), intent(in) :: &
+      thlm,          & ! Mean of liquid water pot. temp., thl (overall)      [K]
+      mu_thl_1,      & ! Mean of thl (1st PDF component)                     [K]
+      mu_thl_2,      & ! Mean of thl (2nd PDF component)                     [K]
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
-      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
-      t_tol,         & ! Tolerance value of t                                [-]
-      cthl1,         & ! Coefficient c_thl (1st PDF component)               [-]
-      cthl2            ! Coefficient c_thl (2nd PDF component)               [-]
+      KK_evap_coef,  & ! KK evap. coef.  [(kg/kg)^(1-alpha-beta)(#/kg)^-gamma/s]
+      t_tol,         & ! Tolerance value of t                            [kg/kg]
+      cthl1,         & ! Coefficient c_thl (1st PDF component)       [(kg/kg)/K]
+      cthl2            ! Coefficient c_thl (2nd PDF component)       [(kg/kg)/K]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      covar_thl_KK_evap  ! Covariance between th_l and KK evap. tendency     [-]
+      covar_thl_KK_evap  ! Covariance of th_l and KK evap. tend.   [K*(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha_exp, & ! Exponent on s                                           [-]
-      beta_exp,  & ! Exponent on r_r                                         [-]
-      gamma_exp    ! Exponent on N_r                                         [-]
+      alpha_exp,      & ! Exponent on s                                      [-]
+      beta_exp,       & ! Exponent on r_r                                    [-]
+      gamma_exp,      & ! Exponent on N_r                                    [-]
+      comp_1_contrib, & ! Contribution to thl'KKevap' (PDF comp. 1) [K(kg/kg)/s]
+      comp_2_contrib    ! Contribution to thl'KKevap' (PDF comp. 2) [K(kg/kg)/s]
 
 
     ! Values of the KK exponents.
@@ -884,10 +919,11 @@ module KK_upscaled_covariances
     beta_exp  = KK_evap_rr_exp
     gamma_exp = KK_evap_Nr_exp
 
-    ! Calculate the covariance of th_l and KK evaporation tendency.
-    covar_thl_KK_evap  &
-    = KK_evap_coef  &
-      * ( mixt_frac * precip_frac_1 * ( one / ( two * cthl1 ) )  &
+    ! Calculate the contribution from PDF component 1 to the covariance of
+    ! th_l and KK evaporation tendency.
+    comp_1_contrib  &
+    = KK_evap_coef * precip_frac_1 &
+      * ( ( one / ( two * cthl1 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_1, mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
                                        sigma_t_1, sigma_s_1, sigma_rr_1_n, &
                                        sigma_Nr_1_n, corr_ts_1, corr_trr_1_n, &
@@ -895,19 +931,25 @@ module KK_upscaled_covariances
                                        corr_sNr_1_n, corr_rrNr_1_n, mu_t_1, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
-            - trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
-                                  mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
-                                  sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
-                                  alpha_exp + one, beta_exp, gamma_exp )  &
-            + mu_s_1  &
-              * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+              - trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
                                     sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
                                     corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
-                                    alpha_exp, beta_exp, gamma_exp )  &
-            )  &
-        + ( one - mixt_frac ) * precip_frac_2 * ( one / ( two * cthl2 ) )  &
+                                    alpha_exp + one, beta_exp, gamma_exp )  &
+            ) &
+          + ( mu_thl_1 - thlm + mu_s_1 / ( two * cthl1 ) ) &
+            * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+                                  mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
+                                  sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
+                                  corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
+                                  alpha_exp, beta_exp, gamma_exp )  &
+        )
+
+    ! Calculate the contribution from PDF component 2 to the covariance of
+    ! th_l and KK evaporation tendency.
+    comp_2_contrib  &
+    = KK_evap_coef * precip_frac_2 &
+      * ( ( one / ( two * cthl2 ) )  &
           * ( quadrivar_NNLL_covar_eq( mu_t_2, mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
                                        sigma_t_2, sigma_s_2, sigma_rr_2_n, &
                                        sigma_Nr_2_n, corr_ts_2, corr_trr_2_n, &
@@ -915,19 +957,23 @@ module KK_upscaled_covariances
                                        corr_sNr_2_n, corr_rrNr_2_n, mu_t_2, &
                                        KK_evap_tndcy, KK_evap_coef, t_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
-            - trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
-                                  mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
-                                  sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
-                                  alpha_exp + one, beta_exp, gamma_exp )  &
-            + mu_s_2  &
-              * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+              - trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
                                     sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
                                     corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
-                                    alpha_exp, beta_exp, gamma_exp )  &
-            )  &
+                                    alpha_exp + one, beta_exp, gamma_exp )  &
+            ) &
+          + ( mu_thl_2 - thlm + mu_s_2 / ( two * cthl2 ) )  &
+            * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+                                  mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
+                                  sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
+                                  corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
+                                  alpha_exp, beta_exp, gamma_exp )  &
         )
+
+    ! Calculate the covariance of th_l and KK evaporation tendency.
+    covar_thl_KK_evap  &
+    = mixt_frac * comp_1_contrib + ( one - mixt_frac ) * comp_2_contrib
 
 
     return

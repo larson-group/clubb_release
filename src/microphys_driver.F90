@@ -1651,8 +1651,9 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, thlm, wm_zt,    & ! Intent(in)
-                                         p_in_Pa, exner, rho, cloud_frac,         & ! Intent(in)
+          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, &
+                                         wm_zt, rtm, thlm, p_in_Pa, &
+                                         exner, rho, cloud_frac,   & ! Intent(in)
                                          pdf_params, wtmp, rcm, Ncnm,             & ! Intent(in)
                                          s_mellor, Nc_in_cloud,                   & ! Intent(in)
                                          hydromet, wphydrometp,                   & ! Intent(in)
