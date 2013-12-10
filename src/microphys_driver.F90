@@ -2946,47 +2946,12 @@ module microphys_driver
     ! Boundary Conditions
 
     ! Lower Boundary
-    k   = 1
-    km1 = max( k-1, 1 )
-    kp1 = k+1
+    k = 1
 
-    if ( l_sed .and. l_upwind_diff_sed ) then
-
-       ! LHS time tendency at the lower boundary.
-       lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
-
-       ! Here we apply the upwind differencing at the lower boundary.
-       lhs(kp1_tdiag:km1_tdiag,k) & 
-       = lhs(kp1_tdiag:km1_tdiag,k) & 
-       + sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                              rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                              gr%invrs_dzm(k), k )
-
-    else
-
-       ! This is set so that < h_m > at thermodynamic level k = 1, which is
-       ! below the model lower boundary, is equal to < h_m > at k = 2.
-       lhs(k_tdiag,k)   = one
-       lhs(kp1_tdiag,k) = -one
-
-    endif  ! l_sed and l_upwind_diff_sed
-
-    if ( l_stats_samp ) then
-
-       ! Statistics:  implicit contributions to hydrometeor hmm.
-
-       if ( ihmm_sd > 0 .and. l_sed .and. l_upwind_diff_sed ) then
-          tmp(1:3) &
-          = sed_upwind_diff_lhs( V_hmt(k), V_hmt(kp1), rho_ds_zt(k), &
-                                 rho_ds_zt(kp1), invrs_rho_ds_zt(k), &
-                                 gr%invrs_dzm(k), k )
-
-          ztscr04(k) = -tmp(3)
-          ztscr05(k) = -tmp(2)
-          ztscr06(k) = -tmp(1)
-      endif
-
-    endif  ! l_stats_samp
+    ! This is set so that < h_m > at thermodynamic level k = 1, which is below
+    ! the model lower boundary, is equal to < h_m > at k = 2.
+    lhs(k_tdiag,k)   = one
+    lhs(kp1_tdiag,k) = -one
 
 
     ! Upper Boundary
@@ -3282,18 +3247,9 @@ module microphys_driver
 
     ! Lower boundary conditions on the RHS
 
-    if ( l_sed .and. l_upwind_diff_sed ) then
-
-       ! RHS time tendency at the lower boundary.
-       rhs(1) = hmm(1) / real( dt, kind = core_rknd )
-
-    else
-
-       ! This is set so that < h_m > at thermodynamic level k = 1, which is
-       ! below the model lower boundary, is equal to < h_m > at k = 2.
-       rhs(1) = zero
-
-    endif  ! l_sed and l_upwind_diff_sed
+    ! This is set so that < h_m > at thermodynamic level k = 1, which is below
+    ! the model lower boundary, is equal to < h_m > at k = 2.
+    rhs(1) = zero
 
 
     return
