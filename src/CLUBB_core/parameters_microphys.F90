@@ -39,7 +39,7 @@ module parameters_microphys
   logical, public :: & 
     l_cloud_sed = .false.,         & ! Cloud water sedimentation (K&K/No microphysics)
     l_ice_micro  = .false.,        & ! Compute ice (COAMPS/Morrison)
-    l_upwind_diff_sed = .true.,    & ! Use upwind differencing approx for sedimentation (K&K/COAMPS)
+    l_upwind_diff_sed = .false.,   & ! Use upwind differencing approx for sedimentation (K&K/COAMPS)
     l_graupel  = .false.,          & ! Compute graupel (COAMPS/Morrison)
     l_hail  = .false.,             & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng  = .false.,   & ! Use Seifert and Behneng warm drizzle (Morrison)
