@@ -508,7 +508,10 @@ module stats_zt
       iNSAGG,  &
       iNPRCI, &
       iNSCNG, &
-      iNSUBS
+      iNSUBS, &
+      iPRC, &
+      iPRA, &
+      iPRE
 
     use stats_variables, only: &
       iPCC, &
@@ -528,6 +531,21 @@ module stats_zt
       iNGMLTG, &
       iNSUBG, &
       iNACT, &
+      iSIZEFIX_NR, &
+      iSIZEFIX_NC, &
+      iSIZEFIX_NI, &
+      iSIZEFIX_NS, &
+      iSIZEFIX_NG, &
+      iNEGFIX_NR, &
+      iNEGFIX_NC, &
+      iNEGFIX_NI, &
+      iNEGFIX_NS, &
+      iNEGFIX_NG, &
+      iREMOVE_NR, &
+      iREMOVE_NC, &
+      iREMOVE_NI, &
+      iREMOVE_NS, &
+      iREMOVE_NG, &
       iT_in_K_mc
 
 
@@ -2480,11 +2498,35 @@ module stats_zt
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
+      case ('PRC')
+        iPRC= k
+             
+        call stat_assign( var_index=iPRC, var_name="PRC", &
+             var_description="Autoconversion +rrainm -rcm [(kg/kg/s)]", var_units="(kg/kg/s)", &
+             l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('PRA')
+        iPRA= k
+
+        call stat_assign( var_index=iPRA, var_name="PRA", &
+             var_description="Accretion +rrainm -rcm [(kg/kg/s)]", var_units="(kg/kg/s)", &
+             l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('PRE')
+        iPRE= k
+
+        call stat_assign( var_index=iPRE, var_name="PRE", &
+             var_description="Evaporation of rain -rrainm [(kg/kg/s)]", var_units="(kg/kg/s)", &
+             l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
       case ('PCC')
         iPCC= k
 
         call stat_assign( var_index=iPCC, var_name="PCC", &
-             var_description="Satuation adjustment -rvm +rcm [(kg/kg/s)]", var_units="(#/kg/s)", &
+             var_description="Satuation adjustment -rvm +rcm [(kg/kg/s)]", var_units="(kg/kg/s)", &
              l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2616,6 +2658,126 @@ module stats_zt
 
         call stat_assign( var_index=iNACT, var_name="NACT", &
              var_description="Cloud drop formation by aerosol activation, +Ncm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('SIZEFIX_NR')
+        iSIZEFIX_NR= k
+
+        call stat_assign( var_index=iSIZEFIX_NR, var_name="SIZEFIX_NR", &
+             var_description="Adjust rain # conc. for large/small drops, +Nrm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('SIZEFIX_NC')
+        iSIZEFIX_NC= k
+
+        call stat_assign( var_index=iSIZEFIX_NC, var_name="SIZEFIX_NC", &
+             var_description="Adjust cloud # conc. for large/small drops, +Ncm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('SIZEFIX_NI')
+        iSIZEFIX_NI= k
+
+        call stat_assign( var_index=iSIZEFIX_NI, var_name="SIZEFIX_NI", &
+             var_description="Adjust ice # conc. for large/small drops, +Nim [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('SIZEFIX_NS')
+        iSIZEFIX_NS= k
+
+        call stat_assign( var_index=iSIZEFIX_NS, var_name="SIZEFIX_NS", &
+             var_description="Adjust snow # conc. for large/small drops, +Nsnowm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('SIZEFIX_NG')
+        iSIZEFIX_NG= k
+
+        call stat_assign( var_index=iSIZEFIX_NG, var_name="SIZEFIX_NG", &
+             var_description="Adjust graupel # conc. for large/small drops,+Ngraupelm [(#/kg/s)]",&
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NEGFIX_NR')
+        iNEGFIX_NR= k
+
+        call stat_assign( var_index=iNEGFIX_NR, var_name="NEGFIX_NR", &
+             var_description="Removal of negative rain drop number conc., -Nrm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NEGFIX_NC')
+        iNEGFIX_NC= k
+
+        call stat_assign( var_index=iNEGFIX_NC, var_name="NEGFIX_NC", &
+             var_description="Removal of negative cloud drop number conc., -Ncm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NEGFIX_NI')
+        iNEGFIX_NI= k
+
+        call stat_assign( var_index=iNEGFIX_NI, var_name="NEGFIX_NI", &
+             var_description="Removal of negative ice number conc., -Nim [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NEGFIX_NS')
+        iNEGFIX_NS= k
+
+        call stat_assign( var_index=iNEGFIX_NS, var_name="NEGFIX_NS", &
+             var_description="Removal of negative snow number conc,, -Nsnowm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NEGFIX_NG')
+        iNEGFIX_NG= k
+
+        call stat_assign( var_index=iNEGFIX_NG, var_name="NEGFIX_NG", &
+             var_description="Removal of negative graupel number conc., -Ngraupelm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('REMOVE_NR')
+        iREMOVE_NR= k
+
+        call stat_assign( var_index=iREMOVE_NR, var_name="REMOVE_NR", &
+             var_description="Remove rain drop # conc. when small mixing rat., -Nrm [(#/kg/s)]",&
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('REMOVE_NC')
+        iREMOVE_NC= k
+
+        call stat_assign( var_index=iREMOVE_NC, var_name="REMOVE_NC", &
+             var_description="Remove cloud drop # conc. when small mixing rat., -Ncm [(#/kg/s)]",&
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1      
+
+      case ('REMOVE_NI')
+        iREMOVE_NI= k
+
+        call stat_assign( var_index=iREMOVE_NI, var_name="REMOVE_NI", &
+             var_description="Remove ice # conc. when small mixing ratio, -Nim [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1      
+
+      case ('REMOVE_NS')
+        iREMOVE_NS= k
+
+        call stat_assign( var_index=iREMOVE_NS, var_name="REMOVE_NS", &
+             var_description="Remove snow # conc. when small mixing ratio, -Nsnowm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1      
+
+      case ('REMOVE_NG')
+        iREMOVE_NG= k
+
+        call stat_assign( var_index=iREMOVE_NG, var_name="REMOVE_NG", &
+             var_description="Remove graupel # conc. when small mix. rat., -Ngraupelm [(#/kg/s)]",&
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 

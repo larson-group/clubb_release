@@ -126,7 +126,10 @@ module morrison_micro_driver_module
       iNSAGG, &
       iNPRCI, &
       iNSCNG, &
-      iNSUBS
+      iNSUBS, &
+      iPRA, &
+      iPRC, &
+      iPRE
 
     use stats_variables, only: &
       iPCC, &
@@ -146,6 +149,21 @@ module morrison_micro_driver_module
       iNGMLTG, &
       iNSUBG, &
       iNACT, &
+      iSIZEFIX_NR, &
+      iSIZEFIX_NC, &
+      iSIZEFIX_NI, &
+      iSIZEFIX_NS, &
+      iSIZEFIX_NG, &
+      iNEGFIX_NR, &
+      iNEGFIX_NC, &
+      iNEGFIX_NI, &
+      iNEGFIX_NS, &
+      iNEGFIX_NG, &
+      iREMOVE_NR, &
+      iREMOVE_NC, &
+      iREMOVE_NI, &
+      iREMOVE_NS, &
+      iREMOVE_NG, &
       iT_in_K_mc
 
 
@@ -251,9 +269,7 @@ module morrison_micro_driver_module
       rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
       rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
       morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics [m/s] 
-      cloud_frac_in, & ! Cloud fraction used as input for the Morrison scheme [-]
-      rrainm_auto_r4,& ! Autoconversion rate     [kg/kg/s]
-      rrainm_accr_r4   ! Accretion rate         [kg/kg/s]
+      cloud_frac_in    ! Cloud fraction used as input for the Morrison scheme [-]
 
     ! In the comments below, by "adds to" we mean that if the quantity is
     ! positive, it adds positively to the prognostic variable, but if the
@@ -350,9 +366,12 @@ module morrison_micro_driver_module
                 !    Adds to Nsnowm, subtracts from Nim [#/kg/s]
       NSCNG, &  ! Conversion of snow to graupel
                 !    Adds to Ngraupelm, subtracts from Nsnowm [#/kg/s]
-      NSUBS     ! Loss of Nsnowm due to sublimation
+      NSUBS, &  ! Loss of Nsnowm due to sublimation
                 !    Adds to Nsnowm [#/kg/s]
-                        
+      PRA,   &  ! Accretion. Adds to rrainm, subtracts from rcm [kg/kg/s]
+      PRC,   &  ! Autoconversion. Adds to rrainm, subtracts from rcm [kg/kg/s]
+      PRE       ! Rain evaporation. Subtracts from rrainm [kg/kg/s]              
+          
     real, dimension(nz) :: &
       PCC, &    ! Saturation adjustment 
                 !    Adds to rcm, substracts from rvm [kg/kg/s]
@@ -372,7 +391,23 @@ module morrison_micro_driver_module
       NSUBI, &  ! Loss of ice due to sublimation. Subtracts from Nim [#/kg/s]
       NGMLTG, & ! Loss of graupel due to melting. Subtracts from Ngraupelm [#/kg/s]
       NSUBG, &  ! Loss of graupel due to sublimation. Subtracts from Ngraupelm [#/kg/s]
-      NACT      ! Cloud droplet formation by aerosol activation. Adds to Ncm [#/kg/s]
+      NACT,  &  ! Cloud droplet formation by aerosol activation. Adds to Ncm [#/kg/s]
+      SIZEFIX_NR, &  ! Adjustment to rain drop number concentration for large/small drops 
+      SIZEFIX_NC, &  ! Adjustment to cloud drop number concentration for large/small drops
+      SIZEFIX_NI, &  ! Adjustment to ice number concentration for large/small drops
+      SIZEFIX_NS, &  ! Adjustment to snow number concentration for large/small drops
+      SIZEFIX_NG, &  ! Adjustment to graupel number concentration for large/small drops
+      NEGFIX_NI, &    ! Removal of negative ice number concentration 
+      NEGFIX_NS, &    ! Removal of negative snow number concentration 
+      NEGFIX_NC, &    ! Removal of negative cloud drop number concentration 
+      NEGFIX_NR, &    ! Removal of negative rain drop number concentration 
+      NEGFIX_NG, &    ! Removal of negative graupel number concentration 
+      REMOVE_NI, &    ! Removal of ice number concentration when mixing ratio is small
+      REMOVE_NS, &    ! Removal of snow number concentration when mixing ratio is small
+      REMOVE_NC, &    ! Removal of cloud drop number concentration when mixing ratio is small
+      REMOVE_NR, &    ! Removal of rain drop number concentration when mixing ratio is small
+      REMOVE_NG    ! Removal of graupel number concentration when mixing ratio is small
+
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -403,8 +438,6 @@ module morrison_micro_driver_module
       Nrm_auto, & ! Change in Nrm due to autoconversion               [num/kg/s]
       Nrm_evap    ! Change in Nrm due to evaporation                  [num/kg/s]
 
-    real, dimension(nz) :: &
-      rrainm_evap_r4
 
     ! ---- Begin Code ----
 
@@ -455,11 +488,6 @@ module morrison_micro_driver_module
     effg = 0.0
     effs = 0.0
     effr = 0.0
-
-    ! Initialize autoconversion/accretion to zero
-    rrainm_auto_r4 = 0.0
-    rrainm_accr_r4 = 0.0
-    rrainm_evap_r4 = 0.0
 
     ! Initialize Morrison budgets to zero
     PSMLT = 0.0
@@ -516,6 +544,9 @@ module morrison_micro_driver_module
     NPRCI = 0.0
     NSCNG = 0.0
     NSUBS = 0.0
+    PRA = 0.0
+    PRC = 0.0
+    PRE = 0.0
     PCC = 0.0 
     NNUCCC = 0.0
     NPSACWS = 0.0
@@ -533,6 +564,22 @@ module morrison_micro_driver_module
     NGMLTG = 0.0
     NSUBG = 0.0
     NACT = 0.0
+    SIZEFIX_NR = 0.0
+    SIZEFIX_NC = 0.0 
+    SIZEFIX_NI = 0.0 
+    SIZEFIX_NS = 0.0 
+    SIZEFIX_NG = 0.0 
+    NEGFIX_NR = 0.0 
+    NEGFIX_NC = 0.0 
+    NEGFIX_NI = 0.0 
+    NEGFIX_NS = 0.0 
+    NEGFIX_NG = 0.0 
+    REMOVE_NR = 0.0 
+    REMOVE_NC = 0.0 
+    REMOVE_NI = 0.0 
+    REMOVE_NS = 0.0 
+    REMOVE_NG = 0.0
+
 
     hydromet_mc_r4 = real( hydromet_mc )
     rcm_mc_r4 = real( rcm_mc )
@@ -540,7 +587,6 @@ module morrison_micro_driver_module
     P_in_pa_r4 = real( P_in_Pa )
     rho_r4 = real( rho )
     dzq_r4 = real( dzq )
-
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
@@ -561,9 +607,9 @@ module morrison_micro_driver_module
            rcm_sten, &
            NGSTEN, NRSTEN, NISTEN, NSSTEN, NCSTEN, &
            cloud_frac_in, &
-           rrainm_auto_r4, rrainm_accr_r4, &
+           PRC, PRA, &
            PSMLT, EVPMS, PRACS, EVPMG, &
-           PRACG, rrainm_evap_r4,PGMLT,MNUCCC, &
+           PRACG, PRE,PGMLT,MNUCCC, &
            PSACWS, PSACWI, QMULTS, QMULTG, &
            PSACWG, PGSACW, PRD, PRCI, &
            PRAI, QMULTR, QMULTRG, MNUCCD, &
@@ -573,15 +619,18 @@ module morrison_micro_driver_module
            NPRC1, NRAGG, NPRACG, NSUBR, NSMLTR, NGMLTR, NPRACS, NNUCCR, NIACR, &
            NIACRS, NGRACS, NSMLTS, NSAGG, NPRCI, NSCNG, NSUBS, &
            PCC, NNUCCC, NPSACWS, NPRA, NPRC, NPSACWI, NPSACWG, NPRAI, &
-           NMULTS, NMULTG, NMULTR, NMULTRG, NNUCCD, NSUBI, NGMLTG, NSUBG, NACT  )
+           NMULTS, NMULTG, NMULTR, NMULTRG, NNUCCD, NSUBI, NGMLTG, NSUBG, NACT, &
+           SIZEFIX_NR, SIZEFIX_NC, SIZEFIX_NI, SIZEFIX_NS, SIZEFIX_NG, &
+           NEGFIX_NR, NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, NEGFIX_NG, &
+           REMOVE_NR, REMOVE_NC, REMOVE_NI, REMOVE_NS, REMOVE_NG )
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
     rvm_mc = real( rvm_mc_r4, kind = core_rknd )
 
-    rrainm_auto = real( rrainm_auto_r4, kind = core_rknd )
-    rrainm_accr = real( rrainm_accr_r4, kind = core_rknd )
-    rrainm_evap = real( rrainm_evap_r4, kind = core_rknd )
+    rrainm_auto = real( PRC, kind = core_rknd )
+    rrainm_accr = real( PRA, kind = core_rknd )
+    rrainm_evap = real( PRE, kind = core_rknd )
 
     Nrm_auto = real( NPRC1, kind = core_rknd )
     Nrm_evap = real( NSUBR, kind = core_rknd )
@@ -597,6 +646,8 @@ module morrison_micro_driver_module
                               hydromet(2:,i)  ) / real( dt, kind = core_rknd )
       end if
     end do
+
+
     hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
 
     ! Update thetal based on absolute temperature
@@ -667,6 +718,9 @@ module morrison_micro_driver_module
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
     if ( l_stats_samp ) then
+      call stat_update_var( iPRC,lh_stat_sample_weight*real(PRC,kind=core_rknd),zt)
+      call stat_update_var( iPRA,lh_stat_sample_weight*real(PRA,kind=core_rknd),zt)
+      call stat_update_var( iPRE,lh_stat_sample_weight*real(PRE,kind=core_rknd),zt)
       call stat_update_var( iPSMLT, lh_stat_sample_weight*real( PSMLT, kind=core_rknd ), zt )
       call stat_update_var( iEVPMS, lh_stat_sample_weight*real( EVPMS, kind=core_rknd ), zt )
       call stat_update_var( iPRACS, lh_stat_sample_weight*real( PRACS, kind=core_rknd ), zt )
@@ -739,6 +793,21 @@ module morrison_micro_driver_module
       call stat_update_var( iNGMLTG, lh_stat_sample_weight*real( NGMLTG, kind=core_rknd ), zt )
       call stat_update_var( iNSUBG, lh_stat_sample_weight*real( NSUBG, kind=core_rknd ), zt )
       call stat_update_var( iNACT, lh_stat_sample_weight*real( NACT,kind=core_rknd ), zt )
+      call stat_update_var( iSIZEFIX_NR, lh_stat_sample_weight*real( SIZEFIX_NR,kind=core_rknd),zt)
+      call stat_update_var( iSIZEFIX_NC, lh_stat_sample_weight*real( SIZEFIX_NC,kind=core_rknd),zt)
+      call stat_update_var( iSIZEFIX_NI, lh_stat_sample_weight*real( SIZEFIX_NI,kind=core_rknd),zt)
+      call stat_update_var( iSIZEFIX_NS, lh_stat_sample_weight*real( SIZEFIX_NS,kind=core_rknd),zt)
+      call stat_update_var( iSIZEFIX_NG, lh_stat_sample_weight*real( SIZEFIX_NG,kind=core_rknd),zt)
+      call stat_update_var( iNEGFIX_NR, lh_stat_sample_weight*real( NEGFIX_NR,kind=core_rknd ),zt)
+      call stat_update_var( iNEGFIX_NC, lh_stat_sample_weight*real( NEGFIX_NC,kind=core_rknd ),zt)
+      call stat_update_var( iNEGFIX_NI, lh_stat_sample_weight*real( NEGFIX_NI,kind=core_rknd ),zt)
+      call stat_update_var( iNEGFIX_NS, lh_stat_sample_weight*real( NEGFIX_NS,kind=core_rknd ),zt)
+      call stat_update_var( iNEGFIX_NG, lh_stat_sample_weight*real( NEGFIX_NG,kind=core_rknd ),zt)
+      call stat_update_var( iREMOVE_NR, lh_stat_sample_weight*real( REMOVE_NR,kind=core_rknd ),zt)
+      call stat_update_var( iREMOVE_NC, lh_stat_sample_weight*real( REMOVE_NC,kind=core_rknd ),zt)
+      call stat_update_var( iREMOVE_NI, lh_stat_sample_weight*real( REMOVE_NI,kind=core_rknd ),zt)
+      call stat_update_var( iREMOVE_NS, lh_stat_sample_weight*real( REMOVE_NS,kind=core_rknd ),zt)
+      call stat_update_var( iREMOVE_NG, lh_stat_sample_weight*real( REMOVE_NG,kind=core_rknd ),zt)
       call stat_update_var( iT_in_K_mc, lh_stat_sample_weight*real( T_in_K_mc, kind=core_rknd ),zt)
 
     end if ! l_stats_samp

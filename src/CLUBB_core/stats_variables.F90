@@ -797,11 +797,14 @@ module stats_variables
     iNSAGG = 0,  &
     iNPRCI = 0, &
     iNSCNG = 0, &
-    iNSUBS = 0
+    iNSUBS = 0, &
+    iPRC = 0, &
+    iPRA = 0, &
+    iPRE = 0
 
 !$omp threadprivate( iNGSTEN, iNRSTEN, iNISTEN, iNSSTEN, iNCSTEN, iNPRC1, iNRAGG, &
 !$omp   iNPRACG, iNSUBR,  iNSMLTR, iNGMLTR, iNPRACS, iNNUCCR, iNIACR, &
-!$omp   iNIACRS, iNGRACS, iNSMLTS, iNSAGG, iNPRCI, iNSCNG, iNSUBS )
+!$omp   iNIACRS, iNGRACS, iNSMLTS, iNSAGG, iNPRCI, iNSCNG, iNSUBS, iPRC, iPRA, iPRE )
 
   ! More indices for Morrison budgets!!
   integer, public :: &
@@ -822,10 +825,28 @@ module stats_variables
     iNGMLTG = 0, &
     iNSUBG = 0, &
     iNACT = 0, &
+    iSIZEFIX_NR = 0, &
+    iSIZEFIX_NC = 0, &
+    iSIZEFIX_NI = 0, &
+    iSIZEFIX_NS = 0, &
+    iSIZEFIX_NG = 0, &
+    iNEGFIX_NR = 0, &
+    iNEGFIX_NC = 0, &
+    iNEGFIX_NI = 0, &
+    iNEGFIX_NS = 0, &
+    iNEGFIX_NG = 0, &
+    iREMOVE_NR = 0, &
+    iREMOVE_NC = 0, &
+    iREMOVE_NI = 0, &
+    iREMOVE_NS = 0, &
+    iREMOVE_NG = 0, &
     iT_in_K_mc = 0
 
 !$omp threadprivate(iPCC, iNNUCCC, iNPSACWS, iNPRA, iNPRC, iNPSACWI, iNPSACWG, iNPRAI, &
-!$omp   iNMULTS, iNMULTG, iNMULTR, iNMULTRG, iNNUCCD, iNSUBI, iNGMLTG, iNSUBG, iNACT, iT_in_k_mc  )
+!$omp   iNMULTS, iNMULTG, iNMULTR, iNMULTRG, iNNUCCD, iNSUBI, iNGMLTG, iNSUBG, iNACT, &
+!$omp   iSIZEFIX_NR, iSIZEFIX_NC, iSIZEFIX_NI, iSIZEFIX_NS, iSIZEFIX_NG, iNEGFIX_NR, &
+!$omp   iNEGFIX_NC, iNEGFIX_NI, iNEGFIX_NS, iNEGFIX_NG, iREMOVE_NR, iREMOVE_NC, iREMOVE_NI, &
+!$omp   iREMOVE_NS, iREMOVE_NG, iT_in_K_mc  )
 
   ! Indices for statistics in zm file
   integer, public :: & 
