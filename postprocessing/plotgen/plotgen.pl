@@ -808,15 +808,6 @@ sub buildMatlabStringStd()
 		        foreach (@inputDirs)
 		        {
 		            my $file = "$_/$lines[$lineNum]{'filename'}";
-			    #Ticket 543
-			    #If a CaseName_LH_sfc file is found in the output, the LH_morr_rain_rate should be output
-			    #for the Surface rainfall rate plot
-			    my $lhSfcFile = $_ . "/" . $caseName . "_LH_sfc.ctl";
-			    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile)
-			    {
-				$file = $lhSfcFile;
-				$expression = "LH_morr_rain_rate";
-			    }
 
 		            if($dataFileType eq "netcdf")
 		            {
