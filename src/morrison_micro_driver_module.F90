@@ -685,25 +685,6 @@ module morrison_micro_driver_module
 
     if ( .not. l_latin_hypercube .and. l_stats_samp ) then
 
-      ! -------- Sedimentation tendency from Morrison microphysics --------
-
-      ! --- Mixing ratios ---
-
-      call stat_update_var( irgraupelm_sd_morr, &
-                 real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), zt )
-
-      call stat_update_var( irrainm_sd_morr, &
-                 real( hydromet_sten(:,iirrainm), kind = core_rknd ), zt )
-
-      call stat_update_var( irsnowm_sd_morr, &
-                 real( hydromet_sten(:,iirsnowm), kind = core_rknd ), zt )
-
-      call stat_update_var( iricem_sd_mg_morr, &
-                 real( hydromet_sten(:,iiricem), kind = core_rknd ), zt )
-
-      call stat_update_var( ircm_sd_mg_morr, &
-                 real( rcm_sten, kind = core_rknd), zt )
-
       where ( cloud_frac(:) > real( cloud_frac_thresh, kind = core_rknd ) ) 
         rcm_in_cloud(:) = rcm / cloud_frac
       else where
@@ -718,6 +699,16 @@ module morrison_micro_driver_module
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
     if ( l_stats_samp ) then
+      call stat_update_var( irgraupelm_sd_morr, lh_stat_sample_weight  &
+                * real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), zt )
+      call stat_update_var( irrainm_sd_morr,lh_stat_sample_weight &
+                * real( hydromet_sten(:,iirrainm), kind = core_rknd ), zt )
+      call stat_update_var( irsnowm_sd_morr,lh_stat_sample_weight &
+                * real( hydromet_sten(:,iirsnowm), kind = core_rknd ), zt )
+      call stat_update_var( iricem_sd_mg_morr,lh_stat_sample_weight &
+                * real( hydromet_sten(:,iiricem), kind = core_rknd ), zt )
+      call stat_update_var( ircm_sd_mg_morr,lh_stat_sample_weight &
+                * real( rcm_sten, kind = core_rknd), zt )
       call stat_update_var( iPRC,lh_stat_sample_weight*real(PRC,kind=core_rknd),zt)
       call stat_update_var( iPRA,lh_stat_sample_weight*real(PRA,kind=core_rknd),zt)
       call stat_update_var( iPRE,lh_stat_sample_weight*real(PRE,kind=core_rknd),zt)

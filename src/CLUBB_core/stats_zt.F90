@@ -808,7 +808,7 @@ module stats_zt
         call stat_assign( var_index=ircm_sd_mg_morr, var_name="rcm_sd_mg_morr", &
              var_description="rcm sedimentation when using morrision or MG microphysics &
              &(not in budget, included in rcm_mc) [kg kg^{-1} s^{-1}]", &
-             var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=zt )
+             var_units="kg kg^{-1} s^{-1}", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
       case ('thlm_mfl_min')
@@ -1487,7 +1487,7 @@ module stats_zt
         call stat_assign( var_index=irrainm_sd_morr, var_name="rrainm_sd_morr", &
              var_description="rrainm sedimentation when using morrision microphysics &
              &(not in budget, included in rrainm_mc) [kg kg^{-1} s^{-1}]", &
-             var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=zt )
+             var_units="kg kg^{-1} s^{-1}", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
       case ('rrainm_ta')
@@ -1687,7 +1687,7 @@ module stats_zt
         call stat_assign( var_index=irsnowm_sd_morr, var_name="rsnowm_sd_morr", &
              var_description="rsnowm sedimentation when using morrison microphysics &
              &(Not in budget, included in rsnowm_mc) [(kg/kg)/s]", &
-             var_units="(kg/kg)/s", l_silhs=.false., grid_kind=zt )
+             var_units="(kg/kg)/s", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
       case ('rsnowm_ta')
@@ -1810,7 +1810,7 @@ module stats_zt
         call stat_assign( var_index=iricem_sd_mg_morr, var_name="ricem_sd_mg_morr", &
              var_description="ricem sedimentation when using morrison or MG microphysics &
              &(not in budget, included in ricem_mc) [(kg/kg)/s]", &
-             var_units="(kg/kg)/s", l_silhs=.false., grid_kind=zt )
+             var_units="(kg/kg)/s", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
       case ('ricem_ta')
@@ -1883,7 +1883,7 @@ module stats_zt
         call stat_assign( var_index=irgraupelm_sd_morr, var_name="rgraupelm_sd_morr", &
              var_description="rgraupelm sedimentation when using morrison microphysics &
              &(not in budget, included in rgraupelm_mc) [(kg/kg)/s]", &
-             var_units="(kg/kg)/s", l_silhs=.false., grid_kind=zt )
+             var_units="(kg/kg)/s", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
       case ('rgraupelm_ta')
