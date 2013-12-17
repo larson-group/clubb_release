@@ -566,18 +566,22 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
-      mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
-      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
-      sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
-      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)         [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+!     mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+!     mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+!     mu_Nr_1_n,     & ! Mean of Nr (1st PDF component) ip              [num/kg]
+!     mu_Nr_2_n,     & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip       [ln(num/kg)]
+      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
+      sigma_x_1,     & ! Standard deviation of x (1st PDF component)  [un. vary]
+      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)  [un. vary]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
       sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
       sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
       sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
@@ -596,7 +600,7 @@ module KK_upscaled_covariances
       corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
       x_mean,        & ! Mean of x (overall)                        [units vary]
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
-      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
+      KK_evap_coef,  & ! KK evap. coef.  [(kg/kg)^(1-alpha-beta)(#/kg)^-gamma/s]
       x_tol,         & ! Tolerance value of x                       [units vary]
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
@@ -604,7 +608,7 @@ module KK_upscaled_covariances
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      covar_x_KK_evap  ! Covariance between x and KK evaporation tendency    [-]
+      covar_x_KK_evap  ! Covariance of x and KK evap. tendency   [u.v.(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -620,9 +624,8 @@ module KK_upscaled_covariances
 
     ! Calculate the covariance of x and KK evaporation tendency.
     covar_x_KK_evap  &
-    = KK_evap_coef  &
-      * ( mixt_frac &
-          * precip_frac_1 &
+    = mixt_frac &
+      * ( KK_evap_coef * precip_frac_1 &
           * quadrivar_NNLL_covar_eq( mu_x_1, mu_s_1, mu_rr_1_n, mu_Nr_1_n, &
                                      sigma_x_1, sigma_s_1, sigma_rr_1_n, &
                                      sigma_Nr_1_n, corr_xs_1, corr_xrr_1_n, &
@@ -630,16 +633,19 @@ module KK_upscaled_covariances
                                      corr_sNr_1_n, corr_rrNr_1_n, x_mean, &
                                      KK_evap_tndcy, KK_evap_coef, x_tol, &
                                      alpha_exp, beta_exp, gamma_exp ) &
-        + ( one - mixt_frac ) &
-          * precip_frac_2 &
-          * quadrivar_NNLL_covar_eq( mu_x_2, mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
-                                     sigma_x_2, sigma_s_2, sigma_rr_2_n, &
-                                     sigma_Nr_2_n, corr_xs_2, corr_xrr_2_n, &
-                                     corr_xNr_2_n, corr_srr_2_n, &
-                                     corr_sNr_2_n, corr_rrNr_2_n, x_mean, &
-                                     KK_evap_tndcy, KK_evap_coef, x_tol, &
-                                     alpha_exp, beta_exp, gamma_exp ) &
-        )
+          - ( one - precip_frac_1 ) * ( mu_x_1 - x_mean ) * KK_evap_tndcy &
+        ) &
+      + ( one - mixt_frac ) &
+        * ( KK_evap_coef * precip_frac_2 &
+            * quadrivar_NNLL_covar_eq( mu_x_2, mu_s_2, mu_rr_2_n, mu_Nr_2_n, &
+                                       sigma_x_2, sigma_s_2, sigma_rr_2_n, &
+                                       sigma_Nr_2_n, corr_xs_2, corr_xrr_2_n, &
+                                       corr_xNr_2_n, corr_srr_2_n, &
+                                       corr_sNr_2_n, corr_rrNr_2_n, x_mean, &
+                                       KK_evap_tndcy, KK_evap_coef, x_tol, &
+                                       alpha_exp, beta_exp, gamma_exp ) &
+            - ( one - precip_frac_2 ) * ( mu_x_2 - x_mean ) * KK_evap_tndcy &
+          )
 
 
     return
@@ -1482,16 +1488,20 @@ module KK_upscaled_covariances
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_x_1,        & ! Mean of x (1st PDF component)                       [-]
-      mu_x_2,        & ! Mean of x (2nd PDF component)                       [-]
-      mu_s_1,        & ! Mean of s (1st PDF component)                       [-]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                       [-]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) in-precip (ip)    [-]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      sigma_x_1,     & ! Standard deviation of x (1st PDF component)         [-]
-      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)         [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)         [-]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)         [-]
+      mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+!     mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
+!     mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
+!     mu_Nr_1_n,     & ! Mean of Nr (1st PDF component) ip              [num/kg]
+!     mu_Nr_2_n,     & ! Mean of Nr (2nd PDF component) ip              [num/kg]
+      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip        [ln(kg/kg)]
+      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip        [ln(kg/kg)]
+      sigma_x_1,     & ! Standard deviation of x (1st PDF component)  [un. vary]
+      sigma_x_2,     & ! Standard deviation of x (2nd PDF component)  [un. vary]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
       sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
       sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
       corr_xs_1,     & ! Correlation between x and s (1st PDF component)     [-]
@@ -1510,7 +1520,7 @@ module KK_upscaled_covariances
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      covar_x_KK_accr  ! Covariance between x and KK accretion tendency      [-]
+      covar_x_KK_accr  ! Covariance of x and KK accr. tendency   [u.v.(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -1524,22 +1534,24 @@ module KK_upscaled_covariances
 
     ! Calculate the covariance of x and KK accretion tendency.
     covar_x_KK_accr  &
-    = KK_accr_coef &
-      * ( mixt_frac &
-          * precip_frac_1 &
+    = mixt_frac &
+      * ( KK_accr_coef * precip_frac_1 &
           * trivar_NNL_covar_eq( mu_x_1, mu_s_1, mu_rr_1_n, &
                                  sigma_x_1, sigma_s_1, sigma_rr_1_n, &
                                  corr_xs_1, corr_xrr_1_n, corr_srr_1_n, &
                                  x_mean, KK_accr_tndcy, KK_accr_coef, &
                                  x_tol, alpha_exp, beta_exp ) &
-        + ( one - mixt_frac ) &
-          * precip_frac_2 &
-          * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_rr_2_n, &
-                                 sigma_x_2, sigma_s_2, sigma_rr_2_n, &
-                                 corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
-                                 x_mean, KK_accr_tndcy, KK_accr_coef, &
-                                 x_tol, alpha_exp, beta_exp ) &
-        )
+          - ( one - precip_frac_1 ) * ( mu_x_1 - x_mean ) * KK_accr_tndcy &
+        ) &
+      + ( one - mixt_frac ) &
+        * ( KK_accr_coef * precip_frac_2 &
+            * trivar_NNL_covar_eq( mu_x_2, mu_s_2, mu_rr_2_n, &
+                                   sigma_x_2, sigma_s_2, sigma_rr_2_n, &
+                                   corr_xs_2, corr_xrr_2_n, corr_srr_2_n, &
+                                   x_mean, KK_accr_tndcy, KK_accr_coef, &
+                                   x_tol, alpha_exp, beta_exp ) &
+            - ( one - precip_frac_2 ) * ( mu_x_2 - x_mean ) * KK_accr_tndcy &
+          )
 
 
     return
