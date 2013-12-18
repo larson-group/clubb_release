@@ -840,13 +840,14 @@ module stats_variables
     iREMOVE_NI = 0, &
     iREMOVE_NS = 0, &
     iREMOVE_NG = 0, &
+    iNIM_MORR_CL = 0, &
     iT_in_K_mc = 0
 
 !$omp threadprivate(iPCC, iNNUCCC, iNPSACWS, iNPRA, iNPRC, iNPSACWI, iNPSACWG, iNPRAI, &
 !$omp   iNMULTS, iNMULTG, iNMULTR, iNMULTRG, iNNUCCD, iNSUBI, iNGMLTG, iNSUBG, iNACT, &
 !$omp   iSIZEFIX_NR, iSIZEFIX_NC, iSIZEFIX_NI, iSIZEFIX_NS, iSIZEFIX_NG, iNEGFIX_NR, &
 !$omp   iNEGFIX_NC, iNEGFIX_NI, iNEGFIX_NS, iNEGFIX_NG, iREMOVE_NR, iREMOVE_NC, iREMOVE_NI, &
-!$omp   iREMOVE_NS, iREMOVE_NG, iT_in_K_mc  )
+!$omp   iREMOVE_NS, iREMOVE_NG, iNIM_MORR_CL, iT_in_K_mc  )
 
   ! Indices for statistics in zm file
   integer, public :: & 

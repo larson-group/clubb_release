@@ -546,6 +546,7 @@ module stats_zt
       iREMOVE_NI, &
       iREMOVE_NS, &
       iREMOVE_NG, &
+      iNIM_MORR_CL, &
       iT_in_K_mc
 
 
@@ -2778,6 +2779,14 @@ module stats_zt
 
         call stat_assign( var_index=iREMOVE_NG, var_name="REMOVE_NG", &
              var_description="Remove graupel # conc. when small mix. rat., -Ngraupelm [(#/kg/s)]",&
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NIM_MORR_CL')
+        iNIM_MORR_CL= k
+
+        call stat_assign( var_index=iNIM_MORR_CL, var_name="NIM_MORR_CL", &
+             var_description="CLipping of large ice concentrations, -Nim [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 

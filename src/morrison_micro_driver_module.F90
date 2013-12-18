@@ -164,6 +164,7 @@ module morrison_micro_driver_module
       iREMOVE_NI, &
       iREMOVE_NS, &
       iREMOVE_NG, &
+      iNIM_MORR_CL, &
       iT_in_K_mc
 
 
@@ -406,8 +407,8 @@ module morrison_micro_driver_module
       REMOVE_NS, &    ! Removal of snow number concentration when mixing ratio is small
       REMOVE_NC, &    ! Removal of cloud drop number concentration when mixing ratio is small
       REMOVE_NR, &    ! Removal of rain drop number concentration when mixing ratio is small
-      REMOVE_NG    ! Removal of graupel number concentration when mixing ratio is small
-
+      REMOVE_NG, &    ! Removal of graupel number concentration when mixing ratio is small
+      NIM_MORR_CL   ! Clipping of large ice number concentrations
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -579,6 +580,7 @@ module morrison_micro_driver_module
     REMOVE_NI = 0.0 
     REMOVE_NS = 0.0 
     REMOVE_NG = 0.0
+    NIM_MORR_CL = 0.0
 
 
     hydromet_mc_r4 = real( hydromet_mc )
@@ -622,7 +624,7 @@ module morrison_micro_driver_module
            NMULTS, NMULTG, NMULTR, NMULTRG, NNUCCD, NSUBI, NGMLTG, NSUBG, NACT, &
            SIZEFIX_NR, SIZEFIX_NC, SIZEFIX_NI, SIZEFIX_NS, SIZEFIX_NG, &
            NEGFIX_NR, NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, NEGFIX_NG, &
-           REMOVE_NR, REMOVE_NC, REMOVE_NI, REMOVE_NS, REMOVE_NG )
+           REMOVE_NR, REMOVE_NC, REMOVE_NI, REMOVE_NS, REMOVE_NG, NIM_MORR_CL )
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -799,6 +801,8 @@ module morrison_micro_driver_module
       call stat_update_var( iREMOVE_NI, lh_stat_sample_weight*real( REMOVE_NI,kind=core_rknd ),zt)
       call stat_update_var( iREMOVE_NS, lh_stat_sample_weight*real( REMOVE_NS,kind=core_rknd ),zt)
       call stat_update_var( iREMOVE_NG, lh_stat_sample_weight*real( REMOVE_NG,kind=core_rknd ),zt)
+      call stat_update_var( iNIM_MORR_CL, lh_stat_sample_weight &
+                *real( NIM_MORR_CL,kind=core_rknd ), zt )
       call stat_update_var( iT_in_K_mc, lh_stat_sample_weight*real( T_in_K_mc, kind=core_rknd ),zt)
 
     end if ! l_stats_samp
