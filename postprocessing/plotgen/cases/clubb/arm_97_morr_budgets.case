@@ -237,13 +237,14 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NSUBI', 'expression' => 'NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NIM\_MORR\_CL', 'expression' => '-NIM_MORR_CL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nim Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_mc', 'expression' => 'Nim_mc-NISTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rrainm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
