@@ -448,7 +448,11 @@ sub runCases()
 		        {
 		            my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
 		            my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-		            
+		        
+			    if($CASE::CASE{'type'} eq "morrbudget")	
+    		     	    {
+				OutputWriter->writeMorrBudgetSubHeader($outputIndex, $subText);
+			    }
 		            if($subText ne "")
 		            {
 		                OutputWriter->writeSubHeader($outputIndex, $subText);

@@ -347,6 +347,359 @@ HTML
     OutputWriter->writeSubHtml($fh, $text);
 }
 
+##############################################################################
+#Writes the HTML header for Morrison microphysics budgets (SAM or CLUBB)
+##############################################################################
+sub writeMorrBudgetSubHeader()
+{
+    shift(@_);
+    my $fh = shift(@_);
+
+    OutputWriter->writeSubHeader($fh, "");
+
+    my $text = <<HTML;
+    <br />
+    <br />
+    <br />
+    <DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=11><B>Microphysical Processes</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=11><B>Processes Affecting Mixing Ratios (kg/kg/s)</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>EPRD</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of cloud ice</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRACS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by snow to form snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>EPRDG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRAI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>EPRDS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>     </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>EVPMG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>evaporation of melted graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>     </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRCI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion of cloud ice to snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>EVPMS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>evaporation of melted snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRD</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>depositional growth of cloud ice</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>MNUCCC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>contact freezing of cloud droplets</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRDG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>depositional growth of graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>MNUCCD</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>freezing of aerosol</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRDS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>depositional growth of snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>MNUCCR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>contact freezing of rain droplets</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRE</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>rain evaporation</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PCC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>saturation adjustment</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PSACR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of snow by rain to form graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PGMLT</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>freezing of rain to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PSACWG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud water by graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PGRACS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by snow to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PSACWI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud water by cloud ice</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PGSACW</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>riming of cloud water by snow to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PSACWS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud water by snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PIACR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by rain to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PSMLT</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>freezing of rain to form snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PIACRS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by rain to form snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QMULTG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering from droplets accreted onto graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRA</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QMULTR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering from rain droplets accreted onto snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRACG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QMULTRG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering from rain droplets accreted onto graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRACI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by rain to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QMULTS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering from cloud droplets accreted onto snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>PRACIS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by rain to form snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+    </TR>
+    <TR>
+	<TD ALIGN="CENTER" COLSPAN=11><B>                 </B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=11><B>Processes Affecting Number Concentrations (#/kg/s)</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NACT</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>cloud drop formation by aerosols</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRC1</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>change in rain due to autoconversion</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NCSTEN</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>cloud water sedimentation</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRCI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion of cloud ice to snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NEGFIX_NC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>removal of negative cloud water concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPSACWG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud drops by graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NEXFIX_NG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>removal of negative graupel concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPSACWI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>cloud droplet accretion by cloud ice</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NEGFIX_NI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>removal of negative ice concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPSACWS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>cloud droplet accretion by snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NEGFIX_NR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>removal of negative rain concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NRAGG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>self collection of rain drops</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NEGFIX_NS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>removal of negative snow concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NRSTEN</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>rain sedimentation</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NGMLTG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>melting of graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSAGG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>aggregation of snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NGMLTR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>melting of graupel to form rain</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSCNG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>conversion of snow to graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NGRACS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSMLTR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>melting of snow to form rain</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NGSTEN</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>graupel sedimentation</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSMLTS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>melting of snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NIACR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of ice by rain to form graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSSTEN</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>snow sedimentation</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NIACRS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of ice by rain to form snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSUBG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of graupel</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NIM_MORR_CL</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>clipping of large ice concentration</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSUBI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of cloud ice</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NISTEN</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>cloud ice sedimentation</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSUBR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>evaporation of rain</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NMULTG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to accretion of droplets by graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NSUBS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>sublimation of snow</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NMULTR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to rain riming snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>remove cloud number when mixing ratio is small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NMULTRG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to rain riming snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>remove graupel number when mixing ratio is small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NMULTS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to accretion of droplets by snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>remove ice number when mixing ratio is small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>contact freezing</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>remove rain number when mixing ratio is small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCD</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>ice nucleation by freezing aerosol</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>remove snow number when mixing ratio is small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>contact freezing of rain</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>SIZEFIX_NC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>adjust cloud number when size is too large/small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRA</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>accretion</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>SIZEFIX_NG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>adjust graupel number when size is too large/small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRACG</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by graupel</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>SIZEFIX_NI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>adjust graupel number when size is too large/small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRACS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>collection of rain by snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>SIZEFIX_NR</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>adjust rain number when size is too large/small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRAI</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>accretion of cloud ice by snow</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>SIZEFIX_NS</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>adjust snow number when size is too large/small</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NPRC</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B></B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B></B></TD>
+    </TR>
+
+
+</TABLE>
+<BR/>
+<BR/>
+</DIV>
+HTML
+
+    OutputWriter->writeSubHtml($fh, $text);
+}
+
 ###############################################################################
 # Writes the HTML header for WRF
 ###############################################################################
