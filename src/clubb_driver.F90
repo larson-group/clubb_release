@@ -257,6 +257,7 @@ module clubb_driver
         cleanup_corr_matrix_arrays
 
     use setup_clubb_pdf_params, only: &
+        num_hm, &               ! Variable
         setup_pdf_parameters    ! Procedure(s)
 
     use array_index, only: &
@@ -422,29 +423,35 @@ module clubb_driver
       radht_zm, &
       rcm_zm
 
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      wphmp, &      ! Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]
+      wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
+      rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
+      thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
+
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 
     ! Definition of namelists
-    namelist /model_setting/  & 
-      runtype, nzmax, grid_type, deltaz, zm_init, zm_top, & 
-      zt_grid_fname, zm_grid_fname,  & 
-      day, month, year, rlat, rlon, sfc_elevation, & 
-      time_initial, time_final, & 
-      dt_main, dt_rad, & 
-      sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, & 
+    namelist /model_setting/  &
+      runtype, nzmax, grid_type, deltaz, zm_init, zm_top, &
+      zt_grid_fname, zm_grid_fname,  &
+      day, month, year, rlat, rlon, sfc_elevation, &
+      time_initial, time_final, &
+      dt_main, dt_rad, &
+      sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
       thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
-      l_soil_veg, l_uv_nudge, l_restart, restart_path_case, & 
-      time_restart, l_input_fields, debug_level, & 
+      l_soil_veg, l_uv_nudge, l_restart, restart_path_case, &
+      time_restart, l_input_fields, debug_level, &
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
       l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad
 
 
-    namelist /stats_setting/ & 
+    namelist /stats_setting/ &
       l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
          l_allow_small_stats_tout
 
@@ -825,10 +832,18 @@ module clubb_driver
            dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
            err_code )                                           ! Intent(out)
     ! Allocate a correctly-sized array for radf and zero it
-    allocate(radf(gr%nz))
+    allocate( radf(gr%nz) )
 
     ! Zero all elements of radf
     radf(1:gr%nz) = 0.0_core_rknd
+
+    allocate( wphmp(gr%nz,num_hm), wp2hmp(gr%nz,num_hm), rtphmp(gr%nz,num_hm), &
+              thlphmp(gr%nz,num_hm) )
+
+    wphmp(:,:) = 0._core_rknd
+    wp2hmp(:,:) = 0._core_rknd
+    rtphmp(:,:) = 0._core_rknd
+    thlphmp(:,:) = 0._core_rknd
 
     if ( fatal_error( err_code ) ) return
 
@@ -1169,7 +1184,7 @@ module clubb_driver
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
-             rfrzm, radf, &                                       ! Intent(in)
+             rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
@@ -1220,7 +1235,7 @@ module clubb_driver
                                     corr_array_1, corr_array_2, &               ! Intent(out)
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-                                    hydromet_pdf_params )                       ! Intent(out)
+                                    wphmp, hydromet_pdf_params )                ! Intent(out)
 
       endif ! not micro_scheme == "none"
 

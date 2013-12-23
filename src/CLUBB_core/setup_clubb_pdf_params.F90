@@ -68,7 +68,7 @@ module setup_clubb_pdf_params
                                    corr_array_1_n, corr_array_2_n, &               ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, &     ! Intent(out)
-                                   hydromet_pdf_params )                           ! Intent(out)
+                                   wphmp, hydromet_pdf_params )                    ! Intent(out)
 
     ! Description:
 
@@ -190,6 +190,9 @@ module setup_clubb_pdf_params
       sigma_x_1_n, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2_n    ! Standard deviation array for the 2nd PDF component   [units vary]
 
+    real( kind = core_rknd ), dimension(nz,num_hm), intent(out) :: &
+      wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
+
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
@@ -230,8 +233,7 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz,num_hm) :: &
       hmm,   & ! Mean of a precipitating hydrometeor, hm (overall)  [units vary]
       hm1,   & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
-      hm2,   & ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
-      wphmp    ! Covariance of w and a precipitating hydrometeor    [(m/s)units]
+      hm2      ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
 
     real( kind = core_rknd ), dimension(nz,num_hm) :: &
       wphmp_ip_zt    ! Covar. of hm and w (in-precip) on t-levs   [(m/s)(kg/kg)]

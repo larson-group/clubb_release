@@ -633,6 +633,12 @@ module stats_variables
 !$omp                  irtpthlp_zt, iup2_zt, ivp2_zt, iupwp_zt, ivpwp_zt )
 
   integer, public :: &
+    iwphmp = 0, &
+    iwp2hmp = 0, &
+    irtphmp = 0, &
+    ithlphmp = 0
+
+  integer, public :: &
     irrp2_zt = 0, &
     iNrp2_zt = 0
 

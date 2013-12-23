@@ -61,7 +61,7 @@ module clubb_core
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
-               rfrzm, radf, &                                       ! intent(in)
+               rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! intent(in)
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! intent(inout)
@@ -326,7 +326,7 @@ module clubb_core
       l_stats_samp,  &
       l_stats,       &
       zt,            &
-      zm,            & 
+      zm,            &
       sfc,           &
       irtm_spur_src, &
       ithlm_spur_src
@@ -346,6 +346,9 @@ module clubb_core
     use sigma_sqd_w_module, only: &
       compute_sigma_sqd_w ! Procedure(s)
 
+    use setup_clubb_pdf_params, only: &
+      num_hm          ! Variable(s)
+
     implicit none
 
     !!! External
@@ -362,7 +365,7 @@ module clubb_core
                                         ! compute the perturbed values
 
     logical, parameter :: &
-      l_use_ice_latent = .false. !Includes the effects of ice latent heating in turbulence terms
+      l_use_ice_latent = .false. ! Includes the effects of ice latent heating in turbulence terms
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
@@ -404,31 +407,37 @@ module clubb_core
       rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      radf               ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3] 
+      radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), dimension(gr%nz, num_hm), intent(in) :: &
+      wphmp, &      ! Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]
+      wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
+      rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
+      thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
+
+    real( kind = core_rknd ), intent(in) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
       wprtp_sfc,    & ! w' r_t' at surface       [(kg m)/( kg s)]
       upwp_sfc,     & ! u'w' at surface          [m^2/s^2]
       vpwp_sfc        ! v'w' at surface          [m^2/s^2]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: &
       sclrm_forcing    ! Passive scalar forcing         [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in),  dimension(sclr_dim) ::  &
       wpsclrp_sfc      ! Scalar flux at surface         [{units vary} m/s]
 
     ! Eddy passive scalar variables
-    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: &
       edsclrm_forcing  ! Eddy passive scalar forcing    [{units vary}/s]
 
-    real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  & 
+    real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       upwp,    & ! u'w' (momentum levels)                         [m^2/s^2]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
@@ -446,7 +455,7 @@ module clubb_core
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
 
     ! Passive scalar variables
-    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: & 
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
       sclrm,     & ! Passive scalar mean (thermo. levels) [units vary]
       wpsclrp,   & ! w'sclr' (momentum levels)            [{units vary} m/s]
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
@@ -900,18 +909,19 @@ module clubb_core
           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),   & ! intent(in)
           sclrpthlp_zt(k,:), k,                                & ! intent(in)
 #ifdef GFDL
-      RH_crit(k, : , :),   do_liquid_only_in_clubb,        & ! intent(in)  h1g, 2010-06-16
+          RH_crit(k, : , :),   do_liquid_only_in_clubb,        & ! intent(in)  h1g, 2010-06-16
 #endif
-      wp4_zt(k), wprtp2(k), wp2rtp(k),                     & ! intent(out)
-      wpthlp2(k), wp2thlp(k), wprtpthlp(k),                & ! intent(out)
-      cloud_frac(k), ice_supersat_frac(k),                 & ! intent(out)
-      rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),     & ! intent(out)
-      thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),& ! intent(out)
-      thlprcp_zt(k), rcp2_zt(k), pdf_params(k),            & ! intent(out)
-      err_code_pdf_closure,                                & ! intent(out)
-      wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),   & ! intent(out)
-      wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),   & ! intent(out)
-      rc_coef_zt(k)                                        ) ! intent(out)
+          wphmp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),  & ! intent(in)
+          wp4_zt(k), wprtp2(k), wp2rtp(k),                     & ! intent(out)
+          wpthlp2(k), wp2thlp(k), wprtpthlp(k),                & ! intent(out)
+          cloud_frac(k), ice_supersat_frac(k),                 & ! intent(out)
+          rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),     & ! intent(out)
+          thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),& ! intent(out)
+          thlprcp_zt(k), rcp2_zt(k), pdf_params(k),            & ! intent(out)
+          err_code_pdf_closure,                                & ! intent(out)
+          wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),   & ! intent(out)
+          wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),   & ! intent(out)
+          rc_coef_zt(k)                                        ) ! intent(out)
 
       ! Subroutine may produce NaN values, and if so, exit
       ! gracefully.
@@ -983,6 +993,7 @@ module clubb_core
 #ifdef GFDL
             RH_crit(k, : , :),  do_liquid_only_in_clubb,   & ! intent(in)  h1g, 2010-06-16
 #endif
+            wphmp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),    & ! intent(in)
             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                    & ! intent(out)
             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),         & ! intent(out)
             cloud_frac_zm(k), ice_supersat_frac_zm(k),             & ! intent(out) 
@@ -1137,6 +1148,7 @@ module clubb_core
 #ifdef GFDL
             RH_crit(k, : , :),   do_liquid_only_in_clubb,        & ! intent(in)  h1g, 2010-06-16
 #endif
+            wphmp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),                   & ! intent(in)
             wp4_zt_frz(k), wprtp2_frz(k), wp2rtp_frz(k),                          & ! intent(out)
             wpthlp2_frz(k), wp2thlp_frz(k), wprtpthlp_frz(k),                     & ! intent(out)
             cloud_frac_frz(k), ice_supersat_frac_frz(k),                          & ! intent(out)
@@ -1191,6 +1203,7 @@ module clubb_core
 #ifdef GFDL
               RH_crit(k, : , :),  do_liquid_only_in_clubb,    & ! intent(in)  h1g, 2010-06-16
 #endif
+              wphmp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),               & ! intent(in)
               wp4_frz(k), wprtp2_zm_frz(k), wp2rtp_zm_frz(k),                   & ! intent(out)
               wpthlp2_zm_frz(k), wp2thlp_zm_frz(k), wprtpthlp_zm_frz(k),        & ! intent(out)
               cloud_frac_zm_frz(k), ice_supersat_frac_zm_frz(k),                & ! intent(out) 

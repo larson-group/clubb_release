@@ -250,7 +250,11 @@ module stats_zm
         iC6rt_Skw_fnc, &
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
-        iC1_Skw_fnc
+        iC1_Skw_fnc, &
+        iwphmp, &
+        iwp2hmp, &
+        irtphmp, &
+        ithlphmp
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -1536,7 +1540,28 @@ module stats_zm
         call stat_assign( var_index=iwprtp_exit_mfl, var_name="wprtp_exit_mfl", &
              var_description="Wprtp exiting flux limiter [(m kg)/(s kg)]", &
              var_units="(m kg)/(s kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1        
+        k = k + 1
+
+      case ('wphmp')
+        iwphmp = k
+        call stat_assign( var_index=iwphmp, var_name="wphmp", &
+             var_description="Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]", &
+             var_units="(m/s) <hydrometeor units>", l_silhs=.false., grid_kind=zm)
+        k = k + 1
+
+      case ('rtphmp')
+        irtphmp = k
+        call stat_assign( var_index=irtphmp, var_name="rtphmp", &
+             var_description="Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]", &
+             var_units="(kg/kg) <hydrometeor units>", l_silhs=.false., grid_kind=zm)
+        k = k + 1
+
+      case ('thlphmp')
+        ithlphmp = k
+        call stat_assign( var_index=ithlphmp, var_name="thlphmp", &
+             var_description="Covariance of thlp and a hydrometeor [K <hydrometeor units>]", &
+             var_units="K <hydrometeor units>", l_silhs=.false., grid_kind=zm)
+        k = k + 1
 
       case ('wm_zm')
         iwm_zm = k

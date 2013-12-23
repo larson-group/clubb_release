@@ -549,6 +549,8 @@ module stats_zt
       iNIM_MORR_CL, &
       iT_in_K_mc
 
+    use stats_variables, only: &
+      iwp2hmp ! Variable(s)
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -4000,6 +4002,13 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
       ! end changes by janhft 09/25/12
+
+      case ('wp2hmp')
+        iwp2hmp = k
+        call stat_assign( var_index=iwp2hmp, var_name="wp2hmp", &
+             var_description="Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]", &
+             var_units="(m/s)^2 <hydrometeor units>", l_silhs=.false., grid_kind=zt )
+        k = k + 1
 
       case default
 

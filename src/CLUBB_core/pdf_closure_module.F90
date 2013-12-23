@@ -28,6 +28,7 @@ module pdf_closure_module
 #ifdef GFDL
                RH_crit,  do_liquid_only_in_clubb,&  ! h1g, 2010-06-15
 #endif
+               wphmp, wp2hmp, rtphmp, thlphmp,   &
                wp4, wprtp2, wp2rtp,              &
                wpthlp2, wp2thlp, wprtpthlp,      &
                cloud_frac, ice_supersat_frac,    &
@@ -118,6 +119,9 @@ module pdf_closure_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use setup_clubb_pdf_params, only: &
+      num_hm      ! Variable(s)
+
     implicit none
 
     intrinsic :: sqrt, exp, min, max, abs, present
@@ -158,6 +162,12 @@ module pdf_closure_module
 
     integer, intent(in) ::  &
       level  ! Thermodynamic level for which calculations are taking place.
+
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
+      wphmp,  &     ! Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]
+      wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
+      rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
+      thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
 
     ! Output Variables
 
