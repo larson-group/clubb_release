@@ -404,11 +404,12 @@ subroutine mmicro_pcond ( sub_column,           &
 
    ! Upscaled KK for autoconversion and accretion
    use setup_clubb_pdf_params, only: &
-       compute_mean_stdev, & ! Procedure(s)
-       compute_corr, &
-       normalize_pdf_params, &
-       unpack_pdf_params, &
-       num_hm ! Variable(s)
+       compute_mean_stdev,   & ! Procedure(s)
+       normalize_mean_stdev, &
+       compute_corr,         &
+       normalize_corr,       &
+       unpack_pdf_params,    &
+       num_hm                  ! Variable(s)
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
@@ -419,10 +420,10 @@ subroutine mmicro_pcond ( sub_column,           &
 
    use constants_clubb, only: &
        zero,       &  ! Constant(s)
-       one, &
+       one,        &
        cm3_per_m3, &
-       rr_tol, &
-       Nr_tol, &
+       rr_tol,     &
+       Nr_tol,     &
        rc_tol
 
    use parameters_microphys, only: &
@@ -950,8 +951,9 @@ subroutine mmicro_pcond ( sub_column,           &
       mixt_frac        ! Mixture fraction                                    [-]
 
     real ( kind = core_rknd ), dimension(num_hm) :: &
-      hm1, &
-      hm2, &
+      hm1,      &
+      hm2,      &
+      wphmp_zt, &
       hm_tol
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
@@ -1810,6 +1812,9 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
+                 wphmp_zt(1) = zero
+                 wphmp_zt(2) = zero
+
                  hm_tol(1) = rr_tol
                  hm_tol(2) = Nr_tol
 
@@ -1832,28 +1837,31 @@ subroutine mmicro_pcond ( sub_column,           &
                                           mu_x_1, mu_x_2, & ! Intent(out)
                                           sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call compute_corr( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                 call normalize_mean_stdev( hm1, hm2, hm_tol, &
+                                            real( nc(i,k), kind = core_rknd ), &
+                                            d_variables, &
+                                            mu_x_1, mu_x_2, &
+                                            sigma_x_1, sigma_x_2, &
+                                            xp2_on_xm2, xp2_on_xm2, &
+                                            mu_x_1_n, mu_x_2_n, &
+                                            sigma_x_1_n, sigma_x_2_n )
+
+                 call compute_corr( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    zero, zero, zero, & ! Intent(in)
                                     zero, zero, & ! Intent(in)
-                                    sigma_x_1, & ! Intent(in)
+                                    zero, mixt_frac, one, & ! Intent(in)
+                                    one, wphmp_zt, hm_tol, &
+                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
-                 call normalize_pdf_params &
-                                ( hm1, hm2, hm_tol, & ! Intent(in)
-                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  d_variables, & ! Intent(in)
-                                  xp2_on_xm2, xp2_on_xm2, & ! Intent(in)
-                                  mu_x_1, mu_x_2, & ! Intent(in)
-                                  sigma_x_1, sigma_x_2, & ! Intent(in)
-                                  corr_array_1, corr_array_2, & ! Intent(in)
-                                  mu_x_1_n, mu_x_2_n, & ! Intent(out)
-                                  sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
-                                  corr_array_1_n, corr_array_2_n ) ! Intent(out)
+                 call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
+                                      xp2_on_xm2, xp2_on_xm2, &
+                                      corr_array_1, corr_array_2, &
+                                      corr_array_1_n, corr_array_2_n )
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)
@@ -2388,28 +2396,31 @@ subroutine mmicro_pcond ( sub_column,           &
                                   mu_x_1, mu_x_2, & ! Intent(out)
                                   sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call compute_corr ( real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                     real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                     zero, zero, zero, & ! Intent(in)
-                                     zero, zero, & ! Intent(in)
-                                     sigma_x_1, & ! Intent(in)
-                                     corr_array_cloud, corr_array_below, &   ! Intent(in)
-                                     pdf_params(k), d_variables, & ! Intent(in)
-                                     corr_array_1, corr_array_2 )    ! Intent(out)
+                 call normalize_mean_stdev( hm1, hm2, hm_tol, &
+                                            real( nc(i,k), kind = core_rknd ), &
+                                            d_variables, &
+                                            mu_x_1, mu_x_2, &
+                                            sigma_x_1, sigma_x_2, &
+                                            xp2_on_xm2, xp2_on_xm2, &
+                                            mu_x_1_n, mu_x_2_n, &
+                                            sigma_x_1_n, sigma_x_2_n )
 
-                 call normalize_pdf_params &
-                                ( hm1, hm2, hm_tol, & ! Intent(in)
-                                  real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  d_variables, & ! Intent(in)
-                                  xp2_on_xm2, xp2_on_xm2, & ! Intent(in)
-                                  mu_x_1, mu_x_2, & ! Intent(in)
-                                  sigma_x_1, sigma_x_2, & ! Intent(in)
-                                  corr_array_1, corr_array_2, & ! Intent(in)
-                                  mu_x_1_n, mu_x_2_n, & ! Intent(out)
-                                  sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
-                                  corr_array_1_n, corr_array_2_n ) ! Intent(out)
+                 call compute_corr( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                    zero, zero, & ! Intent(in)
+                                    zero, mixt_frac, one, & ! Intent(in)
+                                    one, wphmp_zt, hm_tol, &
+                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                    corr_array_cloud, corr_array_below, & ! Intent(in)
+                                    pdf_params(k), d_variables, & ! Intent(in)
+                                    corr_array_1, corr_array_2 ) ! Intent(out)
+
+                 call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
+                                      xp2_on_xm2, xp2_on_xm2, &
+                                      corr_array_1, corr_array_2, &
+                                      corr_array_1_n, corr_array_2_n )
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)

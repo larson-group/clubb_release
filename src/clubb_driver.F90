@@ -1228,7 +1228,7 @@ module clubb_driver
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, hydromet, Ncnm, rho, rcm, &          ! Intent(in)
+         call setup_pdf_parameters( gr%nz, hydromet, wm_zt, Ncnm, rho, rcm, &  ! Intent(in)
                                     cloud_frac, ice_supersat_frac, sqrt(wp2_zt), & ! Intent(in)
                                     wphydrometp, corr_array_cloud, corr_array_below,& ! Intent(in)
                                     pdf_params, l_stats_samp, d_variables, &    ! Intent(in)

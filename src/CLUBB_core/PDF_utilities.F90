@@ -476,9 +476,12 @@ module PDF_utilities
   end function calc_corr_sx
 
   !=============================================================================
-  pure function calc_xp2( mu_x_1, mu_x_2, mu_x_1_n, mu_x_2_n, sigma_x_1, &
-                          sigma_x_2, sigma_x_1_n, sigma_x_2_n, mixt_frac, &
-                          x_frac_1, x_frac_2, x_mean, x_tol )  &
+  pure function calc_xp2( mu_x_1, mu_x_2, &
+                          mu_x_1_n, mu_x_2_n, &
+                          sigma_x_1, sigma_x_2, &
+                          sigma_x_1_n, sigma_x_2_n, &
+                          mixt_frac, x_frac_1, x_frac_2, &
+                          x_mean, x_tol )  &
   result( xp2 )
 
     ! Description:
