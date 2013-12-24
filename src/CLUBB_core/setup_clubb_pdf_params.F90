@@ -66,7 +66,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, hydromet, wm_zt, Ncnm, rho, rcm, &          ! Intent(in)
-                                   cloud_frac, ice_supersat_frac, w_std_dev, &     ! Intent(in)
+                                   cloud_frac, ice_supersat_frac, wp2_zt, &     ! Intent(in)
                                    wphydrometp, corr_array_cloud, corr_array_below, & ! Intent(in)
                                    pdf_params, l_stats_samp, d_variables, &        ! Intent(in)
                                    corr_array_1_n, corr_array_2_n, &               ! Intent(out)
@@ -163,13 +163,13 @@ module setup_clubb_pdf_params
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,      & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
-      Ncnm,       & ! Mean cloud nuclei concentration, < N_cn >       [num/kg]
-      rho,        & ! Density                                         [kg/m^3]
-      rcm,        & ! Mean cloud water mixing ratio, < r_c >          [kg/kg]
-      cloud_frac, & ! Cloud fraction                                  [-]
-      ice_supersat_frac, & ! Ice cloud fraction                       [-]
-      w_std_dev     ! Standard deviation of vertical velocity, w      [m/s]
+      wm_zt,      & ! Mean vertical velocity, <w>, on thermo. levels   [m/s]
+      Ncnm,       & ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
+      rho,        & ! Density                                          [kg/m^3]
+      rcm,        & ! Mean cloud water mixing ratio, < r_c >           [kg/kg]
+      cloud_frac, & ! Cloud fraction                                   [-]
+      ice_supersat_frac, & ! Ice cloud fraction                        [-]
+      wp2_zt        ! Variance of w, <w'^2> (interp. to thermo. levs.) [m^2/s^2]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
@@ -524,7 +524,7 @@ module setup_clubb_pdf_params
 
           call compute_corr( wm_zt(k), rc1(k), rc2(k), cloud_frac1(k), &
                              cloud_frac2(k), wpsp_zt(k), wpNcnp_zt(k), &
-                             w_std_dev(k), mixt_frac(k), precip_frac_1(k), &
+                             sqrt(wp2_zt(k)), mixt_frac(k), precip_frac_1(k), &
                              precip_frac_2(k), wphmp_zt(k,:), hm_tol, &
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                              corr_array_cloud, corr_array_below, &
@@ -1709,7 +1709,7 @@ module setup_clubb_pdf_params
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
-    real( kind = core_rknd ), dimension(num_hm) :: &
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
       wphmp_zt, & ! Covariance of w and hm interp. to thermo. levs.  [(m/s)u.v.]
       hm_tol      ! Tolerance value for the hydrometeor             [units vary]
 
@@ -1719,7 +1719,8 @@ module setup_clubb_pdf_params
       sigma_x_1, & ! Standard deviation of x array (1st PDF comp.)  [units vary]
       sigma_x_2    ! Standard deviation of x array (2nd PDF comp.)  [units vary]
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    intent(in) :: &
       corr_array_cloud, & ! Prescribed correlation array in cloud        [-]
       corr_array_below    ! Prescribed correlation array below cloud     [-]
 
@@ -1727,7 +1728,8 @@ module setup_clubb_pdf_params
       pdf_params    ! PDF parameters                                [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    intent(out) :: &
       corr_array_1, & ! Correlation array 1st component (order: s,t,w,Ncn <hydrometeors>)   [-]
       corr_array_2    ! Correlation array 2nd component (order: s,t,w,Ncn <hydrometeors>)   [-]
 
@@ -2656,7 +2658,7 @@ module setup_clubb_pdf_params
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), dimension(num_hm) :: &
+    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
       hm1,    & ! Mean of a precip. hydrometeor (1st PDF component) [units vary]
       hm2,    & ! Mean of a precip. hydrometeor (2nd PDF component) [units vary]
       hm_tol    ! Tolerance value for the hydrometeor               [units vary]
