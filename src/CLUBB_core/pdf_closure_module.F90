@@ -18,7 +18,7 @@ module pdf_closure_module
   !#######################################################################
   !#######################################################################
   subroutine pdf_closure &
-             ( p_in_Pa, exner, thv_ds, wm,       &
+             ( num_hm, p_in_Pa, exner, thv_ds, wm,&
                wp2, wp3, sigma_sqd_w,            &
                Skw, rtm, rtp2,                   &
                wprtp, thlm, thlp2,               &
@@ -119,14 +119,14 @@ module pdf_closure_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-    use setup_clubb_pdf_params, only: &
-      num_hm      ! Variable(s)
-
     implicit none
 
     intrinsic :: sqrt, exp, min, max, abs, present
 
     ! Input Variables
+    integer, intent(in) :: &
+      num_hm         ! Number of hydrometeor species              [#]
+
     real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,     & ! Pressure                                   [Pa]
       exner,       & ! Exner function                             [-]

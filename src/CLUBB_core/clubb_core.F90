@@ -51,7 +51,7 @@ module clubb_core
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core &
-             ( l_implemented, dt, fcor, sfc_elevation, &            ! intent(in)
+             ( l_implemented, dt, fcor, sfc_elevation, num_hm, &    ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
@@ -346,9 +346,6 @@ module clubb_core
     use sigma_sqd_w_module, only: &
       compute_sigma_sqd_w ! Procedure(s)
 
-    use setup_clubb_pdf_params, only: &
-      num_hm          ! Variable(s)
-
     implicit none
 
     !!! External
@@ -380,6 +377,9 @@ module clubb_core
     real( kind = core_rknd ), intent(in) ::  & 
       fcor,  &          ! Coriolis forcing             [s^-1]
       sfc_elevation     ! Elevation of ground level    [m AMSL]
+
+    integer, intent(in) :: &
+      num_hm            ! Number of hydrometeors       [#]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
@@ -901,7 +901,7 @@ module clubb_core
     do k = 1, gr%nz, 1
 
       call pdf_closure & 
-        ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),        & ! intent(in)
+        ( num_hm, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),& ! intent(in)
           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                & ! intent(in)
           Skw_zt(k), rtm(k), rtp2_zt(k),                       & ! intent(in)
           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),             & ! intent(in)
@@ -983,7 +983,7 @@ module clubb_core
       do k = 1, gr%nz, 1
 
         call pdf_closure & 
-          ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),    & ! intent(in)
+          ( num_hm, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),& ! intent(in)
             wp2(k), wp3_zm(k), sigma_sqd_w(k),                     & ! intent(in)
             Skw_zm(k), rtm_zm(k), rtp2(k),                         & ! intent(in)
             wprtp(k),  thlm_zm(k), thlp2(k),                       & ! intent(in)
@@ -1138,7 +1138,7 @@ module clubb_core
       do k = 1, gr%nz, 1
 
         call pdf_closure & 
-          ( p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),                         & ! intent(in)
+          ( num_hm, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),                 & ! intent(in)
             wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                                 & ! intent(in)
             Skw_zt(k), rtm_frz(k), rtp2_zt(k),                                    & ! intent(in)
             zm2zt( wprtp, k ), thlm_frz(k), thlp2_zt(k),                          & ! intent(in)
@@ -1193,7 +1193,7 @@ module clubb_core
         ! Call pdf_closure again to output the variables which belong on the momentum grid.
         do k=1, gr%nz, 1
           call pdf_closure & 
-            ( p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),               & ! intent(in)
+            ( num_hm, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k),       & ! intent(in)
               wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
               Skw_zm(k), rtm_zm_frz(k), rtp2(k),                                & ! intent(in)
               wprtp(k),  thlm_zm_frz(k), thlp2(k),                              & ! intent(in)

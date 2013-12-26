@@ -1174,7 +1174,7 @@ module clubb_driver
 
       ! Call the parameterization one timestep
       call advance_clubb_core &
-           ( l_implemented, dt_main, fcor, sfc_elevation, &       ! Intent(in)
+           ( l_implemented, dt_main, fcor, sfc_elevation, num_hm,&! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
