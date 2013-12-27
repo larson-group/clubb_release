@@ -16,7 +16,7 @@ module setup_clubb_pdf_params
 
   private :: component_means_hydromet, &
              precip_fraction,          &
-             hm_ip_idx,                &
+             pdf2hm_idx,               &
              hm2pdf_idx,               &
              component_mean_hm_ip,     &
              component_stdev_hm_ip,    &
@@ -1571,11 +1571,11 @@ module setup_clubb_pdf_params
     ! Mean of the hydrometeor species
     do ivar = iiPDF_Ncn+1, d_variables
 
-       mu_x_1(ivar) = component_mean_hm_ip( hm1(hm_ip_idx(ivar)), precip_frac_1, &
-                                            hm_tol(hm_ip_idx(ivar)) )
+       mu_x_1(ivar) = component_mean_hm_ip( hm1(pdf2hm_idx(ivar)), precip_frac_1, &
+                                            hm_tol(pdf2hm_idx(ivar)) )
 
-       mu_x_2(ivar) = component_mean_hm_ip( hm2(hm_ip_idx(ivar)), precip_frac_2, &
-                                            hm_tol(hm_ip_idx(ivar)) )
+       mu_x_2(ivar) = component_mean_hm_ip( hm2(pdf2hm_idx(ivar)), precip_frac_2, &
+                                            hm_tol(pdf2hm_idx(ivar)) )
 
     enddo
 
@@ -1790,13 +1790,13 @@ module setup_clubb_pdf_params
 
        do jvar = iiPDF_Ncn+1, d_variables
 
-          call calc_corr_whm( wm_zt, wphmp_zt(hm_ip_idx(jvar)), &
+          call calc_corr_whm( wm_zt, wphmp_zt(pdf2hm_idx(jvar)), &
                               mu_x_1(iiPDF_w), mu_x_2(iiPDF_w), &
                               mu_x_1(jvar), mu_x_2(jvar), &
                               sigma_x_1(iiPDF_w), sigma_x_2(iiPDF_w), &
                               sigma_x_1(jvar), sigma_x_2(jvar), &
                               mixt_frac, precip_frac_1, precip_frac_2, &
-                              hm_tol(hm_ip_idx(jvar)), &
+                              hm_tol(pdf2hm_idx(jvar)), &
                               corr_whm_1(jvar), corr_whm_2(jvar) )
 
        enddo ! jvar = iiPDF_Ncn+1, d_variables
@@ -1983,8 +1983,8 @@ module setup_clubb_pdf_params
   end subroutine compute_corr
 
   !=============================================================================
-  function hm_ip_idx( iiPDF_idx )  &
-  result( hmip_idx )
+  function pdf2hm_idx( iiPDF_idx )  &
+  result( hm_idx )
 
     ! Description:
     ! Returns the position of a specific hydrometeor corresponding to the iiPDF index
@@ -1997,14 +1997,13 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-        d_variables, &
-        iiPDF_rrain, &
-        iiPDF_rsnow, &
-        iiPDF_rice, &
+        iiPDF_rrain,    & ! Variable(s)
+        iiPDF_rsnow,    &
+        iiPDF_rice,     &
         iiPDF_rgraupel, &
-        iiPDF_Nr, &
-        iiPDF_Nsnow, &
-        iiPDF_Ni, &
+        iiPDF_Nr,       &
+        iiPDF_Nsnow,    &
+        iiPDF_Ni,       &
         iiPDF_Ngraupel
 
     implicit none
@@ -2013,37 +2012,37 @@ module setup_clubb_pdf_params
     integer, intent(in) :: iiPDF_idx ! iiPDF index
 
     ! Return Variable
-    integer :: hmip_idx
+    integer :: hm_idx
 
     if ( iiPDF_idx == iiPDF_rrain ) then
-       hmip_idx = iirr
+       hm_idx = iirr
 
     elseif (  iiPDF_idx == iiPDF_Nr ) then
-       hmip_idx = iiNr
+       hm_idx = iiNr
 
     elseif (  iiPDF_idx == iiPDF_rsnow ) then
-       hmip_idx = iirs
+       hm_idx = iirs
 
     elseif (  iiPDF_idx == iiPDF_Nsnow ) then
-       hmip_idx = iiNs
+       hm_idx = iiNs
 
     elseif (  iiPDF_idx == iiPDF_rgraupel ) then
-       hmip_idx = iirg
+       hm_idx = iirg
 
     elseif (  iiPDF_idx == iiPDF_Ngraupel ) then
-       hmip_idx = iiNg
+       hm_idx = iiNg
 
     elseif (  iiPDF_idx == iiPDF_rice ) then
-       hmip_idx = iiri
+       hm_idx = iiri
 
     elseif (  iiPDF_idx == iiPDF_Ni ) then
-       hmip_idx = iiNi
+       hm_idx = iiNi
 
     endif
 
     return
 
-  end function hm_ip_idx
+  end function pdf2hm_idx
 
   !=============================================================================
   function hm2pdf_idx( hm_idx ) result( pdf_idx )
@@ -2057,8 +2056,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-        d_variables,    & ! Constant(s)
-        iiPDF_rrain,    &
+        iiPDF_rrain,    & ! Variable(s)
         iiPDF_rsnow,    &
         iiPDF_rice,     &
         iiPDF_rgraupel, &
@@ -2752,7 +2750,7 @@ module setup_clubb_pdf_params
     do ivar = iiPDF_Ncn+1, d_variables, 1
 
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 1.
-       if ( hm1(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) ) then
+       if ( hm1(pdf2hm_idx(ivar)) > hm_tol(pdf2hm_idx(ivar)) ) then
 
           mu_x_1_n(ivar) = mean_L2N( mu_x_1(ivar), sigma2_on_mu2_1(ivar) )
 
@@ -2774,7 +2772,7 @@ module setup_clubb_pdf_params
        sigma_x_1_n(ivar) = stdev_L2N( sigma2_on_mu2_1(ivar) )
 
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 2.
-       if ( hm2(hm_ip_idx(ivar)) > hm_tol(hm_ip_idx(ivar)) ) then
+       if ( hm2(pdf2hm_idx(ivar)) > hm_tol(pdf2hm_idx(ivar)) ) then
 
           mu_x_2_n(ivar) = mean_L2N( mu_x_2(ivar), sigma2_on_mu2_2(ivar) )
 
