@@ -126,7 +126,8 @@ module setup_clubb_pdf_params
         Cholesky_factor ! Procedure(s)
 
     use stats_type, only: &
-        stat_update_var ! Procedure(s)
+        stat_update_var,    & ! Procedure(s)
+        stat_update_var_pt
 
     use stats_variables, only: &
         irr1,             & ! Variable(s)
@@ -136,6 +137,8 @@ module setup_clubb_pdf_params
         iprecip_frac,     &
         iprecip_frac_1,   &
         iprecip_frac_2,   &
+        irrp2_zt,         &
+        iNrp2_zt,         &
         zt
 
     use model_flags, only: &
@@ -495,6 +498,19 @@ module setup_clubb_pdf_params
           else ! hm = 0.
 
              hmp2_zt(k,i) = zero
+
+          endif
+
+          ! Statistics
+          if ( i == iirr ) then
+
+             ! Variance of rain water mixing ratio, <r_r'^2>.
+             call stat_update_var_pt( irrp2_zt, k, hmp2_zt(k,i), zt )
+
+          elseif ( i == iiNr ) then
+
+             ! Variance of rain drop concentration, <N_r'^2>.
+             call stat_update_var_pt( iNrp2_zt, k, hmp2_zt(k,i), zt )
 
           endif
 
