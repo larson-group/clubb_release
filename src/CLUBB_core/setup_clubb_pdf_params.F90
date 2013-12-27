@@ -65,8 +65,8 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, hydromet, wm_zt, Ncnm, rho, rcm, &          ! Intent(in)
-                                   cloud_frac, ice_supersat_frac, wp2_zt, &     ! Intent(in)
+  subroutine setup_pdf_parameters( nz, dt, hydromet, wm_zt, Ncnm, rho, &
+                                   rcm, cloud_frac, ice_supersat_frac, wp2_zt, &   ! Intent(in)
                                    wphydrometp, corr_array_cloud, corr_array_below, & ! Intent(in)
                                    pdf_params, l_stats_samp, d_variables, &        ! Intent(in)
                                    corr_array_1_n, corr_array_2_n, &               ! Intent(out)
@@ -118,8 +118,13 @@ module setup_clubb_pdf_params
     use PDF_utilities, only: &
         calc_xp2  ! Procedure(s)
 
+    use clip_explicit, only: &
+        clip_covar, & ! Procedure(s)
+        clip_wphmp    ! Variables(s)
+
     use clubb_precision, only: &
-        core_rknd, &    ! Variable(s)
+        core_rknd,      & ! Variable(s)
+        time_precision, &
         dp
 
     use matrix_operations, only: &
@@ -164,6 +169,9 @@ module setup_clubb_pdf_params
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
       d_variables    ! Number of variables in the correlation array
+
+    real( kind = time_precision ), intent(in) ::  & 
+      dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm_zt,      & ! Mean vertical velocity, <w>, on thermo. levels   [m/s]
@@ -282,6 +290,9 @@ module setup_clubb_pdf_params
 !   real( kind = core_rknd ), dimension(d_variables) :: &
 !     sigma2_on_mu2_1, & ! Prescribed ratio array:  sigma_hm_1^2 / mu_hm_1^2 [-]
 !     sigma2_on_mu2_2    ! Prescribed ratio array:  sigma_hm_2^2 / mu_hm_2^2 [-]
+
+    real( kind = core_rknd ), dimension(nz,num_hm) :: &
+      wphmp_chnge    ! Change in wphmp_zt due to covar. clipping    [(m/s)units]
 
     logical :: l_corr_array_scaling
 
@@ -502,17 +513,26 @@ module setup_clubb_pdf_params
           endif
 
           ! Statistics
-          if ( i == iirr ) then
+          if ( l_stats_samp ) then
 
-             ! Variance of rain water mixing ratio, <r_r'^2>.
-             call stat_update_var_pt( irrp2_zt, k, hmp2_zt(k,i), zt )
+             if ( i == iirr ) then
 
-          elseif ( i == iiNr ) then
+                ! Variance of rain water mixing ratio, <r_r'^2>.
+                call stat_update_var_pt( irrp2_zt, k, hmp2_zt(k,i), zt )
 
-             ! Variance of rain drop concentration, <N_r'^2>.
-             call stat_update_var_pt( iNrp2_zt, k, hmp2_zt(k,i), zt )
+             elseif ( i == iiNr ) then
 
-          endif
+                ! Variance of rain drop concentration, <N_r'^2>.
+                call stat_update_var_pt( iNrp2_zt, k, hmp2_zt(k,i), zt )
+
+             endif
+
+          endif ! l_stats_samp
+
+          ! Clip the value of covariance <w'hm'> on thermodynamic levels.
+          call clip_covar( clip_wphmp, .true.,  & 
+                           .true., dt, wp2_zt, hmp2_zt(:,i),  & 
+                           wphmp_zt(:,i), wphmp_chnge(:,i) )
 
        enddo ! i = 1, num_hm, 1
 
