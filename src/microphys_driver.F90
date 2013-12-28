@@ -2092,7 +2092,8 @@ module microphys_driver
       ! A Crank-Nicholson time-stepping scheme is used for this variable.
       ! This is the portion of the calculation using < h_m > from timestep t+1. 
       wphydrometp(1:gr%nz-1,i) &
-      = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+      = wphydrometp(1:gr%nz-1,i) &
+        - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
                                hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
                                gr%invrs_dzm(1:gr%nz-1) )
 
