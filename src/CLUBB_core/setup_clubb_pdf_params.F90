@@ -307,6 +307,25 @@ module setup_clubb_pdf_params
     call precip_hm_arrays( nz, hydromet, wphydrometp, &
                            hmm, wphmp, hm_list, hm_tol )
 
+    ! Interpolate the covariances of w and precipitating hydrometeors to
+    ! thermodynamic grid levels.
+    do i = 1, num_hm, 1
+
+       wphmp_zt(:,i) = zm2zt( wphmp(:,i) )
+
+       ! When the mean value of a precipitating hydrometeor is below tolerance
+       ! value, it is considered to have a value of 0, and the precipitating
+       ! hydrometeor does not vary over the grid level.  Any covariance
+       ! involving that precipitating hydrometeor also has a value of 0 at that
+       ! grid level.
+       do k = 1, nz, 1
+          if ( hmm(k,i) <= hm_tol(i) ) then
+             wphmp_zt(k,i) = zero
+          endif
+       enddo ! k = 1, nz, 1
+
+    enddo ! i = 1, num_hm, 1
+
     ! Setup some of the PDF parameters
     rc1         = pdf_params%rc1
     rc2         = pdf_params%rc2
@@ -358,21 +377,12 @@ module setup_clubb_pdf_params
 
        ! Interpolate the covariances to thermodynamic grid levels.
        wpsp_zt = zm2zt( wpsp_zm )
-       do i = 1, num_hm, 1
-          wphmp_zt(:,i) = zm2zt( wphmp(:,i) )
-       enddo ! i = 1, num_hm, 1
        wpNcnp_zt = zm2zt( wpNcnp_zm )
 
-       ! When the mean value of a hydrometeor is below tolerance value, it is
-       ! considered to have a value of 0, and does not vary over the grid level.
-       ! Any covariance involving that hydrometeor also has a value of 0 at that
-       ! grid level.
+       ! When the mean value of Ncn is below tolerance value, it is considered
+       ! to have a value of 0, and Ncn does not vary over the grid level.  Any
+       ! covariance involving Ncn also has a value of 0 at that grid level.
        do k = 1, nz, 1
-          do i = 1, num_hm, 1
-             if ( hmm(k,i) <= hm_tol(i) ) then
-                wphmp_zt(k,i) = zero
-             endif
-          enddo ! i = 1, num_hm, 1
           if ( Ncnm(k) <= Ncn_tol ) then
              wpNcnp_zt(k) = zero
           endif
