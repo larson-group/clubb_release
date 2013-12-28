@@ -119,8 +119,8 @@ module setup_clubb_pdf_params
         calc_xp2  ! Procedure(s)
 
     use clip_explicit, only: &
-        clip_covar, & ! Procedure(s)
-        clip_wphmp    ! Variables(s)
+        clip_covar_level, & ! Procedure(s)
+        clip_wphmp          ! Variables(s)
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
@@ -530,9 +530,9 @@ module setup_clubb_pdf_params
           endif ! l_stats_samp
 
           ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-          call clip_covar( clip_wphmp, .true.,  & 
-                           .true., dt, wp2_zt, hmp2_zt(:,i),  & 
-                           wphmp_zt(:,i), wphmp_chnge(:,i) )
+          call clip_covar_level( clip_wphmp, k, .true.,  & 
+                                 .true., dt, wp2_zt(k), hmp2_zt(k,i),  & 
+                                 wphmp_zt(k,i), wphmp_chnge(k,i) )
 
        enddo ! i = 1, num_hm, 1
 

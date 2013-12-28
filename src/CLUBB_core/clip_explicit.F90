@@ -9,6 +9,7 @@ module clip_explicit
 
   public :: clip_covars_denom, &
             clip_covar, & 
+            clip_covar_level, & 
             clip_variance, & 
             clip_skewness, &
             clip_skewness_core
@@ -573,6 +574,170 @@ module clip_explicit
 
     return
   end subroutine clip_covar
+
+  !=============================================================================
+  subroutine clip_covar_level( solve_type, level, l_first_clip_ts,  & 
+                               l_last_clip_ts, dt, xp2, yp2,  & 
+                               xpyp, xpyp_chnge )
+
+    ! Description:
+    ! Clipping the value of covariance x'y' based on the correlation between x
+    ! and y.  This is all done at a single vertical level.
+    !
+    ! The correlation between variables x and y is:
+    !
+    ! corr_(x,y) = x'y' / [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! where x'^2 is the variance of x, y'^2 is the variance of y, and x'y' is
+    ! the covariance of x and y.
+    !
+    ! The correlation of two variables must always have a value between -1
+    ! and 1, such that:
+    !
+    ! -1 <= corr_(x,y) <= 1.
+    !
+    ! Therefore, there is an upper limit on x'y', such that:
+    !
+    ! x'y' <=  [ sqrt(x'^2) * sqrt(y'^2) ];
+    !
+    ! and a lower limit on x'y', such that:
+    !
+    ! x'y' >= -[ sqrt(x'^2) * sqrt(y'^2) ].
+    !
+    ! The values of x'y', x'^2, and y'^2 are all found on momentum levels.
+    !
+    ! The value of x'y' may need to be clipped whenever x'y', x'^2, or y'^2 is
+    ! updated.
+    !
+    ! The following covariances are found in the code:
+    !
+    ! w'r_t', w'th_l', w'sclr', (computed in advance_xm_wpxp);
+    ! r_t'th_l', sclr'r_t', sclr'th_l', (computed in advance_xp2_xpyp);
+    ! u'w', v'w', w'edsclr' (computed in advance_windm_edsclrm);
+    ! and w'hm' (computed in setup_pdf_parameters).
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        max_mag_correlation, & ! Constant(s)
+        zero
+
+    use clubb_precision, only: & 
+        time_precision, & ! Variable(s)
+        core_rknd
+
+    use stats_type, only: & 
+        stat_begin_update_pt, & ! Procedure(s)
+        stat_modify_pt,       & 
+        stat_end_update_pt
+
+    use stats_variables, only: & 
+        zm,  & ! Variable(s)
+        iwprtp_cl, & 
+        iwpthlp_cl, & 
+        irtpthlp_cl, & 
+        l_stats_samp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: & 
+      solve_type, & ! Variable being solved; used for STATS
+      level         ! Vertical level index
+
+    logical, intent(in) :: & 
+      l_first_clip_ts, & ! First instance of clipping in a timestep.
+      l_last_clip_ts     ! Last instance of clipping in a timestep.
+
+    real( kind = time_precision ), intent(in) ::  & 
+      dt     ! Model timestep; used here for STATS        [s]
+
+    real( kind = core_rknd ), intent(in) :: & 
+      xp2, & ! Variance of x, <x'^2>                      [{x units}^2]
+      yp2    ! Variance of y, <y'^2>                      [{y units}^2]
+
+    ! Output Variable
+    real( kind = core_rknd ), intent(inout) :: & 
+      xpyp   ! Covariance of x and y, <x'y'>              [{x units}*{y units}]
+
+    real( kind = core_rknd ), intent(out) :: &
+      xpyp_chnge  ! Net change in <x'y'> due to clipping  [{x units}*{y units}]
+
+
+    ! Local Variable
+    integer :: & 
+      ixpyp_cl    ! Statistics index
+
+
+    select case ( solve_type )
+    case ( clip_wprtp )   ! wprtp clipping budget term
+      ixpyp_cl = iwprtp_cl
+    case ( clip_wpthlp )   ! wpthlp clipping budget term
+      ixpyp_cl = iwpthlp_cl
+    case ( clip_rtpthlp )   ! rtpthlp clipping budget term
+      ixpyp_cl = irtpthlp_cl
+    case default   ! scalars (or upwp/vpwp) are involved
+      ixpyp_cl = 0
+    end select
+
+
+    if ( l_stats_samp ) then
+       if ( l_first_clip_ts ) then
+          call stat_begin_update_pt( ixpyp_cl, level, &
+                                     xpyp / real( dt, kind = core_rknd ), zm )
+       else
+          call stat_modify_pt( ixpyp_cl, level, &
+                               -xpyp / real( dt, kind = core_rknd ), zm )
+       endif
+    endif
+
+    ! The value of x'y' at the surface (or lower boundary) is a set value that
+    ! is either specified or determined elsewhere in a surface subroutine.  It
+    ! is ensured elsewhere that the correlation between x and y at the surface
+    ! (or lower boundary) is between -1 and 1.  Thus, the covariance clipping
+    ! code does not need to be invoked at the lower boundary.  Likewise, the
+    ! value of x'y' is set at the upper boundary, so the covariance clipping
+    ! code does not need to be invoked at the upper boundary.
+    ! Note that if clipping were applied at the lower boundary, momentum will
+    ! not be conserved, therefore it should never be added.
+
+    ! Clipping for xpyp at an upper limit corresponding with a correlation
+    ! between x and y of max_mag_correlation.
+    if ( xpyp >  max_mag_correlation * sqrt( xp2 * yp2 ) ) then
+
+        xpyp_chnge =  max_mag_correlation * sqrt( xp2 * yp2 ) - xpyp
+
+        xpyp =  max_mag_correlation * sqrt( xp2 * yp2 )
+
+    ! Clipping for xpyp at a lower limit corresponding with a correlation
+    ! between x and y of -max_mag_correlation.
+    elseif ( xpyp < -max_mag_correlation * sqrt( xp2 * yp2 ) ) then
+
+        xpyp_chnge = -max_mag_correlation * sqrt( xp2 * yp2 ) - xpyp
+
+        xpyp = -max_mag_correlation * sqrt( xp2 * yp2 )
+
+    else
+
+        xpyp_chnge = zero
+
+    endif
+
+    if ( l_stats_samp ) then
+       if ( l_last_clip_ts ) then
+          call stat_end_update_pt( ixpyp_cl, level, &
+                                   xpyp / real( dt, kind = core_rknd ), zm )
+       else
+          call stat_modify_pt( ixpyp_cl, level, &
+                               xpyp / real( dt, kind = core_rknd ), zm )
+       endif
+    endif
+
+
+    return
+  end subroutine clip_covar_level
 
   !=============================================================================
   subroutine clip_variance( solve_type, dt, threshold, &
