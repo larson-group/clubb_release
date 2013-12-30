@@ -1264,6 +1264,11 @@ module clubb_core
                wpthvp_frz, thlpthvp_frz, rtpthvp_frz )           ! intent(inout)
         end if ! l_trapezoidal_rule_zm
 
+        wpthvp = wpthvp_frz
+        wp2thvp = wp2thvp_frz
+        thlpthvp = thlpthvp_frz
+        rtpthvp = rtpthvp_frz
+
       end if ! l_use_ice_latent = .true.
 
 
@@ -1606,23 +1611,7 @@ module clubb_core
         mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
       end if
 
-      if ( l_use_ice_latent ) then
-        !calculate turbulence with terms including ice latent heating
-        call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
-                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
-                            tau_zm, Skw_zm, rtpthvp_frz, rtm_forcing, & ! intent(in)
-                            wprtp_forcing, rtm_ref, thlpthvp_frz,     & ! intent(in)
-                            thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)
-                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
-                            invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
-                            w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! intent(in)
-                            mixt_frac_zm, l_implemented,              & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
-                            rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
-                            err_code,                                 & ! intent(inout)
-                            sclrm, wpsclrp                            ) ! intent(inout)
-      else
-        call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
+      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
                             tau_zm, Skw_zm, rtpthvp, rtm_forcing,     & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
@@ -1635,7 +1624,6 @@ module clubb_core
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
                             sclrm, wpsclrp                            ) ! intent(inout)
-      end if
 
       ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
       ! This code won't work unless rtm >= 0 !!!
@@ -1662,22 +1650,7 @@ module clubb_core
       ! at shorter timesteps so these are prognosed now.
 
       ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
-      if ( l_use_ice_latent) then
-        ! calculate turbulence with terms including ice latent heating
-        call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
-                             wpthlp, wpthvp_frz, um, vm, wp2, wp2_zt, & ! intent(in)
-                             wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
-                             Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
-                             rtpthlp_forcing, rho_ds_zm, rho_ds_zt,   & ! intent(in)
-                             invrs_rho_ds_zm, thv_ds_zm,              & ! intent(in)
-                             Lscale, wp3_on_wp2, wp3_on_wp2_zt,       & ! intent(in)
-                             l_iter_xp2_xpyp, dt,                     & ! intent(in)
-                             sclrm, wpsclrp,                          & ! intent(in) 
-                             rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)
-                             err_code,                                & ! intent(inout)
-                             sclrp2, sclrprtp, sclrpthlp              ) ! intent(inout)
-      else
-        call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
+      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
                              wpthlp, wpthvp, um, vm, wp2, wp2_zt,     & ! intent(in)
                              wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
                              Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
@@ -1689,7 +1662,6 @@ module clubb_core
                              rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)
                              err_code,                                & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp              ) ! intent(inout)
-      end if
 
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
@@ -1713,18 +1685,7 @@ module clubb_core
       ! by one timestep
       !----------------------------------------------------------------
 
-      if ( l_use_ice_latent) then
-        call advance_wp2_wp3 &
-           ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
-             a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
-             wpthvp_frz, wp2thvp_frz, um, vm, upwp, vpwp,  & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
-             Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
-             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt, err_code           )  ! intent(inout)
-      else
-        call advance_wp2_wp3 &
+      call advance_wp2_wp3 &
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
              a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
@@ -1733,7 +1694,6 @@ module clubb_core
              invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
              thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt, err_code           )  ! intent(inout)
-      end if
 
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
