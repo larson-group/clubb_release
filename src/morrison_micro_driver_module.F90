@@ -67,9 +67,8 @@ module morrison_micro_driver_module
       ieff_rad_graupel
 
     use stats_variables, only: & 
-      imorr_rain_rate, & !Variables
+      iprecip_rate_sfc, & !Variables
       imorr_snow_rate, &
-      iLH_morr_rain_rate, &
       iLH_morr_snow_rate
 
     use stats_variables, only: &
@@ -413,7 +412,7 @@ module morrison_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
-    real :: Morr_snow_rate, Morr_rain_rate
+    real :: Morr_snow_rate, Morr_precip_rate
 
     real, dimension(nz,hydromet_dim) :: &
       hydromet_r4, &   ! Temporary variable
@@ -600,7 +599,7 @@ module morrison_micro_driver_module
            hydromet_r4(:,iiNim), hydromet_r4(:,iiNsnowm), hydromet_r4(:,iiNrm), &
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
            wm_zt_r4, w_std_dev_r4, morr_rain_vel_r4, &
-           Morr_rain_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
+           Morr_precip_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
            hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
            hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
@@ -818,8 +817,8 @@ module morrison_micro_driver_module
       call stat_update_var( ieff_rad_graupel, real( effg(:), kind = core_rknd ), zt )
 
       ! Snow and Rain rates at the bottom of the domain, in mm/day
-      call stat_update_var_pt( imorr_rain_rate, 1, &
-        real(Morr_rain_rate, kind = core_rknd) * &
+      call stat_update_var_pt( iprecip_rate_sfc, 1, &
+        real(Morr_precip_rate, kind = core_rknd) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), sfc )
 
       call stat_update_var_pt( imorr_snow_rate, 1, &
@@ -830,17 +829,15 @@ module morrison_micro_driver_module
 
     if ( l_latin_hypercube .and. l_stats_samp ) then
       ! Snow and Rain rates at the bottom of the domain, in mm/day
-      call stat_update_var_pt( iLH_morr_rain_rate, 1, &
-        lh_stat_sample_weight*real( Morr_rain_rate, kind = core_rknd ) * &
-        real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
+      call stat_update_var_pt( iprecip_rate_sfc, 1, &
+        lh_stat_sample_weight*real( Morr_precip_rate, kind = core_rknd ) * &
+        real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), sfc )
 
       call stat_update_var_pt( iLH_morr_snow_rate, 1, &
         lh_stat_sample_weight*real( Morr_snow_rate, kind = core_rknd ) * &
         real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ), LH_sfc )
 
     end if ! l_latin_hypercube .and. l_stats_samp
-
-    return
 
     return
   end subroutine morrison_micro_driver

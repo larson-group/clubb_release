@@ -175,7 +175,7 @@ module stats_zt
         irsati, & 
         irrainm, & 
         iNrm, & 
-        irain_rate_zt, & 
+        iprecip_rate_zt, & 
         iradht, & 
         iradht_LW, & 
         iradht_SW, & 
@@ -1175,10 +1175,10 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rain_rate_zt')     ! Brian
-        irain_rate_zt = k
+      case ('precip_rate_zt')     ! Brian
+        iprecip_rate_zt = k
 
-        call stat_assign( var_index=irain_rate_zt, var_name="rain_rate_zt", &
+        call stat_assign( var_index=iprecip_rate_zt, var_name="precip_rate_zt", &
              var_description="Rain rate [mm/day]", var_units="mm/day", l_silhs=.false., &
              grid_kind=zt )
         k = k + 1

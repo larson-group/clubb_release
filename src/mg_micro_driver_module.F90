@@ -41,7 +41,7 @@ module mg_micro_driver_module
       irsnowm,       &
       irrainm,       &
       iswp,          &
-      irain_rate_sfc, &
+      iprecip_rate_sfc, &
       ieff_rad_cloud, &
       ieff_rad_ice,  &
       ieff_rad_rain, &
@@ -577,7 +577,7 @@ module mg_micro_driver_module
       call stat_update_var( ieff_rad_snow, reff_snow(:), zt)
 
       ! Rain rates at the bottom of the domain, in mm/day
-      call stat_update_var_pt( irain_rate_sfc, 1, &
+      call stat_update_var_pt( iprecip_rate_sfc, 1, &
                                real( prect(icol), kind = core_rknd ) * mm_per_m * &
                                real( sec_per_day, kind = core_rknd ), sfc )
 

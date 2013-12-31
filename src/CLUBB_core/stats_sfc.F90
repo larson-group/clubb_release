@@ -44,7 +44,7 @@ module stats_sfc
         irwp, &
         iz_cloud_base, & 
         iz_inversion, & 
-        irain_rate_sfc, & 
+        iprecip_rate_sfc, & 
         irain_flux_sfc, & 
         irrainm_sfc
 
@@ -75,8 +75,7 @@ module stats_sfc
         iwindm_matrix_condt_num
 
     use stats_variables, only: & 
-      imorr_rain_rate, &
-      imorr_snow_rate
+      imorr_snow_rate ! Variable(s)
       
     use stats_variables, only: &
       irtm_spur_src,            &
@@ -215,11 +214,11 @@ module stats_sfc
              grid_kind=sfc )
         k = k + 1
 
-      case ('rain_rate_sfc')          ! Brian
-        irain_rate_sfc = k
-        call stat_assign( var_index=irain_rate_sfc, var_name="rain_rate_sfc", &
+      case ('precip_rate_sfc')          ! Brian
+        iprecip_rate_sfc = k
+        call stat_assign( var_index=iprecip_rate_sfc, var_name="precip_rate_sfc", &
              var_description="Surface rainfall rate [mm/day]", var_units="mm/day", &
-             l_silhs=.false., grid_kind=sfc )
+             l_silhs=.true., grid_kind=sfc )
         k = k + 1
 
       case ('rain_flux_sfc')         ! Brian
@@ -236,13 +235,6 @@ module stats_sfc
         call stat_assign( var_index=irrainm_sfc, var_name="rrainm_sfc", &
              var_description="Surface rain water mixing ratio [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=sfc )
-        k = k + 1
-
-      case ( 'morr_rain_rate' )
-        imorr_rain_rate = k
-        call stat_assign( var_index=imorr_rain_rate, var_name="morr_rain_rate", &
-             var_description="Total precip fallout rate from Morrison scheme [mm/day]", &
-             var_units="mm/day", l_silhs=.false., grid_kind=sfc )
         k = k + 1
 
       case ( 'morr_snow_rate' )

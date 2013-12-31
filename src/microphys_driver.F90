@@ -999,7 +999,7 @@ module microphys_driver
         iwpNcp, &
         iVrrprrp, &
         iVNrpNrp, & 
-        irain_rate_zt, & 
+        iprecip_rate_zt, & 
         iFprec
 
     use stats_variables, only: & 
@@ -1023,7 +1023,7 @@ module microphys_driver
         irsnowm_hf,       &
         irsnowm_wvhf,     &
         irsnowm_cl,       &
-        irain_rate_sfc,   & 
+        iprecip_rate_sfc,   & 
         irain_flux_sfc,   & 
         irrainm_sfc
 
@@ -2222,7 +2222,7 @@ module microphys_driver
       !                                * ( 86400 s/day ) * ( 1000 mm/m ).
       ! Rainfall rate is defined as positive.  Since V_rr is always negative,
       ! the minus (-) sign is necessary.
-      call stat_update_var( irain_rate_zt,  & 
+      call stat_update_var( iprecip_rate_zt,  & 
                             max( - ( hydromet(:,iirrainm) &
                                      * hydromet_vel_zt(:,iirrainm) &
                                      + hydromet_vel_covar_zt(:,iirrainm) ), &
@@ -2250,14 +2250,17 @@ module microphys_driver
 
       ! Store values of surface fluxes for statistics
       ! See notes above.
-      call stat_update_var_pt( irain_rate_sfc, 1,  & 
-                               max( - ( hydromet(2,iirrainm) &
-                                        * hydromet_vel_zt(2,iirrainm) &
-                                        + hydromet_vel_covar_zt(2,iirrainm) ), &
-                                    zero ) &
-                                * ( rho(2) / rho_lw ) & 
-                                * real( sec_per_day, kind = core_rknd ) &
-                                * mm_per_m, sfc )
+
+      if ( trim( micro_scheme ) /= "morrison" ) then
+        call stat_update_var_pt( iprecip_rate_sfc, 1,  & 
+                                 max( - ( hydromet(2,iirrainm) &
+                                          * hydromet_vel_zt(2,iirrainm) &
+                                          + hydromet_vel_covar_zt(2,iirrainm) ), &
+                                      zero ) &
+                                  * ( rho(2) / rho_lw ) & 
+                                  * real( sec_per_day, kind = core_rknd ) &
+                                  * mm_per_m, sfc )
+      end if
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
                                max( - ( zt2zm( hydromet(:,iirrainm), 1 )  & 

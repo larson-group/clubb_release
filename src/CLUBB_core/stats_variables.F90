@@ -234,7 +234,7 @@ module stats_variables
      irrainm = 0,          & ! Brian
      im_vol_rad_rain = 0,  & ! Brian
      im_vol_rad_cloud = 0, & ! COAMPS only. dschanen 6 Dec 2006
-     irain_rate_zt = 0,    & ! Brian
+     iprecip_rate_zt = 0,    & ! Brian
      iAKm = 0,             & ! analytic Kessler.  Vince Larson 22 May 2005 
      iLH_AKm = 0,          & ! LH Kessler.  Vince Larson  22 May 2005
      iradht = 0,           & ! Radiative heating.
@@ -244,7 +244,7 @@ module stats_variables
 !$omp  threadprivate( iNcm, iNcnm, iNc_activated, isnowslope, &
 !$omp    ised_rcm, irsat, irsati, irrainm, &
 !$omp    im_vol_rad_rain, im_vol_rad_cloud, &
-!$omp    irain_rate_zt, iAKm, iLH_AKm, &
+!$omp    iprecip_rate_zt, iAKm, iLH_AKm, &
 !$omp    iradht, iradht_LW, iradht_SW, &
 !$omp    irel_humidity )
 
@@ -1179,13 +1179,13 @@ module stats_variables
     irwp = 0, &
     iz_cloud_base = 0, & 
     iz_inversion = 0, & 
-    irain_rate_sfc = 0,    &    ! Brian
+    iprecip_rate_sfc = 0,    &    ! Brian
     irain_flux_sfc = 0,   &    ! Brian
     irrainm_sfc = 0, & ! Brian
     iwpthlp_sfc = 0
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
-!$omp   irain_rate_sfc, irain_flux_sfc, irrainm_sfc, &
+!$omp   iprecip_rate_sfc, irain_flux_sfc, irrainm_sfc, &
 !$omp   iwpthlp_sfc )
 
   integer, public :: &
@@ -1220,10 +1220,9 @@ module stats_variables
 !$omp   iup2_vp2_matrix_condt_num, iwindm_matrix_condt_num)
 
   integer, public :: & 
-    imorr_rain_rate = 0, &
     imorr_snow_rate = 0
 
-!$omp threadprivate(imorr_rain_rate, imorr_snow_rate)
+!$omp threadprivate( imorr_snow_rate)
 
   integer, public :: &
     irtm_spur_src = 0,    &
@@ -1244,9 +1243,8 @@ module stats_variables
 !$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt)
 
   integer, public :: & 
-    iLH_morr_rain_rate = 0, &
     iLH_morr_snow_rate = 0
-!$omp threadprivate( iLH_morr_rain_rate, iLH_morr_snow_rate )
+!$omp threadprivate( iLH_morr_snow_rate )
 
   integer, public :: & 
     iLH_vwp = 0, &

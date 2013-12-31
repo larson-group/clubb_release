@@ -13,6 +13,6 @@ vars_zm =
 
 vars_sfc =
 'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
-'rain_rate_sfc', 'morr_rain_rate',
+'precip_rate_sfc',
 ''
 /

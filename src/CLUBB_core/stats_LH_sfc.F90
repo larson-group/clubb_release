@@ -31,8 +31,7 @@ module stats_LH_sfc
       LH_sfc ! Variable(s)
 
     use stats_variables, only: & 
-      iLH_morr_rain_rate, & ! Variable(s)
-      iLH_morr_snow_rate, &
+      iLH_morr_snow_rate, & ! Variable(s)
       iLH_vwp, &
       iLH_lwp
       
@@ -64,13 +63,6 @@ module stats_LH_sfc
     do i = 1, LH_sfc%nn
 
       select case ( trim( vars_LH_sfc(i) ) )
-
-      case ( 'LH_morr_rain_rate' )
-        iLH_morr_rain_rate = k
-        call stat_assign( var_index=iLH_morr_rain_rate, var_name="LH_morr_rain_rate", &
-             var_description="Total precip fallout rate from Morrison scheme [mm/day]", &
-             var_units="mm/day", l_silhs=.true., grid_kind=LH_sfc )
-        k = k + 1
 
       case ( 'LH_morr_snow_rate' )
         iLH_morr_snow_rate = k
