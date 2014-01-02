@@ -79,7 +79,7 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_micro -lclubb_morrison -lclubb_param"
+REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_micro -lclubb_morrison -lmicrophys_utils -lclubb_param"
 
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
@@ -178,13 +178,15 @@ fi
 if [ -e $srcdir/SCM_Activation/aer_ccn_act_k.F90 ]; then 
 	ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > $dir/file_list/clubb_gfdl_activation_files
 fi
+if [ -e  $srcdir/Microphys_utils  ]; then
+	ls $srcdir/Microphys_utils/*.F90 > $dir/file_list/clubb_microphys_utils_files
+fi
 if [ -e  $srcdir/CLUBB_core ]; then
 	ls $srcdir/CLUBB_core/*.[f,F]90 > $dir/file_list/clubb_param_files
 else
 	echo "Fatal error, CLUBB_core directory is missing"
 	exit -1
 fi
-
 
 # Exclude numerical recipes if using double precision or numerical recipes doesn't exist
 if ! "$l_double_precision"; then
@@ -215,6 +217,10 @@ $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_param.a -m Make.clubb_param -
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_bugsrad.a -m Make.clubb_bugsrad -c "${CPPDEFS}" \
   -e $all_files_list $dir/file_list/clubb_bugsrad_files
+
+$mkmf -t $bindir/mkmf_template \
+  -p $libdir/libmicrophys_utils.a -m Make.microphys_utils -c "${CPPDEFS}" \
+  -e $all_files_list $dir/file_list/clubb_microphys_utils_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_KK_micro.a -m Make.clubb_KK_micro -c "${CPPDEFS}" \
@@ -304,13 +310,16 @@ libclubb_param.a:
 libclubb_bugsrad.a: libclubb_param.a
 	cd $objdir; \$(MAKE) -f Make.clubb_bugsrad
 
-libclubb_KK_micro.a: libclubb_param.a
+libmicrophys_utils.a: libclubb_param.a
+	cd $objdir; \$(MAKE) -f Make.microphys_utils
+
+libclubb_KK_micro.a: libclubb_param.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.clubb_KK_micro
 
 libclubb_coamps.a: libclubb_param.a
 	cd $objdir; \$(MAKE) -f Make.clubb_coamps
 
-libclubb_morrison.a: libclubb_param.a
+libclubb_morrison.a: libclubb_param.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.clubb_morrison
 	
 libclubb_mg.a: libclubb_param.a libclubb_KK_micro.a
@@ -319,7 +328,7 @@ libclubb_mg.a: libclubb_param.a libclubb_KK_micro.a
 libclubb_gfdlact.a: 
 	cd $objdir; \$(MAKE) -f Make.clubb_gfdlact
 
-liblatin_hypercube.a: libclubb_param.a libclubb_KK_micro.a
+liblatin_hypercube.a: libclubb_param.a libclubb_KK_micro.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.latin_hypercube
 
 libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a liblatin_hypercube.a
