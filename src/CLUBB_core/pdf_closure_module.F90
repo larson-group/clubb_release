@@ -3,7 +3,7 @@ module pdf_closure_module
 
   implicit none
 
-  public :: pdf_closure
+  public :: pdf_closure, calc_vert_avg_cf_component
 
   private ! Set Default Scope
 
@@ -12,32 +12,32 @@ module pdf_closure_module
 
   !#######################################################################
   !#######################################################################
-  ! If you change the argument list of pdf_closure you also have to 
-  ! change the calls to this function in the host models CAM, WRF, SAM 
+  ! If you change the argument list of pdf_closure you also have to
+  ! change the calls to this function in the host models CAM, WRF, SAM
   ! and GFDL.
   !#######################################################################
   !#######################################################################
   subroutine pdf_closure &
              ( num_hm, p_in_Pa, exner, thv_ds, wm,&
-               wp2, wp3, sigma_sqd_w,            &
-               Skw, rtm, rtp2,                   &
-               wprtp, thlm, thlp2,               &
-               wpthlp, rtpthlp, sclrm,           &
-               wpsclrp, sclrp2, sclrprtp,        &
-               sclrpthlp, level,                 &
+               wp2, wp3, sigma_sqd_w,             &
+               Skw, rtm, rtp2,                    &
+               wprtp, thlm, thlp2,                &
+               wpthlp, rtpthlp, sclrm,            &
+               wpsclrp, sclrp2, sclrprtp,         &
+               sclrpthlp, level,                  &
 #ifdef GFDL
-               RH_crit,  do_liquid_only_in_clubb,&  ! h1g, 2010-06-15
+               RH_crit,  do_liquid_only_in_clubb, &  ! h1g, 2010-06-15
 #endif
-               wphmp, wp2hmp, rtphmp, thlphmp,   &
-               wp4, wprtp2, wp2rtp,              &
-               wpthlp2, wp2thlp, wprtpthlp,      &
-               cloud_frac, ice_supersat_frac,    &
-               rcm, wpthvp, wp2thvp, rtpthvp,    &
-               thlpthvp, wprcp, wp2rcp, rtprcp,  &
-               thlprcp, rcp2, pdf_params,        &
-               err_code,                         &
-               wpsclrprtp, wpsclrp2, sclrpthvp,  &
-               wpsclrpthlp, sclrprcp, wp2sclrp,  &
+               wphmp, wp2hmp, rtphmp, thlphmp,    &
+               wp4, wprtp2, wp2rtp,               &
+               wpthlp2, wp2thlp, wprtpthlp,       &
+               cloud_frac, ice_supersat_frac,     &
+               rcm, wpthvp, wp2thvp, rtpthvp,     &
+               thlpthvp, wprcp, wp2rcp, rtprcp,   &
+               thlprcp, rcp2, pdf_params,         &
+               err_code,                          &
+               wpsclrprtp, wpsclrp2, sclrpthvp,   &
+               wpsclrpthlp, sclrprcp, wp2sclrp,   &
                rc_coef                           )
 
 
@@ -773,7 +773,7 @@ module pdf_closure_module
     ! Calculate cloud_frac2 and rc2
     call calc_cloud_frac_component(s2, stdev_s2, s_at_liq_sat, cloud_frac2, rc2)
 
-    if (l_calc_ice_supersat_frac) then
+    if ( l_calc_ice_supersat_frac ) then
       ! We must compute s_at_ice_sat1 and s_at_ice_sat2
       if (tl1 <= T_freeze_K) then
         rt_at_ice_sat1 = sat_mixrat_ice( p_in_Pa, tl1 )
@@ -794,10 +794,10 @@ module pdf_closure_module
       end if
 
       ! Calculate ice_supersat_frac1
-      call calc_cloud_frac_component(s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1)
+      call calc_cloud_frac_component( s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1 )
       
       ! Calculate ice_supersat_frac2
-      call calc_cloud_frac_component(s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2)
+      call calc_cloud_frac_component( s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2 )
     end if
 
     ! Compute moments that depend on theta_v
@@ -1056,7 +1056,8 @@ module pdf_closure_module
   end subroutine pdf_closure
   
   !-----------------------------------------------------------------------
-  pure subroutine calc_cloud_frac_component(s, stdev_s, s_at_sat, cloud_fracN, rcN)
+  elemental subroutine calc_cloud_frac_component( s, stdev_s, s_at_sat, cloud_fracN, rcN )
+
   ! Description:
   !   Given the mean and standard deviation of 's', this subroutine
   !   calculates cloud_frac<n>, where n is the PDF component (either 1 or
@@ -1124,7 +1125,8 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
   
   !-----------------------------------------------------------------------
-  function calc_cloud_frac(cloud_frac1, cloud_frac2, mixt_frac)
+  function calc_cloud_frac( cloud_frac1, cloud_frac2, mixt_frac )
+
   ! Description:
   !   Given the the two pdf components of a cloud fraction, and the weight
   !   of the first component, this fuction calculates the cloud fraction,
@@ -1187,6 +1189,325 @@ module pdf_closure_module
     return
     
   end function calc_cloud_frac
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  pure subroutine calc_vert_avg_cf_component &
+                  ( nz, k, z_vals, s_mellor, stdev_s, s_at_sat, &
+                    cloud_fracN, rcN )
+  ! Description:
+  !   This subroutine is similar to calc_cloud_frac_component, but
+  !   resolves cloud_frac and rc at an arbitrary number of vertical levels
+  !   in the vicinity of the desired level. This may give a better
+  !   parameterization of sub-grid atmospheric conditions.
+  !
+  ! References:
+  !   ticket:640
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd
+
+    implicit none
+
+    intrinsic :: sum
+
+    ! Local Constants
+    integer, parameter :: &
+      n = 5       ! Number of vertical levels to use in averaging (arbitrary, but must be odd)
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &       ! Number of vertical levels                         [count]
+      k           ! Level at which cloud_frac is to be computed       [count]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals,   & ! Height at each vertical level                     [m]
+      s_mellor, & ! Value of s_mellor                                 [kg/kg]
+      stdev_s,  & ! Standard deviation of s_mellor                    [kg/kg]
+      s_at_sat    ! Value of s at saturation with respect to ice      [kg/kg]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      cloud_fracN ! Vertically averaged cloud fraction                [-]
+
+    ! Optional Output Variables
+    real( kind = core_rknd ), intent(out), optional :: &
+      rcN         ! Vertically averaged cloud water mixing ratio      [kg/kg]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(n) :: &
+      s_mellor_ref,      &   ! s_mellor evaluated on refined grid     [kg/kg]
+      stdev_s_ref,       &   ! stdev_s evaluated on refined grid      [kg/kg]
+      cloud_frac_ref,    &   ! cloud_frac evaluated on refined grid   [-]
+      rc_ref                 ! r_c evaluated on refined grid          [kg/kg]
+      
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    s_mellor_ref = interp_var_array( n, nz, k, z_vals, s_mellor )
+    stdev_s_ref = interp_var_array( n, nz, k, z_vals, stdev_s )
+    ! We could optionally compute s_at_sat in an analogous manner. For now,
+    ! use s_at_sat(k) as an approximation.
+
+    ! Compute cloud_frac and r_c at each refined grid level
+    call calc_cloud_frac_component( s_mellor_ref(:), stdev_s_ref(:), s_at_sat(k), & ! Intent(in)
+                                    cloud_frac_ref(:), rc_ref(:) )                  ! Intent(out)
+
+    cloud_fracN = sum( cloud_frac_ref(:) ) / real( n, kind=core_rknd )
+    if ( present( rcN ) ) then
+      rcN = sum( rc_ref(:) ) / real( n, kind=core_rknd )
+    end if
+
+    return
+  end subroutine calc_vert_avg_cf_component
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  pure function interp_var_array( n_points, nz, k, z_vals, var )
+
+  ! Description:
+  !   Interpolates a variable to an array of values about a given level
+
+  ! References
+  !   ticket:640
+  !-----------------------------------------------------------------------
+
+  use clubb_precision, only: &
+    core_rknd           ! Constant
+
+  implicit none
+
+  ! Input Variables
+  integer, intent(in) :: &
+    n_points, &       ! Number of points to interpolate to (must be odd and >= 3)
+    nz, &             ! Total number of vertical levels
+    k                 ! Center of interpolation array
+
+  real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    z_vals, &         ! Height at each vertical level           [m]
+    var               ! Variable values on grid                 [units vary]
+
+  ! Output Variables
+  real( kind = core_rknd ), dimension(n_points) :: &
+    interp_var_array  ! Interpolated values of variable         [units vary]
+
+  ! Local Variables
+  real( kind = core_rknd ) :: &
+    dz    ! Distance between vertical levels
+
+  real( kind = core_rknd ) :: &
+    z_val             ! Height at some sub-grid level
+
+  integer :: i        ! Loop iterator
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Place a point at each of k-1, k, and k+1.
+    interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
+    interp_var_array((n_points-1)/2) = var_value_integer_height( nz, k, z_vals, var )
+    interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
+
+    ! Lower half
+    if ( k == 1 ) then
+      dz = z_vals(2) - z_vals(1)
+    else
+      dz = z_vals(k) - z_vals(k-1)
+    end if
+    do i=1, (n_points-3)/2
+      z_val = z_vals(k) - real( i, kind=core_rknd ) * dz
+      interp_var_array(1+i) &
+      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )
+    end do
+
+    ! Upper half
+    if ( k == nz ) then
+      dz = z_vals(nz) - z_vals(nz-1)
+    else
+      dz = z_vals(k+1) - z_vals(k)
+    end if
+    do i=1, (n_points-3)/2
+      z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
+      interp_var_array((n_points-1)/2+i) &
+      = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )
+    end do
+
+    return
+  end function interp_var_array
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  pure function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )
+
+  ! Description
+  !   Returns the value of a variable at an integer height between 0 and
+  !   nz+1 inclusive, using extrapolation when k==0 or k==nz+1
+
+  ! References
+  !   ticket:640
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    use interpolation, only: &
+      mono_cubic_interp  ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,    & ! Total number of vertical levels
+      k        ! Level to resolve variable value
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals,            & ! Height at each vertical level                  [m]
+      var_grid_value       ! Value of variable at each grid level           [units vary]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: &
+      var_value            ! Value of variable at height level              [units vary]
+
+    ! Local Variables
+    integer :: km1, k00, kp1, kp2
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    if ( k >= 1 .and. k <= nz ) then
+      ! This is the simple case. No extrapolation necessary.
+      var_value = var_grid_value(k)
+    else if ( k == 0 ) then
+      ! Extrapolate below the lower boundary
+      km1 = nz
+      k00 = 1
+      kp1 = 2
+      kp2 = 3
+      var_value = mono_cubic_interp( z_vals(1)-(z_vals(2)-z_vals(1)), &
+                                     km1, k00, kp1, kp2, &
+                                     z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
+                                     var_grid_value(km1), var_grid_value(k00), &
+                                     var_grid_value(kp1), var_grid_value(kp2) )
+    else if ( k == nz+1 ) then
+      ! Extrapolate above the upper boundary
+      km1 = nz
+      k00 = nz-1
+      kp1 = nz
+      kp2 = nz
+      var_value = mono_cubic_interp( z_vals(nz)+(z_vals(nz)-z_vals(nz-1)), &
+                                     km1, k00, kp1, kp2, &
+                                     z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
+                                     var_grid_value(km1), var_grid_value(k00), &
+                                     var_grid_value(kp1), var_grid_value(kp2) )
+    else
+      ! Invalid height requested
+      var_value = -999._core_rknd
+    end if ! k > 1 .and. k < nz
+    return
+  end function var_value_integer_height
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  pure function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )
+
+  ! Description
+  !   Interpolates (or extrapolates) a variable to a value between grid
+  !   levels
+
+  ! References
+  !   ticket:640
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    use interpolation, only: &
+      mono_cubic_interp   ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &         ! Number of vertical levels
+      k             ! Grid level near interpolation target
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      z_vals, &     ! Height at each grid level          [m]
+      var           ! Variable values at grid levels     [units vary]
+
+    real( kind = core_rknd ), intent(in) :: &
+      z_interp      ! Interpolation target height        [m]
+
+    logical, intent(in) :: &
+      l_below       ! True if z_interp < z_vals(k), false otherwise
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      var_value     ! Interpolated value of variable     [units vary]
+
+    ! Local Variables
+    integer :: km1, k00, kp1, kp2 ! Parameters for call to mono_cubic_interp
+  !----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    if ( l_below ) then
+
+      if ( k == 1 ) then ! Extrapolation
+        km1 = nz
+        k00 = 1
+        kp1 = 2
+        kp2 = 3
+      else if ( k == 2 ) then
+        km1 = 1
+        k00 = 1
+        kp1 = 2
+        kp2 = 3
+      else if ( k == nz ) then
+        km1 = nz-2
+        k00 = nz-1
+        kp1 = nz
+        kp2 = nz
+      else
+        km1 = k-2
+        k00 = k-1
+        kp1 = k
+        kp2 = k+1
+      end if ! k == 1
+
+    else ! .not. l_below
+
+      if ( k == 1 ) then
+        km1 = 1
+        k00 = 1
+        kp1 = 2
+        kp2 = 3
+      else if ( k == nz-1 ) then
+        km1 = nz-2
+        k00 = nz-1
+        kp1 = nz
+        kp2 = nz
+      else if ( k == nz ) then ! Extrapolation
+        km1 = nz
+        k00 = nz-1
+        kp1 = nz
+        kp2 = nz
+      else
+        km1 = k-1
+        k00 = k
+        kp1 = k+1
+        kp2 = k+2
+      end if ! k == 1
+
+    end if ! l_below
+
+    ! Now perform the interpolation
+    var_value = mono_cubic_interp( z_interp, km1, k00, kp1, kp2, &
+                                   z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
+                                   var(km1), var(k00), var(kp1), var(kp2) )
+    return
+  end function var_subgrid_interp
   !-----------------------------------------------------------------------
 
 end module pdf_closure_module

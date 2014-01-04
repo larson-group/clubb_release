@@ -125,7 +125,7 @@ module interpolation
       eps
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+      core_rknd ! Constant
     
     use model_flags, only: &
       l_quintic_poly_interp ! Variable(s)

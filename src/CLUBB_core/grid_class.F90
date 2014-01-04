@@ -1208,7 +1208,7 @@ module grid_class
     use interpolation, only: mono_cubic_interp
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+      core_rknd ! Constant
 
     implicit none
 
