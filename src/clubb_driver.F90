@@ -120,8 +120,7 @@ module clubb_driver
     use model_flags, only: & 
       l_pos_def, l_hole_fill, & ! Constants
       l_single_C2_Skw, l_gamma_Skw, l_byteswap_io, &
-      l_use_precip_frac, &
-      l_use_hydromet_tolerance, l_calc_thlp2_rad
+      l_calc_thlp2_rad
 
     use stats_variables, only: l_stats_last, l_stats_samp, & ! Variable(s)
       l_output_rad_files
@@ -779,13 +778,6 @@ module clubb_driver
       if ( l_write_to_file ) close(unit=iunit)
 
     end if ! clubb_at_least_debug_level(1)
-
-    if ( l_use_precip_frac .and. ( .not. l_use_hydromet_tolerance ) ) then
-       write(fstderr,*) &
-             "Error: You can not use l_use_precip_frac = .true. if"  &
-             // "l_use_hydromet_tolerance = .false. ."
-       stop
-    endif
 
     !----------------------------------------------------------------------
 

@@ -481,7 +481,7 @@ module PDF_utilities
                           sigma_x_1, sigma_x_2, &
                           sigma_x_1_n, sigma_x_2_n, &
                           mixt_frac, x_frac_1, x_frac_2, &
-                          x_mean, x_tol )  &
+                          x_mean )  &
   result( xp2 )
 
     ! Description:
@@ -505,8 +505,9 @@ module PDF_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one, & ! Constant(s)
-        two
+        two,  & ! Constant(s)
+        one,  &
+        zero 
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -526,8 +527,7 @@ module PDF_utilities
       mixt_frac,   & ! Mixture fraction                                     [-]
       x_frac_1,    & ! Fraction: x distributed lognormally (1st PDF comp.)  [-]
       x_frac_2,    & ! Fraction: x distributed lognormally (2nd PDF comp.)  [-]
-      x_mean,      & ! Overall mean value of x                              [-]
-      x_tol          ! Tolerance value of x                                 [-]
+      x_mean         ! Overall mean value of x                              [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -535,7 +535,7 @@ module PDF_utilities
 
 
     ! Calculate overall variance of x, <x'^2>.
-    if ( sigma_x_1 <= x_tol .and. sigma_x_2 <= x_tol ) then
+    if ( sigma_x_1 == zero .and. sigma_x_2 == zero ) then
 
        ! The value of x is constant within both PDF components.
        xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
@@ -544,7 +544,7 @@ module PDF_utilities
              - x_mean**2
 
 
-    elseif ( sigma_x_1 <= x_tol ) then
+    elseif ( sigma_x_1 == zero ) then
 
        ! The value of x is constant within the 1st PDF component.
        xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
@@ -554,7 +554,7 @@ module PDF_utilities
              - x_mean**2
 
 
-    elseif ( sigma_x_2 <= x_tol ) then
+    elseif ( sigma_x_2 == zero ) then
 
        ! The value of x is constant within the 2nd PDF component.
        xp2 = ( mixt_frac * x_frac_1 &

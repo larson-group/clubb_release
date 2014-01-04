@@ -953,8 +953,7 @@ subroutine mmicro_pcond ( sub_column,           &
     real ( kind = core_rknd ), dimension(num_hm) :: &
       hm1,      &
       hm2,      &
-      wphmp_zt, &
-      hm_tol
+      wphmp_zt
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
       mu_x_1, &
@@ -1815,9 +1814,6 @@ subroutine mmicro_pcond ( sub_column,           &
                  wphmp_zt(1) = zero
                  wphmp_zt(2) = zero
 
-                 hm_tol(1) = rr_tol
-                 hm_tol(2) = Nr_tol
-
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
                     xp2_on_xm2 = xp2_on_xm2_array_cloud
                  else
@@ -1829,7 +1825,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                           real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                          hm1, hm2, hm_tol, & ! Intent(in)
+                                          hm1, hm2, & ! Intent(in)
                                           one, one, & ! Intent(in)
                                           xp2_on_xm2_array_cloud, & ! Intent(in)
                                           xp2_on_xm2_array_below, & ! Intent(in)
@@ -1837,7 +1833,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           mu_x_1, mu_x_2, & ! Intent(out)
                                           sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call normalize_mean_stdev( hm1, hm2, hm_tol, &
+                 call normalize_mean_stdev( hm1, hm2, &
                                             real( nc(i,k), kind = core_rknd ), &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
@@ -1852,7 +1848,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     zero, zero, & ! Intent(in)
                                     zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphmp_zt, hm_tol, &
+                                    one, wphmp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
@@ -2373,9 +2369,6 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 hm_tol(1) = rr_tol
-                 hm_tol(2) = Nr_tol
-
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
                     xp2_on_xm2 = xp2_on_xm2_array_cloud
                  else
@@ -2388,7 +2381,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                   real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                   real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                   real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                  hm1, hm2, hm_tol, & ! Intent(in)
+                                  hm1, hm2, & ! Intent(in)
                                   one, one, & ! Intent(in)
                                   xp2_on_xm2_array_cloud, &              ! Intent(in)
                                   xp2_on_xm2_array_below, &              ! Intent(in)
@@ -2396,7 +2389,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                   mu_x_1, mu_x_2, & ! Intent(out)
                                   sigma_x_1, sigma_x_2 ) ! Intent(out)
 
-                 call normalize_mean_stdev( hm1, hm2, hm_tol, &
+                 call normalize_mean_stdev( hm1, hm2, &
                                             real( nc(i,k), kind = core_rknd ), &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
@@ -2411,7 +2404,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     zero, zero, & ! Intent(in)
                                     zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphmp_zt, hm_tol, &
+                                    one, wphmp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)

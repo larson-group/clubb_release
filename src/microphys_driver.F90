@@ -115,7 +115,6 @@ module microphys_driver
         iirsnowm,    &
         iiricem,     &
         iirgraupelm, &
-        iiNcnm,      &
         iiNsnowm,    & 
         iiNim,       &
         iiNgraupelm, &
@@ -127,16 +126,6 @@ module microphys_driver
         morrison_lognormal
 
     use parameters_microphys, only: &
-        KK_evap_Supersat_exp, & ! Variable(s)
-        KK_evap_rr_exp,       &
-        KK_evap_Nr_exp,       &
-        KK_auto_rc_exp,       &
-        KK_auto_Nc_exp,       &
-        KK_accr_rc_exp,       &
-        KK_accr_rr_exp,       &
-        KK_mvr_rr_exp,        &
-        KK_mvr_Nr_exp,        &
-        KK_Nrm_evap_nu,       &
         rrp2_on_rrm2_cloud,   &
         Nrp2_on_Nrm2_cloud,   &
         Ncnp2_on_Ncnm2_cloud, &
@@ -145,16 +134,6 @@ module microphys_driver
         Ncnp2_on_Ncnm2_below, &
         C_evap,               &
         r_0
-
-    use parameters_microphys, only: &
-        rsnowp2_on_rsnowm2_cloud, & ! Variables
-        Nsnowp2_on_Nsnowm2_cloud, & 
-        ricep2_on_ricem2_cloud, & 
-        Nicep2_on_Nicem2_cloud, &
-        rsnowp2_on_rsnowm2_below, & 
-        Nsnowp2_on_Nsnowm2_below, & 
-        ricep2_on_ricem2_below, & 
-        Nicep2_on_Nicem2_below
 
     use parameters_microphys, only: &
         LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used

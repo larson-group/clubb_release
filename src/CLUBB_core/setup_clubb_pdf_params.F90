@@ -84,13 +84,9 @@ module setup_clubb_pdf_params
         gr
 
     use constants_clubb, only: &
-        one,     & ! Constant(s)
-        zero,    &
-        rc_tol,  &
-        rr_tol,  &
-        Nr_tol,  &
-        Ncn_tol, &
-        eps
+        one,    & ! Constant(s)
+        zero,   &
+        rc_tol
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
@@ -246,9 +242,9 @@ module setup_clubb_pdf_params
       wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz,num_hm) :: &
-      hmm,   & ! Mean of a precipitating hydrometeor, hm (overall)  [units vary]
-      hm1,   & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
-      hm2      ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
+      hmm, & ! Mean of a precipitating hydrometeor, hm (overall)    [units vary]
+      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
+      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)    [units vary]
 
     real( kind = core_rknd ), dimension(nz,num_hm) :: &
       hmp2_zt,  & ! Variance of a precip. hydrometeor (overall); t-lev [units^2]
@@ -256,9 +252,6 @@ module setup_clubb_pdf_params
 
     character(len=10), dimension(num_hm) :: &
       hm_list    ! Names of all precipitating hydrometeors
-
-    real( kind = core_rknd ), dimension(num_hm) :: &
-      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
 
      real( kind = core_rknd ), dimension(nz) :: &
       rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
@@ -305,7 +298,7 @@ module setup_clubb_pdf_params
     ! Setup hydrometeor arrays out of precipitating hydrometeors, which do not
     ! include N_c or N_cn.
     call precip_hm_arrays( nz, hydromet, wphydrometp, &
-                           hmm, wphmp, hm_list, hm_tol )
+                           hmm, wphmp, hm_list )
 
     ! Interpolate the covariances of w and precipitating hydrometeors to
     ! thermodynamic grid levels.
@@ -313,13 +306,12 @@ module setup_clubb_pdf_params
 
        wphmp_zt(:,i) = zm2zt( wphmp(:,i) )
 
-       ! When the mean value of a precipitating hydrometeor is below tolerance
-       ! value, it is considered to have a value of 0, and the precipitating
-       ! hydrometeor does not vary over the grid level.  Any covariance
-       ! involving that precipitating hydrometeor also has a value of 0 at that
-       ! grid level.
+       ! When the mean value of a precipitating hydrometeor is 0, the
+       ! precipitating hydrometeor does not vary over the grid level.  Any
+       ! covariance involving that precipitating hydrometeor also has a value
+       ! of 0 at that grid level. 
        do k = 1, nz, 1
-          if ( hmm(k,i) <= hm_tol(i) ) then
+          if ( hmm(k,i) == zero ) then
              wphmp_zt(k,i) = zero
           endif
        enddo ! k = 1, nz, 1
@@ -337,10 +329,10 @@ module setup_clubb_pdf_params
     if ( l_use_precip_frac ) then
 
        call component_means_hydromet( nz, hmm, rho, rc1, rc2, &
-                                      mixt_frac, hm_tol, l_stats_samp, &
+                                      mixt_frac, l_stats_samp, &
                                       hm1, hm2 )
 
-       call precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
+       call precip_fraction( nz, hmm, hm1, hm2, hm_list, &
                              cloud_frac, cloud_frac1, mixt_frac, &
                              ice_supersat_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
@@ -379,11 +371,10 @@ module setup_clubb_pdf_params
        wpsp_zt = zm2zt( wpsp_zm )
        wpNcnp_zt = zm2zt( wpNcnp_zm )
 
-       ! When the mean value of Ncn is below tolerance value, it is considered
-       ! to have a value of 0, and Ncn does not vary over the grid level.  Any
-       ! covariance involving Ncn also has a value of 0 at that grid level.
+       ! When the mean value of Ncn is 0, Ncn does not vary over the grid level.
+       ! Any covariance involving Ncn also has a value of 0 at that grid level.
        do k = 1, nz, 1
-          if ( Ncnm(k) <= Ncn_tol ) then
+          if ( Ncnm(k) == zero ) then
              wpNcnp_zt(k) = zero
           endif
        enddo ! k = 1, nz, 1
@@ -477,7 +468,7 @@ module setup_clubb_pdf_params
        !!! -- for each PDF component.
        call compute_mean_stdev( Ncnm(k), rc1(k), rc2(k), &            ! Intent(in)
                                 cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
-                                hm1(k,:), hm2(k,:), hm_tol, &         ! Intent(in)
+                                hm1(k,:), hm2(k,:), &                 ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
                                 xp2_on_xm2_array_cloud, &             ! Intent(in)
                                 xp2_on_xm2_array_below, &             ! Intent(in)
@@ -489,8 +480,7 @@ module setup_clubb_pdf_params
        !!! Calculate the normalized means and normalized standard deviations 
        !!! involving precipitating hydrometeors (hm in-precip) and N_cn --
        !!! ln hm and ln N_cn -- for each PDF component.
-       call normalize_mean_stdev( hm1(k,:), hm2(k,:), hm_tol, &
-                                  Ncnm(k), d_variables, &
+       call normalize_mean_stdev( hm1(k,:), hm2(k,:), Ncnm(k), d_variables, &
                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                   xp2_on_xm2_1, xp2_on_xm2_2, &
                                   mu_x_1_n(:,k), mu_x_2_n(:,k), &
@@ -500,7 +490,7 @@ module setup_clubb_pdf_params
        ! <hm'^2>.
        do i = 1, num_hm, 1
 
-          if ( hmm(k,i) > hm_tol(i) .and. i /= iirg .and. i /= iiNg ) then
+          if ( hmm(k,i) > zero .and. i /= iirg .and. i /= iiNg ) then
 
              ! There is some of the hydrometeor species found at level k.
              ! Calculate the variance (overall) of the hydrometeor.
@@ -514,9 +504,9 @@ module setup_clubb_pdf_params
                          sigma_x_1(pdf_idx), sigma_x_2(pdf_idx), &
                          sigma_x_1_n(pdf_idx,k), sigma_x_2_n(pdf_idx,k), &
                          mixt_frac(k), precip_frac_1(k), precip_frac_2(k), &
-                         hmm(k,i), hm_tol(i) )
+                         hmm(k,i) )
 
-          else ! hm = 0.
+          else ! hmm(k,i) = 0.
 
              hmp2_zt(k,i) = zero
 
@@ -571,7 +561,7 @@ module setup_clubb_pdf_params
           call compute_corr( wm_zt(k), rc1(k), rc2(k), cloud_frac1(k), &
                              cloud_frac2(k), wpsp_zt(k), wpNcnp_zt(k), &
                              sqrt(wp2_zt(k)), mixt_frac(k), precip_frac_1(k), &
-                             precip_frac_2(k), wphmp_zt(k,:), hm_tol, &
+                             precip_frac_2(k), wphmp_zt(k,:), &
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                              corr_array_cloud, corr_array_below, &
                              pdf_params(k), d_variables, &
@@ -694,7 +684,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine component_means_hydromet( nz, hmm, rho, rc1, rc2, &
-                                       mixt_frac, hm_tol, l_stats_samp, &
+                                       mixt_frac, l_stats_samp, &
                                        hm1, hm2 )
 
     ! Description:
@@ -857,9 +847,6 @@ module setup_clubb_pdf_params
       rc2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
-
     logical, intent(in) :: &
       l_stats_samp     ! Flag to record statistical output.
 
@@ -937,7 +924,7 @@ module setup_clubb_pdf_params
        do k = 1, nz, 1
 
           !!! Calculate the component means for the hydrometeor.
-          if ( hmm(k,i) > hm_tol(i) ) then
+          if ( hmm(k,i) > zero ) then
 
              if ( LWP1(k) <= LWP_tol .and. LWP2(k) <= LWP_tol ) then
 
@@ -993,11 +980,10 @@ module setup_clubb_pdf_params
              endif
 
 
-          else ! hmm(k) <= hm_tol
+          else ! hmm(k) == 0
 
-             ! The overall hydrometeor is either 0 or below tolerance value (any
-             ! postive value is considered to be a numerical artifact).  Simply
-             ! set each component mean equal to the overall mean.
+             ! The overall mean of the hydrometeor is 0.  Simply set each
+             ! PDF component mean equal to the overall mean.
              hm1(k,i) = hmm(k,i)
              hm2(k,i) = hmm(k,i)
 
@@ -1029,7 +1015,7 @@ module setup_clubb_pdf_params
   end subroutine component_means_hydromet
 
   !=============================================================================
-  subroutine precip_fraction( nz, hmm, hm1, hm2, hm_list, hm_tol, &
+  subroutine precip_fraction( nz, hmm, hm1, hm2, hm_list, &
                               cloud_frac, cloud_frac1, mixt_frac, &
                               ice_supersat_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
@@ -1064,9 +1050,6 @@ module setup_clubb_pdf_params
     character(len=10), dimension(num_hm), intent(in) :: &
       hm_list    ! Names of all hydrometeors
 
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm_tol    ! Tolerance value for the hydrometeor           [units vary]
-
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac,  &     ! Cloud fraction (overall)                     [-] 
       cloud_frac1, &     ! Cloud fraction (1st PDF component)           [-]
@@ -1089,9 +1072,6 @@ module setup_clubb_pdf_params
       N_tot_hm_1, & ! Mean total hydromet concentration (1st PDF comp.) [num/kg]
       N_tot_hm_2    ! Mean total hydromet concentration (2nd PDF comp.) [num/kg]
 
-    real( kind = core_rknd ) :: &
-      r_tot_hm_tol    ! Tolerance value for total hydromet mixing ratio [kg/kg]
-
     character(len=10) :: &
       hydromet_name    ! Name of a hydrometeor
 
@@ -1113,7 +1093,7 @@ module setup_clubb_pdf_params
           precip_frac(k) = cloud_frac(k)
        endif
 
-       if ( any( hmm(k,:) > hm_tol(:) ) &
+       if ( any( hmm(k,:) > zero ) &
             .and. precip_frac(k) < precip_frac_tol ) then
 
           ! In a scenario where we find any hydrometeor at this grid level, but
@@ -1121,14 +1101,13 @@ module setup_clubb_pdf_params
           ! a minimum threshold value.
           precip_frac(k) = precip_frac_tol
 
-       elseif ( all( hmm(k,:) <= hm_tol(:) ) &
+       elseif ( all( hmm(k,:) == zero ) &
                 .and. precip_frac(k) < precip_frac_tol ) then
 
-          ! The means (overall) of every precipitating hydrometeor are all less
-          ! than their respective tolerance amounts.  They are all considered to
-          ! have values of 0.  There is not any hydrometeor species found at
-          ! this grid level.  There is also no cloud at or above this grid
-          ! level, so set precipitation fraction to 0.
+          ! The means (overall) of every precipitating hydrometeor are all 0.
+          ! There is not any hydrometeor species found at this grid level.
+          ! There is also no cloud at or above this grid level, so set
+          ! precipitation fraction to 0.
           precip_frac(k) = zero
 
        endif
@@ -1188,7 +1167,7 @@ module setup_clubb_pdf_params
              ! component 1 between the levels) is applied to PDF component 2.
              precip_frac_1(k) = one
 
-          elseif ( any( hm1(k,:) > hm_tol(:) ) &
+          elseif ( any( hm1(k,:) > zero ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find any hydrometeor in the 1st PDF
@@ -1197,15 +1176,14 @@ module setup_clubb_pdf_params
              ! (in the 1st PDF component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( all( hm1(k,:) <= hm_tol(:) ) &
+          elseif ( all( hm1(k,:) == zero ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! The means of every precipitating hydrometeor in the 1st PDF
-             ! component are all less than their respective tolerance amounts.
-             ! They are all considered to have values of 0.  There is not any
-             ! hydrometeor species found in the 1st PDF component at this grid
-             ! level.  There is also no cloud at or above this grid level, so
-             ! set precipitation fraction (in the 1st PDF component) to 0.
+             ! component are all 0.  There is not any hydrometeor species found
+             ! in the 1st PDF component at this grid level.  There is also no
+             ! cloud at or above this grid level, so set precipitation fraction
+             ! (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
 
           endif
@@ -1253,15 +1231,15 @@ module setup_clubb_pdf_params
              ! Double check for errors in PDF component 1.
              if ( precip_frac_1(k) > one ) then
                 precip_frac_1(k) = one
-             elseif ( any( hm1(k,:) > hm_tol(:) ) &
+             elseif ( any( hm1(k,:) > zero ) &
                       .and. precip_frac_1(k) <= precip_frac_tol ) then
                 precip_frac_1(k) = precip_frac_tol
-             elseif ( all( hm1(k,:) <= hm_tol(:) ) &
+             elseif ( all( hm1(k,:) == zero ) &
                       .and. precip_frac_1(k) <= precip_frac_tol ) then
                 precip_frac_1(k) = zero
              endif
 
-          elseif ( any( hm2(k,:) > hm_tol(:) ) &
+          elseif ( any( hm2(k,:) > zero ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find any hydrometeor in the 2nd PDF
@@ -1270,15 +1248,14 @@ module setup_clubb_pdf_params
              ! (in the 2nd PDF component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( all( hm2(k,:) <= hm_tol(:) ) &
+          elseif ( all( hm2(k,:) == zero ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! The means of every precipitating hydrometeor in the 2nd PDF
-             ! component are all less than their respective tolerance amounts.
-             ! They are all considered to have values of 0.  There is not any
-             ! hydrometeor species found in the 2nd PDF component at this grid
-             ! level.  There is also no cloud at or above this grid level, so
-             ! set precipitation fraction (in the 2nd PDF component) to 0.
+             ! component are all 0.  There is not any hydrometeor species found
+             ! in the 2nd PDF component at this grid level.  There is also no
+             ! cloud at or above this grid level, so set precipitation fraction
+             ! (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
 
           endif
@@ -1332,36 +1309,35 @@ module setup_clubb_pdf_params
        ! in the above equations to solve for component precipitation fractions.
        do k = 1, nz, 1
 
-          if ( all( hm1(k,:) <= hm_tol(:) ) &
-               .and. all( hm2(k,:) <= hm_tol(:) ) ) then
+          if ( all( hm1(k,:) == zero ) &
+               .and. all( hm2(k,:) == zero ) ) then
 
              ! There are no hydrometeors found in each PDF component.
              ! Precipitation fraction within each component is set to 0.
              precip_frac_1(k) = zero
              precip_frac_2(k) = zero
 
-          elseif ( any( hm1(k,:) > hm_tol(:) ) &
-                   .and. all( hm2(k,:) <= hm_tol(:) ) ) then
+          elseif ( any( hm1(k,:) > zero ) &
+                   .and. all( hm2(k,:) == zero ) ) then
 
              ! All the hydrometeors are found within the 1st PDF component.
              precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
              precip_frac_2(k) = zero
 
-          elseif ( any( hm2(k,:) > hm_tol(:) ) &
-                   .and. all( hm1(k,:) <= hm_tol(:) ) ) then
+          elseif ( any( hm2(k,:) > zero ) &
+                   .and. all( hm1(k,:) == zero ) ) then
 
              ! All the hydrometeors are found within the 2nd PDF component.
              precip_frac_1(k) = zero
              precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
 
-          else ! any( hm1(k,:) > hm_tol(:) ) AND any( hm2(k,:) > hm_tol(:) )
+          else ! any( hm1(k,:) > zero ) AND any( hm2(k,:) > zero )
 
              ! Hydrometeors are found within both PDF components.
              r_tot_hm_1 = zero
              r_tot_hm_2 = zero
              N_tot_hm_1 = zero
              N_tot_hm_2 = zero
-             r_tot_hm_tol = one
              do i = 1, num_hm, 1
 
                 hydromet_name = hm_list(i)
@@ -1372,10 +1348,6 @@ module setup_clubb_pdf_params
                    ! Find total hydrometeor mixing ratio in each PDF component.
                    r_tot_hm_1 = r_tot_hm_1 + hm1(k,i)
                    r_tot_hm_2 = r_tot_hm_2 + hm2(k,i)
-
-                   if ( hm1(k,i) > hm_tol(i) ) then
-                      r_tot_hm_tol = min( r_tot_hm_tol, hm_tol(i) )
-                   endif
 
                 elseif ( hydromet_name(1:1) == "N" ) then
 
@@ -1389,12 +1361,12 @@ module setup_clubb_pdf_params
              enddo ! i = 1, num_hm, 1
 
              !!! Find precipitation fraction within PDF component 1.
-             if ( r_tot_hm_1 > r_tot_hm_tol ) then
+             if ( r_tot_hm_1 > zero ) then
                 precip_frac_1(k) &
                 = precip_frac(k) &
                   / ( mixt_frac(k) &
                       + ( one - mixt_frac(k) ) * r_tot_hm_2/r_tot_hm_1 )
-             else ! N_tot_hm_1 > N_tot_hm_tol
+             else ! N_tot_hm_1 > zero 
                 precip_frac_1(k) &
                 = precip_frac(k) &
                   / ( mixt_frac(k) &
@@ -1430,7 +1402,7 @@ module setup_clubb_pdf_params
 
 
           ! Special cases for PDF component 1.
-          if ( any( hm1(k,:) > hm_tol(:) ) &
+          if ( any( hm1(k,:) > zero ) &
                .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find any hydrometeor in the 1st PDF
@@ -1439,22 +1411,21 @@ module setup_clubb_pdf_params
              ! (in the 1st PDF component) to a minimum threshold value.
              precip_frac_1(k) = precip_frac_tol
 
-          elseif ( all( hm1(k,:) <= hm_tol(:) ) &
+          elseif ( all( hm1(k,:) == zero ) &
                    .and. precip_frac_1(k) <= precip_frac_tol ) then
 
              ! The means of every precipitating hydrometeor in the 1st PDF
-             ! component are all less than their respective tolerance amounts.
-             ! They are all considered to have values of 0.  There is not any
-             ! hydrometeor species found in the 1st PDF component at this grid
-             ! level.  There is also no cloud at or above this grid level, so
-             ! set precipitation fraction (in the 1st PDF component) to 0.
+             ! component are all 0.  There is not any hydrometeor species found
+             ! in the 1st PDF component at this grid level.  There is also no
+             ! cloud at or above this grid level, so set precipitation fraction
+             ! (in the 1st PDF component) to 0.
              precip_frac_1(k) = zero
 
           endif
 
 
           ! Special cases for PDF component 2.
-          if ( any( hm2(k,:) > hm_tol(:) ) &
+          if ( any( hm2(k,:) > zero ) &
                .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! In a scenario where we find any hydrometeor in the 2nd PDF
@@ -1463,15 +1434,14 @@ module setup_clubb_pdf_params
              ! (in the 2nd PDF component) to a minimum threshold value.
              precip_frac_2(k) = precip_frac_tol
 
-          elseif ( all( hm2(k,:) <= hm_tol(:) ) &
+          elseif ( all( hm2(k,:) == zero ) &
                    .and. precip_frac_2(k) <= precip_frac_tol ) then
 
              ! The means of every precipitating hydrometeor in the 2nd PDF
-             ! component are all less than their respective tolerance amounts.
-             ! They are all considered to have values of 0.  There is not any
-             ! hydrometeor species found in the 2nd PDF component at this grid
-             ! level.  There is also no cloud at or above this grid level, so
-             ! set precipitation fraction (in the 2nd PDF component) to 0.
+             ! component are all 0.  There is not any hydrometeor species found
+             ! in the 2nd PDF component at this grid level.  There is also no
+             ! cloud at or above this grid level, so set precipitation fraction
+             ! (in the 2nd PDF component) to 0.
              precip_frac_2(k) = zero
 
           endif
@@ -1490,56 +1460,44 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine compute_mean_stdev( Ncnm, rc1, rc2, &                      ! Intent(in)
                                  cloud_frac1, cloud_frac2, &            ! Intent(in)
-                                 hm1, hm2, hm_tol, &                    ! Intent(in)
+                                 hm1, hm2, &                            ! Intent(in)
                                  precip_frac_1, precip_frac_2, &        ! Intent(in)
                                  xp2_on_xm2_array_cloud, &              ! Intent(in)
                                  xp2_on_xm2_array_below, &              ! Intent(in)
                                  pdf_params, d_variables, &             ! Intent(in)
                                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2 ) ! Intent(out)
        
-    ! Description: Computes the in precip means and standard deviations of s, t, w,
-    !              Ncn and the hydrometeors.
+    ! Description:
+    ! Calculates the means and standard deviations (for each PDF component) of
+    ! s, t, w, Ncn, and the precipitating hydrometeors.  For the precipitating
+    ! hydrometeors, the component means and standard deviations are in-precip. 
 
     ! References:
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        rc_tol,       & ! Constant(s)
-        rr_tol,       &
-        Nr_tol,       &
-        Ncn_tol,      &
-        w_tol,        & ! [m/s]
-        s_mellor_tol, & ! [kg/kg]
-        one,          &
+        one,  & ! Constant(s)
         zero
 
     use parameters_microphys, only: &
-      l_fix_s_t_correlations, & ! Variables
-      Ncp2_on_Ncm2_cloud => Ncnp2_on_Ncnm2_cloud, &
-      Ncp2_on_Ncm2_below => Ncnp2_on_Ncnm2_below
-
-    use clubb_precision, only: &
-        core_rknd  ! Variable(s)
+        Ncnp2_on_Ncnm2_cloud  ! Variable(s)
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
-    use model_flags, only: &
-        l_use_hydromet_tolerance
-
     use corr_matrix_module, only: &
-        hm_idx ! Procedure(s)
-
-    use corr_matrix_module, only: &
-        iiPDF_s_mellor, &
+        iiPDF_s_mellor, & ! Variable(s)
         iiPDF_t_mellor, &
-        iiPDF_w, &
+        iiPDF_w,        &
         iiPDF_Ncn
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: d_variables ! Number of variables in the mean/stdev/correlation arrays
+    integer, intent(in) :: d_variables ! Number of PDF variables
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
@@ -1554,29 +1512,27 @@ module setup_clubb_pdf_params
       xp2_on_xm2_array_cloud, &
       xp2_on_xm2_array_below
 
-
     real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm1, &
-      hm2, &
-      hm_tol
+      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
+      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)    [units vary]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
     ! Output Variables
-    !!! This code assumes to be these arrays in the same order as the correlation arrays etc.
-    !!! which is determined by the iiPDF indices. The order should be as follows:
-    !!! s, t, w, <hydrometeors> (indices increasing from left to right)
+    ! Note:  This code assumes to be these arrays in the same order as the
+    ! correlation arrays, etc., which is determined by the iiPDF indices.
+    ! The order should be as follows:  s, t, w, Ncn, <precip. hydrometeors>
+    ! (indices increasing from left to right).
     real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
-      mu_x_1, &    ! Hydrometeor means 1st component
-      mu_x_2, &    ! Hydrometeor means 2nd component
-      sigma_x_1, & ! Hydrometeor standard deviations 1st component
-      sigma_x_2    ! Hydrometeor standard deviations 2nd component
+      mu_x_1,    & ! Mean array of PDF vars. (1st PDF component)    [units vary]
+      mu_x_2,    & ! Mean array of PDF vars. (2nd PDF component)    [units vary]
+      sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
+      sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
     ! Local Variables
     integer :: ivar ! Loop iterator
 
-    ! ---- Begin Code ----
 
     !!! Enter the PDF parameters.
 
@@ -1609,19 +1565,19 @@ module setup_clubb_pdf_params
     mu_x_2(iiPDF_t_mellor) = zero
 
     ! Mean of cloud nuclei concentration in PDF component 1.
-    mu_x_1(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
+    mu_x_1(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one )
 
     ! Mean of cloud nuclei concentration in PDF component 2.
-    mu_x_2(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one, Ncn_tol )
+    mu_x_2(iiPDF_Ncn) = component_mean_hm_ip( Ncnm, one )
 
     ! Mean of the hydrometeor species
     do ivar = iiPDF_Ncn+1, d_variables
 
-       mu_x_1(ivar) = component_mean_hm_ip( hm1(pdf2hm_idx(ivar)), precip_frac_1, &
-                                            hm_tol(pdf2hm_idx(ivar)) )
+       mu_x_1(ivar) &
+       = component_mean_hm_ip( hm1(pdf2hm_idx(ivar)), precip_frac_1 )
 
-       mu_x_2(ivar) = component_mean_hm_ip( hm2(pdf2hm_idx(ivar)), precip_frac_2, &
-                                            hm_tol(pdf2hm_idx(ivar)) )
+       mu_x_2(ivar) &
+       = component_mean_hm_ip( hm2(pdf2hm_idx(ivar)), precip_frac_2 )
 
     enddo
 
@@ -1651,14 +1607,14 @@ module setup_clubb_pdf_params
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
     sigma_x_1(iiPDF_Ncn) &
     = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc1, one, &
-                             Ncp2_on_Ncm2_cloud, &
-                             Ncp2_on_Ncm2_cloud )
+                             Ncnp2_on_Ncnm2_cloud, &
+                             Ncnp2_on_Ncnm2_cloud )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 2.
     sigma_x_2(iiPDF_Ncn) &
     = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc2, one, &
-                             Ncp2_on_Ncm2_cloud, &
-                             Ncp2_on_Ncm2_cloud )
+                             Ncnp2_on_Ncnm2_cloud, &
+                             Ncnp2_on_Ncnm2_cloud )
 
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
@@ -1686,6 +1642,7 @@ module setup_clubb_pdf_params
 
     enddo
 
+
     return
 
   end subroutine compute_mean_stdev
@@ -1694,7 +1651,7 @@ module setup_clubb_pdf_params
   subroutine compute_corr( wm_zt, rc1, rc2, cloud_frac1, &
                            cloud_frac2, wpsp, wpNcnp, &
                            stdev_w, mixt_frac, precip_frac_1, &
-                           precip_frac_2, wphmp_zt, hm_tol, &
+                           precip_frac_2, wphmp_zt, &
                            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                            corr_array_cloud, corr_array_below, &
                            pdf_params, d_variables, &
@@ -1707,8 +1664,6 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only:  &
         rc_tol,       & ! Constant(s)
-        rr_tol,       &
-        Nr_tol,       &
         Ncn_tol,      &
         w_tol,        & ! [m/s]
         s_mellor_tol, & ! [kg/kg]
@@ -1756,8 +1711,7 @@ module setup_clubb_pdf_params
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      wphmp_zt, & ! Covariance of w and hm interp. to thermo. levs.  [(m/s)u.v.]
-      hm_tol      ! Tolerance value for the hydrometeor             [units vary]
+      wphmp_zt    ! Covariance of w and hm interp. to thermo. levs.  [(m/s)u.v.]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       mu_x_1,    & ! Mean of x array (1st PDF component)            [units vary]
@@ -1842,7 +1796,6 @@ module setup_clubb_pdf_params
                               sigma_x_1(iiPDF_w), sigma_x_2(iiPDF_w), &
                               sigma_x_1(jvar), sigma_x_2(jvar), &
                               mixt_frac, precip_frac_1, precip_frac_2, &
-                              hm_tol(pdf2hm_idx(jvar)), &
                               corr_whm_1(jvar), corr_whm_2(jvar) )
 
        enddo ! jvar = iiPDF_Ncn+1, d_variables
@@ -2170,7 +2123,7 @@ module setup_clubb_pdf_params
   end function hm2pdf_idx
 
   !=============================================================================
-  function component_mean_hm_ip( hmi, precip_frac_i, hm_tol )  &
+  function component_mean_hm_ip( hmi, precip_frac_i )  &
   result( mu_hm_i )
 
     ! Description:
@@ -2186,16 +2139,12 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_use_hydromet_tolerance
-
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       hmi,           & ! Mean of hydrometeor, hm (ith PDF component) [hm units]
-      precip_frac_i, & ! Precipitation fraction (ith PDF component)  [-]
-      hm_tol           ! Tolerance value for hydrometeor             [hm units]
+      precip_frac_i    ! Precipitation fraction (ith PDF component)  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -2203,13 +2152,12 @@ module setup_clubb_pdf_params
 
 
     ! Mean of the hydrometeor (in-precip) in the ith PDF component.
-    if ( ( hmi > hm_tol ) .or. ( .not. l_use_hydromet_tolerance ) ) then
+    if ( hmi > zero ) then
        mu_hm_i = hmi / precip_frac_i
     else
-       ! The mean of the hydrometeor in the ith PDF component is less than the
-       ! tolerance amount for the particular hydrometeor.  It is considered to
-       ! have a value of 0.  There is not any of this hydrometeor species in the
-       ! ith PDF component at this grid level.
+       ! The mean of the hydrometeor in the ith PDF component is 0.  There is
+       ! not any of this hydrometeor species in the ith PDF component at this
+       ! grid level.
        mu_hm_i = zero
     endif
 
@@ -2237,9 +2185,6 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
-
-    use model_flags, only: &
-        l_use_hydromet_tolerance
 
     implicit none
 
@@ -2668,8 +2613,7 @@ module setup_clubb_pdf_params
   end function component_corr_thm_ip
 
   !=============================================================================
-  subroutine normalize_mean_stdev( hm1, hm2, hm_tol, &
-                                   Ncnm, d_variables, &
+  subroutine normalize_mean_stdev( hm1, hm2, Ncnm, d_variables, &
                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                    sigma2_on_mu2_1, sigma2_on_mu2_2, &
                                    mu_x_1_n, mu_x_2_n, &
@@ -2684,7 +2628,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        Ncn_tol  ! Constant(s)
+        zero  ! Constant(s)
 
     use PDF_utilities, only: &
         mean_L2N,  & ! Procedure(s)
@@ -2703,9 +2647,8 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      hm1,    & ! Mean of a precip. hydrometeor (1st PDF component) [units vary]
-      hm2,    & ! Mean of a precip. hydrometeor (2nd PDF component) [units vary]
-      hm_tol    ! Tolerance value for the hydrometeor               [units vary]
+      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
+      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)    [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >               [num/kg]
@@ -2754,16 +2697,15 @@ module setup_clubb_pdf_params
     !!! distribution over the entire domain.
 
     ! Normalized mean of cloud nuclei concentration, N_cn, in PDF component 1.
-    if ( Ncnm > Ncn_tol ) then
+    if ( Ncnm > zero ) then
 
        mu_x_1_n(iiPDF_Ncn) = mean_L2N( mu_x_1(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
 
     else
 
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The value of mu_Ncn_1_n should be -inf.  It
-       ! will be set to -huge for purposes of assigning it a value.
+       ! Mean cloud nuclei concentration is 0.  There are not any cloud nuclei
+       ! or cloud at this grid level.  The value of mu_Ncn_1_n should be -inf.
+       ! It will be set to -huge for purposes of assigning it a value.
        mu_x_1_n(iiPDF_Ncn) = -huge( mu_x_1(iiPDF_Ncn) )
 
     endif
@@ -2773,16 +2715,15 @@ module setup_clubb_pdf_params
     sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2_cloud )
 
     ! Normalized mean of cloud nuclei concentration, N_cn,  in PDF component 2.
-    if ( Ncnm > Ncn_tol ) then
+    if ( Ncnm > zero ) then
 
        mu_x_2_n(iiPDF_Ncn) = mean_L2N( mu_x_2(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
 
     else
 
-       ! Mean cloud nuclei concentration is less than the tolerance amount.  It
-       ! is considered to have a value of 0.  There are not any cloud nuclei or
-       ! cloud at this grid level.  The value of mu_Ncn_2_n should be -inf.  It
-       ! will be set to -huge for purposes of assigning it a value.
+       ! Mean cloud nuclei concentration is 0.  There are not any cloud nuclei
+       ! or cloud at this grid level.  The value of mu_Ncn_2_n should be -inf.
+       ! It will be set to -huge for purposes of assigning it a value.
        mu_x_2_n(iiPDF_Ncn) = -huge( mu_x_2(iiPDF_Ncn) )
 
     endif
@@ -2796,14 +2737,13 @@ module setup_clubb_pdf_params
     do ivar = iiPDF_Ncn+1, d_variables, 1
 
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 1.
-       if ( hm1(pdf2hm_idx(ivar)) > hm_tol(pdf2hm_idx(ivar)) ) then
+       if ( hm1(pdf2hm_idx(ivar)) > zero ) then
 
           mu_x_1_n(ivar) = mean_L2N( mu_x_1(ivar), sigma2_on_mu2_1(ivar) )
 
        else
 
-          ! The mean of a precipitating hydrometeor in PDF component 1 is less
-          ! than its tolerance amount.  It is considered to have a value of 0.
+          ! The mean of a precipitating hydrometeor in PDF component 1 is 0.
           ! There is not any of this precipitating hydrometeor in the 1st PDF
           ! component at this grid level.  The in-precip mean of this
           ! precipitating hydrometeor (1st PDF component) is also 0.  The value
@@ -2818,14 +2758,13 @@ module setup_clubb_pdf_params
        sigma_x_1_n(ivar) = stdev_L2N( sigma2_on_mu2_1(ivar) )
 
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 2.
-       if ( hm2(pdf2hm_idx(ivar)) > hm_tol(pdf2hm_idx(ivar)) ) then
+       if ( hm2(pdf2hm_idx(ivar)) > zero ) then
 
           mu_x_2_n(ivar) = mean_L2N( mu_x_2(ivar), sigma2_on_mu2_2(ivar) )
 
        else
 
-          ! The mean of a precipitating hydrometeor in PDF component 2 is less
-          ! than its tolerance amount.  It is considered to have a value of 0.
+          ! The mean of a precipitating hydrometeor in PDF component 2 is 0.
           ! There is not any of this precipitating hydrometeor in the 2nd PDF
           ! component at this grid level.  The in-precip mean of this
           ! precipitating hydrometeor (2nd PDF component) is also 0.  The value
@@ -3032,7 +2971,6 @@ module setup_clubb_pdf_params
                             sigma_w_1, sigma_w_2, &
                             sigma_hm_1, sigma_hm_2, &
                             mixt_frac, precip_frac_1, precip_frac_2, &
-                            hm_tol, &
                             corr_whm_1, corr_whm_2 )
 
     ! Description:
@@ -3099,7 +3037,6 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         one,                 & ! Constant(s)
         zero,                &
-        w_tol,               &
         max_mag_correlation
 
     use clubb_precision, only: &
@@ -3121,8 +3058,7 @@ module setup_clubb_pdf_params
       sigma_hm_2,    & ! Standard deviation of hm (2nd PDF component) ip [hm un]
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      hm_tol           ! Tolerance value for the hydrometeor             [hm un]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -3136,8 +3072,8 @@ module setup_clubb_pdf_params
 
     ! Calculate the PDF component correlation between vertical velocity, w, and
     ! a hydrometeor, hm, in precipitation.
-    if ( sigma_w_1 * sigma_hm_1 > w_tol * hm_tol .and. &
-         sigma_w_2 * sigma_hm_2 > w_tol * hm_tol ) then
+    if ( sigma_w_1 * sigma_hm_1 > zero .and. &
+         sigma_w_2 * sigma_hm_2 > zero ) then
 
        ! Both w and hm vary in both PDF components.
        ! Calculate corr_whm (where corr_whm_1 = corr_whm_2 = corr_whm).
@@ -3160,7 +3096,7 @@ module setup_clubb_pdf_params
        corr_whm_2 = corr_whm
 
 
-    elseif ( sigma_w_1 * sigma_hm_1 > w_tol * hm_tol ) then
+    elseif ( sigma_w_1 * sigma_hm_1 > zero ) then
 
        ! Both w and hm vary in PDF component 1, but at least one of w and hm is
        ! constant in PDF component 2.
@@ -3182,7 +3118,7 @@ module setup_clubb_pdf_params
        corr_whm_2 = zero
        
 
-    elseif ( sigma_w_2 * sigma_hm_2 > w_tol * hm_tol ) then
+    elseif ( sigma_w_2 * sigma_hm_2 > zero ) then
 
        ! Both w and hm vary in PDF component 2, but at least one of w and hm is
        ! constant in PDF component 1.
@@ -3951,7 +3887,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine precip_hm_arrays( nz, hydromet, wphydrometp, &
-                               hmm, wphmp, hm_list, hm_tol )
+                               hmm, wphmp, hm_list )
 
     ! Description:
     ! Makes new hydrometeor arrays out of only the precipitating hydrometeors,
@@ -3972,8 +3908,7 @@ module setup_clubb_pdf_params
         hydromet_dim  ! Variable(s)
 
     use parameters_microphys, only: &
-        hydromet_list, & ! Variable(s)
-        hydromet_tol
+        hydromet_list  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd     ! Variable(s)
@@ -3995,9 +3930,6 @@ module setup_clubb_pdf_params
 
     character(len=10), dimension(num_hm), intent(out) :: &
       hm_list    ! Names of all precipitating hydrometeors
-
-    real( kind = core_rknd ), dimension(num_hm), intent(out) :: &
-      hm_tol    ! Tolerance value for a precipitating hydrometeor  [units vary]
 
     ! Local Variables
     integer :: &
@@ -4026,9 +3958,6 @@ module setup_clubb_pdf_params
 
           ! Hydrometeor name from hydrometeor list
           hm_list(idx) = hydromet_list(i)
-
-          ! Hydrometeor tolerance values
-          hm_tol(idx) = hydromet_tol(i)
 
        endif ! i /= iiNcm and i /= iiNcnm
 
