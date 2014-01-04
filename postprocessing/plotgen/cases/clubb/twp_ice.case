@@ -165,6 +165,11 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qg', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},          
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Graupel Number Concentration', 'axisLabel' => 'Ngraupelm [#/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'NG .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ngraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qi', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},

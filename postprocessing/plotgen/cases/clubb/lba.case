@@ -165,6 +165,11 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QG / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Graupel Number Concentration', 'axisLabel' => 'Ngraupelm [#/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'NG * 1e+6', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ngraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/LBA/LBA_128x128x128_100m_morr_CEM.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QI / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
