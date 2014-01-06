@@ -293,7 +293,7 @@ module pdf_closure_module
       ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
       ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
       rt_at_ice_sat1, rt_at_ice_sat2, &
-      s_at_ice_sat1, s_at_ice_sat2
+      s_at_ice_sat1, s_at_ice_sat2, rc1_ice, rc2_ice
       
     
     real( kind = core_rknd ), parameter :: &
@@ -769,7 +769,7 @@ module pdf_closure_module
 
     ! Calculate cloud_frac1 and rc1
     call calc_cloud_frac_component(s1, stdev_s1, s_at_liq_sat, cloud_frac1, rc1)
-    
+
     ! Calculate cloud_frac2 and rc2
     call calc_cloud_frac_component(s2, stdev_s2, s_at_liq_sat, cloud_frac2, rc2)
 
@@ -794,10 +794,10 @@ module pdf_closure_module
       end if
 
       ! Calculate ice_supersat_frac1
-      call calc_cloud_frac_component( s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1 )
+      call calc_cloud_frac_component( s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1, rc1_ice )
       
       ! Calculate ice_supersat_frac2
-      call calc_cloud_frac_component( s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2 )
+      call calc_cloud_frac_component( s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2, rc2_ice )
     end if
 
     ! Compute moments that depend on theta_v
@@ -1061,8 +1061,7 @@ module pdf_closure_module
   ! Description:
   !   Given the mean and standard deviation of 's', this subroutine
   !   calculates cloud_frac<n>, where n is the PDF component (either 1 or
-  !   2). In addition, the subroutine can also optionally calculate rc<n>,
-  !   the mean of r_c
+  !   2). In addition, the subroutine calculates rc<n>, the mean of r_c
   !
   ! References:
   !   See ticket#529
@@ -1091,12 +1090,8 @@ module pdf_closure_module
     
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      cloud_fracN   ! Component of cloud_frac
-    
-    ! Output Variable
-    ! Note: this parameter can be optionally computed.
-    real( kind = core_rknd), intent(out), optional :: &
-      rcN           ! Mean of r_c 
+      cloud_fracN, &  ! Component of cloud_frac
+      rcN             ! Mean of r_c 
     
     ! Local Variables
     real( kind = core_rknd) :: zetaN
@@ -1106,17 +1101,14 @@ module pdf_closure_module
     if ( stdev_s > s_mellor_tol ) then
       zetaN = (s - s_at_sat) / stdev_s
       cloud_fracN  = 0.5_core_rknd*( 1._core_rknd + erf( zetaN/sqrt_2 )  )
-      if (present(rcN)) &
-        rcN       = (s - s_at_sat)*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
+      rcN       = (s - s_at_sat)*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
     else
       if ( (s - s_at_sat) < 0.0_core_rknd ) then
         cloud_fracN  = 0.0_core_rknd
-        if (present(rcN)) &
-          rcN        = 0.0_core_rknd
+        rcN        = 0.0_core_rknd
       else
         cloud_fracN  = 1.0_core_rknd
-        if (present(rcN)) &
-          rcN        = s - s_at_sat
+        rcN        = s - s_at_sat
       end if ! s < 0
     end if ! stdev_s > s_mellor_tol
     
@@ -1229,11 +1221,8 @@ module pdf_closure_module
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      cloud_fracN ! Vertically averaged cloud fraction                [-]
-
-    ! Optional Output Variables
-    real( kind = core_rknd ), intent(out), optional :: &
-      rcN         ! Vertically averaged cloud water mixing ratio      [kg/kg]
+      cloud_fracN, & ! Vertically averaged cloud fraction                [-]
+      rcN            ! Vertically averaged cloud water mixing ratio      [kg/kg]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(n) :: &
@@ -1255,9 +1244,7 @@ module pdf_closure_module
                                     cloud_frac_ref(:), rc_ref(:) )                  ! Intent(out)
 
     cloud_fracN = sum( cloud_frac_ref(:) ) / real( n, kind=core_rknd )
-    if ( present( rcN ) ) then
-      rcN = sum( rc_ref(:) ) / real( n, kind=core_rknd )
-    end if
+    rcN = sum( rc_ref(:) ) / real( n, kind=core_rknd )
 
     return
   end subroutine calc_vert_avg_cf_component
