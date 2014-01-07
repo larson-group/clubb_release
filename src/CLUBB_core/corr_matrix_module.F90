@@ -801,7 +801,7 @@ module corr_matrix_module
 
  !-----------------------------------------------------------------------------
   subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
-                                iiricem, iiNcm, iiNsnowm, iiNim, &
+                                iiricem, iiNsnowm, iiNim, &
                                 l_ice_micro, iunit )
 
     ! Description: This subroutine sets up arrays that are necessary for WRF.
@@ -822,7 +822,6 @@ module corr_matrix_module
       iiNrm, &
       iirsnowm, & 
       iiricem, & 
-      iiNcm, & 
       iiNsnowm, & 
       iiNim, &
       iunit

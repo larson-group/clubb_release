@@ -224,10 +224,6 @@ module setup_clubb_pdf_params
       corr_mtx_approx_1,   & ! Approximated correlation matrix (C = LL'), 1st comp.  [-]
       corr_mtx_approx_2      ! Approximated correlation matrix (C = LL'), 2nd comp.  [-]
 
-    real( kind = core_rknd ), dimension(nz) ::  &
-      rrainm, & ! Mean rain water mixing ratio, <r_r> (t-levs.)  [kg/kg]
-      Nrm       ! Mean rain drop concentration, <N_r> (t-levs.)  [num/kg]
-
     real( kind = core_rknd ), dimension(nz) :: &
       rc1,         & ! Mean of r_c (1st PDF component)              [kg/kg]
       rc2,         & ! Mean of r_c (2nd PDF component)              [kg/kg]
@@ -252,12 +248,6 @@ module setup_clubb_pdf_params
 
     character(len=10), dimension(num_hm) :: &
       hm_list    ! Names of all precipitating hydrometeors
-
-     real( kind = core_rknd ), dimension(nz) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
@@ -386,17 +376,6 @@ module setup_clubb_pdf_params
     corr_cholesky_mtx_2 = zero
 
 
-    ! Mean of hydrometeor (overall)
-    rrainm = hmm(:,iirr)
-    Nrm    = hmm(:,iiNr)
-
-    ! Mean of hydrometeor (each PDF component)
-    rr1 = hm1(:,iirr)
-    rr2 = hm2(:,iirr)
-    Nr1 = hm1(:,iiNr)
-    Nr2 = hm2(:,iiNr)
-
-
     ! Statistics
     if ( l_stats_samp ) then
 
@@ -404,12 +383,12 @@ module setup_clubb_pdf_params
 
           if ( irr1 > 0 ) then
              ! Mean rain water mixing ratio in PDF component 1.
-             call stat_update_var( irr1, rr1, zt )
+             call stat_update_var( irr1, hm1(:,iirr), zt )
           endif
 
           if ( irr2 > 0 ) then
              ! Mean rain water mixing ratio in PDF component 2.
-             call stat_update_var( irr2, rr2, zt )
+             call stat_update_var( irr2, hm2(:,iirr), zt )
           endif
 
        endif ! iirr > 0
@@ -418,12 +397,12 @@ module setup_clubb_pdf_params
 
           if ( iNr1 > 0 ) then
              ! Mean rain drop concentration in PDF component 1.
-             call stat_update_var( iNr1, Nr1, zt )
+             call stat_update_var( iNr1, hm1(:,iiNr), zt )
           endif
 
           if ( iNr2 > 0 ) then
              ! Mean rain drop concentration in PDF component 2.
-             call stat_update_var( iNr2, Nr2, zt )
+             call stat_update_var( iNr2, hm2(:,iiNr), zt )
           endif
 
        endif ! iiNr > 0
@@ -1735,8 +1714,6 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      sigma_rr_1,  &
-      sigma_Nr_1,  &
       sigma_Ncn_1
 
     real( kind = core_rknd ), dimension(d_variables)  :: &
@@ -1757,8 +1734,6 @@ module setup_clubb_pdf_params
     ! ---- Begin Code ----
 
     !!! Enter the PDF parameters.
-    sigma_rr_1 = sigma_x_1(iiPDF_rrain)
-    sigma_Nr_1 = sigma_x_1(iiPDF_Nr)
     sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
 
     !!! Correlations
@@ -2013,6 +1988,10 @@ module setup_clubb_pdf_params
     ! Return Variable
     integer :: hm_idx
 
+
+    ! Initialize hm_idx
+    hm_idx = 0
+
     if ( iiPDF_idx == iiPDF_rrain ) then
        hm_idx = iirr
 
@@ -2074,6 +2053,9 @@ module setup_clubb_pdf_params
     integer :: &
       pdf_idx    ! Index of a precipitating hydrometeor in the PDF array.
 
+
+    ! Initialize pdf_idx.
+    pdf_idx = 0
 
     if ( hm_idx == iirr ) then
 
