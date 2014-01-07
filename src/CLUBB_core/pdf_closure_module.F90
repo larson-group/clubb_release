@@ -1206,7 +1206,8 @@ module pdf_closure_module
 
     ! Local Constants
     integer, parameter :: &
-      n = 5       ! Number of vertical levels to use in averaging (arbitrary, but must be odd)
+      n_points = 5       ! Number of vertical levels to use in averaging
+                         ! (arbitrary, but must be odd)
 
     ! Input Variables
     integer, intent(in) :: &
@@ -1225,7 +1226,7 @@ module pdf_closure_module
       rcN            ! Vertically averaged cloud water mixing ratio      [kg/kg]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(n) :: &
+    real( kind = core_rknd ), dimension(n_points) :: &
       s_mellor_ref,      &   ! s_mellor evaluated on refined grid     [kg/kg]
       stdev_s_ref,       &   ! stdev_s evaluated on refined grid      [kg/kg]
       cloud_frac_ref,    &   ! cloud_frac evaluated on refined grid   [-]
@@ -1234,8 +1235,8 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    s_mellor_ref = interp_var_array( n, nz, k, z_vals, s_mellor )
-    stdev_s_ref = interp_var_array( n, nz, k, z_vals, stdev_s )
+    s_mellor_ref = interp_var_array( n_points, nz, k, z_vals, s_mellor )
+    stdev_s_ref = interp_var_array( n_points, nz, k, z_vals, stdev_s )
     ! We could optionally compute s_at_sat in an analogous manner. For now,
     ! use s_at_sat(k) as an approximation.
 
@@ -1243,8 +1244,8 @@ module pdf_closure_module
     call calc_cloud_frac_component( s_mellor_ref(:), stdev_s_ref(:), s_at_sat(k), & ! Intent(in)
                                     cloud_frac_ref(:), rc_ref(:) )                  ! Intent(out)
 
-    cloud_fracN = sum( cloud_frac_ref(:) ) / real( n, kind=core_rknd )
-    rcN = sum( rc_ref(:) ) / real( n, kind=core_rknd )
+    cloud_fracN = sum( cloud_frac_ref(:) ) / real( n_points, kind=core_rknd )
+    rcN = sum( rc_ref(:) ) / real( n_points, kind=core_rknd )
 
     return
   end subroutine calc_vert_avg_cf_component
@@ -1294,7 +1295,7 @@ module pdf_closure_module
 
     ! Place a point at each of k-1, k, and k+1.
     interp_var_array(1) = var_value_integer_height( nz, k-1, z_vals, var )
-    interp_var_array((n_points-1)/2) = var_value_integer_height( nz, k, z_vals, var )
+    interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
     interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
 
     ! Lower half
@@ -1317,7 +1318,7 @@ module pdf_closure_module
     end if
     do i=1, (n_points-3)/2
       z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
-      interp_var_array((n_points-1)/2+i) &
+      interp_var_array((n_points+1)/2+i) &
       = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.false. )
     end do
 
