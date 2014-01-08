@@ -186,7 +186,7 @@ module KK_utilities
       mean_rc    ! Mean cloud water mixing ratio                [kg/kg]
  
     ! Return Variable
-    real( kind = core_rknd ) :: &
+    integer :: &
       cloud_top_level    ! Vertical level index of cloud top
 
     ! Local Variable
