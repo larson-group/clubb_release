@@ -121,13 +121,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PSACWG', 'expression' => '-PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PGSACW', 'expression' => '-PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM', 'expression' => '-PRA - PRC+ PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC\_INST', 'expression' => 'QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM', 'expression' => '-PRA - PRC+ PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QTO Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000*86400.)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM+QV3D\_SUM', 'expression' => '(-PRA - PRC + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW)-(PRE+EVPMS+EVPMG+PCC+PRD+PRDS+MNUCCD+EPRD+EPRDS+PRDG+EPRDG)', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM+QV3D\_SUM', 'expression' => '(-PRA - PRC + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST)-(PRE+EVPMS+EVPMG+PCC+PRD+PRDS+MNUCCD+EPRD+EPRDS+PRDG+EPRDG)', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -135,7 +136,6 @@
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NC', 'expression' => 'SIZEFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NC', 'expression' => '-NEGFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-REMOVE\_NC', 'expression' => '-REMOVE_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NACT', 'expression' => 'NACT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NNUCCC', 'expression' => '-NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPSACWS', 'expression' => '-NPSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -143,7 +143,8 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPRC', 'expression' => '-NPRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPSACWI', 'expression' => '-NPSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPSACWG', 'expression' => '-NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT-NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NC\_INST', 'expression' => 'NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
 
@@ -173,13 +174,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => 'MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRACI', 'expression' => '-PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PRACIS', 'expression' => '-PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_SUM', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_INST', 'expression' => 'QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_SUM', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QI Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY-QISED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QI\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -200,7 +202,6 @@
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NI', 'expression' => 'SIZEFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NI', 'expression' => '-NEGFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-REMOVE\_NI', 'expression' => '-REMOVE_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NNUCCC', 'expression' => 'NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPRCI', 'expression' => '-NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPRAI', 'expression' => '-NPRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -212,13 +213,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSUBI', 'expression' => 'NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NI\_INST', 'expression' => 'NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI + NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NI Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '((NIMPHY-NISED) ./RHO)* (1.0e6/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI + NI_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QR Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -247,13 +249,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PGRACS', 'expression' => '-PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_INST', 'expression' => 'QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QR Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY-QRSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NR Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -271,7 +274,6 @@
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NR', 'expression' => 'SIZEFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NR', 'expression' => '-NEGFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-REMOVE\_NR', 'expression' => '-REMOVE_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSUBR', 'expression' => 'NSUBR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NSMLTR', 'expression' => '-NSMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NGMLTR', 'expression' => '-NGMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -283,13 +285,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NPRACG', 'expression' => '-NPRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR - REMOVE_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NR\_INST', 'expression' => 'NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NR Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY-NRSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR - REMOVE_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QS Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -317,13 +320,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PRACIS', 'expression' => 'PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => 'EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_INST', 'expression' => 'QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QS Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY-QSSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NS Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -341,7 +345,6 @@
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NS', 'expression' => 'SIZEFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NS', 'expression' => '-NEGFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-REMOVE\_NS', 'expression' => '-REMOVE_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -349,13 +352,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS - REMOVE_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NS\_INST', 'expression' => 'NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NS Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY-NSSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS - REMOVE_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QG Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -383,13 +387,14 @@
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PSACR', 'expression' => 'PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => 'EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_INST', 'expression' => 'QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'QG Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY-QGSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'NG Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -407,20 +412,20 @@
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NG', 'expression' => 'SIZEFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NG', 'expression' => '-NEGFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => '-REMOVE\_NG', 'expression' => '-REMOVE_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NGMLTG', 'expression' => 'NGMLTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => 'NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => 'NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NNUCCR', 'expression' => 'NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NIACR', 'expression' => 'NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NSUBG', 'expression' => 'NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG - REMOVE_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NG\_INST', 'expression' => 'NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
     
        {'plotTitle' => 'NG Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY-NGSED) ./RHO)  * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG - REMOVE_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707_128x128x128_1km_LES_fixNc50.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 

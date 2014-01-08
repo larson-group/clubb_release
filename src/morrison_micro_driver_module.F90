@@ -158,12 +158,17 @@ module morrison_micro_driver_module
       iNEGFIX_NI, &
       iNEGFIX_NS, &
       iNEGFIX_NG, &
-      iREMOVE_NR, &
-      iREMOVE_NC, &
-      iREMOVE_NI, &
-      iREMOVE_NS, &
-      iREMOVE_NG, &
       iNIM_MORR_CL, &
+      iQC_INST, & 
+      iQR_INST, &
+      iQI_INST, &
+      iQS_INST, &
+      iQG_INST, &
+      iNC_INST, &
+      iNR_INST, &
+      iNI_INST, & 
+      iNS_INST, &
+      iNG_INST, &
       iT_in_K_mc
 
 
@@ -402,12 +407,18 @@ module morrison_micro_driver_module
       NEGFIX_NC, &    ! Removal of negative cloud drop number concentration 
       NEGFIX_NR, &    ! Removal of negative rain drop number concentration 
       NEGFIX_NG, &    ! Removal of negative graupel number concentration 
-      REMOVE_NI, &    ! Removal of ice number concentration when mixing ratio is small
-      REMOVE_NS, &    ! Removal of snow number concentration when mixing ratio is small
-      REMOVE_NC, &    ! Removal of cloud drop number concentration when mixing ratio is small
-      REMOVE_NR, &    ! Removal of rain drop number concentration when mixing ratio is small
-      REMOVE_NG, &    ! Removal of graupel number concentration when mixing ratio is small
-      NIM_MORR_CL   ! Clipping of large ice number concentrations
+      NIM_MORR_CL, &   ! Clipping of large ice number concentrations
+      QC_INST, & ! Change in cloud mixing ratio due to instantaneous processes
+      QR_INST, & ! Change in rain mixing ratio due to instantaneous processes
+      QI_INST, & ! Change in ice mixing ratio due to instantaneous processes
+      QS_INST, & ! Change in snow mixing ratio due to instantaneous processes
+      QG_INST, & ! Change in graupel mixing ratio due to instantaneous processes
+      NC_INST, & ! Change in cloud number concentration due to instantaneous processes
+      NR_INST, & ! Change in rain number concentration due to instantaneous processes
+      NI_INST, & ! Change in ice number concentration due to instantaneous processes
+      NS_INST, & ! Change in snow number concentration due to instantaneous processes
+      NG_INST    ! Change in graupel number concentration due to instantaneous processes
+
 
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
@@ -574,12 +585,17 @@ module morrison_micro_driver_module
     NEGFIX_NI = 0.0 
     NEGFIX_NS = 0.0 
     NEGFIX_NG = 0.0 
-    REMOVE_NR = 0.0 
-    REMOVE_NC = 0.0 
-    REMOVE_NI = 0.0 
-    REMOVE_NS = 0.0 
-    REMOVE_NG = 0.0
     NIM_MORR_CL = 0.0
+    QC_INST = 0.0
+    QR_INST = 0.0
+    QI_INST = 0.0
+    QS_INST = 0.0
+    QG_INST = 0.0
+    NC_INST = 0.0
+    NR_INST = 0.0
+    NI_INST = 0.0
+    NS_INST = 0.0
+    NG_INST = 0.0
 
 
     hydromet_mc_r4 = real( hydromet_mc )
@@ -623,7 +639,8 @@ module morrison_micro_driver_module
            NMULTS, NMULTG, NMULTR, NMULTRG, NNUCCD, NSUBI, NGMLTG, NSUBG, NACT, &
            SIZEFIX_NR, SIZEFIX_NC, SIZEFIX_NI, SIZEFIX_NS, SIZEFIX_NG, &
            NEGFIX_NR, NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, NEGFIX_NG, &
-           REMOVE_NR, REMOVE_NC, REMOVE_NI, REMOVE_NS, REMOVE_NG, NIM_MORR_CL )
+           NIM_MORR_CL, QC_INST, QR_INST, QI_INST, QS_INST, QG_INST, &
+           NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -795,13 +812,19 @@ module morrison_micro_driver_module
       call stat_update_var( iNEGFIX_NI, lh_stat_sample_weight*real( NEGFIX_NI,kind=core_rknd ),zt)
       call stat_update_var( iNEGFIX_NS, lh_stat_sample_weight*real( NEGFIX_NS,kind=core_rknd ),zt)
       call stat_update_var( iNEGFIX_NG, lh_stat_sample_weight*real( NEGFIX_NG,kind=core_rknd ),zt)
-      call stat_update_var( iREMOVE_NR, lh_stat_sample_weight*real( REMOVE_NR,kind=core_rknd ),zt)
-      call stat_update_var( iREMOVE_NC, lh_stat_sample_weight*real( REMOVE_NC,kind=core_rknd ),zt)
-      call stat_update_var( iREMOVE_NI, lh_stat_sample_weight*real( REMOVE_NI,kind=core_rknd ),zt)
-      call stat_update_var( iREMOVE_NS, lh_stat_sample_weight*real( REMOVE_NS,kind=core_rknd ),zt)
-      call stat_update_var( iREMOVE_NG, lh_stat_sample_weight*real( REMOVE_NG,kind=core_rknd ),zt)
       call stat_update_var( iNIM_MORR_CL, lh_stat_sample_weight &
                 *real( NIM_MORR_CL,kind=core_rknd ), zt )
+      call stat_update_var( iQC_INST, lh_stat_sample_weight*real( QC_INST,kind=core_rknd ),zt)
+      call stat_update_var( iQR_INST, lh_stat_sample_weight*real( QR_INST,kind=core_rknd ),zt)
+      call stat_update_var( iQI_INST, lh_stat_sample_weight*real( QI_INST,kind=core_rknd ),zt)
+      call stat_update_var( iQS_INST, lh_stat_sample_weight*real( QS_INST,kind=core_rknd ),zt)
+      call stat_update_var( iQG_INST, lh_stat_sample_weight*real( QG_INST,kind=core_rknd ),zt)
+      call stat_update_var( iNC_INST, lh_stat_sample_weight*real( NC_INST,kind=core_rknd ),zt)
+      call stat_update_var( iNR_INST, lh_stat_sample_weight*real( NR_INST,kind=core_rknd ),zt)
+      call stat_update_var( iNI_INST, lh_stat_sample_weight*real( NI_INST,kind=core_rknd ),zt)
+      call stat_update_var( iNS_INST, lh_stat_sample_weight*real( NS_INST,kind=core_rknd ),zt)
+      call stat_update_var( iNG_INST, lh_stat_sample_weight*real( NG_INST,kind=core_rknd ),zt)
+
       call stat_update_var( iT_in_K_mc, lh_stat_sample_weight*real( T_in_K_mc, kind=core_rknd ),zt)
 
     end if ! l_stats_samp

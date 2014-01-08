@@ -541,12 +541,17 @@ module stats_zt
       iNEGFIX_NI, &
       iNEGFIX_NS, &
       iNEGFIX_NG, &
-      iREMOVE_NR, &
-      iREMOVE_NC, &
-      iREMOVE_NI, &
-      iREMOVE_NS, &
-      iREMOVE_NG, &
       iNIM_MORR_CL, &
+      iQC_INST, &
+      iQR_INST, &
+      iQI_INST, &
+      iQS_INST, & 
+      iQG_INST, &
+      iNC_INST, &
+      iNR_INST, &
+      iNI_INST, &
+      iNS_INST, & 
+      iNG_INST, &
       iT_in_K_mc
 
     use stats_variables, only: &
@@ -2744,53 +2749,104 @@ module stats_zt
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
-      case ('REMOVE_NR')
-        iREMOVE_NR= k
-
-        call stat_assign( var_index=iREMOVE_NR, var_name="REMOVE_NR", &
-             var_description="Remove rain drop # conc. when small mixing rat., -Nrm [(#/kg/s)]",&
-             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
-        k = k + 1
-
-      case ('REMOVE_NC')
-        iREMOVE_NC= k
-
-        call stat_assign( var_index=iREMOVE_NC, var_name="REMOVE_NC", &
-             var_description="Remove cloud drop # conc. when small mixing rat., -Ncm [(#/kg/s)]",&
-             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
-        k = k + 1      
-
-      case ('REMOVE_NI')
-        iREMOVE_NI= k
-
-        call stat_assign( var_index=iREMOVE_NI, var_name="REMOVE_NI", &
-             var_description="Remove ice # conc. when small mixing ratio, -Nim [(#/kg/s)]", &
-             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
-        k = k + 1      
-
-      case ('REMOVE_NS')
-        iREMOVE_NS= k
-
-        call stat_assign( var_index=iREMOVE_NS, var_name="REMOVE_NS", &
-             var_description="Remove snow # conc. when small mixing ratio, -Nsnowm [(#/kg/s)]", &
-             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
-        k = k + 1      
-
-      case ('REMOVE_NG')
-        iREMOVE_NG= k
-
-        call stat_assign( var_index=iREMOVE_NG, var_name="REMOVE_NG", &
-             var_description="Remove graupel # conc. when small mix. rat., -Ngraupelm [(#/kg/s)]",&
-             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
-        k = k + 1
-
       case ('NIM_MORR_CL')
         iNIM_MORR_CL= k
 
         call stat_assign( var_index=iNIM_MORR_CL, var_name="NIM_MORR_CL", &
-             var_description="CLipping of large ice concentrations, -Nim [(#/kg/s)]", &
+             var_description="Clipping of large ice concentrations, -Nim [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
+
+      case ('QC_INST')
+        iQC_INST= k
+
+        call stat_assign( var_index=iQC_INST, var_name="QC_INST", &
+             var_description="Change in mixing ratio due to instantaneous processes, &
+                                +rcm [(kg/kg/s)]", &
+             var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('QR_INST')
+        iQR_INST= k
+
+        call stat_assign( var_index=iQR_INST, var_name="QR_INST", &
+             var_description="Change in mixing ratio from instantaneous processes, &
+                                +rrainm [(kg/kg/s)]", &
+             var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('QI_INST')
+        iQI_INST= k
+
+        call stat_assign( var_index=iQI_INST, var_name="QI_INST", &
+             var_description="Change in mixing ratio from instantaneous processes, &
+                                +ricem [(kg/kg/s)]", &
+             var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('QS_INST')
+        iQS_INST= k
+
+        call stat_assign( var_index=iQS_INST, var_name="QS_INST", &
+             var_description="Change in mixing ratio from instantaneous processes, &
+                                +rsnowm [(kg/kg/s)]", &
+             var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('QG_INST')
+        iQG_INST= k
+
+        call stat_assign( var_index=iQG_INST, var_name="QG_INST", &
+             var_description="Change in mixing ratio from instantaneous processes, &
+                                +rgraupelm [(kg/kg/s)]", &
+             var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NC_INST')
+        iNC_INST= k
+
+        call stat_assign( var_index=iNC_INST, var_name="NC_INST", &
+             var_description="Change in # conc. from instantaneous processes, &
+                                +Ncm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NR_INST')
+        iNR_INST= k
+
+        call stat_assign( var_index=iNR_INST, var_name="NR_INST", &
+             var_description="Change in # conc. from instantaneous processes, &
+                                +Nrm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NI_INST')
+        iNI_INST= k
+
+        call stat_assign( var_index=iNI_INST, var_name="NI_INST", &
+             var_description="Change in # conc. from instantaneous processes, &
+                                +Nim [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NS_INST')
+        iNS_INST= k
+
+        call stat_assign( var_index=iNS_INST, var_name="NS_INST", &
+             var_description="Change in # conc. from instantaneous processes, &
+                                +Nsnowm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
+      case ('NG_INST')
+        iNG_INST= k
+
+        call stat_assign( var_index=iNG_INST, var_name="NG_INST", &
+             var_description="Change in # conc. from instantaneous processes, &
+                                +Ngraupelm [(#/kg/s)]", &
+             var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
+        k = k + 1
+
 
       case ('T_in_K_mc')
         iT_in_K_mc= k
