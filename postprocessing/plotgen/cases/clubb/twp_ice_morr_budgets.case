@@ -127,13 +127,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PSACWG', 'expression' => '-PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PGSACW', 'expression' => '-PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-PRA - PRC+ PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'QC\_INST', 'expression' => 'QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-PRA - PRC+ PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rcm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_mc', 'expression' => 'rcm_mc', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-PRA - PRC + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rcm\_sum', 'expression' => '-PRA - PRC + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -160,13 +161,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPRC', 'expression' => '-NPRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWI', 'expression' => '-NPSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWG', 'expression' => '-NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT-NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NC\_INST', 'expression' => 'NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
        {'plotTitle' => 'Ncm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_mc', 'expression' => 'Ncm_mc-NCSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
 
@@ -198,13 +200,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => 'MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PRACI', 'expression' => '-PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PRACIS', 'expression' => '-PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'QI\_INST', 'expression' => 'QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'ricem Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -225,7 +228,6 @@
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NI', 'expression' => 'SIZEFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NI', 'expression' => '-NEGFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-REMOVE\_NI', 'expression' => '-REMOVE_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NNUCCC', 'expression' => 'NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPRCI', 'expression' => '-NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPRAI', 'expression' => '-NPRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -238,13 +240,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSUBI', 'expression' => 'NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NIM\_MORR\_CL', 'expression' => '-NIM_MORR_CL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NI\_INST', 'expression' => 'NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nim Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_mc', 'expression' => 'Nim_mc-NISTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI - REMOVE_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rrainm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -275,13 +278,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PGRACS', 'expression' => '-PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'QR\_INST', 'expression' => 'QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rrainm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc-rrainm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nrm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -301,7 +305,6 @@
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NR', 'expression' => 'SIZEFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NR', 'expression' => '-NEGFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-REMOVE\_NR', 'expression' => '-REMOVE_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSUBR', 'expression' => 'NSUBR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NSMLTR', 'expression' => '-NSMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NGMLTR', 'expression' => '-NGMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -313,13 +316,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NPRACG', 'expression' => '-NPRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sum', 'expression' => 'SIZEFIX_NR - NEGFIX_NR - REMOVE_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NR\_INST', 'expression' => 'NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sum', 'expression' => 'SIZEFIX_NR - NEGFIX_NR  + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nrm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_mc', 'expression' => 'Nrm_mc - NRSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sum', 'expression' => 'SIZEFIX_NR - NEGFIX_NR - REMOVE_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_sum', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -348,13 +352,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'PRACIS', 'expression' => 'PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => 'EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'QS\_INST', 'expression' => 'QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rsnowm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_mc', 'expression' => 'rsnowm_mc-rsnowm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'nsnowm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -373,7 +378,6 @@
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NS', 'expression' => 'SIZEFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NS', 'expression' => '-NEGFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-REMOVE\_NS', 'expression' => '-REMOVE_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -381,13 +385,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS - REMOVE_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NS\_INST', 'expression' => 'NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nsnowm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_mc', 'expression' => 'Nsnowm_mc - NSSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS - REMOVE_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rgraupelm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -416,13 +421,14 @@
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'PSACR', 'expression' => 'PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => 'EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'QG\_INST', 'expression' => 'QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'rgraupelm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Ngraupelm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -441,20 +447,20 @@
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NG', 'expression' => 'SIZEFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NG', 'expression' => '-NEGFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => '-REMOVE\_NG', 'expression' => '-REMOVE_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NGMLTG', 'expression' => 'NGMLTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => 'NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => 'NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NNUCCR', 'expression' => 'NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NIACR', 'expression' => 'NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NSUBG', 'expression' => 'NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG - REMOVE_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'NG\_INST', 'expression' => 'NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
     
        {'plotTitle' => 'Ngraupelm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_mc', 'expression' => 'Ngraupelm_mc - NGSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG - REMOVE_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
