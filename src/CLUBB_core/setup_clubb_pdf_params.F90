@@ -1057,6 +1057,10 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), parameter :: &
       precip_frac_tol = cloud_frac_min  ! Minimum precip. frac.         [-]
     
+    ! "Maximum allowable" hydrometeor mixing ratio in-precip component mean.
+    real( kind = core_rknd ), parameter :: &
+      max_hm_ip_comp_mean = 0.0025_core_rknd  ! [kg/kg]
+
     integer :: &
       k, i   ! Loop indices
 
@@ -1430,6 +1434,84 @@ module setup_clubb_pdf_params
 
 
     endif ! Select component precipitation fraction method.
+
+
+    ! Increase Precipiation Fraction under special conditions.
+    !
+    ! There are scenarios that sometimes occur that require precipitation
+    ! fraction to be boosted.  Precipitation fraction is calculated from cloud
+    ! fraction and ice supersaturation fraction.  For numerical reasons, CLUBB's
+    ! PDF may become entirely subsaturated with respect to liquid and ice,
+    ! resulting in both a cloud fraction of 0 and an ice supersaturation
+    ! fraction of 0.  When this happens, precipitation fraction drops to 0 when
+    ! there aren't any hydrometeors present at that grid level, or to
+    ! precip_frac_tol when there is at least one hydrometeor present at that
+    ! grid level.  However, sometimes there are large values of hydrometeors
+    ! found at that grid level.  When this occurs, the PDF component in-precip
+    ! mean of a hydrometeor can become ridiculously large.  This is because the
+    ! ith PDF component in-precip mean of a hydrometeor, mu_hm_i,  is given by
+    ! the equation:
+    !
+    ! mu_hm_i = hmi / precip_frac_i;
+    !
+    ! where hmi is the overall ith PDF component mean of the hydrometeor, and
+    ! precip_frac_i is the ith PDF component precipitation fraction.  When
+    ! precip_frac_i has a value of precip_frac_tol and hmi is large, mu_hm_i can
+    ! be huge.  This can cause enormous microphysical process rates and result
+    ! in numerical instability.  It is also very inaccurate.
+    !
+    ! In order to limit this problem, the ith PDF component precipitation
+    ! fraction is increased in order to decrease mu_hm_i.  First, an "upper
+    ! limit" is set for mu_hm_i when the hydrometeor is a mixing ratio.  This is
+    ! called max_hm_ip_comp_mean.  At every vertical level and for every
+    ! hydrometeor mixing ratio, a check is made to try to prevent mu_hm_i from
+    ! exceeding the "upper limit".  The check is:
+    ! hmi / precip_frac_i ( which = mu_hm_i ) > max_hm_ip_comp_mean, which can
+    ! be rewritten:  hmi > precip_frac_i * max_hm_ip_comp_mean.  When this
+    ! occurs, precip_frac_i is increased to hmi/max_hm_ip_comp_mean.  Of course,
+    ! precip_frac_i is not allowed to exceed 1, so when hmi is already greater
+    ! than max_hm_ip_comp_mean, mu_hm_i will also have to be greater than
+    ! max_hm_ip_comp_mean.  However, the value of mu_hm_i is still reduced when
+    ! compared to what it would have been using precip_frac_tol.  In the event
+    ! that multiple hydrometeor mixing ratios violate the check, the code is set
+    ! up so that precip_frac_i is increased based on the highest hmi.
+    do k = 1, nz, 1
+
+       do i = 1, num_hm, 1
+          
+          hydromet_name = hm_list(i)
+
+          if ( hydromet_name(1:1) == "r" ) then
+
+             ! The hydrometeor is a mixing ratio.
+
+             if ( hm1(k,i) > precip_frac_1(k) * max_hm_ip_comp_mean ) then
+
+                ! Increase precipitation fraction in the 1st PDF component.
+                precip_frac_1(k) = min( hm1(k,i)/max_hm_ip_comp_mean, one )
+
+                ! Recalculate overall precipitation fraction.
+                precip_frac(k) = mixt_frac(k) * precip_frac_1(k) &
+                                 + ( one - mixt_frac(k) ) * precip_frac_2(k)
+
+             endif ! mu_hm_1 = hm1/precip_frac_1 > max_hm_ip_comp_mean
+
+             if ( hm2(k,i) > precip_frac_2(k) * max_hm_ip_comp_mean ) then
+
+                ! Increase precipitation fraction in the 2nd PDF component.
+                precip_frac_2(k) = min( hm2(k,i)/max_hm_ip_comp_mean, one )
+
+                ! Recalculate overall precipitation fraction.
+                precip_frac(k) = mixt_frac(k) * precip_frac_1(k) &
+                                 + ( one - mixt_frac(k) ) * precip_frac_2(k)
+
+             endif ! mu_hm_2 = hm2/precip_frac_2 > max_hm_ip_comp_mean
+
+          endif ! hydromet_name(1:1) == "r"
+
+       enddo ! i = 1, num_hm, 1
+
+    enddo ! k = 1, nz, 1
 
 
     return
