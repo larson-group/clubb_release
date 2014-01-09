@@ -33,8 +33,8 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use corr_matrix_module, only: &
-        iiPDF_w ! Variable(s)
+!    use corr_matrix_module, only: &
+!        iiPDF_w ! Variable(s)
 
     use constants_clubb, only: &
         zero
@@ -110,8 +110,8 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use parameters_tunable, only:  & 
-        alpha_corr ! Constant(s)
+!    use parameters_tunable, only:  &
+!        alpha_corr ! Constant(s)
 
     use constants_clubb, only: &
       max_mag_correlation
@@ -140,8 +140,8 @@ module diagnose_correlations_module
     integer :: i, j ! Loop iterator
 
     real( kind = core_rknd ) :: &
-      f_ij, &
-      f_ij_o
+      f_ij
+!      f_ij_o
 
     real( kind = core_rknd ), dimension(n_variables) :: &
       s_1j ! s_1j = sqrt(1-c_1j^2)
@@ -152,7 +152,6 @@ module diagnose_correlations_module
     ! Remove compiler warnings about unused variables.
     if ( .false. ) then
        print *, "sqrt_xp2_on_xm2 = ", sqrt_xp2_on_xm2
-       print *, "f_ij_o = ", f_ij_o
     endif
 
     ! calculate all square roots
@@ -988,7 +987,7 @@ module diagnose_correlations_module
     use corr_matrix_module, only: &
         iiPDF_w,        & ! Variable(s)
         iiPDF_s_mellor, &
-        iiPDF_t_mellor, &
+!        iiPDF_t_mellor, &
         iiPDF_Ncn,      &
         iiPDF_rrain,    &
         iiPDF_Nr

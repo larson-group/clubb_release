@@ -2761,8 +2761,8 @@ module stats_zt
         iQC_INST= k
 
         call stat_assign( var_index=iQC_INST, var_name="QC_INST", &
-             var_description="Change in mixing ratio due to instantaneous processes, &
-                                +rcm [(kg/kg/s)]", &
+             var_description="Change in mixing ratio due to instantaneous processes," // &
+                             " +rcm [(kg/kg/s)]", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2770,8 +2770,8 @@ module stats_zt
         iQR_INST= k
 
         call stat_assign( var_index=iQR_INST, var_name="QR_INST", &
-             var_description="Change in mixing ratio from instantaneous processes, &
-                                +rrainm [(kg/kg/s)]", &
+             var_description="Change in mixing ratio from instantaneous processes," // &
+                             " +rrainm [(kg/kg/s)]", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2779,8 +2779,8 @@ module stats_zt
         iQI_INST= k
 
         call stat_assign( var_index=iQI_INST, var_name="QI_INST", &
-             var_description="Change in mixing ratio from instantaneous processes, &
-                                +ricem [(kg/kg/s)]", &
+             var_description="Change in mixing ratio from instantaneous processes," // &
+                             " +ricem [(kg/kg/s)]", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2788,8 +2788,8 @@ module stats_zt
         iQS_INST= k
 
         call stat_assign( var_index=iQS_INST, var_name="QS_INST", &
-             var_description="Change in mixing ratio from instantaneous processes, &
-                                +rsnowm [(kg/kg/s)]", &
+             var_description="Change in mixing ratio from instantaneous processes," // &
+                             " +rsnowm [(kg/kg/s)]", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2797,8 +2797,8 @@ module stats_zt
         iQG_INST= k
 
         call stat_assign( var_index=iQG_INST, var_name="QG_INST", &
-             var_description="Change in mixing ratio from instantaneous processes, &
-                                +rgraupelm [(kg/kg/s)]", &
+             var_description="Change in mixing ratio from instantaneous processes," // &
+                             " +rgraupelm [(kg/kg/s)]", &
              var_units="(kg/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2806,8 +2806,8 @@ module stats_zt
         iNC_INST= k
 
         call stat_assign( var_index=iNC_INST, var_name="NC_INST", &
-             var_description="Change in # conc. from instantaneous processes, &
-                                +Ncm [(#/kg/s)]", &
+             var_description="Change in # conc. from instantaneous processes," // &
+                             " +Ncm [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2815,8 +2815,8 @@ module stats_zt
         iNR_INST= k
 
         call stat_assign( var_index=iNR_INST, var_name="NR_INST", &
-             var_description="Change in # conc. from instantaneous processes, &
-                                +Nrm [(#/kg/s)]", &
+             var_description="Change in # conc. from instantaneous processes," // &
+                             " +Nrm [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2824,8 +2824,8 @@ module stats_zt
         iNI_INST= k
 
         call stat_assign( var_index=iNI_INST, var_name="NI_INST", &
-             var_description="Change in # conc. from instantaneous processes, &
-                                +Nim [(#/kg/s)]", &
+             var_description="Change in # conc. from instantaneous processes," // &
+                             " +Nim [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2833,8 +2833,8 @@ module stats_zt
         iNS_INST= k
 
         call stat_assign( var_index=iNS_INST, var_name="NS_INST", &
-             var_description="Change in # conc. from instantaneous processes, &
-                                +Nsnowm [(#/kg/s)]", &
+             var_description="Change in # conc. from instantaneous processes," // &
+                             " +Nsnowm [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 
@@ -2842,8 +2842,8 @@ module stats_zt
         iNG_INST= k
 
         call stat_assign( var_index=iNG_INST, var_name="NG_INST", &
-             var_description="Change in # conc. from instantaneous processes, &
-                                +Ngraupelm [(#/kg/s)]", &
+             var_description="Change in # conc. from instantaneous processes," // &
+                             " +Ngraupelm [(#/kg/s)]", &
              var_units="(#/kg/s)", l_silhs=.true., grid_kind=zt )
         k = k + 1
 

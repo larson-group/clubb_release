@@ -39,7 +39,6 @@ module estimate_scm_microphys_module
 
     use parameters_microphys, only: &
       l_lh_cloud_weighted_sampling, & ! Variable(s)
-      l_silhs_KK_convergence_adj_mean, &
       l_const_Nc_in_cloud, &
       l_var_covar_src
 
@@ -73,9 +72,14 @@ module estimate_scm_microphys_module
     use stats_type, only: & 
       stat_update_var ! Procedure(s)
 
+#ifdef SILHS_KK_CONVERGENCE_TEST
+    use parameters_microphys, only: &
+      l_silhs_KK_convergence_adj_mean ! Variable(s)
+
     use array_index, only: &
       iiNrm, & ! Variable(s)
       iirrainm
+#endif
 
     implicit none
 
