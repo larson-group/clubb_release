@@ -830,7 +830,9 @@ module stats_variables
     iNSUBI = 0, & 
     iNGMLTG = 0, &
     iNSUBG = 0, &
-    iNACT = 0, &
+    iNACT = 0
+
+  integer, public :: &
     iSIZEFIX_NR = 0, &
     iSIZEFIX_NC = 0, &
     iSIZEFIX_NI = 0, &

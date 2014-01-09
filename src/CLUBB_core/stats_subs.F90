@@ -1097,8 +1097,6 @@ module stats_subs
         rad_zm, &
         sfc, & 
         l_stats_last, & 
-        stats_tsamp, & 
-        stats_tout, &
         l_output_rad_files, & 
         l_grads
 
@@ -1107,9 +1105,6 @@ module stats_subs
 
     use output_grads, only: & 
         write_grads ! Procedure(s)
-
-    use error_code, only: &
-        clubb_at_least_debug_level ! Procedure(s)
 
     use parameters_microphys, only: &
       LH_microphys_disabled  ! Constant

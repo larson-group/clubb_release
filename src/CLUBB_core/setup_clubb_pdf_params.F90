@@ -1746,12 +1746,10 @@ module setup_clubb_pdf_params
         pdf_parameter  ! Variable(s) type
 
     use corr_matrix_module, only: &
-        iiPDF_s_mellor, &
+        iiPDF_s_mellor, & ! Variable(s)
         iiPDF_t_mellor, &
-        iiPDF_w, &
-        iiPDF_Ncn, &
-        iiPDF_rrain, &
-        iiPDF_Nr
+        iiPDF_w,        &
+        iiPDF_Ncn
 
     implicit none
 
