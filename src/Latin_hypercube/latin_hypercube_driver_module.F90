@@ -562,8 +562,6 @@ module latin_hypercube_driver_module
     use latin_hypercube_arrays, only: &
       height_time_matrix ! Variables
 
-    use parameters_model, only: hydromet_dim ! Variable
-
     use permute_height_time_module, only: &
       permute_height_time ! Procedure
 

@@ -230,8 +230,7 @@ module microphys_driver
     character(len=*), parameter :: &
       corr_input_path = "../input/case_setups/", & ! Path to correlation files
       cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
-      below_file_ext  = "_corr_array_below.in", &
-      default_corr_case = "arm_97" ! Default correlation arrays are read in from this case
+      below_file_ext  = "_corr_array_below.in"
 
     ! External
     intrinsic :: trim
@@ -262,9 +261,7 @@ module microphys_driver
 
     character(len=128) :: &
      corr_file_path_cloud, &
-     corr_file_path_below, &
-     corr_file_path_cloud_default, &
-     corr_file_path_below_default
+     corr_file_path_below
 
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, sigma_g, &
@@ -822,10 +819,6 @@ module microphys_driver
                             l_ice_micro )
 
     call init_precip_hm_arrays( hydromet_dim )
-
-    ! Path to the default prescribed correlation arrays ( arm_97 case )
-    corr_file_path_cloud_default = corr_input_path//default_corr_case//cloud_file_ext
-    corr_file_path_below_default = corr_input_path//default_corr_case//below_file_ext
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext

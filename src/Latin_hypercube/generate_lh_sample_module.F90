@@ -1057,14 +1057,6 @@ module generate_lh_sample_module
     logical, dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real( kind = core_rknd ) :: &
-      stdev_s1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
-      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
-      stdev_w1,    & ! Standard deviation of w for the 1st normal distribution   [m/s]
-      stdev_w2,    & ! Standard deviation of w for 2nd normal distribution       [m/s]
-      stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
-      stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
-
     real( kind = dp ), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
@@ -1086,16 +1078,6 @@ module generate_lh_sample_module
     i = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
-
-    ! Set standard deviation of s1/s2
-    stdev_s1 = sigma1(iiPDF_s_mellor)
-    stdev_s2 = sigma2(iiPDF_s_mellor)
-
-    stdev_t1 = sigma1(iiPDF_t_mellor)
-    stdev_t2 = sigma2(iiPDF_t_mellor)
-
-    stdev_w1 = sigma1(iiPDF_w)
-    stdev_w2 = sigma2(iiPDF_w)
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics scheme

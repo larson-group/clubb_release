@@ -259,14 +259,8 @@ module clubb_driver
         num_hm, &               ! Variable
         setup_pdf_parameters    ! Procedure(s)
 
-    use array_index, only: &
-        iirrainm, & ! Variable(s)
-        iiNrm
-
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter ! Type(s)
-
-
 
     implicit none
 
