@@ -153,7 +153,6 @@
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NC', 'expression' => 'SIZEFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NC', 'expression' => '-NEGFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-REMOVE\_NC', 'expression' => '-REMOVE_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NACT', 'expression' => 'NACT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NNUCCC', 'expression' => '-NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWS', 'expression' => '-NPSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -162,13 +161,13 @@
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWI', 'expression' => '-NPSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => '-NPSACWG', 'expression' => '-NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'NC\_INST', 'expression' => 'NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
        {'plotTitle' => 'Ncm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_mc', 'expression' => 'Ncm_mc-NCSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC - REMOVE_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm_97_zt.ctl', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
 
