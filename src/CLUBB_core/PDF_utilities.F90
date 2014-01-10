@@ -578,6 +578,13 @@ module PDF_utilities
     endif
 
 
+    ! As a check, prevent negative values for hydrometeor variances due to
+    ! numerical loss of precision error.
+    if ( xp2 < zero ) then
+       xp2 = zero
+    endif
+
+
     return
 
   end function calc_xp2
