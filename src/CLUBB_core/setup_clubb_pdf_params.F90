@@ -279,6 +279,11 @@ module setup_clubb_pdf_params
 
     logical :: l_corr_array_scaling
 
+    ! Flags used for covariance clipping of <w'hm'>.
+    logical, parameter :: &
+      l_first_clip_ts = .true., & ! First instance of clipping in a timestep.
+      l_last_clip_ts  = .true.    ! Last instance of clipping in a timestep.
+
     integer :: pdf_idx  ! Index of precipitating hydrometeor in PDF array.
 
     integer :: k, i  ! Loop indices
@@ -509,8 +514,8 @@ module setup_clubb_pdf_params
           endif ! l_stats_samp
 
           ! Clip the value of covariance <w'hm'> on thermodynamic levels.
-          call clip_covar_level( clip_wphmp, k, .true.,  & 
-                                 .true., dt, wp2_zt(k), hmp2_zt(k,i),  & 
+          call clip_covar_level( clip_wphmp, k, l_first_clip_ts, &
+                                 l_last_clip_ts, dt, wp2_zt(k), hmp2_zt(k,i), &
                                  wphmp_zt(k,i), wphmp_chnge(k,i) )
 
        enddo ! i = 1, num_hm, 1
