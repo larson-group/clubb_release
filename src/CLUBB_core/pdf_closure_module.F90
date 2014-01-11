@@ -1287,7 +1287,11 @@ module pdf_closure_module
   real( kind = core_rknd ) :: &
     z_val             ! Height at some sub-grid level
 
-  integer :: i        ! Loop iterator
+  integer :: &
+    i, &                      ! Loop iterator
+
+    subgrid_lev_count         ! Number of refined grid points located between
+                              ! two defined grid levels
 
   !-----------------------------------------------------------------------
 
@@ -1298,13 +1302,15 @@ module pdf_closure_module
     interp_var_array((n_points+1)/2) = var_value_integer_height( nz, k, z_vals, var )
     interp_var_array(n_points) = var_value_integer_height( nz, k+1, z_vals, var )
 
+    subgrid_lev_count = (n_points - 3) / 2
+
     ! Lower half
     if ( k == 1 ) then
-      dz = z_vals(2) - z_vals(1)
+      dz = (z_vals(2) - z_vals(1)) / real( subgrid_lev_count+1, kind=core_rknd )
     else
-      dz = z_vals(k) - z_vals(k-1)
+      dz = (z_vals(k) - z_vals(k-1)) / real( subgrid_lev_count+1, kind=core_rknd )
     end if
-    do i=1, (n_points-3)/2
+    do i=1, subgrid_lev_count
       z_val = z_vals(k) - real( i, kind=core_rknd ) * dz
       interp_var_array(1+i) &
       = var_subgrid_interp( nz, k, z_vals, var, z_val, l_below=.true. )
@@ -1312,9 +1318,9 @@ module pdf_closure_module
 
     ! Upper half
     if ( k == nz ) then
-      dz = z_vals(nz) - z_vals(nz-1)
+      dz = ( z_vals(nz) - z_vals(nz-1) ) / real( subgrid_lev_count+1, kind=core_rknd )
     else
-      dz = z_vals(k+1) - z_vals(k)
+      dz = ( z_vals(k+1) - z_vals(k) ) / real( subgrid_lev_count+1, kind=core_rknd )
     end if
     do i=1, (n_points-3)/2
       z_val = z_vals(k) + real( i, kind=core_rknd ) * dz
@@ -1494,6 +1500,7 @@ module pdf_closure_module
     var_value = mono_cubic_interp( z_interp, km1, k00, kp1, kp2, &
                                    z_vals(km1), z_vals(k00), z_vals(kp1), z_vals(kp2), &
                                    var(km1), var(k00), var(kp1), var(kp2) )
+
     return
   end function var_subgrid_interp
   !-----------------------------------------------------------------------
