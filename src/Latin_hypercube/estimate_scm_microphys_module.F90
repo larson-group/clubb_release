@@ -30,9 +30,7 @@ module estimate_scm_microphys_module
 
     use constants_clubb, only:  &
       fstderr, &  ! Constant(s)
-      zero_threshold, &
-      rc_tol, &
-      cm3_per_m3
+      zero_threshold
 
     use parameters_model, only: &
       hydromet_dim ! Variable

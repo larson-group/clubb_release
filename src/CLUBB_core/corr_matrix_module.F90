@@ -574,8 +574,7 @@ module corr_matrix_module
 !   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
 
     use constants_clubb, only: &
-      fstdout, & ! Constant(s)
-      fstderr, &
+      fstderr, &  ! Constant(s)
       zero
 
     use clubb_precision, only: &

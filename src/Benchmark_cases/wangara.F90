@@ -28,7 +28,7 @@ module wangara
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     use array_index, only: iisclr_thl, iisclr_rt, iiedsclr_thl, iiedsclr_rt ! Variable(s)
 

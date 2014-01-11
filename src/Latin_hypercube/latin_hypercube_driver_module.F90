@@ -68,7 +68,6 @@ module latin_hypercube_driver_module
 
     use constants_clubb, only: &
       fstderr, & ! Constant
-      cm3_per_m3, &
       zero_threshold
 
     use parameters_microphys, only: &
@@ -78,7 +77,7 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: genrand_real, genrand_intg ! Constants
+    use mt95, only: genrand_real ! Constants
 
     use mt95, only: genrand_init ! Procedure
 
@@ -581,7 +580,6 @@ module latin_hypercube_driver_module
 
     use constants_clubb, only: &
       fstderr, & ! Constant
-      cm3_per_m3, &
       zero_threshold
 
     use parameters_microphys, only: &
@@ -591,7 +589,7 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: genrand_real, genrand_intg ! Constants
+    use mt95, only: genrand_real ! Constants
 
     use mt95, only: genrand_init ! Procedure
 
@@ -1350,8 +1348,8 @@ module latin_hypercube_driver_module
       variable_units(i)        = "K"
 
       call open_2D_samples_file( nz, LH_microphys_calls, d_variables+2, & ! In
-                                 trim( fname_prefix )//"_nl", fdir, & ! In
-                                 time_initial, stats_tout, zt, variable_names, & ! In
+                                 trim( fname_prefix )//"_nl", & ! In
+                                 variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
                                  lognormal_sample_file ) ! In/Out
 
@@ -1440,8 +1438,7 @@ module latin_hypercube_driver_module
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
 
       call open_2D_samples_file( nz, LH_microphys_calls, i, & ! In
-                                 trim( fname_prefix )//"_u", fdir, & ! In
-                                 time_initial, stats_tout, zt, &! In
+                                 trim( fname_prefix )//"_u", & ! In
                                  variable_names(1:i), variable_descriptions(1:i), & ! In
                                  variable_units(1:i), & ! In
                                  uniform_sample_file ) ! In/Out
@@ -1614,9 +1611,6 @@ module latin_hypercube_driver_module
 
     use mt95, only: genrand_real ! Constant
     use mt95, only: r8 => genrand_real ! Constant
-
-    use constants_clubb, only: &
-      fstderr ! Constant
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
@@ -2101,8 +2095,7 @@ module latin_hypercube_driver_module
       copy_X_nl_into_hydromet_all_pts ! Procedure(s)
 
     use constants_clubb, only: &
-      zero_threshold, & ! Constant(s)
-      fstderr
+      zero_threshold    ! Constant(s)
 
     use clubb_precision, only: & 
       core_rknd, & ! Variable(s)

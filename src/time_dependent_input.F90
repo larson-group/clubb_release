@@ -152,8 +152,6 @@ module time_dependent_input
     !  input values that vary in one dimension.
     !-----------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr ! Variable(s)
-
     use input_reader, only: &
       read_one_dim_file, one_dim_read_var, & ! Procedure(s)
       fill_blanks_one_dim_vars, read_x_profile, &
@@ -506,9 +504,7 @@ module time_dependent_input
       linear_interp_factor ! Procedure(s)
 
     use input_names, only: &
-      z_name, & ! Variable(s)
-      pressure_name, &
-      temperature_f_name, &
+      temperature_f_name, &  ! Variable(s)
       rt_f_name,&
       sp_humidity_f_name, &
       thetal_f_name, &

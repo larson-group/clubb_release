@@ -119,11 +119,6 @@ module advance_xp2_xpyp_module
     use clip_explicit, only: & 
       clip_covar,  & ! Procedure(s)
       clip_variance, &
-      clip_rtp2, &        ! Variable(s)
-      clip_thlp2, &
-      clip_rtpthlp, &
-      clip_up2, &
-      clip_vp2, &
       clip_sclrp2, &
       clip_sclrprtp, &
       clip_sclrpthlp
@@ -3343,7 +3338,6 @@ module advance_xp2_xpyp_module
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
-      dp, &
       time_precision
 
     implicit none

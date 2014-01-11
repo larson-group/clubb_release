@@ -20,9 +20,6 @@ module corr_cholesky_mtx_tests
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        fstdout  ! Constant(s)
-
     use clubb_precision, only: &
         core_rknd
 

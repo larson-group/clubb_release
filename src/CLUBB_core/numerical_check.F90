@@ -507,9 +507,6 @@ module numerical_check
 !   to the console.
 !------------------------------------------------------------------------
 
-    use constants_clubb, only:  & 
-        fstderr ! Variable
-
     use grid_class, only: & 
         gr ! Variable
 

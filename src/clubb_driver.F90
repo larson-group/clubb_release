@@ -91,15 +91,14 @@ module clubb_driver
       calculate_thlp2_rad
 
     use constants_clubb, only: &
-      fstdout, fstderr, zero, one, eps, zero_dp, one_dp, & ! Constant(s)
+      fstdout, fstderr, zero, zero_dp, one_dp, & ! Constant(s)
       rt_tol, thl_tol, w_tol, w_tol_sqd, &
-      rr_tol, Nr_tol, Ncn_tol, rc_tol
+      rc_tol
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Variable(s)
       clubb_no_error, &
-      clubb_var_equals_NaN, & 
-      clubb_rtm_level_not_found
+      clubb_var_equals_NaN
 
     use error_code, only: &
       fatal_error,  & ! Procedure(s)
@@ -1357,7 +1356,6 @@ module clubb_driver
     use constants_clubb, only:  & 
       em_min,  &
       grav, &
-      zero_threshold, &
       cm3_per_m3
 
     use parameters_model, only:  & 
@@ -1393,8 +1391,6 @@ module clubb_driver
 
     use error_code, only: &
       clubb_no_error ! Variable(s)
-
-    use constants_clubb, only: fstderr ! Variables(s)
 
     use array_index, only: &
         iiNcm ! Variable(s)
@@ -3091,7 +3087,7 @@ module clubb_driver
 
     use constants_clubb, only: & 
       Cp, Lv, kappa, p0, & ! Variable(s)
-      rc_tol, zero, fstderr, cm3_per_m3
+      zero, fstderr
 
     use variables_prognostic_module, only:  & 
       sclrm_forcing,   & ! Passive scalar variables
@@ -3679,7 +3675,7 @@ module clubb_driver
         LH_microphys_calls
 
     use constants_clubb, only: & 
-        rc_tol, zero, fstderr ! Variable(s)
+        rc_tol, fstderr ! Variable(s)
 
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
@@ -3992,7 +3988,7 @@ module clubb_driver
 !   None
 !-------------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr, zero_threshold  ! Constant(s)
+    use constants_clubb, only: fstderr  ! Constant(s)
 
     use numerical_check, only: is_nan_2d, rad_check ! Procedure(s)
 

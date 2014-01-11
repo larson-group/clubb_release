@@ -743,10 +743,6 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use constants_clubb, only: &
-        zero, & ! Variable(s)
-        one
-
     implicit none
 
     intrinsic :: matmul, transpose

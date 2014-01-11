@@ -252,7 +252,6 @@ module stats_zm
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
         iwphmp, &
-        iwp2hmp, &
         irtphmp, &
         ithlphmp
 

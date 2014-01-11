@@ -185,8 +185,7 @@ module morrison_micro_driver_module
 
     use constants_clubb, only: &
       sec_per_day, &
-      zero, &
-      zero_threshold
+      zero
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)

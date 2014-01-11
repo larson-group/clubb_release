@@ -57,7 +57,7 @@ module bugsrad_driver
     use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
                                pascal_per_mb, g_per_kg ! Variable(s)
 
-    use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
+    use clubb_precision, only: dp, core_rknd ! Variable(s)
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 

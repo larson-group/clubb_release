@@ -121,7 +121,7 @@ module nov11
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
+    use constants_clubb, only: fstderr ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 

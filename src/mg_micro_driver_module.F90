@@ -29,7 +29,6 @@ module mg_micro_driver_module
       iiricem, iiNim
 
     use constants_clubb, only: &
-      zero_threshold, &
       T_freeze_K, &
 !      Lv, &
       Cp
@@ -86,7 +85,6 @@ module mg_micro_driver_module
       tmelt,  &
       latice, &
       latvap, &
-      gravit, &
       epsilo
       
     use ppgrid, only: &
@@ -103,7 +101,6 @@ module mg_micro_driver_module
       
     use constants_clubb, only: &
       rc_tol, & ! Variable
-      rt_tol, &
       sec_per_day, &
       mm_per_m
 

@@ -380,9 +380,6 @@ module input_reader
     !   None
     !----------------------------------------------------------------------------------------------
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     implicit none
 
     ! External

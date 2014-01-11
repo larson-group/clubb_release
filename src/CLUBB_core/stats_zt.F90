@@ -570,8 +570,6 @@ module stats_zt
     intrinsic :: trim
 
     ! Local Constants
-    ! This is used in calls to stat_assign for SILHS variables.
-    logical, parameter :: l_silhs_var = .true.
 
     ! Input Variable
     character(len= * ), dimension(nvarmax_zt), intent(in) :: vars_zt

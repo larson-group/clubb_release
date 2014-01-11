@@ -29,8 +29,6 @@ module twp_ice
     !   http://users.monash.edu.au/~ladavies/gcss.html
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv, grav ! Variable(s)
-
     use saturation, only: sat_mixrat_liq ! Procedure(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)

@@ -84,8 +84,7 @@ module hydrostatic_module
     use constants_clubb, only: & 
         kappa,  & ! Variable(s)
         p0, & 
-        Rd, &
-        zero_threshold
+        Rd
 
     use grid_class, only: & 
         gr,  & ! Variable(s)

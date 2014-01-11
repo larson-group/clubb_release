@@ -2510,8 +2510,7 @@ module inputfields
       max_iz        ! maximum iz value from all files
 
     logical :: l_grads_file, & ! use grads or netcdf
-      l_internal_error, &
-      l_convert_to_MKS ! convert inputs to MKS units
+      l_internal_error
 
     type (input_field) :: &
       current_var ! The current variable
@@ -2672,9 +2671,6 @@ module inputfields
 
     use grid_class, only: &
       gr ! Type
-
-    use constants_clubb, only: &
-      fstderr  ! Variable(s)
 
     implicit none
 

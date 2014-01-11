@@ -33,7 +33,7 @@ module astex_a209
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     use array_index, only: iisclr_rt, iisclr_thl, iiedsclr_rt, iiedsclr_thl ! Variable(s)
 
@@ -105,8 +105,6 @@ module astex_a209
     ! References:
     !   http://www.euclipse.nl/wp3/ASTEX_Lagrangian/Introduction.shtml
     !----------------------------------------------------------------------
-
-    use constants_clubb, only: Cp, Lv, fstdout ! Variable(s)
 
     use time_dependent_input, only: T_sfc_given, time_sfc_given, &
                                     time_select ! Variable(s)

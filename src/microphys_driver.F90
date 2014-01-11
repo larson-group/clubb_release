@@ -142,10 +142,6 @@ module microphys_driver
         hydromet_tol  ! Variable(s)
 
     use constants_clubb, only: &
-        one,        & ! Constant(s)
-        two_thirds, &
-        one_third,  &
-        zero,       &
         cm3_per_m3, &
         rr_tol,     &
         ri_tol,     &
@@ -206,7 +202,6 @@ module microphys_driver
     use gfdl_activation, only: Loading ! Procedure
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
         core_rknd
 
     use corr_matrix_module, only: &
@@ -215,11 +210,6 @@ module microphys_driver
 
     use setup_clubb_pdf_params, only: &
         init_precip_hm_arrays  ! Procedure(s)
-
-#ifdef LATIN_HYPERCUBE
-    use mt95, only: &
-        genrand_intg
-#endif /* LATIN_HYPERCUBE */
 
     implicit none
 
@@ -1060,7 +1050,6 @@ module microphys_driver
     use parameters_microphys, only: &
         LH_microphys_type, & ! Determines how the LH samples are used
         LH_microphys_interactive,     & ! Feed the subcols into the microphys and allow feedback
-        LH_microphys_non_interactive, & ! Feed the subcols into the microphys with no feedback
         LH_microphys_disabled           ! Disable latin hypercube entirely
 
     use clubb_precision, only: &
@@ -2600,8 +2589,7 @@ module microphys_driver
     use constants_clubb, only: &
         one,         & ! Constant(s)
         one_half,    &
-        zero,        & 
-        sec_per_day
+        zero
 
     use stats_variables, only: & 
         irrainm_ma, & ! Variable(s)

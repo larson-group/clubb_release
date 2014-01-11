@@ -33,7 +33,7 @@ module mpace_b
   !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Rd, Cp, Lv, p0, rc_tol, zero_threshold, &
+    use constants_clubb, only: Rd, Cp, &
                                grav, sec_per_day, g_per_kg ! Variable(s)
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
@@ -42,7 +42,7 @@ module mpace_b
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     use array_index, only: iiedsclr_rt, iiedsclr_thl, iisclr_rt, iisclr_thl ! Variable(s)
 
@@ -133,8 +133,6 @@ module mpace_b
   !        References:
   !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
   !-----------------------------------------------------------------------
-
-    use constants_clubb, only: Cp, Lv ! Variable(s)
 
     use surface_flux, only: convert_sens_ht_to_km_s, convert_latent_ht_to_m_s ! Functions(s)
 

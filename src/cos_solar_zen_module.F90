@@ -32,7 +32,7 @@ module cos_solar_zen_module
 !     Table 2.2 and Eqn. 2.2.10
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: pi_dp, fstderr, sec_per_day, sec_per_hr,&
+    use constants_clubb, only: pi_dp, fstderr, sec_per_hr,&
                                radians_per_deg_dp ! Variable(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)

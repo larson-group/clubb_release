@@ -83,8 +83,7 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep, & ! Variable
-      fstderr
+      ep    ! Variable
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -146,8 +145,7 @@ module saturation
 !-------------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      ep, & ! Variable
-      fstderr
+      ep    ! Variable
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -634,7 +632,6 @@ module saturation
 ! References:
 !   Bolton 1980
 !------------------------------------------------------------------------
-    use constants_clubb, only: T_freeze_K
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)

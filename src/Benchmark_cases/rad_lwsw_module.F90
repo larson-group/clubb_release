@@ -382,9 +382,7 @@ module rad_lwsw_module
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-      Cp, & ! Constant(s)
-      rho_lw, &
-      pi, &
+      rho_lw, & ! Constant(s)
       three_halves
 
     use interpolation, only: lin_int ! Procedure(s)

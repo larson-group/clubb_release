@@ -97,7 +97,6 @@ module clubb_core
     ! Modules to be included
 
     use constants_clubb, only: & 
-      w_tol,  & ! Variable(s)
       em_min, & 
       thl_tol, & 
       rt_tol, &
@@ -106,7 +105,6 @@ module clubb_core
       Cp, & 
       Lv, & 
       ep1, & 
-      eps, &
       p0, &
       kappa, &
       fstderr, &
@@ -261,9 +259,6 @@ module clubb_core
     use clubb_precision, only:  & 
       time_precision, & ! Variable(s)
       core_rknd
-
-    use error_code, only :  & 
-      clubb_no_error ! Constant(s)
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
@@ -1981,8 +1976,7 @@ module clubb_core
         clubb_no_error ! Constant(s)
 
       use model_flags, only: & 
-        setup_model_flags, & ! Subroutine
-        l_gmres              ! Variable
+        setup_model_flags    ! Subroutine
 
 #ifdef MKL
       use csr_matrix_class, only: &
@@ -3161,9 +3155,7 @@ module clubb_core
     zt2zm                         ! Procedure
 
   use constants_clubb, only: &
-    ten, &
     two, &
-    one, &
     rc_tol
 
   use parameters_tunable, only: &

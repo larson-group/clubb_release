@@ -138,8 +138,6 @@ module rico
   !          RICO: http://www.knmi.nl/samenw/rico/setup3d.html
   !-----------------------------------------------------------------------
 
-  use constants_clubb, only: kappa, p0 ! Variable(s)
-  
   use saturation, only: sat_mixrat_liq ! Procedure(s)
 
   use surface_flux, only: compute_ubar, compute_momentum_flux, &

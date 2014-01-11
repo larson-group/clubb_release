@@ -17,8 +17,8 @@ module output_2D_samples_module
   contains
 !-------------------------------------------------------------------------------
   subroutine open_2D_samples_file( nz, n_micro_calls, n_2D_variables, &
-                                   fname_prefix, fdir, &
-                                   time, dtwrite, zgrid, variable_names, &
+                                   fname_prefix, &
+                                   variable_names, &
                                    variable_descriptions, variable_units, &
                                    sample_file )
 ! Description:
@@ -30,15 +30,9 @@ module output_2D_samples_module
     use output_netcdf, only: open_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: time_precision, core_rknd ! Constant(s)
+    use clubb_precision, only: core_rknd ! Constant(s)
 
     implicit none
-
-    ! Parameter Constants
-    integer, parameter :: &
-      day   = 1, & ! Made up times for GrADS
-      month = 1, &
-      year  = 1900
 
     ! Input Variables
     integer, intent(in) :: &
@@ -47,20 +41,12 @@ module output_2D_samples_module
       n_2D_variables   ! Number variables to output
 
     character(len=*), intent(in) :: &
-      fdir,      & ! Output directory
       fname_prefix ! Prefix for the netCDF output
 
     character(len=*), intent(in), dimension(n_2D_variables) :: &
       variable_names,        & ! Names of the variables to be used in the 2D netCDF file
       variable_descriptions, & ! Description of the variables in the 2D file
       variable_units           ! Units on the variables  
-
-    real(kind=time_precision), intent(in) :: &
-      time,   & ! Start time                      [s]
-      dtwrite   ! Interval for writing to disk    [s]
-
-    real( kind = core_rknd ), intent(in), dimension(nz) :: &
-      zgrid ! Vertical grid levels [m]
 
     ! Input/Output Variables
     type(stat_file), intent(inout) :: &
@@ -197,8 +183,7 @@ module output_2D_samples_module
     use mt95, only: genrand_real ! Constant(s)
 
     use clubb_precision, only: &
-    core_rknd, &
-    dp ! Constant(s)
+      dp ! Constant(s)
 
     implicit none
 

@@ -29,7 +29,7 @@ module gabls3
     !       http://www.knmi.nl/samenw/gabls/
     !----------------------------------------------------------------------
 
-    use constants_clubb, only: kappa, grav, Rd, Cp, p0, Lv ! Variable(s)
+    use constants_clubb, only: grav ! Variable(s)
 
     use diag_ustar_module, only: diag_ustar ! Procedure(s)
 

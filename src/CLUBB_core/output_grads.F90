@@ -50,7 +50,6 @@ module output_grads
 !-------------------------------------------------------------------------------
     use constants_clubb, only:  & 
         fstderr,  & ! Constant(s)
-        fstdout, &
         sec_per_min
 
     use stat_file_module, only: & 
@@ -240,7 +239,6 @@ module output_grads
 
     use constants_clubb, only:  & 
         fstderr,  & ! Variable 
-        fstdout,  &
         sec_per_hr, &
         sec_per_min
 
@@ -494,10 +492,6 @@ module output_grads
     use stat_file_module, only: & 
       stat_file ! Type
 
-    use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      core_rknd
-
 !   use stat_file_module, only: &
 !     clubb_i, clubb_j ! Variable(s)
 
@@ -669,8 +663,7 @@ module output_grads
 !   None
 !---------------------------------------------------------
     use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      core_rknd
+      time_precision    ! Variable(s)
 
     use calendar, only:  & 
       compute_current_date ! Procedure(s)

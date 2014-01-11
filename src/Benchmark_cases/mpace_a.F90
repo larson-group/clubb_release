@@ -60,8 +60,8 @@ module mpace_a
 !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Rd, Lv, p0, rc_tol, & ! Variable(s)
-                         zero_threshold, fstderr, sec_per_hr, g_per_kg
+    use constants_clubb, only: Cp, Rd, & ! Variable(s)
+                         sec_per_hr, g_per_kg
 
     use parameters_model, only: sclr_dim, edsclr_dim ! Variable(s)
 
@@ -241,7 +241,7 @@ module mpace_a
 !          http://science.arm.gov/wg/cpm/scm/scmic5/index.html
 !-----------------------------------------------------------------------
 
-    use constants_clubb, only: Cp, Lv, fstderr ! Variable(s)
+    use constants_clubb, only: Cp, Lv ! Constant(s)
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 

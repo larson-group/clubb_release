@@ -195,9 +195,6 @@ module PDF_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        one  ! Constant(s)
-
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -237,9 +234,6 @@ module PDF_utilities
     !    Marcel Dekker, 401 pp.
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        one_dp  ! Constant(s)
 
     use clubb_precision, only: &
         dp ! double precision
@@ -281,9 +275,7 @@ module PDF_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one,     & ! Constant(s)
-        zero,    &
-        fstdout
+        one        ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)

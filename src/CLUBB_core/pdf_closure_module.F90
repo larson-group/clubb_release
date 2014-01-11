@@ -59,22 +59,17 @@ module pdf_closure_module
 
     use constants_clubb, only: & 
       ! Constants
-      sqrt_2pi,      & ! sqrt(2*pi)
-      sqrt_2,        & ! sqrt(2)
-      pi,            & ! The ratio of radii to their circumference
       two,           & ! 2
       zero,          & ! 0
       Cp,            & ! Dry air specific heat at constant p [J/kg/K]
       Lv,            & ! Latent heat of vaporization         [J/kg]
       Rd,            & ! Dry air gas constant                [J/kg/K]
-      Rv,            & ! Water vapor gas constant            [J/kg/K]
       ep,            & ! Rd / Rv;     ep  = 0.622            [-]
       ep1,           & ! (1.0-ep)/ep; ep1 = 0.61             [-]
       ep2,           & ! 1.0/ep;      ep2 = 1.61             [-]
       w_tol_sqd,     & ! Tolerance for w'^2                  [m^2/s^2]
       rt_tol,        & ! Tolerance for r_t                   [kg/kg]
       thl_tol,       & ! Tolerance for th_l                  [K]
-      s_mellor_tol,  & ! Tolerance for pdf parameter s       [kg/kg]
       T_freeze_K,    & ! Freezing point of water             [K]
       fstderr,       &
       zero_threshold
@@ -308,6 +303,12 @@ module pdf_closure_module
 #endif
 
 !------------------------ Code Begins ----------------------------------
+
+    ! Temporarily get rid of annoying compiler warnings
+    ! ticket:639
+    if ( .false. ) then
+      print *, wphmp(1), wp2hmp(1), rtphmp(1), thlphmp(1)
+    end if
 
     ! Check whether the passive scalars are present.
 

@@ -31,7 +31,7 @@ module cloud_feedback
   !   http://atmgcm.msrc.sunysb.edu/cfmip_figs/Case_specification.html
   !----------------------------------------------------------------------
 
-  use constants_clubb, only: pi, grav, Lv, Cp, p0, kappa ! Variable(s)
+  use constants_clubb, only: p0, kappa ! Variable(s)
 
   use saturation, only: sat_mixrat_liq ! Variable(s)
 

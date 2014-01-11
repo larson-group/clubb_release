@@ -96,8 +96,7 @@ module advance_windm_edsclrm_module
       fatal_error
 
     use error_code, only:  & 
-      clubb_no_error, &  ! Constant(s)
-      clubb_singular_matrix
+      clubb_no_error     ! Constant(s)
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant(s)
@@ -1092,9 +1091,6 @@ module advance_windm_edsclrm_module
     use stats_type, only:  &
       stat_update_var_pt  ! Subroutine
 
-    use constants_clubb, only:  & 
-      fstderr ! Variable(s)
-
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -1178,11 +1174,7 @@ module advance_windm_edsclrm_module
       stat_end_update_pt,  & ! Subroutines
       stat_update_var_pt
 
-    use constants_clubb, only:  & 
-      fstderr ! Variable(s)
-
     use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
       core_rknd
 
     use grid_class, only: &

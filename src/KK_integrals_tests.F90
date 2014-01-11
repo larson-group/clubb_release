@@ -108,8 +108,7 @@ module KK_integrals_tests
 
     use constants_clubb, only: &
         one_dp, &  ! Constant(s)
-        two_dp, &
-        fstdout
+        two_dp
 
     use PDF_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)
@@ -461,8 +460,7 @@ module KK_integrals_tests
     use constants_clubb, only: &
         two_dp,  & ! Constant(s)
         one_dp,  &
-        zero_dp, &
-        fstdout
+        zero_dp
 
     use PDF_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)

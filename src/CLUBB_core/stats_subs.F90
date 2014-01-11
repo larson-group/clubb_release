@@ -1100,9 +1100,6 @@ module stats_subs
         l_output_rad_files, & 
         l_grads
 
-    use clubb_precision, only: & 
-        time_precision ! Variable(s)
-
     use output_grads, only: & 
         write_grads ! Procedure(s)
 
@@ -1110,8 +1107,7 @@ module stats_subs
       LH_microphys_disabled  ! Constant
 
     use parameters_microphys, only: &
-      LH_microphys_type, & ! Variable(s)
-      LH_microphys_calls
+      LH_microphys_type    ! Variable(s)
 
     use stat_file_module, only: &
       clubb_i, & ! Variable(s)
@@ -1500,8 +1496,7 @@ module stats_subs
         thlm2T_in_K ! Procedure
 
     use constants_clubb, only: & 
-        rc_tol, & ! Constant(s)
-        w_tol_sqd
+        rc_tol    ! Constant(s)
 
     use parameters_model, only: & 
         sclr_dim,  &        ! Variable(s)

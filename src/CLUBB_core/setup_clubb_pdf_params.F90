@@ -1729,7 +1729,6 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        rc_tol,       & ! Constant(s)
         Ncn_tol,      &
         w_tol,        & ! [m/s]
         s_mellor_tol, & ! [kg/kg]
@@ -2247,7 +2246,6 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only:  &
         one,    & ! Constant(s)
-        zero,   &
         rc_tol
 
     use clubb_precision, only: &
@@ -3880,9 +3878,6 @@ module setup_clubb_pdf_params
         iiNim,       &
         iiNgraupelm, &
         iiNcm          ! Note: Ncm is not part of CLUBB's PDF.
-
-    use clubb_precision, only: &
-        core_rknd     ! Variable(s)
 
     implicit none
 

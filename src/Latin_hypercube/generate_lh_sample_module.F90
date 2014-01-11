@@ -80,8 +80,7 @@ module generate_lh_sample_module
       w_tol_sqd, &      ! w^2 tolerance in m^2/s^2
       rc_tol, &         ! rc tolerance in kg/kg
       rr_tol, &         ! rr tolerance in kg/kg
-      Nr_tol, &         ! Nr tolerance in #/kg
-      Nc_tol            ! Nc tolerance in #/kg
+      Nr_tol            ! Nr tolerance in #/kg
 
     use array_index, only: &
       iiNim,    & ! Variables
@@ -998,7 +997,6 @@ module generate_lh_sample_module
 
 
     use constants_clubb, only:  &
-      max_mag_correlation, & ! Constant(s)
       one
 
     use clubb_precision, only: &
@@ -1165,9 +1163,6 @@ module generate_lh_sample_module
   ! References:
   !   None
   !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd      ! Constant
 
     use constants_clubb, only: &
       zero_dp
@@ -1346,9 +1341,6 @@ module generate_lh_sample_module
     use constants_clubb, only: &
       max_mag_correlation ! Constant
 
-    use clubb_precision, only: &
-      core_rknd ! double precision
-
     implicit none
 
     ! External
@@ -1411,11 +1403,6 @@ module generate_lh_sample_module
 !   See Art B. Owen (2003), ``Quasi-Monte Carlo Sampling,"
 !      a chapter from SIGGRAPH 2003
 !-------------------------------------------------------------------------------
-
-    use mt95, only: genrand_real ! Constants
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
 
     implicit none
 
@@ -1510,17 +1497,11 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use constants_clubb, only:  &
-      fstderr  ! Constant(s)
-
     use error_code, only:  &
       clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
       core_rknd ! double precision
-
-    use mt95, only: &
-      genrand_real
 
     implicit none
 
@@ -1955,9 +1936,6 @@ module generate_lh_sample_module
 ! References:
 !   None
 !-----------------------------------------------------------------------
-
-    use constants_clubb, only:  &
-        fstderr  ! Constant(s)
 
     use error_code, only:  &
         clubb_at_least_debug_level  ! Procedure(s)

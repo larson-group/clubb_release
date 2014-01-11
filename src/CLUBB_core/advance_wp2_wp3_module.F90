@@ -356,9 +356,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: & 
         w_tol_sqd,      & ! Variables(s)
-        eps,           &
-        zero_threshold, &
-        fstderr
+        zero_threshold
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
@@ -1075,7 +1073,6 @@ module advance_wp2_wp3_module
         nu_hd_vert_res_dep
 
     use constants_clubb, only:  & 
-        eps,          & ! Variable(s)
         three_halves, &
         gamma_over_implicit_ts
 
@@ -2519,7 +2516,6 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
-        eps,          &
         three_halves, &
         gamma_over_implicit_ts
 
@@ -3713,9 +3709,6 @@ module advance_wp2_wp3_module
 
     use grid_class, only:  &
         gr ! Variable gr%weights_zt2zm
-
-    use constants_clubb, only:  &
-        w_tol_sqd
 
     use model_flags, only:  &
         l_standard_term_ta

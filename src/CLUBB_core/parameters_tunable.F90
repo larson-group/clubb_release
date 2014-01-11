@@ -1217,9 +1217,6 @@ module parameters_tunable
     ! None
     !-----------------------------------------------------------------------
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     implicit none
 
     ! --- Begin Code ---
