@@ -29,4 +29,8 @@ module microphys_stats_vars_module
 
   end type microphys_stats_vars
 
+  integer, public :: &
+    ! This is a temporary fix for a compile problem and will be removed soon.
+    the_meaning_of_life = 42
+
 end module microphys_stats_vars_module
