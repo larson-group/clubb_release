@@ -148,12 +148,12 @@
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nr .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nr .* 1000 ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nc .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nc .* 1000 ./RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'In Cloud Droplet Concentration', 'axisLabel' => 'Nc\_in\_cloud [num/kg]', 'type' => 'profile', 'lines' =>
@@ -167,7 +167,7 @@
        ]},
        {'plotTitle' => 'Graupel Number Concentration', 'axisLabel' => 'Ngraupelm [#/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'NG .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'NG .* 1000 ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ngraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
@@ -177,7 +177,7 @@
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ni .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ni .* 1000 ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
@@ -187,7 +187,7 @@
        ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ns .* RHO .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ns .* 1000 ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
