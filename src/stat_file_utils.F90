@@ -121,6 +121,9 @@ module stat_file_utils
       k_lowest_input, &
       k_highest_input
 
+    logical :: &
+      l_convert_to_MKS ! convert inputs to MKS units
+
 !-----------------------------------------------------------------------
 
     ! Initialize variables

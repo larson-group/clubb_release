@@ -1348,8 +1348,8 @@ module latin_hypercube_driver_module
       variable_units(i)        = "K"
 
       call open_2D_samples_file( nz, LH_microphys_calls, d_variables+2, & ! In
-                                 trim( fname_prefix )//"_nl", & ! In
-                                 variable_names, & ! In
+                                 trim( fname_prefix )//"_nl", fdir, & ! In
+                                 time_initial, stats_tout, zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
                                  lognormal_sample_file ) ! In/Out
 
@@ -1438,7 +1438,8 @@ module latin_hypercube_driver_module
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
 
       call open_2D_samples_file( nz, LH_microphys_calls, i, & ! In
-                                 trim( fname_prefix )//"_u", & ! In
+                                 trim( fname_prefix )//"_u", fdir, & ! In
+                                 time_initial, stats_tout, zt, & ! In
                                  variable_names(1:i), variable_descriptions(1:i), & ! In
                                  variable_units(1:i), & ! In
                                  uniform_sample_file ) ! In/Out

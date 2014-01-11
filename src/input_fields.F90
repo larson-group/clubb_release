@@ -2521,6 +2521,9 @@ module inputfields
     integer, parameter :: &
       base_unit_number = 15
 
+    logical :: &
+      l_convert_to_MKS ! convert inputs to MKS units
+
     !--------------------------- BEGIN CODE ---------------------------------
 
     l_error = .false.
