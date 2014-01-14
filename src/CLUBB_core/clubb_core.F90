@@ -364,7 +364,10 @@ module clubb_core
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     logical, parameter :: &
-      l_refine_grid_in_cloud = .false. ! Compute cloud_frac and rcm on a refined grid
+      l_refine_grid_in_cloud = .false., & ! Compute cloud_frac and rcm on a refined grid
+
+      l_interactive_refined  = .false.    ! Should the refined grid code feed into the model?
+                                          ! Only has meaning if l_refined_grid_in_cloud is .true.
 
     real( kind = core_rknd ), parameter :: &
       s_at_liq_sat = 0._core_rknd  ! Value of s at saturation with respect to ice
@@ -681,6 +684,14 @@ module clubb_core
       sclrprcp_frz, &
       wp2sclrp_zm_frz
 
+    real( kind = core_rknd ) :: &
+      cloud_frac1_refined, & ! cloud_frac1 computed on refined grid
+      cloud_frac2_refined, & ! cloud_frac2 computed on refined grid
+      rc1_refined, &         ! rc1 computed on refined grid
+      rc2_refined, &         ! rc2 computed on refined grid
+      cloud_frac_refined, &  ! cloud_frac gridbox mean on refined grid
+      rcm_refined            ! rcm gridbox mean on refined grid
+
 
     !----- Begin Code -----
 
@@ -954,22 +965,30 @@ module clubb_core
           call calc_vert_avg_cf_component &
                ( gr%nz, k, gr%zt, pdf_params%s1, &                    ! Intent(in)
                  pdf_params%stdev_s1, (/(s_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
-                 pdf_params(k)%cloud_frac1, &                         ! Intent(out)
-                 pdf_params(k)%rc1 )                                  ! Intent(out)
+                 cloud_frac1_refined, rc1_refined )                   ! Intent(out)
 
           call calc_vert_avg_cf_component & 
                ( gr%nz, k, gr%zt, pdf_params%s2, &                     ! Intent(in)
                  pdf_params%stdev_s2, (/(s_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
-                 pdf_params(k)%cloud_frac2, &                          ! Intent(out)
-                 pdf_params(k)%rc2 )                                   ! Intent(out)
+                 cloud_frac2_refined, rc2_refined )                    ! Intent(out)
 
-          ! Recalculate cloud_frac and rcm
-          cloud_frac(k) = compute_weighted_average &
-                          ( pdf_params(k)%cloud_frac1, pdf_params(k)%cloud_frac2, &
-                            pdf_params(k)%mixt_frac )
+          cloud_frac_refined = compute_weighted_average &
+                               ( cloud_frac1_refined, cloud_frac2_refined, &
+                                 pdf_params(k)%mixt_frac )
 
-          rcm(k) =  compute_weighted_average &
-                    ( pdf_params(k)%rc1, pdf_params(k)%rc2, pdf_params(k)%mixt_frac )
+          rcm_refined = compute_weighted_average &
+                        ( rc1_refined, rc2_refined, pdf_params(k)%mixt_frac )
+
+          if ( l_interactive_refined ) then
+            ! Replace pdf_closure estimates with refined estimates
+            pdf_params(k)%rc1 = rc1_refined
+            pdf_params(k)%rc2 = rc2_refined
+            rcm(k) = rcm_refined
+
+            pdf_params(k)%cloud_frac1 = cloud_frac1_refined
+            pdf_params(k)%cloud_frac2 = cloud_frac2_refined
+            cloud_frac(k) = cloud_frac_refined
+          end if
 
         end if ! pdf_params(k)%s1/pdf_params(k)%stdev_s1 > -1._core_rknd
 

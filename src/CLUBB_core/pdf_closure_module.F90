@@ -1207,7 +1207,7 @@ module pdf_closure_module
 
     ! Local Constants
     integer, parameter :: &
-      n_points = 5       ! Number of vertical levels to use in averaging
+      n_points = 9       ! Number of vertical levels to use in averaging
                          ! (arbitrary, but must be odd)
 
     ! Input Variables
