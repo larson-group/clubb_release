@@ -6,6 +6,7 @@ module fill_holes
   implicit none
 
   public :: fill_holes_driver, &
+            hole_filling_one_lev, &
             vertical_avg, &
             vertical_integral
 
@@ -483,5 +484,93 @@ module fill_holes
   end function vertical_integral
 
 !===============================================================================
+
+  subroutine hole_filling_one_lev( num_hm_fill, hm_one_lev, hm_one_lev_filled )
+
+  ! Description:
+  ! Fills holes between same-phase (i.e. either liquid or frozen) hydrometeors for
+  ! one height level.
+  !
+  ! Warning: Do not input hydrometeors of different phases, e.g. liquid and frozen.
+  ! Otherwise heat will not be conserved.
+  !
+  ! References:
+  !
+  ! None
+  !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, & ! Variable(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: num_hm_fill ! number of hydrometeors involved
+
+    real(kind = core_rknd), dimension(num_hm_fill), intent(in) :: hm_one_lev
+
+    ! Output Variables
+    real(kind = core_rknd), dimension(num_hm_fill), intent(out) :: hm_one_lev_filled
+
+    ! Local Variables
+    integer :: num_neg_hm ! number of holes
+
+    real(kind = core_rknd) :: &
+      total_hole, & ! Size of the hole ( missing mass, less than 0 )
+      total_mass    ! Total mass to fill the hole
+      ! total mass of water substance = total_mass + total_hole
+
+    integer :: i ! loop iterator
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Initialization
+    hm_one_lev_filled = 0._core_rknd
+    total_hole = 0._core_rknd
+    total_mass = 0._core_rknd
+    num_neg_hm = 0
+
+    ! Determine the total size of the hole and the number of neg. hydrometeors
+    ! and the total mass of hole filling material
+    do i=1, num_hm_fill
+       print *, "hm_one_lev(",i,") = ", hm_one_lev(i)
+       if ( hm_one_lev(i) < zero ) then
+          total_hole = total_hole + hm_one_lev(i) ! less than zero
+          num_neg_hm = num_neg_hm + 1
+       else
+          total_mass = total_mass + hm_one_lev(i)
+       endif
+
+    enddo
+
+    print *, "total_hole = ", total_hole
+    print *, "total_mass = ", total_mass
+    print *, "num_neg_hm = ", num_neg_hm
+
+    ! Hole cannot be filled with other hydrometeors
+    if ( abs(total_hole) > total_mass ) then
+       print *, "Warning: One level hole filling was not successful! total_hole > total_mass"
+       hm_one_lev_filled = hm_one_lev
+       return
+    endif
+
+    ! Fill the holes and adjust the remaining quantities:
+    ! hm_filled(i) = 0, if hm(i) < 0
+    ! or
+    ! hm_filled(i) = (1 + total_hole/total_mass)*hm(i), if hm(i) > 0
+    do i=1, num_hm_fill
+       hm_one_lev_filled(i) = max(hm_one_lev(i), zero) * ( one + total_hole / total_mass )
+    enddo
+
+    return
+
+  end subroutine hole_filling_one_lev
+  !-----------------------------------------------------------------------
 
 end module fill_holes

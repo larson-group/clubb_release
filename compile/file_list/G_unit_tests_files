@@ -1,3 +1,4 @@
 ../src/G_unit_tests.F90
 ../src/KK_integrals_tests.F90
 ../src/corr_cholesky_mtx_tests.F90
+../src/hole_filling_tests.F90
