@@ -3716,7 +3716,8 @@ module clubb_driver
         l_lh_vert_overlap, &
         LH_sequence_length, &
         l_local_kk, &
-        l_predictnc
+        l_predictnc, &
+        l_var_covar_src
 
     use latin_hypercube_driver_module, only: &
         LH_subcolumn_generator_mod, & ! Procedure(s)
@@ -3862,15 +3863,20 @@ module clubb_driver
       stop
     endif
 
-
-
     if ( l_morr_xp2_mc_tndcy .and. &
-         ( LH_microphys_type == LH_microphys_interactive ) ) then
+         ( LH_microphys_type /= LH_microphys_disabled ) ) then
        write(fstderr,*) "Error:  The code to include the effects of rain " &
                         // "evaporation on rtp2 and thlp2 in Morrison " &
                         // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
-                        // "interactive Latin Hypercube " &
-                        // "(LH_microphys_type = interactive) are incompatible."
+                        // "Latin Hypercube are incompatible."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_var_covar_src ) then
+       write(fstderr,*) "Error: The code l_morr_xp2_mc_tndcy and " &
+                        // "l_var_covar_src are incompatible, since " &
+                        // "they both are used to determine the effect " &
+                        // "of microphysics on variances."
        stop
     endif
 
