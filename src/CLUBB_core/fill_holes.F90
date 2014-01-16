@@ -7,6 +7,7 @@ module fill_holes
 
   public :: fill_holes_driver, &
             hole_filling_one_lev, &
+            fill_holes_hydromet, &
             vertical_avg, &
             vertical_integral
 
@@ -485,7 +486,8 @@ module fill_holes
 
 !===============================================================================
 
-  subroutine hole_filling_one_lev( num_hm_fill, hm_one_lev, hm_one_lev_filled )
+  subroutine hole_filling_one_lev( num_hm_fill, hm_one_lev, & ! Intent(in)
+                                   hm_one_lev_filled ) ! Intent(out)
 
   ! Description:
   ! Fills holes between same-phase (i.e. either liquid or frozen) hydrometeors for
@@ -539,7 +541,7 @@ module fill_holes
     ! Determine the total size of the hole and the number of neg. hydrometeors
     ! and the total mass of hole filling material
     do i=1, num_hm_fill
-       print *, "hm_one_lev(",i,") = ", hm_one_lev(i)
+!       print *, "hm_one_lev(",i,") = ", hm_one_lev(i)
        if ( hm_one_lev(i) < zero ) then
           total_hole = total_hole + hm_one_lev(i) ! less than zero
           num_neg_hm = num_neg_hm + 1
@@ -549,9 +551,16 @@ module fill_holes
 
     enddo
 
-    print *, "total_hole = ", total_hole
-    print *, "total_mass = ", total_mass
-    print *, "num_neg_hm = ", num_neg_hm
+!    print *, "total_hole = ", total_hole
+!    print *, "total_mass = ", total_mass
+!    print *, "num_neg_hm = ", num_neg_hm
+
+    ! There is no water substance at all to fill the hole
+    if ( total_mass == zero ) then
+       print *, "Warning: One level hole filling was not successful! total_mass = 0"
+       hm_one_lev_filled = hm_one_lev
+       return
+    endif
 
     ! Hole cannot be filled with other hydrometeors
     if ( abs(total_hole) > total_mass ) then
@@ -571,6 +580,104 @@ module fill_holes
     return
 
   end subroutine hole_filling_one_lev
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  subroutine fill_holes_hydromet( nz, hydromet_dim, hydromet, & ! Intent(in)
+                                  hydromet_filled ) ! Intent(out)
+
+  ! Description:
+  ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
+  ! The hole filling conserves water substance between all same-phase (frozen or liquid)
+  ! hydrometeors at each height level.
+  !
+  ! Attention: The hole filling for the liquid phase hydrometeors is not yet implemented
+  !
+  ! References:
+  !
+  ! None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use array_index, only: &
+        l_frozen_hm, & ! Variable(s)
+        l_mix_rat_hm
+
+    use constants_clubb, only: &
+        zero
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: hydromet_dim, nz
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hydromet_filled
+
+    ! Local Variables
+    integer :: i,j ! Loop iterators
+
+    integer :: num_frozen_hm = 0 ! Number of frozen hydrometeor mixing ratios
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      hydromet_frozen,       & ! Frozen hydrometeor mixing ratios
+      hydromet_frozen_filled   ! Frozen hydrometeor mixing ratios after hole filling
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Determine the number of frozen hydrometeor mixing ratios
+    do i=1,hydromet_dim
+       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+          num_frozen_hm = num_frozen_hm + 1
+       endif
+    enddo
+
+    ! Allocation
+    allocate( hydromet_frozen(nz,num_frozen_hm) )
+    allocate( hydromet_frozen_filled(nz,num_frozen_hm) )
+
+    ! Determine frozen hydrometeor mixing ratios
+    j = 1
+    do i = 1,hydromet_dim
+       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+          hydromet_frozen(:,j) = hydromet(:,i)
+          j = j+1
+       endif
+    enddo
+
+    ! Fill holes for the frozen hydrometeors
+    do i=1,nz
+       if ( any( hydromet_frozen(i,:) < zero ) ) then
+          call hole_filling_one_lev( num_frozen_hm, hydromet_frozen(i,:), & ! Intent(in)
+                                     hydromet_frozen_filled(i,:) ) ! Intent(out)
+       else
+          hydromet_frozen_filled(i,:) = hydromet_frozen(i,:)
+       endif
+    enddo
+
+    ! Setup the filled hydromet array
+    j = 1
+    do i=1, hydromet_dim
+       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+          hydromet_filled(:,i) = hydromet_frozen_filled(:,j)
+          j = j+1
+       else
+          hydromet_filled(:,i) = hydromet(:,i)
+       endif
+    enddo
+
+    !!! Here we could do the same hole filling for all the liquid phase hydrometeors
+
+    return
+  end subroutine fill_holes_hydromet
   !-----------------------------------------------------------------------
 
 end module fill_holes

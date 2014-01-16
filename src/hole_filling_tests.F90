@@ -7,7 +7,7 @@ module hole_filling_tests
 
   public :: hole_filling_tests_driver
 
-  private :: hole_filling_one_lev_tests
+  private :: hole_filling_one_lev_tests, fill_holes_hydromet_tests
 
   contains
 
@@ -32,10 +32,32 @@ module hole_filling_tests
 
     print *, "=================================================="
     print *, " "
-    print *, "Performing hole_filling_one_lev tests"
+    print *, "Performing hole_filling_one_lev_tests"
     print *, " "
 
     call hole_filling_one_lev_tests( tol, total_errors )
+
+    print *, "=================================================="
+    print *, " "
+
+    if ( total_errors == 0 ) then
+
+       print *, "Success!"
+
+    else  ! total_mismatches > 0
+
+       print *, "There were", total_errors, "total errors found."
+
+    endif
+
+    total_errors = 0
+
+    print *, "=================================================="
+    print *, " "
+    print *, "Performing fill_holes_hydromet_tests"
+    print *, " "
+
+    call fill_holes_hydromet_tests( total_errors )
 
     print *, "=================================================="
     print *, " "
@@ -59,6 +81,9 @@ module hole_filling_tests
   subroutine hole_filling_one_lev_tests( tol, total_errors )
 
     ! Description:
+    ! Tests the subroutine hole_filling_one_lev for conservation and non-negativity.
+    !
+    ! Expected number of errors: 1
 
     ! References:
     !-----------------------------------------------------------------------
@@ -100,6 +125,7 @@ module hole_filling_tests
       testset3_out
 
     ! ---- Begin Code ----
+
     ! Testset 1
     num_hm_fill = 4
     testset1_in(1) = -2._core_rknd
@@ -108,8 +134,8 @@ module hole_filling_tests
     testset1_in(4) = -3._core_rknd
 
     testset1_comp(1) = 0._core_rknd
-    testset1_comp(2) = 5._core_rknd-25./11.
-    testset1_comp(3) = 6._core_rknd-30./11.
+    testset1_comp(2) = 5._core_rknd-25./11._core_rknd
+    testset1_comp(3) = 6._core_rknd-30./11._core_rknd
     testset1_comp(4) = 0._core_rknd
 
     call hole_filling_one_lev( num_hm_fill, testset1_in, testset1_out )
@@ -121,7 +147,7 @@ module hole_filling_tests
       print *, "testset1_comp = ", testset1_comp
     endif
 
-    call check_results( num_hm_fill, testset1_in, testset1_out, total_errors )
+    call check_results_one_lev( num_hm_fill, testset1_in, testset1_out, total_errors )
 
     ! Testset 2 -- should cause an error
     num_hm_fill = 4
@@ -132,7 +158,7 @@ module hole_filling_tests
 
     call hole_filling_one_lev( num_hm_fill, testset2_in, testset2_out )
 
-    call check_results( num_hm_fill, testset2_in, testset2_out, total_errors )
+    call check_results_one_lev( num_hm_fill, testset2_in, testset2_out, total_errors )
 
     ! Testset 3
     num_hm_fill = 4
@@ -143,14 +169,105 @@ module hole_filling_tests
 
     call hole_filling_one_lev( num_hm_fill, testset3_in, testset3_out )
 
-    call check_results( num_hm_fill, testset3_in, testset3_out, total_errors )
+    call check_results_one_lev( num_hm_fill, testset3_in, testset3_out, total_errors )
 
     return
 
   end subroutine hole_filling_one_lev_tests
   !=============================================================================
 
-  subroutine check_results(num_hm_fill, testset_in, testset_result, total_errors)
+  subroutine fill_holes_hydromet_tests( total_errors )
+
+    ! Description:
+    ! Tests the subroutine fill_holes_hydromet on water substance conservation
+    ! and non-negativity.
+    !
+    ! Expected number of errors: 2
+    !
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, &  ! Constant(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd
+
+    use array_index, only: &
+        l_frozen_hm, &
+        l_mix_rat_hm
+
+    use fill_holes, only: &
+        fill_holes_hydromet
+
+    implicit none
+
+    intrinsic :: reshape, transpose
+
+    integer, parameter :: c = core_rknd
+
+    ! Input/Output Variable
+    integer, intent(inout) :: total_errors
+
+    ! Output Variables
+
+    ! Local Variables
+    integer :: hm_dim, hgt_dim, i
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      testset_in,  & ! Testset input
+      testset_out    ! Testset after hole filling
+
+    ! ---- Begin Code ----
+
+    hm_dim = 7
+    hgt_dim = 6
+    allocate(testset_in(hgt_dim,hm_dim))
+    allocate(testset_out(hgt_dim,hm_dim))
+
+    allocate(l_frozen_hm(hm_dim))
+    allocate(l_mix_rat_hm(hm_dim))
+
+    l_frozen_hm  = (/ .true., .false., .false., .true., .true., .true., .true. /)
+    l_mix_rat_hm = (/ .false., .true., .false., .true., .true., .true., .true. /)
+
+!    Testset 1
+!    F   F   F   T   T   T   T  -->  Frozen mixratio (T) or not (F)
+!    1,  6,  3,  1,  1,  2,  1
+!    2,  5,  3,  3, -2, -1,  4
+!    3,  4,  3,  2, -4, -1,  2
+!    4,  3,  4,  1, -3,  1,  3
+!    5,  2,  4, -1, -1, -1, -1
+!    6,  1,  4,  0,  0,  0,  0
+
+   testset_in = reshape( (/ 1._c,  2._c,  3._c,  4._c,  5._c,  6._c, &
+                            6._c,  5._c,  4._c,  3._c,  2._c,  1._c, &
+                            3._c,  3._c,  3._c,  4._c,  4._c,  4._c, &
+                            1._c,  3._c,  2._c,  1._c, -1._c,  0._c, &
+                            1._c, -2._c, -4._c, -3._c, -1._c,  0._c, &
+                            2._c, -1._c, -1._c,  1._c, -1._c,  0._c, &
+                            1._c,  4._c,  2._c,  3._c, -1._c,  0._c /), &
+                            (/ hgt_dim, hm_dim /) )
+
+    do i = 1, hm_dim
+       print *, "testset_in(:,",i,") = ", testset_in(:,i)
+    enddo
+
+    call fill_holes_hydromet( hgt_dim, hm_dim, testset_in, testset_out )
+
+    call check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
+                                   testset_in, testset_out, & ! Intent(in)
+                                   total_errors ) ! Intent(inout)
+
+    return
+
+  end subroutine fill_holes_hydromet_tests
+  !=============================================================================
+
+  subroutine check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
+                                       testset_in, testset_result, & ! Intent(in)
+                                       total_errors) ! Intent(inout)
     ! Description:
 
     ! References:
@@ -162,8 +279,80 @@ module hole_filling_tests
     use clubb_precision, only: &
         core_rknd
 
-    use fill_holes, only: &
-        hole_filling_one_lev
+    use array_index, only: &
+        l_frozen_hm, &
+        l_mix_rat_hm
+
+    implicit none
+
+    intrinsic :: sum
+
+    ! Input Variables
+    integer, intent(in) :: hgt_dim, hm_dim
+
+    real( kind = core_rknd ), dimension(hgt_dim, hm_dim), intent(in) :: &
+      testset_result, &
+      testset_in
+
+    ! Input/Output Variables
+    integer, intent(inout) :: total_errors
+
+    ! Local Variables
+    integer :: i,j ! Loop iterators
+
+    integer :: num_frozen_hm = 0
+
+    real( kind = core_rknd ), dimension( :, :), allocatable :: &
+      testset_frozen_res, &
+      testset_frozen_in
+
+    ! ---- Begin Code ----
+
+    ! Determine the number of frozen hydrometeor mixing ratios
+    do i = 1, hm_dim
+       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+          num_frozen_hm = num_frozen_hm + 1
+       endif
+    enddo
+
+    ! Allocation
+    allocate( testset_frozen_in(hgt_dim,num_frozen_hm) )
+    allocate( testset_frozen_res(hgt_dim,num_frozen_hm) )
+
+    ! Determine frozen hydrometeor mixing ratios
+    j = 1
+    do i = 1, hm_dim
+       if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
+          testset_frozen_res(:,j) = testset_result(:,i)
+          testset_frozen_in(:,j) = testset_in(:,i)
+          j = j+1
+       endif
+    enddo
+
+    ! Check if the hole filling was conservative
+    do i = 1, hgt_dim
+       call check_results_one_lev( num_frozen_hm, & ! Intent(in)
+                                   testset_frozen_in(i,:), testset_frozen_res(i,:), & ! Intent(in)
+                                   total_errors ) ! Intent(out)
+    enddo
+
+    return
+
+  end subroutine check_results_hm_filling
+
+
+  subroutine check_results_one_lev( num_hm_fill, testset_in, testset_result, & ! Intent(in)
+                                    total_errors) ! Intent(inout)
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero ! Constant(s)
+
+    use clubb_precision, only: &
+        core_rknd
 
     implicit none
 
@@ -195,6 +384,6 @@ module hole_filling_tests
 
     return
 
-  end subroutine check_results
+  end subroutine check_results_one_lev
 
 end module hole_filling_tests
