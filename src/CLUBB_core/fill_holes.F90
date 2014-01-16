@@ -6,7 +6,7 @@ module fill_holes
   implicit none
 
   public :: fill_holes_driver, &
-            hole_filling_one_lev, &
+            hole_filling_hm_one_lev, &
             fill_holes_hydromet, &
             vertical_avg, &
             vertical_integral
@@ -486,7 +486,7 @@ module fill_holes
 
 !===============================================================================
 
-  subroutine hole_filling_one_lev( num_hm_fill, hm_one_lev, & ! Intent(in)
+  subroutine hole_filling_hm_one_lev( num_hm_fill, hm_one_lev, & ! Intent(in)
                                    hm_one_lev_filled ) ! Intent(out)
 
   ! Description:
@@ -507,6 +507,9 @@ module fill_holes
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure(s)
 
     implicit none
 
@@ -577,9 +580,22 @@ module fill_holes
        hm_one_lev_filled(i) = max(hm_one_lev(i), zero) * ( one + total_hole / total_mass )
     enddo
 
+    ! Assertion checks (water substance conservation, non-negativity)
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+       if ( sum( hm_one_lev ) /= sum(hm_one_lev_filled) ) then
+          print *, "Warning: Hole filling was not conservative!"
+       endif
+
+       if ( any( hm_one_lev_filled < zero ) ) then
+          print *, "Warning: Hole filling failed! A hole could not be filled."
+       endif
+
+    endif
+
     return
 
-  end subroutine hole_filling_one_lev
+  end subroutine hole_filling_hm_one_lev
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
@@ -656,7 +672,7 @@ module fill_holes
     ! Fill holes for the frozen hydrometeors
     do i=1,nz
        if ( any( hydromet_frozen(i,:) < zero ) ) then
-          call hole_filling_one_lev( num_frozen_hm, hydromet_frozen(i,:), & ! Intent(in)
+          call hole_filling_hm_one_lev( num_frozen_hm, hydromet_frozen(i,:), & ! Intent(in)
                                      hydromet_frozen_filled(i,:) ) ! Intent(out)
        else
           hydromet_frozen_filled(i,:) = hydromet_frozen(i,:)

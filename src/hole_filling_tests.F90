@@ -7,7 +7,7 @@ module hole_filling_tests
 
   public :: hole_filling_tests_driver
 
-  private :: hole_filling_one_lev_tests, fill_holes_hydromet_tests
+  private :: hole_filling_hm_one_lev_tests, fill_holes_hydromet_tests
 
   contains
 
@@ -32,10 +32,10 @@ module hole_filling_tests
 
     print *, "=================================================="
     print *, " "
-    print *, "Performing hole_filling_one_lev_tests"
+    print *, "Performing hole_filling_hm_one_lev_tests"
     print *, " "
 
-    call hole_filling_one_lev_tests( tol, total_errors )
+    call hole_filling_hm_one_lev_tests( tol, total_errors )
 
     print *, "=================================================="
     print *, " "
@@ -78,10 +78,10 @@ module hole_filling_tests
   end subroutine hole_filling_tests_driver
 
   !=============================================================================
-  subroutine hole_filling_one_lev_tests( tol, total_errors )
+  subroutine hole_filling_hm_one_lev_tests( tol, total_errors )
 
     ! Description:
-    ! Tests the subroutine hole_filling_one_lev for conservation and non-negativity.
+    ! Tests the subroutine hole_filling_hm_one_lev for conservation and non-negativity.
     !
     ! Expected number of errors: 1
 
@@ -96,12 +96,12 @@ module hole_filling_tests
         core_rknd
 
     use fill_holes, only: &
-        hole_filling_one_lev
+        hole_filling_hm_one_lev
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ) :: tol
+    real( kind = core_rknd ), intent(in) :: tol
 
     ! Input/Output Variable
     integer, intent(inout) :: total_errors
@@ -134,11 +134,11 @@ module hole_filling_tests
     testset1_in(4) = -3._core_rknd
 
     testset1_comp(1) = 0._core_rknd
-    testset1_comp(2) = 5._core_rknd-25./11._core_rknd
-    testset1_comp(3) = 6._core_rknd-30./11._core_rknd
+    testset1_comp(2) = 5._core_rknd-25._core_rknd/11._core_rknd
+    testset1_comp(3) = 6._core_rknd-30._core_rknd/11._core_rknd
     testset1_comp(4) = 0._core_rknd
 
-    call hole_filling_one_lev( num_hm_fill, testset1_in, testset1_out )
+    call hole_filling_hm_one_lev( num_hm_fill, testset1_in, testset1_out )
 
     if( any( abs(testset1_out - testset1_comp) > tol ) ) then
       total_errors = total_errors + 1
@@ -156,7 +156,7 @@ module hole_filling_tests
     testset2_in(3) = -5._core_rknd
     testset2_in(4) = 1._core_rknd
 
-    call hole_filling_one_lev( num_hm_fill, testset2_in, testset2_out )
+    call hole_filling_hm_one_lev( num_hm_fill, testset2_in, testset2_out )
 
     call check_results_one_lev( num_hm_fill, testset2_in, testset2_out, total_errors )
 
@@ -167,13 +167,13 @@ module hole_filling_tests
     testset3_in(3) = -2._core_rknd
     testset3_in(4) = -2._core_rknd
 
-    call hole_filling_one_lev( num_hm_fill, testset3_in, testset3_out )
+    call hole_filling_hm_one_lev( num_hm_fill, testset3_in, testset3_out )
 
     call check_results_one_lev( num_hm_fill, testset3_in, testset3_out, total_errors )
 
     return
 
-  end subroutine hole_filling_one_lev_tests
+  end subroutine hole_filling_hm_one_lev_tests
   !=============================================================================
 
   subroutine fill_holes_hydromet_tests( total_errors )
