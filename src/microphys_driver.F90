@@ -110,7 +110,9 @@ module microphys_driver
 ! Change by Marc Pilon on 11/16/11
 
     use array_index, only: & 
-        iirrainm,    & ! Variables
+        l_frozen_hm, & ! Variables
+        l_mix_rat_hm, &
+        iirrainm,    &
         iiNrm,       &
         iirsnowm,    &
         iiricem,     &
@@ -460,6 +462,8 @@ module microphys_driver
 
 
       allocate( hydromet_list(hydromet_dim) )
+      allocate( l_frozen_hm(hydromet_dim) )
+      allocate( l_mix_rat_hm(hydromet_dim) )
 
       hydromet_list(iirrainm)    = "rrainm"
       hydromet_list(iirsnowm)    = "rsnowm"
@@ -470,8 +474,19 @@ module microphys_driver
       hydromet_list(iiNsnowm)    = "Nsnowm"
       hydromet_list(iiNim)       = "Nim"
       hydromet_list(iiNgraupelm) = "Ngraupelm"
+
+      l_frozen_hm(iirrainm) = .false.
+      l_frozen_hm(iirsnowm:iirgraupelm) = .true.
+      l_frozen_hm(iiNrm) = .false.
+      l_frozen_hm(iiNsnowm:iiNgraupelm) = .true.
+
+      l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
+      l_mix_rat_hm(iiNrm:iiNgraupelm) = .false.
+
       if ( l_predictnc ) then
         hydromet_list(iiNcm)     = "Ncm"
+        l_frozen_hm(iiNcm) = .false.
+        l_mix_rat_hm(iiNcm) = .false.
       endif
 
       ! Set Nc0 in the Morrison code (module_MP_graupel) based on Nc0_in_cloud
@@ -606,11 +621,22 @@ module microphys_driver
       endif
 
       allocate( hydromet_list(hydromet_dim) )
+      allocate( l_frozen_hm(hydromet_dim) )
+      allocate( l_mix_rat_hm(hydromet_dim) )
 
       hydromet_list(iiricem) = "ricem"
       hydromet_list(iiNim)   = "Nim"
+
+      l_mix_rat_hm(iiricem) = .true.
+      l_mix_rat_hm(iiNim) = .false.
+
+      l_frozen_hm(iiricem) = .true.
+      l_frozen_hm(iiNim) = .true.
+
       if ( l_predictnc ) then
-        hydromet_list(iiNcm) = "Ncm"
+         hydromet_list(iiNcm) = "Ncm"
+         l_mix_rat_hm(iiNcm) = .false.
+         l_frozen_hm(iiNcm) = .false.
       end if
 
       allocate( l_hydromet_sed(hydromet_dim) )
@@ -647,8 +673,6 @@ module microphys_driver
 
       hydromet_dim = 7
 
-      allocate( l_hydromet_sed(hydromet_dim) )
-
       allocate( hydromet_list(hydromet_dim) )
 
       hydromet_list(iirrainm)    = "rrainm"
@@ -659,6 +683,24 @@ module microphys_driver
       hydromet_list(iiNrm)       = "Nrm"
       hydromet_list(iiNcm)       = "Ncm"
       hydromet_list(iiNim)       = "Nim"
+
+      allocate( l_frozen_hm(hydromet_dim) )
+
+      l_frozen_hm(iirrainm)    = .false.
+      l_frozen_hm(iirsnowm)    = .true.
+      l_frozen_hm(iiricem)     = .true.
+      l_frozen_hm(iirgraupelm) = .true.
+
+      l_frozen_hm(iiNrm)       = .false.
+      l_frozen_hm(iiNcm)       = .false.
+      l_frozen_hm(iiNim)       = .true.
+
+      allocate( l_mix_rat_hm(hydromet_dim) )
+
+      l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
+      l_mix_rat_hm(iiNrm:iiNim) = .false.
+
+      allocate( l_hydromet_sed(hydromet_dim) )
 
       l_hydromet_sed(iiNrm) = .true.
       l_hydromet_sed(iiNim) = .false.
@@ -688,14 +730,21 @@ module microphys_driver
       hydromet_dim = 2
 
       allocate( l_hydromet_sed(hydromet_dim) )
-
       allocate( hydromet_list(hydromet_dim) )
+      allocate( l_frozen_hm(hydromet_dim) )
+      allocate( l_mix_rat_hm(hydromet_dim) )
 
       hydromet_list(iirrainm) = "rrainm"
       hydromet_list(iiNrm) = "Nrm"
 
       l_hydromet_sed(iirrainm) = .true.
       l_hydromet_sed(iiNrm)    = .true.
+
+      l_frozen_hm(iirrainm) = .false.
+      l_frozen_hm(iiNrm) = .false.
+
+      l_mix_rat_hm(iirrainm) = .true.
+      l_mix_rat_hm(iiNrm) = .false.
 
     case ( "simplified_ice", "none" )
       iirrainm    = -1

@@ -39,6 +39,12 @@ module array_index
 !$omp threadprivate(iisclr_rt, iisclr_thl, iisclr_CO2, &
 !$omp   iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2)
 
+  ! Logical fields
+  logical, dimension(:), allocatable, public :: &
+    l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
+    l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
+!$omp threadprivate(l_frozen_hm, l_mix_rat_hm)
+
   private ! Default Scope
 
 end module array_index
