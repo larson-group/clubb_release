@@ -491,9 +491,24 @@ sub writeMorrBudgetSubHeader()
         <TD ALIGN="CENTER" COLSPAN=2><B>PRACIS</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>collection of cloud ice by rain to form snow</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QC_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QG_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QI_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
+    </TR>
+    <TR>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QR_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>QS_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
+    </TR>
+
     <TR>
 	<TD ALIGN="CENTER" COLSPAN=11><B>                 </B></TD>
     </TR>
@@ -616,36 +631,36 @@ sub writeMorrBudgetSubHeader()
         <TD ALIGN="CENTER" COLSPAN=2><B>NMULTR</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to rain riming snow</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NC</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>remove cloud number when mixing ratio is small</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NC_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>NMULTRG</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to rain riming snow</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NG</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>remove graupel number when mixing ratio is small</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NG_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>NMULTS</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>splintering due to accretion of droplets by snow</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NI</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>remove ice number when mixing ratio is small</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NI_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCC</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>contact freezing</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NR</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>remove rain number when mixing ratio is small</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NR_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCD</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>ice nucleation by freezing aerosol</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>REMOVE_NS</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>remove snow number when mixing ratio is small</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>NS_INST</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>changes due to instantaneous processes</B></TD>
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>NNUCCR</B></TD>
