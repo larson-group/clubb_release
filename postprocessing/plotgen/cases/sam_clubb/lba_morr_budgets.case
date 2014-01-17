@@ -15,7 +15,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'HL Budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'HADV', 'expression' => 'HLSTOR/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -401,7 +401,7 @@ name => 'LBA_MORR_BUDGETS',
        [
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGADV', 'expression' => '(NGADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGDIFF', 'expression' => '(NGDIFF ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGLSADV', 'expression' => '(NGLSAD ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGLSADV', 'expression' => '(NGLSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY-NGSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGSED', 'expression' => '(NGSED ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGSTO', 'expression' => '(NGSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
