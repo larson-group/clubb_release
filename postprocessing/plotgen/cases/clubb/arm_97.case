@@ -217,7 +217,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => 'SAM-LES uses Morrison microphysics and CLUBB standalone uses COAMPS microphysics',
+        'subText' => '',
         'subHtml' => ''
     },
     'additionalOutput' =>
