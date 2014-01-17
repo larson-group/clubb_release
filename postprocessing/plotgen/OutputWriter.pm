@@ -468,7 +468,7 @@ sub writeMorrBudgetSubHeader()
     </TR>
     <TR>
         <TD ALIGN="CENTER" COLSPAN=2><B>PRA</B></TD>
-        <TD ALIGN="CENTER" COLSPAN=2><B>autoconversion</B></TD>
+        <TD ALIGN="CENTER" COLSPAN=2><B>accretion</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>    </B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>QMULTR</B></TD>
         <TD ALIGN="CENTER" COLSPAN=2><B>splintering from rain droplets accreted onto snow</B></TD>
