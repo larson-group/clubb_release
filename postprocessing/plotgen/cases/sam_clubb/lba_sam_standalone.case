@@ -1,0 +1,166 @@
+# LBA SAM-CLUBB Case File
+
+%CASE = 
+(
+    'name' => 'LBA_SAM_Standalone',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'LBA Hour 5-6',
+    'startTime' => 300.0,  # [minutes]
+    'endTime' => 360.0,    # [minutes]
+    'startHeight' => 0.0,   # [m]
+    'endHeight' => 16000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+	{'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cf / cld [%]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'CLD_FRAC * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'WP2 + W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'TL2 + THLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(QT2 / 1e+6) + RTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'UW + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'VW + VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'UP2 + U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'VP2 + V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'qpl [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'QPL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Number Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       [  
+        {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'QS / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       {'plotTitle' => 'Micro Fractions', 'axisLabel' => '[%/100]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'Cloud\_liq', 'expression' => 'cloudliq_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'Rain', 'expression' => 'rain_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'Cloud\_ice', 'expression' => 'cloudice_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'Snow', 'expression' => 'snow_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'Graupel', 'expression' => 'graupel_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp / tlflux [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'IWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'SAM\_STANDALONE', 'expression' => 'SWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
