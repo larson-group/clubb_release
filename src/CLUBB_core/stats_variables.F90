@@ -1259,6 +1259,11 @@ module stats_variables
     iLH_lwp = 0
 !$omp threadprivate( iLH_vwp, iLH_lwp )
 
+
+  integer, public :: &
+    icloud_frac_refined = 0, &
+    ircm_refined = 0
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid

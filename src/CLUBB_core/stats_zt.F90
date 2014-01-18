@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 450 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 500 ! Maximum variables allowed
 
   contains
 
@@ -555,7 +555,9 @@ module stats_zt
       iT_in_K_mc
 
     use stats_variables, only: &
-      iwp2hmp ! Variable(s)
+      iwp2hmp, & ! Variable(s)
+      icloud_frac_refined, &
+      ircm_refined
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -4064,6 +4066,20 @@ module stats_zt
              var_units="(m/s)^2 <hydrometeor units>", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
+      case ('cloud_frac_refined')
+        icloud_frac_refined = k
+        call stat_assign( var_index=icloud_frac_refined, var_name="cloud_frac_refined", &
+                          var_description="Cloud fraction computed on refined grid [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('rcm_refined')
+        ircm_refined = k
+        call stat_assign( var_index=ircm_refined, var_name="rcm_refined", &
+                          var_description="Cloud water mixing ratio computed on refined grid &
+                          &[kg/kg]", var_units="kg/kg", l_silhs=.false., grid_kind=zt)
+        k = k + 1
+
       case default
 
         l_found = .false.
@@ -4153,7 +4169,6 @@ module stats_zt
       end select ! trim( vars_zt )
 
     end do ! i=1,zt%nn
-
     return
   end subroutine stats_init_zt
 

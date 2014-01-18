@@ -328,7 +328,9 @@ module clubb_core
       ithlm_spur_src
 
     use stats_variables, only: &
-      irfrzm ! Variable(s)
+      irfrzm, & ! Variable(s)
+      icloud_frac_refined, &
+      ircm_refined
 
     use stats_variables, only: &
       iSkw_velocity, & ! Variable(s)
@@ -364,7 +366,7 @@ module clubb_core
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     logical, parameter :: &
-      l_refine_grid_in_cloud = .false., & ! Compute cloud_frac and rcm on a refined grid
+      l_refine_grid_in_cloud = .true., &  ! Compute cloud_frac and rcm on a refined grid
 
       l_interactive_refined  = .false.    ! Should the refined grid code feed into the model?
                                           ! Only has meaning if l_refined_grid_in_cloud is .true.
@@ -990,7 +992,18 @@ module clubb_core
             cloud_frac(k) = cloud_frac_refined
           end if
 
+        else
+          ! Set these equal to the non-refined values so we have something to
+          ! output to stats!
+          cloud_frac_refined = cloud_frac(k)
+          rcm_refined = rcm(k)
         end if ! pdf_params(k)%s1/pdf_params(k)%stdev_s1 > -1._core_rknd
+
+        ! Stats output
+        if ( l_stats_samp ) then
+          call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, zt )
+          call stat_update_var_pt( ircm_refined, k, rcm_refined, zt )
+        end if
 
       end do ! k=1, gr%nz
 
