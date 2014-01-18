@@ -366,7 +366,7 @@ module clubb_core
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
     logical, parameter :: &
-      l_refine_grid_in_cloud = .true., &  ! Compute cloud_frac and rcm on a refined grid
+      l_refine_grid_in_cloud = .false., & ! Compute cloud_frac and rcm on a refined grid
 
       l_interactive_refined  = .false.    ! Should the refined grid code feed into the model?
                                           ! Only has meaning if l_refined_grid_in_cloud is .true.
