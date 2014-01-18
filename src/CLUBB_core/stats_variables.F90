@@ -1263,7 +1263,7 @@ module stats_variables
   integer, public :: &
     icloud_frac_refined = 0, &
     ircm_refined = 0
-
+!$omp threadprivate( icloud_frac_refined, ircm_refined )
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid
