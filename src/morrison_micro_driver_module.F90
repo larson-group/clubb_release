@@ -12,12 +12,10 @@ module morrison_micro_driver_module
   subroutine morrison_micro_driver &
              ( dt, nz, l_stats_samp, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
-               exner, rho, cloud_frac, pdf_params, w_std_dev, &
+               exner, rho, cloud_frac, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
-               rtp2_mc, thlp2_mc, &
-               wprtp_mc, wpthlp_mc, rtpthlp_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
                Nrm_auto, Nrm_evap )
 
@@ -28,7 +26,6 @@ module morrison_micro_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use pdf_parameter_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
 
@@ -38,9 +35,6 @@ module morrison_micro_driver_module
 
     use module_MP_graupel, only: &
       cloud_frac_thresh ! Constant
-
-    use advance_xp2_xpyp_module, only: &
-      update_xp2_mc_tndcy
 
     use stats_variables, only: &
       zt,  & ! Variables
@@ -191,9 +185,6 @@ module morrison_micro_driver_module
       core_rknd, & ! Variable(s)
       time_precision
 
-    use model_flags, only: &
-      l_morr_xp2_mc_tndcy
-
     implicit none
 
     ! External
@@ -218,9 +209,6 @@ module morrison_micro_driver_module
       exner,      & ! Exner function                     [-]
       rho,        & ! Density on thermo. grid            [kg/m^3]
       cloud_frac    ! Cloud fraction                     [-]
-
-    type(pdf_parameter), target, dimension(nz), intent(in) :: &
-      pdf_params ! PDF parameters
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wm_zt, &     ! Mean vertical velocity on the thermo grid     [m/s]
@@ -252,13 +240,9 @@ module morrison_micro_driver_module
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rtp2_mc,   & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc,  & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      wprtp_mc,  & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtpthlp_mc,& ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
       rrainm_auto,     & ! Autoconversion rate                 [kg/kg/s]
-      rrainm_accr        ! Accretion rate                      [kg/kg/s]
+      rrainm_accr,     & ! Accretion rate                      [kg/kg/s]
+      rrainm_evap        ! Rain evaporation rate               [kg/kg/s]
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -439,10 +423,6 @@ module morrison_micro_driver_module
       w_std_dev_r4 ! Standard deviation of w  [m/s]
 
     integer :: i, k
-
-    !variables needed to compute rtp2_mc when l_morr_xp2_mc_tndcy = .true.
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rrainm_evap         !Evaporation of rain   [kg/kg/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       Nrm_auto, & ! Change in Nrm due to autoconversion               [num/kg/s]
@@ -681,25 +661,6 @@ module morrison_micro_driver_module
       hydromet_vel_zt(k,iirrainm) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
 
-    if ( l_morr_xp2_mc_tndcy ) then
-
-       call update_xp2_mc_tndcy( nz, dt, cloud_frac, rcm, rvm, thlm,    & !Intent(in)  
-                                 wm_zt, exner, rrainm_evap, pdf_params, & !Intent(in)
-                                 rtp2_mc, thlp2_mc,                     & !Intent(out)
-                                 wprtp_mc, wpthlp_mc,                   & !Intent(out)
-                                 rtpthlp_mc  )                            !Intent(out)
-
-    else
-
-       ! Set microphysics tendencies for model variances to 0.
-       rtp2_mc  = zero
-       thlp2_mc = zero
-       wprtp_mc = zero
-       wpthlp_mc = zero
-       rtpthlp_mc = zero
-
-    endif
-
     if ( .not. l_latin_hypercube .and. l_stats_samp ) then
 
       where ( cloud_frac(:) > real( cloud_frac_thresh, kind = core_rknd ) ) 
@@ -710,8 +671,8 @@ module morrison_micro_driver_module
 
       call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
 
-      call stat_update_var( irrainm_auto, real( rrainm_auto, kind=core_rknd ), zt )
-      call stat_update_var( irrainm_accr, real( rrainm_accr, kind=core_rknd ), zt )
+      call stat_update_var( irrainm_auto, rrainm_auto, zt )
+      call stat_update_var( irrainm_accr, rrainm_accr, zt )
       call stat_update_var( irrainm_cond, rrainm_evap, zt )
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 

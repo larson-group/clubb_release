@@ -62,6 +62,10 @@ module microphys_driver
     pbuf_init,           &
     pbuf_deallocate
 
+  use advance_xp2_xpyp_module, only: &
+    update_xp2_mc_tndcy
+
+
   implicit none
 
   ! Subroutines
@@ -1573,14 +1577,31 @@ module microphys_driver
         call morrison_micro_driver & 
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
-               exner, rho, cloud_frac_morr, pdf_params, wtmp, &
+               exner, rho, cloud_frac_morr, wtmp, &
                delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, lh_const_stat_sample_weight, &
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
-               rtp2_mc, thlp2_mc, &
-               wprtp_mc, wpthlp_mc, rtpthlp_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
                Nrm_auto, Nrm_evap )
+
+        if ( l_morr_xp2_mc_tndcy) then
+          call update_xp2_mc_tndcy( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
+                                 wm_zt, exner, rrainm_evap, pdf_params, &         !Intent(in)
+                                 rtp2_mc, thlp2_mc,     &                         !Intent(out)
+                                 wprtp_mc, wpthlp_mc,     &                       !Intent(out)
+                                 rtpthlp_mc  )                                    !Intent(out)
+
+        else
+
+          ! Set microphysics tendencies for model variances to 0.
+          rtp2_mc  = zero
+          thlp2_mc = zero
+          wprtp_mc = zero
+          wpthlp_mc = zero
+          rtpthlp_mc = zero
+
+        endif
+
 
         ! Output rain sedimentation velocity
         if ( l_stats_samp ) then
@@ -1648,14 +1669,11 @@ module microphys_driver
           call KK_local_micro_driver( dt, gr%nz, l_stats_samp, &
                                       l_latin_hypercube_input, thlm, wm_zt, &
                                       p_in_Pa, exner, rho, cloud_frac, &
-                                      pdf_params, wtmp, delta_zt, rcm, &
+                                      wtmp, delta_zt, rcm, &
                                       Ncm, s_mellor, rvm, &
                                       hydromet, lh_const_stat_sample_weight, &
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
-                                      rtp2_mc, thlp2_mc, &
-                                      wprtp_mc, wpthlp_mc, &
-                                      rtpthlp_mc,  &
                                       rrainm_auto, rrainm_accr, rrainm_evap, &
                                       Nrm_auto, Nrm_evap )
 

@@ -4,13 +4,10 @@
 interface
   subroutine microphys_sub( dt, nnzp, l_stats_sample, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
-                            exner, rho, cloud_frac, pdf_params, w_std_dev, &
+                            exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
-                            rtp2_mc, thlp2_mc, &
-                            wprtp_mc, wpthlp_mc, &
-                            rtpthlp_mc, & 
                             rrainm_auto, rrainm_accr, rrainm_evap, &
                             Nrm_auto, Nrm_evap )
 
@@ -38,9 +35,6 @@ interface
       rho,        & ! Density on thermodynamic levels    [kg/m^3]
       cloud_frac    ! Cloud fraction                     [-]
 
-    type(pdf_parameter), target, dimension(nnzp), intent(in) :: &
-      pdf_params ! PDF parameters
-
     real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
       w_std_dev, & ! Standard deviation of w    [m/s]
       dzq          ! Difference in height       [m]
@@ -67,13 +61,6 @@ interface
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
-
-    real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
-      rtp2_mc,  &  ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc, &  ! Microphysics tendency for <thl'^2>  [K^2/s]
-      wprtp_mc, &  ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtpthlp_mc   ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
       rrainm_auto, & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]

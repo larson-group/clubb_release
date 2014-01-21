@@ -15,7 +15,7 @@ module estimate_scm_microphys_module
                k_lh_start, LH_rt, LH_thl, &
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
-               dzq, pdf_params, hydromet, rcm, Nc_in_cloud,  &
+               dzq, hydromet, rcm, Nc_in_cloud,  &
                lh_hydromet_mc, lh_hydromet_vel, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -44,9 +44,6 @@ module estimate_scm_microphys_module
     use corr_matrix_module, only: &
       iiPDF_s_mellor, &
       iiPDF_w
-
-    use pdf_parameter_module, only: &
-      pdf_parameter ! Type
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
@@ -123,8 +120,6 @@ module estimate_scm_microphys_module
       ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
       Nc_in_cloud 
 
-    type(pdf_parameter), dimension(nz), intent(in) :: pdf_params
-
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
@@ -177,11 +172,6 @@ module estimate_scm_microphys_module
       Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rtp2_mc,         & ! Micro. tendency for <rt'^2>         [(kg/kg)^2/s]
-      thlp2_mc,        & ! Micro. tendency for <thl'^2>        [K^2/s]
-      wprtp_mc,        & ! Micro. tendency for <w'rt'>         [m*(kg/kg)/s^2]
-      wpthlp_mc,       & ! Micro. tendency for <w'thl'>        [m*K/s^2]
-      rtpthlp_mc,      & ! Micro. tendency for <rt'thl'>       [K*(kg/kg)/s]
       lh_rrainm_auto,  & ! Autoconversion budget for <rr>      [kg/kg/s]
       lh_rrainm_accr,  & ! Accretion budget for <rr>           [kg/kg/s]
       lh_rrainm_evap,  & ! Evaporation budget for <rr>         [kg/kg/s]
@@ -356,14 +346,11 @@ module estimate_scm_microphys_module
       call microphys_sub &
            ( dt, nz, l_stats_samp, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
-             exner, rho, cloud_frac, pdf_params, w_std_dev, & ! In
+             exner, rho, cloud_frac, w_std_dev, & ! In
              dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
              hydromet_all_points, LH_sample_point_weights(sample), & ! In
              lh_hydromet_mc, lh_hydromet_vel, & ! Out
              lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
-             rtp2_mc, thlp2_mc, & ! Out
-             wprtp_mc, wpthlp_mc, & ! Out
-             rtpthlp_mc, &  ! Out
              lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap, &
              lh_Nrm_auto, lh_Nrm_evap ) ! Out
 

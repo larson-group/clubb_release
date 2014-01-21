@@ -1201,7 +1201,7 @@ module latin_hypercube_driver_module
            k_lh_start, LH_rt, LH_thl, &                              ! Intent(in)
            X_nl_all_levs, LH_sample_point_weights, &                 ! Intent(in) 
            p_in_Pa, exner, rho, cloud_frac, w_std_dev, &             ! Intent(in)
-           delta_zt, pdf_params, hydromet, rcm, Nc_in_cloud, &       ! Intent(in)
+           delta_zt, hydromet, rcm, Nc_in_cloud, &       ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, &                        ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
            LH_rtp2_mc, LH_thlp2_mc, LH_wprtp_mc, &                   ! Intent(out)
