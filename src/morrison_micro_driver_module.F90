@@ -431,6 +431,11 @@ module morrison_micro_driver_module
 
     ! ---- Begin Code ----
 
+    ! Get rid of compiler warnings
+    if ( .false. ) then
+       print *, "s_mellor = ", s_mellor
+    endif
+
     ! Determine temperature
     T_in_K = real( thlm2T_in_K( thlm, exner, rcm ) )
 
