@@ -1497,9 +1497,6 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use error_code, only:  &
-      clubb_at_least_debug_level  ! Procedure(s)
-
     use clubb_precision, only: &
       core_rknd ! double precision
 
@@ -1936,9 +1933,6 @@ module generate_lh_sample_module
 ! References:
 !   None
 !-----------------------------------------------------------------------
-
-    use error_code, only:  &
-        clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd ! double precision

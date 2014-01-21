@@ -280,9 +280,6 @@ module PDF_utilities
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use error_code, only: &
-        clubb_at_least_debug_level ! Procedure(s)
-
     implicit none
 
     ! Input Variables
@@ -308,20 +305,9 @@ module PDF_utilities
 !    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
 !                                   * sqrt( exp( sigma_y_n**2 ) - one )  )  &
 !                / ( sigma_x_n * sigma_y_n )
-!    if ( log_arg >= epsilon( log_arg ) ) then
 
-       corr_xy_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
+     corr_xy_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
 
-!    else
-!
-!       corr_xy_n = zero
-!
-!       if ( clubb_at_least_debug_level( 2 ) ) then
-!          write(fstdout,*) "Warning: Values clipped in function corr_LL2NN, " &
-!                           // "since the argument of log was <= 0."
-!       endif
-!
-!    endif
 
     return
   end function corr_LL2NN

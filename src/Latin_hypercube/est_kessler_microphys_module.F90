@@ -39,9 +39,6 @@ module est_kessler_microphys_module
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
 
-    use estimate_scm_microphys_module, only: &
-      est_single_column_tndcy ! Procedure(s)
-
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd
