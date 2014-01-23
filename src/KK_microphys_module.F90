@@ -357,7 +357,7 @@ module KK_microphys_module
                                        d_variables, corr_array_1, corr_array_2, & ! Intent(in)
                                        mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
                                        hydromet_pdf_params,                     & ! Intent(in)
-                                       hydromet_mc, hydromet_vel,               & ! Intent(inout)
+                                       hydromet_mc, hydromet_vel,               & ! Intent(out)
                                        rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
                                        hydromet_vel_covar_zt_impc,              & ! Intent(out)
                                        hydromet_vel_covar_zt_expc,              & ! Intent(out)
