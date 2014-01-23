@@ -151,15 +151,23 @@ module math_utilities
     real( kind = core_rknd ), dimension(n_levels) :: mean
 
     integer :: k
+
     ! ---- Begin Code ----
+
+    ! Get rid of an annoying compiler warning.
+    k = 1
+    k = k
 
     forall( k = 1:n_levels )
       mean(k) = sum( weight(1:n_samples) * x_sample(k,1:n_samples) ) &
               / real( n_samples, kind=core_rknd )
     end forall
 
+
     return
+
   end function compute_sample_mean
+
 !-----------------------------------------------------------------------
   pure function compute_sample_variance( n_levels, n_samples, x_sample, weight, x_mean ) &
     result( variance )

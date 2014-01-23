@@ -191,6 +191,9 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
+    ! Get rid of compiler warning
+    l_small_nonzero_cloud_frac = .false.
+
     nt_repeat = n_micro_calls * sequence_length
 
     if ( .not. allocated( height_time_matrix ) ) then
@@ -712,6 +715,9 @@ module latin_hypercube_driver_module
     real( kind = dp ), dimension(n_micro_calls) :: precip_frac_n
 
     ! ---- Begin Code ----
+
+    ! Get rid of compiler warning
+    l_small_nonzero_cloud_frac = .false.
 
     nt_repeat = n_micro_calls * sequence_length
 
@@ -2223,10 +2229,15 @@ module latin_hypercube_driver_module
                                       hydromet_all_points, &  ! Out
                                       Nc_all_points ) ! Out
 
+        ! Get rid of an annoying compiler warning.
+        ivar = 1
+        ivar = ivar
+
         forall ( ivar = 1:hydromet_dim )
           LH_hydromet(:,ivar) = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights,&
                                                      hydromet_all_points(:,:,ivar) )
         end forall ! 1..hydromet_dim
+
       end if
 
       if ( iLH_Ncm > 0 ) then

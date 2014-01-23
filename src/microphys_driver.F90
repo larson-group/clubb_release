@@ -4207,6 +4207,9 @@ module microphys_driver
     real( kind = core_rknd ) :: rhs
 
 
+    ! Initialize Right-hand side term.
+    rhs = zero
+
     ! RHS (explicit component) of turbulent sedimentation term,
     ! - (1/rho_ds) * d( rho_ds * < V_hm'h_m' > ) / dz.
     ! = - (1/rho_ds)

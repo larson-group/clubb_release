@@ -875,6 +875,9 @@ module corr_matrix_module
 
     !----- Begin Code -----
 
+    ! Get rid of an annoying compiler warning.
+    ii_idx = 1
+
     if ( iiPDF_idx == iiPDF_Ncn ) then
        ii_idx = iiNcnm
     endif

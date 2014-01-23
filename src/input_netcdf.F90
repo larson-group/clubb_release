@@ -250,6 +250,9 @@ module input_netcdf
       ncf%time = (hours * sec_per_hr) + (minutes * sec_per_min) + seconds + &
                  (delta_d * sec_per_day)
 
+      ! Get rid of compiler warning
+      multiplier = 0.0_time_precision
+
       ! Figure out what units Time is in so dtwrite can be set correctly
       select case ( time( 1:index ( time, ' ' ) ) )
       case ( "hours" )
