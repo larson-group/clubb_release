@@ -8,15 +8,14 @@ module KK_microphys_module
 
   public :: KK_local_micro_driver, &
             KK_upscaled_micro_driver, &
-            ! Now used in Latin hypercube
-            ! Eric Raut July 2013
             KK_microphys_adjust
 
   private :: KK_micro_init, &
              KK_tendency_coefs, &
              KK_upscaled_stats, &
              KK_stats_output, &
-             KK_sedimentation
+             KK_sedimentation, &
+             KK_micro_output
 
   contains
 
@@ -103,16 +102,14 @@ module KK_microphys_module
       dzq,       & ! Thickness between thermo. levels (for LH interface) [m]
       rvm          ! Mean water vapor mixing ratio (for LH interface)    [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       lh_stat_sample_weight ! The weight of this sample, if using SILHS  [-]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
@@ -131,7 +128,7 @@ module KK_microphys_module
 
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(:), pointer ::  &
+    real( kind = core_rknd ), dimension(nz) ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
@@ -185,18 +182,18 @@ module KK_microphys_module
     end if
 
     !!! Initialize microphysics fields.
-    call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                        rrainm, Nrm, Vrr, VNr, &
-                        rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_micro_init( nz, hydromet, &
+                        hydromet_mc, hydromet_vel, rrainm, Nrm, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
 
+
     ! Do not use l_src_adj or l_evap_adj when l_silhs_KK_convergence_adj_mean is
     ! true. We need to do this to get Latin hypercube to converge to KK
     ! analytic. The adjustment code will be called by Latin hypercube for the
-    ! means only. (ticket:558)
+    ! means only.
     if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
       l_src_adj_enabled = .false.
       l_evap_adj_enabled = .false.
@@ -340,6 +337,11 @@ module KK_microphys_module
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
 
+    !!! Output hydrometeor mean tendencies and mean sedimentation velocities
+    !!! in output arrays.
+    call KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                          hydromet_mc, hydromet_vel )
+
 
     return
 
@@ -423,9 +425,6 @@ module KK_microphys_module
 
     implicit none
 
-    ! Local variables
-    logical, parameter :: &
-      l_latin_hypercube = .false. ! We are not Latin hypercube
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -450,7 +449,7 @@ module KK_microphys_module
       Ncnm,       & ! Mean cloud nuclei concentration < N_cn >        [num/kg]
       s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
 
-    type(pdf_parameter), dimension(nz), target, intent(in) :: &
+    type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
@@ -462,8 +461,7 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
@@ -478,19 +476,16 @@ module KK_microphys_module
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    ! More Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
@@ -502,7 +497,7 @@ module KK_microphys_module
       rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(:), pointer ::  &
+    real( kind = core_rknd ), dimension(nz) :: &
       rrainm,          & ! Mean rain water mixing ratio, < r_r > [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r > [num/kg]
       Vrr,             & ! Mean sedimentation velocity of r_r    [m/s]
@@ -570,28 +565,28 @@ module KK_microphys_module
     real( kind = core_rknd ) :: &
       corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
       corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
-      !corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      !corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
-      !corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      !corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
-      !corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      !corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
+     !corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
+     !corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
+     !corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+     !corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
+     !corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+     !corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
       corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2!,     & ! Correlation between s and t (2nd PDF component)     [-]
-      !corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      !corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      !corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      !corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      !corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      !corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      !corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      !corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      !corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      !corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      !corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      !corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
-      !corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
-      !corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
+      corr_st_2!,    & ! Correlation between s and t (2nd PDF component)     [-]
+     !corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
+     !corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
+     !corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
+     !corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
+     !corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
+     !corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
+     !corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
+     !corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
+     !corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
+     !corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
+     !corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+     !corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
+     !corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
+     !corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
 
     real( kind = core_rknd ) :: &
       corr_wrr_1_n,  & ! Correlation between w and ln rr (1st PDF comp.) ip  [-]
@@ -626,7 +621,7 @@ module KK_microphys_module
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
-    real( kind = core_rknd ), dimension(:), pointer :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       Vrrprrp_zt_impc, & ! Imp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)]
       Vrrprrp_zt_expc, & ! Exp. comp. of <V_rr'r_r'>: <r_r> eq.  [(m/s)(kg/kg)]
       VNrpNrp_zt_impc, & ! Imp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)]
@@ -653,6 +648,9 @@ module KK_microphys_module
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
       l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
 
+    logical, parameter :: &
+      l_latin_hypercube = .false.    ! Upscaled KK cannot be used with L.H.
+
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
       k                  ! Loop index
@@ -660,24 +658,15 @@ module KK_microphys_module
     ! ---- Begin Code ----
 
     !!! Initialize microphysics fields.
-    call KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                        rrainm, Nrm, Vrr, VNr, &
-                        rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_micro_init( nz, hydromet, &
+                        hydromet_mc, hydromet_vel, rrainm, Nrm, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
 
-    ! The implicit and explicit components used to calculate the covariances of
-    ! hydrometeor sedimentation velocities and their associated hydrometeors
-    ! (<V_rr'r_r'> and <V_Nr'N_r'>).
-    Vrrprrp_zt_impc => hydromet_vel_covar_zt_impc(:,iirrainm)
-    Vrrprrp_zt_expc => hydromet_vel_covar_zt_expc(:,iirrainm)
-    VNrpNrp_zt_impc => hydromet_vel_covar_zt_impc(:,iiNrm)
-    VNrpNrp_zt_expc => hydromet_vel_covar_zt_expc(:,iiNrm)
-
     ! Setup mixture fraction.
-    mixt_frac   = pdf_params%mixt_frac    
+    mixt_frac = pdf_params%mixt_frac    
 
     !!! Microphysics tendency loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
@@ -738,6 +727,10 @@ module KK_microphys_module
                                       KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                       KK_accr_tndcy(k), KK_mean_vol_rad(k) )
 
+       !!! Calculate the values of the turbulent sedimentation terms,
+       !!! <V_rr'rr'> and <V_Nr'Nr'>.  Each turbulent sedimentation term has an
+       !!! implicit component and an explicit component to be used in the
+       !!! predictive equation for the hydrometeor.
        call KK_sed_vel_covars( rrainm(k), rr1, rr2, Nrm(k), &
                                Nr1, Nr2, KK_mean_vol_rad(k), &
                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
@@ -909,6 +902,11 @@ module KK_microphys_module
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
 
+    !!! Output hydrometeor mean tendencies and mean sedimentation velocities
+    !!! in output arrays.
+    call KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                          hydromet_mc, hydromet_vel )
+
     !!! Turbulent sedimentation above cloud top should have a value of 0.
     if ( cloud_top_level > 1 ) then
        Vrrprrp_zt_impc(cloud_top_level+1:nz-1) = zero
@@ -932,6 +930,14 @@ module KK_microphys_module
     Vrrprrp_zt_expc(nz) = zero
     VNrpNrp_zt_impc(nz) = zero
     VNrpNrp_zt_expc(nz) = zero
+
+    ! The implicit and explicit components used to calculate the covariances of
+    ! hydrometeor sedimentation velocities and their associated hydrometeors
+    ! (<V_rr'r_r'> and <V_Nr'N_r'>) are fed into the output arrays.
+    hydromet_vel_covar_zt_impc(:,iirrainm) = Vrrprrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iirrainm) = Vrrprrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iiNrm) = VNrpNrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iiNrm) = VNrpNrp_zt_expc
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -968,9 +974,8 @@ module KK_microphys_module
   end subroutine KK_upscaled_micro_driver
 
   !=============================================================================
-  subroutine KK_micro_init( nz, hydromet, hydromet_mc, hydromet_vel, &
-                            rrainm, Nrm, Vrr, VNr, &
-                            rrainm_mc_tndcy, Nrm_mc_tndcy, &
+  subroutine KK_micro_init( nz, hydromet, &
+                            hydromet_mc, hydromet_vel, rrainm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                             KK_Nrm_auto_tndcy, &
@@ -1000,22 +1005,17 @@ module KK_microphys_module
     integer, intent(in) :: &
       nz          ! Number of model vertical grid levels
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(out) :: &
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(:), pointer, intent(out) ::  &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
-      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
-      Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
-      VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+      rrainm, & ! Mean rain water mixing ratio (overall), < r_r >    [kg/kg]
+      Nrm       ! Mean rain drop concentration (overall), < N_r >    [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       KK_evap_tndcy,     & ! Mean KK (dr_r/dt) due to evaporation    [(kg/kg)/s]
@@ -1043,21 +1043,11 @@ module KK_microphys_module
     hydromet_mc(:,:) = zero
     hydromet_vel(:,:) = zero
 
-    !!! Assign pointers for hydrometeor variables.
+    ! Set up mean field variables for <r_r> and <N_r>.
+    rrainm = hydromet(:,iirrainm)
+    Nrm    = hydromet(:,iiNrm)
 
-    ! Mean fields.
-    rrainm => hydromet(:,iirrainm)
-    Nrm    => hydromet(:,iiNrm)
-
-    ! Sedimentation Velocities.
-    Vrr => hydromet_vel(:,iirrainm)
-    VNr => hydromet_vel(:,iiNrm)
-
-    ! Mean field tendencies.
-    rrainm_mc_tndcy => hydromet_mc(:,iirrainm)
-    Nrm_mc_tndcy    => hydromet_mc(:,iiNrm)
-
-    !!! Set KK microphysics tendency adjustment flags
+    ! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
     l_evap_adj_enabled = .true.
 
@@ -1625,7 +1615,7 @@ module KK_microphys_module
       KK_mean_vol_rad    ! KK rain drop mean volume radius       [m]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(:), pointer, intent(inout) ::  &
+    real( kind = core_rknd ), dimension(:), intent(inout) ::  &
       Vrr, & ! Mean sedimentation velocity of < r_r >            [m/s]
       VNr    ! Mean sedimentation velocity of < N_r >            [m/s]
 
@@ -1675,6 +1665,58 @@ module KK_microphys_module
     return
 
   end subroutine KK_sedimentation
+
+  !=============================================================================
+  subroutine KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                              hydromet_mc, hydromet_vel )
+
+    ! Description:
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use array_index, only: &
+        iirrainm, & ! Constant(s)
+        iiNrm
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+      Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
+      VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
+      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
+      hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
+
+
+    !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
+
+    ! Mean field tendencies.
+    hydromet_mc(:,iirrainm) = rrainm_mc_tndcy
+    hydromet_mc(:,iiNrm) = Nrm_mc_tndcy
+
+    ! Sedimentation Velocities.
+    hydromet_vel(:,iirrainm) = Vrr
+    hydromet_vel(:,iiNrm) = VNr
+
+
+    return
+
+  end subroutine KK_micro_output
 
 !===============================================================================
 

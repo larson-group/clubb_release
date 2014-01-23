@@ -3358,7 +3358,7 @@ module advance_xp2_xpyp_module
                           !It is expected that this variable is negative, as
                           !that is the convention in Morrison microphysics
 
-    type(pdf_parameter), target, dimension(nz), intent(in) :: &
+    type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters
 
     !input/output variables

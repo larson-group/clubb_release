@@ -221,15 +221,14 @@ module morrison_micro_driver_module
       s_mellor,     & ! The variable 's' from Mellor              [kg/kg]
       rvm             ! Vapor water mixing ratio                  [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), &
-    target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       lh_stat_sample_weight
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), target, intent(out) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 

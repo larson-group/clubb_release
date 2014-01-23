@@ -45,7 +45,7 @@ interface
       s_mellor,      & ! The variable 's' from Mellor        [kg/kg]
       rvm              ! Vapor water mixing ratio            [kg/kg]
 
-    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(in) :: &
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -53,7 +53,7 @@ interface
 
     ! Output Variables
 
-    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), target, intent(out) :: &
+    real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(out) :: &
       hydromet_mc, & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
