@@ -327,7 +327,7 @@ program jacobian
   do i = 1, clubb_params%entries
 
     do j = 1, var2zt%entries
-      write(unit=*,fmt='(3(a,e10.4))')  & 
+      write(unit=*,fmt='(3(a,e11.4))')  & 
       delta//var2zt%name(j)//"/" & 
       //delta//clubb_params%name(i)//" = ", jmatrix(i, j), & 
       " impact: ", impact_matrix(i, j), & 
@@ -336,7 +336,7 @@ program jacobian
     end do
 
     do j = 1, var2zm%entries
-      write(unit=*,fmt='(3(a,e10.4))')  & 
+      write(unit=*,fmt='(3(a,e11.4))')  & 
       delta//var2zm%name(j)//"/" & 
       //delta//clubb_params%name(i)//" = ", jmatrix(i, j+nvarzt), & 
       " impact: ", impact_matrix(i, j+nvarzt), & 

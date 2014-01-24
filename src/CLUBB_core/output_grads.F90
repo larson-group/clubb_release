@@ -590,7 +590,7 @@ module output_grads
     end if
 
     write(unit=grads_file%iounit,fmt='(a)') 'DSET ^'//trim( grads_file%fname )//'.dat'
-    write(unit=grads_file%iounit,fmt='(a,e11.5)') 'UNDEF ',undef
+    write(unit=grads_file%iounit,fmt='(a,e12.5)') 'UNDEF ',undef
 
     if ( grads_file%nlon == 1 ) then ! Use linear for a singleton X dimesion
       write(unit=grads_file%iounit,fmt='(a,f8.3,a)') 'XDEF    1 LINEAR ', grads_file%rlon, ' 1.'

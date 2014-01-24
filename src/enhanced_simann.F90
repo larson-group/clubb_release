@@ -205,8 +205,8 @@ module enhanced_simann
                        / real( size( init_moves ), kind = core_rknd ) &
                      )
         if ( l_esa_debug_statements ) then
-          write(6,*) "Intial moves ="
-          write(6,'(8g10.4)') init_moves
+          write(6,*) "Initial moves ="
+          write(6,'(8g11.4)') init_moves
         end if
 
         ! Compute initial temperature.  Value of probok comes from Siarry, et al.
