@@ -19,7 +19,11 @@ srcdir="$dir/../src"  # dir where the source files reside
 DEBUG="-debug full -traceback -check bounds -check uninit -fpe0 -ftz -ftrapuv"
 
 # == Warnings ==
-WARNINGS="-warn -warn notruncated_source"
+WARNINGS="-warn all -warn notruncated_source"
+
+# These flags are used to disable warnings for code that we don't want to see
+# warnings for (like code that isn't ours).
+DISABLE_WARNINGS="-warn none"
 
 # == Machine specific options ==
 ARCH="-xHost -openmp" # This should work on most modern AMD/Intel computers

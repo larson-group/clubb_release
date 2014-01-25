@@ -228,19 +228,19 @@ $mkmf -t $bindir/mkmf_template \
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_coamps_files
+  -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_coamps_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_morrison.a -m Make.clubb_morrison -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_morrison_files
+  -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_morrison_files
   
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_mg.a -m Make.clubb_mg -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_mg_files
+  -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_mg_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_gfdlact.a -m Make.clubb_gfdlact -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_gfdl_activation_files
+  -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" -o "${WARNINGS}" \
