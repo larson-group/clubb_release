@@ -178,8 +178,7 @@ module morrison_micro_driver_module
       iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
 
     use constants_clubb, only: &
-      sec_per_day, &
-      zero
+      sec_per_day
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)

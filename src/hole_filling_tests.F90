@@ -88,10 +88,6 @@ module hole_filling_tests
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        one, &  ! Constant(s)
-        zero
-
     use clubb_precision, only: &
         core_rknd
 
@@ -187,10 +183,6 @@ module hole_filling_tests
     ! References:
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only: &
-        one, &  ! Constant(s)
-        zero
-
     use clubb_precision, only: &
         core_rknd
 
@@ -272,9 +264,6 @@ module hole_filling_tests
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        zero ! Constant(s)
 
     use clubb_precision, only: &
         core_rknd
