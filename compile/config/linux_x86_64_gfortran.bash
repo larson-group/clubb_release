@@ -21,10 +21,11 @@ srcdir="$dir/../src"  # dir where the source files reside
 
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
+#  (It works for the FIRE case as of Jan 2014)
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # floating point arithmetic
-DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics"
-#DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false" # Floating point trapping enabled
+#DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics"
+DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics" # Floating point trapping enabled
 
 # == Warnings ==
 WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f95 -pedantic"
