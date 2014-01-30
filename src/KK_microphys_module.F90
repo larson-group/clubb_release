@@ -348,10 +348,10 @@ module KK_microphys_module
   end subroutine KK_local_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp, &
-                                       wm_zt, rtm, thlm, p_in_Pa, &
-                                       exner, rho, cloud_frac, & ! Intent(in)
-                                       pdf_params, w_std_dev, rcm, Ncnm,        & ! Intent(in)
+  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp,                    & ! Intent(in)
+                                       wm_zt, rtm, thlm, p_in_Pa,               & ! Intent(in)
+                                       exner, rho, cloud_frac,                  & ! Intent(in)
+                                       pdf_params, w_std_dev, rcm,              & ! Intent(in)
                                        s_mellor, Nc_in_cloud,                   & ! Intent(in)
                                        hydromet, wphydrometp,                   & ! Intent(in)
                                        d_variables, corr_array_1, corr_array_2, & ! Intent(in)
@@ -446,7 +446,6 @@ module KK_microphys_module
       rho,        & ! Density                                         [kg/m^3]
       cloud_frac, & ! Cloud fraction                                  [-]
       rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
-      Ncnm,       & ! Mean cloud nuclei concentration < N_cn >        [num/kg]
       s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -746,8 +745,8 @@ module KK_microphys_module
 
        if ( l_var_covar_src ) then
 
-          call KK_upscaled_covar_driver( wm_zt(k), rtm(k), thlm(k), exner(k), &
-                                         rrainm(k), Nrm(k), Ncnm(k), &
+          call KK_upscaled_covar_driver( wm_zt(k), rtm(k), thlm(k), &
+                                         exner(k), rrainm(k), Nrm(k), &
                                          mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                          mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                          mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &

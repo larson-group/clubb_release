@@ -28,9 +28,8 @@ module array_index
     iiNsnowm,    & ! Snow concentration                            [num/kg]
     iiNim,       & ! Ice concentration                             [num/kg]
     iiNgraupelm, & ! Graupel concentration                         [num/kg]
-    iiNcnm,      & ! Cloud nuclei concentration                    [num/kg]
     iiNcm          ! Cloud droplet concentration (not part of PDF) [num/kg]
-!$omp threadprivate(iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcnm,iiNcm)
+!$omp threadprivate(iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm)
 
   ! Scalar quantities
   integer, public :: & 

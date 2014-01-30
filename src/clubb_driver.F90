@@ -176,12 +176,14 @@ module clubb_driver
 
     use clip_explicit, only: clip_skewness_core !Procedure(s)
 
+    use parameters_microphys, only: &
+        Nc0_in_cloud    ! Variable(s)
+
 #ifdef LATIN_HYPERCUBE
     use parameters_microphys, only: &
-      LH_microphys_type, & ! Variable(s)
+      LH_microphys_type,     & ! Variable(s)
       LH_microphys_disabled, &
-      LH_seed, &
-      Ncnm_initial, &
+      LH_seed,               &
       micro_scheme
 
     use latin_hypercube_driver_module, only: &
@@ -229,21 +231,21 @@ module clubb_driver
       dt_main
 
     use model_flags, only: &
-      setup_configurable_model_flags, & ! Procedure(s)
-      read_model_flags_from_file, &
-      l_rtm_nudge, &
-      l_diagnose_correlations, &
-      l_calc_w_corr
+        setup_configurable_model_flags, & ! Procedure(s)
+        read_model_flags_from_file, &
+        l_rtm_nudge, &
+        l_diagnose_correlations, &
+        l_calc_w_corr
 
     use soil_vegetation, only: &
-      l_soil_veg ! Variable(s)
+        l_soil_veg ! Variable(s)
 
     use soil_vegetation, only: &
-      initialize_soil_veg ! Procedure(s)
+        initialize_soil_veg ! Procedure(s)
 
     use parameters_model, only: &
-      rtm_min, &
-      rtm_nudge_max_altitude
+        rtm_min, &
+        rtm_nudge_max_altitude
 
     use diagnose_correlations_module, only: &
         corr_stat_output ! Procedure(s)
@@ -259,7 +261,10 @@ module clubb_driver
         setup_pdf_parameters    ! Procedure(s)
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter ! Type(s)
+        hydromet_pdf_parameter ! Type(s)
+
+    use array_index, only: &
+        iiNcm ! Variable(s)
 
     implicit none
 
@@ -395,7 +400,8 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
-      Nrm       ! Overall mean rain drop concentration               [num/kg]
+      Nrm,    & ! Overall mean rain drop concentration               [num/kg]
+      Ncm       ! Overall mean cloud droplet concentration           [num/kg]
 
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
@@ -856,6 +862,7 @@ module clubb_driver
     ! Allocate hydrometeor variables.
     allocate( rrainm(gr%nz) )
     allocate( Nrm(gr%nz) )
+    allocate( Ncm(gr%nz) )
 
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(gr%nz) )
@@ -1208,19 +1215,27 @@ module clubb_driver
             endif
          end do
 
-         Ncnm = Ncnm_initial / rho 
-
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
+         ! Since Ncm is still part of the hydromet array (for now), unpack Ncm
+         ! before the call to setup_pdf_parameters.
+         if ( iiNcm > 0 ) then
+            Ncm = hydromet(:,iiNcm)
+         else
+            Ncm = Nc0_in_cloud / rho
+         endif
+
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, dt_main, hydromet, wm_zt, Ncnm, rho, &
-                                    rcm, cloud_frac, ice_supersat_frac, wp2_zt, & ! Intent(in)
-                                    wphydrometp, corr_array_cloud, corr_array_below,& ! Intent(in)
-                                    pdf_params, l_stats_samp, d_variables, &    ! Intent(in)
-                                    corr_array_1, corr_array_2, &               ! Intent(out)
-                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &     ! Intent(out)
-                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-                                    wphmp, hydromet_pdf_params )                ! Intent(out)
+         call setup_pdf_parameters( gr%nz, d_variables, dt_main, wm_zt, rho, &   ! Intent(in)
+                                    wp2_zt, Ncm, Nc0_in_cloud, rcm, cloud_frac, & ! Intent(in)
+                                    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
+                                    corr_array_cloud, corr_array_below, &        ! Intent(in)
+                                    pdf_params, l_stats_samp, &                  ! Intent(in)
+                                    mu_x_1, mu_x_2, &                            ! Intent(out)
+                                    sigma_x_1, sigma_x_2, &                      ! Intent(out)
+                                    corr_array_1, corr_array_2, &                ! Intent(out)
+                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
+                                    wphmp, hydromet_pdf_params )                 ! Intent(out)
 
       endif ! not micro_scheme == "none"
 

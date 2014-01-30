@@ -59,20 +59,22 @@ module setup_clubb_pdf_params
   ! component.  The option l_interp_prescribed_params allows for an interpolated
   ! value between the in-cloud and below-cloud parameter value based on the
   ! component cloud fraction.
-  logical, parameter :: &
+  logical, parameter, private :: &
     l_interp_prescribed_params = .false.
 
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, dt, hydromet, wm_zt, Ncnm, rho, &
-                                   rcm, cloud_frac, ice_supersat_frac, wp2_zt, &   ! Intent(in)
-                                   wphydrometp, corr_array_cloud, corr_array_below, & ! Intent(in)
-                                   pdf_params, l_stats_samp, d_variables, &        ! Intent(in)
-                                   corr_array_1_n, corr_array_2_n, &               ! Intent(out)
-                                   mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! Intent(out)
-                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2, &     ! Intent(out)
-                                   wphmp, hydromet_pdf_params )                    ! Intent(out)
+  subroutine setup_pdf_parameters( nz, d_variables, dt, wm_zt, rho, &           ! Intent(in)
+                                   wp2_zt, Ncm, Nc0_in_cloud, rcm, cloud_frac, & ! Intent(in)
+                                   ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
+                                   corr_array_cloud, corr_array_below, &        ! Intent(in)
+                                   pdf_params, l_stats_samp, &                  ! Intent(in)
+                                   mu_x_1_n, mu_x_2_n, &                        ! Intent(out)
+                                   sigma_x_1_n, sigma_x_2_n, &                  ! Intent(out)
+                                   corr_array_1_n, corr_array_2_n, &            ! Intent(out)
+                                   corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
+                                   wphmp, hydromet_pdf_params )                 ! Intent(out)
 
     ! Description:
 
@@ -86,7 +88,8 @@ module setup_clubb_pdf_params
     use constants_clubb, only: &
         one,    & ! Constant(s)
         zero,   &
-        rc_tol
+        rc_tol, &
+        cloud_frac_min
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
@@ -98,9 +101,13 @@ module setup_clubb_pdf_params
         hydromet_dim  ! Variable(s)
 
     use model_flags, only: &
-        l_use_precip_frac, & ! Flag(s)
-        l_calc_w_corr, &
+        l_use_precip_frac,   & ! Flag(s)
+        l_calc_w_corr,       &
         l_use_modified_corr
+
+    use parameters_microphys, only: &
+        l_const_Nc_in_cloud, & ! Flag(s)
+        l_predictnc
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
@@ -131,15 +138,16 @@ module setup_clubb_pdf_params
         stat_update_var_pt
 
     use stats_variables, only: &
-        irr1,             & ! Variable(s)
-        irr2,             &
-        iNr1,             &
-        iNr2,             &
-        iprecip_frac,     &
-        iprecip_frac_1,   &
-        iprecip_frac_2,   &
-        irrp2_zt,         &
-        iNrp2_zt,         &
+        irr1,           & ! Variable(s)
+        irr2,           &
+        iNr1,           &
+        iNr2,           &
+        iprecip_frac,   &
+        iprecip_frac_1, &
+        iprecip_frac_2, &
+        iNcnm,          &
+        irrp2_zt,       &
+        iNrp2_zt,       &
         zt
 
     use model_flags, only: &
@@ -170,13 +178,18 @@ module setup_clubb_pdf_params
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,      & ! Mean vertical velocity, <w>, on thermo. levels   [m/s]
-      Ncnm,       & ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
-      rho,        & ! Density                                          [kg/m^3]
-      rcm,        & ! Mean cloud water mixing ratio, < r_c >           [kg/kg]
-      cloud_frac, & ! Cloud fraction                                   [-]
-      ice_supersat_frac, & ! Ice cloud fraction                        [-]
-      wp2_zt        ! Variance of w, <w'^2> (interp. to thermo. levs.) [m^2/s^2]
+      wm_zt,  & ! Mean vertical velocity, <w>, on thermodynamic levels [m/s]
+      rho,    & ! Density                                              [kg/m^3]
+      wp2_zt, & ! Variance of w, <w'^2> (interp. to thermo. levels)    [m^2/s^2]
+      Ncm       ! Mean cloud droplet concentration, <N_c>              [num/kg]
+
+    real( kind = core_rknd ), intent(in) :: &
+      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc. [num/m^3]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
+      cloud_frac,        & ! Cloud fraction                            [-]
+      ice_supersat_frac    ! Ice supersaturation fraction              [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
@@ -230,6 +243,9 @@ module setup_clubb_pdf_params
       cloud_frac1, & ! Cloud fraction (1st PDF component)           [-]
       cloud_frac2, & ! Cloud fraction (2nd PDF component)           [-]
       mixt_frac      ! Mixture fraction                             [-]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      Ncnm    ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
 
     real( kind = core_rknd ), dimension(nz) ::  &
       wpsp_zm,     & ! Covariance of s and w (momentum levels)   [(m/s)(kg/kg)]
@@ -343,6 +359,49 @@ module setup_clubb_pdf_params
 
     endif
 
+    ! Calculate <N_cn> from <N_c>, whether <N_c> is predicted or based on a
+    ! prescribed value, and whether the in-cloud value is constant or varying.
+    if ( l_predictnc .and. .not. l_const_Nc_in_cloud ) then
+       ! The mean of N_c is predicted and the value of N_c in-cloud may vary.
+       ! I will call the full equation here later.  Brian; 1/28/2014.
+       do k = 1, nz
+          if ( cloud_frac(k) > cloud_frac_min ) then
+             Ncnm(k) = Ncm(k) / cloud_frac(k)
+          else
+             ! The model is producing a positive mean cloud droplet
+             ! concentration, but is not producing any cloud.  Set Ncnm to the
+             ! constant, prescribed value of Nc (which is still set to a default
+             ! value even when Ncm is predicted).  This will avoid a huge value
+             ! of Ncnm.
+             Ncnm(k) = Nc0_in_cloud / rho(k)
+          endif
+       enddo ! k = 1, nz
+    elseif ( l_predictnc .and. l_const_Nc_in_cloud ) then
+       ! The mean of N_c is predicted and the value of N_c in-cloud is constant.
+       do k = 1, nz
+          if ( cloud_frac(k) > cloud_frac_min ) then
+             Ncnm(k) = Ncm(k) / cloud_frac(k)
+          else
+             ! The model is producing a positive mean cloud droplet
+             ! concentration, but is not producing any cloud.  Set Ncnm to the
+             ! constant, prescribed value of Nc (which is still set to a default
+             ! value even when Ncm is predicted).  This will avoid a huge value
+             ! of Ncnm.
+             Ncnm(k) = Nc0_in_cloud / rho(k)
+          endif
+       enddo ! k = 1, nz
+    elseif ( .not. l_const_Nc_in_cloud .and. .not. l_predictNc ) then
+       ! The value of N_c in-cloud is based on a prescribed parameter, which is
+       ! used as the in-cloud mean of N_c.  However, N_c in-cloud is allowed to
+       ! vary around this prescribed mean value.  The value of N_cn also varies.
+       ! Find the mean of N_cn, <N_cn>.
+       ! I will call the full equation here later.  Brian; 1/28/2014.
+       Ncnm = Nc0_in_cloud / rho
+    elseif ( l_const_Nc_in_cloud .and. .not. l_predictNc ) then
+       ! The value of N_c in-cloud is constant, prescribed parameter.  The value
+       ! of N_cn is also constant at any grid level.
+       Ncnm = Nc0_in_cloud / rho
+    endif
 
     ! Calculate correlations involving w by first calculating total covariances
     ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.
@@ -425,6 +484,11 @@ module setup_clubb_pdf_params
        if ( iprecip_frac_2 > 0 ) then
           ! Precipitation fraction in PDF component 2.
           call stat_update_var( iprecip_frac_2, precip_frac_2, zt )
+       endif
+
+       if ( iNcnm > 0 ) then
+          ! Mean simplified cloud nuclei concentration (overall).
+          call stat_update_var( iNcnm, Ncnm, zt )
        endif
 
     endif
@@ -3873,7 +3937,6 @@ module setup_clubb_pdf_params
         iirsnowm,    &
         iiricem,     &
         iirgraupelm, &
-        iiNcnm,      &
         iiNsnowm,    & 
         iiNim,       &
         iiNgraupelm, &
@@ -3907,10 +3970,10 @@ module setup_clubb_pdf_params
     ! Count the number of precipitating hydrometeors and set indices for
     ! precipitating hydrometeors.
     do i = 1, hydromet_dim, 1
-       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
+       if ( i /= iiNcm ) then
 
           ! The hydrometeor is a precipitating hydrometeor, which does not
-          ! include N_c or N_cn.
+          ! include N_c.
 
           ! Iterate the precipitating hydrometeor index.
           idx = idx + 1
@@ -3935,7 +3998,7 @@ module setup_clubb_pdf_params
              iiNg = idx
           endif
 
-       endif ! i /= iiNcm and i /= iiNcnm
+       endif ! i /= iiNcm
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -3963,8 +4026,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use array_index, only: & 
-        iiNcnm, & ! Variable(s)
-        iiNcm     ! Note: Ncm is not part of CLUBB's PDF.
+        iiNcm  ! Variable(s); Note: Ncm is not part of CLUBB's PDF.
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -4004,7 +4066,7 @@ module setup_clubb_pdf_params
     ! Loop over all hydrometeors and set up precipitating hydrometeor arrays.
     do i = 1, hydromet_dim, 1
 
-       if ( ( i /= iiNcm ) .and. ( i /= iiNcnm ) ) then
+       if ( i /= iiNcm ) then
 
           ! The hydrometeor is a precipitating hydrometeor, which does not
           ! include N_c or N_cn. 
@@ -4021,7 +4083,7 @@ module setup_clubb_pdf_params
           ! Hydrometeor name from hydrometeor list
           hm_list(idx) = hydromet_list(i)
 
-       endif ! i /= iiNcm and i /= iiNcnm
+       endif ! i /= iiNcm
 
     enddo ! i = 1, hydromet_dim, 1
 

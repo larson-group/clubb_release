@@ -553,10 +553,10 @@ module corr_matrix_module
     use parameters_microphys, only: &
       rrp2_on_rrm2_cloud,   & ! Variables
       Nrp2_on_Nrm2_cloud,   &
-      Ncp2_on_Ncm2_cloud => Ncnp2_on_Ncnm2_cloud, &
+      Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below,   &
       Nrp2_on_Nrm2_below,   &
-      Ncp2_on_Ncm2_below => Ncnp2_on_Ncnm2_below
+      Ncnp2_on_Ncnm2_below
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -594,15 +594,11 @@ module corr_matrix_module
       input_file_below    ! Path to the out of cloud correlation file
 
     ! Local variables
-    integer :: iiPDF_Nc
-
     character(len=1) :: response
     logical :: l_warning, corr_file_exist
     integer :: i
 
     ! ---- Begin Code ----
-
-    iiPDF_Nc = iiPDF_Ncn
 
     allocate( corr_array_cloud(d_variables,d_variables) )
     allocate( corr_array_below(d_variables,d_variables) )
@@ -638,12 +634,12 @@ module corr_matrix_module
     endif
 
     ! Sanity check to avoid confusing non-convergence results.
-    if ( .not. l_fix_s_t_correlations .and. iiPDF_Nc > 0 ) then
+    if ( .not. l_fix_s_t_correlations .and. iiPDF_Ncn > 0 ) then
       l_warning = .false.
       do i = 1, d_variables
-        if ( ( corr_array_cloud(i,iiPDF_Nc) /= zero .or.  &
-               corr_array_below(i,iiPDF_Nc) /= zero ) .and. &
-             i /= iiPDF_Nc ) then
+        if ( ( corr_array_cloud(i,iiPDF_Ncn) /= zero .or.  &
+               corr_array_below(i,iiPDF_Ncn) /= zero ) .and. &
+             i /= iiPDF_Ncn ) then
           l_warning = .true.
         end if
       end do ! 1..d_variables
@@ -659,8 +655,8 @@ module corr_matrix_module
       end if
     end if ! l_fix_s_t_correlations
 
-    if ( iiPDF_Nc > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_Nc) = Ncp2_on_Ncm2_cloud
+    if ( iiPDF_Ncn > 0 ) then
+      xp2_on_xm2_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2_cloud
     end if
 
     if ( iiPDF_rrain > 0 ) then
@@ -703,10 +699,10 @@ module corr_matrix_module
       end if ! iiPDF_Ngraupel > 0
     end if ! iiPDF_rgraupel > 0
 
-    if ( iiPDF_Nc > 0 ) then
+    if ( iiPDF_Ncn > 0 ) then
       ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
-      xp2_on_xm2_array_below(iiPDF_Nc) = &
-        max( Ncp2_on_Ncm2_below, epsilon( Ncp2_on_Ncm2_below ) )
+      xp2_on_xm2_array_below(iiPDF_Ncn) = &
+        max( Ncnp2_on_Ncnm2_below, epsilon( Ncnp2_on_Ncnm2_below ) )
 
     end if
 
@@ -851,7 +847,6 @@ module corr_matrix_module
   !-----------------------------------------------------------------------
 
     use array_index, only: &
-        iiNcnm, &
         iirrainm, &
         iiNrm, &
         iirsnowm, &
@@ -877,10 +872,6 @@ module corr_matrix_module
 
     ! Get rid of an annoying compiler warning.
     ii_idx = 1
-
-    if ( iiPDF_idx == iiPDF_Ncn ) then
-       ii_idx = iiNcnm
-    endif
 
     if ( iiPDF_idx == iiPDF_rrain ) then
        ii_idx = iirrainm

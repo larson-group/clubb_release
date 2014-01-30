@@ -43,7 +43,6 @@ module microphys_driver
     hydromet_list,                & ! Names of the hydrometeor species
     microphys_start_time,         & ! When to start the microphysics [s]
     sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
-    Ncnm_initial,                 & ! Initial value for Ncnm (K&K)
     Nc0_in_cloud                    ! Initial value for Ncm (K&K, l_cloud_sed, Morrison)
 
   use parameters_microphys, only: &
@@ -270,7 +269,7 @@ module microphys_driver
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
       Ncnp2_on_Ncnm2_below, C_evap, r_0, microphys_start_time, &
-      Ncnm_initial, Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
     namelist /gfdl_activation_setting/ &
@@ -399,7 +398,6 @@ module microphys_driver
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
       call write_text ( "microphys_start_time = ", real( microphys_start_time, kind = core_rknd ), &
         l_write_to_file, iunit )
-      call write_text ( "Ncnm_initial = ", Ncnm_initial, l_write_to_file, iunit )
       call write_text ( "Nc0_in_cloud = ", Nc0_in_cloud, l_write_to_file, iunit )
       call write_text ( "ccnconst = ", real(ccnconst, kind = core_rknd), l_write_to_file, iunit )
       call write_text ( "ccnexpnt = ", real(ccnexpnt, kind = core_rknd), l_write_to_file, iunit )
@@ -1057,7 +1055,7 @@ module microphys_driver
         iNgraupelm_mc, &
         iNc_in_cloud, &
         iNc_activated, &
-        iNcnm,         &
+!        iNcnm,         &
         iNcm_bt,       &
         iNcm_cl,       &
         iNcm_mc,       &
@@ -1679,10 +1677,10 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp, &
-                                         wm_zt, rtm, thlm, p_in_Pa, &
-                                         exner, rho, cloud_frac,   & ! Intent(in)
-                                         pdf_params, wtmp, rcm, Ncnm,             & ! Intent(in)
+          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp,                 & ! Intent(in)
+                                         wm_zt, rtm, thlm, p_in_Pa,               & ! Intent(in)
+                                         exner, rho, cloud_frac,                  & ! Intent(in)
+                                         pdf_params, wtmp, rcm,                   & ! Intent(in)
                                          s_mellor, Nc_in_cloud,                   & ! Intent(in)
                                          hydromet, wphydrometp,                   & ! Intent(in)
                                          n_variables, corr_array_1, corr_array_2, & ! Intent(in)
@@ -2227,7 +2225,7 @@ module microphys_driver
     end if ! l_cloud_sed
 
     if ( l_stats_samp ) then
-      call stat_update_var( iNcnm, Ncnm, zt )
+      !call stat_update_var( iNcnm, Ncnm, zt )
 
       ! In the case where Ncm is neither a fixed number nor predicted these will
       ! be set to -999.

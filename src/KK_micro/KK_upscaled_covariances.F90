@@ -24,8 +24,8 @@ module KK_upscaled_covariances
   contains
 
   !=============================================================================
-  subroutine KK_upscaled_covar_driver( w_mean, rtm, thlm, exner, &
-                                       rrainm, Nrm, Ncnm, &
+  subroutine KK_upscaled_covar_driver( w_mean, rtm, thlm, &
+                                       exner, rrainm, Nrm, &
                                        mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                        mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                        mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
@@ -74,8 +74,7 @@ module KK_upscaled_covariances
         Cp,     &
         w_tol,  &
         rr_tol, & 
-        Nr_tol, & 
-        Ncn_tol
+        Nr_tol 
 
     use constants_clubb, only:  &
         t_tol => t_mellor_tol  ! Constant
@@ -110,8 +109,7 @@ module KK_upscaled_covariances
       thlm,   & ! Mean liquid water potential temp., thl (overall)  [K]
       exner,  & ! Exner function                                    [-]
       rrainm, & ! Mean rain water mixing ratio (overall)            [kg/kg]
-      Nrm,    & ! Mean rain drop concentration (overall)            [num/kg]
-      Ncnm      ! Mean cloud nuclei concentration                   [num/kg]
+      Nrm       ! Mean rain drop concentration (overall)            [num/kg]
 
     real( kind = core_rknd ), intent(in) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
@@ -316,64 +314,40 @@ module KK_upscaled_covariances
 
     ! Calculate the covariance of vertical velocity and KK autoconversion
     ! tendency.
-    if ( Ncnm > Ncn_tol ) then
-
-       w_KK_auto_covar &
-       = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Ncn_1_n, &
-                          mu_Ncn_2_n, sigma_w_1, sigma_w_2, sigma_s_1, &
-                          sigma_s_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                          corr_ws_1, corr_ws_2, corr_wNcn_1_n, &
-                          corr_wNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                          w_mean, KK_auto_tndcy, KK_auto_coef, w_tol, &
-                          mixt_frac, Nc_in_cloud, l_const_Nc_in_cloud )
-
-    else  ! N_cn = 0.
-
-       w_KK_auto_covar = zero
-
-    endif
+    w_KK_auto_covar &
+    = covar_x_KK_auto( mu_w_1, mu_w_2, mu_s_1, mu_s_2, mu_Ncn_1_n, &
+                       mu_Ncn_2_n, sigma_w_1, sigma_w_2, sigma_s_1, &
+                       sigma_s_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                       corr_ws_1, corr_ws_2, corr_wNcn_1_n, &
+                       corr_wNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                       w_mean, KK_auto_tndcy, KK_auto_coef, w_tol, &
+                       mixt_frac, Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Calculate the covariance of total water mixing ratio and KK autoconversion
     ! tendency.
-    if ( Ncnm > Ncn_tol ) then
-
-       rt_KK_auto_covar &
-       = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
-                           mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
-                           sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
-                           sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                           corr_st_1, corr_st_2, corr_tNcn_1_n, &
-                           corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                           rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
-                           KK_auto_coef, t_tol, crt1, crt2, mixt_frac, &
-                           Nc_in_cloud, l_const_Nc_in_cloud )
-
-    else  ! N_cn = 0.
-
-       rt_KK_auto_covar = zero
-
-    endif
+    rt_KK_auto_covar &
+    = covar_rt_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
+                        mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
+                        sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                        sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                        corr_st_1, corr_st_2, corr_tNcn_1_n, &
+                        corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                        rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
+                        KK_auto_coef, t_tol, crt1, crt2, mixt_frac, &
+                        Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Calculate the covariance of liquid water potential temperature and
     ! KK autoconversion tendency.
-    if ( Ncnm > Ncn_tol ) then
-
-       thl_KK_auto_covar &
-       = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
-                            mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
-                            sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
-                            sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                            corr_st_1, corr_st_2, corr_tNcn_1_n, &
-                            corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
-                            thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
-                            KK_auto_coef, t_tol, cthl1, cthl2, mixt_frac, &
-                            Nc_in_cloud, l_const_Nc_in_cloud )
-
-    else  ! N_cn = 0.
-
-       thl_KK_auto_covar = zero
-
-    endif
+    thl_KK_auto_covar &
+    = covar_thl_KK_auto( mu_t_1, mu_t_2, mu_s_1, mu_s_2, mu_Ncn_1, &
+                         mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_t_1, &
+                         sigma_t_2, sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                         sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                         corr_st_1, corr_st_2, corr_tNcn_1_n, &
+                         corr_tNcn_2_n, corr_sNcn_1_n, corr_sNcn_2_n, &
+                         thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
+                         KK_auto_coef, t_tol, cthl1, cthl2, mixt_frac, &
+                         Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Calculate the covariance of vertical velocity and KK accretion tendency.
     if ( rrainm > rr_tol ) then
