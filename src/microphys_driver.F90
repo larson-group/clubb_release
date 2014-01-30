@@ -857,7 +857,8 @@ module microphys_driver
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            l_ice_micro )
+                            iirgraupelm, iiNgraupelm, &
+                            l_ice_micro, l_graupel )
 
     call init_precip_hm_arrays( hydromet_dim )
 

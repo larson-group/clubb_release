@@ -384,6 +384,12 @@ module corr_matrix_module
 
     case( "Nsnow" )
       i = iiPDF_Nsnow
+        
+    case( "rgraupel" )
+      i = iiPDF_rgraupel
+
+    case( "Ngraupel" )
+      i = iiPDF_Ngraupel
 
     end select
 
@@ -394,7 +400,8 @@ module corr_matrix_module
   !-----------------------------------------------------------------------
   subroutine setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                                 iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                l_ice_micro )
+                                iirgraupelm, iiNgraupelm, &
+                                l_ice_micro, l_graupel )
 
   ! Description:
   !
@@ -417,10 +424,13 @@ module corr_matrix_module
       iiricem,  & ! Index of ice mixing ratio
       iiNim,    & ! Index of ice crystal concentration
       iirsnowm, & ! Index of snow mixing ratio
-      iiNsnowm    ! Index of snow concentration
+      iiNsnowm, & ! Index of snow concentration
+      iirgraupelm, & ! Index of graupel mixing ratio
+      iiNgraupelm    ! Index of graupel number concentration
 
     logical, intent(in) :: &
-      l_ice_micro  ! Whether the microphysics scheme will do ice
+      l_ice_micro, &  ! Whether the microphysics scheme will do ice
+      l_graupel       ! True if graupel is used
 
     ! Local Variables
     integer :: &
@@ -477,6 +487,24 @@ module corr_matrix_module
                 iiPDF_Nsnow = pdf_count
              endif
 
+             if ( l_graupel ) then
+                if ( i == iirgraupelm ) then
+                   pdf_count = pdf_count + 1
+                   iiPDF_rgraupel = pdf_count
+                endif
+        
+                if ( i == iiNgraupelm ) then
+                   pdf_count = pdf_count + 1
+                   iiPDF_Ngraupel = pdf_count
+                endif   
+             
+             else
+                
+                iiPDF_rgraupel = -1
+                iiPDF_Ngraupel = -1
+             
+             endif
+
           else
 
              iiPDF_rice = -1
@@ -490,10 +518,6 @@ module corr_matrix_module
 
     endif ! hydromet_dim > 0
 
-    ! Disabled until we have values for the correlations of graupel and
-    ! other variates in the latin hypercube sampling.
-    iiPDF_rgraupel = -1
-    iiPDF_Ngraupel = -1
 
     d_variables = pdf_count
 
@@ -563,10 +587,14 @@ module corr_matrix_module
       Nsnowp2_on_Nsnowm2_cloud, &
       ricep2_on_ricem2_cloud, &
       Nicep2_on_Nicem2_cloud, &
+      rgraupelp2_on_rgraupelm2_cloud, &
+      Ngraupelp2_on_Ngraupelm2_cloud, &
       rsnowp2_on_rsnowm2_below, &
       Nsnowp2_on_Nsnowm2_below, &
       ricep2_on_ricem2_below, &
-      Nicep2_on_Nicem2_below
+      Nicep2_on_Nicem2_below, &
+      rgraupelp2_on_rgraupelm2_below, &
+      Ngraupelp2_on_Ngraupelm2_below
 
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Variable(s)
@@ -689,11 +717,11 @@ module corr_matrix_module
 
     ! Sampling for graupel (disabled)
     if ( iiPDF_rgraupel > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_rgraupel) = -999._core_rknd
+      xp2_on_xm2_array_cloud(iiPDF_rgraupel) = rgraupelp2_on_rgraupelm2_cloud
 
 
       if ( iiPDF_Ngraupel > 0 ) then
-        xp2_on_xm2_array_cloud(iiPDF_Ngraupel) = -999._core_rknd
+        xp2_on_xm2_array_cloud(iiPDF_Ngraupel) = Ngraupelp2_on_Ngraupelm2_cloud
 
 
       end if ! iiPDF_Ngraupel > 0
@@ -739,11 +767,11 @@ module corr_matrix_module
     end if ! iiPDF_rice > 0
 
     if ( iiPDF_rgraupel > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_rgraupel) = -999._core_rknd
+      xp2_on_xm2_array_below(iiPDF_rgraupel) = rgraupelp2_on_rgraupelm2_below
 
 
       if ( iiPDF_Ngraupel > 0 ) then
-        xp2_on_xm2_array_below(iiPDF_Ngraupel) = -999._core_rknd
+        xp2_on_xm2_array_below(iiPDF_Ngraupel) = Ngraupelp2_on_Ngraupelm2_below
 
 
       end if ! iiPDF_Ngraupel > 0
@@ -797,7 +825,8 @@ module corr_matrix_module
  !-----------------------------------------------------------------------------
   subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
                                 iiricem, iiNsnowm, iiNim, &
-                                l_ice_micro, iunit )
+                                iirgraupelm, iiNgraupelm, &
+                                l_ice_micro, l_graupel, iunit )
 
     ! Description: This subroutine sets up arrays that are necessary for WRF.
     !   
@@ -817,17 +846,20 @@ module corr_matrix_module
       iiNrm, &
       iirsnowm, & 
       iiricem, & 
-      iiNsnowm, & 
+      iiNsnowm, &
       iiNim, &
+      iirgraupelm, &
+      iiNgraupelm, &
       iunit
 
-    logical, intent(in) :: l_ice_micro
+    logical, intent(in) :: l_ice_micro, l_graupel
 
     ! ---- Begin Code ----
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            l_ice_micro )
+                            iirgraupelm, iiNgraupelm, &
+                            l_ice_micro, l_graupel )
 
     ! Setup the arrays and indices containing the correlations, etc.
     call setup_corr_varnce_array( LH_file_path_cloud, LH_file_path_below, iunit )

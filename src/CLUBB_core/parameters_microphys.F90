@@ -191,19 +191,26 @@ module parameters_microphys
     rsnowp2_on_rsnowm2_cloud = 0.766_core_rknd, & 
     Nsnowp2_on_Nsnowm2_cloud = 0.429_core_rknd, & 
     ricep2_on_ricem2_cloud   = 1.0_core_rknd, & 
-    Nicep2_on_Nicem2_cloud   = 1.0_core_rknd
+    Nicep2_on_Nicem2_cloud   = 1.0_core_rknd, &
+    rgraupelp2_on_rgraupelm2_cloud = 1.0_core_rknd, &
+    Ngraupelp2_on_Ngraupelm2_cloud = 1.0_core_rknd
 
 !$omp threadprivate( rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, & 
-!$omp                ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud )
+!$omp                ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud, &
+!$omp                rgraupelp2_on_rgraupelm2_cloud, Ngraupelp2_on_Ngraupelm2_cloud )
 
    real( kind = core_rknd ), public :: &
      rsnowp2_on_rsnowm2_below = 0.766_core_rknd, & 
      Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd, & 
      ricep2_on_ricem2_below   = 1.0_core_rknd, & 
-     Nicep2_on_Nicem2_below   = 1.0_core_rknd
+     Nicep2_on_Nicem2_below   = 1.0_core_rknd, &
+     rgraupelp2_on_rgraupelm2_below = 1.0_core_rknd, &
+     Ngraupelp2_on_Ngraupelm2_below = 1.0_core_rknd
+
 
 !$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
-!$omp                ricep2_on_ricem2_below, Nicep2_on_Nicem2_below )
+!$omp                ricep2_on_ricem2_below, Nicep2_on_Nicem2_below, &
+!$omp                rgraupelp2_on_rgraupelm2_below, Ngraupelp2_on_Ngraupelm2_below )
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
     hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
