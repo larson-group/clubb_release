@@ -135,7 +135,6 @@ l_calc_w_corr = .false.
 micro_scheme = "khairoutdinov_kogan",
 l_predictnc = .false.,
 Nc0_in_cloud  = 100.e6,
-Ncnm_initial = 100.e6,
 rrp2_on_rrm2_cloud   = 0.766,
 Nrp2_on_Nrm2_cloud   = 0.429, 
 Ncnp2_on_Ncnm2_cloud = 2.2,
