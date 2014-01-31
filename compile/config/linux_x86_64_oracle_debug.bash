@@ -15,7 +15,13 @@ srcdir="$dir/../src"  # dir where the source files reside
 # It is sometimes helpful to turn on floating-point trapping for the 
 #  standalone program, but this will not work when using the tuner.
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
-DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common -traceback=common"
+# Note: -ftrap=common includes invalid (invalid operations), overflow,
+#       underflow, and division (division by zero).
+# Note:  floating point trapping is not currently enabled for overflow because
+# of the code in l_var_covar_src.  This will be changed once all special cases
+# for that code are complete.
+#DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common -traceback=common"
+DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common,no%overflow -traceback=common" # Disable floating point trapping for overflow
 
 # == Warnings ==
 # This is the preferred warning level when compiling CLUBB with Sun Studio.

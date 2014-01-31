@@ -839,6 +839,21 @@ module KK_microphys_module
 
     if ( l_var_covar_src ) then
 
+       ! Set values of wprtp_mc_tndcy_zt, wpthlp_mc_tndcy_zt, rtp2_mc_tndcy_zt,
+       ! thlp2_mc_tndcy_zt, and rtpthlp_mc_tndcy_zt to 0 at the lowest
+       ! thermodynamic grid level (thermodynamic level 1), which is below the
+       ! model lower boundary.  This will prevent an unset value of these
+       ! variables (from thermodynamic level 1, which is not part of the above
+       ! microphysics tendency loop) from being used in the interpolation of
+       ! these variables to momentum levels (in this case, the model lower
+       ! boundary at momentum level 1).  The interpolated value of these
+       ! variables at momentum level 1 is not used in the model code.
+       wprtp_mc_tndcy_zt(1)   = zero
+       wpthlp_mc_tndcy_zt(1)  = zero
+       rtp2_mc_tndcy_zt(1)    = zero
+       thlp2_mc_tndcy_zt(1)   = zero
+       rtpthlp_mc_tndcy_zt(1) = zero
+
        ! Output microphysics tendency terms for
        ! model variances and covariances on momentum levels.
        wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
