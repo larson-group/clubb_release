@@ -1054,9 +1054,9 @@ module microphys_driver
         iNgraupelm_bt, &
         iNgraupelm_cl, &
         iNgraupelm_mc, &
-        iNc_in_cloud, &
+        iNc_in_cloud,  &
         iNc_activated, &
-!        iNccnm,         &
+        iNccnm,        &
         iNcm_bt,       &
         iNcm_cl,       &
         iNcm_mc,       &
@@ -2226,7 +2226,7 @@ module microphys_driver
     end if ! l_cloud_sed
 
     if ( l_stats_samp ) then
-      !call stat_update_var( iNccnm, Nccnm, zt )
+      call stat_update_var( iNccnm, Nccnm, zt )
 
       ! In the case where Ncm is neither a fixed number nor predicted these will
       ! be set to -999.
