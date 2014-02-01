@@ -889,7 +889,7 @@ module microphys_driver
                n_variables, corr_array_1, corr_array_2,                 & ! Intent(in)
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,                    & ! Intent(in)
                hydromet_pdf_params,                                     & ! Intent(in)
-               Ncnm, hydromet, wphydrometp,                             & ! Intent(inout)
+               Nccnm, hydromet, wphydrometp,                            & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(out)
                wprtp_mc, wpthlp_mc,                                     & ! Intent(out)
                rtp2_mc, thlp2_mc, rtpthlp_mc,                           & ! Intent(out)
@@ -1056,7 +1056,7 @@ module microphys_driver
         iNgraupelm_mc, &
         iNc_in_cloud, &
         iNc_activated, &
-!        iNcnm,         &
+!        iNccnm,         &
         iNcm_bt,       &
         iNcm_cl,       &
         iNcm_mc,       &
@@ -1181,10 +1181,10 @@ module microphys_driver
     ! Input/Output Variables
 
     ! Note:
-    ! For COAMPS Ncnm is initialized and Nim & Ncm are computed within
+    ! For COAMPS Nccnm is initialized and Nim & Ncm are computed within
     ! subroutine adjtg.
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: & 
-      Ncnm    ! Cloud nuclei concentration     [num/m^3]
+      Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
@@ -1478,7 +1478,7 @@ module microphys_driver
              rtm, wm_zm, p_in_Pa, exner, rho, & 
              thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
              hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
-             rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), Ncnm, hydromet(:,iiNim), cond, & 
+             rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), Nccnm, hydromet(:,iiNim), cond, & 
              hydromet_vel_zt(:,iirsnowm), hydromet_vel_zt(:,iiricem), & 
              hydromet_vel_zt(:,iirrainm), hydromet_vel_zt(:,iiNrm),  & 
              hydromet_vel_zt(:,iirgraupelm), & 
@@ -1621,7 +1621,7 @@ module microphys_driver
       rvm = rtm - rcm
       call mg_microphys_driver &
           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-            rho, cloud_frac, rcm, Ncm, rvm, Ncnm, pdf_params, hydromet, &
+            rho, cloud_frac, rcm, Ncm, rvm, Nccnm, pdf_params, hydromet, &
             hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
     case ( "khairoutdinov_kogan" )
@@ -2226,7 +2226,7 @@ module microphys_driver
     end if ! l_cloud_sed
 
     if ( l_stats_samp ) then
-      !call stat_update_var( iNcnm, Ncnm, zt )
+      !call stat_update_var( iNccnm, Nccnm, zt )
 
       ! In the case where Ncm is neither a fixed number nor predicted these will
       ! be set to -999.
@@ -2336,7 +2336,7 @@ module microphys_driver
 
       write(fstderr,*) "Intent(inout)"
 
-      write(fstderr,*) "Ncnm = ", Ncnm
+      write(fstderr,*) "Nccnm = ", Nccnm
       write(fstderr,*) "hydromet = ", hydromet
       write(fstderr,*) "Intent(out)"
       write(fstderr,*) "rcm_mc = ", rcm_mc

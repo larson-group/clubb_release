@@ -47,7 +47,7 @@ module clubb_driver
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       thvm, Lscale, Kh_zm, &
-      um_ref, vm_ref, Ncnm, wp2_zt, &
+      um_ref, vm_ref, Nccnm, wp2_zt, &
       hydromet, wphydrometp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
@@ -919,7 +919,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                             & ! Intent(inout)
              rtm_ref, thlm_ref,                                & ! Intent(inout) 
              um_ref, vm_ref,                                   & ! Intent(inout)
-             hydromet, Ncnm,                                   & ! Intent(inout)
+             hydromet, Nccnm,                                  & ! Intent(inout)
              sclrm, edsclrm, err_code )                          ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -947,7 +947,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
              rtm_ref, thlm_ref,                                  & ! Intent(inout) 
              um_ref, vm_ref,                                     & ! Intent(inout)
-             hydromet, Ncnm,                                     & ! Intent(inout)
+             hydromet, Nccnm,                                    & ! Intent(inout)
              sclrm, edsclrm, err_code )                            ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -1249,7 +1249,7 @@ module clubb_driver
              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
              corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
              hydromet_pdf_params,                             & ! Intent(in)
-             Ncnm, hydromet, wphydrometp, err_code,           & ! Intent(inout)
+             Nccnm, hydromet, wphydrometp, err_code,          & ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
              wprtp_mc, wpthlp_mc,                             & ! Intent(out)
              rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
@@ -1359,7 +1359,7 @@ module clubb_driver
                thv_ds_zm, thv_ds_zt, &
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
-               hydromet, Ncnm, &
+               hydromet, Nccnm, &
                sclrm, edsclrm, err_code )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -1368,20 +1368,21 @@ module clubb_driver
     !   None
     !-----------------------------------------------------------------------
 
-    use constants_clubb, only:  & 
-      em_min,  &
-      grav, &
-      cm3_per_m3
+    use constants_clubb, only:  &
+        one,        & ! Constant(s)
+        em_min,     &
+        grav,       &
+        cm3_per_m3
 
     use parameters_model, only:  & 
-      sclr_dim, &
-      edsclr_dim, &
-      hydromet_dim
+        sclr_dim, &
+        edsclr_dim, &
+        hydromet_dim
 
     use parameters_microphys, only: &
-      Nc0_in_cloud,  & ! Variable(s)
-      micro_scheme, &
-      l_predictnc
+        Nc0_in_cloud,  & ! Variable(s)
+        micro_scheme, &
+        l_predictnc
 
     use parameters_radiation, only: radiation_top, rad_scheme ! Variable(s)
 
@@ -1472,7 +1473,8 @@ module clubb_driver
       exner,           & ! Exner function                      [-] 
       thvm,            & ! Virtual potential temperature       [K]
       p_in_Pa,         & ! Pressure                            [Pa]
-      rho, rho_zm,     & ! Density                             [kg/m^3]
+      rho,             & ! Density (thermodynamic levels)      [kg/m^3]
+      rho_zm,          & ! Density on momentum levels          [kg/m^3]
       rho_ds_zm,       & ! Dry, static density (moment. levs.) [kg/m^3]
       rho_ds_zt,       & ! Dry, static density (thermo. levs.) [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density (m-levs.)  [m^3/kg]
@@ -1488,7 +1490,7 @@ module clubb_driver
       hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Ncnm ! Cloud nuclei number concentration (COAMPS microphysics)
+      Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
 
     ! Output
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(out) ::  & 
@@ -1565,10 +1567,11 @@ module clubb_driver
       end if
 
     case ( "coamps" )
-      ! Initialize Ncnm as in COAMPS-LES
-      Ncnm(1:gr%nz) = 30.0_core_rknd * (1.0_core_rknd + &
-             exp( -gr%zt(1:gr%nz)/2000.0_core_rknd )) * &
-             cm3_per_m3 ! Known magic number
+      ! Initialize Nccnm as in COAMPS-LES
+      Nccnm(1:gr%nz) &
+      = 30.0_core_rknd &
+        * ( one + exp( -gr%zt(1:gr%nz) / 2000.0_core_rknd ) )  &
+        * cm3_per_m3 / rho    ! Known magic number
     end select
 
 
@@ -2837,7 +2840,7 @@ module clubb_driver
         l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
         l_input_thlm_forcing, l_input_rtm_forcing, & 
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
-        l_input_Ncnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
+        l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
         l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
         l_input_sfc_soil_T_in_K, stat_files
 
@@ -2943,7 +2946,7 @@ module clubb_driver
       l_input_rsnowm = .true.
       l_input_ricem = .true.
       l_input_rgraupelm = .true.
-      l_input_Ncnm = .true.
+      l_input_Nccnm = .true.
       l_input_Ncm = .true.
       l_input_Nrm = .true.
       l_input_Nim =  .true.
@@ -2953,7 +2956,7 @@ module clubb_driver
       l_input_rsnowm = .true.
       l_input_ricem = .true.
       l_input_rgraupelm = .true.
-      l_input_Ncnm = .false.
+      l_input_Nccnm = .false.
       if ( l_predictnc ) then
         l_input_Ncm = .true.
       else
@@ -2967,7 +2970,7 @@ module clubb_driver
       l_input_rsnowm = .false.
       l_input_ricem = .true.
       l_input_rgraupelm = .false.
-      l_input_Ncnm = .false.
+      l_input_Nccnm = .false.
       if ( l_predictnc ) then
         l_input_Ncm = .true.
       else
@@ -2981,7 +2984,7 @@ module clubb_driver
       l_input_rsnowm = .false.
       l_input_ricem = .false.
       l_input_rgraupelm = .false.
-      l_input_Ncnm = .false.
+      l_input_Nccnm = .false.
       l_input_Ncm = .false.
       l_input_Nrm = .true.
       l_input_Nim = .false.
@@ -2991,7 +2994,7 @@ module clubb_driver
       l_input_rsnowm = .false.
       l_input_ricem = .false.
       l_input_rgraupelm = .false.
-      l_input_Ncnm = .false.
+      l_input_Nccnm = .false.
       l_input_Ncm = .false.
       l_input_Nrm = .false.
       l_input_Nim = .false.
@@ -3667,7 +3670,7 @@ module clubb_driver
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
                corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
                hydromet_pdf_params,                             & ! Intent(in)
-               Ncnm, hydromet, wphydrometp, err_code,           & ! Intent(inout)
+               Nccnm, hydromet, wphydrometp, err_code,          & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
                wprtp_mc, wpthlp_mc,                             & ! Intent(out)
                rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
@@ -3807,7 +3810,7 @@ module clubb_driver
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Ncnm ! Cloud nuclei number concentration (COAMPS microphyics)     [#/kg]
+      Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
@@ -3979,7 +3982,7 @@ module clubb_driver
            d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
            hydromet_pdf_params, &                                     ! Intent(in)
-           Ncnm, hydromet, wphydrometp, &                             ! Intent(inout)
+           Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
            rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
            wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
            rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)

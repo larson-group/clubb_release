@@ -80,7 +80,8 @@ module stats_zt
         iLWP2, &
         iprecip_frac, &
         iprecip_frac_1, &
-        iprecip_frac_2
+        iprecip_frac_2, &
+        iNcnm
 
     use stats_variables, only: &
         imu_rr_1,       & ! Variable(s)
@@ -168,7 +169,7 @@ module stats_zt
         iNcm, &
         iNc_in_cloud, &
         iNc_activated, &
-        iNcnm, & 
+        iNccnm, & 
         isnowslope, & 
         ised_rcm, & 
         irsat, & 
@@ -1039,11 +1040,11 @@ module stats_zt
 
         k = k + 1
 
-      case ('Ncnm')
-        iNcnm = k
-        call stat_assign( var_index=iNcnm, var_name="Ncnm", &
-             var_description="Cloud nuclei concentration [num/kg]", var_units="num/kg", &
-             l_silhs=.false., grid_kind=zt )
+      case ('Nccnm')
+        iNccnm = k
+        call stat_assign( var_index=iNccnm, var_name="Nccnm", &
+             var_description="Cloud condensation nuclei concentration (COAMPS/MG) [num/kg]", &
+             var_units="num/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('Nim')           ! Brian
@@ -3532,6 +3533,13 @@ module stats_zt
         call stat_assign( var_index=iprecip_frac_2, var_name="precip_frac_2", &
              var_description="Precipitation Fraction (2nd PDF component) [-]", var_units="-", &
              l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ( 'Ncnm' )
+        iNcnm = k
+        call stat_assign( var_index=iNcnm, var_name="Ncnm", &
+             var_description="Cloud nuclei concentration (PDF) [num/kg]", &
+             var_units="num/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ( 'mu_rr_1' )

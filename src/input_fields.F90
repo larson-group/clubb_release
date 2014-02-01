@@ -40,7 +40,7 @@ module inputfields
     l_input_thvm = .false., l_input_rrainm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
     l_input_rsnowm = .false., l_input_ricem = .false., &
-    l_input_rgraupelm = .false., l_input_Ncnm = .false., l_input_Nim = .false., & 
+    l_input_rgraupelm = .false., l_input_Nccnm = .false., l_input_Nim = .false., & 
     l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
@@ -239,7 +239,7 @@ module inputfields
         Kh_zt, &
         thvm, &
         wpthvp, &
-        Ncnm, & 
+        Nccnm, & 
         sigma_sqd_w_zt, & 
         em, &
         radht
@@ -506,8 +506,8 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_Ncnm, stat_files(clubb_zt), "Ncnm", gr%nz, timestep, &
-             gr%zt, Ncnm, l_read_error )
+           ( l_input_Nccnm, stat_files(clubb_zt), "Nccnm", gr%nz, timestep, &
+             gr%zt, Nccnm, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1161,9 +1161,9 @@ module inputfields
         end if
       end if
 
-      coamps_variables(k)%l_input_var = l_input_Ncnm
-      coamps_variables(k)%input_name = "ncnm"
-      coamps_variables(k)%clubb_var => Ncnm
+      coamps_variables(k)%l_input_var = l_input_Nccnm
+      coamps_variables(k)%input_name = "nccnm"
+      coamps_variables(k)%clubb_var => Nccnm
       coamps_variables(k)%adjustment = 1.0_core_rknd
       coamps_variables(k)%clubb_grid_type = "zt"
       coamps_variables(k)%input_file_index = coamps_sm
@@ -1926,8 +1926,8 @@ module inputfields
 
       k = k + 1
 
-      SAM_variables(k)%l_input_var = l_input_Ncnm
-      SAM_variables(k)%clubb_name = "Ncnm"
+      SAM_variables(k)%l_input_var = l_input_Nccnm
+      SAM_variables(k)%clubb_name = "Nccnm"
       SAM_variables(k)%input_name = "none"
 
       k = k + 1
@@ -2799,7 +2799,7 @@ module inputfields
       l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
-      l_input_Ncnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
+      l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
       l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
       l_input_sfc_soil_T_in_K
 
@@ -2859,7 +2859,7 @@ module inputfields
     l_input_vp2 = .false.
     l_input_sigma_sqd_w = .false.
     l_input_Ncm = .false.
-    l_input_Ncnm = .false.
+    l_input_Nccnm = .false.
     l_input_Nim = .false.
     l_input_cloud_frac = .false.
     l_input_sigma_sqd_w_zt = .false.

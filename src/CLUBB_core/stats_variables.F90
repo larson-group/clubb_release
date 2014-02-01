@@ -119,9 +119,10 @@ module stats_variables
      iLWP2 = 0, &
      iprecip_frac = 0, &
      iprecip_frac_1 = 0, &
-     iprecip_frac_2 = 0
+     iprecip_frac_2 = 0, &
+     iNcnm = 0 
 !$omp threadprivate(  irr1, irr2, iNr1, iNr2, iLWP1, iLWP2, &
-!$omp   iprecip_frac, iprecip_frac_1, iprecip_frac_2 )
+!$omp   iprecip_frac, iprecip_frac_1, iprecip_frac_2, iNcnm )
 
   integer, public :: &
      imu_rr_1 = 0,       &
@@ -224,7 +225,7 @@ module stats_variables
 
   integer, public :: & 
      iNcm = 0,             & ! Brian
-     iNcnm = 0,            & 
+     iNccnm = 0,           & 
      iNc_in_cloud = 0,     &
      iNc_activated = 0,    &
      isnowslope = 0,       & ! Adam Smith, 22 April 2008
@@ -241,7 +242,7 @@ module stats_variables
      iradht_LW = 0,        & !   "           "   Long-wave component
      iradht_SW = 0,        & !   "           "   Short-wave component
      irel_humidity = 0
-!$omp  threadprivate( iNcm, iNcnm, iNc_activated, isnowslope, &
+!$omp  threadprivate( iNcm, iNccnm, iNc_activated, isnowslope, &
 !$omp    ised_rcm, irsat, irsati, irrainm, &
 !$omp    im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp    iprecip_rate_zt, iAKm, iLH_AKm, &

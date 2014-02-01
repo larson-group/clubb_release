@@ -127,8 +127,8 @@ module variables_diagnostic_module
 !$omp threadprivate(hydromet,wphydrometp)
 
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
-    Ncnm     ! Cloud nuclei number concentration       [num/m^3]
-!$omp threadprivate(Ncnm)
+    Nccnm     ! Cloud condensation nuclei concentration (COAMPS/MG)   [num/kg]
+!$omp threadprivate(Nccnm)
 
 
 ! Surface data
@@ -311,7 +311,7 @@ module variables_diagnostic_module
 
 
     ! Microphysics Variables
-    allocate( Ncnm(1:nz) )
+    allocate( Nccnm(1:nz) )
     allocate( hydromet(1:nz,1:hydromet_dim) )    ! All hydrometeor mean fields
     allocate( wphydrometp(1:nz,1:hydromet_dim) ) ! All < w'h_m' > fields
 
@@ -486,7 +486,7 @@ module variables_diagnostic_module
     tau_zt = 0.0_core_rknd ! Eddy dissipation time scale: thermo. levels
 
     ! Hydrometer types
-    Ncnm(1:nz) = 0.0_core_rknd ! Cloud nuclei number concentration (COAMPS)
+    Nccnm(1:nz) = 0.0_core_rknd ! CCN concentration (COAMPS/MG)
 
     do i = 1, hydromet_dim, 1
       hydromet(1:nz,i)    = 0.0_core_rknd
@@ -607,7 +607,7 @@ module variables_diagnostic_module
 
     ! Cloud water variables
 
-    deallocate( Ncnm )
+    deallocate( Nccnm )
 
     deallocate( hydromet )     ! Hydrometeor mean fields
     deallocate( wphydrometp )  ! < w'h_m' > fields

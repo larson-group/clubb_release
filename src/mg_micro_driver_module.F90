@@ -11,7 +11,7 @@ module mg_micro_driver_module
 !-------------------------------------------------------------------------------
   subroutine mg_microphys_driver &
              ( dt, nz, l_stats_samp, invrs_dzt, thlm, p_in_Pa, exner, &
-               rho, cloud_frac, rcm, Ncm, rvm, Ncnm, pdf_params, hydromet, &
+               rho, cloud_frac, rcm, Ncm, rvm, Nccnm, pdf_params, hydromet, &
                hydromet_mc, hydromet_vel, rcm_mc, rvm_mc, thlm_mc )
 ! Description:
 !   Wrapper for the Morrison-Gettelman microphysics
@@ -135,7 +135,7 @@ module mg_micro_driver_module
       l_stats_samp  ! Whether to accumulate statistics [T/F]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      invrs_dzt,  & ! Inverse of the grid spacing   [1/m]
+      invrs_dzt,  & ! Inverse of the grid spacing        [1/m]
       thlm,       & ! Liquid potential temperature       [K]
       p_in_Pa,    & ! Pressure                           [Pa]
       exner,      & ! Exner function                     [-]
@@ -143,10 +143,10 @@ module mg_micro_driver_module
       cloud_frac    ! Cloud fraction                     [-]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm,      & ! Liquid water mixing ratio          [kg/kg]
-      Ncm,      & ! Cloud droplet number concentration [count/kg]
-      rvm,      & ! Vapor water mixing ratio           [kg/kg]
-      Ncnm        ! Cloud nuclei number concentration  [count/m^3]
+      rcm,   & ! Liquid water mixing ratio                [kg/kg]
+      Ncm,   & ! Cloud droplet number concentration       [count/kg]
+      rvm,   & ! Vapor water mixing ratio                 [kg/kg]
+      Nccnm    ! Cloud condensation nuclei concentration  [count/kg]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                   [units vary]
@@ -214,7 +214,7 @@ module mg_micro_driver_module
       icecldf_flip, & ! Ice cloud fraction                                   [-]
       naai_flip,    & ! number of activated ice nuclei                       [1/kg]
       rho_flip,     & ! Density on thermo. grid                              [kg/m^3]
-      npccn_flip,   & ! Number of cloud nuclei                               [count/m^3]
+      npccn_flip,   & ! Number of cloud nuclei                               [count/kg]
       unused_in       ! Represents MG variables that are not used in the current code
       
     real(r8), dimension(pcols,nz-1,4) :: &
@@ -436,7 +436,8 @@ module mg_micro_driver_module
     else
 
       rho_flip(icol,1:nz-1) = real( flip( real(rho(2:nz),kind=dp ), nz-1 ), kind=r8 )
-      npccn_flip(icol,1:nz-1) = real( flip( real(Ncnm(2:nz),kind=dp ), nz-1 ), kind=r8 )
+      npccn_flip(icol,1:nz-1) &
+         = real( flip( real( Nccnm(2:nz), kind=dp ), nz-1 ), kind=r8 )
 
       ! Determine ice nulceation number using Meyers formula found in the Morrison microphysics
       do k = 1, nz-1

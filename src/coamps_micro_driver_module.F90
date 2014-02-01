@@ -18,7 +18,7 @@ module coamps_micro_driver_module
          ( runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, ricem, rrainm, rgraupelm, rsnowm, & 
-           rcm, Ncm, Nrm, Ncnm, Nim, & 
+           rcm, Ncm, Nrm, Nccnm, Nim, & 
            cond, Vrsnow, Vrice, Vrr, VNr, Vrgraupel, & 
            ritend, rrtend, rgtend,  & 
            rsnowtend, nrmtend, & 
@@ -182,7 +182,7 @@ module coamps_micro_driver_module
 
     real(kind = core_rknd), dimension(gr%nz), intent(inout) :: & 
       Ncm,        & ! Number of cloud droplets   [count/kg]
-      Ncnm,       & ! Number of cloud nuclei     [count/m^3]
+      Nccnm,      & ! Number of cloud nuclei     [count/kg]
       Nim           ! Number of ice crystals     [count/kg]
 
     real(kind = core_rknd), dimension(1,1,gr%nz-1), intent(inout) :: &
@@ -577,12 +577,12 @@ module coamps_micro_driver_module
         p3(1,1,k)   = 0.0
 
         ! Convert from MKS units as needed
-        ! Nrm, Ncm, Ncnm are in kg^-1, and need to coverted to 1e-6 * kg^-1. 
-        ! They will be converted to #/cc within adjtq if ldrizzle is true, 
-        ! or ignored if ldrizzle is false.
+        ! Nrm, Ncm, Nccnm are in kg^-1, and need to coverted to
+        ! (m^3/cm^3)*kg^-1.  They will be converted to #/cc within adjtq if
+        ! ldrizzle is true, or ignored if ldrizzle is false.
         nc3(1,1,k)  = real(Ncm(k+1) / cm3_per_m3)
         nr3(1,1,k)  = real(Nrm(k+1) / cm3_per_m3)
-        ncn3(1,1,k) = real(Ncnm(k+1) / cm3_per_m3)
+        ncn3(1,1,k) = real(Nccnm(k+1) / cm3_per_m3)
 
         ! Nim is in #/m^3 within adjtq (See conice.F).
         ni3(1,1,k)  = real(Nim(k+1) * rho(k+1))
@@ -825,9 +825,9 @@ module coamps_micro_driver_module
 ! Transfer back to CLUBB arrays
       do k=1, kk, 1
         ! Convert to MKS as needed
-        ! ncn3 & nc3 are in cm^-3, and need to be converted to m^-3
-        Ncm(k+1)  = real(nc3(1,1,k), kind = core_rknd) * cm3_per_m3
-        Ncnm(k+1) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
+        ! ncn3 & nc3 are in (m^3/cm^3)*kg^-1, and need to be converted to kg^-1.
+        Ncm(k+1)   = real(nc3(1,1,k), kind = core_rknd) * cm3_per_m3
+        Nccnm(k+1) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
 
         ! Convert ice number concentration to #/kg
         Nim(k+1)  = real(ni3(1,1,k), kind = core_rknd) / rho(k+1)
