@@ -3838,9 +3838,6 @@ module clubb_driver
 
     ! Local Variables
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm ! Cloud droplet number concentration
-
     real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
@@ -3910,16 +3907,6 @@ module clubb_driver
     !----------------------------------------------------------------
     ! Compute subcolumns if enabled
     !----------------------------------------------------------------
-
-    if ( l_predictnc .and. iiNcm > 0 ) then
-      Ncm = hydromet(:,iiNcm)
-    else
-      where ( rcm >= rc_tol )
-        Ncm = ( Nc0_in_cloud / rho ) * cloud_frac
-      else where
-        Ncm = 0._core_rknd
-      end where
-    end if
 
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       if ( l_lh_vert_overlap ) then
