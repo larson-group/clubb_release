@@ -119,4 +119,32 @@ module microphys_stats_vars_module
   end subroutine microphys_put_var
   !-----------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
+  subroutine microphys_stats_cleanup( microphys_stats_vars )
+
+  ! Description:
+  !   Deallocates all (dynamic) memory associated with the
+  !   microphys_stats_vars object
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input/Output Variables
+    type(microphys_stats_vars_type), intent(inout) :: &
+      microphys_stats_vars   ! Unallocated microphys_stats_vars_type object
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    deallocate( microphys_stats_vars%stats_indices, &
+                microphys_stats_vars%output_values )
+
+    return
+  end subroutine microphys_stats_cleanup
+  !-----------------------------------------------------------------------
+
 end module microphys_stats_vars_module
