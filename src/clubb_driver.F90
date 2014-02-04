@@ -3682,9 +3682,6 @@ module clubb_driver
 !   None
 !-------------------------------------------------------------------------------
 
-    use array_index, only: &
-        iiNcm ! Variable(s)
-
     use corr_matrix_module, only: &
         iiPDF_Ncn ! Variable(s)
 
@@ -3692,7 +3689,7 @@ module clubb_driver
         pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-        micro_scheme, Nc0_in_cloud, &  ! Variables
+        micro_scheme,       &  ! Variables
         LH_microphys_calls
 
     use constants_clubb, only: & 
@@ -3737,7 +3734,6 @@ module clubb_driver
         l_lh_vert_overlap, &
         LH_sequence_length, &
         l_local_kk, &
-        l_predictnc, &
         l_var_covar_src
 
     use latin_hypercube_driver_module, only: &
