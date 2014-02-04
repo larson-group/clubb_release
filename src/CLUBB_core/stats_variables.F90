@@ -716,7 +716,7 @@ module stats_variables
     iLH_Ngraupelm = 0, &
     iLH_thlm = 0, &
     iLH_rcm = 0, &
-    iLH_Ncm = 0, &
+    iLH_Ncnm = 0, &
     iLH_rvm = 0, &
     iLH_wm = 0, &
     iLH_cloud_frac = 0, &
@@ -727,19 +727,19 @@ module stats_variables
 
 !$omp threadprivate(iLH_rrainm, iLH_Nrm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
 !$omp   iLH_rgraupelm, iLH_Ngraupelm, &
-!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_rvm, iLH_wm, iLH_cloud_frac, &
+!$omp   iLH_thlm, iLH_rcm, iLH_Ncnm, iLH_rvm, iLH_wm, iLH_cloud_frac, &
 !$omp   iLH_s_mellor, iLH_t_mellor, iLH_precip_frac, iLH_mixt_frac )
 
   integer, public :: &
     iLH_wp2_zt = 0, &
     iLH_Nrp2_zt = 0, &
-    iLH_Ncp2_zt = 0, &
+    iLH_Ncnp2_zt = 0, &
     iLH_rcp2_zt = 0, &
     iLH_rtp2_zt = 0, &
     iLH_thlp2_zt = 0, &
     iLH_rrainp2_zt = 0, &
     iLH_sp2 = 0 ! Eric Raut
-!$omp threadprivate( iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
+!$omp threadprivate( iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncnp2_zt, iLH_rcp2_zt, iLH_rtp2_zt, &
 !$omp                iLH_thlp2_zt, iLH_rrainp2_zt, iLH_sp2 )
 
 

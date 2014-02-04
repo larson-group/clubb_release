@@ -3685,6 +3685,9 @@ module clubb_driver
     use array_index, only: &
         iiNcm ! Variable(s)
 
+    use corr_matrix_module, only: &
+        iiPDF_Ncn ! Variable(s)
+
     use pdf_parameter_module, only: &
         pdf_parameter ! Derived type
 
@@ -3933,7 +3936,6 @@ module clubb_driver
         Lscale_vert_avg = -999._core_rknd
       end if
 
-!      print *, "In advance_clubb_microphys: Ncm = ", Ncm
       if ( l_use_modified_corr ) then
          call LH_subcolumn_generator_mod &
               ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
@@ -3945,9 +3947,17 @@ module clubb_driver
                 X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
                 LH_sample_point_weights ) ! Out
       else
+         ! Ncn is the only variable in the PDF where the overall mean is equal
+         ! to the mean in each PDF component (Ncnm = mu_Ncn_1 = mu_Ncn_2).  In
+         ! order to avoid passing Ncnm out of setup_pdf_parameters and into
+         ! run_clubb and then into this subroutine (advance_clubb_microphys) for
+         ! this call to LH_subcolumn_generator (which isn't even used anymore
+         ! since l_use_modified_corr is hardwired to .true.), mu_Ncn_1 (already
+         ! found in this subroutine as part of mu_x_1) will be used in place of
+         ! Ncnm in this subroutine call.
          call LH_subcolumn_generator &
               ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-                thlm, pdf_params, wm_zt, gr%dzt, rcm, Ncm, rtm-rcm, & ! In
+                thlm, pdf_params, wm_zt, gr%dzt, rcm, mu_x_1(iiPDF_Ncn,:), rtm-rcm, & ! In
                 hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
                 corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
                 X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out

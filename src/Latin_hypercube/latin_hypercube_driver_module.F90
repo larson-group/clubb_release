@@ -31,7 +31,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine LH_subcolumn_generator &
              ( iter, d_variables, n_micro_calls, sequence_length, nz, &
-               thlm, pdf_params, wm_zt, delta_zm, rcm, Ncm, rvm, &
+               thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
                corr_array_cloud, corr_array_below, Lscale_vert_avg, &
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
@@ -116,9 +116,9 @@ module latin_hypercube_driver_module
       delta_zm     ! Difference in moment. altitudes    [m]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm, & ! Liquid water mixing ratio          [kg/kg]
-      Ncm, & ! Cloud droplet number concentration [#/kg]
-      rvm    ! Vapor water mixing ratio           [kg/kg]
+      rcm,  & ! Liquid water mixing ratio                              [kg/kg]
+      Ncnm, & ! Cloud nuclei concentration (simplified); Nc=Ncn*H(s)   [#/kg]
+      rvm     ! Vapor water mixing ratio                               [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -468,7 +468,7 @@ module latin_hypercube_driver_module
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample &
              ( d_variables, hydromet_dim, &  ! In
-               wm_zt(k), rcm(k), Ncm(k), rvm(k), thlm(k), & ! In
+               wm_zt(k), rcm(k), Ncnm(k), rvm(k), thlm(k), & ! In
                pdf_params(k)%mixt_frac, & ! In
                pdf_params(k)%w1, pdf_params(k)%w2, pdf_params(k)%rc1, pdf_params(k)%rc2, & ! In
                pdf_params(k)%varnce_w1, pdf_params(k)%varnce_w2, & ! In
@@ -494,7 +494,7 @@ module latin_hypercube_driver_module
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample &
              ( d_variables, hydromet_dim, &  ! In
-               wm_zt(k), rcm(k), Ncm(k), rvm(k), thlm(k), & ! In
+               wm_zt(k), rcm(k), Ncnm(k), rvm(k), thlm(k), & ! In
                pdf_params(k)%mixt_frac, & ! In
                pdf_params(k)%w1, pdf_params(k)%w2, pdf_params(k)%rc1, pdf_params(k)%rc2, & ! In
                pdf_params(k)%varnce_w1, pdf_params(k)%varnce_w2, & ! In
@@ -1234,7 +1234,7 @@ module latin_hypercube_driver_module
       iiPDF_Ni, &
       iiPDF_Nsnow, &
       iiPDF_Ngraupel, &
-      iiPDF_Nc => iiPDF_Ncn
+      iiPDF_Ncn
 
     use parameters_microphys, only: &
       LH_microphys_calls ! Variable
@@ -1322,10 +1322,10 @@ module latin_hypercube_driver_module
         variable_descriptions(iiPDF_Nr) = "Rain droplet number concentration"
         variable_units(iiPDF_Nr)        = "count/kg"
       end if
-      if ( iiPDF_Nc > 0 ) then
-        variable_names(iiPDF_Nc)        = "Nc"
-        variable_descriptions(iiPDF_Nc) = "Cloud droplet number concentration"
-        variable_units(iiPDF_Nc)        = "count/kg"
+      if ( iiPDF_Ncn > 0 ) then
+        variable_names(iiPDF_Ncn)        = "Ncn"
+        variable_descriptions(iiPDF_Ncn) = "Cloud nuclei concentration (simplified)"
+        variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
         variable_names(iiPDF_Ni)        = "Ni"
@@ -1407,10 +1407,10 @@ module latin_hypercube_driver_module
         variable_descriptions(iiPDF_Nr) = "Rain droplet number concentration"
         variable_units(iiPDF_Nr)        = "count/kg"
       end if
-      if ( iiPDF_Nc > 0 ) then
-        variable_names(iiPDF_Nc)        = "Nc"
-        variable_descriptions(iiPDF_Nc) = "Cloud droplet number concentration"
-        variable_units(iiPDF_Nc)        = "count/kg"
+      if ( iiPDF_Ncn > 0 ) then
+        variable_names(iiPDF_Ncn)        = "Ncn"
+        variable_descriptions(iiPDF_Ncn) = "Cloud nuclei concentration (simplified)"
+        variable_units(iiPDF_Ncn)        = "count/kg"
       end if
       if ( iiPDF_Ni > 0 ) then
         variable_names(iiPDF_Ni)        = "Ni"
@@ -2053,7 +2053,7 @@ module latin_hypercube_driver_module
       iLH_Ngraupelm, &
       iLH_thlm, &
       iLH_rcm, &
-      iLH_Ncm, &
+      iLH_Ncnm, &
       iLH_rvm, &
       iLH_wm, &
       iLH_cloud_frac, &
@@ -2064,7 +2064,7 @@ module latin_hypercube_driver_module
     use stats_variables, only: &
       iLH_wp2_zt, &  ! Variable(s)
       iLH_Nrp2_zt, &
-      iLH_Ncp2_zt, &
+      iLH_Ncnp2_zt, &
       iLH_rcp2_zt, &
       iLH_rtp2_zt, &
       iLH_thlp2_zt, &
@@ -2096,7 +2096,7 @@ module latin_hypercube_driver_module
       iiPDF_s_mellor, & ! Variable(s)
       iiPDF_t_mellor, &
       iiPDF_w, &
-      iiPDF_Nc => iiPDF_Ncn
+      iiPDF_Ncn
 
     use estimate_scm_microphys_module, only: &
       copy_X_nl_into_hydromet_all_pts ! Procedure(s)
@@ -2134,9 +2134,9 @@ module latin_hypercube_driver_module
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
-      rc_all_points, & ! Cloud water mixing ratio for all levels   [kg/kg]
-      Nc_all_points, & ! Cloud droplet number conc. for all levels   [kg/kg]
-      rv_all_points    ! Vapor mixing ratio for all levels   [kg/kg]
+      rc_all_points,  & ! Cloud water mixing ratio for all levels        [kg/kg]
+      Ncn_all_points, & ! Cloud nuclei conc. for all levels; Nc=Ncn*H(s) [kg/kg]
+      rv_all_points     ! Vapor mixing ratio for all levels              [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,n_micro_calls,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species    [units vary]
@@ -2147,7 +2147,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz) :: &
       LH_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
       LH_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
-      LH_Ncm,        & ! Average value of the latin hypercube est. of Nc                [num/kg]
+      LH_Ncnm,       & ! Average value of the latin hypercube est. of Ncn               [num/kg]
       LH_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
       LH_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       LH_wp2_zt,     & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
@@ -2156,7 +2156,7 @@ module latin_hypercube_driver_module
       LH_rtp2_zt,    & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
       LH_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
       LH_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
-      LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
+      LH_Ncnp2_zt,   & ! Average value of the variance of the LH est. of Ncn.            [#^2/kg^2]
       LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
       LH_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
@@ -2220,14 +2220,14 @@ module latin_hypercube_driver_module
       end if
 
       if ( iLH_rrainm + iLH_Nrm + iLH_ricem + iLH_Nim + iLH_rsnowm + iLH_Nsnowm + &
-           iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncm > 0 ) then
+           iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncnm > 0 ) then
 
         LH_hydromet = 0._core_rknd
         call copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, & ! In
                                       X_nl_all_levs, &  ! In
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
-                                      Nc_all_points ) ! Out
+                                      Ncn_all_points ) ! Out
 
         ! Get rid of an annoying compiler warning.
         ivar = 1
@@ -2240,10 +2240,10 @@ module latin_hypercube_driver_module
 
       end if
 
-      if ( iLH_Ncm > 0 ) then
-        LH_Ncm  = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
-                                      Nc_all_points(:,:) )
-        call stat_update_var( iLH_Ncm, LH_Ncm, LH_zt )
+      if ( iLH_Ncnm > 0 ) then
+        LH_Ncnm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                       Ncn_all_points(:,:) )
+        call stat_update_var( iLH_Ncnm, LH_Ncnm, LH_zt )
       end if
 
       ! Latin hypercube estimate of cloud fraction
@@ -2326,11 +2326,11 @@ module latin_hypercube_driver_module
       end if
 
       ! Compute the variance of cloud droplet number concentration
-      if ( iiPDF_Nc > 0 .and. iLH_Ncp2_zt > 0 ) then
-        LH_Ncp2_zt = compute_sample_variance &
-                     ( nz, n_micro_calls, Nc_all_points(:,:), &
-                       LH_sample_point_weights, LH_Ncm(:) )
-        call stat_update_var( iLH_Ncp2_zt, LH_Ncp2_zt, LH_zt )
+      if ( iiPDF_Ncn > 0 .and. iLH_Ncnp2_zt > 0 ) then
+        LH_Ncnp2_zt = compute_sample_variance &
+                      ( nz, n_micro_calls, Ncn_all_points(:,:), &
+                        LH_sample_point_weights, LH_Ncnm(:) )
+        call stat_update_var( iLH_Ncnp2_zt, LH_Ncnp2_zt, LH_zt )
       end if
 
       ! Compute the variance of rain droplet number concentration

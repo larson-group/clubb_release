@@ -24,7 +24,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( d_variables, hydromet_dim, & 
-               wm, rcm, Ncm, rvm, thlm, & 
+               wm, rcm, Ncnm, rvm, thlm, & 
                mixt_frac, &
                w1_in, w2_in, rc1_in, rc2_in, &
                varnce_w1_in, varnce_w2_in, &
@@ -44,23 +44,23 @@ module generate_lh_sample_module
 
 ! Assumptions:
 !   The l_fix_s_t_correlations = false code does not set the correlation 
-!   between Nc and the other variates (i.e. it assumes they are all zero).
+!   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the 
-!   correlation of e.g. s & Nc and s & rr, we do not know the correlation of
-!   Nc and rr.
+!   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
+!   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
-!   correlation between rr and Nc when the correlation between s and Nc is
+!   correlation between rr and Ncn when the correlation between s and Ncn is
 !   non-zero, and the code would have to halt.
 !
 !   One implication of this is that if l_fix_s_t_correlations = false 
-!   then the correlation of s and Nc must be set to 
+!   then the correlation of s and Ncn must be set to 
 !   zero in the correlation file to check the convergence of a non-interactive
 !   SILHS solution against the analytic K&K solution.
 !
 !   The l_fix_s_t_correlations = true code does not have the above limitation
 !   but will use a value for the covariance of the s and t that is not necessarily 
 !   equal to the one computed by the PDF, so setting the correlation of 
-!   s and Nc to zero is not needed.
+!   s and Ncn to zero is not needed.
 !   It will also fix the value of the correlation between s and t in the 
 !   analytic K&K code, which should allow for convergence between the two solutions.
 !   If it does not, then there is probably a new bug in the code.
@@ -98,7 +98,7 @@ module generate_lh_sample_module
       iiPDF_rice, &
       iiPDF_rgraupel, &
       iiPDF_Nr, &
-      iiPDF_Nc => iiPDF_Ncn, &
+      iiPDF_Ncn, &
       iiPDF_Ni, &
       iiPDF_Nsnow, &
       iiPDF_Ngraupel, &
@@ -154,11 +154,11 @@ module generate_lh_sample_module
       hydromet ! Hydrometeor species [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
-      wm,         & ! Vertical velocity                   [m/s]
-      rcm,        & ! Mean liquid water mixing ratio      [kg/kg]
-      Ncm,        & ! Cloud droplet number concentration  [#/kg]
-      rvm,        & ! Mean vapor water mixing ratio       [kg/kg]
-      thlm          ! Mean liquid potential temperature   [K]
+      wm,   & ! Vertical velocity                                      [m/s]
+      rcm,  & ! Mean liquid water mixing ratio                         [kg/kg]
+      Ncnm, & ! Cloud nuclei concentration (simplified); Nc=Ncn*H(s)   [#/kg]
+      rvm,  & ! Mean vapor water mixing ratio                          [kg/kg]
+      thlm    ! Mean liquid potential temperature                      [K]
 
     real( kind = core_rknd ), intent(in) :: &
       mixt_frac,      & ! Mixture fraction                                        [-]
@@ -252,12 +252,12 @@ module generate_lh_sample_module
       Sigma_stw_2    ! Covariance of s,t, w + hydrometeors for plume 2
 
     real( kind = dp ) :: &
-!     Ncm,     & ! Cloud droplet number concentration.[number / kg air]
-      var_Nc1, & ! PDF param for width of plume 1.   [(#/kg)^2]
-      var_Nc2, & ! PDF param for width of plume 2.   [(#/kg^2]
-      Nrm,     & ! Rain droplet number concentration. [number / kg air]
-      var_Nr1, & ! PDF param for width of plume 1.   [(#/kg)^2]
-      var_Nr2    ! PDF param for width of plume 2.   [(#/kg^2]
+!     Ncnm,     & ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s) [#/kg]
+      var_Ncn1, & ! PDF param for width of plume 1.              [(#/kg)^2]
+      var_Ncn2, & ! PDF param for width of plume 2.              [(#/kg^2]
+      Nrm,      & ! Rain droplet number concentration.           [#/kg]
+      var_Nr1,  & ! PDF param for width of plume 1.              [(#/kg)^2]
+      var_Nr2     ! PDF param for width of plume 2.              [(#/kg^2]
 
     real( kind = core_rknd ) :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_srr, corr_sNr, &
             covar_sNr1, covar_sNr2, covar_srr1, covar_srr2
@@ -265,13 +265,13 @@ module generate_lh_sample_module
     real( kind = dp ) :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
 
 !   real :: &
-!     stdev_Nc, & ! Standard deviation of Nc   [#/kg]
-!     corr_tNc, & ! Correlation between t and Nc [-]
-!     corr_sNc, & ! Correlation between s and Nc [-]
-!     covar_tNc1,    & ! Covariance of t and Nc1      []
-!     covar_tNc2,    & ! Covariance of t and Nc2      []
-!     covar_sNc1,    & ! Covariance of s and Nc1      [# kg/kg^2]
-!     covar_sNc2       ! Covariance of s and Nc2      [# kg/kg^2]
+!     stdev_Ncn, & ! Standard deviation of Ncn   [#/kg]
+!     corr_tNcn, & ! Correlation between t and Ncn [-]
+!     corr_sNcn, & ! Correlation between s and Ncn [-]
+!     covar_tNcn1,    & ! Covariance of t and Ncn1      []
+!     covar_tNcn2,    & ! Covariance of t and Ncn2      []
+!     covar_sNcn1,    & ! Covariance of s and Ncn1      [# kg/kg^2]
+!     covar_sNcn2       ! Covariance of s and Ncn2      [# kg/kg^2]
 
 !   real( kind = dp ), dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
@@ -419,7 +419,7 @@ module generate_lh_sample_module
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
+    !    but we set means, covariance of hydrometeors (e.g. rrain, Ncn) to constants.
 
 
     ! Standard sample for testing purposes when n=2
@@ -448,19 +448,20 @@ module generate_lh_sample_module
 
     end if
 
-    ! Compute PDF parameters for Nc, rr.
-    ! Assume that Nc, rr obey single-lognormal distributions
+    ! Compute PDF parameters for Ncn, rr.
+    ! Assume that Ncn, rr obey single-lognormal distributions
 
-    ! Nc  = droplet number concentration.  [Nc] = number / kg air
-    ! Ncm  = mean of Nc
-    ! Ncp2_on_Ncm2 = variance of Nc divided by Ncm^2
-    !  We must have a Ncp2_on_Ncm2 >= machine epsilon for the matrix
-    ! Nc1  = PDF parameter for mean of plume 1. [Nc1] = (#/kg)
-    ! Nc2  = PDF parameter for mean of plume 2. [Nc2] = (#/kg)
+    ! Ncn  = cloud nuclei conc. (simplfied) / extended cloud droplet conc.;
+    !        Nc = Ncn * H(s).  [Ncn] = number / kg air
+    ! Ncnm  = mean of Ncn
+    ! Ncnp2_on_Ncnm2 = variance of Ncn divided by Ncnm^2
+    !  We must have a Ncnp2_on_Ncnm2 >= machine epsilon for the matrix
+    ! Ncn1  = PDF parameter for mean of plume 1. [Ncn1] = (#/kg)
+    ! Ncn2  = PDF parameter for mean of plume 2. [Ncn2] = (#/kg)
 
-    if ( iiPDF_Nc > 0 ) then
+    if ( iiPDF_Ncn > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Nc, real(Ncm, kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Ncn, real(Ncnm, kind = dp), xp2_on_xm2_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -520,7 +521,7 @@ module generate_lh_sample_module
     end if
 
 
-    ! Means of s, t, w, Nc, Nr, rr for Gaussians 1 and 2
+    ! Means of s, t, w, Ncn, Nr, rr for Gaussians 1 and 2
 
     ! The mean of t is always 0.
     t1 = 0._core_rknd
@@ -582,12 +583,12 @@ module generate_lh_sample_module
 
       Sigma_stw_2(iiPDF_w,iiPDF_w) = real(varnce_w2, kind = dp)
 
-      if ( iiPDF_Nc > 0 ) then
-        ! var_Nc1,2 = PDF param for width of plume 1,2. [var_Nc1,2] = (#/kg)**2
-        var_Nc1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Nc), kind=dp ) )
-        var_Nc2 = var_Nc1
-        Sigma_stw_1(iiPDF_Nc,iiPDF_Nc) = var_Nc1
-        Sigma_stw_2(iiPDF_Nc,iiPDF_Nc) = var_Nc2
+      if ( iiPDF_Ncn > 0 ) then
+        ! var_Ncn1,2 = PDF param for width of plume 1,2. [var_Ncn1,2] = (#/kg)**2
+        var_Ncn1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Ncn), kind=dp ) )
+        var_Ncn2 = var_Ncn1
+        Sigma_stw_1(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn1
+        Sigma_stw_2(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn2
       end if
 
       if ( iiPDF_Nr > 0 ) then
@@ -741,48 +742,48 @@ module generate_lh_sample_module
 
       end if ! if iiPDF_rrain > 0 .and. iiPDF_Nr > 0
 
-!     if ( iiPDF_Nc > 0 ) then
+!     if ( iiPDF_Ncn > 0 ) then
 
-      ! Covariances involving s and Nc (currently disabled)
-!       corr_sNc = corr_array(iiPDF_s_mellor,iiPDF_Nc)
-!       stdev_Nc = real( Ncm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiPDF_Nc) )
+      ! Covariances involving s and Ncn (currently disabled)
+!       corr_sNcn = corr_array(iiPDF_s_mellor,iiPDF_Ncn)
+!       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiPDF_Ncn) )
 
-!       if ( stdev_s1 > s_mellor_tol .and. Ncm > real(Nc_tol, kind = dp) ) then
+!       if ( stdev_s1 > s_mellor_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
 !         ! The variable s is already Gaussian
-!         stdev_sNc1 = corr_gaus_LN_to_covar_gaus &
-!                 ( corr_sNc, &
+!         stdev_sNcn1 = corr_gaus_LN_to_covar_gaus &
+!                 ( corr_sNcn, &
 !                   stdev_s1, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Nc) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_1(iiPDF_s_mellor,iiPDF_Nc) = real(stdev_sNc1, kind = dp)
-!         Sigma_stw_1(iiPDF_Nc,iiPDF_s_mellor) = real(stdev_sNc1, kind = dp)
+!         Sigma_stw_1(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
+!         Sigma_stw_1(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn1, kind = dp)
 
-!         ! Approximate the covariance of t and Nc
-!         covar_tNc1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNc1 ) / stdev_s1**2
+!         ! Approximate the covariance of t and Ncn
+!         covar_tNcn1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNcn1 ) / stdev_s1**2
 
-!         Sigma_stw_1(iiPDF_t_mellor,iiPDF_Nc) = real(covar_tNc1, kind = dp)
-!         Sigma_stw_2(iiPDF_Nc,iiPDF_t_mellor) = real(covar_tNc2, kind = dp)
+!         Sigma_stw_1(iiPDF_t_mellor,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_t_mellor) = real(covar_tNcn2, kind = dp)
 
 !       end if
 
-!       if ( stdev_s2 > s_mellor_tol .and. Ncm > real(Nc_tol, kind = dp) ) then
-!         stdev_sNc2 = corr_gaus_LN_to_covar_gaus &
-!                 ( corr_sNc, &
+!       if ( stdev_s2 > s_mellor_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
+!         stdev_sNcn2 = corr_gaus_LN_to_covar_gaus &
+!                 ( corr_sNcn, &
 !                   stdev_s2, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Nc) ) )
+!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_2(iiPDF_s_mellor,iiPDF_Nc) = real(stdev_sNc2, kind = dp)
-!         Sigma_stw_2(iiPDF_Nc,iiPDF_s_mellor) = real(stdev_sNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn2, kind = dp)
 
-!         ! Approximate the covariance of t and Nc
-!         covar_tNc2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNc2 ) / stdev_s2**2
+!         ! Approximate the covariance of t and Ncn
+!         covar_tNcn2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNcn2 ) / stdev_s2**2
 
-!         Sigma_stw_2(iiPDF_t_mellor,iiPDF_Nc) = real(stNc2, kind = dp)
-!         Sigma_stw_2(iiPDF_Nc,iiPDF_t_mellor) = real(stNc2, kind = dp)
+!         Sigma_stw_2(iiPDF_t_mellor,iiPDF_Ncn) = real(stNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_t_mellor) = real(stNcn2, kind = dp)
 
 !       end if
 
-!     end if ! iiPDF_Nc > 0
+!     end if ! iiPDF_Ncn > 0
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -959,23 +960,23 @@ module generate_lh_sample_module
 
 ! Assumptions:
 !   The l_fix_s_t_correlations = false code does not set the correlation
-!   between Nc and the other variates (i.e. it assumes they are all zero).
+!   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the
-!   correlation of e.g. s & Nc and s & rr, we do not know the correlation of
-!   Nc and rr.
+!   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
+!   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
-!   correlation between rr and Nc when the correlation between s and Nc is
+!   correlation between rr and Ncn when the correlation between s and Ncn is
 !   non-zero, and the code would have to halt.
 !
 !   One implication of this is that if l_fix_s_t_correlations = false
-!   then the correlation of s and Nc must be set to
+!   then the correlation of s and Ncn must be set to
 !   zero in the correlation file to check the convergence of a non-interactive
 !   SILHS solution against the analytic K&K solution.
 !
 !   The l_fix_s_t_correlations = true code does not have the above limitation
 !   but will use a value for the covariance of the s and t that is not necessarily
 !   equal to the one computed by the PDF, so setting the correlation of
-!   s and Nc to zero is not needed.
+!   s and Ncn to zero is not needed.
 !   It will also fix the value of the correlation between s and t in the
 !   analytic K&K code, which should allow for convergence between the two solutions.
 !   If it does not, then there is probably a new bug in the code.
@@ -1082,7 +1083,7 @@ module generate_lh_sample_module
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of hydrometeors (e.g. rrain, Nc) to constants.
+    !    but we set means, covariance of hydrometeors (e.g. rrain, Ncn) to constants.
 
 
     ! Standard sample for testing purposes when n=2
@@ -1146,7 +1147,7 @@ module generate_lh_sample_module
 
     end if
 
-    ! Zero Nc if not in cloud
+    ! Zero Ncn if not in cloud
     if ( X_nl_one_lev(iiPDF_s_mellor) < 0.0_dp ) then
       X_nl_one_lev(iiPDF_Ncn) = 0.0_dp
     end if
@@ -1308,7 +1309,7 @@ module generate_lh_sample_module
                      X_mixt_comp_one_lev, & ! intent(in)
                      LH_rt, LH_thl ) ! intent(out)
 
-    ! Convert lognormal variates (e.g. Nc and rr) to lognormal
+    ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
     where ( l_d_variable_lognormal )
       X_nl_one_lev(:) = exp( X_nl_one_lev(:) )
     end where
@@ -2454,7 +2455,7 @@ module generate_lh_sample_module
 
     if ( corr_sx /= 0._core_rknd ) then
       ! Covariance between s and lognormal variate x
-      ! The variable x could be rrain, Nr, Nc, et cetera.
+      ! The variable x could be rrain, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
            ( corr_sx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
              covar_sx ) ! Out
@@ -2486,7 +2487,7 @@ module generate_lh_sample_module
 
     if ( corr_wx /= 0._core_rknd ) then
       ! Covariance between w and lognormal variate x
-      ! The variable x could be rrain, Nr, Nc, et cetera.
+      ! The variable x could be rrain, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
            ( corr_wx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
              covar_wx ) ! Out

@@ -162,6 +162,9 @@ module estimate_scm_microphys_module
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      Ncn_all_points    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
+
+    real( kind = core_rknd ), dimension(nz) :: &
       s_mellor_column    ! 's' (Mellor 1977)                    [kg/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -329,7 +332,11 @@ module estimate_scm_microphys_module
                                     X_nl_all_levs(:,sample,:), & ! In
                                     hydromet, & ! In
                                     hydromet_all_points, &  ! Out
-                                    Nc ) ! Out
+                                    Ncn_all_points ) ! Out
+
+      ! For now, set Nc = Ncn at every point.
+      ! Their relationship is Nc = Ncn * H(s).
+      Nc = Ncn_all_points
 
       ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
       ! sample points. Thus, we overwrite the sample value of Nc with
@@ -569,7 +576,7 @@ module estimate_scm_microphys_module
                                       X_nl_all_levs, &
                                       hydromet, &
                                       hydromet_all_points, &
-                                      Nc_all_points )
+                                      Ncn_all_points )
 
   ! Description:
   !   Copy the points from the latin hypercube sample to an array with just the
@@ -598,7 +605,7 @@ module estimate_scm_microphys_module
       iiPDF_Nr, &
       iiPDF_Nsnow, &
       iiPDF_Ngraupel, &
-      iiPDF_Nc => iiPDF_Ncn, &
+      iiPDF_Ncn, &
       iiPDF_Ni
 
     use clubb_precision, only: &
@@ -622,7 +629,7 @@ module estimate_scm_microphys_module
       hydromet_all_points ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(out) :: &
-      Nc_all_points ! Cloud droplet number concentration [#/kg]
+      Ncn_all_points    ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
 
     integer :: sample, ivar
 
@@ -676,9 +683,10 @@ module estimate_scm_microphys_module
 
         end if
       end do ! 1..hydromet_dim
-      ! Copy Nc into Nc all points
-      if ( iiPDF_Nc > 0 ) then
-        Nc_all_points(:,sample) = real( X_nl_all_levs(:,sample,iiPDF_Nc), kind=core_rknd )
+      ! Copy Ncn into Ncn all points
+      if ( iiPDF_Ncn > 0 ) then
+        Ncn_all_points(:,sample) = &
+          real( X_nl_all_levs(:,sample,iiPDF_Ncn), kind=core_rknd )
       end if
     end do ! 1..n_micro_calls
 
