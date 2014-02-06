@@ -69,6 +69,7 @@ module stats_LH_zt
       iLH_Ngraupelm, &
       iLH_thlm, &
       iLH_rcm, &
+      iLH_Ncm, &
       iLH_Ncnm, &
       iLH_rvm, &
       iLH_wm, &
@@ -78,6 +79,7 @@ module stats_LH_zt
       iLH_thlp2_zt, &
       iLH_rrainp2_zt, &
       iLH_Nrp2_zt, &
+      iLH_Ncp2_zt, &
       iLH_Ncnp2_zt, &
       iLH_cloud_frac, &
       iLH_s_mellor, &
@@ -376,6 +378,14 @@ module stats_LH_zt
              l_silhs=.true., grid_kind=LH_zt )
         k = k + 1
 
+      case ( 'LH_Ncm' )
+        iLH_Ncm = k
+
+        call stat_assign( var_index=iLH_Ncm, var_name="LH_Ncm", &
+             var_description="Latin hypercube estimate of Ncm [count/kg]", var_units="count/kg", &
+             l_silhs=.true., grid_kind=LH_zt )
+        k = k + 1
+
       case ( 'LH_Ncnm' )
         iLH_Ncnm = k
 
@@ -442,6 +452,13 @@ module stats_LH_zt
         iLH_Ncnp2_zt = k
         call stat_assign( var_index=iLH_Ncnp2_zt, var_name="LH_Ncnp2_zt", &
              var_description="Variance of the latin hypercube estimate of Ncn [count^2/kg^2]", &
+             var_units="count^2/kg^2", l_silhs=.true., grid_kind=LH_zt )
+        k = k + 1
+
+      case ( 'LH_Ncp2_zt' )
+        iLH_Ncp2_zt = k
+        call stat_assign( var_index=iLH_Ncp2_zt, var_name="LH_Ncp2_zt", &
+             var_description="Variance of the latin hypercube estimate of Nc [count^2/kg^2]", &
              var_units="count^2/kg^2", l_silhs=.true., grid_kind=LH_zt )
         k = k + 1
 

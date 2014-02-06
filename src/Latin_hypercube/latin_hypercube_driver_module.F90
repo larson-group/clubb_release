@@ -2028,7 +2028,9 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_LH &
              ( nz, n_micro_calls, d_variables, rho_ds_zt, &
-               LH_sample_point_weights, X_nl_all_levs, LH_thl, LH_rt )
+               LH_sample_point_weights, X_nl_all_levs, &
+               LH_thl, LH_rt, Nc_in_cloud )
+
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
 !   purposes.
@@ -2040,6 +2042,9 @@ module latin_hypercube_driver_module
     use parameters_model, only: hydromet_dim ! Variable
 
     use grid_class, only: gr
+
+    use parameters_microphys, only: &
+        l_const_Nc_in_cloud ! Variable(s)
 
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)
@@ -2053,6 +2058,7 @@ module latin_hypercube_driver_module
       iLH_Ngraupelm, &
       iLH_thlm, &
       iLH_rcm, &
+      iLH_Ncm, &
       iLH_Ncnm, &
       iLH_rvm, &
       iLH_wm, &
@@ -2064,6 +2070,7 @@ module latin_hypercube_driver_module
     use stats_variables, only: &
       iLH_wp2_zt, &  ! Variable(s)
       iLH_Nrp2_zt, &
+      iLH_Ncp2_zt, &
       iLH_Ncnp2_zt, &
       iLH_rcp2_zt, &
       iLH_rtp2_zt, &
@@ -2132,10 +2139,15 @@ module latin_hypercube_driver_module
       LH_thl, & ! Sample of liquid potential temperature [K]
       LH_rt     ! Sample of total water mixing ratio     [kg/kg]
 
+    real( kind = core_rknd), dimension(nz), intent(in) :: &
+      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
+      Nc_in_cloud
+
     ! Local variables
     real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
       rc_all_points,  & ! Cloud water mixing ratio for all levels        [kg/kg]
-      Ncn_all_points, & ! Cloud nuclei conc. for all levels; Nc=Ncn*H(s) [kg/kg]
+      Nc_all_points,  & ! Cloud droplet conc. for all levels             [#/kg]
+      Ncn_all_points, & ! Cloud nuclei conc. for all levels; Nc=Ncn*H(s) [#/kg]
       rv_all_points     ! Vapor mixing ratio for all levels              [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,n_micro_calls,hydromet_dim) :: &
@@ -2147,6 +2159,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz) :: &
       LH_thlm,       & ! Average value of the latin hypercube est. of theta_l           [K]
       LH_rcm,        & ! Average value of the latin hypercube est. of rc                [kg/kg]
+      LH_Ncm,        & ! Average value of the latin hypercube est. of Nc                [num/kg]
       LH_Ncnm,       & ! Average value of the latin hypercube est. of Ncn               [num/kg]
       LH_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
       LH_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
@@ -2156,7 +2169,8 @@ module latin_hypercube_driver_module
       LH_rtp2_zt,    & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
       LH_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
       LH_Nrp2_zt,    & ! Average value of the variance of the LH est. of Nr.            [#^2/kg^2]
-      LH_Ncnp2_zt,   & ! Average value of the variance of the LH est. of Ncn.            [#^2/kg^2]
+      LH_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
+      LH_Ncnp2_zt,   & ! Average value of the variance of the LH est. of Ncn.           [#^2/kg^2]
       LH_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       LH_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
       LH_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
@@ -2165,7 +2179,7 @@ module latin_hypercube_driver_module
 
     real(kind=core_rknd) :: xtmp
 
-    integer :: sample, ivar
+    integer :: sample, ivar, k
 
     ! ---- Begin Code ----
 
@@ -2220,7 +2234,7 @@ module latin_hypercube_driver_module
       end if
 
       if ( iLH_rrainm + iLH_Nrm + iLH_ricem + iLH_Nim + iLH_rsnowm + iLH_Nsnowm + &
-           iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncnm > 0 ) then
+           iLH_rgraupelm + iLH_Ngraupelm + iLH_Ncnm + iLH_Ncm > 0 ) then
 
         LH_hydromet = 0._core_rknd
         call copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, & ! In
@@ -2228,6 +2242,24 @@ module latin_hypercube_driver_module
                                       LH_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
                                       Ncn_all_points ) ! Out
+
+        if ( l_const_Nc_in_cloud ) then
+           ! For l_const_Nc_in_cloud, we want to use the same value of Nc for
+           ! all sample points.
+           do k = 1, nz, 1
+              where ( rc_all_points(k,:) > 0.0_core_rknd )
+                 Nc_all_points(k,:) = Nc_in_cloud(k)
+              else where
+                 Nc_all_points(k,:) = 0.0_core_rknd
+              end where
+           enddo ! k = 1, nz, 1
+        else ! Nc varies in-cloud
+           where ( rc_all_points > 0.0_core_rknd )
+              Nc_all_points = Ncn_all_points
+           else where
+              Nc_all_points = 0.0_core_rknd
+           end where
+        endif
 
         ! Get rid of an annoying compiler warning.
         ivar = 1
@@ -2244,6 +2276,12 @@ module latin_hypercube_driver_module
         LH_Ncnm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
                                        Ncn_all_points(:,:) )
         call stat_update_var( iLH_Ncnm, LH_Ncnm, LH_zt )
+      end if
+
+      if ( iLH_Ncm > 0 ) then
+        LH_Ncm = compute_sample_mean( nz, n_micro_calls, LH_sample_point_weights, &
+                                      Nc_all_points(:,:) )
+        call stat_update_var( iLH_Ncm, LH_Ncm, LH_zt )
       end if
 
       ! Latin hypercube estimate of cloud fraction
@@ -2325,12 +2363,20 @@ module latin_hypercube_driver_module
         call stat_update_var( iLH_rrainp2_zt, LH_rrainp2_zt, LH_zt )
       end if
 
-      ! Compute the variance of cloud droplet number concentration
+      ! Compute the variance of cloud nuclei concentration (simplifed)
       if ( iiPDF_Ncn > 0 .and. iLH_Ncnp2_zt > 0 ) then
         LH_Ncnp2_zt = compute_sample_variance &
                       ( nz, n_micro_calls, Ncn_all_points(:,:), &
                         LH_sample_point_weights, LH_Ncnm(:) )
         call stat_update_var( iLH_Ncnp2_zt, LH_Ncnp2_zt, LH_zt )
+      end if
+
+      ! Compute the variance of cloud droplet concentration
+      if ( iLH_Ncp2_zt > 0 ) then
+        LH_Ncp2_zt = compute_sample_variance &
+                     ( nz, n_micro_calls, Nc_all_points(:,:), &
+                       LH_sample_point_weights, LH_Ncm(:) )
+        call stat_update_var( iLH_Ncp2_zt, LH_Ncp2_zt, LH_zt )
       end if
 
       ! Compute the variance of rain droplet number concentration

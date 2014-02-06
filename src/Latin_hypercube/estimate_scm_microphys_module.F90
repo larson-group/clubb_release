@@ -334,20 +334,23 @@ module estimate_scm_microphys_module
                                     hydromet_all_points, &  ! Out
                                     Ncn_all_points ) ! Out
 
-      ! For now, set Nc = Ncn at every point.
-      ! Their relationship is Nc = Ncn * H(s).
-      Nc = Ncn_all_points
-
-      ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
-      ! sample points. Thus, we overwrite the sample value of Nc with
-      ! Nc_in_cloud.
-      if (l_const_Nc_in_cloud) then
-        where (s_mellor_column > 0.0_core_rknd)
-          Nc = Nc_in_cloud
-        else where
-          Nc = 0.0_core_rknd
-        end where
-      end if
+      ! Set Nc = Ncn * H(s).  For l_const_Nc_in_cloud, Ncn should have a
+      ! constant value of Nc_in_cloud.
+      if ( l_const_Nc_in_cloud ) then
+         ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
+         ! sample points.
+         where ( s_mellor_column > 0.0_core_rknd )
+            Nc = Nc_in_cloud
+         else where
+            Nc = 0.0_core_rknd
+         end where
+      else ! Nc varies in-cloud
+         where ( s_mellor_column > 0.0_core_rknd )
+            Nc = Ncn_all_points
+         else where
+            Nc = 0.0_core_rknd
+         end where
+      endif
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &

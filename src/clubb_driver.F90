@@ -3689,11 +3689,12 @@ module clubb_driver
         pdf_parameter ! Derived type
 
     use parameters_microphys, only: &
-        micro_scheme,       &  ! Variables
+        micro_scheme,       & ! Variables
         LH_microphys_calls
 
     use constants_clubb, only: & 
-        rc_tol, fstderr ! Variable(s)
+        rc_tol,  & ! Variable(s)
+        fstderr
 
     use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
 
@@ -3727,14 +3728,22 @@ module clubb_driver
         corr_array_below
 
 #ifdef LATIN_HYPERCUBE
+    use constants_clubb, only: &
+        cloud_frac_min  ! Variable(s)
+
+    use array_index, only: &
+        iiNcm  ! Variable(s)
+
     use parameters_microphys, only: &
         LH_microphys_type, & ! Variable(s)
         LH_microphys_disabled, &
         LH_microphys_interactive, &
         l_lh_vert_overlap, &
         LH_sequence_length, &
+        l_predictnc, &
         l_local_kk, &
-        l_var_covar_src
+        l_var_covar_src, &
+        Nc0_in_cloud
 
     use latin_hypercube_driver_module, only: &
         LH_subcolumn_generator_mod, & ! Procedure(s)
@@ -3850,6 +3859,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Nc_in_cloud    ! Mean cloud droplet concentration (within-cloud)  [num/kg]
+
     integer :: k, kp1, km1
 #endif
     integer :: err_code_microphys
@@ -3947,9 +3959,16 @@ module clubb_driver
                 LH_sample_point_weights ) ! Out
       endif
 
+      if ( l_predictnc ) then
+         Nc_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+      else
+         Nc_in_cloud = Nc0_in_cloud / rho
+      endif
+
       call stats_accumulate_LH &
            ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In
-             LH_sample_point_weights,  X_nl_all_levs, LH_thl, LH_rt ) ! In
+             LH_sample_point_weights,  X_nl_all_levs, & ! In
+             LH_thl, LH_rt, Nc_in_cloud ) ! In
     end if ! LH_microphys_enabled
 
 #else

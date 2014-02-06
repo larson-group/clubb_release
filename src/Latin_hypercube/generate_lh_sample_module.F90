@@ -1147,10 +1147,6 @@ module generate_lh_sample_module
 
     end if
 
-    ! Zero Ncn if not in cloud
-    if ( X_nl_one_lev(iiPDF_s_mellor) < 0.0_dp ) then
-      X_nl_one_lev(iiPDF_Ncn) = 0.0_dp
-    end if
 
     return
   end subroutine generate_lh_sample_mod
