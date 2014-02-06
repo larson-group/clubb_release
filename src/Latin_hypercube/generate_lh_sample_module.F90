@@ -988,10 +988,9 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, &
+      iiPDF_s_mellor, & ! Variable(s)
       iiPDF_t_mellor, &
-      iiPDF_w, &
-      iiPDF_Ncn
+      iiPDF_w
 
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
