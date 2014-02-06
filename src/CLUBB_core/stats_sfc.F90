@@ -79,7 +79,8 @@ module stats_sfc
       
     use stats_variables, only: &
       irtm_spur_src,            &
-      ithlm_spur_src
+      ithlm_spur_src, &
+      irsnowm_sd_morr_int
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -431,6 +432,14 @@ module stats_sfc
         call stat_assign( var_index=ithlm_spur_src, var_name="thlm_spur_src", &
              var_description="thlm spurious source [(K kg) / (m^2 s)]", &
              var_units="(K kg) / (m^2 s)", l_silhs=.false., grid_kind=sfc )
+        k = k + 1
+
+      case ('rsnowm_sd_morr_int')
+        irsnowm_sd_morr_int = k
+
+        call stat_assign( var_index=irsnowm_sd_morr_int, var_name="rsnowm_sd_morr_int", &
+             var_description="rsnowm_sd_morr vertical integral [(kg/kg)/s]", &
+             var_units="(kg/kg)/s", l_silhs=.true., grid_kind=sfc )
         k = k + 1
 
       case default

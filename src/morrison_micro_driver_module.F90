@@ -51,7 +51,8 @@ module morrison_micro_driver_module
       ircm_in_cloud, &
       irrainm_auto, &
       irrainm_accr, &
-      irrainm_cond
+      irrainm_cond, &
+      irsnowm_sd_morr_int
 
     use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
@@ -181,13 +182,25 @@ module morrison_micro_driver_module
       sec_per_day
 
     use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      time_precision
+        core_rknd, & ! Variable(s)
+        time_precision
+
+    use variables_prognostic_module, only: &
+        rho_ds_zt
+
+    use grid_class, only: &
+        gr
+
+    use error_code, only: &
+        clubb_at_least_debug_level
+
+    use fill_holes, only: &
+        vertical_integral
 
     implicit none
 
     ! External
-    intrinsic :: max, real
+    intrinsic :: max, real, maxval
 
     ! Constant parameters
     real( kind = core_rknd ), parameter :: &
@@ -426,6 +439,8 @@ module morrison_micro_driver_module
       Nrm_auto, & ! Change in Nrm due to autoconversion               [num/kg/s]
       Nrm_evap    ! Change in Nrm due to evaporation                  [num/kg/s]
 
+    ! Local Variables
+    real( kind = core_rknd ) :: rsnowm_sd_morr_int
 
     ! ---- Begin Code ----
 
@@ -663,6 +678,21 @@ module morrison_micro_driver_module
     do k = 1, nz, 1
       hydromet_vel_zt(k,iirrainm) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
+    
+    if ( clubb_at_least_debug_level(2) ) then
+
+       rsnowm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                            lh_stat_sample_weight*hydromet_sten(2:nz, iirsnowm), &
+                            gr%invrs_dzt(2:nz) )
+
+       if ( rsnowm_sd_morr_int > maxval( hydromet_sten(2:nz, iirsnowm) ) ) then
+          print *, "Warning: rsnowm_sd_morr was not conservative!" // &
+                   " rsnowm_sd_morr_verical_integr = ", rsnowm_sd_morr_int
+       endif
+
+       call stat_update_var_pt( irsnowm_sd_morr_int, 1, rsnowm_sd_morr_int, sfc )
+
+    endif
 
     if ( .not. l_latin_hypercube .and. l_stats_samp ) then
 

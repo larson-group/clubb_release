@@ -560,15 +560,13 @@ module fill_holes
 
     ! There is no water substance at all to fill the hole
     if ( total_mass == zero ) then
-       print *, "Warning: One level hole filling was not successful! total_mass = 0"
-       hm_one_lev_filled = hm_one_lev
-       return
-    endif
 
-    ! Hole cannot be filled with other hydrometeors
-    if ( abs(total_hole) > total_mass ) then
-       print *, "Warning: One level hole filling was not successful! total_hole > total_mass"
+       if ( clubb_at_least_debug_level(2) ) then
+          print *, "Warning: One level hole filling was not successful! total_mass = 0"
+       endif
+
        hm_one_lev_filled = hm_one_lev
+
        return
     endif
 
@@ -577,7 +575,22 @@ module fill_holes
     ! or
     ! hm_filled(i) = (1 + total_hole/total_mass)*hm(i), if hm(i) > 0
     do i=1, num_hm_fill
-       hm_one_lev_filled(i) = max(hm_one_lev(i), zero) * ( one + total_hole / total_mass )
+
+       ! if there is not enough material, fill the holes partially with all the material available
+       if ( abs(total_hole) > total_mass ) then
+
+          if ( clubb_at_least_debug_level(2) ) then
+             print *, "Warning: One level hole was not able to fill holes completely!" // &
+                      " The holes were filled partially. |total_hole| > total_mass"
+          endif
+
+          hm_one_lev_filled(i) = min(hm_one_lev(i), zero) * ( one + total_mass / total_hole )
+
+       else ! fill holes completely
+          hm_one_lev_filled(i) = max(hm_one_lev(i), zero) * ( one + total_hole / total_mass )
+
+       endif
+
     enddo
 
     ! Assertion checks (water substance conservation, non-negativity)
@@ -609,6 +622,8 @@ module fill_holes
   !
   ! Attention: The hole filling for the liquid phase hydrometeors is not yet implemented
   !
+  ! Attention: l_frozen_hm and l_mix_rat_hm need to be set up before this subroutine is called!
+  !
   ! References:
   !
   ! None
@@ -639,7 +654,7 @@ module fill_holes
     ! Local Variables
     integer :: i,j ! Loop iterators
 
-    integer :: num_frozen_hm = 0 ! Number of frozen hydrometeor mixing ratios
+    integer :: num_frozen_hm ! Number of frozen hydrometeor mixing ratios
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       hydromet_frozen,       & ! Frozen hydrometeor mixing ratios
@@ -650,6 +665,7 @@ module fill_holes
     !----- Begin Code -----
 
     ! Determine the number of frozen hydrometeor mixing ratios
+    num_frozen_hm = 0
     do i=1,hydromet_dim
        if ( l_frozen_hm(i) .and. l_mix_rat_hm(i) ) then
           num_frozen_hm = num_frozen_hm + 1

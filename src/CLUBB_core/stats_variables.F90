@@ -445,7 +445,8 @@ module stats_variables
      irsnowm_mc = 0, & 
      irsnowm_hf = 0, &
      irsnowm_wvhf = 0, &
-     irsnowm_cl = 0
+     irsnowm_cl = 0, &
+     irsnowm_sd_morr_int = 0
 
 !$omp   threadprivate(irsnowm_bt, irsnowm_ma, irsnowm_sd, irsnowm_sd_morr, irsnowm_ta)
 !$omp   threadprivate(irsnowm_mc, irsnowm_hf, irsnowm_wvhf, irsnowm_cl)
