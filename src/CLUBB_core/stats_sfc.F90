@@ -434,10 +434,10 @@ module stats_sfc
              var_units="(K kg) / (m^2 s)", l_silhs=.false., grid_kind=sfc )
         k = k + 1
 
-      case ('rsnowm_sd_morr_int')
+      case ('rs_sd_morr_int')
         irsnowm_sd_morr_int = k
 
-        call stat_assign( var_index=irsnowm_sd_morr_int, var_name="rsnowm_sd_morr_int", &
+        call stat_assign( var_index=irsnowm_sd_morr_int, var_name="rs_sd_morr_int", &
              var_description="rsnowm_sd_morr vertical integral [(kg/kg)/s]", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=sfc )
         k = k + 1
