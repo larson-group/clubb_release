@@ -858,14 +858,16 @@ module stats_variables
     iNI_INST = 0, &
     iNS_INST = 0, &
     iNG_INST = 0, &
-    iT_in_K_mc = 0
+    iT_in_K_mc = 0, &
+    ihl_residual = 0, &
+    iqto_residual = 0
 
 !$omp threadprivate(iPCC, iNNUCCC, iNPSACWS, iNPRA, iNPRC, iNPSACWI, iNPSACWG, iNPRAI, &
 !$omp   iNMULTS, iNMULTG, iNMULTR, iNMULTRG, iNNUCCD, iNSUBI, iNGMLTG, iNSUBG, iNACT, &
 !$omp   iSIZEFIX_NR, iSIZEFIX_NC, iSIZEFIX_NI, iSIZEFIX_NS, iSIZEFIX_NG, iNEGFIX_NR, &
 !$omp   iNEGFIX_NC, iNEGFIX_NI, iNEGFIX_NS, iNEGFIX_NG, iNIM_MORR_CL, iQC_INST, iQR_INST, &
 !$omp   iQI_INST, iQS_INST, iQG_INST, iNC_INST, iNR_INST, iNI_INST, iNS_INST, &
-!$omp   iNG_INST, iT_in_K_mc  )
+!$omp   iNG_INST, iT_in_K_mc, ihl_residual, iqto_residual  )
 
   ! Indices for statistics in zm file
   integer, public :: & 

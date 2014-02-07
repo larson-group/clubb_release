@@ -558,7 +558,9 @@ module stats_zt
     use stats_variables, only: &
       iwp2hmp, & ! Variable(s)
       icloud_frac_refined, &
-      ircm_refined
+      ircm_refined, &
+      ihl_residual, &
+      iqto_residual
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -4087,6 +4089,23 @@ module stats_zt
                           var_description="Cloud water mixing ratio computed on refined grid &
                           &[kg/kg]", var_units="kg/kg", l_silhs=.false., grid_kind=zt)
         k = k + 1
+
+      case ('hl_residual')
+        ihl_residual = k
+        call stat_assign( var_index=ihl_residual, var_name="hl_residual", &
+                          var_description="Residual change in HL/Cp from Morrison microphysics &
+                          &not due to sedimentation [K]", &
+                          var_units="K", l_silhs=.true., grid_kind=zt)
+        k = k + 1
+
+      case ('qto_residual')
+        iqto_residual = k
+        call stat_assign( var_index=iqto_residual, var_name="qto_residual", &
+                          var_description="Residual change in total water from Morrison &
+                          &microphysics not due to sedimentation [kg/kg]", &
+                          var_units="kg/kg", l_silhs=.true., grid_kind=zt)
+        k = k + 1
+
 
       case default
 

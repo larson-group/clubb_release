@@ -41,6 +41,12 @@ module morrison_micro_driver_module
       LH_sfc, &
       sfc
 
+    use constants_clubb, only: &
+      Lv, & ! Constants
+      Ls, &
+      Cp, &
+      grav
+
     use stats_variables, only: & 
       irsnowm_sd_morr, & ! Variables
       iricem_sd_mg_morr, & 
@@ -52,7 +58,9 @@ module morrison_micro_driver_module
       irrainm_auto, &
       irrainm_accr, &
       irrainm_cond, &
-      irsnowm_sd_morr_int
+      irsnowm_sd_morr_int, &
+      ihl_residual, &
+      iqto_residual
 
     use stats_variables, only: & 
       ieff_rad_cloud, & ! Variables
@@ -442,6 +450,15 @@ module morrison_micro_driver_module
     ! Local Variables
     real( kind = core_rknd ) :: rsnowm_sd_morr_int
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      hl_before, &
+      qto_before, &
+      hl_after, &
+      hl_residual, &
+      qto_after, &
+      qto_residual
+
+
     ! ---- Begin Code ----
 
     ! Get rid of compiler warnings
@@ -602,6 +619,13 @@ module morrison_micro_driver_module
     rho_r4 = real( rho )
     dzq_r4 = real( dzq )
 
+    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * zt%z &
+                - Lv * ( rcm + hydromet(:,iirrainm) ) &
+                - Ls * ( hydromet(:,iiricem) + hydromet(:,iirsnowm) + hydromet(:,iirgraupelm) )
+
+    qto_before = rvm + rcm + hydromet(:,iirrainm) + hydromet(:,iiricem) &
+                  + hydromet(:,iirsnowm) + hydromet(:,iirgraupelm)
+
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
          ( rcm_mc_r4, hydromet_mc_r4(:,iiricem), hydromet_mc_r4(:,iirsnowm), &
@@ -638,6 +662,33 @@ module morrison_micro_driver_module
            NEGFIX_NR, NEGFIX_NC, NEGFIX_NI, NEGFIX_NS, NEGFIX_NG, &
            NIM_MORR_CL, QC_INST, QR_INST, QI_INST, QS_INST, QG_INST, &
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
+
+    hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * zt%z &
+                - Lv * ( real( rcm_r4, kind = core_rknd) &
+                        + real( hydromet_r4(:,iirrainm), kind = core_rknd ) ) &
+                - Ls * ( real( hydromet_r4(:,iiricem), kind = core_rknd ) &
+                        + real( hydromet_r4(:,iirsnowm), kind = core_rknd ) &
+                        + real(hydromet_r4(:,iirgraupelm), kind = core_rknd ) )
+
+    hl_residual = ( hl_after - hl_before &
+                   - dt * Lv * ( real( rcm_sten, kind = core_rknd ) &
+                        + real( hydromet_sten(:,iirrainm), kind = core_rknd ) ) &
+                   - dt * Ls * ( real( hydromet_sten(:,iiricem), kind = core_rknd ) &
+                        + real( hydromet_sten(:,iirsnowm), kind = core_rknd ) &
+                        + real( hydromet_sten(:,iirgraupelm), kind = core_rknd ) ) ) / Cp
+
+    qto_after = real( rvm_r4, kind = core_rknd ) + real( rcm_r4, kind = core_rknd ) &
+                 + real( hydromet_r4(:,iirrainm), kind = core_rknd ) &
+                 + real( hydromet_r4(:,iiricem), kind = core_rknd ) &
+                 + real( hydromet_r4(:,iirsnowm), kind = core_rknd ) &
+                 + real( hydromet_r4(:,iirgraupelm), kind = core_rknd )
+
+    qto_residual = qto_after - qto_before - dt * ( real( rcm_sten, kind = core_rknd ) &
+                 + real( hydromet_sten(:,iirrainm), kind = core_rknd ) &
+                 + real( hydromet_sten(:,iiricem), kind = core_rknd ) &
+                 + real( hydromet_sten(:,iirsnowm), kind = core_rknd ) &
+                 + real( hydromet_sten(:,iirgraupelm), kind = core_rknd) )
+
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -710,6 +761,8 @@ module morrison_micro_driver_module
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
     if ( l_stats_samp ) then
+      call stat_update_var( ihl_residual, lh_stat_sample_weight * hl_residual, zt )
+      call stat_update_var( iqto_residual, lh_stat_sample_weight * qto_residual, zt )
       call stat_update_var( irgraupelm_sd_morr, lh_stat_sample_weight  &
                 * real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), zt )
       call stat_update_var( irrainm_sd_morr,lh_stat_sample_weight &
