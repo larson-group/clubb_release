@@ -3232,7 +3232,7 @@ module advance_xp2_xpyp_module
     ! Use the hole filling code to make a variance term positive definite
     !-----------------------------------------------------------------------
 
-    use fill_holes, only: fill_holes_driver
+    use fill_holes, only: fill_holes_vertical
     use grid_class, only: gr
     use clubb_precision, only: time_precision, core_rknd
 
@@ -3295,7 +3295,7 @@ module advance_xp2_xpyp_module
       ! Call the hole-filling scheme.
       ! The first pass-through should draw from only two levels on either side
       ! of the hole.
-      call fill_holes_driver( 2, tolerance, "zm",   & ! Intent(in) 
+      call fill_holes_vertical( 2, tolerance, "zm",   & ! Intent(in)
                               rho_ds_zt, rho_ds_zm, & ! Intent(in)
                               xp2_np1 )               ! Intent(inout)
 

@@ -1002,64 +1002,21 @@ module microphys_driver
         iVrsnow, & 
         iVrice, & 
         iVrgraupel, &
-        iwprrp, &
-        iwprip, &
-        iwprsp, &
-        iwprgp, &
-        iwpNrp, &
-        iwpNip, &
-        iwpNsp, &
-        iwpNgp, &
-        iwpNcp, &
         iVrrprrp, &
-        iVNrpNrp, & 
+        iVNrpNrp, &
         iprecip_rate_zt, & 
         iFprec
 
     use stats_variables, only: & 
-        irrainm_bt,       & ! Variable(s)
-        irrainm_mc,       & 
-        irrainm_hf,       & 
-        irrainm_wvhf,     &
-        irrainm_cl,       &
-        iricem_bt,        & 
-        iricem_mc,        &
-        iricem_hf,        &
-        iricem_wvhf,      &
-        iricem_cl,        &
-        irgraupelm_bt,    &
-        irgraupelm_mc,    &
-        irgraupelm_hf,    &
-        irgraupelm_wvhf,  &
-        irgraupelm_cl,    &
-        irsnowm_bt,       & 
-        irsnowm_mc,       &
-        irsnowm_hf,       &
-        irsnowm_wvhf,     &
-        irsnowm_cl,       &
         iprecip_rate_sfc,   & 
         irain_flux_sfc,   & 
         irrainm_sfc
 
     use stats_variables, only: & 
-        iNrm_bt,       & ! Variable(s)
-        iNrm_mc,       &
-        iNrm_cl,       &
-        iNim_bt,       &
-        iNim_cl,       &
-        iNim_mc,       &
-        iNsnowm_bt,    &
-        iNsnowm_cl,    &
-        iNsnowm_mc,    &
-        iNgraupelm_bt, &
-        iNgraupelm_cl, &
-        iNgraupelm_mc, &
         iNc_in_cloud,  &
         iNc_activated, &
         iNccnm,        &
         iNcm_bt,       &
-        iNcm_cl,       &
-        iNcm_mc,       &
         iNcm_act,      &
         iNcm
 
@@ -1090,8 +1047,9 @@ module microphys_driver
 
     use fill_holes, only: &
         vertical_avg, & ! Procedure(s)
-        fill_holes_driver, &
-        fill_holes_hydromet
+        fill_holes_vertical, &
+        fill_holes_hydromet, &
+        fill_holes_wv
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_add,            &
@@ -1110,10 +1068,6 @@ module microphys_driver
 
     use corr_matrix_module, only: &
         d_variables ! Variable(s)
-
-    use array_index, only: &
-        l_frozen_hm, &
-        l_mix_rat_hm
 
     implicit none
 
@@ -1266,8 +1220,7 @@ module microphys_driver
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     real( kind = core_rknd ) :: &
-      max_velocity, & ! Maximum sedimentation velocity [m/s]
-      temp            ! Temporary variables     [units vary]
+      max_velocity ! Maximum sedimentation velocity [m/s]
 
     integer :: i, k ! Loop iterators / Array indices
 
@@ -1878,6 +1831,7 @@ module microphys_driver
 
     endif
 
+    hydromet_filled = zero
     do i = 1, hydromet_dim
 
       ! Set up the stats indices for hydrometeor at index i
@@ -1917,9 +1871,9 @@ module microphys_driver
          if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
 
             ! Apply the hole filling algorithm
-            call fill_holes_driver( 2, zero_threshold, "zt", &
-                                    rho_ds_zt, rho_ds_zm, &
-                                    hydromet(:,i) )
+            call fill_holes_vertical( 2, zero_threshold, "zt", &
+                                      rho_ds_zt, rho_ds_zm, &
+                                      hydromet(:,i) )
 
          endif ! Variable is a mixing ratio and l_hole_fill is true
 
@@ -1948,34 +1902,8 @@ module microphys_driver
             ! the missing mass with water vapor mixing ratio.
             ! We noticed this is needed for ASEX A209, particularly if Latin
             ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-            do k = 2, gr%nz, 1
-
-               if ( hydromet(k,i) < zero_threshold ) then
-
-                  ! Set temp to the time tendency applied to vapor and removed
-                  ! from the hydrometeor.
-                  temp = hydromet(k,i) / real( dt, kind = core_rknd )
-
-                  ! Adjust the tendency rvm_mc accordingly
-                  rvm_mc(k) = rvm_mc(k) + temp
-
-                  ! Adjust the tendency of thlm_mc according to whether the
-                  ! effect is an evaporation or sublimation tendency.
-                  select case ( trim( hydromet_name ) )
-                  case( "rrainm" )
-                     thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
-                  case( "ricem", "rsnowm", "rgraupelm" )
-                     thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
-                  case default
-                     stop "Fatal error in microphys_driver"
-                  end select
-
-                  ! Set the mixing ratio to 0
-                  hydromet(k,i) = zero_threshold
-
-               endif ! hydromet(k,i) < 0
-
-            enddo ! k = 2..gr%nz
+            call fill_holes_wv( gr%nz, dt, exner, hydromet_name, & ! Intent(in)
+                                rvm_mc, thlm_mc, hydromet(:,i) )   ! Intent(out)
 
          endif ! Variable is a mixing ratio and l_hole_fill is true
 
@@ -4239,11 +4167,6 @@ module microphys_driver
   !-----------------------------------------------------------------------
 
     use stats_variables, only: &
-        iVrr,  & ! Variable(s)
-        iVNr, &
-        iVrsnow, &
-        iVrice, &
-        iVrgraupel, &
         iwprrp, &
         iwprip, &
         iwprsp, &
@@ -4252,11 +4175,7 @@ module microphys_driver
         iwpNip, &
         iwpNsp, &
         iwpNgp, &
-        iwpNcp, &
-        iVrrprrp, &
-        iVNrpNrp, &
-        iprecip_rate_zt, &
-        iFprec
+        iwpNcp
 
     use stats_variables, only: &
         irrainm_bt,       & ! Variable(s)
@@ -4278,10 +4197,7 @@ module microphys_driver
         irsnowm_mc,       &
         irsnowm_hf,       &
         irsnowm_wvhf,     &
-        irsnowm_cl,       &
-        iprecip_rate_sfc,   &
-        irain_flux_sfc,   &
-        irrainm_sfc
+        irsnowm_cl
 
     use stats_variables, only: &
         iNrm_bt,       & ! Variable(s)
@@ -4296,14 +4212,9 @@ module microphys_driver
         iNgraupelm_bt, &
         iNgraupelm_cl, &
         iNgraupelm_mc, &
-        iNc_in_cloud, &
-        iNc_activated, &
-        iNcnm,         &
         iNcm_bt,       &
         iNcm_cl,       &
-        iNcm_mc,       &
-        iNcm_act,      &
-        iNcm
+        iNcm_mc
 
     use clubb_precision, only: &
         core_rknd

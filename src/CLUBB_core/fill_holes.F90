@@ -5,9 +5,10 @@ module fill_holes
 
   implicit none
 
-  public :: fill_holes_driver, &
+  public :: fill_holes_vertical, &
             hole_filling_hm_one_lev, &
             fill_holes_hydromet, &
+            fill_holes_wv, &
             vertical_avg, &
             vertical_integral
 
@@ -18,9 +19,9 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_driver( num_pts, threshold, field_grid, &
-                                rho_ds, rho_ds_zm, &
-                                field )
+  subroutine fill_holes_vertical( num_pts, threshold, field_grid, &
+                                  rho_ds, rho_ds_zm, &
+                                  field )
 
     ! Description:
     ! This subroutine clips values of 'field' that are below 'threshold' as much
@@ -158,7 +159,7 @@ module fill_holes
 
     return
 
-  end subroutine fill_holes_driver
+  end subroutine fill_holes_vertical
 
   !=============================================================================
   subroutine fill_holes_multiplicative &
@@ -710,6 +711,89 @@ module fill_holes
 
     return
   end subroutine fill_holes_hydromet
+  !-----------------------------------------------------------------------
+
+    !-----------------------------------------------------------------------
+  subroutine fill_holes_wv( nz, dt, exner, hydromet_name, & ! Intent(in)
+                            rvm_mc, thlm_mc, hydromet )! Intent(inout)
+
+  ! Description:
+  ! Fills holes using the cloud water mixing ratio from the current height level.
+  !
+  ! References:
+  !
+  ! None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd, &
+        time_precision
+
+    use constants_clubb, only: &
+        zero, & ! Constant(s)
+        zero_threshold, &
+        Lv, &
+        Ls, &
+        Cp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: nz
+
+    real( kind = time_precision ), intent(in) ::  &
+      dt           ! Timestep         [s]
+
+    character(len=10), intent(in) :: hydromet_name
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      exner        ! Exner function                            [-]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      hydromet, &  ! Hydrometeor array                         [units vary]
+      rvm_mc, &
+      thlm_mc
+
+    ! Local Variables
+    integer :: k ! Loop iterator
+
+    real( kind = core_rknd ) :: temp
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do k = 2, nz, 1
+
+       if ( hydromet(k) < zero_threshold ) then
+
+          ! Set temp to the time tendency applied to vapor and removed
+          ! from the hydrometeor.
+          temp = hydromet(k) / real( dt, kind = core_rknd )
+
+          ! Adjust the tendency rvm_mc accordingly
+          rvm_mc(k) = rvm_mc(k) + temp
+
+          ! Adjust the tendency of thlm_mc according to whether the
+          ! effect is an evaporation or sublimation tendency.
+          select case ( trim( hydromet_name ) )
+          case( "rrainm" )
+             thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+          case( "ricem", "rsnowm", "rgraupelm" )
+             thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+          case default
+             stop "Fatal error in microphys_driver"
+          end select
+
+          ! Set the mixing ratio to 0
+          hydromet(k) = zero_threshold
+
+       endif ! hydromet(k,i) < 0
+
+    enddo ! k = 2..gr%nz
+
+    return
+  end subroutine fill_holes_wv
   !-----------------------------------------------------------------------
 
 end module fill_holes

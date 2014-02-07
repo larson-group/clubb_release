@@ -373,7 +373,7 @@ module advance_wp2_wp3_module
         band_solvex
 
     use fill_holes, only: & 
-        fill_holes_driver
+        fill_holes_vertical
 
     use clip_explicit, only: &
         clip_variance, & ! Procedure(s)
@@ -773,9 +773,9 @@ module advance_wp2_wp3_module
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
 
       ! Use a simple hole filling algorithm
-      call fill_holes_driver( 2, w_tol_sqd, "zm", &
-                              rho_ds_zt, rho_ds_zm, &
-                              wp2 )
+      call fill_holes_vertical( 2, w_tol_sqd, "zm", &
+                                rho_ds_zt, rho_ds_zm, &
+                                wp2 )
 
     endif ! wp2
 

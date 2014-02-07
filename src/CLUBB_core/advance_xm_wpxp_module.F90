@@ -1860,7 +1860,7 @@ module advance_xm_wpxp_module
         zero
 
     use fill_holes, only: &
-        fill_holes_driver ! Procedure
+        fill_holes_vertical ! Procedure
 
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure(s)
@@ -2266,9 +2266,9 @@ module advance_xm_wpxp_module
         end do
       end if
 
-      call fill_holes_driver( 2, xm_threshold, "zt", &
-                              rho_ds_zt, rho_ds_zm, &
-                              xm )
+      call fill_holes_vertical( 2, xm_threshold, "zt", &
+                                rho_ds_zt, rho_ds_zm, &
+                                xm )
 
     end if !  any( xm < xm_threshold ) .and. l_hole_fill
 
