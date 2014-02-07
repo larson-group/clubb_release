@@ -1013,8 +1013,8 @@ module latin_hypercube_driver_module
     call stats_accumulate_uniform_LH( nz, n_micro_calls, l_in_precip, X_mixt_comp_all_levs, &
                                       LH_sample_point_weights)
 
-    ! Upwards loop
-    do k = k_lh_start, nz, 1
+    ! Sample loop
+    do k = 1, nz
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, n_micro_calls, 1
         call generate_lh_sample_mod &
@@ -1030,25 +1030,7 @@ module latin_hypercube_driver_module
                l_in_precip(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, n_micro_calls, 1
-    end do ! k = k_lh_start..nz
-
-      ! Downwards loop
-    do k = k_lh_start-1, 1, -1
-      do sample = 1, n_micro_calls, 1
-        call generate_lh_sample_mod &
-             ( d_variables, d_uniform_extra, & ! In
-               pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
-               pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
-               pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
-               pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
-               mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               corr_stw_matrix_Cholesky_1(:,:,k), & ! In
-               corr_stw_matrix_Cholesky_2(:,:,k), & ! In
-               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               l_in_precip(k,sample), & ! In
-               LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
-      end do ! sample = 1, n_micro_calls, 1
-    end do ! k_lh_start-1..1
+    end do ! k = 1, nz
 
     if ( l_output_2D_lognormal_dist ) then
       call output_2D_lognormal_dist_file( nz, n_micro_calls, d_variables, &
