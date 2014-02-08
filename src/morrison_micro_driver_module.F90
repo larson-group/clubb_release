@@ -733,10 +733,12 @@ module morrison_micro_driver_module
     if ( clubb_at_least_debug_level(2) ) then
 
        rsnowm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                            lh_stat_sample_weight*hydromet_sten(2:nz, iirsnowm), &
+                            lh_stat_sample_weight * &
+                            real( hydromet_sten(2:nz,iirsnowm), kind=core_rknd ), &
                             gr%invrs_dzt(2:nz) )
 
-       if ( rsnowm_sd_morr_int > maxval( hydromet_sten(2:nz, iirsnowm) ) ) then
+       if ( rsnowm_sd_morr_int > maxval( real(hydromet_sten(2:nz, iirsnowm), &
+                                               kind=core_rknd ) ) ) then
           print *, "Warning: rsnowm_sd_morr was not conservative!" // &
                    " rsnowm_sd_morr_verical_integr = ", rsnowm_sd_morr_int
        endif
