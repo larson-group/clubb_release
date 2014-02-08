@@ -144,19 +144,19 @@ module estimate_scm_microphys_module
 
 
     ! Local Variables
-    real( kind = dp ), dimension(nz,hydromet_dim) :: &
-      lh_hydromet_mc_sum, & ! LH est of hydrometeor time tendency          [(units vary)/s]
-      lh_hydromet_vel_sum   ! LH est of hydrometeor sedimentation velocity [m/s]
+    real( kind = dp ), dimension(nz,hydromet_dim,n_micro_calls) :: &
+      lh_hydromet_mc_all, & ! LH est of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = dp ), dimension(nz) :: &
-      lh_rrainm_auto_sum,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
-      lh_rrainm_accr_sum,  & ! LH est of time tendency of accretion                    [kg/kg/s]
-      lh_rrainm_evap_sum,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
-      lh_Nrm_auto_sum,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
-      lh_Nrm_evap_sum,     & ! LH_est of time tendency of Nrm evaporation              [#/kg/s]
-      lh_rcm_mc_sum,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc_sum,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc_sum         ! LH est of time tendency of liquid potential temperature     [K/s]
+    real( kind = dp ), dimension(nz,n_micro_calls) :: &
+      lh_rrainm_auto_all,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
+      lh_rrainm_accr_all,  & ! LH est of time tendency of accretion                    [kg/kg/s]
+      lh_rrainm_evap_all,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
+      lh_Nrm_auto_all,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
+      lh_Nrm_evap_all,     & ! LH_est of time tendency of Nrm evaporation              [#/kg/s]
+      lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
+      lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
+      lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
@@ -251,22 +251,22 @@ module estimate_scm_microphys_module
     lh_hydromet_vel(:,:) = 0._core_rknd
 
     ! Initialize microphysical tendencies for each mixture component
-    lh_hydromet_mc_sum(:,:) = 0._dp
+    lh_hydromet_mc_all(:,:,:) = 0._dp
 
-    lh_hydromet_vel_sum(:,:) = 0._dp
+    lh_hydromet_vel_all(:,:,:) = 0._dp
 
-    lh_rcm_mc_sum(:) = 0._dp
+    lh_rcm_mc_all(:,:) = 0._dp
 
-    lh_rvm_mc_sum(:) = 0._dp
+    lh_rvm_mc_all(:,:) = 0._dp
 
-    lh_thlm_mc_sum(:) = 0._dp
+    lh_thlm_mc_all(:,:) = 0._dp
 
-    lh_rrainm_auto_sum(:) = 0._dp
-    lh_rrainm_accr_sum(:) = 0._dp
-    lh_rrainm_evap_sum(:) = 0._dp
+    lh_rrainm_auto_all(:,:) = 0._dp
+    lh_rrainm_accr_all(:,:) = 0._dp
+    lh_rrainm_evap_all(:,:) = 0._dp
 
-    lh_Nrm_auto_sum(:) = 0._dp
-    lh_Nrm_evap_sum(:) = 0._dp
+    lh_Nrm_auto_all(:,:) = 0._dp
+    lh_Nrm_evap_all(:,:) = 0._dp
 
     lh_rtp2_mc(:) = 0.0_core_rknd
     lh_thlp2_mc(:) = 0.0_core_rknd
@@ -359,53 +359,36 @@ module estimate_scm_microphys_module
              exner, rho, cloud_frac, w_std_dev, & ! In
              dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
              hydromet_all_points, LH_sample_point_weights(sample), & ! In
-             lh_hydromet_mc, lh_hydromet_vel, & ! Out
-             lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, & ! Out
-             lh_rrainm_auto, lh_rrainm_accr, lh_rrainm_evap, &
-             lh_Nrm_auto, lh_Nrm_evap ) ! Out
+             lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
+             lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
+             lh_rrainm_auto_all(:,sample), lh_rrainm_accr_all(:,sample), &
+             lh_rrainm_evap_all(:,sample), &
+             lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample) ) ! Out
 
-      rt_all_samples(:,sample) = rc_column + rv_column + dt * ( lh_rcm_mc + lh_rvm_mc )
-      thl_all_samples(:,sample) = thl_column + dt * lh_thlm_mc
+      rt_all_samples(:,sample) = rc_column + rv_column + dt * ( lh_rcm_mc_all(:,sample) &
+                 + lh_rvm_mc_all(:,sample) )
+      thl_all_samples(:,sample) = thl_column + dt * lh_thlm_mc_all(:,sample)
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
         ! microphysics on clear or cloudy air
-        lh_hydromet_vel(:,:) = lh_hydromet_vel(:,:) * LH_sample_point_weights(sample)
-        lh_hydromet_mc(:,:) = lh_hydromet_mc(:,:) * LH_sample_point_weights(sample)
-        lh_rcm_mc(:) = lh_rcm_mc(:) * LH_sample_point_weights(sample)
-        lh_rvm_mc(:) = lh_rvm_mc(:) * LH_sample_point_weights(sample)
-        lh_thlm_mc(:) = lh_thlm_mc(:) * LH_sample_point_weights(sample)
-        lh_rrainm_auto(:) = lh_rrainm_auto(:) * LH_sample_point_weights(sample)
-        lh_rrainm_accr(:) = lh_rrainm_accr(:) * LH_sample_point_weights(sample)
-        lh_rrainm_evap(:) = lh_rrainm_evap(:) * LH_sample_point_weights(sample)
-        lh_Nrm_auto = lh_Nrm_auto(:) * LH_sample_point_weights(sample)
-        lh_Nrm_evap = lh_Nrm_evap(:) * LH_sample_point_weights(sample)
-      end if
-      if ( l_stats_samp ) then
-        ! Save autoconversion, accretion, and evaporation rate for statistics!
-        call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
-        call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
-        call stat_update_var( iLH_rrainm_evap, lh_rrainm_evap, LH_zt )
-        call stat_update_var( iLH_Nrm_auto, lh_Nrm_auto, LH_zt )
-        call stat_update_var( iLH_Nrm_cond, lh_Nrm_evap, LH_zt )
+        lh_hydromet_vel_all(:,:,sample) = lh_hydromet_vel_all(:,:,sample) &
+                * LH_sample_point_weights(sample)
+        lh_hydromet_mc_all(:,:,sample) = lh_hydromet_mc_all(:,:,sample) &
+                * LH_sample_point_weights(sample)
+        lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_rrainm_auto_all(:,sample) = lh_rrainm_auto_all(:,sample) &
+                * LH_sample_point_weights(sample)
+        lh_rrainm_accr_all(:,sample) = lh_rrainm_accr_all(:,sample) &
+                * LH_sample_point_weights(sample)
+        lh_rrainm_evap_all(:,sample) = lh_rrainm_evap_all(:,sample) &
+                * LH_sample_point_weights(sample)
+        lh_Nrm_auto_all(:,sample) = lh_Nrm_auto_all(:,sample) * LH_sample_point_weights(sample)
+        lh_Nrm_evap_all(:,sample) = lh_Nrm_evap_all(:,sample) * LH_sample_point_weights(sample)
       end if
 
-      do ivar = 1, hydromet_dim
-        lh_hydromet_vel_sum(:,ivar) = lh_hydromet_vel_sum(:,ivar) &
-                                    + real( lh_hydromet_vel(:,ivar), kind=dp )
-        lh_hydromet_mc_sum(:,ivar) = lh_hydromet_mc_sum(:,ivar) &
-                                   + real( lh_hydromet_mc(:,ivar), kind=dp )
-      end do
-
-      lh_rcm_mc_sum(:) = lh_rcm_mc_sum(:) + real( lh_rcm_mc(:), kind=dp )
-      lh_rvm_mc_sum(:) = lh_rvm_mc_sum(:) + real( lh_rvm_mc(:), kind=dp )
-      lh_thlm_mc_sum(:) = lh_thlm_mc_sum(:) + real( lh_thlm_mc(:), kind=dp )
-
-      lh_rrainm_auto_sum(:) = lh_rrainm_auto_sum(:) + real( lh_rrainm_auto(:), kind=dp )
-      lh_rrainm_accr_sum(:) = lh_rrainm_accr_sum(:) + real( lh_rrainm_accr(:), kind=dp )
-      lh_rrainm_evap_sum(:) = lh_rrainm_evap_sum(:) + real( lh_rrainm_evap(:), kind=dp )
-      lh_Nrm_auto_sum(:) = lh_Nrm_auto_sum(:) + real( lh_Nrm_auto(:), kind=dp )
-      lh_Nrm_evap_sum(:) = lh_Nrm_evap_sum(:) + real( lh_Nrm_evap(:), kind=dp )
 
       ! Loop to get new sample
     end do ! sample = 1, n_micro_calls
@@ -427,27 +410,42 @@ module estimate_scm_microphys_module
 
     ! Grid box average.
     forall( ivar = 1:hydromet_dim )
-      lh_hydromet_vel(:,ivar) = real( lh_hydromet_vel_sum(:,ivar), kind=core_rknd ) &
-                              / real( n_micro_calls, kind=core_rknd )
-      lh_hydromet_mc(:,ivar) = real( lh_hydromet_mc_sum(:,ivar), kind=core_rknd ) &
-                             / real( n_micro_calls, kind=core_rknd )
+      forall( k = 1:nz )
+        lh_hydromet_vel(k,ivar) = real( sum( lh_hydromet_vel_all(k,ivar,:) ), kind=core_rknd ) &
+                                / real( n_micro_calls, kind=core_rknd )
+        lh_hydromet_mc(k,ivar) = real( sum( lh_hydromet_mc_all(k,ivar,:) ), kind=core_rknd ) &
+                               / real( n_micro_calls, kind=core_rknd )
+      end forall
     end forall
 
-    lh_rcm_mc = real( lh_rcm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
-    lh_rvm_mc = real( lh_rvm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
-    lh_thlm_mc = real( lh_thlm_mc_sum, kind=core_rknd ) / real( n_micro_calls, kind=core_rknd )
+    forall( k = 1:nz )
+      lh_rcm_mc(k) = real( sum( lh_rcm_mc_all(k,:) ), kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
+      lh_rvm_mc(k) = real( sum( lh_rvm_mc_all(k,:) ), kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
+      lh_thlm_mc(k) = real( sum( lh_thlm_mc_all(k,:) ), kind=core_rknd ) / &
+                                     real( n_micro_calls, kind=core_rknd )
 
-    lh_rrainm_auto = real( lh_rrainm_auto_sum, kind=core_rknd ) / &
+      lh_rrainm_auto(k) = real( sum( lh_rrainm_auto_all(k,:) ), kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
-    lh_rrainm_accr = real( lh_rrainm_accr_sum, kind=core_rknd ) / &
+      lh_rrainm_accr(k) = real( sum( lh_rrainm_accr_all(k,:) ), kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
-    lh_rrainm_evap = real( lh_rrainm_evap_sum, kind=core_rknd ) / &
+      lh_rrainm_evap(k) = real( sum( lh_rrainm_evap_all(k,:) ), kind=core_rknd ) / &
                                      real( n_micro_calls, kind=core_rknd )
-    lh_Nrm_auto = real( lh_Nrm_auto_sum / real( n_micro_calls, kind=dp ), &
+      lh_Nrm_auto(k) = real( sum( lh_Nrm_auto_all(k,:) ) / real( n_micro_calls, kind=dp ), &
                                      kind = core_rknd )
-    lh_Nrm_evap = real( lh_Nrm_evap_sum / real( n_micro_calls, kind=dp ), &
+      lh_Nrm_evap(k) = real( sum( lh_Nrm_evap_all(k,:) ) / real( n_micro_calls, kind=dp ), &
                                      kind = core_rknd )
+    end forall
 
+    ! Statistics sampling
+    if ( l_stats_samp ) then
+      call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
+      call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
+      call stat_update_var( iLH_rrainm_evap, lh_rrainm_evap, LH_zt )
+      call stat_update_var( iLH_Nrm_auto, lh_Nrm_auto, LH_zt )
+      call stat_update_var( iLH_Nrm_cond, lh_Nrm_evap, LH_zt )
+    end if
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
