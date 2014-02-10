@@ -1047,9 +1047,8 @@ module microphys_driver
 
     use fill_holes, only: &
         vertical_avg, & ! Procedure(s)
-        fill_holes_vertical, &
-        fill_holes_hydromet, &
-        fill_holes_wv
+        fill_holes_driver, &
+        setup_stats_indices
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_add,            &
@@ -1240,6 +1239,7 @@ module microphys_driver
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Nc_in_cloud ! cloud average droplet concentration [#/kg]
+
 
     character(len=10) :: hydromet_name
 
@@ -1819,19 +1819,13 @@ module microphys_driver
 
     enddo
 
-    ! If we're dealing with negative hydrometeors, we first try to fill the
-    ! holes proportionally from other same-phase hydrometeors at each height
-    ! level.
-    if ( any( hydromet < zero ) .and. l_fill_holes_hm ) then
+    ! Fill holes in hydromet profiles
+    call fill_holes_driver( gr%nz, dt, hydromet_dim,     & ! Intent(in)
+                            l_fill_holes_hm,             & ! Intent(in)
+                            rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
+                            thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
 
-       call fill_holes_hydromet( gr%nz, hydromet_dim, hydromet, & ! Intent(in)
-                                 hydromet_filled ) ! Intent(out)
 
-       hydromet = hydromet_filled
-
-    endif
-
-    hydromet_filled = zero
     do i = 1, hydromet_dim
 
       ! Set up the stats indices for hydrometeor at index i
@@ -1856,89 +1850,6 @@ module microphys_driver
          endif
 
       endif ! hydromet(:,i) < 0
-
-      ! Store the previous value of the hydrometeor for the effect of the
-      ! hole-filling scheme.
-      if ( l_stats_samp ) then
-         call stat_begin_update( ixrm_hf, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
-      endif
-
-      ! If we're dealing with a mixing ratio and hole filling is enabled,
-      ! then we apply the hole filling algorithm
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-         if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-
-            ! Apply the hole filling algorithm
-            call fill_holes_vertical( 2, zero_threshold, "zt", &
-                                      rho_ds_zt, rho_ds_zm, &
-                                      hydromet(:,i) )
-
-         endif ! Variable is a mixing ratio and l_hole_fill is true
-
-      endif ! hydromet(:,i) < 0
-
-      ! Enter the new value of the hydrometeor for the effect of the
-      ! hole-filling scheme.
-      if ( l_stats_samp ) then
-         call stat_end_update( ixrm_hf, hydromet(:,i) &
-                                        / real( dt, kind = core_rknd ), zt )
-      endif
-
-      ! Store the previous value of the hydrometeor for the effect of the water
-      ! vapor hole-filling scheme.
-      if ( l_stats_samp ) then
-         call stat_begin_update( ixrm_wvhf, hydromet(:,i) &
-                                            / real( dt, kind = core_rknd ), zt )
-      endif
-
-      !!! We should put this into another subroutine inside fill_holes.F90
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-         if ( hydromet_name(1:1) == "r" .and. l_hole_fill ) then
-
-            ! If the hole filling algorithm failed, then we attempt to fill
-            ! the missing mass with water vapor mixing ratio.
-            ! We noticed this is needed for ASEX A209, particularly if Latin
-            ! hypercube sampling is enabled.  -dschanen 11 Nov 2010
-            call fill_holes_wv( gr%nz, dt, exner, hydromet_name, & ! Intent(in)
-                                rvm_mc, thlm_mc, hydromet(:,i) )   ! Intent(out)
-
-         endif ! Variable is a mixing ratio and l_hole_fill is true
-
-      endif ! hydromet(:,i) < 0
-
-      ! Enter the new value of the hydrometeor for the effect of the water vapor
-      ! hole-filling scheme.
-      if ( l_stats_samp ) then
-         call stat_end_update( ixrm_wvhf, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
-      endif
-
-      ! Store the previous value of the hydrometeor for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_begin_update( ixrm_cl, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
-      endif
-
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-           ! Clip any remaining negative values of hydrometeors to 0.
-           ! This includes the case where the variable is a number
-           ! concentration and is therefore not conserved.
-           where ( hydromet(:,i) < zero_threshold )
-              hydromet(:,i) = zero_threshold
-           end where
-
-      endif ! hydromet(:,i) < 0
-
-      ! Enter the new value of the hydrometeor for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                        / real( dt, kind = core_rknd ), zt )
-      endif
-
 
       ! Lower boundary condition
       ! Hydrometeors that are below the model lower boundary level have
@@ -4149,228 +4060,5 @@ module microphys_driver
   end subroutine cleanup_microphys
 !===============================================================================
 
-  subroutine setup_stats_indices( ihm,                         & ! Intent(in)
-                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                  ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
-                                  max_velocity )                 ! Intent(inout)
-
-  ! Description:
-  !
-  ! Determines the stats output indices depending on the hydrometeor.
-
-  ! Attention: hydromet_list needs to be set up before this routine is called.
-  !
-  ! Bogus example
-  ! References:
-  !
-  ! None
-  !-----------------------------------------------------------------------
-
-    use stats_variables, only: &
-        iwprrp, &
-        iwprip, &
-        iwprsp, &
-        iwprgp, &
-        iwpNrp, &
-        iwpNip, &
-        iwpNsp, &
-        iwpNgp, &
-        iwpNcp
-
-    use stats_variables, only: &
-        irrainm_bt,       & ! Variable(s)
-        irrainm_mc,       &
-        irrainm_hf,       &
-        irrainm_wvhf,     &
-        irrainm_cl,       &
-        iricem_bt,        &
-        iricem_mc,        &
-        iricem_hf,        &
-        iricem_wvhf,      &
-        iricem_cl,        &
-        irgraupelm_bt,    &
-        irgraupelm_mc,    &
-        irgraupelm_hf,    &
-        irgraupelm_wvhf,  &
-        irgraupelm_cl,    &
-        irsnowm_bt,       &
-        irsnowm_mc,       &
-        irsnowm_hf,       &
-        irsnowm_wvhf,     &
-        irsnowm_cl
-
-    use stats_variables, only: &
-        iNrm_bt,       & ! Variable(s)
-        iNrm_mc,       &
-        iNrm_cl,       &
-        iNim_bt,       &
-        iNim_cl,       &
-        iNim_mc,       &
-        iNsnowm_bt,    &
-        iNsnowm_cl,    &
-        iNsnowm_mc,    &
-        iNgraupelm_bt, &
-        iNgraupelm_cl, &
-        iNgraupelm_mc, &
-        iNcm_bt,       &
-        iNcm_cl,       &
-        iNcm_mc
-
-    use clubb_precision, only: &
-        core_rknd
-
-    use constants_clubb, only: &
-        zero
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: ihm
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), intent(inout) :: &
-      max_velocity ! Maximum sedimentation velocity [m/s]
-
-    integer, intent(inout) :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-                              ixrm_bt, ixrm_mc, iwpxrp
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    ! Initializing max_velocity in order to avoid a compiler warning.
-      ! Regardless of the case, it will be reset in the 'select case'
-      ! statement immediately below.
-      max_velocity = zero
-
-      select case ( trim( hydromet_list(ihm) ) )
-      case ( "rrainm" )
-        ixrm_bt   = irrainm_bt
-        ixrm_hf   = irrainm_hf
-        ixrm_wvhf = irrainm_wvhf
-        ixrm_cl   = irrainm_cl
-        ixrm_mc   = irrainm_mc
-
-        iwpxrp    = iwprrp
-
-        max_velocity = -9.1_core_rknd ! m/s
-
-      case ( "ricem" )
-        ixrm_bt   = iricem_bt
-        ixrm_hf   = iricem_hf
-        ixrm_wvhf = iricem_wvhf
-        ixrm_cl   = iricem_cl
-        ixrm_mc   = iricem_mc
-
-        iwpxrp    = iwprip
-
-        max_velocity = -1.2_core_rknd ! m/s
-
-      case ( "rsnowm" )
-        ixrm_bt   = irsnowm_bt
-        ixrm_hf   = irsnowm_hf
-        ixrm_wvhf = irsnowm_wvhf
-        ixrm_cl   = irsnowm_cl
-        ixrm_mc   = irsnowm_mc
-
-        iwpxrp    = iwprsp
-
-        ! Morrison limit
-!         max_velocity = -1.2_core_rknd ! m/s
-        ! Made up limit.  The literature suggests that it is quite possible
-        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
-        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-        max_velocity = -2.0_core_rknd ! m/s
-
-      case ( "rgraupelm" )
-        ixrm_bt   = irgraupelm_bt
-        ixrm_hf   = irgraupelm_hf
-        ixrm_wvhf = irgraupelm_wvhf
-        ixrm_cl   = irgraupelm_cl
-        ixrm_mc   = irgraupelm_mc
-
-        iwpxrp    = iwprgp
-
-        max_velocity = -20._core_rknd ! m/s
-
-      case ( "Nrm" )
-        ixrm_bt   = iNrm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = iNrm_cl
-        ixrm_mc   = iNrm_mc
-
-        iwpxrp    = iwpNrp
-
-        max_velocity = -9.1_core_rknd ! m/s
-
-      case ( "Nim" )
-        ixrm_bt   = iNim_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = iNim_cl
-        ixrm_mc   = iNim_mc
-
-        iwpxrp    = iwpNip
-
-        max_velocity = -1.2_core_rknd ! m/s
-
-      case ( "Nsnowm" )
-        ixrm_bt   = iNsnowm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = iNsnowm_cl
-        ixrm_mc   = iNsnowm_mc
-
-        iwpxrp    = iwpNsp
-
-        ! Morrison limit
-!         max_velocity = -1.2_core_rknd ! m/s
-        ! Made up limit.  The literature suggests that it is quite possible
-        ! that snow flake might achieve a terminal velocity of 2 m/s, and this
-        ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
-        max_velocity = -2.0_core_rknd ! m/s
-
-      case ( "Ngraupelm" )
-        ixrm_bt   = iNgraupelm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = iNgraupelm_cl
-        ixrm_mc   = iNgraupelm_mc
-
-        iwpxrp    = iwpNgp
-
-        max_velocity = -20._core_rknd ! m/s
-
-      case ( "Ncm" )
-        ixrm_bt   = iNcm_bt
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = iNcm_cl
-        ixrm_mc   = iNcm_mc
-
-        iwpxrp    = iwpNcp
-
-        ! Use the rain water limit, since Morrison has no explicit limit on
-        ! cloud water.  Presumably these numbers are never large.
-        ! -dschanen 28 Sept 2009
-        max_velocity = -9.1_core_rknd ! m/s
-
-      case default
-        ixrm_bt   = 0
-        ixrm_hf   = 0
-        ixrm_wvhf = 0
-        ixrm_cl   = 0
-        ixrm_mc   = 0
-
-        iwpxrp    = 0
-
-        max_velocity = -9.1_core_rknd ! m/s
-
-      end select
-
-    return
-  end subroutine setup_stats_indices
-  !-----------------------------------------------------------------------
 
 end module microphys_driver
