@@ -144,11 +144,11 @@ module estimate_scm_microphys_module
 
 
     ! Local Variables
-    real( kind = dp ), dimension(nz,hydromet_dim,n_micro_calls) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim,n_micro_calls) :: &
       lh_hydromet_mc_all, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
-    real( kind = dp ), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), dimension(nz,n_micro_calls) :: &
       lh_rrainm_auto_all,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
       lh_rrainm_accr_all,  & ! LH est of time tendency of accretion                    [kg/kg/s]
       lh_rrainm_evap_all,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
@@ -251,22 +251,22 @@ module estimate_scm_microphys_module
     lh_hydromet_vel(:,:) = 0._core_rknd
 
     ! Initialize microphysical tendencies for each mixture component
-    lh_hydromet_mc_all(:,:,:) = 0._dp
+    lh_hydromet_mc_all(:,:,:) = 0._core_rknd
 
-    lh_hydromet_vel_all(:,:,:) = 0._dp
+    lh_hydromet_vel_all(:,:,:) = 0._core_rknd
 
-    lh_rcm_mc_all(:,:) = 0._dp
+    lh_rcm_mc_all(:,:) = 0._core_rknd
 
-    lh_rvm_mc_all(:,:) = 0._dp
+    lh_rvm_mc_all(:,:) = 0._core_rknd
 
-    lh_thlm_mc_all(:,:) = 0._dp
+    lh_thlm_mc_all(:,:) = 0._core_rknd
 
-    lh_rrainm_auto_all(:,:) = 0._dp
-    lh_rrainm_accr_all(:,:) = 0._dp
-    lh_rrainm_evap_all(:,:) = 0._dp
+    lh_rrainm_auto_all(:,:) = 0._core_rknd
+    lh_rrainm_accr_all(:,:) = 0._core_rknd
+    lh_rrainm_evap_all(:,:) = 0._core_rknd
 
-    lh_Nrm_auto_all(:,:) = 0._dp
-    lh_Nrm_evap_all(:,:) = 0._dp
+    lh_Nrm_auto_all(:,:) = 0._core_rknd
+    lh_Nrm_evap_all(:,:) = 0._core_rknd
 
     lh_rtp2_mc(:) = 0.0_core_rknd
     lh_thlp2_mc(:) = 0.0_core_rknd
@@ -365,9 +365,9 @@ module estimate_scm_microphys_module
              lh_rrainm_evap_all(:,sample), &
              lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample) ) ! Out
 
-      rt_all_samples(:,sample) = rc_column + rv_column + dt * ( lh_rcm_mc_all(:,sample) &
-                 + lh_rvm_mc_all(:,sample) )
-      thl_all_samples(:,sample) = thl_column + dt * lh_thlm_mc_all(:,sample)
+      rt_all_samples(:,sample) = rc_column + rv_column + &
+      real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
+      thl_all_samples(:,sample) = thl_column + real( dt, kind=core_rknd ) * lh_thlm_mc_all(:,sample)
 
       if ( l_lh_cloud_weighted_sampling ) then
         ! Weight the output results depending on whether we're calling the
@@ -419,23 +419,21 @@ module estimate_scm_microphys_module
     end forall
 
     forall( k = 1:nz )
-      lh_rcm_mc(k) = real( sum( lh_rcm_mc_all(k,:) ), kind=core_rknd ) / &
+      lh_rcm_mc(k) = sum( lh_rcm_mc_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-      lh_rvm_mc(k) = real( sum( lh_rvm_mc_all(k,:) ), kind=core_rknd ) / &
+      lh_rvm_mc(k) = sum( lh_rvm_mc_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-      lh_thlm_mc(k) = real( sum( lh_thlm_mc_all(k,:) ), kind=core_rknd ) / &
+      lh_thlm_mc(k) = sum( lh_thlm_mc_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
 
-      lh_rrainm_auto(k) = real( sum( lh_rrainm_auto_all(k,:) ), kind=core_rknd ) / &
+      lh_rrainm_auto(k) = sum( lh_rrainm_auto_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-      lh_rrainm_accr(k) = real( sum( lh_rrainm_accr_all(k,:) ), kind=core_rknd ) / &
+      lh_rrainm_accr(k) = sum( lh_rrainm_accr_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-      lh_rrainm_evap(k) = real( sum( lh_rrainm_evap_all(k,:) ), kind=core_rknd ) / &
+      lh_rrainm_evap(k) = sum( lh_rrainm_evap_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-      lh_Nrm_auto(k) = real( sum( lh_Nrm_auto_all(k,:) ) / real( n_micro_calls, kind=dp ), &
-                                     kind = core_rknd )
-      lh_Nrm_evap(k) = real( sum( lh_Nrm_evap_all(k,:) ) / real( n_micro_calls, kind=dp ), &
-                                     kind = core_rknd )
+      lh_Nrm_auto(k) = sum( lh_Nrm_auto_all(k,:) ) / real( n_micro_calls, kind=core_rknd )
+      lh_Nrm_evap(k) = sum( lh_Nrm_evap_all(k,:) ) / real( n_micro_calls, kind=core_rknd )
     end forall
 
     ! Statistics sampling
