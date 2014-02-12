@@ -137,6 +137,18 @@ module microphys_driver
         rrp2_on_rrm2_below,   &
         Nrp2_on_Nrm2_below,   &
         Ncnp2_on_Ncnm2_below, &
+        rsnowp2_on_rsnowm2_cloud, &
+        Nsnowp2_on_Nsnowm2_cloud, &
+        ricep2_on_ricem2_cloud, &
+        Nicep2_on_Nicem2_cloud, &
+        rgraupelp2_on_rgraupelm2_cloud, &
+        Ngraupelp2_on_Ngraupelm2_cloud, &
+        rsnowp2_on_rsnowm2_below, &
+        Nsnowp2_on_Nsnowm2_below, &
+        ricep2_on_ricem2_below, &
+        Nicep2_on_Nicem2_below, &
+        rgraupelp2_on_rgraupelm2_below, &
+        Ngraupelp2_on_Ngraupelm2_below, &
         C_evap,               &
         r_0
 
@@ -268,7 +280,12 @@ module microphys_driver
       l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
       rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
-      Ncnp2_on_Ncnm2_below, C_evap, r_0, microphys_start_time, &
+      Ncnp2_on_Ncnm2_below, rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, &
+      ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud, rgraupelp2_on_rgraupelm2_cloud, &
+      Ngraupelp2_on_Ngraupelm2_cloud, rsnowp2_on_rsnowm2_below, &
+      Nsnowp2_on_Nsnowm2_below, ricep2_on_ricem2_below, Nicep2_on_Nicem2_below, &
+      rgraupelp2_on_rgraupelm2_below, Ngraupelp2_on_Ngraupelm2_below, &
+      C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
 
@@ -393,6 +410,30 @@ module microphys_driver
       call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Ncnp2_on_Ncnm2_below = ", Ncnp2_on_Ncnm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "rsnowp2_on_rsnowm2_cloud = ", rsnowp2_on_rsnowm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "Nsnowp2_on_Nsnowm2_cloud = ", Nsnowp2_on_Nsnowm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "ricep2_on_ricem2_cloud = ", ricep2_on_ricem2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "Nicep2_on_Nicem2_cloud = ", Nicep2_on_Nicem2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "rgraupelp2_on_rgraupelm2_cloud = ", rgraupelp2_on_rgraupelm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "Ngraupelp2_on_Ngraupelm2_cloud = ", Ngraupelp2_on_Ngraupelm2_cloud, &
+        l_write_to_file, iunit )
+      call write_text ( "rsnowp2_on_rsnowm2_below = ", rsnowp2_on_rsnowm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "Nsnowp2_on_Nsnowm2_below = ", Nsnowp2_on_Nsnowm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "ricep2_on_ricem2_below = ", ricep2_on_ricem2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "Nicep2_on_Nicem2_below = ", Nicep2_on_Nicem2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "rgraupelp2_on_rgraupelm2_below = ", rgraupelp2_on_rgraupelm2_below, &
+        l_write_to_file, iunit )
+      call write_text ( "Ngraupelp2_on_Ngraupelm2_below = ", Ngraupelp2_on_Ngraupelm2_below, &
         l_write_to_file, iunit )
       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
