@@ -559,7 +559,7 @@ module stats_zt
       iwp2hmp, & ! Variable(s)
       icloud_frac_refined, &
       ircm_refined, &
-      ihl_residual, &
+      ihl_on_Cp_residual, &
       iqto_residual
 
     use stats_type, only: & 
@@ -4090,9 +4090,9 @@ module stats_zt
                           &[kg/kg]", var_units="kg/kg", l_silhs=.false., grid_kind=zt)
         k = k + 1
 
-      case ('hl_residual')
-        ihl_residual = k
-        call stat_assign( var_index=ihl_residual, var_name="hl_residual", &
+      case ('hl_on_Cp_residual')
+        ihl_on_Cp_residual = k
+        call stat_assign( var_index=ihl_on_Cp_residual, var_name="hl_on_Cp_residual", &
                           var_description="Residual change in HL/Cp from Morrison microphysics &
                           &not due to sedimentation [K]", &
                           var_units="K", l_silhs=.true., grid_kind=zt)

@@ -36,8 +36,11 @@ module morrison_micro_driver_module
     use module_MP_graupel, only: &
       cloud_frac_thresh ! Constant
 
+    use grid_class, only: &
+      gr
+
     use stats_variables, only: &
-      zt,  & ! Variables
+      zt, &
       LH_sfc, &
       sfc
 
@@ -59,7 +62,7 @@ module morrison_micro_driver_module
       irrainm_accr, &
       irrainm_cond, &
       irsnowm_sd_morr_int, &
-      ihl_residual, &
+      ihl_on_Cp_residual, &
       iqto_residual
 
     use stats_variables, only: & 
@@ -454,7 +457,7 @@ module morrison_micro_driver_module
       hl_before, &
       qto_before, &
       hl_after, &
-      hl_residual, &
+      hl_on_Cp_residual, &
       qto_after, &
       qto_residual
 
@@ -619,7 +622,8 @@ module morrison_micro_driver_module
     rho_r4 = real( rho )
     dzq_r4 = real( dzq )
 
-    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * zt%z &
+
+    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
                 - Lv * ( rcm + hydromet(:,iirrainm) ) &
                 - Ls * ( hydromet(:,iiricem) + hydromet(:,iirsnowm) + hydromet(:,iirgraupelm) )
 
@@ -663,14 +667,14 @@ module morrison_micro_driver_module
            NIM_MORR_CL, QC_INST, QR_INST, QI_INST, QS_INST, QG_INST, &
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
-    hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * zt%z &
+    hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
                 - Lv * ( real( rcm_r4, kind = core_rknd) &
                         + real( hydromet_r4(:,iirrainm), kind = core_rknd ) ) &
                 - Ls * ( real( hydromet_r4(:,iiricem), kind = core_rknd ) &
                         + real( hydromet_r4(:,iirsnowm), kind = core_rknd ) &
                         + real(hydromet_r4(:,iirgraupelm), kind = core_rknd ) )
 
-    hl_residual = ( hl_after - hl_before &
+    hl_on_Cp_residual = ( hl_after - hl_before &
                    - dt * Lv * ( real( rcm_sten, kind = core_rknd ) &
                         + real( hydromet_sten(:,iirrainm), kind = core_rknd ) ) &
                    - dt * Ls * ( real( hydromet_sten(:,iiricem), kind = core_rknd ) &
@@ -763,7 +767,7 @@ module morrison_micro_driver_module
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
     if ( l_stats_samp ) then
-      call stat_update_var( ihl_residual, lh_stat_sample_weight * hl_residual, zt )
+      call stat_update_var( ihl_on_Cp_residual, lh_stat_sample_weight * hl_on_Cp_residual, zt )
       call stat_update_var( iqto_residual, lh_stat_sample_weight * qto_residual, zt )
       call stat_update_var( irgraupelm_sd_morr, lh_stat_sample_weight  &
                 * real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), zt )
