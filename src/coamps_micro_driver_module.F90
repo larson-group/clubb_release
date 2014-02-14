@@ -18,10 +18,12 @@ module coamps_micro_driver_module
          ( runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, ricem, rrainm, rgraupelm, rsnowm, & 
-           rcm, Ncm, Nrm, Nccnm, Nim, & 
-           cond, Vrsnow, Vrice, Vrr, VNr, Vrgraupel, & 
+           rcm, Ncm, Nrm, Nim, &
+           Nccnm, cond, &
+           Vrsnow, Vrice, Vrr, VNr, Vrgraupel, & 
            ritend, rrtend, rgtend,  & 
            rsnowtend, nrmtend, & 
+           ncmtend, nimtend, & 
            rvm_mc, rcm_mc, thlm_mc )
 
 !    Description:
@@ -178,12 +180,12 @@ module coamps_micro_driver_module
       rrainm,     & ! Rain water mixing ratio    [kg/kg]
       rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
       rsnowm,     & ! Snow water mixing ratio    [kg/kg]
-      Nrm           ! Number of rain drops       [count/kg]
+      Nrm,        & ! Number of rain drops       [count/kg]
+      Ncm,        & ! Number of cloud droplets   [count/kg]
+      Nim           ! Number of ice crystals     [count/kg]
 
     real(kind = core_rknd), dimension(gr%nz), intent(inout) :: & 
-      Ncm,        & ! Number of cloud droplets   [count/kg]
-      Nccnm,      & ! Number of cloud nuclei     [count/kg]
-      Nim           ! Number of ice crystals     [count/kg]
+      Nccnm         ! Number of cloud nuclei     [count/kg]
 
     real(kind = core_rknd), dimension(1,1,gr%nz-1), intent(inout) :: &
       cond ! condensation/evaporation of liquid water
@@ -197,7 +199,9 @@ module coamps_micro_driver_module
       rvm_mc,     & ! d(rv)/dt                   [kg/kg/s]
       rcm_mc,     & ! d(rc)/dt                   [kg/kg/s]
       thlm_mc,    & ! d(thlm)/dt                 [K/s]
-      nrmtend       ! d(Nrm)/dt                  [count/kg/s]
+      nrmtend,    & ! d(Nrm)/dt                  [count/kg/s]
+      ncmtend,    & ! d(Ncm)/dt                  [count/kg/s]
+      nimtend       ! d(Nim)/dt                  [count/kg/s]
 
     real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
       Vrr,       & ! Rain mixing ratio fall speed        [m/s]
@@ -825,12 +829,8 @@ module coamps_micro_driver_module
 ! Transfer back to CLUBB arrays
       do k=1, kk, 1
         ! Convert to MKS as needed
-        ! ncn3 & nc3 are in (m^3/cm^3)*kg^-1, and need to be converted to kg^-1.
-        Ncm(k+1)   = real(nc3(1,1,k), kind = core_rknd) * cm3_per_m3
+        ! ncn3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
         Nccnm(k+1) = real(ncn3(1,1,k), kind = core_rknd) * cm3_per_m3
-
-        ! Convert ice number concentration to #/kg
-        Nim(k+1)  = real(ni3(1,1,k), kind = core_rknd) / rho(k+1)
       end do ! k=1..kk+1
 
 !-------------------------------------------------
@@ -881,6 +881,14 @@ module coamps_micro_driver_module
                            / real(deltf, kind = core_rknd) ! Conversion factor
         rsnowtend(k+1) = ( real(qs3(1,1,k), kind = core_rknd) - rsnowm(k+1) ) &
                            / real(deltf, kind = core_rknd)
+        ! nc3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
+        ncmtend(k+1)   = ( ( real( nc3(1,1,k), kind = core_rknd ) * cm3_per_m3 ) &
+                             - Ncm(k+1) ) &
+                           / real( deltf, kind = core_rknd )
+        ! Convert ice number concentration to #/kg
+        nimtend(k+1)   = ( ( real( ni3(1,1,k), kind = core_rknd ) / rho(k+1) ) &
+                             - Nim(k+1) ) &
+                           / real( deltf, kind = core_rknd )
         rvm_mc(k+1)    = real(((qv3(1,1,k) - rvm(k+1)) / deltf), kind = core_rknd)
         rcm_mc(k+1)    = (real(qc3(1,1,k), kind = core_rknd) - rcm(k+1)) &
                            / real(deltf, kind = core_rknd)
@@ -894,6 +902,8 @@ module coamps_micro_driver_module
       ritend(1)    = 0.0_core_rknd
       nrmtend(1)   = 0.0_core_rknd
       rsnowtend(1) = 0.0_core_rknd
+      ncmtend(1)   = 0.0_core_rknd
+      nimtend(1)   = 0.0_core_rknd
       rcm_mc(1)    = 0.0_core_rknd
       rvm_mc(1)    = 0.0_core_rknd
       thlm_mc(1)   = 0.0_core_rknd

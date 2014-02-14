@@ -1476,17 +1476,19 @@ module microphys_driver
       hydromet_vel_zt(:,:) = zero
 #ifdef COAMPS_MICRO
       call coamps_micro_driver & 
-           ( runtype, time_current, dt, & 
-             rtm, wm_zm, p_in_Pa, exner, rho, & 
-             thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  & 
-             hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & 
-             rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), Nccnm, hydromet(:,iiNim), cond, & 
-             hydromet_vel_zt(:,iirsnowm), hydromet_vel_zt(:,iiricem), & 
-             hydromet_vel_zt(:,iirrainm), hydromet_vel_zt(:,iiNrm),  & 
-             hydromet_vel_zt(:,iirgraupelm), & 
-             hydromet_mc(:,iiricem), hydromet_mc(:,iirrainm), & 
-             hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & 
-             hydromet_mc(:,iiNrm), & 
+           ( runtype, time_current, dt, & ! In
+             rtm, wm_zm, p_in_Pa, exner, rho, & ! In
+             thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  &  ! In
+             hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & ! In
+             rcm, hydromet(:,iiNcm), hydromet(:,iiNrm), hydromet(:,iiNim), & !In
+             Nccnm, cond, & ! Inout
+             hydromet_vel_zt(:,iirsnowm), hydromet_vel_zt(:,iiricem), & ! Out
+             hydromet_vel_zt(:,iirrainm), hydromet_vel_zt(:,iiNrm),  &  ! Out
+             hydromet_vel_zt(:,iirgraupelm), &  ! Out
+             hydromet_mc(:,iiricem), hydromet_mc(:,iirrainm), & ! Out
+             hydromet_mc(:,iirgraupelm), hydromet_mc(:,iirsnowm), & ! Out
+             hydromet_mc(:,iiNrm), & ! Out
+             hydromet_mc(:,iiNcm), hydromet_mc(:,iiNim), & ! Out
              rvm_mc, rcm_mc, thlm_mc )
 #else
       stop "Not compiled with COAMPS microphysics"
