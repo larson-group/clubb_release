@@ -803,6 +803,8 @@ module microphys_driver
 
       hydromet_dim = 0
 
+      l_predictnc = .false.
+
     case default
       write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
       stop
@@ -1218,8 +1220,7 @@ module microphys_driver
       hydromet_vel_zt
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
-      hydromet_mc,    &  ! Change in hydrometeors due to microphysics  [units/s]
-      hydromet_filled    ! hydromet array after hole filling           [units vary]
+      hydromet_mc     ! Change in hydrometeors due to microphysics  [units/s]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
@@ -1412,53 +1413,35 @@ module microphys_driver
       end if  ! l_predictnc
     end if ! l_gfdl_activation
 
-    ! Determine how Ncm and Nc_in_cloud will be computed
-    select case ( trim( micro_scheme ) )
-
-    case ( "coamps", "morrison", "morrison_gettelman", "khairoutdinov_kogan" )
-
-       if ( l_predictnc ) then
-
-          Ncm = hydromet(:,iiNcm)
-
-       else ! Compute the fixed value by multiplying by cloud fraction
-
-          if ( .not. l_const_Nc_in_cloud ) then
-             where ( rcm >= rc_tol )
-                Ncm = cloud_frac * ( Nc0_in_cloud / rho ) ! Convert to #/kg air
-             else where
-                Ncm = zero
-             end where
-
-             Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
-
-          else  ! Constant, specified value of Nc within cloud
-
-             Nc_in_cloud = Nc0_in_cloud / rho ! Convert to #/kg air.
-
-             Ncm = cloud_frac * ( Nc0_in_cloud / rho ) ! Convert to #/kg air
-
-          endif
-
-      endif
-
-    case default
-
-      if ( l_cloud_sed ) then
-        where ( rcm >= rc_tol )
-          Ncm = cloud_frac * ( Nc0_in_cloud / rho ) ! Convert to #/kg air
-        else where
-          Ncm = zero
-        end where
-        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
-
-      else
-        ! These quantites are undefined
-        Ncm = -999._core_rknd
-        Nc_in_cloud = -999._core_rknd
-      end if
-
-    end select ! micro_scheme
+    ! Setup Ncm and Nc_in_cloud.
+    if ( l_predictnc ) then
+       ! Nc is predicted by the microphysics scheme.
+       Ncm = hydromet(:,iiNcm)
+       Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+    else
+       ! Nc is a prescribed value.
+       if ( .not. l_const_Nc_in_cloud ) then
+          where ( rcm > rc_tol )
+             ! When Nc is prescribed and cloud water is found, find the value of
+             ! Nc_in_cloud.
+             Nc_in_cloud = Nc0_in_cloud / rho
+             Ncm = ( Nc0_in_cloud / rho ) * cloud_frac
+          elsewhere  ! rcm = 0
+             ! When Nc is prescribed and cloud water is not found, there are not
+             ! any cloud droplets.  The value of Nc_in_cloud is 0 or undefined.
+             Nc_in_cloud = zero
+             Ncm = zero
+          endwhere  ! rcm > 0
+       else ! Constant in-cloud Nc.
+          ! Note:  this code is needed for the constant Nc-in-cloud case for
+          !        upscaled KK microphysics.  As soon as the code in KK
+          !        microphysics is rewritten in a slightly more general form,
+          !        we can simply use the above code for Nc_in_cloud (when Nc is
+          !        prescribed).
+          Nc_in_cloud = Nc0_in_cloud / rho
+          Ncm = ( Nc0_in_cloud / rho ) * cloud_frac
+       endif
+    endif ! l_predictnc
 
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
@@ -1525,6 +1508,8 @@ module microphys_driver
           rcm_morr(:) = 0.0_core_rknd
           cloud_frac_morr(:) = 0.0_core_rknd
           hydromet(:,iiNcm) = 0.0_core_rknd
+          Ncm = 0.0_core_rknd
+          Nc_in_cloud = 0.0_core_rknd
         end where
       end if
  
@@ -1721,13 +1706,6 @@ module microphys_driver
     case default
       ! Do nothing
     end select ! micro_scheme
-
-
-    ! Re-compute Ncm and Nc_in_cloud if needed
-    if ( iiNcm > 0 ) then
-      Ncm = hydromet(:,iiNcm)
-      Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
-    end if
 
 
     !-----------------------------------------------------------------------
