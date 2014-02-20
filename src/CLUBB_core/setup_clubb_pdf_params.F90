@@ -1610,7 +1610,7 @@ module setup_clubb_pdf_params
         zero
 
     use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2_cloud  ! Variable(s)
+        Ncnp2_on_Ncnm2  ! Variable(s)
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
@@ -1737,14 +1737,12 @@ module setup_clubb_pdf_params
     ! Standard deviation of cloud nuclei concentration in PDF component 1.
     sigma_x_1(iiPDF_Ncn) &
     = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc1, one, &
-                             Ncnp2_on_Ncnm2_cloud, &
-                             Ncnp2_on_Ncnm2_cloud )
+                             Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
 
     ! Standard deviation of cloud nuclei concentration in PDF component 2.
     sigma_x_2(iiPDF_Ncn) &
     = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc2, one, &
-                             Ncnp2_on_Ncnm2_cloud, &
-                             Ncnp2_on_Ncnm2_cloud )
+                             Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
 
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
@@ -2767,7 +2765,7 @@ module setup_clubb_pdf_params
         iiPDF_Ncn  ! Variable(s)
 
     use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2_cloud  ! Variable(s)
+        Ncnp2_on_Ncnm2  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -2828,7 +2826,7 @@ module setup_clubb_pdf_params
     ! Normalized mean of cloud nuclei concentration, N_cn, in PDF component 1.
     if ( Ncnm > zero ) then
 
-       mu_x_1_n(iiPDF_Ncn) = mean_L2N( mu_x_1(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+       mu_x_1_n(iiPDF_Ncn) = mean_L2N( mu_x_1(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
     else
 
@@ -2841,12 +2839,12 @@ module setup_clubb_pdf_params
 
     ! Normalized standard deviation of cloud nuclei concentration, N_cn, in
     ! PDF component 1.
-    sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2_cloud )
+    sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2 )
 
     ! Normalized mean of cloud nuclei concentration, N_cn,  in PDF component 2.
     if ( Ncnm > zero ) then
 
-       mu_x_2_n(iiPDF_Ncn) = mean_L2N( mu_x_2(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+       mu_x_2_n(iiPDF_Ncn) = mean_L2N( mu_x_2(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
     else
 
@@ -2859,7 +2857,7 @@ module setup_clubb_pdf_params
 
     ! Normalized standard deviation of cloud nuclei concentration, N_cn, in
     ! PDF component 2.
-    sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2_cloud )
+    sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2 )
 
 
     ! Normalize precipitating hydrometeor means and standard deviations.
@@ -2940,7 +2938,7 @@ module setup_clubb_pdf_params
         iiPDF_Ncn
 
     use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2_cloud  ! Variable(s)
+        Ncnp2_on_Ncnm2  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -2993,32 +2991,32 @@ module setup_clubb_pdf_params
     ! Normalize the correlation between w and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_w), sigma_x_1_n(iiPDF_Ncn), &
-                  Ncnp2_on_Ncnm2_cloud )
+                  Ncnp2_on_Ncnm2 )
 
     ! Normalize the correlation between w and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_w), sigma_x_2_n(iiPDF_Ncn), &
-                  Ncnp2_on_Ncnm2_cloud )
+                  Ncnp2_on_Ncnm2 )
 
     ! Normalize the correlation between s and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_s_mellor) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_s_mellor), &
-                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
     ! Normalize the correlation between s and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_s_mellor) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_s_mellor), &
-                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between s and N_cn in PDF component 1.
+    ! Normalize the correlation between t and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_t_mellor) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_t_mellor), &
-                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between s and N_cn in PDF component 2.
+    ! Normalize the correlation between t and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_t_mellor) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_t_mellor), &
-                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2_cloud )
+                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
     ! Normalize the correlations (in-precip) between s/t/w and the precipitating
     ! hydrometeors.
@@ -3055,14 +3053,14 @@ module setup_clubb_pdf_params
        corr_array_1_n(jvar, ivar) &
        = corr_LL2NN( corr_array_1(jvar, ivar), &
                      sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                     Ncnp2_on_Ncnm2_cloud, sigma2_on_mu2_1(jvar) )
+                     Ncnp2_on_Ncnm2, sigma2_on_mu2_1(jvar) )
 
        ! Normalize the correlation (in-precip) between N_cn and a precipitating
        ! hydrometeor, hm, in PDF component 2.
        corr_array_2_n(jvar, ivar) &
        = corr_LL2NN( corr_array_2(jvar, ivar), &
                      sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                     Ncnp2_on_Ncnm2_cloud, sigma2_on_mu2_2(jvar) )
+                     Ncnp2_on_Ncnm2, sigma2_on_mu2_2(jvar) )
 
     enddo ! jvar = ivar+1, d_variables
 

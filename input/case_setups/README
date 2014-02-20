@@ -292,8 +292,7 @@ Nrp2_on_Nrm2_cloud | real, default precision
 Nrp2_on_Nrm2_below | real, default precision
   Variance of rain drop concentration divided by the mean squared (K&K).
 
-Ncnp2_on_Ncnm2_cloud | real, default precision
-Ncnp2_on_Ncnm2_below | real, default precision
+Ncnp2_on_Ncnm2 | real, default precision
   Variance of cloud nuclei concentration divided by the mean squared (K&K).
 
 C_evap | real, default precision

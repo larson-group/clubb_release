@@ -135,13 +135,11 @@ l_calc_w_corr = .false.
 micro_scheme = "khairoutdinov_kogan",
 l_predictnc = .false.,
 Nc0_in_cloud  = 100.e6,
-rrp2_on_rrm2_cloud   = 0.766,
-Nrp2_on_Nrm2_cloud   = 0.429, 
-Ncnp2_on_Ncnm2_cloud = 2.2,
-
-rrp2_on_rrm2_below   = 1.0,
-Nrp2_on_Nrm2_below   = 1.0,
-Ncnp2_on_Ncnm2_below = 0.0,
+rrp2_on_rrm2_cloud = 0.766,
+Nrp2_on_Nrm2_cloud = 0.429, 
+rrp2_on_rrm2_below = 1.0,
+Nrp2_on_Nrm2_below = 1.0,
+Ncnp2_on_Ncnm2     = 2.2,
 
 C_evap = 0.5,
 r_0 = 100.0e-6,

@@ -131,21 +131,22 @@ module parameters_microphys
 
   ! Parameters for in-cloud.
   real( kind = core_rknd ), public :: &
-    rrp2_on_rrm2_cloud = 0.766_core_rknd,   & ! Prescribed in-cloud ratio <r_r'^2> / <r_r>^2   [-]
-    Nrp2_on_Nrm2_cloud = 0.429_core_rknd,   & ! Prescribed in-cloud ratio <N_r'^2> / <N_r>^2   [-]
-    Ncnp2_on_Ncnm2_cloud = 0.003_core_rknd    ! Prescribed in-cloud ratio <N_cn'^2> / <N_cn>^2 [-]
+    rrp2_on_rrm2_cloud = 0.766_core_rknd, & ! Prescribed in-cloud ratio <r_r'^2> / <r_r>^2   [-]
+    Nrp2_on_Nrm2_cloud = 0.429_core_rknd    ! Prescribed in-cloud ratio <N_r'^2> / <N_r>^2   [-]
 
-!$omp threadprivate( rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, &
-!$omp                Ncnp2_on_Ncnm2_cloud )
+!$omp threadprivate( rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud )
 
   ! Parameters for below-cloud.
   real( kind = core_rknd ), public :: &
-    rrp2_on_rrm2_below  = 0.897_core_rknd,  & ! Prescribed below-cl ratio <r_r'^2> / <r_r>^2   [-]
-    Nrp2_on_Nrm2_below = 1.0_core_rknd,   & ! Prescribed below-cl ratio <N_r'^2> / <N_r>^2   [-]
-    Ncnp2_on_Ncnm2_below = 0.0_core_rknd      ! Prescribed below-cl ratio <N_cn'^2> / <N_cn>^2 [-]
+    rrp2_on_rrm2_below = 0.897_core_rknd, & ! Prescribed below-cloud ratio <r_r'^2> / <r_r>^2   [-]
+    Nrp2_on_Nrm2_below = 1.0_core_rknd      ! Prescribed below-cloud ratio <N_r'^2> / <N_r>^2   [-]
 
-!$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
-!$omp                Ncnp2_on_Ncnm2_below )
+!$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below )
+
+  real( kind = core_rknd ), public :: &
+    Ncnp2_on_Ncnm2 = 0.003_core_rknd    ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
+
+!$omp threadprivate( Ncnp2_on_Ncnm2 )
 
   ! Other needed parameters
   ! Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric

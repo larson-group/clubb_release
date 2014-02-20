@@ -131,12 +131,11 @@ module microphys_driver
         morrison_lognormal
 
     use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud,   &
-        Nrp2_on_Nrm2_cloud,   &
-        Ncnp2_on_Ncnm2_cloud, &
-        rrp2_on_rrm2_below,   &
-        Nrp2_on_Nrm2_below,   &
-        Ncnp2_on_Ncnm2_below, &
+        rrp2_on_rrm2_cloud, &
+        Nrp2_on_Nrm2_cloud, &
+        rrp2_on_rrm2_below, &
+        Nrp2_on_Nrm2_below, &
+        Ncnp2_on_Ncnm2,     &
         rsnowp2_on_rsnowm2_cloud, &
         Nsnowp2_on_Nsnowm2_cloud, &
         ricep2_on_ricem2_cloud, &
@@ -278,9 +277,9 @@ module microphys_driver
       l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
       LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
       l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2_cloud, &
+      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2, &
       rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
-      Ncnp2_on_Ncnm2_below, rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, &
+      rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, &
       ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud, rgraupelp2_on_rgraupelm2_cloud, &
       Ngraupelp2_on_Ngraupelm2_cloud, rsnowp2_on_rsnowm2_below, &
       Nsnowp2_on_Nsnowm2_below, ricep2_on_ricem2_below, Nicep2_on_Nicem2_below, &
@@ -403,13 +402,11 @@ module microphys_driver
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_cloud = ", Nrp2_on_Nrm2_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "Ncnp2_on_Ncnm2_cloud = ", Ncnp2_on_Ncnm2_cloud, &
-        l_write_to_file, iunit )
       call write_text ( "rrp2_on_rrm2_below = ", rrp2_on_rrm2_below, &
         l_write_to_file, iunit )
       call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
         l_write_to_file, iunit )
-      call write_text ( "Ncnp2_on_Ncnm2_below = ", Ncnp2_on_Ncnm2_below, &
+      call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
         l_write_to_file, iunit )
       call write_text ( "rsnowp2_on_rsnowm2_cloud = ", rsnowp2_on_rsnowm2_cloud, &
         l_write_to_file, iunit )

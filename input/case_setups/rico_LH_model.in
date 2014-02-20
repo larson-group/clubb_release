@@ -148,13 +148,11 @@ micro_scheme = "khairoutdinov_kogan",
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
 !!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain.
-rrp2_on_rrm2_cloud   = 0.766  
-Nrp2_on_Nrm2_cloud   = 0.429  
-Ncnp2_on_Ncnm2_cloud = 2.2  
-
-rrp2_on_rrm2_below   = 1.0
-Nrp2_on_Nrm2_below   = 1.0
-Ncnp2_on_Ncnm2_below = 0.0
+rrp2_on_rrm2_cloud = 0.766  
+Nrp2_on_Nrm2_cloud = 0.429  
+rrp2_on_rrm2_below = 1.0
+Nrp2_on_Nrm2_below = 1.0
+Ncnp2_on_Ncnm2     = 2.2  
 
 C_evap = 0.5
 r_0 = 100.0e-6

@@ -575,12 +575,11 @@ module corr_matrix_module
 !-------------------------------------------------------------------------------
 
     use parameters_microphys, only: &
-      rrp2_on_rrm2_cloud,   & ! Variables
-      Nrp2_on_Nrm2_cloud,   &
-      Ncnp2_on_Ncnm2_cloud, &
-      rrp2_on_rrm2_below,   &
-      Nrp2_on_Nrm2_below,   &
-      Ncnp2_on_Ncnm2_below
+      rrp2_on_rrm2_cloud, & ! Variables
+      Nrp2_on_Nrm2_cloud, &
+      rrp2_on_rrm2_below, &
+      Nrp2_on_Nrm2_below, &
+      Ncnp2_on_Ncnm2
 
     use parameters_microphys, only: &
       rsnowp2_on_rsnowm2_cloud, & ! Variables
@@ -684,7 +683,7 @@ module corr_matrix_module
     end if ! l_fix_s_t_correlations
 
     if ( iiPDF_Ncn > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2_cloud
+      xp2_on_xm2_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
     if ( iiPDF_rrain > 0 ) then
@@ -728,10 +727,7 @@ module corr_matrix_module
     end if ! iiPDF_rgraupel > 0
 
     if ( iiPDF_Ncn > 0 ) then
-      ! The epsilon is a kluge to prevent a singular matrix in generate_lh_sample
-      xp2_on_xm2_array_below(iiPDF_Ncn) = &
-        max( Ncnp2_on_Ncnm2_below, epsilon( Ncnp2_on_Ncnm2_below ) )
-
+      xp2_on_xm2_array_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
     if ( iiPDF_rrain > 0 ) then
