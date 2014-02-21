@@ -348,22 +348,20 @@ module KK_microphys_module
   end subroutine KK_local_micro_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, l_stats_samp,                    & ! Intent(in)
-                                       wm_zt, rtm, thlm, p_in_Pa,               & ! Intent(in)
-                                       exner, rho, cloud_frac,                  & ! Intent(in)
-                                       pdf_params, w_std_dev, rcm,              & ! Intent(in)
-                                       s_mellor, Nc_in_cloud,                   & ! Intent(in)
-                                       hydromet, wphydrometp,                   & ! Intent(in)
-                                       d_variables, corr_array_1, corr_array_2, & ! Intent(in)
-                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
-                                       hydromet_pdf_params,                     & ! Intent(in)
-                                       hydromet_mc, hydromet_vel,               & ! Intent(out)
-                                       rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
-                                       hydromet_vel_covar_zt_impc,              & ! Intent(out)
-                                       hydromet_vel_covar_zt_expc,              & ! Intent(out)
-                                       wprtp_mc_tndcy, wpthlp_mc_tndcy,         & ! Intent(out)
-                                       rtp2_mc_tndcy, thlp2_mc_tndcy,           & ! Intent(out)
-                                       rtpthlp_mc_tndcy )                         ! Intent(out)
+  subroutine KK_upscaled_micro_driver( dt, nz, d_variables, l_stats_samp,    & ! Intent(in)
+                                       wm_zt, rtm, thlm, p_in_Pa,            & ! Intent(in)
+                                       exner, rho, rcm, Nc_in_cloud,         & ! Intent(in)
+                                       pdf_params, hydromet_pdf_params,      & ! Intent(in)
+                                       hydromet, wphydrometp,                & ! Intent(in)
+                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                       corr_array_1, corr_array_2,           & ! Intent(in)
+                                       hydromet_mc, hydromet_vel,            & ! Intent(out)
+                                       rcm_mc, rvm_mc, thlm_mc,              & ! Intent(out)
+                                       hydromet_vel_covar_zt_impc,           & ! Intent(out)
+                                       hydromet_vel_covar_zt_expc,           & ! Intent(out)
+                                       wprtp_mc_tndcy, wpthlp_mc_tndcy,      & ! Intent(out)
+                                       rtp2_mc_tndcy, thlp2_mc_tndcy,        & ! Intent(out)
+                                       rtpthlp_mc_tndcy )                      ! Intent(out)
     ! Description:
 
     ! References:
@@ -431,22 +429,21 @@ module KK_microphys_module
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
-      nz,         & ! Number of model vertical grid levels
-      d_variables   ! Number of variables in the correlation arrays
+      nz,          & ! Number of model vertical grid levels
+      d_variables    ! Number of variables in the correlation arrays
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,      & ! Mean vertical velocity on thermodynamic levels  [m/s]
-      rtm,        & ! Mean total water mixing ratio                   [kg/kg]
-      thlm,       & ! Mean liquid water potential temperature         [K]
-      p_in_Pa,    & ! Pressure                                        [Pa]
-      exner,      & ! Exner function                                  [-]
-      rho,        & ! Density                                         [kg/m^3]
-      cloud_frac, & ! Cloud fraction                                  [-]
-      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
-      s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
+      wm_zt,       & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      rtm,         & ! Mean total water mixing ratio                   [kg/kg]
+      thlm,        & ! Mean liquid water potential temperature         [K]
+      p_in_Pa,     & ! Pressure                                        [Pa]
+      exner,       & ! Exner function                                  [-]
+      rho,         & ! Density                                         [kg/m^3]
+      rcm,         & ! Mean cloud water mixing ratio                   [kg/kg]
+      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
@@ -454,25 +451,19 @@ module KK_microphys_module
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      w_std_dev    ! Standard deviation of w (for LH interface)          [m/s]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
-
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
-
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
     real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
       mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
       sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
       sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
+      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
+      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &

@@ -1664,22 +1664,20 @@ module microphys_driver
 
         else
 
-          call KK_upscaled_micro_driver( dt, gr%nz, l_stats_samp,                 & ! Intent(in)
-                                         wm_zt, rtm, thlm, p_in_Pa,               & ! Intent(in)
-                                         exner, rho, cloud_frac,                  & ! Intent(in)
-                                         pdf_params, wtmp, rcm,                   & ! Intent(in)
-                                         s_mellor, Nc_in_cloud,                   & ! Intent(in)
-                                         hydromet, wphydrometp,                   & ! Intent(in)
-                                         n_variables, corr_array_1, corr_array_2, & ! Intent(in)
-                                         mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,    & ! Intent(in)
-                                         hydromet_pdf_params,                     & ! Intent(in)
-                                         hydromet_mc, hydromet_vel_zt,            & ! Intent(out)
-                                         rcm_mc, rvm_mc, thlm_mc,                 & ! Intent(out)
-                                         hydromet_vel_covar_zt_impc,              & ! Intent(out)
-                                         hydromet_vel_covar_zt_expc,              & ! Intent(out)
-                                         wprtp_mc, wpthlp_mc,         &             ! Intent(out)
-                                         rtp2_mc, thlp2_mc,           &             ! Intent(out)
-                                         rtpthlp_mc )                               ! Intent(out)
+          call KK_upscaled_micro_driver( dt, gr%nz, n_variables, l_stats_samp, & ! Intent(in)
+                                         wm_zt, rtm, thlm, p_in_Pa,            & ! Intent(in)
+                                         exner, rho, rcm, Nc_in_cloud,         & ! Intent(in)
+                                         pdf_params, hydromet_pdf_params,      & ! Intent(in)
+                                         hydromet, wphydrometp,                & ! Intent(in)
+                                         mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                         corr_array_1, corr_array_2,           & ! Intent(in)
+                                         hydromet_mc, hydromet_vel_zt,         & ! Intent(out)
+                                         rcm_mc, rvm_mc, thlm_mc,              & ! Intent(out)
+                                         hydromet_vel_covar_zt_impc,           & ! Intent(out)
+                                         hydromet_vel_covar_zt_expc,           & ! Intent(out)
+                                         wprtp_mc, wpthlp_mc,                  & ! Intent(out)
+                                         rtp2_mc, thlp2_mc,                    & ! Intent(out)
+                                         rtpthlp_mc )                            ! Intent(out)
 
         endif
 
