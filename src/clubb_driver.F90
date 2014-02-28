@@ -66,9 +66,9 @@ module clubb_driver
       thlp2, rtpthlp, cloud_frac, ice_supersat_frac, &
       rcm_in_layer, cloud_cover
 
-    use variables_prognostic_module, only:  & 
+    use variables_prognostic_module, only:  &
       sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, & ! Variables
-      wpsclrp, wpsclrp_sfc,  & 
+      wpsclrp, wpsclrp_sfc,  &
       edsclrm, edsclrm_forcing, wpedsclrp_sfc
 
 
@@ -82,11 +82,11 @@ module clubb_driver
     use inputfields, only: stat_files
 
     use parameters_tunable, only: &
-      l_prescribed_avg_deltaz, params_list ! Variable(s)     
+      l_prescribed_avg_deltaz, params_list ! Variable(s)
 
-    use clubb_core, only: & 
-      setup_clubb_core,  & ! Procedure(s) 
-      cleanup_clubb_core, & 
+    use clubb_core, only: &
+      setup_clubb_core,  & ! Procedure(s)
+      cleanup_clubb_core, &
       advance_clubb_core, &
       calculate_thlp2_rad
 
@@ -106,13 +106,13 @@ module clubb_driver
       set_clubb_debug_level, &
       reportError
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: time_precision, core_rknd, dp ! Constants
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
       iiricem, iirsnowm, iirgraupelm
 
-    use microphys_driver, only: init_microphys, cleanup_microphys ! Subroutines
+    use microphys_driver, only: init_microphys, advance_microphys, cleanup_microphys ! Subroutines
 
     use bugsrad_driver, only: init_radiation ! Subroutine
 
@@ -184,10 +184,17 @@ module clubb_driver
       LH_microphys_type,     & ! Variable(s)
       LH_microphys_disabled, &
       LH_seed,               &
-      micro_scheme
+      micro_scheme,          &
+      LH_microphys_calls,    &
+      l_lh_vert_overlap,     &
+      l_predictnc,           &
+      LH_sequence_length
 
     use latin_hypercube_driver_module, only: &
-      latin_hypercube_2D_output, & ! Procedure(s)
+      LH_subcolumn_generator, & ! Procedure(s)
+      LH_subcolumn_generator_mod, &
+      stats_accumulate_LH, &
+      latin_hypercube_2D_output, &
       latin_hypercube_2D_close
 
     use latin_hypercube_arrays, only: &
@@ -235,7 +242,8 @@ module clubb_driver
         read_model_flags_from_file, &
         l_rtm_nudge, &
         l_diagnose_correlations, &
-        l_calc_w_corr
+        l_calc_w_corr, &
+        l_use_modified_corr
 
     use soil_vegetation, only: &
         l_soil_veg ! Variable(s)
@@ -254,7 +262,10 @@ module clubb_driver
         corr_array_cloud, & ! Variable(s)
         corr_array_below, &
         d_variables, &
-        cleanup_corr_matrix_arrays
+        cleanup_corr_matrix_arrays, &
+        iiPDF_Ncn, &
+        xp2_on_xm2_array_cloud, &
+        xp2_on_xm2_array_below
 
     use setup_clubb_pdf_params, only: &
         num_hm, &               ! Variable
@@ -265,6 +276,12 @@ module clubb_driver
 
     use array_index, only: &
         iiNcm ! Variable(s)
+
+    use constants_clubb, only: &
+        cloud_frac_min
+
+    use fill_holes, only: &
+        vertical_avg  ! Procedure(s)
 
     implicit none
 
@@ -393,7 +410,7 @@ module clubb_driver
 
     logical :: l_restart_input
 
-    integer :: k ! Loop iterator
+    integer :: k, kp1, km1 ! Loop iterator(s)
 
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
@@ -426,6 +443,25 @@ module clubb_driver
       wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
       rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
       thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
+
+    real( kind = dp ), dimension(:,:,:), allocatable :: &
+      X_nl_all_levs ! Lognormally distributed hydrometeors
+
+    integer, dimension(:,:), allocatable :: &
+      X_mixt_comp_all_levs ! Which mixture component a sample is in
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      LH_rt, LH_thl ! Samples of rt, thl          [kg/kg, K]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      Lscale_vert_avg, &  ! 3pt vertically averaged Lscale        [m]
+      Nc_in_cloud          ! Mean cloud droplet concentration (within-cloud)  [num/kg]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      LH_sample_point_weights ! Weights for cloud weighted sampling
+
+    integer :: &
+      err_code_microphys
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
@@ -904,6 +940,11 @@ module clubb_driver
 
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
 
+    allocate( X_nl_all_levs(gr%nz,LH_microphys_calls,d_variables), &
+              X_mixt_comp_all_levs(gr%nz,LH_microphys_calls), LH_rt(gr%nz,LH_microphys_calls), &
+              LH_thl(gr%nz,LH_microphys_calls), LH_sample_point_weights(LH_microphys_calls), &
+              Lscale_vert_avg(gr%nz), Nc_in_cloud(gr%nz) )
+
     if ( .not. l_restart ) then
 
       time_current = time_initial
@@ -911,16 +952,16 @@ module clubb_driver
 
       call initialize_clubb &
            ( iunit, trim( forcings_file_path ), p_sfc, zm_init, & ! Intent(in)
-             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,    & ! Intent(inout)
-             wm_zt, wm_zm, em, exner,                          & ! Intent(inout)
-             thvm, p_in_Pa,                                    & ! Intent(inout)
-             rho, rho_zm, rho_ds_zm, rho_ds_zt,                & ! Intent(inout)
-             invrs_rho_ds_zm, invrs_rho_ds_zt,                 & ! Intent(inout)
-             thv_ds_zm, thv_ds_zt,                             & ! Intent(inout)
-             rtm_ref, thlm_ref,                                & ! Intent(inout) 
-             um_ref, vm_ref,                                   & ! Intent(inout)
-             hydromet, Nccnm,                                  & ! Intent(inout)
-             sclrm, edsclrm, err_code )                          ! Intent(out)
+             thlm, rtm, um, vm, ug, vg, wp2, up2, vp2, rcm,     & ! Intent(inout)
+             wm_zt, wm_zm, em, exner,                           & ! Intent(inout)
+             thvm, p_in_Pa,                                     & ! Intent(inout)
+             rho, rho_zm, rho_ds_zm, rho_ds_zt,                 & ! Intent(inout)
+             invrs_rho_ds_zm, invrs_rho_ds_zt,                  & ! Intent(inout)
+             thv_ds_zm, thv_ds_zt,                              & ! Intent(inout)
+             rtm_ref, thlm_ref,                                 & ! Intent(inout) 
+             um_ref, vm_ref,                                    & ! Intent(inout)
+             hydromet, Nccnm,                                   & ! Intent(inout)
+             sclrm, edsclrm, err_code )                           ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
 
@@ -1239,20 +1280,102 @@ module clubb_driver
 
       endif ! not micro_scheme == "none"
 
-      ! Advance a microphysics scheme
-      call advance_clubb_microphys &
-           ( itime, dt_main, rho, rho_zm, p_in_Pa, exner,     & ! Intent(in)
-             cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
-             Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
-             rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt,           & ! Intent(in)
-             d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
-             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
-             corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
-             hydromet_pdf_params,                             & ! Intent(in)
-             Nccnm, hydromet, wphydrometp, err_code,          & ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
-             wprtp_mc, wpthlp_mc,                             & ! Intent(out)
-             rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
+#ifdef LATIN_HYPERCUBE
+      !----------------------------------------------------------------
+      ! Compute subcolumns if enabled
+      !----------------------------------------------------------------
+
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        if ( l_lh_vert_overlap ) then
+          ! Determine 3pt vertically averaged Lscale
+          do k = 1, gr%nz
+            kp1 = min( k+1, gr%nz )
+            km1 = max( k-1, 1 )
+            Lscale_vert_avg(k) = vertical_avg &
+                               ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+                                 Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
+          end do
+        else
+          ! If vertical overlap is disabled, this calculation won't be needed
+          Lscale_vert_avg = -999._core_rknd
+        end if
+
+        if ( l_use_modified_corr ) then
+           call LH_subcolumn_generator_mod &
+                ( itime, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
+                  pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
+                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+                  real( corr_cholesky_mtx_1, kind = dp ), & ! In
+                  real( corr_cholesky_mtx_2, kind = dp ), & ! In
+                  hydromet_pdf_params, & ! In
+                  X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
+                  LH_sample_point_weights ) ! Out
+        else
+           ! Ncn is the only variable in the PDF where the overall mean is equal
+           ! to the mean in each PDF component (Ncnm = mu_Ncn_1 = mu_Ncn_2).  In
+           ! order to avoid passing Ncnm out of setup_pdf_parameters and into
+           ! run_clubb and then into this subroutine (advance_clubb_microphys) for
+           ! this call to LH_subcolumn_generator (which isn't even used anymore
+           ! since l_use_modified_corr is hardwired to .true.), mu_Ncn_1 (already
+           ! found in this subroutine as part of mu_x_1) will be used in place of
+           ! Ncnm in this subroutine call.
+           call LH_subcolumn_generator &
+                ( itime, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
+                  thlm, pdf_params, wm_zt, gr%dzt, rcm, mu_x_1(iiPDF_Ncn,:), rtm-rcm, & ! In
+                  hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+                  corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
+                  X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
+                  LH_sample_point_weights ) ! Out
+        endif
+
+        if ( l_predictnc ) then
+           Nc_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+        else
+           Nc_in_cloud = Nc0_in_cloud / rho
+        endif
+
+        call stats_accumulate_LH &
+             ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In
+               LH_sample_point_weights,  X_nl_all_levs, & ! In
+               LH_thl, LH_rt, Nc_in_cloud ) ! In
+      end if ! LH_microphys_enabled
+
+#else
+      X_nl_all_levs = -999._core_rknd
+      LH_rt = -999._core_rknd
+      LH_thl = -999._core_rknd
+      X_mixt_comp_all_levs = -999
+      LH_sample_point_weights = -999._core_rknd
+      if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
+#endif /* LATIN_HYPERCUBE */
+
+      !----------------------------------------------------------------
+      ! Compute Microphysics
+      !----------------------------------------------------------------
+
+      call advance_microphys &
+           ( itime, runtype, dt_main, time_current, &                   ! Intent(in)
+             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
+             wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
+             wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
+             LH_sample_point_weights, &                                 ! Intent(in)
+             X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
+             d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
+             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
+             hydromet_pdf_params, &                                     ! Intent(in)
+             Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
+             rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
+             wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
+             rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
+             err_code_microphys )                                       ! Intent(out)
+
+      if ( fatal_error( err_code_microphys ) ) then
+        if ( clubb_at_least_debug_level( 1 ) ) then
+          write(fstderr,*) "Fatal error in advance_microphys:"
+          call reportError( err_code_microphys )
+        end if
+        err_code = err_code_microphys
+      end if
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -1343,7 +1466,8 @@ module clubb_driver
     end if
 #endif
 
-    deallocate( radf, rcm_zm, radht_zm )
+    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
+                LH_sample_point_weights, Lscale_vert_avg, Nc_in_cloud )
 
     return
   end subroutine run_clubb
@@ -3659,357 +3783,6 @@ module clubb_driver
 
     return
   end subroutine advance_clubb_forcings
-
-!-------------------------------------------------------------------------------
-  subroutine advance_clubb_microphys &
-             ( iter, dt, rho, rho_zm, p_in_Pa, exner,           & ! Intent(in)
-               cloud_frac, thlm, rtm, rcm, wm_zt, wm_zm,        & ! Intent(in)
-               Kh_zm, wp2_zt, Lscale, pdf_params,               & ! Intent(in)
-               rho_ds_zt,  rho_ds_zm, invrs_rho_ds_zt,          & ! Intent(in)
-               d_variables, corr_array_1, corr_array_2,         & ! Intent(in)
-               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,            & ! Intent(in)
-               corr_cholesky_mtx_1, corr_cholesky_mtx_2,        & ! Intent(in)
-               hydromet_pdf_params,                             & ! Intent(in)
-               Nccnm, hydromet, wphydrometp, err_code,          & ! Intent(inout)
-               rvm_mc, rcm_mc, thlm_mc,                         & ! Intent(out)
-               wprtp_mc, wpthlp_mc,                             & ! Intent(out)
-               rtp2_mc, thlp2_mc, rtpthlp_mc )                    ! Intent(out)
-
-! Description:
-!   Advance a microphysics scheme
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
-    use corr_matrix_module, only: &
-        iiPDF_Ncn ! Variable(s)
-
-    use pdf_parameter_module, only: &
-        pdf_parameter ! Derived type
-
-    use parameters_microphys, only: &
-        micro_scheme,       & ! Variables
-        LH_microphys_calls
-
-    use constants_clubb, only: & 
-        rc_tol,  & ! Variable(s)
-        fstderr
-
-    use clubb_precision, only: time_precision, dp, core_rknd ! Variable(s)
-
-    use microphys_driver, only: advance_microphys ! Procedure(s)
-
-    use parameters_model, only: hydromet_dim ! Variable(s)
-
-    use pdf_parameter_module, only: &
-        pdf_parameter ! Type
-
-    use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter ! Type
-
-    use error_code, only: &
-        fatal_error, &  ! Procedure(s)
-        clubb_at_least_debug_level, &
-        reportError
-
-    use grid_class, only: &
-        gr ! Instance of a type
-
-    use clubb_model_settings, only: &
-        time_current, & ! Variable(s)
-        runtype
-
-
-    use corr_matrix_module, only: &
-        xp2_on_xm2_array_cloud, &
-        xp2_on_xm2_array_below, &
-        corr_array_cloud, &
-        corr_array_below
-
-#ifdef LATIN_HYPERCUBE
-    use constants_clubb, only: &
-        cloud_frac_min  ! Variable(s)
-
-    use array_index, only: &
-        iiNcm  ! Variable(s)
-
-    use parameters_microphys, only: &
-        LH_microphys_type, & ! Variable(s)
-        LH_microphys_disabled, &
-        LH_microphys_interactive, &
-        l_lh_vert_overlap, &
-        LH_sequence_length, &
-        l_predictnc, &
-        l_local_kk, &
-        l_var_covar_src, &
-        Nc0_in_cloud
-
-    use latin_hypercube_driver_module, only: &
-        LH_subcolumn_generator_mod, & ! Procedure(s)
-        LH_subcolumn_generator, &
-        stats_accumulate_LH
-
-    use fill_holes, only: &
-        vertical_avg  ! Procedure(s)
-
-    use model_flags, only: &
-        l_diagnose_correlations, & ! Variable(s)
-        l_morr_xp2_mc_tndcy, &
-        l_evaporate_cold_rcm, &
-        l_use_modified_corr
-
-#else
-#define d_variables 0
-#endif
-
-    implicit none
-
-    ! External
-    intrinsic :: trim
-
-    ! Input Variables
-    integer, intent(in) :: &
-      iter,       & ! Model iteration number
-      d_variables   ! Number of variables in the correlation arrays
-
-    real(kind=time_precision), intent(in) :: & 
-      dt ! Model timestep                            [s]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rho,        & ! Density on thermo. grid                           [kg/m^3] 
-      rho_zm,     & ! Density on moment. grid                           [kg/m^3]
-      p_in_Pa,    & ! Pressure.                                         [Pa] 
-      exner,      & ! Exner function.                                   [-]
-      cloud_frac, & ! Cloud fraction (thermodynamic levels)             [-]
-      thlm,       & ! Liquid potential temperature                      [K]
-      rtm,        & ! Total water mixing ratio, r_t (thermo. levels)    [kg/kg]
-      rcm,        & ! Cloud water mixing ratio, r_c (thermo. levels)    [kg/kg]
-      wm_zt,      & ! wm on thermo. grid.                               [m/s]
-      wm_zm,      & ! wm on moment. grid.                               [m/s]
-      Kh_zm,      & ! Eddy-diffusivity on momentum levels               [m^2/s]
-      wp2_zt,     & ! w'^2 interpolated the thermo levels               [m^2/s^2]
-      Lscale        ! Length scale                                      [m]
-
-    type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
-      pdf_params      ! PDF parameters   [units vary]
-
-    type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
-      hydromet_pdf_params      ! hydrometeor PDF parameters   [units vary]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
-      rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
-      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
-
-    real( kind = core_rknd ), dimension(d_variables, d_variables, gr%nz), intent(in) :: &
-      corr_array_1, & ! Correlation matrix for the first pdf component    [-]
-      corr_array_2    ! Correlation matrix for the second pdf component   [-]
-
-    real( kind = core_rknd ), dimension(d_variables, gr%nz), intent(in) :: &
-      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
-      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
-      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
-      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
-
-    real( kind = core_rknd ), dimension(d_variables,d_variables,gr%nz), intent(in) :: &
-      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
-      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
-
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
-      hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
-      wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
-
-    integer, intent(inout) :: &
-      err_code
-
-    ! Output Variables
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      thlm_mc,   & ! theta_l microphysical tendency [K/s]
-      rcm_mc,    & ! r_c microphysical tendency     [(kg/kg)/s]
-      rvm_mc       ! r_v microphysical tendency     [(kg/kg)/s]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
-
-    ! Local Variables
-
-    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables) :: &
-      X_nl_all_levs ! Lognormally distributed hydrometeors
-
-    integer, dimension(gr%nz,LH_microphys_calls) :: &
-      X_mixt_comp_all_levs ! Which mixture component the sample is in
-
-    real( kind = core_rknd ), dimension(gr%nz,LH_microphys_calls) :: &
-      LH_rt, LH_thl ! Samples of rt, thl        [kg/kg,K]
-
-    real( kind = core_rknd ), dimension(LH_microphys_calls) :: &
-      LH_sample_point_weights ! Weights for cloud weighted sampling
-
-#ifdef LATIN_HYPERCUBE
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Lscale_vert_avg ! 3pt vertically averaged Lscale          [m]
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Nc_in_cloud    ! Mean cloud droplet concentration (within-cloud)  [num/kg]
-
-    integer :: k, kp1, km1
-#endif
-    integer :: err_code_microphys
-
-    ! ---- Begin Code ----
-
-#ifdef LATIN_HYPERCUBE
-    !The algorithm for diagnosing the correlations only works with the KK microphysics by now. 
-    !<Changes by janhft 02/19/13>
-    if ( l_diagnose_correlations &
-         .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
-         .and. ( LH_microphys_type == LH_microphys_disabled ) ) ) then
-       write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
-                        // "for KK microphysics by now."
-       stop
-    endif  
-
-    if ( ( .not. l_local_kk) .and. &
-         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) .and. &
-         ( LH_microphys_type == LH_microphys_interactive ) ) then
-       write(fstderr,*) "Error:  KK upscaled microphysics " &
-                        // "(l_local_kk = .false.) and interactive Latin " &
-                        // "Hypercube (LH_microphys_type = interactive) " &
-                        // "are incompatible."
-      stop
-    endif
-
-    if ( l_morr_xp2_mc_tndcy .and. &
-         ( LH_microphys_type /= LH_microphys_disabled ) ) then
-       write(fstderr,*) "Error:  The code to include the effects of rain " &
-                        // "evaporation on rtp2 and thlp2 in Morrison " &
-                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
-                        // "Latin Hypercube are incompatible."
-       stop
-    endif
-
-    if ( l_morr_xp2_mc_tndcy .and. l_var_covar_src ) then
-       write(fstderr,*) "Error: The code l_morr_xp2_mc_tndcy and " &
-                        // "l_var_covar_src are incompatible, since " &
-                        // "they both are used to determine the effect " &
-                        // "of microphysics on variances."
-       stop
-    endif
-
-    if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
-      write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &
-                       //  "are currently incompatible."
-      stop
-    end if
-
-    !----------------------------------------------------------------
-    ! Compute subcolumns if enabled
-    !----------------------------------------------------------------
-
-    if ( LH_microphys_type /= LH_microphys_disabled ) then
-      if ( l_lh_vert_overlap ) then
-        ! Determine 3pt vertically averaged Lscale
-        do k = 1, gr%nz
-          kp1 = min( k+1, gr%nz )
-          km1 = max( k-1, 1 )
-          Lscale_vert_avg(k) = vertical_avg &
-                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
-        end do
-      else
-        ! If vertical overlap is disabled, this calculation won't be needed
-        Lscale_vert_avg = -999._core_rknd
-      end if
-
-      if ( l_use_modified_corr ) then
-         call LH_subcolumn_generator_mod &
-              ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-                pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
-                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
-                real( corr_cholesky_mtx_1, kind = dp ), & ! In
-                real( corr_cholesky_mtx_2, kind = dp ), & ! In
-                hydromet_pdf_params, & ! In
-                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
-                LH_sample_point_weights ) ! Out
-      else
-         ! Ncn is the only variable in the PDF where the overall mean is equal
-         ! to the mean in each PDF component (Ncnm = mu_Ncn_1 = mu_Ncn_2).  In
-         ! order to avoid passing Ncnm out of setup_pdf_parameters and into
-         ! run_clubb and then into this subroutine (advance_clubb_microphys) for
-         ! this call to LH_subcolumn_generator (which isn't even used anymore
-         ! since l_use_modified_corr is hardwired to .true.), mu_Ncn_1 (already
-         ! found in this subroutine as part of mu_x_1) will be used in place of
-         ! Ncnm in this subroutine call.
-         call LH_subcolumn_generator &
-              ( iter, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
-                thlm, pdf_params, wm_zt, gr%dzt, rcm, mu_x_1(iiPDF_Ncn,:), rtm-rcm, & ! In
-                hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
-                corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
-                LH_sample_point_weights ) ! Out
-      endif
-
-      if ( l_predictnc ) then
-         Nc_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
-      else
-         Nc_in_cloud = Nc0_in_cloud / rho
-      endif
-
-      call stats_accumulate_LH &
-           ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In
-             LH_sample_point_weights,  X_nl_all_levs, & ! In
-             LH_thl, LH_rt, Nc_in_cloud ) ! In
-    end if ! LH_microphys_enabled
-
-#else
-    X_nl_all_levs = -999._core_rknd
-    LH_rt = -999._core_rknd
-    LH_thl = -999._core_rknd
-    X_mixt_comp_all_levs = -999
-    LH_sample_point_weights = -999._core_rknd
-    if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
-#endif /* LATIN_HYPERCUBE */
-
-    !----------------------------------------------------------------
-    ! Compute Microphysics
-    !----------------------------------------------------------------
-
-    call advance_microphys &
-         ( iter, runtype, dt, time_current, &                         ! Intent(in)
-           thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
-           wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-           wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
-           LH_sample_point_weights, &                                 ! Intent(in)
-           X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-           d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
-           mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
-           hydromet_pdf_params, &                                     ! Intent(in)
-           Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
-           rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
-           wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
-           rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
-           err_code_microphys )                                       ! Intent(out)
-
-    if ( fatal_error( err_code_microphys ) ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) "Fatal error in advance_clubb_microphys:"
-        call reportError( err_code_microphys )
-      end if
-      err_code = err_code_microphys
-    end if
-
-    return
-  end subroutine advance_clubb_microphys
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &

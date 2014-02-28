@@ -227,6 +227,11 @@ module microphys_driver
     use setup_clubb_pdf_params, only: &
         init_precip_hm_arrays  ! Procedure(s)
 
+    use model_flags, only: &
+        l_diagnose_correlations, &
+        l_evaporate_cold_rcm, &
+        l_morr_xp2_mc_tndcy
+
     implicit none
 
     ! Constant Parameters
@@ -894,6 +899,50 @@ module microphys_driver
            &preprocessor flag SILHS_KK_CONVERGENCE_TEST"
     end if
 #endif
+
+    !The algorithm for diagnosing the correlations only works with the KK
+    !microphysics by now. 
+    !<Changes by janhft 02/19/13>
+    if ( l_diagnose_correlations &
+         .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
+         .and. ( LH_microphys_type_int == LH_microphys_disabled ) ) ) then
+       write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
+                        // "for KK microphysics by now."
+       stop
+    endif
+
+    if ( ( .not. l_local_kk) .and. &
+         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) .and. &
+         ( LH_microphys_type_int == LH_microphys_interactive ) ) then
+       write(fstderr,*) "Error:  KK upscaled microphysics " &
+                        // "(l_local_kk = .false.) and interactive Latin " &
+                        // "Hypercube (LH_microphys_type = interactive) " &
+                        // "are incompatible."
+      stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. &
+         ( LH_microphys_type_int /= LH_microphys_disabled ) ) then
+       write(fstderr,*) "Error:  The code to include the effects of rain " &
+                        // "evaporation on rtp2 and thlp2 in Morrison " &
+                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
+                        // "Latin Hypercube are incompatible."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_var_covar_src ) then
+       write(fstderr,*) "Error: The code l_morr_xp2_mc_tndcy and " &
+                        // "l_var_covar_src are incompatible, since " &
+                        // "they both are used to determine the effect " &
+                        // "of microphysics on variances."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
+      write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &
+                       //  "are currently incompatible."
+      stop
+    end if
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
