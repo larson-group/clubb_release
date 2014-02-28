@@ -64,15 +64,15 @@ module diagnose_correlations_module
 
     ! We actually don't need this right now
     real( kind = core_rknd ), dimension(d_variables) :: &
-      xp2_on_xm2_array   ! ratios of x_variance over x_mean^2
+      sigma2_on_mu2_ip_array  ! Ratios: sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
 
     integer :: i ! Loop iterator
 
     !-------------------- Begin code --------------------
 
-    ! Initialize xp2_on_xm2_array
+    ! Initialize sigma2_on_mu2_ip_array
     do i = 1, d_variables
-       xp2_on_xm2_array(i) = zero
+       sigma2_on_mu2_ip_array(i) = zero
     end do 
 
     ! Swap the w-correlations to the first row for the prescribed correlations
@@ -85,7 +85,8 @@ module diagnose_correlations_module
        corr_array_swapped = corr_array_pre_swapped
     endif
 
-    call diagnose_corr( d_variables, sqrt(xp2_on_xm2_array), corr_array_pre_swapped, &
+    call diagnose_corr( d_variables, sqrt(sigma2_on_mu2_ip_array), &
+                        corr_array_pre_swapped, &
                         corr_array_swapped )
 
     ! Swap rows back
@@ -96,7 +97,8 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine diagnose_corr( n_variables, sqrt_xp2_on_xm2, corr_matrix_prescribed, & !intent(in)
+  subroutine diagnose_corr( n_variables, sqrt_sigma2_on_mu2_ip, & ! intent(in)
+                            corr_matrix_prescribed, & !intent(in)
                             corr_matrix_approx ) ! intent(inout)
 
     ! Description:
@@ -126,7 +128,7 @@ module diagnose_correlations_module
       n_variables  ! number of variables in the correlation matrix [-]
     
     real( kind = core_rknd ), dimension(n_variables), intent(in) :: & 
-      sqrt_xp2_on_xm2    ! sqrt of x_variance / x_mean^2 [units vary]
+      sqrt_sigma2_on_mu2_ip  ! sqrt of sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
 
     real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
       corr_matrix_prescribed ! correlation matrix [-]
@@ -151,7 +153,7 @@ module diagnose_correlations_module
 
     ! Remove compiler warnings about unused variables.
     if ( .false. ) then
-       print *, "sqrt_xp2_on_xm2 = ", sqrt_xp2_on_xm2
+       print *, "sqrt_sigma2_on_mu2_ip = ", sqrt_sigma2_on_mu2_ip
     endif
 
     ! calculate all square roots
@@ -167,7 +169,7 @@ module diagnose_correlations_module
       do i = (j+1), n_variables
 
         ! formula (16) in the ref. paper (Larson et al. (2011))
-        !f_ij = alpha_corr * sqrt_xp2_on_xm2(i) * sqrt_xp2_on_xm2(j) &
+        !f_ij = alpha_corr * sqrt_sigma2_on_mu2_ip(i) * sqrt_sigma2_on_mu2_ip(j) &
         !        * sign(1.0_core_rknd,corr_matrix_approx(1,i)*corr_matrix_approx(1,j))
 
         ! If the predicting c1i's are small then cij will be closer to the prescribed value. If

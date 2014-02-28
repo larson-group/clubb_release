@@ -264,8 +264,8 @@ module clubb_driver
         d_variables, &
         cleanup_corr_matrix_arrays, &
         iiPDF_Ncn, &
-        xp2_on_xm2_array_cloud, &
-        xp2_on_xm2_array_below
+        sigma2_on_mu2_ip_array_cloud, &
+        sigma2_on_mu2_ip_array_below
 
     use setup_clubb_pdf_params, only: &
         num_hm, &               ! Variable
@@ -1322,7 +1322,7 @@ module clubb_driver
            call LH_subcolumn_generator &
                 ( itime, d_variables, LH_microphys_calls, LH_sequence_length, gr%nz, & ! In
                   thlm, pdf_params, wm_zt, gr%dzt, rcm, mu_x_1(iiPDF_Ncn,:), rtm-rcm, & ! In
-                  hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+                  hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
                   corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
                   X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, & ! Out
                   LH_sample_point_weights ) ! Out

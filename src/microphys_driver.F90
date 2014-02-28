@@ -131,24 +131,24 @@ module microphys_driver
         morrison_lognormal
 
     use parameters_microphys, only: &
-        rrp2_on_rrm2_cloud, &
-        Nrp2_on_Nrm2_cloud, &
-        rrp2_on_rrm2_below, &
-        Nrp2_on_Nrm2_below, &
-        Ncnp2_on_Ncnm2,     &
-        rsnowp2_on_rsnowm2_cloud, &
-        Nsnowp2_on_Nsnowm2_cloud, &
-        ricep2_on_ricem2_cloud, &
-        Nicep2_on_Nicem2_cloud, &
-        rgraupelp2_on_rgraupelm2_cloud, &
-        Ngraupelp2_on_Ngraupelm2_cloud, &
-        rsnowp2_on_rsnowm2_below, &
-        Nsnowp2_on_Nsnowm2_below, &
-        ricep2_on_ricem2_below, &
-        Nicep2_on_Nicem2_below, &
-        rgraupelp2_on_rgraupelm2_below, &
-        Ngraupelp2_on_Ngraupelm2_below, &
-        C_evap,               &
+        rr_sigma2_on_mu2_ip_cloud, &
+        Nr_sigma2_on_mu2_ip_cloud, &
+        rr_sigma2_on_mu2_ip_below, &
+        Nr_sigma2_on_mu2_ip_below, &
+        Ncnp2_on_Ncnm2,            &
+        rs_sigma2_on_mu2_ip_cloud, &
+        Ns_sigma2_on_mu2_ip_cloud, &
+        ri_sigma2_on_mu2_ip_cloud, &
+        Ni_sigma2_on_mu2_ip_cloud, &
+        rg_sigma2_on_mu2_ip_cloud, &
+        Ng_sigma2_on_mu2_ip_cloud, &
+        rs_sigma2_on_mu2_ip_below, &
+        Ns_sigma2_on_mu2_ip_below, &
+        ri_sigma2_on_mu2_ip_below, &
+        Ni_sigma2_on_mu2_ip_below, &
+        rg_sigma2_on_mu2_ip_below, &
+        Ng_sigma2_on_mu2_ip_below, &
+        C_evap,                    &
         r_0
 
     use parameters_microphys, only: &
@@ -282,13 +282,14 @@ module microphys_driver
       l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
       LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
       l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud, Ncnp2_on_Ncnm2, &
-      rrp2_on_rrm2_below, Nrp2_on_Nrm2_below, &
-      rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, &
-      ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud, rgraupelp2_on_rgraupelm2_cloud, &
-      Ngraupelp2_on_Ngraupelm2_cloud, rsnowp2_on_rsnowm2_below, &
-      Nsnowp2_on_Nsnowm2_below, ricep2_on_ricem2_below, Nicep2_on_Nicem2_below, &
-      rgraupelp2_on_rgraupelm2_below, Ngraupelp2_on_Ngraupelm2_below, &
+      rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud, Ncnp2_on_Ncnm2, &
+      rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below, &
+      rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, &
+      ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
+      rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud, &
+      rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, &
+      ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
+      rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -403,39 +404,39 @@ module microphys_driver
         l_write_to_file, iunit)
       call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
         l_write_to_file, iunit )
-      call write_text ( "rrp2_on_rrm2_cloud = ", rrp2_on_rrm2_cloud, &
+      call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", rr_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "Nrp2_on_Nrm2_cloud = ", Nrp2_on_Nrm2_cloud, &
+      call write_text ( "Nr_sigma2_on_mu2_ip_cloud = ", Nr_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "rrp2_on_rrm2_below = ", rrp2_on_rrm2_below, &
+      call write_text ( "rr_sigma2_on_mu2_ip_below = ", rr_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "Nrp2_on_Nrm2_below = ", Nrp2_on_Nrm2_below, &
+      call write_text ( "Nr_sigma2_on_mu2_ip_below = ", Nr_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
       call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
         l_write_to_file, iunit )
-      call write_text ( "rsnowp2_on_rsnowm2_cloud = ", rsnowp2_on_rsnowm2_cloud, &
+      call write_text ( "rs_sigma2_on_mu2_ip_cloud = ", rs_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "Nsnowp2_on_Nsnowm2_cloud = ", Nsnowp2_on_Nsnowm2_cloud, &
+      call write_text ( "Ns_sigma2_on_mu2_ip_cloud = ", Ns_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "ricep2_on_ricem2_cloud = ", ricep2_on_ricem2_cloud, &
+      call write_text ( "ri_sigma2_on_mu2_ip_cloud = ", ri_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "Nicep2_on_Nicem2_cloud = ", Nicep2_on_Nicem2_cloud, &
+      call write_text ( "Ni_sigma2_on_mu2_ip_cloud = ", Ni_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "rgraupelp2_on_rgraupelm2_cloud = ", rgraupelp2_on_rgraupelm2_cloud, &
+      call write_text ( "rg_sigma2_on_mu2_ip_cloud = ", rg_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "Ngraupelp2_on_Ngraupelm2_cloud = ", Ngraupelp2_on_Ngraupelm2_cloud, &
+      call write_text ( "Ng_sigma2_on_mu2_ip_cloud = ", Ng_sigma2_on_mu2_ip_cloud, &
         l_write_to_file, iunit )
-      call write_text ( "rsnowp2_on_rsnowm2_below = ", rsnowp2_on_rsnowm2_below, &
+      call write_text ( "rs_sigma2_on_mu2_ip_below = ", rs_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "Nsnowp2_on_Nsnowm2_below = ", Nsnowp2_on_Nsnowm2_below, &
+      call write_text ( "Ns_sigma2_on_mu2_ip_below = ", Ns_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "ricep2_on_ricem2_below = ", ricep2_on_ricem2_below, &
+      call write_text ( "ri_sigma2_on_mu2_ip_below = ", ri_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "Nicep2_on_Nicem2_below = ", Nicep2_on_Nicem2_below, &
+      call write_text ( "Ni_sigma2_on_mu2_ip_below = ", Ni_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "rgraupelp2_on_rgraupelm2_below = ", rgraupelp2_on_rgraupelm2_below, &
+      call write_text ( "rg_sigma2_on_mu2_ip_below = ", rg_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
-      call write_text ( "Ngraupelp2_on_Ngraupelm2_below = ", Ngraupelp2_on_Ngraupelm2_below, &
+      call write_text ( "Ng_sigma2_on_mu2_ip_below = ", Ng_sigma2_on_mu2_ip_below, &
         l_write_to_file, iunit )
       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )

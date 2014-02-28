@@ -158,8 +158,8 @@ module setup_clubb_pdf_params
         calc_cholesky_corr_mtx_approx
 
     use corr_matrix_module, only: &
-        xp2_on_xm2_array_cloud, & ! Variable(s)
-        xp2_on_xm2_array_below, &
+        sigma2_on_mu2_ip_array_cloud, & ! Variable(s)
+        sigma2_on_mu2_ip_array_below, &
         iiPDF_rrain, &
         iiPDF_Nr, &
         iiPDF_Ncn, &
@@ -284,11 +284,8 @@ module setup_clubb_pdf_params
       corr_array_scaling
 
     real( kind = core_rknd ), dimension(d_variables) :: &
-      xp2_on_xm2_1, & ! Prescribed ratio array:  sigma_hm_1^2 / mu_hm_1^2    [-]
-      xp2_on_xm2_2    ! Prescribed ratio array:  sigma_hm_2^2 / mu_hm_2^2    [-]
-!   real( kind = core_rknd ), dimension(d_variables) :: &
-!     sigma2_on_mu2_1, & ! Prescribed ratio array:  sigma_hm_1^2 / mu_hm_1^2 [-]
-!     sigma2_on_mu2_2    ! Prescribed ratio array:  sigma_hm_2^2 / mu_hm_2^2 [-]
+      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
+      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
 
     real( kind = core_rknd ), dimension(nz,num_hm) :: &
       wphmp_chnge    ! Change in wphmp_zt due to covar. clipping    [(m/s)units]
@@ -500,15 +497,15 @@ module setup_clubb_pdf_params
     do k = 1, nz, 1
 
        if ( rc1(k) > rc_tol ) then
-          xp2_on_xm2_1 = xp2_on_xm2_array_cloud
+          sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_cloud
        else
-          xp2_on_xm2_1 = xp2_on_xm2_array_below
+          sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_below
        endif
 
        if ( rc2(k) > rc_tol ) then
-          xp2_on_xm2_2 = xp2_on_xm2_array_cloud
+          sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_cloud
        else
-          xp2_on_xm2_2 = xp2_on_xm2_array_below
+          sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_below
        endif
 
        !!! Calculate the means and standard deviations involving PDF variables 
@@ -518,8 +515,8 @@ module setup_clubb_pdf_params
                                 cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
                                 hm1(k,:), hm2(k,:), &                 ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                                xp2_on_xm2_array_cloud, &             ! Intent(in)
-                                xp2_on_xm2_array_below, &             ! Intent(in)
+                                sigma2_on_mu2_ip_array_cloud, &       ! Intent(in)
+                                sigma2_on_mu2_ip_array_below, &       ! Intent(in)
                                 pdf_params(k), d_variables, &         ! Intent(in)
                                 mu_x_1, mu_x_2, &                     ! Intent(out)
                                 sigma_x_1, sigma_x_2 )      ! Intent(out)
@@ -530,7 +527,7 @@ module setup_clubb_pdf_params
        !!! ln hm and ln N_cn -- for each PDF component.
        call normalize_mean_stdev( hm1(k,:), hm2(k,:), Ncnm(k), d_variables, &
                                   mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                  xp2_on_xm2_1, xp2_on_xm2_2, &
+                                  sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                                   mu_x_1_n(:,k), mu_x_2_n(:,k), &
                                   sigma_x_1_n(:,k), sigma_x_2_n(:,k) )
 
@@ -651,7 +648,7 @@ module setup_clubb_pdf_params
        !!! precipitating hydrometeors, ln hm (for example, ln r_r and ln N_r),
        !!! and ln N_cn for each PDF component.
        call normalize_corr( d_variables, sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
-                            xp2_on_xm2_1, xp2_on_xm2_2, &
+                            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                             corr_array_1, corr_array_2, &
                             corr_array_1_n(:,:,k), corr_array_2_n(:,:,k) )
 
@@ -1592,8 +1589,8 @@ module setup_clubb_pdf_params
                                  cloud_frac1, cloud_frac2, &            ! Intent(in)
                                  hm1, hm2, &                            ! Intent(in)
                                  precip_frac_1, precip_frac_2, &        ! Intent(in)
-                                 xp2_on_xm2_array_cloud, &              ! Intent(in)
-                                 xp2_on_xm2_array_below, &              ! Intent(in)
+                                 sigma2_on_mu2_ip_array_cloud, &        ! Intent(in)
+                                 sigma2_on_mu2_ip_array_below, &        ! Intent(in)
                                  pdf_params, d_variables, &             ! Intent(in)
                                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2 ) ! Intent(out)
        
@@ -1639,8 +1636,8 @@ module setup_clubb_pdf_params
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2_array_cloud, &
-      xp2_on_xm2_array_below
+      sigma2_on_mu2_ip_array_cloud, & ! Prescribed ratio array: cloudy levs. [-]
+      sigma2_on_mu2_ip_array_below    ! Prescribed ratio array: clear levs.  [-]
 
     real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
       hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
@@ -1759,14 +1756,14 @@ module setup_clubb_pdf_params
        sigma_x_1(ivar) &
        =  component_stdev_hm_ip( mu_x_1(ivar), &
                                  rc1, cloud_frac1, &
-                                 xp2_on_xm2_array_cloud(ivar), &
-                                 xp2_on_xm2_array_below(ivar) )
+                                 sigma2_on_mu2_ip_array_cloud(ivar), &
+                                 sigma2_on_mu2_ip_array_below(ivar) )
 
        sigma_x_2(ivar) &
        =  component_stdev_hm_ip( mu_x_2(ivar), &
                                  rc2, cloud_frac2, &
-                                 xp2_on_xm2_array_cloud(ivar), &
-                                 xp2_on_xm2_array_below(ivar) )
+                                 sigma2_on_mu2_ip_array_cloud(ivar), &
+                                 sigma2_on_mu2_ip_array_below(ivar) )
 
     enddo
 
@@ -2742,7 +2739,7 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine normalize_mean_stdev( hm1, hm2, Ncnm, d_variables, &
                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
-                                   sigma2_on_mu2_1, sigma2_on_mu2_2, &
+                                   sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                                    mu_x_1_n, mu_x_2_n, &
                                    sigma_x_1_n, sigma_x_2_n )
 
@@ -2790,8 +2787,8 @@ module setup_clubb_pdf_params
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      sigma2_on_mu2_1, & ! Prescribed ratio array:  sigma_hm_1^2 / mu_hm_1^2 [-]
-      sigma2_on_mu2_2    ! Prescribed ratio array:  sigma_hm_2^2 / mu_hm_2^2 [-]
+      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
+      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables), intent(out) :: &
@@ -2866,7 +2863,7 @@ module setup_clubb_pdf_params
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 1.
        if ( hm1(pdf2hm_idx(ivar)) > zero ) then
 
-          mu_x_1_n(ivar) = mean_L2N( mu_x_1(ivar), sigma2_on_mu2_1(ivar) )
+          mu_x_1_n(ivar) = mean_L2N( mu_x_1(ivar), sigma2_on_mu2_ip_1(ivar) )
 
        else
 
@@ -2882,12 +2879,12 @@ module setup_clubb_pdf_params
 
        ! Normalized standard deviation of a precipitating hydrometeor, hm, in
        ! PDF component 1.
-       sigma_x_1_n(ivar) = stdev_L2N( sigma2_on_mu2_1(ivar) )
+       sigma_x_1_n(ivar) = stdev_L2N( sigma2_on_mu2_ip_1(ivar) )
 
        ! Normalized mean of a precipitating hydrometeor, hm, in PDF component 2.
        if ( hm2(pdf2hm_idx(ivar)) > zero ) then
 
-          mu_x_2_n(ivar) = mean_L2N( mu_x_2(ivar), sigma2_on_mu2_2(ivar) )
+          mu_x_2_n(ivar) = mean_L2N( mu_x_2(ivar), sigma2_on_mu2_ip_2(ivar) )
 
        else
 
@@ -2903,7 +2900,7 @@ module setup_clubb_pdf_params
 
        ! Normalized standard deviation of a precipitating hydrometeor, hm, in
        ! PDF component 2.
-       sigma_x_2_n(ivar) = stdev_L2N( sigma2_on_mu2_2(ivar) )
+       sigma_x_2_n(ivar) = stdev_L2N( sigma2_on_mu2_ip_2(ivar) )
 
     enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
@@ -2914,7 +2911,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
-                             sigma2_on_mu2_1, sigma2_on_mu2_2, &
+                             sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                              corr_array_1, corr_array_2, &
                              corr_array_1_n, corr_array_2_n )
 
@@ -2954,8 +2951,8 @@ module setup_clubb_pdf_params
       sigma_x_2_n    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
 
     real ( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      sigma2_on_mu2_1, & ! Prescribed ratio array:  sigma_hm_1^2 / mu_hm_1^2 [-]
-      sigma2_on_mu2_2    ! Prescribed ratio array:  sigma_hm_2^2 / mu_hm_2^2 [-]
+      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
+      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
     intent(in) :: &
@@ -3027,13 +3024,13 @@ module setup_clubb_pdf_params
           ! precipitating hydrometeor, hm, in PDF component 1.
           corr_array_1_n(jvar, ivar) &
           = corr_NL2NN( corr_array_1(jvar, ivar), sigma_x_1_n(jvar), &
-                        sigma2_on_mu2_1(jvar) )
+                        sigma2_on_mu2_ip_1(jvar) )
 
           ! Normalize the correlation (in-precip) between w, s, or t and a
           ! precipitating hydrometeor, hm, in PDF component 2.
           corr_array_2_n(jvar, ivar) &
           = corr_NL2NN( corr_array_2(jvar, ivar), sigma_x_2_n(jvar), &
-                        sigma2_on_mu2_2(jvar) )
+                        sigma2_on_mu2_ip_2(jvar) )
 
        enddo ! jvar = iiPDF_Ncn+1, d_variables
     enddo ! ivar = iiPDF_s_mellor, iiPDF_w
@@ -3053,14 +3050,14 @@ module setup_clubb_pdf_params
        corr_array_1_n(jvar, ivar) &
        = corr_LL2NN( corr_array_1(jvar, ivar), &
                      sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                     Ncnp2_on_Ncnm2, sigma2_on_mu2_1(jvar) )
+                     Ncnp2_on_Ncnm2, sigma2_on_mu2_ip_1(jvar) )
 
        ! Normalize the correlation (in-precip) between N_cn and a precipitating
        ! hydrometeor, hm, in PDF component 2.
        corr_array_2_n(jvar, ivar) &
        = corr_LL2NN( corr_array_2(jvar, ivar), &
                      sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                     Ncnp2_on_Ncnm2, sigma2_on_mu2_2(jvar) )
+                     Ncnp2_on_Ncnm2, sigma2_on_mu2_ip_2(jvar) )
 
     enddo ! jvar = ivar+1, d_variables
 
@@ -3074,14 +3071,14 @@ module setup_clubb_pdf_params
           corr_array_1_n(jvar, ivar) &
           = corr_LL2NN( corr_array_1(jvar, ivar), &
                         sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                        sigma2_on_mu2_1(ivar), sigma2_on_mu2_1(jvar) )
+                        sigma2_on_mu2_ip_1(ivar), sigma2_on_mu2_ip_1(jvar) )
 
           ! Normalize the correlation (in-precip) between two precipitating
           ! hydrometeors (for example, r_r and N_r) in PDF component 2.
           corr_array_2_n(jvar, ivar) &
           = corr_LL2NN( corr_array_2(jvar, ivar), &
                         sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                        sigma2_on_mu2_2(ivar), sigma2_on_mu2_2(jvar) )
+                        sigma2_on_mu2_ip_2(ivar), sigma2_on_mu2_ip_2(jvar) )
 
        enddo ! jvar = ivar+1, d_variables
     enddo ! ivar = iiPDF_Ncn+1, d_variables-1

@@ -35,7 +35,7 @@ module generate_lh_sample_module
                stdev_t1_in, stdev_t2_in, &
                covar_st_1, covar_st_2, &
                crt1, crt2, cthl1, cthl2, &
-               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
+               hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
                corr_array_cloud, corr_array_below, &
                X_u_one_lev, X_mixt_comp_one_lev, &
                LH_rt, LH_thl, X_nl_one_lev ) ! Out
@@ -191,8 +191,8 @@ module generate_lh_sample_module
 
     ! From the KK_microphys_module
     real( kind = core_rknd ), dimension(d_variables), target, intent(in) :: &
-      xp2_on_xm2_array_cloud, & ! Variance over mean for sampled variables    [-]
-      xp2_on_xm2_array_below
+      sigma2_on_mu2_ip_array_cloud, & ! Ratio:  sigma_x^2/mu_x^2 ip; cloudy levs. [-]
+      sigma2_on_mu2_ip_array_below    ! Ratio:  sigma_x^2/mu_x^2 ip; clear levs.  [-]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), target, intent(in) :: &
       corr_array_cloud, & ! Correlations in cloud for sampled variables  [-]
@@ -308,7 +308,7 @@ module generate_lh_sample_module
       temp_3_elements
 
     real( kind = core_rknd ), pointer, dimension(:) :: &
-      xp2_on_xm2_array => null() ! Pointer for the x'2 / xm^2 array
+      sigma2_on_mu2_ip_array => null() ! Pointer for the sigma_x^2/mu_x^2 array
 
     real( kind = core_rknd ), pointer, dimension(:,:) :: &
       corr_array => null()  ! Correlation array pointer
@@ -434,15 +434,15 @@ module generate_lh_sample_module
     ! We define in cloud to be those points where mean liquid water is greater
     ! than rc_tol.  This should be done consistently with analytic K&K code.
     if ( X_mixt_comp_one_lev == 1 .and. rc1_in > rc_tol ) then
-      xp2_on_xm2_array => xp2_on_xm2_array_cloud
+      sigma2_on_mu2_ip_array => sigma2_on_mu2_ip_array_cloud
       corr_array => corr_array_cloud
       l_in_cloud = .true.
     else if ( X_mixt_comp_one_lev == 2 .and. rc2_in > rc_tol ) then
-      xp2_on_xm2_array => xp2_on_xm2_array_cloud
+      sigma2_on_mu2_ip_array => sigma2_on_mu2_ip_array_cloud
       corr_array => corr_array_cloud
       l_in_cloud = .true.
     else
-      xp2_on_xm2_array => xp2_on_xm2_array_below
+      sigma2_on_mu2_ip_array => sigma2_on_mu2_ip_array_below
       corr_array => corr_array_below
       l_in_cloud = .false.
 
@@ -461,7 +461,8 @@ module generate_lh_sample_module
 
     if ( iiPDF_Ncn > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Ncn, real(Ncnm, kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Ncn, real(Ncnm, kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -472,51 +473,57 @@ module generate_lh_sample_module
 
     if ( iiPDF_rrain > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rrain, real(hydromet(iirrainm), kind = dp), xp2_on_xm2_array, &! In
+           ( d_variables, iiPDF_rrain, real(hydromet(iirrainm), kind = dp), & ! In
+             sigma2_on_mu2_ip_array, &! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_Nr > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Nr, real(hydromet(iiNrm), kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Nr, real(hydromet(iiNrm), kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_rsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rsnow, real(hydromet(iirsnowm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_rsnow, real(hydromet(iirsnowm),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_Nsnow > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Nsnow, real(hydromet(iiNsnowm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Nsnow, real(hydromet(iiNsnowm),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_rice > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rice, real(hydromet(iiricem),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_rice, real(hydromet(iiricem),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_Ni > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Ni, real(hydromet(iiNim),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Ni, real(hydromet(iiNim),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_rgraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rgraupel, & ! In
-             real(hydromet(iirgraupelm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_rgraupel, real(hydromet(iirgraupelm),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
     if ( iiPDF_Ngraupel > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Ngraupel, & ! In
-             real(hydromet(iiNgraupelm),kind = dp), xp2_on_xm2_array, & ! In
+           ( d_variables, iiPDF_Ngraupel, real(hydromet(iiNgraupelm),kind = dp), & ! In
+             sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
@@ -585,7 +592,7 @@ module generate_lh_sample_module
 
       if ( iiPDF_Ncn > 0 ) then
         ! var_Ncn1,2 = PDF param for width of plume 1,2. [var_Ncn1,2] = (#/kg)**2
-        var_Ncn1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Ncn), kind=dp ) )
+        var_Ncn1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_Ncn), kind=dp ) )
         var_Ncn2 = var_Ncn1
         Sigma_stw_1(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn1
         Sigma_stw_2(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn2
@@ -593,7 +600,7 @@ module generate_lh_sample_module
 
       if ( iiPDF_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
-        var_Nr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_Nr), kind=dp ) )
+        var_Nr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_Nr), kind=dp ) )
         var_Nr2 = var_Nr1
         Sigma_stw_1(iiPDF_Nr,iiPDF_Nr) = var_Nr1
         Sigma_stw_2(iiPDF_Nr,iiPDF_Nr) = var_Nr2
@@ -601,7 +608,7 @@ module generate_lh_sample_module
 
       if ( iiPDF_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1._dp+ real( Xp2_on_Xm2_array(iiPDF_rrain), kind=dp ) )
+        var_rr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_rrain), kind=dp ) )
         var_rr2 = var_rr1
         Sigma_stw_1(iiPDF_rrain,iiPDF_rrain) = var_rr1
         Sigma_stw_2(iiPDF_rrain,iiPDF_rrain) = var_rr2
@@ -623,7 +630,8 @@ module generate_lh_sample_module
                  corr_rrNr ) ! Out
 
           call construct_LN_LN_element &
-               ( corr_rrNr, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
+               ( corr_rrNr, sigma2_on_mu2_ip_array(index1), & ! In
+                 sigma2_on_mu2_ip_array(index2), & ! In
                  covar_rrNr1 ) ! Out
 
           ! rr1 = rr2 and Nr1 = Nr2, so we can just set covar_rrNr2 here
@@ -647,7 +655,7 @@ module generate_lh_sample_module
 
           ! Covariance between s and rain number conc.
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_s1, xp2_on_xm2_array(index2), & ! In
+               ( corr_sNr, stdev_s1, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_sNr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -671,7 +679,7 @@ module generate_lh_sample_module
                  corr_sNr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_s2, xp2_on_xm2_array(index2), & ! In
+               ( corr_sNr, stdev_s2, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_sNr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -699,7 +707,7 @@ module generate_lh_sample_module
 
           ! Covariance between s and rain water mixing ratio
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_s1, xp2_on_xm2_array(index2), & ! In
+               ( corr_srr, stdev_s1, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_srr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -723,7 +731,7 @@ module generate_lh_sample_module
                  corr_srr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_s2, xp2_on_xm2_array(index2), & ! In
+               ( corr_srr, stdev_s2, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_srr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -746,14 +754,14 @@ module generate_lh_sample_module
 
       ! Covariances involving s and Ncn (currently disabled)
 !       corr_sNcn = corr_array(iiPDF_s_mellor,iiPDF_Ncn)
-!       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( xp2_on_xm2_array(iiPDF_Ncn) )
+!       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( sigma2_on_mu2_ip_array(iiPDF_Ncn) )
 
 !       if ( stdev_s1 > s_mellor_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
 !         ! The variable s is already Gaussian
 !         stdev_sNcn1 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNcn, &
 !                   stdev_s1, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Ncn) ) )
+!                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
 !         Sigma_stw_1(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
 !         Sigma_stw_1(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn1, kind = dp)
@@ -770,7 +778,7 @@ module generate_lh_sample_module
 !         stdev_sNcn2 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNcn, &
 !                   stdev_s2, &
-!                   sigma_LN_to_sigma_gaus( xp2_on_xm2_array(iiPDF_Ncn) ) )
+!                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
 !         Sigma_stw_2(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
 !         Sigma_stw_2(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn2, kind = dp)
@@ -837,7 +845,7 @@ module generate_lh_sample_module
 
         call construct_corr_stw_matrix &
              ( d_variables, corr_array_cloud, & ! In
-               xp2_on_xm2_array_cloud, & ! In
+               sigma2_on_mu2_ip_array_cloud, & ! In
                corr_stw_matrix ) ! Out
 
         ! Compute choleksy factorization for the correlation matrix (in cloud)
@@ -849,7 +857,7 @@ module generate_lh_sample_module
         ! and the other elements are LN covariances
         call construct_corr_stw_matrix &
              ( d_variables, corr_array_below, & ! In
-               xp2_on_xm2_array_below, & ! In
+               sigma2_on_mu2_ip_array_below, & ! In
                corr_stw_matrix ) ! Out
 
         ! Compute choleksy factorization for the correlation matrix (out of cloud)
@@ -2032,7 +2040,7 @@ module generate_lh_sample_module
     return
   end subroutine st_2_rtthl
 !-------------------------------------------------------------------------------
-  subroutine log_sqd_normalized( Xm, Xp2_on_Xm2, &
+  subroutine log_sqd_normalized( Xm, sigma2_on_mu2_ip, &
                                  X1, X2 )
 ! Description:
 !
@@ -2051,7 +2059,7 @@ module generate_lh_sample_module
     ! Input Variables
     real( kind = dp ), intent(in) :: &
       Xm,         & ! Mean X          [units vary]
-      Xp2_on_Xm2    ! X'^2 / X^2      [-]
+      sigma2_on_mu2_ip    ! X'^2 / X^2      [-]
 
     ! Output Variables
     real( kind = dp ), intent(out) :: &
@@ -2064,14 +2072,14 @@ module generate_lh_sample_module
     ! correct because of the 0.5 coefficient. I.e. sqrt( Xm^2 ) = Xm.
     ! Here we use epsilon to impose a limit on the numerator to prevent
     ! taking the log of 0 while still imposing an upper bound.
-    X1 = 0.5_dp * log( max( Xm, epsilon( Xm ) )**2 / ( 1._dp + Xp2_on_Xm2 ) )
+    X1 = 0.5_dp * log( max( Xm, epsilon( Xm ) )**2 / ( 1._dp + sigma2_on_mu2_ip ) )
     X2 = X1
 
     return
   end subroutine log_sqd_normalized
 
 !-------------------------------------------------------------------------------
-  subroutine construct_gaus_LN_element( corr_sy, stdev_s, yp2_on_ym2, &
+  subroutine construct_gaus_LN_element( corr_sy, stdev_s, y_sigma2_on_mu2, &
                                         covar_sy )
 
 ! Description:
@@ -2088,24 +2096,25 @@ module generate_lh_sample_module
     implicit none
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_sy,   & ! Correlation between x and y [-]
-      stdev_s,   & ! Standard deviation of s     [usually kg/kg]
-      yp2_on_ym2   ! Variance of y over mean y^2 [-]
+      corr_sy,         & ! Correlation between x and y                       [-]
+      stdev_s,         & ! Standard deviation of s                       [kg/kg]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 over mu_y^2 (ith PDF comp.) ip  [-]
 
     real( kind = core_rknd ), intent(out) :: covar_sy
 
-    real( kind = core_rknd ) :: yp2_on_ym2_gaus
+    real( kind = core_rknd ) :: y_sigma2_on_mu2_gaus
 
     ! ---- Begin Code ----
 
-    yp2_on_ym2_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
+    y_sigma2_on_mu2_gaus = sigma_LN_to_sigma_gaus( y_sigma2_on_mu2 )
 
-    covar_sy = corr_gaus_LN_to_covar_gaus( corr_sy, stdev_s, yp2_on_ym2_gaus )
+    covar_sy = corr_gaus_LN_to_covar_gaus( corr_sy, stdev_s, y_sigma2_on_mu2_gaus )
 
     return
   end subroutine construct_gaus_LN_element
 !-------------------------------------------------------------------------------
-  subroutine construct_LN_LN_element( corr_xy, xp2_on_xm2, yp2_on_ym2, &
+  subroutine construct_LN_LN_element( corr_xy, x_sigma2_on_mu2_ip, &
+                                      y_sigma2_on_mu2_ip, &
                                       covar_xy )
 
 ! Description:
@@ -2121,9 +2130,9 @@ module generate_lh_sample_module
     implicit none
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_xy,    & ! Correlation between x and y   [-]
-      xp2_on_xm2, & ! Variance of x over mean x^2   [-]
-      yp2_on_ym2    ! Variance of y over mean y^2   [-]
+      corr_xy,            & ! Correlation btwn. x and y (ith PDF comp.) ip  [-]
+      x_sigma2_on_mu2_ip, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF comp.) ip [-]
+      y_sigma2_on_mu2_ip    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF comp.) ip [-]
 
     real( kind = core_rknd ), intent(out) :: covar_xy
 
@@ -2131,8 +2140,8 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    sigma_x_gaus = sigma_LN_to_sigma_gaus( xp2_on_xm2 )
-    sigma_y_gaus = sigma_LN_to_sigma_gaus( yp2_on_ym2 )
+    sigma_x_gaus = sigma_LN_to_sigma_gaus( x_sigma2_on_mu2_ip )
+    sigma_y_gaus = sigma_LN_to_sigma_gaus( y_sigma2_on_mu2_ip )
 
     covar_xy = corr_LN_to_covar_gaus( corr_xy, sigma_x_gaus, sigma_y_gaus )
 
@@ -2186,7 +2195,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine construct_corr_stw_matrix &
              ( d_variables, corr_array, &
-               xp2_on_xm2_array, &
+               sigma2_on_mu2_ip_array, &
                corr_stw_matrix )
 ! Description:
 !   Construct a correlation matrix containing s,t,w and the lognormal variates.
@@ -2235,7 +2244,7 @@ module generate_lh_sample_module
       corr_array ! Correlations between variates
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2_array ! x'^2 / xm^2
+      sigma2_on_mu2_ip_array  ! sigma_^2 / mu^2 (ith PDF comp.) in-precip.  [-]
 
     ! Output variables
     real( kind = dp ), dimension(d_variables,d_variables), intent(out) :: &
@@ -2302,7 +2311,8 @@ module generate_lh_sample_module
 
     ! Compute the main diagonal for each lognormal variate
     forall ( i = LN_index:d_variables )
-      corr_stw_matrix(i,i) = real(log( 1._core_rknd + Xp2_on_Xm2_array(i) ), kind = dp)
+      corr_stw_matrix(i,i)&
+      = real(log( 1._core_rknd + sigma2_on_mu2_ip_array(i) ), kind = dp)
     end forall
 
     do index1 = LN_index, d_variables
@@ -2310,7 +2320,7 @@ module generate_lh_sample_module
         ! Add all lognormal covariances
         call add_corr_to_matrix_LN_LN &
              ( d_variables, index1, index2, & ! In
-               xp2_on_xm2_array, corr_array, & ! In
+               sigma2_on_mu2_ip_array, corr_array, & ! In
                corr_stw_matrix ) ! In/Out
       end do
     end do
@@ -2320,7 +2330,7 @@ module generate_lh_sample_module
       call add_corr_to_matrix_gaus_LN &
            ( d_variables, iiPDF_s_mellor, & ! In
              iiPDF_t_mellor, iiPDF_w, index1, & ! In
-             xp2_on_xm2_array, corr_array, & ! In
+             sigma2_on_mu2_ip_array, corr_array, & ! In
              corr_stw_matrix ) ! In/Out
     end do
 
@@ -2329,7 +2339,7 @@ module generate_lh_sample_module
 
 !-------------------------------------------------------------------------------
   subroutine add_corr_to_matrix_LN_LN( d_variables, index1, index2, &
-                                       xp2_on_xm2_array, corr_array, &
+                                       sigma2_on_mu2_ip_array, corr_array, &
                                        corr_stw_matrix )
 ! Description:
 !   Added a correlation between two lognormally distributed variates to a
@@ -2353,7 +2363,7 @@ module generate_lh_sample_module
       index1, index2 ! Index of the 2 variates
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
+      sigma2_on_mu2_ip_array  ! sigma_^2 / mu^2 (ith PDF comp.) in-precip.  [-]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array ! Array of correlations        [-]
@@ -2377,7 +2387,7 @@ module generate_lh_sample_module
 
     if ( corr_xy /= 0._core_rknd ) then
       call construct_LN_LN_element &
-           ( corr_xy, xp2_on_xm2_array(index1), xp2_on_xm2_array(index2), & ! In
+           ( corr_xy, sigma2_on_mu2_ip_array(index1), sigma2_on_mu2_ip_array(index2), & ! In
              covar_xy ) ! Out
     else
       covar_xy = 0._core_rknd
@@ -2393,7 +2403,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine add_corr_to_matrix_gaus_LN( d_variables, iiPDF_s_mellor, &
                                          iiPDF_t_mellor, iiPDF_w, index1, &
-                                         xp2_on_xm2_array, corr_array, &
+                                         sigma2_on_mu2_ip_array, corr_array, &
                                          corr_stw_matrix )
 ! Description:
 !   Add a correlation between s,t Mellor, w and a lognormal variate to a
@@ -2421,7 +2431,7 @@ module generate_lh_sample_module
       index1           ! Index of the lognormal variate
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2_array ! x'^2 / xm^2 array      [-]
+      sigma2_on_mu2_ip_array  ! sigma_^2 / mu^2 (ith PDF comp.) in-precip.  [-]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array ! Array of correlations        [-]
@@ -2452,7 +2462,7 @@ module generate_lh_sample_module
       ! Covariance between s and lognormal variate x
       ! The variable x could be rrain, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
-           ( corr_sx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
+           ( corr_sx, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
              covar_sx ) ! Out
     else
       covar_sx = 0._core_rknd
@@ -2484,7 +2494,7 @@ module generate_lh_sample_module
       ! Covariance between w and lognormal variate x
       ! The variable x could be rrain, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
-           ( corr_wx, 1.0_core_rknd, xp2_on_xm2_array(index1), & ! In
+           ( corr_wx, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
              covar_wx ) ! Out
     else
       covar_wx = 0._core_rknd
@@ -2498,7 +2508,7 @@ module generate_lh_sample_module
   end subroutine add_corr_to_matrix_gaus_LN
 
 !-------------------------------------------------------------------------------
-  subroutine add_mu_element_LN( d_variables, index1, xm, xp2_on_xm2, mu1, mu2 )
+  subroutine add_mu_element_LN( d_variables, index1, xm, sigma2_on_mu2_ip, mu1, mu2 )
 
 ! Description:
 !   Compute an element of mu1 and mu2 for a lognormal variate.
@@ -2527,7 +2537,7 @@ module generate_lh_sample_module
       Xm ! Mean X  [kg/kg or #/kg]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: & 
-      xp2_on_xm2 ! X'^2 / Xm^2 array [-]
+      sigma2_on_mu2_ip ! sigma_^2 / mu^2 (ith PDF comp.) in-precip.  [-]
 
     ! Input /Output Variables
 
@@ -2537,14 +2547,14 @@ module generate_lh_sample_module
     ! Local Variables
 
     real( kind = dp ) :: &
-      xp2_on_xm2_element, & ! X'^2 / Xm^2 array [-]
+      sigma2_on_mu2_ip_element, & ! sigma_^2 / mu^2 (ith PDF comp.) ip  [-]
       X1, X2  ! PDF parameter for mean of plume 1 and 2.
 
     ! ---- Begin Code ----
 
-    xp2_on_xm2_element = real( xp2_on_xm2(index1), kind = dp )
+    sigma2_on_mu2_ip_element = real( sigma2_on_mu2_ip(index1), kind = dp )
 
-    call log_sqd_normalized( Xm, xp2_on_xm2_element, & ! In
+    call log_sqd_normalized( Xm, sigma2_on_mu2_ip_element, & ! In
                              X1, X2 ) ! Out
 
     mu1(index1) = real( X1, kind = core_rknd )
@@ -2639,8 +2649,8 @@ module generate_lh_sample_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu, &         ! Mean term 'x'                     [-]
-      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
+      mu, &         ! Mean term 'x'           [-]
+      sigma2_on_mu2 ! sigma_x^2 over mu_x^2   [-]
 
     real( kind = core_rknd ) :: mu_gaus ! Mean field converted to gaussian  [-]
 
@@ -2670,7 +2680,7 @@ module generate_lh_sample_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      sigma2_on_mu2 ! Variance of 'x' over mean 'x'^2   [-]
+      sigma2_on_mu2 ! sigma_x^2 over mu_x^2   [-]
 
     real( kind = core_rknd ) :: sigma_gaus ! Sigma converted to gaussian dist. [-]
 

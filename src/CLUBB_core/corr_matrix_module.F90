@@ -37,13 +37,13 @@ module corr_matrix_module
 !$omp threadprivate(d_variables)
 
   real( kind = core_rknd ), public, dimension(:), allocatable :: &
-    xp2_on_xm2_array_cloud, &
-    xp2_on_xm2_array_below
+    sigma2_on_mu2_ip_array_cloud, &
+    sigma2_on_mu2_ip_array_below
 
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
     corr_array_cloud, &
     corr_array_below
-!$omp threadprivate(xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
+!$omp threadprivate(sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
 !$omp   corr_array_cloud, corr_array_below)
 
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
@@ -575,25 +575,25 @@ module corr_matrix_module
 !-------------------------------------------------------------------------------
 
     use parameters_microphys, only: &
-      rrp2_on_rrm2_cloud, & ! Variables
-      Nrp2_on_Nrm2_cloud, &
-      rrp2_on_rrm2_below, &
-      Nrp2_on_Nrm2_below, &
+      rr_sigma2_on_mu2_ip_cloud, & ! Variables
+      Nr_sigma2_on_mu2_ip_cloud, &
+      rr_sigma2_on_mu2_ip_below, &
+      Nr_sigma2_on_mu2_ip_below, &
       Ncnp2_on_Ncnm2
 
     use parameters_microphys, only: &
-      rsnowp2_on_rsnowm2_cloud, & ! Variables
-      Nsnowp2_on_Nsnowm2_cloud, &
-      ricep2_on_ricem2_cloud, &
-      Nicep2_on_Nicem2_cloud, &
-      rgraupelp2_on_rgraupelm2_cloud, &
-      Ngraupelp2_on_Ngraupelm2_cloud, &
-      rsnowp2_on_rsnowm2_below, &
-      Nsnowp2_on_Nsnowm2_below, &
-      ricep2_on_ricem2_below, &
-      Nicep2_on_Nicem2_below, &
-      rgraupelp2_on_rgraupelm2_below, &
-      Ngraupelp2_on_Ngraupelm2_below
+      rs_sigma2_on_mu2_ip_cloud, & ! Variables
+      Ns_sigma2_on_mu2_ip_cloud, &
+      ri_sigma2_on_mu2_ip_cloud, &
+      Ni_sigma2_on_mu2_ip_cloud, &
+      rg_sigma2_on_mu2_ip_cloud, &
+      Ng_sigma2_on_mu2_ip_cloud, &
+      rs_sigma2_on_mu2_ip_below, &
+      Ns_sigma2_on_mu2_ip_below, &
+      ri_sigma2_on_mu2_ip_below, &
+      Ni_sigma2_on_mu2_ip_below, &
+      rg_sigma2_on_mu2_ip_below, &
+      Ng_sigma2_on_mu2_ip_below
 
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Variable(s)
@@ -630,11 +630,11 @@ module corr_matrix_module
     allocate( corr_array_cloud(d_variables,d_variables) )
     allocate( corr_array_below(d_variables,d_variables) )
 
-    allocate( xp2_on_xm2_array_cloud(d_variables) )
-    allocate( xp2_on_xm2_array_below(d_variables) )
+    allocate( sigma2_on_mu2_ip_array_cloud(d_variables) )
+    allocate( sigma2_on_mu2_ip_array_below(d_variables) )
 
-    xp2_on_xm2_array_cloud(:) = zero
-    xp2_on_xm2_array_below(:) = zero
+    sigma2_on_mu2_ip_array_cloud(:) = zero
+    sigma2_on_mu2_ip_array_below(:) = zero
 
     ! corr_file_exist is true if the *_corr_array_cloud.in file exists
     ! Note: It is assumed that if the *_corr_array_cloud.in file exists
@@ -683,91 +683,91 @@ module corr_matrix_module
     end if ! l_fix_s_t_correlations
 
     if ( iiPDF_Ncn > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+      sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
     if ( iiPDF_rrain > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_rrain) = rrp2_on_rrm2_cloud
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rrain) = rr_sigma2_on_mu2_ip_cloud
       if ( iiPDF_Nr > 0 ) then
-        xp2_on_xm2_array_cloud(iiPDF_Nr) = Nrp2_on_Nrm2_cloud
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Nr) = Nr_sigma2_on_mu2_ip_cloud
       end if ! iiPDF_Nr > 0
     end if ! iiPDF_rrain > 0
 
     if ( iiPDF_rsnow > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_rsnow) = rsnowp2_on_rsnowm2_cloud
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rsnow) = rs_sigma2_on_mu2_ip_cloud
 
 
       if ( iiPDF_Nsnow > 0 ) then
-        xp2_on_xm2_array_cloud(iiPDF_Nsnow) = Nsnowp2_on_Nsnowm2_cloud
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Nsnow) = Ns_sigma2_on_mu2_ip_cloud
 
 
       end if ! iiPDF_Nsnow > 0
     end if ! iiPDF_rsnow > 0
 
     if ( iiPDF_rice > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_rice) = ricep2_on_ricem2_cloud
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rice) = ri_sigma2_on_mu2_ip_cloud
 
 
       if ( iiPDF_Ni > 0 ) then
-        xp2_on_xm2_array_cloud(iiPDF_Ni) = Nicep2_on_Nicem2_cloud
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ni) = Ni_sigma2_on_mu2_ip_cloud
 
       end if ! iiPDF_Ni > 0
     end if ! iiPDF_rice > 0
 
     ! Sampling for graupel (disabled)
     if ( iiPDF_rgraupel > 0 ) then
-      xp2_on_xm2_array_cloud(iiPDF_rgraupel) = rgraupelp2_on_rgraupelm2_cloud
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rgraupel) = rg_sigma2_on_mu2_ip_cloud
 
 
       if ( iiPDF_Ngraupel > 0 ) then
-        xp2_on_xm2_array_cloud(iiPDF_Ngraupel) = Ngraupelp2_on_Ngraupelm2_cloud
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ngraupel) = Ng_sigma2_on_mu2_ip_cloud
 
 
       end if ! iiPDF_Ngraupel > 0
     end if ! iiPDF_rgraupel > 0
 
     if ( iiPDF_Ncn > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+      sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
     if ( iiPDF_rrain > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_rrain) = rrp2_on_rrm2_below
+      sigma2_on_mu2_ip_array_below(iiPDF_rrain) = rr_sigma2_on_mu2_ip_below
 
 
 
       if ( iiPDF_Nr > 0 ) then
-        xp2_on_xm2_array_below(iiPDF_Nr) = Nrp2_on_Nrm2_below
+        sigma2_on_mu2_ip_array_below(iiPDF_Nr) = Nr_sigma2_on_mu2_ip_below
 
 
       end if ! iiPDF_Nr > 0
     end if ! iiPDF_rrain > 0
 
     if ( iiPDF_rsnow > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_rsnow) = rsnowp2_on_rsnowm2_below
+      sigma2_on_mu2_ip_array_below(iiPDF_rsnow) = rs_sigma2_on_mu2_ip_below
 
 
       if ( iiPDF_Nsnow > 0 ) then
-        xp2_on_xm2_array_below(iiPDF_Nsnow) = Nsnowp2_on_Nsnowm2_below
+        sigma2_on_mu2_ip_array_below(iiPDF_Nsnow) = Ns_sigma2_on_mu2_ip_below
 
       end if ! iiPDF_Nsnow > 0
     end if ! iiPDF_rsnow > 0
 
     if ( iiPDF_rice > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_rice) = ricep2_on_ricem2_below
+      sigma2_on_mu2_ip_array_below(iiPDF_rice) = ri_sigma2_on_mu2_ip_below
 
 
       if ( iiPDF_Ni > 0 ) then
-        xp2_on_xm2_array_below(iiPDF_Ni) =  Nicep2_on_Nicem2_below
+        sigma2_on_mu2_ip_array_below(iiPDF_Ni) =  Ni_sigma2_on_mu2_ip_below
       end if ! iiPDF_Ni > 0
 
     end if ! iiPDF_rice > 0
 
     if ( iiPDF_rgraupel > 0 ) then
-      xp2_on_xm2_array_below(iiPDF_rgraupel) = rgraupelp2_on_rgraupelm2_below
+      sigma2_on_mu2_ip_array_below(iiPDF_rgraupel) = rg_sigma2_on_mu2_ip_below
 
 
       if ( iiPDF_Ngraupel > 0 ) then
-        xp2_on_xm2_array_below(iiPDF_Ngraupel) = Ngraupelp2_on_Ngraupelm2_below
+        sigma2_on_mu2_ip_array_below(iiPDF_Ngraupel) = Ng_sigma2_on_mu2_ip_below
 
 
       end if ! iiPDF_Ngraupel > 0
@@ -799,12 +799,12 @@ module corr_matrix_module
       deallocate( corr_array_below )
     end if
 
-    if ( allocated( xp2_on_xm2_array_cloud ) ) then
-      deallocate( xp2_on_xm2_array_cloud )
+    if ( allocated( sigma2_on_mu2_ip_array_cloud ) ) then
+      deallocate( sigma2_on_mu2_ip_array_cloud )
     end if
 
-    if ( allocated( xp2_on_xm2_array_below ) ) then
-      deallocate( xp2_on_xm2_array_below )
+    if ( allocated( sigma2_on_mu2_ip_array_below ) ) then
+      deallocate( sigma2_on_mu2_ip_array_below )
     end if
 
     if ( allocated( corr_array_cloud_def ) ) then

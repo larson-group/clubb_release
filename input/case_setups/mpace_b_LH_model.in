@@ -150,11 +150,11 @@ l_graupel = .false.
 l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
 
 ! Addition for using latin hypercube sampling
-rrp2_on_rrm2_cloud = 0.766
-Nrp2_on_Nrm2_cloud = 0.429
-rrp2_on_rrm2_below = 1.0
-Nrp2_on_Nrm2_below = 1.0
-Ncnp2_on_Ncnm2     = 2.2
+rr_sigma2_on_mu2_ip_cloud = 0.766
+Nr_sigma2_on_mu2_ip_cloud = 0.429
+rr_sigma2_on_mu2_ip_below = 1.0
+Nr_sigma2_on_mu2_ip_below = 1.0
+Ncnp2_on_Ncnm2            = 2.2
 
 
 LH_microphys_type = "interactive",

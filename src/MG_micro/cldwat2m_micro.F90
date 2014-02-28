@@ -437,8 +437,8 @@ subroutine mmicro_pcond ( sub_column,           &
        d_variables, &
        corr_array_cloud, &
        corr_array_below, &
-       xp2_on_xm2_array_cloud, &
-       xp2_on_xm2_array_below, &
+       sigma2_on_mu2_ip_array_cloud, &
+       sigma2_on_mu2_ip_array_below, &
        iiPDF_s_mellor, &
        iiPDF_t_mellor, &
        iiPDF_w, &
@@ -960,7 +960,7 @@ subroutine mmicro_pcond ( sub_column,           &
       mu_x_2, &
       sigma_x_1, &
       sigma_x_2, &
-      xp2_on_xm2
+      sigma2_on_mu2_ip
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
       mu_x_1_n, &
@@ -1815,9 +1815,9 @@ subroutine mmicro_pcond ( sub_column,           &
                  wphmp_zt(2) = zero
 
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
-                    xp2_on_xm2 = xp2_on_xm2_array_cloud
+                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
                  else
-                    xp2_on_xm2 = xp2_on_xm2_array_below
+                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_below
                  endif
 
                  call compute_mean_stdev( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
@@ -1827,8 +1827,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                           real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                           hm1, hm2, & ! Intent(in)
                                           one, one, & ! Intent(in)
-                                          xp2_on_xm2_array_cloud, & ! Intent(in)
-                                          xp2_on_xm2_array_below, & ! Intent(in)
+                                          sigma2_on_mu2_ip_array_cloud, & ! Intent(in)
+                                          sigma2_on_mu2_ip_array_below, & ! Intent(in)
                                           pdf_params(k), d_variables, & ! Intent(in)
                                           mu_x_1, mu_x_2, & ! Intent(out)
                                           sigma_x_1, sigma_x_2 ) ! Intent(out)
@@ -1838,7 +1838,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
                                             sigma_x_1, sigma_x_2, &
-                                            xp2_on_xm2, xp2_on_xm2, &
+                                            sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 
@@ -1855,7 +1855,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
-                                      xp2_on_xm2, xp2_on_xm2, &
+                                      sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
                                       corr_array_1, corr_array_2, &
                                       corr_array_1_n, corr_array_2_n )
 
@@ -2370,9 +2370,9 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
-                    xp2_on_xm2 = xp2_on_xm2_array_cloud
+                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
                  else
-                    xp2_on_xm2 = xp2_on_xm2_array_below
+                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_below
                  endif
 
                  call compute_mean_stdev &
@@ -2383,8 +2383,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                   real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                   hm1, hm2, & ! Intent(in)
                                   one, one, & ! Intent(in)
-                                  xp2_on_xm2_array_cloud, &              ! Intent(in)
-                                  xp2_on_xm2_array_below, &              ! Intent(in)
+                                  sigma2_on_mu2_ip_array_cloud, &              ! Intent(in)
+                                  sigma2_on_mu2_ip_array_below, &              ! Intent(in)
                                   pdf_params(k), d_variables, & ! Intent(in)
                                   mu_x_1, mu_x_2, & ! Intent(out)
                                   sigma_x_1, sigma_x_2 ) ! Intent(out)
@@ -2394,7 +2394,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
                                             sigma_x_1, sigma_x_2, &
-                                            xp2_on_xm2, xp2_on_xm2, &
+                                            sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 
@@ -2411,7 +2411,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
-                                      xp2_on_xm2, xp2_on_xm2, &
+                                      sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
                                       corr_array_1, corr_array_2, &
                                       corr_array_1_n, corr_array_2_n )
 

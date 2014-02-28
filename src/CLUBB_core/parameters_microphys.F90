@@ -129,19 +129,19 @@ module parameters_microphys
 
   ! Statistical rain parameters        .
 
-  ! Parameters for in-cloud.
+  ! Prescribed parameters for in-cloud.
   real( kind = core_rknd ), public :: &
-    rrp2_on_rrm2_cloud = 0.766_core_rknd, & ! Prescribed in-cloud ratio <r_r'^2> / <r_r>^2   [-]
-    Nrp2_on_Nrm2_cloud = 0.429_core_rknd    ! Prescribed in-cloud ratio <N_r'^2> / <N_r>^2   [-]
+    rr_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    Nr_sigma2_on_mu2_ip_cloud = 0.429_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
-!$omp threadprivate( rrp2_on_rrm2_cloud, Nrp2_on_Nrm2_cloud )
+!$omp threadprivate( rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud )
 
-  ! Parameters for below-cloud.
+  ! Prescribed parameters for below-cloud.
   real( kind = core_rknd ), public :: &
-    rrp2_on_rrm2_below = 0.897_core_rknd, & ! Prescribed below-cloud ratio <r_r'^2> / <r_r>^2   [-]
-    Nrp2_on_Nrm2_below = 1.0_core_rknd      ! Prescribed below-cloud ratio <N_r'^2> / <N_r>^2   [-]
+    rr_sigma2_on_mu2_ip_below = 0.897_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    Nr_sigma2_on_mu2_ip_below = 1.0_core_rknd      ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
-!$omp threadprivate( rrp2_on_rrm2_below, Nrp2_on_Nrm2_below )
+!$omp threadprivate( rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below )
 
   real( kind = core_rknd ), public :: &
     Ncnp2_on_Ncnm2 = 0.003_core_rknd    ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
@@ -189,29 +189,28 @@ module parameters_microphys
   ! Parameters added for ice microphysics and latin hypercube sampling
 
   real( kind = core_rknd ), public :: &
-    rsnowp2_on_rsnowm2_cloud = 0.766_core_rknd, & 
-    Nsnowp2_on_Nsnowm2_cloud = 0.429_core_rknd, & 
-    ricep2_on_ricem2_cloud   = 1.0_core_rknd, & 
-    Nicep2_on_Nicem2_cloud   = 1.0_core_rknd, &
-    rgraupelp2_on_rgraupelm2_cloud = 1.0_core_rknd, &
-    Ngraupelp2_on_Ngraupelm2_cloud = 1.0_core_rknd
+    rs_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & 
+    Ns_sigma2_on_mu2_ip_cloud = 0.429_core_rknd, & 
+    ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & 
+    Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
+    rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
+    Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd
 
-!$omp threadprivate( rsnowp2_on_rsnowm2_cloud, Nsnowp2_on_Nsnowm2_cloud, & 
-!$omp                ricep2_on_ricem2_cloud, Nicep2_on_Nicem2_cloud, &
-!$omp                rgraupelp2_on_rgraupelm2_cloud, Ngraupelp2_on_Ngraupelm2_cloud )
+!$omp threadprivate( rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, & 
+!$omp                ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
+!$omp                rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud )
 
    real( kind = core_rknd ), public :: &
-     rsnowp2_on_rsnowm2_below = 0.766_core_rknd, & 
-     Nsnowp2_on_Nsnowm2_below = 0.429_core_rknd, & 
-     ricep2_on_ricem2_below   = 1.0_core_rknd, & 
-     Nicep2_on_Nicem2_below   = 1.0_core_rknd, &
-     rgraupelp2_on_rgraupelm2_below = 1.0_core_rknd, &
-     Ngraupelp2_on_Ngraupelm2_below = 1.0_core_rknd
+     rs_sigma2_on_mu2_ip_below = 0.766_core_rknd, & 
+     Ns_sigma2_on_mu2_ip_below = 0.429_core_rknd, & 
+     ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & 
+     Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
+     rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
+     Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd
 
-
-!$omp threadprivate( rsnowp2_on_rsnowm2_below, Nsnowp2_on_Nsnowm2_below, & 
-!$omp                ricep2_on_ricem2_below, Nicep2_on_Nicem2_below, &
-!$omp                rgraupelp2_on_rgraupelm2_below, Ngraupelp2_on_Ngraupelm2_below )
+!$omp threadprivate( rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, & 
+!$omp                ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
+!$omp                rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below )
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
     hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]

@@ -32,7 +32,7 @@ module latin_hypercube_driver_module
   subroutine LH_subcolumn_generator &
              ( iter, d_variables, n_micro_calls, sequence_length, nz, &
                thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
-               hydromet, xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, &
+               hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
                corr_array_cloud, corr_array_below, Lscale_vert_avg, &
                X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                LH_sample_point_weights )
@@ -124,8 +124,8 @@ module latin_hypercube_driver_module
       hydromet ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      xp2_on_xm2_array_cloud, &! Variances over mean values squared [-]
-      xp2_on_xm2_array_below
+      sigma2_on_mu2_ip_array_cloud, & ! sigma_x^2/mu_x^2 ip; cloudy levs. [-]
+      sigma2_on_mu2_ip_array_below    ! sigma_x^2/mu_x^2 ip; clear levs.  [-]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_array_cloud, & ! Correlation for hydrometeor species [-]
@@ -482,7 +482,7 @@ module latin_hypercube_driver_module
                pdf_params(k)%covar_st_1, pdf_params(k)%covar_st_2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
-               hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+               hydromet(k,:), sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
                corr_array_cloud, corr_array_below, & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
@@ -508,7 +508,7 @@ module latin_hypercube_driver_module
                pdf_params(k)%covar_st_1, pdf_params(k)%covar_st_2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
-               hydromet(k,:), xp2_on_xm2_array_cloud, xp2_on_xm2_array_below, & ! In
+               hydromet(k,:), sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
                corr_array_cloud, corr_array_below, & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                LH_rt(k,sample), LH_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
