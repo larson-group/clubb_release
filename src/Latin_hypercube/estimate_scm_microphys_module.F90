@@ -3,7 +3,8 @@ module estimate_scm_microphys_module
 
   implicit none
 
-  public :: est_single_column_tndcy, copy_X_nl_into_hydromet_all_pts
+  public :: est_single_column_tndcy, copy_X_nl_into_hydromet_all_pts, &
+            copy_X_nl_into_rc_all_pts
 
   private ! Default scope
 
@@ -614,9 +615,9 @@ module estimate_scm_microphys_module
     implicit none
 
     integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
-      d_variables,   & ! Number of variates (normally=5) 
-      n_micro_calls    ! Number of calls to microphysics (normally=2)
+      nz,            & ! Number of vertical levels
+      d_variables,   & ! Number of variates
+      n_micro_calls    ! Number of calls to microphysics
 
     real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -693,6 +694,53 @@ module estimate_scm_microphys_module
   end subroutine copy_X_nl_into_hydromet_all_pts
   !-----------------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------------
+  subroutine copy_X_nl_into_rc_all_pts &
+             ( nz, d_variables, n_micro_calls, X_nl_all_levs, &
+               LH_rc )
+  ! Description:
+  !   Extracts a sample of rc from X_nl_all_levs, where rc = s * H(s), for each
+  !   subcolumn.
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------------
+    use clubb_precision, only: &
+      dp, &
+      core_rknd
+
+    use corr_matrix_module, only: &
+      iiPDF_s_mellor        ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &                 ! Number of vertical levels
+      d_variables, &        ! Number of lognormal variates
+      n_micro_calls         ! Number of SILHS samples
+
+    real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
+      X_nl_all_levs         ! Normal-lognormal SILHS sample               [units vary]
+
+    ! Output variables
+    real( kind = core_rknd ), dimension(nz,n_micro_calls), intent(out) :: &
+      LH_rc                 ! SILHS samples of rc
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    where ( X_nl_all_levs(:,:,iiPDF_s_mellor) >= 0.0_core_rknd )
+      LH_rc = X_nl_all_levs(:,:,iiPDF_s_mellor)
+    elsewhere
+      LH_rc = 0.0_core_rknd
+    end where
+
+    return
+  end subroutine copy_X_nl_into_rc_all_pts
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
   subroutine LH_moments ( n_samples, LH_weights, nz, & 
                  rt_all_samples, thl_all_samples, w_all_samples, &
                  lh_rtp2, lh_thlp2, &

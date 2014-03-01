@@ -297,7 +297,8 @@ module clubb_driver
     ! Constant Parameters
     logical, parameter :: &
       l_host_applies_sfc_fluxes = .false., &
-      l_implemented = .false.
+      l_implemented = .false., &
+      l_silhs_rad = .false. ! Call a radiation scheme using SILHS
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -1285,7 +1286,7 @@ module clubb_driver
       ! Compute subcolumns if enabled
       !----------------------------------------------------------------
 
-      if ( LH_microphys_type /= LH_microphys_disabled ) then
+      if ( LH_microphys_type /= LH_microphys_disabled .or. l_silhs_rad ) then
         if ( l_lh_vert_overlap ) then
           ! Determine 3pt vertically averaged Lscale
           do k = 1, gr%nz
@@ -1388,14 +1389,28 @@ module clubb_driver
         ! somewhat inconsistent, but we would need to move the call to
         ! radiation before the call the microphysics to change this.
         ! -dschanen 17 Aug 2009
-        call advance_clubb_radiation &
-             ( time_current, rho, rho_zm, p_in_Pa, &          ! Intent(in)
-               exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
-               err_code, &                                    ! Intent(inout)
-               radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
-               Frad_SW_down, Frad_LW_down )                   ! Intent(out)
+        if ( l_silhs_rad ) then
 
-      end if
+          call silhs_radiation_driver &
+               ( gr%nz, LH_microphys_calls, d_variables, hydromet_dim, & !In
+                 time_current, rho, rho_zm, & !In
+                 p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
+                 LH_rt, LH_thl, LH_sample_point_weights, hydromet, & !In
+                 err_code, & !inout
+                 radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down ) !out
+
+        else
+
+          call advance_clubb_radiation &
+               ( time_current, rho, rho_zm, p_in_Pa, &          ! Intent(in)
+                 exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
+                 err_code, &                                    ! Intent(inout)
+                 radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
+                 Frad_SW_down, Frad_LW_down )                   ! Intent(out)
+
+        end if ! l_silhs_rad
+
+      end if ! mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1
 
       ! Update the radiation variables here so they are updated every timestep
       call update_radiation_variables( gr%nz )
@@ -4261,5 +4276,173 @@ module clubb_driver
     end if ! lstats_samp
 
   end subroutine update_radiation_variables
+
+  !-----------------------------------------------------------------------
+  subroutine silhs_radiation_driver &
+             ( nz, LH_microphys_calls, d_variables, hydromet_dim, time_current, rho, rho_zm, &
+               p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
+               LH_rt, LH_thl, LH_sample_point_weights, hydromet, &
+               err_code, &
+               radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
+
+  ! Description:
+  !   Computes radiation over a set of sample points and averages the
+  !   results
+
+  ! References
+  !   clubb:ticket:663
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      dp, &       ! Constant(s)
+      core_rknd
+
+    use error_code, only: &
+      clubb_no_error, & ! Constant
+      fatal_error, &    ! Function(s)
+      clubb_at_least_debug_level, &
+      reportError ! Subroutine
+
+    use estimate_scm_microphys_module, only: &
+      copy_X_nl_into_hydromet_all_pts, &   ! Procedure(s)
+      copy_X_nl_into_rc_all_pts
+
+    use constants_clubb, only: &
+      fstderr        ! Constant
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &                 ! Number of vertical levels
+      LH_microphys_calls, & ! Number of SILHS sample points
+      d_variables, &        ! Number of lognormal variates
+      hydromet_dim          ! Number of hydrometeor species
+
+    real( kind = time_precision ), intent(in) :: &
+      time_current        ! Current time of simulation                 [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rho,               & ! Density on thermo. grid                   [kg/m^3]
+      rho_zm,            & ! Density on moment. grid                   [kg/m^3]
+      p_in_Pa,           & ! Pressure.                                 [Pa] 
+      exner,             & ! Exner function.                           [-]
+      cloud_frac,        & ! Cloud fraction (thermodynamic levels)     [-]
+      ice_supersat_frac    ! Ice cloud fraction (thermodynamic levels) [-]
+
+    real( kind = dp ), dimension(nz,LH_microphys_calls,d_variables), intent(in) :: &
+      X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
+
+    real( kind = core_rknd ), dimension(nz,LH_microphys_calls), intent(in) :: &
+      LH_rt, &             ! SILHS sample of rt                        [kg/kg]
+      LH_thl               ! SILHS sample of thl                       [K]
+
+    real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
+      LH_sample_point_weights ! Weight of each SILHS sample point      [-]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+      hydromet             ! Hydrometeor mean fields
+
+    ! Input/Output Variables
+    integer, intent(inout) :: &
+      err_code
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      radht,        & ! Radiative heating rate                         [K/s]
+      Frad,         & ! Total radiative flux                           [W/m^2]
+      Frad_SW_up,   & ! Short-wave upwelling radiative flux            [W/m^2]
+      Frad_LW_up,   & ! Long-wave upwelling radiative flux             [W/m^2]
+      Frad_SW_down, & ! Short-wave downwelling radiative flux          [W/m^2]
+      Frad_LW_down    ! Long-wave downwelling radiative flux           [W/m^2]
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz,LH_microphys_calls,hydromet_dim) :: &
+      hydromet_all_pts ! SILHS sample of hydrometeors for each column  [units vary]
+
+    real( kind = core_rknd ), dimension(nz,LH_microphys_calls) :: &
+      Ncn_all_points   ! SILHS sample of Ncn for each column           [#/kg]
+                       ! (not used)
+
+    real( kind = core_rknd ), dimension(nz,LH_microphys_calls) :: &
+      LH_rc            ! SILHS sample of rc                            [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz,LH_microphys_calls) :: &
+      radht_samples,        &    ! radht evaluated at each sample point
+      Frad_samples,         &    ! Frad evaluated at each sample point
+      Frad_SW_up_samples,   &    ! Frad_SW_up evaluated at each sample point
+      Frad_LW_up_samples,   &    ! Frad_LW_up evaluated at each sample point
+      Frad_SW_down_samples, &    ! Frad_SW_down evaluated at each sample point
+      Frad_LW_down_samples       ! Frad_LW_down evaluated at each sample point
+
+    integer :: isample, k ! Looping variates
+
+    integer, dimension(LH_microphys_calls) :: &
+      err_code_samp
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    call copy_X_nl_into_hydromet_all_pts &
+         ( nz, d_variables, LH_microphys_calls, &         ! Intent(in)
+           X_nl_all_levs, &                               ! Intent(in)
+           hydromet, &                                    ! Intent(in)
+           hydromet_all_pts, &                            ! Intent(out)
+           Ncn_all_points )                               ! Intent(out)
+
+    call copy_X_nl_into_rc_all_pts &
+         ( nz, d_variables, LH_microphys_calls, X_nl_all_levs, & ! Intent(in)
+           LH_rc )                                               ! Intent(out)
+
+    do isample=1, LH_microphys_calls
+      ! Call a radiation scheme
+      call advance_clubb_radiation &
+           ( time_current, rho, rho_zm, p_in_Pa, &                                 ! Intent(in)
+             exner, cloud_frac, ice_supersat_frac, LH_thl(:,isample), &            ! Intent(in)
+             LH_rt(:,isample), LH_rc(:,isample), hydromet_all_pts(:,isample,:), &  ! Intent(in)
+             err_code_samp(isample), &                                             ! Intent(inout)
+             radht_samples(:,isample), Frad_samples(:,isample), &                  ! Intent(out)
+             Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &       ! Intent(out)
+             Frad_SW_down_samples(:,isample), Frad_LW_down_samples(:,isample) )    ! Intent(out)
+    end do
+
+    ! Average results
+    forall ( k = 1:nz )
+
+      radht(k) = sum( radht_samples(k,:) * LH_sample_point_weights(:) ) / &
+                  real( LH_microphys_calls, kind=core_rknd )
+      Frad(k)  = sum( Frad_samples(k,:) * LH_sample_point_weights(:) ) / &
+                  real( LH_microphys_calls, kind=core_rknd )
+      Frad_SW_up(k) = sum( Frad_SW_up_samples(k,:) * LH_sample_point_weights(:) ) / &
+                       real( LH_microphys_calls, kind=core_rknd )
+      Frad_LW_up(k) = sum( Frad_LW_up_samples(k,:) * LH_sample_point_weights(:) ) / &
+                       real( LH_microphys_calls, kind=core_rknd )
+      Frad_SW_down(k)  = sum( Frad_SW_down_samples(k,:) * LH_sample_point_weights(:) ) / &
+                          real( LH_microphys_calls, kind=core_rknd )
+      Frad_LW_down(k)  = sum( Frad_LW_down_samples(k,:) * LH_sample_point_weights(:) ) / &
+                          real( LH_microphys_calls, kind=core_rknd )
+
+    end forall
+
+    ! Check for errors
+    do isample=1, LH_microphys_calls
+      if ( fatal_error( err_code_samp(isample) ) ) then
+
+        if ( clubb_at_least_debug_level( 1 ) ) then
+
+          write(fstderr,*) "Fatal error in silhs_radiation_driver:"
+          call reportError( err_code_samp(isample) )
+
+        end if ! clubb_at_least_debug_level( 1 )
+
+        err_code = err_code_samp(isample)
+
+      end if ! fatal_error( err_code_samp(isample)
+    end do ! isample=1, LH_microphys_calls
+
+    return
+  end subroutine silhs_radiation_driver
+  !-----------------------------------------------------------------------
 
 end module clubb_driver
