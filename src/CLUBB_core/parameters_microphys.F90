@@ -129,20 +129,55 @@ module parameters_microphys
 
   ! Statistical rain parameters        .
 
-  ! Prescribed parameters for in-cloud.
+  ! Prescribed parameters for hydrometeor in-precip values of
+  ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that have some cloud.
+  ! These default values are taken from SAM LES results for DYCOMS-II RF02 DO.
+  ! They can be set based on values for a given case in the CASE_model.in file.
   real( kind = core_rknd ), public :: &
     rr_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
     Nr_sigma2_on_mu2_ip_cloud = 0.429_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
 !$omp threadprivate( rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud )
 
-  ! Prescribed parameters for below-cloud.
+  ! Parameters added for ice microphysics and latin hypercube sampling
+  real( kind = core_rknd ), public :: &
+    rs_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & 
+    Ns_sigma2_on_mu2_ip_cloud = 0.429_core_rknd, & 
+    ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & 
+    Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
+    rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
+    Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd
+
+!$omp threadprivate( rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, & 
+!$omp                ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
+!$omp                rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud )
+
+  ! Prescribed parameters for hydrometeor in-precip values of
+  ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that are entirely clear.
+  ! These default values are taken from SAM LES results for DYCOMS-II RF02 DO.
+  ! They can be set based on values for a given case in the CASE_model.in file.
   real( kind = core_rknd ), public :: &
     rr_sigma2_on_mu2_ip_below = 0.897_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
     Nr_sigma2_on_mu2_ip_below = 1.0_core_rknd      ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
 !$omp threadprivate( rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below )
 
+  ! Parameters added for ice microphysics and latin hypercube sampling
+   real( kind = core_rknd ), public :: &
+     rs_sigma2_on_mu2_ip_below = 0.766_core_rknd, & 
+     Ns_sigma2_on_mu2_ip_below = 0.429_core_rknd, & 
+     ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & 
+     Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
+     rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
+     Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd
+
+!$omp threadprivate( rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, & 
+!$omp                ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
+!$omp                rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below )
+
+  ! Prescribed parameter for <N_cn'^2> / <N_cn>^2 at any grid level.
+  ! The parameter can be set based on the value for a given case in the
+  ! CASE_model.in file.
   real( kind = core_rknd ), public :: &
     Ncnp2_on_Ncnm2 = 0.003_core_rknd    ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
 
@@ -185,32 +220,6 @@ module parameters_microphys
 !$omp                KK_auto_rc_exp, KK_auto_Nc_exp, KK_accr_rc_exp, &
 !$omp                KK_accr_rr_exp, KK_mvr_rr_exp, KK_mvr_Nr_exp, &
 !$omp                KK_Nrm_evap_nu )
-
-  ! Parameters added for ice microphysics and latin hypercube sampling
-
-  real( kind = core_rknd ), public :: &
-    rs_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & 
-    Ns_sigma2_on_mu2_ip_cloud = 0.429_core_rknd, & 
-    ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & 
-    Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
-    rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
-    Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd
-
-!$omp threadprivate( rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, & 
-!$omp                ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
-!$omp                rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud )
-
-   real( kind = core_rknd ), public :: &
-     rs_sigma2_on_mu2_ip_below = 0.766_core_rknd, & 
-     Ns_sigma2_on_mu2_ip_below = 0.429_core_rknd, & 
-     ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & 
-     Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
-     rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
-     Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd
-
-!$omp threadprivate( rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, & 
-!$omp                ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
-!$omp                rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below )
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
     hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
