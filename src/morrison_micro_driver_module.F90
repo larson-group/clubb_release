@@ -747,7 +747,9 @@ module morrison_micro_driver_module
                    " rsnowm_sd_morr_verical_integr = ", rsnowm_sd_morr_int
        endif
 
-       call stat_update_var_pt( irsnowm_sd_morr_int, 1, rsnowm_sd_morr_int, sfc )
+       if (l_stats_samp) then
+         call stat_update_var_pt( irsnowm_sd_morr_int, 1, rsnowm_sd_morr_int, sfc )
+       endif
 
     endif
 
