@@ -96,7 +96,7 @@ module clubb_driver
       rc_tol
 
     use error_code, only: &
-      clubb_var_out_of_bounds,  & ! Variable(s)
+      clubb_var_out_of_bounds,  & ! Constants
       clubb_no_error, &
       clubb_var_equals_NaN
 
@@ -243,7 +243,8 @@ module clubb_driver
         l_rtm_nudge, &
         l_diagnose_correlations, &
         l_calc_w_corr, &
-        l_use_modified_corr
+        l_use_modified_corr, &
+        l_silhs_rad
 
     use soil_vegetation, only: &
         l_soil_veg ! Variable(s)
@@ -297,8 +298,7 @@ module clubb_driver
     ! Constant Parameters
     logical, parameter :: &
       l_host_applies_sfc_fluxes = .false., &
-      l_implemented = .false., &
-      l_silhs_rad = .false. ! Call a radiation scheme using SILHS
+      l_implemented = .false.
 
     logical, parameter :: &
       l_write_to_file = .true. ! If true, will write case information to a file
@@ -1103,6 +1103,13 @@ module clubb_driver
 
     end if
 
+    if ( l_silhs_rad .and. l_calc_thlp2_rad ) then
+
+      write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
+      err_code = clubb_var_out_of_bounds
+      return
+
+    end if
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------

@@ -166,6 +166,9 @@ module model_flags
     l_calc_thlp2_rad = .true.         ! Include the contribution of radiation to thlp2
 !$omp threadprivate( l_calc_thlp2_rad )
 
+  logical, parameter, public :: &
+    l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
+
 #ifdef GFDL
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
