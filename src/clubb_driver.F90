@@ -4384,6 +4384,8 @@ module clubb_driver
 
     !----- Begin Code -----
 
+    err_code_samp(:) = clubb_no_error
+
     call copy_X_nl_into_hydromet_all_pts &
          ( nz, d_variables, LH_microphys_calls, &         ! Intent(in)
            X_nl_all_levs, &                               ! Intent(in)
