@@ -1200,10 +1200,11 @@ module clubb_core
       !of latent heating due to ice.  Thlm and rtm add the effects of ice, and
       !the terms are all renamed with "_frz" appended. The modified terms will
       !be fed into the calculations of the turbulence terms. storer-3/14/13
+      
+      !Also added rain for completeness. storer-3/4/14
 
-      thlm_frz = thlm - (Lv / (Cp*exner) ) * rfrzm ! Add effects of ice latent heat
-      ! Ice is treated as liquid water here
-      rtm_frz = rtm + rfrzm
+      thlm_frz = thlm - (Lv / (Cp*exner) ) * rrainm - (Ls / (Cp*exner) ) * rfrzm 
+      rtm_frz = rtm + rrainm + rfrzm
 
 
       do k = 1, gr%nz, 1
