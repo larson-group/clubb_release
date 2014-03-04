@@ -104,6 +104,7 @@ module clubb_core
       ep2, & 
       Cp, & 
       Lv, & 
+      Ls, &
       ep1, & 
       p0, &
       kappa, &
