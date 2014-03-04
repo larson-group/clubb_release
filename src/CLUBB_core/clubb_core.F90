@@ -60,7 +60,7 @@ module clubb_core
                wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rrainm, &     ! intent(in)
                rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! intent(in)
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
@@ -413,7 +413,8 @@ module clubb_core
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+      rfrzm,           & ! Total ice-phase water mixing ratio        [kg/kg]
+      rrainm             ! Rain water mixing ratio                   [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]

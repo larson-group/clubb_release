@@ -110,7 +110,7 @@ module clubb_driver
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
-      iiricem, iirsnowm, iirgraupelm
+      iiricem, iirsnowm, iirgraupelm, iirrainm
 
     use microphys_driver, only: init_microphys, advance_microphys, cleanup_microphys ! Subroutines
 
@@ -1224,7 +1224,7 @@ module clubb_driver
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
-             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, &             ! Intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet(:,iirrainm), & ! Intent(in)
              rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
