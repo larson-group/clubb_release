@@ -1986,7 +1986,7 @@ module latin_hypercube_driver_module
 
     ! Parameter Constants
     real( kind = dp ), parameter :: &
-      vert_corr_coef = 0.03_dp ! Empirically defined correlation constant [-]
+      vert_decorr_coef = 0.03_dp ! Empirically defined de-correlation constant [-]
 
     ! Input Variables
     integer, intent(in) :: &
@@ -2001,7 +2001,7 @@ module latin_hypercube_driver_module
       vert_corr ! The vertical correlation      [-]
 
     ! ---- Begin Code ----
-    vert_corr(1:nz) = exp( -vert_corr_coef &
+    vert_corr(1:nz) = exp( -vert_decorr_coef &
                             * real( delta_zm(1:nz) / Lscale_vert_avg(1:nz), kind=dp ) )
 
     return
