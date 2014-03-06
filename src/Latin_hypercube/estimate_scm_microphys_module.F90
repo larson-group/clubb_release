@@ -636,7 +636,7 @@ module estimate_scm_microphys_module
     end if ! l_stats_samp
 
   end subroutine adjust_KK_src_means
-#endif
+#endif /*SILHS_KK_CONVERGENCE_TEST*/
   !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_hydromet_all_pts( nz, d_variables, n_micro_calls, &
                                       X_nl_all_levs, &
