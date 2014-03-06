@@ -1215,7 +1215,7 @@ module clubb_driver
 
       ! Call the parameterization one timestep
       call advance_clubb_core &
-           ( l_implemented, dt_main, fcor, sfc_elevation, num_hm,&! Intent(in)
+           ( l_implemented, dt_main, fcor, sfc_elevation, num_hm, hydromet_dim, &! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -1224,7 +1224,7 @@ module clubb_driver
              wpsclrp_sfc, wpedsclrp_sfc,  &                       ! Intent(in)
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
-             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet(:,iirrainm), & ! Intent(in)
+             invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! Intent(in)
              rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)

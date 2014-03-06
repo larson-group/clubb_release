@@ -51,7 +51,7 @@ module clubb_core
   !#######################################################################
   !#######################################################################
   subroutine advance_clubb_core &
-             ( l_implemented, dt, fcor, sfc_elevation, num_hm, &    ! intent(in)
+             ( l_implemented, dt, fcor, sfc_elevation, num_hm, hydromet_dim, &    ! intent(in)
                thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! intent(in)
                sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! intent(in)
                wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! intent(in)
@@ -60,7 +60,7 @@ module clubb_core
                wpsclrp_sfc, wpedsclrp_sfc, &                        ! intent(in)
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
-               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, rrainm, &     ! intent(in)
+               invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
                rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! intent(in)
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
@@ -110,7 +110,8 @@ module clubb_core
       kappa, &
       fstderr, &
       zero_threshold, &
-      three_halves
+      three_halves, &
+      zero
 
     use parameters_tunable, only: & 
       gamma_coefc,  & ! Variable(s)
@@ -345,6 +346,9 @@ module clubb_core
     use sigma_sqd_w_module, only: &
       compute_sigma_sqd_w ! Procedure(s)
 
+    use array_index, only: &
+      iirrainm            ! Variable
+
     implicit none
 
     !!! External
@@ -388,7 +392,8 @@ module clubb_core
       sfc_elevation     ! Elevation of ground level    [m AMSL]
 
     integer, intent(in) :: &
-      num_hm            ! Number of hydrometeors       [#]
+      num_hm, &         ! Number of precipitating hydrometeors  [#]
+      hydromet_dim      ! Total number of hydrometeors          [#]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
@@ -413,8 +418,10 @@ module clubb_core
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      rfrzm,           & ! Total ice-phase water mixing ratio        [kg/kg]
-      rrainm             ! Rain water mixing ratio                   [kg/kg]
+      rfrzm              ! Total ice-phase water mixing ratio        [kg/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet           ! Collection of hydrometeors                [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
@@ -696,6 +703,8 @@ module clubb_core
       cloud_frac_refined, &  ! cloud_frac gridbox mean on refined grid
       rcm_refined            ! rcm gridbox mean on refined grid
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      rrainm                 ! Rain water mixing ratio
 
     !----- Begin Code -----
 
@@ -1188,7 +1197,6 @@ module clubb_core
     ! increase cloudiness at coarser grid resolutions.
     if ( l_use_cloud_cover ) then
       cloud_frac = cloud_cover
-      !ice_supersat_frac = cloud_cover !?-mark
       rcm = rcm_in_layer
     end if
 
@@ -1204,6 +1212,12 @@ module clubb_core
       !be fed into the calculations of the turbulence terms. storer-3/14/13
       
       !Also added rain for completeness. storer-3/4/14
+
+      if ( iirrainm > 0 ) then
+        rrainm = hydromet(:,iirrainm)
+      else
+        rrainm = zero
+      end if
 
       thlm_frz = thlm - (Lv / (Cp*exner) ) * rrainm - (Ls / (Cp*exner) ) * rfrzm 
       rtm_frz = rtm + rrainm + rfrzm
