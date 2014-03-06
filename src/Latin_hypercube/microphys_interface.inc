@@ -9,13 +9,16 @@ interface
                             hydromet_mc, hydromet_vel, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rrainm_auto, rrainm_accr, rrainm_evap, &
-                            Nrm_auto, Nrm_evap )
+                            Nrm_auto, Nrm_evap, microphys_stats_vars )
 
     use pdf_parameter_module, only: pdf_parameter
 
     use parameters_model, only: hydromet_dim
 
     use clubb_precision, only: core_rknd, time_precision
+
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type   ! Type
 
     ! Input Variables
 
@@ -68,6 +71,9 @@ interface
       rrainm_evap, & ! Evaporation budget for rain water mixing ratio    [kg/kg/s]
       Nrm_auto,    & ! Change in Nrm due to autoconversion               [num/kg/s]
       Nrm_evap       ! Change in Nrm due to evaporation                  [num/kg/s]
+
+    type(microphys_stats_vars_type), intent(out) :: &
+      microphys_stats_vars     ! Output variables
 
   end subroutine microphys_sub
 end interface

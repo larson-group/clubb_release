@@ -2,13 +2,17 @@
 !===============================================================================
 module KK_microphys_module
 
+  use clubb_precision, only: &
+    core_rknd
+
   implicit none
 
   private
 
   public :: KK_local_micro_driver, &
             KK_upscaled_micro_driver, &
-            KK_microphys_adjust
+            KK_microphys_adjust, &
+            KK_microphys_adj_terms_type
 
   private :: KK_micro_init, &
              KK_tendency_coefs, &
@@ -16,6 +20,18 @@ module KK_microphys_module
              KK_stats_output, &
              KK_sedimentation, &
              KK_micro_output
+
+  ! This derived type stores information about adjustment to microphysics terms
+  ! in KK microphysics.
+  type KK_microphys_adj_terms_type
+
+    real( kind = core_rknd ) :: &
+      rrainm_src_adj = 0._core_rknd, &   ! Total adjustment to rrainm source terms [(kg/kg)/s]
+      rrainm_cond_adj = 0._core_rknd, &  ! Total adjustment to rrainm evap terms   [(kg/kg)/s]
+      Nrm_src_adj = 0._core_rknd, &      ! Total adjustment to Nrm source terms    [(num/kg)/s]
+      Nrm_cond_adj = 0._core_rknd        ! Total adjustment to Nrm evap terms      [(num/kg)/s]
+
+  end type KK_microphys_adj_terms_type
 
   contains
 
@@ -29,7 +45,8 @@ module KK_microphys_module
                                     hydromet_mc, hydromet_vel, &
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy, &
-                                    KK_Nrm_auto_tndcy, KK_Nrm_evap_tndcy )
+                                    KK_Nrm_auto_tndcy, KK_Nrm_evap_tndcy, &
+                                    microphys_stats_vars )
 
     ! Description:
 
@@ -73,7 +90,29 @@ module KK_microphys_module
     use parameters_microphys, only: &
         l_silhs_KK_convergence_adj_mean ! Variable
 
+    use microphys_stats_vars_module, only: &
+        microphys_stats_vars_type, &
+        microphys_stats_alloc, &
+        microphys_put_var
+
+    use stats_variables, only: &
+        im_vol_rad_rain, & ! Variables
+        iNrm_auto, &
+        iNrm_cond, &
+        iNrm_cond_adj, &
+        iNrm_src_adj, &
+        irrainm_accr, &
+        irrainm_auto, &
+        irrainm_cond, &
+        irrainm_cond_adj, &
+        irrainm_src_adj
+
     implicit none
+
+    ! Local Constants
+    integer, parameter :: &
+      num_stats_vars = 20         ! Overestimate of the number of statistics
+                                  ! variables sampled in this subroutine
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -126,6 +165,8 @@ module KK_microphys_module
       KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation     [(num/kg)/s]
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.       [(num/kg)/s]
 
+    type(microphys_stats_vars_type), intent(out) :: &
+      microphys_stats_vars ! Variables output for statistical sampling
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) ::  &
@@ -145,41 +186,23 @@ module KK_microphys_module
       KK_accr_coef, & ! KK accretion coefficient                    [(kg/kg)/s]
       KK_mvr_coef     ! KK mean volume radius coefficient           [m]
 
-    real( kind = core_rknd ) ::  &
-      rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
-      Nrm_source           ! Total source term rate for Nrm         [(num/kg)/s]
-
-    real( kind = core_rknd ), dimension(nz) ::  &
-      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
-      Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
-      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
-      Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
+    type(KK_microphys_adj_terms_type), dimension(nz) :: &
+      adj_terms    ! Adjustments to microphysics terms
 
     logical :: &
       l_src_adj_enabled,   & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled,  & ! Flag to enable rrainm/Nrm evaporation adjustment
-      l_stats_samp_in_sub, & ! Used to disable stats when SILHS is enabled
-      l_stats_samp_in_adj    ! Used to enable/disable stats in the adjustment code
+      l_evap_adj_enabled     ! Flag to enable rrainm/Nrm evaporation adjustment
 
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
       k                  ! Loop index
 
+  !-----------------------------------------------------------------------
 
-    ! Remove compiler warnings
-    if ( .false. ) then
-      rrainm_src_adj = dzq
-      rrainm_src_adj = rvm
-      rrainm_src_adj = w_std_dev
-      rrainm_src_adj = cloud_frac
-    end if
+    !----- Begin Code -----
 
-    ! Disable stats when latin hypercube is enabled, except for adjustment output
-    if ( .not. l_latin_hypercube .and. l_stats_samp ) then
-     l_stats_samp_in_sub = .true.
-    else
-     l_stats_samp_in_sub = .false.
-    end if
+    ! Initialize microphys_stats_vars for statistics sampling
+    call microphys_stats_alloc( nz, num_stats_vars, microphys_stats_vars )
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, &
@@ -197,15 +220,6 @@ module KK_microphys_module
     if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
       l_src_adj_enabled = .false.
       l_evap_adj_enabled = .false.
-    end if
-
-    ! Do not sample in the adjustment code when l_silhs_KK_convergence_adj_mean
-    ! is true. We only want to sample when SILHS calls the adjustment subroutine
-    ! (KK_microphys_adjust).
-    if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
-      l_stats_samp_in_adj = .false.
-    else
-      l_stats_samp_in_adj = l_stats_samp
     end if
 
     !!! Microphysics tendency loop.
@@ -293,17 +307,11 @@ module KK_microphys_module
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                 l_evap_adj_enabled, l_stats_samp_in_adj, &
+                                 l_evap_adj_enabled, l_stats_samp, &
                                  l_latin_hypercube, k, &
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
-                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
-
-       !!! Statistical output for mean microphysics tendenices.
-       call KK_stats_output( KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                             KK_accr_tndcy(k), KK_mean_vol_rad(k), &
-                             KK_Nrm_evap_tndcy(k), KK_Nrm_auto_tndcy(k), &
-                             l_stats_samp_in_sub, k )
-
+                                 rvm_mc(k), rcm_mc(k), thlm_mc(k), &
+                                 adj_terms(k) )
 
     enddo  ! Microphysics tendency loop: k = 2, nz, 1
 
@@ -342,6 +350,17 @@ module KK_microphys_module
     call KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
                           hydromet_mc, hydromet_vel )
 
+    !!! Output values for statistics
+    call microphys_put_var( irrainm_cond, KK_evap_tndcy, microphys_stats_vars )
+    call microphys_put_var( irrainm_auto, KK_auto_tndcy, microphys_stats_vars )
+    call microphys_put_var( irrainm_accr, KK_accr_tndcy, microphys_stats_vars )
+    call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_vars )
+    call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_vars )
+    call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_vars )
+    call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_vars )
+    call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_vars )
+    call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_vars )
+    call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_vars )
 
     return
 
@@ -419,7 +438,12 @@ module KK_microphys_module
     use stats_variables, only: &
         iVrrprrp_expcalc, &
         iVNrpNrp_expcalc, &
-        zm
+        zm, &
+        zt, &
+        irrainm_src_adj, &
+        iNrm_src_adj, &
+        irrainm_cond_adj, &
+        iNrm_cond_adj
 
     implicit none
 
@@ -624,15 +648,8 @@ module KK_microphys_module
       thlp2_mc_tndcy_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
       rtpthlp_mc_tndcy_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
 
-    real( kind = core_rknd ) ::  &
-      rrainm_source,     & ! Total source term rate for rrainm       [(kg/kg)/s]
-      Nrm_source           ! Total source term rate for Nrm         [(num/kg)/s]
-
-    real( kind = core_rknd ), dimension(nz) ::  &
-      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
-      Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
-      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
-      Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
+    type(KK_microphys_adj_terms_type), dimension(nz) :: &
+      adj_terms           ! Adjustments to microphysics terms
 
     logical :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
@@ -805,7 +822,8 @@ module KK_microphys_module
                                  l_evap_adj_enabled, l_stats_samp, &
                                  l_latin_hypercube, k, &
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
-                                 rvm_mc(k), rcm_mc(k), thlm_mc(k) )
+                                 rvm_mc(k), rcm_mc(k), thlm_mc(k), &
+                                 adj_terms(k) )
 
 
        !!! Statistical output for upscaled KK.
@@ -970,6 +988,23 @@ module KK_microphys_module
                                        + VNrpNrp_zt_expc ), zm )
 
        endif
+
+       ! Stats output for microphysics adjustment terms
+       if ( irrainm_src_adj > 0 ) then
+         call stat_update_var( irrainm_src_adj, adj_terms%rrainm_src_adj, zt )
+       end if
+
+       if ( iNrm_src_adj > 0 ) then
+         call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
+       end if
+
+       if ( irrainm_cond_adj > 0 ) then
+         call stat_update_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, zt )
+       end if
+
+       if ( iNrm_cond_adj > 0 ) then
+         call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
+       end if
 
     endif ! l_stats_samp
 
@@ -1159,7 +1194,8 @@ module KK_microphys_module
                                   l_evap_adj_enabled, l_stats_samp, &
                                   l_latin_hypercube, level, &
                                   rrainm_mc_tndcy, Nrm_mc_tndcy, &
-                                  rvm_mc, rcm_mc, thlm_mc )
+                                  rvm_mc, rcm_mc, thlm_mc, &
+                                  adj_terms )
 
     ! Description:
 
@@ -1181,35 +1217,7 @@ module KK_microphys_module
         KK_Nrm_evap_local_mean, & ! Procedure(s)
         KK_Nrm_auto_mean
 
-    use stats_variables, only: &
-        izt_rrainm_src_adj => irrainm_src_adj,  & ! Variable(s)
-        izt_rrainm_cond_adj=> irrainm_cond_adj, &
-        izt_Nrm_src_adj    => iNrm_src_adj,     &
-        izt_Nrm_cond_adj   => iNrm_cond_adj,    &
-        iLH_rrainm_src_adj,                     &
-        iLH_rrainm_cond_adj,                    &
-        iLH_Nrm_src_adj,                        &
-        iLH_Nrm_cond_adj,                       &
-        zt,                                     &
-        LH_zt
-
-    use stats_type, only: &
-        stats, &
-        stat_update_var_pt  ! Procedure(s)
-
     implicit none
-
-    ! Local Constants
-    ! This is a set of stat index arrays, because they are arrays of stat indexes.
-    integer, dimension(2) :: &
-      irrainm_src_adj,  & ! Stats index array for rrainm_src_adj
-      irrainm_cond_adj, & ! Stats index array for rrainm_cond_adj
-      iNrm_src_adj,     & ! Stats index array for Nrm_src_adj
-      iNrm_cond_adj       ! Stats index array for Nrm_cond_adj
-
-    integer, parameter :: &
-      stat_index_array_zt = 1, &
-      stat_index_array_LH = 2
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -1247,6 +1255,10 @@ module KK_microphys_module
       rvm_mc,  & ! Time tendency of vapor water mixing ratio        [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature    [K/s]
 
+    type(KK_microphys_adj_terms_type), intent(out) :: &
+      adj_terms    ! Structure containing information about adjustment of
+                      ! microphysics terms
+
     ! Local Variables
     real( kind = core_rknd ) ::  &
       rrainm_source,   & ! Total source term rate for rrainm        [(kg/kg)/s]
@@ -1261,12 +1273,9 @@ module KK_microphys_module
       rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
       total_rc_needed      ! Amount of r_c needed to over the timestep
                            ! for rain source terms                       [kg/kg]
+  !-----------------------------------------------------------------------
 
-    type (stats), pointer :: &
-      stat_grid           ! The grid to output stats to             [-]
-
-    integer :: zt_or_LH ! The index to the set of stat index arrays to use for stats output [-]
-
+    !---- Begin Code -----
 
     !!! Source-adjustment code for rrainm and Nrm.
     rrainm_source = KK_auto_tndcy + KK_accr_tndcy
@@ -1368,44 +1377,11 @@ module KK_microphys_module
     rcm_mc  = -rrainm_source  ! Accretion + Autoconversion
     thlm_mc = ( Lv / ( Cp * exner ) ) * rrainm_mc_tndcy
 
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       irrainm_src_adj = (/ izt_rrainm_src_adj, iLH_rrainm_src_adj /)
-       irrainm_cond_adj = (/ izt_rrainm_cond_adj, iLH_rrainm_cond_adj /)
-       iNrm_src_adj = (/ izt_Nrm_src_adj, iLH_Nrm_src_adj /)
-       iNrm_cond_adj = (/ izt_Nrm_cond_adj, iLH_Nrm_cond_adj /)
-
-       ! Determine index to the stat index array, and the grid to output to
-       if ( l_latin_hypercube ) then
-          zt_or_LH = stat_index_array_LH
-          stat_grid => LH_zt
-       else
-          zt_or_LH = stat_index_array_zt
-          stat_grid => zt
-       end if ! l_latin_hypercube
-
-       if ( irrainm_src_adj(zt_or_LH) > 0 ) then
-          call stat_update_var_pt( irrainm_src_adj(zt_or_LH), level, rrainm_src_adj, stat_grid )
-       endif
-
-       if ( iNrm_src_adj(zt_or_LH) > 0 ) then
-          call stat_update_var_pt( iNrm_src_adj(zt_or_LH), level, Nrm_src_adj, stat_grid )
-       endif
-
-       if ( irrainm_cond_adj(zt_or_LH) > 0 ) then
-          call stat_update_var_pt( irrainm_cond_adj(zt_or_LH), level, &
-                                   rrainm_evap_net - KK_evap_tndcy, stat_grid )
-       endif
-
-       if ( iNrm_cond_adj(zt_or_LH) > 0 ) then
-          call stat_update_var_pt( iNrm_cond_adj(zt_or_LH), level, &
-                                   Nrm_evap_net - KK_Nrm_evap_tndcy, stat_grid )
-       endif
-
-    endif
-
+    ! Return adjustment terms
+    adj_terms%rrainm_src_adj = rrainm_src_adj
+    adj_terms%Nrm_src_adj = Nrm_src_adj
+    adj_terms%rrainm_cond_adj = rrainm_evap_net - KK_evap_tndcy
+    adj_terms%Nrm_cond_adj = Nrm_evap_net - KK_Nrm_evap_tndcy
 
     return
 

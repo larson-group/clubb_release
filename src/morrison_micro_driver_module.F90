@@ -17,7 +17,7 @@ module morrison_micro_driver_module
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
-               Nrm_auto, Nrm_evap )
+               Nrm_auto, Nrm_evap, microphys_stats_vars )
 
 ! Description:
 !   Wrapper for the Morrison microphysics
@@ -208,6 +208,10 @@ module morrison_micro_driver_module
     use fill_holes, only: &
         vertical_integral
 
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type, & ! Type
+      microphys_stats_alloc ! Procedure
+
     implicit none
 
     ! External
@@ -265,6 +269,9 @@ module morrison_micro_driver_module
       rrainm_auto,     & ! Autoconversion rate                 [kg/kg/s]
       rrainm_accr,     & ! Accretion rate                      [kg/kg/s]
       rrainm_evap        ! Rain evaporation rate               [kg/kg/s]
+
+    type(microphys_stats_vars_type), intent(out) :: &
+      microphys_stats_vars ! Variables output for statistical sampling
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -468,6 +475,9 @@ module morrison_micro_driver_module
     if ( .false. ) then
        print *, "s_mellor = ", s_mellor
     endif
+
+    ! The structure microphys_stats_vars is not used right now.
+    call microphys_stats_alloc( nz, 0, microphys_stats_vars )
 
     ! Determine temperature
     T_in_K = real( thlm2T_in_K( thlm, exner, rcm ) )

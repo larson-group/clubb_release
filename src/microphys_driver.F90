@@ -114,7 +114,7 @@ module microphys_driver
 
     use array_index, only: & 
         l_frozen_hm, & ! Variables
-        l_mix_rat_hm, &
+        l_mix_rat_hm,&
         iirrainm,    &
         iiNrm,       &
         iirsnowm,    &
@@ -1158,6 +1158,11 @@ module microphys_driver
     use corr_matrix_module, only: &
         d_variables ! Variable(s)
 
+    use microphys_stats_vars_module, only: &
+        microphys_stats_vars_type, &  ! Type
+        microphys_stats_accumulate, &
+        microphys_stats_cleanup
+
     implicit none
 
     ! Local Constants
@@ -1329,6 +1334,8 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Nc_in_cloud ! cloud average droplet concentration [#/kg]
 
+    type(microphys_stats_vars_type) :: &
+      microphys_stats_vars         ! Statistics variables from microphysics
 
     character(len=10) :: hydromet_name
 
@@ -1617,7 +1624,7 @@ module microphys_driver
                hydromet_mc, hydromet_vel_zt, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
-               Nrm_auto, Nrm_evap )
+               Nrm_auto, Nrm_evap, microphys_stats_vars )
 
         if ( l_morr_xp2_mc_tndcy) then
           call update_xp2_mc_tndcy( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
@@ -1710,7 +1717,7 @@ module microphys_driver
                                       hydromet_mc, hydromet_vel_zt, &
                                       rcm_mc, rvm_mc, thlm_mc, &
                                       rrainm_auto, rrainm_accr, rrainm_evap, &
-                                      Nrm_auto, Nrm_evap )
+                                      Nrm_auto, Nrm_evap, microphys_stats_vars )
 
         else
 
@@ -1752,6 +1759,13 @@ module microphys_driver
       ! Do nothing
     end select ! micro_scheme
 
+    ! Sample microphysics variables if necessary
+    if ( microphys_stats_vars%l_allocated ) then
+
+      call microphys_stats_accumulate( microphys_stats_vars, l_stats_samp )
+      call microphys_stats_cleanup( microphys_stats_vars )
+
+    end if
 
     !-----------------------------------------------------------------------
     !       Loop over all hydrometeor species and apply sedimentation,

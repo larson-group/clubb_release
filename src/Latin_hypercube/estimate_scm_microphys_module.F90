@@ -58,20 +58,30 @@ module estimate_scm_microphys_module
       l_stats_samp ! Variable(s)
 
     use stats_variables, only: & 
-      LH_zt, & ! Variable(s)
-      iLH_rrainm_auto, & 
-      iLH_rrainm_accr, &
-      iLH_rrainm_evap, &
-      iLH_Nrm_auto,    &
-      iLH_Nrm_cond
+      LH_zt,             & ! Variable(s)
+      zt,                &
+      iLH_rrainm_auto,   & 
+      iLH_rrainm_accr,   &
+      iLH_rrainm_evap,   &
+      iLH_Nrm_auto,      &
+      iLH_Nrm_cond,      &
+      irrainm_src_adj,   &
+      iNrm_src_adj,      &
+      irrainm_cond_adj,  &
+      iNrm_cond_adj
 
     use stats_type, only: & 
-      stat_update_var ! Procedure(s)
+      stat_update_var, & ! Procedure(s)
+      stat_update_var_pt
 
-#ifdef SILHS_KK_CONVERGENCE_TEST
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type, &
+      microphys_stats_cleanup
+
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
+#ifdef SILHS_KK_CONVERGENCE_TEST
     use array_index, only: &
       iiNrm, & ! Variable(s)
       iirrainm
@@ -86,7 +96,7 @@ module estimate_scm_microphys_module
 
     ! Constant parameters
     logical, parameter :: &
-      l_latin_hypercube = .true. ! We are the Latin hypercube
+      l_latin_hypercube = .true. ! We are the Latin hypercube!
 
     logical, parameter :: &
       l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
@@ -176,13 +186,6 @@ module estimate_scm_microphys_module
       Nc            ! Cloud droplet concentration               [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      lh_rrainm_auto,  & ! Autoconversion budget for <rr>      [kg/kg/s]
-      lh_rrainm_accr,  & ! Accretion budget for <rr>           [kg/kg/s]
-      lh_rrainm_evap,  & ! Evaporation budget for <rr>         [kg/kg/s]
-      lh_Nrm_auto,     & ! Change in Nrm due to autoconversion [num/kg/s]
-      lh_Nrm_evap        ! Change in Nrm due to evaporation    [num/kg/s]
-
-    real( kind = core_rknd ), dimension(nz) :: &
       lh_rtp2_before_microphys,    & ! <rt'^2> before microphys_sub    [(kg/kg)^2]
       lh_rtp2_after_microphys,     & ! <rt'^2> after microphys_sub     [(kg/kg)^2]
       lh_thlp2_before_microphys,   & ! <thl'^2> before microphys_sub   [K^2]
@@ -203,7 +206,13 @@ module estimate_scm_microphys_module
       s_mellor_all_points,  & ! n_micro_calls values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
 
-    integer :: ivar, k, sample
+    type(microphys_stats_vars_type), dimension(n_micro_calls) :: &
+      microphys_stats_vars    ! Statistics variables output from microphysics
+
+    real( kind = core_rknd ), dimension(n_micro_calls) :: &
+      var_values              ! Temporary variable to hold values of a variable
+
+    integer :: ivar, k, sample, stat_index
 
     integer :: &
       in_cloud_points, &
@@ -364,7 +373,8 @@ module estimate_scm_microphys_module
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
              lh_rrainm_auto_all(:,sample), lh_rrainm_accr_all(:,sample), &
              lh_rrainm_evap_all(:,sample), &
-             lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample) ) ! Out
+             lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample), &
+             microphys_stats_vars(sample) ) ! Out
 
       rt_all_samples(:,sample) = rc_column + rv_column + &
       real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
@@ -380,14 +390,6 @@ module estimate_scm_microphys_module
         lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * LH_sample_point_weights(sample)
         lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * LH_sample_point_weights(sample)
         lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * LH_sample_point_weights(sample)
-        lh_rrainm_auto_all(:,sample) = lh_rrainm_auto_all(:,sample) &
-                * LH_sample_point_weights(sample)
-        lh_rrainm_accr_all(:,sample) = lh_rrainm_accr_all(:,sample) &
-                * LH_sample_point_weights(sample)
-        lh_rrainm_evap_all(:,sample) = lh_rrainm_evap_all(:,sample) &
-                * LH_sample_point_weights(sample)
-        lh_Nrm_auto_all(:,sample) = lh_Nrm_auto_all(:,sample) * LH_sample_point_weights(sample)
-        lh_Nrm_evap_all(:,sample) = lh_Nrm_evap_all(:,sample) * LH_sample_point_weights(sample)
       end if
 
 
@@ -426,25 +428,46 @@ module estimate_scm_microphys_module
                                      real( n_micro_calls, kind=core_rknd )
       lh_thlm_mc(k) = sum( lh_thlm_mc_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
-
-      lh_rrainm_auto(k) = sum( lh_rrainm_auto_all(k,:) ) / &
-                                     real( n_micro_calls, kind=core_rknd )
-      lh_rrainm_accr(k) = sum( lh_rrainm_accr_all(k,:) ) / &
-                                     real( n_micro_calls, kind=core_rknd )
-      lh_rrainm_evap(k) = sum( lh_rrainm_evap_all(k,:) ) / &
-                                     real( n_micro_calls, kind=core_rknd )
-      lh_Nrm_auto(k) = sum( lh_Nrm_auto_all(k,:) ) / real( n_micro_calls, kind=core_rknd )
-      lh_Nrm_evap(k) = sum( lh_Nrm_evap_all(k,:) ) / real( n_micro_calls, kind=core_rknd )
     end forall
 
-    ! Statistics sampling
+    ! Sample variables from microphys_stats_vars objects for statistics
     if ( l_stats_samp ) then
-      call stat_update_var( iLH_rrainm_auto, lh_rrainm_auto, LH_zt )
-      call stat_update_var( iLH_rrainm_accr, lh_rrainm_accr, LH_zt )
-      call stat_update_var( iLH_rrainm_evap, lh_rrainm_evap, LH_zt )
-      call stat_update_var( iLH_Nrm_auto, lh_Nrm_auto, LH_zt )
-      call stat_update_var( iLH_Nrm_cond, lh_Nrm_evap, LH_zt )
-    end if
+
+      do ivar=1, microphys_stats_vars(1)%num_vars
+
+        stat_index = microphys_stats_vars(1)%stats_indices(ivar)
+
+        ! We don't want to sample the adjustment statistics if
+        ! l_silhs_KK_convergence_adj_mean is true. These will be sampled in
+        ! the subroutine adjust_KK_src_means below.
+
+        if ( .not. l_silhs_KK_convergence_adj_mean .or. &
+            ( stat_index /= irrainm_src_adj .and. &
+              stat_index /= iNrm_src_adj .and. &
+              stat_index /= irrainm_cond_adj .and. &
+              stat_index /= iNrm_cond_adj ) ) then
+
+          do k=1, nz
+
+            forall ( sample=1:n_micro_calls )
+              var_values(sample) = microphys_stats_vars(sample)%output_values(k,ivar)
+            end forall ! sample=1:n_micro_calls
+
+            call stat_update_var_pt( stat_index, k, &
+                 sum( var_values(:) * LH_sample_point_weights(:) ) / &
+                   real( n_micro_calls, kind=core_rknd ), zt )
+
+          end do ! k=1, nz
+
+        end if ! .not. l_silhs_KK_convergence_adj_mean .or. (...)
+      end do ! ivar=1, microphys_stats_vars(1)%num_vars
+
+    end if ! l_stats_samp
+
+    ! Cleanup microphys_stats_vars objects
+    do ivar=1, n_micro_calls
+      call microphys_stats_cleanup( microphys_stats_vars(ivar) )
+    end do
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
@@ -473,12 +496,21 @@ module estimate_scm_microphys_module
                                   Nrm_auto, Nrm_evap,                      &
                                   rrainm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
+
+  ! Description:
+  !   Adjusts the means of microphysics terms for KK microphysics by calling the
+  !   KK microphysics adjustment subroutine
+
+  ! References:
+  !   clubb:ticket:558
+  !-----------------------------------------------------------------------------
     use KK_Nrm_tendencies, only: &
       KK_Nrm_auto_mean, & ! Procedure(s)
       KK_Nrm_evap_local_mean
 
     use KK_microphys_module, only: &
-      KK_microphys_adjust ! Procedure
+      KK_microphys_adjust, &      ! Procedure
+      KK_microphys_adj_terms_type ! Type
 
     use clubb_precision, only: &
       time_precision, &
@@ -489,7 +521,23 @@ module estimate_scm_microphys_module
       Nr_tol, &
       zero
 
+    use stats_variables, only: &
+      zt, &
+      irrainm_src_adj, &
+      iNrm_src_adj, &
+      irrainm_cond_adj, &
+      iNrm_cond_adj
+
     implicit none
+
+    ! Local Constants
+    logical, parameter :: &
+      ! Whether to adjust rrainm_source to not over-deplete cloud water
+      l_src_adj_enabled = .true.,  &
+      ! Whether to adjust rrainm_evap to not over-evaporate rain
+      l_evap_adj_enabled = .true., &
+      ! This subroutine is called from Latin hypercube.
+      l_latin_hypercube = .true.
 
     ! Input variables
     real( kind = time_precision ), intent(in) :: &
@@ -520,13 +568,9 @@ module estimate_scm_microphys_module
       rcm_mc,    & ! Time tendency of rcm                    [(kg/kg)/s]
       thlm_mc      ! Time tendency of thlm                   [(kg/kg)/s]
 
-    logical, parameter :: &
-      ! Whether to adjust rrainm_source to not over-deplete cloud water
-      l_src_adj_enabled = .true.,  &
-      ! Whether to adjust rrainm_evap to not over-evaporate rain
-      l_evap_adj_enabled = .true., &
-      ! This subroutine is called from Latin hypercube.
-      l_latin_hypercube = .true.
+    ! Local Variables
+    type(KK_microphys_adjust_terms_type), dimension(nz) :: &
+      adj_terms    ! Adjustment terms returned from the adjustment routine
 
     integer :: k
 
@@ -543,14 +587,15 @@ module estimate_scm_microphys_module
     do k = 2, nz, 1
 
       ! We call KK_microphys_adjust to adjust the means of the mc terms
-      call KK_microphys_adjust(dt, exner(k), rcm(k), rrainm(k), Nrm(k),   & !intent(in)
-                               rrainm_evap(k), rrainm_auto(k),            & !intent(in)
-                               rrainm_accr(k), Nrm_evap(k),               & !intent(in)
-                               Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
-                               l_evap_adj_enabled, l_stats_samp,          & !intent(in)
-                               l_latin_hypercube, k,                      & !intent(in)
-                               rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
-                               rvm_mc(k), rcm_mc(k), thlm_mc(k) )           !intent(out)
+      call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k),   & !intent(in)
+                                rrainm_evap(k), rrainm_auto(k),            & !intent(in)
+                                rrainm_accr(k), Nrm_evap(k),               & !intent(in)
+                                Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
+                                l_evap_adj_enabled, l_stats_samp,          & !intent(in)
+                                l_latin_hypercube, k,                      & !intent(in)
+                                rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
+                                rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)
+                                adj_terms(k) )                               !intent(out)
     end do ! k = 2, nz, 1
 
     ! Set boundary conditions
@@ -568,6 +613,27 @@ module estimate_scm_microphys_module
 
     thlm_mc(1) = zero
     thlm_mc(nz) = zero
+
+    ! Statistical sampling
+    if ( l_stats_samp ) then
+
+      if ( irrainm_src_adj > 0 ) then
+        call stat_update_var( irrainm_src_adj, adj_terms%rrainm_src_adj, zt )
+      end if
+
+      if ( iNrm_src_adj > 0 ) then
+        call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
+      end if
+
+      if ( irrainm_cond_adj > 0 ) then
+        call stat_update_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, zt )
+      end if
+
+      if ( iNrm_cond_adj > 0 ) then
+        call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
+      end if
+
+    end if ! l_stats_samp
 
   end subroutine adjust_KK_src_means
 #endif

@@ -12,9 +12,13 @@ module microphys_stats_vars_module
 
   private ! Set Default Scope
 
-  public :: microphys_stats_vars_type, microphys_stats_alloc
+  public :: microphys_stats_vars_type, microphys_stats_alloc, microphys_put_var, &
+            microphys_stats_accumulate, microphys_stats_cleanup
 
   type microphys_stats_vars_type
+
+    logical :: &
+      l_allocated = .false. ! This is set to true when the structure is allocated
 
     integer :: &
       nz, &       ! Number of vertical levels
@@ -55,25 +59,18 @@ module microphys_stats_vars_module
     type(microphys_stats_vars_type), intent(inout) :: &
       microphys_stats_vars   ! Unallocated microphys_stats_vars_type object
 
-    ! Local Variables
-    integer, dimension(:), allocatable, target :: &
-      stats_indices_alloc
-
-    real( kind = core_rknd ), dimension(:,:), allocatable, target :: &
-      output_values_alloc
-
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
 
-    allocate( stats_indices_alloc(num_vars), output_values_alloc(nz,num_vars) )
+    allocate( microphys_stats_vars%stats_indices(num_vars), &
+              microphys_stats_vars%output_values(nz,num_vars) )
 
     microphys_stats_vars%nz = nz
     microphys_stats_vars%alloc_size = num_vars
     microphys_stats_vars%num_vars = 0 ! Since no variables have been put into structure
 
-    microphys_stats_vars%stats_indices => stats_indices_alloc
-    microphys_stats_vars%output_values => output_values_alloc
+    microphys_stats_vars%l_allocated = .true.
 
     return
   end subroutine microphys_stats_alloc
@@ -106,7 +103,7 @@ module microphys_stats_vars_module
 
     !----- Begin Code -----
     if ( microphys_stats_vars%num_vars == microphys_stats_vars%alloc_size ) then
-      ! There is no more room in the structure. Do nothing.
+      ! There is no more room in the structure. Do nothing (for now).
       return
     end if
 
@@ -118,6 +115,50 @@ module microphys_stats_vars_module
     return
   end subroutine microphys_put_var
   !-----------------------------------------------------------------------
+
+  subroutine microphys_stats_accumulate( microphys_stats_vars, l_stats_samp )
+
+  ! Description:
+  !   Samples all variables stored in the microphys_stats_vars structure by
+  !   using stat_update_var. The variables are sampled on the zt grid.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use stats_variables, only: &
+      zt ! Variable
+
+    use stats_type, only: &
+      stat_update_var ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    type(microphys_stats_vars_type), intent(in) :: &
+      microphys_stats_vars
+
+    logical, intent(in) :: &
+      l_stats_samp              ! Are we sampling this timestep?
+
+    ! Local Variables
+    integer :: i ! Loop variable
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    if ( l_stats_samp ) then
+
+      do i=1, microphys_stats_vars%num_vars
+
+        call stat_update_var( microphys_stats_vars%stats_indices(i), &
+                              microphys_stats_vars%output_values(:,i), zt )
+
+      end do ! i=1, microphys_stats_vars%num_vars
+
+    end if ! l_stats_samp
+
+  end subroutine microphys_stats_accumulate
 
   !-----------------------------------------------------------------------
   subroutine microphys_stats_cleanup( microphys_stats_vars )
@@ -143,6 +184,7 @@ module microphys_stats_vars_module
     deallocate( microphys_stats_vars%stats_indices, &
                 microphys_stats_vars%output_values )
 
+ !   microphys_stats_vars%l_allocated = .false.
     return
   end subroutine microphys_stats_cleanup
   !-----------------------------------------------------------------------
