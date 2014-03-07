@@ -94,13 +94,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrainm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Rain Water Mixing Ratio', 'axisLabel' => '[qrp2 (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Rain Water Mixing Ratio', 'axisLabel' => 'qrp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrainp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-rain Variance of Rain Water Mixing Ratio (w.r.t mean^2)', 'axisLabel' => 'qrp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-rain Variance of Rain Water Mixing Ratio', 'axisLabel' => 'qrp2\_ip / qrm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qrainp2_ip ./ qrainm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qrainp2_ip ./ (max(1e-5,qrainm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Rain Drop Number Concentration
@@ -116,9 +116,9 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nrainp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-rain Variance of Rain Drop Concentration (w.r.t mean^2)', 'axisLabel' => 'Nrp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-rain Variance of Rain Drop Concentration', 'axisLabel' => 'Nrp2\_ip / Nrm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nrainp2_ip ./ nrainm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nrainp2_ip ./ (max(1e-5,nrainm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Cloud Droplet Number Concentration
@@ -126,7 +126,7 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Cloud Droplet Number Concentration in Cloud', 'axisLabel' => 'Ncm_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Droplet Number Concentration in Cloud', 'axisLabel' => 'Ncm\_ip [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudliqm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
@@ -134,9 +134,9 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudliqp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-cloud Variance of Cloud Droplet Number Concentration (w.r.t mean^2)', 'axisLabel' => 'Ncp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-cloud Variance of Cloud Droplet Number Concentration', 'axisLabel' => 'Ncp2\_ip / Ncm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudliqp2_ip ./ ncloudliqm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudliqp2_ip ./ (max(1e-5,ncloudliqm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Graupel Number Concentration
@@ -148,13 +148,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ngraupelm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Graupel Mixing Ratio', 'axisLabel' => '[Ngp2 (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Graupel Number Concentration', 'axisLabel' => 'Ngp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ngraupelp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-graupel Variance of Graupel Mixing Ratio (w.r.t mean^2)', 'axisLabel' => 'Ngp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-graupel Variance of Graupel Number Concentration', 'axisLabel' => 'Ngp2\_ip / Ngm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ngraupelp2_ip ./ ngraupelm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ngraupelp2_ip ./ (max(1e-5,ngraupelm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Graupel Mixing Ratio
@@ -166,13 +166,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qgraupelm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Graupel Mixing Ratio', 'axisLabel' => '[qgp2 (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Graupel Mixing Ratio', 'axisLabel' => 'qgp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qgraupelp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-graupel Variance of Graupel Mixing Ratio (w.r.t mean^2)', 'axisLabel' => 'qgp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-graupel Variance of Graupel Mixing Ratio', 'axisLabel' => 'qgp2\_ip / qgm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qgraupelp2_ip ./ qgraupelm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qgraupelp2_ip ./ (max(1e-5,qgraupelm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Cloud Ice Mixing Ratio
@@ -184,13 +184,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qcloudicem_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Mixing Ratio', 'axisLabel' => '[qip2 (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Mixing Ratio', 'axisLabel' => 'qip2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qcloudicep2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice  Mixing Ratio (w.r.t mean^2)', 'axisLabel' => 'qip2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice  Mixing Ratio', 'axisLabel' => 'qip2\_ip / qim\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qcloudicep2_ip ./ qcloudicem_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qcloudicep2_ip ./ (max(1e-5,qcloudicem_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Cloud Ice Number Concentration
@@ -202,13 +202,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudicem_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Number Concentration', 'axisLabel' => '[Nip2 (num/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Number Concentration', 'axisLabel' => 'Nip2 [(num/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudicep2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice Number Concentration (w.r.t mean^2)', 'axisLabel' => 'Nip2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice Number Concentration', 'axisLabel' => 'Nip2\_ip / Nim\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudicep2_ip ./ ncloudicem_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudicep2_ip ./ (max(1e-5,ncloudicem_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Snow Mixing Ratio
@@ -220,13 +220,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsnowm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Snow Mixing Ratio', 'axisLabel' => '[qsp2 (kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Snow Mixing Ratio', 'axisLabel' => 'qsp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsnowp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-snow Variance of Snow Mixing Ratio (w.r.t mean^2)', 'axisLabel' => 'qsp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-snow Variance of Snow Mixing Ratio', 'axisLabel' => 'qsp2\_ip / qsm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qsnowp2_ip ./ qsnowm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qsnowp2_ip ./ (max(1e-5,qsnowm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        #Snow Number Concentration
@@ -238,13 +238,13 @@
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Domain-wide Variance of Snow Number Concentration', 'axisLabel' => '[Nsp2 (#/kg)^2]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Domain-wide Variance of Snow Number Concentration', 'axisLabel' => 'Nsp2 [(#/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Within-snow Variance of Snow Number Concentration (w.r.t mean^2)', 'axisLabel' => 'Nsp2\_ip [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Within-snow Variance of Snow Number Concentration', 'axisLabel' => 'Nsp2\_ip / Nsm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nsnowp2_ip ./ nsnowm_ip.^2)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nsnowp2_ip ./ (max(1e-5,nsnowm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Micro Fractions', 'axisLabel' => '[%/100]', 'type' => 'profile', 'lines' =>
