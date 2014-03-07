@@ -32,7 +32,7 @@
 # - file_list/coamps_files : files needed for libclubb_coamps.a
 # - file_list/numerical_recipes_files : Numerical Recipes files for clubb_tuner
 # - file_list/clubb_optional_files: Code in the UNRELEASED_CODE blocks of clubb
-# - file_list/latin_hypercube_files: Code in the LATIN_HYPERCUBE blocks of clubb
+# - file_list/silhs_files: Code in the SILHS blocks of clubb
 # - file_list/clubb_gfdl_activation_files : files needed for libclubb_gfdlact.a
 #
 # These file lists can be empty if those directories are empty due to licensing 
@@ -105,9 +105,9 @@ if [ -e $srcdir/SCM_Activation ]; then
 fi
 
 if [ -e $srcdir/Latin_hypercube ]; then
-	CPPDEFS="${CPPDEFS} -DLATIN_HYPERCUBE"
-	OPT_LIBS="${OPT_LIBS} -llatin_hypercube"
-	LH_LIB="liblatin_hypercube.a"
+	CPPDEFS="${CPPDEFS} -DSILHS"
+	OPT_LIBS="${OPT_LIBS} -lsilhs"
+	LH_LIB="libsilhs.a"
 fi
 
 # Add miscellaneous preprocessor definitions
@@ -115,7 +115,7 @@ fi
 CPPDEFS="${CPPDEFS} -Dradoffline -Dnooverlap -DCLUBB"
 
 # Add all flags together.  These must be linked by order of dependence, so 
-# So liblatin_hypercube comes before libclubb comes before liblapack.
+# So libsilhs comes before libclubb comes before liblapack.
 LDFLAGS="-L$libdir $OPT_LIBS $REQ_LIBS ${LDFLAGS}"
 
 # ------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 fi
 if [ -e $srcdir/Latin_hypercube ]; then
-	ls $srcdir/Latin_hypercube/*.F90 > $dir/file_list/latin_hypercube_files
+	ls $srcdir/Latin_hypercube/*.F90 > $dir/file_list/silhs_files
 fi
 if [ -e $srcdir/COAMPS_micro ]; then
 	ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
@@ -243,8 +243,8 @@ $mkmf -t $bindir/mkmf_template \
   -e $all_files_list -o "${DISABLE_WARNINGS}" $dir/file_list/clubb_gfdl_activation_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/liblatin_hypercube.a -m Make.latin_hypercube -c "${CPPDEFS}" -o "${WARNINGS}" \
-  -e $all_files_list $dir/file_list/latin_hypercube_files
+  -p $libdir/libsilhs.a -m Make.silhs -c "${CPPDEFS}" -o "${WARNINGS}" \
+  -e $all_files_list $dir/file_list/silhs_files
 
 $mkmf -t $bindir/mkmf_template -p $libdir/libclubb_other.a -m Make.clubb_other -c "${CPPDEFS}" \
   -o "${WARNINGS}" -e $all_files_list $dir/file_list/clubb_optional_files \
@@ -282,7 +282,7 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 fi
 
 if [ -e $srcdir/Latin_hypercube ]; then
-	CLUBBStandardsCheck_latin_hypercube="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90"
+	CLUBBStandardsCheck_silhs="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90"
 fi
 
 # ------------------------------------------------------------------------------
@@ -302,7 +302,7 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
 	$CLUBBStandardsCheck_unreleased_cases
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_micro/*.F90
-	$CLUBBStandardsCheck_latin_hypercube
+	$CLUBBStandardsCheck_silhs
 
 libclubb_param.a:
 	cd $objdir; \$(MAKE) -f Make.clubb_param
@@ -328,10 +328,10 @@ libclubb_mg.a: libclubb_param.a libclubb_KK_micro.a
 libclubb_gfdlact.a: 
 	cd $objdir; \$(MAKE) -f Make.clubb_gfdlact
 
-liblatin_hypercube.a: libclubb_param.a libclubb_KK_micro.a libmicrophys_utils.a
-	cd $objdir; \$(MAKE) -f Make.latin_hypercube
+libsilhs.a: libclubb_param.a libclubb_KK_micro.a libmicrophys_utils.a
+	cd $objdir; \$(MAKE) -f Make.silhs
 
-libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a liblatin_hypercube.a
+libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a libsilhs.a
 	cd $objdir; \$(MAKE) -f Make.clubb_other
 
 clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB

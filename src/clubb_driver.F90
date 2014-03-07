@@ -179,7 +179,7 @@ module clubb_driver
     use parameters_microphys, only: &
         Nc0_in_cloud    ! Variable(s)
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
     use parameters_microphys, only: &
       LH_microphys_type,     & ! Variable(s)
       LH_microphys_disabled, &
@@ -645,10 +645,10 @@ module clubb_driver
 #else
       call write_text( "-DUNRELEASED_CODE disabled", l_write_to_file, iunit )
 #endif
-#ifdef LATIN_HYPERCUBE
-      call write_text( "-DLATIN_HYPERCUBE enabled", l_write_to_file, iunit )
+#ifdef SILHS
+      call write_text( "-DSILHS enabled", l_write_to_file, iunit )
 #else
-      call write_text( "-DLATIN_HYPERCUBE disabled", l_write_to_file, iunit )
+      call write_text( "-DSILHS disabled", l_write_to_file, iunit )
 #endif
 #ifdef nooverlap
       call write_text( "-Dnooverlap enabled", l_write_to_file, iunit )
@@ -961,7 +961,7 @@ module clubb_driver
 
       if ( fatal_error( err_code ) ) return
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
       if ( LH_microphys_type /= LH_microphys_disabled ) then
         call genrand_init( put=LH_seed )
       end if
@@ -1061,7 +1061,7 @@ module clubb_driver
     end if
   
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
     if ( LH_microphys_type /= LH_microphys_disabled ) then
 
       ! Setup 2D output of all subcolumns (if enabled)
@@ -1070,7 +1070,7 @@ module clubb_driver
              gr%zt, time_initial  )
 
     end if
-#endif /*LATIN_HYPERCUBE*/
+#endif /* SILHS */
 
     ! Time integration
     ! Call advance_clubb_core once per each statistics output time
@@ -1275,7 +1275,7 @@ module clubb_driver
 
       endif ! not micro_scheme == "none"
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
       !----------------------------------------------------------------
       ! Compute subcolumns if enabled
       !----------------------------------------------------------------
@@ -1342,7 +1342,7 @@ module clubb_driver
       X_mixt_comp_all_levs = -999
       LH_sample_point_weights = -999._core_rknd
       if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
-#endif /* LATIN_HYPERCUBE */
+#endif /* SILHS */
 
       !----------------------------------------------------------------
       ! Compute Microphysics
@@ -1468,7 +1468,7 @@ module clubb_driver
 
     call stats_finalize( )
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
     if ( LH_microphys_type /= LH_microphys_disabled ) then
       call latin_hypercube_2D_close( )
       call cleanup_latin_hypercube_arrays( )

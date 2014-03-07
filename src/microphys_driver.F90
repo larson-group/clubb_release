@@ -984,7 +984,7 @@ module microphys_driver
     use mg_micro_driver_module, only: &
         mg_microphys_driver
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
     use latin_hypercube_driver_module, only: &
         LH_microphys_driver ! Procedure
 
@@ -993,7 +993,7 @@ module microphys_driver
 !     X_mixt_comp_all_levs, &
 !     LH_rt, LH_thl
 
-#endif /*LATIN_HYPERCUBE*/
+#endif /* SILHS */
 
     use ice_dfsn_module, only: & 
         ice_dfsn ! Procedure(s)
@@ -1571,7 +1571,7 @@ module microphys_driver
       end if
  
       if ( LH_microphys_type /= LH_microphys_disabled ) then
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
         call LH_microphys_driver &
              ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
@@ -1590,7 +1590,7 @@ module microphys_driver
           rcm_mc(1) = + LH_rt(1,1) + LH_thl(1,1) &
             + LH_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
         end if
-#endif /* LATIN_HYPERCUBE */
+#endif /* SILHS */
         call stats_accumulate_LH_tend( hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc )
 
@@ -1675,7 +1675,7 @@ module microphys_driver
 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
         call LH_microphys_driver &
              ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
@@ -1688,8 +1688,8 @@ module microphys_driver
                wpthlp_mc, rtpthlp_mc, & ! Out               
                KK_local_micro_driver ) ! Procedure
 #else
-        stop "Latin hypercube was not enabled at compile time"
-#endif /* LATIN_HYPERCUBE */
+        stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
+#endif /* SILHS */
 
         call stats_accumulate_LH_tend( hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc )

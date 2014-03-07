@@ -20,7 +20,7 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
-#ifdef LATIN_HYPERCUBE
+#ifdef SILHS
   public :: LH_subcolumn_generator, LH_microphys_driver, latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_LH, LH_subcolumn_generator_mod
 
@@ -2486,6 +2486,6 @@ module latin_hypercube_driver_module
     return
   end subroutine stats_accumulate_uniform_LH
 
-#endif /*LATIN_HYPERCUBE*/
+#endif /* SILHS */
 
 end module latin_hypercube_driver_module
