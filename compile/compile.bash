@@ -104,7 +104,7 @@ if [ -e $srcdir/SCM_Activation ]; then
 	GFDLACT_LIB="libclubb_gfdlact.a"
 fi
 
-if [ -e $srcdir/Latin_hypercube ]; then
+if [ -e $srcdir/SILHS ]; then
 	CPPDEFS="${CPPDEFS} -DSILHS"
 	OPT_LIBS="${OPT_LIBS} -lsilhs"
 	LH_LIB="libsilhs.a"
@@ -169,8 +169,8 @@ cd $dir
 if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	ls $srcdir/Benchmark_cases/Unreleased_cases/*.F90 > $dir/file_list/clubb_optional_files
 fi
-if [ -e $srcdir/Latin_hypercube ]; then
-	ls $srcdir/Latin_hypercube/*.F90 > $dir/file_list/silhs_files
+if [ -e $srcdir/SILHS ]; then
+	ls $srcdir/SILHS/*.F90 > $dir/file_list/silhs_files
 fi
 if [ -e $srcdir/COAMPS_micro ]; then
 	ls $srcdir/COAMPS_micro/*.F > $dir/file_list/clubb_coamps_files
@@ -281,8 +281,8 @@ if [ -e $srcdir/Benchmark_cases/Unreleased_cases ]; then
 	CLUBBStandardsCheck_unreleased_cases="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/Unreleased_cases/*.F90"
 fi
 
-if [ -e $srcdir/Latin_hypercube ]; then
-	CLUBBStandardsCheck_silhs="-perl ../utilities/CLUBBStandardsCheck.pl ../src/Latin_hypercube/*.F90"
+if [ -e $srcdir/SILHS ]; then
+	CLUBBStandardsCheck_silhs="-perl ../utilities/CLUBBStandardsCheck.pl ../src/SILHS/*.F90"
 fi
 
 # ------------------------------------------------------------------------------
