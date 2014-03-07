@@ -2063,7 +2063,8 @@ module stats_subs
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_LH_tend( LH_hydromet_mc, LH_thlm_mc, LH_rvm_mc, LH_rcm_mc )
+  subroutine stats_accumulate_LH_tend( LH_hydromet_mc, LH_Ncm_mc, &
+                                       LH_thlm_mc, LH_rvm_mc, LH_rcm_mc )
 ! Description:
 !   Compute stats for the tendency of latin hypercube sample points.
 
@@ -2078,7 +2079,7 @@ module stats_subs
 
     use array_index, only:  & 
       iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm
 
     use stats_variables, only: &
       iLH_rrainm_mc, & ! Variable(s)
@@ -2112,6 +2113,9 @@ module stats_subs
       AKm_rcm, &
       AKm_rcc
 
+    use parameters_microphys, only: &
+        l_predictnc  ! Variable(s)
+
     use stats_type, only: & 
         stat_update_var ! Procedure(s)
 
@@ -2129,6 +2133,7 @@ module stats_subs
       LH_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      LH_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
       LH_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
       LH_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
       LH_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
@@ -2139,8 +2144,8 @@ module stats_subs
       call stat_update_var( iLH_rcm_mc, LH_rcm_mc, LH_zt )
       call stat_update_var( iLH_rvm_mc, LH_rvm_mc, LH_zt )
 
-      if ( iiNcm > 0 ) then
-        call stat_update_var( iLH_Ncm_mc, LH_hydromet_mc(:,iiNcm), LH_zt )
+      if ( l_predictnc ) then
+        call stat_update_var( iLH_Ncm_mc, LH_Ncm_mc, LH_zt )
       end if
 
       if ( iirrainm > 0 ) then

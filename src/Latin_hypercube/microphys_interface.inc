@@ -6,7 +6,7 @@ interface
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
                             dzq, rcm, Nc, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
-                            hydromet_mc, hydromet_vel, &
+                            hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rrainm_auto, rrainm_accr, rrainm_evap, &
                             Nrm_auto, Nrm_evap, microphys_stats_vars )
@@ -61,6 +61,7 @@ interface
       hydromet_vel   ! Hydrometeor sedimentation velocity [m/s]
 
     real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
+      Ncm_mc, & ! Time tendency of cloud droplet concentration  [num/kg/s]
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]

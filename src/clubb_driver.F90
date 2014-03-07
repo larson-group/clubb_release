@@ -48,7 +48,7 @@ module clubb_driver
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       thvm, Lscale, Kh_zm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
-      hydromet, wphydrometp, thlm_ref, rtm_ref, &
+      hydromet, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
 
@@ -275,9 +275,6 @@ module clubb_driver
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter ! Type(s)
 
-    use array_index, only: &
-        iiNcm ! Variable(s)
-
     use constants_clubb, only: &
         cloud_frac_min
 
@@ -418,8 +415,7 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
-      Nrm,    & ! Overall mean rain drop concentration               [num/kg]
-      Ncm       ! Overall mean cloud droplet concentration           [num/kg]
+      Nrm       ! Overall mean rain drop concentration               [num/kg]
 
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
       corr_array_1, & ! Correlation matrix for the first pdf component    [-]
@@ -899,7 +895,6 @@ module clubb_driver
     ! Allocate hydrometeor variables.
     allocate( rrainm(gr%nz) )
     allocate( Nrm(gr%nz) )
-    allocate( Ncm(gr%nz) )
 
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(gr%nz) )
@@ -961,7 +956,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                              & ! Intent(inout)
              rtm_ref, thlm_ref,                                 & ! Intent(inout) 
              um_ref, vm_ref,                                    & ! Intent(inout)
-             hydromet, Nccnm,                                   & ! Intent(inout)
+             Ncm, Nccnm,                                        & ! Intent(inout)
              sclrm, edsclrm, err_code )                           ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -989,7 +984,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
              rtm_ref, thlm_ref,                                  & ! Intent(inout) 
              um_ref, vm_ref,                                     & ! Intent(inout)
-             hydromet, Nccnm,                                    & ! Intent(inout)
+             Ncm, Nccnm,                                         & ! Intent(inout)
              sclrm, edsclrm, err_code )                            ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -1266,14 +1261,6 @@ module clubb_driver
 
          call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
-         ! Since Ncm is still part of the hydromet array (for now), unpack Ncm
-         ! before the call to setup_pdf_parameters.
-         if ( iiNcm > 0 ) then
-            Ncm = hydromet(:,iiNcm)
-         else
-            Ncm = Nc0_in_cloud / rho
-         endif
-
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, wm_zt, rho, &   ! Intent(in)
                                     wp2_zt, Ncm, Nc0_in_cloud, rcm, cloud_frac, & ! Intent(in)
@@ -1337,7 +1324,7 @@ module clubb_driver
         endif
 
         if ( l_predictnc ) then
-           Nc_in_cloud = hydromet(:,iiNcm) / max( cloud_frac, cloud_frac_min )
+           Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
         else
            Nc_in_cloud = Nc0_in_cloud / rho
         endif
@@ -1371,7 +1358,7 @@ module clubb_driver
              d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
              hydromet_pdf_params, &                                     ! Intent(in)
-             Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
+             Nccnm, hydromet, wphydrometp, Ncm, wpNcp,  &               ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
              wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
              rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
@@ -1505,7 +1492,7 @@ module clubb_driver
                thv_ds_zm, thv_ds_zt, &
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
-               hydromet, Nccnm, &
+               Ncm, Nccnm, &
                sclrm, edsclrm, err_code )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -1522,8 +1509,7 @@ module clubb_driver
 
     use parameters_model, only:  & 
         sclr_dim, &
-        edsclr_dim, &
-        hydromet_dim
+        edsclr_dim
 
     use parameters_microphys, only: &
         Nc0_in_cloud,  & ! Variable(s)
@@ -1553,9 +1539,6 @@ module clubb_driver
 
     use error_code, only: &
       clubb_no_error ! Variable(s)
-
-    use array_index, only: &
-        iiNcm ! Variable(s)
 
     ! Joshua Fasching
     ! March 2008
@@ -1632,8 +1615,8 @@ module clubb_driver
       rtm_ref,         & ! Initial profile of rtm              [kg/kg]
       thlm_ref           ! Initial profile of thlm             [K]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
-      hydromet ! Hydrometeor species    [kg/kg] or [#/kg]
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      Ncm    ! Cloud droplet concentration    [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
@@ -1702,13 +1685,13 @@ module clubb_driver
     case ( "morrison", "morrison_gettelman" )
       if ( l_predictnc ) then
 
-        hydromet(2:gr%nz-1,iiNcm) = Nc0_in_cloud / rho(2:gr%nz-1)
+        Ncm(2:gr%nz-1) = Nc0_in_cloud / rho(2:gr%nz-1)
 
         ! Upper boundary condition
-        hydromet(gr%nz,iiNcm) = 0._core_rknd
+        Ncm(gr%nz) = 0._core_rknd
 
         ! Lower boundary condition
-        hydromet(1,iiNcm) = 0._core_rknd
+        Ncm(1) = 0._core_rknd
 
       end if
 

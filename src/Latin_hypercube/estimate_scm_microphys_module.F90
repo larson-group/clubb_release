@@ -17,7 +17,7 @@ module estimate_scm_microphys_module
                X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
                dzq, hydromet, rcm, Nc_in_cloud,  &
-               lh_hydromet_mc, lh_hydromet_vel, &
+               lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
                lh_wpthlp_mc, lh_rtpthlp_mc, &
@@ -144,6 +144,7 @@ module estimate_scm_microphys_module
       lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      lh_Ncm_mc,   & ! LH estimate of time tendency of cloud droplet concentration  [num/kg/s]
       lh_rcm_mc,   & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc,   & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc,  & ! LH estimate of time tendency of liquid potential temperature [K/s]
@@ -165,6 +166,7 @@ module estimate_scm_microphys_module
       lh_rrainm_evap_all,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
       lh_Nrm_auto_all,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
       lh_Nrm_evap_all,     & ! LH_est of time tendency of Nrm evaporation              [#/kg/s]
+      lh_Ncm_mc_all,       & ! LH est of time tendency of cloud droplet concentration  [#/kg/s]
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
@@ -264,6 +266,8 @@ module estimate_scm_microphys_module
     lh_hydromet_mc_all(:,:,:) = 0._core_rknd
 
     lh_hydromet_vel_all(:,:,:) = 0._core_rknd
+
+    lh_Ncm_mc_all(:,:) = 0._core_rknd
 
     lh_rcm_mc_all(:,:) = 0._core_rknd
 
@@ -370,6 +374,7 @@ module estimate_scm_microphys_module
              dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
              hydromet_all_points, LH_sample_point_weights(sample), & ! In
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
+             lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
              lh_rrainm_auto_all(:,sample), lh_rrainm_accr_all(:,sample), &
              lh_rrainm_evap_all(:,sample), &
@@ -387,6 +392,7 @@ module estimate_scm_microphys_module
                 * LH_sample_point_weights(sample)
         lh_hydromet_mc_all(:,:,sample) = lh_hydromet_mc_all(:,:,sample) &
                 * LH_sample_point_weights(sample)
+        lh_Ncm_mc_all(:,sample) = lh_Ncm_mc_all(:,sample) * LH_sample_point_weights(sample)
         lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * LH_sample_point_weights(sample)
         lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * LH_sample_point_weights(sample)
         lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * LH_sample_point_weights(sample)
@@ -422,6 +428,8 @@ module estimate_scm_microphys_module
     end forall
 
     forall( k = 1:nz )
+      lh_Ncm_mc(k) = sum( lh_Ncm_mc_all(k,:) ) / &
+                                     real( n_micro_calls, kind=core_rknd )
       lh_rcm_mc(k) = sum( lh_rcm_mc_all(k,:) ) / &
                                      real( n_micro_calls, kind=core_rknd )
       lh_rvm_mc(k) = sum( lh_rvm_mc_all(k,:) ) / &

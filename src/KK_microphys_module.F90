@@ -42,7 +42,7 @@ module KK_microphys_module
                                     w_std_dev, dzq, rcm, &
                                     Ncm, s_mellor, rvm, &
                                     hydromet, lh_stat_sample_weight, &
-                                    hydromet_mc, hydromet_vel, &
+                                    hydromet_mc, hydromet_vel, Ncm_mc, &
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy, &
                                     KK_Nrm_auto_tndcy, KK_Nrm_evap_tndcy, &
@@ -154,6 +154,7 @@ module KK_microphys_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      Ncm_mc,  & ! Time tendency of cloud droplet concentration  [num/kg/s]
       rcm_mc,  & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
@@ -212,6 +213,10 @@ module KK_microphys_module
                         KK_Nrm_auto_tndcy, &
                         l_src_adj_enabled, l_evap_adj_enabled )
 
+    ! The time tendency of cloud droplet concentration is only present because
+    ! of Latin Hypercube interface.  Ncm_mc is needed for other microphysics
+    ! schemes, but not KK.  Simply set Ncm_mc to 0.
+    Ncm_mc = zero
 
     ! Do not use l_src_adj or l_evap_adj when l_silhs_KK_convergence_adj_mean is
     ! true. We need to do this to get Latin hypercube to converge to KK

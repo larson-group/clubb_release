@@ -3934,8 +3934,7 @@ module setup_clubb_pdf_params
         iirgraupelm, &
         iiNsnowm,    & 
         iiNim,       &
-        iiNgraupelm, &
-        iiNcm          ! Note: Ncm is not part of CLUBB's PDF.
+        iiNgraupelm
 
     implicit none
 
@@ -3965,35 +3964,29 @@ module setup_clubb_pdf_params
     ! Count the number of precipitating hydrometeors and set indices for
     ! precipitating hydrometeors.
     do i = 1, hydromet_dim, 1
-       if ( i /= iiNcm ) then
 
-          ! The hydrometeor is a precipitating hydrometeor, which does not
-          ! include N_c.
+       ! Iterate the precipitating hydrometeor index.
+       idx = idx + 1
 
-          ! Iterate the precipitating hydrometeor index.
-          idx = idx + 1
-
-          ! Assign indices to each hydrometeor in the precipitating hydrometeor
-          ! arrays.
-          if ( i == iirrainm ) then
-             iirr = idx
-          elseif ( i == iiNrm ) then
-             iiNr = idx
-          elseif ( i == iirsnowm ) then
-             iirs = idx
-          elseif ( i == iiricem ) then
-             iiri = idx
-          elseif ( i == iirgraupelm ) then
-             iirg = idx
-          elseif ( i == iiNsnowm ) then
-             iiNs = idx
-          elseif ( i == iiNim ) then
-             iiNi = idx
-          elseif ( i == iiNgraupelm ) then
-             iiNg = idx
-          endif
-
-       endif ! i /= iiNcm
+       ! Assign indices to each hydrometeor in the precipitating hydrometeor
+       ! arrays.
+       if ( i == iirrainm ) then
+          iirr = idx
+       elseif ( i == iiNrm ) then
+          iiNr = idx
+       elseif ( i == iirsnowm ) then
+          iirs = idx
+       elseif ( i == iiricem ) then
+          iiri = idx
+       elseif ( i == iirgraupelm ) then
+          iirg = idx
+       elseif ( i == iiNsnowm ) then
+          iiNs = idx
+       elseif ( i == iiNim ) then
+          iiNi = idx
+       elseif ( i == iiNgraupelm ) then
+          iiNg = idx
+       endif
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -4019,9 +4012,6 @@ module setup_clubb_pdf_params
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use array_index, only: & 
-        iiNcm  ! Variable(s); Note: Ncm is not part of CLUBB's PDF.
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -4061,24 +4051,20 @@ module setup_clubb_pdf_params
     ! Loop over all hydrometeors and set up precipitating hydrometeor arrays.
     do i = 1, hydromet_dim, 1
 
-       if ( i /= iiNcm ) then
+       ! The hydrometeor is a precipitating hydrometeor, which does not
+       ! include N_c or N_cn. 
 
-          ! The hydrometeor is a precipitating hydrometeor, which does not
-          ! include N_c or N_cn. 
+       ! Iterate the precipitating hydrometeor index.
+       idx = idx + 1
 
-          ! Iterate the precipitating hydrometeor index.
-          idx = idx + 1
+       ! Mean of hydrometeor (overall)
+       hmm(:,idx) = hydromet(:,i)
 
-          ! Mean of hydrometeor (overall)
-          hmm(:,idx) = hydromet(:,i)
+       ! Covariance of vertical velocity and a hydrometeor
+       wphmp(:,idx) = wphydrometp(:,i)
 
-          ! Covariance of vertical velocity and a hydrometeor
-          wphmp(:,idx) = wphydrometp(:,i)
-
-          ! Hydrometeor name from hydrometeor list
-          hm_list(idx) = hydromet_list(i)
-
-       endif ! i /= iiNcm
+       ! Hydrometeor name from hydrometeor list
+       hm_list(idx) = hydromet_list(i)
 
     enddo ! i = 1, hydromet_dim, 1
 

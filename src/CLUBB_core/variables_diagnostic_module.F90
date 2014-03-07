@@ -126,6 +126,12 @@ module variables_diagnostic_module
     wphydrometp    ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
 !$omp threadprivate(hydromet,wphydrometp)
 
+! Cloud droplet concentration arrays
+  real( kind = core_rknd ), allocatable, dimension(:), public :: &
+    Ncm,   & ! Mean cloud droplet concentration, <N_c> (thermo. levels) [num/kg]
+    wpNcp    ! Covariance of w and N_c, <w'N_c'> (momentum levels) [(m/s)(#/kg)]
+!$omp threadprivate(Ncm,wpNcp)
+
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Nccnm     ! Cloud condensation nuclei concentration (COAMPS/MG)   [num/kg]
 !$omp threadprivate(Nccnm)
@@ -314,6 +320,8 @@ module variables_diagnostic_module
     allocate( Nccnm(1:nz) )
     allocate( hydromet(1:nz,1:hydromet_dim) )    ! All hydrometeor mean fields
     allocate( wphydrometp(1:nz,1:hydromet_dim) ) ! All < w'h_m' > fields
+    allocate( Ncm(1:nz) )   ! Mean cloud droplet concentration, < N_c >
+    allocate( wpNcp(1:nz) ) ! < w'N_c' >
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     allocate( lh_AKm(1:nz) )    ! Kessler ac estimate
@@ -493,6 +501,10 @@ module variables_diagnostic_module
       wphydrometp(1:nz,i) = 0.0_core_rknd
     end do
 
+    ! Cloud droplet concentration
+    Ncm(1:nz)   = 0.0_core_rknd
+    wpNcp(1:nz) = 0.0_core_rknd
+
 
     ! Variables for Latin hypercube microphysics.  Vince Larson 22 May 2005
     lh_AKm   = 0.0_core_rknd  ! Kessler ac estimate
@@ -611,7 +623,8 @@ module variables_diagnostic_module
 
     deallocate( hydromet )     ! Hydrometeor mean fields
     deallocate( wphydrometp )  ! < w'h_m' > fields
-
+    deallocate( Ncm )          ! Mean cloud droplet concentration, < N_c >
+    deallocate( wpNcp )        ! < w'N_c' >
 
     ! Interpolated variables for tuning
     deallocate( wp2_zt )     ! w'^2 on thermo. grid

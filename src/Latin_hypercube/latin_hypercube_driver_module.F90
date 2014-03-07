@@ -1066,7 +1066,7 @@ module latin_hypercube_driver_module
                pdf_params, p_in_Pa, exner, rho, &
                rcm, w_std_dev, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
-               LH_hydromet_mc, LH_hydromet_vel, &
+               LH_hydromet_mc, LH_hydromet_vel, LH_Ncm_mc, &
                LH_rcm_mc, LH_rvm_mc, LH_thlm_mc, &
                LH_rtp2_mc, LH_thlp2_mc, LH_wprtp_mc, &
                LH_wpthlp_mc, LH_rtpthlp_mc, &
@@ -1161,6 +1161,7 @@ module latin_hypercube_driver_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      LH_Ncm_mc,    & ! LH estimate of time tendency of cloud droplet concentration  [num/kg/s]
       LH_rcm_mc,    & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       LH_rvm_mc,    & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       LH_thlm_mc,   & ! LH estimate of time tendency of liquid potential temperature [K/s]
@@ -1190,7 +1191,7 @@ module latin_hypercube_driver_module
            X_nl_all_levs, LH_sample_point_weights, &                 ! Intent(in) 
            p_in_Pa, exner, rho, cloud_frac, w_std_dev, &             ! Intent(in)
            delta_zt, hydromet, rcm, Nc_in_cloud, &                   ! Intent(in)
-           lh_hydromet_mc, lh_hydromet_vel, &                        ! Intent(out)
+           lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
            LH_rtp2_mc, LH_thlp2_mc, LH_wprtp_mc, &                   ! Intent(out)
            LH_wpthlp_mc, LH_rtpthlp_mc, &                            ! Intent(out)

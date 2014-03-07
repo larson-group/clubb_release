@@ -14,7 +14,7 @@ module morrison_micro_driver_module
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
                dzq, rcm, Ncm, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
-               hydromet_mc, hydromet_vel_zt, &
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
                Nrm_auto, Nrm_evap, microphys_stats_vars )
@@ -187,7 +187,7 @@ module morrison_micro_driver_module
 
     use array_index, only:  & 
       iirrainm, iirsnowm, iiricem, iirgraupelm, &
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm, iiNcm
+      iiNrm, iiNsnowm, iiNim, iiNgraupelm
 
     use constants_clubb, only: &
       sec_per_day
@@ -259,7 +259,9 @@ module morrison_micro_driver_module
       hydromet_mc,  & ! Hydrometeor time tendency          [(units vary)/s]
       hydromet_vel_zt ! Hydrometeor sedimentation velocity [m/s]
 
-    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      Ncm_mc    ! Cloud droplet concentration time tendency    [num/kg/s]
+
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -517,8 +519,8 @@ module morrison_micro_driver_module
     rvm_mc(1:nz) = 0.0_core_rknd
     hydromet_mc(1:nz,:) = 0.0_core_rknd
     hydromet_sten(1:nz,:) = 0.0
+    Ncm_mc(1:nz) = 0.0_core_rknd
     rcm_sten = 0.0
-    Ncm_mc_r4 = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0
@@ -626,6 +628,7 @@ module morrison_micro_driver_module
 
 
     hydromet_mc_r4 = real( hydromet_mc )
+    Ncm_mc_r4 = real( Ncm_mc )
     rcm_mc_r4 = real( rcm_mc )
     rvm_mc_r4 = real( rvm_mc )
     P_in_pa_r4 = real( P_in_Pa )
@@ -718,17 +721,16 @@ module morrison_micro_driver_module
     ! This done because the hydromet_mc arrays that are produced by
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
-      if ( i == iiNcm ) then
-        hydromet_mc(2:,iiNcm) = ( real( Ncm_r4(2:), kind = core_rknd ) - &
-                                hydromet(2:,iiNcm) ) / real( dt, kind=core_rknd )
-      else
-        hydromet_mc(2:,i) = ( real( hydromet_r4(2:,i), kind = core_rknd ) - &
-                              hydromet(2:,i)  ) / real( dt, kind = core_rknd )
-      end if
+       hydromet_mc(2:,i) = ( real( hydromet_r4(2:,i), kind = core_rknd ) - &
+                             hydromet(2:,i) ) / real( dt, kind = core_rknd )
     end do
 
-
     hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
+
+    Ncm_mc(2:) = ( real( Ncm_r4(2:), kind = core_rknd ) - Ncm(2:) ) &
+                 / real( dt, kind = core_rknd )
+
+    Ncm_mc(1) = 0.0_core_rknd ! Boundary condition
 
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( real( T_in_K, kind = core_rknd ), exner, &

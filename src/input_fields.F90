@@ -227,7 +227,8 @@ module inputfields
         sigma_sqd_w
 
     use variables_diagnostic_module, only: & 
-        hydromet,  & ! Variable(s)
+        hydromet, & ! Variable(s)
+        Ncm, &
         tau_zm, &
         tau_zt, & 
         ug, & 
@@ -264,7 +265,7 @@ module inputfields
         sec_per_day
 
     use array_index, only:  & 
-        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim, iiNcm
+        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim
 
     use stat_file_utils, only: & 
       LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -275,7 +276,8 @@ module inputfields
       lin_ext_zm_bottom
 
     use parameters_microphys, only: &
-      micro_scheme ! Variable(s)
+        micro_scheme, & ! Variable(s)
+        l_predictnc
 
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
@@ -500,7 +502,7 @@ module inputfields
            ( l_input_Ncm, stat_files(clubb_zt), "Ncm", gr%nz, timestep, &
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_Ncm ) then
-        hydromet(1:gr%nz,iiNcm) = tmp1(1:gr%nz)
+         Ncm(1:gr%nz) = tmp1(1:gr%nz)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -515,7 +517,7 @@ module inputfields
            ( l_input_Nim, stat_files(clubb_zt), "Nim", gr%nz, timestep, &
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_Nim ) then
-        hydromet(1:gr%nz, iiNcm) = tmp1(1:gr%nz)
+        hydromet(1:gr%nz, iiNim) = tmp1(1:gr%nz)
       end if
 
       l_fatal_error = l_fatal_error .or. l_read_error
@@ -1088,7 +1090,7 @@ module inputfields
       temp_Ncm = 0.0_core_rknd! initialize to 0.0
 
       if ( l_input_Ncm ) then
-        if ( iiNcm < 1 ) then
+        if ( .not. l_predictnc ) then
             write(fstderr,*) "Cloud droplet number conc. cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
@@ -1394,7 +1396,7 @@ module inputfields
       end if
 
       if ( l_input_Ncm ) then
-        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiNcm) = &
+        Ncm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm)) = &
                     temp_Ncm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
@@ -2107,8 +2109,8 @@ module inputfields
                    temp_Nrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if( l_input_Ncm .and. iiNcm > 0) then
-        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNcm) = &
+      if ( l_input_Ncm .and. l_predictnc ) then
+        Ncm(k_lowest_zt(sam_file):k_highest_zt(sam_file)) = &
                    temp_Ncm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
