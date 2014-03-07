@@ -1375,6 +1375,12 @@ module microphys_driver
        hydromet_vel_covar_zt_impc = zero
        hydromet_vel_covar_zt_expc = zero
     endif
+
+    ! Initialization of things
+    Ncm_vel_covar = zero
+    Ncm_vel_covar_zt = zero
+    Ncm_vel = zero
+    Ncm_vel_zt = zero
     Ncm_vel_covar_zt_impc = zero
     Ncm_vel_covar_zt_expc = zero
 
