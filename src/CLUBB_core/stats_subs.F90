@@ -2551,10 +2551,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
     do kvar = 1, stats_grid%kk
 
       l_proper_sample = ( stats_grid%n(1,1,kvar,ivar) == 0 .or. &
-                          stats_grid%n(1,1,kvar,ivar) == floor(stats_tout/stats_tsamp) .or. &
-                          ( stats_grid%f%var(ivar)%l_silhs .and. &
-                                  stats_grid%n(1,1,kvar,ivar) == LH_microphys_calls * &
-                                        floor( stats_tout/stats_tsamp ) ) )
+                          stats_grid%n(1,1,kvar,ivar) == floor(stats_tout/stats_tsamp) )
 
       if ( .not. l_proper_sample ) then
 
