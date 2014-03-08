@@ -88,11 +88,6 @@ module microphys_driver
 
 !$omp threadprivate( l_hydromet_sed )
 
-  logical, private :: &
-    l_Ncm_sed    ! Flag to sediment mean cloud droplet concentration
-
-!$omp threadprivate( l_Ncm_sed )
-
   logical :: l_gfdl_activation ! Flag for GFDL activation code
 
   private ! Default Scope
@@ -627,8 +622,6 @@ module microphys_driver
       l_hydromet_sed(iiricem)     = .false.
       l_hydromet_sed(iirgraupelm) = .false.
 
-      l_Ncm_sed = .false.
-
       call GRAUPEL_INIT()
 
     case ( "morrison_gettelman" )
@@ -672,7 +665,6 @@ module microphys_driver
       ! Sedimentation is handled within the MG microphysics
       l_hydromet_sed(iiricem) = .false.
       l_hydromet_sed(iiNim)   = .false.
-      l_Ncm_sed = .false.
 
       ! Initialize constants for aerosols
       call ini_microp_aero()
@@ -733,8 +725,6 @@ module microphys_driver
       l_hydromet_sed(iirsnowm)    = .true.
       l_hydromet_sed(iiricem)     = .true.
       l_hydromet_sed(iirgraupelm) = .true.
-
-      l_Ncm_sed = .false.
 
     case ( "khairoutdinov_kogan" )
       if ( l_predictnc ) then
@@ -1252,20 +1242,8 @@ module microphys_driver
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_vel,    & ! Mean N_c sedimentation velocity, <V_Nc> [m/s]
-      Ncm_vel_zt    ! Mean N_c sed. velocity on thermo. levs. [m/s]
-
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_vel_covar,    & ! Covariance of V_Nc & N_c (m-levs)  [(num/kg)(m/s)]
-      Ncm_vel_covar_zt    ! Covariance of V_Nc & N_c (t-levs)  [(num/kg)(m/s)]
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
-      Ncm_vel_covar_zt_expc    ! Exp. comp. <V_Nc'N_c'> t-levs [(num/kg)(m/s)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       delta_zt  ! Difference in thermo. height levels     [m]
@@ -1358,14 +1336,6 @@ module microphys_driver
        hydromet_vel_covar_zt_expc = zero
     endif
 
-    ! Initialization of things
-    Ncm_vel_covar = zero
-    Ncm_vel_covar_zt = zero
-    Ncm_vel = zero
-    Ncm_vel_zt = zero
-    Ncm_vel_covar_zt_impc = zero
-    Ncm_vel_covar_zt_expc = zero
-
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nz, 1
       Kr(k) = c_Krrainm * Kh_zm(k)
@@ -1386,19 +1356,14 @@ module microphys_driver
 
     ! Start Ncm budget to capture Ncm_act term
     if ( l_stats_samp .and. l_predictnc ) then
-       if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
-          call stat_begin_update( iNcm_bt, &
-                                  Ncm / real( dt, kind = core_rknd ), zt )
-       else
-          ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-          ! set to the value of the mean hydrometeor field at k = 2.  Don't
-          ! include budget stats for level k = 1.
-          do k = 2, gr%nz, 1
-             call stat_begin_update_pt( iNcm_bt, k, &
-                                        Ncm(k) &
-                                        / real( dt, kind = core_rknd ), zt )
-          enddo
-       endif
+       ! The mean hydrometeor field at thermodynamic level k = 1 is simply
+       ! set to the value of the mean hydrometeor field at k = 2.  Don't
+       ! include budget stats for level k = 1.
+       do k = 2, gr%nz, 1
+          call stat_begin_update_pt( iNcm_bt, k, &
+                                     Ncm(k) &
+                                     / real( dt, kind = core_rknd ), zt )
+       enddo
     endif ! l_stats_samp and l_predictnc
 
     ! Call GFDL activation code
@@ -1495,8 +1460,6 @@ module microphys_driver
       hydromet_vel(:,:) = zero
       hydromet_vel_zt(:,:) = zero
       Ncm_mc = zero
-      Ncm_vel = zero
-      Ncm_vel_zt = zero
 #ifdef COAMPS_MICRO
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & ! In
@@ -1787,13 +1750,10 @@ module microphys_driver
 
     if ( l_predictnc ) then
 
-       call advance_Ncm( dt, wm_zt, cloud_frac, Kr, &
-                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                         Ncm_mc, Ncm_vel_covar_zt_impc, &
-                         Ncm_vel_covar_zt_expc, &
-                         Ncm, Nc_in_cloud, Ncm_vel_zt, &
-                         wpNcp, Ncm_vel, Ncm_vel_covar, Ncm_vel_covar_zt, &
-                         err_code )
+       call advance_Ncm( dt, wm_zt, cloud_frac, Kr, rho_ds_zm, &
+                         rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                         Ncm, Nc_in_cloud, &
+                         wpNcp, err_code )
 
     endif ! l_predictnc
 
@@ -2307,13 +2267,10 @@ module microphys_driver
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm( dt, wm_zt, cloud_frac, Kr, &
-                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                          Ncm_mc, Ncm_vel_covar_zt_impc, &
-                          Ncm_vel_covar_zt_expc, &
-                          Ncm, Nc_in_cloud, Ncm_vel_zt, &
-                          wpNcp, Ncm_vel, Ncm_vel_covar, Ncm_vel_covar_zt, &
-                          err_code )
+  subroutine advance_Ncm( dt, wm_zt, cloud_frac, Kr, rho_ds_zm, &
+                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
+                          Ncm, Nc_in_cloud, &
+                          wpNcp, err_code )
 
     ! Description:
     ! Advance cloud droplet concentration (Ncm) one model time step.
@@ -2379,45 +2336,50 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
-      Ncm_vel_covar_zt_expc    ! Exp. comp. <V_Nc'N_c'> t-levs [(num/kg)(m/s)]
-
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., < N_c > (thermo. levs.) [num/kg]
-      Nc_in_cloud, & ! Mean (in-cloud) cloud droplet concentration       [num/kg]
-      Ncm_vel_zt     ! Mean N_c sedimenation velocity on thermo. levs.   [m/s]
+      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration       [num/kg]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      wpNcp,   & ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
-      Ncm_vel    ! Mean N_c sedimentation velocity, <V_Nc> (m-levs.)    [m/s]
-
-    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      Ncm_vel_covar,    & ! Covariance of V_Nc & N_c (m-levs)  [(num/kg)(m/s)]
-      Ncm_vel_covar_zt    ! Covariance of V_Nc & N_c (t-levs)  [(num/kg)(m/s)]
+      wpNcp    ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
 
     integer, intent(out) :: &
       err_code    ! Exit code (used to check for errors)
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
+      Ncm_vel_covar_zt_expc    ! Exp. comp. <V_Nc'N_c'> t-levs [(num/kg)(m/s)]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ncm_vel,    & ! Mean N_c sedimentation velocity, <V_Nc> (m-levs.) [m/s]
+      Ncm_vel_zt    ! Mean N_c sedimenation velocity on thermo. levs.   [m/s]
+
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
       lhs    ! Left hand side array
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rhs    ! Right hand side vector
 
-    real( kind = core_rknd ) :: &
-      max_velocity    ! Maximum sedimentation velocity [m/s]
+    ! Sedimentation velocity of cloud droplet concentration is not considered in
+    ! the solution of N_c.
+    logical, parameter :: &
+      l_Ncm_sed = .false. ! Flag to sediment Ncm with sedimentation vel. Ncm_vel
 
     integer :: k    ! Loop index
 
 
-    ! Use the rain water limit, since Morrison has no explicit limit on
-    ! cloud water.  Presumably these numbers are never large.
-    ! -dschanen 28 Sept 2009
-    max_velocity = -9.1_core_rknd ! m/s
+    ! The mean sedimentation velocity of cloud droplet concentration, < V_Nc >,
+    ! and the covariance of N_c sedimentation velocity with N_c, < V_Nc'Nc' >,
+    ! are not used in the advancement of < N_c >.  Sedimentation velocity of N_c
+    ! is not considered in the solution.  However, these variables need to be
+    ! initialized to 0 and passed into microphys_lhs and microphys_rhs.
+    Ncm_vel_covar_zt_impc = zero
+    Ncm_vel_covar_zt_expc = zero
+    Ncm_vel    = zero
+    Ncm_vel_zt = zero
 
     if ( l_stats_samp ) then
 
@@ -2444,29 +2406,6 @@ module microphys_driver
        !endif
 
     endif ! l_stats_samp
-
-    ! Set realistic limits on sedimentation velocities, following the numbers in
-    ! the Morrison microphysics.
-
-    do k = 1, gr%nz
-       if ( clubb_at_least_debug_level( 1 ) ) then
-          ! Print a warning if the velocity has a large magnitude or the
-          ! velocity is in the wrong direction.
-          if ( Ncm_vel_zt(k) < max_velocity .or. &
-               Ncm_vel_zt(k) > zero_threshold ) then
-
-              write(fstderr,*) "Ncm velocity at k = ", k, " = ", &
-                               Ncm_vel_zt(k), "m/s"
-
-          endif
-       endif
-       Ncm_vel_zt(k) = min( max( Ncm_vel_zt(k), max_velocity ), zero_threshold )
-    enddo ! k = 1, gr%nz, 1
-
-    ! Interpolate velocity to the momentum grid for a centered difference
-    ! approximation of the sedimenation term.
-    Ncm_vel = zt2zm( Ncm_vel_zt )
-    Ncm_vel(gr%nz) = zero ! Upper boundary condition
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
@@ -2577,22 +2516,6 @@ module microphys_driver
 
     ! A zero-flux boundary condition at the top of the model is used for N_c.
     wpNcp(gr%nz) = zero
-
-    !!! Calculate the covariance of N_c sedimentation velocity and N_c which
-    !!! is solved semi-implicitly on thermodynamic levels.
-    Ncm_vel_covar_zt = Ncm_vel_covar_zt_impc * Ncm + Ncm_vel_covar_zt_expc
-
-    ! Boundary conditions for < V_Nc'Nc' >|_zt.
-    Ncm_vel_covar_zt(1) = Ncm_vel_covar_zt(2)
-
-    !!! Calculate the covariance of N_c sedimentation velocity and N_c,
-    !!! < V_Nc'N_c' >, by interpolating the thermodynamic level results to
-    !!! momentum levels.
-    Ncm_vel_covar = zt2zm( Ncm_vel_covar_zt )
-
-    ! Boundary conditions for < V_Nc'Nc' >.
-    Ncm_vel_covar(1)     = Ncm_vel_covar_zt(2)
-    Ncm_vel_covar(gr%nz) = zero
 
     ! Statistics for all covariances involving N_c:  < w'N_c' >.
     if ( l_stats_samp ) then
