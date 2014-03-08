@@ -1066,8 +1066,8 @@ module microphys_driver
         iVrsnow, & 
         iVrice, & 
         iVrgraupel, &
-        iVrrprrp, &
-        iVNrpNrp, &
+        !iVrrprrp, &
+        !iVNrpNrp, &
         iprecip_rate_zt, & 
         iFprec
 
@@ -1308,10 +1308,7 @@ module microphys_driver
     real( kind = core_rknd ) :: &
       max_velocity ! Maximum sedimentation velocity [m/s]
 
-    integer :: i, k ! Loop iterators / Array indices
-
-    integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-               ixrm_bt, ixrm_mc, iwpxrp
+    integer :: k    ! Loop index
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
@@ -1330,11 +1327,7 @@ module microphys_driver
     type(microphys_stats_vars_type) :: &
       microphys_stats_vars         ! Statistics variables from microphysics
 
-    character(len=10) :: hydromet_name
-
     logical :: l_latin_hypercube_input
-
-    logical :: l_fill_holes_hm = .true.
 
 !-------------------------------------------------------------------------------
 
@@ -1777,223 +1770,15 @@ module microphys_driver
     !       advection and diffusion.
     !-----------------------------------------------------------------------
 
-    do i = 1, hydromet_dim
-
-
-      ! Set up the stats indices for hydrometeor index i
-      call setup_stats_indices( i,                           & ! Intent(in)
-                                ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
-                                max_velocity )                 ! Intent(inout)
-
-
-      if ( l_stats_samp ) then
-
-        ! Update explicit contributions to the hydrometeor species
-        call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
-
-        ! Save prior value of the hydrometeors for determining total time
-        ! tendency
-        ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
-        ! that is calculated before microphysics is called.  The stat_begin_update
-        ! subroutine is called prior to the GFDL activation code, so we can't call
-        ! it here again. -meyern
-        if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-           call stat_begin_update( ixrm_bt, &
-                                   hydromet(:,i) &
-                                   / real( dt, kind = core_rknd ), zt )
-        else
-           ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-           ! set to the value of the mean hydrometeor field at k = 2.
-           ! Don't include budget stats for level k = 1.
-           do k = 2, gr%nz, 1
-              call stat_begin_update_pt( ixrm_bt, k, &
-                                         hydromet(k,i) &
-                                         / real( dt, kind = core_rknd ), zt )
-           enddo
-        endif
-
-      endif ! l_stats_samp
-
-      ! Set realistic limits on sedimentation velocities, following the
-      ! numbers in the Morrison microphysics.
-
-      do k = 1, gr%nz
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          ! Print a warning if the velocity has a large magnitude or the
-          ! velocity is in the wrong direction.
-          if ( hydromet_vel_zt(k,i) < max_velocity .or. &
-               hydromet_vel_zt(k,i) > zero_threshold ) then
-
-            write(fstderr,*) trim( hydromet_list(i) )// &
-              " velocity at k = ", k, " = ", hydromet_vel_zt(k,i), "m/s"
-          end if
-        end if
-        hydromet_vel_zt(k,i) = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
-      end do ! k = 1..gr%nz
-
-      ! Interpolate velocity to the momentum grid for a centered difference
-      ! approximation of the sedimenation term.
-      hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
-      hydromet_vel(gr%nz,i) = zero ! Upper boundary condition
-
-      ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
-      ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
-      ! A Crank-Nicholson time-stepping scheme is used for this variable.
-      ! This is the portion of the calculation using < h_m > from timestep t. 
-      wphydrometp(1:gr%nz-1,i) &
-      = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
-                               hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                               gr%invrs_dzm(1:gr%nz-1) )
-
-      ! A zero-flux boundary condition at the top of the model is used for
-      ! hydrometeors.
-      wphydrometp(gr%nz,i) = zero
-
-      ! Add implicit terms to the LHS matrix
-      call microphys_lhs( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                          dt, Kr, nu_r_vert_res_dep, wm_zt,            & ! In
-                          hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
-                          hydromet_vel_covar_zt_impc(:,i),             & ! In
-                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
-                          lhs )                                          ! Out
-
-      ! Set up explicit term in the RHS vector
-      call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
-                          hydromet(:,i), hydromet_mc(:,i), &
-                          Kr, nu_r_vert_res_dep, cloud_frac, &
-                          hydromet_vel_covar_zt_expc(:,i), &
-                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                          rhs )
-
-      !!!!! Advance hydrometeor one time step.
-      call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
-                            cloud_frac, &
-                            lhs, rhs, hydromet(:,i), err_code )
-
-
-    enddo ! i = 1, hydromet_dim
-
-    ! Fill holes in hydromet profiles
-    call fill_holes_driver( gr%nz, dt, hydromet_dim,     & ! Intent(in)
-                            l_fill_holes_hm,             & ! Intent(in)
-                            rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
-                            thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
-
-
-    do i = 1, hydromet_dim
-
-      ! Set up the stats indices for hydrometeor at index i
-      call setup_stats_indices( i,                           & ! Intent(in)
-                                ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
-                                max_velocity )                 ! Intent(inout)
-
-      ! Print warning message if any hydrometeor species has a value < 0.
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-         hydromet_name = hydromet_list(i)
-
-         if ( clubb_at_least_debug_level( 1 ) ) then
-            do k = 1, gr%nz
-               if ( hydromet(k,i) < zero_threshold ) then
-                  write(fstderr,*) trim( hydromet_name ) //" < ", &
-                                   zero_threshold, &
-                                   " in advance_microphys at k= ", k
-               endif
-            enddo
-         endif
-
-      endif ! hydromet(:,i) < 0
-
-      ! Lower boundary condition
-      ! Hydrometeors that are below the model lower boundary level have
-      ! sedimented out of the model domain, and is not conserved.
-      if ( hydromet(1,i) < zero_threshold ) then
-         hydromet(1,i) = zero_threshold
-      endif
-
-
-      ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
-      ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
-      ! A Crank-Nicholson time-stepping scheme is used for this variable.
-      ! This is the portion of the calculation using < h_m > from timestep t+1. 
-      wphydrometp(1:gr%nz-1,i) &
-      = wphydrometp(1:gr%nz-1,i) &
-        - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
-                               hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                               gr%invrs_dzm(1:gr%nz-1) )
-
-      ! A zero-flux boundary condition at the top of the model is used for
-      ! hydrometeors.
-      wphydrometp(gr%nz,i) = zero
-
-      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
-      !!! hydrometeor, which is solved semi-implicitly on thermodynamic levels.
-      hydromet_vel_covar_zt(:,i) &
-      = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
-        + hydromet_vel_covar_zt_expc(:,i)
-
-      ! Boundary conditions for < V_hm'hm' >|_zt.
-      hydromet_vel_covar_zt(1,i) = hydromet_vel_covar_zt(2,i)
-
-      !!! Calculate the covariance of hydrometeor sedimentation velocity and the
-      !!! hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic level
-      !!! results to momentum levels.
-      hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
-
-      ! Boundary conditions for < V_hm'hm' >.
-      hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
-      hydromet_vel_covar(gr%nz,i) = zero
-
-      ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
-      ! <V_rr'r_r'>, and <V_Nr'N_r'>.
-      if ( l_stats_samp ) then
-
-         if ( iwpxrp > 0 ) then
-
-            ! Covariance of vertical velocity and the hydrometeor.
-            call stat_update_var( iwpxrp, wphydrometp(:,i), zm )
-
-         endif
-
-         if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
-
-            ! Covariance of sedimentation velocity of r_r and r_r.
-            call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), zm )
-
-         elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
-
-            ! Covariance of sedimentation velocity of N_r and N_r.
-            call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
-
-         endif
-
-      endif ! l_stats_samp
-
-
-      if ( l_stats_samp ) then
-
-         ! Total time tendency
-         if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
-            call stat_end_update( ixrm_bt, &
-                                  hydromet(:,i) &
-                                  / real( dt, kind = core_rknd ), zt )
-         else
-            ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-            ! set to the value of the mean hydrometeor field at k = 2.  Don't
-            ! include budget stats for level k = 1.
-            do k = 2, gr%nz, 1
-               call stat_end_update_pt( ixrm_bt, k, &
-                                        hydromet(k,i) &
-                                        / real( dt, kind = core_rknd ), zt )
-            enddo
-         endif
-
-      endif ! l_stats_samp
-
-
-    enddo ! i=1..hydromet_dim
+    call advance_hydrometeor( dt, wm_zt, exner, cloud_frac, Kr, &
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                              hydromet_mc, hydromet_vel_covar_zt_impc, &
+                              hydromet_vel_covar_zt_expc, &
+                              hydromet, hydromet_vel_zt, &
+                              rvm_mc, thlm_mc, &
+                              wphydrometp, hydromet_vel, &
+                              hydromet_vel_covar, hydromet_vel_covar_zt, &
+                              err_code )
 
     ! Temporarily move this here, prior to the advancing of Ncm.
     if ( l_stats_samp ) then
@@ -2377,6 +2162,376 @@ module microphys_driver
 
     return
   end subroutine advance_microphys
+
+  !=============================================================================
+  subroutine advance_hydrometeor( dt, wm_zt, exner, cloud_frac, Kr, &
+                                  rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
+                                  hydromet_vel_covar_zt_expc, &
+                                  hydromet, hydromet_vel_zt, &
+                                  rvm_mc, thlm_mc, &
+                                  wphydrometp, hydromet_vel, &
+                                  hydromet_vel_covar, hydromet_vel_covar_zt, &
+                                  err_code )
+
+    ! Description:
+    ! Advance each hydrometeor (precipitating hydrometeor) one model time step.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only: & 
+        gr,    & ! Variable(s)
+        zt2zm    ! Procedure(s)
+
+    use constants_clubb, only: & 
+        one_half,       & ! Constant(s)
+        zero,           &
+        zero_threshold, &
+        fstderr
+
+    use parameters_model, only: & 
+        hydromet_dim   ! Variable(s)
+
+    use advance_windm_edsclrm_module, only : &
+        xpwp_fnc  ! Procedure(s)
+
+    use fill_holes, only: &
+        fill_holes_driver,   & ! Procedure(s)
+        setup_stats_indices
+
+    use parameters_tunable, only: & 
+        nu_r_vert_res_dep  ! Variable(s)
+
+    use error_code, only:  & 
+        clubb_at_least_debug_level    ! Procedure(s)
+
+    use clubb_precision, only:  & 
+        time_precision, & ! Variable(s)
+        core_rknd
+
+    use stats_type, only: & 
+        stat_update_var,      & ! Procedure(s)
+        stat_begin_update,    &
+        stat_begin_update_pt, &
+        stat_end_update,      &
+        stat_end_update_pt
+
+    use stats_variables, only: & 
+        zt,           &  ! Variable(s)
+        zm,           & 
+        l_stats_samp
+
+    ! Stats for <V_rr'rr"> and <V_Nr'Nr'>
+    use array_index, only:  & 
+        iirrainm, &! Variable(s)
+        iiNrm
+
+    use stats_variables, only: & 
+        iVrrprrp, & ! Variable(s)
+        iVNrpNrp
+
+    implicit none
+
+    ! Input Variables
+    real( kind = time_precision ), intent(in) ::  & 
+      dt    ! Duration of one model time step         [s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
+      exner,      & ! Exner function, (p/p1000mb)^(Rd/Cp)            [-]
+      cloud_frac, & ! Cloud fraction                                 [-]
+      Kr            ! Eddy diffusivity coefficient for rain          [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: & 
+      hydromet_mc     ! Change in hydrometeors due to microphysics  [units/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
+      hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
+      hydromet,       & ! Hydrometeor mean, <h_m> (thermodynamic levels) [units]
+      hydromet_vel_zt   ! Mean hydrometeor sed. velocity on thermo. levs.  [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
+      thlm_mc    ! Microphysics contributions to liquid potential temp.   [K/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+      wphydrometp,  & ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
+      hydromet_vel    ! Mean hydrometeor sedimentation velocity, <V_hm>    [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(out) :: &
+      hydromet_vel_covar,    & ! Covariance of V_hm & h_m (m-levs)  [units(m/s)]
+      hydromet_vel_covar_zt    ! Covariance of V_hm & h_m (t-levs)  [units(m/s)]
+
+    integer, intent(out) :: &
+      err_code    ! Exit code (used to check for errors)
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs    ! Left hand side array
+
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      rhs    ! Right hand side vector
+
+    character(len=10) :: hydromet_name
+
+    real( kind = core_rknd ) :: &
+      max_velocity    ! Maximum sedimentation velocity [m/s]
+
+    logical :: l_fill_holes_hm = .true.
+
+    integer :: i, k    ! Loop indices
+
+    ! Stat indices
+    integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
+               ixrm_bt, ixrm_mc, iwpxrp
+
+
+    ! Loop over each type of precipitating hydrometeor and advance one model
+    ! time step.
+    do i = 1, hydromet_dim
+
+       ! Set up the stats indices for hydrometeor index i
+       call setup_stats_indices( i,                           & ! Intent(in)
+                                 ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
+                                 ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                 max_velocity )                 ! Intent(inout)
+
+       if ( l_stats_samp ) then
+
+          ! Update explicit contributions to the hydrometeor species
+          call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
+
+          ! Save prior value of the hydrometeors for determining total time
+          ! tendency.
+          if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
+             call stat_begin_update( ixrm_bt, &
+                                     hydromet(:,i) &
+                                     / real( dt, kind = core_rknd ), zt )
+          else
+             ! The mean hydrometeor field at thermodynamic level k = 1 is simply
+             ! set to the value of the mean hydrometeor field at k = 2.
+             ! Don't include budget stats for level k = 1.
+             do k = 2, gr%nz, 1
+                call stat_begin_update_pt( ixrm_bt, k, &
+                                           hydromet(k,i) &
+                                           / real( dt, kind = core_rknd ), zt )
+             enddo
+          endif
+
+       endif ! l_stats_samp
+
+       ! Set realistic limits on sedimentation velocities, following the
+       ! numbers in the Morrison microphysics.
+       do k = 1, gr%nz
+          if ( clubb_at_least_debug_level( 1 ) ) then
+            ! Print a warning if the velocity has a large magnitude or the
+            ! velocity is in the wrong direction.
+             if ( hydromet_vel_zt(k,i) < max_velocity .or. &
+                  hydromet_vel_zt(k,i) > zero_threshold ) then
+
+                write(fstderr,*) trim( hydromet_list(i) )// &
+                                 " velocity at k = ", k, " = ", &
+                                 hydromet_vel_zt(k,i), "m/s"
+             endif
+          endif
+          hydromet_vel_zt(k,i) &
+          = min( max( hydromet_vel_zt(k,i), max_velocity ), zero_threshold )
+       enddo ! k = 1, gr%nz, 1
+
+       ! Interpolate velocity to the momentum grid for a centered difference
+       ! approximation of the sedimenation term.
+       hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
+       hydromet_vel(gr%nz,i) = zero ! Upper boundary condition
+
+       ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
+       ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
+       ! A Crank-Nicholson time-stepping scheme is used for this variable.
+       ! This is the portion of the calculation using < h_m > from timestep t. 
+       wphydrometp(1:gr%nz-1,i) &
+       = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+                                hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
+                                gr%invrs_dzm(1:gr%nz-1) )
+
+       ! A zero-flux boundary condition at the top of the model is used for
+       ! hydrometeors.
+       wphydrometp(gr%nz,i) = zero
+
+       ! Add implicit terms to the LHS matrix
+       call microphys_lhs( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
+                           dt, Kr, nu_r_vert_res_dep, wm_zt,            & ! In
+                           hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
+                           hydromet_vel_covar_zt_impc(:,i),             & ! In
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
+                           lhs )                                          ! Out
+
+       ! Set up explicit term in the RHS vector
+       call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
+                           hydromet(:,i), hydromet_mc(:,i), &
+                           Kr, nu_r_vert_res_dep, cloud_frac, &
+                           hydromet_vel_covar_zt_expc(:,i), &
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           rhs )
+
+       !!!!! Advance hydrometeor one time step.
+       call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
+                             cloud_frac, &
+                             lhs, rhs, hydromet(:,i), err_code )
+
+    enddo ! i = 1, hydromet_dim, 1
+
+    ! Now that all precipitating hydrometeors have been advanced, fill holes in
+    ! hydromet profiles.
+    call fill_holes_driver( gr%nz, dt, hydromet_dim,     & ! Intent(in)
+                            l_fill_holes_hm,             & ! Intent(in)
+                            rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
+                            thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
+
+    ! Loop over each type of precipitating hydrometeor and calculate hydrometeor
+    ! covariances (<w'hm'> and <V_hm'hm'>) and other quantities requiring the
+    ! value of hydromet (<hm>) from the (t+1) timestep.
+    do i = 1, hydromet_dim
+
+       ! Set up the stats indices for hydrometeor at index i
+       call setup_stats_indices( i,                           & ! Intent(in)
+                                 ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
+                                 ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                 max_velocity )                 ! Intent(inout)
+
+       ! Print warning message if any hydrometeor species has a value < 0.
+       if ( any( hydromet(:,i) < zero_threshold ) ) then
+
+          hydromet_name = hydromet_list(i)
+
+          if ( clubb_at_least_debug_level( 1 ) ) then
+             do k = 1, gr%nz
+                if ( hydromet(k,i) < zero_threshold ) then
+                   write(fstderr,*) trim( hydromet_name ) //" < ", &
+                                    zero_threshold, &
+                                    " in advance_microphys at k= ", k
+                endif
+             enddo
+          endif
+
+       endif ! hydromet(:,i) < 0
+
+       ! Lower boundary condition
+       ! Hydrometeors that are below the model lower boundary level have
+       ! sedimented out of the model domain, and is not conserved.
+       if ( hydromet(1,i) < zero_threshold ) then
+          hydromet(1,i) = zero_threshold
+       endif
+
+       ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
+       ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
+       ! A Crank-Nicholson time-stepping scheme is used for this variable.
+       ! This is the portion of the calculation using < h_m > from timestep t+1.
+       wphydrometp(1:gr%nz-1,i) &
+       = wphydrometp(1:gr%nz-1,i) &
+         - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+                                hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
+                                gr%invrs_dzm(1:gr%nz-1) )
+
+       ! A zero-flux boundary condition at the top of the model is used for
+       ! hydrometeors.
+       wphydrometp(gr%nz,i) = zero
+
+       !!! Calculate the covariance of hydrometeor sedimentation velocity and
+       !!! the hydrometeor, which is solved semi-implicitly on thermodynamic
+       !!! levels.
+       hydromet_vel_covar_zt(:,i) &
+       = hydromet_vel_covar_zt_impc(:,i) * hydromet(:,i) &
+         + hydromet_vel_covar_zt_expc(:,i)
+
+       ! Boundary conditions for < V_hm'hm' >|_zt.
+       hydromet_vel_covar_zt(1,i) = hydromet_vel_covar_zt(2,i)
+
+       !!! Calculate the covariance of hydrometeor sedimentation velocity and
+       !!! the hydrometeor, < V_hm'h_m' >, by interpolating the thermodynamic
+       !!! level results to momentum levels.
+       hydromet_vel_covar(:,i) = zt2zm( hydromet_vel_covar_zt(:,i) )
+
+       ! Boundary conditions for < V_hm'hm' >.
+       hydromet_vel_covar(1,i)     = hydromet_vel_covar_zt(2,i)
+       hydromet_vel_covar(gr%nz,i) = zero
+
+       ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
+       ! <V_rr'r_r'>, and <V_Nr'N_r'>.
+       if ( l_stats_samp ) then
+
+          if ( iwpxrp > 0 ) then
+
+             ! Covariance of vertical velocity and the hydrometeor.
+             call stat_update_var( iwpxrp, wphydrometp(:,i), zm )
+
+          endif
+
+          if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
+
+             ! Covariance of sedimentation velocity of r_r and r_r.
+             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), &
+                                   zm )
+
+          elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
+
+             ! Covariance of sedimentation velocity of N_r and N_r.
+             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
+
+          endif
+
+       endif ! l_stats_samp
+
+       if ( l_stats_samp ) then
+
+          ! Total time tendency
+          if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
+             call stat_end_update( ixrm_bt, &
+                                   hydromet(:,i) &
+                                   / real( dt, kind = core_rknd ), zt )
+          else
+             ! The mean hydrometeor field at thermodynamic level k = 1 is simply
+             ! set to the value of the mean hydrometeor field at k = 2.  Don't
+             ! include budget stats for level k = 1.
+             do k = 2, gr%nz, 1
+                call stat_end_update_pt( ixrm_bt, k, &
+                                         hydromet(k,i) &
+                                         / real( dt, kind = core_rknd ), zt )
+             enddo
+          endif
+
+       endif ! l_stats_samp
+
+    enddo ! i = 1, hydromet_dim, 1
+
+
+    return
+
+  end subroutine advance_hydrometeor
+
+  !=============================================================================
+  subroutine advance_Ncm
+
+    ! Description:
+    !
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    return
+
+  end subroutine advance_Ncm
 
   !=============================================================================
   subroutine microphys_solve( solve_type, l_sed, &
