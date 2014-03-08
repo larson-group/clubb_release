@@ -1078,11 +1078,8 @@ module microphys_driver
 
     use stats_variables, only: & 
         iNcm,          &
-        iwpNcp,        &
         iNc_in_cloud,  &
         iNcm_bt,       &
-        iNcm_mc,       &
-        iNcm_cl,       &
         iNcm_act,      &
         iNc_activated, &
         iNccnm
@@ -1240,12 +1237,6 @@ module microphys_driver
     integer, intent(out) :: err_code ! Exit code returned from subroutine
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
-      lhs    ! Left hand side of tridiagonal matrix
-
-    real( kind = core_rknd ), dimension(gr%nz) :: & 
-      rhs    ! Right hand side vector
-
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       hydromet_vel,   & ! Mean hydrometeor sedimentation velocity, <V_xx> [m/s]
       hydromet_vel_zt   ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
@@ -1262,8 +1253,8 @@ module microphys_driver
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Ncm_vel,   & ! Mean N_c sedimentation velocity, <V_Nc> [m/s]
-      Ncm_vel_zt   ! Mean N_c sed. velocity on thermo. levs. [m/s]
+      Ncm_vel,    & ! Mean N_c sedimentation velocity, <V_Nc> [m/s]
+      Ncm_vel_zt    ! Mean N_c sed. velocity on thermo. levs. [m/s]
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
@@ -1304,9 +1295,6 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
-
-    real( kind = core_rknd ) :: &
-      max_velocity ! Maximum sedimentation velocity [m/s]
 
     integer :: k    ! Loop index
 
@@ -1799,217 +1787,13 @@ module microphys_driver
 
     if ( l_predictnc ) then
 
-      ! Use the rain water limit, since Morrison has no explicit limit on
-      ! cloud water.  Presumably these numbers are never large.
-      ! -dschanen 28 Sept 2009
-      max_velocity = -9.1_core_rknd ! m/s
-
-      if ( l_stats_samp ) then
-
-        ! Update explicit contributions to cloud droplet concentration.
-        call stat_update_var( iNcm_mc, Ncm_mc, zt )
-
-        ! Save prior value of Ncm for determining total time tendency.
-        ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
-        ! that is calculated before microphysics is called.  The stat_begin_update
-        ! subroutine is called prior to the GFDL activation code, so we can't call
-        ! it here again. -meyern
-        !if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
-        !   call stat_begin_update( iNcm_bt, &
-        !                           Ncm / real( dt, kind = core_rknd ), zt )
-        !else
-        !   ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-        !   ! set to the value of the mean hydrometeor field at k = 2.
-        !   ! Don't include budget stats for level k = 1.
-        !   do k = 2, gr%nz, 1
-        !      call stat_begin_update_pt( iNcm_bt, k, &
-        !                                 Ncm(k) &
-        !                                 / real( dt, kind = core_rknd ), zt )
-        !   enddo
-        !endif
-
-      endif ! l_stats_samp
-
-      ! Set realistic limits on sedimentation velocities, following the
-      ! numbers in the Morrison microphysics.
-
-      do k = 1, gr%nz
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          ! Print a warning if the velocity has a large magnitude or the
-          ! velocity is in the wrong direction.
-          if ( Ncm_vel_zt(k) < max_velocity .or. &
-               Ncm_vel_zt(k) > zero_threshold ) then
-
-            write(fstderr,*) trim( "Ncm" )// &
-              " velocity at k = ", k, " = ", Ncm_vel_zt(k), "m/s"
-          end if
-        end if
-        Ncm_vel_zt(k) = min( max( Ncm_vel_zt(k), max_velocity ), zero_threshold )
-      end do ! k = 1..gr%nz
-
-      ! Interpolate velocity to the momentum grid for a centered difference
-      ! approximation of the sedimenation term.
-      Ncm_vel = zt2zm( Ncm_vel_zt )
-      Ncm_vel(gr%nz) = zero ! Upper boundary condition
-
-      ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
-      ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
-      ! A Crank-Nicholson time-stepping scheme is used for this variable.
-      ! This is the portion of the calculation using < N_c > from timestep t. 
-      wpNcp(1:gr%nz-1) &
-      = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
-                               Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
-                               gr%invrs_dzm(1:gr%nz-1) )
-
-      ! A zero-flux boundary condition at the top of the model is used for N_c.
-      wpNcp(gr%nz) = zero
-
-      ! Add implicit terms to the LHS matrix
-      call microphys_lhs( "Ncm", l_Ncm_sed, & ! In
-                          dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
-                          Ncm_vel, Ncm_vel_zt, & ! In
-                          Ncm_vel_covar_zt_impc, & ! In
-                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
-                          lhs ) ! Out
-
-       ! Set up explicit term in the RHS vector
-       if ( l_in_cloud_Nc_diff ) then
-
-          call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
-                              Nc_in_cloud, &
-                              Ncm_mc/max(cloud_frac,cloud_frac_min), &
-                              Kr, nu_r_vert_res_dep, cloud_frac, &
-                              Ncm_vel_covar_zt_expc, &
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                              rhs )
-
-      else
-
-          call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
-                              Ncm, Ncm_mc, &
-                              Kr, nu_r_vert_res_dep, cloud_frac, &
-                              Ncm_vel_covar_zt_expc, &
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                              rhs )
-
-      endif
-
-
-       !!!!! Advance Ncm one time step.
-       if ( l_in_cloud_Nc_diff ) then
-
-          ! Ncm in-cloud is computed above
-          call microphys_solve( "Ncm", l_Ncm_sed, &
-                                cloud_frac, &
-                                lhs, rhs, Nc_in_cloud, err_code )
-
-          Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
-
-       else
-
-          call microphys_solve( "Ncm", l_Ncm_sed, &
-                                cloud_frac, &
-                                lhs, rhs, Ncm, err_code )
-
-       endif
-
-
-      ! Print warning message if Ncm (at any level) has a value < 0.
-      if ( any( Ncm < zero_threshold ) ) then
-
-         if ( clubb_at_least_debug_level( 1 ) ) then
-            do k = 1, gr%nz
-               if ( Ncm(k) < zero_threshold ) then
-                  write(fstderr,*) "Ncm < ", zero_threshold, &
-                                   " in advance_microphys at k = ", k
-               endif ! Ncm(k) < 0
-            enddo ! k = 1, gr%nz
-         endif ! clubb_at_least_debug_level( 1 )
-
-      endif ! Ncm < 0
-
-      ! Store the previous value of Ncm for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_begin_update( iNcm_cl, &
-                                 Ncm / real( dt, kind = core_rknd ), zt )
-      endif
-
-      if ( any( Ncm < zero_threshold ) ) then
-
-         ! Clip any negative values of Ncm to 0.
-         where ( Ncm < zero_threshold )
-            Ncm = zero_threshold
-         end where
-
-      endif ! Ncm < 0
-
-      ! Enter the new value of Ncm for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_end_update( iNcm_cl, &
-                               Ncm / real( dt, kind = core_rknd ), zt )
-      endif
-
-
-      ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
-      ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
-      ! A Crank-Nicholson time-stepping scheme is used for this variable.
-      ! This is the portion of the calculation using < N_c > from timestep t+1. 
-      wpNcp(1:gr%nz-1) &
-      = wpNcp(1:gr%nz-1) &
-        - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
-                               Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
-                               gr%invrs_dzm(1:gr%nz-1) )
-
-      ! A zero-flux boundary condition at the top of the model is used for N_c.
-      wpNcp(gr%nz) = zero
-
-      !!! Calculate the covariance of N_c sedimentation velocity and N_c which
-      !!! is solved semi-implicitly on thermodynamic levels.
-      Ncm_vel_covar_zt = Ncm_vel_covar_zt_impc * Ncm + Ncm_vel_covar_zt_expc
-
-      ! Boundary conditions for < V_Nc'Nc' >|_zt.
-      Ncm_vel_covar_zt(1) = Ncm_vel_covar_zt(2)
-
-      !!! Calculate the covariance of N_c sedimentation velocity and N_c,
-      !!! < V_Nc'N_c' >, by interpolating the thermodynamic level results to
-      !!! momentum levels.
-      Ncm_vel_covar = zt2zm( Ncm_vel_covar_zt )
-
-      ! Boundary conditions for < V_Nc'Nc' >.
-      Ncm_vel_covar(1)     = Ncm_vel_covar_zt(2)
-      Ncm_vel_covar(gr%nz) = zero
-
-      ! Statistics for all covariances involving N_c:  < w'N_c' >.
-      if ( l_stats_samp ) then
-
-         if ( iwpNcp > 0 ) then
-
-            ! Covariance of vertical velocity and N_c.
-            call stat_update_var( iwpNcp, wpNcp, zm )
-
-         endif
-
-      endif ! l_stats_samp
-
-      if ( l_stats_samp ) then
-
-         ! Total time tendency
-         if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
-            call stat_end_update( iNcm_bt, &
-                                  Ncm / real( dt, kind = core_rknd ), zt )
-         else
-            ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-            ! set to the value of the mean hydrometeor field at k = 2.  Don't
-            ! include budget stats for level k = 1.
-            do k = 2, gr%nz, 1
-               call stat_end_update_pt( iNcm_bt, k, &
-                                        Ncm(k) &
-                                        / real( dt, kind = core_rknd ), zt )
-            enddo
-         endif
-
-      endif ! l_stats_samp
-
+       call advance_Ncm( dt, wm_zt, cloud_frac, Kr, &
+                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                         Ncm_mc, Ncm_vel_covar_zt_impc, &
+                         Ncm_vel_covar_zt_expc, &
+                         Ncm, Nc_in_cloud, Ncm_vel_zt, &
+                         wpNcp, Ncm_vel, Ncm_vel_covar, Ncm_vel_covar_zt, &
+                         err_code )
 
     endif ! l_predictnc
 
@@ -2523,15 +2307,324 @@ module microphys_driver
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm
+  subroutine advance_Ncm( dt, wm_zt, cloud_frac, Kr, &
+                          rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                          Ncm_mc, Ncm_vel_covar_zt_impc, &
+                          Ncm_vel_covar_zt_expc, &
+                          Ncm, Nc_in_cloud, Ncm_vel_zt, &
+                          wpNcp, Ncm_vel, Ncm_vel_covar, Ncm_vel_covar_zt, &
+                          err_code )
 
     ! Description:
-    !
+    ! Advance cloud droplet concentration (Ncm) one model time step.
 
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: & 
+        gr,    & ! Variable(s)
+        zt2zm    ! Procedure(s)
+
+    use constants_clubb, only: & 
+        one_half,       & ! Constant(s)
+        zero,           &
+        zero_threshold, &
+        fstderr
+
+    use advance_windm_edsclrm_module, only : &
+        xpwp_fnc  ! Procedure(s)
+
+    use parameters_tunable, only: & 
+        nu_r_vert_res_dep  ! Variable(s)
+
+    use error_code, only:  & 
+        clubb_at_least_debug_level    ! Procedure(s)
+
+    use clubb_precision, only:  & 
+        time_precision, & ! Variable(s)
+        core_rknd
+
+    use stats_type, only: & 
+        stat_update_var,      & ! Procedure(s)
+        stat_begin_update,    &
+        !stat_begin_update_pt, &
+        stat_end_update,      &
+        stat_end_update_pt
+
+    use stats_variables, only: & 
+        zt,           & ! Variable(s)
+        zm,           & 
+        l_stats_samp, &
+        iNcm_bt,      &
+        iNcm_mc,      &
+        iNcm_cl,      &
+        iwpNcp
+
     implicit none
+
+    ! Input Variables
+    real( kind = time_precision ), intent(in) ::  & 
+      dt    ! Duration of one model time step         [s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
+      cloud_frac, & ! Cloud fraction                                 [-]
+      Kr            ! Eddy diffusivity coefficient for rain          [m^2/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density on thermo. levels    [kg/m^3]
+      invrs_rho_ds_zt    ! Inv. dry, static density @ thermo. levs. [m^3/kg]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      Ncm_mc     ! Change in Ncm due to microphysics  [num/kg/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Ncm_vel_covar_zt_impc, & ! Imp. comp. <V_Nc'N_c'> t-levs [m/s]
+      Ncm_vel_covar_zt_expc    ! Exp. comp. <V_Nc'N_c'> t-levs [(num/kg)(m/s)]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
+      Ncm,         & ! Mean cloud droplet conc., < N_c > (thermo. levs.) [num/kg]
+      Nc_in_cloud, & ! Mean (in-cloud) cloud droplet concentration       [num/kg]
+      Ncm_vel_zt     ! Mean N_c sedimenation velocity on thermo. levs.   [m/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      wpNcp,   & ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
+      Ncm_vel    ! Mean N_c sedimentation velocity, <V_Nc> (m-levs.)    [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      Ncm_vel_covar,    & ! Covariance of V_Nc & N_c (m-levs)  [(num/kg)(m/s)]
+      Ncm_vel_covar_zt    ! Covariance of V_Nc & N_c (t-levs)  [(num/kg)(m/s)]
+
+    integer, intent(out) :: &
+      err_code    ! Exit code (used to check for errors)
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(3,gr%nz) :: & 
+      lhs    ! Left hand side array
+
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      rhs    ! Right hand side vector
+
+    real( kind = core_rknd ) :: &
+      max_velocity    ! Maximum sedimentation velocity [m/s]
+
+    integer :: k    ! Loop index
+
+
+    ! Use the rain water limit, since Morrison has no explicit limit on
+    ! cloud water.  Presumably these numbers are never large.
+    ! -dschanen 28 Sept 2009
+    max_velocity = -9.1_core_rknd ! m/s
+
+    if ( l_stats_samp ) then
+
+       ! Update explicit contributions to cloud droplet concentration.
+       call stat_update_var( iNcm_mc, Ncm_mc, zt )
+
+       ! Save prior value of Ncm for determining total time tendency.
+       ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
+       ! that is calculated before microphysics is called.  The stat_begin_update
+       ! subroutine is called prior to the GFDL activation code, so we can't call
+       ! it here again. -meyern
+       !if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
+       !   call stat_begin_update( iNcm_bt, &
+       !                           Ncm / real( dt, kind = core_rknd ), zt )
+       !else
+       !   ! The mean hydrometeor field at thermodynamic level k = 1 is simply
+       !   ! set to the value of the mean hydrometeor field at k = 2.
+       !   ! Don't include budget stats for level k = 1.
+       !   do k = 2, gr%nz, 1
+       !      call stat_begin_update_pt( iNcm_bt, k, &
+       !                                 Ncm(k) &
+       !                                 / real( dt, kind = core_rknd ), zt )
+       !   enddo
+       !endif
+
+    endif ! l_stats_samp
+
+    ! Set realistic limits on sedimentation velocities, following the numbers in
+    ! the Morrison microphysics.
+
+    do k = 1, gr%nz
+       if ( clubb_at_least_debug_level( 1 ) ) then
+          ! Print a warning if the velocity has a large magnitude or the
+          ! velocity is in the wrong direction.
+          if ( Ncm_vel_zt(k) < max_velocity .or. &
+               Ncm_vel_zt(k) > zero_threshold ) then
+
+              write(fstderr,*) "Ncm velocity at k = ", k, " = ", &
+                               Ncm_vel_zt(k), "m/s"
+
+          endif
+       endif
+       Ncm_vel_zt(k) = min( max( Ncm_vel_zt(k), max_velocity ), zero_threshold )
+    enddo ! k = 1, gr%nz, 1
+
+    ! Interpolate velocity to the momentum grid for a centered difference
+    ! approximation of the sedimenation term.
+    Ncm_vel = zt2zm( Ncm_vel_zt )
+    Ncm_vel(gr%nz) = zero ! Upper boundary condition
+
+    ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
+    ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
+    ! A Crank-Nicholson time-stepping scheme is used for this variable.
+    ! This is the portion of the calculation using < N_c > from timestep t. 
+    wpNcp(1:gr%nz-1) &
+    = - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+                             Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
+                             gr%invrs_dzm(1:gr%nz-1) )
+
+    ! A zero-flux boundary condition at the top of the model is used for N_c.
+    wpNcp(gr%nz) = zero
+
+    ! Add implicit terms to the LHS array
+    call microphys_lhs( "Ncm", l_Ncm_sed, & ! In
+                        dt, Kr, nu_r_vert_res_dep, wm_zt, &  ! In
+                        Ncm_vel, Ncm_vel_zt, & ! In
+                        Ncm_vel_covar_zt_impc, & ! In
+                        rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                        lhs ) ! Out
+
+    ! Set up explicit term in the RHS vector
+    if ( l_in_cloud_Nc_diff ) then
+
+       call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
+                           Nc_in_cloud, &
+                           Ncm_mc / max( cloud_frac, cloud_frac_min ), &
+                           Kr, nu_r_vert_res_dep, cloud_frac, &
+                           Ncm_vel_covar_zt_expc, &
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           rhs )
+
+    else
+
+       call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
+                           Ncm, Ncm_mc, &
+                           Kr, nu_r_vert_res_dep, cloud_frac, &
+                           Ncm_vel_covar_zt_expc, &
+                           rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                           rhs )
+
+    endif
+
+
+    !!!!! Advance Ncm one time step.
+    if ( l_in_cloud_Nc_diff ) then
+
+       call microphys_solve( "Ncm", l_Ncm_sed, &
+                             cloud_frac, &
+                             lhs, rhs, Nc_in_cloud, err_code )
+
+       Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
+
+    else
+
+       call microphys_solve( "Ncm", l_Ncm_sed, &
+                             cloud_frac, &
+                             lhs, rhs, Ncm, err_code )
+
+    endif
+
+
+    ! Print warning message if Ncm (at any level) has a value < 0.
+    if ( any( Ncm < zero_threshold ) ) then
+
+       if ( clubb_at_least_debug_level( 1 ) ) then
+          do k = 1, gr%nz
+             if ( Ncm(k) < zero_threshold ) then
+                write(fstderr,*) "Ncm < ", zero_threshold, &
+                                 " in advance_microphys at k = ", k
+             endif ! Ncm(k) < 0
+          enddo ! k = 1, gr%nz, 1
+       endif ! clubb_at_least_debug_level( 1 )
+
+    endif ! Ncm < 0
+
+    ! Store the previous value of Ncm for the effect of clipping.
+    if ( l_stats_samp ) then
+       call stat_begin_update( iNcm_cl, &
+                               Ncm / real( dt, kind = core_rknd ), zt )
+    endif
+
+    if ( any( Ncm < zero_threshold ) ) then
+
+       ! Clip any negative values of Ncm to 0.
+       where ( Ncm < zero_threshold )
+          Ncm = zero_threshold
+       end where
+
+    endif ! Ncm < 0
+
+    ! Enter the new value of Ncm for the effect of clipping.
+    if ( l_stats_samp ) then
+       call stat_end_update( iNcm_cl, &
+                             Ncm / real( dt, kind = core_rknd ), zt )
+    endif
+
+
+    ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
+    ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
+    ! A Crank-Nicholson time-stepping scheme is used for this variable.
+    ! This is the portion of the calculation using < N_c > from timestep t+1. 
+    wpNcp(1:gr%nz-1) &
+    = wpNcp(1:gr%nz-1) &
+      - one_half * xpwp_fnc( Kr(1:gr%nz-1)+nu_r_vert_res_dep(1:gr%nz-1), &
+                             Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
+                             gr%invrs_dzm(1:gr%nz-1) )
+
+    ! A zero-flux boundary condition at the top of the model is used for N_c.
+    wpNcp(gr%nz) = zero
+
+    !!! Calculate the covariance of N_c sedimentation velocity and N_c which
+    !!! is solved semi-implicitly on thermodynamic levels.
+    Ncm_vel_covar_zt = Ncm_vel_covar_zt_impc * Ncm + Ncm_vel_covar_zt_expc
+
+    ! Boundary conditions for < V_Nc'Nc' >|_zt.
+    Ncm_vel_covar_zt(1) = Ncm_vel_covar_zt(2)
+
+    !!! Calculate the covariance of N_c sedimentation velocity and N_c,
+    !!! < V_Nc'N_c' >, by interpolating the thermodynamic level results to
+    !!! momentum levels.
+    Ncm_vel_covar = zt2zm( Ncm_vel_covar_zt )
+
+    ! Boundary conditions for < V_Nc'Nc' >.
+    Ncm_vel_covar(1)     = Ncm_vel_covar_zt(2)
+    Ncm_vel_covar(gr%nz) = zero
+
+    ! Statistics for all covariances involving N_c:  < w'N_c' >.
+    if ( l_stats_samp ) then
+
+       if ( iwpNcp > 0 ) then
+
+          ! Covariance of vertical velocity and N_c.
+          call stat_update_var( iwpNcp, wpNcp, zm )
+
+       endif
+
+    endif ! l_stats_samp
+
+    if ( l_stats_samp ) then
+
+       ! Total time tendency
+       if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
+          call stat_end_update( iNcm_bt, &
+                                  Ncm / real( dt, kind = core_rknd ), zt )
+       else
+          ! The mean hydrometeor field at thermodynamic level k = 1 is simply
+          ! set to the value of the mean hydrometeor field at k = 2.  Don't
+          ! include budget stats for level k = 1.
+          do k = 2, gr%nz, 1
+             call stat_end_update_pt( iNcm_bt, k, &
+                                      Ncm(k) &
+                                      / real( dt, kind = core_rknd ), zt )
+          enddo ! k = 2, gr%nz, 1
+       endif
+
+    endif ! l_stats_samp
+
 
     return
 
