@@ -210,7 +210,8 @@ module morrison_micro_driver_module
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, & ! Type
-      microphys_stats_alloc ! Procedure
+      microphys_stats_alloc, & ! Procedure
+      microphys_put_var
 
     implicit none
 
@@ -219,7 +220,7 @@ module morrison_micro_driver_module
 
     ! Constant parameters
     integer, parameter :: &
-      num_output_zt = 100, & ! Overestimate of the number of variables to be output to zt grid
+      num_output_zt = 200, & ! Overestimate of the number of variables to be output to zt grid
       num_output_sfc = 10    ! Same, for sfc grid
 
 
@@ -756,7 +757,6 @@ module morrison_micro_driver_module
     if ( clubb_at_least_debug_level(2) ) then
 
        rsnowm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                            lh_stat_sample_weight * &
                             real( hydromet_sten(2:nz,iirsnowm), kind=core_rknd ), &
                             gr%invrs_dzt(2:nz) )
 
@@ -767,7 +767,7 @@ module morrison_micro_driver_module
        endif
 
        if (l_stats_samp) then
-         call stat_update_var_pt( irsnowm_sd_morr_int, 1, rsnowm_sd_morr_int, sfc )
+         call microphys_put_var( irsnowm_sd_morr_int, (/rsnowm_sd_morr_int/), microphys_stats_sfc )
        endif
 
     endif
@@ -788,117 +788,116 @@ module morrison_micro_driver_module
     end if ! ( .not. l_latin_hypercube .and. l_stats_samp )
 
     if ( l_stats_samp ) then
-      call stat_update_var( ihl_on_Cp_residual, lh_stat_sample_weight * hl_on_Cp_residual, zt )
-      call stat_update_var( iqto_residual, lh_stat_sample_weight * qto_residual, zt )
-      call stat_update_var( irgraupelm_sd_morr, lh_stat_sample_weight  &
-                * real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), zt )
-      call stat_update_var( irrainm_sd_morr,lh_stat_sample_weight &
-                * real( hydromet_sten(:,iirrainm), kind = core_rknd ), zt )
-      call stat_update_var( irsnowm_sd_morr,lh_stat_sample_weight &
-                * real( hydromet_sten(:,iirsnowm), kind = core_rknd ), zt )
-      call stat_update_var( iricem_sd_mg_morr,lh_stat_sample_weight &
-                * real( hydromet_sten(:,iiricem), kind = core_rknd ), zt )
-      call stat_update_var( ircm_sd_mg_morr,lh_stat_sample_weight &
-                * real( rcm_sten, kind = core_rknd), zt )
-      call stat_update_var( iPRC,lh_stat_sample_weight*real(PRC,kind=core_rknd),zt)
-      call stat_update_var( iPRA,lh_stat_sample_weight*real(PRA,kind=core_rknd),zt)
-      call stat_update_var( iPRE,lh_stat_sample_weight*real(PRE,kind=core_rknd),zt)
-      call stat_update_var( iPSMLT, lh_stat_sample_weight*real( PSMLT, kind=core_rknd ), zt )
-      call stat_update_var( iEVPMS, lh_stat_sample_weight*real( EVPMS, kind=core_rknd ), zt )
-      call stat_update_var( iPRACS, lh_stat_sample_weight*real( PRACS, kind=core_rknd ), zt )
-      call stat_update_var( iEVPMG, lh_stat_sample_weight*real( EVPMG, kind=core_rknd ), zt )
-      call stat_update_var( iPRACG, lh_stat_sample_weight*real( PRACG, kind=core_rknd ), zt )
-      call stat_update_var( iPGMLT, lh_stat_sample_weight*real( PGMLT, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCC, lh_stat_sample_weight*real( MNUCCC, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWS, lh_stat_sample_weight*real( PSACWS, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWI, lh_stat_sample_weight*real( PSACWI, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTS, lh_stat_sample_weight*real( QMULTS, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTG, lh_stat_sample_weight*real( QMULTG, kind=core_rknd ), zt )
-      call stat_update_var( iPSACWG, lh_stat_sample_weight*real( PSACWG, kind=core_rknd ), zt )
-      call stat_update_var( iPGSACW, lh_stat_sample_weight*real( PGSACW, kind=core_rknd ), zt )
-      call stat_update_var( iPRD, lh_stat_sample_weight*real( PRD, kind=core_rknd ), zt )
-      call stat_update_var( iPRCI, lh_stat_sample_weight*real( PRCI, kind=core_rknd ), zt )
-      call stat_update_var( iPRAI, lh_stat_sample_weight*real( PRAI, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTR, lh_stat_sample_weight*real( QMULTR, kind=core_rknd ), zt )
-      call stat_update_var( iQMULTRG, lh_stat_sample_weight*real( QMULTRG, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCD, lh_stat_sample_weight*real( MNUCCD, kind=core_rknd ), zt )
-      call stat_update_var( iPRACI, lh_stat_sample_weight*real( PRACI, kind=core_rknd ), zt )
-      call stat_update_var( iPRACIS, lh_stat_sample_weight*real( PRACIS, kind=core_rknd ), zt )
-      call stat_update_var( iEPRD, lh_stat_sample_weight*real( EPRD, kind=core_rknd ), zt )
-      call stat_update_var( iMNUCCR, lh_stat_sample_weight*real( MNUCCR, kind=core_rknd ), zt )
-      call stat_update_var( iPIACR, lh_stat_sample_weight*real( PIACR, kind=core_rknd ), zt )
-      call stat_update_var( iPIACRS, lh_stat_sample_weight*real( PIACRS, kind=core_rknd ), zt )
-      call stat_update_var( iPGRACS, lh_stat_sample_weight*real( PGRACS, kind=core_rknd ), zt )
-      call stat_update_var( iPRDS, lh_stat_sample_weight*real( PRDS, kind=core_rknd ), zt )
-      call stat_update_var( iEPRDS, lh_stat_sample_weight*real( EPRDS, kind=core_rknd ), zt )
-      call stat_update_var( iPSACR, lh_stat_sample_weight*real( PSACR, kind=core_rknd ), zt )
-      call stat_update_var( iPRDG, lh_stat_sample_weight*real( PRDG, kind=core_rknd ), zt )
-      call stat_update_var( iEPRDG, lh_stat_sample_weight*real( EPRDG, kind=core_rknd ), zt )
+      call microphys_put_var( ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )
+      call microphys_put_var( iqto_residual, qto_residual, microphys_stats_zt )
+      call microphys_put_var( irgraupelm_sd_morr, &
+                real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), microphys_stats_zt )
+      call microphys_put_var( irrainm_sd_morr, &
+                real( hydromet_sten(:,iirrainm), kind = core_rknd ), microphys_stats_zt )
+      call microphys_put_var( irsnowm_sd_morr, &
+                real( hydromet_sten(:,iirsnowm), kind = core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iricem_sd_mg_morr, &
+                real( hydromet_sten(:,iiricem), kind = core_rknd ), microphys_stats_zt )
+      call microphys_put_var( ircm_sd_mg_morr, &
+                real( rcm_sten, kind = core_rknd), microphys_stats_zt )
+      call microphys_put_var( iPRC,real(PRC,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iPRA,real(PRA,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iPRE,real(PRE,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iPSMLT, real( PSMLT, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iEVPMS, real( EVPMS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRACS, real( PRACS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iEVPMG, real( EVPMG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRACG, real( PRACG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPGMLT, real( PGMLT, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iMNUCCC, real( MNUCCC, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPSACWS, real( PSACWS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPSACWI, real( PSACWI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iQMULTS, real( QMULTS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iQMULTG, real( QMULTG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPSACWG, real( PSACWG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPGSACW, real( PGSACW, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRD, real( PRD, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRCI, real( PRCI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRAI, real( PRAI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iQMULTR, real( QMULTR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iQMULTRG, real( QMULTRG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iMNUCCD, real( MNUCCD, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRACI, real( PRACI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRACIS, real( PRACIS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iEPRD, real( EPRD, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iMNUCCR, real( MNUCCR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPIACR, real( PIACR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPIACRS, real( PIACRS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPGRACS, real( PGRACS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRDS, real( PRDS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iEPRDS, real( EPRDS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPSACR, real( PSACR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iPRDG, real( PRDG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iEPRDG, real( EPRDG, kind=core_rknd ), microphys_stats_zt )
         
       ! Update more Morrison budgets
-      call stat_update_var( iNGSTEN, lh_stat_sample_weight*real( NGSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNRSTEN, lh_stat_sample_weight*real( NRSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNISTEN, lh_stat_sample_weight*real( NISTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNSSTEN, lh_stat_sample_weight*real( NSSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNCSTEN, lh_stat_sample_weight*real( NCSTEN, kind=core_rknd ), zt )
-      call stat_update_var( iNPRC1, lh_stat_sample_weight*real( NPRC1, kind=core_rknd ), zt )
-      call stat_update_var( iNRAGG, lh_stat_sample_weight*real( NRAGG, kind=core_rknd ), zt )
-      call stat_update_var( iNPRACG, lh_stat_sample_weight*real( NPRACG, kind=core_rknd ), zt )
-      call stat_update_var( iNSUBR, lh_stat_sample_weight*real( NSUBR, kind=core_rknd ), zt )
-      call stat_update_var( iNSMLTR, lh_stat_sample_weight*real( NSMLTR, kind=core_rknd ), zt )
-      call stat_update_var( iNGMLTR, lh_stat_sample_weight*real( NGMLTR, kind=core_rknd ), zt )
-      call stat_update_var( iNPRACS, lh_stat_sample_weight*real( NPRACS, kind=core_rknd ), zt )
-      call stat_update_var( iNNUCCR, lh_stat_sample_weight*real( NNUCCR, kind=core_rknd ), zt )
-      call stat_update_var( iNIACR, lh_stat_sample_weight*real( NIACR, kind=core_rknd ), zt )
-      call stat_update_var( iNIACRS, lh_stat_sample_weight*real( NIACRS, kind=core_rknd ), zt )
-      call stat_update_var( iNGRACS, lh_stat_sample_weight*real( NGRACS, kind=core_rknd ), zt )
-      call stat_update_var( iNSMLTS, lh_stat_sample_weight*real( NSMLTS, kind=core_rknd ), zt )
-      call stat_update_var( iNSAGG, lh_stat_sample_weight*real( NSAGG, kind=core_rknd ), zt )
-      call stat_update_var( iNPRCI, lh_stat_sample_weight*real( NPRCI, kind=core_rknd ), zt )
-      call stat_update_var( iNSCNG, lh_stat_sample_weight*real( NSCNG, kind=core_rknd ), zt )
-      call stat_update_var( iNSUBS, lh_stat_sample_weight*real( NSUBS, kind=core_rknd ), zt )
+      call microphys_put_var( iNGSTEN, real( NGSTEN, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNRSTEN, real( NRSTEN, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNISTEN, real( NISTEN, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSSTEN, real( NSSTEN, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNCSTEN, real( NCSTEN, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRC1, real( NPRC1, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNRAGG, real( NRAGG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRACG, real( NPRACG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSUBR, real( NSUBR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSMLTR, real( NSMLTR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNGMLTR, real( NGMLTR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRACS, real( NPRACS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNNUCCR, real( NNUCCR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNIACR, real( NIACR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNIACRS, real( NIACRS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNGRACS, real( NGRACS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSMLTS, real( NSMLTS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSAGG, real( NSAGG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRCI, real( NPRCI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSCNG, real( NSCNG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSUBS, real( NSUBS, kind=core_rknd ), microphys_stats_zt )
 
-      call stat_update_var( iPCC, lh_stat_sample_weight*real( PCC, kind=core_rknd ), zt )
-      call stat_update_var( iNNUCCC, lh_stat_sample_weight*real( NNUCCC, kind=core_rknd ), zt )
-      call stat_update_var( iNPSACWS, lh_stat_sample_weight*real( NPSACWS, kind=core_rknd ), zt )
-      call stat_update_var( iNPRA, lh_stat_sample_weight*real( NPRA, kind=core_rknd ), zt )
-      call stat_update_var( iNPRC, lh_stat_sample_weight*real( NPRC, kind=core_rknd ), zt )
-      call stat_update_var( iNPSACWI, lh_stat_sample_weight*real( NPSACWI, kind=core_rknd ), zt )
-      call stat_update_var( iNPSACWG, lh_stat_sample_weight*real( NPSACWG, kind=core_rknd ), zt )
-      call stat_update_var( iNPRAI, lh_stat_sample_weight*real( NPRAI, kind=core_rknd ), zt )
-      call stat_update_var( iNMULTS, lh_stat_sample_weight*real( NMULTS, kind=core_rknd ), zt )
-      call stat_update_var( iNMULTG, lh_stat_sample_weight*real( NMULTG, kind=core_rknd ), zt )
-      call stat_update_var( iNMULTR, lh_stat_sample_weight*real( NMULTR, kind=core_rknd ), zt )
-      call stat_update_var( iNMULTRG, lh_stat_sample_weight*real( NMULTRG, kind=core_rknd ), zt )
-      call stat_update_var( iNNUCCD, lh_stat_sample_weight*real( NNUCCD, kind=core_rknd ), zt )
-      call stat_update_var( iNSUBI, lh_stat_sample_weight*real( NSUBI, kind=core_rknd ), zt )
-      call stat_update_var( iNGMLTG, lh_stat_sample_weight*real( NGMLTG, kind=core_rknd ), zt )
-      call stat_update_var( iNSUBG, lh_stat_sample_weight*real( NSUBG, kind=core_rknd ), zt )
-      call stat_update_var( iNACT, lh_stat_sample_weight*real( NACT,kind=core_rknd ), zt )
-      call stat_update_var( iSIZEFIX_NR, lh_stat_sample_weight*real( SIZEFIX_NR,kind=core_rknd),zt)
-      call stat_update_var( iSIZEFIX_NC, lh_stat_sample_weight*real( SIZEFIX_NC,kind=core_rknd),zt)
-      call stat_update_var( iSIZEFIX_NI, lh_stat_sample_weight*real( SIZEFIX_NI,kind=core_rknd),zt)
-      call stat_update_var( iSIZEFIX_NS, lh_stat_sample_weight*real( SIZEFIX_NS,kind=core_rknd),zt)
-      call stat_update_var( iSIZEFIX_NG, lh_stat_sample_weight*real( SIZEFIX_NG,kind=core_rknd),zt)
-      call stat_update_var( iNEGFIX_NR, lh_stat_sample_weight*real( NEGFIX_NR,kind=core_rknd ),zt)
-      call stat_update_var( iNEGFIX_NC, lh_stat_sample_weight*real( NEGFIX_NC,kind=core_rknd ),zt)
-      call stat_update_var( iNEGFIX_NI, lh_stat_sample_weight*real( NEGFIX_NI,kind=core_rknd ),zt)
-      call stat_update_var( iNEGFIX_NS, lh_stat_sample_weight*real( NEGFIX_NS,kind=core_rknd ),zt)
-      call stat_update_var( iNEGFIX_NG, lh_stat_sample_weight*real( NEGFIX_NG,kind=core_rknd ),zt)
-      call stat_update_var( iNIM_MORR_CL, lh_stat_sample_weight &
-                *real( NIM_MORR_CL,kind=core_rknd ), zt )
-      call stat_update_var( iQC_INST, lh_stat_sample_weight*real( QC_INST,kind=core_rknd ),zt)
-      call stat_update_var( iQR_INST, lh_stat_sample_weight*real( QR_INST,kind=core_rknd ),zt)
-      call stat_update_var( iQI_INST, lh_stat_sample_weight*real( QI_INST,kind=core_rknd ),zt)
-      call stat_update_var( iQS_INST, lh_stat_sample_weight*real( QS_INST,kind=core_rknd ),zt)
-      call stat_update_var( iQG_INST, lh_stat_sample_weight*real( QG_INST,kind=core_rknd ),zt)
-      call stat_update_var( iNC_INST, lh_stat_sample_weight*real( NC_INST,kind=core_rknd ),zt)
-      call stat_update_var( iNR_INST, lh_stat_sample_weight*real( NR_INST,kind=core_rknd ),zt)
-      call stat_update_var( iNI_INST, lh_stat_sample_weight*real( NI_INST,kind=core_rknd ),zt)
-      call stat_update_var( iNS_INST, lh_stat_sample_weight*real( NS_INST,kind=core_rknd ),zt)
-      call stat_update_var( iNG_INST, lh_stat_sample_weight*real( NG_INST,kind=core_rknd ),zt)
+      call microphys_put_var( iPCC, real( PCC, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNNUCCC, real( NNUCCC, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPSACWS, real( NPSACWS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRA, real( NPRA, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRC, real( NPRC, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPSACWI, real( NPSACWI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPSACWG, real( NPSACWG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNPRAI, real( NPRAI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNMULTS, real( NMULTS, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNMULTG, real( NMULTG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNMULTR, real( NMULTR, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNMULTRG, real( NMULTRG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNNUCCD, real( NNUCCD, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSUBI, real( NSUBI, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNGMLTG, real( NGMLTG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNSUBG, real( NSUBG, kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iNACT, real( NACT,kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iSIZEFIX_NR, real( SIZEFIX_NR,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iSIZEFIX_NC, real( SIZEFIX_NC,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iSIZEFIX_NI, real( SIZEFIX_NI,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iSIZEFIX_NS, real( SIZEFIX_NS,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iSIZEFIX_NG, real( SIZEFIX_NG,kind=core_rknd),microphys_stats_zt )
+      call microphys_put_var( iNEGFIX_NR, real( NEGFIX_NR,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNEGFIX_NC, real( NEGFIX_NC,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNEGFIX_NI, real( NEGFIX_NI,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNEGFIX_NS, real( NEGFIX_NS,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNEGFIX_NG, real( NEGFIX_NG,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNIM_MORR_CL, real( NIM_MORR_CL,kind=core_rknd ), microphys_stats_zt )
+      call microphys_put_var( iQC_INST, real( QC_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iQR_INST, real( QR_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iQI_INST, real( QI_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iQS_INST, real( QS_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iQG_INST, real( QG_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNC_INST, real( NC_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNR_INST, real( NR_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNI_INST, real( NI_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNS_INST, real( NS_INST,kind=core_rknd ),microphys_stats_zt )
+      call microphys_put_var( iNG_INST, real( NG_INST,kind=core_rknd ),microphys_stats_zt )
 
-      call stat_update_var( iT_in_K_mc, lh_stat_sample_weight*real( T_in_K_mc, kind=core_rknd ),zt)
+      call microphys_put_var( iT_in_K_mc, real( T_in_K_mc, kind=core_rknd ),microphys_stats_zt )
 
     end if ! l_stats_samp
 

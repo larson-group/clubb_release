@@ -104,7 +104,7 @@ module microphys_stats_vars_module
     !----- Begin Code -----
     if ( microphys_stats_vars%num_vars == microphys_stats_vars%alloc_size ) then
       ! There is no more room in the structure. Do nothing (for now).
-      return
+      stop "Invalid allocation size"
     end if
 
     microphys_stats_vars%num_vars = microphys_stats_vars%num_vars + 1
