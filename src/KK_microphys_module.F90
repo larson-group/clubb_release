@@ -46,7 +46,7 @@ module KK_microphys_module
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy, &
                                     KK_Nrm_auto_tndcy, KK_Nrm_evap_tndcy, &
-                                    microphys_stats_vars )
+                                    microphys_stats_zt, microphys_stats_sfc )
 
     ! Description:
 
@@ -111,8 +111,10 @@ module KK_microphys_module
 
     ! Local Constants
     integer, parameter :: &
-      num_stats_vars = 20         ! Overestimate of the number of statistics
+      num_stats_zt = 20,  &       ! Overestimate of the number of statistics
                                   ! variables sampled in this subroutine
+
+      num_stats_sfc = 0           ! No sfc variables sampled in this routine
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -167,7 +169,8 @@ module KK_microphys_module
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.       [(num/kg)/s]
 
     type(microphys_stats_vars_type), intent(out) :: &
-      microphys_stats_vars ! Variables output for statistical sampling
+      microphys_stats_zt, & ! Variables output for statistical sampling (zt grid)
+      microphys_stats_sfc   ! Variables output for statistical sampling (sfc grid)
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) ::  &
@@ -203,7 +206,8 @@ module KK_microphys_module
     !----- Begin Code -----
 
     ! Initialize microphys_stats_vars for statistics sampling
-    call microphys_stats_alloc( nz, num_stats_vars, microphys_stats_vars )
+    call microphys_stats_alloc( nz, num_stats_zt, microphys_stats_zt )
+    call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )
 
     !!! Initialize microphysics fields.
     call KK_micro_init( nz, hydromet, &
@@ -356,16 +360,16 @@ module KK_microphys_module
                           hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    call microphys_put_var( irrainm_cond, KK_evap_tndcy, microphys_stats_vars )
-    call microphys_put_var( irrainm_auto, KK_auto_tndcy, microphys_stats_vars )
-    call microphys_put_var( irrainm_accr, KK_accr_tndcy, microphys_stats_vars )
-    call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_vars )
-    call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_vars )
-    call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_vars )
-    call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_vars )
-    call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_vars )
-    call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_vars )
-    call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_vars )
+    call microphys_put_var( irrainm_cond, KK_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrainm_auto, KK_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrainm_accr, KK_accr_tndcy, microphys_stats_zt )
+    call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
+    call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_zt )
+    call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
+    call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_zt )
+    call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
 
     return
 

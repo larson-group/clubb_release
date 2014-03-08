@@ -17,7 +17,7 @@ module morrison_micro_driver_module
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
-               Nrm_auto, Nrm_evap, microphys_stats_vars )
+               Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
 
 ! Description:
 !   Wrapper for the Morrison microphysics
@@ -218,6 +218,11 @@ module morrison_micro_driver_module
     intrinsic :: max, real, maxval
 
     ! Constant parameters
+    integer, parameter :: &
+      num_output_zt = 100, & ! Overestimate of the number of variables to be output to zt grid
+      num_output_sfc = 10    ! Same, for sfc grid
+
+
     real( kind = core_rknd ), parameter :: &
       w_thresh = 0.1_core_rknd ! Minimum value w for latin hypercube [m/s]
 
@@ -273,7 +278,8 @@ module morrison_micro_driver_module
       rrainm_evap        ! Rain evaporation rate               [kg/kg/s]
 
     type(microphys_stats_vars_type), intent(out) :: &
-      microphys_stats_vars ! Variables output for statistical sampling
+      microphys_stats_zt, & ! Variables output for statistical sampling (zt grid)
+      microphys_stats_sfc   ! Variables output for statistical sampling (sfc grid)
 
     ! Local Variables
     real, dimension(nz) :: & 
@@ -478,8 +484,9 @@ module morrison_micro_driver_module
        print *, "s_mellor = ", s_mellor
     endif
 
-    ! The structure microphys_stats_vars is not used right now.
-    call microphys_stats_alloc( nz, 0, microphys_stats_vars )
+    call microphys_stats_alloc( nz, num_output_zt, microphys_stats_zt )
+    call microphys_stats_alloc( nz, num_output_sfc, microphys_stats_sfc )
+
 
     ! Determine temperature
     T_in_K = real( thlm2T_in_K( thlm, exner, rcm ) )

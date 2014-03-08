@@ -57,23 +57,6 @@ module estimate_scm_microphys_module
     use stats_variables, only: &
       l_stats_samp ! Variable(s)
 
-    use stats_variables, only: & 
-      LH_zt,             & ! Variable(s)
-      zt,                &
-      iLH_rrainm_auto,   & 
-      iLH_rrainm_accr,   &
-      iLH_rrainm_evap,   &
-      iLH_Nrm_auto,      &
-      iLH_Nrm_cond,      &
-      irrainm_src_adj,   &
-      iNrm_src_adj,      &
-      irrainm_cond_adj,  &
-      iNrm_cond_adj
-
-    use stats_type, only: & 
-      stat_update_var, & ! Procedure(s)
-      stat_update_var_pt
-
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
       microphys_stats_cleanup
@@ -209,12 +192,10 @@ module estimate_scm_microphys_module
       w_all_points            ! n_micro_calls values of vertical velocity      [m/s]
 
     type(microphys_stats_vars_type), dimension(n_micro_calls) :: &
-      microphys_stats_vars    ! Statistics variables output from microphysics
+      microphys_stats_zt, &   ! Statistics variables output from microphysics on zt grid
+      microphys_stats_sfc     ! Statistics variables on sfc grid
 
-    real( kind = core_rknd ), dimension(n_micro_calls) :: &
-      var_values              ! Temporary variable to hold values of a variable
-
-    integer :: ivar, k, sample, stat_index
+    integer :: ivar, k, sample
 
     integer :: &
       in_cloud_points, &
@@ -379,10 +360,11 @@ module estimate_scm_microphys_module
              lh_rrainm_auto_all(:,sample), lh_rrainm_accr_all(:,sample), &
              lh_rrainm_evap_all(:,sample), &
              lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample), &
-             microphys_stats_vars(sample) ) ! Out
+             microphys_stats_zt(sample), microphys_stats_sfc(sample) ) ! Out
 
       rt_all_samples(:,sample) = rc_column + rv_column + &
-      real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
+        real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
+
       thl_all_samples(:,sample) = thl_column + real( dt, kind=core_rknd ) * lh_thlm_mc_all(:,sample)
 
       if ( l_lh_cloud_weighted_sampling ) then
@@ -439,42 +421,14 @@ module estimate_scm_microphys_module
     end forall
 
     ! Sample variables from microphys_stats_vars objects for statistics
-    if ( l_stats_samp ) then
-
-      do ivar=1, microphys_stats_vars(1)%num_vars
-
-        stat_index = microphys_stats_vars(1)%stats_indices(ivar)
-
-        ! We don't want to sample the adjustment statistics if
-        ! l_silhs_KK_convergence_adj_mean is true. These will be sampled in
-        ! the subroutine adjust_KK_src_means below.
-
-        if ( .not. l_silhs_KK_convergence_adj_mean .or. &
-            ( stat_index /= irrainm_src_adj .and. &
-              stat_index /= iNrm_src_adj .and. &
-              stat_index /= irrainm_cond_adj .and. &
-              stat_index /= iNrm_cond_adj ) ) then
-
-          do k=1, nz
-
-            forall ( sample=1:n_micro_calls )
-              var_values(sample) = microphys_stats_vars(sample)%output_values(k,ivar)
-            end forall ! sample=1:n_micro_calls
-
-            call stat_update_var_pt( stat_index, k, &
-                 sum( var_values(:) * LH_sample_point_weights(:) ) / &
-                   real( n_micro_calls, kind=core_rknd ), zt )
-
-          end do ! k=1, nz
-
-        end if ! .not. l_silhs_KK_convergence_adj_mean .or. (...)
-      end do ! ivar=1, microphys_stats_vars(1)%num_vars
-
-    end if ! l_stats_samp
+    call silhs_microphys_stats &
+         ( n_micro_calls, microphys_stats_zt,  microphys_stats_sfc, &               ! Intent(in)
+           LH_sample_point_weights, l_stats_samp, l_silhs_KK_convergence_adj_mean ) ! Intent(in)
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, n_micro_calls
-      call microphys_stats_cleanup( microphys_stats_vars(ivar) )
+      call microphys_stats_cleanup( microphys_stats_zt(ivar) )
+      call microphys_stats_cleanup( microphys_stats_sfc(ivar) )
     end do
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
@@ -495,6 +449,114 @@ module estimate_scm_microphys_module
 #endif
     return
   end subroutine est_single_column_tndcy
+
+  !-----------------------------------------------------------------------
+  subroutine silhs_microphys_stats &
+             ( n_micro_calls, microphys_stats_zt, microphys_stats_sfc, &
+               LH_sample_point_weights, l_stats_samp, &
+               l_silhs_KK_convergence_adj_mean )
+
+  ! Description:
+  !   Samples variables acquired from call to microphys_sub in SILHS
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd            ! Compile-time constant
+
+    use stats_variables, only: &
+      zt,                & ! Variables
+      sfc,               &
+      irrainm_src_adj,   &
+      iNrm_src_adj,      &
+      irrainm_cond_adj,  &
+      iNrm_cond_adj
+
+    use stats_type, only: &
+      stat_update_var_pt
+
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_micro_calls           ! Number of SILHS sample points
+
+    type(microphys_stats_vars_type), dimension(n_micro_calls), intent(in) :: &
+      microphys_stats_zt, &   ! Variables sampled on zt and sfc grids, respectively
+      microphys_stats_sfc
+
+    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
+      LH_sample_point_weights ! Weight of each SILHS sample point
+
+    logical, intent(in) :: &
+      l_stats_samp, &                   ! Are we sampling this timestep?
+      l_silhs_KK_convergence_adj_mean   ! If this is true, certain variables are
+                                        ! not sampled right now.
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(n_micro_calls) :: var_values
+
+    integer :: ivar, stat_index, sample, k
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code-----
+
+    ! Sample variables from microphys_stats_vars objects for statistics
+    if ( l_stats_samp ) then
+
+      ! Sample sfc variables (only one grid level needed)
+      do ivar=1, microphys_stats_sfc(1)%num_vars
+        stat_index = microphys_stats_sfc(1)%stats_indices(ivar)
+
+        forall ( sample=1:n_micro_calls )
+          var_values(sample) = microphys_stats_sfc(sample)%output_values(1,ivar)
+        end forall
+
+        call stat_update_var_pt( stat_index, 1, &
+             sum( var_values(:) * LH_sample_point_weights(:) ) / &
+              real( n_micro_calls, kind = core_rknd ), sfc )
+
+      end do
+
+      ! Sample zt variables
+      do ivar=1, microphys_stats_zt(1)%num_vars
+
+        stat_index = microphys_stats_zt(1)%stats_indices(ivar)
+
+        ! We don't want to sample the adjustment statistics if
+        ! l_silhs_KK_convergence_adj_mean is true. These will be sampled in
+        ! the subroutine adjust_KK_src_means below.
+
+        if ( .not. l_silhs_KK_convergence_adj_mean .or. &
+            ( stat_index /= irrainm_src_adj .and. &
+              stat_index /= iNrm_src_adj .and. &
+              stat_index /= irrainm_cond_adj .and. &
+              stat_index /= iNrm_cond_adj ) ) then
+
+          do k=1, microphys_stats_zt(1)%nz
+
+            forall ( sample=1:n_micro_calls )
+              var_values(sample) = microphys_stats_zt(sample)%output_values(k,ivar)
+            end forall ! sample=1:n_micro_calls
+
+            call stat_update_var_pt( stat_index, k, &
+                 sum( var_values(:) * LH_sample_point_weights(:) ) / &
+                   real( n_micro_calls, kind=core_rknd ), zt )
+
+          end do ! k=1, nz
+
+        end if ! .not. l_silhs_KK_convergence_adj_mean .or. (...)
+      end do ! ivar=1, microphys_stats_zt(1)%num_vars
+
+    end if ! l_stats_samp
+    return
+  end subroutine silhs_microphys_stats
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------

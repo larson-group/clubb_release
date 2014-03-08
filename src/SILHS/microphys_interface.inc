@@ -9,7 +9,7 @@ interface
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rrainm_auto, rrainm_accr, rrainm_evap, &
-                            Nrm_auto, Nrm_evap, microphys_stats_vars )
+                            Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
 
     use pdf_parameter_module, only: pdf_parameter
 
@@ -74,7 +74,8 @@ interface
       Nrm_evap       ! Change in Nrm due to evaporation                  [num/kg/s]
 
     type(microphys_stats_vars_type), intent(out) :: &
-      microphys_stats_vars     ! Output variables
+      microphys_stats_zt, &   ! Output variables for statistical sampling
+      microphys_stats_sfc
 
   end subroutine microphys_sub
 end interface

@@ -56,7 +56,7 @@ module microphys_stats_vars_module
                              ! (actual number output can be less)
 
     ! Input/Output Variables
-    type(microphys_stats_vars_type), intent(inout) :: &
+    type(microphys_stats_vars_type), intent(out) :: &
       microphys_stats_vars   ! Unallocated microphys_stats_vars_type object
 
   !-----------------------------------------------------------------------
@@ -116,20 +116,19 @@ module microphys_stats_vars_module
   end subroutine microphys_put_var
   !-----------------------------------------------------------------------
 
-  subroutine microphys_stats_accumulate( microphys_stats_vars, l_stats_samp )
+  subroutine microphys_stats_accumulate( microphys_stats_vars, l_stats_samp, grid )
 
   ! Description:
   !   Samples all variables stored in the microphys_stats_vars structure by
-  !   using stat_update_var. The variables are sampled on the zt grid.
+  !   using stat_update_var. The variables are sampled on the grid given as an
+  !   argument to the subroutine. Therefore, there are no global variables used!
 
   ! References:
   !   None
   !-----------------------------------------------------------------------
 
-    use stats_variables, only: &
-      zt ! Variable
-
     use stats_type, only: &
+      stats, &        ! Type
       stat_update_var ! Procedure
 
     implicit none
@@ -140,6 +139,10 @@ module microphys_stats_vars_module
 
     logical, intent(in) :: &
       l_stats_samp              ! Are we sampling this timestep?
+
+    ! Input/Output Variables
+    type(stats), intent(inout) :: &
+      grid                      ! Which grid to sample variables to
 
     ! Local Variables
     integer :: i ! Loop variable
@@ -152,7 +155,7 @@ module microphys_stats_vars_module
       do i=1, microphys_stats_vars%num_vars
 
         call stat_update_var( microphys_stats_vars%stats_indices(i), &
-                              microphys_stats_vars%output_values(:,i), zt )
+                              microphys_stats_vars%output_values(:,i), grid )
 
       end do ! i=1, microphys_stats_vars%num_vars
 
@@ -184,7 +187,7 @@ module microphys_stats_vars_module
     deallocate( microphys_stats_vars%stats_indices, &
                 microphys_stats_vars%output_values )
 
- !   microphys_stats_vars%l_allocated = .false.
+    microphys_stats_vars%l_allocated = .false.
     return
   end subroutine microphys_stats_cleanup
   !-----------------------------------------------------------------------

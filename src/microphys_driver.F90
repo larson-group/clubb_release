@@ -1325,7 +1325,8 @@ module microphys_driver
       Nc_in_cloud ! cloud average droplet concentration [#/kg]
 
     type(microphys_stats_vars_type) :: &
-      microphys_stats_vars         ! Statistics variables from microphysics
+      microphys_stats_zt, &   ! Statistics variables from microphysics on zt and sfc grids
+      microphys_stats_sfc
 
     logical :: l_latin_hypercube_input
 
@@ -1613,7 +1614,7 @@ module microphys_driver
           thlm_morr = thlm
         end if
 
-        call morrison_micro_driver & 
+        call morrison_micro_driver &
              ( dt, gr%nz, l_stats_samp, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac_morr, wtmp, &
@@ -1621,14 +1622,14 @@ module microphys_driver
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
-               Nrm_auto, Nrm_evap, microphys_stats_vars )
+               Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
 
         if ( l_morr_xp2_mc_tndcy) then
           call update_xp2_mc_tndcy( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
-                                 wm_zt, exner, rrainm_evap, pdf_params, &         !Intent(in)
-                                 rtp2_mc, thlp2_mc,     &                         !Intent(out)
-                                 wprtp_mc, wpthlp_mc,     &                       !Intent(out)
-                                 rtpthlp_mc  )                                    !Intent(out)
+                                    wm_zt, exner, rrainm_evap, pdf_params, &      !Intent(in)
+                                    rtp2_mc, thlp2_mc,     &                      !Intent(out)
+                                    wprtp_mc, wpthlp_mc,     &                    !Intent(out)
+                                    rtpthlp_mc )                                 !Intent(out)
 
         else
 
@@ -1715,7 +1716,8 @@ module microphys_driver
                                       hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                                       rcm_mc, rvm_mc, thlm_mc, &
                                       rrainm_auto, rrainm_accr, rrainm_evap, &
-                                      Nrm_auto, Nrm_evap, microphys_stats_vars )
+                                      Nrm_auto, Nrm_evap, microphys_stats_zt, &
+                                      microphys_stats_sfc )
 
         else
 
@@ -1758,11 +1760,13 @@ module microphys_driver
     end select ! micro_scheme
 
     ! Sample microphysics variables if necessary
-    if ( microphys_stats_vars%l_allocated ) then
-
-      call microphys_stats_accumulate( microphys_stats_vars, l_stats_samp )
-      call microphys_stats_cleanup( microphys_stats_vars )
-
+    if ( microphys_stats_zt%l_allocated ) then
+      call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
+      call microphys_stats_cleanup( microphys_stats_zt )
+    end if
+    if ( microphys_stats_sfc%l_allocated ) then
+      call microphys_stats_accumulate( microphys_stats_sfc, l_stats_samp, sfc )
+      call microphys_stats_cleanup( microphys_stats_sfc )
     end if
 
     !-----------------------------------------------------------------------
