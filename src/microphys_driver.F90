@@ -1725,15 +1725,19 @@ module microphys_driver
     !       advection and diffusion.
     !-----------------------------------------------------------------------
 
-    call advance_hydrometeor( dt, wm_zt, exner, cloud_frac, Kr, &
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
-                              hydromet_mc, hydromet_vel_covar_zt_impc, &
-                              hydromet_vel_covar_zt_expc, &
-                              hydromet, hydromet_vel_zt, &
-                              rvm_mc, thlm_mc, &
-                              wphydrometp, hydromet_vel, &
-                              hydromet_vel_covar, hydromet_vel_covar_zt, &
-                              err_code )
+    if ( hydromet_dim > 0 ) then
+
+       call advance_hydrometeor( dt, wm_zt, exner, cloud_frac, Kr, &
+                                 rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
+                                 hydromet_mc, hydromet_vel_covar_zt_impc, &
+                                 hydromet_vel_covar_zt_expc, &
+                                 hydromet, hydromet_vel_zt, &
+                                 rvm_mc, thlm_mc, &
+                                 wphydrometp, hydromet_vel, &
+                                 hydromet_vel_covar, hydromet_vel_covar_zt, &
+                                 err_code )
+
+    endif ! hydromet_dim > 0
 
     ! Temporarily move this here, prior to the advancing of Ncm.
     if ( l_stats_samp ) then
