@@ -943,7 +943,8 @@ module microphys_driver
                n_variables, corr_array_1, corr_array_2,                 & ! Intent(in)
                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2,                    & ! Intent(in)
                hydromet_pdf_params,                                     & ! Intent(in)
-               Nccnm, hydromet, wphydrometp, Ncm, wpNcp,                & ! Intent(inout)
+               Nccnm, hydromet, wphydrometp,                            & ! Intent(inout)
+               Ncm, Nc_in_cloud, wpNcp,                                 & ! Intent(inout)
                rvm_mc, rcm_mc, thlm_mc,                                 & ! Intent(out)
                wprtp_mc, wpthlp_mc,                                     & ! Intent(out)
                rtp2_mc, thlp2_mc, rtpthlp_mc,                           & ! Intent(out)
@@ -958,8 +959,8 @@ module microphys_driver
     !---------------------------------------------------------------------------
 
     use grid_class, only: & 
-        gr,  & ! Variable(s)
-        zm2zt,  & ! Procedure(s)
+        gr,    & ! Variable(s)
+        zm2zt, & ! Procedure(s)
         zt2zm
 
     use KK_microphys_module, only: & 
@@ -999,8 +1000,7 @@ module microphys_driver
         xpwp_fnc  ! Procedure(s)
 
     use parameters_tunable, only: & 
-        c_Krrainm,  & ! Variable(s) 
-        nu_r_vert_res_dep
+        c_Krrainm    ! Variable(s) 
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -1098,11 +1098,6 @@ module microphys_driver
 
     use stats_subs, only: &
         stats_accumulate_hydromet
-
-    use fill_holes, only: &
-        vertical_avg, & ! Procedure(s)
-        fill_holes_driver, &
-        setup_stats_indices
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_add,            &
@@ -1208,8 +1203,9 @@ module microphys_driver
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Ncm,   & ! Mean cloud droplet conc., < N_c > (thermo. levs.)      [num/kg]
-      wpNcp    ! Covariance < w'N_c' > (momentum levels)         [(m/s)(num/kg)]
+      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
+      Nc_in_cloud, & ! Mean (in-cloud) cloud droplet concentration      [num/kg]
+      wpNcp          ! Covariance < w'N_c' > (momentum levels)   [(m/s)(num/kg)]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: & 
@@ -1287,9 +1283,6 @@ module microphys_driver
     real( kind = core_rknd ), dimension(gr%nz, 4) :: &
       aeromass ! ug/m^3
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      Nc_in_cloud ! cloud average droplet concentration [#/kg]
-
     type(microphys_stats_vars_type) :: &
       microphys_stats_zt, &   ! Statistics variables from microphysics on zt and sfc grids
       microphys_stats_sfc
@@ -1327,6 +1320,15 @@ module microphys_driver
     ! microphysics
     if ( time_current < microphys_start_time ) return
 
+    ! Initialize predicitive hydrometeor tendencies and sedimentation
+    ! velocities.
+    if ( hydromet_dim > 0 ) then
+       hydromet_mc = zero
+       hydromet_vel_zt = zero
+    endif
+    ! Initialize predicitive Ncm tendency.
+    Ncm_mc = zero
+
     ! Initialize the values of the implicit and explicit components used to 
     ! calculate the covariances of hydrometeor sedimentation velocities and
     ! their associated hydrometeors (for example, <V_rr'r_r'> and <V_Nr'N_r'>)
@@ -1354,97 +1356,6 @@ module microphys_driver
     ! Calculate T_in_K
     T_in_K = thlm2T_in_K( thlm, exner, rcm )
 
-    ! Start Ncm budget to capture Ncm_act term
-    if ( l_stats_samp .and. l_predictnc ) then
-       ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-       ! set to the value of the mean hydrometeor field at k = 2.  Don't
-       ! include budget stats for level k = 1.
-       do k = 2, gr%nz, 1
-          call stat_begin_update_pt( iNcm_bt, k, &
-                                     Ncm(k) &
-                                     / real( dt, kind = core_rknd ), zt )
-       enddo
-    endif ! l_stats_samp and l_predictnc
-
-    ! Call GFDL activation code
-    if( l_gfdl_activation ) then
-      ! Ensure a microphysics that has Ncm is being used
-      ! Note: KK micro is not used because it resets Ncm every timestep
-      if ( l_predictnc ) then
-
-        ! Save the initial Ncm value for the Ncm_act term
-        if ( l_stats_samp ) then
-          call stat_begin_update( iNcm_act, &
-                                  Ncm / real( dt, kind = core_rknd ), zt )
-        end if
-
-        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
-
-        ! Convert to #/kg
-        Ndrop_max = Ndrop_max * cm3_per_m3 / rho
-
-        if( l_stats_samp ) then
-          call stat_update_var( iNc_activated, Ndrop_max, zt)
-        end if
-
-        ! Clip Ncm values that are outside of cloud by CLUBB standards
-        do k=1, gr%nz
-
-! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
-          if( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
-             zero  ! if T<-40C, no liquid drop nucleation
-! <--- h1g, 2011-04-20
-
-          ! Clip Ncm to only be where there is cloud to avoid divide by zero errors
-          if( cloud_frac(k) > cloud_frac_min ) then
-            Ncm(k) = max( Ndrop_max(k), Ncm(k) )
-          else
-            Ncm(k) = zero
-          end if
-        end do
-
-        ! Update the Ncm_act term
-        if( l_stats_samp ) then
-          call stat_end_update( iNcm_act, &
-                                Ncm / real( dt, kind = core_rknd ), zt )
-        end if
-
-      else
-
-        stop "Unsupported microphysics scheme for GFDL activation."
-
-      end if  ! l_predictnc
-    end if ! l_gfdl_activation
-
-    ! Setup Ncm and Nc_in_cloud.
-    if ( l_predictnc ) then
-       ! Nc is predicted by the microphysics scheme.
-       Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
-    else
-       ! Nc is a prescribed value.
-       if ( .not. l_const_Nc_in_cloud ) then
-          where ( rcm > rc_tol )
-             ! When Nc is prescribed and cloud water is found, find the value of
-             ! Nc_in_cloud.
-             Nc_in_cloud = Nc0_in_cloud / rho
-             Ncm = ( Nc0_in_cloud / rho ) * cloud_frac
-          elsewhere  ! rcm = 0
-             ! When Nc is prescribed and cloud water is not found, there are not
-             ! any cloud droplets.  The value of Nc_in_cloud is 0 or undefined.
-             Nc_in_cloud = zero
-             Ncm = zero
-          endwhere  ! rcm > 0
-       else ! Constant in-cloud Nc.
-          ! Note:  this code is needed for the constant Nc-in-cloud case for
-          !        upscaled KK microphysics.  As soon as the code in KK
-          !        microphysics is rewritten in a slightly more general form,
-          !        we can simply use the above code for Nc_in_cloud (when Nc is
-          !        prescribed).
-          Nc_in_cloud = Nc0_in_cloud / rho
-          Ncm = ( Nc0_in_cloud / rho ) * cloud_frac
-       endif
-    endif ! l_predictnc
-
     ! Begin by calling Brian Griffin's implementation of the
     ! Khairoutdinov and Kogan microphysics (analytic or local formulas),
     ! the COAMPS implementation of Rutlege and Hobbes, or the Morrison
@@ -1455,11 +1366,6 @@ module microphys_driver
 
     case ( "coamps" )
 
-      ! Initialize tendencies to zero
-      hydromet_mc(:,:) = zero
-      hydromet_vel(:,:) = zero
-      hydromet_vel_zt(:,:) = zero
-      Ncm_mc = zero
 #ifdef COAMPS_MICRO
       call coamps_micro_driver & 
            ( runtype, time_current, dt, & ! In
@@ -1488,16 +1394,17 @@ module microphys_driver
         call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(iVNr, zt2zm( hydromet_vel(:,iiNrm) ), zm )
+        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVrsnow, zt2zm( hydromet_vel(:,iirsnowm) ), zm )
+        call stat_update_var(iVrsnow, zt2zm( hydromet_vel_zt(:,iirsnowm) ), zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVrice, zt2zm( hydromet_vel(:,iiricem) ), zm )
+        call stat_update_var( iVrice, zt2zm( hydromet_vel_zt(:,iiricem) ), zm )
 
         ! Sedimentation velocity for graupel
-        call stat_update_var( iVrgraupel, zt2zm( hydromet_vel(:,iirgraupelm) ), zm )
+        call stat_update_var( iVrgraupel, &
+                              zt2zm( hydromet_vel_zt(:,iirgraupelm) ), zm )
       end if ! l_stats_samp
 
     case ( "morrison" )
@@ -1710,6 +1617,56 @@ module microphys_driver
       ! Do nothing
     end select ! micro_scheme
 
+    ! Call GFDL activation code
+    if( l_gfdl_activation ) then
+      ! Ensure a microphysics that has Ncm is being used
+      if ( l_predictnc ) then
+
+        ! Save the initial Ncm value for the Ncm_act term
+        if ( l_stats_samp ) then
+          call stat_begin_update( iNcm_act, Ncm_mc, zt )
+        end if
+
+        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
+
+        ! Convert to #/kg
+        Ndrop_max = Ndrop_max * cm3_per_m3 / rho
+
+        if( l_stats_samp ) then
+          call stat_update_var( iNc_activated, Ndrop_max, zt)
+        end if
+
+        ! Clip Ncm values that are outside of cloud by CLUBB standards
+        do k=1, gr%nz
+
+! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
+          if( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
+             zero  ! if T<-40C, no liquid drop nucleation
+! <--- h1g, 2011-04-20
+
+          ! Apply "clipped" Ncm to the Ncm tendency, Ncm_mc.
+          if( cloud_frac(k) > cloud_frac_min ) then
+            Ncm_mc(k) &
+            = Ncm_mc(k) &
+              + ( ( max( Ndrop_max(k), Ncm(k) ) - Ncm(k) ) &
+                  / real( dt, kind = core_rknd ) )
+          else
+            Ncm_mc(k) = Ncm_mc(k) - ( Ncm(k) / real( dt, kind = core_rknd ) )
+          end if
+        end do
+
+        ! Update the Ncm_act term
+        if( l_stats_samp ) then
+          call stat_end_update( iNcm_act, Ncm_mc, zt )
+        end if
+
+      else
+
+        stop "Unsupported microphysics scheme for GFDL activation."
+
+      end if  ! l_predictnc
+    end if ! l_gfdl_activation
+
     ! Sample microphysics variables if necessary
     if ( microphys_stats_zt%l_allocated ) then
       call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
@@ -1739,13 +1696,6 @@ module microphys_driver
 
     endif ! hydromet_dim > 0
 
-    ! Temporarily move this here, prior to the advancing of Ncm.
-    if ( l_stats_samp ) then
-      ! In the case where Ncm is neither a fixed number nor predicted these will
-      ! be set to -999.
-      call stat_update_var( iNcm, Ncm, zt )
-    end if ! l_stats_samp
-
     !-----------------------------------------------------------------------
     ! When mean cloud droplet concentration, Ncm, is predicted, apply
     ! sedimentation, advection, and diffusion, and advance Ncm one model
@@ -1754,10 +1704,21 @@ module microphys_driver
 
     if ( l_predictnc ) then
 
+       ! Nc is predicted.
+
        call advance_Ncm( dt, wm_zt, cloud_frac, Kr, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          Ncm, Nc_in_cloud, &
                          wpNcp, err_code )
+
+    else
+
+       ! Nc is prescribed.
+       ! The in-cloud mean of cloud droplet concentration, Nc_in_cloud, is
+       ! constant in this scenario.  The overall mean of cloud droplet
+       ! concentration, Ncm, depends of the in-cloud mean and cloud fraction.
+
+       Ncm = Nc_in_cloud * cloud_frac
 
     endif ! l_predictnc
 
@@ -1791,13 +1752,12 @@ module microphys_driver
                            rcm_mc, thlm_mc )        ! Intent(inout)
     end if ! l_cloud_sed
 
-    ! Temporarily move this code to an earlier point, prior to advancing Ncm.
     if ( l_stats_samp ) then
       call stat_update_var( iNccnm, Nccnm, zt )
     
       ! In the case where Ncm is neither a fixed number nor predicted these will
       ! be set to -999.
-    !  call stat_update_var( iNcm, Ncm, zt )
+      call stat_update_var( iNcm, Ncm, zt )
       call stat_update_var( iNc_in_cloud, Nc_in_cloud, zt )
     end if ! l_stats_samp
 
@@ -2308,7 +2268,7 @@ module microphys_driver
     use stats_type, only: & 
         stat_update_var,      & ! Procedure(s)
         stat_begin_update,    &
-        !stat_begin_update_pt, &
+        stat_begin_update_pt, &
         stat_end_update,      &
         stat_end_update_pt
 
@@ -2391,23 +2351,12 @@ module microphys_driver
        call stat_update_var( iNcm_mc, Ncm_mc, zt )
 
        ! Save prior value of Ncm for determining total time tendency.
-       ! This kludge is to allow Ncm_bt to include the Ncm_act budget term
-       ! that is calculated before microphysics is called.  The stat_begin_update
-       ! subroutine is called prior to the GFDL activation code, so we can't call
-       ! it here again. -meyern
-       !if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
-       !   call stat_begin_update( iNcm_bt, &
-       !                           Ncm / real( dt, kind = core_rknd ), zt )
-       !else
-       !   ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-       !   ! set to the value of the mean hydrometeor field at k = 2.
-       !   ! Don't include budget stats for level k = 1.
-       !   do k = 2, gr%nz, 1
-       !      call stat_begin_update_pt( iNcm_bt, k, &
-       !                                 Ncm(k) &
-       !                                 / real( dt, kind = core_rknd ), zt )
-       !   enddo
-       !endif
+       ! The value of Ncm at thermodynamic level k = 1 is simply set to the
+       ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
+       do k = 2, gr%nz, 1
+          call stat_begin_update_pt( iNcm_bt, k, &
+                                     Ncm(k) / real( dt, kind = core_rknd ), zt )
+       enddo
 
     endif ! l_stats_samp
 
@@ -2469,6 +2418,8 @@ module microphys_driver
                              cloud_frac, &
                              lhs, rhs, Ncm, err_code )
 
+       Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
+
     endif
 
 
@@ -2507,6 +2458,10 @@ module microphys_driver
                              Ncm / real( dt, kind = core_rknd ), zt )
     endif
 
+    ! Clip any negative values of Nc_in_cloud to 0.
+    where ( Nc_in_cloud < zero_threshold )
+       Nc_in_cloud = zero_threshold
+    end where
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
     ! a down-gradient approximation:  < w'N_c' > = - K * d< N_c >/dz.
@@ -2536,19 +2491,12 @@ module microphys_driver
     if ( l_stats_samp ) then
 
        ! Total time tendency
-       if ( l_Ncm_sed .and. l_upwind_diff_sed ) then
-          call stat_end_update( iNcm_bt, &
-                                  Ncm / real( dt, kind = core_rknd ), zt )
-       else
-          ! The mean hydrometeor field at thermodynamic level k = 1 is simply
-          ! set to the value of the mean hydrometeor field at k = 2.  Don't
-          ! include budget stats for level k = 1.
-          do k = 2, gr%nz, 1
-             call stat_end_update_pt( iNcm_bt, k, &
-                                      Ncm(k) &
-                                      / real( dt, kind = core_rknd ), zt )
-          enddo ! k = 2, gr%nz, 1
-       endif
+       ! The value of Ncm at thermodynamic level k = 1 is simply set to the
+       ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
+       do k = 2, gr%nz, 1
+          call stat_end_update_pt( iNcm_bt, k, &
+                                   Ncm(k) / real( dt, kind = core_rknd ), zt )
+       enddo ! k = 2, gr%nz, 1
 
     endif ! l_stats_samp
 

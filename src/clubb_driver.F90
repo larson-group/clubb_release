@@ -110,7 +110,7 @@ module clubb_driver
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
-      iiricem, iirsnowm, iirgraupelm, iirrainm
+      iiricem, iirsnowm, iirgraupelm
 
     use microphys_driver, only: init_microphys, advance_microphys, cleanup_microphys ! Subroutines
 
@@ -451,8 +451,8 @@ module clubb_driver
       LH_rt, LH_thl ! Samples of rt, thl          [kg/kg, K]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      Lscale_vert_avg, &  ! 3pt vertically averaged Lscale        [m]
-      Nc_in_cloud          ! Mean cloud droplet concentration (within-cloud)  [num/kg]
+      Lscale_vert_avg, & ! 3pt vertically averaged Lscale               [m]
+      Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       LH_sample_point_weights ! Weights for cloud weighted sampling
@@ -831,7 +831,7 @@ module clubb_driver
     dummy_dy = 0.0_core_rknd
 
     ! Setup microphysical fields
-    call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & !Intent(in)
+    call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
                          hydromet_dim )                    ! Intent(out)
 
     ! Setup radiation parameters
@@ -956,7 +956,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                              & ! Intent(inout)
              rtm_ref, thlm_ref,                                 & ! Intent(inout) 
              um_ref, vm_ref,                                    & ! Intent(inout)
-             Ncm, Nccnm,                                        & ! Intent(inout)
+             Ncm, Nc_in_cloud, Nccnm,                           & ! Intent(inout)
              sclrm, edsclrm, err_code )                           ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -984,7 +984,7 @@ module clubb_driver
              thv_ds_zm, thv_ds_zt,                               & ! Intent(inout)
              rtm_ref, thlm_ref,                                  & ! Intent(inout) 
              um_ref, vm_ref,                                     & ! Intent(inout)
-             Ncm, Nccnm,                                         & ! Intent(inout)
+             Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
              sclrm, edsclrm, err_code )                            ! Intent(out)
 
       if ( fatal_error( err_code ) ) return
@@ -1263,7 +1263,7 @@ module clubb_driver
 
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, wm_zt, rho, &   ! Intent(in)
-                                    wp2_zt, Ncm, Nc0_in_cloud, rcm, cloud_frac, & ! Intent(in)
+                                    wp2_zt, Ncm, Nc_in_cloud, rcm, cloud_frac, & ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
                                     corr_array_cloud, corr_array_below, &        ! Intent(in)
                                     pdf_params, l_stats_samp, &                  ! Intent(in)
@@ -1323,12 +1323,6 @@ module clubb_driver
                   LH_sample_point_weights ) ! Out
         endif
 
-        if ( l_predictnc ) then
-           Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
-        else
-           Nc_in_cloud = Nc0_in_cloud / rho
-        endif
-
         call stats_accumulate_LH &
              ( gr%nz, LH_microphys_calls, d_variables, rho_ds_zt, & ! In
                LH_sample_point_weights,  X_nl_all_levs, & ! In
@@ -1358,7 +1352,8 @@ module clubb_driver
              d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
              hydromet_pdf_params, &                                     ! Intent(in)
-             Nccnm, hydromet, wphydrometp, Ncm, wpNcp,  &               ! Intent(inout)
+             Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
+             Ncm, Nc_in_cloud, wpNcp, &                                 ! Intent(inout)
              rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
              wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
              rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
@@ -1492,7 +1487,7 @@ module clubb_driver
                thv_ds_zm, thv_ds_zt, &
                rtm_ref, thlm_ref, &
                um_ref, vm_ref, &
-               Ncm, Nccnm, &
+               Ncm, Nc_in_cloud, Nccnm, &
                sclrm, edsclrm, err_code )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -1512,7 +1507,7 @@ module clubb_driver
         edsclr_dim
 
     use parameters_microphys, only: &
-        Nc0_in_cloud,  & ! Variable(s)
+        Nc0_in_cloud, & ! Variable(s)
         micro_scheme, &
         l_predictnc
 
@@ -1616,7 +1611,8 @@ module clubb_driver
       thlm_ref           ! Initial profile of thlm             [K]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Ncm    ! Cloud droplet concentration    [num/kg]
+      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
+      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Nccnm    ! Cloud condensation nuclei concentration (COAMPS/MG)  [num/kg]
@@ -1679,28 +1675,29 @@ module clubb_driver
                                      invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(out)
                                      thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
 
-    ! Determine initial value cloud droplet number concentration for the
-    ! Morrison microphysics
+    ! Determine initial value cloud droplet number concentration when Nc
+    ! is predicted.
+    Nc_in_cloud = Nc0_in_cloud / rho
+    if ( l_predictnc ) then
+
+       Ncm(2:gr%nz-1) = Nc_in_cloud(2:gr%nz-1)
+
+       ! Upper boundary condition
+       Ncm(gr%nz) = 0._core_rknd
+
+       ! Lower boundary condition
+       Ncm(1) = 0._core_rknd
+
+    endif
+
     select case ( trim( micro_scheme ) )
-    case ( "morrison", "morrison_gettelman" )
-      if ( l_predictnc ) then
-
-        Ncm(2:gr%nz-1) = Nc0_in_cloud / rho(2:gr%nz-1)
-
-        ! Upper boundary condition
-        Ncm(gr%nz) = 0._core_rknd
-
-        ! Lower boundary condition
-        Ncm(1) = 0._core_rknd
-
-      end if
 
     case ( "coamps" )
-      ! Initialize Nccnm as in COAMPS-LES
-      Nccnm(1:gr%nz) &
-      = 30.0_core_rknd &
-        * ( one + exp( -gr%zt(1:gr%nz) / 2000.0_core_rknd ) )  &
-        * cm3_per_m3 / rho    ! Known magic number
+       ! Initialize Nccnm as in COAMPS-LES
+       Nccnm(1:gr%nz) &
+       = 30.0_core_rknd &
+         * ( one + exp( -gr%zt(1:gr%nz) / 2000.0_core_rknd ) )  &
+         * cm3_per_m3 / rho    ! Known magic number
     end select
 
 

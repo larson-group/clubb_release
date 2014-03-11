@@ -66,7 +66,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, d_variables, dt, wm_zt, rho, &           ! Intent(in)
-                                   wp2_zt, Ncm, Nc0_in_cloud, rcm, cloud_frac, & ! Intent(in)
+                                   wp2_zt, Ncm, Nc_in_cloud, rcm, cloud_frac, & ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
                                    corr_array_cloud, corr_array_below, &        ! Intent(in)
                                    pdf_params, l_stats_samp, &                  ! Intent(in)
@@ -178,13 +178,11 @@ module setup_clubb_pdf_params
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,  & ! Mean vertical velocity, <w>, on thermodynamic levels [m/s]
-      rho,    & ! Density                                              [kg/m^3]
-      wp2_zt, & ! Variance of w, <w'^2> (interp. to thermo. levels)    [m^2/s^2]
-      Ncm       ! Mean cloud droplet concentration, <N_c>              [num/kg]
-
-    real( kind = core_rknd ), intent(in) :: &
-      Nc0_in_cloud    ! Constant in-cloud value of cloud droplet conc. [num/m^3]
+      wm_zt,       & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+      rho,         & ! Density                                         [kg/m^3]
+      wp2_zt,      & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
+      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.) [num/kg]
+      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
@@ -370,7 +368,7 @@ module setup_clubb_pdf_params
              ! constant, prescribed value of Nc (which is still set to a default
              ! value even when Ncm is predicted).  This will avoid a huge value
              ! of Ncnm.
-             Ncnm(k) = Nc0_in_cloud / rho(k)
+             Ncnm(k) = Nc_in_cloud(k)
           endif
        enddo ! k = 1, nz
     elseif ( l_predictnc .and. l_const_Nc_in_cloud ) then
@@ -384,7 +382,7 @@ module setup_clubb_pdf_params
              ! constant, prescribed value of Nc (which is still set to a default
              ! value even when Ncm is predicted).  This will avoid a huge value
              ! of Ncnm.
-             Ncnm(k) = Nc0_in_cloud / rho(k)
+             Ncnm(k) = Nc_in_cloud(k)
           endif
        enddo ! k = 1, nz
     elseif ( .not. l_const_Nc_in_cloud .and. .not. l_predictNc ) then
@@ -393,11 +391,11 @@ module setup_clubb_pdf_params
        ! vary around this prescribed mean value.  The value of N_cn also varies.
        ! Find the mean of N_cn, <N_cn>.
        ! I will call the full equation here later.  Brian; 1/28/2014.
-       Ncnm = Nc0_in_cloud / rho
+       Ncnm = Nc_in_cloud
     elseif ( l_const_Nc_in_cloud .and. .not. l_predictNc ) then
        ! The value of N_c in-cloud is constant, prescribed parameter.  The value
        ! of N_cn is also constant at any grid level.
-       Ncnm = Nc0_in_cloud / rho
+       Ncnm = Nc_in_cloud
     endif
 
     ! Calculate correlations involving w by first calculating total covariances
