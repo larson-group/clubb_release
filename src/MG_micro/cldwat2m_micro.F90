@@ -408,8 +408,7 @@ subroutine mmicro_pcond ( sub_column,           &
        normalize_mean_stdev, &
        compute_corr,         &
        normalize_corr,       &
-       unpack_pdf_params,    &
-       num_hm                  ! Variable(s)
+       unpack_pdf_params
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
@@ -425,6 +424,9 @@ subroutine mmicro_pcond ( sub_column,           &
        rr_tol,     &
        Nr_tol,     &
        rc_tol
+
+   use parameters_model, only: &
+       hydromet_dim  ! Variable(s)
 
    use parameters_microphys, only: &
        KK_auto_Nc_exp,      & ! Variable(s)
@@ -950,10 +952,10 @@ subroutine mmicro_pcond ( sub_column,           &
       KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
       mixt_frac        ! Mixture fraction                                    [-]
 
-    real ( kind = core_rknd ), dimension(num_hm) :: &
-      hm1,      &
-      hm2,      &
-      wphmp_zt
+    real ( kind = core_rknd ), dimension(hydromet_dim) :: &
+      hm1,            &
+      hm2,            &
+      wphydrometp_zt
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
       mu_x_1, &
@@ -1811,8 +1813,8 @@ subroutine mmicro_pcond ( sub_column,           &
                  hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 wphmp_zt(1) = zero
-                 wphmp_zt(2) = zero
+                 wphydrometp_zt(1) = zero
+                 wphydrometp_zt(2) = zero
 
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
                     sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
@@ -1848,7 +1850,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     zero, zero, & ! Intent(in)
                                     zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphmp_zt, &
+                                    one, wphydrometp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
@@ -2404,7 +2406,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
                                     zero, zero, & ! Intent(in)
                                     zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphmp_zt, &
+                                    one, wphydrometp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)

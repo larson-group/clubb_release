@@ -269,7 +269,6 @@ module clubb_driver
         sigma2_on_mu2_ip_array_below
 
     use setup_clubb_pdf_params, only: &
-        num_hm, &               ! Variable
         setup_pdf_parameters    ! Procedure(s)
 
     use hydromet_pdf_parameter_module, only: &
@@ -436,10 +435,9 @@ module clubb_driver
       rcm_zm
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      wphmp, &      ! Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]
-      wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
-      rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
-      thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
+      wp2hmp,  & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2<hydromet units>]
+      rtphmp,  & ! Covariance of rt and a hydrometeor  [(kg/kg)<hydromet units>]
+      thlphmp    ! Covariance of thl and a hydrometeor [K<hydromet units>]
 
     real( kind = dp ), dimension(:,:,:), allocatable :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
@@ -861,10 +859,9 @@ module clubb_driver
     ! Zero all elements of radf
     radf(1:gr%nz) = 0.0_core_rknd
 
-    allocate( wphmp(gr%nz,num_hm), wp2hmp(gr%nz,num_hm), rtphmp(gr%nz,num_hm), &
-              thlphmp(gr%nz,num_hm) )
+    allocate( wp2hmp(gr%nz,hydromet_dim), rtphmp(gr%nz,hydromet_dim), &
+              thlphmp(gr%nz,hydromet_dim) )
 
-    wphmp(:,:) = 0._core_rknd
     wp2hmp(:,:) = 0._core_rknd
     rtphmp(:,:) = 0._core_rknd
     thlphmp(:,:) = 0._core_rknd
@@ -1210,7 +1207,7 @@ module clubb_driver
 
       ! Call the parameterization one timestep
       call advance_clubb_core &
-           ( l_implemented, dt_main, fcor, sfc_elevation, num_hm, hydromet_dim, &! Intent(in)
+           ( l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, &! Intent(in)
              thlm_forcing, rtm_forcing, um_forcing, vm_forcing, & ! Intent(in)
              sclrm_forcing, edsclrm_forcing, wprtp_forcing, &     ! Intent(in)
              wpthlp_forcing, rtp2_forcing, thlp2_forcing, &       ! Intent(in)
@@ -1220,7 +1217,7 @@ module clubb_driver
              p_in_Pa, rho_zm, rho, exner, &                       ! Intent(in)
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! Intent(in)
-             rfrzm, radf, wphmp, wp2hmp, rtphmp, thlphmp, &       ! Intent(in)
+             rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, & ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
@@ -1271,7 +1268,7 @@ module clubb_driver
                                     sigma_x_1, sigma_x_2, &                      ! Intent(out)
                                     corr_array_1, corr_array_2, &                ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-                                    wphmp, hydromet_pdf_params )                 ! Intent(out)
+                                    hydromet_pdf_params )                        ! Intent(out)
 
       endif ! not micro_scheme == "none"
 

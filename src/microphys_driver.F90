@@ -223,9 +223,6 @@ module microphys_driver
         setup_pdf_indices, &  ! Procedure(s)
         setup_corr_varnce_array
 
-    use setup_clubb_pdf_params, only: &
-        init_precip_hm_arrays  ! Procedure(s)
-
     use model_flags, only: &
         l_diagnose_correlations, &
         l_evaporate_cold_rcm, &
@@ -913,8 +910,6 @@ module microphys_driver
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
                             iirgraupelm, iiNgraupelm, &
                             l_ice_micro, l_graupel )
-
-    call init_precip_hm_arrays( hydromet_dim )
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext

@@ -16,22 +16,22 @@ module clip_explicit
 
   ! Named constants to avoid string comparisons
   integer, parameter, public :: &
-    clip_rtp2 = 1, &       ! Named constant for rtp2 clipping
-    clip_thlp2 = 2, &      ! Named constant for thlp2 clipping
-    clip_rtpthlp = 3, &    ! Named constant for rtpthlp clipping
-    clip_up2 = 5, &        ! Named constant for up2 clipping
-    clip_vp2 = 6, &        ! Named constant for vp2 clipping
-!    clip_scalar = 7, &     ! Named constant for scalar clipping
-    clip_wprtp = 8, &      ! Named constant for wprtp clipping
-    clip_wpthlp = 9, &     ! Named constant for wpthlp clipping
-    clip_upwp = 10, &      ! Named constant for upwp clipping
-    clip_vpwp = 11, &      ! Named constant for vpwp clipping
-    clip_wp2 = 12, &       ! Named constant for wp2 clipping
-    clip_wpsclrp = 13, &   ! Named constant for wp scalar clipping
-    clip_sclrp2 = 14, &    ! Named constant for sclrp2 clipping
-    clip_sclrprtp = 15, &  ! Named constant for sclrprtp clipping
-    clip_sclrpthlp = 16, & ! Named constant for sclrpthlp clipping
-    clip_wphmp = 17        ! Named constant for wphmp clipping
+    clip_rtp2 = 1, &         ! Named constant for rtp2 clipping
+    clip_thlp2 = 2, &        ! Named constant for thlp2 clipping
+    clip_rtpthlp = 3, &      ! Named constant for rtpthlp clipping
+    clip_up2 = 5, &          ! Named constant for up2 clipping
+    clip_vp2 = 6, &          ! Named constant for vp2 clipping
+!    clip_scalar = 7, &       ! Named constant for scalar clipping
+    clip_wprtp = 8, &        ! Named constant for wprtp clipping
+    clip_wpthlp = 9, &       ! Named constant for wpthlp clipping
+    clip_upwp = 10, &        ! Named constant for upwp clipping
+    clip_vpwp = 11, &        ! Named constant for vpwp clipping
+    clip_wp2 = 12, &         ! Named constant for wp2 clipping
+    clip_wpsclrp = 13, &     ! Named constant for wp scalar clipping
+    clip_sclrp2 = 14, &      ! Named constant for sclrp2 clipping
+    clip_sclrprtp = 15, &    ! Named constant for sclrprtp clipping
+    clip_sclrpthlp = 16, &   ! Named constant for sclrpthlp clipping
+    clip_wphydrometp = 17    ! Named constant for wphydrometp clipping
 
   contains
 

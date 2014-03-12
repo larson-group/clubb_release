@@ -17,28 +17,27 @@ module pdf_closure_module
   ! and GFDL.
   !#######################################################################
   !#######################################################################
-  subroutine pdf_closure &
-             ( num_hm, p_in_Pa, exner, thv_ds, wm,&
-               wp2, wp3, sigma_sqd_w,             &
-               Skw, rtm, rtp2,                    &
-               wprtp, thlm, thlp2,                &
-               wpthlp, rtpthlp, sclrm,            &
-               wpsclrp, sclrp2, sclrprtp,         &
-               sclrpthlp, level,                  &
+  subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds, wm, &
+                          wp2, wp3, sigma_sqd_w,                    &
+                          Skw, rtm, rtp2,                           &
+                          wprtp, thlm, thlp2,                       &
+                          wpthlp, rtpthlp, sclrm,                   &
+                          wpsclrp, sclrp2, sclrprtp,                &
+                          sclrpthlp, level,                         &
 #ifdef GFDL
-               RH_crit,  do_liquid_only_in_clubb, &  ! h1g, 2010-06-15
+                          RH_crit,  do_liquid_only_in_clubb,        & ! h1g, 2010-06-15
 #endif
-               wphmp, wp2hmp, rtphmp, thlphmp,    &
-               wp4, wprtp2, wp2rtp,               &
-               wpthlp2, wp2thlp, wprtpthlp,       &
-               cloud_frac, ice_supersat_frac,     &
-               rcm, wpthvp, wp2thvp, rtpthvp,     &
-               thlpthvp, wprcp, wp2rcp, rtprcp,   &
-               thlprcp, rcp2, pdf_params,         &
-               err_code,                          &
-               wpsclrprtp, wpsclrp2, sclrpthvp,   &
-               wpsclrpthlp, sclrprcp, wp2sclrp,   &
-               rc_coef                           )
+                          wphydrometp, wp2hmp, rtphmp, thlphmp,     &
+                          wp4, wprtp2, wp2rtp,                      &
+                          wpthlp2, wp2thlp, wprtpthlp,              &
+                          cloud_frac, ice_supersat_frac,            &
+                          rcm, wpthvp, wp2thvp, rtpthvp,            &
+                          thlpthvp, wprcp, wp2rcp, rtprcp,          &
+                          thlprcp, rcp2, pdf_params,                &
+                          err_code,                                 &
+                          wpsclrprtp, wpsclrp2, sclrpthvp,          &
+                          wpsclrpthlp, sclrprcp, wp2sclrp,          &
+                          rc_coef                                   )
 
 
 ! Description:
@@ -120,7 +119,7 @@ module pdf_closure_module
 
     ! Input Variables
     integer, intent(in) :: &
-      num_hm         ! Number of hydrometeor species              [#]
+      hydromet_dim   ! Number of hydrometeor species              [#]
 
     real( kind = core_rknd ), intent(in) ::  & 
       p_in_Pa,     & ! Pressure                                   [Pa]
@@ -158,11 +157,11 @@ module pdf_closure_module
     integer, intent(in) ::  &
       level  ! Thermodynamic level for which calculations are taking place.
 
-    real( kind = core_rknd ), dimension(num_hm), intent(in) :: &
-      wphmp,  &     ! Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]
-      wp2hmp, &     ! Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]
-      rtphmp, &     ! Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]
-      thlphmp       ! Covariance of thl and a hydrometeor [K <hydrometeor units>]
+    real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
+      wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
+      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
+      rtphmp,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
+      thlphmp        ! Covariance of thl and a hydrometeor [K <hm units>]
 
     ! Output Variables
 
@@ -307,7 +306,7 @@ module pdf_closure_module
     ! Temporarily get rid of annoying compiler warnings
     ! ticket:639
     if ( .false. ) then
-      print *, wphmp(1), wp2hmp(1), rtphmp(1), thlphmp(1)
+      print *, wphydrometp(1), wp2hmp(1), rtphmp(1), thlphmp(1)
     end if
 
     ! Check whether the passive scalars are present.
