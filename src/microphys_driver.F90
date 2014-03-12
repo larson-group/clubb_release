@@ -1916,7 +1916,8 @@ module microphys_driver
         nu_r_vert_res_dep  ! Variable(s)
 
     use error_code, only:  & 
-        clubb_at_least_debug_level    ! Procedure(s)
+        clubb_at_least_debug_level, &    ! Procedure(s)
+        clubb_no_error
 
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
@@ -2008,6 +2009,8 @@ module microphys_driver
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
                ixrm_bt, ixrm_mc, iwpxrp
 
+    ! Initialize error code
+    err_code = clubb_no_error
 
     ! Loop over each type of precipitating hydrometeor and advance one model
     ! time step.
