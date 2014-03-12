@@ -16,7 +16,7 @@ module output_2D_samples_module
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine open_2D_samples_file( nz, n_micro_calls, n_2D_variables, &
+  subroutine open_2D_samples_file( nz, num_samples, n_2D_variables, &
                                    fname_prefix, fdir, &
                                    time, dtwrite, zgrid, variable_names, &
                                    variable_descriptions, variable_units, &
@@ -43,8 +43,8 @@ module output_2D_samples_module
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
-      n_micro_calls, & ! Number of calls to the microphysics
-      n_2D_variables   ! Number variables to output
+      num_samples, & ! Number of samples per variable
+      n_2D_variables ! Number variables to output
 
     character(len=*), intent(in) :: &
       fdir,      & ! Output directory
@@ -69,7 +69,7 @@ module output_2D_samples_module
     ! Local Variables
     integer :: nlat, nlon ! Not actually latitudes and longitudes
 
-    real( kind = core_rknd ), dimension(n_micro_calls) :: rlat
+    real( kind = core_rknd ), dimension(num_samples) :: rlat
 
     real( kind = core_rknd ), dimension(1) :: rlon
 
@@ -83,14 +83,14 @@ module output_2D_samples_module
 
     ! We need to set this like a latitude to trick GrADS and allow of viewing of
     ! the sample points with the GrADS application and sdfopen.
-    nlat = n_micro_calls
+    nlat = num_samples
     nlon = 1
 
-    allocate( sample_file%rlat(n_micro_calls), sample_file%rlon(1) )
+    allocate( sample_file%rlat(num_samples), sample_file%rlon(1) )
     allocate( sample_file%var(n_2D_variables) )
     allocate( sample_file%z(nz) )
 
-    forall( i=1:n_micro_calls )
+    forall( i=1:num_samples )
       rlat(i) = real( i, kind = core_rknd ) ! Use made up arbitrary values for degrees north
     end forall
 
@@ -115,7 +115,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
-             ( nz, n_micro_calls, d_variables, X_nl_all_levs, &
+             ( nz, num_samples, d_variables, X_nl_all_levs, &
                LH_rt, LH_thl )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
@@ -133,13 +133,13 @@ module output_2D_samples_module
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
-      n_micro_calls, & ! Number of calls to the microphysics
-      d_variables      ! Number variates being sampled
+      num_samples, & ! Number of samples per variable
+      d_variables    ! Number variates being sampled
 
-    real(kind=stat_rknd), intent(in), dimension(nz,n_micro_calls,d_variables) :: &
+    real(kind=stat_rknd), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), intent(in), dimension(nz,n_micro_calls) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
       LH_rt, & ! Sample of total water mixing ratio             [kg/kg]
       LH_thl   ! Sample of liquid potential temperature         [K]
 
@@ -148,10 +148,10 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     do j = 1, d_variables+2
-      allocate( lognormal_sample_file%var(j)%ptr(n_micro_calls,1,nz) )
+      allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
       do j = 1, d_variables
         lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = X_nl_all_levs(1:nz,sample,j)
       end do
@@ -159,12 +159,12 @@ module output_2D_samples_module
 
     ! Append rt, thl at the end of the variables
     j = d_variables+1
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
       lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_rt(1:nz,sample), kind=dp)
     end do
 
     j = d_variables+2
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
       lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_thl(1:nz,sample), kind=dp)
     end do
 
@@ -183,7 +183,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
-             ( nz, n_micro_calls, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
+             ( nz, num_samples, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
                p_matrix_s_element )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
@@ -204,16 +204,16 @@ module output_2D_samples_module
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
-      n_micro_calls, & ! Number of calls to the microphysics
-      dp1              ! Number of variates being sampled + 1
+      num_samples, & ! Number of samples per variable
+      dp1            ! Number of variates being sampled + 1
 
-    real(kind=genrand_real), intent(in), dimension(nz,n_micro_calls,dp1) :: &
+    real(kind=genrand_real), intent(in), dimension(nz,num_samples,dp1) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
-    integer, intent(in), dimension(nz,n_micro_calls) :: &
+    integer, intent(in), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
-    integer, intent(in), dimension(n_micro_calls) :: &
+    integer, intent(in), dimension(num_samples) :: &
       p_matrix_s_element ! P matrix at the s_mellor column
 
     integer :: sample, j, k
@@ -221,10 +221,10 @@ module output_2D_samples_module
     ! ---- Begin Code ----
 
     do j = 1, dp1+2
-      allocate( uniform_sample_file%var(j)%ptr(n_micro_calls,1,nz) )
+      allocate( uniform_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
       do j = 1, dp1
         uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
       end do

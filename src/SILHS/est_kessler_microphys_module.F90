@@ -15,7 +15,7 @@ module est_kessler_microphys_module
 !------------------------------------------------------------------------
 
   subroutine est_kessler_microphys &
-             ( nz, n_micro_calls, d_variables, &
+             ( nz, num_samples, d_variables, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, LH_sample_point_weights, &
                LH_AKm, AKm, AKstd, AKstd_cld, &
@@ -49,10 +49,10 @@ module est_kessler_microphys_module
 
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
-      n_micro_calls, & ! Number of calls to the microphysics
-      d_variables      ! Number of variates
+      num_samples, & ! Number of sample points
+      d_variables    ! Number of variates
 
-    real( kind = dp ), dimension(nz,n_micro_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -64,10 +64,10 @@ module est_kessler_microphys_module
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params ! PDF parameters       [units vary]
 
-    integer, dimension(nz,n_micro_calls), intent(in) :: &
+    integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -106,7 +106,7 @@ module est_kessler_microphys_module
     ! Double precision version of Monte Carlo avg liquid water
     real( kind = dp ) :: lh_rcm_avg_dp
 
-    real( kind = dp ), dimension(n_micro_calls) :: &
+    real( kind = dp ), dimension(num_samples) :: &
       rcm_sample ! Sample points of rcm         [kg/kg]
 
     ! Variables needed for exact Kessler autoconversion, AKm
@@ -175,12 +175,12 @@ module est_kessler_microphys_module
       !    but we set means, covariance of hydromet mixing ratio's and number
       !    concentrations to constants.
 
-      rcm_sample(1:n_micro_calls) = max( X_nl_all_levs(level,1:n_micro_calls,1), 0._dp)
+      rcm_sample(1:num_samples) = max( X_nl_all_levs(level,1:num_samples,1), 0._dp)
 
       ! Call microphysics, i.e. Kessler autoconversion.
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_estimate &
-           ( n_micro_calls, real(mixt_frac, kind = dp), &
+           ( num_samples, real(mixt_frac, kind = dp), &
              real(cloud_frac1, kind = dp), real(cloud_frac2, kind = dp), &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
@@ -191,7 +191,7 @@ module est_kessler_microphys_module
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
-           ( n_micro_calls, real(mixt_frac, kind = dp), real(cloud_frac1, kind = dp), &
+           ( num_samples, real(mixt_frac, kind = dp), real(cloud_frac1, kind = dp), &
              real(cloud_frac2, kind = dp), rcm_sample, &
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
@@ -263,7 +263,7 @@ module est_kessler_microphys_module
     return
   end subroutine est_kessler_microphys
 !-----------------------------------------------------------------------
-  subroutine autoconv_estimate( n_micro_calls, mixt_frac, &
+  subroutine autoconv_estimate( num_samples, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
                               X_mixt_comp_one_lev, LH_sample_point_weights, ac_m )
@@ -304,22 +304,22 @@ module est_kessler_microphys_module
     ! Input Variables
 
     integer, intent(in) :: &
-      n_micro_calls  ! Number of calls to microphysics (normally=2)
+      num_samples  ! Number of calls to microphysics (normally=2)
 
     real( kind = dp ), intent(in) :: &
       mixt_frac,               & ! Mixture fraction of Gaussians
       cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    real( kind = dp ), dimension(n_micro_calls), intent(in) :: &
+    real( kind = dp ), dimension(num_samples), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content (when positive) [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Nc, & ! n in-cloud values of droplet number (#/mg air)
 !     rr    ! n in-cloud values of specific rain content (g/kg)
 
-    integer, dimension(n_micro_calls), intent(in) :: &
+    integer, dimension(num_samples), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
-    real( kind = core_rknd ), dimension(n_micro_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
        LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
@@ -386,7 +386,7 @@ module est_kessler_microphys_module
     n1 = 0
     n2 = 0
 
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
 
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
@@ -432,7 +432,7 @@ module est_kessler_microphys_module
       end if
 
       ! Loop to get new sample
-    end do ! sample = 1, n_micro_calls
+    end do ! sample = 1, num_samples
 
 !! Convert sums to averages.
 !! Old code that underestimates if a plume has no sample points
@@ -477,7 +477,7 @@ module est_kessler_microphys_module
       ac_m = mixt_frac*cloud_frac1*ac_m1 + (1._dp-mixt_frac)*cloud_frac2*ac_m2
 
     else
-      ac_m = ( ac_m1 + ac_m2 ) / real( n_micro_calls, kind=dp )
+      ac_m = ( ac_m1 + ac_m2 ) / real( num_samples, kind=dp )
 
     end if
 
@@ -487,7 +487,7 @@ module est_kessler_microphys_module
   end subroutine autoconv_estimate
 
 !----------------------------------------------------------------------
-  subroutine rc_estimate( n_micro_calls, mixt_frac, C1, C2, rc, & ! w,   & 
+  subroutine rc_estimate( num_samples, mixt_frac, C1, C2, rc, & ! w,   & 
                          !N_pts, rr, 
                            X_mixt_comp_one_lev, rc_m )
 ! Description:
@@ -513,19 +513,19 @@ module est_kessler_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_micro_calls ! Number of calls to microphysics (normally=2)
+      num_samples ! Number of calls to microphysics (normally=2)
 
     real( kind = dp ), intent(in) :: &
       mixt_frac, & ! Mixture fraction of Gaussians
       C1, C2       ! Cloud fraction associated w/ 1st, 2nd mixture component
 
-    real( kind = dp ), dimension(n_micro_calls), intent(in) :: &
+    real( kind = dp ), dimension(num_samples), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content [kg/kg].
 !     w,  & ! n in-cloud values of vertical velocity (m/s)
 !     Npts, & ! n in-cloud values of droplet number (#/kg air)
 !     rr    ! n in-cloud values of specific rain content (kg/kg)
 
-    integer, dimension(n_micro_calls), intent(in) :: &
+    integer, dimension(num_samples), intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
     ! Output Variables
@@ -584,7 +584,7 @@ module est_kessler_microphys_module
     n1    = 0
     n2    = 0
 
-    do sample = 1, n_micro_calls
+    do sample = 1, num_samples
 
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
@@ -650,7 +650,7 @@ module est_kessler_microphys_module
     end if ! l_cloud_weighted_averaging
 
     ! Grid box average.
-    rc_m = ( rc_m1 + rc_m2 ) / real(n_micro_calls, kind = dp)
+    rc_m = ( rc_m1 + rc_m2 ) / real(num_samples, kind = dp)
 
     return
   end subroutine rc_estimate

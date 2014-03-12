@@ -252,7 +252,6 @@ module generate_lh_sample_module
       Sigma_stw_2    ! Covariance of s,t, w + hydrometeors for plume 2
 
     real( kind = dp ) :: &
-!     Ncnm,     & ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s) [#/kg]
       var_Ncn1, & ! PDF param for width of plume 1.              [(#/kg)^2]
       var_Ncn2, & ! PDF param for width of plume 2.              [(#/kg^2]
       Nrm,      & ! Rain droplet number concentration.           [#/kg]
@@ -415,7 +414,7 @@ module generate_lh_sample_module
     end if ! l_fix_s_t_correlations
 
     !---------------------------------------------------------------------------
-    ! Generate a set of sample points for a microphysics scheme
+    ! Generate a set of sample points for a microphysics/radiation scheme
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
@@ -461,7 +460,7 @@ module generate_lh_sample_module
 
     if ( iiPDF_Ncn > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Ncn, real(Ncnm, kind = dp), & ! In
+           ( d_variables, iiPDF_Ncn, real( Ncnm, kind = dp ), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
@@ -1022,14 +1021,14 @@ module generate_lh_sample_module
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
     real( kind = core_rknd ), intent(in) :: &
-      rt1,         & ! Mean of r_t for 1st normal distribution                 [kg/kg]
-      rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
-      thl1,           & ! Mean of th_l for 1st normal distribution                [K]
-      thl2,           & ! Mean of th_l for 2nd normal distribution                [K]
-      crt1,           & ! Coefficient for s'                                      [-]
-      crt2,           & ! Coefficient for s'                                      [-]
-      cthl1,          & ! Coefficient for s'                                    [1/K]
-      cthl2             ! Coefficient for s'                                    [1/K]
+      rt1,         & ! Mean of r_t for 1st normal distribution   [kg/kg]
+      rt2,         & ! Mean of r_t for 2nd normal distribution   [kg/kg]
+      thl1,        & ! Mean of th_l for 1st normal distribution  [K]
+      thl2,        & ! Mean of th_l for 2nd normal distribution  [K]
+      crt1,        & ! Coefficient for s'                        [-]
+      crt2,        & ! Coefficient for s'                        [-]
+      cthl1,       & ! Coefficient for s'                        [1/K]
+      cthl2          ! Coefficient for s'                        [1/K]
 
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
       corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
@@ -1048,7 +1047,7 @@ module generate_lh_sample_module
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     logical, intent(in) :: &
-      l_in_precip_one_lev ! Whether we are in precipitation   [-]
+      l_in_precip_one_lev ! Whether we are in precipitation (T/F)
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1086,7 +1085,7 @@ module generate_lh_sample_module
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
     !---------------------------------------------------------------------------
-    ! Generate a set of sample points for a microphysics scheme
+    ! Generate a set of sample points for a microphysics/radiation scheme
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
@@ -1297,7 +1296,8 @@ module generate_lh_sample_module
                            X_nl_one_lev ) ! intent(out)
 
 ! Transform s (column 1) and t (column 2) back to rt and thl
-! This is only needed if you need rt, thl in your microphysics.
+!   This is only needed if you need total water mixing ratio and liquid potential
+!   samples points.
 !     call sptp_2_rtpthlp &
 !          ( 1, d_variables, mixt_frac, crt1, cthl1, crt2, cthl2, &
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
@@ -1398,7 +1398,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine generate_uniform_sample( n_micro_calls, nt_repeat, n_vars, p_matrix, X_u_one_lev )
+  subroutine generate_uniform_sample( num_samples, nt_repeat, n_vars, p_matrix, X_u_one_lev )
 
 ! Description:
 !   Generates a matrix X that contains a Latin Hypercube sample.
@@ -1412,17 +1412,17 @@ module generate_lh_sample_module
 
     ! Input Variables
     integer, intent(in) :: &
-      n_micro_calls, & ! `n'   Number of calls to microphysics (normally=2)
-      nt_repeat,     & ! `n_t' Num. random samples before sequence repeats (normally=10)
+      num_samples,  & ! `n'  Number of samples generated
+      nt_repeat,    & ! `n_t' Num. random samples before sequence repeats
       n_vars           ! Number of uniform variables to generate
 
-    integer, intent(in), dimension(n_micro_calls,n_vars) :: &
-      p_matrix    !n_micro_calls x n_vars array of permuted integers
+    integer, intent(in), dimension(num_samples,n_vars) :: &
+      p_matrix    !num_samples x n_vars array of permuted integers
 
     ! Output Variables
 
-    real(kind=dp), intent(out), dimension(n_micro_calls,n_vars) :: &
-      X_u_one_lev ! n_micro_calls by n_vars matrix, X
+    real(kind=dp), intent(out), dimension(num_samples,n_vars) :: &
+      X_u_one_lev ! num_samples by n_vars matrix, X
                   ! each row of which is a n_vars-dimensional sample
 
     ! Local Variables
@@ -1439,7 +1439,7 @@ module generate_lh_sample_module
 !       end do
 
     ! Choose values of sample using permuted vector and random number generator
-    do j = 1,n_micro_calls
+    do j = 1,num_samples
       do k = 1,n_vars
         X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, p_matrix(j,k) )
       end do
