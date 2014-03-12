@@ -408,7 +408,7 @@ foreach $object ( sort @objects ) {
       if ( $module and ! $target ) {
          my $dep_module;
          foreach $dep_module ( @dependency_modules ) {
-           if ( $module =~/$dep_module/i ) {
+           if ( lc($module) eq lc($dep_module) ) {
               #$target = $dep_module . ".o";
               $target = $obj_of_dep_module{$dep_module};
               last;

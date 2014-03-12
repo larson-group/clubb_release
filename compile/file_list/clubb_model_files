@@ -20,7 +20,6 @@
 ../src/bugsrad_driver.F90
 ../src/coamps_micro_driver_module.F90
 ../src/cos_solar_zen_module.F90
-../src/KK_micro/KK_fixed_correlations.F90 
 ../src/ice_dfsn_module.F90
 ../src/mg_micro_driver_module.F90
 ../src/morrison_micro_driver_module.F90
