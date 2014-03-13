@@ -1118,10 +1118,6 @@ module microphys_driver
 
     implicit none
 
-    ! Local Constants
-    real( kind = core_rknd ), parameter :: &
-      lh_const_stat_sample_weight = 1.0_core_rknd ! Weight of a single sample with SILHS disabled
-
     ! Input Variables
 
     integer, intent(in) :: &
@@ -1473,10 +1469,10 @@ module microphys_driver
         end if
 
         call morrison_micro_driver &
-             ( dt, gr%nz, l_stats_samp, &
+             ( dt, gr%nz, &
                l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac_morr, wtmp, &
-               delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, lh_const_stat_sample_weight, &
+               delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
@@ -1565,12 +1561,12 @@ module microphys_driver
 
         if ( l_local_kk ) then
 
-          call KK_local_micro_driver( dt, gr%nz, l_stats_samp, &
+          call KK_local_micro_driver( dt, gr%nz, &
                                       l_latin_hypercube_input, thlm, wm_zt, &
                                       p_in_Pa, exner, rho, cloud_frac, &
                                       wtmp, delta_zt, rcm, &
                                       Ncm, s_mellor, rvm, &
-                                      hydromet, lh_const_stat_sample_weight, &
+                                      hydromet, &
                                       hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                                       rcm_mc, rvm_mc, thlm_mc, &
                                       rrainm_auto, rrainm_accr, rrainm_evap, &

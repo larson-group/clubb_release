@@ -10,10 +10,10 @@ module morrison_micro_driver_module
   contains
 !-------------------------------------------------------------------------------
   subroutine morrison_micro_driver &
-             ( dt, nz, l_stats_samp, &
+             ( dt, nz, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
-               dzq, rcm, Ncm, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
+               dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                rrainm_auto, rrainm_accr, rrainm_evap, &
@@ -224,7 +224,6 @@ module morrison_micro_driver_module
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
-      l_stats_samp,     & ! Whether to accumulate statistics [T/F]
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -247,9 +246,6 @@ module morrison_micro_driver_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), intent(in) :: &
-      lh_stat_sample_weight
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &

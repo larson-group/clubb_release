@@ -2,10 +2,10 @@
 ! hypercube sampling for.  New microphysics drivers will need to have the same
 ! number and type of arguments as this does.
 interface
-  subroutine microphys_sub( dt, nnzp, l_stats_sample, &
+  subroutine microphys_sub( dt, nnzp, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
-                            dzq, rcm, Nc, s_mellor, rvm, hydromet, lh_stat_sample_weight, &
+                            dzq, rcm, Nc, s_mellor, rvm, hydromet, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             rrainm_auto, rrainm_accr, rrainm_evap, &
@@ -27,7 +27,6 @@ interface
     integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 
     logical, intent(in) :: &
-      l_stats_sample,   & ! Whether to accumulate statistics [T/F]
       l_latin_hypercube   ! Whether we're using latin hypercube sampling
 
     real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
@@ -50,9 +49,6 @@ interface
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), intent(in) :: &
-      lh_stat_sample_weight ! The weight of this sample, if using SILHS.
 
     ! Output Variables
 

@@ -36,12 +36,12 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_local_micro_driver( dt, nz, l_stats_samp, &
+  subroutine KK_local_micro_driver( dt, nz, &
                                     l_latin_hypercube, thlm, wm_zt, &
                                     p_in_Pa, exner, rho, cloud_frac, &
                                     w_std_dev, dzq, rcm, &
                                     Ncm, s_mellor, rvm, &
-                                    hydromet, lh_stat_sample_weight, &
+                                    hydromet, &
                                     hydromet_mc, hydromet_vel, Ncm_mc, &
                                     rcm_mc, rvm_mc, thlm_mc, &
                                     KK_auto_tndcy, KK_accr_tndcy, KK_evap_tndcy, &
@@ -124,7 +124,6 @@ module KK_microphys_module
       nz          ! Number of model vertical grid levels
 
     logical, intent(in) :: &
-      l_stats_samp,      & ! Flag to sample statistics
       l_latin_hypercube    ! Flag to use Latin Hypercube interface
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -145,9 +144,6 @@ module KK_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet    ! Hydrometeor species                      [units vary]
-
-    real( kind = core_rknd ), intent(in) :: &
-      lh_stat_sample_weight ! The weight of this sample, if using SILHS  [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -316,7 +312,7 @@ module KK_microphys_module
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                 l_evap_adj_enabled, l_stats_samp, &
+                                 l_evap_adj_enabled, &
                                  l_latin_hypercube, k, &
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
@@ -828,7 +824,7 @@ module KK_microphys_module
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
-                                 l_evap_adj_enabled, l_stats_samp, &
+                                 l_evap_adj_enabled, &
                                  l_latin_hypercube, k, &
                                  rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
@@ -1200,7 +1196,7 @@ module KK_microphys_module
                                   KK_evap_tndcy, KK_auto_tndcy, &
                                   KK_accr_tndcy, KK_Nrm_evap_tndcy, &
                                   KK_Nrm_auto_tndcy, l_src_adj_enabled, &
-                                  l_evap_adj_enabled, l_stats_samp, &
+                                  l_evap_adj_enabled, &
                                   l_latin_hypercube, level, &
                                   rrainm_mc_tndcy, Nrm_mc_tndcy, &
                                   rvm_mc, rcm_mc, thlm_mc, &
@@ -1248,7 +1244,6 @@ module KK_microphys_module
     logical, intent(in) :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
       l_evap_adj_enabled, & ! Flag to enable rrainm/Nrm evaporation adjustment
-      l_stats_samp,       & ! Flag to sample statistical output
       l_latin_hypercube     ! Flag for Latin hypercube input. Used for stats. [-]
 
     integer, intent(in) :: & 

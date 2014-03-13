@@ -349,11 +349,11 @@ module estimate_scm_microphys_module
 
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
-           ( dt, nz, l_stats_samp, & ! In
+           ( dt, nz, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, w_std_dev, & ! In
              dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
-             hydromet_all_points, LH_sample_point_weights(sample), & ! In
+             hydromet_all_points, & ! In
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
