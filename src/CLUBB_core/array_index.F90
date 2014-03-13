@@ -1,33 +1,34 @@
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------------
 ! $Id$
-!-----------------------------------------------------------------------
+!===============================================================================
 module array_index
 
-! Description:
-!   Contains indices to variables in larger arrays.
-!   Note that the 'ii' is necessary because 'i' is used in
-!   statistics to track locations in the zt/zm/sfc derived types.
+  ! Description:
+  ! Contains indices to variables in larger arrays.
+  ! Note that the 'ii' is necessary because 'i' is used in
+  ! statistics to track locations in the zt/zm/sfc derived types.
 
-! References:
-!   None
-!-----------------------------------------------------------------------
+  ! References:
+  !   None
+  !-------------------------------------------------------------------------
+
   implicit none
 
   ! Variables
   ! Microphysics mixing ratios
   integer, public :: &
-    iirrainm,    & ! Rain water mixing ratio  [kg/kg]
-    iirsnowm,    & ! Snow mixing ratio        [kg/kg]
-    iiricem,     & ! Ice mixing ratio         [kg/kg]
-    iirgraupelm    ! Graupel mixing ratio     [kg/kg]
+    iirrainm,    & ! Hydrometeor array index for rain water mixing ratio, rr
+    iirsnowm,    & ! Hydrometeor array index for snow mixing ratio, rs
+    iiricem,     & ! Hydrometeor array index for ice mixing ratio, ri
+    iirgraupelm    ! Hydrometeor array index for graupel mixing ratio, rg
 !$omp threadprivate(iirrainm, iirsnowm, iiricem, iirgraupelm)
 
   ! Microphysics concentrations
   integer, public :: &
-    iiNrm,       & ! Rain drop concentration                       [num/kg]
-    iiNsnowm,    & ! Snow concentration                            [num/kg]
-    iiNim,       & ! Ice concentration                             [num/kg]
-    iiNgraupelm    ! Graupel concentration                         [num/kg]
+    iiNrm,       & ! Hydrometeor array index for rain drop concentration, Nr
+    iiNsnowm,    & ! Hydrometeor array index for snow concentration, Ns
+    iiNim,       & ! Hydrometeor array index for ice concentration, Ni
+    iiNgraupelm    ! Hydrometeor array index for graupel concentration, Ng
 !$omp threadprivate(iiNrm, iiNsnowm, iiNim, iiNgraupelm)
 
   ! Scalar quantities
@@ -45,5 +46,6 @@ module array_index
 
   private ! Default Scope
 
+!===============================================================================
+
 end module array_index
-!-----------------------------------------------------------------------

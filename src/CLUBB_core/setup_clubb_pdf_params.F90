@@ -15,8 +15,6 @@ module setup_clubb_pdf_params
 
   private :: component_means_hydromet, &
              precip_fraction,          &
-             pdf2hydromet_idx,         &
-             hydromet2pdf_idx,         &
              component_mean_hm_ip,     &
              component_stdev_hm_ip,    &
              component_corr_wx,        &
@@ -144,6 +142,9 @@ module setup_clubb_pdf_params
         iiPDF_s_mellor, &
         iiPDF_t_mellor, &
         iiPDF_w
+
+    use index_mapping, only: &
+        hydromet2pdf_idx    ! Procedure(s)
 
     use array_index, only: &
         iirrainm,    & ! Variable(s)
@@ -1587,6 +1588,9 @@ module setup_clubb_pdf_params
     use parameters_microphys, only: &
         Ncnp2_on_Ncnm2  ! Variable(s)
 
+    use index_mapping, only: &
+        pdf2hydromet_idx  ! Procedure(s)
+
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
@@ -1782,6 +1786,9 @@ module setup_clubb_pdf_params
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
         calc_w_corr
+
+    use index_mapping, only: &
+        pdf2hydromet_idx  ! Procedure(s)
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -2082,190 +2089,6 @@ module setup_clubb_pdf_params
     return
 
   end subroutine compute_corr
-
-  !=============================================================================
-  function pdf2hydromet_idx( iiPDF_idx )  &
-  result( hydromet_idx )
-
-    ! Description:
-    ! Returns the position of a specific hydrometeor corresponding to the iiPDF index
-    ! in the hm_ip arrays
-    !
-    ! This code assumes that the iiPDF indices are ordered like: s, t, w, Ncn, <hydromets>
-    ! and that the hm_ip arrays contain the same <hydromets> as reflected by the iiPDF indices.
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use corr_matrix_module, only: &
-        iiPDF_rrain,    & ! Variable(s)
-        iiPDF_rsnow,    &
-        iiPDF_rice,     &
-        iiPDF_rgraupel, &
-        iiPDF_Nr,       &
-        iiPDF_Nsnow,    &
-        iiPDF_Ni,       &
-        iiPDF_Ngraupel
-
-    use array_index, only: &
-        iirrainm,    & ! Variable(s)
-        iirsnowm,    &
-        iiricem,     &
-        iirgraupelm, &
-        iiNrm,       &
-        iiNsnowm,    &
-        iiNim,       &
-        iiNgraupelm
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: iiPDF_idx ! iiPDF index
-
-    ! Return Variable
-    integer :: hydromet_idx
-
-
-    ! Initialize hydromet_idx
-    hydromet_idx = 0
-
-    if ( iiPDF_idx == iiPDF_rrain ) then
-
-       ! Index for rain water mixing ratio, rr.
-       hydromet_idx = iirrainm
-
-    elseif (  iiPDF_idx == iiPDF_Nr ) then
-
-       ! Index for rain drop concentration, Nr.
-       hydromet_idx = iiNrm
-
-    elseif (  iiPDF_idx == iiPDF_rsnow ) then
-
-       ! Index for snow mixing ratio, rs.
-       hydromet_idx = iirsnowm
-
-    elseif (  iiPDF_idx == iiPDF_Nsnow ) then
-
-       ! Index for snow flake concentration, Ns.
-       hydromet_idx = iiNsnowm
-
-    elseif (  iiPDF_idx == iiPDF_rgraupel ) then
-
-       ! Index for graupel mixing ratio, rg.
-       hydromet_idx = iirgraupelm
-
-    elseif (  iiPDF_idx == iiPDF_Ngraupel ) then
-
-       ! Index for graupel concentration, Ng.
-       hydromet_idx = iiNgraupelm
-
-    elseif (  iiPDF_idx == iiPDF_rice ) then
-
-       ! Index for ice mixing ratio, ri.
-       hydromet_idx = iiricem
-
-    elseif (  iiPDF_idx == iiPDF_Ni ) then
-
-       ! Index for ice concentration, Ni.
-       hydromet_idx = iiNim
-
-    endif
-
-    return
-
-  end function pdf2hydromet_idx
-
-  !=============================================================================
-  function hydromet2pdf_idx( hydromet_idx ) result( pdf_idx )
-
-    ! Description:
-    ! Returns the position of a specific precipitating hydrometeor corresponding
-    ! to the precipitating hydrometeor index (hydromet_idx) in the PDF array
-    ! (pdf_idx).
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use array_index, only: &
-        iirrainm,    & ! Variable(s)
-        iirsnowm,    &
-        iiricem,     &
-        iirgraupelm, &
-        iiNrm,       &
-        iiNsnowm,    &
-        iiNim,       &
-        iiNgraupelm
-
-    use corr_matrix_module, only: &
-        iiPDF_rrain,    & ! Variable(s)
-        iiPDF_rsnow,    &
-        iiPDF_rice,     &
-        iiPDF_rgraupel, &
-        iiPDF_Nr,       &
-        iiPDF_Nsnow,    &
-        iiPDF_Ni,       &
-        iiPDF_Ngraupel
-
-    implicit none
-
-    ! Input Variable
-    integer, intent(in) :: &
-      hydromet_idx    ! Index of a precipitating hydrometeor in the hm array.
-
-    ! Return Variable
-    integer :: &
-      pdf_idx    ! Index of a precipitating hydrometeor in the PDF array.
-
-
-    ! Initialize pdf_idx.
-    pdf_idx = 0
-
-    if ( hydromet_idx == iirrainm ) then
-
-       ! Index for rain water mixing ratio, rr.
-       pdf_idx = iiPDF_rrain
-
-    elseif ( hydromet_idx == iiNrm ) then
-
-       ! Index for rain drop concentration, Nr.
-       pdf_idx = iiPDF_Nr
-
-    elseif ( hydromet_idx == iiricem ) then
-
-       ! Index for ice mixing ratio, ri.
-       pdf_idx = iiPDF_rice
-
-    elseif ( hydromet_idx == iiNim ) then
-
-       ! Index for ice concentration, Ni.
-       pdf_idx = iiPDF_Ni
-    
-    elseif ( hydromet_idx == iirsnowm ) then
-
-       ! Index for snow mixing ratio, rs.
-       pdf_idx = iiPDF_rsnow
-
-    elseif ( hydromet_idx == iiNsnowm ) then
-
-       ! Index for snow flake concentration, Ns.
-       pdf_idx = iiPDF_Nsnow
-
-    elseif ( hydromet_idx == iirgraupelm ) then
-
-       ! Index for graupel mixing ratio, rg.
-       pdf_idx = iiPDF_rgraupel
-
-    elseif ( hydromet_idx == iiNgraupelm ) then
-
-       ! Index for graupel concentration, Ng.
-       pdf_idx = iiPDF_Ngraupel
-
-    endif
-
-
-    return
-    
-  end function hydromet2pdf_idx
 
   !=============================================================================
   function component_mean_hm_ip( hmi, precip_frac_i )  &
@@ -2778,6 +2601,9 @@ module setup_clubb_pdf_params
     use PDF_utilities, only: &
         mean_L2N,  & ! Procedure(s)
         stdev_L2N
+
+    use index_mapping, only: &
+        pdf2hydromet_idx  ! Procedure(s)
 
     use corr_matrix_module, only: &
         iiPDF_Ncn  ! Variable(s)
