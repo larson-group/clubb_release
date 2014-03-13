@@ -1265,7 +1265,7 @@ module microphys_driver
       wtmp,    & ! Standard dev. of w                   [m/s]
       s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
 
-    integer :: k    ! Loop index
+    integer :: k, i    ! Loop indices
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Ndrop_max  ! GFDL droplet activation concentration [#/kg]
@@ -1283,6 +1283,12 @@ module microphys_driver
       microphys_stats_sfc
 
     logical :: l_latin_hypercube_input
+
+    integer, dimension(hydromet_dim) :: &
+      err_code_hydromet    ! Exit code (used to check for errors) for hydromet
+
+    integer :: &
+      err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
 !-------------------------------------------------------------------------------
 
@@ -1687,7 +1693,7 @@ module microphys_driver
                                  rvm_mc, thlm_mc, &
                                  wphydrometp, hydromet_vel, &
                                  hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                 err_code )
+                                 err_code_hydromet )
 
     endif ! hydromet_dim > 0
 
@@ -1704,7 +1710,7 @@ module microphys_driver
        call advance_Ncm( dt, wm_zt, cloud_frac, Kr, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          Ncm, Nc_in_cloud, &
-                         wpNcp, err_code )
+                         wpNcp, err_code_Ncm )
 
     else
 
@@ -1829,6 +1835,45 @@ module microphys_driver
 !       Error Report
 !       Joshua Fasching Feb 2008
 
+    do i = 1, hydromet_dim, 1
+
+       if ( fatal_error( err_code_hydromet(i) ) ) then
+
+          if ( clubb_at_least_debug_level(1) ) then
+
+             write(fstderr,*) "Error in hydrometeor field " &
+                              // trim( hydromet_list(i) )
+
+             write(fstderr,*) trim( hydromet_list(i) ) // " = ", hydromet(:,i)
+
+          endif ! clubb_at_least_debug_level(1)
+
+          err_code = err_code_hydromet(i)
+
+       endif ! fatal_error( err_code_hydromet(i) )
+
+    enddo ! i = 1, hydromet_dim, 1
+
+
+    if ( l_predictnc ) then
+
+       if ( fatal_error( err_code_Ncm ) ) then
+
+          if ( clubb_at_least_debug_level(1) ) then
+
+             write(fstderr,*) "Error in Ncm"
+
+             write(fstderr,*) "Ncm = ", Ncm
+
+          endif ! clubb_at_least_debug_level(1)
+
+          err_code = err_code_Ncm
+
+       endif ! fatal_error( err_code_Ncm )
+
+    endif ! l_predictnc
+
+
     if ( fatal_error( err_code ) .and.  &
          clubb_at_least_debug_level( 1 ) ) then
 
@@ -1879,7 +1924,7 @@ module microphys_driver
                                   rvm_mc, thlm_mc, &
                                   wphydrometp, hydromet_vel, &
                                   hydromet_vel_covar, hydromet_vel_covar_zt, &
-                                  err_code )
+                                  err_code_hydromet )
 
     ! Description:
     ! Advance each hydrometeor (precipitating hydrometeor) one model time step.
@@ -1911,7 +1956,7 @@ module microphys_driver
         nu_r_vert_res_dep  ! Variable(s)
 
     use error_code, only:  & 
-        clubb_at_least_debug_level, &    ! Procedure(s)
+        clubb_at_least_debug_level, & ! Procedure(s)
         clubb_no_error
 
     use clubb_precision, only:  & 
@@ -1981,8 +2026,8 @@ module microphys_driver
       hydromet_vel_covar,    & ! Covariance of V_hm & h_m (m-levs)  [units(m/s)]
       hydromet_vel_covar_zt    ! Covariance of V_hm & h_m (t-levs)  [units(m/s)]
 
-    integer, intent(out) :: &
-      err_code    ! Exit code (used to check for errors)
+    integer, dimension(hydromet_dim), intent(out) :: &
+      err_code_hydromet    ! Exit code (used to check for errors) for hydromet
 
     ! Local Variables
     real( kind = core_rknd ), dimension(3,gr%nz) :: & 
@@ -2004,8 +2049,9 @@ module microphys_driver
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
                ixrm_bt, ixrm_mc, iwpxrp
 
+
     ! Initialize error code
-    err_code = clubb_no_error
+    err_code_hydromet = clubb_no_error
 
     ! Loop over each type of precipitating hydrometeor and advance one model
     ! time step.
@@ -2096,7 +2142,7 @@ module microphys_driver
        !!!!! Advance hydrometeor one time step.
        call microphys_solve( trim( hydromet_list(i) ), l_hydromet_sed(i), &
                              cloud_frac, &
-                             lhs, rhs, hydromet(:,i), err_code )
+                             lhs, rhs, hydromet(:,i), err_code_hydromet(i) )
 
     enddo ! i = 1, hydromet_dim, 1
 
@@ -2232,7 +2278,7 @@ module microphys_driver
   subroutine advance_Ncm( dt, wm_zt, cloud_frac, Kr, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           Ncm, Nc_in_cloud, &
-                          wpNcp, err_code )
+                          wpNcp, err_code_Ncm )
 
     ! Description:
     ! Advance cloud droplet concentration (Ncm) one model time step.
@@ -2257,7 +2303,8 @@ module microphys_driver
         nu_r_vert_res_dep  ! Variable(s)
 
     use error_code, only:  & 
-        clubb_at_least_debug_level    ! Procedure(s)
+        clubb_at_least_debug_level, & ! Procedure(s)
+        clubb_no_error
 
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
@@ -2308,7 +2355,7 @@ module microphys_driver
       wpNcp    ! Covariance < w'N_c' > (momentum levels)    [(m/s)(num/kg)]
 
     integer, intent(out) :: &
-      err_code    ! Exit code (used to check for errors)
+      err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -2332,6 +2379,9 @@ module microphys_driver
 
     integer :: k    ! Loop index
 
+
+    ! Initialize error code
+    err_code_Ncm = clubb_no_error
 
     ! The mean sedimentation velocity of cloud droplet concentration, < V_Nc >,
     ! and the covariance of N_c sedimentation velocity with N_c, < V_Nc'Nc' >,
@@ -2406,7 +2456,7 @@ module microphys_driver
 
        call microphys_solve( "Ncm", l_Ncm_sed, &
                              cloud_frac, &
-                             lhs, rhs, Nc_in_cloud, err_code )
+                             lhs, rhs, Nc_in_cloud, err_code_Ncm )
 
        Ncm = Nc_in_cloud * max( cloud_frac, cloud_frac_min )
 
@@ -2414,7 +2464,7 @@ module microphys_driver
 
        call microphys_solve( "Ncm", l_Ncm_sed, &
                              cloud_frac, &
-                             lhs, rhs, Ncm, err_code )
+                             lhs, rhs, Ncm, err_code_Ncm )
 
        Nc_in_cloud = Ncm / max( cloud_frac, cloud_frac_min )
 
