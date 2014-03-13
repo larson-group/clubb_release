@@ -176,6 +176,9 @@ module morrison_micro_driver_module
       T_in_K2thlm, & ! Procedure(s)
       thlm2T_in_K
 
+    use model_flags, only: &
+        l_evaporate_cold_rcm  ! Flag(s)
+
     use array_index, only:  & 
       iirrainm, iirsnowm, iiricem, iirgraupelm, &
       iiNrm, iiNsnowm, iiNim, iiNgraupelm
@@ -507,6 +510,15 @@ module morrison_micro_driver_module
     forall ( i = 1:hydromet_dim )
       hydromet_r4(1:nz,i) = real( hydromet(1:nz,i) )
     end forall
+
+    if ( l_evaporate_cold_rcm ) then
+       ! Convert liquid to vapor at temperatures colder than -37C
+       where ( T_in_K < 236.15 )
+          rcm_r4 = 0.0
+          cloud_frac_in = 0.0
+          Ncm_r4 = 0.0
+       end where
+    end if
     
     ! Initialize tendencies to zero
     T_in_K_mc(1:nz) = 0.0

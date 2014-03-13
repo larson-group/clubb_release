@@ -1017,7 +1017,6 @@ module microphys_driver
 
     use model_flags, only: &
         l_hole_fill, & ! Variable(s)
-        l_evaporate_cold_rcm, &
         l_morr_xp2_mc_tndcy
 
     use clubb_precision, only:  & 
@@ -1408,16 +1407,6 @@ module microphys_driver
       rcm_morr(:) = rcm(:)
       cloud_frac_morr(:) = cloud_frac(:)
 
-      if ( l_evaporate_cold_rcm  ) then
-        ! Convert liquid to vapor at temperatures colder than -37C
-        where ( T_in_K(:) < 236.15_core_rknd )
-          rcm_morr(:) = 0.0_core_rknd
-          cloud_frac_morr(:) = 0.0_core_rknd
-          Ncm = 0.0_core_rknd
-          Nc_in_cloud = 0.0_core_rknd
-        end where
-      end if
- 
       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef SILHS
         call LH_microphys_driver &
