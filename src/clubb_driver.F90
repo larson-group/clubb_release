@@ -176,9 +176,6 @@ module clubb_driver
 
     use clip_explicit, only: clip_skewness_core !Procedure(s)
 
-    use parameters_microphys, only: &
-        Nc0_in_cloud    ! Variable(s)
-
 #ifdef SILHS
     use parameters_microphys, only: &
       LH_microphys_type,     & ! Variable(s)
@@ -187,7 +184,6 @@ module clubb_driver
       micro_scheme,          &
       LH_microphys_calls,    &
       l_lh_vert_overlap,     &
-      l_predictnc,           &
       LH_sequence_length
 
     use latin_hypercube_driver_module, only: &

@@ -1064,7 +1064,6 @@ module microphys_driver
     use stats_variables, only: & 
         iNcm,          &
         iNc_in_cloud,  &
-        iNcm_bt,       &
         iNcm_act,      &
         iNc_activated, &
         iNccnm
