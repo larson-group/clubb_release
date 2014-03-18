@@ -2386,8 +2386,16 @@ module microphys_driver
        ! The value of Ncm at thermodynamic level k = 1 is simply set to the
        ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
        do k = 2, gr%nz, 1
-          call stat_begin_update_pt( iNcm_bt, k, &
-                                     Ncm(k) / real( dt, kind = core_rknd ), zt )
+          if ( l_in_cloud_Nc_diff ) then
+             call stat_begin_update_pt( iNcm_bt, k, &
+                                        ( Nc_in_cloud(k) &
+                                         * max(cloud_frac(k),cloud_frac_min) ) &
+                                        / real( dt, kind = core_rknd ), zt )
+          else
+             call stat_begin_update_pt( iNcm_bt, k, &
+                                        Ncm(k) / real( dt, kind = core_rknd ), &
+                                        zt )
+          endif
        enddo
 
     endif ! l_stats_samp
