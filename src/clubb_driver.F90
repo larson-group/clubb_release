@@ -1119,7 +1119,8 @@ module clubb_driver
       if ( l_input_fields ) then
         l_restart_input = .false.
         call compute_timestep( &
-             iunit, stat_files(1), l_restart_input, time_current, &  ! Intent(in)
+             iunit, stat_files(1), l_restart_input,  &  ! Intent(in)
+             time_current-time_initial+dt_main, &       ! Intent(in)
              itime_nearest )    ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
