@@ -1652,6 +1652,18 @@ module microphys_driver
       end if  ! l_predictnc
     end if ! l_gfdl_activation
 
+    ! Cloud water sedimentation.
+    if ( l_cloud_sed ) then
+
+       ! Note:  it would be very easy to upscale the cloud water sedimentation
+       !        flux, so we should look into adding an upscaled option.
+
+       call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
+                            exner, sigma_g,  &       ! Intent(in)
+                            rcm_mc, thlm_mc )        ! Intent(inout)
+
+    endif ! l_cloud_sed
+
     ! Sample microphysics variables if necessary
     if ( microphys_stats_zt%l_allocated ) then
       call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
@@ -1706,36 +1718,6 @@ module microphys_driver
        Ncm = Nc_in_cloud * cloud_frac
 
     endif ! l_predictnc
-
-
-    if ( l_cloud_sed ) then
-
-      ! For the GCSS DYCOMS II RF02 case the following lines of code are 
-      ! currently setup to use a specified cloud droplet number
-      ! concentration (Ncm).  The cloud droplet concentration has
-      ! been moved here instead of being stated in KK_microphys
-      ! for the following reasons:
-      !    a) The effects of cloud droplet sedimentation can be computed
-      !       without having to call the precipitation scheme.
-      !    b) Ncm tends to be a case-specific parameter.  Therefore, it
-      !       is appropriate to declare in the same place as other
-      !       case-specific parameters.
-      !
-      ! Someday, we could move the setting of Ncm to pdf_closure
-      ! for the following reasons:
-      !    a) The cloud water mixing ratio (rcm) is computed using the
-      !       PDF scheme.  Perhaps someday Ncm can also be computed by
-      !       the same scheme.
-      !    b) It seems more appropriate to declare Ncm in the same place
-      !       where rcm is computed.
-      !
-      ! Since cloud base (z_cloud_base) is determined by the mixing ratio rc_tol,
-      ! so will cloud droplet number concentration (Ncm).
-
-      call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
-                           exner, sigma_g,  &       ! Intent(in)
-                           rcm_mc, thlm_mc )        ! Intent(inout)
-    end if ! l_cloud_sed
 
     if ( l_stats_samp ) then
       call stat_update_var( iNccnm, Nccnm, zt )
