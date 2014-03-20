@@ -195,7 +195,11 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'lwpmean ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       
+       {'plotTitle' => 'Rain Water Path', 'axisLabel' => 'rwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'RWP ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'twp_ice_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},       
        {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PREC', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
