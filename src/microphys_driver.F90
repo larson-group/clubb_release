@@ -1658,9 +1658,9 @@ module microphys_driver
        ! Note:  it would be very easy to upscale the cloud water sedimentation
        !        flux, so we should look into adding an upscaled option.
 
-       call cloud_drop_sed( rcm, Ncm, rho_zm, rho, & ! Intent(in)
-                            exner, sigma_g,  &       ! Intent(in)
-                            rcm_mc, thlm_mc )        ! Intent(inout)
+       call cloud_drop_sed( rcm, Nc_in_cloud * cloud_frac, & ! Intent(in)
+                            rho_zm, rho, exner, sigma_g, &   ! Intent(in)
+                            rcm_mc, thlm_mc )                ! Intent(inout)
 
     endif ! l_cloud_sed
 
