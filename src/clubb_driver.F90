@@ -1337,7 +1337,7 @@ module clubb_driver
       !----------------------------------------------------------------
 
       call advance_microphys &
-           ( itime, runtype, dt_main, time_current, &                   ! Intent(in)
+           ( runtype, dt_main, time_current, &                          ! Intent(in)
              thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
              wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
              wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
