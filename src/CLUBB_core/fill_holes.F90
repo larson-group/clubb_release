@@ -825,7 +825,8 @@ module fill_holes
     use constants_clubb, only: &
         zero, &
         zero_threshold, &
-        fstderr
+        fstderr, &
+        eps
 
     use parameters_microphys, only: &
         hydromet_list  ! Names of the hydrometeor species
@@ -1028,6 +1029,12 @@ module fill_holes
 
     enddo
 
+    ! Eliminate very small values in hydromet by setting them to zero
+    do i = 1, hydromet_dim
+       where ( hydromet(:,i) < eps )
+              hydromet(:,i) = zero
+       end where
+    enddo
     return
   end subroutine fill_holes_driver
   !-----------------------------------------------------------------------
