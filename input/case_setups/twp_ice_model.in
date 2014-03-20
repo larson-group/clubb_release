@@ -41,6 +41,7 @@ zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
 ! Note:  For this option, zt_grid_fname must be ''.
 zm_grid_fname = ''
 
+
 day   = 19     ! Day of model start (1 to 31).
 month = 1     ! Month of model start (1 to 12).
 year  = 2006  ! Year of model start.
@@ -53,7 +54,8 @@ sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level
 time_initial = 10800.0  ! Model start time [seconds since midnight on start date]
 !The line below is used for submission, the shorter run is for comparison with LES
 !time_final = 2160000.0  ! Model end time [seconds since midnight on start date]
-time_final = 1296000.0
+!time_final = 1296000.0
+time_final = 604800.0
 
 
 dt_main    = 300.0   ! Model timestep [s]
@@ -122,6 +124,7 @@ debug_level   = 2
 
 l_prescribed_avg_deltaz = .false.
 
+
 /
 
 &gfdl_activation_setting
@@ -134,6 +137,43 @@ l_prescribed_avg_deltaz = .false.
 micro_scheme = "morrison"
 l_ice_micro = .true.
 l_graupel = .true.
+
+l_predictNc = .false.
+l_const_Nc_in_cloud = .true.
+
+
+l_var_covar_src = .true.
+
+
+LH_microphys_type = "interactive",
+l_lh_vert_overlap = .true.,
+l_lh_cloud_weighted_sampling = .true.,
+LH_microphys_calls = 8,
+LH_sequence_length = 1,
+l_fix_s_t_correlations = .true.,
+
+rr_sigma2_on_mu2_ip_cloud = 4.0
+Nr_sigma2_on_mu2_ip_cloud = 2.0
+
+rs_sigma2_on_mu2_ip_cloud = 1.0
+Ns_sigma2_on_mu2_ip_cloud = 0.5
+ri_sigma2_on_mu2_ip_cloud = 1.0
+Ni_sigma2_on_mu2_ip_cloud = 0.5
+rg_sigma2_on_mu2_ip_cloud = 1.0
+Ng_sigma2_on_mu2_ip_cloud = 0.5
+
+rr_sigma2_on_mu2_ip_below = 4.0
+Nr_sigma2_on_mu2_ip_below = 2.0
+
+rs_sigma2_on_mu2_ip_below = 1.0
+Ns_sigma2_on_mu2_ip_below = 0.5
+ri_sigma2_on_mu2_ip_below = 1.0
+Ni_sigma2_on_mu2_ip_below = 0.5
+rg_sigma2_on_mu2_ip_below = 1.0
+Ng_sigma2_on_mu2_ip_below = 0.5
+
+
+
 /
 
 &radiation_setting
@@ -167,3 +207,4 @@ stats_fmt    = "grads"      ! Type of statistical output file ("grads" or "netcd
 
 &scalar_sounding
 /
+
