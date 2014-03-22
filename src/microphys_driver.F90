@@ -3195,7 +3195,7 @@ module microphys_driver
     lhs = zero
 
     ! Setup LHS Matrix
-    do k = 2, gr%nz-1, 1
+    do k = 2, gr%nz, 1
 
        km1 = max( k-1, 1 )
        kp1 = min( k+1, gr%nz )
