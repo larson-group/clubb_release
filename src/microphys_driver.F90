@@ -931,22 +931,22 @@ module microphys_driver
   end subroutine init_microphys
 
   !=============================================================================
-  subroutine microphys_schemes( dt, time_current, n_variables, runtype, &  ! In
-                                thlm, p_in_Pa, exner, rho, rho_zm, rtm, &  ! In
-                                rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &   ! In
-                                hydromet, wphydrometp, Ncm, Nc_in_cloud, & ! In
-                                pdf_params, hydromet_pdf_params, &         ! In
-                                X_nl_all_levs, X_mixt_comp_all_levs, &     ! In
-                                LH_rt, LH_thl, LH_sample_point_weights, &  ! In
-                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &    ! In
-                                corr_array_1, corr_array_2, &              ! In
-                                Nccnm, &                                   ! Inout
-                                hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &     ! Out
-                                thlm_mc, hydromet_vel_zt, &                ! Out
-                                hydromet_vel_covar_zt_impc, &              ! Out
-                                hydromet_vel_covar_zt_expc, &              ! Out
-                                wprtp_mc, wpthlp_mc,  rtp2_mc, &           ! Out
-                                thlp2_mc, rtpthlp_mc )                     ! Out
+  subroutine microphys_schemes( dt, time_current, n_variables, runtype, & ! In
+                                thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
+                                rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
+                                hydromet, wphydrometp, Nc_in_cloud, &     ! In
+                                pdf_params, hydromet_pdf_params, &        ! In
+                                X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
+                                LH_rt, LH_thl, LH_sample_point_weights, & ! In
+                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
+                                corr_array_1, corr_array_2, &             ! In
+                                Nccnm, &                                  ! Inout
+                                hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
+                                thlm_mc, hydromet_vel_zt, &               ! Out
+                                hydromet_vel_covar_zt_impc, &             ! Out
+                                hydromet_vel_covar_zt_expc, &             ! Out
+                                wprtp_mc, wpthlp_mc,  rtp2_mc, &          ! Out
+                                thlp2_mc, rtpthlp_mc )                    ! Out
 
     ! Description:
     ! Call a microphysics scheme and output microphysics tendencies for the
@@ -1112,7 +1112,6 @@ module microphys_driver
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
@@ -1184,11 +1183,10 @@ module microphys_driver
       delta_zt  ! Difference in thermo. height levels     [m]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K,          & ! Temperature              [K]
-      rvm,             & ! Vapor water mixing ratio [kg/kg]
-      thlm_morr,       & ! Thlm fed into morrison microphysics [K]
-      rcm_morr,        & ! rcm fed into morrison microphysics [kg/kg]
-      cloud_frac_morr    ! Cloud fraction fed into morrision microphysics []
+      T_in_K,        & ! Temperature                                [K]
+      rvm,           & ! Vapor water mixing ratio                   [kg/kg]
+      thlm_morr,     & ! Thlm fed into morrison microphysics        [K]
+      Ncm_microphys    ! Mean cloud droplet concentration, <N_c>    [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rrainm_auto, & ! Autoconversion rate for rrainm      [kg/kg/s]
@@ -1223,15 +1221,6 @@ module microphys_driver
     logical :: l_latin_hypercube_input
 
 
-    ! Return if there is delay between the model start time and start of the
-    ! microphysics
-    if ( time_current < microphys_start_time ) return
-
-    ! Make some compiler warnings go away for external users
-    if ( runtype == "" ) then
-       stop "Runtype is null, which should not happen."
-    endif
-
     ! We must initialize intent(out) variables. If we do not, and they do not
     ! otherwise get assigned (e.g. microphys_scheme=="none"), then we are not
     ! within the realms of Fortran standards compliance.
@@ -1261,6 +1250,19 @@ module microphys_driver
        hydromet_vel_covar_zt_impc = zero
        hydromet_vel_covar_zt_expc = zero
     endif
+
+    ! Return if there is delay between the model start time and start of the
+    ! microphysics
+    if ( time_current < microphys_start_time ) return
+
+    ! Make some compiler warnings go away for external users
+    if ( runtype == "" ) then
+       stop "Runtype is null, which should not happen."
+    endif
+
+    ! Calculate the updated value of mean cloud droplet concentration, based on
+    ! Nc_in_cloud and the updated value of cloud_frac.
+    Ncm_microphys = Nc_in_cloud * cloud_frac
 
     Ndrop_max = zero
 
@@ -1296,7 +1298,7 @@ module microphys_driver
               rtm, wm_zm, p_in_Pa, exner, rho, & ! In
               thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  &  ! In
               hydromet(:,iirgraupelm), hydromet(:,iirsnowm), & ! In
-              rcm, Ncm, hydromet(:,iiNrm), hydromet(:,iiNim), & !In
+              rcm, Ncm_microphys, hydromet(:,iiNrm), hydromet(:,iiNim), & !In
               Nccnm, cond, & ! Inout
               hydromet_vel_zt(:,iirsnowm), hydromet_vel_zt(:,iiricem), & ! Out
               hydromet_vel_zt(:,iirrainm), hydromet_vel_zt(:,iiNrm),  &  ! Out
@@ -1333,16 +1335,13 @@ module microphys_driver
 
     case ( "morrison" )
 
-       rcm_morr(:) = rcm(:)
-       cloud_frac_morr(:) = cloud_frac(:)
-
        if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef SILHS
           call LH_microphys_driver &
                ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
                  X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
-                 rcm_morr, wtmp, delta_zt, cloud_frac_morr, & ! In
+                 rcm, wtmp, delta_zt, cloud_frac, & ! In
                  hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
@@ -1389,8 +1388,8 @@ module microphys_driver
           call morrison_micro_driver &
                ( dt, gr%nz, &
                  l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
-                 exner, rho, cloud_frac_morr, wtmp, &
-                 delta_zt, rcm_morr, Ncm, s_mellor, rvm, hydromet, &
+                 exner, rho, cloud_frac, wtmp, &
+                 delta_zt, rcm, Ncm_microphys, s_mellor, rvm, hydromet, &
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                  rcm_mc, rvm_mc, thlm_mc, &
                  rrainm_auto, rrainm_accr, rrainm_evap, &
@@ -1434,7 +1433,7 @@ module microphys_driver
        rvm = rtm - rcm
        call mg_microphys_driver &
             ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-              rho, cloud_frac, rcm, Ncm, rvm, Nccnm, pdf_params, hydromet, &
+              rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
               hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
     case ( "khairoutdinov_kogan" )
@@ -1483,7 +1482,7 @@ module microphys_driver
                                          l_latin_hypercube_input, thlm, wm_zt, &
                                          p_in_Pa, exner, rho, cloud_frac, &
                                          wtmp, delta_zt, rcm, &
-                                         Ncm, s_mellor, rvm, &
+                                         Ncm_microphys, s_mellor, rvm, &
                                          hydromet, &
                                          hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                                          rcm_mc, rvm_mc, thlm_mc, &
@@ -1540,7 +1539,7 @@ module microphys_driver
        ! Ensure a microphysics that has Ncm is being used
        if ( l_predictnc ) then
 
-          ! Save the initial Ncm value for the Ncm_act term
+          ! Save the initial Ncm mc value for the Ncm_act term
           if ( l_stats_samp ) then
              call stat_begin_update( iNcm_act, Ncm_mc, zt )
           endif
@@ -1566,10 +1565,13 @@ module microphys_driver
              if( cloud_frac(k) > cloud_frac_min ) then
                 Ncm_mc(k) &
                 = Ncm_mc(k) &
-                  + ( ( max( Ndrop_max(k), Ncm(k) ) - Ncm(k) ) &
+                  + ( ( max( Ndrop_max(k), Ncm_microphys(k) ) &
+                        - Ncm_microphys(k) ) &
                       / real( dt, kind = core_rknd ) )
              else
-                Ncm_mc(k) = Ncm_mc(k) - ( Ncm(k) / real( dt, kind = core_rknd ) )
+                Ncm_mc(k) &
+                = Ncm_mc(k) &
+                  - ( Ncm_microphys(k) / real( dt, kind = core_rknd ) )
              endif
 
           enddo
@@ -1592,9 +1594,9 @@ module microphys_driver
        ! Note:  it would be very easy to upscale the cloud water sedimentation
        !        flux, so we should look into adding an upscaled option.
 
-       call cloud_drop_sed( rcm, Nc_in_cloud * cloud_frac, & ! Intent(in)
-                            rho_zm, rho, exner, sigma_g, &   ! Intent(in)
-                            rcm_mc, thlm_mc )                ! Intent(inout)
+       call cloud_drop_sed( rcm, Ncm_microphys,          & ! Intent(in)
+                            rho_zm, rho, exner, sigma_g, & ! Intent(in)
+                            rcm_mc, thlm_mc )              ! Intent(inout)
 
     endif ! l_cloud_sed
 
@@ -1841,32 +1843,32 @@ module microphys_driver
     ! Initialize the error code.
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
-    ! Return if there is delay between the model start time and start of the
-    ! microphysics
-    if ( time_current < microphys_start_time ) return
-
     ! Solve for the value of Kr, the hydrometeor eddy diffusivity.
     do k = 1, gr%nz, 1
       Kr(k) = c_Krrainm * Kh_zm(k)
     enddo
 
     ! Call microphysics scheme and produce microphysics tendencies.
-    call microphys_schemes( dt, time_current, n_variables, runtype, &  ! In
-                            thlm, p_in_Pa, exner, rho, rho_zm, rtm, &  ! In
-                            rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &   ! In
-                            hydromet, wphydrometp, Ncm, Nc_in_cloud, & ! In
-                            pdf_params, hydromet_pdf_params, &         ! In
-                            X_nl_all_levs, X_mixt_comp_all_levs, &     ! In
-                            LH_rt, LH_thl, LH_sample_point_weights, &  ! In
-                            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &    ! In
-                            corr_array_1, corr_array_2, &              ! In
-                            Nccnm, &                                   ! Inout
-                            hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &     ! Out
-                            thlm_mc, hydromet_vel_zt, &                ! Out
-                            hydromet_vel_covar_zt_impc, &              ! Out
-                            hydromet_vel_covar_zt_expc, &              ! Out
-                            wprtp_mc, wpthlp_mc,  rtp2_mc, &           ! Out
-                            thlp2_mc, rtpthlp_mc )                     ! Out
+    call microphys_schemes( dt, time_current, n_variables, runtype, & ! In
+                            thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
+                            rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
+                            hydromet, wphydrometp, Nc_in_cloud, &     ! In
+                            pdf_params, hydromet_pdf_params, &        ! In
+                            X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
+                            LH_rt, LH_thl, LH_sample_point_weights, & ! In
+                            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
+                            corr_array_1, corr_array_2, &             ! In
+                            Nccnm, &                                  ! Inout
+                            hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
+                            thlm_mc, hydromet_vel_zt, &               ! Out
+                            hydromet_vel_covar_zt_impc, &             ! Out
+                            hydromet_vel_covar_zt_expc, &             ! Out
+                            wprtp_mc, wpthlp_mc,  rtp2_mc, &          ! Out
+                            thlp2_mc, rtpthlp_mc )                    ! Out
+
+    ! Return if there is delay between the model start time and start of the
+    ! microphysics
+    if ( time_current < microphys_start_time ) return
 
     !-----------------------------------------------------------------------
     ! Loop over all hydrometeor species and apply sedimentation,
