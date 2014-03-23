@@ -3355,43 +3355,6 @@ module microphys_driver
     lhs(kp1_tdiag,k) = -one
 
 
-    ! Upper Boundary
-    k   = gr%nz
-    km1 = max( k-1, 1 )
-
-    ! LHS time tendency at the upper boundary.
-    lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
-
-    ! LHS eddy-diffusion term at the upper boundary.
-    lhs(kp1_tdiag:km1_tdiag,k) &
-    = lhs(kp1_tdiag:km1_tdiag,k) &
-      + one_half &
-        * invrs_rho_ds_zt(k) &
-        * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
-                            rho_ds_zm(km1) * Kr(km1), nu, & 
-                            gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                            gr%invrs_dzt(k), k )
-
-    if ( l_stats_samp ) then
-
-       ! Statistics:  implicit contributions to hydrometeor hmm.
-
-       if ( ihmm_ta > 0 ) then
-          tmp(1:3) & 
-          = one_half &
-            * invrs_rho_ds_zt(k) &
-             * diffusion_zt_lhs( rho_ds_zm(k) * Kr(k), &
-                                 rho_ds_zm(km1) * Kr(km1), nu, & 
-                                 gr%invrs_dzm(km1), gr%invrs_dzm(k), &
-                                 gr%invrs_dzt(k), k )
-          ztscr10(k) = -tmp(3)
-          ztscr11(k) = -tmp(2)
-          ztscr12(k) = -tmp(1)
-       endif
-
-    endif  ! l_stats_samp
-
-
     return
 
   end subroutine microphys_lhs
