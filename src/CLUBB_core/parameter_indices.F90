@@ -86,8 +86,8 @@ module parameter_indices
     ic_K9             = 44, & 
     inu9              = 45, & 
     inu10             = 46, &
-    ic_Krrainm        = 47, & 
-    inu_r             = 48, & 
+    ic_K_hm           = 47, & 
+    inu_hm            = 48, & 
     inu_hd            = 49
 
   integer, parameter, public :: & 

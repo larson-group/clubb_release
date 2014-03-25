@@ -338,7 +338,7 @@ module diagnose_correlations_module
         pdf_parameter  ! Type
 
     use parameters_tunable, only: &
-        c_Krrainm ! Variable(s)
+        c_K_hm ! Variable(s)
 
     use constants_clubb, only: &
         one ! Constant(s)
@@ -391,22 +391,22 @@ module diagnose_correlations_module
 
 ! same for wpNrp
 !    wprrp_zm(1:nz-1) &
-!    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+!    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
 !                rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
 !                rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
 !                gr%invrs_dzm(1:nz-1) )
 
     wprrp_zm(1:nz-1) &
-    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
                 rrainm(1:nz-1), rrainm(2:nz), &
                 gr%invrs_dzm(1:nz-1) )
 
     wpNrp_zm(1:nz-1) &
-    = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), &
+    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
                 Nrm(1:nz-1), Nrm(2:nz), &
                 gr%invrs_dzm(1:nz-1) )
 
-    wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
+    wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
                                   Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
 
     ! Boundary conditions; We are assuming constant flux at the top.

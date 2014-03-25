@@ -92,7 +92,7 @@ module setup_clubb_pdf_params
         Kh_zm
 
     use parameters_tunable, only: &
-        c_Krrainm
+        c_K_hm
 
     use PDF_utilities, only: &
         calc_xp2  ! Procedure(s)
@@ -383,7 +383,7 @@ module setup_clubb_pdf_params
                        * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
        enddo
 
-       wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_Krrainm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
+       wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
                                      Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
 
        ! Boundary conditions; We are assuming zero flux at the top.

@@ -95,7 +95,7 @@ module parameters_tunable
     c_K6        = 0.375000_core_rknd, & ! Coef. of Eddy Diffusion: wpxp  [m^2/s]
     c_K8        = 1.250000_core_rknd, & ! Coef. of Eddy Diffusion: wp3   [m^2/s]
     c_K9        = 0.250000_core_rknd, & ! Coef. of Eddy Diff.: up2/vp2   [m^2/s]
-    c_Krrainm   = 0.200000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
+    c_K_hm      = 0.200000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
     gamma_coef  = 0.320000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
     gamma_coefb = 0.320000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd, & ! Deg. Slope: gamma coef. Skw. Fnct. [-]
@@ -109,7 +109,7 @@ module parameters_tunable
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
     lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
 !$omp threadprivate(c_K, c_K1, c_K2, c_K6, &
-!$omp   c_K8, c_K9, c_Krrainm, gamma_coef, gamma_coefb, gamma_coefc, &
+!$omp   c_K8, c_K9, c_K_hm, gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp   mu, mult_coef, taumin, taumax, lmin)
 
   real( kind = core_rknd ), public :: &
@@ -129,25 +129,25 @@ module parameters_tunable
     nu8   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp3        [m^2/s]
     nu9   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: up2/vp2    [m^2/s]
     nu10  = 0.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: edsclrm    [m^2/s]
-    nu_r  = 1.500000_core_rknd, & ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
+    nu_hm = 1.500000_core_rknd, & ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
     nu_hd = 20000.00_core_rknd    ! Coef. for 4th-order hyper-diffusion  [m^4/s]
-!$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_r, nu_hd)
+!$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, nu_hd)
 
 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
-    nu1_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: wp2       [m^2/s]
-    nu2_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: xp2       [m^2/s]
-    nu6_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: wpxp      [m^2/s]
-    nu8_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: wp3       [m^2/s]
-    nu9_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: up2/vp2   [m^2/s]
-    nu10_vert_res_dep, & ! Background Coef. of Eddy Diffusion: edsclrm   [m^2/s]
-    nu_r_vert_res_dep    ! Background Coef. of Eddy Diffusion: hydromet. [m^2/s]
+    nu1_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wp2      [m^2/s]
+    nu2_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: xp2      [m^2/s]
+    nu6_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wpxp     [m^2/s]
+    nu8_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: wp3      [m^2/s]
+    nu9_vert_res_dep,   & ! Background Coef. of Eddy Diffusion: up2/vp2  [m^2/s]
+    nu10_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: edsclrm  [m^2/s]
+    nu_hm_vert_res_dep    ! Background Coef. of Eddy Diffusion: hydromet [m^2/s]
 
   real( kind = core_rknd ), public :: &
     nu_hd_vert_res_dep   ! Constant coef. for 4th-order hyper-diffusion  [m^4/s]
 
 !$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
-!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_r_vert_res_dep,  &
+!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_hm_vert_res_dep,  &
 !$omp   nu_hd_vert_res_dep )
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
@@ -213,7 +213,7 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
     nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
     alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -241,7 +241,7 @@ module parameters_tunable
        "C7_Lscale0      ", "wpxp_L_thresh   ", "c_K             ", "c_K1            ", &
        "nu1             ", "c_K2            ", "nu2             ", "c_K6            ", &
        "nu6             ", "c_K8            ", "nu8             ", "c_K9            ", &
-       "nu9             ", "nu10            ", "c_Krrainm       ", "nu_r            ", &
+       "nu9             ", "nu10            ", "c_K_hm          ", "nu_hm           ", &
        "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
        "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
        "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
@@ -330,7 +330,7 @@ module parameters_tunable
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+                            c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
                             nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                             Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -493,8 +493,8 @@ module parameters_tunable
     if ( .not. allocated( nu10_vert_res_dep ) ) then
       allocate( nu10_vert_res_dep(1:gr%nz) )
     end if
-    if ( .not. allocated( nu_r_vert_res_dep ) ) then
-      allocate( nu_r_vert_res_dep(1:gr%nz) )
+    if ( .not. allocated( nu_hm_vert_res_dep ) ) then
+      allocate( nu_hm_vert_res_dep(1:gr%nz) )
     end if
 
     ! Flag for adjusting the values of the constant diffusivity coefficients
@@ -582,13 +582,13 @@ module parameters_tunable
       end if ! l_nu_grid_dependent
 
       !mult_factor = 1.0_core_rknd + mult_coef * log( avg_deltaz / grid_spacing_thresh )
-      nu1_vert_res_dep  =  nu1 * mult_factor_zm
-      nu2_vert_res_dep  =  nu2 * mult_factor_zm
-      nu6_vert_res_dep  =  nu6 * mult_factor_zm
-      nu8_vert_res_dep  =  nu8 * mult_factor_zt
-      nu9_vert_res_dep  =  nu9 * mult_factor_zm
-      nu10_vert_res_dep =  nu10 * mult_factor_zt !We're unsure of the grid
-      nu_r_vert_res_dep =  nu_r * mult_factor_zt
+      nu1_vert_res_dep   =  nu1 * mult_factor_zm
+      nu2_vert_res_dep   =  nu2 * mult_factor_zm
+      nu6_vert_res_dep   =  nu6 * mult_factor_zm
+      nu8_vert_res_dep   =  nu8 * mult_factor_zt
+      nu9_vert_res_dep   =  nu9 * mult_factor_zm
+      nu10_vert_res_dep  =  nu10 * mult_factor_zt !We're unsure of the grid
+      nu_hm_vert_res_dep =  nu_hm * mult_factor_zt
 
       ! The value of nu_hd is based on an average grid box spacing of
       ! 40 m.  The value of nu_hd should be adjusted proportionally to
@@ -602,13 +602,13 @@ module parameters_tunable
 
     else ! nu values are not adjusted
 
-      nu1_vert_res_dep  =  nu1
-      nu2_vert_res_dep  =  nu2
-      nu6_vert_res_dep  =  nu6
-      nu8_vert_res_dep  =  nu8
-      nu9_vert_res_dep  =  nu9
-      nu10_vert_res_dep = nu10
-      nu_r_vert_res_dep =  nu_r
+      nu1_vert_res_dep   =  nu1
+      nu2_vert_res_dep   =  nu2
+      nu6_vert_res_dep   =  nu6
+      nu8_vert_res_dep   =  nu8
+      nu9_vert_res_dep   =  nu9
+      nu10_vert_res_dep  = nu10
+      nu_hm_vert_res_dep = nu_hm
       nu_hd_vert_res_dep = nu_hd
 
     end if  ! l_adj_low_res_nu
@@ -664,7 +664,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -734,7 +734,7 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
       nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -757,7 +757,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -801,7 +801,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, &
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, &
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -867,8 +867,8 @@ module parameters_tunable
       ic_K9, & 
       inu9, & 
       inu10, &
-      ic_Krrainm, & 
-      inu_r, & 
+      ic_K_hm, & 
+      inu_hm, & 
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -898,7 +898,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, nu10, c_Krrainm, nu_r, nu_hd, gamma_coef, &
+      c_K9, nu9, nu10, c_K_hm, nu_hm, nu_hd, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
       taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
       Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -954,8 +954,8 @@ module parameters_tunable
     params(ic_K9)      = c_K9
     params(inu9)       = nu9
     params(inu10)      = nu10
-    params(ic_Krrainm) = c_Krrainm
-    params(inu_r)      = nu_r
+    params(ic_K_hm)    = c_K_hm
+    params(inu_hm)     = nu_hm
     params(inu_hd)     = nu_hd
 
     params(igamma_coef)  = gamma_coef
@@ -992,7 +992,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
                nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1058,8 +1058,8 @@ module parameters_tunable
       ic_K9, & 
       inu9, & 
       inu10, &
-      ic_Krrainm, & 
-      inu_r, & 
+      ic_K_hm, & 
+      inu_hm, & 
       inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -1092,7 +1092,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-      c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+      c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
       nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1146,8 +1146,8 @@ module parameters_tunable
     c_K9      = params(ic_K9)
     nu9       = params(inu9)
     nu10      = params(inu10)
-    c_Krrainm = params(ic_Krrainm)
-    nu_r      = params(inu_r)
+    c_K_hm    = params(ic_K_hm)
+    nu_hm     = params(inu_hm)
     nu_hd     = params(inu_hd)
 
     gamma_coef  = params(igamma_coef)
@@ -1197,7 +1197,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_Krrainm, nu_r, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
                           nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1267,8 +1267,8 @@ module parameters_tunable
     c_K9               = init_value
     nu9                = init_value
     nu10               = init_value
-    c_Krrainm          = init_value
-    nu_r               = init_value
+    c_K_hm             = init_value
+    nu_hm              = init_value
     nu_hd              = init_value
     beta               = init_value
     gamma_coef         = init_value
@@ -1313,7 +1313,7 @@ module parameters_tunable
 
     deallocate( nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep,  &
                 nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, &
-                nu_r_vert_res_dep, stat = ierr )
+                nu_hm_vert_res_dep, stat = ierr )
 
     if ( ierr /= 0 ) then
       write(fstderr,*) "Deallocation of vertically depedent nu arrays failed."
