@@ -113,6 +113,9 @@ module clubb_driver
       iiricem, iirsnowm, iirgraupelm
 
     use microphys_driver, only: &
+        microphys_schemes  ! Procedure(s)
+
+    use advance_microphys_module, only: &
         advance_microphys  ! Procedure(s)
 
     use microphys_init_cleanup, only: &
@@ -388,9 +391,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(0) :: rad_dummy ! Dummy variable for radiation levels
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
-      rcm_mc, & ! Tendency of liquid water due to microphysics     [kg/kg/s]
-      rvm_mc, & ! Tendency of vapor water due to microphysics      [kg/kg/s]
-      thlm_mc   ! Tendecy of liquid pot. temp. due to microphysics [K/s]
+      rcm_mc, & ! Tendency of liquid water due to microphysics      [kg/kg/s]
+      rvm_mc, & ! Tendency of vapor water due to microphysics       [kg/kg/s]
+      thlm_mc   ! Tendency of liquid pot. temp. due to microphysics [K/s]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
@@ -398,6 +401,19 @@ module clubb_driver
       rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
       thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
       rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
+      hydromet_mc     ! Microphysics tendency for mean hydrometeors  [units/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
+      Ncm_mc     ! Microphysics tendency for Ncm                     [num/kg/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
+      hydromet_vel_zt   ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
+
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
+      hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
+      hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
@@ -929,6 +945,29 @@ module clubb_driver
     thlp2_mc   = zero
     rtpthlp_mc = zero
 
+    ! Allocate microphysics tendencies for mean hydrometeors and mean cloud
+    ! droplet concentration.
+    allocate( hydromet_mc(gr%nz,hydromet_dim) )
+    allocate( Ncm_mc(gr%nz) )
+
+    ! Allocate mean sedimentation velocity for hydrometeors
+    allocate( hydromet_vel_zt(gr%nz,hydromet_dim) )
+
+    ! Allocate covariance sedimentation velocities for <V_hm'hm'>, implicit and
+    ! explicit components, such that:
+    ! <V_hm'hm'> = <V_hm'hm'>|_impc * <hm> + <V_hm'hm'>|_expc.
+    allocate( hydromet_vel_covar_zt_impc(gr%nz,hydromet_dim) )
+    allocate( hydromet_vel_covar_zt_expc(gr%nz,hydromet_dim) )
+
+    ! Initialize to 0.
+    hydromet_mc = zero
+    Ncm_mc      = zero
+
+    hydromet_vel_zt = zero
+
+    hydromet_vel_covar_zt_impc = zero
+    hydromet_vel_covar_zt_expc = zero
+
     allocate( rfrzm(gr%nz) )
     rfrzm = zero
 
@@ -1341,30 +1380,42 @@ module clubb_driver
       ! Compute Microphysics
       !----------------------------------------------------------------
 
-      call advance_microphys &
-           ( runtype, dt_main, time_current, &                          ! Intent(in)
-             thlm, p_in_Pa, exner, rho, rho_zm, rtm, rcm, cloud_frac, & ! Intent(in)
-             wm_zt, wm_zm, Kh_zm, pdf_params, &                         ! Intent(in)
-             wp2_zt, rho_ds_zt, rho_ds_zm, invrs_rho_ds_zt, &           ! Intent(in)
-             LH_sample_point_weights, &                                 ! Intent(in)
-             X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &      ! Intent(in)
-             d_variables, corr_array_1, corr_array_2, &                 ! Intent(in)
-             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &                    ! Intent(in)
-             hydromet_pdf_params, &                                     ! Intent(in)
-             Nccnm, hydromet, wphydrometp, &                            ! Intent(inout)
-             Ncm, Nc_in_cloud, wpNcp, &                                 ! Intent(inout)
-             rvm_mc, rcm_mc, thlm_mc, &                                 ! Intent(out)
-             wprtp_mc, wpthlp_mc, &                                     ! Intent(out)
-             rtp2_mc, thlp2_mc, rtpthlp_mc, &                           ! Intent(out)
-             err_code_microphys )                                       ! Intent(out)
+      ! Call microphysics scheme and produce microphysics tendencies.
+      call microphys_schemes( dt_main, time_current, d_variables, runtype, & ! In
+                              thlm, p_in_Pa, exner, rho, rho_zm, rtm, &      ! In
+                              rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &       ! In
+                              hydromet, wphydrometp, Nc_in_cloud, &          ! In
+                              pdf_params, hydromet_pdf_params, &             ! In
+                              X_nl_all_levs, X_mixt_comp_all_levs, &         ! In
+                              LH_rt, LH_thl, LH_sample_point_weights, &      ! In
+                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &        ! In
+                              corr_array_1, corr_array_2, &                  ! In
+                              Nccnm, &                                       ! Inout
+                              hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &         ! Out
+                              thlm_mc, hydromet_vel_zt, &                    ! Out
+                              hydromet_vel_covar_zt_impc, &                  ! Out
+                              hydromet_vel_covar_zt_expc, &                  ! Out
+                              wprtp_mc, wpthlp_mc, rtp2_mc, &                ! Out
+                              thlp2_mc, rtpthlp_mc )                         ! Out
+
+      ! Advance predictive microphysics fields one model timestep.
+      call advance_microphys( dt_main, time_current, wm_zt, exner, &   ! In
+                              rho, rho_zm, cloud_frac, Kh_zm, &        ! In
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                              hydromet_mc, Ncm_mc, &                   ! In
+                              hydromet_vel_covar_zt_impc, &            ! In
+                              hydromet_vel_covar_zt_expc, &            ! In
+                              hydromet, hydromet_vel_zt, &             ! Inout
+                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
+                              wphydrometp, wpNcp, err_code_microphys ) ! Out
 
       if ( fatal_error( err_code_microphys ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "Fatal error in advance_microphys:"
-          call reportError( err_code_microphys )
-        end if
-        err_code = err_code_microphys
-      end if
+         if ( clubb_at_least_debug_level( 1 ) ) then
+             write(fstderr,*) "Fatal error in advance_microphys:"
+             call reportError( err_code_microphys )
+         endif
+         err_code = err_code_microphys
+      endif
 
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
@@ -1468,6 +1519,10 @@ module clubb_driver
       call cleanup_latin_hypercube_arrays( )
     end if
 #endif
+
+    deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
+                thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
+                hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                 LH_sample_point_weights, Lscale_vert_avg, Nc_in_cloud )

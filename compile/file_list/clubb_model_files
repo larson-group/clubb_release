@@ -15,6 +15,7 @@
 ../src/Benchmark_cases/spec_hum_to_mixing_ratio.F90
 ../src/Benchmark_cases/surface_flux.F90
 ../src/Benchmark_cases/wangara.F90
+../src/advance_microphys_module.F90
 ../src/clubb_driver.F90
 ../src/clubb_model_settings.F90
 ../src/bugsrad_driver.F90
