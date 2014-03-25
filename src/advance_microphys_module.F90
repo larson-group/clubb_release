@@ -190,7 +190,14 @@ module advance_microphys_module
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
 
-    ! Initialize the error code.
+    ! Initialize intent(out) variables -- covariances <w'hm'> (for any
+    ! hydrometeor, hm) and <w'Nc'>.
+    if ( hydromet_dim > 0 ) then
+       wphydrometp = zero
+    endif
+    wpNcp = zero
+
+    ! Initialize intent(out) variables -- the error code.
     err_code = clubb_no_error  ! Initialize to the value for no errors
 
     ! Return if there is delay between the model start time and start of the
@@ -307,7 +314,7 @@ module advance_microphys_module
                                   * ( rho(2) / rho_lw ) & 
                                   * real( sec_per_day, kind = core_rknd ) &
                                   * mm_per_m, sfc )
-      end if
+      endif ! micro_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
                                max( - ( zt2zm( hydromet(:,iirrainm), 1 )  & 
@@ -320,7 +327,7 @@ module advance_microphys_module
       call stat_update_var_pt( irrainm_sfc, 1,  & 
                                ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
 
-    endif ! l_stats_samp
+    endif ! l_stats_samp and iirrainm > 0
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 

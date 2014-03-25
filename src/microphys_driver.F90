@@ -121,10 +121,6 @@ module microphys_driver
         microphys_start_time, & ! When to start the microphysics [s]
         sigma_g                 ! Parameter used in the cloud droplet sedimentation code
 
-    use parameters_microphys, only: &
-        l_silhs_KK_convergence_adj_mean ! Clip source adj. terms on mean instead of individual
-                                        ! sample points to test convergence with KK analytic
-
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
 
