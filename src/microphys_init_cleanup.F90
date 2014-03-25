@@ -1,0 +1,967 @@
+! $Id$
+!===============================================================================
+module microphys_init_cleanup
+
+  ! Description:
+  ! Initialize and cleanup code pertaining to microphysics schemes.
+
+  ! References:
+  !  H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
+  !  moment microphysics scheme for application in cloud and
+  !  climate models. Part 1: Description. J. Atmos. Sci., 62, 1665-1677.
+
+  !  Khairoutdinov, M. and Kogan, Y.: A new cloud physics parameterization in a
+  !  large-eddy simulation model of marine stratocumulus, Mon. Wea. Rev., 128,
+  !  229-243, 2000.
+  !-------------------------------------------------------------------------
+
+  implicit none
+
+  public :: init_microphys,    &
+            cleanup_microphys
+
+  private ! Default Scope
+
+  contains
+
+  !=============================================================================
+  subroutine init_microphys( iunit, runtype, namelist_file, case_info_file, &
+                             hydromet_dim )
+
+    ! Description:
+    ! Set indices to the various hydrometeor species and define hydromet_dim for
+    ! the purposes of allocating memory.
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use parameters_microphys, only: &
+        l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
+        l_cloud_sed,                  & ! Cloud water sedimentation (K&K or no microphysics)
+        l_ice_micro,                  & ! Compute ice (COAMPS / Morrison)
+        l_graupel,                    & ! Compute graupel (Morrison)
+        l_hail,                       & ! See module_mp_graupel for a description
+        l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
+        l_predictnc,                  & ! Predict cloud droplet number conc
+        l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
+        specify_aerosol,              & ! Specify aerosol (Morrison)
+        l_subgrid_w,                  & ! Use subgrid w  (Morrison)
+        l_arctic_nucl,                & ! Use MPACE observations (Morrison)
+        l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
+        l_fix_pgam,                   & ! Fix pgam (Morrison)
+        l_fix_s_t_correlations,       & ! Use a fixed correlation for s and t Mellor (SILHS)
+        l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (SILHS)
+        l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
+        LH_microphys_calls,           & ! # of SILHS samples to call the microphysics with
+        LH_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
+        LH_seed,                      & ! Integer seed for the Mersenne twister
+        l_local_kk,                   & ! Use local formula for K&K
+        l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
+        l_var_covar_src,              & ! Flag for using variance and covariance src terms
+        micro_scheme,                 & ! The microphysical scheme in use
+        hydromet_list,                & ! Names of the hydrometeor species
+        l_hydromet_sed,               & ! Flag to sediment a hydrometeor
+        l_gfdl_activation,            & ! Flag to use GFDL activation scheme
+        microphys_start_time,         & ! When to start the microphysics [s]
+        sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
+        Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
+
+    use parameters_microphys, only: &
+        LH_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
+        LH_microphys_non_interactive, & ! Feed the subcolumns into microphysics with no feedback
+        LH_microphys_disabled           ! Disable latin hypercube entirely
+
+    use parameters_microphys, only: &
+        l_silhs_KK_convergence_adj_mean ! Clip source adjustment terms on mean instead of individual
+                                        ! sample points to test convergence with KK analytic
+    use parameters_microphys, only: &
+        morrison_no_aerosol, &  ! Constants
+        morrison_power_law,  &
+        morrison_lognormal
+
+    use parameters_microphys, only: &
+        rr_sigma2_on_mu2_ip_cloud, &
+        Nr_sigma2_on_mu2_ip_cloud, &
+        rr_sigma2_on_mu2_ip_below, &
+        Nr_sigma2_on_mu2_ip_below, &
+        Ncnp2_on_Ncnm2,            &
+        rs_sigma2_on_mu2_ip_cloud, &
+        Ns_sigma2_on_mu2_ip_cloud, &
+        ri_sigma2_on_mu2_ip_cloud, &
+        Ni_sigma2_on_mu2_ip_cloud, &
+        rg_sigma2_on_mu2_ip_cloud, &
+        Ng_sigma2_on_mu2_ip_cloud, &
+        rs_sigma2_on_mu2_ip_below, &
+        Ns_sigma2_on_mu2_ip_below, &
+        ri_sigma2_on_mu2_ip_below, &
+        Ni_sigma2_on_mu2_ip_below, &
+        rg_sigma2_on_mu2_ip_below, &
+        Ng_sigma2_on_mu2_ip_below, &
+        C_evap,                    &
+        r_0
+
+    use parameters_microphys, only: &
+        LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
+
+    use parameters_microphys, only: &
+        hydromet_tol  ! Variable(s)
+
+    use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
+        pbuf_init
+
+    ! Adding coefficient variable for clex9_oct14 case to reduce NNUCCD
+    ! and NNUCCC
+    use module_mp_graupel, only: &
+        NNUCCD_REDUCE_COEF, &
+        NNUCCC_REDUCE_COEF
+    ! Change by Marc Pilon on 11/16/11
+
+    use array_index, only: & 
+        l_frozen_hm, & ! Variables
+        l_mix_rat_hm,&
+        iirrainm,    &
+        iiNrm,       &
+        iirsnowm,    &
+        iiricem,     &
+        iirgraupelm, &
+        iiNsnowm,    & 
+        iiNim,       &
+        iiNgraupelm
+
+    use constants_clubb, only: &
+        cm3_per_m3, &
+        rr_tol,     &
+        ri_tol,     &
+        rs_tol,     &
+        rg_tol,     &
+        Nr_tol,     &
+        Ni_tol,     &
+        Ns_tol,     &
+        Ng_tol,     &
+        Nc_tol
+
+    use KK_fixed_correlations, only: &
+        setup_KK_corr ! Procedure(s)
+
+    ! The version of the Morrison 2005 microphysics that is in SAM.
+    use module_mp_GRAUPEL, only: &
+        Nc0, ccnconst, ccnexpnt, & ! Variables
+        aer_rm1, aer_rm2, aer_n1, aer_n2, &
+        aer_sig1, aer_sig2, pgam_fixed, &
+        doicemicro, &         ! use ice species (snow/cloud ice/graupel)
+        dograupel, &          ! use graupel
+        dohail, &             ! make graupel species have properties of hail
+        dosb_warm_rain, &     ! use Seifert & Beheng (2001) warm rain parameterization
+        dopredictNc, &        ! prediction of cloud droplet number
+        aerosol_mode, &       ! specify two modes of (sulfate) aerosol
+        dosubgridw, &         ! input estimate of subgrid w to microphysics
+        doarcticicenucl, &    ! use arctic parameter values for ice nucleation
+        docloudedgeactivation,& ! activate cloud droplets throughout the cloud
+        dofix_pgam            ! option to fix value of pgam (exponent in cloud water gamma distn)
+
+    use module_mp_Graupel, only: &
+        GRAUPEL_INIT ! Subroutine
+
+    use cldwat2m_micro, only: &
+        ini_micro,             & ! Subroutine
+        l_use_CLUBB_pdf_in_mg    ! Flag
+
+    use microp_aero, only: &
+        ini_microp_aero ! Subroutine
+
+    use constants_clubb, only: &
+        fstderr    ! Constant
+
+    use text_writer, only: &
+        write_text   ! Used to write microphysics settings to setup.txt file
+
+    use error_code, only: clubb_at_least_debug_level ! Function
+
+    use gfdl_activation, only: nooc, sul_concen, & ! Variables
+        low_concen, high_concen, &
+        lowup, highup, lowup2, highup2, &
+        lowmass2, highmass2, lowmass3, highmass3, &
+        lowmass4, highmass4, lowmass5, highmass5, &
+        lowT2, highT2, aeromass_value
+
+    use aer_ccn_act_k_mod, only: aer_ccn_act_k_init ! Procedure
+
+    use gfdl_activation, only: Loading ! Procedure
+
+    use clubb_precision, only:  & 
+        core_rknd
+
+    use corr_matrix_module, only: &
+        setup_pdf_indices, &  ! Procedure(s)
+        setup_corr_varnce_array
+
+    use model_flags, only: &
+        l_diagnose_correlations, &
+        l_evaporate_cold_rcm, &
+        l_morr_xp2_mc_tndcy
+
+    implicit none
+
+    ! Constant Parameters
+    logical, parameter :: &
+      l_write_to_file = .true. ! If true, will write case information to a file.
+
+    character(len=*), parameter :: &
+      corr_input_path = "../input/case_setups/", & ! Path to correlation files
+      cloud_file_ext  = "_corr_array_cloud.in", & ! File extensions for correlation files
+      below_file_ext  = "_corr_array_below.in"
+
+    ! External
+    intrinsic :: trim
+
+    ! Input variables
+    integer, intent(in) :: &
+      iunit ! File unit
+
+    character(len=*), intent(in) :: &
+      runtype
+
+    character(len=*), intent(in) :: &
+      namelist_file ! File name
+
+    character(len=*), intent(in) :: &
+      case_info_file ! Name of simulation info file (plain text)
+
+    ! Output variables
+    integer, intent(out) :: & 
+      hydromet_dim ! Number of hydrometeor fields.
+
+    ! Local variables
+    character(len=30) :: LH_microphys_type
+    integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
+    integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
+    real( kind = core_rknd ), dimension( :, :, :, :, : ), allocatable :: &
+      droplets, droplets2            ! Used for lookup tables with GFDL activation
+
+    character(len=128) :: &
+     corr_file_path_cloud, &
+     corr_file_path_below
+
+    namelist /microphysics_setting/ &
+      micro_scheme, l_cloud_sed, sigma_g, &
+      l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
+      l_seifert_beheng, l_predictnc, l_const_Nc_in_cloud, specify_aerosol, &
+      l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
+      l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
+      LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
+      l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
+      rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud, Ncnp2_on_Ncnm2, &
+      rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below, &
+      rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, &
+      ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
+      rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud, &
+      rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, &
+      ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
+      rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below, &
+      C_evap, r_0, microphys_start_time, &
+      Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
+      aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
+
+    namelist /gfdl_activation_setting/ &
+      nooc, sul_concen, low_concen, high_concen, &
+      lowup, highup, lowup2, highup2, lowmass2, &
+      highmass2, lowmass3, highmass3,  &
+      lowmass4, highmass4, lowmass5, highmass5, &
+      lowT2, highT2, aeromass_value, l_gfdl_activation
+
+    ! ---- Begin Code ----
+
+    ! Set default values, then read in the namelist.
+    ! Note: many parameters are set in the microphys_parameters module.
+
+    l_gfdl_activation = .false.
+
+    ! Cloud water sedimentation from the RF02 case
+    ! This has no effect on Morrison's cloud water sedimentation
+    l_cloud_sed = .false.
+    sigma_g = 1.5_core_rknd ! Parameter for cloud droplet sedimentation code (RF02 value)
+
+    !--------------------------------------------------------------------------
+    ! Parameters for NNUCCD & NNUCCC coefficients on clex9_oct14 case
+    !--------------------------------------------------------------------------
+
+    select case (trim( runtype ))
+    case ( "clex9_oct14")
+       NNUCCD_REDUCE_COEF = .01 ! Reduce NNUCCD by factor of 100 for clex9_oct14
+       NNUCCC_REDUCE_COEF = .01 ! Reduce NNUCCC by factor of 100 for clex9_oct14
+    end select
+    ! end change by Marc Pilon 11/16/11
+
+    ! Aerosol for RF02 from Mikhail Ovtchinnikov
+    aer_rm1  = 0.011e-6 ! Mean geometric radius  [m]
+    aer_rm2  = 0.06e-6
+
+    aer_sig1 = 1.2   ! Std dev of aerosol size distribution  [-]
+    aer_sig2 = 1.7
+
+    aer_n1   = 125.e6  ! Aerosol contentration                 [#/m3]
+    aer_n2   = 65.e6
+
+    ! Other parameters, set as in SAM
+    ccnconst = 120. ! Parameter for powerlaw CCN [#/cm3]
+    ccnexpnt = 0.4
+
+    pgam_fixed = 5.
+
+    LH_microphys_type = "disabled"
+
+    ! The next three lines open the cases model.in file and replace values of
+    ! the parameters if they exist in the file.
+    open(unit=iunit, file=namelist_file, status='old', action='read')
+    read(iunit, nml=microphysics_setting)
+    close(unit=iunit)
+
+    ! Printing Microphysics inputs
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+       ! This will open the cases setup.txt file and append it to include the
+       ! parameters in the microphysics_setting namelist. This file was created
+       ! and written to from clubb_driver previously.
+      if ( l_write_to_file ) open(unit=iunit, file=case_info_file, &
+          status='old', action='write', position='append')
+
+         ! Write to file all parameters from the namelist microphysics_seting.
+       call write_text( "--------------------------------------------------", &
+                        l_write_to_file, iunit )
+       call write_text( "&microphysics_setting", l_write_to_file, iunit )
+       call write_text( "--------------------------------------------------", &
+                        l_write_to_file, iunit )
+
+       call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
+                         iunit )
+       call write_text ( "l_cloud_sed = ", l_cloud_sed, l_write_to_file, iunit )
+       call write_text ( "sigma_g = ", sigma_g, l_write_to_file, iunit )
+       call write_text ( "l_graupel = ", l_graupel, l_write_to_file, iunit )
+       call write_text ( "l_hail = ", l_hail, l_write_to_file, iunit )
+       call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
+       call write_text ( "l_const_Nc_in_cloud = ", l_const_Nc_in_cloud, &
+                         l_write_to_file, iunit )
+       call write_text ( "specify_aerosol = "// specify_aerosol, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_subgrid_w = ", l_subgrid_w, l_write_to_file, iunit )
+       call write_text ( "l_arctic_nucl = ", l_arctic_nucl, l_write_to_file, &
+                          iunit )
+       call write_text ( "l_cloud_edge_activation = ", &
+                         l_cloud_edge_activation, l_write_to_file, iunit )
+       call write_text ( "l_fix_pgam = ", l_fix_pgam, l_write_to_file, iunit )
+       call write_text ( "l_in_cloud_Nc_diff = ", l_in_cloud_Nc_diff, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_var_covar_src = ", l_var_covar_src, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_upwind_diff_sed = ", l_upwind_diff_sed, &
+                         l_write_to_file, iunit )
+       call write_text ( "LH_microphys_type = " // &
+                         trim( LH_microphys_type ), l_write_to_file, iunit )
+       call write_text ( "LH_microphys_calls = ", LH_microphys_calls, &
+                         l_write_to_file, iunit )
+       call write_text ( "LH_sequence_length = ", LH_sequence_length, &
+                         l_write_to_file, iunit )
+       call write_text ( "LH_seed = ", LH_seed, l_write_to_file, iunit )
+       call write_text ( "l_lh_cloud_weighted_sampling = ", &
+                         l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
+       call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_silhs_KK_convergence_adj_mean = ", &
+                         l_silhs_KK_convergence_adj_mean, &
+                         l_write_to_file, iunit )
+       call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
+                         l_write_to_file, iunit )
+       call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", &
+                         rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "Nr_sigma2_on_mu2_ip_cloud = ", &
+                         Nr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "rr_sigma2_on_mu2_ip_below = ", &
+                         rr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Nr_sigma2_on_mu2_ip_below = ", &
+                         Nr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
+                         l_write_to_file, iunit )
+       call write_text ( "rs_sigma2_on_mu2_ip_cloud = ", &
+                         rs_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "Ns_sigma2_on_mu2_ip_cloud = ", &
+                         Ns_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "ri_sigma2_on_mu2_ip_cloud = ", &
+                         ri_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "Ni_sigma2_on_mu2_ip_cloud = ", &
+                         Ni_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "rg_sigma2_on_mu2_ip_cloud = ", &
+                         rg_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "Ng_sigma2_on_mu2_ip_cloud = ", &
+                         Ng_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+       call write_text ( "rs_sigma2_on_mu2_ip_below = ", &
+                         rs_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Ns_sigma2_on_mu2_ip_below = ", &
+                         Ns_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "ri_sigma2_on_mu2_ip_below = ", &
+                         ri_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Ni_sigma2_on_mu2_ip_below = ", &
+                         Ni_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "rg_sigma2_on_mu2_ip_below = ", &
+                         rg_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Ng_sigma2_on_mu2_ip_below = ", &
+                         Ng_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
+       call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
+       call write_text ( "microphys_start_time = ", &
+                         real( microphys_start_time, kind = core_rknd ), &
+                         l_write_to_file, iunit )
+       call write_text ( "Nc0_in_cloud = ", Nc0_in_cloud, &
+                         l_write_to_file, iunit )
+       call write_text ( "ccnconst = ", real(ccnconst, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "ccnexpnt = ", real(ccnexpnt, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_rm1 = ", real(aer_rm1, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_rm2 = ", real(aer_rm2, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_n1 = ", real(aer_n1, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_n2 = ", real(aer_n2, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_sig1 = ", real(aer_sig1, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "aer_sig2 = ", real(aer_sig2, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd), &
+                         l_write_to_file, iunit )
+
+       if ( l_write_to_file ) close(unit=iunit)
+
+    endif ! clubb_at_least_debug_level(1)
+
+    ! Read in the name list for initialization, if it exists
+    open(unit=iunit, file=namelist_file, status='old', action='read')
+    read(iunit, nml=gfdl_activation_setting)
+    close(unit=iunit)
+
+    ! Initialize the GFDL activation code, if necessary
+    if( l_gfdl_activation ) then
+       ! Ensure a microphysics that has Ncm is being used
+       if( trim( micro_scheme ) == "coamps" .or. &
+           trim( micro_scheme ) == "morrison" & 
+           .or. trim( micro_scheme ) == "morrison_gettelman") then
+
+          ! Read in the lookup tables
+          call Loading( droplets, droplets2 )
+          allocate( droplets(res,res,res,res,res), droplets2(res,res,res,res,res) )
+          ! Initialize the activation variables
+          call aer_ccn_act_k_init                            &
+               ( real( droplets ), real( droplets2 ), res, res2, nooc,     &
+                 real( sul_concen ), real( low_concen ), real( high_concen ),      &
+                 real( lowup ), real( highup ), real( lowup2 ), real( highup2 ), real( lowmass2 ), &
+                 real( highmass2 ), real( lowmass3 ), real( highmass3 ),           &
+                 real( lowmass4 ), real( highmass4 ), real( lowmass5 ), real( highmass5 ), &
+                 real( lowT2 ),real( highT2 ) )
+          deallocate( droplets, droplets2 )
+       endif ! coamps .or. morrison .or. khairoutdinov_kogan
+    endif ! l_gfdl_activation
+
+    ! The location of the fields in the hydromet array are arbitrary,
+    ! and don't need to be set consistently among schemes so long as
+    ! the 'i' indices point to the correct parts of the array.
+
+    select case ( trim( micro_scheme ) )
+    case ( "morrison" )
+       iirrainm    = 1
+       iirsnowm    = 2
+       iiricem     = 3
+       iirgraupelm = 4
+
+       iiNrm       = 5
+       iiNsnowm    = 6
+       iiNim       = 7
+       iiNgraupelm = 8
+
+       hydromet_dim = 8
+
+
+       allocate( hydromet_list(hydromet_dim) )
+       allocate( l_frozen_hm(hydromet_dim) )
+       allocate( l_mix_rat_hm(hydromet_dim) )
+
+       hydromet_list(iirrainm)    = "rrainm"
+       hydromet_list(iirsnowm)    = "rsnowm"
+       hydromet_list(iiricem)     = "ricem"
+       hydromet_list(iirgraupelm) = "rgraupelm"
+
+       hydromet_list(iiNrm)       = "Nrm"
+       hydromet_list(iiNsnowm)    = "Nsnowm"
+       hydromet_list(iiNim)       = "Nim"
+       hydromet_list(iiNgraupelm) = "Ngraupelm"
+
+       l_frozen_hm(iirrainm) = .false.
+       l_frozen_hm(iirsnowm:iirgraupelm) = .true.
+       l_frozen_hm(iiNrm) = .false.
+       l_frozen_hm(iiNsnowm:iiNgraupelm) = .true.
+
+       l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
+       l_mix_rat_hm(iiNrm:iiNgraupelm) = .false.
+
+       ! Set Nc0 in the Morrison code (module_MP_graupel) based on Nc0_in_cloud
+       Nc0 = real( Nc0_in_cloud / cm3_per_m3 ) ! Units on Nc0 are per cm^3
+
+       ! Set flags from the Morrison scheme as in GRAUPEL_INIT
+       if ( l_predictnc ) then
+          dopredictNc = .true.
+       else
+          dopredictNc = .false.
+       endif
+
+       ! Set the mode of aerosol to be used
+       select case ( trim( specify_aerosol ) )
+       case ( "morrison_no_aerosol" )
+          aerosol_mode = morrison_no_aerosol
+
+       case ( "morrison_power_law" )
+          aerosol_mode = morrison_power_law
+
+       case ( "morrison_lognormal" )
+          aerosol_mode = morrison_lognormal
+
+       case default
+          stop "Unknown Morrison aerosol mode."
+
+       end select
+
+       if ( l_cloud_edge_activation ) then
+          docloudedgeactivation = .true.
+       else
+          docloudedgeactivation = .false.
+       endif
+
+       if ( l_ice_micro ) then
+          doicemicro = .true.
+       else
+          doicemicro = .false.
+       endif
+
+       if ( l_arctic_nucl ) then
+          doarcticicenucl = .true.
+       else
+          doarcticicenucl = .false.
+       endif
+
+       if ( l_graupel ) then
+          dograupel = .true.
+       else
+          dograupel = .false.
+       endif
+
+       if ( l_hail ) then
+          dohail = .true.
+       else
+          dohail = .false.
+       endif
+
+       if ( l_seifert_beheng ) then
+          dosb_warm_rain = .true.
+       else
+          dosb_warm_rain = .false.
+       endif
+
+       if ( l_fix_pgam ) then
+          dofix_pgam = .true.
+       else
+          dofix_pgam = .false.
+       endif
+
+       if ( l_subgrid_w ) then
+          dosubgridw = .true.
+       else
+          dosubgridw = .false.
+       endif
+
+       if ( l_cloud_sed ) then
+          write(fstderr,*) "Morrison microphysics has seperate code for" &
+                           //" cloud water sedimentation, therefore " &
+                           //"l_cloud_sed should be set to .false."
+          stop "Fatal error."
+       endif
+
+       if ( .not. l_fix_s_t_correlations .and. l_ice_micro &
+            .and. trim( LH_microphys_type ) /= "disabled" ) then
+          write(fstderr,*) "The variable l_fix_s_t_correlations must be true" &
+                           // " in order to enable latin hypercube sampling" &
+                           // " and ice microphysics."
+          write(fstderr,*) "Therefore l_ice_micro must be set to false to use this option."
+          stop "Fatal error."
+       endif
+       allocate( l_hydromet_sed(hydromet_dim) )
+       ! Sedimentation is handled within the Morrison microphysics
+       l_hydromet_sed(iiNrm) = .false.
+       l_hydromet_sed(iiNim) = .false.
+       l_hydromet_sed(iiNgraupelm) = .false.
+       l_hydromet_sed(iiNsnowm) = .false.
+
+       l_hydromet_sed(iirrainm)    = .false.
+       l_hydromet_sed(iirsnowm)    = .false.
+       l_hydromet_sed(iiricem)     = .false.
+       l_hydromet_sed(iirgraupelm) = .false.
+
+       call GRAUPEL_INIT()
+
+    case ( "morrison_gettelman" )
+       iirrainm    = -1
+       iirsnowm    = -1
+       iiricem     = 1
+       iirgraupelm = -1
+
+       iiNrm       = -1
+       iiNsnowm    = -1
+       iiNim       = 2
+       iiNgraupelm = -1
+       hydromet_dim = 2
+
+       if ( l_predictnc ) then
+          write(fstderr,*) "Morrison-Gettelman microphysics is not currently" &
+                           // " configured for l_predictnc = T"
+          stop "Fatal error."
+       endif
+
+       if ( l_cloud_sed ) then
+          write(fstderr,*) "Morrison-Gettelman microphysics has seperate code" &
+                           // " for cloud water sedimentation, therefore" &
+                           // " l_cloud_sed should be set to .false."
+          stop "Fatal error."
+       endif
+
+       allocate( hydromet_list(hydromet_dim) )
+       allocate( l_frozen_hm(hydromet_dim) )
+       allocate( l_mix_rat_hm(hydromet_dim) )
+
+       hydromet_list(iiricem) = "ricem"
+       hydromet_list(iiNim)   = "Nim"
+
+       l_mix_rat_hm(iiricem) = .true.
+       l_mix_rat_hm(iiNim) = .false.
+
+       l_frozen_hm(iiricem) = .true.
+       l_frozen_hm(iiNim) = .true.
+
+       allocate( l_hydromet_sed(hydromet_dim) )
+       ! Sedimentation is handled within the MG microphysics
+       l_hydromet_sed(iiricem) = .false.
+       l_hydromet_sed(iiNim)   = .false.
+
+       ! Initialize constants for aerosols
+       call ini_microp_aero()
+
+       ! Setup the MG scheme
+       call ini_micro()
+       call pbuf_init()
+
+    case ( "coamps" )
+       if ( .not. l_predictnc ) then
+          write(fstderr,*) "COAMPS microphysics does not support l_predictnc = F"
+          stop "Fatal Error"
+       endif
+       iirrainm    = 1
+       iirsnowm    = 2
+       iiricem     = 3
+       iirgraupelm = 4
+
+       iiNrm       = 5
+       ! Nsnowm is computed diagnostically in the subroutine coamps_micro_driver
+       iiNsnowm    = -1
+       iiNim       = 6
+       iiNgraupelm = -1
+
+       hydromet_dim = 6
+
+       allocate( hydromet_list(hydromet_dim) )
+
+       hydromet_list(iirrainm)    = "rrainm"
+       hydromet_list(iirsnowm)    = "rsnowm"
+       hydromet_list(iiricem)     = "ricem"
+       hydromet_list(iirgraupelm) = "rgraupelm"
+
+       hydromet_list(iiNrm)       = "Nrm"
+       hydromet_list(iiNim)       = "Nim"
+
+       allocate( l_frozen_hm(hydromet_dim) )
+
+       l_frozen_hm(iirrainm)    = .false.
+       l_frozen_hm(iirsnowm)    = .true.
+       l_frozen_hm(iiricem)     = .true.
+       l_frozen_hm(iirgraupelm) = .true.
+
+       l_frozen_hm(iiNrm)       = .false.
+       l_frozen_hm(iiNim)       = .true.
+
+       allocate( l_mix_rat_hm(hydromet_dim) )
+
+       l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
+       l_mix_rat_hm(iiNrm:iiNim) = .false.
+
+       allocate( l_hydromet_sed(hydromet_dim) )
+
+       l_hydromet_sed(iiNrm) = .true.
+       l_hydromet_sed(iiNim) = .false.
+
+       l_hydromet_sed(iirrainm)    = .true.
+       l_hydromet_sed(iirsnowm)    = .true.
+       l_hydromet_sed(iiricem)     = .true.
+       l_hydromet_sed(iirgraupelm) = .true.
+
+    case ( "khairoutdinov_kogan" )
+       if ( l_predictnc ) then
+          write(fstderr,*) "Khairoutdinov-Kogan microphysics does not support l_predictnc = T"
+          stop "Fatal Error"
+       endif
+       iirrainm    = 1
+       iirsnowm    = -1
+       iiricem     = -1
+       iirgraupelm = -1
+
+       iiNrm       = 2
+       iiNsnowm    = -1
+       iiNim       = -1
+       iiNgraupelm = -1
+
+       hydromet_dim = 2
+
+       allocate( l_hydromet_sed(hydromet_dim) )
+       allocate( hydromet_list(hydromet_dim) )
+       allocate( l_frozen_hm(hydromet_dim) )
+       allocate( l_mix_rat_hm(hydromet_dim) )
+
+       hydromet_list(iirrainm) = "rrainm"
+       hydromet_list(iiNrm) = "Nrm"
+
+       l_hydromet_sed(iirrainm) = .true.
+       l_hydromet_sed(iiNrm)    = .true.
+
+       l_frozen_hm(iirrainm) = .false.
+       l_frozen_hm(iiNrm) = .false.
+
+       l_mix_rat_hm(iirrainm) = .true.
+       l_mix_rat_hm(iiNrm) = .false.
+
+    case ( "simplified_ice", "none" )
+       iirrainm    = -1
+       iirsnowm    = -1
+       iiricem     = -1
+       iirgraupelm = -1
+
+       iiNrm       = -1
+       iiNsnowm    = -1
+       iiNim       = -1
+       iiNgraupelm = -1
+
+       hydromet_dim = 0
+
+       l_predictnc = .false.
+
+    case default
+       write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
+       stop
+
+    end select
+
+    ! Set up hydrometeor tolerance array.
+    allocate( hydromet_tol(hydromet_dim) )
+    if ( iirrainm > 0 ) then
+       hydromet_tol(iirrainm) = rr_tol
+    endif
+    if ( iiricem > 0 ) then
+       hydromet_tol(iiricem) = ri_tol
+    endif
+    if ( iirsnowm > 0 ) then
+       hydromet_tol(iirsnowm) = rs_tol
+    endif
+    if ( iirgraupelm > 0 ) then
+       hydromet_tol(iirgraupelm) = rg_tol
+    endif
+    if ( iiNrm > 0 ) then
+       hydromet_tol(iiNrm) = Nr_tol
+    endif
+    if ( iiNim > 0 ) then
+       hydromet_tol(iiNim) = Ni_tol
+    endif
+    if ( iiNsnowm > 0 ) then
+       hydromet_tol(iiNsnowm) = Ns_tol
+    endif
+    if ( iiNgraupelm > 0 ) then
+       hydromet_tol(iiNgraupelm) = Ng_tol
+    endif
+
+    ! Sanity check
+    if ( l_lh_cloud_weighted_sampling .and. .not.  l_lh_vert_overlap ) then
+       write(fstderr,*) "Error in init_microphys: "// &
+        "l_lh_cloud_weighted_sampling requires l_lh_vert_overlap."
+       stop
+    endif
+
+    select case ( trim( LH_microphys_type ) )
+    case ( "interactive" )
+       LH_microphys_type_int = LH_microphys_interactive
+
+    case ( "non-interactive" )
+       LH_microphys_type_int = LH_microphys_non_interactive
+
+    case ( "disabled" )
+       LH_microphys_type_int = LH_microphys_disabled
+
+    case default
+       stop "Error determining LH_microphys_type"
+
+    end select
+
+    ! Make sure the user didn't select LH sampling using
+    ! coamps, morrison-gettelman, or simplified_ice microphysics
+    if ( ( .not. ( LH_microphys_type_int == LH_microphys_disabled ) ) &
+           .and. ( trim( micro_scheme ) == "coamps" .or. &
+                   trim( micro_scheme ) == "morrison_gettelman" .or. &
+                   trim( micro_scheme ) == "simplified_ice" ) ) then
+       stop "LH sampling can not be enabled when using coamps," &
+            // " morrison_gettelman, or simplified_ice microphysics types"
+    endif
+
+    ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when SILHS is disabled
+    if ( l_silhs_KK_convergence_adj_mean .and. &
+       LH_microphys_type_int == LH_microphys_disabled) then
+       stop "l_silhs_KK_convergence_adj_mean requires LH microphysics to be enabled."
+    endif
+
+    ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
+    ! a microphysics scheme other than khairoutdinov_kogan (KK)
+    if ( l_silhs_KK_convergence_adj_mean .and. &
+          trim( micro_scheme ) /= "khairoutdinov_kogan" ) then
+       stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
+    endif
+
+    ! Stop the run if user has selected l_silhs_KK_convergence_adj_mean and not
+    ! included the preprocessor flag SILHS_KK_CONVERGENCE_TEST
+#ifndef SILHS_KK_CONVERGENCE_TEST
+    if (l_silhs_KK_convergence_adj_mean) then
+       stop "Use of the l_silhs_KK_convergence_adj_mean flag requires the &
+            &preprocessor flag SILHS_KK_CONVERGENCE_TEST"
+    endif
+#endif
+
+    !The algorithm for diagnosing the correlations only works with the KK
+    !microphysics by now. 
+    !<Changes by janhft 02/19/13>
+    if ( l_diagnose_correlations &
+         .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
+         .and. ( LH_microphys_type_int == LH_microphys_disabled ) ) ) then
+       write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
+                        // "for KK microphysics by now."
+       stop
+    endif
+
+    if ( ( .not. l_local_kk) .and. &
+         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) .and. &
+         ( LH_microphys_type_int == LH_microphys_interactive ) ) then
+       write(fstderr,*) "Error:  KK upscaled microphysics " &
+                        // "(l_local_kk = .false.) and interactive Latin " &
+                        // "Hypercube (LH_microphys_type = interactive) " &
+                        // "are incompatible."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. &
+         ( LH_microphys_type_int /= LH_microphys_disabled ) ) then
+       write(fstderr,*) "Error:  The code to include the effects of rain " &
+                        // "evaporation on rtp2 and thlp2 in Morrison " &
+                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
+                        // "Latin Hypercube are incompatible."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_var_covar_src ) then
+       write(fstderr,*) "Error: The code l_morr_xp2_mc_tndcy and " &
+                        // "l_var_covar_src are incompatible, since " &
+                        // "they both are used to determine the effect " &
+                        // "of microphysics on variances."
+       stop
+    endif
+
+    if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
+       write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &
+                        //  "are currently incompatible."
+       stop
+    endif
+
+    call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
+                            iiricem, iiNim, iirsnowm, iiNsnowm, &
+                            iirgraupelm, iiNgraupelm, &
+                            l_ice_micro, l_graupel )
+
+    corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
+    corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
+
+    ! Allocate and set the arrays containing the correlations
+    ! and the X'^2 / X'^2 terms
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
+
+    if ( l_use_CLUBB_pdf_in_mg .or. &
+         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) ) then
+
+       call setup_KK_corr( iunit, l_write_to_file, case_info_file ) ! In
+
+    endif
+
+
+    return
+
+  end subroutine init_microphys
+
+  !=============================================================================
+  subroutine cleanup_microphys( )
+
+    ! Description:
+    ! De-allocate arrays used by the microphysics
+
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
+
+    use parameters_microphys, only: &
+        hydromet_list,  & ! Variable(s)
+        l_hydromet_sed, &
+        hydromet_tol,   &
+        micro_scheme
+
+    use phys_buffer, only: & ! Used for placing wp2_zt in MG micro.
+        pbuf_deallocate
+
+    implicit none
+
+    intrinsic :: allocated
+
+    ! ---- Begin Code ----
+
+    if ( allocated( hydromet_list ) ) then
+       deallocate( hydromet_list )
+    end if
+
+    if ( allocated( l_hydromet_sed ) ) then
+       deallocate( l_hydromet_sed )
+    end if
+
+    if ( allocated( hydromet_tol ) ) then
+        deallocate( hydromet_tol )
+    endif
+
+    if ( trim( micro_scheme ) == "morrison_gettelman" ) then
+       call pbuf_deallocate()
+    endif
+
+
+    return
+
+  end subroutine cleanup_microphys
+
+  !=============================================================================
+
+end module microphys_init_cleanup

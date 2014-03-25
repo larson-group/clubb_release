@@ -112,7 +112,12 @@ module clubb_driver
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
       iiricem, iirsnowm, iirgraupelm
 
-    use microphys_driver, only: init_microphys, advance_microphys, cleanup_microphys ! Subroutines
+    use microphys_driver, only: &
+        advance_microphys  ! Procedure(s)
+
+    use microphys_init_cleanup, only: &
+        init_microphys,    & ! Procedure(s)
+        cleanup_microphys
 
     use bugsrad_driver, only: init_radiation ! Subroutine
 

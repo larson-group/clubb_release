@@ -24,6 +24,7 @@
 ../src/mg_micro_driver_module.F90
 ../src/morrison_micro_driver_module.F90
 ../src/microphys_driver.F90
+../src/microphys_init_cleanup.F90
 ../src/microphys_interface.inc
 ../src/quicksort.F90
 ../src/simple_rad_module.F90
