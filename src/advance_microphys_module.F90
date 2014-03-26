@@ -175,11 +175,17 @@ module advance_microphys_module
       hydromet_vel_covar,    & ! Covariance of V_xx & x_x (m-levs)  [units(m/s)]
       hydromet_vel_covar_zt    ! Covariance of V_xx & x_x (t-levs)  [units(m/s)]
 
-    ! Eddy diffusivity for rain and rain drop concentration.
-    ! It is also used for the other hydrometeor variables.
-    ! K_hm = Constant * Kh_zm; Constant is named c_K_hm.
+    ! Turbulent advection for hydrometeors -- down-gradient approximation for
+    ! covariances <w'hm'> (for any hydrometeor, hm) and <w'Nc'>:
+    ! <w'hm'> = - K_hm * d<hm>/dz; and
+    ! <w'Nc'> = - K_Nc & d<Nc>/dz;
+    ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
+    ! on multiple factors.
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      K_hm    ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      K_hm   ! [m^2/s]
+      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc           [m^2/s]
 
     integer :: k, i    ! Loop indices
 
@@ -204,10 +210,35 @@ module advance_microphys_module
     ! microphysics
     if ( time_current < microphys_start_time ) return
 
-    ! Solve for the value of K_hm, the hydrometeor eddy diffusivity.
-    do k = 1, gr%nz, 1
-       K_hm(k) = c_K_hm * Kh_zm(k)
-    enddo
+    ! Turbulent advection for hydrometeors -- down-gradient approximation for
+    ! covariances <w'hm'> (for any hydrometeor, hm) and <w'Nc'>:
+    ! <w'hm'> = - K_hm * d<hm>/dz; and
+    ! <w'Nc'> = - K_Nc & d<Nc>/dz;
+    ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
+    ! on multiple factors.
+    if ( hydromet_dim > 0 ) then
+
+       ! Solve for the value of K_hm, the coefficient of diffusion for
+       ! hydrometeors.
+       do i = 1, hydromet_dim, 1
+          do k = 1, gr%nz, 1
+
+             K_hm(k,i) = c_K_hm * Kh_zm(k)
+
+          enddo ! k = 1, gr%nz, 1
+       enddo ! i = hydromet_dim, 1
+
+    endif ! hydromet_dim > 0
+
+    if ( l_predictnc ) then
+
+       ! Solve for the value of K_Nc, the coefficient of diffusion for cloud
+       ! droplet concentration.
+       do k = 1, gr%nz, 1
+          K_Nc(k) = c_K_hm * Kh_zm(k)
+       enddo ! k = 1, gr%nz, 1
+
+    endif ! l_predictnc
 
     !------------------------------------------------------------------------
     ! Advance predictive mean precipitating hydrometeors one model timestep.
@@ -240,7 +271,7 @@ module advance_microphys_module
 
        ! Nc is predicted.
 
-       call advance_Ncm( dt, wm_zt, cloud_frac, K_hm, rho_ds_zm, &
+       call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          Ncm, Nc_in_cloud, &
                          wpNcp, err_code_Ncm )
@@ -506,8 +537,10 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
       exner,      & ! Exner function, (p/p1000mb)^(Rd/Cp)            [-]
-      cloud_frac, & ! Cloud fraction                                 [-]
-      K_hm          ! Eddy diffusivity coefficient for hydrometeor   [m^2/s]
+      cloud_frac    ! Cloud fraction                                 [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      K_hm    ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
@@ -628,9 +661,10 @@ module advance_microphys_module
        ! A Crank-Nicholson time-stepping scheme is used for this variable.
        ! This is the portion of the calculation using < h_m > from timestep t. 
        wphydrometp(1:gr%nz-1,i) &
-       = - one_half * xpwp_fnc( K_hm(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
-                                hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                                gr%invrs_dzm(1:gr%nz-1) )
+       = - one_half &
+           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_hm_vert_res_dep(1:gr%nz-1), &
+                       hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
+                       gr%invrs_dzm(1:gr%nz-1) )
 
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
@@ -638,7 +672,7 @@ module advance_microphys_module
 
        ! Add implicit terms to the LHS matrix
        call microphys_lhs( trim( hydromet_list(i) ), l_hydromet_sed(i), & ! In
-                           dt, K_hm, nu_hm_vert_res_dep, wm_zt,         & ! In
+                           dt, K_hm(:,i), nu_hm_vert_res_dep, wm_zt,    & ! In
                            hydromet_vel(:,i), hydromet_vel_zt(:,i),     & ! In
                            hydromet_vel_covar_zt_impc(:,i),             & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt,       & ! In
@@ -647,7 +681,7 @@ module advance_microphys_module
        ! Set up explicit term in the RHS vector
        call microphys_rhs( trim( hydromet_list(i) ), dt, l_hydromet_sed(i), &
                            hydromet(:,i), hydromet_mc(:,i), &
-                           K_hm, nu_hm_vert_res_dep, cloud_frac, &
+                           K_hm(:,i), nu_hm_vert_res_dep, cloud_frac, &
                            hydromet_vel_covar_zt_expc(:,i), &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            rhs )
@@ -707,9 +741,10 @@ module advance_microphys_module
        ! This is the portion of the calculation using < h_m > from timestep t+1.
        wphydrometp(1:gr%nz-1,i) &
        = wphydrometp(1:gr%nz-1,i) &
-         - one_half * xpwp_fnc( K_hm(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
-                                hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
-                                gr%invrs_dzm(1:gr%nz-1) )
+         - one_half &
+           * xpwp_fnc( K_hm(1:gr%nz-1,i)+nu_hm_vert_res_dep(1:gr%nz-1), &
+                       hydromet(1:gr%nz-1,i), hydromet(2:gr%nz,i), &
+                       gr%invrs_dzm(1:gr%nz-1) )
 
        ! A zero-flux boundary condition at the top of the model is used for
        ! hydrometeors.
@@ -788,7 +823,7 @@ module advance_microphys_module
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_hm, rho_ds_zm, &
+  subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           Ncm, Nc_in_cloud, &
                           wpNcp, err_code_Ncm )
@@ -852,7 +887,7 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
       cloud_frac, & ! Cloud fraction                                 [-]
-      K_hm          ! Eddy diffusivity coefficient for hydrometeor   [m^2/s]
+      K_Nc          ! Coefficient of diffusion (turb. adv.) for Nc   [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
@@ -938,7 +973,7 @@ module advance_microphys_module
     ! A Crank-Nicholson time-stepping scheme is used for this variable.
     ! This is the portion of the calculation using < N_c > from timestep t. 
     wpNcp(1:gr%nz-1) &
-    = - one_half * xpwp_fnc( K_hm(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
+    = - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
                              Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
                              gr%invrs_dzm(1:gr%nz-1) )
 
@@ -947,7 +982,7 @@ module advance_microphys_module
 
     ! Add implicit terms to the LHS array
     call microphys_lhs( "Ncm", l_Ncm_sed, & ! In
-                        dt, K_hm, nu_hm_vert_res_dep, wm_zt, &  ! In
+                        dt, K_Nc, nu_hm_vert_res_dep, wm_zt, &  ! In
                         Ncm_vel, Ncm_vel_zt, & ! In
                         Ncm_vel_covar_zt_impc, & ! In
                         rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
@@ -959,7 +994,7 @@ module advance_microphys_module
        call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
                            Nc_in_cloud, &
                            Ncm_mc / max( cloud_frac, cloud_frac_min ), &
-                           K_hm, nu_hm_vert_res_dep, cloud_frac, &
+                           K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            rhs )
@@ -968,7 +1003,7 @@ module advance_microphys_module
 
        call microphys_rhs( "Ncm", dt, l_Ncm_sed, &
                            Ncm, Ncm_mc, &
-                           K_hm, nu_hm_vert_res_dep, cloud_frac, &
+                           K_Nc, nu_hm_vert_res_dep, cloud_frac, &
                            Ncm_vel_covar_zt_expc, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &
                            rhs )
@@ -1042,7 +1077,7 @@ module advance_microphys_module
     ! This is the portion of the calculation using < N_c > from timestep t+1. 
     wpNcp(1:gr%nz-1) &
     = wpNcp(1:gr%nz-1) &
-      - one_half * xpwp_fnc( K_hm(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
+      - one_half * xpwp_fnc( K_Nc(1:gr%nz-1)+nu_hm_vert_res_dep(1:gr%nz-1), &
                              Ncm(1:gr%nz-1), Ncm(2:gr%nz), &
                              gr%invrs_dzm(1:gr%nz-1) )
 
@@ -1466,7 +1501,7 @@ module advance_microphys_module
       wm_zt, & ! w wind component on thermodynamic levels                [m/s]
       V_hm,  & ! Sedimentation velocity of hydrometeor (momentum levels) [m/s]
       V_hmt, & ! Sedimentation velocity of hydrometeor (thermo. levels)  [m/s]
-      K_hm     ! Eddy diffusivity for hydrometeor on momentum levels     [m^2/s]
+      K_hm     ! Coefficient of diffusion (turb. adv.) for hydrometeor   [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       Vhmphmp_zt_impc, & ! Implicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
@@ -1797,7 +1832,7 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       hmm,             & ! Mean value of hydrometeor (t-levs.)      [units]
       hmm_tndcy,       & ! Microphysics tendency (thermo. levels)   [units/s]
-      K_hm,            & ! Eddy diffusivity for hydromet on m-levs  [m^2/s]
+      K_hm,            & ! Coef. of diffusion for hydrometeor       [m^2/s]
       nu,              & ! Background diffusion coefficient         [m^2/s]
       cloud_frac,      & ! Cloud fraction                           [-]
       Vhmphmp_zt_expc, & ! Explicit comp. of <V_hm'h_m'> on t-levs  [units(m/s)]
