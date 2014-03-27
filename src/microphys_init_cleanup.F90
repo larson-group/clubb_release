@@ -470,7 +470,9 @@ module microphys_init_cleanup
     ! the 'i' indices point to the correct parts of the array.
 
     select case ( trim( micro_scheme ) )
+
     case ( "morrison" )
+
        iirrainm    = 1
        iirsnowm    = 2
        iiricem     = 3
@@ -482,29 +484,6 @@ module microphys_init_cleanup
        iiNgraupelm = 8
 
        hydromet_dim = 8
-
-
-       allocate( hydromet_list(hydromet_dim) )
-       allocate( l_frozen_hm(hydromet_dim) )
-       allocate( l_mix_rat_hm(hydromet_dim) )
-
-       hydromet_list(iirrainm)    = "rrainm"
-       hydromet_list(iirsnowm)    = "rsnowm"
-       hydromet_list(iiricem)     = "ricem"
-       hydromet_list(iirgraupelm) = "rgraupelm"
-
-       hydromet_list(iiNrm)       = "Nrm"
-       hydromet_list(iiNsnowm)    = "Nsnowm"
-       hydromet_list(iiNim)       = "Nim"
-       hydromet_list(iiNgraupelm) = "Ngraupelm"
-
-       l_frozen_hm(iirrainm) = .false.
-       l_frozen_hm(iirsnowm:iirgraupelm) = .true.
-       l_frozen_hm(iiNrm) = .false.
-       l_frozen_hm(iiNsnowm:iiNgraupelm) = .true.
-
-       l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
-       l_mix_rat_hm(iiNrm:iiNgraupelm) = .false.
 
        ! Set Nc0 in the Morrison code (module_MP_graupel) based on Nc0_in_cloud
        Nc0 = real( Nc0_in_cloud / cm3_per_m3 ) ! Units on Nc0 are per cm^3
@@ -589,18 +568,21 @@ module microphys_init_cleanup
 
        if ( .not. l_fix_s_t_correlations .and. l_ice_micro &
             .and. trim( LH_microphys_type ) /= "disabled" ) then
-          write(fstderr,*) "The variable l_fix_s_t_correlations must be true" &
+          write(fstderr,*) "The flag l_fix_s_t_correlations must be true" &
                            // " in order to enable latin hypercube sampling" &
                            // " and ice microphysics."
-          write(fstderr,*) "Therefore l_ice_micro must be set to false to use this option."
+          write(fstderr,*) "The flag l_ice_micro must be set" &
+                           // " to false to use this option."
           stop "Fatal error."
        endif
+
        allocate( l_hydromet_sed(hydromet_dim) )
+
        ! Sedimentation is handled within the Morrison microphysics
-       l_hydromet_sed(iiNrm) = .false.
-       l_hydromet_sed(iiNim) = .false.
+       l_hydromet_sed(iiNrm)       = .false.
+       l_hydromet_sed(iiNim)       = .false.
        l_hydromet_sed(iiNgraupelm) = .false.
-       l_hydromet_sed(iiNsnowm) = .false.
+       l_hydromet_sed(iiNsnowm)    = .false.
 
        l_hydromet_sed(iirrainm)    = .false.
        l_hydromet_sed(iirsnowm)    = .false.
@@ -610,6 +592,7 @@ module microphys_init_cleanup
        call GRAUPEL_INIT()
 
     case ( "morrison_gettelman" )
+
        iirrainm    = -1
        iirsnowm    = -1
        iiricem     = 1
@@ -619,6 +602,7 @@ module microphys_init_cleanup
        iiNsnowm    = -1
        iiNim       = 2
        iiNgraupelm = -1
+
        hydromet_dim = 2
 
        if ( l_predictnc ) then
@@ -634,20 +618,8 @@ module microphys_init_cleanup
           stop "Fatal error."
        endif
 
-       allocate( hydromet_list(hydromet_dim) )
-       allocate( l_frozen_hm(hydromet_dim) )
-       allocate( l_mix_rat_hm(hydromet_dim) )
-
-       hydromet_list(iiricem) = "ricem"
-       hydromet_list(iiNim)   = "Nim"
-
-       l_mix_rat_hm(iiricem) = .true.
-       l_mix_rat_hm(iiNim) = .false.
-
-       l_frozen_hm(iiricem) = .true.
-       l_frozen_hm(iiNim) = .true.
-
        allocate( l_hydromet_sed(hydromet_dim) )
+
        ! Sedimentation is handled within the MG microphysics
        l_hydromet_sed(iiricem) = .false.
        l_hydromet_sed(iiNim)   = .false.
@@ -660,10 +632,13 @@ module microphys_init_cleanup
        call pbuf_init()
 
     case ( "coamps" )
+
        if ( .not. l_predictnc ) then
-          write(fstderr,*) "COAMPS microphysics does not support l_predictnc = F"
+          write(fstderr,*) "COAMPS microphysics" &
+                           // " does not support l_predictnc = F"
           stop "Fatal Error"
        endif
+
        iirrainm    = 1
        iirsnowm    = 2
        iiricem     = 3
@@ -677,31 +652,6 @@ module microphys_init_cleanup
 
        hydromet_dim = 6
 
-       allocate( hydromet_list(hydromet_dim) )
-
-       hydromet_list(iirrainm)    = "rrainm"
-       hydromet_list(iirsnowm)    = "rsnowm"
-       hydromet_list(iiricem)     = "ricem"
-       hydromet_list(iirgraupelm) = "rgraupelm"
-
-       hydromet_list(iiNrm)       = "Nrm"
-       hydromet_list(iiNim)       = "Nim"
-
-       allocate( l_frozen_hm(hydromet_dim) )
-
-       l_frozen_hm(iirrainm)    = .false.
-       l_frozen_hm(iirsnowm)    = .true.
-       l_frozen_hm(iiricem)     = .true.
-       l_frozen_hm(iirgraupelm) = .true.
-
-       l_frozen_hm(iiNrm)       = .false.
-       l_frozen_hm(iiNim)       = .true.
-
-       allocate( l_mix_rat_hm(hydromet_dim) )
-
-       l_mix_rat_hm(iirrainm:iirgraupelm) = .true.
-       l_mix_rat_hm(iiNrm:iiNim) = .false.
-
        allocate( l_hydromet_sed(hydromet_dim) )
 
        l_hydromet_sed(iiNrm) = .true.
@@ -713,10 +663,13 @@ module microphys_init_cleanup
        l_hydromet_sed(iirgraupelm) = .true.
 
     case ( "khairoutdinov_kogan" )
+
        if ( l_predictnc ) then
-          write(fstderr,*) "Khairoutdinov-Kogan microphysics does not support l_predictnc = T"
+          write(fstderr,*) "Khairoutdinov-Kogan microphysics" &
+                           // " does not support l_predictnc = T"
           stop "Fatal Error"
        endif
+
        iirrainm    = 1
        iirsnowm    = -1
        iiricem     = -1
@@ -730,23 +683,12 @@ module microphys_init_cleanup
        hydromet_dim = 2
 
        allocate( l_hydromet_sed(hydromet_dim) )
-       allocate( hydromet_list(hydromet_dim) )
-       allocate( l_frozen_hm(hydromet_dim) )
-       allocate( l_mix_rat_hm(hydromet_dim) )
-
-       hydromet_list(iirrainm) = "rrainm"
-       hydromet_list(iiNrm) = "Nrm"
 
        l_hydromet_sed(iirrainm) = .true.
        l_hydromet_sed(iiNrm)    = .true.
 
-       l_frozen_hm(iirrainm) = .false.
-       l_frozen_hm(iiNrm) = .false.
-
-       l_mix_rat_hm(iirrainm) = .true.
-       l_mix_rat_hm(iiNrm) = .false.
-
     case ( "simplified_ice", "none" )
+
        iirrainm    = -1
        iirsnowm    = -1
        iiricem     = -1
@@ -762,36 +704,72 @@ module microphys_init_cleanup
        l_predictnc = .false.
 
     case default
+
        write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
        stop
 
     end select
 
-    ! Set up hydrometeor tolerance array.
+    ! Set up predictive precipitating hydrometeor arrays.
+    allocate( hydromet_list(hydromet_dim) )
     allocate( hydromet_tol(hydromet_dim) )
+    allocate( l_mix_rat_hm(hydromet_dim) )
+    allocate( l_frozen_hm(hydromet_dim) )
     if ( iirrainm > 0 ) then
-       hydromet_tol(iirrainm) = rr_tol
+       ! The microphysics scheme predicts rain water mixing ratio, rr.
+       hydromet_list(iirrainm) = "rrainm"
+       l_mix_rat_hm(iirrainm)  = .true.
+       l_frozen_hm(iirrainm)   = .false.
+       hydromet_tol(iirrainm)  = rr_tol
     endif
     if ( iiricem > 0 ) then
-       hydromet_tol(iiricem) = ri_tol
+       ! The microphysics scheme predicts ice mixing ratio, ri.
+       hydromet_list(iiricem) = "ricem"
+       l_mix_rat_hm(iiricem)  = .true.
+       l_frozen_hm(iiricem)   = .true.
+       hydromet_tol(iiricem)  = ri_tol
     endif
     if ( iirsnowm > 0 ) then
-       hydromet_tol(iirsnowm) = rs_tol
+       ! The microphysics scheme predicts snow mixing ratio, rs.
+       hydromet_list(iirsnowm) = "rsnowm"
+       l_mix_rat_hm(iirsnowm)  = .true.
+       l_frozen_hm(iirsnowm)   = .true.
+       hydromet_tol(iirsnowm)  = rs_tol
     endif
     if ( iirgraupelm > 0 ) then
-       hydromet_tol(iirgraupelm) = rg_tol
+       ! The microphysics scheme predicts graupel mixing ratio, rg.
+       hydromet_list(iirgraupelm) = "rgraupelm"
+       l_mix_rat_hm(iirgraupelm)  = .true.
+       l_frozen_hm(iirgraupelm)   = .true.
+       hydromet_tol(iirgraupelm)  = rg_tol
     endif
     if ( iiNrm > 0 ) then
-       hydromet_tol(iiNrm) = Nr_tol
+       ! The microphysics scheme predicts rain drop concentration, Nr.
+       hydromet_list(iiNrm) = "Nrm"
+       l_frozen_hm(iiNrm)   = .false.
+       l_mix_rat_hm(iiNrm)  = .false.
+       hydromet_tol(iiNrm)  = Nr_tol
     endif
     if ( iiNim > 0 ) then
-       hydromet_tol(iiNim) = Ni_tol
+       ! The microphysics scheme predicts ice concentration, Ni.
+       hydromet_list(iiNim) = "Nim"
+       l_mix_rat_hm(iiNim)  = .false.
+       l_frozen_hm(iiNim)   = .true.
+       hydromet_tol(iiNim)  = Ni_tol
     endif
     if ( iiNsnowm > 0 ) then
-       hydromet_tol(iiNsnowm) = Ns_tol
+       ! The microphysics scheme predicts snowflake concentration, Ns.
+       hydromet_list(iiNsnowm) = "Nsnowm"
+       l_mix_rat_hm(iiNsnowm)  = .false.
+       l_frozen_hm(iiNsnowm)   = .true.
+       hydromet_tol(iiNsnowm)  = Ns_tol
     endif
     if ( iiNgraupelm > 0 ) then
-       hydromet_tol(iiNgraupelm) = Ng_tol
+       ! The microphysics scheme predicts graupel concentration, Ng.
+       hydromet_list(iiNgraupelm) = "Ngraupelm"
+       l_mix_rat_hm(iiNgraupelm)  = .false.
+       l_frozen_hm(iiNgraupelm)   = .true.
+       hydromet_tol(iiNgraupelm)  = Ng_tol
     endif
 
     ! Sanity check
@@ -932,6 +910,10 @@ module microphys_init_cleanup
         hydromet_tol,   &
         micro_scheme
 
+    use array_index, only: & 
+        l_mix_rat_hm, & ! Variable(s)
+        l_frozen_hm
+
     use phys_buffer, only: & ! Used for placing wp2_zt in MG micro.
         pbuf_deallocate
 
@@ -943,11 +925,19 @@ module microphys_init_cleanup
 
     if ( allocated( hydromet_list ) ) then
        deallocate( hydromet_list )
-    end if
+    endif
 
     if ( allocated( l_hydromet_sed ) ) then
        deallocate( l_hydromet_sed )
-    end if
+    endif
+
+    if ( allocated( l_mix_rat_hm ) ) then
+       deallocate( l_mix_rat_hm )
+    endif
+
+    if ( allocated( l_frozen_hm ) ) then
+       deallocate( l_frozen_hm )
+    endif
 
     if ( allocated( hydromet_tol ) ) then
         deallocate( hydromet_tol )
