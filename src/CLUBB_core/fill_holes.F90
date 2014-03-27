@@ -939,7 +939,7 @@ module fill_holes
                if ( hydromet(k,i) < zero_threshold ) then
                   write(fstderr,*) trim( hydromet_name ) //" < ", &
                                    zero_threshold, &
-                                   " in advance_microphys at k= ", k
+                                   " in fill_holes_driver at k= ", k
                endif
             enddo
          endif
