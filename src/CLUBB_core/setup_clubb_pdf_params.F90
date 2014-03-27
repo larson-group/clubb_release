@@ -298,7 +298,7 @@ module setup_clubb_pdf_params
                 if ( hydromet(k,i) < zero_threshold ) then
  
                    ! Write error message
-                   write(fstderr,*) trim( hydromet_name ) //" < ", &
+                   write(fstderr,*) trim( hydromet_name )// " = ", hydromet(k,i)," < ", &
                                    zero_threshold, &
                                    " at beginning of setup_pdf_parameters at k= ", k
          
