@@ -64,7 +64,9 @@ module setup_clubb_pdf_params
         one,    & ! Constant(s)
         zero,   &
         rc_tol, &
-        cloud_frac_min
+        cloud_frac_min, &
+        fstderr, &
+        zero_threshold
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s)
@@ -151,6 +153,9 @@ module setup_clubb_pdf_params
         iiNrm,       &
         iirgraupelm, &
         iiNgraupelm
+
+    use error_code, only : &
+        clubb_at_least_debug_level   ! Procedure(s) 
 
     implicit none
 
@@ -273,11 +278,40 @@ module setup_clubb_pdf_params
       l_first_clip_ts = .true., & ! First instance of clipping in a timestep.
       l_last_clip_ts  = .true.    ! Last instance of clipping in a timestep.
 
+    character(len=10) :: &
+      hydromet_name    ! Name of a hydrometeor
+
     integer :: pdf_idx  ! Index of precipitating hydrometeor in PDF array.
 
     integer :: k, i  ! Loop indices
 
     ! ---- Begin Code ----
+
+
+    ! Assertion check
+    ! Check that all hydrometeors are positive otherwise exit the program
+    if ( clubb_at_least_debug_level( 2 ) ) then
+       do i = 1, hydromet_dim
+          if ( any( hydromet(:,i) < zero_threshold ) ) then
+             hydromet_name = hydromet_list(i)
+             do k = 1, nz
+                if ( hydromet(k,i) < zero_threshold ) then
+ 
+                   ! Write error message
+                   write(fstderr,*) trim( hydromet_name ) //" < ", &
+                                   zero_threshold, &
+                                   " at beginning of setup_pdf_parameters at k= ", k
+         
+                   ! Exit program
+                   stop "Exiting..."
+
+                endif ! hydromet(k,i) < 0
+             enddo ! k = 1, nz
+          endif ! hydromet(:,i) < 0      
+       enddo ! i = 1, hydromet_dim
+   
+    endif !clubb_at_least_debug_level( 2 )
+
 
     ! Interpolate the covariances of w and precipitating hydrometeors to
     ! thermodynamic grid levels.
