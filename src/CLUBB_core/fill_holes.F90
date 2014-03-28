@@ -931,20 +931,20 @@ module fill_holes
 
       ! Print warning message if any hydrometeor species has a value < 0.
       if ( any( hydromet(:,i) < zero_threshold ) ) then
-
-         hydromet_name = hydromet_list(i)
-
          if ( clubb_at_least_debug_level( 1 ) ) then
+
+            hydromet_name = hydromet_list(i)
+
             do k = 1, nz
                if ( hydromet(k,i) < zero_threshold ) then
                   write(fstderr,*) trim( hydromet_name ) //" < ", &
                                    zero_threshold, &
                                    " in fill_holes_driver at k= ", k
-               endif
-            enddo
-         endif
+               endif ! hydromet(k,i) < 0
+            enddo ! k = 1, nz
+         endif ! hydromet(:,i) < 0       
+      endif ! clubb_at_least_debug_level( 1 )
 
-      endif ! hydromet(:,i) < 0
 
       ! Store the previous value of the hydrometeor for the effect of the
       ! hole-filling scheme.
