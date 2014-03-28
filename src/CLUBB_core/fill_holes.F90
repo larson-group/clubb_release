@@ -930,8 +930,8 @@ module fill_holes
                                 max_velocity )                 ! Intent(inout)
 
       ! Print warning message if any hydrometeor species has a value < 0.
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
-         if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level( 1 ) ) then
+         if ( any( hydromet(:,i) < zero_threshold ) ) then
 
             hydromet_name = hydromet_list(i)
 
