@@ -185,7 +185,7 @@ Ni_sigma2_on_mu2_ip_below = 0.5
 rg_sigma2_on_mu2_ip_below = 1.0
 Ng_sigma2_on_mu2_ip_below = 0.5
 
-
+Ncnp2_on_Ncnm2 = 0.003
 
 /
 

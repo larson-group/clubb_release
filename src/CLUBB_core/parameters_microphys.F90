@@ -140,22 +140,21 @@ module parameters_microphys
 
   ! Prescribed parameters for hydrometeor in-precip values of
   ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that have some cloud.
-  ! These default values are taken from SAM LES results for DYCOMS-II RF02 DO.
   ! They can be set based on values for a given case in the CASE_model.in file.
   real( kind = core_rknd ), public :: &
-    rr_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-    Nr_sigma2_on_mu2_ip_cloud = 0.429_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
+    rr_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    Nr_sigma2_on_mu2_ip_cloud = 1.0_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
 !$omp threadprivate( rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud )
 
   ! Parameters added for ice microphysics and latin hypercube sampling
   real( kind = core_rknd ), public :: &
-    rs_sigma2_on_mu2_ip_cloud = 0.766_core_rknd, & 
-    Ns_sigma2_on_mu2_ip_cloud = 0.429_core_rknd, & 
-    ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & 
-    Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
-    rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, &
-    Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd
+    rs_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rs_i^2/mu_rs_i^2  [-]
+    Ns_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
+    ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_ri_i^2/mu_ri_i^2  [-]
+    Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
+    rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rg_i^2/mu_rg_i^2  [-]
+    Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd    ! sigma_Ng_i^2/mu_Ng_i^2  [-]
 
 !$omp threadprivate( rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, & 
 !$omp                ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
@@ -163,22 +162,21 @@ module parameters_microphys
 
   ! Prescribed parameters for hydrometeor in-precip values of
   ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that are entirely clear.
-  ! These default values are taken from SAM LES results for DYCOMS-II RF02 DO.
   ! They can be set based on values for a given case in the CASE_model.in file.
   real( kind = core_rknd ), public :: &
-    rr_sigma2_on_mu2_ip_below = 0.897_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-    Nr_sigma2_on_mu2_ip_below = 1.0_core_rknd      ! sigma_Nr_i^2/mu_Nr_i^2  [-]
+    rr_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    Nr_sigma2_on_mu2_ip_below = 1.0_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
 
 !$omp threadprivate( rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below )
 
   ! Parameters added for ice microphysics and latin hypercube sampling
-   real( kind = core_rknd ), public :: &
-     rs_sigma2_on_mu2_ip_below = 0.766_core_rknd, & 
-     Ns_sigma2_on_mu2_ip_below = 0.429_core_rknd, & 
-     ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & 
-     Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
-     rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, &
-     Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd
+  real( kind = core_rknd ), public :: &
+    rs_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rs_i^2/mu_rs_i^2  [-]
+    Ns_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
+    ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_ri_i^2/mu_ri_i^2  [-]
+    Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
+    rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rg_i^2/mu_rg_i^2  [-]
+    Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd    ! sigma_Ng_i^2/mu_Ng_i^2  [-]
 
 !$omp threadprivate( rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, & 
 !$omp                ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
@@ -188,7 +186,7 @@ module parameters_microphys
   ! The parameter can be set based on the value for a given case in the
   ! CASE_model.in file.
   real( kind = core_rknd ), public :: &
-    Ncnp2_on_Ncnm2 = 0.003_core_rknd    ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
+    Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
 
 !$omp threadprivate( Ncnp2_on_Ncnm2 )
 
