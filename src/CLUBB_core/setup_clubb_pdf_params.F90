@@ -150,10 +150,8 @@ module setup_clubb_pdf_params
         hydromet2pdf_idx    ! Procedure(s)
 
     use array_index, only: &
-        iirrainm,    & ! Variable(s)
-        iiNrm,       &
-        iirgraupelm, &
-        iiNgraupelm
+        iirrainm, & ! Variable(s)
+        iiNrm
 
     use error_code, only : &
         clubb_at_least_debug_level   ! Procedure(s) 
@@ -544,8 +542,7 @@ module setup_clubb_pdf_params
        ! <hm'^2>.
        do i = 1, hydromet_dim, 1
 
-          if ( hydromet(k,i) > zero &
-               .and. i /= iirgraupelm .and. i /= iiNgraupelm ) then
+          if ( hydromet(k,i) > zero ) then
 
              ! There is some of the hydrometeor species found at level k.
              ! Calculate the variance (overall) of the hydrometeor.
@@ -736,7 +733,7 @@ module setup_clubb_pdf_params
     ! Boundary condition for the variance (overall) of a hydrometeor, <hm'^2>,
     ! on thermodynamic grid levels at the lowest thermodynamic grid level, k = 1
     ! (which is below the model lower boundary).
-    hydrometp2_zt(1,:) = hydrometp2(2,:)
+    hydrometp2_zt(1,:) = hydrometp2_zt(2,:)
 
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
