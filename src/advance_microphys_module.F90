@@ -31,15 +31,15 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( dt, time_current, wm_zt, exner, &        ! In
-                                rho, rho_zm, cloud_frac, Kh_zm, &        ! In
-                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
-                                hydromet_mc, Ncm_mc, &                   ! In
-                                hydromet_vel_covar_zt_impc, &            ! In
-                                hydromet_vel_covar_zt_expc, &            ! In
-                                hydromet, hydromet_vel_zt, &             ! Inout
-                                Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
-                                wphydrometp, wpNcp, err_code )           ! Out
+  subroutine advance_microphys( dt, time_current, wm_zt, wp2, exner, &    ! In
+                                rho, rho_zm, cloud_frac, Kh_zm, Skw_zm, & ! In
+                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &  ! In
+                                hydromet_mc, Ncm_mc, hydrometp2, &        ! In
+                                hydromet_vel_covar_zt_impc, &             ! In
+                                hydromet_vel_covar_zt_expc, &             ! In
+                                hydromet, hydromet_vel_zt, &              ! Inout
+                                Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &      ! Inout
+                                wphydrometp, wpNcp, err_code )            ! Out
 
     ! Description:
     ! Advance mean precipitating hydrometeors and mean cloud droplet
@@ -59,17 +59,20 @@ module advance_microphys_module
         hydromet_dim   ! Integer
 
     use constants_clubb, only: & 
-        Lv,          & ! Constant(s)
+        one,         & ! Constant(s)
+        zero,        &
+        Lv,          &
         rho_lw,      & 
         fstderr,     &
-        zero,        &
         sec_per_day, &
-        mm_per_m
+        mm_per_m,    &
+        eps
 
     use parameters_microphys, only: &
         l_predictnc,          & ! Predict cloud droplet number conc (Morrison)
         micro_scheme,         & ! The microphysical scheme in use
         hydromet_list,        & ! Names of the hydrometeor species
+        hydromet_tol,         & ! Tolerance values for hydrometeor species
         microphys_start_time    ! When to start the microphysics [s]
 
     use clubb_precision, only:  & 
@@ -122,12 +125,14 @@ module advance_microphys_module
       time_current   ! Current time     [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      wm_zt,      & ! w wind component on thermodynamic levels  [m/s]
-      exner,      & ! Exner function                            [-]
-      rho,        & ! Density on thermodynamic levels           [kg/m^3]
-      rho_zm,     & ! Density on momentum levels                [kg/m^3]
-      cloud_frac, & ! Cloud fraction                            [-]
-      Kh_zm         ! Kh Eddy diffusivity on momentum grid      [m^2/s]
+      wm_zt,      & ! w wind component on thermodynamic levels        [m/s]
+      wp2,        & ! Variance of vertical velocity (momentum levels) [m^2/s^2]
+      exner,      & ! Exner function                                  [-]
+      rho,        & ! Density on thermodynamic levels                 [kg/m^3]
+      rho_zm,     & ! Density on momentum levels                      [kg/m^3]
+      cloud_frac, & ! Cloud fraction                                  [-]
+      Kh_zm,      & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
+      Skw_zm        ! Skewness of w on momentum levels                [-]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
@@ -139,6 +144,9 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Ncm_mc    ! Microphysics tendency for Ncm                     [num/kg/s]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
@@ -187,7 +195,7 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc           [m^2/s]
 
-    integer :: k, i    ! Loop indices
+    integer :: k, kp1, i    ! Loop indices
 
     integer, dimension(hydromet_dim) :: &
       err_code_hydromet    ! Exit code (used to check for errors) for hydromet
@@ -223,7 +231,24 @@ module advance_microphys_module
        do i = 1, hydromet_dim, 1
           do k = 1, gr%nz, 1
 
-             K_hm(k,i) = c_K_hm * Kh_zm(k)
+             K_hm(k,i) &
+             = c_K_hm * Kh_zm(k) &
+               * ( sqrt( hydrometp2(k,i) ) &
+                   / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
+               * ( one + abs( Skw_zm(k) ) )
+
+             kp1 = min( k, gr%nz )
+
+             if ( abs( gr%invrs_dzm(k) &
+                       * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
+
+                K_hm(k,i) &
+                = min( K_hm(k,i), &
+                       ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
+                       / abs( gr%invrs_dzm(k) &
+                              * ( hydromet(kp1,i) - hydromet(k,i) ) ) )
+
+             endif ! | d<hm>/dz | > 0
 
           enddo ! k = 1, gr%nz, 1
        enddo ! i = hydromet_dim, 1

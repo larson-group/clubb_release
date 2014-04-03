@@ -49,7 +49,7 @@ module setup_clubb_pdf_params
                                    sigma_x_1_n, sigma_x_2_n, &                  ! Intent(out)
                                    corr_array_1_n, corr_array_2_n, &            ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-                                   hydromet_pdf_params )                        ! Intent(out)
+                                   hydromet_pdf_params, hydrometp2 )            ! Intent(out)
 
     ! Description:
 
@@ -57,8 +57,9 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
+        gr,    & ! Variable(s)
         zm2zt, & ! Procedure(s)
-        gr
+        zt2zm
 
     use constants_clubb, only: &
         one,    & ! Constant(s)
@@ -210,8 +211,11 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(out) :: &
-      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
-      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
+      corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
+      corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Local Variables
     real( kind = dp ), dimension(d_variables,d_variables,nz) :: &
@@ -728,6 +732,18 @@ module setup_clubb_pdf_params
        endif
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
+
+    ! Boundary condition for the variance (overall) of a hydrometeor, <hm'^2>,
+    ! on thermodynamic grid levels at the lowest thermodynamic grid level, k = 1
+    ! (which is below the model lower boundary).
+    hydrometp2_zt(1,:) = hydrometp2(2,:)
+
+    ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
+    ! momentum grid levels.
+    do i = 1, hydromet_dim, 1
+       hydrometp2(:,i)  = zt2zm( hydrometp2_zt(:,i) )
+       hydrometp2(nz,i) = zero
+    enddo
 
 
     return

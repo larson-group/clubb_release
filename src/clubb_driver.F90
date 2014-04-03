@@ -46,7 +46,7 @@ module clubb_driver
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
-      thvm, Lscale, Kh_zm, &
+      thvm, Lscale, Skw_zm, Kh_zm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
       hydromet, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
@@ -414,6 +414,9 @@ module clubb_driver
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
+
+    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
@@ -959,6 +962,9 @@ module clubb_driver
     allocate( hydromet_vel_covar_zt_impc(gr%nz,hydromet_dim) )
     allocate( hydromet_vel_covar_zt_expc(gr%nz,hydromet_dim) )
 
+    ! Allocate the overall variance of a hydrometeor, <hm'^2>.
+    allocate( hydrometp2(gr%nz,hydromet_dim) )
+
     ! Initialize to 0.
     hydromet_mc = zero
     Ncm_mc      = zero
@@ -967,6 +973,8 @@ module clubb_driver
 
     hydromet_vel_covar_zt_impc = zero
     hydromet_vel_covar_zt_expc = zero
+
+    hydrometp2 = zero
 
     allocate( rfrzm(gr%nz) )
     rfrzm = zero
@@ -1309,7 +1317,7 @@ module clubb_driver
                                     sigma_x_1, sigma_x_2, &                      ! Intent(out)
                                     corr_array_1, corr_array_2, &                ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-                                    hydromet_pdf_params )                        ! Intent(out)
+                                    hydromet_pdf_params, hydrometp2 )            ! Intent(out)
 
       endif ! not micro_scheme == "none"
 
@@ -1399,15 +1407,15 @@ module clubb_driver
                               thlp2_mc, rtpthlp_mc )                         ! Out
 
       ! Advance predictive microphysics fields one model timestep.
-      call advance_microphys( dt_main, time_current, wm_zt, exner, &   ! In
-                              rho, rho_zm, cloud_frac, Kh_zm, &        ! In
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
-                              hydromet_mc, Ncm_mc, &                   ! In
-                              hydromet_vel_covar_zt_impc, &            ! In
-                              hydromet_vel_covar_zt_expc, &            ! In
-                              hydromet, hydromet_vel_zt, &             ! Inout
-                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
-                              wphydrometp, wpNcp, err_code_microphys ) ! Out
+      call advance_microphys( dt_main, time_current, wm_zt, wp2, exner, & ! In
+                              rho, rho_zm, cloud_frac, Kh_zm, Skw_zm, &   ! In
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &    ! In
+                              hydromet_mc, Ncm_mc, hydrometp2, &          ! In
+                              hydromet_vel_covar_zt_impc, &               ! In
+                              hydromet_vel_covar_zt_expc, &               ! In
+                              hydromet, hydromet_vel_zt, &                ! Inout
+                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &        ! Inout
+                              wphydrometp, wpNcp, err_code_microphys )    ! Out
 
       if ( fatal_error( err_code_microphys ) ) then
          if ( clubb_at_least_debug_level( 1 ) ) then
@@ -1522,7 +1530,8 @@ module clubb_driver
 
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
-                hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
+                hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc, &
+                hydrometp2 )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, LH_rt, LH_thl, &
                 LH_sample_point_weights, Lscale_vert_avg, Nc_in_cloud )
