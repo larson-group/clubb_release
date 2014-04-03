@@ -546,7 +546,6 @@ module setup_clubb_pdf_params
 
              ! There is some of the hydrometeor species found at level k.
              ! Calculate the variance (overall) of the hydrometeor.
-             ! CLUBB's PDF is not currently setup for graupel.
 
              pdf_idx = hydromet2pdf_idx(i)
 
