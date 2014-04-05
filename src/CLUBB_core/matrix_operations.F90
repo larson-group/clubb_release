@@ -256,6 +256,9 @@ module matrix_operations
           write(fstderr,*) "iteration =", iter, "itermax =", itermax
           stop "Fatal error in Cholesky_factor"
         else if ( clubb_at_least_debug_level( 1 ) ) then
+          ! Adding a STOP statement to prevent this problem from slipping under
+          ! the rug.
+          stop "Fatal error in Cholesky_factor"
           write(fstderr,*) "Attempting to modify matrix to allow factorization."
         end if
 
