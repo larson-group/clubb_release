@@ -66,61 +66,35 @@ module corr_matrix_module
   subroutine init_default_corr_arrays(  ) 
 
     ! Description:
-    !   Initializes the default correlation arrays with correlations from the 
-    !   arm_97 case.
-    !-----------------------------------------------------------------------------
-  
+    ! Initializes the default correlation arrays to 0.
+    !---------------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,  & ! Constant(s)
+        zero
+
     implicit none
 
-    ! This "renaming" is used to shorten the matrix declarations below.
-    integer, parameter :: c = core_rknd
+    integer:: indx
 
     ! ---- Begin Code ----
  
     allocate( corr_array_cloud_def(d_var_total,d_var_total) )
     allocate( corr_array_below_def(d_var_total,d_var_total) )
 
-    corr_array_cloud_def = reshape( &
+    corr_array_cloud_def = zero
+    corr_array_below_def = zero
 
-(/ 1._c, .3_c, .09_c , .09_c , .242_c , .285_c , -.08_c , .28_c , .06_c , .04_c , 0._c, 0._c, &! s
-   0._c, 1._c, .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
-   0._c, 0._c, 1._c  , .34_c , 0._c   , 0._c   ,  .44_c , .55_c , .65_c , .73_c , 0._c, 0._c, &! w
-   0._c, 0._c, 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
-   0._c, 0._c, 0._c  , 0._c  , 1._c   , .768_c ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 0._c, &! rr
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 1._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 0._c, &! Nr
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  1._c  , .77_c , .29_c , .49_c , 0._c, 0._c, &! ri
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 1._c  , .43_c , .60_c , 0._c, 0._c, &! Ni
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 1._c  , .95_c , 0._c, 0._c, &! rs
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 1._c  , 0._c, 0._c, &! Ns
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, 0._c, &! rg
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
-
-    shape(corr_array_cloud_def))
-!  s     t     w       Ncn     rr       Nr        ri      Ni      rs      Ns      rg    Ng 
+    do indx = 1, d_var_total, 1
+       corr_array_cloud_def(indx,indx) = one
+       corr_array_below_def(indx,indx) = one
+    enddo
 
     corr_array_cloud_def = transpose( corr_array_cloud_def )
-
-
-    corr_array_below_def = reshape( &
-
-(/ 1._c, .3_c, .09_c , .09_c , .056_c , .015_c , -.08_c , .28_c , .06_c , .04_c , 0._c, 0._c, &! s
-   0._c, 1._c, .027_c, .027_c, .168_c , .0045_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
-   0._c, 0._c, 1._c  , .34_c , 0._c   , 0._c   , .44_c  , .55_c , .65_c , .73_c , 0._c, 0._c, &! w
-   0._c, 0._c, 0._c  , 1._c  , 0._c   , 0._c   , .39_c  , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
-   0._c, 0._c, 0._c  , 0._c  , 1._c   , .886_c , 0._c   , 0._c  , 0._c  , 0._c  , 0._c, 0._c, &! rr
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 1._c   , 0._c   , 0._c  , 0._c  , 0._c  , 0._c, 0._c, &! Nr
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 1._c   , .77_c , .29_c , .49_c , 0._c, 0._c, &! ri
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 0._c   , 1._c  , .43_c , .60_c , 0._c, 0._c, &! Ni
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 0._c   , 0._c  , 1._c  , .95_c , 0._c, 0._c, &! rs
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 0._c   , 0._c  , 0._c  , 1._c  , 0._c, 0._c, &! Ns
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 0._c   , 0._c  , 0._c  , 0._c  , 1._c, 0._c, &! rg
-   0._c, 0._c, 0._c  , 0._c  , 0._c   , 0._c   , 0._c   , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
-
-    shape(corr_array_below_def))
-!  s     t     w       Ncn     rr       Nr       ri       Ni      rs      Ns      rg    Ng 
-
-
     corr_array_below_def = transpose( corr_array_below_def )
+
+
+    return
 
   end subroutine init_default_corr_arrays
 
@@ -208,7 +182,7 @@ module corr_matrix_module
 
     ! Description:
     !   If there are no corr_array.in files for the current case, default 
-    !   correlations from arm_97 are used (e.g. in WRF_CLUBB). 
+    !   correlations of 0 are used. 
     !-----------------------------------------------------------------------------
   
     use constants_clubb, only: &
@@ -649,10 +623,10 @@ module corr_matrix_module
        call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, & ! In
                                      corr_array_below ) ! Out
 
-    else ! Read in default correlation matrices (from arm_97_corr_array_cloud)
+    else ! Read in default correlation matrices
 
        write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                        "The default correlation arrays (hardwired from arm_97) will be used."
+                        "The default correlation arrays (hardwired to 0) will be used."
 
        call init_default_corr_arrays( )
 
