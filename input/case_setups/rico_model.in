@@ -34,8 +34,6 @@ zm_top = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
 zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
-!zt_grid_fname = ''
-
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -63,8 +61,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 60.0   ! Model timestep [s]
-dt_rad = 60.0   ! Radiation timestep [s] 
+dt_main    = 300.0   ! Model timestep [s]
+dt_rad = 300.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -147,50 +145,22 @@ l_calc_w_corr = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
+micro_scheme = "khairoutdinov_kogan"
 
-micro_scheme = "morrison"
-l_ice_micro = .true.
-l_graupel = .true.
+!!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
+!!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
+!!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
+! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
+rr_sigma2_on_mu2_ip_cloud = 1.0
+Nr_sigma2_on_mu2_ip_cloud = 1.0
+rr_sigma2_on_mu2_ip_below = 1.0
+Nr_sigma2_on_mu2_ip_below = 1.0
+Ncnp2_on_Ncnm2            = 2.2
 
-
-
-l_predictNc = .false.
-l_const_Nc_in_cloud = .true.
-
-
-l_var_covar_src = .true.
-
-
-LH_microphys_type = "interactive",
-l_lh_vert_overlap = .true.,
-l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 16,
-LH_sequence_length = 1,
-l_fix_s_t_correlations = .true.,
-
-
-rr_sigma2_on_mu2_ip_cloud = 4.0
-Nr_sigma2_on_mu2_ip_cloud = 2.0
-
-rs_sigma2_on_mu2_ip_cloud = 1.0
-Ns_sigma2_on_mu2_ip_cloud = 0.5
-ri_sigma2_on_mu2_ip_cloud = 1.0
-Ni_sigma2_on_mu2_ip_cloud = 0.5
-rg_sigma2_on_mu2_ip_cloud = 1.0
-Ng_sigma2_on_mu2_ip_cloud = 0.5
-
-rr_sigma2_on_mu2_ip_below = 4.0
-Nr_sigma2_on_mu2_ip_below = 2.0
-
-rs_sigma2_on_mu2_ip_below = 1.0
-Ns_sigma2_on_mu2_ip_below = 0.5
-ri_sigma2_on_mu2_ip_below = 1.0
-Ni_sigma2_on_mu2_ip_below = 0.5
-rg_sigma2_on_mu2_ip_below = 1.0
-Ng_sigma2_on_mu2_ip_below = 0.5
-
-
+!!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Nc0_in_cloud  = 70.e6 ! num/m^3
+l_predictnc = .false.
+l_const_Nc_in_cloud = .true.
 /
 
 &radiation_setting
@@ -204,7 +174,7 @@ rad_scheme = "none"
 
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
-stats_tsamp  = 60.     ! Frequency of statistical sampling [s]
+stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main
                         ! (stats_tsamp must multiply evenly into stats_tout)
@@ -213,14 +183,6 @@ stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
-&setfields
-
-datafile = '/home/storer/newbenchmarks/RICO.nc'
-
-input_type = 'sam'
-
-l_input_radht = .true.
-/
-
+!theta = 297.900, 297.900, 312.664, 317.000, 335.210, 348.098, 352.784, 362.812, 392.084, 470.365
 
 

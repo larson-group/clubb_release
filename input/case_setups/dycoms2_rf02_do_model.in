@@ -11,10 +11,8 @@ runtype = "dycoms2_rf02" ! Case name.
 ! For grid_type = 1 nzmax can be any nunber
 !nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
 !nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
-nzmax = 128
 
-
-grid_type = 2     ! Select grid type:
+grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -35,8 +33,8 @@ zm_top = 1600.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd' 
-!zt_grid_fname = ''
+!zt_grid_fname = '../input/grid/dycoms2_rf02_sam_zt_grid.grd'
+zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -142,50 +140,17 @@ l_prescribed_avg_deltaz = .false.
 l_cloud_sed  = .false.  ! Flag for cloud water sedimentation.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-
-micro_scheme = "morrison"
-l_ice_micro = .true.
-l_graupel = .true.
-
-
-
-l_predictNc = .false.
+micro_scheme = "khairoutdinov_kogan"
+Nc0_in_cloud  = 55.e6 ! num/m^3
+l_predictnc = .false.
 l_const_Nc_in_cloud = .true.
-
-
 l_var_covar_src = .true.
 
-
-LH_microphys_type = "interactive",
-l_lh_vert_overlap = .true.,
-l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 16,
-LH_sequence_length = 1,
-l_fix_s_t_correlations = .true.,
-
-
-rr_sigma2_on_mu2_ip_cloud = 4.0
-Nr_sigma2_on_mu2_ip_cloud = 2.0
-
-rs_sigma2_on_mu2_ip_cloud = 1.0
-Ns_sigma2_on_mu2_ip_cloud = 0.5
-ri_sigma2_on_mu2_ip_cloud = 1.0
-Ni_sigma2_on_mu2_ip_cloud = 0.5
-rg_sigma2_on_mu2_ip_cloud = 1.0
-Ng_sigma2_on_mu2_ip_cloud = 0.5
-
-rr_sigma2_on_mu2_ip_below = 4.0
-Nr_sigma2_on_mu2_ip_below = 2.0
-
-rs_sigma2_on_mu2_ip_below = 1.0
-Ns_sigma2_on_mu2_ip_below = 0.5
-ri_sigma2_on_mu2_ip_below = 1.0
-Ni_sigma2_on_mu2_ip_below = 0.5
-rg_sigma2_on_mu2_ip_below = 1.0
-Ng_sigma2_on_mu2_ip_below = 0.5
-
-
-Nc0_in_cloud  = 55.e6 ! num/m^3
+rr_sigma2_on_mu2_ip_cloud = 0.766
+Nr_sigma2_on_mu2_ip_cloud = 0.429
+rr_sigma2_on_mu2_ip_below = 0.897
+Nr_sigma2_on_mu2_ip_below = 1.0
+Ncnp2_on_Ncnm2            = 0.003
 
 /
 
@@ -212,14 +177,71 @@ stats_tout   = 60.                ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"            ! Type of statistical output file ("grads" or "netcdf").
 
 /
+! Inputfields Settings
+! You will not need to modify these if l_input_fields is false.
 &setfields
-
-datafile = '/home/storer/newbenchmarks/DYCOMS_RF02_DO.nc'
-
-input_type = 'sam'
-
-l_input_radht = .true.
+datafile      = "../les_data/dycoms2_rf02_do"
+input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
+l_input_um = .true. 
+l_input_vm = .true.
+l_input_rtm = .true. 
+l_input_thlm = .true.
+l_input_wp2 = .true.
+l_input_wprtp = .true.
+l_input_wpthlp = .true.
+l_input_wp3 = .true.
+l_input_rtp2 = .true.
+l_input_thlp2 = .true.
+l_input_rtpthlp = .true.
+l_input_upwp = .true.
+l_input_vpwp = .true.
+l_input_ug = .false.
+l_input_vg = .false.
+l_input_rcm = .true.
+l_input_wm_zt = .false.
+l_input_exner = .true.
+l_input_em = .true.
+l_input_p = .true.
+l_input_rho = .true.
+l_input_rho_zm = .true.
+l_input_Lscale = .false.
+l_input_Lscale_up = .false.
+l_input_Lscale_down = .false.
+l_input_Kh_zt = .true.
+l_input_Kh_zm = .false.
+l_input_tau_zm = .false.
+l_input_tau_zt = .false.
+l_input_wpthvp = .true.
+l_input_thl1 = .false.
+l_input_thl2 = .false.
+l_input_mixt_frac = .false.
+l_input_s1 = .false.
+l_input_s2 = .false.
+l_input_stdev_s1 = .false.
+l_input_stdev_s2 = .false.
+l_input_rc1 = .false.
+l_input_rc2 = .false.
+l_input_thvm = .true.
+l_input_rrainm = .false.
+l_input_Nrm = .false.
+l_input_Ncm = .false.
+l_input_rsnowm = .false.
+l_input_ricem = .false.
+l_input_rgraupelm = .false.
+l_input_Ncnm = .false.
+l_input_Nim = .false.
+l_input_thlm_forcing = .false.
+l_input_rtm_forcing = .false.
+l_input_up2 = .true.
+l_input_vp2 = .true.
+l_input_sigma_sqd_w = .false.
+l_input_cloud_frac = .false.
+l_input_sigma_sqd_w_zt = .false.
+l_input_veg_T_in_K = .false.
+l_input_deep_soil_T_in_K = .false.
+l_input_sfc_soil_T_in_K = .false.
 /
 
+! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
 
 
