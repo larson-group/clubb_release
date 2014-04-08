@@ -1007,7 +1007,7 @@ module clubb_driver
       if ( fatal_error( err_code ) ) return
 
 #ifdef SILHS
-      if ( LH_microphys_type /= LH_microphys_disabled ) then
+      if ( LH_microphys_type /= LH_microphys_disabled .or. l_silhs_rad ) then
         call genrand_init( put=LH_seed )
       end if
 #endif
