@@ -818,6 +818,9 @@ module fill_holes
   ! None
   !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        gr  ! Variable(s)
+
     use clubb_precision, only: &
         core_rknd, & ! Variable(s)
         time_precision
@@ -825,11 +828,18 @@ module fill_holes
     use constants_clubb, only: &
         zero, &
         zero_threshold, &
-        fstderr, &
-        eps
+        Lv, &
+        Ls, &
+        Cp, &
+        fstderr
 
     use parameters_microphys, only: &
-        hydromet_list  ! Names of the hydrometeor species
+        hydromet_list, & ! Names of the hydrometeor species
+        hydromet_tol
+
+    use array_index, only: &
+        l_mix_rat_hm, & ! Variable(s)
+        l_frozen_hm
 
     use error_code, only: &
         clubb_at_least_debug_level ! Procedure(s)
@@ -921,6 +931,7 @@ module fill_holes
     endif ! any( hydromet < zero ) .and. l_fill_holes_hm
 
     hydromet_filled = zero
+
     do i = 1, hydromet_dim
 
       ! Set up the stats indices for hydrometeor at index i
@@ -1012,14 +1023,52 @@ module fill_holes
 
       if ( any( hydromet(:,i) < zero_threshold ) ) then
 
-           ! Clip any remaining negative values of hydrometeors to 0.
-           ! This includes the case where the variable is a number
-           ! concentration and is therefore not conserved.
-           where ( hydromet(:,i) < zero_threshold )
-              hydromet(:,i) = zero_threshold
-           end where
+         ! Clip any remaining negative values of hydrometeors to 0.
+         ! This includes the case where the variable is a number
+         ! concentration and is therefore not conserved.
+         where ( hydromet(:,i) < zero_threshold )
+            hydromet(:,i) = zero_threshold
+         end where
 
       endif ! hydromet(:,i) < 0
+
+      ! Eliminate very small values in hydromet by setting them to zero
+      do k = 2, gr%nz, 1
+
+         if ( hydromet(k,i) <= hydromet_tol(i) ) then
+
+            if ( l_mix_rat_hm(i) ) then
+
+               rvm_mc(k) &
+               = rvm_mc(k) &
+                 + ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+
+               if ( .not. l_frozen_hm(i) ) then
+
+                  ! Rain water mixing ratio
+   
+                  thlm_mc(k) &
+                  = thlm_mc(k) &
+                    - ( Lv / ( Cp * exner(k) ) ) &
+                      * ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+
+               else ! Frozen hydrometeor mixing ratio
+
+                  thlm_mc(k) &
+                  = thlm_mc(k) &
+                    - ( Ls / ( Cp * exner(k) ) ) &
+                      * ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+
+               endif ! l_frozen_hm(i)
+
+            endif ! l_mix_rat_hm(i)
+
+            hydromet(k,i) = zero
+
+         endif ! hydromet(k,i) <= hydromet_tol(i)
+
+      enddo ! k = 2, gr%nz, 1
+
 
       ! Enter the new value of the hydrometeor for the effect of clipping.
       if ( l_stats_samp ) then
@@ -1027,16 +1076,13 @@ module fill_holes
                                         / real( dt, kind = core_rknd ), zt )
       endif
 
-    enddo
+    enddo ! i = 1, hydromet_dim, 1
 
-    ! Eliminate very small values in hydromet by setting them to zero
-    do i = 1, hydromet_dim
-       where ( hydromet(:,i) < eps )
-              hydromet(:,i) = zero
-       end where
-    enddo
+
     return
+
   end subroutine fill_holes_driver
+
   !-----------------------------------------------------------------------
 
 

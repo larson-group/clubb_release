@@ -994,7 +994,7 @@ module setup_clubb_pdf_params
 
 
     !!! Find hm1 and hm2 based on the ratio of LWP2/LWP1, such that:
-    !!! hm2/hm1 ( = rr2/rr1 = nr2/nr1, etc. ) = LWP2/LWP1.
+    !!! hm2/hm1 ( = rr2/rr1 = Nr2/Nr1, etc. ) = LWP2/LWP1.
     do i = 1, hydromet_dim, 1
 
        do k = 1, nz, 1

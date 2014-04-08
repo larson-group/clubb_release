@@ -330,10 +330,10 @@ module constants_clubb
     ri_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_i [kg/kg]
     rs_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_s [kg/kg]
     rg_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_g [kg/kg]
-    Nr_tol  = 1.0E-2_core_rknd,  & ! Tolerance value for N_r [#/kg]
-    Ni_tol  = 1.0E-2_core_rknd,  & ! Tolerance value for N_i [#/kg]
-    Ns_tol  = 1.0E-2_core_rknd,  & ! Tolerance value for N_s [#/kg]
-    Ng_tol  = 1.0E-2_core_rknd     ! Tolerance value for N_g [#/kg]
+    Nr_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_r [#/kg]
+    Ni_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_i [#/kg]
+    Ns_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_s [#/kg]
+    Ng_tol  = 1.0E-10_core_rknd    ! Tolerance value for N_g [#/kg]
 
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
