@@ -491,9 +491,10 @@ module advance_microphys_module
                                   err_code_hydromet )
 
     ! Description:
-    ! Advance each hydrometeor (precipitating hydrometeor) one model time step.
+    !   Advance each hydrometeor (precipitating hydrometeor) one model time step.
 
     ! References:
+    !   None
     !-----------------------------------------------------------------------
 
     use grid_class, only: & 
@@ -564,7 +565,7 @@ module advance_microphys_module
       exner,      & ! Exner function, (p/p1000mb)^(Rd/Cp)            [-]
       cloud_frac    ! Cloud fraction                                 [-]
 
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       K_hm    ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
