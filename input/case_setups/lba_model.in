@@ -10,7 +10,7 @@ runtype = "lba"   ! Case name.
 !nzmax = 300       ! Number of vertical levels.  ! For grid_type = 3.
 nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
-grid_type = 2     ! Select grid type:
+grid_type = 2    ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -160,7 +160,7 @@ l_var_covar_src = .true.
 LH_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 8,
+LH_microphys_calls = 16,
 LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
@@ -185,7 +185,6 @@ Ni_sigma2_on_mu2_ip_below = 0.5
 rg_sigma2_on_mu2_ip_below = 1.0
 Ng_sigma2_on_mu2_ip_below = 0.5
 
-Ncnp2_on_Ncnm2 = 0.003
 
 /
 

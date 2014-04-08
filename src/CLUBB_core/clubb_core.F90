@@ -365,7 +365,7 @@ module clubb_core
                                         ! compute the perturbed values
 
     logical, parameter :: &
-      l_use_ice_latent = .false. ! Includes the effects of ice latent heating in turbulence terms
+      l_use_ice_latent = .true. ! Includes the effects of ice latent heating in turbulence terms
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic

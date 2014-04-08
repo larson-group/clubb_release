@@ -7,7 +7,7 @@ runtype = "arm_97" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
 !nzmax = 150       ! Number of vertical levels.  ! For grid_type = 3.
-nzmax =128       ! Number of vertical levels.  ! For grid_type = 2.
+nzmax =128      ! Number of vertical levels.  ! For grid_type = 2.
 
 grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
@@ -127,6 +127,7 @@ iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 l_prescribed_avg_deltaz = .false.
 
+l_input_fields = .true.
 /
 
 &gfdl_activation_setting
@@ -152,7 +153,7 @@ l_var_covar_src = .true.
 LH_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 8,
+LH_microphys_calls = 16,
 LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
@@ -177,13 +178,12 @@ Ni_sigma2_on_mu2_ip_below = 0.5
 rg_sigma2_on_mu2_ip_below = 1.0
 Ng_sigma2_on_mu2_ip_below = 0.5
 
-Ncnp2_on_Ncnm2 = 0.003
 
 /
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "bugsrad",
+rad_scheme = "none",
 l_sw_radiation = .true.
 ! Flag indicating if U.S. Std Atmosphere should 
 ! be used to extend the grid in radiation.
@@ -205,6 +205,15 @@ stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
 stats_tout   = 60.       ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
 
+/
+
+&setfields
+
+datafile = '/home/storer/newbenchmarks/ARM9707.nc'
+
+input_type = 'sam'
+
+l_input_radht = .true.
 /
 
 

@@ -11,7 +11,7 @@ runtype = "twp_ice" ! Case name.
 !nzmax = 108       ! Number of vertical levels.  ! For grid_type = 3.
 nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
 
-grid_type = 2     ! Select grid type:
+grid_type = 2    ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -58,7 +58,7 @@ time_initial = 10800.0  ! Model start time [seconds since midnight on start date
 time_final = 604800.0
 
 
-dt_main    = 300.0   ! Model timestep [s]
+dt_main    = 60.0   ! Model timestep [s]
 dt_rad = 1800.0   ! Radiation timestep [s] 
 
 sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
@@ -124,7 +124,7 @@ debug_level   = 2
 
 l_prescribed_avg_deltaz = .false.
 
-
+l_input_fields = .true.
 /
 
 &gfdl_activation_setting
@@ -148,7 +148,7 @@ l_var_covar_src = .true.
 LH_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 8,
+LH_microphys_calls = 16,
 LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
@@ -172,13 +172,12 @@ Ni_sigma2_on_mu2_ip_below = 0.5
 rg_sigma2_on_mu2_ip_below = 1.0
 Ng_sigma2_on_mu2_ip_below = 0.5
 
-Ncnp2_on_Ncnm2 = 0.003
 
 /
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "bugsrad",
+rad_scheme = "none",
 l_sw_radiation = .true.
 radiation_top = 38000. ! Height of profile used for radiation [m]
 
@@ -195,7 +194,7 @@ l_use_default_std_atmosphere = .false.
 
 l_stats      = .true.       ! Flag for statistical output.
 fname_prefix = "twp_ice"    ! Prefix of output filename.
-stats_tsamp  = 600.         ! Frequency of statistical sampling [s]
+stats_tsamp  = 60.         ! Frequency of statistical sampling [s]
                             ! For most complete sampling, let 
                             ! stats_tsamp = dt_main
                             ! (stats_tsamp must multiply evenly into stats_tout)
@@ -207,4 +206,13 @@ stats_fmt    = "grads"      ! Type of statistical output file ("grads" or "netcd
 
 &scalar_sounding
 /
+&setfields
+
+datafile = '/home/storer/newbenchmarks/TWPICE.nc'
+
+input_type = 'sam'
+
+l_input_radht = .true.
+/
+
 

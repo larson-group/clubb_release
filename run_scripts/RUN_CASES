@@ -3,47 +3,8 @@
 ! run_bindiff_all.bash. Any blank lines and lines starting with '!' will
 ! be ignored.
 
-arm
-atex
-bomex
-dycoms2_rf01
-dycoms2_rf01_fixed_sst
 dycoms2_rf02_do
-dycoms2_rf02_ds
-dycoms2_rf02_nd
-dycoms2_rf02_so
-fire
-gabls2
-gabls3
-mpace_a
-mpace_b
 rico
-wangara
-
-! The following are unreleased cases. External users should comment these
-! lines out before running run_scm_all.bash and run_bindiff_all.bash
 arm_97
-astex_a209
-cgils_s6
-!cgils_s6_p2k
-cgils_s11
-!cgils_s11_p2k
-cgils_s12
-!cgils_s12_p2k
-clex9_nov02
-clex9_oct14
-!cloud_feedback_s6
-!cloud_feedback_s6_p2k
-!cloud_feedback_s11
-!cloud_feedback_s11_p2k
-!cloud_feedback_s12
-!cloud_feedback_s12_p2k
-cobra
-gabls3_night
-jun25_altocu
 lba
-mpace_b_LH
-nov11_altocu
-rico_LH
 twp_ice
-mc3e

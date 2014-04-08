@@ -1,4 +1,4 @@
-! $Id$
+! $Id: arm_97_corr_array_below.in 6750 2014-02-24 19:19:16Z storer@uwm.edu $
 !
 ! This file contains a cloud correlation matrix. This can be looked at as a
 ! two-dimensional array with an equal number of rows and columns. For each
