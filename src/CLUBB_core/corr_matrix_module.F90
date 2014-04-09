@@ -66,7 +66,7 @@ module corr_matrix_module
   subroutine init_default_corr_arrays(  ) 
 
     ! Description:
-    ! Initializes the default correlation arrays to 0.
+    ! Initializes the default correlation arrays.
     !---------------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -77,20 +77,65 @@ module corr_matrix_module
 
     integer:: indx
 
+    ! This "renaming" is used to shorten the matrix declarations below.
+    integer, parameter :: c = core_rknd
+
     ! ---- Begin Code ----
  
+    ! Allocate Array.
     allocate( corr_array_cloud_def(d_var_total,d_var_total) )
     allocate( corr_array_below_def(d_var_total,d_var_total) )
 
+    ! Initialize all values to 0.
     corr_array_cloud_def = zero
     corr_array_below_def = zero
 
+    ! Set the correlation of any variable with itself to 1.
     do indx = 1, d_var_total, 1
        corr_array_cloud_def(indx,indx) = one
        corr_array_below_def(indx,indx) = one
     enddo
 
+    ! Set up default correlation arrays.
+    corr_array_cloud_def = reshape( &
+
+(/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! s
+  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
+  0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
+  0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
+  0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 1._c   ,  .1_c  , .1_c  , 0._c  , 0._c  , .2_c, .2_c, &! Nr
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  1._c  , .7_c  , .5_c  , .5_c  , .3_c, .3_c, &! ri
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 1._c  , .5_c  , .5_c  , .3_c, .3_c, &! Ni
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 1._c  , .7_c  , .4_c, .4_c, &! rs
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 1._c  , .4_c, .4_c, &! Ns
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
+
+    shape(corr_array_cloud_def) )
+!  s     t     w       Ncn     rr       Nr        ri      Ni      rs      Ns      rg    Ng
+
     corr_array_cloud_def = transpose( corr_array_cloud_def )
+
+
+    corr_array_below_def = reshape( &
+
+(/1._c, .3_c , .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! s
+  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
+  0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
+  0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
+  0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 1._c   ,  .1_c  , .1_c  , 0._c  , 0._c  , .2_c, .2_c, &! Nr
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  1._c  , .7_c  , .5_c  , .5_c  , .3_c, .3_c, &! ri
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 1._c  , .5_c  , .5_c  , .3_c, .3_c, &! Ni
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 1._c  , .7_c  , .4_c, .4_c, &! rs
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 1._c  , .4_c, .4_c, &! Ns
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
+  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
+
+    shape(corr_array_below_def) )
+!  s     t     w       Ncn     rr       Nr       ri       Ni      rs      Ns      rg    Ng
+
     corr_array_below_def = transpose( corr_array_below_def )
 
 
@@ -626,7 +671,7 @@ module corr_matrix_module
     else ! Read in default correlation matrices
 
        write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                        "The default correlation arrays (hardwired to 0) will be used."
+                        "The default correlation arrays will be used."
 
        call init_default_corr_arrays( )
 
