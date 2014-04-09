@@ -82,7 +82,7 @@ module corr_matrix_module
 
     ! ---- Begin Code ----
  
-    ! Allocate Array.
+    ! Allocate Arrays.
     allocate( corr_array_cloud_def(d_var_total,d_var_total) )
     allocate( corr_array_below_def(d_var_total,d_var_total) )
 
@@ -97,6 +97,10 @@ module corr_matrix_module
     enddo
 
     ! Set up default correlation arrays.
+    ! The default correlation arrays used here are the correlation arrays used
+    ! for the ARM 97 case.  Any changes should be made concurrently here and in
+    ! ../../input/case_setups/arm_97_corr_array_cloud.in (for "in-cloud") and
+    ! in ../../input/case_setups/arm_97_corr_array_cloud.in (for "below-cloud").
     corr_array_cloud_def = reshape( &
 
 (/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! s
@@ -227,7 +231,7 @@ module corr_matrix_module
 
     ! Description:
     !   If there are no corr_array.in files for the current case, default 
-    !   correlations of 0 are used. 
+    !   correlations are used. 
     !-----------------------------------------------------------------------------
   
     use constants_clubb, only: &
