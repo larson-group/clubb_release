@@ -54,7 +54,13 @@ run_case()
 	# Run the CLUBB model
 	if [ -e ../bin/clubb_standalone ]; then
 		../bin/clubb_standalone
-		RESULT=$?
+		CLUBB_EXIT_STATUS=$?
+		if [ $CLUBB_EXIT_STATUS -eq 6 ]; then
+			# The exit status of 6 is used as the success exit status in CLUBB.
+			RESULT=0
+		else
+			RESULT=1
+		fi
 	else
 		echo "clubb_standalone not found (did you re-compile?)"
 	fi

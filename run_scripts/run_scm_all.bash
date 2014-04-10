@@ -192,29 +192,26 @@ else
     echo -e "\nPerforming standard run\n"
 fi
 
-# This will loop over all runs in sequence 
-for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); 
+# This will loop over all runs in sequence
+for (( x=0; x < "${#RUN_CASE[@]}"; x++ ));
 do
     echo -e "Running ${RUN_CASE[$x]}"
     TMP_OUT=tmp_out.log
 
     if [ $NIGHTLY == true ] ; then
-      #RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1`
-      ./run_scm.bash $OPTIONS ${RUN_CASE[$x]} >$TMP_OUT 2>&1
-      #echo -e "$RESULT"
-      cat $TMP_OUT
+      ./run_scm.bash $OPTIONS ${RUN_CASE[$x]}
+			EXIT_CODES[$x]=$?
     else
       # Send standard output to the bit bucket so only error output is recorded
       #RESULT=`./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>&1 >/dev/null`
       ./run_scm.bash $OPTIONS ${RUN_CASE[$x]} 2>$TMP_OUT >/dev/null
+			EXIT_CODES[$x]=$?
     fi
 
     #RESULT_STATUS=`echo "$RESULT" | grep 'normally'`
     RESULT_STATUS=`grep 'normally' $TMP_OUT`
 
-    if [ -z "$RESULT_STATUS" ]; then
-        EXIT_CODES[$x]=-1
-       
+    if [ ${EXIT_CODES[$x]} -ne 0 ]; then
         # If there was an error, and this is not running in nightly mode,
         # it will not be displayed. So, display the error here.
         if [ $NIGHTLY != true ] ; then
