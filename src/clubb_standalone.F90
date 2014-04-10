@@ -18,7 +18,9 @@ program clubb_standalone
 
   use parameters_tunable, only: read_parameters ! Procedure(s)
 
-  use clubb_precision, only: core_rknd ! Variable(s)
+  use clubb_precision, only: core_rknd ! Constant
+
+  use constants_clubb, only: fstderr ! Constant
 
   implicit none
 
@@ -27,6 +29,8 @@ program clubb_standalone
 
   ! Constant parameters
   integer, parameter :: iunit = 10
+
+  integer, parameter :: success_code = 6
 
   character(len=13), parameter :: &
     namelist_filename = "clubb.in"  ! Text file containing namelists
@@ -60,8 +64,8 @@ program clubb_standalone
     stop "Model wasn't valid, check your parameters and timestep"
 
   else
-    stop "Program exited normally"
-
+    write(fstderr,*) "Program exited normally"
+    call exit(success_code)
   end if 
 
 end program clubb_standalone
