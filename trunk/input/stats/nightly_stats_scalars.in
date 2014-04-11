@@ -1,0 +1,18 @@
+&statsnl
+vars_zt =
+'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
+'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
+'Ncm', 'rgraupelm', 'ricem', 'Nim',
+'sclr1m', 'sclr2m','Lscale'
+''
+
+vars_zm =
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'wpthvp',
+'upwp', 'vpwp', 'up2', 'vp2', 'sclr1p2', 'sclr2p2',
+''
+
+vars_sfc =
+'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
+'precip_rate_sfc',
+''
+/

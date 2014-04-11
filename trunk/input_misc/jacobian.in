@@ -1,0 +1,8 @@
+! $Id: jacobian.in,v 1.16 2007-02-23 01:12:17 dschanen Exp $
+
+&jcbn_nml
+times             = 90, 180
+delta_factor      = 1.04
+l_use_standard_vars = .false.
+/
+

@@ -1,0 +1,133 @@
+$Id$
+
+This directory contains scripts for the various programs that can be used with
+the CLUBB parameterization.
+
+generate_seed.bash: 
+  Generates a psuedo random seed that is used by the tuner.
+
+run_bin_diff_all.bash: 
+  Compares the output for all cases specified in run_scm_all.bash in 
+  two specified directories.
+
+run_inputfields.bash: 
+  Runs CLUBB with specified prognostic variables from a GrADS or netCDF 
+  stats file.
+
+run_jacobian.bash: 
+  Runs the CLUBB jacobian program.
+
+run_scm_all.bash: 
+  Runs all of the cases CLUBB is set up to do.
+
+  NOTE: 
+  You can specify to run the cases in nightly mode using --nightly (or -n).
+  In nightly mode, the output is sent to /usr/nightly_tests/nightly_tests/output/CLUBB_current.
+  Whatever was in this directory before is copied to  /usr/nightly_tests/nightly_tests/output/CLUBB_previous
+  Both of these directories are created if they don't exist.
+
+  You can specify to run only the short cases using --short-cases (or -c).  This omits the 
+  gabls2, cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, and twp_ice cases.
+
+  You can specify to run the priority cases using --priority-cases (or -i). This will include
+  only the following cases if they are in RUN_CASES: arm, atex,bomex, dycoms2_rf01, 
+  dycoms2_rf01_fixed_sst, dycoms2_rf02_ds,dycoms2_rf02_nd, mpace_b, rico, wangara, arm_97,
+  cloud_feedback_s6, cloud_feedback_s11, cloud_feedback_s12, gabls3_night, lba, and twp_ice.
+
+  You can specify a manual grid for the runs. This is done
+  with the command line options --zt_grid (or -z) and --zm_grid (or -m).
+  These options are used by first specifying the desired grid file, then the
+  number of grid levels after the command line option -l (or --levels).
+  For example, to use a 30-level coarse grid specified on the zt points:
+  ./run_scm_all.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30
+    OR
+  ./run_scm_all.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
+
+  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
+  For example, ./run_scm_all.bash -t 360.
+
+  To specify a custom stats file, use the --stats (or -s) option. For example, to use
+  the nightly stats, ./run_scm_all.bash --stats ../input/stats/nightly_stats.in
+
+  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
+  file.
+
+  To run a performance test, use the --performance_test (or -r) option.  This will disable
+  statistics output and set debug level to 0 for performance testing.
+
+  To specify a custom output directory, use the --output_directory (or -o).  For example,
+  to use the home directory, ./run_scm_all.bash -o $HOME.
+
+RUN_CASES:
+  The file RUN_CASES lists all the cases to be run with run_bindiff_all.bash 
+and run_scm_all.bash. This makes it easier for external users to run CLUBB 
+since they can comment out cases.  It also makes it easier for UWM to add a 
+new case.
+
+run_scm.bash: 
+  Runs CLUBB for a specified case. The case is specified with the model name.
+
+  NOTE: Optionally, You can specify a manual grid for the runs. This is done
+  with the command line options --zt_grid (or -z) and --zm_grid (or -m).
+  These options are used by first specifying the desired grid file, then the
+  number of grid levels after the command line option -l (or --levels).
+  For example, to use a 30-level coarse grid specified on the zt points:
+  ./run_scm.bash --zt_grid ../input/grid/coarse_30lev_32km_zt_grid.grd --levels 30
+    OR
+  ./run_scm.bash -z ../input/grid/coarse_30lev_32km_zt_grid.grd -l 30
+
+  You can specify the timestep to run the cases at using --timestep_test (or -t) followed by a number.
+  For example, ./run_scm.bash -t 360.
+
+  To specify a custom stats file, use the --stats (or -s) option. For example, to use
+  the nightly stats, ./run_scm.bash --stats ../input/stats/nightly_stats.in
+
+  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
+  file.
+
+  To run a performance test, use the --performance_test (or -r) option.  This will disable
+  statistics output and set debug level to 0 for performance testing.
+
+  To specify a custom output directory, use the --output_directory (or -o).  For example,
+  to use the home directory, ./run_scm.bash -o $HOME.
+
+rum_scm_collect.bash: 
+  Runs a case in CLUBB while using the Sun Studio profiler to collect runtime 
+  statistics.  For best results, the CLUBB code should be compiled with the Sun
+  Studio compiler to use this script.  However, the Intel compiler has been
+  confirmed to work as well.  The name of the output directory and optionally
+  case name are arguments for the script.
+
+  NOTE: It is highly recommended that no other programs are running on the
+  computer that runs this script. If other programs are running, the results
+  may be inconsistent and possibly misleading.
+
+run_scm_collect_suite.bash
+  Runs a selected set of cases in CLUBB while using the Sun Studio profiler to
+  collect runtime statistics for all of them. For best results, the CLUBB code
+  should be compiled with the Sun Studio compiler to use this script. However,
+  the Intel compiler has been confirmed to work as well. Each case will be run
+  a few times to allow for averaging of the runtime statistics. The name of the
+  output directory is an argument for the script.  
+
+  NOTE: The output requires about 25 GB of disk space.  Please make sure 
+  that enough space is available, and delete these output files when they
+  are no longer needed.
+
+  NOTE: It is highly recommended that no other programs are running on the
+  computer that runs this script. If other programs are running, the results
+  may be inconsistent and possibly misleading.
+
+time_scm_all.bash
+  Best used to determine the overall runtime of CLUBB. time_scm_all.bash sets
+  the debug level to 0 and turns off the stats output, and runs only the cases
+  which do not use microphysics or non-simplified radiation schemes. The script
+  requires an argument for the number of runs to perform, and will aggregate
+  the overall CPU time taken for all of the runs performed.
+
+run_timestep_tests.bash: 
+  Runs all of the cases CLUBB is set up to do. CLUBB is ran several times for 
+  each case at different timestep settings.
+
+run_tuner.bash: 
+  Runs the CLUBB tuning program.

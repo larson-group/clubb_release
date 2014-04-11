@@ -1,0 +1,10 @@
+These utilities are useful when dealing with the MPACE case.  All of 
+these scripts are run in MATLAB.
+
+make_mpace_files.m is the original script used to make the required 
+formatted text output for the MPACE intercomparison.
+make_mpace_files_heights.m is identical except that it includes 
+additional output files (height levels) as requested by the MPACE 
+primary investigators.  It uses the other scripts in the directory to 
+open and read the GrADS files containing the data to be written to the 
+text files.

@@ -1,0 +1,53 @@
+Plotgen 3.0 Case Implementation Readme:
+=======================================
+
+This is the folder where cases are described. Each case should have its
+own case file. For your convenience, there are two template case files to
+hopefully make it easier for you to implement a new case.
+
+Follow these steps when implementing a new case:
+
+CLUBB:
+======
+1. To implement a new case without LES, Best Ever, and 12/17 data, copy 
+templates/template_simple.case to <YOUR CASE NAME>.case. If you are implementing a 
+case with LES, Best Ever and 12/17 data, copy clubb/templates/template_all.case to 
+<YOUR CASE NAME>.case. If you want to plot budgets, copy clubb/templates/template_budget.case
+to <YOUR CASE NAME>_budget.case.
+
+2. Open your newly created case file. You can do a find and replace for
+all occurrences of case_name to whatever your case name is. For example, 
+for cloud_feedback_s12, you would replace all occurrences of case_name
+with cloud_feedback_s12 (or whatever you type after run_scm.bash).
+
+3. Test your changes. If you have data, plotgen should automatically plot
+it for you. 
+
+
+SAM-CLUBB:
+==========
+1. To implement a new case for SAM-CLUBB, follow step 1 from above,
+but instead of using clubb/templates, use sam_clubb/templates. 
+
+2. Open your newly created case file. You will need to do a find and replace all
+for two variables: SAM_CASE_NAME is the SAM_CLUBB data files (for example, ARM9707),
+and CLUBB_CASE_NAME which is the CLUBB file (for example, arm_97_zt.ctl).
+
+3. Test your changes. If you have data, plotgen should automatically plot
+it for you.
+
+
+
+Some cases are unique, so you may need to modify the case files for your
+current situation. The template files are still a good starting point.
+
+Once you are satisfied with the results, commit your new case file. 
+You SHOULD ONLY have to create a .case file, and NOT modify any
+of the plotgen code. Once your change has been committed, contact
+your local system administrator (messneradmin@uwm.edu) and ask them
+to create a new RPM for you so your changes can be seen when anyone
+executes plotgen (and in the nightly tests). For faster results, you
+may want to bring them cookies/cup cakes with your request. Information
+on creating the Plotgen RPM can be found here:
+
+http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/PlotgenRpm

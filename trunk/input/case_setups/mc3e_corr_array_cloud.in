@@ -1,0 +1,33 @@
+! $Id$ .
+! This file contains a cloud correlation matrix. This can be looked at as a
+! two-dimensional array with an equal number of rows and columns. For each
+! column, the row at the same index is the same variable. For example, this
+! matrix should look like the following:
+!
+!     | s | t | w | Ncn |...|
+!   s | 1 | x | x |  x  | x |
+!   t | * | 1 | x |  x  | x |
+!   w | * | * | 1 |  x  | x |
+!  Ncn| * | * | * |  1  | x |
+!  ...| * | * | * |  *  | 1 |
+!
+! Where x represents a value and * is an ignored cell. The bottom half of 
+! the matrix can be ignored becasue the matrix is symmetrical. The main
+! diagonal is always filled with a value of 1.0.
+!
+! All unkown values are left at 0.0. All values in the bottom of
+! the matrix are 0.0, but they can be set to any number because they are
+! ignored.
+s         t         w       Ncn     rrain    Nr      rice    Ni      rsnow    Nsnow    rgraupel  Ng
+1.0       0.3       0.09    0.09    0.242    0.285   -0.08   0.28    0.06     0.04     0.0       0.0
+0.0       1.0       0.027   0.027   0.0726   0.0855  -0.024  0.084   0.018    0.012    0.0       0.0   
+0.0       0.0       1.0     0.34    0.0      0.0     0.44    0.55    0.65     0.73     0.0       0.0 
+0.0       0.0       0.0     1.0     0.0      0.0     0.39    0.29    0.14     0.21     0.0       0.0 
+0.0       0.0       0.0     0.0     1.0      0.786   0.0     0.0     0.0      0.0      0.0       0.0  
+0.0       0.0       0.0     0.0     0.0      1.0     0.0     0.0     0.0      0.0      0.0       0.0  
+0.0       0.0       0.0     0.0     0.0      0.0     1.0     0.77    0.29     0.49     0.0       0.0  
+0.0       0.0       0.0     0.0     0.0      0.0     0.0     1.0     0.43     0.60     0.0       0.0  
+0.0       0.0       0.0     0.0     0.0      0.0     0.0     0.0     1.0      0.95     0.0       0.0 
+0.0       0.0       0.0     0.0     0.0      0.0     0.0     0.0     0.0      1.0      0.0       0.0
+0.0       0.0       0.0     0.0     0.0      0.0     0.0     0.0     0.0      0.0      1.0       0.0
+0.0       0.0       0.0     0.0     0.0      0.0     0.0     0.0     0.0      0.0      0.0       1.0

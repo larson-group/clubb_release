@@ -1,0 +1,596 @@
+$Id$
+
+
+INPUT/CASE_SETUPS DIRECTORY OVERVIEW
+====================================
+
+The <CASE NAME>_model.in files contain the following namelists:
+
+--------------------------------------------------------------------------------
+1. &model_setting:
+--------------------------------------------------------------------------------
+
+  Name        | Data type  
+------------------------------------------
+
+runtype | character 
+  This simulation type, e.g. "bomex".
+  Used to determine case specific settings, e.g. initial TKE.
+  See clubb_driver.F90 for examples.
+
+nzmax | integer
+ Maximum number of vertical levels for grid_type = 2 or grid_type = 3.
+ Note that if there is less sounding data than nzmax requires, then the 
+ domain will be truncated to a value less than nzmax levels.
+
+grid_type | integer
+  1 ==> evenly spaced grid levels, 2 ==> unevenly-spaced thermo. grid levels,
+  3 ==> unevenly-spaced momentum grid levels.
+
+deltaz | real, default precision 
+  Distance between grid levels for grid_type = 1 [m].
+
+zm_init | real, default precision 
+  Min Altitude of lowest mom. level on any grid  [m].
+
+zm_top | real, default precision 
+  Max Altitude of highest mom. level on any grid [m].
+
+zt_grid_fname | character
+  Stretched grid on thermodynamic levels (grid_type = 2).
+  Path (from ../run_scripts/) and filename of data file that contains
+  thermodynamic level altitudes (in meters).
+
+zm_grid_fname | character
+  Stretched grid on momentum levels (grid_type = 3).
+  Path (from ../run_scripts/) and filename to data file that contains
+  momentum level altitudes (in meters).
+  Note:  For this option, zt_grid_fname must be ''.
+
+day | integer
+  Day of model start (1 to 31).
+
+month | integer
+  Month of model start (1 to 12).
+
+year | integer
+  Year of model start.
+
+rlat | real, default precision
+  Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees].
+
+rlon | real, default precision
+  Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees].
+
+time_initial | real, minimum of 12 digits of precision
+  Model start time [seconds since midnight UTC on start date].
+
+time_final | real, minimum of 12 digits of precision
+  Model end time [seconds since midnight UTC on start date].
+
+time_spinup | real, minimum of 12 digits of precision
+  End of spin-up period [seconds since midnight UTC on start date].
+  In some cases, e.g. clex9_oct14, microphysics or other code
+  is shut off during the spinup period, e.g. the first hour
+  of simulation.  However, in most cases, the spinup period
+  is not treated specially, and therefore we can set
+  time_spinup to some time greater than time_final.
+
+dt_main | real, minimum of 12 digits of precision 
+  Model timestep [s].
+
+dt_rad | real, minimum of 12 digits of precision
+  Radiation timestep [s] (must be a multiple of dt_main).
+
+T_sfc | real, default precision
+  Temperature of underlying surface (e.g. SST) [K].
+
+p_sfc | real, default precision
+  Pressure at model base [Pa].
+
+SE | real, default precision
+  Fixed surface sensible heat flux  [K m/s].
+
+LE | real, default precision
+  Fixed surface latent heat flux [kg/kg m/s].
+
+fcor | real, default precision
+  Coriolis parameter [s^-1].
+
+T0 | real, default precision
+  Reference temperature (usually 300) [K].
+
+ts_nudge | real, default precision 
+  Timescale of u/v nudging [s].
+
+l_t_dependent | logical
+  Flag used to indicate that this case uses a forcings.in and surface.in file for
+  time dependent input.
+
+l_input_xpwp_sfc | logical
+  Flag used to determine whether or not to read in the surface momentum
+  fluxes upwp_sfc and vpwp_sfc.
+
+l_tke_aniso | logical
+  Flag for enabling anisotropic TKE.  
+  When this is true:  TKE = ( u'^2 + v'^2 + w'^2 ) / 2.
+  When this is false: TKE =  3 ( w'^2 ) / 2.
+
+l_uv_nudge | logical
+  Flag for horizontal wind speed nudging.
+
+rtm/thlm/um/vm_sponge_damp_settings%l_sponge_damping | logical
+  Enable sponge damping.
+
+rtm/thlm/um/vm_sponge_damp_settings%tau_sponge_damp_min | real, default precision
+  Minimum damping time-scale ( at the top ) [s].
+
+rtm/thlm/um/vm_sponge_damp_settings%tau_sponge_damp_max | real, default precision
+  Maximum damping time-scale (base of damping layer) [s].
+
+rtm/thlm/um/vm_sponge_damp_settings%sponge_damp_depth   | real, default precision
+   damping depth as a fraction of domain height [-].
+
+l_restart | logical 
+  Flag for whether this is a restart run.  A restart run continues
+  an earlier run by reading in data saved to disk by the earlier run.
+
+restart_path_case | character 
+  Path (from ../run_scripts/) and filename of GrADS/netCDF files 
+  sans '_zt.ctl', '_zm.ctl', or '_zt.nc', '_zm.nc'.
+
+time_restart | real, minimum of 12 digits of precision
+  Time of model restart.  [seconds since start time in stat file]
+
+l_input_fields | logical
+  Flag for whether this is an inputfields simulation, i.e.  we will set the
+  certain fields at the beginning of each timestep based on netCDF or GrADS
+  data in a stats file for the purposes of diagnosing structural problems
+  within the clubb equations.
+
+  Nota bene:  The GrADS data files cannot have a time increment less than 1mn.
+  Therefore, when a file is output in CLUBB with a stats_tout of less than
+  60, the code will simply round up, which will not work for using the
+  resulting GrADS data file generated for an inputfields simulation.
+  Therefore, when l_input_fields is true, always use GrADS data output
+  at 1mn increments or greater.
+
+debug_level | integer
+  0 => Print no debug messages to the screen
+  1 => Print lightweight debug messages, e.g. print statements
+  2 => Print debug messages that require extra testing,
+       e.g. checks for NaNs and spurious negative values.
+
+sclr_dim  | integer
+  Adds passive scalars that are computed using higher-order closure.
+  0 to shut off all high-order scalar computations.
+  > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
+      that will be read in and tracked.
+
+iisclr_rt  | integer
+  Location in the sclr arrays to place a scalar emulating total water.
+
+iisclr_thl | integer 
+  Location in the sclr arrays to place a scalar emulating thetal.
+
+iisclr_CO2 | integer
+  Location in the sclr arrays to place a scalar for CO2. See the cobra case
+  for an example of this.
+
+sclr_tol | real, default precision, array 
+  Tolerances below which we consider the scalar to be 0.
+
+edsclr_dim  | integer
+  Adds scalars that are computed using simple eddy-diffusivity.
+  0 to shut off all eddy-scalar computations.
+  > 0 the specifies the number of columns in <runtype>_edsclr_sounding.in 
+      that will be read in and tracked.
+
+iiedsclr_rt | integer
+  Location in the edsclr arrays to place a scalar emulating total water.
+
+iiedsclr_thl | integer
+  Location in the edsclr arrays to place a scalar emulating thetal.
+
+iiedsclr_CO2 | integer
+  Location in the edsclr arrays to place a scalar for CO2.  See the cobra case
+  for an example of this.
+
+--------------------------------------------------------------------------------
+2. &microphys_setting:
+--------------------------------------------------------------------------------
+
+  Name        | Data type  
+------------------------------------------
+micro_scheme | character
+  The microphysics scheme to use.  Either khairoutdinov_kogan, coamps,
+  morrison, or none.
+
+l_cloud_sed | logical
+  Cloud water sedimentation (K&K or no microphysics).
+  This uses the formula from the DYCOMS II RF02 specification.
+
+sigma_g	| real
+  Geometric std. dev. of cloud droplets falling in a stokes regime.  Used by
+  the cloud water sedimenation code.
+
+l_ice_micro | logical
+  Compute ice and snow (COAMPS / Morrison)
+
+l_graupel | logical
+  Compute graupel (COAMPS / Morrison)
+
+l_hail | logical
+  See module_mp_graupel.F90 for a description (Morrison)
+
+l_seifert_beheng | logical
+  Use Seifert and Beheng (2001) warm drizzle (Morrison)
+
+l_predictnc | logical
+  Predict cloud droplet number conc (Morrison)
+
+specify_aerosol | character
+  Specify aerosol mode to be used (Morrison)
+  morrison_no_aerosol - none, morrison_power_law - powerlaw,
+    morrison_lognormal - lognormal
+
+l_subgrid_w | logical
+  Use subgrid-scale w for cloud droplet activation (Morrison).
+  Highly recommended for a CLUBB single column simulation when l_predictnc is
+  true, since there is no way to account for updrafts like an LES.
+
+l_arctic_nucl | logical
+  Use MPACE observations for ice nucleation (Morrison)
+
+l_cloud_edge_activation | logical
+  Activate droplets on cloud edges (Morrison)
+
+l_fix_pgam | logical
+  Fix pgam (Morrison)
+
+LH_microphys_type | character
+  Determines the level of interaction between the latin hypercube samples 
+  and the microphysics (K&K).
+  Valid values are "interactive", "non-interactive", or "disabled".
+
+l_lh_vert_overlap | logical
+  Use a vertical overlap assumption for generating latin hypercube sample 
+  points rather than random overlap (K&K / Morrison).
+
+l_lh_cloud_weighted_sampling | logical
+  Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
+  LH_microphys_calls must be an even number, and sequence length must be 1 in
+  order to enable this.
+
+LH_microphys_calls | integer
+  Number of latin hypercube samples to call the microphysics with (K&K).
+
+LH_sequence_length | integer
+  Number of timesteps before the Latin Hypercube seq. repeats (K&K).
+
+l_local_kk | logical
+  Use the local formulas for K&K microphyics, rather than the analytic formulas.
+
+l_upwind_diff_sed | logical
+  Use an upwind differencing approximation for sedimenation, rather than 
+  the centered differencing approximation (K&K / COAMPS).
+
+microphys_start_time | real, minimum 12 digits of precision
+  Model time to start calling the microphysics scheme [s]
+  Useful for artificially creating a delayed onset of ice/rain in idealized
+  cases.
+
+Nc0_in_cloud 
+  Initial value for Ncm (cloud droplet number concentration) in #/m^3.
+  (K&K, l_cloud_sed = .true., Morrison).
+
+rr_sigma2_on_mu2_ip_cloud | real, default precision
+rr_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of rain
+  water mixing ratio divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+Nr_sigma2_on_mu2_ip_cloud | real, default precision
+Nr_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of rain
+  drop concentration divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+Ncnp2_on_Ncnm2 | real, default precision
+  Prescribed parameter for the variance (overall) of cloud nuclei concentration
+  divided by the mean (overall) squared (Upscaled KK, Latin Hypercube).
+
+ri_sigma2_on_mu2_ip_cloud | real, default precision
+ri_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of ice
+  mixing ratio divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+Ni_sigma2_on_mu2_ip_cloud | real, default precision
+Ni_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of ice
+  concentration divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+rs_sigma2_on_mu2_ip_cloud | real, default precision
+rs_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of snow
+  mixing ratio divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+Ns_sigma2_on_mu2_ip_cloud | real, default precision
+Ns_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of snow
+  concentration divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+rg_sigma2_on_mu2_ip_cloud | real, default precision
+rg_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of
+  graupel mixing ratio divided by the in-precip mean (ith PDF component) squared
+  (Upscaled KK, Latin Hypercube).
+
+Ng_sigma2_on_mu2_ip_cloud | real, default precision
+Ng_sigma2_on_mu2_ip_below | real, default precision
+  Prescribed parameters for the in-precip variance (ith PDF component) of
+  graupel concentration divided by the in-precip mean (ith PDF component)
+  squared (Upscaled KK, Latin Hypercube).
+
+C_evap | real, default precision
+  Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
+  mean volume radius (K&K)
+
+r_0 | real, default precision
+  Assumed radius of all new drops (K&K) [m].
+
+ccnconst | real, default precision
+  Parameter for powerlaw CCN (Morrison) [#/m^3].
+
+ccnexpnt | real, default precision
+  Exponent for powerlaw CCN (Morrison).
+
+aer_rm1 | real, default precision 
+aer_rm2 | real, default precision
+  Mean geometric radius (Morrison) [m].
+
+aer_n1 | real, default precision
+aer_n2 | real, default precision
+  Aerosol concentration (Morrison) [#/m^3].
+
+aer_sig1 | real, default precision
+aer_sig2 | real, default precision
+  Standard deviation of size distribution (Morrison) [-]
+
+pgam_fixed | real, default precision
+  Value for fixed pgam (Morrison).
+
+--------------------------------------------------------------------------------
+3. &radiation_setting:
+--------------------------------------------------------------------------------
+
+  Name        | Data type  
+------------------------------------------
+
+rad_scheme | character
+  Currently only "bugsrad", "simplified", "simplified_lba", or "simplified_bomex".
+
+sol_const | double precision
+  The solar constant [W/m^2] (BUGSrad).
+
+radiation_top | real, default precision
+  The top of the atmosphere fed into a radiation scheme [m].
+  The computational grid should be extended to reach this altitude (BUGSrad).
+
+alvdr | double precision
+  Visible direct surface albedo   [-] (BUGSrad, simplified).
+
+alndr | double precision
+  Near-IR direct surface albedo   [-] (BUGSrad).
+
+alvdf | double precision
+  Visible diffuse surface albedo  [-] (BUGSrad).
+
+alndf| double precision
+  Near-IR diffuse surface albedo  [-] (BUGSrad).
+
+F0 | real, default precision
+  Coefficient for cloud top heating (see Stevens) [W/m^2] (simplified).
+
+F1 | real, default precision
+  Coefficient for cloud base heating (see Stevens) [W/m^2] (simplified).
+
+kappa | real, default precision
+  A constant (Duynkerke eqn. 5) [m^2/kg] (simplified).
+
+gc | real, default precision
+  Asymmetry parameter, "g" in Duynkerke [-] (simplified).
+
+omega |  real, default precision
+  Single-scattering albedo [-] (simplified).
+
+slr | double precision
+  Fraction of daylight (usually 1.0)  [-] (BUGSrad).
+
+eff_drop_radius | real, default precision
+  Effective droplet radius  [m] (simplified).
+
+cos_solar_zen_values | real, 20 element array, default precision
+  Cosine of the solar zenith angle for l_fix_cos_solar_zen = true [-].
+  Used with simplified if l_sw_radiation is true, or BUGSrad.
+  See cloud_feedback_s6_model.in for an example in which 
+  zenith angle is set constant with time.
+
+cos_solar_zen_times | real, 20 element array, default precision
+  Times corresponding to the cosine of the solar zenith angle [s].
+  Used with simplified if l_sw_radiation is true, or BUGSrad.
+
+Fs_values | real, 20 element array, default precision
+  The incident of incoming SW insolation at cloud top the
+  direction of the incoming beam (not the vertical)   [W/m^2]
+  (simplified)
+
+l_fix_cos_solar_zen | logical
+  Fix the value of the cosine of the solar zenith angle rather than compute 
+  it from the latitude, longitude and current time. (simplified, BUGSrad)
+
+l_sw_radiation | logical
+  Whether to compute shortwave radiation. (simplified)
+  To disable shortwave radiation in BUGSrad, set cosine of the solar zenith
+  angle or fraction of daylight to 0.
+
+l_use_default_std_atmosphere | logical
+  Flag indicating if U.S. Std Atmosphere should be used to extend the grid in radiation.
+  If false, sounding data will be used. (BUGSrad)
+
+
+
+--------------------------------------------------------------------------------
+4. &stats_setting
+--------------------------------------------------------------------------------
+
+  Name        | Data type  
+------------------------------------------
+
+l_stats | logical
+  Enables statistics output
+
+fname_prefix | character
+  Prefix of the output filenames (a _zt, _zm, and _sfc will be generated).
+
+stats_tsamp | real, minimum 12 digits of precision
+  Frequency to sample statistics [s].
+
+stats_tout | real, minimum 12 digits of precision
+  Frequency to output statistics [s]
+
+stats_fmt | character
+  Either "grads" or "netcdf".  Note that the GrADS viewer has trouble
+  comparing a netCDF file to a grads file.
+
+Other files in the case_setups directory:
+====================================
+
+<Case Name>_sounding.in
+  Sounding information for initial CLUBB fields.
+
+<Case Name>_sclr_sounding.in
+  Sounding information for passive scalars.
+
+<Case Name>_forcings.in
+  Forcing information.
+
+<Case Name>_surface.in
+  Surface flux information.
+
+--------------------------------------------------------------------------------
+5. &setfields
+--------------------------------------------------------------------------------
+Name | Data type
+------------------------------------------
+
+datafile | character
+  Beginning of the name of the file.  The assumed end of the filename is then
+  appended based on whether the data is from CLUBB or COAMPS-LES,
+  i.e. _zt, _zm, or _coamps_sm, _coamps_sw.
+
+input_type | character
+  Can be any of the following: <'coamps_les','clubb','sam','rams_les'>, depending
+  on whether the data is from CLUBB, COAMPS-LES, SAM, or RAMS-LES.
+
+l_input_<varname> | logical
+  Whether the values of the given field will be reset based on data at each timestep
+  in the simulation.
+  
+  Possible names are:
+    l_input_um,
+    l_input_vm,
+    l_input_rtm,
+    l_input_thlm,
+    l_input_wp2,
+    l_input_wprtp,
+    l_input_wpthlp,
+    l_input_wp3,
+    l_input_rtp2,
+    l_input_thlp2,
+    l_input_rtpthlp,
+    l_input_upwp,
+    l_input_vpwp,
+    l_input_ug,
+    l_input_vg,
+    l_input_rcm,
+    l_input_wm_zt,
+    l_input_exner,
+    l_input_em,
+    l_input_p,
+    l_input_rho,
+    l_input_rho_zm,
+    l_input_Lscale,
+    l_input_Lscale_up,
+    l_input_Lscale_down,
+    l_input_Kh_zt,
+    l_input_Kh_zm,
+    l_input_tau_zm,
+    l_input_tau_zt,
+    l_input_wpthvp,
+    l_input_radht,
+    l_input_thl1,
+    l_input_thl2,
+    l_input_mixt_frac,
+    l_input_s1,
+    l_input_s2,
+    l_input_stdev_s1,
+    l_input_stdev_s2,
+    l_input_rc1,
+    l_input_rc2,
+    l_input_thvm,
+    l_input_rrainm,
+    l_input_Nrm,
+    l_input_rsnowm,
+    l_input_ricem,
+    l_input_rgraupelm,
+    l_input_thlm_forcing,
+    l_input_rtm_forcing,
+    l_input_up2,
+    l_input_vp2,
+    l_input_sigma_sqd_w,
+    l_input_Ncm,
+    l_input_Ncnm,
+    l_input_Nim,
+    l_input_cloud_frac,
+    l_input_sigma_sqd_w_zt,
+    l_input_veg_T_in_K,
+    l_input_deep_soil_T_in_K,
+    l_input_sfc_soil_T_in_K
+
+================================================================================
+In addition, the directory contains the following files for running simulations:
+
+<Case Name>_sounding.in
+Contains columns for the initial values of temperature, moisture, and wind.
+
+<Case Name>_ozone_sounding.in
+This is an optional file that is only used with BUGSrad radiation scheme to 
+specify the values of O3 (ozone).
+
+<Case Name>_surface.in
+This file contains values for the heat and moisture flux at the surface.
+The values can be use fixed values (sfc_type = 0) in which case sens_ht, and 
+latent_ht are used or the bulk formula (sfc_type = 1) in which case the value 
+T_sfc is used to compute the flux.
+
+<Case Name>_forcings.in
+Large-scale tendency applied to mean fields (e.g. um, vm, thlm, rtm). Cases that
+were implemented in clubb_standalone prior to adding this code may use hardwired
+values that are set in the source code instead. See l_t_dependent, above.
+
+For latin hypercube sampling you must have the following 2 files or will 
+recieve an error message:
+
+<Case Name>_corr_array_cloud.in
+The in cloud (where rcm >= rc_tol) correlation values for computing the
+latin hypercube sample points fed into the microphysics.
+
+<Case Name>_corr_array_below.in
+The out of cloud (where rcm < rc_tol) correlation values for computing the 
+latin hypercube sample points fed into the microphysics.
+

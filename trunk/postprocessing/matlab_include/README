@@ -1,0 +1,7 @@
+This folder contains files that are useful. MATLAB functions that can be incorporated into other MATLAB scripts.
+
+read_grads_clubb_endian.m is the file that reads in GrADS variable information so that it can be used in MATLAB.
+
+header_read.m is the file that reads in header information from a GrADS file.
+
+convert_units.m is the file that contains a class with functions used for converting units.

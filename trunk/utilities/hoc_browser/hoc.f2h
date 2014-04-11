@@ -1,0 +1,26 @@
+#f90tohtml input file for HOC, November 2005 
+@file_array=(
+["hoc_ls/src.ls","src","#eeeeee"],
+["hoc_ls/HOC_parameterization.ls","HOC_parameterization","#ddeedd"],
+["hoc_ls/LH.ls","LH","#ddddee"],
+["hoc_ls/GCSS.ls","GCSS","#dddddd"],
+["hoc_ls/BUGSrad.ls","BUGSrad","#eedddd"],
+["hoc_ls/coamps_micro.ls","COAMPS_Microphysics","#eeddee"],
+);
+$dir_html="/home/hoc_browser/hoc_v2.2_tuner/hocbrowser/"; 
+$verbose=1;  
+$c_comment=1;
+$perl_comment=0;
+$tree_depth=20;
+$contents_title="HOC";
+$subject_hash="hoc.subject";
+$parse_include=1;
+$include_match="^\\s*include|^#\\s*include";
+$include_file_match='(\&lt;|\")(.*)(\&gt;|\")';
+$default_index="main";
+$default_prog="hoc_tuner";
+$aggressive=0;
+$splitter='[a-zA-Z0-9_]\(';
+$comment_color='#447700';
+$search_regex='*/*';
+$search_files='foo';

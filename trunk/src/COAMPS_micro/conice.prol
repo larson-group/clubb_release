@@ -1,0 +1,76 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            conice.f
+C DESCRIPTION:		  computes ice concentration
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  conice(t,conci,cnzero,cbeta,tzero,tice,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len			integer	input	dimension (number of data items)
+C					 of input/output arrays
+C cbeta			real	input	constant = 0.6   
+C cnzero		real	input	constant = .01
+C conci(len)		real	output	ice concentration array
+C t(len)		real	input	temperature in deg c (0-40 degrees)
+C tice			real	input	constant temp of ice of 269.16
+C tzero			real	input	Kelvin conversion = 273.16K (0 deg C)
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	loop index
+C	
+C METHOD:	
+C	  do while looping over temperature array 
+C	  if temperature value less than or equal to ice temperature then
+C	    set corresponding ice concentration array value to calculated value
+C	  else
+C	    set corresponding ice concentration array value to zero
+C	  enddo	
+C	  return
+C
+C INCLUDE FILES:          None	
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

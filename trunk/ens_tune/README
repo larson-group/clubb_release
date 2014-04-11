@@ -1,0 +1,83 @@
+$Id$
+
+These scripts differ from the regular tuning run in that they can be used to
+create many different sets of constant parameters based on the random starting
+simplexes generated with differing seeds.  Chris Golaz used an ensemble 
+method to create the plots that appear in the tuner paper.  These scripts are
+based on the scripts he used, but differ in that they have been setup
+machines UW-Milwaukee.
+The mytuner_messner.bash was configured for use on the nodes of the 
+Messner Beowulf cluster at UWM in approximately 2007.
+The mytuner_sequential.bash was configured for use on a single node in
+Septemeber 2009.
+
+This directory is more or less a template for how to setup a new case, but
+you will need to alter all these scripts and namelists to suit your ensemble 
+tuning needs.
+You will also need to copy over and modify stats.in files to include only those
+variables for which wish to tune for.
+
+The mytuner_messner.bash script was developed in 2007 and no longer reflects
+the current CLUBB directory structure, though it could be used as a very
+rough template of how to add a new script for a cluster environment.
+
+
+Creating and Running an Ensemble tuner job)
+
+1)  Edit the following fields in mytuner_sequential.bash
+    a) MEMBERMAX, the number of ensemble members
+    b) CLUBB, The directory that CLUBB is located in
+    c) ENSEMBLE_DIR, The directory with the mytuner_sequential.bash script
+    d) CASE, the case name.  This will also be the name of the tuner namelist
+	followed by _error.in
+    e) ARCHIVE, the directory where the output will be stored
+    f) EXPERIMENTS, the cases to run 
+
+2)  Edit the error.in file:
+     The error_combined_001.in file is the same type of file as the error.in
+     file in the regular CLUBB tuner.  This file must include all the
+     relevant information for EVERY case being tuned for, such as the
+     CLUBB and LES stats files, the CLUBB run file, the vertical
+     levels and time periods being tuned for, and the general weighting of
+     each case.  This file also must include other important factors such
+     as the variable(s) being tuned for and the general weighting of each
+     variable.  Of course, the initial values of the constants and the
+     amount of deviation allowed for each of the constants are also
+     declared here.  Refer to clubb/input_misc/tuner/README for more information
+
+3)  For each case Create/copy the <CASE NAME>_stats_tune.in file.  A sample of this 
+    file can be found in the ens_tune/ directory (and subsequently in the
+    ens_tune_xyz/ directory if it was copied from the ens_tune/ directory).
+    This file is used in the tuning process itself.  In order for this
+    process to work, stats_fmt in this file must be set to 'grads'.  The
+    tuner code reads the LES GrADS files and compares the results with the
+    CLUBB GrADS files (which are written according the specifications
+    stated in this file).  This file MUST also contain the names of the
+    CLUBB variables that are being tuned for.  During the process of
+    tuning, small GrADS files will be written that contain the results for
+    ONLY the variables that are listed here.  This makes the tuning go
+    faster because it is not being slowed down by the writing of
+    unnecessary variables.
+
+4)  Execute mytuner_sequential.bash to have it begin running the ensemble
+    tuner.  It will checkout the LES data that you need to run the tuner.
+    When it is completed go to ARCHIVE/CASE directory and run sortresults.bash
+    to see the results.
+    If you would like to have the tuner move the first foot to match the previous
+    run if that cost function was better than the one before, execute
+    mytuner_movingfoot.bash.  This is may provide better results becuase the
+    Numerical Recipes suggest that we restart where we have found a minimum.
+
+5)  If you wish to analyze these results, you can run analyze_tuner.py, which is a
+    python script written to create a scatter plot, a box plot, and the Plotgen
+    plots to help you to easily analyze the data.  
+
+
+Doing a basic `at' job:
+    
+1.) at -f ./atjob.bash now
+
+(Come back in a number of hours/days)
+
+2.) Go to your ARCHIVE/CASE directory.  Run sortresults.bash for sorted results.
+ 

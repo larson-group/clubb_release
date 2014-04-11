@@ -1,0 +1,95 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            tvqs.f
+C DESCRIPTION:		  compute terminal velocity of snowflakes
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  tvqs(qs,fallv,prbm,rbm,pcut,p00,slopes,m,n,npts,kk)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C kk                    integer input   number of sigma levels
+C m                     integer input   x-dimension of grid
+C n                     integer input   y-dimension of grid
+C npts                  integer input   number of grid points
+C fallv(m,n,kk)         real    output  fall velocity of snowflakes
+C p00                   real    input   reference pressure (1000 mb)
+C pcut                  real    input   lowest allowable mixing ratio of
+C                                       snowflakes
+C prbm(m,n,kk)          real    input   pressure of reference state at
+C                                       mass levels
+C qs(m,n,kk)		real	input	snow flakes at each grid point
+C					and for each sigma level
+C rbm(m,n,kk)		real	input	density of reference state at
+C					mass levels
+C slopes		real	input	slope factor for snow
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:
+C Name		Description
+C -----------	------------------------
+C gamma		produce gamma function of z
+C	
+C LOCAL VARIABLES AND
+C            STRUCTURES:
+C Name			Type	Description
+C -------------------	------	-----------
+C i                     integer loop index
+C k                     integer loop index
+C bsnow			real	fallspeed exponent for snow = 0.11
+C ex1			real	local constant = 0.4
+C falspd		real	working variable for fall speed
+C garg			real	local constant = 4.11
+C pfact			real	pressure factor
+C tvs1			real	
+C x6			real	slope factor for snow divided by
+C                               density of reference state multiplied by
+C                               snowflakes at that grid point-level
+C	
+C METHOD:
+C            loop over every grid point at each level
+C            if the mixing ratio of snowflakes does not exeed cutting level
+C            then set fall velocity to zero
+C            else if mixing ratio of snowflakes exceeds cutting level
+C            calculate fall velocity
+C            return at end of loop
+C
+C INCLUDE FILES:          tvqs.f.pro
+C
+C COMPILER DEPENDENCIES:  FORTRAN 77
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"
+C MAKEFILE:
+C     /a/ops/src/met/coamps/src/sub/makefile
+C
+C  RECORD OF CHANGES:
+C    NONE
+C........................ END PROLOGUE ...................................

@@ -1,0 +1,92 @@
+--------------------------------------------------------------------------------
+-               Setting up a new case in CLUBB standalone
+--------------------------------------------------------------------------------
+Purpose:
+  This document is intended to supplement documentation already available to 
+  users of CLUBB on the Larson Group computers, and provide some basis for 
+  setting up cases in CLUBB standalone for users outside of UW Milwaukee.  
+  Setting up simulations for using CLUBB in a host model (e.g. WRF-CLUBB, 
+  SAM-CLUBB) is outside scope of what is provided here. Internal group
+  procedures are also outside the scope of this document
+
+1. Required files
+  a. input/case_setups/<runtype>_model.in
+     See the README for descriptions all the variables contained within this
+     file.
+
+  b. input/case_setups/<runtype>_sounding.in
+     See the case setups directory for examples of these.  This provides the
+     initial profiles of moisture temperature, and wind.
+
+2. Modifications to the CLUBB code
+  a. Ideally, any case could be handled without modification to the CLUBB code,
+     but experience has shown that case specific nudging and other special 
+     conditions usually require direct modification to clubb_driver.F90 or 
+     other files.  These case specific modifications should always be handled 
+     outside of CLUBB core if possible.
+
+  b. New cases will typically require a new value for the runtype variable
+     specified in the &model_setting namelist.
+     This is used for case specific initialization of variables (e.g. initial 
+     TKE), determining how to set the surface flux, and special forcings.  
+     The use of l_t_dependent = .true. is the preferred method
+     for doing this for new cases. It requires 2 additional text files:
+
+     1) input/case_setups/<runtype>_surface.in
+     2) input/case_setups/<runtype>_forcings.in
+
+     These can be generated prior to the simulation by hand using the case 
+     specification or using using a short program (See the arm_forcings_code 
+     directory for an example).
+
+     To add a surface.in and forcings.in file to a case, perform the following 
+     steps.
+
+     1) In the case's model.in file ( input/case_setups/), add a line as follows
+
+     ! Flag used to indicate that this case uses
+     ! a forcings.in and surface.in file for
+     ! time dependent input
+     l_t_dependent = .true. ! Flag for time dependent input 
+
+     Although it is not crucial, for the sake of consistency these lines should
+     be placed after the variables sfctype, Tsfc, psfc, SE, LE, fcor, T0, 
+     ts_nudge, and forcings_file_path (only a few of these may be present).
+
+     2) In the initialize_t_dependent_surface subroutine in the 
+     time_dependent_input module, make sure that a variable exists for each
+     column of your surface.in file. If you make a new variable, be certain to 
+     add the column name to the input_names module.
+
+     3) You may need to create case specific code file (e.g. arm.F90 located 
+     in src/Benchmark_cases/ for the arm case) as well. Use newer case files 
+     as a guide.
+
+3.  Adding a new column to the <runtype>_surface.in file
+
+  a. First check the input_names module to see if the variable you want to 
+     add already exists. If not, create it.
+
+  b. In the time_dependent_input module name your new array and declare it 
+     alongside the others.
+
+  c. In the initialize_t_dependent_surface subroutine of the same module, add 
+     some code to allow for the allocating of your new array using the others 
+     as guides.
+
+  d. In the finalize_t_dependent_surface subroutine, add code to deallocate 
+     the array.
+
+  To reference the read in data use:
+
+  use time_dependent_input, only: [array_name] 
+
+
+4. Other files of note
+  a. input/grid/*.grd
+    Various stretched grid types can be defined and used in this directory.
+
+  b. input/stats/*.in
+    New statistical output must be setup in the code and then added to one of
+    these files to be used. The file all_stats.in is generally used by
+    default.

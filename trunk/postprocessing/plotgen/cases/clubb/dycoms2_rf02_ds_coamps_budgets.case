@@ -1,0 +1,152 @@
+# DYCOMS II RF02 DS BUDGETS Case File
+
+%CASE =
+(
+    'name' => 'dycoms2_rf02_ds_coamps_budgets',
+    'enabled' => 'true',
+    'type' => 'budget',
+    'headerText' => 'DYCOMS II RF02 DS COAMPS BUDGETS Minutes 301-360',
+    'startTime' => 301.0,  # [minutes]
+    'endTime' => 360.0,    # [minutes]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 1200.0, # [m]
+
+    'plots' =>
+    [
+       {'plotTitle' => 'thlm budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_bt', 'expression' => 'th_bt - (2490 ./ ex0) .* qc_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_ha', 'expression' => 'th_ha - (2490 ./ ex0) .* qc_ha', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_va', 'expression' => 'th_va - (2490 ./ ex0) .* qc_va', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_ta', 'expression' => 'th_xa - (2490 ./ ex0) .* qc_xa + th_ya - (2490 ./ ex0) .* qc_ya + th_za - (2490 ./ ex0) .* qc_za + th_da - (2490 ./ ex0) .* qc_da + th_hm - (2490 ./ ex0) .* qc_hm + th_vm - (2490 ./ ex0) .* qc_vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_ls', 'expression' => 'th_ls - (2490 ./ ex0) .* qc_ls', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_lf', 'expression' => 'th_lf - (2490 ./ ex0) .* qc_lf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_nd', 'expression' => 'th_nd - (2490 ./ ex0) .* qc_nd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_mc', 'expression' => 'th_mc - (2490 ./ ex0) .* qc_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_rad', 'expression' => 'th_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_sd', 'expression' => 'th_sd - (2490 ./ ex0) .* qc_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_rd', 'expression' => 'th_rd - (2490 ./ ex0) .* qc_rd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlm\_residual', 'expression' => '(th_bt - (2490 ./ ex0) .* qc_bt) - ( (th_ha + th_va + th_xa + th_ya + th_za + th_da + th_hm + th_vm + th_ls + th_lf + th_nd + th_mc + th_rad) - (2490 ./ ex0) .* (qc_ha + qc_va + qc_xa + qc_ya + qc_za + qc_da + qc_hm + qc_vm + qc_ls + qc_lf + qc_nd + qc_mc + qc_sd + qc_rd) )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'qtm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_bt', 'expression' => 'qv_bt + qc_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_ha', 'expression' => 'qv_ha + qc_ha', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_va', 'expression' => 'qv_va + qc_va', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_ta', 'expression' => 'qv_xa + qc_xa + qv_ya + qc_ya + qv_za + qc_za + qv_da + qc_da + qv_hm + qc_hm + qv_vm + qc_vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_ls', 'expression' => 'qv_ls + qc_ls', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_lf', 'expression' => 'qv_lf + qc_lf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_nd', 'expression' => 'qv_nd + qc_nd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_mc', 'expression' => 'qv_mc + qc_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_pd1', 'expression' => 'qv_pd1 + qc_pd1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_pd2', 'expression' => 'qv_pd2 + qc_pd2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_pd3', 'expression' => 'qv_pd3 + qc_pd3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_pd4', 'expression' => 'qv_pd4 + qc_pd4', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtm\_residual', 'expression' => '(qv_bt + qc_bt) - ( (qv_ha + qv_va + qv_xa + qv_ya + qv_za + qv_da + qv_hm + qv_vm + qv_ls + qv_lf + qv_nd + qv_mc + qv_pd1 + qv_pd2 + qv_pd3 + qv_pd4) + (qc_ha + qc_va + qc_xa + qc_ya + qc_za + qc_da + qc_hm + qc_vm + qc_ls + qc_lf + qc_nd + qc_mc + qc_pd1 + qc_pd2 + qc_pd3 + qc_pd4) )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'wpthlp budgets', 'axisLabel' => '[(m K)/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_bt', 'expression' => 'wpthp_bt - (2490 ./ ex0) .* wpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_dp', 'expression' => 'wpthp_dp - (2490 ./ ex0) .* wpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_tp', 'expression' => 'wpthp_tp - (2490 ./ ex0) .* wpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_mc', 'expression' => 'wpthp_mc - (2490 ./ ex0) .* wpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_rad', 'expression' => 'wpthp_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_pr', 'expression' => 'wpthp_pr - (2490 ./ ex0) .* wpqcp_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_bp', 'expression' => 'wpthp_bp - (2490 ./ ex0) .* wpqcp_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpthlp\_residual', 'expression' => 'wpthp_rs - (2490 ./ ex0) .* wpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'wpqtp budgets', 'axisLabel' => '[(m kg)/(s^2 kg)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_bt', 'expression' => 'wpqvp_bt + wpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_dp', 'expression' => 'wpqvp_dp + wpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_tp', 'expression' => 'wpqvp_tp + wpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_mc', 'expression' => 'wpqvp_mc + wpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_pr', 'expression' => 'wpqvp_pr + wpqcp_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_bp', 'expression' => 'wpqvp_bp + wpqcp_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wpqtp\_residual', 'expression' => 'wpqvp_rs + wpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'wp2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_bt', 'expression' => 'wp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_dp', 'expression' => 'wp2_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_tp', 'expression' => 'wp2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_pr', 'expression' => 'wp2_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_bp', 'expression' => 'wp2_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp2\_residual', 'expression' => 'wp2_bt - (wp2_dp + wp2_tp + wp2_pr + wp2_bp)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'wp3 budgets', 'axisLabel' => '[m^3/s^4]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_bt', 'expression' => 'wp3_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_dp', 'expression' => 'wp3_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_tp', 'expression' => 'wp3_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_pr', 'expression' => 'wp3_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_bp', 'expression' => 'wp3_bp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sw.ctl', 'type' => 'auto', 'name' => 'wp3\_residual', 'expression' => 'wp3_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'thlp2 budgets', 'axisLabel' => '[(K^2)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_bt', 'expression' => 'thp2_bt + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_bt - 2 .* (2490 ./ ex0) .* thpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_dp', 'expression' => 'thp2_dp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_dp - 2 .* (2490 ./ ex0) .* thpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_tp', 'expression' => 'thp2_tp + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_tp - 2 .* (2490 ./ ex0) .* thpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_mc', 'expression' => 'thp2_mc + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_mc - 2 .* (2490 ./ ex0) .* thpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_rad', 'expression' => 'thp2_rad - 2 .* (2490 ./ ex0) .* thpqcp_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'thlp2\_residual', 'expression' => 'thp2_rs + ((2490 ./ ex0) .* (2490 ./ ex0)) .* qcp2_rs - 2 .* (2490 ./ ex0) .* thpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'qtp2 budgets', 'axisLabel' => '[(kg^2)/(kg^2s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtp2\_bt', 'expression' => 'qvp2_bt + qcp2_bt + 2 .* qvpqcp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtp2\_dp', 'expression' => 'qvp2_dp + qcp2_dp + 2 .* qvpqcp_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtp2\_tp', 'expression' => 'qvp2_tp + qcp2_tp + 2 .* qvpqcp_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtp2\_mc', 'expression' => 'qvp2_mc + qcp2_mc + 2 .* qvpqcp_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtp2\_residual', 'expression' => 'qvp2_rs + qcp2_rs + 2 .* qvpqcp_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'qtpthlp budgets', 'axisLabel' => '[(kg K)/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_bt', 'expression' => 'thpqvp_bt - (2490 ./ ex0) .* qvpqcp_bt + thpqcp_bt - (2490 ./ ex0) .* qcp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_dp', 'expression' => 'thpqvp_dp - (2490 ./ ex0) .* qvpqcp_dp + thpqcp_dp - (2490 ./ ex0) .* qcp2_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_tp', 'expression' => 'thpqvp_tp - (2490 ./ ex0) .* qvpqcp_tp + thpqcp_tp - (2490 ./ ex0) .* qcp2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_mc', 'expression' => 'thpqvp_mc - (2490 ./ ex0) .* qvpqcp_mc + thpqcp_mc - (2490 ./ ex0) .* qcp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_rad', 'expression' => 'thpqvp_rad + thpqcp_rad', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'qtpthlp\_residual', 'expression' => 'thpqvp_rs - (2490 ./ ex0) .* qvpqcp_rs + thpqcp_rs - (2490 ./ ex0) .* qcp2_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'up2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_bt', 'expression' => 'up2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_dp', 'expression' => 'up2_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_tp', 'expression' => 'up2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_sh', 'expression' => 'up2_sh', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_pr', 'expression' => 'up2_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'up2\_residual', 'expression' => 'up2_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'vp2 budgets', 'axisLabel' => '[m^2/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_bt', 'expression' => 'vp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_dp', 'expression' => 'vp2_dp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_tp', 'expression' => 'vp2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_sh', 'expression' => 'vp2_sh', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_pr', 'expression' => 'vp2_pr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'auto', 'name' => 'vp2\_residual', 'expression' => 'vp2_rs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

@@ -1,0 +1,10 @@
+! $Id$
+! Declare any cases that should be run with run_scm_all.bash and 
+! run_bindiff_all.bash. Any blank lines and lines starting with '!' will
+! be ignored.
+
+dycoms2_rf02_do
+rico
+arm_97
+lba
+twp_ice

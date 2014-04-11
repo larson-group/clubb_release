@@ -1,0 +1,296 @@
+# ARM97 SAM-CLUBB Case File
+
+%CASE = 
+(
+    'name' => 'ARM97_SAM_Standalone',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'ARM97 Hours 72-93',
+    'startTime' => 4320.0,  # [minutes]
+    'endTime' => 5580.0,    # [minutes]
+    'startHeight' => 0.0,   # [m]
+    'endHeight' => 18000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thetal [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm / qt [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QT-QI) / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+	{'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Liquid Fraction', 'axisLabel' => '[%/100]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloudliq_frac_em6 ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm / qcl [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QCL / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2 + W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2 + THLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QT2 / 1e+6) + RTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um / u [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Meridonal Wind Component, v', 'axisLabel' => 'vm / v [m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW + VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UP2 + U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VP2 + V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+      
+       # Rain Water Mixing Ratio
+       {'plotTitle' => 'Rain Water Mixing Ratio', 'axisLabel' => 'qrm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QR / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Water Mixing Ratio in Rain', 'axisLabel' => 'qrm\_ip [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrainm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Rain Water Mixing Ratio', 'axisLabel' => 'qrp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrainp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-rain Variance of Rain Water Mixing Ratio', 'axisLabel' => 'qrp2\_ip / qrm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qrainp2_ip ./ (max(1e-5,qrainm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Rain Drop Number Concentration
+       {'plotTitle' => 'Rain Drop Concentration', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NR * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Rain Drop Concentration in Rain', 'axisLabel' => 'Nrm\_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nrainm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Rain Drop Concentration', 'axisLabel' => 'Nrp2 [(num/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nrainp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-rain Variance of Rain Drop Concentration', 'axisLabel' => 'Nrp2\_ip / Nrm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nrainp2_ip ./ (max(1e-5,nrainm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Cloud Droplet Number Concentration
+       {'plotTitle' => 'Cloud Droplet Number Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NC * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Droplet Number Concentration in Cloud', 'axisLabel' => 'Ncm\_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudliqm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Cloud Droplet Number Concentration', 'axisLabel' => 'Ncp2 [(#/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudliqp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-cloud Variance of Cloud Droplet Number Concentration', 'axisLabel' => 'Ncp2\_ip / Ncm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudliqp2_ip ./ (max(1e-5,ncloudliqm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Graupel Number Concentration
+       {'plotTitle' => 'Graupel Number Concentration', 'axisLabel' => 'Ngm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NG * 1e+6) ./ RHO ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Number Concentration in Graupel', 'axisLabel' => 'Ngm\_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ngraupelm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Graupel Number Concentration', 'axisLabel' => 'Ngp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ngraupelp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-graupel Variance of Graupel Number Concentration', 'axisLabel' => 'Ngp2\_ip / Ngm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ngraupelp2_ip ./ (max(1e-5,ngraupelm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Graupel Mixing Ratio
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Graupel Mixing Ratio in Graupel', 'axisLabel' => 'qgm\_ip [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qgraupelm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Graupel Mixing Ratio', 'axisLabel' => 'qgp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qgraupelp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-graupel Variance of Graupel Mixing Ratio', 'axisLabel' => 'qgp2\_ip / qgm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qgraupelp2_ip ./ (max(1e-5,qgraupelm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Cloud Ice Mixing Ratio
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'qim [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QI / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Mixing Ratio in Cloud Ice', 'axisLabel' => 'qim\_ip [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qcloudicem_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Mixing Ratio', 'axisLabel' => 'qip2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qcloudicep2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice  Mixing Ratio', 'axisLabel' => 'qip2\_ip / qim\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qcloudicep2_ip ./ (max(1e-5,qcloudicem_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Cloud Ice Number Concentration
+       {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NI * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Number Concentration in Cloud Ice', 'axisLabel' => 'Ni\_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudicem_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Cloud Ice Number Concentration', 'axisLabel' => 'Nip2 [(num/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ncloudicep2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-cloud-ice Variance of Cloud Ice Number Concentration', 'axisLabel' => 'Nip2\_ip / Nim\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(ncloudicep2_ip ./ (max(1e-5,ncloudicem_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Snow Mixing Ratio
+       {'plotTitle' => 'Snow Mixing Ratio ', 'axisLabel' => 'qsm [kg/kg]', 'type' => 'profile', 'lines' =>
+       [  
+        {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QS / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Mixing Ratio in Snow', 'axisLabel' => 'qsm\_ip [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsnowm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Snow Mixing Ratio', 'axisLabel' => 'qsp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsnowp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-snow Variance of Snow Mixing Ratio', 'axisLabel' => 'qsp2\_ip / qsm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(qsnowp2_ip ./ (max(1e-5,qsnowm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+       #Snow Number Concentration
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Number Concentration in Snow', 'axisLabel' => 'Nsm\_ip [num/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowm_ip', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Domain-wide Variance of Snow Number Concentration', 'axisLabel' => 'Nsp2 [(#/kg)^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsnowp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Within-snow Variance of Snow Number Concentration', 'axisLabel' => 'Nsp2\_ip / Nsm\_ip^2 [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(nsnowp2_ip ./ (max(1e-5,nsnowm_ip).^2))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'Micro Fractions', 'axisLabel' => '[%/100]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'Cloud\_liq', 'expression' => 'cloudliq_frac_em6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'Rain', 'expression' => 'rain_frac_em6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'Cloud\_ice', 'expression' => 'cloudice_frac_em6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'Snow', 'expression' => 'snow_frac_em6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'Graupel', 'expression' => 'graupel_frac_em6', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Buoyancy flux', 'axisLabel' => 'wpthvp / tlflux [K m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       
+
+       {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'NS .* 0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'IWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Snow Water Path', 'axisLabel' => 'swp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'ARM9707.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'SWP / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)

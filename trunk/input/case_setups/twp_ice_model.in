@@ -1,0 +1,218 @@
+! $Id$
+! Parameter file for the TWP_ICE case
+
+&model_setting
+
+! Model Settings
+
+runtype = "twp_ice" ! Case name.
+
+! For grid_type = 1 nzmax can be any nunber
+!nzmax = 108       ! Number of vertical levels.  ! For grid_type = 3.
+nzmax = 128       ! Number of vertical levels.  ! For grid_type = 2.
+
+grid_type = 2    ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 200.0   ! Distance between grid levels on evenly-spaced grid.      [m]
+zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
+zm_top = 28625.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../run_scripts/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = ''
+
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../run_scripts/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+zm_grid_fname = ''
+
+
+day   = 19     ! Day of model start (1 to 31).
+month = 1     ! Month of model start (1 to 12).
+year  = 2006  ! Year of model start.
+
+rlat = -12.425   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = 130.891  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
+
+time_initial = 10800.0  ! Model start time [seconds since midnight on start date]
+!The line below is used for submission, the shorter run is for comparison with LES
+!time_final = 2160000.0  ! Model end time [seconds since midnight on start date]
+!time_final = 1296000.0
+time_final = 604800.0
+
+
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 1800.0   ! Radiation timestep [s] 
+
+sfctype = 1      ! Select surface scheme (cases without specified surface fluxes).
+                 ! 0 ==> fixed surface sensible and latent heat fluxes,
+                 !       as defined by sens_ht and latent_ht, respectively.
+                 ! 1 ==> determine surface sensible and latent heat fluxes 
+                 !       through a bulk formula that uses the given surface 
+                 !       temperature (T_sfc) and assumes over ocean.
+
+!p_sfc = 978.9e2   ! Pressure at model base              [Pa]
+p_sfc = 1004.4e2   ! Pressure at model base              [Pa]
+fcor = -3.1379e-5  ! Coriolis parameter                  [s^-1]
+T0   = 300.      ! Reference temperature (usually 300) [K]
+
+! Select saturation formula (flatau or bolton)
+! flatau is default
+saturation_formula = "flatau"
+
+ts_nudge = 7200  ! Timescale of u/v nudging            [s]
+
+l_t_dependent = .true. ! Read values from _surface.in file. Also read 
+                       ! _forcings.in file if l_ignore_forcings = .false.
+
+
+l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
+
+sclr_dim = 0 
+
+! Sponge Damping
+!
+! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]
+! tau_sponge_damp_max : Maximum damping time-scale (base of damping layer) [s]
+! sponge_damp_depth   : damping depth as a fraction of domain height [-]
+!
+thlm_sponge_damp_settings%l_sponge_damping = .false.
+thlm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+thlm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+thlm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+rtm_sponge_damp_settings%l_sponge_damping = .false.
+rtm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+rtm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+rtm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+uv_sponge_damp_settings%l_sponge_damping = .false.
+uv_sponge_damp_settings%tau_sponge_damp_min = 60. 
+uv_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+uv_sponge_damp_settings%sponge_damp_depth = 0.25
+
+l_restart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../run_scripts/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
+restart_path_case = "restart/twp_ice"
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
+
+! Select debug level:
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
+debug_level   = 2
+
+l_prescribed_avg_deltaz = .false.
+
+l_input_fields = .true.
+/
+
+&gfdl_activation_setting
+
+/
+
+&microphysics_setting
+! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
+! "coamps", "simplified_ice", or "none"
+micro_scheme = "morrison"
+l_ice_micro = .true.
+l_graupel = .true.
+
+l_predictNc = .false.
+l_const_Nc_in_cloud = .true.
+
+
+l_var_covar_src = .true.
+
+
+LH_microphys_type = "interactive",
+l_lh_vert_overlap = .true.,
+l_lh_cloud_weighted_sampling = .true.,
+LH_microphys_calls = 16,
+LH_sequence_length = 1,
+l_fix_s_t_correlations = .true.,
+
+rr_sigma2_on_mu2_ip_cloud = 4.0
+Nr_sigma2_on_mu2_ip_cloud = 2.0
+
+rs_sigma2_on_mu2_ip_cloud = 1.0
+Ns_sigma2_on_mu2_ip_cloud = 0.5
+ri_sigma2_on_mu2_ip_cloud = 1.0
+Ni_sigma2_on_mu2_ip_cloud = 0.5
+rg_sigma2_on_mu2_ip_cloud = 1.0
+Ng_sigma2_on_mu2_ip_cloud = 0.5
+
+rr_sigma2_on_mu2_ip_below = 4.0
+Nr_sigma2_on_mu2_ip_below = 2.0
+
+rs_sigma2_on_mu2_ip_below = 1.0
+Ns_sigma2_on_mu2_ip_below = 0.5
+ri_sigma2_on_mu2_ip_below = 1.0
+Ni_sigma2_on_mu2_ip_below = 0.5
+rg_sigma2_on_mu2_ip_below = 1.0
+Ng_sigma2_on_mu2_ip_below = 0.5
+
+
+/
+
+&radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
+rad_scheme = "none",
+l_sw_radiation = .true.
+radiation_top = 38000. ! Height of profile used for radiation [m]
+
+! Flag indicating if U.S. Std Atmosphere should 
+! be used to extend the grid in radiation.
+! If false, sounding data will be used.
+l_use_default_std_atmosphere = .false. 
+
+/
+
+&stats_setting
+
+! Statistics Settings
+
+l_stats      = .true.       ! Flag for statistical output.
+fname_prefix = "twp_ice"    ! Prefix of output filename.
+stats_tsamp  = 60.         ! Frequency of statistical sampling [s]
+                            ! For most complete sampling, let 
+                            ! stats_tsamp = dt_main
+                            ! (stats_tsamp must multiply evenly into stats_tout)
+stats_tout   = 3600.        ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"      ! Type of statistical output file ("grads" or "netcdf").
+
+/
+
+
+&scalar_sounding
+/
+&setfields
+
+datafile = '/home/storer/newbenchmarks/TWPICE.nc'
+
+input_type = 'sam'
+
+l_input_radht = .true.
+/
+
+

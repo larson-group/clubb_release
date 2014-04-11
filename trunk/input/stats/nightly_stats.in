@@ -1,0 +1,20 @@
+&statsnl
+vars_zt =
+'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
+'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
+'Ncm', 'Nc_in_cloud', 'rgraupelm', 'ricem', 'Nim',
+'rsnowm', 'Nsnowm','Lscale', 'radht', 'corr_sw', 'corr_wrr', 'corr_wNr',
+'corr_wNcn', 'corr_srr', 'corr_sNr', 'corr_sNcn', 'corr_rrNr', 'precip_frac', 'ice_supersat_frac'
+''
+
+vars_zm =
+'wp2', 'rtp2', 'thlp2', 'rtpthlp', 'wprtp', 'wpthlp', 'tau_zm',
+'upwp', 'vpwp', 'up2', 'vp2', 'wpthvp', 'wprcp', 'rc_coef', 'thlprcp', 'rtprcp',
+'wprrp', 'wpNrp',
+''
+
+vars_sfc =
+'wp2_vert_avg', 'lwp', 'swp', 'iwp', 'rwp',
+'precip_rate_sfc',
+''
+/

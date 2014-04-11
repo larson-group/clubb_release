@@ -1,0 +1,94 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            tvqr.f
+C DESCRIPTION:		  compute terminal velocity of raindrops
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  tvqr(qr,fallv,prbm,rbm,pcut,p00,sloper,m,n,npts,kk)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C kk			integer	input 	number of sigma levels
+C m			integer	input 	x-dimension of grid
+C n			integer	input 	y-dimension of grid
+C npts			integer	input	number of grid points
+C fallv(m,n,kk)		real	output	fall velocity of raindrops
+C p00			real	input	reference pressure (1000 mb)
+C pcut			real	input	lowest allowable mixing ratio of
+C					cloud droplets, ice crystals,
+C					snowflakes, and raindrops
+C prbm(m,n,kk)		real	input	pressure of reference state at
+C					mass levels
+C qr(m,n,kk)		real	input	rain drops at each grid point
+C					and sigma level
+C rbm(m,n,kk)		real	input	density of reference state at
+C					mass levels
+C sloper		real	input	slope factor for rain
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	loop index
+C k			integer	loop index
+C ainvsf		real	inverse slope factor
+C ex1			real	local constant = 0.4
+C pfact			real	pressure factor
+C tvr1			real	local constant = 0.267
+C tvr2			real	local constant = 206.0
+C tvr3			real	local constant = 2045.0
+C tvr4			real	local constant = 9060.0
+C x5			real	fall speed multiplied by pressure factor
+C x6			real	slope factor for rain divided by 
+C				density of reference state multiplied by
+C				rain drops at that grid point-level
+C	
+C METHOD:	
+C	   loop over every grid point at each level
+C	   if the mixing ratio of raindrops does not exeed cutting level
+C	   then set fall velocity to zero
+C	   else if mixing ratio of raindrops exceeds cutting level
+C	   calculate fall velocity
+C	   return at end of loop
+C INCLUDE FILES:          tvqr.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

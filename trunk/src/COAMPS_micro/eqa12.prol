@@ -1,0 +1,100 @@
+C.............................START PROLOGUE............................
+C
+C SCCS IDENTIFICATION:   %W% %G%
+C                        %U% %P%
+C
+C CONFIGURATION IDENTIFICATION:  Version 4.0
+C
+C MODULE NAME:            eqa12.f
+C DESCRIPTION:		  compute evaporation of falling raindrops
+C
+C COPYRIGHT:              (c) 1994 FLENUMMETOCCEN
+C                         U.S. GOVERNMENT DOMAIN
+C                         ALL RIGHTS RESERVED
+C CONTRACT NUMBER
+C    AND TITLE:
+C REFERENCES:             None
+C CLASSIFICATION:         Unclassified
+C RESTRICTIONS:           None
+C COMPUTER/OPERATING
+C    SYSTEM DEPENDENCIES: None
+C
+C LIBRARIES OF RESIDENCE:
+C    /a/ops/lib/coampslib.a
+C
+C USAGE:
+C call  eqa12(qr,qv,qsatv,rho,sr,pt,apbp
+C                  ,w1,w2,w3,prevp,pi,rnzero,apr
+C                  ,pcut,visair,gm3,len)
+C
+C PARAMETERS:
+C Name			Type	Usage	Description
+C -----------		------	------	-----------
+C len			integer	input	dimension of input/output arrays
+C apbp(len)		real	input	work array
+C apr			real	input	coefficient in polynimal fallspeed
+C gm3			real	input	result of producing the gamma function
+C pcut			real	input	lowest allowable mixing ratio of
+C					cloud droplets, ice crystals,
+C					snowflakes, and raindrops
+C pi			real	input	constant for pi
+C prevp(len)		real	output	evaporation of raindrops
+C pt(len)		real	input	terrain pressure
+C qr(len)		real	input	rain drops at each grid point
+C					and sigma level
+C qsatv(m,kk)           real    input	saturation vapor pressure with respect
+C                                       to water vapor
+C qv(len)		real	input	water vapor at each grid point
+C					for each sigma level
+C rho(len)              real    input   density
+C rnzero		real    input	intercept value in raindrop size	
+C sr(len)               real    input   slope factor for rain
+C visair		real	input	dynamic vicosity of air
+C w1(len)		real	input (NOT USED)w wind component at each grid
+C					point for each sigma leve at 
+C					t - delt
+C w2(len)		real	input (NOT USED)w wind component at each grid
+C					point for each sigma leve at t
+C w3(len)		real	input (NOT USED)w wind component at each grid
+C					point for each sigma leve at 
+C					t + delt
+C	
+C COMMON BLOCKS:          None
+C			
+C FILES:                  None
+C DATA BASES:             None
+C NON-FILE INPUT/OUTPUT:  None
+C ERROR CONDITIONS:       None
+C ADDITIONAL COMMENTS:    None
+C
+C...................... MAINTENANCE SECTION ..............................
+C
+C MODULES CALLED:         None
+C
+C LOCAL VARIABLES AND
+C            STRUCTURES:	
+C Name			Type	Description	
+C -------------------	------	-----------	
+C i			integer	loop index
+C tp1			real	local constant = .78
+C tp2			real	local constant = .31*gm3
+C tp3			real	local constant = apr/visair
+C tp4			real	local constant = 2.0*pi*rnzero
+C z1                    real    temporary variable
+C z2                    real    temporary variable
+C z3                    real    temporary variable
+C	
+C METHOD:	
+C
+C	use method of rutledge and hobbs (mwr vol 40, 1983, pp 1185-1206)	
+C
+C INCLUDE FILES:          eqa12.f.pro
+C	
+C COMPILER DEPENDENCIES:  FORTRAN 77	
+C COMPILE OPTIONS:        -Zu -wd"dO"-Wf"-em -o aggress"	
+C MAKEFILE:	
+C     /a/ops/src/met/coamps/src/sub/makefile	
+C	
+C  RECORD OF CHANGES:	
+C    NONE	
+C........................ END PROLOGUE ...................................	

@@ -1,0 +1,180 @@
+CHANGES MADE TO WRF CODE FOR HOC PARAMETERIZATION
+=================================================
+
+Brian Griffin.  September 20, 2006.
+
+NOTE #1:  The files below are listed in a format such as abcdefg.F(.zzzz)
+          This means that my "command file" is abcdefg.F.zzzz (ignore other
+          files by the same name but with different extensions).  The
+          abcdefg.F is identical to the abcdefg.F.zzzz file.  You can look
+          at either one.  However, the abcdefg.F file is what the compiler 
+          reads.
+
+NOTE #2:  For any of these source files (with the exceptions of the ones I
+          created myself), you can find the changes I made by doing a query
+          for my name -- Brian.  The files that I created myself were: 
+          1)  module_bl_newhoc.F(.backup)
+          2)  module_cu_GCSS.F(.backup)
+          3)  module_quadratic.F(.hoc)
+
+
+Directory:  WRFV2/
+
+ 1)  configure.wrf.backup.pgi5.x
+
+     After WRF has been downloaded and configured, it will generate a
+     configure.wrf file to be used for compilation.  However, this file
+     must be edited to allow for reference to HOC src code and HOC
+     libraries.  See the file for details.
+
+
+Directory:  WRFV2/phys/
+
+ 1)  module_bl_newhoc.F(.backup)
+
+     This is the WRF interface file for the HOC parameterization.  This is the
+     file that I had previously sent to you.  It has been updated with some new
+     commenting and some slightly changed code, so you should look this one
+     through again.
+
+ 2)  module_pbl_driver.F(.hoc)
+
+     This is the WRF file that calls various PBL parameterizations, including
+     the HOC parameterization.  Note that there is an OLD HOC parameterization
+     from two years ago included in the file.  I have clearly marked it and
+     have commented out the code.  We are only interested in NEW HOC.
+
+ 3)  module_cu_GCSS.F(.backup)
+
+     This file contains the forcing information (large-scale subsidence, 
+     large-scale advective tendencies, radiative cooling, etc.) for the GCSS
+     cases which I have installed in WRF code.
+
+ 4)  module_cumulus_driver.F(.cases.hoc)
+
+     This is the WRF file that calls various cumulus parameterizations.
+     However, the code for the various GCSS test cases is also included
+     amongst these.  Read the comments.
+
+ 5)  module_quadratic.F(.hoc)
+
+     This module was added to the code by me in order to find a derivative
+     at any interior point by running a quadratic line through three
+     successive points.  The derivative of that quadratic line can then be
+     taken.  It is only referenced from my GCSS codes.
+
+ 6)  module_physics_addtendc.F(.cases.hoc)
+
+     This is code that must be updated anytime you add a new parameterization 
+     to the WRF physics code.  Look at my changes.  The OLD HOC code is also
+     pointed out and commented out.
+
+ 7)  module_physics_init.F(.cases.hoc)
+
+     This code must also be updated anytime you add a new parameterization to
+     the WRF physics code.  It deals only with initialization.  Again, the
+     OLD HOC code is pointed out and commented out.
+
+ 8)  module_radiation_driver.F(.cases)
+
+     A small change was made to this file in order to be able to run a certain
+     longwave scheme while opting for no shortwave scheme.
+
+ 9)  module_ra_rrtm.F(.cases)
+
+     A small, insignificant change was made to this file.
+
+10)  Makefile(.cases.hoc)
+
+     Had to be altered to add new files for compilation.
+
+NOTE:  Ignore files such as module_bl_hoc.F, module_bl_outputgrads.F,
+       module_bl_outputfile.F, and filesfc.h, filezt.h, and filezm.h.
+       These files deal either with the old version of WRF-HOC, or with
+       the stats options in HOC that I don't yet have implemented in 
+       WRF-HOC.
+
+
+Directory:  WRFV2/dyn_em/
+
+ 1)  solve_em.F(.pd.cases.hoc)
+
+     Had to be altered simply for purposes of passing variables.
+
+ 2)  start_em.F(.cases.hoc)
+
+     Had to be altered simply for purposes of passing variables.
+
+ 3)  module_advect_em.F(.pd)
+
+     We were given a positive definite scalar advection scheme by Bill Skamarock
+     at NCAR.  This was done in order to prevent a problem we were having in
+     some of our LES simulations, where we were getting negative values of cloud
+     water mixing ratio after WRF advected the quantity around.  The unfortunate
+     part about having this code included is that WRF cannot be run in parallel
+     as a result.  It must be run in single-processor mode.
+
+ 4)  module_big_step_utilities.F(.cases)
+
+     This file had to be altered for our GCSS cases.  We needed to add code
+     to perturbation_coriolis and to phy_prep.
+
+ 5)  module_diffusion_em.F(.cases)
+
+     This file also had to be altered for our GCSS cases.  The subroutine
+     vertical_diffusion_2 is where surface fluxes are set (w'thl', w'rt',
+     u'w', v'w').  I added a subroutine in order to provide the aforementioned
+     subroutine with the appropriate information from each specific GCSS
+     case.  I also added many diagrams of the Arakawa-C grid, which is the
+     grid used by WRF.
+
+ 6)  module_em.F(.pd.cases)
+
+     This file needed to be altered for a variety of small reasons.  Some
+     variables needed to be passed through it, the pert_coriolis option
+     had to be hard-wired to .true., and I needed to alter update_phy_ten.
+
+ 7)  module_initialize_quarter_ss.F(.cases.hoc)
+
+     This file had to be altered for many reasons.  I needed to set
+     case-specific values of the coriolis parameter.  I needed to provide
+     information on initial perturbations in theta, moisture, and wind for
+     any test cases (these initial perturbations are not used in WRF-HOC
+     interface).  I needed to provide information on initial subgrid TKE.
+     I also needed to provide for initial theta-l, rt, and rc for an
+     initially saturated profile.
+
+
+Directory:  WRFV2/Registry/
+
+ 1)  Registry.EM(.cases.hoc)
+
+     This file needed to be altered to allow for new WRF state variables.
+     This was needed for GCSS cases, as well as for the HOC parameterization.
+     Also, new packages needed to be added near the bottom for cu_physics 
+     (GCSS cases), bl_pbl_physics (HOC), and mp_physics (passiveqvqcqr).
+
+
+Directory:  WRFV2/share/
+
+ 1)  module_model_constants.F(.cases)
+
+     Some small changes suggested by Bill Skamarock.
+
+ 2)  module_bc.F(.cases)
+
+     A minor boundary change.
+
+
+Directory:  WRFV2/test/em_quarter_ss/
+
+ 1)  namelist.input(.yyyyyhoc)
+
+     Case-specific namelists (be careful to used namelists ending in "hoc",
+     rather than the LES counterparts).
+
+ 2)  input_sounding(_yyyyy)
+
+     Case-specific input soundings.
+
+

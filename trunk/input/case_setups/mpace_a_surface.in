@@ -1,0 +1,8 @@
+! $Id$
+!
+! Note that T_sfc is included here, but it is not currently used. It is
+! included here to facilitate a transition to using T_sfc in the future
+! if needed.
+Time[s]        T_sfc[K]
+50400.00       271.7528
+309600.00000   271.7528

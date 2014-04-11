@@ -1,0 +1,173 @@
+! $Id$
+! Parameter file for June 25 altocumulus case
+
+&model_setting
+
+! Model Settings
+
+runtype = "jun25_altocu" ! Case name.
+
+! For grid_type = 1 nzmax can be any nunber
+nzmax = 201       ! Number of vertical levels.
+
+grid_type = 1     ! Select grid type:
+                  ! 1 ==> evenly-spaced grid levels.
+                  ! 2 ==> stretched (unevenly-spaced) grid
+                  !       entered on thermodynamic grid levels;
+                  !       mom. levels halfway between thermo. levels
+                  !       (style of SAM stretched grid).
+                  ! 3 ==> stretched (unevenly-spaced) grid
+                  !       entered on momentum grid levels;
+                  !       thermo. levels halfway between mom. levels
+                  !       (style of WRF stretched grid).
+
+! Evenly-spaced grid (grid_type = 1).
+! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
+deltaz  = 12.5 ! Distance between grid levels on evenly-spaced grid. [m]
+zm_init = 4808.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
+zm_top = 7810.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+
+! Stretched grid on thermodynamic levels (grid_type = 2).
+! Path (from ../run_scripts/) and filename of data file that contains
+! thermodynamic level altitudes (in meters).
+! Note:  For this option, zm_grid_fname must be ''.
+zt_grid_fname = ''
+
+! Stretched grid on momentum levels (grid_type = 3).
+! Path (from ../run_scripts/) and filename to data file that contains
+! momentum level altitudes (in meters).
+! Note:  For this option, zt_grid_fname must be ''.
+zm_grid_fname = ''
+
+day   = 25    ! Day of model start (1 to 31).
+month = 06    ! Month of model start (1 to 12).
+year  = 1996  ! Year of model start.
+
+rlat = 38.0    ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -96.40  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+
+sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
+
+time_initial = 35799.1 ! Model start time [GMT, seconds since midnight on start date]
+time_final   = 71799.1 ! Model end time [GMT, seconds since midnight on start date]
+
+
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 60.0   ! Radiation timestep [s] 
+
+p_sfc = 574.87e2    ! Pressure at model base              [Pa]
+
+fcor = 8.9763e-5   ! Coriolis parameter                  [s^-1]
+T0   = 300.        ! Reference temperature (usually 300) [K]
+
+l_t_dependent  = .true ! Read values from _surface.in file. Also read
+                       ! _forcings.in file if 
+
+
+! Sponge Damping
+!
+! tau_sponge_damp_min : Minimum damping time-scale ( at the top0 [s]
+! tau_sponge_damp_max : Maximum damping time-scale (base of damping layer) [s]
+! sponge_damp_depth   : damping depth as a fraction of domain height [-]
+!
+thlm_sponge_damp_settings%l_sponge_damping = .false.
+thlm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+thlm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+thlm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+rtm_sponge_damp_settings%l_sponge_damping = .false.
+rtm_sponge_damp_settings%tau_sponge_damp_min = 60. 
+rtm_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+rtm_sponge_damp_settings%sponge_damp_depth = 0.25
+
+uv_sponge_damp_settings%l_sponge_damping = .false.
+uv_sponge_damp_settings%tau_sponge_damp_min = 60. 
+uv_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+uv_sponge_damp_settings%sponge_damp_depth = 0.25
+
+l_restart      = .false.  ! Flag for whether this is a restart run.
+! Path (from ../run_scripts/) and filename of GrADS control files
+! (without '_zt.ctl' or '_zm.ctl').
+restart_path_case  = "restart/jun25_altocu"
+time_restart  = 0.0      ! Time of model restart.
+                         ! [seconds since start time listed in GrADS control file]
+
+! Select debug level:
+!        0 => Print no debug messages to the screen
+!        1 => Print lightweight debug messages, e.g. print statements
+!        2 => Print debug messages that require extra testing,
+!                e.g. checks for NaNs and spurious negative values.
+debug_level   = 2
+
+
+! Add scalars that are computed using higher-order closure
+! 0 to shut off all scalar computations
+! > 0 the specifies the number of columns in <runtype>_sclr_sounding.in 
+!	that will be read in and tracked
+sclr_dim   = 0  ! Total number of scalars
+
+iisclr_rt  = -1  ! Location in the array to place a scalar like total water
+iisclr_thl = -2 ! Location in the array to place a scalar like thetal
+
+sclr_tol  = 1.e-2, 1.e-8 ! Tolerances below which we consider scalar to be 0.
+
+! Add scalars that are computed using simple eddy diffusivity
+! 0 to shut off all scalar computations
+! > 0 the specifies the number of columns in <runtype>_edsclr_sounding.in 
+!	that will be read in and tracked
+edsclr_dim  = 0
+
+iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
+iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
+l_prescribed_avg_deltaz = .false.
+
+/
+
+&gfdl_activation_setting
+
+/
+
+&microphysics_setting
+! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
+! "coamps", "simplified_ice", "none"
+micro_scheme = "none"
+
+/
+
+&radiation_setting
+! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
+rad_scheme = "simplified",
+F0 = 107.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
+F1 = 61.0,    ! Coefficient for cloud base heating (see Stevens)[W/m^2] 
+kappa = 100., ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
+eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
+alvdr = 0.1,   ! Visible direct surface albedo        		[-]
+gc    = 0.85,  ! Asymmetry parameter, "g" in Duynkerke          [-]
+omega = 0.992, ! Single-scattering albedo                       [-] 
+! Cosine of the solar zenith angle	[-]
+cos_solar_zen_values = 0.0, 0.01, 0.1, 0.2, 0.3, 0.4,
+  0.5, 0.6, 0.7, 0.8, 0.9, 1.0,
+! The incident of incoming SW insolation at cloud top the
+! direction of the incoming beam (not the vertical)   [W/m^2]
+Fs_values = 0.0, 715.86, 1073.577, 1165.0905, 1204.7033, 1227.6898,
+  1243.1772, 1254.5893, 1263.5491, 1270.8668, 1277.0474, 1282.3994,
+l_sw_radiation = .true.,
+/
+
+&stats_setting
+
+! Statistics Settings
+
+l_stats       = .true.          ! Flag for statistical output.
+fname_prefix = "jun25_altocu"  ! Prefix of output filename.
+stats_tsamp  = 60.          ! Frequency of statistical sampling [s]
+                            ! For most complete sampling, let 
+                            ! stats_tsamp = dt_main
+                            ! (stats_tsamp must multiply evenly into stats_tout)
+stats_tout   = 60.             ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"         ! Type of statistical output file ("grads" or "netcdf").
+/
+
+
+
+
