@@ -1,0 +1,14 @@
+Details necessary to repeat the simulations from Storer et al. 2014:
+
+*  SAM files necessary for prescribing radiation in TWP-ICE and ARM97, and
+   for plotting comparisons with CLUBB-SILHS are available at:
+   http://www.larson-group.com/storer/
+
+*  SAM files should be placed in the SAMoutput directory within the trunk.
+
+*  Once the SAM files are in place, simply compile and run with ./run_scm_all, which
+   is set up to run only the 5 cases of interest.
+
+*  Case files referencing the new SAM data for plotting can be found in 
+   postprocessing/plotgen/cases/clubb/paper/
+

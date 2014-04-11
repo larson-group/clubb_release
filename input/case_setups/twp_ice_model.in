@@ -208,7 +208,7 @@ stats_fmt    = "grads"      ! Type of statistical output file ("grads" or "netcd
 /
 &setfields
 
-datafile = '/home/storer/newbenchmarks/TWPICE.nc'
+datafile = '../SAMoutput/TWPICE.nc'
 
 input_type = 'sam'
 

@@ -101,8 +101,6 @@ restart_path_case  = "restart/dycoms2_rf02_do"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
-l_input_fields = .false.,
-
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
@@ -212,14 +210,5 @@ stats_tout   = 60.                ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"            ! Type of statistical output file ("grads" or "netcdf").
 
 /
-&setfields
-
-datafile = '/home/storer/newbenchmarks/DYCOMS_RF02_DO.nc'
-
-input_type = 'sam'
-
-l_input_radht = .true.
-/
-
 
 

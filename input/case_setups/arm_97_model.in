@@ -209,7 +209,7 @@ stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf")
 
 &setfields
 
-datafile = '/home/storer/newbenchmarks/ARM9707.nc'
+datafile = '../SAMoutput/ARM9707.nc'
 
 input_type = 'sam'
 
