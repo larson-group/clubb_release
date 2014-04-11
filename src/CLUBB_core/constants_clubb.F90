@@ -284,13 +284,16 @@ module constants_clubb
     
 #endif
 
+  real( kind = core_rknd ), parameter, public :: & 
+    rho_ice = 917.0_core_rknd    ! Density of ice      [kg/m^3]
+
   ! Tolerances below which we consider moments to be zero
   real( kind = core_rknd ), parameter, public ::  & 
-    w_tol        = 2.e-2_core_rknd,  & ! [m/s]
-    thl_tol      = 1.e-2_core_rknd,  & ! [K]
-    rt_tol       = 1.e-8_core_rknd,  & ! [kg/kg]
-    s_mellor_tol = 1.e-8_core_rknd,  & ! [kg/kg]
-    t_mellor_tol = s_mellor_tol        ! [kg/kg]
+    w_tol        = 2.e-2_core_rknd, & ! [m/s]
+    thl_tol      = 1.e-2_core_rknd, & ! [K]
+    rt_tol       = 1.e-8_core_rknd, & ! [kg/kg]
+    s_mellor_tol = 1.e-8_core_rknd, & ! [kg/kg]
+    t_mellor_tol = s_mellor_tol       ! [kg/kg]
 
   ! Tolerances for use by the monatonic flux limiter.
   ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small
@@ -324,23 +327,49 @@ module constants_clubb
     Nc_tol  = 1.0E+2_core_rknd, & ! Tolerance value for N_c  [#/kg]
     Ncn_tol = 1.0E+2_core_rknd    ! Tolerance value for N_cn [#/kg]
 
-  ! Precipitating hydrometeor tolerances.
+  ! Precipitating hydrometeor tolerances for mixing ratios.
   real( kind = core_rknd ), parameter, public :: & 
-    rr_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_r [kg/kg]
-    ri_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_i [kg/kg]
-    rs_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_s [kg/kg]
-    rg_tol  = 1.0E-10_core_rknd, & ! Tolerance value for r_g [kg/kg]
-    Nr_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_r [#/kg]
-    Ni_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_i [#/kg]
-    Ns_tol  = 1.0E-10_core_rknd, & ! Tolerance value for N_s [#/kg]
-    Ng_tol  = 1.0E-10_core_rknd    ! Tolerance value for N_g [#/kg]
+    rr_tol = 1.0E-10_core_rknd, & ! Tolerance value for r_r [kg/kg]
+    ri_tol = 1.0E-10_core_rknd, & ! Tolerance value for r_i [kg/kg]
+    rs_tol = 1.0E-10_core_rknd, & ! Tolerance value for r_s [kg/kg]
+    rg_tol = 1.0E-10_core_rknd    ! Tolerance value for r_g [kg/kg]
+
+  ! Maximum allowable values for the average mean volume radius of the various
+  ! hydrometeor species.
+  real( kind = core_rknd ), parameter, public :: & 
+    mvr_rain_max    = 5.0E-3_core_rknd, & ! Max. avg. mean vol. rad. rain    [m]
+    mvr_ice_max     = 1.3E-4_core_rknd, & ! Max. avg. mean vol. rad. ice     [m]
+    mvr_snow_max    = 1.0E-2_core_rknd, & ! Max. avg. mean vol. rad. snow    [m]
+    mvr_graupel_max = 2.0E-2_core_rknd    ! Max. avg. mean vol. rad. graupel [m]
+
+  ! Precipitating hydrometeor tolerances for concentrations.
+  ! Tolerance value for N_r [#/kg]
+  real( kind = core_rknd ), parameter, public :: & 
+    Nr_tol = ( one / ( four_thirds * pi * rho_lw * mvr_rain_max**3 ) ) &
+             * rr_tol
+
+  ! Tolerance value for N_i [#/kg]
+  real( kind = core_rknd ), parameter, public :: & 
+    Ni_tol = ( one / ( four_thirds * pi * rho_ice * mvr_ice_max**3 ) ) &
+             * ri_tol
+
+  ! Tolerance value for N_s [#/kg]
+  real( kind = core_rknd ), parameter, public :: & 
+    Ns_tol = ( one / ( four_thirds * pi * rho_ice * mvr_snow_max**3 ) ) &
+             * rs_tol
+
+  ! Tolerance value for N_s [#/kg]
+  real( kind = core_rknd ), parameter, public :: & 
+    Ng_tol = ( one / ( four_thirds * pi * rho_ice * mvr_graupel_max**3 ) ) &
+             * rg_tol
 
   ! Minimum value for em (turbulence kinetic energy)
   ! If anisotropic TKE is enabled, em = (1/2) * ( up2 + vp2 + wp2 );
   ! otherwise, em = (3/2) * wp2.  Since up2, vp2, and wp2 all have
   ! the same minimum threshold value of w_tol_sqd, em cannot be less
   ! than (3/2) * w_tol_sqd.  Thus, em_min = (3/2) * w_tol_sqd.
-  real( kind = core_rknd ), parameter, public :: em_min = 1.5_core_rknd * w_tol_sqd  ! [m^2/s^2]
+  real( kind = core_rknd ), parameter, public :: &
+    em_min = 1.5_core_rknd * w_tol_sqd  ! [m^2/s^2]
 
   real( kind = core_rknd ), parameter, public ::  & 
     eps = 1.0e-10_core_rknd ! Small value to prevent a divide by zero
@@ -373,10 +402,10 @@ module constants_clubb
     pascal_per_mb = 100.0_core_rknd ! Pascals per Millibar
 
   real( kind = core_rknd ), parameter, public :: & 
-    cm3_per_m3   = 1.e6_core_rknd, & ! Cubic centimeters per cubic meter
-    micron_per_m = 1.e6_core_rknd, & ! Micrometers per meter
-    cm_per_m     = 100._core_rknd, & ! Centimeters per meter
-    mm_per_m     = 1000._core_rknd   ! Millimeters per meter  
+    cm3_per_m3   = 1.e6_core_rknd,  & ! Cubic centimeters per cubic meter
+    micron_per_m = 1.e6_core_rknd,  & ! Micrometers per meter
+    cm_per_m     = 100._core_rknd,  & ! Centimeters per meter
+    mm_per_m     = 1000._core_rknd    ! Millimeters per meter  
 
 !=============================================================================
 

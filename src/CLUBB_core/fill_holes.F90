@@ -826,11 +826,20 @@ module fill_holes
         time_precision
 
     use constants_clubb, only: &
-        zero, &
-        zero_threshold, &
-        Lv, &
-        Ls, &
-        Cp, &
+        pi,              &
+        four_thirds,     &
+        one,             &
+        zero,            &
+        zero_threshold,  &
+        Lv,              &
+        Ls,              &
+        Cp,              &
+        rho_lw,          &
+        rho_ice,         &
+        mvr_rain_max,    &
+        mvr_ice_max,     &
+        mvr_snow_max,    &
+        mvr_graupel_max, &
         fstderr
 
     use parameters_microphys, only: &
@@ -838,7 +847,15 @@ module fill_holes
         hydromet_tol
 
     use array_index, only: &
-        l_mix_rat_hm, & ! Variable(s)
+        iirrainm,     & ! Variable(s)
+        iiricem,      &
+        iirsnowm,     &
+        iirgraupelm,  &
+        iiNrm,        &
+        iiNim,        &
+        iiNsnowm,     &
+        iiNgraupelm,  &
+        l_mix_rat_hm, &
         l_frozen_hm
 
     use error_code, only: &
@@ -888,7 +905,8 @@ module fill_holes
     character( len = 10 ) :: hydromet_name
 
     real( kind = core_rknd ) :: &
-      max_velocity ! Maximum sedimentation velocity [m/s]
+      Nxm_min_coef, & ! Coefficient for min. mean value of a concentration [1/kg]
+      max_velocity    ! Maximum sedimentation velocity                     [m/s]
 
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
                ixrm_bt, ixrm_mc, iwpxrp
@@ -1015,29 +1033,33 @@ module fill_holes
                                           / real( dt, kind = core_rknd ), zt )
       endif
 
-      ! Store the previous value of the hydrometeor for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_begin_update( ixrm_cl, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
-      endif
+      ! Clipping for hydrometeor mixing ratios.
+      if ( l_mix_rat_hm(i) ) then
 
-      if ( any( hydromet(:,i) < zero_threshold ) ) then
+         ! Store the previous value of the hydrometeor for the effect of
+         ! clipping.
+         if ( l_stats_samp ) then
+            call stat_begin_update( ixrm_cl, &
+                                    hydromet(:,i) &
+                                    / real( dt, kind = core_rknd ), &
+                                    zt )
+         endif
 
-         ! Clip any remaining negative values of hydrometeors to 0.
-         ! This includes the case where the variable is a number
-         ! concentration and is therefore not conserved.
-         where ( hydromet(:,i) < zero_threshold )
-            hydromet(:,i) = zero_threshold
-         end where
+         if ( any( hydromet(:,i) < zero_threshold ) ) then
 
-      endif ! hydromet(:,i) < 0
+            ! Clip any remaining negative values of precipitating hydrometeor
+            ! mixing ratios to 0.
+            where ( hydromet(:,i) < zero_threshold )
+               hydromet(:,i) = zero_threshold
+            end where
 
-      ! Eliminate very small values in hydromet by setting them to zero
-      do k = 2, gr%nz, 1
+         endif ! hydromet(:,i) < 0
 
-         if ( hydromet(k,i) <= hydromet_tol(i) ) then
+         ! Eliminate very small values of mean precipitating hydrometeor mixing
+         ! ratios by setting them to 0.
+         do k = 2, gr%nz, 1
 
-            if ( l_mix_rat_hm(i) ) then
+            if ( hydromet(k,i) <= hydromet_tol(i) ) then
 
                rvm_mc(k) &
                = rvm_mc(k) &
@@ -1061,20 +1083,180 @@ module fill_holes
 
                endif ! l_frozen_hm(i)
 
-            endif ! l_mix_rat_hm(i)
+               hydromet(k,i) = zero
 
-            hydromet(k,i) = zero
+            endif ! hydromet(k,i) <= hydromet_tol(i)
 
-         endif ! hydromet(k,i) <= hydromet_tol(i)
-
-      enddo ! k = 2, gr%nz, 1
+         enddo ! k = 2, gr%nz, 1
 
 
-      ! Enter the new value of the hydrometeor for the effect of clipping.
-      if ( l_stats_samp ) then
-         call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                        / real( dt, kind = core_rknd ), zt )
-      endif
+         ! Enter the new value of the hydrometeor for the effect of clipping.
+         if ( l_stats_samp ) then
+            call stat_end_update( ixrm_cl, hydromet(:,i) &
+                                           / real( dt, kind = core_rknd ), zt )
+         endif
+
+      endif ! l_mix_rat_hm(i)
+
+    enddo ! i = 1, hydromet_dim, 1
+
+    ! Clipping for hydrometeor concentrations.
+    do i = 1, hydromet_dim
+
+      if ( .not. l_mix_rat_hm(i) ) then
+
+         ! Set up the stats indices for hydrometeor at index i
+         call setup_stats_indices( i,                           & ! Intent(in)
+                                   ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
+                                   ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                   max_velocity )                 ! Intent(inout)
+
+         ! Store the previous value of the hydrometeor for the effect of
+         ! clipping.
+         if ( l_stats_samp ) then
+            call stat_begin_update( ixrm_cl, &
+                                    hydromet(:,i) &
+                                    / real( dt, kind = core_rknd ), &
+                                    zt )
+         endif
+
+         if ( i == iiNrm ) then
+
+            ! Clipping for mean rain drop concentration, <Nr>.
+            ! When mean rain water mixing ratio, <rr>, is found at a grid level,
+            ! mean rain drop concentration must be at least a minimum value so
+            ! that average rain drop mean volume radius stays within an upper
+            ! bound.  Otherwise, mean rain drop concentration is 0.
+
+            ! The minimum mean rain drop concentration is given by:
+            !
+            ! <Nr> = <rr> / ( (4/3) * pi * rho_lw * mvr_rain_max^3 ).
+
+            Nxm_min_coef &
+            = one / ( four_thirds * pi * rho_lw * mvr_rain_max**3 )
+
+            do k = 2, gr%nz, 1
+
+               if ( hydromet(k,iirrainm) > zero ) then
+
+                  ! Rain water mixing ratio is found at the grid level.
+                  hydromet(k,iiNrm) &
+                  = max( hydromet(k,iiNrm), &
+                         Nxm_min_coef * hydromet(k,iirrainm) )
+
+               else ! <rr> = 0
+
+                  hydromet(k,iiNrm) = zero
+
+               endif ! hydromet(k,iirrainm) > 0
+
+            enddo ! k = 2, gr%nz, 1
+
+         elseif ( i == iiNim ) then
+
+            ! Clipping for mean ice crystal concentration, <Ni>.
+            ! When mean ice mixing ratio, <ri>, is found at a grid level, mean
+            ! ice crystal concentration must be at least a minimum value so that
+            ! average ice mean volume radius stays within an upper bound.
+            ! Otherwise, mean ice crystal concentration is 0.
+
+            ! The minimum mean ice crystal concentration is given by:
+            !
+            ! <Ni> = <ri> / ( (4/3) * pi * rho_ice * mvr_ice_max^3 ).
+
+            Nxm_min_coef &
+            = one / ( four_thirds * pi * rho_ice * mvr_ice_max**3 )
+
+            do k = 2, gr%nz, 1
+
+               if ( hydromet(k,iiricem) > zero ) then
+
+                  ! Ice mixing ratio is found at the grid level.
+                  hydromet(k,iiNim) &
+                  = max( hydromet(k,iiNim), &
+                         Nxm_min_coef * hydromet(k,iiricem) )
+
+               else ! <ri> = 0
+
+                  hydromet(k,iiNim) = zero
+
+               endif ! hydromet(k,iiricem) > 0
+
+            enddo ! k = 2, gr%nz, 1
+
+         elseif ( i == iiNsnowm ) then
+
+            ! Clipping for mean snow flake concentration, <Ns>.
+            ! When mean snow mixing ratio, <rs>, is found at a grid level, mean
+            ! snow flake concentration must be at least a minimum value so that
+            ! average snow mean volume radius stays within an upper bound.
+            ! Otherwise, mean snow flake concentration is 0.
+
+            ! The minimum mean snow flake concentration is given by:
+            !
+            ! <Ns> = <rs> / ( (4/3) * pi * rho_ice * mvr_snow_max^3 ).
+
+            Nxm_min_coef &
+            = one / ( four_thirds * pi * rho_ice * mvr_snow_max**3 )
+
+            do k = 2, gr%nz, 1
+
+               if ( hydromet(k,iirsnowm) > zero ) then
+
+                  ! Snow mixing ratio is found at the grid level.
+                  hydromet(k,iiNsnowm) &
+                  = max( hydromet(k,iiNsnowm), &
+                         Nxm_min_coef * hydromet(k,iirsnowm) )
+
+               else ! <rs> = 0
+
+                  hydromet(k,iiNsnowm) = zero
+
+               endif ! hydromet(k,iirsnowm) > 0
+
+            enddo ! k = 2, gr%nz, 1
+
+         elseif ( i == iiNgraupelm ) then
+
+            ! Clipping for mean graupel concentration, <Ng>.
+            ! When mean graupel mixing ratio, <rg>, is found at a grid level,
+            ! mean graupel concentration must be at least a minimum value so
+            ! that average graupel mean volume radius stays within an upper
+            ! bound.  Otherwise, graupel concentration is 0.
+
+            ! The minimum mean graupel concentration is given by:
+            !
+            ! <Ng> = <rg> / ( (4/3) * pi * rho_ice * mvr_graupel_max^3 ).
+
+            Nxm_min_coef &
+            = one / ( four_thirds * pi * rho_ice * mvr_graupel_max**3 )
+
+            do k = 2, gr%nz, 1
+
+               if ( hydromet(k,iirgraupelm) > zero ) then
+
+                  ! Graupel mixing ratio is found at the grid level.
+                  hydromet(k,iiNgraupelm) &
+                  = max( hydromet(k,iiNgraupelm), &
+                         Nxm_min_coef * hydromet(k,iirgraupelm) )
+
+               else ! <rg> = 0
+
+                  hydromet(k,iiNgraupelm) = zero
+
+               endif ! hydromet(k,iirgraupelm) > 0
+
+            enddo ! k = 2, gr%nz, 1
+
+         endif
+
+         ! Enter the new value of the hydrometeor for the effect of clipping.
+         if ( l_stats_samp ) then
+            call stat_end_update( ixrm_cl, hydromet(:,i) &
+                                           / real( dt, kind = core_rknd ), zt )
+         endif
+
+      endif ! .not. l_mix_rat_hm(i)
 
     enddo ! i = 1, hydromet_dim, 1
 
