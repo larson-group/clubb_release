@@ -1560,10 +1560,12 @@ module clubb_driver
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        one,        & ! Constant(s)
-        em_min,     &
-        grav,       &
-        cm3_per_m3
+        one,            & ! Constant(s)
+        zero,           &
+        em_min,         &
+        grav,           &
+        cm3_per_m3,     &
+        cloud_frac_min
 
     use parameters_model, only:  & 
         sclr_dim, &
@@ -1571,8 +1573,7 @@ module clubb_driver
 
     use parameters_microphys, only: &
         Nc0_in_cloud, & ! Variable(s)
-        micro_scheme, &
-        l_predictnc
+        micro_scheme
 
     use parameters_radiation, only: radiation_top, rad_scheme ! Variable(s)
 
@@ -1741,17 +1742,25 @@ module clubb_driver
     ! Determine initial value cloud droplet number concentration when Nc
     ! is predicted.
     Nc_in_cloud = Nc0_in_cloud / rho
-    if ( l_predictnc ) then
+    do k = 1, gr%nz, 1
 
-       Ncm(2:gr%nz-1) = Nc_in_cloud(2:gr%nz-1)
+       if ( rcm(k) > zero ) then
 
-       ! Upper boundary condition
-       Ncm(gr%nz) = 0._core_rknd
+          ! The initial profile at this level is entirely saturated (due to
+          ! constant moisture and temperature over the level).  The level is
+          ! entirely cloudy.
+          Ncm(k) = Nc_in_cloud(k)
 
-       ! Lower boundary condition
-       Ncm(1) = 0._core_rknd
+       else ! rcm = 0
 
-    endif
+          ! The initial profile at this level is entirely unsaturated (due to
+          ! constant moisture and temperature over the level).  The level is
+          ! entirely clear.
+          Ncm(k) = Nc_in_cloud(k) * cloud_frac_min
+
+       endif
+
+    enddo ! k = 1, gr%nz, 1
 
     select case ( trim( micro_scheme ) )
 
