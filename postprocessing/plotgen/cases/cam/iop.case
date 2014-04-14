@@ -2,7 +2,7 @@
 
 %CASE =
 (
-	'name' => 'iop',
+    'name' => 'iop',
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'CAM IOP Case',
@@ -296,4 +296,4 @@
         'subHtml' => ''
     }
 
-	)
+)
