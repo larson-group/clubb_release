@@ -1,9 +1,0 @@
-!$Id$
-&configurable_model_flags
-l_quintic_poly_interp = .false.,
-l_tke_aniso           = .true.,
-l_vert_avg_closure    = .true.,
-l_single_C2_Skw       = .false.,
-l_standard_term_ta    = .false.,
-l_use_cloud_cover     = .true.,
-/
