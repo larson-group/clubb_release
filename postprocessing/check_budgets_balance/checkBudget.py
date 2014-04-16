@@ -511,7 +511,7 @@ def calcTolerance(termUnits, timestep, termName):
     w_tol = 2e-2 # m/s
     thl_tol = 1e-2 # K
     rt_tol = 1e-8 # kg/kg
-    Nr_tol = 1e-7 # num/kg (increased by facter of 1000 from constants_clubb)
+    Nr_tol = 1e-5 # num/kg
     
     # Special Cases for tolerance
     if termName == "Ncm":
