@@ -865,10 +865,11 @@ module advance_microphys_module
         zt2zm    ! Procedure(s)
 
     use constants_clubb, only: & 
-        one_half,       & ! Constant(s)
-        zero,           &
-        zero_threshold, &
-        cloud_frac_min, &
+        one_half,        & ! Constant(s)
+        zero,            &
+        zero_threshold,  &
+        cloud_frac_min,  &
+        Nc_in_cloud_min, &
         fstderr
 
     use advance_windm_edsclrm_module, only : &
@@ -1058,14 +1059,17 @@ module advance_microphys_module
 
 
     ! Print warning message if Ncm (at any level) has a value < 0.
-    if ( any( Ncm < zero_threshold ) ) then
+    if ( any( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) ) ) then
 
        if ( clubb_at_least_debug_level( 1 ) ) then
           do k = 1, gr%nz
-             if ( Ncm(k) < zero_threshold ) then
-                write(fstderr,*) "Ncm < ", zero_threshold, &
+             if ( Ncm(k) < &
+                  Nc_in_cloud_min * max( cloud_frac(k), cloud_frac_min ) ) then
+                write(fstderr,*) "Ncm < ", &
+                                 Nc_in_cloud_min &
+                                 * max( cloud_frac(k), cloud_frac_min ), &
                                  " in advance_microphys at k = ", k
-             endif ! Ncm(k) < 0
+             endif ! Ncm(k) < Nc_in_cloud_min*max(cloud_frac(k),cloud_frac_min)
           enddo ! k = 1, gr%nz, 1
        endif ! clubb_at_least_debug_level( 1 )
 
@@ -1077,14 +1081,16 @@ module advance_microphys_module
                                Ncm / real( dt, kind = core_rknd ), zt )
     endif
 
-    if ( any( Ncm < zero_threshold ) ) then
+    if ( any( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) ) ) then
 
-       ! Clip any negative values of Ncm to 0.
-       where ( Ncm < zero_threshold )
-          Ncm = zero_threshold
+       ! Clip any values of Ncm below the minimum threshold value of
+       ! Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) to the minimum
+       ! threshold value.
+       where ( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) )
+          Ncm = Nc_in_cloud_min * max( cloud_frac, cloud_frac_min )
        end where
 
-    endif ! Ncm < 0
+    endif ! Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min )
 
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
@@ -1092,9 +1098,10 @@ module advance_microphys_module
                              Ncm / real( dt, kind = core_rknd ), zt )
     endif
 
-    ! Clip any negative values of Nc_in_cloud to 0.
-    where ( Nc_in_cloud < zero_threshold )
-       Nc_in_cloud = zero_threshold
+    ! Clip any negative values of Nc_in_cloud to the minimum threshold value of
+    ! Nc_in_cloud_min.
+    where ( Nc_in_cloud < Nc_in_cloud_min )
+       Nc_in_cloud = Nc_in_cloud_min
     end where
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using

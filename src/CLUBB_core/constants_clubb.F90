@@ -327,6 +327,9 @@ module constants_clubb
     Nc_tol  = 1.0E+2_core_rknd, & ! Tolerance value for N_c  [#/kg]
     Ncn_tol = 1.0E+2_core_rknd    ! Tolerance value for N_cn [#/kg]
 
+  real( kind = core_rknd ), parameter, public :: &
+    Nc_in_cloud_min = 2.0e+4_core_rknd
+
   ! Precipitating hydrometeor tolerances for mixing ratios.
   real( kind = core_rknd ), parameter, public :: & 
     rr_tol = 1.0E-10_core_rknd, & ! Tolerance value for r_r [kg/kg]
