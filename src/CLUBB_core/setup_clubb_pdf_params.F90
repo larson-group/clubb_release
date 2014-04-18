@@ -40,7 +40,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, d_variables, dt, wm_zt, rho, &           ! Intent(in)
+  subroutine setup_pdf_parameters( nz, d_variables, dt, rho, &                  ! Intent(in)
                                    wp2_zt, Ncm, Nc_in_cloud, rcm, cloud_frac, & ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
                                    corr_array_cloud, corr_array_below, &        ! Intent(in)
@@ -169,7 +169,6 @@ module setup_clubb_pdf_params
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,       & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
       rho,         & ! Density                                         [kg/m^3]
       wp2_zt,      & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.) [num/kg]
@@ -276,6 +275,9 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      wm_zt                ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+
     logical :: l_corr_array_scaling
 
     ! Flags used for covariance clipping of <w'hm'>.
@@ -291,7 +293,6 @@ module setup_clubb_pdf_params
     integer :: k, i  ! Loop indices
 
     ! ---- Begin Code ----
-
 
     ! Assertion check
     ! Check that all hydrometeors are positive otherwise exit the program
@@ -316,6 +317,9 @@ module setup_clubb_pdf_params
        enddo ! i = 1, hydromet_dim
 
     endif !clubb_at_least_debug_level( 2 )
+
+    wm_zt = pdf_params%mixt_frac * pdf_params%w1 + &
+                (one - pdf_params%mixt_frac) * pdf_params%w2
 
     ! Interpolate the covariances of w and precipitating hydrometeors to
     ! thermodynamic grid levels.
