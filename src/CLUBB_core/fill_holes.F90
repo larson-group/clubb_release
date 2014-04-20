@@ -836,10 +836,6 @@ module fill_holes
         Cp,              &
         rho_lw,          &
         rho_ice,         &
-        mvr_rain_max,    &
-        mvr_ice_max,     &
-        mvr_snow_max,    &
-        mvr_graupel_max, &
         fstderr
 
     use parameters_microphys, only: &
@@ -847,16 +843,12 @@ module fill_holes
         hydromet_tol
 
     use array_index, only: &
-        iirrainm,     & ! Variable(s)
-        iiricem,      &
-        iirsnowm,     &
-        iirgraupelm,  &
-        iiNrm,        &
-        iiNim,        &
-        iiNsnowm,     &
-        iiNgraupelm,  &
-        l_mix_rat_hm, &
+        l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm
+
+    use index_mapping, only: &
+        Nx2rx_hm_idx, & ! Procedure(s)
+        mvr_hm_max
 
     use error_code, only: &
         clubb_at_least_debug_level ! Procedure(s)
@@ -1120,7 +1112,7 @@ module fill_holes
                                     zt )
          endif
 
-         if ( i == iiNrm ) then
+         if ( .not. l_frozen_hm(i) ) then
 
             ! Clipping for mean rain drop concentration, <Nr>.
             ! When mean rain water mixing ratio, <rr>, is found at a grid level,
@@ -1133,122 +1125,59 @@ module fill_holes
             ! <Nr> = <rr> / ( (4/3) * pi * rho_lw * mvr_rain_max^3 ).
 
             Nxm_min_coef &
-            = one / ( four_thirds * pi * rho_lw * mvr_rain_max**3 )
+            = one / ( four_thirds * pi * rho_lw * mvr_hm_max(i)**3 )
 
             do k = 2, gr%nz, 1
 
-               if ( hydromet(k,iirrainm) > zero ) then
+               if ( hydromet(k,Nx2rx_hm_idx(i)) > zero ) then
 
                   ! Rain water mixing ratio is found at the grid level.
-                  hydromet(k,iiNrm) &
-                  = max( hydromet(k,iiNrm), &
-                         Nxm_min_coef * hydromet(k,iirrainm) )
+                  hydromet(k,i) &
+                  = max( hydromet(k,i), &
+                         Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(i)) )
 
                else ! <rr> = 0
 
-                  hydromet(k,iiNrm) = zero
+                  hydromet(k,i) = zero
 
-               endif ! hydromet(k,iirrainm) > 0
+               endif ! hydromet(k,Nx2rx_hm_idx(i)) > 0
 
             enddo ! k = 2, gr%nz, 1
 
-         elseif ( i == iiNim ) then
+         else ! l_frozen_hm(i)
 
-            ! Clipping for mean ice crystal concentration, <Ni>.
-            ! When mean ice mixing ratio, <ri>, is found at a grid level, mean
-            ! ice crystal concentration must be at least a minimum value so that
-            ! average ice mean volume radius stays within an upper bound.
-            ! Otherwise, mean ice crystal concentration is 0.
+            ! Clipping for mean frozen hydrometeor concentration, <Nx>.
+            ! When mean frozen hydrometeor mixing ratio, <rx>, is found at a
+            ! grid level, mean frozen hydrometeor concentration must be at least
+            ! a minimum value so that average frozen hydrometeor mean volume
+            ! radius stays within an upper bound.  Otherwise, mean frozen
+            ! hydrometeor concentration is 0.
 
-            ! The minimum mean ice crystal concentration is given by:
+            ! The minimum mean frozen hydrometeor concentration is given by:
             !
-            ! <Ni> = <ri> / ( (4/3) * pi * rho_ice * mvr_ice_max^3 ).
+            ! <Nx> = <rx> / ( (4/3) * pi * rho_ice * mvr_x_max^3 ).
 
             Nxm_min_coef &
-            = one / ( four_thirds * pi * rho_ice * mvr_ice_max**3 )
+            = one / ( four_thirds * pi * rho_ice * mvr_hm_max(i)**3 )
 
             do k = 2, gr%nz, 1
 
-               if ( hydromet(k,iiricem) > zero ) then
+               if ( hydromet(k,Nx2rx_hm_idx(i)) > zero ) then
 
-                  ! Ice mixing ratio is found at the grid level.
-                  hydromet(k,iiNim) &
-                  = max( hydromet(k,iiNim), &
-                         Nxm_min_coef * hydromet(k,iiricem) )
+                  ! Frozen hydrometeor mixing ratio is found at the grid level.
+                  hydromet(k,i) &
+                  = max( hydromet(k,i), &
+                         Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(i)) )
 
-               else ! <ri> = 0
+               else ! <rx> = 0
 
-                  hydromet(k,iiNim) = zero
+                  hydromet(k,i) = zero
 
-               endif ! hydromet(k,iiricem) > 0
-
-            enddo ! k = 2, gr%nz, 1
-
-         elseif ( i == iiNsnowm ) then
-
-            ! Clipping for mean snow flake concentration, <Ns>.
-            ! When mean snow mixing ratio, <rs>, is found at a grid level, mean
-            ! snow flake concentration must be at least a minimum value so that
-            ! average snow mean volume radius stays within an upper bound.
-            ! Otherwise, mean snow flake concentration is 0.
-
-            ! The minimum mean snow flake concentration is given by:
-            !
-            ! <Ns> = <rs> / ( (4/3) * pi * rho_ice * mvr_snow_max^3 ).
-
-            Nxm_min_coef &
-            = one / ( four_thirds * pi * rho_ice * mvr_snow_max**3 )
-
-            do k = 2, gr%nz, 1
-
-               if ( hydromet(k,iirsnowm) > zero ) then
-
-                  ! Snow mixing ratio is found at the grid level.
-                  hydromet(k,iiNsnowm) &
-                  = max( hydromet(k,iiNsnowm), &
-                         Nxm_min_coef * hydromet(k,iirsnowm) )
-
-               else ! <rs> = 0
-
-                  hydromet(k,iiNsnowm) = zero
-
-               endif ! hydromet(k,iirsnowm) > 0
+               endif ! hydromet(k,Nx2rx_hm_idx(i)) > 0
 
             enddo ! k = 2, gr%nz, 1
 
-         elseif ( i == iiNgraupelm ) then
-
-            ! Clipping for mean graupel concentration, <Ng>.
-            ! When mean graupel mixing ratio, <rg>, is found at a grid level,
-            ! mean graupel concentration must be at least a minimum value so
-            ! that average graupel mean volume radius stays within an upper
-            ! bound.  Otherwise, graupel concentration is 0.
-
-            ! The minimum mean graupel concentration is given by:
-            !
-            ! <Ng> = <rg> / ( (4/3) * pi * rho_ice * mvr_graupel_max^3 ).
-
-            Nxm_min_coef &
-            = one / ( four_thirds * pi * rho_ice * mvr_graupel_max**3 )
-
-            do k = 2, gr%nz, 1
-
-               if ( hydromet(k,iirgraupelm) > zero ) then
-
-                  ! Graupel mixing ratio is found at the grid level.
-                  hydromet(k,iiNgraupelm) &
-                  = max( hydromet(k,iiNgraupelm), &
-                         Nxm_min_coef * hydromet(k,iirgraupelm) )
-
-               else ! <rg> = 0
-
-                  hydromet(k,iiNgraupelm) = zero
-
-               endif ! hydromet(k,iirgraupelm) > 0
-
-            enddo ! k = 2, gr%nz, 1
-
-         endif
+         endif ! .not. l_frozen_hm(i)
 
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then

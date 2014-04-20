@@ -38,7 +38,10 @@ module index_mapping
   private ! Default Scope
 
   public :: pdf2hydromet_idx, &
-            hydromet2pdf_idx
+            hydromet2pdf_idx, &
+            rx2Nx_hm_idx,     &
+            Nx2rx_hm_idx,     &
+            mvr_hm_max
 
 contains
 
@@ -185,6 +188,175 @@ contains
     return
 
   end function hydromet2pdf_idx
+
+  !=============================================================================
+  function rx2Nx_hm_idx( rx_idx ) result( Nx_idx )
+
+    ! Description:
+    ! Returns the position in the hydrometeor array of the specific
+    ! precipitating hydrometeor concentration (Nx_idx) corresponding to the
+    ! precipitating hydrometeor mixing ratio (rx_idx) of the same species of
+    ! precipitating hydrometeor (rain, ice, snow, or graupel).
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      rx_idx    ! Index of the mixing ratio in the hydrometeor array.
+
+    ! Return Variable
+    integer :: &
+      Nx_idx    ! Index of the concentration in the hydrometeor array.
+
+
+    ! Initialize Nx_idx.
+    Nx_idx = 0
+
+    if ( rx_idx == iirrainm ) then
+
+       ! Index for rain drop concentration, Nr.
+       Nx_idx = iiNrm
+
+    elseif ( rx_idx == iiricem ) then
+
+       ! Index for ice crystal concentration, Ni.
+       Nx_idx = iiNim
+
+    elseif ( rx_idx == iirsnowm ) then
+
+       ! Index for snow flake concentration, Ns.
+       Nx_idx = iiNsnowm
+
+    elseif ( rx_idx == iirgraupelm ) then
+
+       ! Index for graupel concentration, Ng.
+       Nx_idx = iiNgraupelm
+
+    endif
+
+
+    return
+
+  end function rx2Nx_hm_idx
+
+  !=============================================================================
+  function Nx2rx_hm_idx( Nx_idx ) result( rx_idx )
+
+    ! Description:
+    ! Returns the position in the hydrometeor array of the specific
+    ! precipitating hydrometeor mixing ratio (rx_idx) corresponding to the
+    ! precipitating hydrometeor concentration (Nx_idx) of the same species of
+    ! precipitating hydrometeor (rain, ice, snow, or graupel).
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      Nx_idx    ! Index of the concentration in the hydrometeor array.
+
+    ! Return Variable
+    integer :: &
+      rx_idx    ! Index of the mixing ratio in the hydrometeor array.
+
+
+    ! Initialize rx_idx.
+    rx_idx = 0
+
+    if ( Nx_idx == iiNrm ) then
+
+       ! Index for rain water mixing ratio, rr.
+       rx_idx = iirrainm
+
+    elseif ( Nx_idx == iiNim ) then
+
+       ! Index for ice mixing ratio, ri.
+       rx_idx = iiricem
+
+    elseif ( Nx_idx == iiNsnowm ) then
+
+       ! Index for snow mixing ratio, rs.
+       rx_idx = iirsnowm
+
+    elseif ( Nx_idx == iiNgraupelm ) then
+
+       ! Index for graupel mixing ratio, rg.
+       rx_idx = iirgraupelm
+
+    endif
+
+
+    return
+
+  end function Nx2rx_hm_idx
+
+  !=============================================================================
+  function mvr_hm_max( hydromet_idx ) result( mvr_hydromet_max )
+
+    ! Description:
+    ! Returns the maximum allowable mean volume radius of a specific
+    ! precipitating hydrometeor type (rain, ice, snow, or graupel) corresponding
+    ! to the precipitating hydrometeor index, whether that index is for the
+    ! mixing ratio or concentration associated with that hydrometeor type.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        mvr_rain_max,    & ! Constant(s)
+        mvr_ice_max,     &
+        mvr_snow_max,    &
+        mvr_graupel_max, &
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      hydromet_idx    ! Index of a hydrometeor in the hydromet array.
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      mvr_hydromet_max    ! Maximum allowable mean volume radius    [m]
+
+
+    ! Initialize mvr_hydromet_max.
+    mvr_hydromet_max = zero
+
+    if ( hydromet_idx == iirrainm .or. hydromet_idx == iiNrm ) then
+
+       ! Maximum allowable mean volume radius for rain drops.
+       mvr_hydromet_max = mvr_rain_max
+
+    elseif ( hydromet_idx == iiricem .or. hydromet_idx == iiNim ) then
+
+       ! Maximum allowable mean volume radius for ice crystals.
+       mvr_hydromet_max = mvr_ice_max
+
+    elseif ( hydromet_idx == iirsnowm .or. hydromet_idx == iiNsnowm ) then
+
+       ! Maximum allowable mean volume radius for snow flakes.
+       mvr_hydromet_max = mvr_snow_max
+
+    elseif ( hydromet_idx == iirgraupelm .or. hydromet_idx == iiNgraupelm ) then
+
+       ! Maximum allowable mean volume radius for graupel.
+       mvr_hydromet_max = mvr_graupel_max
+
+    endif
+
+
+    return
+
+  end function mvr_hm_max
 
 !===============================================================================
 
