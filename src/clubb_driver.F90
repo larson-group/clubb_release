@@ -1407,15 +1407,16 @@ module clubb_driver
                               thlp2_mc, rtpthlp_mc )                         ! Out
 
       ! Advance predictive microphysics fields one model timestep.
-      call advance_microphys( dt_main, time_current, wm_zt, wp2, exner, & ! In
-                              rho, rho_zm, cloud_frac, Kh_zm, Skw_zm, &   ! In
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &    ! In
-                              hydromet_mc, Ncm_mc, hydrometp2, &          ! In
-                              hydromet_vel_covar_zt_impc, &               ! In
-                              hydromet_vel_covar_zt_expc, &               ! In
-                              hydromet, hydromet_vel_zt, &                ! Inout
-                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &        ! Inout
-                              wphydrometp, wpNcp, err_code_microphys )    ! Out
+      call advance_microphys( dt_main, time_current, wm_zt, wp2, &     ! In
+                              exner, rho, rho_zm, rcm, &               ! In
+                              cloud_frac, Kh_zm, Skw_zm, &             ! In
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                              hydromet_mc, Ncm_mc, hydrometp2, &       ! In
+                              hydromet_vel_covar_zt_impc, &            ! In
+                              hydromet_vel_covar_zt_expc, &            ! In
+                              hydromet, hydromet_vel_zt, &             ! Inout
+                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
+                              wphydrometp, wpNcp, err_code_microphys ) ! Out
 
       if ( fatal_error( err_code_microphys ) ) then
          if ( clubb_at_least_debug_level( 1 ) ) then

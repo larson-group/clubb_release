@@ -31,15 +31,16 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( dt, time_current, wm_zt, wp2, exner, &    ! In
-                                rho, rho_zm, cloud_frac, Kh_zm, Skw_zm, & ! In
-                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &  ! In
-                                hydromet_mc, Ncm_mc, hydrometp2, &        ! In
-                                hydromet_vel_covar_zt_impc, &             ! In
-                                hydromet_vel_covar_zt_expc, &             ! In
-                                hydromet, hydromet_vel_zt, &              ! Inout
-                                Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &      ! Inout
-                                wphydrometp, wpNcp, err_code )            ! Out
+  subroutine advance_microphys( dt, time_current, wm_zt, wp2, &          ! In
+                                exner, rho, rho_zm, rcm, &               ! In
+                                cloud_frac, Kh_zm, Skw_zm, &             ! In
+                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
+                                hydromet_mc, Ncm_mc, hydrometp2, &       ! In
+                                hydromet_vel_covar_zt_impc, &            ! In
+                                hydromet_vel_covar_zt_expc, &            ! In
+                                hydromet, hydromet_vel_zt, &             ! Inout
+                                Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
+                                wphydrometp, wpNcp, err_code )           ! Out
 
     ! Description:
     ! Advance mean precipitating hydrometeors and mean cloud droplet
@@ -130,6 +131,7 @@ module advance_microphys_module
       exner,      & ! Exner function                                  [-]
       rho,        & ! Density on thermodynamic levels                 [kg/m^3]
       rho_zm,     & ! Density on momentum levels                      [kg/m^3]
+      rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
       cloud_frac, & ! Cloud fraction                                  [-]
       Kh_zm,      & ! Kh Eddy diffusivity on momentum grid            [m^2/s]
       Skw_zm        ! Skewness of w on momentum levels                [-]
@@ -296,7 +298,7 @@ module advance_microphys_module
 
        ! Nc is predicted.
 
-       call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rho_ds_zm, &
+       call advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                          rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                          Ncm, Nc_in_cloud, &
                          wpNcp, err_code_Ncm )
@@ -849,7 +851,7 @@ module advance_microphys_module
   end subroutine advance_hydrometeor
 
   !=============================================================================
-  subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rho_ds_zm, &
+  subroutine advance_Ncm( dt, wm_zt, cloud_frac, K_Nc, rcm, rho_ds_zm, &
                           rho_ds_zt, invrs_rho_ds_zt, Ncm_mc, &
                           Ncm, Nc_in_cloud, &
                           wpNcp, err_code_Ncm )
@@ -864,10 +866,15 @@ module advance_microphys_module
         gr,    & ! Variable(s)
         zt2zm    ! Procedure(s)
 
-    use constants_clubb, only: & 
-        one_half,        & ! Constant(s)
+    use constants_clubb, only: &
+        pi,              & ! Constant(s)
+        four_thirds,     &
+        one,             &
+        one_half,        &
         zero,            &
         zero_threshold,  &
+        rho_lw,          &
+        mvr_cloud_max,   &
         cloud_frac_min,  &
         Nc_in_cloud_min, &
         fstderr
@@ -914,7 +921,8 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       wm_zt,      & ! mean w wind component on thermodynamic levels  [m/s]
       cloud_frac, & ! Cloud fraction                                 [-]
-      K_Nc          ! Coefficient of diffusion (turb. adv.) for Nc   [m^2/s]
+      K_Nc,       & ! Coefficient of diffusion (turb. adv.) for Nc   [m^2/s]
+      rcm           ! Mean cloud water mixing ratio                  [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
       rho_ds_zm,       & ! Dry, static density on momentum levels   [kg/m^3]
@@ -950,6 +958,11 @@ module advance_microphys_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
       rhs    ! Right hand side vector
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Ncm_mvr_min, & ! Min. allowable Ncm due to max. cloud droplet mvr [num/kg]
+      Ncm_min,     & ! Minimum allowable mean cloud droplet conc.       [num/kg]
+      Ncic_min       ! Min. allowable in-cloud mean cloud droplet conc. [num/kg]
 
     ! Sedimentation velocity of cloud droplet concentration is not considered in
     ! the solution of N_c.
@@ -1058,22 +1071,39 @@ module advance_microphys_module
     endif
 
 
-    ! Print warning message if Ncm (at any level) has a value < 0.
-    if ( any( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) ) ) then
+    ! Clipping for mean cloud droplet concentration, <Nc>.
+
+    ! When mean cloud water mixing ratio, <rc>, is found at a grid level, mean
+    ! cloud droplet concentration must be at least a minimum value so that
+    ! average cloud droplet mean volume radius stays within an upper bound.
+
+    ! The minimum mean rain drop concentration is given by:
+    !
+    ! <Nc> = <rc> / ( (4/3) * pi * rho_lw * mvr_cloud_max^3 ).
+
+    Ncm_mvr_min &
+    = ( one / ( four_thirds * pi * rho_lw * mvr_cloud_max**3 ) ) * rcm
+
+    ! Calculate the minimum threshold value for mean cloud droplet
+    ! concentration.  This is the greater of the minimum allowable Ncm based on
+    ! the maximum cloud droplet mean volume radius and Nc_in_cloud_min
+    ! multiplied by max( cloud_frac, cloud_frac_min ).
+    Ncm_min &
+    = max( Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ), Ncm_mvr_min )
+
+    ! Print warning message if Ncm (at any level) has a value < Ncm_min.
+    if ( any( Ncm < Ncm_min ) ) then
 
        if ( clubb_at_least_debug_level( 1 ) ) then
           do k = 1, gr%nz
-             if ( Ncm(k) < &
-                  Nc_in_cloud_min * max( cloud_frac(k), cloud_frac_min ) ) then
-                write(fstderr,*) "Ncm < ", &
-                                 Nc_in_cloud_min &
-                                 * max( cloud_frac(k), cloud_frac_min ), &
+             if ( Ncm(k) < Ncm_min(k) ) then
+                write(fstderr,*) "Ncm < ", Ncm_min(k), &
                                  " in advance_microphys at k = ", k
-             endif ! Ncm(k) < Nc_in_cloud_min*max(cloud_frac(k),cloud_frac_min)
+             endif ! Ncm(k) < Ncm_min(k)
           enddo ! k = 1, gr%nz, 1
        endif ! clubb_at_least_debug_level( 1 )
 
-    endif ! Ncm < 0
+    endif ! Ncm < Ncm_min
 
     ! Store the previous value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
@@ -1081,16 +1111,15 @@ module advance_microphys_module
                                Ncm / real( dt, kind = core_rknd ), zt )
     endif
 
-    if ( any( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) ) ) then
+    if ( any( Ncm < Ncm_min ) ) then
 
-       ! Clip any values of Ncm below the minimum threshold value of
-       ! Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) to the minimum
-       ! threshold value.
-       where ( Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min ) )
-          Ncm = Nc_in_cloud_min * max( cloud_frac, cloud_frac_min )
+       ! Clip any values of Ncm below the minimum threshold value of Ncm_min to
+       ! the minimum threshold value.
+       where ( Ncm < Ncm_min )
+          Ncm = Ncm_min
        end where
 
-    endif ! Ncm < Nc_in_cloud_min * max( cloud_frac, cloud_frac_min )
+    endif ! Ncm < Ncm_min
 
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
@@ -1098,10 +1127,17 @@ module advance_microphys_module
                              Ncm / real( dt, kind = core_rknd ), zt )
     endif
 
+    ! Calculate the minimum threshold value for in-cloud mean cloud droplet
+    ! concentration.  This is the greater of the minimum allowable Nc_in_cloud
+    ! based on the maximum cloud droplet mean volume radius (Ncm_mvr_min)
+    ! divided by max( cloud_frac, cloud_frac_min ) and Nc_in_cloud_min.
+    Ncic_min &
+    = max( Nc_in_cloud_min, Ncm_mvr_min /  max( cloud_frac, cloud_frac_min ) )
+
     ! Clip any negative values of Nc_in_cloud to the minimum threshold value of
-    ! Nc_in_cloud_min.
-    where ( Nc_in_cloud < Nc_in_cloud_min )
-       Nc_in_cloud = Nc_in_cloud_min
+    ! Ncic_min.
+    where ( Nc_in_cloud < Ncic_min )
+       Nc_in_cloud = Ncic_min
     end where
 
     ! Solve for < w'N_c' > at all intermediate (momentum) grid levels, using
