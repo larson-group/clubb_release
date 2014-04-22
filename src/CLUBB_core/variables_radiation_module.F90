@@ -1,5 +1,6 @@
 !---------------------------------------------------------------
 ! $Id$
+!===============================================================================
 module variables_radiation_module
 
 !   This module contains definitions of all radiation arrays

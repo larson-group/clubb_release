@@ -1,4 +1,6 @@
+!-------------------------------------------------------------------------
 !$Id$
+!===============================================================================
 module sponge_layer_damping
 ! Description:
 !   This module is used for damping variables in upper altitudes of the grid.

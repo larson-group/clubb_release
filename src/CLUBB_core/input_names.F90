@@ -1,4 +1,6 @@
+!-----------------------------------------------------------------------
 !$Id$
+!===============================================================================
 module input_names
 !
 !  Description: This module contains all of the strings used to define the

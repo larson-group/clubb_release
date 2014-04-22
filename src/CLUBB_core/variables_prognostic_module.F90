@@ -1,5 +1,6 @@
 !-----------------------------------------------------------------------
 ! $Id$
+!===============================================================================
 module variables_prognostic_module
 
 !       This module contains definitions of all prognostic
