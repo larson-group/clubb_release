@@ -120,10 +120,8 @@ module setup_clubb_pdf_params
         stat_update_var_pt
 
     use stats_variables, only: &
-        irr1,           & ! Variable(s)
-        irr2,           &
-        iNr1,           &
-        iNr2,           &
+        ihm1,           & ! Variable(s)
+        ihm2,           &
         iprecip_frac,   &
         iprecip_frac_1, &
         iprecip_frac_2, &
@@ -456,33 +454,19 @@ module setup_clubb_pdf_params
     ! Statistics
     if ( l_stats_samp ) then
 
-       if ( iirrainm > 0 ) then
+       do i = 1, hydromet_dim, 1
 
-          if ( irr1 > 0 ) then
-             ! Mean rain water mixing ratio in PDF component 1.
-             call stat_update_var( irr1, hm1(:,iirrainm), zt )
+          if ( ihm1(i) > 0 ) then
+             ! Mean of the precipitating hydrometeor in PDF component 1.
+             call stat_update_var( ihm1(i), hm1(:,i), zt )
           endif
 
-          if ( irr2 > 0 ) then
-             ! Mean rain water mixing ratio in PDF component 2.
-             call stat_update_var( irr2, hm2(:,iirrainm), zt )
+          if ( ihm2(i) > 0 ) then
+             ! Mean of the precipitating hydrometeor in PDF component 2.
+             call stat_update_var( ihm2(i), hm2(:,i), zt )
           endif
 
-       endif ! iirrainm > 0
-
-       if ( iiNrm > 0 ) then
-
-          if ( iNr1 > 0 ) then
-             ! Mean rain drop concentration in PDF component 1.
-             call stat_update_var( iNr1, hm1(:,iiNrm), zt )
-          endif
-
-          if ( iNr2 > 0 ) then
-             ! Mean rain drop concentration in PDF component 2.
-             call stat_update_var( iNr2, hm2(:,iiNrm), zt )
-          endif
-
-       endif ! iiNrm > 0
+       enddo ! i = 1, hydromet_dim, 1
 
        if ( iprecip_frac > 0 ) then
           ! Overall precipitation fraction.

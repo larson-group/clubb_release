@@ -110,19 +110,20 @@ module stats_variables
 !$omp   iLscale_pert_1, iLscale_pert_2, &
 !$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho )
 
+  integer, dimension(:), allocatable, public :: & 
+     ihm1, &
+     ihm2
+!$omp threadprivate( ihm1, ihm2 )
+
   integer, public :: & 
-     irr1 = 0, &
-     irr2 = 0, &
-     iNr1 = 0, &
-     iNr2 = 0, &
      iLWP1 = 0, &
      iLWP2 = 0, &
      iprecip_frac = 0, &
      iprecip_frac_1 = 0, &
      iprecip_frac_2 = 0, &
      iNcnm = 0 
-!$omp threadprivate(  irr1, irr2, iNr1, iNr2, iLWP1, iLWP2, &
-!$omp   iprecip_frac, iprecip_frac_1, iprecip_frac_2, iNcnm )
+!$omp threadprivate( iLWP1, iLWP2, iprecip_frac, &
+!$omp   iprecip_frac_1, iprecip_frac_2, iNcnm )
 
   integer, public :: &
      imu_rr_1 = 0,       &

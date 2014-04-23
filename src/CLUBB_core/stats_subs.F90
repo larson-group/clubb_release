@@ -143,6 +143,9 @@ module stats_subs
     use constants_clubb, only: &
       fstdout, fstderr, var_length ! Constants
 
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
     use parameters_microphys, only: &
       LH_microphys_disabled, & ! Constant
       LH_microphys_type ! Variable
@@ -420,6 +423,14 @@ module stats_subs
       ivar = ivar + 1
     end do
     ntot = ivar - 1
+    if ( any( vars_zt == "hmi" ) ) then
+       ! Correct for number of variables found under "hmi".
+       ! Subtract "hmi" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
     if ( ntot == nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."

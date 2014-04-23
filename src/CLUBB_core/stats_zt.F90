@@ -72,10 +72,8 @@ module stats_zt
         isigma_sqd_w_zt
 
     use stats_variables, only: & 
-        irr1, & ! Variable(s)
-        irr2, &
-        iNr1, &
-        iNr2, &
+        ihm1, & ! Variable(s)
+        ihm2, &
         iLWP1, &
         iLWP2, &
         iprecip_frac, &
@@ -566,8 +564,15 @@ module stats_zt
         stat_assign ! Procedure
 
     use parameters_model, only: &
-        sclr_dim,& ! Variable(s)
+        hydromet_dim, & ! Variable(s)
+        sclr_dim,     &
         edsclr_dim
+
+    use parameters_microphys, only: &
+        hydromet_list  ! Variable(s)
+
+    use array_index, only: &
+        l_mix_rat_hm  ! Variable(s)
 
     implicit none
 
@@ -583,7 +588,13 @@ module stats_zt
     logical, intent(inout) :: l_error
 
     ! Local Varables
+    integer :: tot_zt_loops
+
     integer :: i, j, k
+
+    integer :: hm_idx
+
+    character(len=10) :: hm_type
 
     logical :: l_found
 
@@ -591,6 +602,13 @@ module stats_zt
 
     ! The default initialization for array indices for zt is zero (see module
     ! stats_variables)
+
+    ! Allocate and initialize hydrometeor statistical variables.
+    allocate( ihm1(1:hydromet_dim) )
+    allocate( ihm2(1:hydromet_dim) )
+
+    ihm1(:) = 0
+    ihm2(:) = 0
 
     ! Allocate and then zero out passive scalar arrays
     allocate( isclrm(1:sclr_dim) )
@@ -607,9 +625,20 @@ module stats_zt
 
     ! Assign pointers for statistics variables zt using stat_assign
 
+    tot_zt_loops = zt%nn
+
+    if ( any( vars_zt == "hmi" ) ) then
+       ! Correct for number of variables found under "hmi".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "hmi" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
     k = 1
 
-    do i = 1, zt%nn
+    do i = 1, tot_zt_loops
 
       select case ( trim( vars_zt(i) ) )
       case ('thlm')
@@ -3474,33 +3503,69 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'rr1' )
-        irr1 = k
-        call stat_assign( var_index=irr1, var_name="rr1", &
-             var_description="Mean of r_r (1st PDF component) [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Hydrometeor component mean values for each PDF component and hydrometeor
+      ! type.
+      case ( "hmi" )
 
-      case ( 'rr2' )
-        irr2 = k
-        call stat_assign( var_index=irr2, var_name="rr2", &
-             var_description="Mean of r_r (2nd PDF component) [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'Nr1' )
-        iNr1 = k
-        call stat_assign( var_index=iNr1, var_name="Nr1", &
-             var_description="Mean of N_r (1st PDF component) [num/kg]", var_units="num/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'Nr2' )
-        iNr2 = k
-        call stat_assign( var_index=iNr2, var_name="Nr2", &
-             var_description="Mean of N_r (2nd PDF component) [num/kg]", var_units="num/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The mean of the hydrometeor in the 1st PDF component.
+            ihm1(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=ihm1(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"1", &
+                                 var_description="Mean of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=ihm1(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"1", &
+                                 var_description="Mean of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+            ! The mean of the hydrometeor in the 2nd PDF component.
+            ihm2(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=ihm2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"2", &
+                                 var_description="Mean of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=ihm2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"2", &
+                                 var_description="Mean of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'LWP1' )
         iLWP1 = k
