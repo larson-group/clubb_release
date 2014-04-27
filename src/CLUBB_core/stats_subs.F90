@@ -431,7 +431,39 @@ module stats_subs
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
-    if ( ntot == nvarmax_zt ) then
+    if ( any( vars_zt == "mu_hm_i" ) ) then
+       ! Correct for number of variables found under "mu_hm_i".
+       ! Subtract "mu_hm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "mu_hm_i_n" ) ) then
+       ! Correct for number of variables found under "mu_hm_i_n".
+       ! Subtract "mu_hm_i_n" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "sigma_hm_i" ) ) then
+       ! Correct for number of variables found under "sigma_hm_i".
+       ! Subtract "sigma_hm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "sigma_hm_i_n" ) ) then
+       ! Correct for number of variables found under "sigma_hm_i_n".
+       ! Subtract "sigma_hm_i_n" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( ntot >= nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."
       write(fstderr,*) "Check the number of variables listed for vars_zt ",  &

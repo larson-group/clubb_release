@@ -125,36 +125,29 @@ module stats_variables
 !$omp threadprivate( iLWP1, iLWP2, iprecip_frac, &
 !$omp   iprecip_frac_1, iprecip_frac_2, iNcnm )
 
+  integer, dimension(:), allocatable, public :: & 
+     imu_hm_1,      &
+     imu_hm_2,      &
+     imu_hm_1_n,    &
+     imu_hm_2_n,    &
+     isigma_hm_1,   &
+     isigma_hm_2,   &
+     isigma_hm_1_n, &
+     isigma_hm_2_n
+!$omp threadprivate( imu_hm_1, imu_hm_2, imu_hm_1_n, imu_hm_2_n, &
+!$omp   isigma_hm_1, isigma_hm_2, isigma_hm_1_n, isigma_hm_2_n )
+
   integer, public :: &
-     imu_rr_1 = 0,       &
-     imu_rr_2 = 0,       &
-     imu_Nr_1 = 0,       &
-     imu_Nr_2 = 0,       &
      imu_Ncn_1 = 0,      &
      imu_Ncn_2 = 0,      &
-     imu_rr_1_n = 0,     &
-     imu_rr_2_n = 0,     &
-     imu_Nr_1_n = 0,     &
-     imu_Nr_2_n = 0,     &
      imu_Ncn_1_n = 0,    &
      imu_Ncn_2_n = 0,    &
-     isigma_rr_1 = 0,    &
-     isigma_rr_2 = 0,    &
-     isigma_Nr_1 = 0,    &
-     isigma_Nr_2 = 0 ,   &
      isigma_Ncn_1 = 0,   &
      isigma_Ncn_2 = 0,   &
-     isigma_rr_1_n = 0,  &
-     isigma_rr_2_n = 0,  &
-     isigma_Nr_1_n = 0,  &
-     isigma_Nr_2_n = 0,  &
      isigma_Ncn_1_n = 0, &
      isigma_Ncn_2_n = 0
-!$omp threadprivate( imu_rr_1, imu_rr_2, imu_Nr_1, imu_Nr_2, &
-!$omp   imu_Ncn_1, imu_Ncn_2, imu_rr_1_n, imu_rr_2_n, imu_Nr_1_n, imu_Nr_2_n, &
-!$omp   imu_Ncn_1_n, imu_Ncn_2_n, isigma_rr_1, isigma_rr_2, isigma_Nr_1, &
-!$omp   isigma_Nr_2, isigma_Ncn_1, isigma_Ncn_2, isigma_rr_1_n, isigma_rr_2_n, &
-!$omp   isigma_Nr_1_n, isigma_Nr_2_n, isigma_Ncn_1_n, isigma_Ncn_2_n )
+!$omp threadprivate( imu_Ncn_1, imu_Ncn_2, imu_Ncn_1_n, imu_Ncn_2_n, &
+!$omp   isigma_Ncn_1, isigma_Ncn_2, isigma_Ncn_1_n, isigma_Ncn_2_n )
 
   integer, public :: &
      icorr_wrr_1 = 0,    &

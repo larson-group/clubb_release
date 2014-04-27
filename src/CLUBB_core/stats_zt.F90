@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 500 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 550 ! Maximum variables allowed
 
   contains
 
@@ -82,28 +82,20 @@ module stats_zt
         iNcnm
 
     use stats_variables, only: &
-        imu_rr_1,       & ! Variable(s)
-        imu_rr_2,       &
-        imu_Nr_1,       &
-        imu_Nr_2,       &
+        imu_hm_1,       & ! Variable(s)
+        imu_hm_2,       &
         imu_Ncn_1,      &
         imu_Ncn_2,      &
-        imu_rr_1_n,     &
-        imu_rr_2_n,     &
-        imu_Nr_1_n,     &
-        imu_Nr_2_n,     &
+        imu_hm_1_n,     &
+        imu_hm_2_n,     &
         imu_Ncn_1_n,    &
         imu_Ncn_2_n,    &
-        isigma_rr_1,    &
-        isigma_rr_2,    &
-        isigma_Nr_1,    &
-        isigma_Nr_2,    &
+        isigma_hm_1,    &
+        isigma_hm_2,    &
         isigma_Ncn_1,   &
         isigma_Ncn_2,   &
-        isigma_rr_1_n,  &
-        isigma_rr_2_n,  &
-        isigma_Nr_1_n,  &
-        isigma_Nr_2_n,  &
+        isigma_hm_1_n,  &
+        isigma_hm_2_n,  &
         isigma_Ncn_1_n, &
         isigma_Ncn_2_n
 
@@ -606,9 +598,25 @@ module stats_zt
     ! Allocate and initialize hydrometeor statistical variables.
     allocate( ihm1(1:hydromet_dim) )
     allocate( ihm2(1:hydromet_dim) )
+    allocate( imu_hm_1(1:hydromet_dim) )
+    allocate( imu_hm_2(1:hydromet_dim) )
+    allocate( imu_hm_1_n(1:hydromet_dim) )
+    allocate( imu_hm_2_n(1:hydromet_dim) )
+    allocate( isigma_hm_1(1:hydromet_dim) )
+    allocate( isigma_hm_2(1:hydromet_dim) )
+    allocate( isigma_hm_1_n(1:hydromet_dim) )
+    allocate( isigma_hm_2_n(1:hydromet_dim) )
 
     ihm1(:) = 0
     ihm2(:) = 0
+    imu_hm_1(:) = 0
+    imu_hm_2(:) = 0
+    imu_hm_1_n(:) = 0
+    imu_hm_2_n(:) = 0
+    isigma_hm_1(:) = 0
+    isigma_hm_2(:) = 0
+    isigma_hm_1_n(:) = 0
+    isigma_hm_2_n(:) = 0
 
     ! Allocate and then zero out passive scalar arrays
     allocate( isclrm(1:sclr_dim) )
@@ -633,6 +641,38 @@ module stats_zt
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "hmi" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "mu_hm_i" ) ) then
+       ! Correct for number of variables found under "mu_hm_i".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "mu_hm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "mu_hm_i_n" ) ) then
+       ! Correct for number of variables found under "mu_hm_i_n".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "mu_hm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "sigma_hm_i" ) ) then
+       ! Correct for number of variables found under "sigma_hm_i".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "sigma_hm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "sigma_hm_i_n" ) ) then
+       ! Correct for number of variables found under "sigma_hm_i_n".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "sigma_hm_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -3609,33 +3649,69 @@ module stats_zt
              var_units="num/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'mu_rr_1' )
-        imu_rr_1 = k
-        call stat_assign( var_index=imu_rr_1, var_name="mu_rr_1", &
-             var_description="Mean (in-precip) of r_r (1st PDF component) [kg/kg]", &
-             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Hydrometeor component mean values (in-precip) for each PDF component and
+      ! hydrometeor type.
+      case ( 'mu_hm_i' )
 
-      case ( 'mu_rr_2' )
-        imu_rr_2 = k
-        call stat_assign( var_index=imu_rr_2, var_name="mu_rr_2", &
-             var_description="Mean (in-precip) of r_r (2nd PDF component) [kg/kg]", &
-             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'mu_Nr_1' )
-        imu_Nr_1 = k
-        call stat_assign( var_index=imu_Nr_1, var_name="mu_Nr_1", &
-             var_description="Mean (in-precip) of N_r (1st PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'mu_Nr_2' )
-        imu_Nr_2 = k
-        call stat_assign( var_index=imu_Nr_2, var_name="mu_Nr_2", &
-             var_description="Mean (in-precip) of N_r (2nd PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip mean of the hydrometeor in the 1st PDF component.
+            imu_hm_1(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=imu_hm_1(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_1", &
+                                 var_description="Mean (in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=imu_hm_1(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_1", &
+                                 var_description="Mean (in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+            ! The in-precip mean of the hydrometeor in the 2nd PDF component.
+            imu_hm_2(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=imu_hm_2(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_2", &
+                                 var_description="Mean (in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=imu_hm_2(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_2", &
+                                 var_description="Mean (in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'mu_Ncn_1' )
         imu_Ncn_1 = k
@@ -3651,33 +3727,69 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'mu_rr_1_n' )
-        imu_rr_1_n = k
-        call stat_assign( var_index=imu_rr_1_n, var_name="mu_rr_1_n", &
-             var_description="Mean (in-precip) of ln r_r (1st PDF component) [ln(kg/kg)]", &
-             var_units="ln(kg/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Hydrometeor component mean values (in-precip) for ln hm for each PDF
+      ! component and hydrometeor type.
+      case ( 'mu_hm_i_n' )
 
-      case ( 'mu_rr_2_n' )
-        imu_rr_2_n = k
-        call stat_assign( var_index=imu_rr_2_n, var_name="mu_rr_2_n", &
-             var_description="Mean (in-precip) of ln r_r (2nd PDF component) [ln(kg/kg)]", &
-             var_units="ln(kg/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'mu_Nr_1_n' )
-        imu_Nr_1_n = k
-        call stat_assign( var_index=imu_Nr_1_n, var_name="mu_Nr_1_n", &
-             var_description="Mean (in-precip) of ln N_r (1st PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'mu_Nr_2_n' )
-        imu_Nr_2_n = k
-        call stat_assign( var_index=imu_Nr_2_n, var_name="mu_Nr_2_n", &
-             var_description="Mean (in-precip) of ln N_r (2nd PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip mean of ln hm in the 1st PDF component.
+            imu_hm_1_n(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=imu_hm_1_n(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_1_n", &
+                                 var_description="Mean (in-precip) of ln " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [ln(kg/kg)]", &
+                                 var_units="ln(kg/kg)", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=imu_hm_1_n(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_1_n", &
+                                 var_description="Mean (in-precip) of ln " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [ln(num/kg)]", &
+                                 var_units="ln(num/kg)", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+            ! The in-precip mean of ln hm in the 2nd PDF component.
+            imu_hm_2_n(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=imu_hm_2_n(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_2_n", &
+                                 var_description="Mean (in-precip) of ln " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [ln(kg/kg)]", &
+                                 var_units="ln(kg/kg)", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=imu_hm_2_n(hm_idx), &
+                                 var_name="mu_"//trim( hm_type(1:2) )//"_2_n", &
+                                 var_description="Mean (in-precip) of ln " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [ln(num/kg)]", &
+                                 var_units="ln(num/kg)", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'mu_Ncn_1_n' )
         imu_Ncn_1_n = k
@@ -3693,33 +3805,79 @@ module stats_zt
              var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'sigma_rr_1' )
-        isigma_rr_1 = k
-        call stat_assign( var_index=isigma_rr_1, var_name="sigma_rr_1", &
-             var_description="Standard deviation (in-precip) of r_r (1st PDF component) [kg/kg]", &
-             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Hydrometeor component standard deviations (in-precip) for each PDF
+      ! component and hydrometeor type.
+      case ( 'sigma_hm_i' )
 
-      case ( 'sigma_rr_2' )
-        isigma_rr_2 = k
-        call stat_assign( var_index=isigma_rr_2, var_name="sigma_rr_2", &
-             var_description="Standard deviation (in-precip) of r_r (2nd PDF component) [kg/kg]", &
-             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'sigma_Nr_1' )
-        isigma_Nr_1 = k
-        call stat_assign( var_index=isigma_Nr_1, var_name="sigma_Nr_1", &
-             var_description="Standard deviation (in-precip) of N_r (1st PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'sigma_Nr_2' )
-        isigma_Nr_2 = k
-        call stat_assign( var_index=isigma_Nr_2, var_name="sigma_Nr_2", &
-             var_description="Standard deviation (in-precip) of N_r (2nd PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip standard deviation of the hydrometeor in the 1st PDF
+            ! component.
+            isigma_hm_1(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=isigma_hm_1(hm_idx), &
+                                 var_name="sigma_" &
+                                 // trim( hm_type(1:2) )//"_1", &
+                                 var_description="Standard deviation " &
+                                 // "(in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=isigma_hm_1(hm_idx), &
+                                 var_name="sigma_" &
+                                 // trim( hm_type(1:2) )//"_1", &
+                                 var_description="Standard deviation " &
+                                 // "(in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (1st PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+            ! The in-precip standard deviation of the hydrometeor in the 2nd PDF
+            ! component.
+            isigma_hm_2(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=isigma_hm_2(hm_idx), &
+                                 var_name="sigma_" &
+                                 // trim( hm_type(1:2) )//"_2", &
+                                 var_description="Standard deviation " &
+                                 // "(in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [kg/kg]", &
+                                 var_units="kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=isigma_hm_2(hm_idx), &
+                                 var_name="sigma_" &
+                                 // trim( hm_type(1:2) )//"_2", &
+                                 var_description="Standard deviation " &
+                                 // "(in-precip) of " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " (2nd PDF component) [num/kg]", &
+                                 var_units="num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'sigma_Ncn_1' )
         isigma_Ncn_1 = k
@@ -3735,37 +3893,47 @@ module stats_zt
              var_units="num/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'sigma_rr_1_n' )
-        isigma_rr_1_n = k
-        call stat_assign( var_index=isigma_rr_1_n, var_name="sigma_rr_1_n", &
-             var_description="Standard deviation (in-precip) of ln r_r (1st PDF component) &
-             &[ln(kg/kg)]", &
-             var_units="ln(kg/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Hydrometeor component standard deviations (in-precip) for ln hm for each
+      ! PDF component and hydrometeor type.
+      case ( 'sigma_hm_i_n' )
 
-      case ( 'sigma_rr_2_n' )
-        isigma_rr_2_n = k
-        call stat_assign( var_index=isigma_rr_2_n, var_name="sigma_rr_2_n", &
-             var_description="Standard deviation (in-precip) of ln r_r (2nd PDF component) &
-             &[ln(kg/kg)]", &
-             var_units="ln(kg/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'sigma_Nr_1_n' )
-        isigma_Nr_1_n = k
-        call stat_assign( var_index=isigma_Nr_1_n, var_name="sigma_Nr_1_n", &
-             var_description="Standard deviation (in-precip) of ln N_r (1st PDF component) &
-             &[ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'sigma_Nr_2_n' )
-        isigma_Nr_2_n = k
-        call stat_assign( var_index=isigma_Nr_2_n, var_name="sigma_Nr_2_n", &
-             var_description="Standard deviation (in-precip) of ln N_r (2nd PDF component) &
-             &[ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip standard deviation of ln hm in the 1st PDF
+            ! component.
+            isigma_hm_1_n(hm_idx) = k
+
+            call stat_assign( var_index=isigma_hm_1_n(hm_idx), &
+                              var_name="sigma_" &
+                              // trim( hm_type(1:2) )//"_1_n", &
+                              var_description="Standard deviation " &
+                              // "(in-precip) of ln " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (1st PDF component) [-]", &
+                              var_units="-", &
+                              l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+            ! The in-precip standard deviation of ln hm in the 2nd PDF
+            ! component.
+            isigma_hm_2_n(hm_idx) = k
+
+            call stat_assign( var_index=isigma_hm_2_n(hm_idx), &
+                              var_name="sigma_" &
+                              // trim( hm_type(1:2) )//"_2_n", &
+                              var_description="Standard deviation " &
+                              // "(in-precip) of ln " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (2nd PDF component) [-]", &
+                              var_units="-", &
+                              l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'sigma_Ncn_1_n' )
         isigma_Ncn_1_n = k
