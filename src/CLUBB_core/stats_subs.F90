@@ -2341,7 +2341,7 @@ module stats_subs
         zmscr16, & 
         zmscr17
 
-    use stats_variables, only: & 
+    use stats_variables, only: &
       isclrm, & 
       isclrm_f, & 
       iedsclrm, & 
@@ -2357,6 +2357,18 @@ module stats_subs
       iwpsclrprtp, & 
       iwpsclrpthlp, & 
       iwpedsclrp
+
+    use stats_variables, only: &
+      ihm1, &
+      ihm2, &
+      imu_hm_1, &
+      imu_hm_2, &
+      imu_hm_1_n, &
+      imu_hm_2_n, &
+      isigma_hm_1, &
+      isigma_hm_2, &
+      isigma_hm_1_n, &
+      isigma_hm_2_n
 
     use parameters_microphys, only: &
       LH_microphys_disabled ! Constant(s)
@@ -2536,6 +2548,17 @@ module stats_subs
       deallocate( iwpsclrpthlp )
       deallocate( iwpedsclrp )
 
+      ! De-allocate hyderometeor statistical variables
+      deallocate( ihm1 )
+      deallocate( ihm2 )
+      deallocate( imu_hm_1 )
+      deallocate( imu_hm_2 )
+      deallocate( imu_hm_1_n )
+      deallocate( imu_hm_2_n )
+      deallocate( isigma_hm_1 )
+      deallocate( isigma_hm_2 )
+      deallocate( isigma_hm_1_n )
+      deallocate( isigma_hm_2_n )
     end if ! l_stats
 
 
