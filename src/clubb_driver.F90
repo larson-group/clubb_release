@@ -18,7 +18,7 @@ module clubb_driver
   private ::  &
     initialize_clubb, &
     initialize_clubb_variables, &
-    advance_clubb_forcings, & 
+    prescribe_forcings, &
     restart_clubb
 
   public :: &
@@ -1193,12 +1193,12 @@ module clubb_driver
 
       ! Set large-scale tendencies and subsidence profiles
       err_code_forcings = clubb_no_error
-      call advance_clubb_forcings( dt_main, &  ! Intent(in)
+      call prescribe_forcings( dt_main, &  ! Intent(in)
                                    err_code_forcings ) ! Intent(inout)
 
       if ( fatal_error( err_code_forcings ) ) then
         if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "Fatal error in advance_clubb_forcings:"
+          write(fstderr,*) "Fatal error in prescribe_forcings:"
           call reportError( err_code_forcings )
         end if
         err_code = err_code_forcings
@@ -3252,7 +3252,7 @@ module clubb_driver
   end subroutine restart_clubb
 
   !----------------------------------------------------------------------
-  subroutine advance_clubb_forcings( dt, err_code )
+  subroutine prescribe_forcings( dt, err_code )
 
     ! Description:
     !   Calculate tendency and surface variables
@@ -3548,7 +3548,7 @@ module clubb_driver
       case default
 
         write(unit=fstderr,fmt=*)  & 
-           "advance_clubb_forcings: Don't know how to handle " & 
+           "prescribe_forcings: Don't know how to handle " &
            //"LS forcing for runtype: "//trim( runtype )
         stop
 
@@ -3857,7 +3857,7 @@ module clubb_driver
 
 
     return
-  end subroutine advance_clubb_forcings
+  end subroutine prescribe_forcings
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
