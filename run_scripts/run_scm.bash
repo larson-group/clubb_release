@@ -63,6 +63,7 @@ run_case()
 		fi
 	else
 		echo "clubb_standalone not found (did you re-compile?)"
+		RESULT=1
 	fi
 
 	# Remove the namelists
