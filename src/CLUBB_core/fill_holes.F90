@@ -1127,23 +1127,6 @@ module fill_holes
             Nxm_min_coef &
             = one / ( four_thirds * pi * rho_lw * mvr_hm_max(i)**3 )
 
-            do k = 2, gr%nz, 1
-
-               if ( hydromet(k,Nx2rx_hm_idx(i)) > zero ) then
-
-                  ! Rain water mixing ratio is found at the grid level.
-                  hydromet(k,i) &
-                  = max( hydromet(k,i), &
-                         Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(i)) )
-
-               else ! <rr> = 0
-
-                  hydromet(k,i) = zero
-
-               endif ! hydromet(k,Nx2rx_hm_idx(i)) > 0
-
-            enddo ! k = 2, gr%nz, 1
-
          else ! l_frozen_hm(i)
 
             ! Clipping for mean frozen hydrometeor concentration, <Nx>.
@@ -1160,24 +1143,26 @@ module fill_holes
             Nxm_min_coef &
             = one / ( four_thirds * pi * rho_ice * mvr_hm_max(i)**3 )
 
-            do k = 2, gr%nz, 1
-
-               if ( hydromet(k,Nx2rx_hm_idx(i)) > zero ) then
-
-                  ! Frozen hydrometeor mixing ratio is found at the grid level.
-                  hydromet(k,i) &
-                  = max( hydromet(k,i), &
-                         Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(i)) )
-
-               else ! <rx> = 0
-
-                  hydromet(k,i) = zero
-
-               endif ! hydromet(k,Nx2rx_hm_idx(i)) > 0
-
-            enddo ! k = 2, gr%nz, 1
-
          endif ! .not. l_frozen_hm(i)
+
+         ! Loop over vertical levels and increase hydrometeor concentrations
+         ! when necessary.
+         do k = 2, gr%nz, 1
+
+            if ( hydromet(k,Nx2rx_hm_idx(i)) > zero ) then
+
+               ! Hydrometeor mixing ratio, <rx>, is found at the grid level.
+               hydromet(k,i) &
+               = max( hydromet(k,i), &
+                      Nxm_min_coef * hydromet(k,Nx2rx_hm_idx(i)) )
+
+            else ! <rx> = 0
+
+               hydromet(k,i) = zero
+
+            endif ! hydromet(k,Nx2rx_hm_idx(i)) > 0
+
+         enddo ! k = 2, gr%nz, 1
 
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then

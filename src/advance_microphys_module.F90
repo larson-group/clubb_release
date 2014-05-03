@@ -934,8 +934,8 @@ module advance_microphys_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
-      Ncm,         & ! Mean cloud droplet conc., < N_c > (thermo. levs.) [num/kg]
-      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration       [num/kg]
+      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
+      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
