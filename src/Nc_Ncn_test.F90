@@ -1,0 +1,332 @@
+!---------------------------------------------------------------------------
+! $Id$
+!===============================================================================
+module Nc_Ncn_test
+
+  implicit none
+
+  private ! default scope
+
+  public :: Nc_Ncn_unit_test
+
+  contains
+
+  !=============================================================================
+  subroutine Nc_Ncn_unit_test
+
+
+    ! Description:
+    ! Unit testing for the Nc-Ncn "back-and-forth" code.
+    
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        sqrt_2,   & ! Variable(s)
+        one,      &
+        one_half, &
+        zero,     &
+        fstdout
+
+    use Nc_Ncn_eqns, only: &
+        Ncnm_to_Nc_in_cloud, & ! Procedure(s)
+        Nc_in_cloud_to_Ncnm, &
+        Ncnm_to_Ncm, &
+        Ncm_to_Ncnm
+
+    use PDF_utilities, only: &
+        stdev_L2N,  & ! Procedure(s)
+        corr_NL2NN
+
+    use anl_erf, only: &
+        erfc ! Procedure(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
+      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
+      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      cloud_frac       ! Cloud fraction                                      [-]
+
+    real( kind = core_rknd ) :: &
+      Ncm,         & ! Mean cloud droplet concentration (overall)       [num/kg]
+      Nc_in_cloud, & ! Mean cloud droplet concentration (in-cloud)      [num/kg]
+      Ncnm           ! Mean simplified cloud nuclei concentration       [num/kg]
+
+     real( kind = core_rknd ) :: &
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
+      const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
+
+     integer :: iter  ! Loop index
+
+
+    write(fstdout,*) ""
+    write(fstdout,*) "Nc-Ncn equations unit test"
+    write(fstdout,*) "=========================="
+    write(fstdout,*) ""
+
+    do iter = 1, 10, 1
+
+       write(fstdout,*) "Iteration = ", iter
+       write(fstdout,*) ""
+
+       if ( iter == 1 ) then
+
+          mu_s_1 = -1.0e-5_core_rknd
+          mu_s_2 = -5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 2.5e+7_core_rknd
+
+          const_corr_sNcn = 0.4_core_rknd
+
+          mixt_frac = 0.3_core_rknd
+
+       elseif ( iter == 2 ) then
+
+          mu_s_1 = -1.0e-5_core_rknd
+          mu_s_2 = -5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-9_core_rknd
+          sigma_s_2 = 1.5e-9_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 2.5e+7_core_rknd
+
+          const_corr_sNcn = 0.4_core_rknd
+
+          mixt_frac = 0.3_core_rknd
+
+       elseif ( iter == 3 ) then
+
+          mu_s_1 = 1.0e-5_core_rknd
+          mu_s_2 = 5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 7.5e+7_core_rknd
+
+          const_corr_sNcn = 0.4_core_rknd
+
+          mixt_frac = 0.3_core_rknd
+
+       elseif ( iter == 4 ) then
+
+          mu_s_1 = 1.0e-8_core_rknd
+          mu_s_2 = -1.0e-8_core_rknd
+
+          sigma_s_1 = 5.0e-5_core_rknd
+          sigma_s_2 = 5.0e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 5.0e+7_core_rknd
+
+          const_corr_sNcn = 0.1_core_rknd
+
+          mixt_frac = 0.5_core_rknd
+
+       elseif ( iter == 5 ) then
+
+          mu_s_1 = 1.0e-5_core_rknd
+          mu_s_2 = 5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-6_core_rknd
+          sigma_s_2 = 1.5e-6_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 2.5e+7_core_rknd
+
+          const_corr_sNcn = 0.5_core_rknd
+
+          mixt_frac = 0.3_core_rknd
+
+       elseif ( iter == 6 ) then
+
+          mu_s_1 = -1.0e-7_core_rknd
+          mu_s_2 = -5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 5.0e+7_core_rknd
+
+          const_corr_sNcn = zero
+
+          mixt_frac = 0.2_core_rknd
+
+       elseif ( iter == 7 ) then
+
+          mu_s_1 = 1.0e-6_core_rknd
+          mu_s_2 = -5.0e-7_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = zero
+
+          const_corr_sNcn = 0.7_core_rknd
+
+          mixt_frac = 0.2_core_rknd
+
+       elseif ( iter == 8 ) then
+
+          mu_s_1 = 1.0e-6_core_rknd
+          mu_s_2 = -5.0e-7_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-9_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 1.0e+8_core_rknd
+
+          const_corr_sNcn = 0.7_core_rknd
+
+          mixt_frac = 0.2_core_rknd
+
+       elseif ( iter == 9 ) then
+
+          mu_s_1 = 1.0e-5_core_rknd
+          mu_s_2 = -5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-9_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 1.0e+8_core_rknd
+
+          const_corr_sNcn = 0.7_core_rknd
+
+          mixt_frac = 0.2_core_rknd
+
+       elseif ( iter == 10 ) then
+
+          mu_s_1 = 1.0e-5_core_rknd
+          mu_s_2 = -5.0e-5_core_rknd
+
+          sigma_s_1 = 1.0e-5_core_rknd
+          sigma_s_2 = 1.5e-5_core_rknd
+
+          mu_Ncn_1 = 5.0e+7_core_rknd
+
+          sigma_Ncn_1 = 1.0e+8_core_rknd
+
+          const_corr_sNcn = 0.7_core_rknd
+
+          mixt_frac = 0.2_core_rknd
+
+       endif ! iter
+
+       mu_Ncn_2 = mu_Ncn_1
+
+       sigma_Ncn_2 = sigma_Ncn_1
+
+       write(fstdout,*) "mu_s_1 = ", mu_s_1
+       write(fstdout,*) "mu_s_2 = ", mu_s_2
+       write(fstdout,*) "sigma_s_1 = ", sigma_s_1
+       write(fstdout,*) "sigma_s_2 = ", sigma_s_2
+       write(fstdout,*) "mu_Ncn_1 = mu_Ncn_2 = ", mu_Ncn_1
+       write(fstdout,*) "sigma_Ncn_1 = sigma_Ncn_2 = ", sigma_Ncn_1
+       write(fstdout,*) "corr_sNcn_1 = corr_sNcn_2 = ", const_corr_sNcn
+       write(fstdout,*) "mixture fraction = ", mixt_frac
+
+       const_Ncnp2_on_Ncnm2 = sigma_Ncn_1**2 / mu_Ncn_1**2
+
+       sigma_Ncn_1_n = stdev_L2N( const_Ncnp2_on_Ncnm2 ) 
+
+       sigma_Ncn_2_n = sigma_Ncn_1_n
+
+       if ( const_Ncnp2_on_Ncnm2 > zero ) then
+
+          corr_sNcn_1_n &
+          = corr_NL2NN( const_corr_sNcn, sigma_Ncn_1_n, const_Ncnp2_on_Ncnm2 ) 
+
+          corr_sNcn_2_n = corr_sNcn_1_n
+
+       endif
+
+       cloud_frac &
+       = mixt_frac &
+         * one_half * erfc( - ( mu_s_1 / ( sqrt_2 * sigma_s_1 ) ) ) &
+         + ( one - mixt_frac ) &
+           * one_half * erfc( - ( mu_s_2 / ( sqrt_2 * sigma_s_2 ) ) )
+
+       write(fstdout,*) "cloud fraction = ", cloud_frac
+
+
+       ! Calculate Ncm and Nc_in_cloud from PDF parameters (Ncn) and cloud
+       ! fraction.
+       Nc_in_cloud &
+       = Ncnm_to_Nc_in_cloud( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
+                              sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                              sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                              corr_sNcn_1_n, corr_sNcn_2_n, mixt_frac, &
+                              cloud_frac )
+
+       write(fstdout,*) "Nc_in_cloud (from Ncn) = ", Nc_in_cloud
+
+       Ncm = Ncnm_to_Ncm( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
+                          sigma_s_1, sigma_s_2, sigma_Ncn_1, &
+                          sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                          corr_sNcn_1_n, corr_sNcn_2_n, mixt_frac )
+
+       write(fstdout,*) "Ncm (from Ncn) = ", Ncm
+
+       ! Calculate Ncnm from Ncm, Nc_in_cloud, PDF parameters, and cloud
+       ! fraction.
+       Ncnm = Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
+                                   mixt_frac, Nc_in_cloud, cloud_frac, &
+                                   const_Ncnp2_on_Ncnm2, const_corr_sNcn )
+
+       write(fstdout,*) "Ncnm (from Nc_in_cloud) = ", Ncnm
+
+       Ncnm = Ncm_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
+                           mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
+                           const_corr_sNcn )
+
+       write(fstdout,*) "Ncnm (from Ncm) = ", Ncnm
+
+       write(fstdout,*) ""
+       write(fstdout,*) "======================================================"
+       write(fstdout,*) ""
+
+    enddo ! iter = 1, 10, 1
+
+
+    return
+
+  end subroutine Nc_Ncn_unit_test
+
+!===============================================================================
+
+end module Nc_Ncn_test

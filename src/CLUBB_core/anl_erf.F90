@@ -5,46 +5,53 @@ module anl_erf
 
   implicit none
 
-  public :: erf
+  public :: erf,  &
+            erfc
 
   interface erf
     module procedure dp_erf
   end interface
 
-  private :: dp_erf
+  interface erfc
+    module procedure dp_erfc
+  end interface
+
+  private :: dp_erf,  &
+             dp_erfc
 
   private ! Default Scope
 
   contains
 
+  !=============================================================================
   pure function dp_erf( x ) result( erfx_core_rknd )
 
-!-----------------------------------------------------------------------
-! Description:
-!   DP_ERF evaluates the error function DP_ERF(X).
-!
-!   Original Author:
-!     William Cody,
-!     Mathematics and Computer Science Division,
-!     Argonne National Laboratory,
-!     Argonne, Illinois, 60439.
-!
-!   References:
-!     William Cody,
-!     "Rational Chebyshev approximations for the error function",
-!     Mathematics of Computation,
-!     1969, pages 631-638.
-!
-!  Arguments:
-!    Input, real ( kind = dp ) X, the argument of ERF.
-!    Output, real ( kind = dp ) ERFX, the value of ERF(X).
-!
-! Modifications:
-!   kind = 8 was replaced by the more portable sp and dp by UWM.
-!-----------------------------------------------------------------------
+    ! Description:
+    !   DP_ERF evaluates the error function DP_ERF(X).
+    !
+    !   Original Author:
+    !     William Cody,
+    !     Mathematics and Computer Science Division,
+    !     Argonne National Laboratory,
+    !     Argonne, Illinois, 60439.
+    !
+    !   References:
+    !     William Cody,
+    !     "Rational Chebyshev approximations for the error function",
+    !     Mathematics of Computation,
+    !     1969, pages 631-638.
+    !
+    !  Arguments:
+    !    Input, real ( kind = dp ) X, the argument of ERF.
+    !    Output, real ( kind = dp ) ERFX, the value of ERF(X).
+    !
+    ! Modifications:
+    !   kind = 8 was replaced by the more portable sp and dp by UWM.
+    !-----------------------------------------------------------------------
+
     use clubb_precision, only: &
-      dp, & ! Constants
-      core_rknd
+        dp, & ! Constants
+        core_rknd
 
     implicit none
 
@@ -119,8 +126,8 @@ module anl_erf
 
     integer :: i ! Index
 
-!-------------------------------------------------------------------------------
-                !Cast the input (x) to be CLUBB's double precision weberjk 20130709
+    !-----------------------------------------------------------------------
+    ! Cast the input (x) to be CLUBB's double precision weberjk 20130709
     xabs = abs( real(x, kind = dp) )
 
     !
@@ -205,9 +212,56 @@ module anl_erf
       end if
 
     end if
-    erfx_core_rknd = real( erfx, kind=core_rknd) !Return erfx, but as core_rknd weberjk 20130708
+
+    ! Return erfx, but as core_rknd weberjk 20130708
+    erfx_core_rknd = real( erfx, kind = core_rknd )
+
+
     return
+
   end function dp_erf
 
+  !=============================================================================
+  pure function dp_erfc( x ) result( erfcx )
+
+    ! Description:
+    ! The complimentary error function of x:
+    !
+    ! erfc(x) = 1 - erf(x);
+    !
+    ! where:
+    !
+    ! erf(x) = ( 2 / sqrt(pi) ) INT(0:x) e^-t^2 dt;
+    !
+    ! and
+    !
+    ! erfc(x) = ( 2 / sqrt(pi) ) INT(x:inf) e^-t^2 dt.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variable
+    real( kind = core_rknd), intent(in) :: x
+
+    ! Return Variable
+    real( kind = core_rknd) :: erfcx
+
+
+    erfcx = one - dp_erf( x )
+
+
+    return
+
+  end function dp_erfc
+
+!===============================================================================
 
 end module anl_erf
