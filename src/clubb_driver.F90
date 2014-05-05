@@ -4401,7 +4401,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
       LH_sample_point_weights ! Weight of each SILHS sample point      [-]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet             ! Hydrometeor mean fields
 
     ! Input/Output Variables

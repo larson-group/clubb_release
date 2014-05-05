@@ -69,8 +69,7 @@ module morrison_micro_driver_module
 
     use stats_variables, only: & 
       iprecip_rate_sfc, & !Variables
-      imorr_snow_rate, &
-      iLH_morr_snow_rate
+      imorr_snow_rate
 
     use stats_variables, only: &
       iPSMLT, & ! Variable(s)
