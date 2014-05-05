@@ -2,8 +2,8 @@
 ! $Id$
 module arm_3year
 
-!       Description:
-!       Contains subroutines for the ARM 3 Year case.
+! Description:
+!   Contains subroutine(s) for the ARM 3 Year case.
 !----------------------------------------------------------------------
 
 
@@ -19,9 +19,11 @@ module arm_3year
   subroutine arm_3year_sfclyr( time, z, rho_sfc, & 
                                thlm_sfc, ubar,  & 
                                wpthlp_sfc, wprtp_sfc, ustar )
-    !       Description:
-    !       This subroutine computes surface fluxes of horizontal momentum,
-    !       heat and moisture according to GCSS ARM specifications
+    ! Description:
+    !   This subroutine computes surface fluxes of horizontal momentum,
+    !   heat and moisture according to GCSS ARM specifications.
+    ! References:
+    !   None.
     !----------------------------------------------------------------------
 
     use constants_clubb, only: grav ! Variable(s)
@@ -37,8 +39,10 @@ module arm_3year
 
     implicit none
 
-    intrinsic :: max, sqrt, present
+    ! External
+    intrinsic :: size
 
+    ! Constant Parameters
     real( kind = core_rknd ), parameter ::  &  
       z0    = 0.035_core_rknd   ! ARM Cu mom. roughness height
 
@@ -48,7 +52,7 @@ module arm_3year
 
     real( kind = core_rknd ), intent(in) ::  & 
       z,         & ! Height at zt=2      [s] 
-      rho_sfc,      & ! Density at zm=1     [kg/m^3] 
+      rho_sfc,   & ! Density at zm=1     [kg/m^3] 
       ubar,      & ! mean sfc wind speed [m/s]
       thlm_sfc     ! thlm at (2)         [m/s]
 
