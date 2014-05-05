@@ -154,7 +154,18 @@
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'rtpthlp\_sf', 'expression' => 'rtpthlp_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'rtpthlp\_forcing', 'expression' => 'rtpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'rtpthlp\_residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+       {'plotTitle' => 'QT budget', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'DIVQ3D', 'expression' => 'DIVQ3D', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'RCMTEND_CLUBB', 'expression' => 'RCMTEND_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'RVMTEND_CLUBB', 'expression' => 'RVMTEND_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '-PRODPREC', 'expression' => '-PRODPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'EVAPPREC', 'expression' => 'EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'sum', 'expression' => 'DIVQ3D+RCMTEND_CLUBB+RVMTEND_CLUBB-PRODPREC+EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
+
 
     ],
     'nightlyOutput' =>
