@@ -15,8 +15,8 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               k_lh_start, lh_rt, lh_thl, &
-               X_nl_all_levs, lh_sample_point_weights, &
+               k_lh_start, LH_rt, LH_thl, &
+               X_nl_all_levs, LH_sample_point_weights, &
                p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
                dzq, hydromet, rcm, Nc_in_cloud,  &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -97,8 +97,8 @@ module estimate_scm_microphys_module
       k_lh_start       ! Starting level for computing arbitrary overlap
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
-      lh_rt, & ! num_samples values of total water mixing ratio     [kg/kg]
-      lh_thl   ! num_samples values of liquid potential temperature [K]
+      LH_rt, & ! num_samples values of total water mixing ratio     [kg/kg]
+      LH_thl   ! num_samples values of liquid potential temperature [K]
 
     real( kind = dp ), target, dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -120,7 +120,7 @@ module estimate_scm_microphys_module
       hydromet ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-       lh_sample_point_weights ! Weight for cloud weighted sampling
+       LH_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
 
@@ -150,7 +150,7 @@ module estimate_scm_microphys_module
       lh_rrainm_accr_all,  & ! LH est of time tendency of accretion                    [kg/kg/s]
       lh_rrainm_evap_all,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
       lh_Nrm_auto_all,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
-      lh_Nrm_evap_all,     & ! lh_est of time tendency of Nrm evaporation              [#/kg/s]
+      lh_Nrm_evap_all,     & ! LH_est of time tendency of Nrm evaporation              [#/kg/s]
       lh_Ncm_mc_all,       & ! LH est of time tendency of cloud droplet concentration  [#/kg/s]
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -211,7 +211,7 @@ module estimate_scm_microphys_module
 
     ! Assertion check
     if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
-         all( lh_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
+         all( LH_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
         ! The 1.0 indicates cloud_frac is > 0.5
 
       ! Verify every other sample point is out of cloud if we're doing
@@ -236,7 +236,7 @@ module estimate_scm_microphys_module
           write(fstderr,'(4X,A,A)')  "s_mellor_all_points  ", "weight   "
           do sample = 1, num_samples, 1
             write(fstderr,'(I4,2G20.4)') &
-              sample, s_mellor_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
+              sample, s_mellor_all_points(k_lh_start,sample), LH_sample_point_weights(sample)
           end do
         end if ! clubb_at_least_debug_level 2
         stop "Fatal Error in est_single_column_tndcy "
@@ -284,11 +284,11 @@ module estimate_scm_microphys_module
 
 
     if ( l_var_covar_src ) then
-      rt_all_samples = lh_rt
-      thl_all_samples = lh_thl
+      rt_all_samples = LH_rt
+      thl_all_samples = LH_thl
       w_all_samples = w_all_points
 
-      call lh_moments ( num_samples, lh_sample_point_weights, nz, &           ! Intent (in)
+      call LH_moments ( num_samples, LH_sample_point_weights, nz, &           ! Intent (in)
                        rt_all_samples, thl_all_samples, w_all_samples, &        ! Intent (in)
                        lh_rtp2_before_microphys, lh_thlp2_before_microphys, &   ! Intent (out)
                        lh_wprtp_before_microphys, lh_wpthlp_before_microphys, & ! Intent (out)
@@ -306,7 +306,7 @@ module estimate_scm_microphys_module
       end where
 
       w_column   = real( w_all_points(:,sample), kind = core_rknd )
-      rv_column  = real( lh_rt(:,sample), kind = core_rknd ) - rc_column
+      rv_column  = real( LH_rt(:,sample), kind = core_rknd ) - rc_column
       ! Verify total water isn't negative
       if ( any( rv_column < 0._core_rknd) ) then
         if ( clubb_at_least_debug_level( 1 ) ) then
@@ -314,7 +314,7 @@ module estimate_scm_microphys_module
           write(fstderr,'(a3,3a20)') "k", "rt", "rv", "rc"
           do k = 1, nz
             if ( rv_column(k) < 0._core_rknd) then
-              write(6,'(i3,3g20.7)')  k, lh_rt(k,sample), rv_column(k), &
+              write(6,'(i3,3g20.7)')  k, LH_rt(k,sample), rv_column(k), &
                 rc_column(k)
             end if
           end do
@@ -323,7 +323,7 @@ module estimate_scm_microphys_module
         where ( rv_column < 0._core_rknd) rv_column = zero_threshold
       end if ! Some rv_column element < 0
 
-      thl_column = real( lh_thl(:,sample), kind = core_rknd )
+      thl_column = real( LH_thl(:,sample), kind = core_rknd )
 
       call copy_X_nl_into_hydromet_all_pts( nz, d_variables, 1, & ! In
                                     X_nl_all_levs(:,sample,:), & ! In
@@ -373,13 +373,13 @@ module estimate_scm_microphys_module
         ! Weight the output results depending on whether we're calling the
         ! microphysics on clear or cloudy air
         lh_hydromet_vel_all(:,:,sample) = lh_hydromet_vel_all(:,:,sample) &
-                * lh_sample_point_weights(sample)
+                * LH_sample_point_weights(sample)
         lh_hydromet_mc_all(:,:,sample) = lh_hydromet_mc_all(:,:,sample) &
-                * lh_sample_point_weights(sample)
-        lh_Ncm_mc_all(:,sample) = lh_Ncm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * lh_sample_point_weights(sample)
+                * LH_sample_point_weights(sample)
+        lh_Ncm_mc_all(:,sample) = lh_Ncm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * LH_sample_point_weights(sample)
+        lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * LH_sample_point_weights(sample)
       end if
 
 
@@ -387,7 +387,7 @@ module estimate_scm_microphys_module
     end do ! sample = 1, num_samples
 
     if ( l_var_covar_src ) then
-      call lh_moments ( num_samples, lh_sample_point_weights, nz, &           ! Intent (in)
+      call LH_moments ( num_samples, LH_sample_point_weights, nz, &           ! Intent (in)
                          rt_all_samples, thl_all_samples, w_all_samples, &      ! Intent (in)
                          lh_rtp2_after_microphys, lh_thlp2_after_microphys, &   ! Intent (out)
                          lh_wprtp_after_microphys, lh_wpthlp_after_microphys, & ! Intent (out)
@@ -425,7 +425,7 @@ module estimate_scm_microphys_module
     ! Sample variables from microphys_stats_vars objects for statistics
     call silhs_microphys_stats &
          ( num_samples, microphys_stats_zt,  microphys_stats_sfc, &               ! Intent(in)
-           lh_sample_point_weights, l_stats_samp, l_silhs_KK_convergence_adj_mean ) ! Intent(in)
+           LH_sample_point_weights, l_stats_samp, l_silhs_KK_convergence_adj_mean ) ! Intent(in)
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples
@@ -455,7 +455,7 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
   subroutine silhs_microphys_stats &
              ( num_samples, microphys_stats_zt, microphys_stats_sfc, &
-               lh_sample_point_weights, l_stats_samp, &
+               LH_sample_point_weights, l_stats_samp, &
                l_silhs_KK_convergence_adj_mean )
 
   ! Description:
@@ -494,7 +494,7 @@ module estimate_scm_microphys_module
       microphys_stats_sfc
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-      lh_sample_point_weights ! Weight of each SILHS sample point
+      LH_sample_point_weights ! Weight of each SILHS sample point
 
     logical, intent(in) :: &
       l_stats_samp, &                   ! Are we sampling this timestep?
@@ -521,7 +521,7 @@ module estimate_scm_microphys_module
         end forall
 
         call stat_update_var_pt( stat_index, 1, &
-             sum( var_values(:) * lh_sample_point_weights(:) ) / &
+             sum( var_values(:) * LH_sample_point_weights(:) ) / &
               real( num_samples, kind = core_rknd ), sfc )
 
       end do
@@ -548,7 +548,7 @@ module estimate_scm_microphys_module
             end forall ! sample=1:num_samples
 
             call stat_update_var_pt( stat_index, k, &
-                 sum( var_values(:) * lh_sample_point_weights(:) ) / &
+                 sum( var_values(:) * LH_sample_point_weights(:) ) / &
                    real( num_samples, kind=core_rknd ), zt )
 
           end do ! k=1, nz
@@ -835,7 +835,7 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------------
   subroutine copy_X_nl_into_rc_all_pts &
              ( nz, d_variables, num_samples, X_nl_all_levs, &
-               lh_rc )
+               LH_rc )
   ! Description:
   !   Extracts a sample of rc from X_nl_all_levs, where rc = s * H(s), for each
   !   subcolumn.
@@ -863,16 +863,16 @@ module estimate_scm_microphys_module
 
     ! Output variables
     real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
-      lh_rc            ! SILHS samples of rc       [kg/kg]
+      LH_rc            ! SILHS samples of rc       [kg/kg]
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
 
     where ( X_nl_all_levs(:,:,iiPDF_s_mellor) >= 0.0_dp )
-      lh_rc = real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind=core_rknd )
+      LH_rc = real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind=core_rknd )
     elsewhere
-      lh_rc = 0.0_core_rknd
+      LH_rc = 0.0_core_rknd
     end where
 
     return
@@ -880,7 +880,7 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  subroutine lh_moments ( n_samples, lh_weights, nz, & 
+  subroutine LH_moments ( n_samples, LH_weights, nz, & 
                  rt_all_samples, thl_all_samples, w_all_samples, &
                  lh_rtp2, lh_thlp2, &
                  lh_wprtp, lh_wpthlp, &
@@ -915,7 +915,7 @@ module estimate_scm_microphys_module
       n_samples        ! Number of sample columns from latin hypercube
 
     real( kind = core_rknd ), dimension(n_samples), intent(in) :: &
-      lh_weights   ! Sample  point weights                   [-]
+      LH_weights   ! Sample  point weights                   [-]
 
     real( kind = core_rknd ), dimension(nz,n_samples), intent(in) :: &
       rt_all_samples, &  ! rt columns from latin hypercube   [kg/kg]
@@ -944,18 +944,18 @@ module estimate_scm_microphys_module
 
     ! ---- Begin code ----
 
-    rt_mean = compute_sample_mean( nz, n_samples, lh_weights, rt_all_samples )
-    thl_mean = compute_sample_mean( nz, n_samples, lh_weights, thl_all_samples )
-    w_mean = compute_sample_mean( nz, n_samples, lh_weights, w_all_samples )
+    rt_mean = compute_sample_mean( nz, n_samples, LH_weights, rt_all_samples )
+    thl_mean = compute_sample_mean( nz, n_samples, LH_weights, thl_all_samples )
+    w_mean = compute_sample_mean( nz, n_samples, LH_weights, w_all_samples )
 
-    rtp2_zt = compute_sample_variance( nz, n_samples, rt_all_samples, lh_weights, rt_mean )
-    thlp2_zt = compute_sample_variance( nz, n_samples, thl_all_samples, lh_weights, thl_mean )
+    rtp2_zt = compute_sample_variance( nz, n_samples, rt_all_samples, LH_weights, rt_mean )
+    thlp2_zt = compute_sample_variance( nz, n_samples, thl_all_samples, LH_weights, thl_mean )
   
-    wprtp_zt = compute_sample_covariance( nz, n_samples, lh_weights, &
+    wprtp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
                    w_all_samples, w_mean, rt_all_samples, rt_mean ) 
-    wpthlp_zt = compute_sample_covariance( nz, n_samples, lh_weights, &
+    wpthlp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
                    w_all_samples, w_mean, thl_all_samples, thl_mean )
-    rtpthlp_zt = compute_sample_covariance( nz, n_samples, lh_weights, &
+    rtpthlp_zt = compute_sample_covariance( nz, n_samples, LH_weights, &
                    rt_all_samples, rt_mean, thl_all_samples, thl_mean ) 
 
     lh_rtp2 = zt2zm( rtp2_zt )
@@ -965,6 +965,6 @@ module estimate_scm_microphys_module
     lh_rtpthlp = zt2zm( rtpthlp_zt )
 
     return
-  end subroutine lh_moments
+  end subroutine LH_moments
   !-----------------------------------------------------------------------------
 end module estimate_scm_microphys_module

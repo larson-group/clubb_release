@@ -53,9 +53,9 @@ module microphys_init_cleanup
         l_fix_s_t_correlations,       & ! Use a fixed correlation for s and t Mellor (SILHS)
         l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (SILHS)
         l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
-        lh_microphys_calls,           & ! # of SILHS samples to call the microphysics with
-        lh_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
-        lh_seed,                      & ! Integer seed for the Mersenne twister
+        LH_microphys_calls,           & ! # of SILHS samples to call the microphysics with
+        LH_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
+        LH_seed,                      & ! Integer seed for the Mersenne twister
         l_local_kk,                   & ! Use local formula for K&K
         l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
@@ -68,9 +68,9 @@ module microphys_init_cleanup
         Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
 
     use parameters_microphys, only: &
-        lh_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
-        lh_microphys_non_interactive, & ! Feed the subcolumns into microphysics with no feedback
-        lh_microphys_disabled           ! Disable latin hypercube entirely
+        LH_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
+        LH_microphys_non_interactive, & ! Feed the subcolumns into microphysics with no feedback
+        LH_microphys_disabled           ! Disable latin hypercube entirely
 
     use parameters_microphys, only: &
         l_silhs_KK_convergence_adj_mean ! Clip source adjustment terms on mean instead of individual
@@ -102,7 +102,7 @@ module microphys_init_cleanup
         r_0
 
     use parameters_microphys, only: &
-        lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
+        LH_microphys_type_int => LH_microphys_type ! Determines how the LH samples are used
 
     use parameters_microphys, only: &
         hydromet_tol  ! Variable(s)
@@ -233,7 +233,7 @@ module microphys_init_cleanup
       hydromet_dim ! Number of hydrometeor fields.
 
     ! Local variables
-    character(len=30) :: lh_microphys_type
+    character(len=30) :: LH_microphys_type
     integer, parameter :: res = 20   ! Used for lookup tables with GFDL activation
     integer, parameter :: res2 = 20  ! Used for lookup tables with GFDL activation
     real( kind = core_rknd ), dimension( :, :, :, :, : ), allocatable :: &
@@ -248,8 +248,8 @@ module microphys_init_cleanup
       l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
       l_seifert_beheng, l_predictnc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
-      l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
-      lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
+      l_in_cloud_Nc_diff, LH_microphys_type, l_local_kk, LH_microphys_calls, &
+      LH_sequence_length, LH_seed, l_lh_cloud_weighted_sampling, &
       l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
       rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud, Ncnp2_on_Ncnm2, &
       rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below, &
@@ -309,7 +309,7 @@ module microphys_init_cleanup
 
     pgam_fixed = 5.
 
-    lh_microphys_type = "disabled"
+    LH_microphys_type = "disabled"
 
     ! The next three lines open the cases model.in file and replace values of
     ! the parameters if they exist in the file.
@@ -358,13 +358,13 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "l_upwind_diff_sed = ", l_upwind_diff_sed, &
                          l_write_to_file, iunit )
-       call write_text ( "lh_microphys_type = " // &
-                         trim( lh_microphys_type ), l_write_to_file, iunit )
-       call write_text ( "lh_microphys_calls = ", lh_microphys_calls, &
+       call write_text ( "LH_microphys_type = " // &
+                         trim( LH_microphys_type ), l_write_to_file, iunit )
+       call write_text ( "LH_microphys_calls = ", LH_microphys_calls, &
                          l_write_to_file, iunit )
-       call write_text ( "lh_sequence_length = ", lh_sequence_length, &
+       call write_text ( "LH_sequence_length = ", LH_sequence_length, &
                          l_write_to_file, iunit )
-       call write_text ( "lh_seed = ", lh_seed, l_write_to_file, iunit )
+       call write_text ( "LH_seed = ", LH_seed, l_write_to_file, iunit )
        call write_text ( "l_lh_cloud_weighted_sampling = ", &
                          l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
        call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &
@@ -567,7 +567,7 @@ module microphys_init_cleanup
        endif
 
        if ( .not. l_fix_s_t_correlations .and. l_ice_micro &
-            .and. trim( lh_microphys_type ) /= "disabled" ) then
+            .and. trim( LH_microphys_type ) /= "disabled" ) then
           write(fstderr,*) "The flag l_fix_s_t_correlations must be true" &
                            // " in order to enable latin hypercube sampling" &
                            // " and ice microphysics."
@@ -779,24 +779,24 @@ module microphys_init_cleanup
        stop
     endif
 
-    select case ( trim( lh_microphys_type ) )
+    select case ( trim( LH_microphys_type ) )
     case ( "interactive" )
-       lh_microphys_type_int = lh_microphys_interactive
+       LH_microphys_type_int = LH_microphys_interactive
 
     case ( "non-interactive" )
-       lh_microphys_type_int = lh_microphys_non_interactive
+       LH_microphys_type_int = LH_microphys_non_interactive
 
     case ( "disabled" )
-       lh_microphys_type_int = lh_microphys_disabled
+       LH_microphys_type_int = LH_microphys_disabled
 
     case default
-       stop "Error determining lh_microphys_type"
+       stop "Error determining LH_microphys_type"
 
     end select
 
     ! Make sure the user didn't select LH sampling using
     ! coamps, morrison-gettelman, or simplified_ice microphysics
-    if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
+    if ( ( .not. ( LH_microphys_type_int == LH_microphys_disabled ) ) &
            .and. ( trim( micro_scheme ) == "coamps" .or. &
                    trim( micro_scheme ) == "morrison_gettelman" .or. &
                    trim( micro_scheme ) == "simplified_ice" ) ) then
@@ -806,7 +806,7 @@ module microphys_init_cleanup
 
     ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when SILHS is disabled
     if ( l_silhs_KK_convergence_adj_mean .and. &
-       lh_microphys_type_int == lh_microphys_disabled) then
+       LH_microphys_type_int == LH_microphys_disabled) then
        stop "l_silhs_KK_convergence_adj_mean requires LH microphysics to be enabled."
     endif
 
@@ -831,7 +831,7 @@ module microphys_init_cleanup
     !<Changes by janhft 02/19/13>
     if ( l_diagnose_correlations &
          .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
-         .and. ( lh_microphys_type_int == lh_microphys_disabled ) ) ) then
+         .and. ( LH_microphys_type_int == LH_microphys_disabled ) ) ) then
        write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
                         // "for KK microphysics by now."
        stop
@@ -839,16 +839,16 @@ module microphys_init_cleanup
 
     if ( ( .not. l_local_kk) .and. &
          ( trim( micro_scheme ) == "khairoutdinov_kogan" ) .and. &
-         ( lh_microphys_type_int == lh_microphys_interactive ) ) then
+         ( LH_microphys_type_int == LH_microphys_interactive ) ) then
        write(fstderr,*) "Error:  KK upscaled microphysics " &
                         // "(l_local_kk = .false.) and interactive Latin " &
-                        // "Hypercube (lh_microphys_type = interactive) " &
+                        // "Hypercube (LH_microphys_type = interactive) " &
                         // "are incompatible."
        stop
     endif
 
     if ( l_morr_xp2_mc_tndcy .and. &
-         ( lh_microphys_type_int /= lh_microphys_disabled ) ) then
+         ( LH_microphys_type_int /= LH_microphys_disabled ) ) then
        write(fstderr,*) "Error:  The code to include the effects of rain " &
                         // "evaporation on rtp2 and thlp2 in Morrison " &
                         // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &

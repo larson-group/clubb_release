@@ -157,11 +157,11 @@ l_const_Nc_in_cloud = .true.
 l_var_covar_src = .true.
 
 
-lh_microphys_type = "interactive",
+LH_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-lh_microphys_calls = 8,
-lh_sequence_length = 1,
+LH_microphys_calls = 8,
+LH_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
 

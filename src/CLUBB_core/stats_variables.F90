@@ -47,14 +47,14 @@ module stats_variables
 
   character(len=200), public ::  & 
     fname_zt     = '', & ! Name of the stats file for thermodynamic grid fields
-    fname_lh_zt  = '', & ! Name of the stats file for LH variables on the zt grid
-    fname_lh_sfc = '', & ! Name of the stats file for LH variables on the zt grid
+    fname_LH_zt  = '', & ! Name of the stats file for LH variables on the zt grid
+    fname_LH_sfc = '', & ! Name of the stats file for LH variables on the zt grid
     fname_zm     = '', & ! Name of the stats file for momentum grid fields
     fname_rad_zt = '', & ! Name of the stats file for the zt radiation grid fields
     fname_rad_zm = '', & ! Name of the stats file for the zm radiation grid fields
     fname_sfc    = ''    ! Name of the stats file for surface only fields
 
-!$omp   threadprivate(fname_zt, fname_lh_zt, fname_lh_sfc, fname_zm, fname_rad_zt, &
+!$omp   threadprivate(fname_zt, fname_LH_zt, fname_LH_sfc, fname_zm, fname_rad_zt, &
 !$omp     fname_rad_zm, fname_sfc)
 
 !       Indices for statistics in zt file
@@ -231,7 +231,7 @@ module stats_variables
      im_vol_rad_cloud = 0, & ! COAMPS only. dschanen 6 Dec 2006
      iprecip_rate_zt = 0,    & ! Brian
      iAKm = 0,             & ! analytic Kessler.  Vince Larson 22 May 2005 
-     ilh_AKm = 0,          & ! LH Kessler.  Vince Larson  22 May 2005
+     iLH_AKm = 0,          & ! LH Kessler.  Vince Larson  22 May 2005
      iradht = 0,           & ! Radiative heating.
      iradht_LW = 0,        & !   "           "   Long-wave component
      iradht_SW = 0,        & !   "           "   Short-wave component
@@ -239,7 +239,7 @@ module stats_variables
 !$omp  threadprivate( iNcm, iNccnm, iNc_activated, isnowslope, &
 !$omp    ised_rcm, irsat, irsati, irrainm, &
 !$omp    im_vol_rad_rain, im_vol_rad_cloud, &
-!$omp    iprecip_rate_zt, iAKm, ilh_AKm, &
+!$omp    iprecip_rate_zt, iAKm, iLH_AKm, &
 !$omp    iradht, iradht_LW, iradht_SW, &
 !$omp    irel_humidity )
 
@@ -271,9 +271,9 @@ module stats_variables
 !$omp threadprivate(icloud_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
 
   integer, public :: &
-    ilh_rcm_avg = 0
+    iLH_rcm_avg = 0
 
-!$omp threadprivate(ilh_rcm_avg)
+!$omp threadprivate(iLH_rcm_avg)
 
   integer, public :: & 
      iNrm = 0,       & ! Rain droplet number concentration
@@ -661,83 +661,83 @@ module stats_variables
 !$omp   threadprivate(iedsclrm, iedsclrm_f)
 
   integer, public :: &
-    ilh_thlm_mc = 0,      & ! Latin hypercube estimate of thlm_mc
-    ilh_rvm_mc = 0,       & ! Latin hypercube estimate of rvm_mc
-    ilh_rcm_mc = 0,       & ! Latin hypercube estimate of rcm_mc
-    ilh_Ncm_mc = 0,       & ! Latin hypercube estimate of Ncm_mc
-    ilh_rrainm_mc = 0,    & ! Latin hypercube estimate of rrainm_mc
-    ilh_Nrm_mc = 0,       & ! Latin hypercube estimate of Nrm_mc
-    ilh_rsnowm_mc = 0,    & ! Latin hypercube estimate of rsnowm_mc
-    ilh_Nsnowm_mc = 0,    & ! Latin hypercube estimate of Nsnowm_mc
-    ilh_rgraupelm_mc = 0, & ! Latin hypercube estimate of rgraupelm_mc
-    ilh_Ngraupelm_mc = 0, & ! Latin hypercube estimate of Ngraupelm_mc
-    ilh_ricem_mc = 0,     & ! Latin hypercube estimate of ricem_mc
-    ilh_Nim_mc = 0          ! Latin hypercube estimate of Nim_mc
-!$omp   threadprivate( ilh_thlm_mc, ilh_rvm_mc, ilh_rcm_mc, ilh_Ncm_mc, &
-!$omp     ilh_rrainm_mc,  ilh_Nrm_mc, ilh_rsnowm_mc, ilh_Nsnowm_mc, &
-!$omp     ilh_rgraupelm_mc, ilh_Ngraupelm_mc, ilh_ricem_mc, ilh_Nim_mc )
+    iLH_thlm_mc = 0,      & ! Latin hypercube estimate of thlm_mc
+    iLH_rvm_mc = 0,       & ! Latin hypercube estimate of rvm_mc
+    iLH_rcm_mc = 0,       & ! Latin hypercube estimate of rcm_mc
+    iLH_Ncm_mc = 0,       & ! Latin hypercube estimate of Ncm_mc
+    iLH_rrainm_mc = 0,    & ! Latin hypercube estimate of rrainm_mc
+    iLH_Nrm_mc = 0,       & ! Latin hypercube estimate of Nrm_mc
+    iLH_rsnowm_mc = 0,    & ! Latin hypercube estimate of rsnowm_mc
+    iLH_Nsnowm_mc = 0,    & ! Latin hypercube estimate of Nsnowm_mc
+    iLH_rgraupelm_mc = 0, & ! Latin hypercube estimate of rgraupelm_mc
+    iLH_Ngraupelm_mc = 0, & ! Latin hypercube estimate of Ngraupelm_mc
+    iLH_ricem_mc = 0,     & ! Latin hypercube estimate of ricem_mc
+    iLH_Nim_mc = 0          ! Latin hypercube estimate of Nim_mc
+!$omp   threadprivate( iLH_thlm_mc, iLH_rvm_mc, iLH_rcm_mc, iLH_Ncm_mc, &
+!$omp     iLH_rrainm_mc,  iLH_Nrm_mc, iLH_rsnowm_mc, iLH_Nsnowm_mc, &
+!$omp     iLH_rgraupelm_mc, iLH_Ngraupelm_mc, iLH_ricem_mc, iLH_Nim_mc )
 
   integer, public :: &
-    ilh_rrainm_auto = 0, & ! Latin hypercube estimate of autoconversion
-    ilh_rrainm_accr = 0, & ! Latin hypercube estimate of accretion
-    ilh_rrainm_evap = 0, & ! Latin hypercube estimate of evaporation
-    ilh_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
-    ilh_Nrm_cond    = 0    ! Latin hypercube estimate of Nrm evaporation
+    iLH_rrainm_auto = 0, & ! Latin hypercube estimate of autoconversion
+    iLH_rrainm_accr = 0, & ! Latin hypercube estimate of accretion
+    iLH_rrainm_evap = 0, & ! Latin hypercube estimate of evaporation
+    iLH_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
+    iLH_Nrm_cond    = 0    ! Latin hypercube estimate of Nrm evaporation
 
-!$omp   threadprivate( ilh_rrainm_auto, ilh_rrainm_accr, ilh_rrainm_evap, &
-!$omp                  ilh_Nrm_auto, ilh_Nrm_cond )
-
-  integer, public :: &
-    ilh_rrainm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
-    ilh_rrainm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
-    ilh_Nrm_src_adj     = 0, & ! Latin hypercube estimate of Nrm source adjustmet (KK only!)
-    ilh_Nrm_cond_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
-!$omp   threadprivate( ilh_rrainm_src_adj, ilh_rrainm_cond_adj, ilh_Nrm_src_adj, &
-!$omp                  ilh_Nrm_cond_adj     )
+!$omp   threadprivate( iLH_rrainm_auto, iLH_rrainm_accr, iLH_rrainm_evap, &
+!$omp                  iLH_Nrm_auto, iLH_Nrm_cond )
 
   integer, public :: &
-    ilh_Vrr = 0, & ! Latin hypercube estimate of rrainm sedimentation velocity
-    ilh_VNr = 0    ! Latin hypercube estimate of Nrm sedimentation velocity
-!$omp   threadprivate(ilh_Vrr,  ilh_VNr)
+    iLH_rrainm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
+    iLH_rrainm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
+    iLH_Nrm_src_adj     = 0, & ! Latin hypercube estimate of Nrm source adjustmet (KK only!)
+    iLH_Nrm_cond_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
+!$omp   threadprivate( iLH_rrainm_src_adj, iLH_rrainm_cond_adj, iLH_Nrm_src_adj, &
+!$omp                  iLH_Nrm_cond_adj     )
 
   integer, public :: &
-    ilh_rrainm = 0, &
-    ilh_Nrm = 0, &
-    ilh_ricem = 0, &
-    ilh_Nim = 0, &
-    ilh_rsnowm = 0, &
-    ilh_Nsnowm = 0, &
-    ilh_rgraupelm = 0, &
-    ilh_Ngraupelm = 0, &
-    ilh_thlm = 0, &
-    ilh_rcm = 0, &
-    ilh_Ncm = 0, &
-    ilh_Ncnm = 0, &
-    ilh_rvm = 0, &
-    ilh_wm = 0, &
-    ilh_cloud_frac = 0, &
-    ilh_s_mellor = 0, &
-    ilh_t_mellor = 0, &
-    ilh_precip_frac = 0, &
-    ilh_mixt_frac = 0
-
-!$omp threadprivate(ilh_rrainm, ilh_Nrm, ilh_ricem, ilh_Nim, ilh_rsnowm, ilh_Nsnowm, &
-!$omp   ilh_rgraupelm, ilh_Ngraupelm, &
-!$omp   ilh_thlm, ilh_rcm, ilh_Ncm, ilh_Ncnm, ilh_rvm, ilh_wm, ilh_cloud_frac, &
-!$omp   ilh_s_mellor, ilh_t_mellor, ilh_precip_frac, ilh_mixt_frac )
+    iLH_Vrr = 0, & ! Latin hypercube estimate of rrainm sedimentation velocity
+    iLH_VNr = 0    ! Latin hypercube estimate of Nrm sedimentation velocity
+!$omp   threadprivate(iLH_Vrr,  iLH_VNr)
 
   integer, public :: &
-    ilh_wp2_zt = 0, &
-    ilh_Nrp2_zt = 0, &
-    ilh_Ncnp2_zt = 0, &
-    ilh_Ncp2_zt = 0, &
-    ilh_rcp2_zt = 0, &
-    ilh_rtp2_zt = 0, &
-    ilh_thlp2_zt = 0, &
-    ilh_rrainp2_zt = 0, &
-    ilh_sp2 = 0 ! Eric Raut
-!$omp threadprivate( ilh_wp2_zt, ilh_Nrp2_zt, ilh_Ncnp2_zt, ilh_Ncp2_zt, &
-!$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrainp2_zt, ilh_sp2 )
+    iLH_rrainm = 0, &
+    iLH_Nrm = 0, &
+    iLH_ricem = 0, &
+    iLH_Nim = 0, &
+    iLH_rsnowm = 0, &
+    iLH_Nsnowm = 0, &
+    iLH_rgraupelm = 0, &
+    iLH_Ngraupelm = 0, &
+    iLH_thlm = 0, &
+    iLH_rcm = 0, &
+    iLH_Ncm = 0, &
+    iLH_Ncnm = 0, &
+    iLH_rvm = 0, &
+    iLH_wm = 0, &
+    iLH_cloud_frac = 0, &
+    iLH_s_mellor = 0, &
+    iLH_t_mellor = 0, &
+    iLH_precip_frac = 0, &
+    iLH_mixt_frac = 0
+
+!$omp threadprivate(iLH_rrainm, iLH_Nrm, iLH_ricem, iLH_Nim, iLH_rsnowm, iLH_Nsnowm, &
+!$omp   iLH_rgraupelm, iLH_Ngraupelm, &
+!$omp   iLH_thlm, iLH_rcm, iLH_Ncm, iLH_Ncnm, iLH_rvm, iLH_wm, iLH_cloud_frac, &
+!$omp   iLH_s_mellor, iLH_t_mellor, iLH_precip_frac, iLH_mixt_frac )
+
+  integer, public :: &
+    iLH_wp2_zt = 0, &
+    iLH_Nrp2_zt = 0, &
+    iLH_Ncnp2_zt = 0, &
+    iLH_Ncp2_zt = 0, &
+    iLH_rcp2_zt = 0, &
+    iLH_rtp2_zt = 0, &
+    iLH_thlp2_zt = 0, &
+    iLH_rrainp2_zt = 0, &
+    iLH_sp2 = 0 ! Eric Raut
+!$omp threadprivate( iLH_wp2_zt, iLH_Nrp2_zt, iLH_Ncnp2_zt, iLH_Ncp2_zt, &
+!$omp                iLH_rcp2_zt, iLH_rtp2_zt, iLH_thlp2_zt, iLH_rrainp2_zt, iLH_sp2 )
 
 
   ! Indices for Morrison budgets
@@ -1251,13 +1251,13 @@ module stats_variables
 !$omp threadprivate(iwp3_on_wp2, iwp3_on_wp2_zt)
 
   integer, public :: & 
-    ilh_morr_snow_rate = 0
-!$omp threadprivate( ilh_morr_snow_rate )
+    iLH_morr_snow_rate = 0
+!$omp threadprivate( iLH_morr_snow_rate )
 
   integer, public :: & 
-    ilh_vwp = 0, &
-    ilh_lwp = 0
-!$omp threadprivate( ilh_vwp, ilh_lwp )
+    iLH_vwp = 0, &
+    iLH_lwp = 0
+!$omp threadprivate( iLH_vwp, iLH_lwp )
 
 
   integer, public :: &
@@ -1268,13 +1268,13 @@ module stats_variables
 
   type (stats), target, public :: zt,   &    ! zt grid
                                   zm,   &    ! zm grid
-                                  lh_zt,  &  ! lh_zt grid
-                                  lh_sfc,  & ! lh_sfc grid
+                                  LH_zt,  &  ! LH_zt grid
+                                  LH_sfc,  & ! LH_sfc grid
                                   rad_zt,  & ! rad_zt grid
                                   rad_zm,  & ! rad_zm grid
                                   sfc        ! sfc
 
-!$omp threadprivate(zt, zm, lh_zt, lh_sfc, rad_zt, rad_zm, sfc)
+!$omp threadprivate(zt, zm, LH_zt, LH_sfc, rad_zt, rad_zm, sfc)
 
   ! Scratch space
 

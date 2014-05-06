@@ -100,22 +100,22 @@ vars_zt =
 'rcm_refined', 'hl_on_Cp_residual', 'qto_residual', 
 ''
 
-vars_lh_zt =
-'AKm', 'lh_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
-'lh_thlm_mc', 'lh_rvm_mc', 'lh_rcm_mc', 'lh_Ncm_mc', 'lh_rrainm_mc', 'lh_Nrm_mc',
-'lh_rsnowm_mc', 'lh_Nsnowm_mc', 'lh_rgraupelm_mc', 'lh_Ngraupelm_mc', 'lh_ricem_mc', 'lh_Nim_mc',
-'lh_Vrr', 'lh_VNr', 'lh_rrainm', 'lh_ricem', 'lh_rsnowm', 'lh_rgraupelm',
-'lh_thlm', 'lh_rcm', 'lh_rvm', 'lh_wm', 'lh_rcp2_zt', 'lh_rrainp2_zt', 
-'lh_Nrp2_zt', 'lh_Ncp2_zt', 'lh_Ncnp2_zt', 'lh_wp2_zt', 'lh_cloud_frac',
-'lh_s_mellor', 'lh_t_mellor', 'lh_sp2', 'lh_rtp2_zt', 'lh_thlp2_zt',
-'lh_Nrm', 'lh_Nim', 'lh_Ncnm', 'lh_Ncm', 'lh_Ngraupelm', 'lh_Nsnowm',
-'lh_rcm_avg', 'lh_rrainm_auto', 'lh_rrainm_accr', 'lh_rrainm_evap',
-'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrainm_src_adj', 'lh_rrainm_cond_adj',
-'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac',
+vars_LH_zt =
+'AKm', 'LH_AKm', 'AKstd', 'AKstd_cld', 'AKm_rcm', 'AKm_rcc',
+'LH_thlm_mc', 'LH_rvm_mc', 'LH_rcm_mc', 'LH_Ncm_mc', 'LH_rrainm_mc', 'LH_Nrm_mc',
+'LH_rsnowm_mc', 'LH_Nsnowm_mc', 'LH_rgraupelm_mc', 'LH_Ngraupelm_mc', 'LH_ricem_mc', 'LH_Nim_mc',
+'LH_Vrr', 'LH_VNr', 'LH_rrainm', 'LH_ricem', 'LH_rsnowm', 'LH_rgraupelm',
+'LH_thlm', 'LH_rcm', 'LH_rvm', 'LH_wm', 'LH_rcp2_zt', 'LH_rrainp2_zt', 
+'LH_Nrp2_zt', 'LH_Ncp2_zt', 'LH_Ncnp2_zt', 'LH_wp2_zt', 'LH_cloud_frac',
+'LH_s_mellor', 'LH_t_mellor', 'LH_sp2', 'LH_rtp2_zt', 'LH_thlp2_zt',
+'LH_Nrm', 'LH_Nim', 'LH_Ncnm', 'LH_Ncm', 'LH_Ngraupelm', 'LH_Nsnowm',
+'LH_rcm_avg', 'LH_rrainm_auto', 'LH_rrainm_accr', 'LH_rrainm_evap',
+'LH_Nrm_auto', 'LH_Nrm_cond', 'LH_rrainm_src_adj', 'LH_rrainm_cond_adj',
+'LH_Nrm_src_adj', 'LH_Nrm_cond_adj', 'LH_precip_frac', 'LH_mixt_frac',
 ''
 
-vars_lh_sfc =
-'lh_morr_snow_rate', 'lh_lwp', 'lh_vwp',
+vars_LH_sfc =
+'LH_morr_snow_rate', 'LH_lwp', 'LH_vwp',
 ''
 
 vars_zm = 

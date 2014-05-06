@@ -871,15 +871,15 @@ sub buildMatlabStringStd()
 		    my $file1 = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
 		    my $file2 = "$inputDirs[1]/$lines[$lineNum]{'filename'}";
 		    #Ticket 543
-		    #If a CaseName_lh_sfc file is found in the output, the lh_morr_rain_rate should be output
+		    #If a CaseName_LH_sfc file is found in the output, the LH_morr_rain_rate should be output
 		    #for the Surface rainfall rate plot
-		    my $lhSfcFile1 = $inputDirs[0] . "/" . $caseName . "_lh_sfc.ctl";
-		    my $lhSfcFile2 = $inputDirs[1] . "/" . $caseName . "_lh_sfc.ctl";
+		    my $lhSfcFile1 = $inputDirs[0] . "/" . $caseName . "_LH_sfc.ctl";
+		    my $lhSfcFile2 = $inputDirs[1] . "/" . $caseName . "_LH_sfc.ctl";
 		    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile1 && -e $lhSfcFile2)
 		    {
 			$file1 = $lhSfcFile1;
 			$file2 = $lhSfcFile2;
-			$expression = "lh_morr_rain_rate";
+			$expression = "LH_morr_rain_rate";
 		    }
 
 	            if($dataFileType eq "netcdf")

@@ -9,7 +9,7 @@ module stats_subs
 
   public :: stats_init, stats_begin_timestep, stats_end_timestep, & 
     stats_accumulate, stats_finalize, stats_accumulate_hydromet, &
-    stats_accumulate_lh_tend
+    stats_accumulate_LH_tend
 
   private :: stats_zero, stats_avg, stats_check_num_samples
 
@@ -54,8 +54,8 @@ module stats_subs
       ztscr21
 
     use stats_variables, only: & 
-      lh_zt, &  ! Variable(s)
-      lh_sfc
+      LH_zt, &  ! Variable(s)
+      LH_sfc
 
     use stats_variables, only: & 
       zm,      & ! Variables
@@ -88,8 +88,8 @@ module stats_subs
       l_stats_samp,  & 
       l_stats_last, & 
       fname_zt, & 
-      fname_lh_zt, & 
-      fname_lh_sfc, & 
+      fname_LH_zt, & 
+      fname_LH_sfc, & 
       fname_zm, &
       fname_rad_zt, &
       fname_rad_zm, & 
@@ -117,13 +117,13 @@ module stats_subs
       nvarmax_zt, & ! Constant(s)
       stats_init_zt ! Procedure(s)
 
-    use stats_lh_zt, only: & 
-      nvarmax_lh_zt, & ! Constant(s)
-      stats_init_lh_zt ! Procedure(s)
+    use stats_LH_zt, only: & 
+      nvarmax_LH_zt, & ! Constant(s)
+      stats_init_LH_zt ! Procedure(s)
 
-    use stats_lh_sfc, only: & 
-      nvarmax_lh_sfc, & ! Constant(s)
-      stats_init_lh_sfc ! Procedure(s)
+    use stats_LH_sfc, only: & 
+      nvarmax_LH_sfc, & ! Constant(s)
+      stats_init_LH_sfc ! Procedure(s)
 
     use stats_rad_zt, only: & 
       nvarmax_rad_zt, & ! Constant(s)
@@ -147,8 +147,8 @@ module stats_subs
         hydromet_dim  ! Variable(s)
 
     use parameters_microphys, only: &
-      lh_microphys_disabled, & ! Constant
-      lh_microphys_type ! Variable
+      LH_microphys_disabled, & ! Constant
+      LH_microphys_type ! Variable
 
     implicit none
 
@@ -217,11 +217,11 @@ module stats_subs
     character(len=var_length), dimension(nvarmax_zt) ::  & 
       vars_zt  ! Variables on the thermodynamic levels
 
-    character(len=var_length), dimension(nvarmax_lh_zt) ::  & 
-      vars_lh_zt  ! Latin Hypercube variables on the thermodynamic levels
+    character(len=var_length), dimension(nvarmax_LH_zt) ::  & 
+      vars_LH_zt  ! Latin Hypercube variables on the thermodynamic levels
 
-    character(len=var_length), dimension(nvarmax_lh_sfc) ::  & 
-      vars_lh_sfc  ! Latin Hypercube variables at the surface
+    character(len=var_length), dimension(nvarmax_LH_sfc) ::  & 
+      vars_LH_sfc  ! Latin Hypercube variables at the surface
 
     character(len=var_length), dimension(nvarmax_zm) ::  & 
       vars_zm  ! Variables on the momentum levels
@@ -238,8 +238,8 @@ module stats_subs
     namelist /statsnl/ & 
       vars_zt, & 
       vars_zm, &
-      vars_lh_zt, &
-      vars_lh_sfc, &
+      vars_LH_zt, &
+      vars_LH_sfc, &
       vars_rad_zt, &
       vars_rad_zm, & 
       vars_sfc
@@ -267,8 +267,8 @@ module stats_subs
 
     vars_zt  = ''
     vars_zm  = ''
-    vars_lh_zt = ''
-    vars_lh_sfc = ''
+    vars_LH_zt = ''
+    vars_LH_sfc = ''
     vars_rad_zt = ''
     vars_rad_zm = ''
     vars_sfc = ''
@@ -319,21 +319,21 @@ module stats_subs
         ivar = ivar + 1
       end do
 
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
-        write(fstdout,*) "vars_lh_zt = "
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        write(fstdout,*) "vars_LH_zt = "
         ivar = 1
-        do while ( vars_lh_zt(ivar) /= '' )
-          write(fstdout,*) vars_lh_zt(ivar)
+        do while ( vars_LH_zt(ivar) /= '' )
+          write(fstdout,*) vars_LH_zt(ivar)
           ivar = ivar + 1
         end do
 
-        write(fstdout,*) "vars_lh_sfc = "
+        write(fstdout,*) "vars_LH_sfc = "
         ivar = 1
-        do while ( vars_lh_sfc(ivar) /= '' )
-          write(fstdout,*) vars_lh_sfc(ivar)
+        do while ( vars_LH_sfc(ivar) /= '' )
+          write(fstdout,*) vars_LH_sfc(ivar)
           ivar = ivar + 1
         end do
-      end if ! lh_microphys_type /= lh_microphys_disabled
+      end if ! LH_microphys_type /= LH_microphys_disabled
 
       if ( l_output_rad_files ) then
         write(fstdout,*) "vars_rad_zt = "
@@ -364,8 +364,8 @@ module stats_subs
     ! Determine file names for GrADS or NetCDF files
     fname_zt  = trim( fname_prefix )//"_zt"
     fname_zm  = trim( fname_prefix )//"_zm"
-    fname_lh_zt  = trim( fname_prefix )//"_lh_zt"
-    fname_lh_sfc  = trim( fname_prefix )//"_lh_sfc"
+    fname_LH_zt  = trim( fname_prefix )//"_LH_zt"
+    fname_LH_sfc  = trim( fname_prefix )//"_LH_sfc"
     fname_rad_zt  = trim( fname_prefix )//"_rad_zt"
     fname_rad_zm  = trim( fname_prefix )//"_rad_zm"
     fname_sfc = trim( fname_prefix )//"_sfc"
@@ -562,128 +562,128 @@ module stats_subs
     call stats_init_zt( vars_zt, l_error )
 
 
-    ! Setup output file for lh_zt (Latin Hypercube stats)
+    ! Setup output file for LH_zt (Latin Hypercube stats)
 
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
 
       ivar = 1
-      do while ( ichar(vars_lh_zt(ivar)(1:1)) /= 0  & 
-                 .and. len_trim(vars_lh_zt(ivar)) /= 0 & 
-                 .and. ivar <= nvarmax_lh_zt )
+      do while ( ichar(vars_LH_zt(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_LH_zt(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_LH_zt )
         ivar = ivar + 1
       end do
       ntot = ivar - 1
-      if ( ntot == nvarmax_lh_zt ) then
+      if ( ntot == nvarmax_LH_zt ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
-                         "vars_zt than allowed for by nvarmax_lh_zt."
-        write(fstderr,*) "Check the number of variables listed for vars_lh_zt ",  &
-                         "in the stats namelist, or change nvarmax_lh_zt."
-        write(fstderr,*) "nvarmax_lh_zt = ", nvarmax_lh_zt
-        stop "stats_init:  number of lh_zt statistical variables exceeds limit"
+                         "vars_zt than allowed for by nvarmax_LH_zt."
+        write(fstderr,*) "Check the number of variables listed for vars_LH_zt ",  &
+                         "in the stats namelist, or change nvarmax_LH_zt."
+        write(fstderr,*) "nvarmax_LH_zt = ", nvarmax_LH_zt
+        stop "stats_init:  number of LH_zt statistical variables exceeds limit"
       end if
 
-      lh_zt%nn = ntot
-      lh_zt%kk = nzmax
-      lh_zt%ii = nlon
-      lh_zt%jj = nlat
+      LH_zt%nn = ntot
+      LH_zt%kk = nzmax
+      LH_zt%ii = nlon
+      LH_zt%jj = nlat
 
-      allocate( lh_zt%z( lh_zt%kk ) )
-      lh_zt%z = gzt
+      allocate( LH_zt%z( LH_zt%kk ) )
+      LH_zt%z = gzt
 
-      allocate( lh_zt%x( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      allocate( lh_zt%n( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      allocate( lh_zt%l_in_update( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, lh_zt%x, lh_zt%n, lh_zt%l_in_update )
+      allocate( LH_zt%x( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
+      allocate( LH_zt%n( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
+      allocate( LH_zt%l_in_update( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn ) )
+      call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n, LH_zt%l_in_update )
 
-      allocate( lh_zt%f%var( lh_zt%nn ) )
-      allocate( lh_zt%f%z( lh_zt%kk ) )
+      allocate( LH_zt%f%var( LH_zt%nn ) )
+      allocate( LH_zt%f%z( LH_zt%kk ) )
 
 
-      fname = trim( fname_lh_zt )
+      fname = trim( fname_LH_zt )
 
       if ( l_grads ) then
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, lh_zt%kk, nlat, nlon, lh_zt%z, & 
+                         1, LH_zt%kk, nlat, nlon, LH_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         lh_zt%nn, lh_zt%f )
+                         LH_zt%nn, LH_zt%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, lh_zt%kk, lh_zt%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, LH_zt%kk, LH_zt%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_zt%nn, &  ! In
-                          lh_zt%f ) ! InOut
+                          time_current+stats_tout, stats_tout, LH_zt%nn, &  ! In
+                          LH_zt%f ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
 
-      call stats_init_lh_zt( vars_lh_zt, l_error )
+      call stats_init_LH_zt( vars_LH_zt, l_error )
 
       ivar = 1
-      do while ( ichar(vars_lh_sfc(ivar)(1:1)) /= 0  & 
-                 .and. len_trim(vars_lh_sfc(ivar)) /= 0 & 
-                 .and. ivar <= nvarmax_lh_sfc )
+      do while ( ichar(vars_LH_sfc(ivar)(1:1)) /= 0  & 
+                 .and. len_trim(vars_LH_sfc(ivar)) /= 0 & 
+                 .and. ivar <= nvarmax_LH_sfc )
         ivar = ivar + 1
       end do
       ntot = ivar - 1
-      if ( ntot == nvarmax_lh_sfc ) then
+      if ( ntot == nvarmax_LH_sfc ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
-                         "vars_zt than allowed for by nvarmax_lh_sfc."
-        write(fstderr,*) "Check the number of variables listed for vars_lh_sfc ",  &
-                         "in the stats namelist, or change nvarmax_lh_sfc."
-        write(fstderr,*) "nvarmax_lh_sfc = ", nvarmax_lh_sfc
-        stop "stats_init:  number of lh_sfc statistical variables exceeds limit"
+                         "vars_zt than allowed for by nvarmax_LH_sfc."
+        write(fstderr,*) "Check the number of variables listed for vars_LH_sfc ",  &
+                         "in the stats namelist, or change nvarmax_LH_sfc."
+        write(fstderr,*) "nvarmax_LH_sfc = ", nvarmax_LH_sfc
+        stop "stats_init:  number of LH_sfc statistical variables exceeds limit"
       end if
 
-      lh_sfc%nn = ntot
-      lh_sfc%kk = 1
-      lh_sfc%ii = nlon
-      lh_sfc%jj = nlat
+      LH_sfc%nn = ntot
+      LH_sfc%kk = 1
+      LH_sfc%ii = nlon
+      LH_sfc%jj = nlat
 
-      allocate( lh_sfc%z( lh_sfc%kk ) )
-      lh_sfc%z = gzm(1)
+      allocate( LH_sfc%z( LH_sfc%kk ) )
+      LH_sfc%z = gzm(1)
 
-      allocate( lh_sfc%x( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
-      allocate( lh_sfc%n( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
-      allocate( lh_sfc%l_in_update( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
+      allocate( LH_sfc%x( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
+      allocate( LH_sfc%n( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
+      allocate( LH_sfc%l_in_update( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn ) )
 
-      call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, &
-                       lh_sfc%x, lh_sfc%n, lh_sfc%l_in_update )
+      call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
+                       LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
 
-      allocate( lh_sfc%f%var( lh_sfc%nn ) )
-      allocate( lh_sfc%f%z( lh_sfc%kk ) )
+      allocate( LH_sfc%f%var( LH_sfc%nn ) )
+      allocate( LH_sfc%f%z( LH_sfc%kk ) )
 
-      fname = trim( fname_lh_sfc )
+      fname = trim( fname_LH_sfc )
 
       if ( l_grads ) then
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, lh_sfc%kk, nlat, nlon, lh_sfc%z, & 
+                         1, LH_sfc%kk, nlat, nlon, LH_sfc%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         lh_sfc%nn, lh_sfc%f )
+                         LH_sfc%nn, LH_sfc%f )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, lh_sfc%kk, lh_sfc%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, LH_sfc%kk, LH_sfc%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_sfc%nn, &  ! In
-                          lh_sfc%f ) ! InOut
+                          time_current+stats_tout, stats_tout, LH_sfc%nn, &  ! In
+                          LH_sfc%f ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
 
       end if
 
-      call stats_init_lh_sfc( vars_lh_sfc, l_error )
+      call stats_init_LH_sfc( vars_LH_sfc, l_error )
 
-    end if ! lh_microphys_type /= lh_microphys_disabled
+    end if ! LH_microphys_type /= LH_microphys_disabled
 
     ! Initialize zm (momentum points)
 
@@ -1134,8 +1134,8 @@ module stats_subs
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
-        lh_zt, &
-        lh_sfc, &
+        LH_zt, &
+        LH_sfc, &
         zm, & 
         rad_zt, &
         rad_zm, &
@@ -1148,10 +1148,10 @@ module stats_subs
         write_grads ! Procedure(s)
 
     use parameters_microphys, only: &
-      lh_microphys_disabled  ! Constant
+      LH_microphys_disabled  ! Constant
 
     use parameters_microphys, only: &
-      lh_microphys_type    ! Variable(s)
+      LH_microphys_type    ! Variable(s)
 
     use stat_file_module, only: &
       clubb_i, & ! Variable(s)
@@ -1183,9 +1183,9 @@ module stats_subs
     call stats_check_num_samples( zt, l_error )
     call stats_check_num_samples( zm, l_error )
     call stats_check_num_samples( sfc, l_error )
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call stats_check_num_samples( lh_zt, l_error )
-      call stats_check_num_samples( lh_sfc, l_error )
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
+      call stats_check_num_samples( LH_zt, l_error )
+      call stats_check_num_samples( LH_sfc, l_error )
     end if
     if ( l_output_rad_files ) then
       call stats_check_num_samples( rad_zt, l_error )
@@ -1203,9 +1203,9 @@ module stats_subs
     ! Compute averages
     call stats_avg( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n )
     call stats_avg( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n )
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call stats_avg( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, lh_zt%x, lh_zt%n )
-      call stats_avg( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, lh_sfc%x, lh_sfc%n )
+    if ( LH_microphys_type /= LH_microphys_disabled ) then
+      call stats_avg( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, LH_zt%x, LH_zt%n )
+      call stats_avg( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, LH_sfc%x, LH_sfc%n )
     end if
     if ( l_output_rad_files ) then
       call stats_avg( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
@@ -1220,9 +1220,9 @@ module stats_subs
       if ( l_grads ) then
         call write_grads( zt%f  )
         call write_grads( zm%f  )
-        if ( lh_microphys_type /= lh_microphys_disabled ) then
-          call write_grads( lh_zt%f  )
-          call write_grads( lh_sfc%f  )
+        if ( LH_microphys_type /= LH_microphys_disabled ) then
+          call write_grads( LH_zt%f  )
+          call write_grads( LH_sfc%f  )
         end if
         if ( l_output_rad_files ) then
           call write_grads( rad_zt%f  )
@@ -1233,9 +1233,9 @@ module stats_subs
 #ifdef NETCDF
         call write_netcdf( zt%f  )
         call write_netcdf( zm%f  )
-        if ( lh_microphys_type /= lh_microphys_disabled ) then
-          call write_netcdf( lh_zt%f  )
-          call write_netcdf( lh_sfc%f  )
+        if ( LH_microphys_type /= LH_microphys_disabled ) then
+          call write_netcdf( LH_zt%f  )
+          call write_netcdf( LH_sfc%f  )
         end if
         if ( l_output_rad_files ) then
           call write_netcdf( rad_zt%f  )
@@ -1250,11 +1250,11 @@ module stats_subs
       ! Reset sample fields
       call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
       call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
-        call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, &
-                         lh_zt%x, lh_zt%n, lh_zt%l_in_update )
-        call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, &
-                         lh_sfc%x, lh_sfc%n, lh_sfc%l_in_update )
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        call stats_zero( LH_zt%ii, LH_zt%jj, LH_zt%kk, LH_zt%nn, &
+                         LH_zt%x, LH_zt%n, LH_zt%l_in_update )
+        call stats_zero( LH_sfc%ii, LH_sfc%jj, LH_sfc%kk, LH_sfc%nn, &
+                         LH_sfc%x, LH_sfc%n, LH_sfc%l_in_update )
       end if
       if ( l_output_rad_files ) then
         call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, &
@@ -2107,8 +2107,8 @@ module stats_subs
     return
   end subroutine stats_accumulate_hydromet
 !------------------------------------------------------------------------------
-  subroutine stats_accumulate_lh_tend( lh_hydromet_mc, lh_Ncm_mc, &
-                                       lh_thlm_mc, lh_rvm_mc, lh_rcm_mc )
+  subroutine stats_accumulate_LH_tend( LH_hydromet_mc, LH_Ncm_mc, &
+                                       LH_thlm_mc, LH_rvm_mc, LH_rcm_mc )
 ! Description:
 !   Compute stats for the tendency of latin hypercube sample points.
 
@@ -2126,18 +2126,18 @@ module stats_subs
       iiNrm, iiNsnowm, iiNim, iiNgraupelm
 
     use stats_variables, only: &
-      ilh_rrainm_mc, & ! Variable(s)
-      ilh_rsnowm_mc, & 
-      ilh_ricem_mc, & 
-      ilh_rgraupelm_mc, & 
-      ilh_Ncm_mc, &
-      ilh_Nim_mc, & 
-      ilh_Nrm_mc, & 
-      ilh_Nsnowm_mc, &
-      ilh_Ngraupelm_mc, &
-      ilh_rcm_mc, &
-      ilh_rvm_mc, &
-      ilh_thlm_mc
+      iLH_rrainm_mc, & ! Variable(s)
+      iLH_rsnowm_mc, & 
+      iLH_ricem_mc, & 
+      iLH_rgraupelm_mc, & 
+      iLH_Ncm_mc, &
+      iLH_Nim_mc, & 
+      iLH_Nrm_mc, & 
+      iLH_Nsnowm_mc, &
+      iLH_Ngraupelm_mc, &
+      iLH_rcm_mc, &
+      iLH_rvm_mc, &
+      iLH_thlm_mc
 
     use stats_variables, only: &
       iAKstd, & ! Variable(s)
@@ -2145,8 +2145,8 @@ module stats_subs
       iAKm_rcm, &
       iAKm_rcc, &
       iAKm, & 
-      ilh_AKm, &
-      ilh_rcm_avg
+      iLH_AKm, &
+      iLH_rcm_avg
 
      use variables_diagnostic_module, only: &
       AKm, & ! Variable(s)
@@ -2164,7 +2164,7 @@ module stats_subs
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-      lh_zt, & ! Variables
+      LH_zt, & ! Variables
       l_stats_samp
 
     use clubb_precision, only: &
@@ -2174,69 +2174,69 @@ module stats_subs
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      lh_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
+      LH_hydromet_mc ! Tendency of hydrometeors except for rvm/rcm  [units vary]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      lh_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
-      lh_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
-      lh_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
-      lh_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
+      LH_Ncm_mc,  & ! Tendency of cloud droplet concentration  [num/kg/s]
+      LH_thlm_mc, & ! Tendency of liquid potential temperature [kg/kg/s]
+      LH_rcm_mc,  & ! Tendency of cloud water                  [kg/kg/s]
+      LH_rvm_mc     ! Tendency of vapor                        [kg/kg/s]
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( ilh_thlm_mc, lh_thlm_mc, lh_zt )
-      call stat_update_var( ilh_rcm_mc, lh_rcm_mc, lh_zt )
-      call stat_update_var( ilh_rvm_mc, lh_rvm_mc, lh_zt )
+      call stat_update_var( iLH_thlm_mc, LH_thlm_mc, LH_zt )
+      call stat_update_var( iLH_rcm_mc, LH_rcm_mc, LH_zt )
+      call stat_update_var( iLH_rvm_mc, LH_rvm_mc, LH_zt )
 
       if ( l_predictnc ) then
-        call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
+        call stat_update_var( iLH_Ncm_mc, LH_Ncm_mc, LH_zt )
       end if
 
       if ( iirrainm > 0 ) then
-        call stat_update_var( ilh_rrainm_mc, lh_hydromet_mc(:,iirrainm), lh_zt )
+        call stat_update_var( iLH_rrainm_mc, LH_hydromet_mc(:,iirrainm), LH_zt )
       end if
 
       if ( iirsnowm > 0 ) then
-        call stat_update_var( ilh_rsnowm_mc, lh_hydromet_mc(:,iirsnowm), lh_zt )
+        call stat_update_var( iLH_rsnowm_mc, LH_hydromet_mc(:,iirsnowm), LH_zt )
       end if
 
       if ( iiricem > 0 ) then
-        call stat_update_var( ilh_ricem_mc, lh_hydromet_mc(:,iiricem), lh_zt )
+        call stat_update_var( iLH_ricem_mc, LH_hydromet_mc(:,iiricem), LH_zt )
       end if
 
       if ( iirgraupelm > 0 ) then
-        call stat_update_var( ilh_rgraupelm_mc, lh_hydromet_mc(:,iirgraupelm), lh_zt )
+        call stat_update_var( iLH_rgraupelm_mc, LH_hydromet_mc(:,iirgraupelm), LH_zt )
       end if
 
       if ( iiNim > 0 ) then
-        call stat_update_var( ilh_Nim_mc, lh_hydromet_mc(:,iiNim), lh_zt )
+        call stat_update_var( iLH_Nim_mc, LH_hydromet_mc(:,iiNim), LH_zt )
       end if
 
       if ( iiNrm > 0 ) then
-        call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNrm), lh_zt )
+        call stat_update_var( iLH_Nrm_mc, LH_hydromet_mc(:,iiNrm), LH_zt )
       end if
 
       if ( iiNsnowm > 0 ) then
-        call stat_update_var( ilh_Nsnowm_mc, lh_hydromet_mc(:,iiNsnowm), lh_zt )
+        call stat_update_var( iLH_Nsnowm_mc, LH_hydromet_mc(:,iiNsnowm), LH_zt )
       end if
 
       if ( iiNgraupelm > 0 ) then
-        call stat_update_var( ilh_Ngraupelm_mc, lh_hydromet_mc(:,iiNgraupelm), lh_zt )
+        call stat_update_var( iLH_Ngraupelm_mc, LH_hydromet_mc(:,iiNgraupelm), LH_zt )
       end if
 
-      call stat_update_var( iAKm, AKm, lh_zt )
-      call stat_update_var( ilh_AKm, lh_AKm, lh_zt)
-      call stat_update_var( ilh_rcm_avg, lh_rcm_avg, lh_zt )
-      call stat_update_var( iAKstd, AKstd, lh_zt )
-      call stat_update_var( iAKstd_cld, AKstd_cld, lh_zt )
+      call stat_update_var( iAKm, AKm, LH_zt )
+      call stat_update_var( iLH_AKm, lh_AKm, LH_zt)
+      call stat_update_var( iLH_rcm_avg, lh_rcm_avg, LH_zt )
+      call stat_update_var( iAKstd, AKstd, LH_zt )
+      call stat_update_var( iAKstd_cld, AKstd_cld, LH_zt )
 
-      call stat_update_var( iAKm_rcm, AKm_rcm, lh_zt)
-      call stat_update_var( iAKm_rcc, AKm_rcc, lh_zt )
+      call stat_update_var( iAKm_rcm, AKm_rcm, LH_zt)
+      call stat_update_var( iAKm_rcc, AKm_rcc, LH_zt )
 
     end if ! l_stats_samp
 
     return
-  end subroutine stats_accumulate_lh_tend
+  end subroutine stats_accumulate_LH_tend
 
   !-----------------------------------------------------------------------------
   elemental function compute_variance_binormal( x_mean, x1, x2, stdev_x_1, stdev_x_2, mixt_frac ) &
@@ -2289,8 +2289,8 @@ module stats_subs
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
-        lh_zt, &
-        lh_sfc, &
+        LH_zt, &
+        LH_sfc, &
         zm, &
         rad_zt, &
         rad_zm, & 
@@ -2371,10 +2371,10 @@ module stats_subs
       isigma_hm_2_n
 
     use parameters_microphys, only: &
-      lh_microphys_disabled ! Constant(s)
+      LH_microphys_disabled ! Constant(s)
 
     use parameters_microphys, only: &
-      lh_microphys_type ! Variable(s)
+      LH_microphys_type ! Variable(s)
 
 #ifdef NETCDF
     use output_netcdf, only:  & 
@@ -2386,8 +2386,8 @@ module stats_subs
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF
       call close_netcdf( zt%f )
-      call close_netcdf( lh_zt%f )
-      call close_netcdf( lh_sfc%f )
+      call close_netcdf( LH_zt%f )
+      call close_netcdf( LH_sfc%f )
       call close_netcdf( zm%f )
       call close_netcdf( rad_zt%f )
       call close_netcdf( rad_zm%f )
@@ -2434,34 +2434,34 @@ module stats_subs
       deallocate ( ztscr20 )
       deallocate ( ztscr21 )
 
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
-        ! De-allocate all lh_zt variables
-        deallocate( lh_zt%z )
+      if ( LH_microphys_type /= LH_microphys_disabled ) then
+        ! De-allocate all LH_zt variables
+        deallocate( LH_zt%z )
 
-        deallocate( lh_zt%x )
+        deallocate( LH_zt%x )
 
-        deallocate( lh_zt%n )
-        deallocate( lh_zt%l_in_update )
-
-
-        deallocate( lh_zt%f%var )
-        deallocate( lh_zt%f%z )
-        deallocate( lh_zt%f%rlat )
-        deallocate( lh_zt%f%rlon )
-
-        ! De-allocate all lh_sfc variables
-        deallocate( lh_sfc%z )
-
-        deallocate( lh_sfc%x )
-
-        deallocate( lh_sfc%n )
-        deallocate( lh_sfc%l_in_update )
+        deallocate( LH_zt%n )
+        deallocate( LH_zt%l_in_update )
 
 
-        deallocate( lh_sfc%f%var )
-        deallocate( lh_sfc%f%z )
-        deallocate( lh_sfc%f%rlat )
-        deallocate( lh_sfc%f%rlon )
+        deallocate( LH_zt%f%var )
+        deallocate( LH_zt%f%z )
+        deallocate( LH_zt%f%rlat )
+        deallocate( LH_zt%f%rlon )
+
+        ! De-allocate all LH_sfc variables
+        deallocate( LH_sfc%z )
+
+        deallocate( LH_sfc%x )
+
+        deallocate( LH_sfc%n )
+        deallocate( LH_sfc%l_in_update )
+
+
+        deallocate( LH_sfc%f%var )
+        deallocate( LH_sfc%f%z )
+        deallocate( LH_sfc%f%rlat )
+        deallocate( LH_sfc%f%rlon )
       end if
 
       ! De-allocate all zm variables
@@ -2581,7 +2581,7 @@ subroutine stats_check_num_samples( stats_grid, l_error )
     fstderr ! Constant
 
   use parameters_microphys, only: &
-    lh_microphys_calls
+    LH_microphys_calls
 
   use stats_type, only: &
     stats ! Type

@@ -34,7 +34,7 @@ module microphys_driver
                                 hydromet, wphydrometp, Nc_in_cloud, &     ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
-                                lh_rt, lh_thl, lh_sample_point_weights, & ! In
+                                LH_rt, LH_thl, LH_sample_point_weights, & ! In
                                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
                                 corr_array_1, corr_array_2, &             ! In
                                 Nccnm, &                                  ! Inout
@@ -89,7 +89,7 @@ module microphys_driver
 
 #ifdef SILHS
     use latin_hypercube_driver_module, only: &
-        lh_microphys_driver  ! Procedure(s)
+        LH_microphys_driver  ! Procedure(s)
 #endif /* SILHS */
 
     use ice_dfsn_module, only: & 
@@ -114,7 +114,7 @@ module microphys_driver
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
         l_predictnc,          & ! Predict cloud droplet number conc (Morrison)
-        lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
+        LH_microphys_calls,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
         micro_scheme,         & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
@@ -144,7 +144,7 @@ module microphys_driver
         zt,  & ! Variable(s)
         zm,  & 
         sfc, & 
-        lh_zt, &
+        LH_zt, &
         l_stats_samp
 
     use stats_variables, only: & 
@@ -153,8 +153,8 @@ module microphys_driver
         iVrsnow, & 
         iVrice, & 
         iVrgraupel, &
-        ilh_Vrr, &
-        ilh_VNr
+        iLH_Vrr, &
+        iLH_VNr
 
     use stats_variables, only: & 
         iNcm_act,      & ! Variable(s)
@@ -162,7 +162,7 @@ module microphys_driver
         iNccnm
 
     use stats_subs, only: & 
-        stats_accumulate_lh_tend ! Procedure(s)
+        stats_accumulate_LH_tend ! Procedure(s)
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_add,      &
@@ -173,9 +173,9 @@ module microphys_driver
         r8 => shr_kind_r8  ! Variable(s)
 
     use parameters_microphys, only: &
-        lh_microphys_type,        & ! Determines how the LH samples are used
-        lh_microphys_interactive, & ! Feed the subcols into microphys and allow feedback
-        lh_microphys_disabled       ! Disable latin hypercube entirely
+        LH_microphys_type,        & ! Determines how the LH samples are used
+        LH_microphys_interactive, & ! Feed the subcols into microphys and allow feedback
+        LH_microphys_disabled       ! Disable latin hypercube entirely
 
     use clubb_precision, only: &
         time_precision, & ! Variable(s)
@@ -231,19 +231,19 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = dp ), dimension(gr%nz,lh_microphys_calls,d_variables), &
+    real( kind = dp ), dimension(gr%nz,LH_microphys_calls,d_variables), &
     intent(in) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
-    integer, dimension(gr%nz,lh_microphys_calls), intent(in) :: &
+    integer, dimension(gr%nz,LH_microphys_calls), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_microphys_calls), &
+    real( kind = core_rknd ), dimension(gr%nz,LH_microphys_calls), &
     intent(in) :: &
-      lh_rt, lh_thl ! Samples of rt, thl        [kg/kg,K]
+      LH_rt, LH_thl ! Samples of rt, thl        [kg/kg,K]
 
-    real( kind = core_rknd ), dimension(lh_microphys_calls), intent(in) :: &
-      lh_sample_point_weights ! Weights for cloud weighted sampling
+    real( kind = core_rknd ), dimension(LH_microphys_calls), intent(in) :: &
+      LH_sample_point_weights ! Weights for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
       mu_x_1,    & ! Mean array (normalized) of PDF vars. (comp. 1) [un. vary]
@@ -446,11 +446,11 @@ module microphys_driver
 
     case ( "morrison" )
 
-       if ( lh_microphys_type /= lh_microphys_disabled ) then
+       if ( LH_microphys_type /= LH_microphys_disabled ) then
 #ifdef SILHS
-          call lh_microphys_driver &
-               ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
-                 X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+          call LH_microphys_driver &
+               ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
+                 X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, wtmp, delta_zt, cloud_frac, & ! In
                  hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
@@ -463,18 +463,18 @@ module microphys_driver
           stop "Latin hypercube was not enabled at compile time"
           ! Get rid of compiler warnings
           if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
-             rcm_mc(1) = + lh_rt(1,1) + lh_thl(1,1) &
-               + lh_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
+             rcm_mc(1) = + LH_rt(1,1) + LH_thl(1,1) &
+               + LH_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
           endif
 #endif /* SILHS */
-          call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+          call stats_accumulate_LH_tend( hydromet_mc, Ncm_mc, &
                                        thlm_mc, rvm_mc, rcm_mc )
 
        endif ! LH isn't disabled
 
        ! Call the microphysics if we don't want to have feedback effects from the
        ! latin hypercube result (above)
-       if ( lh_microphys_type /= lh_microphys_interactive ) then
+       if ( LH_microphys_type /= LH_microphys_interactive ) then
           l_latin_hypercube_input = .false.
         
           if ( l_morr_xp2_mc_tndcy ) then
@@ -530,7 +530,7 @@ module microphys_driver
              call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrainm) ), zm)
           endif
 
-       endif ! lh_microphys_type /= interactive
+       endif ! LH_microphys_type /= interactive
 
     case ( "morrison_gettelman" )
 
@@ -549,12 +549,12 @@ module microphys_driver
 
     case ( "khairoutdinov_kogan" )
 
-       if ( lh_microphys_type /= lh_microphys_disabled ) then
+       if ( LH_microphys_type /= LH_microphys_disabled ) then
 
 #ifdef SILHS
-          call lh_microphys_driver &
-               ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
-                 X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+          call LH_microphys_driver &
+               ( dt, gr%nz, LH_microphys_calls, d_variables, & ! In
+                 X_nl_all_levs, LH_rt, LH_thl, LH_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, wtmp, delta_zt, cloud_frac, & ! In
                  hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
@@ -567,14 +567,14 @@ module microphys_driver
           stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
-          call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+          call stats_accumulate_LH_tend( hydromet_mc, Ncm_mc, &
                                          thlm_mc, rvm_mc, rcm_mc )
 
           if ( l_stats_samp ) then
              ! Latin hypercube estimate for sedimentation velocities
-             call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrainm), lh_zt )
+             call stat_update_var( iLH_Vrr, hydromet_vel_zt(:,iirrainm), LH_zt )
 
-             call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), lh_zt )
+             call stat_update_var( iLH_VNr, hydromet_vel_zt(:,iiNrm), LH_zt )
 
           endif
 
@@ -582,7 +582,7 @@ module microphys_driver
 
        ! Call the microphysics if we don't want to have feedback effects from the
        ! latin hypercube result (above)
-       if ( lh_microphys_type /= lh_microphys_interactive ) then
+       if ( LH_microphys_type /= LH_microphys_interactive ) then
 
           l_latin_hypercube_input = .false.
           rvm = rtm - rcm
@@ -620,7 +620,7 @@ module microphys_driver
 
           endif
 
-       endif ! lh_microphys_type /= interactive
+       endif ! LH_microphys_type /= interactive
 
        if ( l_stats_samp ) then
 

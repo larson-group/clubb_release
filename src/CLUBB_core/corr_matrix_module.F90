@@ -856,8 +856,8 @@ module corr_matrix_module
 
     ! Constant Parameter(s)
     character(len=*), parameter :: &
-      lh_file_path_below = "./clubb_corr_array_below.in", &
-      lh_file_path_cloud = "./clubb_corr_array_cloud.in"    
+      LH_file_path_below = "./clubb_corr_array_below.in", &
+      LH_file_path_cloud = "./clubb_corr_array_cloud.in"    
 
     ! Input Variables
     integer, intent(in) :: &
@@ -882,7 +882,7 @@ module corr_matrix_module
                             l_ice_micro, l_graupel )
 
     ! Setup the arrays and indices containing the correlations, etc.
-    call setup_corr_varnce_array( lh_file_path_cloud, lh_file_path_below, iunit )
+    call setup_corr_varnce_array( LH_file_path_cloud, LH_file_path_below, iunit )
 
     return    
 

@@ -248,7 +248,7 @@ l_cloud_edge_activation | logical
 l_fix_pgam | logical
   Fix pgam (Morrison)
 
-lh_microphys_type | character
+LH_microphys_type | character
   Determines the level of interaction between the latin hypercube samples 
   and the microphysics (K&K).
   Valid values are "interactive", "non-interactive", or "disabled".
@@ -259,13 +259,13 @@ l_lh_vert_overlap | logical
 
 l_lh_cloud_weighted_sampling | logical
   Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
-  lh_microphys_calls must be an even number, and sequence length must be 1 in
+  LH_microphys_calls must be an even number, and sequence length must be 1 in
   order to enable this.
 
-lh_microphys_calls | integer
+LH_microphys_calls | integer
   Number of latin hypercube samples to call the microphysics with (K&K).
 
-lh_sequence_length | integer
+LH_sequence_length | integer
   Number of timesteps before the Latin Hypercube seq. repeats (K&K).
 
 l_local_kk | logical
