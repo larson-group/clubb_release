@@ -80,7 +80,7 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
-    fname = trim( fname_prefix )//"_LH_sample_points_2D"
+    fname = trim( fname_prefix )//"_lh_sample_points_2D"
     i =1  ! This assignment prevents a g 95 compiler warning
 
     ! We need to set this like a latitude to trick GrADS and allow of viewing of
@@ -118,7 +118,7 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
              ( nz, num_samples, d_variables, X_nl_all_levs, &
-               LH_rt, LH_thl )
+               lh_rt, lh_thl )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -142,8 +142,8 @@ module output_2D_samples_module
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      LH_rt, & ! Sample of total water mixing ratio             [kg/kg]
-      LH_thl   ! Sample of liquid potential temperature         [K]
+      lh_rt, & ! Sample of total water mixing ratio             [kg/kg]
+      lh_thl   ! Sample of liquid potential temperature         [K]
 
     integer :: sample, j
 
@@ -162,12 +162,12 @@ module output_2D_samples_module
     ! Append rt, thl at the end of the variables
     j = d_variables+1
     do sample = 1, num_samples
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_rt(1:nz,sample), kind=dp)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(lh_rt(1:nz,sample), kind=dp)
     end do
 
     j = d_variables+2
     do sample = 1, num_samples
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(LH_thl(1:nz,sample), kind=dp)
+      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(lh_thl(1:nz,sample), kind=dp)
     end do
 
 #ifdef NETCDF

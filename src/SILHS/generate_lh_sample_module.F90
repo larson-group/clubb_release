@@ -40,7 +40,7 @@ module generate_lh_sample_module
                hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
                corr_array_cloud, corr_array_below, &
                X_u_one_lev, X_mixt_comp_one_lev, &
-               LH_rt, LH_thl, X_nl_one_lev ) ! Out
+               lh_rt, lh_thl, X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -208,8 +208,8 @@ module generate_lh_sample_module
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      LH_rt, & ! Total water mixing ratio          [kg/kg]
-      LH_thl   ! Liquid potential temperature      [K]
+      lh_rt, & ! Total water mixing ratio          [kg/kg]
+      lh_thl   ! Liquid potential temperature      [K]
 
     real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -948,7 +948,7 @@ module generate_lh_sample_module
                         Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                         Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
-                        LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
+                        lh_rt, lh_thl, X_nl_one_lev ) ! intent(out)
 
     return
   end subroutine generate_lh_sample
@@ -963,7 +963,7 @@ module generate_lh_sample_module
                corr_stw_matrix_Cholesky_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
                l_in_precip_one_lev, & ! In
-               LH_rt, LH_thl, X_nl_one_lev ) ! Out
+               lh_rt, lh_thl, X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -1053,8 +1053,8 @@ module generate_lh_sample_module
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      LH_rt, & ! Total water mixing ratio          [kg/kg]
-      LH_thl   ! Liquid potential temperature      [K]
+      lh_rt, & ! Total water mixing ratio          [kg/kg]
+      lh_thl   ! Liquid potential temperature      [K]
 
     real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -1145,7 +1145,7 @@ module generate_lh_sample_module
                         Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                         Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
-                        LH_rt, LH_thl, X_nl_one_lev ) ! intent(out)
+                        lh_rt, lh_thl, X_nl_one_lev ) ! intent(out)
 
     ! Zero precipitation hydrometeors if not in precipitation
     if ( .not. l_in_precip_one_lev ) then
@@ -1211,7 +1211,7 @@ module generate_lh_sample_module
                             Sigma1_Cholesky, Sigma2_Cholesky, &
                             Sigma1_scaling, Sigma2_scaling, &
                             l_Sigma1_scaling, l_Sigma2_scaling, &
-                            LH_rt, LH_thl, X_nl_one_lev )
+                            lh_rt, lh_thl, X_nl_one_lev )
 
 ! Description:
 !   Generates n random samples from a d-dim Gaussian-mixture PDF.
@@ -1280,8 +1280,8 @@ module generate_lh_sample_module
     ! Output Variables
     ! Total water, theta_l: mean plus perturbations
     real( kind = core_rknd ), intent(out) :: &
-      LH_rt,  & ! Total water   [kg/kg]
-      LH_thl    ! Liquid potential temperature  [K]
+      lh_rt,  & ! Total water   [kg/kg]
+      lh_thl    ! Liquid potential temperature  [K]
 
     real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -1312,7 +1312,7 @@ module generate_lh_sample_module
                      X_nl_one_lev(iiPDF_s_mellor), & ! intent(in)
                      X_nl_one_lev(iiPDF_t_mellor), & ! intent(in)
                      X_mixt_comp_one_lev, & ! intent(in)
-                     LH_rt, LH_thl ) ! intent(out)
+                     lh_rt, lh_thl ) ! intent(out)
 
     ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
     where ( l_d_variable_lognormal )
@@ -1931,7 +1931,7 @@ module generate_lh_sample_module
                          crt1, cthl1, crt2, cthl2, & 
                          mu_s1, mu_s2, &
                          s_mellor, t_mellor, X_mixt_comp_one_lev, &
-                         LH_rt, LH_thl )
+                         lh_rt, lh_thl )
 ! Description:
 !   Converts from s, t variables to rt, thl.  Also sets a limit on the value
 !   of cthl1 and cthl2 to prevent extreme values of temperature.
@@ -1981,12 +1981,12 @@ module generate_lh_sample_module
     ! Output variables
 
     real( kind = core_rknd ), intent(out) :: &
-      LH_rt, LH_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
+      lh_rt, lh_thl ! n-dimensional column vectors of rt and thl, including mean and perturbation
 
     ! Local Variables
 
 !   real( kind= dp ) :: cthl1_clip, cthl2_clip, & ! Clipped values of cthl1,2 [kg/kg/K]
-    real( kind= dp ) :: LH_dev_thl_lim ! Limited value of the deviation on thetal [K]
+    real( kind= dp ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
 
     ! ---- Begin Code ----
 
@@ -2003,36 +2003,36 @@ module generate_lh_sample_module
 !                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
     if ( X_mixt_comp_one_lev == 1 ) then
-      LH_rt  = real( rt1 + (0.5_dp/crt1)*(s_mellor-mu_s1) +  & 
+      lh_rt  = real( rt1 + (0.5_dp/crt1)*(s_mellor-mu_s1) +  & 
                              (0.5_dp/crt1)*t_mellor, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      LH_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor-mu_s1) & 
+      lh_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor-mu_s1) & 
                      + (0.5_dp/cthl1)*t_mellor
 
-      LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+      lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      LH_thl = real( thl1 + LH_dev_thl_lim, kind=core_rknd )
+      lh_thl = real( thl1 + lh_dev_thl_lim, kind=core_rknd )
 
         ! Old code
-!       LH_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor-mu_s1) +  & 
+!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor-mu_s1) +  & 
 !                              (0.5_dp/cthl1_clip)*t_mellor, kind=core_rknd )
 
     else if ( X_mixt_comp_one_lev == 2 ) then
         ! mixture fraction 2
-      LH_rt = real( rt2 + (0.5_dp/crt2)*(s_mellor-mu_s2) +  & 
+      lh_rt = real( rt2 + (0.5_dp/crt2)*(s_mellor-mu_s2) +  & 
                              (0.5_dp/crt2)*t_mellor, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      LH_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor-mu_s2) & 
+      lh_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor-mu_s2) & 
                      + (0.5_dp/cthl2)*t_mellor
 
-      LH_dev_thl_lim = max( min( LH_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
+      lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      LH_thl = real( thl2 + LH_dev_thl_lim, kind=core_rknd )
+      lh_thl = real( thl2 + lh_dev_thl_lim, kind=core_rknd )
 
       ! Old code
-!     LH_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor-mu_s2) +  & 
+!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor-mu_s2) +  & 
 !                           (0.5_dp/cthl2_clip)*t_mellor, kind=core_rknd )
     else
       stop "Error determining mixture fraction in st_2_rtthl"

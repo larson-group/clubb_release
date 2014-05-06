@@ -7,7 +7,7 @@ function[] = plot_spaghetti( title_str, str_xlabel, fdir, curr_case, mean_var, s
 % Assumptions:
 %   The file names and dimensions of files are assumed to as they currently are 
 %   the CLUBB code (i.e. COARDS conventions for the file with the mean variables
-%   and the subcolumns stored in the 'y' of _nl_LH_sample_points_2D.
+%   and the subcolumns stored in the 'y' of _nl_lh_sample_points_2D.
 % References:
 %   None
 %-------------------------------------------------------------------------------
@@ -16,7 +16,7 @@ set(gca, 'LineStyleOrder',{'-','--'},'NextPlot','ReplaceChildren');
 subplot('Position',[0.2 0.2 0.5 0.3])
 
 % Open the subcolumn file
-subfile = netcdf.open( [ fdir, '/', curr_case, '_nl_LH_sample_points_2D.nc'], 'NC_NOWRITE' );
+subfile = netcdf.open( [ fdir, '/', curr_case, '_nl_lh_sample_points_2D.nc'], 'NC_NOWRITE' );
 
 % Open the zt file
 meanfile = netcdf.open( [ fdir, '/', curr_case, '_zt.nc'], 'NC_NOWRITE' );

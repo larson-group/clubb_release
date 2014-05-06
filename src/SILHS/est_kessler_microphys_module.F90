@@ -19,9 +19,9 @@ module est_kessler_microphys_module
   subroutine est_kessler_microphys &
              ( nz, num_samples, d_variables, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
-               X_mixt_comp_all_levs, LH_sample_point_weights, &
-               LH_AKm, AKm, AKstd, AKstd_cld, &
-               AKm_rcm, AKm_rcc, LH_rcm_avg )
+               X_mixt_comp_all_levs, lh_sample_point_weights, &
+               lh_AKm, AKm, AKstd, AKstd_cld, &
+               AKm_rcm, AKm_rcc, lh_rcm_avg )
 ! Description:
 !   This subroutine computes microphysical grid box averages of the
 !   Kessler autoconversion scheme, using both Latin hypercube sampling
@@ -70,7 +70,7 @@ module est_kessler_microphys_module
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-      LH_sample_point_weights ! Weight for cloud weighted sampling
+      lh_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       lh_AKm,    & ! Monte Carlo estimate of Kessler autoconversion [kg/kg/s]
@@ -186,7 +186,7 @@ module est_kessler_microphys_module
              real(cloud_frac1, kind = dp), real(cloud_frac2, kind = dp), &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), LH_sample_point_weights, lh_AKm_dp )
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights, lh_AKm_dp )
 
       ! Convert to real number
       lh_AKm(level) = real( lh_AKm_dp, kind = core_rknd )
@@ -268,7 +268,7 @@ module est_kessler_microphys_module
   subroutine autoconv_estimate( num_samples, mixt_frac, &
                               cloud_frac1, cloud_frac2, rc, &
                              !w, Nc, rr, &
-                              X_mixt_comp_one_lev, LH_sample_point_weights, ac_m )
+                              X_mixt_comp_one_lev, lh_sample_point_weights, ac_m )
 ! Description:
 !   Compute Kessler grid box avg autoconversion (kg/kg)/s.
 ! References:
@@ -322,7 +322,7 @@ module est_kessler_microphys_module
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-       LH_sample_point_weights ! Weight for cloud weighted sampling
+       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     ! Output Variables
 
@@ -411,7 +411,7 @@ module est_kessler_microphys_module
 !      a user must add a new microphysics scheme.
         if ( l_lh_cloud_weighted_sampling ) then
           ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))&
-                  * real(LH_sample_point_weights(sample), kind=dp)
+                  * real(lh_sample_point_weights(sample), kind=dp)
         else
           ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))
         end if
@@ -425,7 +425,7 @@ module est_kessler_microphys_module
 
         if ( l_lh_cloud_weighted_sampling ) then
           ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp)) &
-                  * real(LH_sample_point_weights(sample), kind=dp)
+                  * real(lh_sample_point_weights(sample), kind=dp)
         else
           ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))
         end if
