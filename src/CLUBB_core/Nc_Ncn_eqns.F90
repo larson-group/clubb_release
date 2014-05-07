@@ -103,8 +103,9 @@ contains
   end function Ncnm_to_Nc_in_cloud
 
   !=============================================================================
-  function Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
-                                mixt_frac, Nc_in_cloud, cloud_frac, &
+  function Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, &
+                                sigma_s_2, mixt_frac, &
+                                Nc_in_cloud, cloud_frac, &
                                 const_Ncnp2_on_Ncnm2, const_corr_sNcn ) &
   result( Ncnm )
 
@@ -149,7 +150,7 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       Nc_in_cloud,          & ! Mean cloud droplet conc. (in-cloud)     [num/kg]
       cloud_frac,           & ! Cloud fraction                               [-]
-      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
     ! Return Variable
@@ -161,7 +162,8 @@ contains
       Ncm    ! Mean cloud droplet concentration (overall)      [num/kg]
 
 
-    if ( cloud_frac > cloud_frac_min .and. const_Ncnp2_on_Ncnm2 > zero ) then
+    if ( cloud_frac > cloud_frac_min &
+         .and. const_corr_sNcn * const_Ncnp2_on_Ncnm2 /= zero ) then
 
        ! There is cloud found at this grid level.  Additionally, Ncn varies.
        ! Calculate Nc_in_cloud.
@@ -502,7 +504,7 @@ contains
 
     real( kind = core_rknd ), intent(in) :: &
       Ncm,                  & ! Mean cloud droplet conc. (overall)      [num/kg]
-      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
     ! Return Variable
@@ -748,7 +750,7 @@ contains
       sigma_s_i    ! Standard deviation of s (ith PDF component)     [kg/kg]
 
     real( kind = core_rknd ), intent(in) :: &
-      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
     ! Return Variable

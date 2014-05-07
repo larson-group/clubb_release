@@ -42,7 +42,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, d_variables, dt, rho, &                  ! Intent(in)
-                                   wp2_zt, Ncm, Nc_in_cloud, rcm, cloud_frac, & ! Intent(in)
+                                   wp2_zt, Nc_in_cloud, rcm, cloud_frac, &      ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
                                    corr_array_cloud, corr_array_below, &        ! Intent(in)
                                    pdf_params, l_stats_samp, &                  ! Intent(in)
@@ -87,9 +87,12 @@ module setup_clubb_pdf_params
 
     use parameters_microphys, only: &
         l_const_Nc_in_cloud, & ! Flag(s)
-        l_predictnc,         &
         hydromet_list,       & ! Variable(s)
-        hydromet_tol
+        hydromet_tol,        &
+        Ncnp2_on_Ncnm2
+
+    use Nc_Ncn_eqns, only: &
+        Nc_in_cloud_to_Ncnm  ! Procedure(s)
 
     use advance_windm_edsclrm_module, only: &
         xpwp_fnc
@@ -170,7 +173,6 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho,         & ! Density                                         [kg/m^3]
       wp2_zt,      & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
-      Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.) [num/kg]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -226,11 +228,15 @@ module setup_clubb_pdf_params
       corr_mtx_approx_2      ! Approximated corr. matrix (C = LL'), 2nd comp. [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rc1,         & ! Mean of r_c (1st PDF component)              [kg/kg]
-      rc2,         & ! Mean of r_c (2nd PDF component)              [kg/kg]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)           [-]
-      cloud_frac2, & ! Cloud fraction (2nd PDF component)           [-]
-      mixt_frac      ! Mixture fraction                             [-]
+      mu_s_1,      & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_s_2,      & ! Mean of s (2nd PDF component)                   [kg/kg]
+      sigma_s_1,   & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_s_2,   & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      rc1,         & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc2,         & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)              [-]
+      cloud_frac2, & ! Cloud fraction (2nd PDF component)              [-]
+      mixt_frac      ! Mixture fraction                                [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
@@ -270,6 +276,10 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(d_variables) :: &
       sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
       sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
+
+    real( kind = core_rknd ) :: &
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
+      const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
@@ -340,6 +350,10 @@ module setup_clubb_pdf_params
     enddo ! i = 1, hydromet_dim, 1
 
     ! Setup some of the PDF parameters
+    mu_s_1      = pdf_params%s1
+    mu_s_2      = pdf_params%s2
+    sigma_s_1   = pdf_params%stdev_s1
+    sigma_s_2   = pdf_params%stdev_s2
     rc1         = pdf_params%rc1
     rc2         = pdf_params%rc2
     cloud_frac1 = pdf_params%cloud_frac1
@@ -369,49 +383,27 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! Calculate <N_cn> from <N_c>, whether <N_c> is predicted or based on a
-    ! prescribed value, and whether the in-cloud value is constant or varying.
-    if ( l_predictnc .and. .not. l_const_Nc_in_cloud ) then
-       ! The mean of N_c is predicted and the value of N_c in-cloud may vary.
-       ! I will call the full equation here later.  Brian; 1/28/2014.
-       do k = 1, nz
-          if ( cloud_frac(k) > cloud_frac_min ) then
-             Ncnm(k) = Ncm(k) / cloud_frac(k)
-          else
-             ! The model is producing a positive mean cloud droplet
-             ! concentration, but is not producing any cloud.  Set Ncnm to the
-             ! constant, prescribed value of Nc (which is still set to a default
-             ! value even when Ncm is predicted).  This will avoid a huge value
-             ! of Ncnm.
-             Ncnm(k) = Nc_in_cloud(k)
-          endif
-       enddo ! k = 1, nz
-    elseif ( l_predictnc .and. l_const_Nc_in_cloud ) then
-       ! The mean of N_c is predicted and the value of N_c in-cloud is constant.
-       do k = 1, nz
-          if ( cloud_frac(k) > cloud_frac_min ) then
-             Ncnm(k) = Ncm(k) / cloud_frac(k)
-          else
-             ! The model is producing a positive mean cloud droplet
-             ! concentration, but is not producing any cloud.  Set Ncnm to the
-             ! constant, prescribed value of Nc (which is still set to a default
-             ! value even when Ncm is predicted).  This will avoid a huge value
-             ! of Ncnm.
-             Ncnm(k) = Nc_in_cloud(k)
-          endif
-       enddo ! k = 1, nz
-    elseif ( .not. l_const_Nc_in_cloud .and. .not. l_predictNc ) then
-       ! The value of N_c in-cloud is based on a prescribed parameter, which is
-       ! used as the in-cloud mean of N_c.  However, N_c in-cloud is allowed to
-       ! vary around this prescribed mean value.  The value of N_cn also varies.
-       ! Find the mean of N_cn, <N_cn>.
-       ! I will call the full equation here later.  Brian; 1/28/2014.
-       Ncnm = Nc_in_cloud
-    elseif ( l_const_Nc_in_cloud .and. .not. l_predictNc ) then
-       ! The value of N_c in-cloud is constant, prescribed parameter.  The value
-       ! of N_cn is also constant at any grid level.
-       Ncnm = Nc_in_cloud
+    ! Calculate <N_cn> from Nc_in_cloud, whether Nc_in_cloud is predicted or
+    ! based on a prescribed value, and whether the value is constant or varying
+    ! over the grid level.
+    if ( .not. l_const_Nc_in_cloud ) then
+       ! Ncn varies at each vertical level.
+       const_Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
+    else  ! l_const_Nc_in_cloud
+       ! Ncn is constant at each vertical level.
+       const_Ncnp2_on_Ncnm2 = zero
     endif
+
+    const_corr_sNcn = corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor)
+
+    do k = 2, nz
+
+       Ncnm(k) = Nc_in_cloud_to_Ncnm( mu_s_1(k), mu_s_2(k), sigma_s_1(k), &
+                                      sigma_s_2(k), mixt_frac(k), &
+                                      Nc_in_cloud(k), cloud_frac(k), &
+                                      const_Ncnp2_on_Ncnm2, const_corr_sNcn )
+
+    enddo ! k = 2, nz
 
     ! Calculate correlations involving w by first calculating total covariances
     ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.

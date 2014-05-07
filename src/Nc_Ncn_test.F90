@@ -304,8 +304,9 @@ module Nc_Ncn_test
 
        ! Calculate Ncnm from Ncm, Nc_in_cloud, PDF parameters, and cloud
        ! fraction.
-       Ncnm = Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
-                                   mixt_frac, Nc_in_cloud, cloud_frac, &
+       Ncnm = Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, &
+                                   sigma_s_2, mixt_frac, &
+                                   Nc_in_cloud, cloud_frac, &
                                    const_Ncnp2_on_Ncnm2, const_corr_sNcn )
 
        write(fstdout,*) "Ncnm (from Nc_in_cloud) = ", Ncnm
