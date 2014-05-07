@@ -161,13 +161,13 @@ Nc0_in_cloud = 70.e6 ! #/m^3
 l_predictnc = .false.,
 
 ! Addition for using latin hypercube sampling
-LH_microphys_type = "interactive",
+lh_microphys_type = "interactive",
 l_local_kk = .true.,
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
 l_fix_s_t_correlations = .true.,
-LH_microphys_calls = 2,
-LH_sequence_length = 1,
+lh_microphys_calls = 2,
+lh_sequence_length = 1,
 
 /
 
@@ -181,7 +181,7 @@ rad_scheme = "none"
 ! Statistics Settings
 
 l_stats      = .true.   ! Flag for statistical output.
-fname_prefix = "rico_LH"   ! Prefix of output filename.
+fname_prefix = "rico_lh"   ! Prefix of output filename.
 stats_tsamp  = 60.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main

@@ -111,7 +111,7 @@ fi
 if [ -e $srcdir/SILHS ]; then
 	CPPDEFS="${CPPDEFS} -DSILHS"
 	OPT_LIBS="${OPT_LIBS} -lsilhs"
-	LH_LIB="libsilhs.a"
+	lh_LIB="libsilhs.a"
 fi
 
 # Add miscellaneous preprocessor definitions
@@ -356,19 +356,19 @@ libsilhs.a: libclubb_param.a libclubb_KK_micro.a libmicrophys_utils.a
 libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a libsilhs.a
 	cd $objdir; \$(MAKE) -f Make.clubb_other
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_standalone
 
-clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_thread_test
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_tuner
 
-jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.jacobian
 
-G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $LH_LIB
+G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.G_unit_tests
 
 int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a

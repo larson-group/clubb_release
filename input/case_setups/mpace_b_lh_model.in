@@ -162,12 +162,12 @@ Ns_sigma2_on_mu2_ip_below = 0.429
 
 Ncnp2_on_Ncnm2            = 2.2
 
-LH_microphys_type = "interactive",
+lh_microphys_type = "interactive",
 l_local_kk = .true.,
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-LH_microphys_calls = 2,
-LH_sequence_length = 1,
+lh_microphys_calls = 2,
+lh_sequence_length = 1,
 l_fix_s_t_correlations = .true.,
 
 ! two aerosol mode defaults from MPACE (from Hugh)
@@ -204,7 +204,7 @@ l_use_default_std_atmosphere = .true.
 ! Statistics Settings
 
 l_stats       = .true.    ! Flag for statistical output.
-fname_prefix = "mpace_b_LH"  ! Prefix of output filename.
+fname_prefix = "mpace_b_lh"  ! Prefix of output filename.
 stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
                           ! For most complete sampling, let 
                           ! stats_tsamp = dt_main
