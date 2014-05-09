@@ -396,14 +396,19 @@ module setup_clubb_pdf_params
 
     const_corr_sNcn = corr_array_cloud(iiPDF_Ncn, iiPDF_s_mellor)
 
-    do k = 1, nz
+    do k = 2, nz
 
        Ncnm(k) = Nc_in_cloud_to_Ncnm( mu_s_1(k), mu_s_2(k), sigma_s_1(k), &
                                       sigma_s_2(k), mixt_frac(k), &
                                       Nc_in_cloud(k), cloud_frac(k), &
                                       const_Ncnp2_on_Ncnm2, const_corr_sNcn )
 
-    enddo ! k = 1, nz
+    enddo ! k = 2, nz
+
+    ! Boundary Condition.
+    ! At thermodynamic level k = 1, which is below the model lower boundary, the
+    ! value of Ncnm does not matter.
+    Ncnm(1) = Nc_in_cloud(1)
 
     ! Calculate correlations involving w by first calculating total covariances
     ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.
@@ -1655,8 +1660,9 @@ module setup_clubb_pdf_params
         zero
 
     use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2, & ! Variable(s)
-        hydromet_tol
+        Ncnp2_on_Ncnm2,      & ! Variable(s)
+        hydromet_tol,        &
+        l_const_Nc_in_cloud
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
@@ -1792,15 +1798,35 @@ module setup_clubb_pdf_params
 
     ! Standard deviation of simplified cloud nuclei concentration, Ncn,
     ! in PDF component 1.
-    sigma_x_1(iiPDF_Ncn) &
-    = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc1, one, &
-                             Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+    if ( .not. l_const_Nc_in_cloud ) then
+
+       ! Ncn varies in both PDF components.
+       sigma_x_1(iiPDF_Ncn) &
+       = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc1, one, &
+                                Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+
+    else ! l_const_Nc_in_cloud
+
+       ! Ncn is constant in both PDF components.
+       sigma_x_1(iiPDF_Ncn) = zero
+
+    endif ! .not. l_const_Nc_in_cloud
 
     ! Standard deviation of simplified cloud nuclei concentration, Ncn,
     ! in PDF component 2.
-    sigma_x_2(iiPDF_Ncn) &
-    = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc2, one, &
-                             Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+    if ( .not. l_const_Nc_in_cloud ) then
+
+       ! Ncn varies in both PDF components.
+       sigma_x_2(iiPDF_Ncn) &
+       = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc2, one, &
+                                Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+
+    else ! l_const_Nc_in_cloud
+
+       ! Ncn is constant in both PDF components.
+       sigma_x_2(iiPDF_Ncn) = zero
+
+    endif ! .not. l_const_Nc_in_cloud
 
     ! Set up the values of the statistical correlations and variances.  Since we
     ! currently do not have enough variables to compute the correlations and
