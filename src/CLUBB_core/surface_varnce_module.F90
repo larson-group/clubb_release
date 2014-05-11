@@ -332,8 +332,8 @@ module surface_varnce_module
 
        ! Compute estimate for surface second order moments
        wp2_sfc = a_const * uf**2
-       up2_sfc = two * a_const * uf**2  ! From Andre, et al. 1978
-       vp2_sfc = two * a_const * uf**2  ! "  "
+       up2_sfc = 2.0_core_rknd * a_const * uf**2  ! From Andre, et al. 1978
+       vp2_sfc = 2.0_core_rknd * a_const * uf**2  ! "  "
 
        ! Vince Larson changed to make correlations between [-1,1]  31 Jan 2008
 !        thlp2_sfc   = 0.1 * a * ( wpthlp_sfc / uf )**2
