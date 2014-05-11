@@ -3,6 +3,137 @@
 !===============================================================================
 module Nc_Ncn_eqns
 
+  ! Description:
+  ! Equations are provided to perform calculations back-and-forth between Nc and
+  ! Ncn, where Nc is cloud droplet concentration and Ncn is simplified cloud
+  ! nuclei concentration.  The equation that relates the two is:
+  !
+  ! Nc = Ncn * H(s);
+  !
+  ! where s is extended liquid water mixing ratio, which is equal to cloud water
+  ! mixing ratio, rc, when both are positive.  However, s is negative in
+  ! subsaturated air.
+  !
+  ! Equation are provided relating mean cloud droplet concentration (overall),
+  ! Ncm, and/or mean cloud droplet concentration (in-cloud), Nc_in_cloud, to
+  ! mean simplified cloud nuclei concentration, Ncnm.
+
+  ! Notes:
+  !
+  ! Meaning of Nc flag combinations:
+  !
+  ! l_const_Nc_in_cloud:
+  ! When this flag is enabled, cloud droplet concentration (in-cloud) is
+  ! constant at a grid level (it is constant over the subgrid domain, but could
+  ! vary over time depending on the value of l_predictNc).  The value of
+  ! in-cloud Nc does not vary.  This also means that Ncn is constant across the
+  ! entire grid level.  When this flag is turned off, both in-cloud Nc and Ncn
+  ! vary at a grid level.
+  !
+  ! l_predictNc:
+  ! When this flag is enabled, Nc_in_cloud (or alternatively Ncm) is predicted.
+  ! It is advanced every time step by a predictive equation, and can change
+  ! at every time step at a grid level.  When this flag is turned off,
+  ! Nc_in_cloud does not change at a grid level over the course of a model run.
+  !
+  ! 1) l_predictNc turned on and l_const_Nc_in_cloud turned on:
+  !    The value of Nc_in_cloud (mean in-cloud Nc) is predicted and can change
+  !    at every timestep at a grid level.  However, the value of in-cloud Nc is
+  !    constant at a grid level (no subgrid variability).
+  !
+  ! 2) l_predictNc turned on and l_const_Nc_in_cloud turned off:
+  !    The value of Nc_in_cloud (mean in-cloud Nc) is predicted and can change
+  !    at every timestep at a grid level.  The value of in-cloud Nc also varies
+  !    at a grid level (subgrid variability around mean in-cloud Nc).
+  !
+  ! 3) l_predictNc turned off and l_const_Nc_in_cloud turned on:
+  !    The value of Nc_in_cloud (mean in-cloud Nc) is constant over time at a
+  !    grid level.  It retains its initial value.  Additionally, the value of
+  !    in-cloud Nc is constant at a grid level (no subgrid variability).  This
+  !    configuration is used most often in idealized cases.
+  !
+  ! 4) l_predictNc turned off and l_const_Nc_in_cloud turned off:
+  !    The value of Nc_in_cloud (mean in-cloud Nc) is constant over time at a
+  !    grid level.  It retains its initial value.  However, the value of
+  !    in-cloud Nc varies at a grid level (subgrid variability around mean
+  !    in-cloud Nc).
+  !
+  !
+  !
+  ! Nc_in_cloud/Nc - Ncn flow chart of CLUBB code:
+  !
+  ! (Please update when warranted).
+  !
+  !
+  ! Ncm/Nc-in-cloud                                         Ncnm/Ncn PDF params.
+  ! --->
+  ! |  |                    Start of CLUBB main time step loop
+  ! |  |
+  ! |  |                    advance_clubb_core
+  ! |  |
+  ! |  |
+  ! |  |\
+  ! |  | \
+  ! |  |  (intent in)-------setup_pdf_parameters-------->calc. Ncnm (local)
+  ! |  |                                                       |
+  ! |  |                                                      \ /
+  ! |  |                                             mu_Ncn_i, sigma_Ncn_i,
+  ! |  |                                                  corr_xNcn_i
+  ! |  |                                                       |
+  ! |  |                                                      \ /
+  ! |  |                                               PDF param. arrays:
+  ! |  |                                             mu_x_i_n, sigma_x_i_n,
+  ! |  |                                                 corr_array_i_n
+  ! |  |                                                  (intent out)
+  ! |  |                                                       |
+  ! |  |                                                       |
+  ! |  |                                                       |
+  ! |  |                                                       |
+  ! |  |                                                       |
+  ! |  |                                                       |
+  ! |  |--(intent in)-------microphys_schemes-------------(intent in)
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                call a microphysics scheme
+  ! |  |                            | 
+  ! |  |  Local micro. scheme-----------Latin Hypercube-----------Upscaled KK
+  ! |  |         |                            |                        |
+  ! |  |  Ncm/Nc-in-cloud:          Populate sample points      Use PDF params.
+  ! |  |  used to find micro.       using PDF params (Ncn).         of Ncn
+  ! |  |    tendencies.             At every sample point:      (mu_Ncn_i, etc.)
+  ! |  |         |                     Nc = Ncn * H(s).          to find micro.
+  ! |  |         |                  Use sample-point Nc to         tendencies.
+  ! |  |         |                  find micro. tendencies             |
+  ! |  |         |                when calling micro. scheme.          |
+  ! |  |         |                            |                        |
+  ! |  |    hydromet_mc/-----------------hydromet_mc/-------------hydromet_mc
+  ! |  |    Ncm_mc (intent out)     |    Ncm_mc (intent out)      (intent out)
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                            |
+  ! |  |                        (intent in)
+  ! |  |                            |
+  ! |  |--(intent inout)----advance_microphys
+  ! |  |
+  ! |  |
+  ! |  | advance microphysics variables (hydromet, Nc_in_cloud/Ncm) one timestep
+  ! |  |                
+  ! |  |                   l_predictnc = true:
+  ! |  |            Nc_in_cloud/Ncm necessary for starting
+  ! |  |            value of Nc_in_cloud/Ncm when advancing
+  ! |  |            one timestep using predictive equation.
+  ! |  |
+  ! |  |
+  ! |  |                    End of CLUBB main time step loop
+  ! <---
+
+  ! References:
+  !-------------------------------------------------------------------------
+
   implicit none
 
   private ! default scope

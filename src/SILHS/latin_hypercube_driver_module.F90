@@ -715,7 +715,7 @@ module latin_hypercube_driver_module
       l_in_precip   ! Whether sample is in precipitation
 
     ! Precipitation fraction in a component of the PDF, for each sample
-    real( kind = dp ), dimension(num_samples) :: precip_frac_n
+    real( kind = dp ), dimension(num_samples) :: precip_frac_i
 
     ! ---- Begin Code ----
 
@@ -962,14 +962,14 @@ module latin_hypercube_driver_module
 
       ! Determine precipitation fraction
       where ( X_mixt_comp_all_levs(k,:) == 1 )
-        precip_frac_n(:) = real( hydromet_pdf_params(k)%precip_frac_1, kind=dp )
+        precip_frac_i(:) = real( hydromet_pdf_params(k)%precip_frac_1, kind=dp )
       else where
-        precip_frac_n(:) = real( hydromet_pdf_params(k)%precip_frac_2, kind=dp )
+        precip_frac_i(:) = real( hydromet_pdf_params(k)%precip_frac_2, kind=dp )
       end where
 
       ! Determine precipitation for all levels
       where ( in_precipitation( X_u_all_levs(k,:,d_variables+2), &
-                  precip_frac_n(:) ) )
+                  precip_frac_i(:) ) )
         l_in_precip(k,:) = .true.
       else where
         l_in_precip(k,:) = .false.

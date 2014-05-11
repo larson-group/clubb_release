@@ -796,10 +796,12 @@ module pdf_closure_module
       end if
 
       ! Calculate ice_supersat_frac1
-      call calc_cloud_frac_component( s1, stdev_s1, s_at_ice_sat1, ice_supersat_frac1, rc1_ice )
+      call calc_cloud_frac_component( s1, stdev_s1, s_at_ice_sat1, &
+                                      ice_supersat_frac1, rc1_ice )
       
       ! Calculate ice_supersat_frac2
-      call calc_cloud_frac_component( s2, stdev_s2, s_at_ice_sat2, ice_supersat_frac2, rc2_ice )
+      call calc_cloud_frac_component( s2, stdev_s2, s_at_ice_sat2, &
+                                      ice_supersat_frac2, rc2_ice )
     end if
 
     ! Compute moments that depend on theta_v
@@ -1057,68 +1059,128 @@ module pdf_closure_module
     return
   end subroutine pdf_closure
   
-  !-----------------------------------------------------------------------
-  elemental subroutine calc_cloud_frac_component( s, stdev_s, s_at_sat, cloud_fracN, rcN )
+  !=============================================================================
+  elemental subroutine calc_cloud_frac_component( mean_s_i, stdev_s_i, &
+                                                  s_at_sat, &
+                                                  cloud_frac_i, rc_i )
 
-  ! Description:
-  !   Given the mean and standard deviation of 's', this subroutine
-  !   calculates cloud_frac<n>, where n is the PDF component (either 1 or
-  !   2). In addition, the subroutine calculates rc<n>, the mean of r_c
-  !
-  ! References:
-  !   See ticket#529
-  !-----------------------------------------------------------------------
+    ! Description:
+    ! Calculates the PDF component cloud water mixing ratio, rc_i, and cloud
+    ! fraction, cloud_frac_i, for the ith PDF component.
+    !
+    ! The equation for cloud water mixing ratio, rc, at any point is:
+    !
+    ! rc = s * H(s);
+    !
+    ! and the equation for cloud fraction at a point, fc, is:
+    !
+    ! fc = H(s);
+    !
+    ! where where extended liquid water mixing ratio, s, is equal to cloud
+    ! water mixing ratio, rc, when positive.  When the atmosphere is saturated
+    ! at this point, cloud water is found, and rc = s, while fc = 1.  Otherwise,
+    ! clear air is found at this point, and rc = fc = 0.
+    !
+    ! The mean of rc and fc is calculated by integrating over the PDF, such
+    ! that:
+    !
+    ! <rc> = INT(-inf:inf) s * H(s) * P(s) ds; and
+    !
+    ! cloud_frac = <fc> = INT(-inf:inf) H(s) * P(s) ds.
+    !
+    ! This can be rewritten as:
+    !
+    ! <rc> = INT(0:inf) s * P(s) ds; and
+    !
+    ! cloud_frac = <fc> = INT(0:inf) P(s) ds;
+    !
+    ! and further rewritten as:
+    !
+    ! <rc> = SUM(i=1,N) mixt_frac_i INT(0:inf) s * P_i(s) ds; and
+    !
+    ! cloud_frac = SUM(i=1,N) mixt_frac_i INT(0:inf) P_i(s) ds;
+    !
+    ! where N is the number of PDF components.  The equation for mean rc in the
+    ! ith PDF component is:
+    !
+    ! rc_i = INT(0:inf) s * P_i(s) ds;
+    !
+    ! and the equation for cloud fraction in the ith PDF component is:
+    ! 
+    ! cloud_frac_i = INT(0:inf) P_i(s) ds.
+    !
+    ! The component values are related to the overall values by:
+    !
+    ! <rc> = SUM(i=1,N) mixt_frac_i * rc_i; and
+    !
+    ! cloud_frac = SUM(i=1,N) mixt_frac_i * cloud_frac_i.
+
+    ! References:
+    !-----------------------------------------------------------------------
     
     use constants_clubb, only: &
-      s_mellor_tol,&! Tolerance for pdf parameter s       [kg/kg]
-      sqrt_2pi,    &! sqrt(2*pi)
-      sqrt_2        ! sqrt(2)
-    
-    use clubb_precision, only: &
-      core_rknd     ! Precision
-    
+        s_mellor_tol, & ! Tolerance for pdf parameter s       [kg/kg]
+        sqrt_2pi,     & ! sqrt(2*pi)
+        sqrt_2,       & ! sqrt(2)
+        one,          & ! 1
+        one_half,     & ! 1/2
+        zero            ! 0
+
     use anl_erf, only:  & 
-      erf ! Procedure(s)
-    ! The error function
-    
+        erf ! Procedure(s) -- The error function
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
     implicit none
-    
+
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      s,          & ! Mean of 's' component
-      stdev_s,    & ! Standard deviation of s
-      s_at_sat      ! Value of 's' at exact saturation with respect to ice
-                    !  Negative (or zero for liquid)
-    
+      mean_s_i,  & ! Mean of s (ith PDF component)                       [kg/kg]
+      stdev_s_i, & ! Standard deviation of s (ith PDF component)         [kg/kg]
+      s_at_sat     ! Value of s at saturation (0--liquid; negative--ice) [kg/kg]
+
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      cloud_fracN, &  ! Component of cloud_frac
-      rcN             ! Mean of r_c 
-    
+      cloud_frac_i, & ! Cloud fraction (ith PDF component)               [-]
+      rc_i            ! Mean cloud water mixing ratio (ith PDF comp.)    [kg/kg]
+
     ! Local Variables
-    real( kind = core_rknd) :: zetaN
-    
-  !-----------------------------------------------------------------------
+    real( kind = core_rknd) :: zeta_i
+
     !----- Begin Code -----
-    if ( stdev_s > s_mellor_tol ) then
-      zetaN = (s - s_at_sat) / stdev_s
-      cloud_fracN  = 0.5_core_rknd*( 1._core_rknd + erf( zetaN/sqrt_2 )  )
-      rcN       = (s - s_at_sat)*cloud_fracN + stdev_s*exp( -0.5_core_rknd*zetaN**2 )/( sqrt_2pi )
-    else
-      if ( (s - s_at_sat) < 0.0_core_rknd ) then
-        cloud_fracN  = 0.0_core_rknd
-        rcN        = 0.0_core_rknd
-      else
-        cloud_fracN  = 1.0_core_rknd
-        rcN        = s - s_at_sat
-      end if ! s < 0
-    end if ! stdev_s > s_mellor_tol
-    
+    if ( stdev_s_i > s_mellor_tol ) then
+
+       ! The value of s varies in the ith PDF component.
+
+       zeta_i = ( mean_s_i - s_at_sat ) / stdev_s_i
+
+       cloud_frac_i = one_half * ( one + erf( zeta_i / sqrt_2 )  )
+
+       rc_i = ( mean_s_i - s_at_sat ) * cloud_frac_i &
+              + stdev_s_i * exp( - one_half * zeta_i**2 ) / ( sqrt_2pi )
+
+    else ! stdev_s_i <= s_mellor_tol
+
+       ! The value of s does not vary in the ith PDF component.
+       if ( ( mean_s_i - s_at_sat ) < zero ) then
+          ! All clear air in the ith PDF component.
+          cloud_frac_i = zero
+          rc_i         = zero
+       else ! mean_s_i >= 0
+          ! All cloud in the ith PDF component.
+          cloud_frac_i = one
+          rc_i         = mean_s_i - s_at_sat
+       endif ! mean_s_i < 0
+
+    endif ! stdev_s_i > s_mellor_tol
+
+
+    return
     
   end subroutine calc_cloud_frac_component
-  !-----------------------------------------------------------------------
-  
-  !-----------------------------------------------------------------------
+
+  !=============================================================================
   function calc_cloud_frac( cloud_frac1, cloud_frac2, mixt_frac )
 
   ! Description:
@@ -1188,7 +1250,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
   pure subroutine calc_vert_avg_cf_component &
                   ( nz, k, z_vals, s_mellor, stdev_s, s_at_sat, &
-                    cloud_fracN, rcN )
+                    cloud_frac_i, rc_i )
   ! Description:
   !   This subroutine is similar to calc_cloud_frac_component, but
   !   resolves cloud_frac and rc at an arbitrary number of vertical levels
@@ -1224,8 +1286,8 @@ module pdf_closure_module
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      cloud_fracN, & ! Vertically averaged cloud fraction                [-]
-      rcN            ! Vertically averaged cloud water mixing ratio      [kg/kg]
+      cloud_frac_i, & ! Vertically averaged cloud fraction                [-]
+      rc_i            ! Vertically averaged cloud water mixing ratio      [kg/kg]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(n_points) :: &
@@ -1246,8 +1308,8 @@ module pdf_closure_module
     call calc_cloud_frac_component( s_mellor_ref(:), stdev_s_ref(:), s_at_sat(k), & ! Intent(in)
                                     cloud_frac_ref(:), rc_ref(:) )                  ! Intent(out)
 
-    cloud_fracN = sum( cloud_frac_ref(:) ) / real( n_points, kind=core_rknd )
-    rcN = sum( rc_ref(:) ) / real( n_points, kind=core_rknd )
+    cloud_frac_i = sum( cloud_frac_ref(:) ) / real( n_points, kind=core_rknd )
+    rc_i = sum( rc_ref(:) ) / real( n_points, kind=core_rknd )
 
     return
   end subroutine calc_vert_avg_cf_component
