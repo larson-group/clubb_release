@@ -153,7 +153,7 @@ contains
                                 sigma_s_1, sigma_s_2, sigma_Ncn_1, &
                                 sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                                 corr_sNcn_1_n, corr_sNcn_2_n, mixt_frac, &
-                                cloud_frac ) &
+                                cloud_frac_1, cloud_frac_2 ) &
   result( Nc_in_cloud )
 
     ! Description:
@@ -177,7 +177,8 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        cloud_frac_min  ! Constant(s)
+        one,            & ! Constant(s)
+        cloud_frac_min
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -199,7 +200,8 @@ contains
       corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
       corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
-      cloud_frac       ! Cloud fraction                                      [-]
+      cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac_2     ! Cloud fraction (2nd PDF component)                  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -207,8 +209,17 @@ contains
 
     ! Local Variable
     real( kind = core_rknd ) :: &
-      Ncm    ! Mean cloud droplet concentration (overall)    [num/kg]
+      Ncm,        & ! Mean cloud droplet concentration (overall)    [num/kg]
+      cloud_frac    ! Cloud fraction                                [-]
  
+
+    ! Calculate overall cloud fraction as calculated by the PDF.
+    ! The variable cloud_frac is not used here because it is altered by factors
+    ! such as the trapezoidal rule calculation.
+    ! Cloud fraction can be recalculated here from cloud_frac_1 and cloud_frac_2
+    ! as long neither of these variables are altered by any factor.  They can
+    ! only be calculated from PDF.
+    cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
 
     if ( cloud_frac > cloud_frac_min ) then
 
@@ -235,8 +246,8 @@ contains
 
   !=============================================================================
   function Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, &
-                                sigma_s_2, mixt_frac, &
-                                Nc_in_cloud, cloud_frac, &
+                                sigma_s_2, mixt_frac, Nc_in_cloud, &
+                                cloud_frac_1, cloud_frac_2, &
                                 const_Ncnp2_on_Ncnm2, const_corr_sNcn ) &
   result( Ncnm )
 
@@ -262,7 +273,8 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero,           & ! Constant(s)
+        one,            & ! Constant(s)
+        zero,           &
         cloud_frac_min
 
     use clubb_precision, only: &
@@ -280,7 +292,8 @@ contains
 
     real( kind = core_rknd ), intent(in) :: &
       Nc_in_cloud,          & ! Mean cloud droplet conc. (in-cloud)     [num/kg]
-      cloud_frac,           & ! Cloud fraction                               [-]
+      cloud_frac_1,         & ! Cloud fraction (1st PDF component)           [-]
+      cloud_frac_2,         & ! Cloud fraction (2nd PDF component)           [-]
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
       const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
@@ -290,8 +303,17 @@ contains
 
     ! Local Variable
     real( kind = core_rknd ) :: &
-      Ncm    ! Mean cloud droplet concentration (overall)      [num/kg]
+      Ncm,        & ! Mean cloud droplet concentration (overall)      [num/kg]
+      cloud_frac    ! Cloud fraction                                  [-]
 
+
+    ! Calculate overall cloud fraction as calculated by the PDF.
+    ! The variable cloud_frac is not used here because it is altered by factors
+    ! such as the trapezoidal rule calculation.
+    ! Cloud fraction can be recalculated here from cloud_frac_1 and cloud_frac_2
+    ! as long neither of these variables are altered by any factor.  They can
+    ! only be calculated from PDF.
+    cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
 
     if ( cloud_frac > cloud_frac_min &
          .and. const_corr_sNcn * const_Ncnp2_on_Ncnm2 /= zero ) then
@@ -302,7 +324,7 @@ contains
 
        Ncnm = Ncm_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
                            mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
-                           const_corr_sNcn )
+                           const_corr_sNcn, Nc_in_cloud )
 
     else ! cloud_frac <= cloud_frac_min .or. const_Ncnp2_on_Ncnm2 = 0
 
@@ -448,7 +470,7 @@ contains
   !=============================================================================
   function Ncm_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
                         mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
-                        const_corr_sNcn ) &
+                        const_corr_sNcn, Ncnm_val_denom_0 ) &
   result( Ncnm )
 
     ! Description:
@@ -616,9 +638,8 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one,     & ! Constant(s)
-        zero,    &
-        Ncn_tol
+        one,  & ! Constant(s)
+        zero
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -636,7 +657,8 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       Ncm,                  & ! Mean cloud droplet conc. (overall)      [num/kg]
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
+      const_corr_sNcn,      & ! Prescribed correlation between s and Ncn     [-]
+      Ncnm_val_denom_0        ! Ncnm value -- denominator in eqn. is 0  [num/kg]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -662,7 +684,10 @@ contains
 
     else ! denominator_term = 0
 
-       Ncnm = Ncn_tol
+       ! When the denominator is 0, it is usually because there is only clear
+       ! air.  In that scenario, Ncm should also be 0.  Set Ncnm to a value that
+       ! is usual or typical
+       Ncnm = Ncnm_val_denom_0
 
     endif ! denominator_term > 0
 

@@ -398,10 +398,11 @@ module setup_clubb_pdf_params
 
     do k = 2, nz
 
-       Ncnm(k) = Nc_in_cloud_to_Ncnm( mu_s_1(k), mu_s_2(k), sigma_s_1(k), &
-                                      sigma_s_2(k), mixt_frac(k), &
-                                      Nc_in_cloud(k), cloud_frac(k), &
-                                      const_Ncnp2_on_Ncnm2, const_corr_sNcn )
+       Ncnm(k) &
+       = Nc_in_cloud_to_Ncnm( mu_s_1(k), mu_s_2(k), sigma_s_1(k), &
+                              sigma_s_2(k), mixt_frac(k), Nc_in_cloud(k), &
+                              cloud_frac1(k), cloud_frac2(k), &
+                              const_Ncnp2_on_Ncnm2, const_corr_sNcn )
 
     enddo ! k = 2, nz
 

@@ -61,7 +61,8 @@ module Nc_Ncn_test
       corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
       corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
-      cloud_frac       ! Cloud fraction                                      [-]
+      cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac_2     ! Cloud fraction (2nd PDF component)                  [-]
 
     real( kind = core_rknd ) :: &
       Ncm,         & ! Mean cloud droplet concentration (overall)       [num/kg]
@@ -275,13 +276,17 @@ module Nc_Ncn_test
 
        endif
 
-       cloud_frac &
-       = mixt_frac &
-         * one_half * erfc( - ( mu_s_1 / ( sqrt_2 * sigma_s_1 ) ) ) &
-         + ( one - mixt_frac ) &
-           * one_half * erfc( - ( mu_s_2 / ( sqrt_2 * sigma_s_2 ) ) )
+       cloud_frac_1 = one_half * erfc( - ( mu_s_1 / ( sqrt_2 * sigma_s_1 ) ) )
 
-       write(fstdout,*) "cloud fraction = ", cloud_frac
+       cloud_frac_2 = one_half * erfc( - ( mu_s_2 / ( sqrt_2 * sigma_s_2 ) ) )
+
+       write(fstdout,*) "cloud fraction (1st PDF component) = ", cloud_frac_1
+
+       write(fstdout,*) "cloud fraction (2nd PDF component) = ", cloud_frac_2
+
+       write(fstdout,*) "cloud fraction = ", &
+                        mixt_frac * cloud_frac_1 &
+                        + ( one - mixt_frac ) * cloud_frac_2
 
 
        ! Calculate Ncm and Nc_in_cloud from PDF parameters (Ncn) and cloud
@@ -291,7 +296,7 @@ module Nc_Ncn_test
                               sigma_s_1, sigma_s_2, sigma_Ncn_1, &
                               sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
                               corr_sNcn_1_n, corr_sNcn_2_n, mixt_frac, &
-                              cloud_frac )
+                              cloud_frac_1, cloud_frac_2 )
 
        write(fstdout,*) "Nc_in_cloud (from Ncn) = ", Nc_in_cloud
 
@@ -305,15 +310,15 @@ module Nc_Ncn_test
        ! Calculate Ncnm from Ncm, Nc_in_cloud, PDF parameters, and cloud
        ! fraction.
        Ncnm = Nc_in_cloud_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, &
-                                   sigma_s_2, mixt_frac, &
-                                   Nc_in_cloud, cloud_frac, &
+                                   sigma_s_2, mixt_frac, Nc_in_cloud, &
+                                   cloud_frac_1, cloud_frac_2, &
                                    const_Ncnp2_on_Ncnm2, const_corr_sNcn )
 
        write(fstdout,*) "Ncnm (from Nc_in_cloud) = ", Ncnm
 
        Ncnm = Ncm_to_Ncnm( mu_s_1, mu_s_2, sigma_s_1, sigma_s_2, &
                            mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
-                           const_corr_sNcn )
+                           const_corr_sNcn, Nc_in_cloud )
 
        write(fstdout,*) "Ncnm (from Ncm) = ", Ncnm
 
