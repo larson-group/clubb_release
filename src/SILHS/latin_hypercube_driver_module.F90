@@ -1519,7 +1519,7 @@ module latin_hypercube_driver_module
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real(kind=core_rknd) :: cloud_frac_n
+    real(kind=core_rknd) :: cloud_frac_i
 
     real(kind=genrand_real) :: rand ! Random number
 
@@ -1548,18 +1548,18 @@ module latin_hypercube_driver_module
 
       if ( in_mixt_comp_1( X_u_dp1_element, real(mixt_frac, kind = dp) ) ) then
         ! Component 1
-        cloud_frac_n = cloud_frac1
+        cloud_frac_i = cloud_frac1
 !       X_mixt_comp_one_lev = 1
       else
         ! Component 2
-        cloud_frac_n = cloud_frac2
+        cloud_frac_i = cloud_frac2
 !       X_mixt_comp_one_lev = 2
       end if
 
-      if ( X_u_s_mellor_element >= 1._dp-real(cloud_frac_n, kind = dp) .and. l_cloudy_sample ) then
+      if ( X_u_s_mellor_element >= 1._dp-real(cloud_frac_i, kind = dp) .and. l_cloudy_sample ) then
         ! If we're looking for the cloudy part of the grid box, then exit this loop
         exit
-      else if ( X_u_s_mellor_element < ( 1._dp-real(cloud_frac_n, kind = dp) ) &
+      else if ( X_u_s_mellor_element < ( 1._dp-real(cloud_frac_i, kind = dp) ) &
                 .and. .not. l_cloudy_sample ) then
         ! If we're looking for the clear part of the grid box, then exit this loop
         exit
@@ -1633,7 +1633,7 @@ module latin_hypercube_driver_module
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real(kind=dp) :: cloud_frac_n, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
+    real(kind=dp) :: cloud_frac_i, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
     real(kind=genrand_real) :: rand, rand1, rand2 ! Random numbers
 
@@ -1652,12 +1652,12 @@ module latin_hypercube_driver_module
 
       if ( in_mixt_comp_1( real( rand1, kind=dp ), cloud_weighted_mixt_frac ) ) then
         ! Component 1
-        cloud_frac_n = real( cloud_frac1, kind=dp )
+        cloud_frac_i = real( cloud_frac1, kind=dp )
 !       X_mixt_comp_one_lev = 1
         X_u_dp1_element = real( mixt_frac, kind=dp ) * rand2
       else
         ! Component 2
-        cloud_frac_n = real( cloud_frac2, kind=dp )
+        cloud_frac_i = real( cloud_frac2, kind=dp )
 !       X_mixt_comp_one_lev = 2
         X_u_dp1_element = real( mixt_frac, kind=dp ) &
                         + real(1._core_rknd-mixt_frac, kind=dp) * real(rand2, kind = dp)
@@ -1670,11 +1670,11 @@ module latin_hypercube_driver_module
         ! New formula based on p_matrix
         X_u_s_mellor_element = 1._dp + 2._dp &
           * (real(p_matrix_element, kind = dp)/real(num_samples, kind = dp) &
-          - 1._dp) * cloud_frac_n &
-          + real(rand, kind = dp) * ( 2._dp/real( num_samples, kind=dp ) ) * cloud_frac_n
+          - 1._dp) * cloud_frac_i &
+          + real(rand, kind = dp) * ( 2._dp/real( num_samples, kind=dp ) ) * cloud_frac_i
       else
-        X_u_s_mellor_element = cloud_frac_n * real(rand, kind = dp) &
-          + (1._dp-cloud_frac_n)
+        X_u_s_mellor_element = cloud_frac_i * real(rand, kind = dp) &
+          + (1._dp-cloud_frac_i)
       end if
 
     else ! Clear air sample
@@ -1685,12 +1685,12 @@ module latin_hypercube_driver_module
 
       if ( in_mixt_comp_1( real( rand1, kind=dp ), clear_weighted_mixt_frac ) ) then
         ! Component 1
-        cloud_frac_n = real(cloud_frac1, kind = dp)
+        cloud_frac_i = real(cloud_frac1, kind = dp)
 !       X_mixt_comp_one_lev = 1
         X_u_dp1_element = real(mixt_frac, kind = dp) * real(rand2, kind = dp)
       else
         ! Component 2
-        cloud_frac_n = real(cloud_frac2, kind = dp)
+        cloud_frac_i = real(cloud_frac2, kind = dp)
 !       X_mixt_comp_one_lev = 2
         X_u_dp1_element = real(mixt_frac, kind = dp) &
         + (1._dp-real(mixt_frac, kind = dp)) * real(rand2, kind = dp)
@@ -1702,11 +1702,11 @@ module latin_hypercube_driver_module
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
         X_u_s_mellor_element = real( p_matrix_element, kind=dp ) &
-          * (2._dp/real(num_samples, kind = dp) ) * (1._dp-cloud_frac_n) &
-          + (2._dp/real(num_samples, kind = dp) * (1._dp-cloud_frac_n) &
+          * (2._dp/real(num_samples, kind = dp) ) * (1._dp-cloud_frac_i) &
+          + (2._dp/real(num_samples, kind = dp) * (1._dp-cloud_frac_i) &
           * real(rand, kind = dp))
       else
-        X_u_s_mellor_element = (1._dp-cloud_frac_n) &
+        X_u_s_mellor_element = (1._dp-cloud_frac_i) &
           * real(rand, kind = dp)
       end if
 
@@ -1934,7 +1934,7 @@ module latin_hypercube_driver_module
       X_u_s_mellor_k_lh_start   ! Uniform distribution for s_mellor at k_lh_start [-]
 
     ! Local Variables
-    real(kind = core_rknd) :: cloud_frac_n
+    real(kind = core_rknd) :: cloud_frac_i
 
     integer :: number_cloudy_samples
 
@@ -1946,11 +1946,11 @@ module latin_hypercube_driver_module
 
     do sample = 1, num_samples
       if ( X_mixt_comp_k_lh_start(sample) == 1 ) then
-        cloud_frac_n = cloud_frac1
+        cloud_frac_i = cloud_frac1
       else
-        cloud_frac_n = cloud_frac2
+        cloud_frac_i = cloud_frac2
       end if
-      if ( X_u_s_mellor_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_n, kind = dp) ) then
+      if ( X_u_s_mellor_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_i, kind = dp) ) then
         number_cloudy_samples = number_cloudy_samples + 1
       else
         ! Do nothing, the air is clear
