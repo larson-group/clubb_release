@@ -13,7 +13,7 @@ module surface_varnce_module
 
   !=============================================================================
   subroutine surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
-                             um_sfc, vm_sfc, Lscale_sfc, wpsclrp_sfc, & 
+                             um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
                              wp2_sfc, up2_sfc, vp2_sfc, & 
                              thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
                              sclrp2_sfc, & 
@@ -94,13 +94,13 @@ module surface_varnce_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
-      upwp_sfc,   & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
-      vpwp_sfc,   & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
-      wpthlp_sfc, & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
-      wprtp_sfc,  & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
-      um_sfc,     & ! Surface u wind component, <u>          [m/s]
-      vm_sfc,     & ! Surface v wind component, <v>          [m/s]
-      Lscale_sfc    ! Mixing length at surface, Lscale       [m] 
+      upwp_sfc,      & ! Surface u momentum flux, <u'w'>|_sfc   [m^2/s^2]
+      vpwp_sfc,      & ! Surface v momentum flux, <v'w'>|_sfc   [m^2/s^2]
+      wpthlp_sfc,    & ! Surface thetal flux, <w'thl'>|_sfc     [K m/s]
+      wprtp_sfc,     & ! Surface moisture flux, <w'rt'>|_sfc    [kg/kg m/s]
+      um_sfc,        & ! Surface u wind component, <u>          [m/s]
+      vm_sfc,        & ! Surface v wind component, <v>          [m/s]
+      Lscale_up_sfc    ! Upward component of Lscale at surface  [m] 
 
     real( kind = core_rknd ), intent(in), dimension(sclr_dim) ::  & 
       wpsclrp_sfc    ! Passive scalar flux, <w'sclr'>|_sfc   [units m/s]
@@ -218,8 +218,9 @@ module surface_varnce_module
        ! Calculate wstar following Andre et al., 1978, p. 1866.
        ! w* = ( ( 1 / T0 ) * g * <w'thl'>|_sfc * z_i )^(1/3);
        ! where z_i is the height of the mixed layer.  The value of CLUBB's
-       ! mixing length, Lscale, at the surface will be used as z_i.
-       wstar = ( (one/T0) * grav * wpthlp_sfc * Lscale_sfc )**(one_third)
+       ! upward component of mixing length, Lscale_up, at the surface will be
+       ! used as z_i.
+       wstar = ( (one/T0) * grav * wpthlp_sfc * Lscale_up_sfc )**(one_third)
 
        ! Andre et al., 1978, Eq. 29.
        ! Andre et al. (1978) defines horizontal wind surface variances in terms

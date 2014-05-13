@@ -1610,7 +1610,7 @@ module clubb_core
         end if
 
         call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
-                             um(2), vm(2), Lscale(2), wpsclrp_sfc,      &      ! intent(in)
+                             um(2), vm(2), Lscale_up(2), wpsclrp_sfc,   &      ! intent(in)
                              wp2(1), up2(1), vp2(1),                    &      ! intent(out)
                              thlp2(1), rtp2(1), rtpthlp(1), err_code_surface,& ! intent(out)
                              sclrp2(1,1:sclr_dim),                      &      ! intent(out)
