@@ -994,6 +994,15 @@ module clubb_core
                         ( rc1_refined, rc2_refined, pdf_params(k)%mixt_frac )
 
           if ( l_interactive_refined ) then
+            ! Note: this code makes PDF component cloud water mixing ratios and
+            !       cloud fractions inconsistent with the PDF.  Other parts of
+            !       CLUBB require PDF component cloud fractions to remain
+            !       consistent with the PDF.  This code needs to be refactored
+            !       so that cloud_frac1 and cloud_frac2 are preserved.
+            write(fstderr,*) "The code in l_interactive_refined does not " &
+                             // "preserve cloud_frac1 and cloud_frac2 " &
+                             // "as required by other parts of CLUBB."
+            stop "Please refactor before continuing."
             ! Replace pdf_closure estimates with refined estimates
             pdf_params(k)%rc1 = rc1_refined
             pdf_params(k)%rc2 = rc2_refined
@@ -2351,6 +2360,9 @@ module clubb_core
       !   None
       !-----------------------------------------------------------------------
 
+      use constants_clubb, only: &
+          fstderr  ! Constant(s)
+
       use stats_variables, only: &
         iwprtp2, & ! Varibles
         iwprtpthlp, &
@@ -2716,6 +2728,16 @@ module clubb_core
       wp2thvp    = trapezoid_zt( wp2thvp, wp2thvp_zm )
 
       if ( l_apply_rule_to_pdf_params ) then
+        ! Note: this code makes PDF component cloud water mixing ratios and
+        !       cloud fractions inconsistent with the PDF.  Other parts of
+        !       CLUBB require PDF component cloud fractions to remain
+        !       consistent with the PDF.  This code needs to be refactored
+        !       so that cloud_frac1 and cloud_frac2 are preserved.
+        write(fstderr,*) "The code in l_apply_rule_to_pdf_params does not " &
+                         // "preserve cloud_frac1 and cloud_frac2 in a " &
+                         // "manner consistent with the PDF as required " &
+                         // "by other parts of CLUBB."
+        stop "Please refactor before continuing."
         pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
         pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
         pdf_params%varnce_w1   = trapezoid_zt( varnce_w1_zt, varnce_w1_zm )
