@@ -38,23 +38,23 @@
        ]},
        {'plotTitle' => 'DIVQ3D', 'axisLabel' => 'DIVQ3D [g/kg/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVQ3D', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVQ3D*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'RVMTEND+RCMTEND', 'axisLabel' => 'RVMTEND+RCMTEND [g/kg/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RVMTEND_CLUBB+RCMTEND_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(RVMTEND_CLUBB+RCMTEND_CLUBB)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => '-PRODPREC', 'axisLabel' => '-PRODPREC [g/kg/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '-PRODPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '-(PRODPREC*1000*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'EVAPPREC', 'axisLabel' => 'EVAPPREC [g/kg/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'EVAPPREC*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'sum', 'axisLabel' => 'sum [g/kg/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVQ3D+RCMTEND_CLUBB+RVMTEND_CLUBB-PRODPREC+EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(DIVQ3D-PRODPREC+EVAPPREC)*1000*86400+(RVMTEND_CLUBB+RCMTEND_CLUBB)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'OMEGA', 'axisLabel' => 'OMEGA [Pa/s]', 'type' => 'profile', 'lines' =>
        [
@@ -68,25 +68,21 @@
        [
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRCP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'T', 'axisLabel' => 'T [C]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'T', 'axisLabel' => 'T [K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'T', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'DIVT3D', 'axisLabel' => 'DIVT3D [K/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVT3D', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVT3D*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'STEND_CLUBB', 'axisLabel' => 'STEND_CLUBB [K/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'STEND_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'STEND_CLUBB*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'QRS+QRL', 'axisLabel' => 'QRS+QRL [K/day]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'QRS+QRL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'sum', 'axisLabel' => 'sum excludes STEND [K/day]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVT3D+PRODPREC-EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(QRS+QRL)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'WPTHVP_CLUBB', 'axisLabel' => 'WPTHVP_CLUBB [W/m^2]', 'type' => 'profile', 'lines' =>
        [
@@ -142,7 +138,7 @@
        ]},
        {'plotTitle' => 'PRECT', 'axisLabel' => 'PRECT [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECT*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'U10', 'axisLabel' => 'U10 [m/s]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
