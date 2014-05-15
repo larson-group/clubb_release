@@ -372,8 +372,7 @@ module stats_zt
         ivpwp_zt
 
     use stats_variables, only: & 
-        irrp2_zt, &
-        iNrp2_zt
+        ihmp2_zt
  
     use stats_variables, only: & 
         zt, & 
@@ -607,6 +606,8 @@ module stats_zt
     allocate( isigma_hm_1_n(1:hydromet_dim) )
     allocate( isigma_hm_2_n(1:hydromet_dim) )
 
+    allocate( ihmp2_zt(1:hydromet_dim) )
+
     ihm1(:) = 0
     ihm2(:) = 0
     imu_hm_1(:) = 0
@@ -617,6 +618,8 @@ module stats_zt
     isigma_hm_2(:) = 0
     isigma_hm_1_n(:) = 0
     isigma_hm_2_n(:) = 0
+
+    ihmp2_zt(:) = 0
 
     ! Allocate and then zero out passive scalar arrays
     allocate( isclrm(1:sclr_dim) )
@@ -673,6 +676,14 @@ module stats_zt
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "sigma_hm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
+    if ( any( vars_zt == "hmp2_zt" ) ) then
+       ! Correct for number of variables found under "hmp2_zt".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - hydromet_dim
+       ! Add 1 for "hmp2_zt" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -3497,21 +3508,42 @@ module stats_zt
              var_units="m^2/s^2", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case('rrp2_zt')
-        irrp2_zt = k
+      ! Hydrometeor overall variances for each hydrometeor type.
+      case('hmp2_zt')
 
-        call stat_assign( var_index=irrp2_zt, var_name="rrp2_zt", &
-             var_description="<r_r'^2> on thermodyamic levels [(kg/kg)^2]", &
-             var_units="(kg/kg)^2", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case('Nrp2_zt')
-        iNrp2_zt = k
+            hm_type = hydromet_list(hm_idx)
 
-        call stat_assign( var_index=iNrp2_zt, var_name="Nrp2_zt", &
-             var_description="<N_r'^2> on thermodyamic levels [(num/kg)^2]", &
-             var_units="(num/kg)^2", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The overall variance of the hydrometeor.
+            ihmp2_zt(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=ihmp2_zt(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"p2_zt", &
+                                 var_description="<" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "'^2> on thermodyamic levels [(kg/kg)^2]", &
+                                 var_units="(kg/kg)^2", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=ihmp2_zt(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"p2_zt", &
+                                 var_description="<" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "'^2> on thermodyamic levels " &
+                                 // "[(num/kg)^2]", &
+                                 var_units="(num/kg)^2", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ('C11_Skw_fnc')
         iC11_Skw_fnc = k

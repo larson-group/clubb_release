@@ -81,7 +81,7 @@ vars_zt =
 'corr_wrr', 'corr_wNr', 'corr_wNcn',
 's_mellor', 'sp2', 'C11_Skw_fnc',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'rrp2_zt', 'Nrp2_zt',
+'up2_zt', 'vp2_zt', 'upwp_zt', 'vpwp_zt', 'hmp2_zt',
 'PSMLT', 'EVPMS', 'PRACS', 'EVPMG', 'PRACG',
 'PGMLT', 'MNUCCC', 'PSACWS', 'PSACWI', 'QMULTS',
 'QMULTG', 'PSACWG', 'PGSACW', 'PRD', 'PRCI', 

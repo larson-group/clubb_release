@@ -634,11 +634,10 @@ module stats_variables
     irtphmp = 0, &
     ithlphmp = 0
 
-  integer, public :: &
-    irrp2_zt = 0, &
-    iNrp2_zt = 0
+  integer, dimension(:), allocatable, public :: &
+    ihmp2_zt
 
-!$omp  threadprivate( irrp2_zt, iNrp2_zt )
+!$omp  threadprivate( ihmp2_zt )
 
   integer, public :: &
     is_mellor = 0

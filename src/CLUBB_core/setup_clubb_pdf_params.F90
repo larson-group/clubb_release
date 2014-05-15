@@ -129,8 +129,7 @@ module setup_clubb_pdf_params
         iprecip_frac_1, &
         iprecip_frac_2, &
         iNcnm,          &
-        irrp2_zt,       &
-        iNrp2_zt,       &
+        ihmp2_zt,       &
         zt
 
     use model_flags, only: &
@@ -152,10 +151,6 @@ module setup_clubb_pdf_params
 
     use index_mapping, only: &
         hydromet2pdf_idx    ! Procedure(s)
-
-    use array_index, only: &
-        iirrainm, & ! Variable(s)
-        iiNrm
 
     use error_code, only : &
         clubb_at_least_debug_level   ! Procedure(s)
@@ -557,16 +552,10 @@ module setup_clubb_pdf_params
           ! Statistics
           if ( l_stats_samp ) then
 
-             if ( i == iirrainm ) then
-
-                ! Variance of rain water mixing ratio, <r_r'^2>.
-                call stat_update_var_pt( irrp2_zt, k, hydrometp2_zt(k,i), zt )
-
-             elseif ( i == iiNrm ) then
-
-                ! Variance of rain drop concentration, <N_r'^2>.
-                call stat_update_var_pt( iNrp2_zt, k, hydrometp2_zt(k,i), zt )
-
+             if ( ihmp2_zt(i) > 0 ) then
+                ! Variance (overall) of the hydrometeor, <hm'^2>.
+                call stat_update_var_pt( ihmp2_zt(i), k, &
+                                         hydrometp2_zt(k,i), zt )
              endif
 
           endif ! l_stats_samp

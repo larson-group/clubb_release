@@ -60,7 +60,7 @@ vars_zt =
 'corr_sw', 'corr_srr', 'corr_sNr', 'corr_sNcn', 'corr_rrNr',
 'corr_wrr', 'corr_wNr', 'corr_wNcn',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
-'rrp2_zt', 'Nrp2_zt',
+'hmp2_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
 'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
 ''

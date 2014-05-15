@@ -463,6 +463,13 @@ module stats_subs
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
+    if ( any( vars_zt == "hmp2_zt" ) ) then
+       ! Correct for number of variables found under "hmp2".
+       ! Subtract "hmp2" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zt statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
     if ( ntot >= nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."
@@ -2368,7 +2375,8 @@ module stats_subs
       isigma_hm_1, &
       isigma_hm_2, &
       isigma_hm_1_n, &
-      isigma_hm_2_n
+      isigma_hm_2_n, &
+      ihmp2_zt
 
     use parameters_microphys, only: &
       lh_microphys_disabled ! Constant(s)
@@ -2559,6 +2567,7 @@ module stats_subs
       deallocate( isigma_hm_2 )
       deallocate( isigma_hm_1_n )
       deallocate( isigma_hm_2_n )
+      deallocate( ihmp2_zt )
     end if ! l_stats
 
 
