@@ -44,7 +44,7 @@ module parameters_microphys
     l_graupel  = .false.,          & ! Compute graupel (COAMPS/Morrison)
     l_hail  = .false.,             & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng  = .false.,   & ! Use Seifert and Behneng warm drizzle (Morrison)
-    l_predictnc  = .true.,         & ! Predict cloud droplet conconcentration (Morrison)
+    l_predictnc = .false.,         & ! Predict cloud droplet conconcentration (Morrison)
     l_const_Nc_in_cloud = .false., & ! Use a constant cloud droplet conc. within cloud (K&K)
     l_subgrid_w = .true.,          & ! Use subgrid w (Morrison)
     l_arctic_nucl = .false.,       & ! Use MPACE observations (Morrison)

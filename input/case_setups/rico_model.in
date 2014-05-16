@@ -159,7 +159,6 @@ Ncnp2_on_Ncnm2            = 2.2
 
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Nc0_in_cloud  = 70.e6 ! num/m^3
-l_predictnc = .false.
 l_const_Nc_in_cloud = .true.
 /
 

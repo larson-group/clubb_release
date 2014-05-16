@@ -143,7 +143,6 @@ l_cloud_sed    = .true.  ! Flag for cloud water sedimentation.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "khairoutdinov_kogan"
 Nc0_in_cloud  = 55.e6 ! num/m^3
-l_predictnc = .false.
 l_var_covar_src = .true.
 
 rr_sigma2_on_mu2_ip_cloud = 0.766

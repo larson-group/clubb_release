@@ -136,7 +136,6 @@ l_prescribed_avg_deltaz = .false.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "morrison"
 Nc0_in_cloud  = 55.e6 ! #/m^3
-l_predictnc = .false.,
 l_ice_micro = .false.,
 
 /
