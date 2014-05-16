@@ -2589,9 +2589,6 @@ subroutine stats_check_num_samples( stats_grid, l_error )
   use constants_clubb, only: &
     fstderr ! Constant
 
-  use parameters_microphys, only: &
-    lh_microphys_calls
-
   use stats_type, only: &
     stats ! Type
 
