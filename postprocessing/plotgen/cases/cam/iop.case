@@ -145,12 +145,6 @@
           {'filename' => 'arm_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/arm_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthvp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'arm_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHVP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#Is a reference temp of 300 correct? ./(9.81 * 300)
-       ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/arm_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},

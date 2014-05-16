@@ -164,8 +164,16 @@
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '-PRODPREC', 'expression' => '-PRODPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'EVAPPREC', 'expression' => 'EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'sum', 'expression' => 'DIVQ3D+RCMTEND_CLUBB+RVMTEND_CLUBB-PRODPREC+EVAPPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]}
+       ]},
 
+       {'plotTitle' => 'T budget', 'axisLabel' => '[K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'DIVT3D', 'expression' => 'DIVT3D*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'PRODPREC', 'expression' => 'PRODPREC*86400*2.5E6/1004.67', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => '-EVAPPREC', 'expression' => '-EVAPPREC*86400*2.5E6/1004.67', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'QRL+QRS', 'expression' => '(QRL+QRS)*86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'sum', 'expression' => '(DIVT3D+QRL+QRS)*86400+(PRODPREC-EVAPPREC)*86400*2.5E6/1004.67', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]}
 
     ],
     'nightlyOutput' =>
