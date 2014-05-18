@@ -407,8 +407,7 @@ subroutine mmicro_pcond ( sub_column,           &
        compute_mean_stdev,   & ! Procedure(s)
        normalize_mean_stdev, &
        compute_corr,         &
-       normalize_corr,       &
-       unpack_pdf_params
+       normalize_corr
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
