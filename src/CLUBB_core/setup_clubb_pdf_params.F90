@@ -102,7 +102,7 @@ module setup_clubb_pdf_params
     use parameters_tunable, only: &
         c_K_hm
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         calc_xp2  ! Procedure(s)
 
     use clip_explicit, only: &
@@ -2693,7 +2693,7 @@ module setup_clubb_pdf_params
     use constants_clubb, only:  &
         Ncn_tol  ! Constant(s)
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         mean_L2N,  & ! Procedure(s)
         stdev_L2N
 
@@ -2880,7 +2880,7 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         corr_NL2NN, & ! Procedure(s)
         corr_LL2NN
 

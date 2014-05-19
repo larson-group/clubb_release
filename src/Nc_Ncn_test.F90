@@ -34,7 +34,7 @@ module Nc_Ncn_test
         Ncnm_to_Ncm, &
         Ncm_to_Ncnm
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         stdev_L2N,  & ! Procedure(s)
         corr_NL2NN
 

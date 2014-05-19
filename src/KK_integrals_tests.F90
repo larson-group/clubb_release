@@ -110,7 +110,7 @@ module KK_integrals_tests
         one_dp, &  ! Constant(s)
         two_dp
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)
         stdev_L2N_dp,  &
         corr_NL2NN_dp, &
@@ -462,7 +462,7 @@ module KK_integrals_tests
         one_dp,  &
         zero_dp
 
-    use PDF_utilities, only: &
+    use pdf_utilities, only: &
         mean_L2N_dp,   & ! Procedure(s)
         stdev_L2N_dp,  &
         corr_NL2NN_dp, &
