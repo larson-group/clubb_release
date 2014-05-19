@@ -428,8 +428,7 @@ subroutine mmicro_pcond ( sub_column,           &
        hydromet_dim  ! Variable(s)
 
    use parameters_microphys, only: &
-       KK_auto_Nc_exp,      & ! Variable(s)
-       l_const_Nc_in_cloud
+       KK_auto_Nc_exp  ! Variable(s)
 
    use clubb_precision, only: &
        core_rknd  ! Variable(s)
@@ -1932,9 +1931,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                         mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
                                         sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
                                         sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
-                                        corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
-                                        real( ncic(i,k), kind = core_rknd ), &
-                                        l_const_Nc_in_cloud ), &
+                                        corr_sNcn_2_n, KK_auto_coef, mixt_frac ), &
                           kind = r8 ) / lcldm(i,k)
                  nprc(k) = prc(k)/cons22
                  nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
