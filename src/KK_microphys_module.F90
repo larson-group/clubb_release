@@ -738,12 +738,11 @@ module KK_microphys_module
                                       corr_sNcn_1_n, corr_sNcn_2_n, &
                                       corr_rrNr_1_n, corr_rrNr_2_n, &
                                       mixt_frac(k), precip_frac_1, &
-                                      precip_frac_2, Nc_in_cloud(k), &
-                                      l_const_Nc_in_cloud, &
-                                      KK_evap_coef, KK_auto_coef, &
-                                      KK_accr_coef, KK_mvr_coef, &
-                                      KK_evap_tndcy(k), KK_auto_tndcy(k), &
-                                      KK_accr_tndcy(k), KK_mean_vol_rad(k) )
+                                      precip_frac_2, KK_evap_coef, &
+                                      KK_auto_coef, KK_accr_coef, &
+                                      KK_mvr_coef, KK_evap_tndcy(k), &
+                                      KK_auto_tndcy(k), KK_accr_tndcy(k), &
+                                      KK_mean_vol_rad(k) )
 
        !!! Calculate the values of the turbulent sedimentation terms,
        !!! <V_rr'rr'> and <V_Nr'Nr'>.  Each turbulent sedimentation term has an

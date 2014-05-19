@@ -34,12 +34,11 @@ module KK_upscaled_means
                                        corr_sNcn_1_n, corr_sNcn_2_n, &
                                        corr_rrNr_1_n, corr_rrNr_2_n, &
                                        mixt_frac, precip_frac_1, &
-                                       precip_frac_2, Nc_in_cloud, &
-                                       l_const_Nc_in_cloud, &
-                                       KK_evap_coef, KK_auto_coef, &
-                                       KK_accr_coef, KK_mvr_coef, &
-                                       KK_evap_tndcy, KK_auto_tndcy, &
-                                       KK_accr_tndcy, KK_mean_vol_rad )
+                                       precip_frac_2, KK_evap_coef, &
+                                       KK_auto_coef, KK_accr_coef, &
+                                       KK_mvr_coef, KK_evap_tndcy, &
+                                       KK_auto_tndcy, KK_accr_tndcy, &
+                                       KK_mean_vol_rad )
 
     ! Description:
 
@@ -91,11 +90,7 @@ module KK_upscaled_means
       corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
-      Nc_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
-
-    logical, intent(in) :: &
-      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
     real( kind = core_rknd ), intent(in) :: &
       KK_evap_coef, & ! KK evaporation coefficient          [(kg/kg)/s]
@@ -130,8 +125,7 @@ module KK_upscaled_means
                              mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
                              sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
                              sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
-                             corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
-                             Nc_in_cloud, l_const_Nc_in_cloud )
+                             corr_sNcn_2_n, KK_auto_coef, mixt_frac )
 
 
     !!! Calculate the upscaled KK accretion tendency.
@@ -268,8 +262,7 @@ module KK_upscaled_means
                                   mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
                                   sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
                                   sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
-                                  corr_sNcn_2_n, KK_auto_coef, mixt_frac, &
-                                  Nc_in_cloud, l_const_Nc_in_cloud )
+                                  corr_sNcn_2_n, KK_auto_coef, mixt_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -312,11 +305,7 @@ module KK_upscaled_means
       corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
       corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      Nc_in_cloud     ! Constant in-cloud value of cloud droplet conc. [num/kg]
-
-    logical, intent(in) :: &
-      l_const_Nc_in_cloud  ! Flag to use a constant value of N_c within cloud
+      mixt_frac        ! Mixture fraction                                    [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -333,33 +322,17 @@ module KK_upscaled_means
     beta_exp  = KK_auto_Nc_exp
 
     ! Calculate the mean KK autoconversion tendency.
-    if ( l_const_Nc_in_cloud ) then
-
-       KK_auto_upscaled_mean  &
-       = KK_auto_coef &
-         * ( mixt_frac &
-             * bivar_NL_mean_eq_Nc0( mu_s_1, Nc_in_cloud, sigma_s_1, &
-                                     alpha_exp, beta_exp ) &
-           + ( one - mixt_frac ) &
-             * bivar_NL_mean_eq_Nc0( mu_s_2, Nc_in_cloud, sigma_s_2, &
-                                     alpha_exp, beta_exp ) &
-           )
-
-    else
-
-       KK_auto_upscaled_mean  &
-       = KK_auto_coef &
-         * ( mixt_frac &
-             * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
-                                 sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
-                                 Nc_tol, alpha_exp, beta_exp ) &
-           + ( one - mixt_frac ) &
-             * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
-                                 sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
-                                 Nc_tol, alpha_exp, beta_exp ) &
-           )
-
-    endif
+    KK_auto_upscaled_mean  &
+    = KK_auto_coef &
+      * ( mixt_frac &
+          * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+                              sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
+                              Nc_tol, alpha_exp, beta_exp ) &
+        + ( one - mixt_frac ) &
+          * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+                              sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
+                              Nc_tol, alpha_exp, beta_exp ) &
+        )
 
 
     return
@@ -637,44 +610,44 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real(mu_s_i, kind=dp)
+    mu_x1 = real( mu_s_i, kind = dp )
     if ( beta_exp_in >= zero ) then
-       mu_x2 = real(mu_rr_i, kind=dp)
+       mu_x2 = real( mu_rr_i, kind = dp )
     else ! exponent beta < 0
-       mu_x2 = real(max( mu_rr_i, rr_tol ), kind=dp)
+       mu_x2 = real( max( mu_rr_i, rr_tol ), kind = dp )
     endif
     if ( gamma_exp_in >= zero ) then
-       mu_x3 = real(mu_Nr_i, kind=dp)
+       mu_x3 = real( mu_Nr_i, kind = dp )
     else ! exponent gamma < 0
-       mu_x3 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
+       mu_x3 = real( max( mu_Nr_i, Nr_tol ), kind = dp )
     endif
-    mu_x2_n = real(mu_rr_i_n , kind=dp)
-    mu_x3_n = real(mu_Nr_i_n, kind=dp)
+    mu_x2_n = real( mu_rr_i_n, kind = dp )
+    mu_x3_n = real( mu_Nr_i_n, kind = dp )
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   =  real(sigma_s_i, kind=dp)
-    sigma_x2   = real(sigma_rr_i, kind=dp)
-    sigma_x3   =  real(sigma_Nr_i, kind=dp)
-    sigma_x2_n = real(sigma_rr_i_n, kind=dp)
-    sigma_x3_n = real(sigma_Nr_i_n, kind=dp)
+    sigma_x1   = real( sigma_s_i, kind = dp )
+    sigma_x2   = real( sigma_rr_i, kind = dp )
+    sigma_x3   = real( sigma_Nr_i, kind = dp )
+    sigma_x2_n = real( sigma_rr_i_n, kind = dp )
+    sigma_x3_n = real( sigma_Nr_i_n, kind = dp )
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = real(corr_srr_i_n, kind=dp)
-    rho_x1x3_n = real(corr_sNr_i_n, kind=dp)
-    rho_x2x3_n = real(corr_rrNr_i_n, kind=dp)
+    rho_x1x2_n = real( corr_srr_i_n, kind = dp )
+    rho_x1x3_n = real( corr_sNr_i_n, kind = dp )
+    rho_x2x3_n = real( corr_rrNr_i_n, kind = dp )
 
     ! Exponents.
-    alpha_exp = real(alpha_exp_in, kind=dp)
-    beta_exp  = real(beta_exp_in, kind=dp)
-    gamma_exp = real(gamma_exp_in, kind=dp)
+    alpha_exp = real( alpha_exp_in, kind = dp )
+    beta_exp  = real( beta_exp_in, kind = dp )
+    gamma_exp = real( gamma_exp_in, kind = dp )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real(s_mellor_tol, kind=dp)
-    x2_tol = real(rr_tol, kind=dp)
-    x3_tol = real(Nr_tol, kind=dp)
+    x1_tol = real( s_mellor_tol, kind = dp )
+    x2_tol = real( rr_tol, kind = dp )
+    x3_tol = real( Nr_tol, kind = dp )
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
     ! The value s_cc is being fed into the parabolic cylinder function.  When
@@ -702,9 +675,10 @@ module KK_upscaled_means
 
     ! Based on the value of sigma_x1 (including the value of s_cc compared to
     ! parab_cyl_max_input), find the correct form of the trivariate equation to
-    ! use. real(Nr_tol, kind=dp)
+    ! use.
 
-    if ( ( sigma_x1 <= x1_tol .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
+    if ( ( sigma_x1 <= x1_tol &
+           .or. abs( s_cc ) > real( parab_cyl_max_input, kind = dp ) ) &
          .and. sigma_x2 <= x2_tol .and. sigma_x3 <= x3_tol ) then
 
        ! The ith PDF component variance of each of s, r_r, and N_r is 0.
@@ -715,7 +689,7 @@ module KK_upscaled_means
 
 
     elseif ( ( sigma_x1 <= x1_tol &
-               .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
+               .or. abs( s_cc ) > real( parab_cyl_max_input, kind = dp ) ) &
              .and. sigma_x2 <= x2_tol ) then
 
        ! The ith PDF component variance of both s and r_r is 0.
@@ -726,7 +700,7 @@ module KK_upscaled_means
 
 
     elseif ( ( sigma_x1 <= x1_tol &
-               .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) &
+               .or. abs( s_cc ) > real( parab_cyl_max_input, kind = dp ) ) &
              .and. sigma_x3 <= x3_tol ) then
 
        ! The ith PDF component variance of both s and N_r is 0.
@@ -746,7 +720,7 @@ module KK_upscaled_means
 
 
     elseif ( sigma_x1 <= x1_tol &
-             .or. abs( s_cc ) > real(parab_cyl_max_input, kind=dp) ) then
+             .or. abs( s_cc ) > real( parab_cyl_max_input, kind = dp ) ) then
 
        ! The ith PDF component variance of s is 0.
        trivar_NLL_mean_eq  &
@@ -877,32 +851,32 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real(mu_s_i, kind=dp)
+    mu_x1 = real( mu_s_i, kind = dp )
     if ( beta_exp_in >= zero ) then
-       mu_x2 = real(mu_y_i, kind=dp)   ! y is N_cn (auto.) or r_r (accr.).
+       mu_x2 = real( mu_y_i, kind = dp )   ! y is N_cn (auto) or r_r (accr)
     else ! exponent beta < 0
-       mu_x2 = real(max( mu_y_i, y_tol ), kind=dp)   ! y is N_cn or r_r.
+       mu_x2 = real( max( mu_y_i, y_tol ), kind = dp )   ! y is N_cn or r_r
     endif
-    mu_x2_n = real(mu_y_i_n, kind=dp) ! y is N_cn (autoconversion) or r_r (accretion).
+    mu_x2_n = real( mu_y_i_n, kind = dp ) ! y is N_cn (auto) or r_r (accr)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = real(sigma_s_i, kind=dp)
-    sigma_x2   = real(sigma_y_i, kind=dp)   ! y is N_cn (auto.) or r_r (accr.).
-    sigma_x2_n = real(sigma_y_i_n, kind=dp) ! y is N_cn (auto.) or r_r (accr.).
+    sigma_x1   = real( sigma_s_i, kind = dp )
+    sigma_x2   = real( sigma_y_i, kind = dp )   ! y is N_cn (auto) or r_r (accr)
+    sigma_x2_n = real( sigma_y_i_n, kind = dp ) ! y is N_cn (auto) or r_r (accr)
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = real(corr_sy_i_n, kind=dp) ! y is N_cn (auto.) or r_r (accr.).
+    rho_x1x2_n = real( corr_sy_i_n, kind = dp ) ! y is N_cn (auto) or r_r (accr)
 
     ! Exponents.
-    alpha_exp = real(alpha_exp_in, kind=dp)
-    beta_exp  = real(beta_exp_in, kind=dp)
+    alpha_exp = real( alpha_exp_in, kind = dp )
+    beta_exp  = real( beta_exp_in, kind = dp )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real(s_mellor_tol, kind=dp)
-    x2_tol = real(y_tol, kind=dp)  ! y is N_cn (auto.) or r_r (accr.).
+    x1_tol = real( s_mellor_tol, kind = dp )
+    x2_tol = real( y_tol, kind = dp )  ! y is N_cn (auto) or r_r (accr)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -930,7 +904,8 @@ module KK_upscaled_means
     ! parab_cyl_max_input) and sigma_x2, find the correct form of the bivariate
     ! equation to use.
 
-    if ( ( sigma_x1 <= x1_tol .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) &
+    if ( ( sigma_x1 <= x1_tol &
+           .or. abs( s_c ) > real( parab_cyl_max_input, kind = dp ) ) &
          .and. sigma_x2 <= x2_tol ) then
 
        ! The ith PDF component variance of both s and y (r_r or N_cn) is 0.
@@ -940,7 +915,7 @@ module KK_upscaled_means
 
 
     elseif ( sigma_x1 <= x1_tol &
-             .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
+             .or. abs( s_c ) > real( parab_cyl_max_input, kind = dp ) ) then
 
        ! The ith PDF component variance of s is 0.
        bivar_NL_mean_eq  &
@@ -1040,25 +1015,25 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real(mu_s_i, kind=dp)
+    mu_x1 = real( mu_s_i, kind = dp )
     if ( beta_exp_in >= zero ) then
-       Nc0 = real(Nc_in_cloud, kind=dp)
+       Nc0 = real( Nc_in_cloud, kind = dp )
     else ! exponent beta < 0
-       Nc0 = real(max( Nc_in_cloud, Nc_tol ), kind=dp)
+       Nc0 = real( max( Nc_in_cloud, Nc_tol ), kind = dp )
     endif
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = real(sigma_s_i, kind=dp)
+    sigma_x1 = real( sigma_s_i, kind = dp )
 
     ! Exponents.
-    alpha_exp = real(alpha_exp_in, kind=dp)
-    beta_exp  = real(beta_exp_in, kind=dp)
+    alpha_exp = real( alpha_exp_in, kind = dp )
+    beta_exp  = real( beta_exp_in, kind = dp )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real(s_mellor_tol, kind=dp)
+    x1_tol = real( s_mellor_tol, kind = dp )
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -1086,7 +1061,8 @@ module KK_upscaled_means
     ! parab_cyl_max_input), find the correct form of the bivariate equation to
     ! use.
 
-    if ( sigma_x1 <= x1_tol .or. abs( s_c ) > real(parab_cyl_max_input, kind=dp) ) then
+    if ( sigma_x1 <= x1_tol &
+         .or. abs( s_c ) > real( parab_cyl_max_input, kind = dp ) ) then
 
        ! The ith PDF component variance of s is 0.
        bivar_NL_mean_eq_Nc0  &
@@ -1187,37 +1163,37 @@ module KK_upscaled_means
 
     ! Means for the ith PDF component.
     if ( alpha_exp_in >= zero ) then
-       mu_x1 = real(mu_rr_i, kind=dp)
+       mu_x1 = real( mu_rr_i, kind = dp )
     else ! exponent alpha < 0
-       mu_x1 = real(max( mu_rr_i, rr_tol ), kind=dp)
+       mu_x1 = real( max( mu_rr_i, rr_tol ), kind = dp )
     endif
     if ( beta_exp_in >= zero ) then
-       mu_x2 = real(mu_Nr_i, kind=dp)
+       mu_x2 = real( mu_Nr_i, kind = dp )
     else ! exponent beta < 0
-       mu_x2 = real(max( mu_Nr_i, Nr_tol ), kind=dp)
+       mu_x2 = real( max( mu_Nr_i, Nr_tol ), kind = dp )
     endif
-    mu_x1_n = real(mu_rr_i_n, kind=dp)
-    mu_x2_n = real(mu_Nr_i_n, kind=dp)
+    mu_x1_n = real( mu_rr_i_n, kind = dp )
+    mu_x2_n = real( mu_Nr_i_n, kind = dp )
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = real(sigma_rr_i, kind=dp)
-    sigma_x2   = real(sigma_Nr_i, kind=dp)
-    sigma_x1_n = real(sigma_rr_i_n, kind=dp)
-    sigma_x2_n = real(sigma_Nr_i_n, kind=dp)
+    sigma_x1   = real( sigma_rr_i, kind = dp )
+    sigma_x2   = real( sigma_Nr_i, kind = dp )
+    sigma_x1_n = real( sigma_rr_i_n, kind = dp )
+    sigma_x2_n = real( sigma_Nr_i_n, kind = dp )
 
     ! Correlations for the ith PDF component.
-    rho_x1x2_n = real(corr_rrNr_i_n, kind=dp)
+    rho_x1x2_n = real( corr_rrNr_i_n, kind = dp )
 
     ! Exponents.
-    alpha_exp = real(alpha_exp_in, kind=dp)
-    beta_exp  = real(beta_exp_in, kind=dp)
+    alpha_exp = real( alpha_exp_in, kind = dp )
+    beta_exp  = real( beta_exp_in, kind = dp )
 
     ! Tolerance values.
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real(rr_tol, kind=dp)
-    x2_tol = real(Nr_tol, kind=dp)
+    x1_tol = real( rr_tol, kind = dp )
+    x2_tol = real( Nr_tol, kind = dp )
 
 
     ! Calculate the mean of the bivariate lognormal equation.
