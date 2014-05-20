@@ -139,11 +139,18 @@ module stats_variables
      icorr_shm_1,   &
      icorr_shm_2,   &
      icorr_thm_1,   &
-     icorr_thm_2
+     icorr_thm_2,   &
+     icorr_whm_1_n, &
+     icorr_whm_2_n, &
+     icorr_shm_1_n, &
+     icorr_shm_2_n, &
+     icorr_thm_1_n, &
+     icorr_thm_2_n
 !$omp threadprivate( imu_hm_1, imu_hm_2, imu_hm_1_n, imu_hm_2_n, &
 !$omp   isigma_hm_1, isigma_hm_2, isigma_hm_1_n, isigma_hm_2_n, &
 !$omp   icorr_whm_1, icorr_whm_2, icorr_shm_1, icorr_shm_2, &
-!$omp   icorr_thm_1, icorr_thm_2 )
+!$omp   icorr_thm_1, icorr_thm_2, icorr_whm_1_n, icorr_whm_2_n, &
+!$omp   icorr_shm_1_n, icorr_shm_2_n, icorr_thm_1_n, icorr_thm_2_n )
 
   integer, public :: &
      imu_Ncn_1 = 0,      &
@@ -158,43 +165,29 @@ module stats_variables
 !$omp   isigma_Ncn_1, isigma_Ncn_2, isigma_Ncn_1_n, isigma_Ncn_2_n )
 
   integer, public :: &
-     icorr_wNcn_1 = 0,   &
-     icorr_wNcn_2 = 0,   &
-     icorr_sNcn_1 = 0,   &
-     icorr_sNcn_2 = 0,   &
-     icorr_tNcn_1 = 0,   &
-     icorr_tNcn_2 = 0,   &
-     icorr_rrNr_1 = 0,   &
+     icorr_wNcn_1 = 0, &
+     icorr_wNcn_2 = 0, &
+     icorr_sNcn_1 = 0, &
+     icorr_sNcn_2 = 0, &
+     icorr_tNcn_1 = 0, &
+     icorr_tNcn_2 = 0, &
+     icorr_rrNr_1 = 0, &
      icorr_rrNr_2 = 0
 !$omp threadprivate( icorr_wNcn_1, icorr_wNcn_2, icorr_sNcn_1, icorr_sNcn_2, &
 !$omp   icorr_tNcn_1, icorr_tNcn_2, icorr_rrNr_1, icorr_rrNr_2 )
 
   integer, public :: &
-     icorr_wrr_1_n = 0,  &
-     icorr_wrr_2_n = 0,  &
-     icorr_wNr_1_n = 0,  &
-     icorr_wNr_2_n = 0,  &
      icorr_wNcn_1_n = 0, &
      icorr_wNcn_2_n = 0, &
-     icorr_srr_1_n = 0,  &
-     icorr_srr_2_n = 0,  &
-     icorr_sNr_1_n = 0,  &
-     icorr_sNr_2_n = 0,  &
      icorr_sNcn_1_n = 0, &
      icorr_sNcn_2_n = 0, &
-     icorr_trr_1_n = 0,  &
-     icorr_trr_2_n = 0,  &
-     icorr_tNr_1_n = 0,  &
-     icorr_tNr_2_n = 0,  &
      icorr_tNcn_1_n = 0, &
      icorr_tNcn_2_n = 0, &
      icorr_rrNr_1_n = 0, &
      icorr_rrNr_2_n = 0
-!$omp threadprivate( icorr_wrr_1_n, icorr_wrr_2_n, icorr_wNr_1_n, icorr_wNr_2_n, &
-!$omp   icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_srr_1_n, icorr_srr_2_n, &
-!$omp   icorr_sNr_1_n, icorr_sNr_2_n, icorr_sNcn_1_n, icorr_sNcn_2_n, &
-!$omp   icorr_trr_1_n, icorr_trr_2_n, icorr_tNr_1_n, icorr_tNr_2_n, &
-!$omp   icorr_tNcn_1_n, icorr_tNcn_2_n, icorr_rrNr_1_n, icorr_rrNr_2_n )
+!$omp threadprivate( icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_sNcn_1_n, &
+!$omp   icorr_sNcn_2_n, icorr_tNcn_1_n, icorr_tNcn_2_n, &
+!$omp   icorr_rrNr_1_n, icorr_rrNr_2_n )
 
   integer, public :: & ! janhft 09/25/12
      icorr_sw = 0,   &
