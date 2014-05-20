@@ -463,6 +463,30 @@ module stats_subs
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
+    if ( any( vars_zt == "corr_whm_i" ) ) then
+       ! Correct for number of variables found under "corr_whm_i".
+       ! Subtract "corr_whm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "corr_shm_i" ) ) then
+       ! Correct for number of variables found under "corr_shm_i".
+       ! Subtract "corr_shm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "corr_thm_i" ) ) then
+       ! Correct for number of variables found under "corr_thm_i".
+       ! Subtract "corr_thm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
     if ( any( vars_zt == "hmp2_zt" ) ) then
        ! Correct for number of variables found under "hmp2".
        ! Subtract "hmp2" from the number of zt statistical variables.
@@ -2349,40 +2373,46 @@ module stats_subs
         zmscr17
 
     use stats_variables, only: &
-      isclrm, & 
-      isclrm_f, & 
-      iedsclrm, & 
-      iedsclrm_f, & 
-      isclrprtp, & 
-      isclrp2, & 
-      isclrpthvp, & 
-      isclrpthlp, & 
-      isclrprcp, & 
-      iwpsclrp, & 
-      iwp2sclrp, & 
-      iwpsclrp2, & 
-      iwpsclrprtp, & 
-      iwpsclrpthlp, & 
-      iwpedsclrp
+        isclrm, & 
+        isclrm_f, & 
+        iedsclrm, & 
+        iedsclrm_f, & 
+        isclrprtp, & 
+        isclrp2, & 
+        isclrpthvp, & 
+        isclrpthlp, & 
+        isclrprcp, & 
+        iwpsclrp, & 
+        iwp2sclrp, & 
+        iwpsclrp2, & 
+        iwpsclrprtp, & 
+        iwpsclrpthlp, & 
+        iwpedsclrp
 
     use stats_variables, only: &
-      ihm1, &
-      ihm2, &
-      imu_hm_1, &
-      imu_hm_2, &
-      imu_hm_1_n, &
-      imu_hm_2_n, &
-      isigma_hm_1, &
-      isigma_hm_2, &
-      isigma_hm_1_n, &
-      isigma_hm_2_n, &
-      ihmp2_zt
+        ihm1, &
+        ihm2, &
+        imu_hm_1, &
+        imu_hm_2, &
+        imu_hm_1_n, &
+        imu_hm_2_n, &
+        isigma_hm_1, &
+        isigma_hm_2, &
+        isigma_hm_1_n, &
+        isigma_hm_2_n, &
+        icorr_whm_1, &
+        icorr_whm_2, &
+        icorr_shm_1, &
+        icorr_shm_2, &
+        icorr_thm_1, &
+        icorr_thm_2, &
+        ihmp2_zt
 
     use parameters_microphys, only: &
-      lh_microphys_disabled ! Constant(s)
+        lh_microphys_disabled ! Constant(s)
 
     use parameters_microphys, only: &
-      lh_microphys_type ! Variable(s)
+        lh_microphys_type ! Variable(s)
 
 #ifdef NETCDF
     use output_netcdf, only:  & 
@@ -2567,6 +2597,12 @@ module stats_subs
       deallocate( isigma_hm_2 )
       deallocate( isigma_hm_1_n )
       deallocate( isigma_hm_2_n )
+      deallocate( icorr_whm_1 )
+      deallocate( icorr_whm_2 )
+      deallocate( icorr_shm_1 )
+      deallocate( icorr_shm_2 )
+      deallocate( icorr_thm_1 )
+      deallocate( icorr_thm_2 )
       deallocate( ihmp2_zt )
     end if ! l_stats
 

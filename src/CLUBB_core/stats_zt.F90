@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 550 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 600 ! Maximum variables allowed
 
   contains
 
@@ -100,22 +100,16 @@ module stats_zt
         isigma_Ncn_2_n
 
     use stats_variables, only: &
-        icorr_wrr_1,    & ! Variable(s)
-        icorr_wrr_2,    &
-        icorr_wNr_1,    &
-        icorr_wNr_2,    &
+        icorr_whm_1,    & ! Variable(s)
+        icorr_whm_2,    &
         icorr_wNcn_1,   &
         icorr_wNcn_2,   &
-        icorr_srr_1,    &
-        icorr_srr_2,    &
-        icorr_sNr_1,    &
-        icorr_sNr_2,    &
+        icorr_shm_1,    &
+        icorr_shm_2,    &
         icorr_sNcn_1,   &
         icorr_sNcn_2,   &
-        icorr_trr_1,    &
-        icorr_trr_2,    &
-        icorr_tNr_1,    &
-        icorr_tNr_2,    &
+        icorr_thm_1,    &
+        icorr_thm_2,    &
         icorr_tNcn_1,   &
         icorr_tNcn_2,   &
         icorr_rrNr_1,   &
@@ -181,11 +175,11 @@ module stats_zt
         iricem
 
     use stats_variables, only: & 
-      ieff_rad_cloud, &
-      ieff_rad_ice, &
-      ieff_rad_snow, &
-      ieff_rad_rain, &
-      ieff_rad_graupel
+        ieff_rad_cloud, &
+        ieff_rad_ice, &
+        ieff_rad_snow, &
+        ieff_rad_rain, &
+        ieff_rad_graupel
 
     use stats_variables, only: & 
         irtm_bt, & 
@@ -382,36 +376,36 @@ module stats_zt
         iedsclrm_f
 
     use stats_variables, only: & 
-      iNsnowm, & ! Variable(s)
-      iNrm, &
-      iNgraupelm, &
-      iNim, & 
-      iNsnowm_bt, &
-      iNsnowm_mc, &
-      iNsnowm_ma, &
-      iNsnowm_ta, &
-      iNsnowm_sd, &
-      iNsnowm_cl, &
-      iNgraupelm_bt, &
-      iNgraupelm_mc, &
-      iNgraupelm_ma, &
-      iNgraupelm_ta, &
-      iNgraupelm_sd, &
-      iNgraupelm_cl, &
-      iNim_bt, &
-      iNim_mc, &
-      iNim_ma, &
-      iNim_ta, &
-      iNim_sd, &
-      iNim_cl
+        iNsnowm, & ! Variable(s)
+        iNrm, &
+        iNgraupelm, &
+        iNim, & 
+        iNsnowm_bt, &
+        iNsnowm_mc, &
+        iNsnowm_ma, &
+        iNsnowm_ta, &
+        iNsnowm_sd, &
+        iNsnowm_cl, &
+        iNgraupelm_bt, &
+        iNgraupelm_mc, &
+        iNgraupelm_ma, &
+        iNgraupelm_ta, &
+        iNgraupelm_sd, &
+        iNgraupelm_cl, &
+        iNim_bt, &
+        iNim_mc, &
+        iNim_ma, &
+        iNim_ta, &
+        iNim_sd, &
+        iNim_cl
 
     use stats_variables, only: & 
-      iNcm_bt, &
-      iNcm_mc, &
-      iNcm_ma, &
-      iNcm_ta, &
-      iNcm_cl, &
-      iNcm_act
+        iNcm_bt, &
+        iNcm_mc, &
+        iNcm_ma, &
+        iNcm_ta, &
+        iNcm_cl, &
+        iNcm_act
 
     use stats_variables, only: &
         iw_KK_evap_covar_zt,   &
@@ -427,129 +421,122 @@ module stats_zt
         iNr_KK_mvr_covar_zt,   &
         iKK_mvr_variance_zt
 
-    use stats_variables, only: & 
-      ieff_rad_cloud, &
-      ieff_rad_ice, &
-      ieff_rad_snow, &
-      ieff_rad_rain, &
-      ieff_rad_graupel
-
     use stats_variables, only: &
-      iC11_Skw_fnc, & ! Variable(s)
-      is_mellor, &
-      iwp3_on_wp2_zt, &
-      ia3_coef_zt
+        iC11_Skw_fnc, & ! Variable(s)
+        is_mellor, &
+        iwp3_on_wp2_zt, &
+        ia3_coef_zt
       
     use stats_variables, only: &
-      iLscale_pert_1, & ! Variable(s)
-      iLscale_pert_2
+        iLscale_pert_1, & ! Variable(s)
+        iLscale_pert_2
 
     use stats_variables, only: &
-      iPSMLT,  & ! Variable(s)
-      iEVPMS,  &
-      iPRACS,  &
-      iEVPMG,  &
-      iPRACG,  &
-      iPGMLT,  &
-      iMNUCCC, &
-      iPSACWS, &
-      iPSACWI, &
-      iQMULTS, &
-      iQMULTG, &
-      iPSACWG, &
-      iPGSACW, &
-      iPRD,    &
-      iPRCI,   &
-      iPRAI,   &
-      iQMULTR, &
-      iQMULTRG,&
-      iMNUCCD, &
-      iPRACI,  &
-      iPRACIS, &
-      iEPRD,   &
-      iMNUCCR, &
-      iPIACR,  &
-      iPIACRS, &
-      iPGRACS, &
-      iPRDS,   &
-      iEPRDS,  &
-      iPSACR,  &
-      iPRDG,   &
-      iEPRDG
+        iPSMLT,  & ! Variable(s)
+        iEVPMS,  &
+        iPRACS,  &
+        iEVPMG,  &
+        iPRACG,  &
+        iPGMLT,  &
+        iMNUCCC, &
+        iPSACWS, &
+        iPSACWI, &
+        iQMULTS, &
+        iQMULTG, &
+        iPSACWG, &
+        iPGSACW, &
+        iPRD,    &
+        iPRCI,   &
+        iPRAI,   &
+        iQMULTR, &
+        iQMULTRG,&
+        iMNUCCD, &
+        iPRACI,  &
+        iPRACIS, &
+        iEPRD,   &
+        iMNUCCR, &
+        iPIACR,  &
+        iPIACRS, &
+        iPGRACS, &
+        iPRDS,   &
+        iEPRDS,  &
+        iPSACR,  &
+        iPRDG,   &
+        iEPRDG
 
     use stats_variables, only: &
-      iNGSTEN, & ! Lots of variable(s)
-      iNRSTEN, &
-      iNISTEN, &
-      iNSSTEN, &
-      iNCSTEN, &
-      iNPRC1,  &
-      iNRAGG,  &
-      iNPRACG, &
-      iNSUBR,  &
-      iNSMLTR, &
-      iNGMLTR, &
-      iNPRACS, &
-      iNNUCCR, &
-      iNIACR,  &
-      iNIACRS, &
-      iNGRACS, &    
-      iNSMLTS, &
-      iNSAGG,  &
-      iNPRCI, &
-      iNSCNG, &
-      iNSUBS, &
-      iPRC, &
-      iPRA, &
-      iPRE
+        iNGSTEN, & ! Lots of variable(s)
+        iNRSTEN, &
+        iNISTEN, &
+        iNSSTEN, &
+        iNCSTEN, &
+        iNPRC1,  &
+        iNRAGG,  &
+        iNPRACG, &
+        iNSUBR,  &
+        iNSMLTR, &
+        iNGMLTR, &
+        iNPRACS, &
+        iNNUCCR, &
+        iNIACR,  &
+        iNIACRS, &
+        iNGRACS, &    
+        iNSMLTS, &
+        iNSAGG,  &
+        iNPRCI, &
+        iNSCNG, &
+        iNSUBS, &
+        iPRC, &
+        iPRA, &
+        iPRE
 
     use stats_variables, only: &
-      iPCC, &
-      iNNUCCC, &
-      iNPSACWS, &
-      iNPRA, &
-      iNPRC, &
-      iNPSACWI, &
-      iNPSACWG, &
-      iNPRAI, &
-      iNMULTS, &
-      iNMULTG, &
-      iNMULTR, &
-      iNMULTRG, &
-      iNNUCCD, &
-      iNSUBI, &
-      iNGMLTG, &
-      iNSUBG, &
-      iNACT, &
-      iSIZEFIX_NR, &
-      iSIZEFIX_NC, &
-      iSIZEFIX_NI, &
-      iSIZEFIX_NS, &
-      iSIZEFIX_NG, &
-      iNEGFIX_NR, &
-      iNEGFIX_NC, &
-      iNEGFIX_NI, &
-      iNEGFIX_NS, &
-      iNEGFIX_NG, &
-      iNIM_MORR_CL, &
-      iQC_INST, &
-      iQR_INST, &
-      iQI_INST, &
-      iQS_INST, & 
-      iQG_INST, &
-      iNC_INST, &
-      iNR_INST, &
-      iNI_INST, &
-      iNS_INST, & 
-      iNG_INST, &
-      iT_in_K_mc
+        iPCC, &
+        iNNUCCC, &
+        iNPSACWS, &
+        iNPRA, &
+        iNPRC, &
+        iNPSACWI, &
+        iNPSACWG, &
+        iNPRAI, &
+        iNMULTS, &
+        iNMULTG, &
+        iNMULTR, &
+        iNMULTRG, &
+        iNNUCCD, &
+        iNSUBI, &
+        iNGMLTG, &
+        iNSUBG, &
+        iNACT, &
+        iSIZEFIX_NR, &
+        iSIZEFIX_NC, &
+        iSIZEFIX_NI, &
+        iSIZEFIX_NS, &
+        iSIZEFIX_NG, &
+        iNEGFIX_NR, &
+        iNEGFIX_NC, &
+        iNEGFIX_NI, &
+        iNEGFIX_NS, &
+        iNEGFIX_NG, &
+        iNIM_MORR_CL, &
+        iQC_INST, &
+        iQR_INST, &
+        iQI_INST, &
+        iQS_INST, & 
+        iQG_INST, &
+        iNC_INST, &
+        iNR_INST, &
+        iNI_INST, &
+        iNS_INST, & 
+        iNG_INST, &
+        iT_in_K_mc
 
     use stats_variables, only: &
-      iwp2hmp, & ! Variable(s)
-      icloud_frac_refined, &
-      ircm_refined, &
-      ihl_on_Cp_residual, &
-      iqto_residual
+        iwp2hmp, & ! Variable(s)
+        icloud_frac_refined, &
+        ircm_refined, &
+        ihl_on_Cp_residual, &
+        iqto_residual
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -606,6 +593,13 @@ module stats_zt
     allocate( isigma_hm_1_n(1:hydromet_dim) )
     allocate( isigma_hm_2_n(1:hydromet_dim) )
 
+    allocate( icorr_whm_1(1:hydromet_dim) )
+    allocate( icorr_whm_2(1:hydromet_dim) )
+    allocate( icorr_shm_1(1:hydromet_dim) )
+    allocate( icorr_shm_2(1:hydromet_dim) )
+    allocate( icorr_thm_1(1:hydromet_dim) )
+    allocate( icorr_thm_2(1:hydromet_dim) )
+
     allocate( ihmp2_zt(1:hydromet_dim) )
 
     ihm1(:) = 0
@@ -618,6 +612,13 @@ module stats_zt
     isigma_hm_2(:) = 0
     isigma_hm_1_n(:) = 0
     isigma_hm_2_n(:) = 0
+
+    icorr_whm_1(:) = 0
+    icorr_whm_2(:) = 0
+    icorr_shm_1(:) = 0
+    icorr_shm_2(:) = 0
+    icorr_thm_1(:) = 0
+    icorr_thm_2(:) = 0
 
     ihmp2_zt(:) = 0
 
@@ -676,6 +677,30 @@ module stats_zt
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "sigma_hm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_whm_i" ) ) then
+       ! Correct for number of variables found under "corr_whm_i".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "corr_whm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_shm_i" ) ) then
+       ! Correct for number of variables found under "corr_shm_i".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "corr_shm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_thm_i" ) ) then
+       ! Correct for number of variables found under "corr_thm_i".
+       ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
+       ! for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
+       ! Add 1 for "corr_thm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -3981,33 +4006,43 @@ module stats_zt
              var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'corr_wrr_1' )
-        icorr_wrr_1 = k
-        call stat_assign( var_index=icorr_wrr_1, var_name="corr_wrr_1", &
-             var_description="Correlation (in-precip) between w and r_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Correlation between w and a hydrometeor (in-precip) for each PDF
+      ! component and hydrometeor type.
+      case ( 'corr_whm_i' )
 
-      case ( 'corr_wrr_2' )
-        icorr_wrr_2 = k
-        call stat_assign( var_index=icorr_wrr_2, var_name="corr_wrr_2", &
-             var_description="Correlation (in-precip) between w and r_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_wNr_1' )
-        icorr_wNr_1 = k
-        call stat_assign( var_index=icorr_wNr_1, var_name="corr_wNr_1", &
-             var_description="Correlation (in-precip) between w and N_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'corr_wNr_2' )
-        icorr_wNr_2 = k
-        call stat_assign( var_index=icorr_wNr_2, var_name="corr_wNr_2", &
-             var_description="Correlation (in-precip) between w and N_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip correlation between w and the hydrometeor in the
+            ! 1st PDF component.
+            icorr_whm_1(hm_idx) = k
+
+            call stat_assign( var_index=icorr_whm_1(hm_idx), &
+                              var_name="corr_w"//trim( hm_type(1:2) )//"_1", &
+                              var_description="Correlation (in-precip) " &
+                              // "between w and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (1st PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+            ! The in-precip correlation between w and the hydrometeor in the
+            ! 2nd PDF component.
+            icorr_whm_2(hm_idx) = k
+
+            call stat_assign( var_index=icorr_whm_2(hm_idx), &
+                              var_name="corr_w"//trim( hm_type(1:2) )//"_2", &
+                              var_description="Correlation (in-precip) " &
+                              // "between w and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (2nd PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'corr_wNcn_1' )
         icorr_wNcn_1 = k
@@ -4023,33 +4058,43 @@ module stats_zt
              var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'corr_srr_1' )
-        icorr_srr_1 = k
-        call stat_assign( var_index=icorr_srr_1, var_name="corr_srr_1", &
-             var_description="Correlation (in-precip) between s and r_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Correlation between s and a hydrometeor (in-precip) for each PDF
+      ! component and hydrometeor type.
+      case ( 'corr_shm_i' )
 
-      case ( 'corr_srr_2' )
-        icorr_srr_2 = k
-        call stat_assign( var_index=icorr_srr_2, var_name="corr_srr_2", &
-             var_description="Correlation (in-precip) between s and r_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_sNr_1' )
-        icorr_sNr_1 = k
-        call stat_assign( var_index=icorr_sNr_1, var_name="corr_sNr_1", &
-             var_description="Correlation (in-precip) between s and N_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'corr_sNr_2' )
-        icorr_sNr_2 = k
-        call stat_assign( var_index=icorr_sNr_2, var_name="corr_sNr_2", &
-             var_description="Correlation (in-precip) between s and N_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip correlation between s and the hydrometeor in the
+            ! 1st PDF component.
+            icorr_shm_1(hm_idx) = k
+
+            call stat_assign( var_index=icorr_shm_1(hm_idx), &
+                              var_name="corr_s"//trim( hm_type(1:2) )//"_1", &
+                              var_description="Correlation (in-precip) " &
+                              // "between s and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (1st PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+            ! The in-precip correlation between s and the hydrometeor in the
+            ! 2nd PDF component.
+            icorr_shm_2(hm_idx) = k
+
+            call stat_assign( var_index=icorr_shm_2(hm_idx), &
+                              var_name="corr_s"//trim( hm_type(1:2) )//"_2", &
+                              var_description="Correlation (in-precip) " &
+                              // "between s and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (2nd PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'corr_sNcn_1' )
         icorr_sNcn_1 = k
@@ -4065,33 +4110,43 @@ module stats_zt
              var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'corr_trr_1' )
-        icorr_trr_1 = k
-        call stat_assign( var_index=icorr_trr_1, var_name="corr_trr_1", &
-             var_description="Correlation (in-precip) between t and r_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Correlation between t and a hydrometeor (in-precip) for each PDF
+      ! component and hydrometeor type.
+      case ( 'corr_thm_i' )
 
-      case ( 'corr_trr_2' )
-        icorr_trr_2 = k
-        call stat_assign( var_index=icorr_trr_2, var_name="corr_trr_2", &
-             var_description="Correlation (in-precip) between t and r_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_tNr_1' )
-        icorr_tNr_1 = k
-        call stat_assign( var_index=icorr_tNr_1, var_name="corr_tNr_1", &
-             var_description="Correlation (in-precip) between t and N_r (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            hm_type = hydromet_list(hm_idx)
 
-      case ( 'corr_tNr_2' )
-        icorr_tNr_2 = k
-        call stat_assign( var_index=icorr_tNr_2, var_name="corr_tNr_2", &
-             var_description="Correlation (in-precip) between t and N_r (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+            ! The in-precip correlation between t and the hydrometeor in the
+            ! 1st PDF component.
+            icorr_thm_1(hm_idx) = k
+
+            call stat_assign( var_index=icorr_thm_1(hm_idx), &
+                              var_name="corr_t"//trim( hm_type(1:2) )//"_1", &
+                              var_description="Correlation (in-precip) " &
+                              // "between t and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (1st PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+            ! The in-precip correlation between t and the hydrometeor in the
+            ! 2nd PDF component.
+            icorr_thm_2(hm_idx) = k
+
+            call stat_assign( var_index=icorr_thm_2(hm_idx), &
+                              var_name="corr_t"//trim( hm_type(1:2) )//"_2", &
+                              var_description="Correlation (in-precip) " &
+                              // "between t and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " (2nd PDF component) [-]", &
+                              var_units="-", l_silhs=.false., grid_kind=zt )
+
+            k = k + 1
+
+         enddo ! i = 1, hydromet_dim, 1
 
       case ( 'corr_tNcn_1' )
         icorr_tNcn_1 = k
