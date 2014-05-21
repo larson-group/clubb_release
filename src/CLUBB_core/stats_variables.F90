@@ -126,31 +126,36 @@ module stats_variables
 !$omp   iprecip_frac_1, iprecip_frac_2, iNcnm )
 
   integer, dimension(:), allocatable, public :: &
-     imu_hm_1,      &
-     imu_hm_2,      &
-     imu_hm_1_n,    &
-     imu_hm_2_n,    &
-     isigma_hm_1,   &
-     isigma_hm_2,   &
-     isigma_hm_1_n, &
-     isigma_hm_2_n, &
-     icorr_whm_1,   &
-     icorr_whm_2,   &
-     icorr_shm_1,   &
-     icorr_shm_2,   &
-     icorr_thm_1,   &
-     icorr_thm_2,   &
-     icorr_whm_1_n, &
-     icorr_whm_2_n, &
-     icorr_shm_1_n, &
-     icorr_shm_2_n, &
-     icorr_thm_1_n, &
-     icorr_thm_2_n
+     imu_hm_1,        &
+     imu_hm_2,        &
+     imu_hm_1_n,      &
+     imu_hm_2_n,      &
+     isigma_hm_1,     &
+     isigma_hm_2,     &
+     isigma_hm_1_n,   &
+     isigma_hm_2_n,   &
+     icorr_whm_1,     &
+     icorr_whm_2,     &
+     icorr_shm_1,     &
+     icorr_shm_2,     &
+     icorr_thm_1,     &
+     icorr_thm_2,     &
+     icorr_Ncnhm_1,   &
+     icorr_Ncnhm_2,   &
+     icorr_whm_1_n,   &
+     icorr_whm_2_n,   &
+     icorr_shm_1_n,   &
+     icorr_shm_2_n,   &
+     icorr_thm_1_n,   &
+     icorr_thm_2_n,   &
+     icorr_Ncnhm_1_n, &
+     icorr_Ncnhm_2_n
 !$omp threadprivate( imu_hm_1, imu_hm_2, imu_hm_1_n, imu_hm_2_n, &
 !$omp   isigma_hm_1, isigma_hm_2, isigma_hm_1_n, isigma_hm_2_n, &
 !$omp   icorr_whm_1, icorr_whm_2, icorr_shm_1, icorr_shm_2, &
-!$omp   icorr_thm_1, icorr_thm_2, icorr_whm_1_n, icorr_whm_2_n, &
-!$omp   icorr_shm_1_n, icorr_shm_2_n, icorr_thm_1_n, icorr_thm_2_n )
+!$omp   icorr_thm_1, icorr_thm_2, icorr_Ncnhm_1, icorr_Ncnhm_2, &
+!$omp   icorr_whm_1_n, icorr_whm_2_n, icorr_shm_1_n, icorr_shm_2_n, &
+!$omp   icorr_thm_1_n, icorr_thm_2_n, icorr_Ncnhm_1_n, icorr_Ncnhm_2_n )
 
   integer, dimension(:,:), allocatable, public :: &
      icorr_hmxhmy_1,   &

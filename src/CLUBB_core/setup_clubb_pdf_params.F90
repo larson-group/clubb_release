@@ -597,8 +597,6 @@ module setup_clubb_pdf_params
        endif ! l_diagnose_correlations
 
        !!! Statistics
-       !!! We should generalize the statistics output to write all the
-       !!! hydrometeor species to disk.
        call pdf_param_hm_stats( d_variables, k, mu_x_1, mu_x_2, &
                                 sigma_x_1, sigma_x_2, &
                                 corr_array_1, corr_array_2, &
@@ -614,8 +612,6 @@ module setup_clubb_pdf_params
 
 
        !!! Statistics
-       !!! We should generalize the statistics output to write all the
-       !!! hydrometeor species to disk.
        call pdf_param_ln_hm_stats( d_variables, k, mu_x_1_n(:,k), &
                                    mu_x_2_n(:,k), sigma_x_1_n(:,k), &
                                    sigma_x_2_n(:,k), corr_array_1_n(:,:,k), &
@@ -3200,6 +3196,7 @@ module setup_clubb_pdf_params
                                  l_stats_samp )
 
     ! Description:
+    ! Record statistics for standard PDF parameters involving hydrometeors.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3242,6 +3239,8 @@ module setup_clubb_pdf_params
         icorr_thm_2,    &
         icorr_tNcn_1,   &
         icorr_tNcn_2,   &
+        icorr_Ncnhm_1,  &
+        icorr_Ncnhm_2,  &
         icorr_hmxhmy_1, &
         icorr_hmxhmy_2, &
         zt
@@ -3425,6 +3424,24 @@ module setup_clubb_pdf_params
        endif
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
+
+          ! Correlation (in-precip) between N_cn and the precipitating
+          ! hydrometeor in PDF component 1.
+          if ( icorr_Ncnhm_1(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncnhm_1(pdf2hydromet_idx(ivar)), &
+                                      level, corr_array_1(ivar,iiPDF_Ncn), zt )
+          endif
+
+          ! Correlation (in-precip) between N_cn and the precipitating
+          ! hydrometeor in PDF component 2.
+          if ( icorr_Ncnhm_2(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncnhm_2(pdf2hydromet_idx(ivar)), &
+                                      level, corr_array_2(ivar,iiPDF_Ncn), zt )
+          endif
+
+       enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
+
+       do ivar = iiPDF_Ncn+1, d_variables, 1
          do jvar = ivar+1, d_variables, 1
 
            ! Correlation (in-precip) between two different hydrometeors (hmx and
@@ -3462,6 +3479,7 @@ module setup_clubb_pdf_params
                                     corr_array_2_n, l_stats_samp )
 
     ! Description:
+    ! Record statistics for normalized PDF parameters involving hydrometeors.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3506,6 +3524,8 @@ module setup_clubb_pdf_params
         icorr_thm_2_n,    &
         icorr_tNcn_1_n,   &
         icorr_tNcn_2_n,   &
+        icorr_Ncnhm_1_n,  &
+        icorr_Ncnhm_2_n,  &
         icorr_hmxhmy_1_n, &
         icorr_hmxhmy_2_n, &
         zt
@@ -3728,6 +3748,27 @@ module setup_clubb_pdf_params
                                    corr_array_2_n(iiPDF_Ncn,iiPDF_t), zt )
        endif
 
+       do ivar = iiPDF_Ncn+1, d_variables, 1
+
+          ! Correlation (in-precip) between ln N_cn and ln hm in PDF
+          ! component 1.
+          if ( icorr_Ncnhm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncnhm_1_n(pdf2hydromet_idx(ivar)), &
+                                      level, corr_array_1_n(ivar,iiPDF_Ncn), &
+                                      zt )
+          endif
+
+          ! Correlation (in-precip) between ln N_cn and ln hm in PDF
+          ! component 2.
+          if ( icorr_Ncnhm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncnhm_2_n(pdf2hydromet_idx(ivar)), &
+                                      level, corr_array_2_n(ivar,iiPDF_Ncn), &
+                                      zt )
+          endif
+
+       enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
+
+       ! Correlation between t and ln N_cn in PDF component 1.
        do ivar = iiPDF_Ncn+1, d_variables, 1
          do jvar = ivar+1, d_variables, 1
 

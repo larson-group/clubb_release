@@ -487,6 +487,14 @@ module stats_subs
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
+    if ( any( vars_zt == "corr_Ncnhm_i" ) ) then
+       ! Correct for number of variables found under "corr_Ncnhm_i".
+       ! Subtract "corr_Ncnhm_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
     if ( any( vars_zt == "corr_hmxhmy_i" ) ) then
        ! Correct for number of variables found under "corr_hmxhmy_i".
        ! Subtract "corr_hmxhmy_i" from the number of zt statistical variables.
@@ -516,6 +524,14 @@ module stats_subs
     if ( any( vars_zt == "corr_thm_i_n" ) ) then
        ! Correct for number of variables found under "corr_thm_i_n".
        ! Subtract "corr_thm_i_n" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
+       ! to the number of zt statistical variables.
+       ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "corr_Ncnhm_i_n" ) ) then
+       ! Correct for number of variables found under "corr_Ncnhm_i_n".
+       ! Subtract "corr_Ncnhm_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
@@ -2450,6 +2466,8 @@ module stats_subs
         icorr_shm_2, &
         icorr_thm_1, &
         icorr_thm_2, &
+        icorr_Ncnhm_1, &
+        icorr_Ncnhm_2, &
         icorr_hmxhmy_1, &
         icorr_hmxhmy_2, &
         icorr_whm_1_n, &
@@ -2458,6 +2476,8 @@ module stats_subs
         icorr_shm_2_n, &
         icorr_thm_1_n, &
         icorr_thm_2_n, &
+        icorr_Ncnhm_1_n, &
+        icorr_Ncnhm_2_n, &
         icorr_hmxhmy_1_n, &
         icorr_hmxhmy_2_n, &
         ihmp2_zt
@@ -2657,6 +2677,8 @@ module stats_subs
       deallocate( icorr_shm_2 )
       deallocate( icorr_thm_1 )
       deallocate( icorr_thm_2 )
+      deallocate( icorr_Ncnhm_1 )
+      deallocate( icorr_Ncnhm_2 )
       deallocate( icorr_hmxhmy_1 )
       deallocate( icorr_hmxhmy_2 )
       deallocate( icorr_whm_1_n )
@@ -2665,6 +2687,8 @@ module stats_subs
       deallocate( icorr_shm_2_n )
       deallocate( icorr_thm_1_n )
       deallocate( icorr_thm_2_n )
+      deallocate( icorr_Ncnhm_1_n )
+      deallocate( icorr_Ncnhm_2_n )
       deallocate( icorr_hmxhmy_1_n )
       deallocate( icorr_hmxhmy_2_n )
       deallocate( ihmp2_zt )
