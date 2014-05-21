@@ -596,7 +596,7 @@ module setup_clubb_pdf_params
 
        endif ! l_diagnose_correlations
 
-       !!! Statistics
+       !!! Statistics for standard PDF parameters involving hydrometeors.
        call pdf_param_hm_stats( d_variables, k, mu_x_1, mu_x_2, &
                                 sigma_x_1, sigma_x_2, &
                                 corr_array_1, corr_array_2, &
@@ -611,7 +611,7 @@ module setup_clubb_pdf_params
                             corr_array_1_n(:,:,k), corr_array_2_n(:,:,k) )
 
 
-       !!! Statistics
+       !!! Statistics for normalized PDF parameters involving hydrometeors.
        call pdf_param_ln_hm_stats( d_variables, k, mu_x_1_n(:,k), &
                                    mu_x_2_n(:,k), sigma_x_1_n(:,k), &
                                    sigma_x_2_n(:,k), corr_array_1_n(:,:,k), &
@@ -3768,7 +3768,6 @@ module setup_clubb_pdf_params
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between t and ln N_cn in PDF component 1.
        do ivar = iiPDF_Ncn+1, d_variables, 1
          do jvar = ivar+1, d_variables, 1
 

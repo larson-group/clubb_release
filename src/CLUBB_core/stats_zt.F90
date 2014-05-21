@@ -4081,16 +4081,20 @@ module stats_zt
 
       case ( 'sigma_Ncn_1_n' )
         isigma_Ncn_1_n = k
-        call stat_assign( var_index=isigma_Ncn_1_n, var_name="sigma_Ncn_1_n", &
-             var_description="Standard deviation of ln N_cn (1st PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
+        call stat_assign( var_index=isigma_Ncn_1_n, &
+                          var_name="sigma_Ncn_1_n", &
+                          var_description="Standard deviation of ln N_cn " &
+                          // "(1st PDF component) [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ( 'sigma_Ncn_2_n' )
         isigma_Ncn_2_n = k
-        call stat_assign( var_index=isigma_Ncn_2_n, var_name="sigma_Ncn_2_n", &
-             var_description="Standard deviation of ln N_cn (2nd PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
+        call stat_assign( var_index=isigma_Ncn_2_n, &
+                          var_name="sigma_Ncn_2_n", &
+                          var_description="Standard deviation of ln N_cn " &
+                          // "(2nd PDF component) [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       ! Correlation between w and a hydrometeor (in-precip) for each PDF
