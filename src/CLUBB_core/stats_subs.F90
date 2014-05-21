@@ -487,6 +487,16 @@ module stats_subs
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
+    if ( any( vars_zt == "corr_hmxhmy_i" ) ) then
+       ! Correct for number of variables found under "corr_hmxhmy_i".
+       ! Subtract "corr_hmxhmy_i" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
+       ! number of correlations between two hydrometeors, which is found by:
+       ! (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! to the number of zt statistical variables.
+       ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )
+    endif
     if ( any( vars_zt == "corr_whm_i_n" ) ) then
        ! Correct for number of variables found under "corr_whm_i_n".
        ! Subtract "corr_whm_i_n" from the number of zt statistical variables.
@@ -510,6 +520,16 @@ module stats_subs
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
+    endif
+    if ( any( vars_zt == "corr_hmxhmy_i_n" ) ) then
+       ! Correct for number of variables found under "corr_hmxhmy_i_n".
+       ! Subtract "corr_hmxhmy_i_n" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
+       ! number of normalized correlations between two hydrometeors, which is
+       ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! to the number of zt statistical variables.
+       ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )
     endif
     if ( any( vars_zt == "hmp2_zt" ) ) then
        ! Correct for number of variables found under "hmp2".
@@ -2430,12 +2450,16 @@ module stats_subs
         icorr_shm_2, &
         icorr_thm_1, &
         icorr_thm_2, &
+        icorr_hmxhmy_1, &
+        icorr_hmxhmy_2, &
         icorr_whm_1_n, &
         icorr_whm_2_n, &
         icorr_shm_1_n, &
         icorr_shm_2_n, &
         icorr_thm_1_n, &
         icorr_thm_2_n, &
+        icorr_hmxhmy_1_n, &
+        icorr_hmxhmy_2_n, &
         ihmp2_zt
 
     use parameters_microphys, only: &
@@ -2633,12 +2657,16 @@ module stats_subs
       deallocate( icorr_shm_2 )
       deallocate( icorr_thm_1 )
       deallocate( icorr_thm_2 )
+      deallocate( icorr_hmxhmy_1 )
+      deallocate( icorr_hmxhmy_2 )
       deallocate( icorr_whm_1_n )
       deallocate( icorr_whm_2_n )
       deallocate( icorr_shm_1_n )
       deallocate( icorr_shm_2_n )
       deallocate( icorr_thm_1_n )
       deallocate( icorr_thm_2_n )
+      deallocate( icorr_hmxhmy_1_n )
+      deallocate( icorr_hmxhmy_2_n )
       deallocate( ihmp2_zt )
     end if ! l_stats
 

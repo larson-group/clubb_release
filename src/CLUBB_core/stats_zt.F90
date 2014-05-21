@@ -10,7 +10,7 @@ module stats_zt
   public :: stats_init_zt
 
 ! Constant parameters
-  integer, parameter, public :: nvarmax_zt = 600 ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zt = 750 ! Maximum variables allowed
 
   contains
 
@@ -112,24 +112,24 @@ module stats_zt
         icorr_thm_2,    &
         icorr_tNcn_1,   &
         icorr_tNcn_2,   &
-        icorr_rrNr_1,   &
-        icorr_rrNr_2
+        icorr_hmxhmy_1, &
+        icorr_hmxhmy_2
 
     use stats_variables, only: &
-        icorr_whm_1_n,  & ! Variable(s)
-        icorr_whm_2_n,  &
-        icorr_wNcn_1_n, &
-        icorr_wNcn_2_n, &
-        icorr_shm_1_n,  &
-        icorr_shm_2_n,  &
-        icorr_sNcn_1_n, &
-        icorr_sNcn_2_n, &
-        icorr_thm_1_n,  &
-        icorr_thm_2_n,  &
-        icorr_tNcn_1_n, &
-        icorr_tNcn_2_n, &
-        icorr_rrNr_1_n, &
-        icorr_rrNr_2_n
+        icorr_whm_1_n,    & ! Variable(s)
+        icorr_whm_2_n,    &
+        icorr_wNcn_1_n,   &
+        icorr_wNcn_2_n,   &
+        icorr_shm_1_n,    &
+        icorr_shm_2_n,    &
+        icorr_sNcn_1_n,   &
+        icorr_sNcn_2_n,   &
+        icorr_thm_1_n,    &
+        icorr_thm_2_n,    &
+        icorr_tNcn_1_n,   &
+        icorr_tNcn_2_n,   &
+        icorr_hmxhmy_1_n, &
+        icorr_hmxhmy_2_n
 
     use stats_variables, only: & ! janhft 09/25/12
         icorr_sw,   & ! Variable(s)
@@ -564,9 +564,9 @@ module stats_zt
 
     integer :: i, j, k
 
-    integer :: hm_idx
+    integer :: hm_idx, hmx_idx, hmy_idx
 
-    character(len=10) :: hm_type
+    character(len=10) :: hm_type, hmx_type, hmy_type
 
     logical :: l_found
 
@@ -593,6 +593,8 @@ module stats_zt
     allocate( icorr_shm_2(1:hydromet_dim) )
     allocate( icorr_thm_1(1:hydromet_dim) )
     allocate( icorr_thm_2(1:hydromet_dim) )
+    allocate( icorr_hmxhmy_1(1:hydromet_dim,1:hydromet_dim) )
+    allocate( icorr_hmxhmy_2(1:hydromet_dim,1:hydromet_dim) )
 
     allocate( icorr_whm_1_n(1:hydromet_dim) )
     allocate( icorr_whm_2_n(1:hydromet_dim) )
@@ -600,6 +602,8 @@ module stats_zt
     allocate( icorr_shm_2_n(1:hydromet_dim) )
     allocate( icorr_thm_1_n(1:hydromet_dim) )
     allocate( icorr_thm_2_n(1:hydromet_dim) )
+    allocate( icorr_hmxhmy_1_n(1:hydromet_dim,1:hydromet_dim) )
+    allocate( icorr_hmxhmy_2_n(1:hydromet_dim,1:hydromet_dim) )
 
     allocate( ihmp2_zt(1:hydromet_dim) )
 
@@ -620,6 +624,8 @@ module stats_zt
     icorr_shm_2(:) = 0
     icorr_thm_1(:) = 0
     icorr_thm_2(:) = 0
+    icorr_hmxhmy_1(:,:) = 0
+    icorr_hmxhmy_2(:,:) = 0
 
     icorr_whm_1_n(:) = 0
     icorr_whm_2_n(:) = 0
@@ -627,6 +633,8 @@ module stats_zt
     icorr_shm_2_n(:) = 0
     icorr_thm_1_n(:) = 0
     icorr_thm_2_n(:) = 0
+    icorr_hmxhmy_1_n(:,:) = 0
+    icorr_hmxhmy_2_n(:,:) = 0
 
     ihmp2_zt(:) = 0
 
@@ -711,6 +719,15 @@ module stats_zt
        ! Add 1 for "corr_thm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "corr_hmxhmy_i" ) ) then
+       ! Correct for number of variables found under "corr_hmxhmy_i".
+       ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
+       ! number of correlations between two hydrometeors, which is found by:
+       ! (1/2) * hydromet_dim * ( hydromet_dim - 1 ); from the loop size.
+       tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
+       ! Add 1 for "corr_hmxhmy_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "corr_whm_i_n" ) ) then
        ! Correct for number of variables found under "corr_whm_i_n".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
@@ -733,6 +750,16 @@ module stats_zt
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "corr_thm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_hmxhmy_i_n" ) ) then
+       ! Correct for number of variables found under "corr_hmxhmy_i_n".
+       ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
+       ! number of normalized correlations between two hydrometeors, which is
+       ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! from the loop size.
+       tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
+       ! Add 1 for "corr_hmxhmy_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -3600,7 +3627,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ('C11_Skw_fnc')
         iC11_Skw_fnc = k
@@ -3694,7 +3721,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'LWP1' )
         iLWP1 = k
@@ -3800,7 +3827,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'mu_Ncn_1' )
         imu_Ncn_1 = k
@@ -3878,7 +3905,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'mu_Ncn_1_n' )
         imu_Ncn_1_n = k
@@ -3966,7 +3993,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'sigma_Ncn_1' )
         isigma_Ncn_1 = k
@@ -4022,7 +4049,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'sigma_Ncn_1_n' )
         isigma_Ncn_1_n = k
@@ -4074,7 +4101,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_wNcn_1' )
         icorr_wNcn_1 = k
@@ -4126,7 +4153,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_sNcn_1' )
         icorr_sNcn_1 = k
@@ -4178,7 +4205,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_tNcn_1' )
         icorr_tNcn_1 = k
@@ -4194,19 +4221,55 @@ module stats_zt
              var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'corr_rrNr_1' )
-        icorr_rrNr_1 = k
-        call stat_assign( var_index=icorr_rrNr_1, var_name="corr_rrNr_1", &
-             var_description="Correlation (in-precip) between r_r and N_r (1st PDF component) [-]",&
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Correlation (in-precip) between two different hydrometeors (hmx and hmy)
+      ! for each PDF component and hydrometeor type.
+      case ( 'corr_hmxhmy_i' )
 
-      case ( 'corr_rrNr_2' )
-        icorr_rrNr_2 = k
-        call stat_assign( var_index=icorr_rrNr_2, var_name="corr_rrNr_2", &
-             var_description="Correlation (in-precip) between r_r and N_r (2nd PDF component) [-]",&
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hmx_idx = 1, hydromet_dim, 1
+
+            hmx_type = hydromet_list(hmx_idx)
+
+            do hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+               hmy_type = hydromet_list(hmy_idx)
+
+               ! The in-precip correlation between hmx and hmy in the 1st PDF
+               ! component.
+               icorr_hmxhmy_1(hmy_idx,hmx_idx) = k
+
+               call stat_assign( var_index=icorr_hmxhmy_1(hmy_idx,hmx_idx), &
+                                 var_name="corr_"//trim( hmx_type(1:2) ) &
+                                 // trim( hmy_type(1:2) )//"_1", &
+                                 var_description="Correlation (in-precip) " &
+                                 // "between " &
+                                 // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
+                                 // " and " &
+                                 // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
+                                 // " (1st PDF component) [-]", &
+                                 var_units="-", l_silhs=.false., grid_kind=zt )
+
+               k = k + 1
+
+               ! The in-precip correlation between hmx and hmy in the 2nd PDF
+               ! component.
+               icorr_hmxhmy_2(hmy_idx,hmx_idx) = k
+
+               call stat_assign( var_index=icorr_hmxhmy_2(hmy_idx,hmx_idx), &
+                                 var_name="corr_"//trim( hmx_type(1:2) ) &
+                                 // trim( hmy_type(1:2) )//"_2", &
+                                 var_description="Correlation (in-precip) " &
+                                 // "between " &
+                                 // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
+                                 // " and " &
+                                 // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
+                                 // " (2nd PDF component) [-]", &
+                                 var_units="-", l_silhs=.false., grid_kind=zt )
+
+               k = k + 1
+
+            enddo ! hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+         enddo ! hmx_idx = 1, hydromet_dim, 1
 
       ! Correlation (in-precip) between w and ln hm for each PDF component and
       ! hydrometeor type.
@@ -4244,7 +4307,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_wNcn_1_n' )
         icorr_wNcn_1_n = k
@@ -4296,7 +4359,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_sNcn_1_n' )
         icorr_sNcn_1_n = k
@@ -4348,7 +4411,7 @@ module stats_zt
 
             k = k + 1
 
-         enddo ! i = 1, hydromet_dim, 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ( 'corr_tNcn_1_n' )
         icorr_tNcn_1_n = k
@@ -4364,22 +4427,55 @@ module stats_zt
              var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ( 'corr_rrNr_1_n' )
-        icorr_rrNr_1_n = k
-        call stat_assign( var_index=icorr_rrNr_1_n, var_name="corr_rrNr_1_n", &
-             var_description="Correlation (in-precip) between ln r_r and ln N_r (1st PDF component)&
-             & [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      ! Correlation (in-precip) between ln hmx and ln hmy (hmx and hmy are two
+      ! different hydrometeors) for each PDF component and hydrometeor type.
+      case ( 'corr_hmxhmy_i_n' )
 
-      case ( 'corr_rrNr_2_n' )
-        icorr_rrNr_2_n = k
-        call stat_assign( var_index=icorr_rrNr_2_n, var_name="corr_rrNr_2_n", &
-             var_description="Correlation (in-precip) between ln r_r and ln N_r (2nd PDF component)&
-             & [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         do hmx_idx = 1, hydromet_dim, 1
 
+            hmx_type = hydromet_list(hmx_idx)
+
+            do hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+               hmy_type = hydromet_list(hmy_idx)
+
+               ! The in-precip correlation between ln hmx and ln hmy in the 1st
+               ! PDF component.
+               icorr_hmxhmy_1_n(hmy_idx,hmx_idx) = k
+
+               call stat_assign( var_index=icorr_hmxhmy_1_n(hmy_idx,hmx_idx), &
+                                 var_name="corr_"//trim( hmx_type(1:2) ) &
+                                 // trim( hmy_type(1:2) )//"_1_n", &
+                                 var_description="Correlation (in-precip) " &
+                                 // "between ln " &
+                                 // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
+                                 // " and ln " &
+                                 // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
+                                 // " (1st PDF component) [-]", &
+                                 var_units="-", l_silhs=.false., grid_kind=zt )
+
+               k = k + 1
+
+               ! The in-precip correlation between ln hmx and ln hmy in the 2nd
+               ! PDF component.
+               icorr_hmxhmy_2_n(hmy_idx,hmx_idx) = k
+
+               call stat_assign( var_index=icorr_hmxhmy_2_n(hmy_idx,hmx_idx), &
+                                 var_name="corr_"//trim( hmx_type(1:2) ) &
+                                 // trim( hmy_type(1:2) )//"_2_n", &
+                                 var_description="Correlation (in-precip) " &
+                                 // "between ln " &
+                                 // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
+                                 // " and ln " &
+                                 // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
+                                 // " (2nd PDF component) [-]", &
+                                 var_units="-", l_silhs=.false., grid_kind=zt )
+
+               k = k + 1
+
+            enddo ! hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+         enddo ! hmx_idx = 1, hydromet_dim, 1
 
       ! changes by janhft 09/25/12
       case ('corr_sw')

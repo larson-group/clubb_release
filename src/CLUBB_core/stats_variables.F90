@@ -125,7 +125,7 @@ module stats_variables
 !$omp threadprivate( iLWP1, iLWP2, iprecip_frac, &
 !$omp   iprecip_frac_1, iprecip_frac_2, iNcnm )
 
-  integer, dimension(:), allocatable, public :: & 
+  integer, dimension(:), allocatable, public :: &
      imu_hm_1,      &
      imu_hm_2,      &
      imu_hm_1_n,    &
@@ -152,6 +152,14 @@ module stats_variables
 !$omp   icorr_thm_1, icorr_thm_2, icorr_whm_1_n, icorr_whm_2_n, &
 !$omp   icorr_shm_1_n, icorr_shm_2_n, icorr_thm_1_n, icorr_thm_2_n )
 
+  integer, dimension(:,:), allocatable, public :: &
+     icorr_hmxhmy_1,   &
+     icorr_hmxhmy_2,   &
+     icorr_hmxhmy_1_n, &
+     icorr_hmxhmy_2_n
+!$omp threadprivate( icorr_hmxhmy_1, icorr_hmxhmy_2, &
+!$omp   icorr_hmxhmy_1_n, icorr_hmxhmy_2_n )
+
   integer, public :: &
      imu_Ncn_1 = 0,      &
      imu_Ncn_2 = 0,      &
@@ -170,11 +178,9 @@ module stats_variables
      icorr_sNcn_1 = 0, &
      icorr_sNcn_2 = 0, &
      icorr_tNcn_1 = 0, &
-     icorr_tNcn_2 = 0, &
-     icorr_rrNr_1 = 0, &
-     icorr_rrNr_2 = 0
-!$omp threadprivate( icorr_wNcn_1, icorr_wNcn_2, icorr_sNcn_1, icorr_sNcn_2, &
-!$omp   icorr_tNcn_1, icorr_tNcn_2, icorr_rrNr_1, icorr_rrNr_2 )
+     icorr_tNcn_2 = 0
+!$omp threadprivate( icorr_wNcn_1, icorr_wNcn_2, icorr_sNcn_1, &
+!$omp   icorr_sNcn_2, icorr_tNcn_1, icorr_tNcn_2 )
 
   integer, public :: &
      icorr_wNcn_1_n = 0, &
@@ -182,12 +188,9 @@ module stats_variables
      icorr_sNcn_1_n = 0, &
      icorr_sNcn_2_n = 0, &
      icorr_tNcn_1_n = 0, &
-     icorr_tNcn_2_n = 0, &
-     icorr_rrNr_1_n = 0, &
-     icorr_rrNr_2_n = 0
+     icorr_tNcn_2_n = 0
 !$omp threadprivate( icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_sNcn_1_n, &
-!$omp   icorr_sNcn_2_n, icorr_tNcn_1_n, icorr_tNcn_2_n, &
-!$omp   icorr_rrNr_1_n, icorr_rrNr_2_n )
+!$omp   icorr_sNcn_2_n, icorr_tNcn_1_n, icorr_tNcn_2_n )
 
   integer, public :: & ! janhft 09/25/12
      icorr_sw = 0,   &
