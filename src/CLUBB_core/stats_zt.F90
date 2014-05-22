@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------------
 ! $Id$
 !===============================================================================
 module stats_zt
@@ -9,23 +9,23 @@ module stats_zt
 
   public :: stats_init_zt
 
-! Constant parameters
+  ! Constant parameters
   integer, parameter, public :: nvarmax_zt = 750 ! Maximum variables allowed
 
   contains
 
-!-----------------------------------------------------------------------
+  !=============================================================================
   subroutine stats_init_zt( vars_zt, l_error )
 
-! Description:
-!   Initializes array indices for zt
+    ! Description:
+    ! Initializes array indices for zt
 
-! Note:
-!   All code that is within subroutine stats_init_zt, including variable
-!   allocation code, is not called if l_stats is false.  This subroutine is
-!   called only when l_stats is true.
+    ! Note:
+    ! All code that is within subroutine stats_init_zt, including variable
+    ! allocation code, is not called if l_stats is false.  This subroutine is
+    ! called only when l_stats is true.
 
-!-----------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
         fstderr ! Constant(s)
@@ -576,6 +576,7 @@ module stats_zt
 
     character(len=50) :: sclr_idx
 
+
     ! The default initialization for array indices for zt is zero (see module
     ! stats_variables)
 
@@ -683,12 +684,26 @@ module stats_zt
        ! Add 1 for "mu_hm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "mu_Ncn_i" ) ) then
+       ! Correct for number of variables found under "mu_Ncn_i".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "mu_Ncn_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "mu_hm_i_n" ) ) then
        ! Correct for number of variables found under "mu_hm_i_n".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "mu_hm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "mu_Ncn_i_n" ) ) then
+       ! Correct for number of variables found under "mu_Ncn_i_n".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "mu_Ncn_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "sigma_hm_i" ) ) then
@@ -699,6 +714,13 @@ module stats_zt
        ! Add 1 for "sigma_hm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "sigma_Ncn_i" ) ) then
+       ! Correct for number of variables found under "sigma_Ncn_i".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "sigma_Ncn_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "sigma_hm_i_n" ) ) then
        ! Correct for number of variables found under "sigma_hm_i_n".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
@@ -707,12 +729,27 @@ module stats_zt
        ! Add 1 for "sigma_hm_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "sigma_Ncn_i_n" ) ) then
+       ! Correct for number of variables found under "sigma_Ncn_i_n".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "sigma_Ncn_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
     if ( any( vars_zt == "corr_whm_i" ) ) then
        ! Correct for number of variables found under "corr_whm_i".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "corr_whm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_wNcn_i" ) ) then
+       ! Correct for number of variables found under "corr_wNcn_i".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_wNcn_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "corr_shm_i" ) ) then
@@ -723,12 +760,26 @@ module stats_zt
        ! Add 1 for "corr_shm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "corr_sNcn_i" ) ) then
+       ! Correct for number of variables found under "corr_sNcn_i".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_sNcn_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "corr_thm_i" ) ) then
        ! Correct for number of variables found under "corr_thm_i".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "corr_thm_i" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_tNcn_i" ) ) then
+       ! Correct for number of variables found under "corr_tNcn_i".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_tNcn_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "corr_Ncnhm_i" ) ) then
@@ -748,12 +799,20 @@ module stats_zt
        ! Add 1 for "corr_hmxhmy_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+
     if ( any( vars_zt == "corr_whm_i_n" ) ) then
        ! Correct for number of variables found under "corr_whm_i_n".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "corr_whm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_wNcn_i_n" ) ) then
+       ! Correct for number of variables found under "corr_wNcn_i_n".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_wNcn_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "corr_shm_i_n" ) ) then
@@ -764,12 +823,26 @@ module stats_zt
        ! Add 1 for "corr_shm_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
+    if ( any( vars_zt == "corr_sNcn_i_n" ) ) then
+       ! Correct for number of variables found under "corr_sNcn_i_n".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_sNcn_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "corr_thm_i_n" ) ) then
        ! Correct for number of variables found under "corr_thm_i_n".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
        ! Add 1 for "corr_thm_i_n" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    if ( any( vars_zt == "corr_tNcn_i_n" ) ) then
+       ! Correct for number of variables found under "corr_tNcn_i_n".
+       ! Subtract 2 from the loop size (1st PDF comp. and 2nd PDF comp.).
+       tot_zt_loops = tot_zt_loops - 2
+       ! Add 1 for "corr_tNcn_i_n" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "corr_Ncnhm_i_n" ) ) then
@@ -3768,22 +3841,22 @@ module stats_zt
       case ( 'precip_frac' )
         iprecip_frac = k
         call stat_assign( var_index=iprecip_frac, var_name="precip_frac", &
-             var_description="Precipitation Fraction [-]", var_units="-", l_silhs=.false., &
-             grid_kind=zt )
+             var_description="Precipitation Fraction [-]", var_units="-", &
+             l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ( 'precip_frac_1' )
         iprecip_frac_1 = k
         call stat_assign( var_index=iprecip_frac_1, var_name="precip_frac_1", &
-             var_description="Precipitation Fraction (1st PDF component) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
+             var_description="Precipitation Fraction (1st PDF component) [-]", &
+             var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ( 'precip_frac_2' )
         iprecip_frac_2 = k
         call stat_assign( var_index=iprecip_frac_2, var_name="precip_frac_2", &
-             var_description="Precipitation Fraction (2nd PDF component) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
+             var_description="Precipitation Fraction (2nd PDF component) [-]", &
+             var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ( 'Ncnm' )
@@ -3857,19 +3930,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'mu_Ncn_1' )
-        imu_Ncn_1 = k
-        call stat_assign( var_index=imu_Ncn_1, var_name="mu_Ncn_1", &
-             var_description="Mean of N_cn (1st PDF component) [num/kg]", var_units="num/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'mu_Ncn_i' )
 
-      case ( 'mu_Ncn_2' )
-        imu_Ncn_2 = k
-        call stat_assign( var_index=imu_Ncn_2, var_name="mu_Ncn_2", &
-             var_description="Mean of N_cn (2nd PDF component) [num/kg]", var_units="num/kg", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         imu_Ncn_1 = k
+
+         call stat_assign( var_index=imu_Ncn_1, &
+                           var_name="mu_Ncn_1", &
+                           var_description="Mean of N_cn (1st PDF component) " &
+                           // "[num/kg]", var_units="num/kg", &
+                           l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         imu_Ncn_2 = k
+
+         call stat_assign( var_index=imu_Ncn_2, &
+                           var_name="mu_Ncn_2", &
+                           var_description="Mean of N_cn (2nd PDF component) " &
+                           // "[num/kg]", var_units="num/kg", &
+                           l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Hydrometeor component mean values (in-precip) for ln hm for each PDF
       ! component and hydrometeor type.
@@ -3935,19 +4016,29 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'mu_Ncn_1_n' )
-        imu_Ncn_1_n = k
-        call stat_assign( var_index=imu_Ncn_1_n, var_name="mu_Ncn_1_n", &
-             var_description="Mean of ln N_cn (1st PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'mu_Ncn_i_n' )
 
-      case ( 'mu_Ncn_2_n' )
-        imu_Ncn_2_n = k
-        call stat_assign( var_index=imu_Ncn_2_n, var_name="mu_Ncn_2_n", &
-             var_description="Mean of ln N_cn (2nd PDF component) [ln(num/kg)]", &
-             var_units="ln(num/kg)", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         imu_Ncn_1_n = k
+
+         call stat_assign( var_index=imu_Ncn_1_n, &
+                           var_name="mu_Ncn_1_n", &
+                           var_description="Mean of ln N_cn " &
+                           // "(1st PDF component) [ln(num/kg)]", &
+                           var_units="ln(num/kg)", &
+                           l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         imu_Ncn_2_n = k
+
+         call stat_assign( var_index=imu_Ncn_2_n, &
+                           var_name="mu_Ncn_2_n", &
+                           var_description="Mean of ln N_cn " &
+                           // "(2nd PDF component) [ln(num/kg)]", &
+                           var_units="ln(num/kg)", &
+                           l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Hydrometeor component standard deviations (in-precip) for each PDF
       ! component and hydrometeor type.
@@ -4023,19 +4114,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'sigma_Ncn_1' )
-        isigma_Ncn_1 = k
-        call stat_assign( var_index=isigma_Ncn_1, var_name="sigma_Ncn_1", &
-             var_description="Standard deviation of N_cn (1st PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'sigma_Ncn_i' )
 
-      case ( 'sigma_Ncn_2' )
-        isigma_Ncn_2 = k
-        call stat_assign( var_index=isigma_Ncn_2, var_name="sigma_Ncn_2", &
-             var_description="Standard deviation of N_cn (2nd PDF component) [num/kg]", &
-             var_units="num/kg", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         isigma_Ncn_1 = k
+
+         call stat_assign( var_index=isigma_Ncn_1, &
+                           var_name="sigma_Ncn_1", &
+                           var_description="Standard deviation of N_cn " &
+                           // "(1st PDF component) [num/kg]", &
+                           var_units="num/kg", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         isigma_Ncn_2 = k
+
+         call stat_assign( var_index=isigma_Ncn_2, &
+                           var_name="sigma_Ncn_2", &
+                           var_description="Standard deviation of N_cn " &
+                           // "(2nd PDF component) [num/kg]", &
+                           var_units="num/kg", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Hydrometeor component standard deviations (in-precip) for ln hm for each
       ! PDF component and hydrometeor type.
@@ -4079,23 +4178,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'sigma_Ncn_1_n' )
-        isigma_Ncn_1_n = k
-        call stat_assign( var_index=isigma_Ncn_1_n, &
-                          var_name="sigma_Ncn_1_n", &
-                          var_description="Standard deviation of ln N_cn " &
-                          // "(1st PDF component) [-]", &
-                          var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'sigma_Ncn_i_n' )
 
-      case ( 'sigma_Ncn_2_n' )
-        isigma_Ncn_2_n = k
-        call stat_assign( var_index=isigma_Ncn_2_n, &
-                          var_name="sigma_Ncn_2_n", &
-                          var_description="Standard deviation of ln N_cn " &
-                          // "(2nd PDF component) [-]", &
-                          var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         isigma_Ncn_1_n = k
+
+         call stat_assign( var_index=isigma_Ncn_1_n, &
+                           var_name="sigma_Ncn_1_n", &
+                           var_description="Standard deviation of ln N_cn " &
+                           // "(1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         isigma_Ncn_2_n = k
+
+         call stat_assign( var_index=isigma_Ncn_2_n, &
+                           var_name="sigma_Ncn_2_n", &
+                           var_description="Standard deviation of ln N_cn " &
+                           // "(2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation between w and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
@@ -4135,19 +4238,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_wNcn_1' )
-        icorr_wNcn_1 = k
-        call stat_assign( var_index=icorr_wNcn_1, var_name="corr_wNcn_1", &
-             var_description="Correlation between w and N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_wNcn_i' )
 
-      case ( 'corr_wNcn_2' )
-        icorr_wNcn_2 = k
-        call stat_assign( var_index=icorr_wNcn_2, var_name="corr_wNcn_2", &
-             var_description="Correlation between w and N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_wNcn_1 = k
+
+         call stat_assign( var_index=icorr_wNcn_1, &
+                           var_name="corr_wNcn_1", &
+                           var_description="Correlation between w and N_cn " &
+                           // "(1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_wNcn_2 = k
+
+         call stat_assign( var_index=icorr_wNcn_2, &
+                           var_name="corr_wNcn_2", &
+                           var_description="Correlation between w and N_cn " &
+                           // "(2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation between s and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
@@ -4187,19 +4298,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_sNcn_1' )
-        icorr_sNcn_1 = k
-        call stat_assign( var_index=icorr_sNcn_1, var_name="corr_sNcn_1", &
-             var_description="Correlation between s and N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_sNcn_i' )
 
-      case ( 'corr_sNcn_2' )
-        icorr_sNcn_2 = k
-        call stat_assign( var_index=icorr_sNcn_2, var_name="corr_sNcn_2", &
-             var_description="Correlation between s and N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_sNcn_1 = k
+
+         call stat_assign( var_index=icorr_sNcn_1, &
+                           var_name="corr_sNcn_1", &
+                           var_description="Correlation between s and N_cn " &
+                           // "(1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_sNcn_2 = k
+
+         call stat_assign( var_index=icorr_sNcn_2, &
+                           var_name="corr_sNcn_2", &
+                           var_description="Correlation between s and N_cn " &
+                           // "(2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation between t and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
@@ -4239,19 +4358,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_tNcn_1' )
-        icorr_tNcn_1 = k
-        call stat_assign( var_index=icorr_tNcn_1, var_name="corr_tNcn_1", &
-             var_description="Correlation between t and N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_tNcn_i' )
 
-      case ( 'corr_tNcn_2' )
-        icorr_tNcn_2 = k
-        call stat_assign( var_index=icorr_tNcn_2, var_name="corr_tNcn_2", &
-             var_description="Correlation between t and N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_tNcn_1 = k
+
+         call stat_assign( var_index=icorr_tNcn_1, &
+                           var_name="corr_tNcn_1", &
+                           var_description="Correlation between t and N_cn " &
+                           // "(1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_tNcn_2 = k
+
+         call stat_assign( var_index=icorr_tNcn_2, &
+                           var_name="corr_tNcn_2", &
+                           var_description="Correlation between t and N_cn " &
+                           // "(2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation between Ncn and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
@@ -4379,19 +4506,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_wNcn_1_n' )
-        icorr_wNcn_1_n = k
-        call stat_assign( var_index=icorr_wNcn_1_n, var_name="corr_wNcn_1_n", &
-             var_description="Correlation between w and ln N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_wNcn_i_n' )
 
-      case ( 'corr_wNcn_2_n' )
-        icorr_wNcn_2_n = k
-        call stat_assign( var_index=icorr_wNcn_2_n, var_name="corr_wNcn_2_n", &
-             var_description="Correlation between w and ln N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_wNcn_1_n = k
+
+         call stat_assign( var_index=icorr_wNcn_1_n, &
+                           var_name="corr_wNcn_1_n", &
+                           var_description="Correlation between w and " &
+                           // "ln N_cn (1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_wNcn_2_n = k
+
+         call stat_assign( var_index=icorr_wNcn_2_n, &
+                           var_name="corr_wNcn_2_n", &
+                           var_description="Correlation between w and " &
+                           // "ln N_cn (2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation (in-precip) between s and ln hm for each PDF component and
       ! hydrometeor type.
@@ -4431,19 +4566,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_sNcn_1_n' )
-        icorr_sNcn_1_n = k
-        call stat_assign( var_index=icorr_sNcn_1_n, var_name="corr_sNcn_1_n", &
-             var_description="Correlation between s and ln N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_sNcn_i_n' )
 
-      case ( 'corr_sNcn_2_n' )
-        icorr_sNcn_2_n = k
-        call stat_assign( var_index=icorr_sNcn_2_n, var_name="corr_sNcn_2_n", &
-             var_description="Correlation between s and ln N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_sNcn_1_n = k
+ 
+        call stat_assign( var_index=icorr_sNcn_1_n, &
+                           var_name="corr_sNcn_1_n", &
+                           var_description="Correlation between s and " &
+                           // "ln N_cn (1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_sNcn_2_n = k
+
+         call stat_assign( var_index=icorr_sNcn_2_n, &
+                           var_name="corr_sNcn_2_n", &
+                           var_description="Correlation between s and " &
+                           // "ln N_cn (2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation (in-precip) between t and ln hm for each PDF component and
       ! hydrometeor type.
@@ -4483,19 +4626,27 @@ module stats_zt
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      case ( 'corr_tNcn_1_n' )
-        icorr_tNcn_1_n = k
-        call stat_assign( var_index=icorr_tNcn_1_n, var_name="corr_tNcn_1_n", &
-             var_description="Correlation between t and ln N_cn (1st PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+      case ( 'corr_tNcn_i_n' )
 
-      case ( 'corr_tNcn_2_n' )
-        icorr_tNcn_2_n = k
-        call stat_assign( var_index=icorr_tNcn_2_n, var_name="corr_tNcn_2_n", &
-             var_description="Correlation between t and ln N_cn (2nd PDF component) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+         icorr_tNcn_1_n = k
+
+         call stat_assign( var_index=icorr_tNcn_1_n, &
+                           var_name="corr_tNcn_1_n", &
+                           var_description="Correlation between t and " &
+                           // "ln N_cn (1st PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
+
+         icorr_tNcn_2_n = k
+
+         call stat_assign( var_index=icorr_tNcn_2_n, &
+                           var_name="corr_tNcn_2_n", &
+                           var_description="Correlation between t and " &
+                           // "ln N_cn (2nd PDF component) [-]", &
+                           var_units="-", l_silhs=.false., grid_kind=zt )
+
+         k = k + 1
 
       ! Correlation (in-precip) between ln Ncn and ln hm for each PDF component
       ! and hydrometeor type.
@@ -4769,8 +4920,14 @@ module stats_zt
 
       end select ! trim( vars_zt )
 
+
     end do ! i=1,zt%nn
+
+
     return
+
   end subroutine stats_init_zt
+
+!===============================================================================
 
 end module stats_zt
