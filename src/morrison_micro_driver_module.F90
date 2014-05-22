@@ -19,171 +19,175 @@ module morrison_micro_driver_module
                rrainm_auto, rrainm_accr, rrainm_evap, &
                Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
 
-! Description:
-!   Wrapper for the Morrison microphysics
-!
-! References:
-!   None
-!-------------------------------------------------------------------------------
-
+    ! Description:
+    ! Wrapper for the Morrison microphysics
+    !
+    ! References:
+    ! None
+    !-----------------------------------------------------------------------
 
     use parameters_model, only: hydromet_dim
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_MP_graupel, only: &
-      M2005MICRO_GRAUPEL  ! Procedure
+        M2005MICRO_GRAUPEL  ! Procedure
 
     use module_MP_graupel, only: &
-      cloud_frac_thresh ! Constant
+        cloud_frac_thresh ! Constant
 
     use grid_class, only: &
-      gr
+        gr
 
     use constants_clubb, only: &
-      Lv, & ! Constants
-      Ls, &
-      Cp, &
-      grav
+        Lv,   & ! Constants
+        Ls,   &
+        Cp,   &
+        grav, &
+        zero
 
     use stats_variables, only: & 
-      irsnowm_sd_morr, & ! Variables
-      iricem_sd_mg_morr, & 
-      irrainm_sd_morr, & 
-      irsnowm_sd_morr, &
-      irgraupelm_sd_morr, &
-      ircm_sd_mg_morr, &
-      ircm_in_cloud, &
-      irrainm_auto, &
-      irrainm_accr, &
-      irrainm_cond, &
-      irsnowm_sd_morr_int, &
-      ihl_on_Cp_residual, &
-      iqto_residual
+        irsnowm_sd_morr, & ! Variables
+        iricem_sd_mg_morr, & 
+        irrainm_sd_morr, & 
+        irsnowm_sd_morr, &
+        irgraupelm_sd_morr, &
+        ircm_sd_mg_morr, &
+        ircm_in_cloud, &
+        irrainm_auto, &
+        irrainm_accr, &
+        irrainm_cond, &
+        irsnowm_sd_morr_int, &
+        ihl_on_Cp_residual, &
+        iqto_residual
 
     use stats_variables, only: & 
-      ieff_rad_cloud, & ! Variables
-      ieff_rad_ice, &
-      ieff_rad_snow, &
-      ieff_rad_rain, &
-      ieff_rad_graupel
+        ieff_rad_cloud, & ! Variables
+        ieff_rad_ice, &
+        ieff_rad_snow, &
+        ieff_rad_rain, &
+        ieff_rad_graupel
 
     use stats_variables, only: & 
-      iprecip_rate_sfc, & !Variables
-      imorr_snow_rate
+        iprecip_rate_sfc, & !Variables
+        imorr_snow_rate
 
     use stats_variables, only: &
-      iPSMLT, & ! Variable(s)
-      iEVPMS, &
-      iPRACS, &
-      iEVPMG, &
-      iPRACG, &
-      iPGMLT, &
-      iMNUCCC, &
-      iPSACWS, &
-      iPSACWI, &
-      iQMULTS, &
-      iQMULTG, &
-      iPSACWG, &
-      iPGSACW, &
-      iPRD, &
-      iPRCI, &
-      iPRAI, &
-      iQMULTR, &
-      iQMULTRG, &
-      iMNUCCD, &
-      iPRACI, &
-      iPRACIS, &
-      iEPRD, &
-      iMNUCCR, &
-      iPIACR, &
-      iPIACRS, &
-      iPGRACS, &
-      iPRDS, &
-      iEPRDS, &
-      iPSACR, &
-      iPRDG, &
-      iEPRDG
+        iPSMLT, & ! Variable(s)
+        iEVPMS, &
+        iPRACS, &
+        iEVPMG, &
+        iPRACG, &
+        iPGMLT, &
+        iMNUCCC, &
+        iPSACWS, &
+        iPSACWI, &
+        iQMULTS, &
+        iQMULTG, &
+        iPSACWG, &
+        iPGSACW, &
+        iPRD, &
+        iPRCI, &
+        iPRAI, &
+        iQMULTR, &
+        iQMULTRG, &
+        iMNUCCD, &
+        iPRACI, &
+        iPRACIS, &
+        iEPRD, &
+        iMNUCCR, &
+        iPIACR, &
+        iPIACRS, &
+        iPGRACS, &
+        iPRDS, &
+        iEPRDS, &
+        iPSACR, &
+        iPRDG, &
+        iEPRDG
 
     use stats_variables, only: &
-      iNGSTEN, & ! Lots of variables
-      iNRSTEN, &
-      iNISTEN, &
-      iNSSTEN, &
-      iNCSTEN, &
-      iNPRC1,  &
-      iNRAGG,  &
-      iNPRACG, &
-      iNSUBR,  &
-      iNSMLTR, &
-      iNGMLTR, &
-      iNPRACS, &
-      iNNUCCR, &
-      iNIACR,  &
-      iNIACRS, &
-      iNGRACS, &
-      iNSMLTS, &
-      iNSAGG, &
-      iNPRCI, &
-      iNSCNG, &
-      iNSUBS, &
-      iPRA, &
-      iPRC, &
-      iPRE
+        iNGSTEN, & ! Lots of variables
+        iNRSTEN, &
+        iNISTEN, &
+        iNSSTEN, &
+        iNCSTEN, &
+        iNPRC1,  &
+        iNRAGG,  &
+        iNPRACG, &
+        iNSUBR,  &
+        iNSMLTR, &
+        iNGMLTR, &
+        iNPRACS, &
+        iNNUCCR, &
+        iNIACR,  &
+        iNIACRS, &
+        iNGRACS, &
+        iNSMLTS, &
+        iNSAGG, &
+        iNPRCI, &
+        iNSCNG, &
+        iNSUBS, &
+        iPRA, &
+        iPRC, &
+        iPRE
 
     use stats_variables, only: &
-      iPCC, & ! Even more variables
-      iNNUCCC, & 
-      iNPSACWS, &
-      iNPRA, &
-      iNPRC, &
-      iNPSACWI, &
-      iNPSACWG, &
-      iNPRAI, &
-      iNMULTS, & 
-      iNMULTG, &
-      iNMULTR, &
-      iNMULTRG, &
-      iNNUCCD, &
-      iNSUBI, &
-      iNGMLTG, &
-      iNSUBG, &
-      iNACT, &
-      iSIZEFIX_NR, &
-      iSIZEFIX_NC, &
-      iSIZEFIX_NI, &
-      iSIZEFIX_NS, &
-      iSIZEFIX_NG, &
-      iNEGFIX_NR, &
-      iNEGFIX_NC, &
-      iNEGFIX_NI, &
-      iNEGFIX_NS, &
-      iNEGFIX_NG, &
-      iNIM_MORR_CL, &
-      iQC_INST, & 
-      iQR_INST, &
-      iQI_INST, &
-      iQS_INST, &
-      iQG_INST, &
-      iNC_INST, &
-      iNR_INST, &
-      iNI_INST, & 
-      iNS_INST, &
-      iNG_INST, &
-      iT_in_K_mc
+        iPCC, & ! Even more variables
+        iNNUCCC, & 
+        iNPSACWS, &
+        iNPRA, &
+        iNPRC, &
+        iNPSACWI, &
+        iNPSACWG, &
+        iNPRAI, &
+        iNMULTS, & 
+        iNMULTG, &
+        iNMULTR, &
+        iNMULTRG, &
+        iNNUCCD, &
+        iNSUBI, &
+        iNGMLTG, &
+        iNSUBG, &
+        iNACT, &
+        iSIZEFIX_NR, &
+        iSIZEFIX_NC, &
+        iSIZEFIX_NI, &
+        iSIZEFIX_NS, &
+        iSIZEFIX_NG, &
+        iNEGFIX_NR, &
+        iNEGFIX_NC, &
+        iNEGFIX_NI, &
+        iNEGFIX_NS, &
+        iNEGFIX_NG, &
+        iNIM_MORR_CL, &
+        iQC_INST, & 
+        iQR_INST, &
+        iQI_INST, &
+        iQS_INST, &
+        iQG_INST, &
+        iNC_INST, &
+        iNR_INST, &
+        iNI_INST, & 
+        iNS_INST, &
+        iNG_INST, &
+        iT_in_K_mc
 
     use T_in_K_module, only: &
-      T_in_K2thlm, & ! Procedure(s)
-      thlm2T_in_K
+        T_in_K2thlm, & ! Procedure(s)
+        thlm2T_in_K
 
     use model_flags, only: &
         l_evaporate_cold_rcm  ! Flag(s)
 
+    use parameters_microphys, only: &
+        l_ice_micro, & ! Flag(s)
+        l_graupel
+
     use array_index, only:  & 
-      iirrainm, iirsnowm, iiricem, iirgraupelm, &
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm
+        iirrainm, iirsnowm, iiricem, iirgraupelm, &
+        iiNrm, iiNsnowm, iiNim, iiNgraupelm
 
     use constants_clubb, only: &
-      sec_per_day
+        sec_per_day
 
     use clubb_precision, only: &
         core_rknd, & ! Variable(s)
@@ -192,9 +196,6 @@ module morrison_micro_driver_module
     use variables_prognostic_module, only: &
         rho_ds_zt
 
-    use grid_class, only: &
-        gr
-
     use error_code, only: &
         clubb_at_least_debug_level
 
@@ -202,9 +203,9 @@ module morrison_micro_driver_module
         vertical_integral
 
     use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type, & ! Type
-      microphys_stats_alloc, & ! Procedure
-      microphys_put_var
+        microphys_stats_vars_type, & ! Type
+        microphys_stats_alloc, & ! Procedure
+        microphys_put_var
 
     implicit none
 
@@ -276,15 +277,19 @@ module morrison_micro_driver_module
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
     real, dimension(nz) :: & 
-      T_in_K,        & ! Temperature                        [K]
-      T_in_K_mc,     & ! Temperature tendency               [K/s]
-      rcm_r4,        & ! Temporary array for cloud water mixing ratio  [kg/kg]
-      Ncm_r4,        & ! Temporary array for cloud number conc.        [#/kg]
-      Ncm_mc_r4,     & ! Temporary array for cloud number conc.        [#/kg/s]
-      rvm_r4,        & ! Temporary array for vapor water mixing ratio  [kg/kg]
-      rcm_sten,      & ! Cloud dropet sedimentation tendency           [kg/kg/s]
-      morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics [m/s] 
-      cloud_frac_in    ! Cloud fraction used as input for the Morrison scheme [-]
+      T_in_K,           & ! Temperature                                      [K]
+      T_in_K_mc,        & ! Temperature tendency                           [K/s]
+      rcm_r4,           & ! Temporary array for cloud water mixing ratio [kg/kg]
+      Ncm_r4,           & ! Temporary array for cloud number conc.        [#/kg]
+      Ncm_mc_r4,        & ! Temporary array for cloud number conc.      [#/kg/s]
+      rvm_r4,           & ! Temporary array for vapor water mixing ratio [kg/kg]
+      rcm_sten,         & ! Mean rc sedimentation tendency             [kg/kg/s]
+      rrainm_sten,      & ! Mean rr sedimentation tendency             [kg/kg/s]
+      ricem_sten,       & ! Mean ri sedimentation tendency             [kg/kg/s]
+      rsnowm_sten,      & ! Mean rs sedimentation tendency             [kg/kg/s]
+      rgraupelm_sten,   & ! Mean rg sedimentation tendency             [kg/kg/s]
+      morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics  [m/s]
+      cloud_frac_in       ! Cloud frac used as input for the Morrison scheme [-]
 
     ! In the comments below, by "adds to" we mean that if the quantity is
     ! positive, it adds positively to the prognostic variable, but if the
@@ -433,21 +438,44 @@ module morrison_micro_driver_module
     real( kind = core_rknd ), dimension(nz) :: & 
       rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
+    real( kind = core_rknd ), dimension(nz) :: & ! Temporary variables 
+      rrainm,    & ! Mean rain water mixing ratio            [kg/kg]
+      ricem,     & ! Mean ice mixing ratio                   [kg/kg]
+      rsnowm,    & ! Mean snow mixing ratio                  [kg/kg]
+      rgraupelm    ! Mean graupel mixing ratio               [kg/kg]
+
     real :: Morr_snow_rate, Morr_precip_rate
 
     real, dimension(nz,hydromet_dim) :: &
-      hydromet_r4, &   ! Temporary variable
-      hydromet_sten, & ! Hydrometeor sedimentation tendency [(units vary)/s]
+      hydromet_r4,    & ! Temporary variable
       hydromet_mc_r4
 
+    real, dimension(nz) :: & ! Temporary variables
+      rrainm_r4,       & ! Mean rain water mixing ratio            [kg/kg]
+      Nrm_r4,          & ! Mean rain drop concentration            [num/kg]
+      ricem_r4,        & ! Mean ice mixing ratio                   [kg/kg]
+      Nim_r4,          & ! Mean ice crystal concentration          [num/kg]
+      rsnowm_r4,       & ! Mean snow mixing ratio                  [kg/kg]
+      Nsnowm_r4,       & ! Mean snow flake concentration           [num/kg]
+      rgraupelm_r4,    & ! Mean graupel mixing ratio               [kg/kg]
+      Ngraupelm_r4,    & ! Mean graupel concentration              [num/kg]
+      rrainm_mc_r4,    & ! Mean rain water mixing ratio tendency   [kg/kg/s]
+      Nrm_mc_r4,       & ! Mean rain drop concentration tendency   [num/kg/s]
+      ricem_mc_r4,     & ! Mean ice mixing ratio tendency          [kg/kg/s]
+      Nim_mc_r4,       & ! Mean ice crystal concentration tendency [num/kg/s]
+      rsnowm_mc_r4,    & ! Mean snow mixing ratio tendency         [kg/kg/s]
+      Nsnowm_mc_r4,    & ! Mean snow flake concentration tendency  [num/kg/s]
+      rgraupelm_mc_r4, & ! Mean graupel mixing ratio tendency      [kg/kg/s]
+      Ngraupelm_mc_r4    ! Mean graupel concentration tendency     [num/kg/s]
+
     real, dimension(nz) :: &
-      rcm_mc_r4, &
-      rvm_mc_r4, &
-      P_in_pa_r4, &
-      rho_r4, &
-      dzq_r4, &
-      wm_zt_r4, &     ! Mean vertical velocity on the thermo grid   [m/s]
-      w_std_dev_r4 ! Standard deviation of w  [m/s]
+      rcm_mc_r4,    &
+      rvm_mc_r4,    &
+      P_in_pa_r4,   &
+      rho_r4,       &
+      dzq_r4,       &
+      wm_zt_r4,     & ! Mean vertical velocity on the thermo grid  [m/s]
+      w_std_dev_r4    ! Standard deviation of w                    [m/s]
 
     integer :: i, k
 
@@ -524,9 +552,12 @@ module morrison_micro_driver_module
     rcm_mc(1:nz) = 0.0_core_rknd
     rvm_mc(1:nz) = 0.0_core_rknd
     hydromet_mc(1:nz,:) = 0.0_core_rknd
-    hydromet_sten(1:nz,:) = 0.0
     Ncm_mc(1:nz) = 0.0_core_rknd
     rcm_sten = 0.0
+    rrainm_sten(1:nz) = 0.0
+    ricem_sten(1:nz) = 0.0
+    rsnowm_sten(1:nz) = 0.0
+    rgraupelm_sten(1:nz) = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0
@@ -642,29 +673,96 @@ module morrison_micro_driver_module
     dzq_r4 = real( dzq )
 
 
-    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
-                - Lv * ( rcm + hydromet(:,iirrainm) ) &
-                - Ls * ( hydromet(:,iiricem) + hydromet(:,iirsnowm) + hydromet(:,iirgraupelm) )
+    ! Unpack hydrometeor arrays.
+    rrainm = hydromet(:,iirrainm)
 
-    qto_before = rvm + rcm + hydromet(:,iirrainm) + hydromet(:,iiricem) &
-                  + hydromet(:,iirsnowm) + hydromet(:,iirgraupelm)
+    rrainm_r4 = hydromet_r4(:,iirrainm)
+    Nrm_r4    = hydromet_r4(:,iiNrm)
+
+    rrainm_mc_r4 = hydromet_mc_r4(:,iirrainm)
+    Nrm_mc_r4    = hydromet_mc_r4(:,iiNrm)
+
+    if ( l_ice_micro ) then
+
+       ricem  = hydromet(:,iiricem)
+       rsnowm = hydromet(:,iirsnowm)
+
+       ricem_r4  = hydromet_r4(:,iiricem)
+       Nim_r4    = hydromet_r4(:,iiNim)
+       rsnowm_r4 = hydromet_r4(:,iirsnowm)
+       Nsnowm_r4 = hydromet_r4(:,iiNsnowm)
+
+       ricem_mc_r4  = hydromet_mc_r4(:,iiricem)
+       Nim_mc_r4    = hydromet_mc_r4(:,iiNim)
+       rsnowm_mc_r4 = hydromet_mc_r4(:,iirsnowm)
+       Nsnowm_mc_r4 = hydromet_mc_r4(:,iiNsnowm)
+
+       if ( l_graupel ) then
+
+          rgraupelm = hydromet(:,iirgraupelm)
+
+          rgraupelm_r4 = hydromet_r4(:,iirgraupelm)
+          Ngraupelm_r4 = hydromet_r4(:,iiNgraupelm)
+
+          rgraupelm_mc_r4 = hydromet_mc_r4(:,iirgraupelm)
+          Ngraupelm_mc_r4 = hydromet_mc_r4(:,iiNgraupelm)
+
+       else ! l_graupel disabled
+
+          rgraupelm = zero
+
+          rgraupelm_r4 = 0.0
+          Ngraupelm_r4 = 0.0
+
+          rgraupelm_mc_r4 = 0.0
+          Ngraupelm_mc_r4 = 0.0
+
+       endif ! l_graupel
+
+    else ! l_ice_micro disabled
+
+       ricem     = zero
+       rsnowm    = zero
+       rgraupelm = zero
+
+       ricem_r4     = 0.0
+       Nim_r4       = 0.0
+       rsnowm_r4    = 0.0
+       Nsnowm_r4    = 0.0
+       rgraupelm_r4 = 0.0
+       Ngraupelm_r4 = 0.0
+
+       ricem_mc_r4     = 0.0
+       Nim_mc_r4       = 0.0
+       rsnowm_mc_r4    = 0.0
+       Nsnowm_mc_r4    = 0.0
+       rgraupelm_mc_r4 = 0.0
+       Ngraupelm_mc_r4 = 0.0
+
+    endif ! l_ice_micro
+
+    hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
+                - Lv * ( rcm + rrainm ) &
+                - Ls * ( ricem + rsnowm + rgraupelm )
+
+    qto_before = rvm + rcm + rrainm + ricem + rsnowm + rgraupelm
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
-         ( rcm_mc_r4, hydromet_mc_r4(:,iiricem), hydromet_mc_r4(:,iirsnowm), &
-           hydromet_mc_r4(:,iirrainm), Ncm_mc_r4(:), &
-           hydromet_mc_r4(:,iiNim), hydromet_mc_r4(:,iiNsnowm), &
-           hydromet_mc_r4(:,iiNrm), rcm_r4, hydromet_r4(:,iiricem), &
-           hydromet_r4(:,iirsnowm), hydromet_r4(:,iirrainm), Ncm_r4(:), &
-           hydromet_r4(:,iiNim), hydromet_r4(:,iiNsnowm), hydromet_r4(:,iiNrm), &
+         ( rcm_mc_r4, ricem_mc_r4, rsnowm_mc_r4, &
+           rrainm_mc_r4, Ncm_mc_r4, &
+           Nim_mc_r4, Nsnowm_mc_r4, &
+           Nrm_mc_r4, rcm_r4, ricem_r4, &
+           rsnowm_r4, rrainm_r4, Ncm_r4, &
+           Nim_r4, Nsnowm_r4, Nrm_r4, &
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
            wm_zt_r4, w_std_dev_r4, morr_rain_vel_r4, &
            Morr_precip_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
-           hydromet_mc_r4(:,iirgraupelm), hydromet_mc_r4(:,iiNgraupelm), &
-           hydromet_r4(:,iirgraupelm), hydromet_r4(:,iiNgraupelm), effg, &
-           hydromet_sten(:,iirgraupelm), hydromet_sten(:,iirrainm), &
-           hydromet_sten(:,iiricem), hydromet_sten(:,iirsnowm), &
+           rgraupelm_mc_r4, Ngraupelm_mc_r4, &
+           rgraupelm_r4, Ngraupelm_r4, effg, &
+           rgraupelm_sten, rrainm_sten, &
+           ricem_sten, rsnowm_sten, &
            rcm_sten, &
            NGSTEN, NRSTEN, NISTEN, NSSTEN, NCSTEN, &
            cloud_frac_in, &
@@ -687,31 +785,64 @@ module morrison_micro_driver_module
            NC_INST, NR_INST, NI_INST, NS_INST, NG_INST )
 
     hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
-                - Lv * ( real( rcm_r4, kind = core_rknd) &
-                        + real( hydromet_r4(:,iirrainm), kind = core_rknd ) ) &
-                - Ls * ( real( hydromet_r4(:,iiricem), kind = core_rknd ) &
-                        + real( hydromet_r4(:,iirsnowm), kind = core_rknd ) &
-                        + real(hydromet_r4(:,iirgraupelm), kind = core_rknd ) )
+               - Lv * ( real( rcm_r4, kind = core_rknd) &
+                        + real( rrainm_r4, kind = core_rknd ) ) &
+               - Ls * ( real( ricem_r4, kind = core_rknd ) &
+                        + real( rsnowm_r4, kind = core_rknd ) &
+                        + real( rgraupelm_r4, kind = core_rknd ) )
 
-    hl_on_Cp_residual = ( hl_after - hl_before &
-                   - dt * Lv * ( real( rcm_sten, kind = core_rknd ) &
-                        + real( hydromet_sten(:,iirrainm), kind = core_rknd ) ) &
-                   - dt * Ls * ( real( hydromet_sten(:,iiricem), kind = core_rknd ) &
-                        + real( hydromet_sten(:,iirsnowm), kind = core_rknd ) &
-                        + real( hydromet_sten(:,iirgraupelm), kind = core_rknd ) ) ) / Cp
+    hl_on_Cp_residual &
+    = ( hl_after - hl_before &
+        - dt * Lv * ( real( rcm_sten, kind = core_rknd ) &
+                      + real( rrainm_sten, kind = core_rknd ) ) &
+        - dt * Ls * ( real( ricem_sten, kind = core_rknd ) &
+                      + real( rsnowm_sten, kind = core_rknd ) &
+                      + real( rgraupelm_sten, kind = core_rknd ) ) ) / Cp
 
-    qto_after = real( rvm_r4, kind = core_rknd ) + real( rcm_r4, kind = core_rknd ) &
-                 + real( hydromet_r4(:,iirrainm), kind = core_rknd ) &
-                 + real( hydromet_r4(:,iiricem), kind = core_rknd ) &
-                 + real( hydromet_r4(:,iirsnowm), kind = core_rknd ) &
-                 + real( hydromet_r4(:,iirgraupelm), kind = core_rknd )
+    qto_after = real( rvm_r4, kind = core_rknd ) &
+                + real( rcm_r4, kind = core_rknd ) &
+                + real( rrainm_r4, kind = core_rknd ) &
+                + real( ricem_r4, kind = core_rknd ) &
+                + real( rsnowm_r4, kind = core_rknd ) &
+                + real( rgraupelm_r4, kind = core_rknd )
 
-    qto_residual = qto_after - qto_before - dt * ( real( rcm_sten, kind = core_rknd ) &
-                 + real( hydromet_sten(:,iirrainm), kind = core_rknd ) &
-                 + real( hydromet_sten(:,iiricem), kind = core_rknd ) &
-                 + real( hydromet_sten(:,iirsnowm), kind = core_rknd ) &
-                 + real( hydromet_sten(:,iirgraupelm), kind = core_rknd) )
+    qto_residual = qto_after - qto_before &
+                   - dt * ( real( rcm_sten, kind = core_rknd ) &
+                            + real( rrainm_sten, kind = core_rknd ) &
+                            + real( ricem_sten, kind = core_rknd ) &
+                            + real( rsnowm_sten, kind = core_rknd ) &
+                            + real( rgraupelm_sten, kind = core_rknd) )
 
+    ! Pack hydrometeor arrays.
+    hydromet_r4(:,iirrainm) = rrainm_r4
+    hydromet_r4(:,iiNrm)    = Nrm_r4
+
+    hydromet_mc_r4(:,iirrainm) = rrainm_mc_r4
+    hydromet_mc_r4(:,iiNrm)    = Nrm_mc_r4
+
+    if ( l_ice_micro ) then
+
+       hydromet_r4(:,iiricem)  = ricem_r4
+       hydromet_r4(:,iiNim)    = Nim_r4
+       hydromet_r4(:,iirsnowm) = rsnowm_r4
+       hydromet_r4(:,iiNsnowm) = Nsnowm_r4
+
+       hydromet_mc_r4(:,iiricem)  = ricem_mc_r4
+       hydromet_mc_r4(:,iiNim)    = Nim_mc_r4
+       hydromet_mc_r4(:,iirsnowm) = rsnowm_mc_r4
+       hydromet_mc_r4(:,iiNsnowm) = Nsnowm_mc_r4
+
+       if ( l_graupel ) then
+
+          hydromet_r4(:,iirgraupelm) = rgraupelm_r4
+          hydromet_r4(:,iiNgraupelm) = Ngraupelm_r4
+
+          hydromet_mc_r4(:,iirgraupelm) = rgraupelm_mc_r4
+          hydromet_mc_r4(:,iiNgraupelm) = Ngraupelm_mc_r4
+
+       endif
+
+    endif
 
     !hydromet_mc = real( hydromet_mc_r4, kind = core_rknd )
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
@@ -755,10 +886,10 @@ module morrison_micro_driver_module
     if ( clubb_at_least_debug_level( 2 ) ) then
 
        rsnowm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                            real( hydromet_sten(2:nz,iirsnowm), kind=core_rknd ), &
+                            real( rsnowm_sten(2:nz), kind=core_rknd ), &
                             gr%invrs_dzt(2:nz) )
 
-       if ( rsnowm_sd_morr_int > maxval( real(hydromet_sten(2:nz, iirsnowm), &
+       if ( rsnowm_sd_morr_int > maxval( real( rsnowm_sten(2:nz), &
                                                kind=core_rknd ) ) ) then
           print *, "Warning: rsnowm_sd_morr was not conservative!" // &
                    " rsnowm_sd_morr_verical_integr = ", rsnowm_sd_morr_int
@@ -784,13 +915,13 @@ module morrison_micro_driver_module
     call microphys_put_var( ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )
     call microphys_put_var( iqto_residual, qto_residual, microphys_stats_zt )
     call microphys_put_var( irgraupelm_sd_morr, &
-              real( hydromet_sten(:,iirgraupelm), kind = core_rknd ), microphys_stats_zt )
+              real( rgraupelm_sten, kind = core_rknd ), microphys_stats_zt )
     call microphys_put_var( irrainm_sd_morr, &
-              real( hydromet_sten(:,iirrainm), kind = core_rknd ), microphys_stats_zt )
+              real( rrainm_sten, kind = core_rknd ), microphys_stats_zt )
     call microphys_put_var( irsnowm_sd_morr, &
-              real( hydromet_sten(:,iirsnowm), kind = core_rknd ), microphys_stats_zt )
+              real( rsnowm_sten, kind = core_rknd ), microphys_stats_zt )
     call microphys_put_var( iricem_sd_mg_morr, &
-              real( hydromet_sten(:,iiricem), kind = core_rknd ), microphys_stats_zt )
+              real( ricem_sten, kind = core_rknd ), microphys_stats_zt )
     call microphys_put_var( ircm_sd_mg_morr, &
               real( rcm_sten, kind = core_rknd), microphys_stats_zt )
     call microphys_put_var( iPRC,real(PRC,kind=core_rknd),microphys_stats_zt )
