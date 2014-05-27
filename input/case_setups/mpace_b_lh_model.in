@@ -148,7 +148,7 @@ micro_scheme = "morrison"
 l_ice_micro = .true.
 l_graupel = .false.
 l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
-l_predictnc = .true.
+l_predict_Nc = .true.
 
 ! Addition for using latin hypercube sampling
 rr_sigma2_on_mu2_ip_cloud = 0.766

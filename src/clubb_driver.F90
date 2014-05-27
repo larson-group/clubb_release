@@ -3061,7 +3061,7 @@ module clubb_driver
 
     use parameters_microphys, only : &
       micro_scheme, &  ! Variable
-      l_predictnc
+      l_predict_Nc
 
     implicit none
 
@@ -3156,7 +3156,7 @@ module clubb_driver
       l_input_ricem = .true.
       l_input_rgraupelm = .true.
       l_input_Nccnm = .false.
-      if ( l_predictnc ) then
+      if ( l_predict_Nc ) then
         l_input_Ncm = .true.
       else
         l_input_Ncm = .false.
@@ -3170,7 +3170,7 @@ module clubb_driver
       l_input_ricem = .true.
       l_input_rgraupelm = .false.
       l_input_Nccnm = .false.
-      if ( l_predictnc ) then
+      if ( l_predict_Nc ) then
         l_input_Ncm = .true.
       else
         l_input_Ncm = .false.

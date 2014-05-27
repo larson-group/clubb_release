@@ -2334,7 +2334,7 @@ module stats_subs
       AKm_rcc
 
     use parameters_microphys, only: &
-        l_predictnc  ! Variable(s)
+        l_predict_Nc  ! Variable(s)
 
     use stats_type, only: & 
         stat_update_var ! Procedure(s)
@@ -2364,7 +2364,7 @@ module stats_subs
       call stat_update_var( ilh_rcm_mc, lh_rcm_mc, lh_zt )
       call stat_update_var( ilh_rvm_mc, lh_rvm_mc, lh_zt )
 
-      if ( l_predictnc ) then
+      if ( l_predict_Nc ) then
         call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
       end if
 

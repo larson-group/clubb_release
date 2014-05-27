@@ -113,7 +113,7 @@ module microphys_driver
 
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
-        l_predictnc,          & ! Predict cloud droplet number conc (Morrison)
+        l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
         lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
         micro_scheme,         & ! The microphysical scheme in use
@@ -648,7 +648,7 @@ module microphys_driver
     ! Call GFDL activation code
     if ( l_gfdl_activation ) then
        ! Ensure a microphysics that has Ncm is being used
-       if ( l_predictnc ) then
+       if ( l_predict_Nc ) then
 
           ! Save the initial Ncm mc value for the Ncm_act term
           if ( l_stats_samp ) then
@@ -696,7 +696,7 @@ module microphys_driver
 
           stop "Unsupported microphysics scheme for GFDL activation."
 
-       endif  ! l_predictnc
+       endif  ! l_predict_Nc
     endif ! l_gfdl_activation
 
     ! Cloud water sedimentation.

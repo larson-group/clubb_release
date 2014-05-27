@@ -277,7 +277,7 @@ module inputfields
 
     use parameters_microphys, only: &
         micro_scheme, & ! Variable(s)
-        l_predictnc
+        l_predict_Nc
 
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
@@ -1090,7 +1090,7 @@ module inputfields
       temp_Ncm = 0.0_core_rknd! initialize to 0.0
 
       if ( l_input_Ncm ) then
-        if ( .not. l_predictnc ) then
+        if ( .not. l_predict_Nc ) then
             write(fstderr,*) "Cloud droplet number conc. cannot be input with"// &
               " micro_scheme = "//micro_scheme
             l_fatal_error = .true.
@@ -2109,7 +2109,7 @@ module inputfields
                    temp_Nrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if ( l_input_Ncm .and. l_predictnc ) then
+      if ( l_input_Ncm .and. l_predict_Nc ) then
         Ncm(k_lowest_zt(sam_file):k_highest_zt(sam_file)) = &
                    temp_Ncm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if

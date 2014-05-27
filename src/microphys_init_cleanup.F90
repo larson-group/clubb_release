@@ -43,7 +43,7 @@ module microphys_init_cleanup
         l_graupel,                    & ! Compute graupel (Morrison)
         l_hail,                       & ! See module_mp_graupel for a description
         l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
-        l_predictnc,                  & ! Predict cloud droplet number conc
+        l_predict_Nc,                  & ! Predict cloud droplet number conc
         l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
         specify_aerosol,              & ! Specify aerosol (Morrison)
         l_subgrid_w,                  & ! Use subgrid w  (Morrison)
@@ -243,7 +243,7 @@ module microphys_init_cleanup
     namelist /microphysics_setting/ &
       micro_scheme, l_cloud_sed, sigma_g, &
       l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
-      l_seifert_beheng, l_predictnc, l_const_Nc_in_cloud, specify_aerosol, &
+      l_seifert_beheng, l_predict_Nc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
@@ -338,7 +338,7 @@ module microphys_init_cleanup
        call write_text ( "l_hail = ", l_hail, l_write_to_file, iunit )
        call write_text ( "l_seifert_beheng = ", l_seifert_beheng, &
                          l_write_to_file, iunit )
-       call write_text ( "l_predictnc = ", l_predictnc, l_write_to_file, iunit )
+       call write_text ( "l_predict_Nc = ", l_predict_Nc, l_write_to_file, iunit )
        call write_text ( "l_const_Nc_in_cloud = ", l_const_Nc_in_cloud, &
                          l_write_to_file, iunit )
        call write_text ( "specify_aerosol = "// specify_aerosol, &
@@ -486,7 +486,7 @@ module microphys_init_cleanup
        Nc0 = real( Nc0_in_cloud / cm3_per_m3 ) ! Units on Nc0 are per cm^3
 
        ! Set flags from the Morrison scheme as in GRAUPEL_INIT
-       if ( l_predictnc ) then
+       if ( l_predict_Nc ) then
           dopredictNc = .true.
        else
           dopredictNc = .false.
@@ -602,9 +602,9 @@ module microphys_init_cleanup
 
        hydromet_dim = 2
 
-       if ( l_predictnc ) then
+       if ( l_predict_Nc ) then
           write(fstderr,*) "Morrison-Gettelman microphysics is not currently" &
-                           // " configured for l_predictnc = T"
+                           // " configured for l_predict_Nc = T"
           stop "Fatal error."
        endif
 
@@ -630,9 +630,9 @@ module microphys_init_cleanup
 
     case ( "coamps" )
 
-       if ( .not. l_predictnc ) then
+       if ( .not. l_predict_Nc ) then
           write(fstderr,*) "COAMPS microphysics" &
-                           // " does not support l_predictnc = F"
+                           // " does not support l_predict_Nc = F"
           stop "Fatal Error"
        endif
 
@@ -661,9 +661,9 @@ module microphys_init_cleanup
 
     case ( "khairoutdinov_kogan" )
 
-       if ( l_predictnc ) then
+       if ( l_predict_Nc ) then
           write(fstderr,*) "Khairoutdinov-Kogan microphysics" &
-                           // " does not support l_predictnc = T"
+                           // " does not support l_predict_Nc = T"
           stop "Fatal Error"
        endif
 
@@ -698,7 +698,7 @@ module microphys_init_cleanup
 
        hydromet_dim = 0
 
-       l_predictnc = .false.
+       l_predict_Nc = .false.
 
     case default
 

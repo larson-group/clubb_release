@@ -70,7 +70,7 @@ module advance_microphys_module
         eps
 
     use parameters_microphys, only: &
-        l_predictnc,          & ! Predict cloud droplet number conc (Morrison)
+        l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
         micro_scheme,         & ! The microphysical scheme in use
         hydromet_list,        & ! Names of the hydrometeor species
         hydromet_tol,         & ! Tolerance values for hydrometeor species
@@ -257,7 +257,7 @@ module advance_microphys_module
 
     endif ! hydromet_dim > 0
 
-    if ( l_predictnc ) then
+    if ( l_predict_Nc ) then
 
        ! Solve for the value of K_Nc, the coefficient of diffusion for cloud
        ! droplet concentration.
@@ -265,7 +265,7 @@ module advance_microphys_module
           K_Nc(k) = c_K_hm * Kh_zm(k)
        enddo ! k = 1, gr%nz, 1
 
-    endif ! l_predictnc
+    endif ! l_predict_Nc
 
     !------------------------------------------------------------------------
     ! Advance predictive mean precipitating hydrometeors one model timestep.
@@ -294,7 +294,7 @@ module advance_microphys_module
     ! timestep.
     !-----------------------------------------------------------------------
 
-    if ( l_predictnc ) then
+    if ( l_predict_Nc ) then
 
        ! Nc is predicted.
 
@@ -312,7 +312,7 @@ module advance_microphys_module
 
        Ncm = Nc_in_cloud * cloud_frac
 
-    endif ! l_predictnc
+    endif ! l_predict_Nc
 
     if ( l_stats_samp ) then
       call stat_update_var( iNcm, Ncm, zt )
@@ -410,7 +410,7 @@ module advance_microphys_module
     enddo ! i = 1, hydromet_dim, 1
 
 
-    if ( l_predictnc ) then
+    if ( l_predict_Nc ) then
 
        if ( fatal_error( err_code_Ncm ) ) then
 
@@ -426,7 +426,7 @@ module advance_microphys_module
 
        endif ! fatal_error( err_code_Ncm )
 
-    endif ! l_predictnc
+    endif ! l_predict_Nc
 
 !       Error Report
 !       Joshua Fasching Feb 2008

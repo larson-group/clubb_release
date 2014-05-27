@@ -226,7 +226,7 @@ l_hail | logical
 l_seifert_beheng | logical
   Use Seifert and Beheng (2001) warm drizzle (Morrison)
 
-l_predictnc | logical
+l_predict_Nc | logical
   Predict cloud droplet number conc (Morrison)
 
 specify_aerosol | character
@@ -236,7 +236,7 @@ specify_aerosol | character
 
 l_subgrid_w | logical
   Use subgrid-scale w for cloud droplet activation (Morrison).
-  Highly recommended for a CLUBB single column simulation when l_predictnc is
+  Highly recommended for a CLUBB single column simulation when l_predict_Nc is
   true, since there is no way to account for updrafts like an LES.
 
 l_arctic_nucl | logical

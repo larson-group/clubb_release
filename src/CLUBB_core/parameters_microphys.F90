@@ -44,7 +44,7 @@ module parameters_microphys
     l_graupel  = .false.,          & ! Compute graupel (COAMPS/Morrison)
     l_hail  = .false.,             & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng  = .false.,   & ! Use Seifert and Behneng warm drizzle (Morrison)
-    l_predictnc = .false.,         & ! Predict cloud droplet conconcentration (Morrison)
+    l_predict_Nc = .false.,         & ! Predict cloud droplet conconcentration (Morrison)
     l_const_Nc_in_cloud = .false., & ! Use a constant cloud droplet conc. within cloud (K&K)
     l_subgrid_w = .true.,          & ! Use subgrid w (Morrison)
     l_arctic_nucl = .false.,       & ! Use MPACE observations (Morrison)
@@ -65,7 +65,7 @@ module parameters_microphys
     l_silhs_KK_convergence_adj_mean = .false.
 
 !$omp threadprivate( l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
-!$omp                l_upwind_diff_sed, l_seifert_beheng, l_predictnc, &
+!$omp                l_upwind_diff_sed, l_seifert_beheng, l_predict_Nc, &
 !$omp                l_const_Nc_in_cloud, l_subgrid_w, l_arctic_nucl, &
 !$omp                l_fix_pgam, l_in_cloud_Nc_diff, l_var_covar_src, &
 !$omp                l_silhs_KK_convergence_adj_mean )

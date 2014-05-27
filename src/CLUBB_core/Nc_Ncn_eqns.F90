@@ -25,34 +25,34 @@ module Nc_Ncn_eqns
   ! l_const_Nc_in_cloud:
   ! When this flag is enabled, cloud droplet concentration (in-cloud) is
   ! constant at a grid level (it is constant over the subgrid domain, but could
-  ! vary over time depending on the value of l_predictNc).  The value of
+  ! vary over time depending on the value of l_predict_Nc).  The value of
   ! in-cloud Nc does not vary.  This also means that Ncn is constant across the
   ! entire grid level.  When this flag is turned off, both in-cloud Nc and Ncn
   ! vary at a grid level.
   !
-  ! l_predictNc:
+  ! l_predict_Nc:
   ! When this flag is enabled, Nc_in_cloud (or alternatively Ncm) is predicted.
   ! It is advanced every time step by a predictive equation, and can change
   ! at every time step at a grid level.  When this flag is turned off,
   ! Nc_in_cloud does not change at a grid level over the course of a model run.
   !
-  ! 1) l_predictNc turned on and l_const_Nc_in_cloud turned on:
+  ! 1) l_predict_Nc turned on and l_const_Nc_in_cloud turned on:
   !    The value of Nc_in_cloud (mean in-cloud Nc) is predicted and can change
   !    at every timestep at a grid level.  However, the value of in-cloud Nc is
   !    constant at a grid level (no subgrid variability).
   !
-  ! 2) l_predictNc turned on and l_const_Nc_in_cloud turned off:
+  ! 2) l_predict_Nc turned on and l_const_Nc_in_cloud turned off:
   !    The value of Nc_in_cloud (mean in-cloud Nc) is predicted and can change
   !    at every timestep at a grid level.  The value of in-cloud Nc also varies
   !    at a grid level (subgrid variability around mean in-cloud Nc).
   !
-  ! 3) l_predictNc turned off and l_const_Nc_in_cloud turned on:
+  ! 3) l_predict_Nc turned off and l_const_Nc_in_cloud turned on:
   !    The value of Nc_in_cloud (mean in-cloud Nc) is constant over time at a
   !    grid level.  It retains its initial value.  Additionally, the value of
   !    in-cloud Nc is constant at a grid level (no subgrid variability).  This
   !    configuration is used most often in idealized cases.
   !
-  ! 4) l_predictNc turned off and l_const_Nc_in_cloud turned off:
+  ! 4) l_predict_Nc turned off and l_const_Nc_in_cloud turned off:
   !    The value of Nc_in_cloud (mean in-cloud Nc) is constant over time at a
   !    grid level.  It retains its initial value.  However, the value of
   !    in-cloud Nc varies at a grid level (subgrid variability around mean
@@ -122,7 +122,7 @@ module Nc_Ncn_eqns
   ! |  |
   ! |  | advance microphysics variables (hydromet, Nc_in_cloud/Ncm) one timestep
   ! |  |                
-  ! |  |                   l_predictnc = true:
+  ! |  |                   l_predict_Nc = true:
   ! |  |            Nc_in_cloud/Ncm necessary for starting
   ! |  |            value of Nc_in_cloud/Ncm when advancing
   ! |  |            one timestep using predictive equation.

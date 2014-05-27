@@ -153,7 +153,7 @@ l_prescribed_avg_deltaz = .false.
 ! "coamps", "simplified_ice", "none"
 micro_scheme = "morrison"
 l_ice_micro = .true.
-l_predictnc = .true.
+l_predict_Nc = .true.
 /
 
 &radiation_setting
