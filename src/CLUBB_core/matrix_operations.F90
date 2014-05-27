@@ -9,7 +9,7 @@ module matrix_operations
   public :: symm_covar_matrix_2_corr_matrix, Cholesky_factor, &
     row_mult_lower_tri_matrix, print_lower_triangular_matrix, &
     get_lower_triangular_matrix, set_lower_triangular_matrix_dp, &
-    set_lower_triangular_matrix
+    set_lower_triangular_matrix, mirror_lower_triangular_matrix
 
   private :: Symm_matrix_eigenvalues
 
@@ -545,5 +545,49 @@ module matrix_operations
 
     return
   end subroutine print_lower_triangular_matrix
+
+  !-----------------------------------------------------------------------
+  subroutine mirror_lower_triangular_matrix( nvars, matrix )
+
+  ! Description:
+  !   Mirrors the elements of a lower triangular matrix to the upper
+  !   triangle so that it is symmetric.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd  ! Constant
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nvars ! Number of variables in each dimension of square matrix
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nvars,nvars), intent(inout) :: &
+      matrix  ! Lower triangluar square matrix
+
+    ! Local Variables
+    integer :: row, col
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do col=2, nvars
+      do row=1, col-1
+
+        matrix(row,col) = matrix(col,row)
+
+      end do
+    end do
+
+    return
+
+  end subroutine mirror_lower_triangular_matrix
+  !-----------------------------------------------------------------------
 
 end module matrix_operations
