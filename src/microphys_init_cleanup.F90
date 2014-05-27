@@ -141,9 +141,6 @@ module microphys_init_cleanup
         Ng_tol,     &
         Nc_tol
 
-    use KK_fixed_correlations, only: &
-        setup_KK_corr ! Procedure(s)
-
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
         Nc0, ccnconst, ccnexpnt, & ! Variables
@@ -881,13 +878,6 @@ module microphys_init_cleanup
     ! Allocate and set the arrays containing the correlations
     ! and the X'^2 / X'^2 terms
     call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
-
-    if ( l_use_CLUBB_pdf_in_mg .or. &
-         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) ) then
-
-       call setup_KK_corr( iunit, l_write_to_file, case_info_file ) ! In
-
-    endif
 
 
     return
