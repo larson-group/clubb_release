@@ -577,13 +577,17 @@ module matrix_operations
 
     !----- Begin Code -----
 
-    do col=2, nvars
-      do row=1, col-1
+    if ( nvars > 1 ) then
 
-        matrix(row,col) = matrix(col,row)
+      do col=2, nvars
+        do row=1, col-1
 
+          matrix(row,col) = matrix(col,row)
+
+        end do
       end do
-    end do
+
+    end if ! nvars > 1
 
     return
 

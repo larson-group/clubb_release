@@ -115,7 +115,8 @@ module setup_clubb_pdf_params
         dp
 
     use matrix_operations, only: &
-        Cholesky_factor ! Procedure(s)
+        Cholesky_factor, & ! Procedure(s)
+        mirror_lower_triangular_matrix
 
     use stats_type, only: &
         stat_update_var,    & ! Procedure(s)
@@ -654,6 +655,11 @@ module setup_clubb_pdf_params
           endif
 
        endif
+
+       ! For ease of use later in the code, we make the correlation arrays
+       ! symmetrical
+       call mirror_lower_triangular_matrix( d_variables, corr_array_1_n(:,:,k) )
+       call mirror_lower_triangular_matrix( d_variables, corr_array_2_n(:,:,k) )
 
     enddo  ! Setup PDF parameters loop: k = 2, nz, 1
 

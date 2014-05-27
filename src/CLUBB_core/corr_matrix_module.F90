@@ -622,7 +622,7 @@ module corr_matrix_module
     use parameters_microphys, only: &
       l_fix_s_t_correlations ! Variable(s)
 
-!   use matrix_operations, only: print_lower_triangular_matrix ! Procedure(s)
+    use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
     use constants_clubb, only: &
       fstderr, &  ! Constant(s)
@@ -683,6 +683,10 @@ module corr_matrix_module
        call set_corr_arrays_to_default( )
 
     endif
+
+    ! Mirror the correlation matrices
+    call mirror_lower_triangular_matrix( d_variables, corr_array_cloud )
+    call mirror_lower_triangular_matrix( d_variables, corr_array_below )
 
     ! Sanity check to avoid confusing non-convergence results.
     if ( .not. l_fix_s_t_correlations .and. iiPDF_Ncn > 0 ) then
