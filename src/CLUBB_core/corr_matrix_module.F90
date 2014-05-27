@@ -412,7 +412,7 @@ module corr_matrix_module
     case( "rgraupel" )
       i = iiPDF_rgraupel
 
-    case( "Ngraupel" )
+    case( "Ng" )
       i = iiPDF_Ngraupel
 
     end select
