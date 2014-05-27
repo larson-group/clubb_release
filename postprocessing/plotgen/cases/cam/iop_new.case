@@ -143,6 +143,27 @@
        {'plotTitle' => 'U10', 'axisLabel' => 'U10 [m/s]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U10', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]}
+       ]},
+#Added from iop.case
+       {'plotTitle' => 'Relative Humidity, RH', 'axisLabel' => 'RELHUM [%]', 'type' => 'profile', 'lines' =>
+       [
+         {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RELHUM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Q tendency due to moist processes', 'axisLabel' => 'DCQ [kg/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'DCQ*86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'T tendency due to moist processes', 'axisLabel' => 'DTCOND [K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'DTCOND*86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Convective Precipitation rate', 'axisLabel' => 'PRECC [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECC.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Large-scale Precipitation rate', 'axisLabel' => 'PRECL [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECL.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
    ]
 )
