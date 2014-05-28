@@ -208,7 +208,7 @@ if( len(sys.argv) == 1 ):
   files_to_check += glob.glob("../src/Benchmark_cases/*.F90")
   files_to_check += glob.glob("../src/Benchmark_cases/Unreleased_cases/*.F90")
   files_to_check += glob.glob("../src/CLUBB_core/*.F90")
-  files_to_check += glob.glob("../src/KK_micro/*.F90")
+  files_to_check += glob.glob("../src/KK_microphys/*.F90")
   files_to_check += glob.glob("../src/Latin_hypercube/*.F90")
   files_to_check.remove("../src/gfdl_activation.F90")
 else:

@@ -74,7 +74,7 @@ module stats_type
 
     ! Description: 
     !   Assigns pointers for statistics variables in grid. There is an
-    !   option to make the variable a SILHS variable (updated n_micro_calls
+    !   option to make the variable a SILHS variable (updated n_microphys_calls
     !   times per timestep rather than just once).
 
     !

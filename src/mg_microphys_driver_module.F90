@@ -1,5 +1,5 @@
 ! $Id$
-module mg_micro_driver_module
+module mg_microphys_driver_module
 
   implicit none
 
@@ -684,4 +684,4 @@ module mg_micro_driver_module
     return
   end subroutine mg_microphys_driver
 
-end module mg_micro_driver_module
+end module mg_microphys_driver_module

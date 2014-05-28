@@ -5,7 +5,7 @@
 ["hoc_ls/LH.ls","LH","#ddddee"],
 ["hoc_ls/GCSS.ls","GCSS","#dddddd"],
 ["hoc_ls/BUGSrad.ls","BUGSrad","#eedddd"],
-["hoc_ls/coamps_micro.ls","COAMPS_Microphysics","#eeddee"],
+["hoc_ls/coamps_microphys.ls","COAMPS_Microphysics","#eeddee"],
 );
 $dir_html="/home/hoc_browser/hoc_v2.2_tuner/hocbrowser/"; 
 $verbose=1;  

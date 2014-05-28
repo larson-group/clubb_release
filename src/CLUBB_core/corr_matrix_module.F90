@@ -425,7 +425,7 @@ module corr_matrix_module
   subroutine setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                                 iiricem, iiNim, iirsnowm, iiNsnowm, &
                                 iirgraupelm, iiNgraupelm, &
-                                l_ice_micro, l_graupel )
+                                l_ice_microphys, l_graupel )
 
   ! Description:
   !
@@ -453,7 +453,7 @@ module corr_matrix_module
       iiNgraupelm    ! Index of graupel number concentration
 
     logical, intent(in) :: &
-      l_ice_micro, &  ! Whether the microphysics scheme will do ice
+      l_ice_microphys, &  ! Whether the microphysics scheme will do ice
       l_graupel       ! True if graupel is used
 
     ! Local Variables
@@ -489,7 +489,7 @@ module corr_matrix_module
              iiPDF_Nr = pdf_count
           endif
 
-          if ( l_ice_micro ) then
+          if ( l_ice_microphys ) then
 
              if ( i == iiricem ) then
                 pdf_count = pdf_count + 1
@@ -536,7 +536,7 @@ module corr_matrix_module
              iiPDF_rsnow = -1
              iiPDF_Nsnow = -1
 
-          endif ! l_ice_micro
+          endif ! l_ice_microphys
 
        enddo ! i = 1, hydromet_dim, 1
 
@@ -850,7 +850,7 @@ module corr_matrix_module
   subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
                                 iiricem, iiNsnowm, iiNim, &
                                 iirgraupelm, iiNgraupelm, &
-                                l_ice_micro, l_graupel, iunit )
+                                l_ice_microphys, l_graupel, iunit )
 
     ! Description: This subroutine sets up arrays that are necessary for WRF.
     !   
@@ -876,14 +876,14 @@ module corr_matrix_module
       iiNgraupelm, &
       iunit
 
-    logical, intent(in) :: l_ice_micro, l_graupel
+    logical, intent(in) :: l_ice_microphys, l_graupel
 
     ! ---- Begin Code ----
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
                             iirgraupelm, iiNgraupelm, &
-                            l_ice_micro, l_graupel )
+                            l_ice_microphys, l_graupel )
 
     ! Setup the arrays and indices containing the correlations, etc.
     call setup_corr_varnce_array( lh_file_path_cloud, lh_file_path_below, iunit )

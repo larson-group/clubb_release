@@ -518,7 +518,7 @@ module output_netcdf
       l_tke_aniso
 
     use parameters_microphys, only: &
-      micro_scheme, & ! Variable(s)
+      microphys_scheme, & ! Variable(s)
       l_local_kk, & ! Logicals
       l_cloud_sed
 
@@ -635,8 +635,8 @@ module output_netcdf
                          current_date(7:8)//' '// &
                          current_time(1:2)//':'//current_time(3:4) )
 
-    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "micro_scheme", &
-                            trim( micro_scheme ) )
+    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
+                            trim( microphys_scheme ) )
 
     stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
                             trim( rad_scheme ) )

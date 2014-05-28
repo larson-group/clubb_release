@@ -50,7 +50,7 @@ module model_flags
     l_morr_xp2_mc_tndcy = .false. !Flag to include the effects of rain evaporation
                                   !on rtp2 and thlp2.  The moister (rt1 or rt2)
                                   !and colder (thl1 or thl2) will be fed into
-                                  !the morrison micro, and rain evaporation will
+                                  !the morrison microphys, and rain evaporation will
                                   !be allowed to increase variances
 
   logical, parameter, public :: &

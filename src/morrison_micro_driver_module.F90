@@ -3,13 +3,13 @@ module morrison_micro_driver_module
 
   implicit none
 
-  public :: morrison_micro_driver
+  public :: morrison_microphys_driver
 
   private
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine morrison_micro_driver &
+  subroutine morrison_microphys_driver &
              ( dt, nz, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
@@ -179,7 +179,7 @@ module morrison_micro_driver_module
         l_evaporate_cold_rcm  ! Flag(s)
 
     use parameters_microphys, only: &
-        l_ice_micro, & ! Flag(s)
+        l_ice_microphys, & ! Flag(s)
         l_graupel
 
     use array_index, only:  & 
@@ -682,7 +682,7 @@ module morrison_micro_driver_module
     rrainm_mc_r4 = hydromet_mc_r4(:,iirrainm)
     Nrm_mc_r4    = hydromet_mc_r4(:,iiNrm)
 
-    if ( l_ice_micro ) then
+    if ( l_ice_microphys ) then
 
        ricem  = hydromet(:,iiricem)
        rsnowm = hydromet(:,iirsnowm)
@@ -719,7 +719,7 @@ module morrison_micro_driver_module
 
        endif ! l_graupel
 
-    else ! l_ice_micro disabled
+    else ! l_ice_microphys disabled
 
        ricem     = zero
        rsnowm    = zero
@@ -739,7 +739,7 @@ module morrison_micro_driver_module
        rgraupelm_mc_r4 = 0.0
        Ngraupelm_mc_r4 = 0.0
 
-    endif ! l_ice_micro
+    endif ! l_ice_microphys
 
     hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
                 - Lv * ( rcm + rrainm ) &
@@ -820,7 +820,7 @@ module morrison_micro_driver_module
     hydromet_mc_r4(:,iirrainm) = rrainm_mc_r4
     hydromet_mc_r4(:,iiNrm)    = Nrm_mc_r4
 
-    if ( l_ice_micro ) then
+    if ( l_ice_microphys ) then
 
        hydromet_r4(:,iiricem)  = ricem_r4
        hydromet_r4(:,iiNim)    = Nim_r4
@@ -1042,6 +1042,6 @@ module morrison_micro_driver_module
       real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ) /), microphys_stats_sfc )
 
     return
-  end subroutine morrison_micro_driver
+  end subroutine morrison_microphys_driver
 
 end module morrison_micro_driver_module

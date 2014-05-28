@@ -530,7 +530,7 @@
 ! Michael Falk, 27 Jul 2007
      .    licedfs,     ! Simplified ice scheme
 ! eMFc
-     .    lcoamps_micro! COAMPS(R) microphysics
+     .    lcoamps_microphys! COAMPS(R) microphysics
 #ifdef STATS
         use hoc_stats
 #endif /*STATS*/
@@ -554,7 +554,7 @@
      .  exner,       ! Exner function -Brian                  [-]
      .  rcm,         ! Liquid water mixing ratio -Brian       [kg/kg] 
      .  Ncm,         ! Cloud droplet number conc. -Brian      [num/kg]
-     .  hm_tndcy,    ! Change in r_t or theta_l due to micro  [(units)/s]  
+     .  hm_tndcy,    ! Change in r_t or theta_l due to microphys  [(units)/s]  
      .  xpthvp,      ! x' theta_v'                            [(units)(K)]
      .  xm_forcing,  ! xm forcing -Brian                      [(units)/s] 
 ! Vince Larson added for clipping 20070929
@@ -699,9 +699,9 @@
           ! Explicit contributions for xm from microphysics 
           ! (including drizzle )
 ! Michael Falk, 27 Jul 2007
-!          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_micro ) ) then
+!          if ( ixm_mc > 0 .and. ( kk_rain .or. lcoamps_microphys ) ) then
           if ( ixm_mc > 0 .and. 
-     .        ( kk_rain .or. lcoamps_micro .or. licedfs) ) then
+     .        ( kk_rain .or. lcoamps_microphys .or. licedfs) ) then
 ! eMFc
             zt%x(:,ixm_mc) = zt%x(:,ixm_mc) + hm_tndcy
             zt%n(:,ixm_mc) = zt%n(:,ixm_mc) + 1
@@ -889,8 +889,8 @@
           ! + xm_microphysics -- rain effects.
           ! Code addition by Brian for rain.
 ! Michael Falk, 27 Jul 2007
-!          if ( kk_rain .or. lcoamps_micro ) then
-          if ( kk_rain .or. lcoamps_micro .or. licedfs ) then
+!          if ( kk_rain .or. lcoamps_microphys ) then
+          if ( kk_rain .or. lcoamps_microphys .or. licedfs ) then
 ! eMFc
             select case(trim( solve_type ))
             case ( "rtm", "thlm" ) 
@@ -909,7 +909,7 @@
              case default
                ! Add nothing
              end select
-           end if ! kk_rain .or lcoamps_micro
+           end if ! kk_rain .or lcoamps_microphys
 
 !         wpxp: time tendency and buoyancy
 

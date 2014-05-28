@@ -189,7 +189,7 @@ module clubb_driver
       lh_microphys_type,     & ! Variable(s)
       lh_microphys_disabled, &
       lh_seed,               &
-      micro_scheme,          &
+      microphys_scheme,          &
       lh_microphys_calls,    &
       l_lh_vert_overlap,     &
       lh_sequence_length
@@ -1291,7 +1291,7 @@ module clubb_driver
 
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
-      if ( .not. trim( micro_scheme ) == "none" ) then
+      if ( .not. trim( microphys_scheme ) == "none" ) then
 
          ! Determine correlations
 
@@ -1319,7 +1319,7 @@ module clubb_driver
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
                                     hydromet_pdf_params, hydrometp2 )            ! Intent(out)
 
-      endif ! not micro_scheme == "none"
+      endif ! not microphys_scheme == "none"
 
 #ifdef SILHS
       !----------------------------------------------------------------
@@ -1574,7 +1574,7 @@ module clubb_driver
 
     use parameters_microphys, only: &
         Nc0_in_cloud, & ! Variable(s)
-        micro_scheme
+        microphys_scheme
 
     use parameters_radiation, only: radiation_top, rad_scheme ! Variable(s)
 
@@ -1763,7 +1763,7 @@ module clubb_driver
 
     enddo ! k = 1, gr%nz, 1
 
-    select case ( trim( micro_scheme ) )
+    select case ( trim( microphys_scheme ) )
 
     case ( "coamps" )
        ! Initialize Nccnm as in COAMPS-LES
@@ -3060,7 +3060,7 @@ module clubb_driver
       l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
-      micro_scheme, &  ! Variable
+      microphys_scheme, &  ! Variable
       l_predict_Nc
 
     implicit none
@@ -3139,7 +3139,7 @@ module clubb_driver
     l_input_rc2  = .true.
     l_input_radht = .true.
 
-    select case ( trim( micro_scheme ) )
+    select case ( trim( microphys_scheme ) )
     case ( "coamps" )
       l_input_rrainm = .true.
       l_input_rsnowm = .true.

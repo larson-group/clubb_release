@@ -83,12 +83,12 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_micro -lclubb_morrison -lmicrophys_utils -lclubb_param"
+REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_microphys -lclubb_morrison -lmicrophys_utils -lclubb_param"
 
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
 # Append preprocessor flags and libraries as needed
-if [ -e $srcdir/COAMPS_micro ]; then
+if [ -e $srcdir/COAMPS_microphys ]; then
 	CPPDEFS="${CPPDEFS} -DCOAMPS_MICRO"
 	OPT_LIBS="${OPT_LIBS} -lclubb_coamps"
 	COAMPS_LIB="libclubb_coamps.a"
@@ -181,7 +181,7 @@ mkdir "$generated_lists_dir"
 # maintained manually.
 repository_file_lists=( \
 	$dir/file_list/clubb_bugsrad_files \
-	$dir/file_list/clubb_KK_micro_files \
+	$dir/file_list/clubb_KK_microphys_files \
 	$dir/file_list/clubb_mg_files \
 	$dir/file_list/clubb_model_files \
 	$dir/file_list/clubb_morrison_files \
@@ -200,8 +200,8 @@ fi
 if [ -e $srcdir/SILHS ]; then
 	ls $srcdir/SILHS/*.F90 > "$generated_lists_dir"/silhs_files
 fi
-if [ -e $srcdir/COAMPS_micro ]; then
-	ls $srcdir/COAMPS_micro/*.F > "$generated_lists_dir"/clubb_coamps_files
+if [ -e $srcdir/COAMPS_microphys ]; then
+	ls $srcdir/COAMPS_microphys/*.F > "$generated_lists_dir"/clubb_coamps_files
 fi
 if [ -e $srcdir/SCM_Activation/aer_ccn_act_k.F90 ]; then 
 	ls $srcdir/SCM_Activation/aer_ccn_act_k.F90 > "$generated_lists_dir"/clubb_gfdl_activation_files
@@ -245,8 +245,8 @@ $mkmf -t $bindir/mkmf_template \
   -e $all_files_list "$generated_lists_dir"/clubb_microphys_utils_files
 
 $mkmf -t $bindir/mkmf_template \
-  -p $libdir/libclubb_KK_micro.a -m Make.clubb_KK_micro -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_KK_micro_files
+  -p $libdir/libclubb_KK_microphys.a -m Make.clubb_KK_microphys -c "${CPPDEFS}" \
+  -e $all_files_list $dir/file_list/clubb_KK_microphys_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" \
@@ -323,7 +323,7 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/CLUBB_core/*.F90
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/Benchmark_cases/*.F90
 	$CLUBBStandardsCheck_unreleased_cases
-	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_micro/*.F90
+	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_microphys/*.F90
 	$CLUBBStandardsCheck_silhs
 
 libclubb_param.a:
@@ -335,8 +335,8 @@ libclubb_bugsrad.a: libclubb_param.a
 libmicrophys_utils.a: libclubb_param.a
 	cd $objdir; \$(MAKE) -f Make.microphys_utils
 
-libclubb_KK_micro.a: libclubb_param.a libmicrophys_utils.a
-	cd $objdir; \$(MAKE) -f Make.clubb_KK_micro
+libclubb_KK_microphys.a: libclubb_param.a libmicrophys_utils.a
+	cd $objdir; \$(MAKE) -f Make.clubb_KK_microphys
 
 libclubb_coamps.a: libclubb_param.a
 	cd $objdir; \$(MAKE) -f Make.clubb_coamps
@@ -344,34 +344,34 @@ libclubb_coamps.a: libclubb_param.a
 libclubb_morrison.a: libclubb_param.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.clubb_morrison
 	
-libclubb_mg.a: libclubb_param.a libclubb_KK_micro.a
+libclubb_mg.a: libclubb_param.a libclubb_KK_microphys.a
 	cd $objdir; \$(MAKE) -f Make.clubb_mg
 
 libclubb_gfdlact.a: 
 	cd $objdir; \$(MAKE) -f Make.clubb_gfdlact
 
-libsilhs.a: libclubb_param.a libclubb_KK_micro.a libmicrophys_utils.a
+libsilhs.a: libclubb_param.a libclubb_KK_microphys.a libmicrophys_utils.a
 	cd $objdir; \$(MAKE) -f Make.silhs
 
-libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_micro.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a libsilhs.a
+libclubb_other.a: libclubb_param.a libclubb_bugsrad.a libclubb_KK_microphys.a libclubb_coamps.a libclubb_morrison.a libclubb_mg.a libclubb_gfdlact.a libsilhs.a
 	cd $objdir; \$(MAKE) -f Make.clubb_other
 
-clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_standalone: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_standalone
 
-clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_thread_test: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_thread_test
 
-clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+clubb_tuner: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.clubb_tuner
 
-jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+jacobian: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.jacobian
 
-G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
+G_unit_tests: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a $GFDLACT_LIB $lh_LIB
 	cd $objdir; \$(MAKE) -f Make.G_unit_tests
 
-int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_micro.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a
+int2txt: libclubb_bugsrad.a libclubb_param.a libclubb_KK_microphys.a $COAMPS_LIB libclubb_morrison.a libclubb_mg.a libclubb_other.a
 	cd $objdir; \$(MAKE) -f Make.int2txt
 
 clean:

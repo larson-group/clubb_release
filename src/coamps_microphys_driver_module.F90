@@ -1,20 +1,20 @@
 !----------------------------------------------------------------------
 ! $Id$
-module coamps_micro_driver_module
+module coamps_microphys_driver_module
 
 ! This module wraps the adjtq subroutine so that it may be used by
 ! CLUBB
 
   implicit none
 
-  public :: coamps_micro_driver
+  public :: coamps_microphys_driver
 
   private ! Set Default Scope
 
   contains
 
 #ifdef COAMPS_MICRO
-  subroutine coamps_micro_driver & 
+  subroutine coamps_microphys_driver & 
          ( runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
            thlm, ricem, rrainm, rgraupelm, rsnowm, & 
@@ -65,7 +65,7 @@ module coamps_micro_driver_module
        iNsnowm
 ! End of ajsmith4's addition
 
-    use parameters_microphys, only: l_graupel, l_ice_micro ! Variable(s)
+    use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
@@ -406,7 +406,7 @@ module coamps_micro_driver_module
       ldrizzle  ! is drizzle on?
 
 
-    real ::  & ! Regular precision to be passed into COAMPS micro. Brian.
+    real ::  & ! Regular precision to be passed into COAMPS microphys. Brian.
       timea,         & ! Current model time                      [s]
       deltf         ! Timestep (i.e. dt_main in CLUBB)         [s]
 
@@ -416,14 +416,14 @@ module coamps_micro_driver_module
 
 !----------------------------------------------------------------------
 
-! Begin coamps_micro_driver code
+! Begin coamps_microphys_driver code
 
     kk = gr%nz-1
     kmax = gr%nz
 
 ! Comment by Adam Smith, 25 March 2008
 ! These variables activate rain/drizzle in the COAMPS
-! micro scheme.  Set these variables to .TRUE. if you need these
+! microphys scheme.  Set these variables to .TRUE. if you need these
 ! hydrometeors in your simulations.
     ldrizzle = .false.
 
@@ -433,8 +433,8 @@ module coamps_micro_driver_module
 !   set ldrizzle = .false.
 !   because collection of drizzle by ice
 !   is not implemented yet.
-    if ( l_ice_micro .and. ldrizzle ) then
-      write(fstderr,*) "l_ice_micro must be false to use ldrizzle"
+    if ( l_ice_microphys .and. ldrizzle ) then
+      write(fstderr,*) "l_ice_microphys must be false to use ldrizzle"
       stop
     end if
 
@@ -517,7 +517,7 @@ module coamps_micro_driver_module
     rvm = real(rtm - rcm)
 
     if ( any( rvm < 0. ) ) then
-      call clubb_debug(1, 'in COAMPS (R) micro driver rvm < 0')
+      call clubb_debug(1, 'in COAMPS (R) microphys driver rvm < 0')
       where ( rvm < 0. ) rvm = 0.
     end if
 
@@ -649,7 +649,7 @@ module coamps_micro_driver_module
       qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1) ! Graupel water mixing ratio
       qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1) ! Snow water mixing ratio
 
-      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS micro
+      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS microphys
 
       pr3d_flip(1,1,1:kk)    = pr3d(1,1,kk:1:-1) ! top point is undefined
       qsatv3d_flip(1,1,1:kk) = qsatv3d(1,1,kk:1:-1) ! " "
@@ -664,7 +664,7 @@ module coamps_micro_driver_module
 !-------------------------------------------------------------------------------
 ! determine if point is saturated as in COAMPS
 !-------------------------------------------------------------------------------
-        if ( .not. l_ice_micro ) then
+        if ( .not. l_ice_microphys ) then
           sat = qv3_flip(1,1,k)/qsatv3d_flip(1,1,k)-1.0
         else
           if ( temp3d_flip(1,1,k) >= real(T_freeze_K) ) then
@@ -736,7 +736,7 @@ module coamps_micro_driver_module
 !     3       ,nc3,nr3,ncn3,ni3,cp,deltf,Lf,Ls,Lv 
              ,nc3(1,1,kk:1:-1),nr3(1,1,kk:1:-1),ncn3(1,1,kk:1:-1) &
              ,ni3(1,1,kk:1:-1),real(Cp),deltf,real(Lf),real(Ls),real(Lv) &
-             ,pcut,real(p0),real(Rd),real(Rv),sloper,slopes,slopeg,timea,l_ice_micro &
+             ,pcut,real(p0),real(Rd),real(Rv),sloper,slopes,slopeg,timea,l_ice_microphys &
              ,nne,kk,i1d,j1d,ary1d,i1dflg,n1d,maxpt1d,maxvr1d &
              ,kmax,nrdamp,ipts,nkpts,icomp,kcomp,j &
              ,xland,aa0,aa1,aa2,aa3,abar,apr,aprpr,bsnow &
@@ -935,16 +935,16 @@ module coamps_micro_driver_module
 
 
       return
-    end subroutine coamps_micro_driver
+    end subroutine coamps_microphys_driver
 
 #else /* COAMPS_MICRO not defined */
-   subroutine coamps_micro_driver( )
+   subroutine coamps_microphys_driver( )
 
      implicit none
 
      stop "Not compiled with COAMPS Microphysics"
 
-   end subroutine coamps_micro_driver
+   end subroutine coamps_microphys_driver
 #endif
 
-  end module coamps_micro_driver_module
+  end module coamps_microphys_driver_module

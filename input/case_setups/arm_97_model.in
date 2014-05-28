@@ -136,8 +136,8 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-micro_scheme = "morrison"
-l_ice_micro = .true.
+microphys_scheme = "morrison"
+l_ice_microphys = .true.
 l_graupel = .true.
 l_const_Nc_in_cloud = .true.
 l_var_covar_src = .true.

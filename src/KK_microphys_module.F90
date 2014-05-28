@@ -12,17 +12,17 @@ module KK_microphys_module
 
   private
 
-  public :: KK_local_micro_driver,       &
-            KK_upscaled_micro_driver,    &
+  public :: KK_local_microphys_driver,       &
+            KK_upscaled_microphys_driver,    &
             KK_microphys_adjust,         &
             KK_microphys_adj_terms_type
 
-  private :: KK_micro_init,        &
+  private :: KK_microphys_init,        &
              KK_tendency_coefs,    &
              KK_upscaled_stats,    &
              KK_stats_output,      &
              KK_sedimentation,     &
-             KK_micro_output,      &
+             KK_microphys_output,      &
              unpack_pdf_params_KK
 
   ! This derived type stores information about adjustment to microphysics terms
@@ -40,7 +40,7 @@ module KK_microphys_module
   contains
 
   !=============================================================================
-  subroutine KK_local_micro_driver( dt, nz, &
+  subroutine KK_local_microphys_driver( dt, nz, &
                                     l_latin_hypercube, thlm, wm_zt, &
                                     p_in_Pa, exner, rho, cloud_frac, &
                                     w_std_dev, dzq, rcm, &
@@ -210,7 +210,7 @@ module KK_microphys_module
     call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )
 
     !!! Initialize microphysics fields.
-    call KK_micro_init( nz, hydromet, &
+    call KK_microphys_init( nz, hydromet, &
                         hydromet_mc, hydromet_vel, rrainm, Nrm, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -356,7 +356,7 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
                           hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
@@ -373,10 +373,10 @@ module KK_microphys_module
 
     return
 
-  end subroutine KK_local_micro_driver
+  end subroutine KK_local_microphys_driver
 
   !=============================================================================
-  subroutine KK_upscaled_micro_driver( dt, nz, d_variables, l_stats_samp,    & ! Intent(in)
+  subroutine KK_upscaled_microphys_driver( dt, nz, d_variables, l_stats_samp,    & ! Intent(in)
                                        wm_zt, rtm, thlm, p_in_Pa,            & ! Intent(in)
                                        exner, rho, rcm, Nc_in_cloud,         & ! Intent(in)
                                        pdf_params, hydromet_pdf_params,      & ! Intent(in)
@@ -675,7 +675,7 @@ module KK_microphys_module
     ! ---- Begin Code ----
 
     !!! Initialize microphysics fields.
-    call KK_micro_init( nz, hydromet, &
+    call KK_microphys_init( nz, hydromet, &
                         hydromet_mc, hydromet_vel, rrainm, Nrm, &
                         KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                         KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -937,7 +937,7 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
                           hydromet_mc, hydromet_vel )
 
     !!! Turbulent sedimentation above cloud top should have a value of 0.
@@ -1021,10 +1021,10 @@ module KK_microphys_module
 
     return
 
-  end subroutine KK_upscaled_micro_driver
+  end subroutine KK_upscaled_microphys_driver
 
   !=============================================================================
-  subroutine KK_micro_init( nz, hydromet, &
+  subroutine KK_microphys_init( nz, hydromet, &
                             hydromet_mc, hydromet_vel, rrainm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
@@ -1104,7 +1104,7 @@ module KK_microphys_module
 
     return
 
-  end subroutine KK_micro_init
+  end subroutine KK_microphys_init
 
   !=============================================================================
   subroutine KK_tendency_coefs( thlm, exner, p_in_Pa, rho, &
@@ -1657,7 +1657,7 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  subroutine KK_micro_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+  subroutine KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
                               hydromet_mc, hydromet_vel )
 
     ! Description:
@@ -1706,7 +1706,7 @@ module KK_microphys_module
 
     return
 
-  end subroutine KK_micro_output
+  end subroutine KK_microphys_output
 
   !=============================================================================
   subroutine unpack_pdf_params_KK( d_variables, mu_x_1, mu_x_2, &

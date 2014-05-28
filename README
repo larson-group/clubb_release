@@ -1132,7 +1132,7 @@ H. Morrison, J. A. Curry, and V. I. Khvorostyanov, 2005: A new double-
 moment microphysics scheme for application in cloud and climate models. 
 Part 1: Description. J. Atmos. Sci., 62, 1665–1677.
 
-You can enable the Morrison scheme by setting micro_scheme = "morrison"
+You can enable the Morrison scheme by setting microphys_scheme = "morrison"
 in the &microphysics_setting namelist.
 
 Some useful &microphysics_setting namelist flags for the 
@@ -1141,7 +1141,7 @@ Morrison microphysics code:
 -----------------------------|--------------------------------------------------
 Logical flag                 |  If true then:
 
-  l_ice_micro      = .true.   Allow ice and snow to form.
+  l_ice_microphys      = .true.   Allow ice and snow to form.
 
   l_graupel        = .true.   Allow graupel to form.
 
@@ -1244,7 +1244,7 @@ _zt = interpolated to the       E.g., wp2_zt is wp2 on the
       thermodynamic grid.           thermodynamic grid
 _sfc= ground or ocean surface   E.g., T_sfc is the temperature of 
                                     the ground or ocean
-microphys = microphysics        E.G., instead of micro or microphysics
+microphys = microphysics        E.G., instead of microphys or microphysics
 -------------------------------------------------------------------------                            
 - (7.2) Some important variables in CLUBB:
 -------------------------------------------------------------------------

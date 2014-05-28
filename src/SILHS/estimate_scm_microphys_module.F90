@@ -133,11 +133,11 @@ module estimate_scm_microphys_module
       lh_rcm_mc,   & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc,   & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc,  & ! LH estimate of time tendency of liquid potential temperature [K/s]
-      lh_rtp2_mc,  & ! LH micro. tendency for <rt'^2>                          [(kg/kg)^2/s]
-      lh_thlp2_mc, & ! LH micro. tendency for <thl'^2>                         [K^2/s]
-      lh_wprtp_mc, & ! LH micro. tendency for <w'rt'>                          [m*(kg/kg)/s^2]
-      lh_wpthlp_mc,& ! LH micro. tendency for <w'thl'>                         [m*K/s^2]
-      lh_rtpthlp_mc  ! LH micro. tendency for <rt'thl'>                        [K*(kg/kg)/s]
+      lh_rtp2_mc,  & ! LH microphys. tendency for <rt'^2>                          [(kg/kg)^2/s]
+      lh_thlp2_mc, & ! LH microphys. tendency for <thl'^2>                         [K^2/s]
+      lh_wprtp_mc, & ! LH microphys. tendency for <w'rt'>                          [m*(kg/kg)/s^2]
+      lh_wpthlp_mc,& ! LH microphys. tendency for <w'thl'>                         [m*K/s^2]
+      lh_rtpthlp_mc  ! LH microphys. tendency for <rt'thl'>                        [K*(kg/kg)/s]
 
 
     ! Local Variables

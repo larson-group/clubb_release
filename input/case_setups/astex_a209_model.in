@@ -132,7 +132,7 @@ l_calc_w_corr = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-micro_scheme = "khairoutdinov_kogan",
+microphys_scheme = "khairoutdinov_kogan",
 Nc0_in_cloud  = 100.e6,
 rr_sigma2_on_mu2_ip_cloud = 0.766,
 Nr_sigma2_on_mu2_ip_cloud = 0.429, 

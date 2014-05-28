@@ -39,7 +39,7 @@ module parameters_microphys
   ! Local Variables
   logical, public :: & 
     l_cloud_sed = .false.,         & ! Cloud water sedimentation (K&K/No microphysics)
-    l_ice_micro  = .false.,        & ! Compute ice (COAMPS/Morrison)
+    l_ice_microphys  = .false.,        & ! Compute ice (COAMPS/Morrison)
     l_upwind_diff_sed = .false.,   & ! Use upwind differencing approx for sedimentation (K&K/COAMPS)
     l_graupel  = .false.,          & ! Compute graupel (COAMPS/Morrison)
     l_hail  = .false.,             & ! Assumption about graupel/hail? (Morrison)
@@ -51,7 +51,7 @@ module parameters_microphys
     l_fix_pgam = .false.,          & ! Fix pgam (Morrison)
     l_in_cloud_Nc_diff = .true.,   & ! Use in cloud values of Nc for diffusion
     l_var_covar_src = .false.        ! Flag for using upscaled microphysics source terms
-                                     ! for predictive variances and covariances (KK micro)
+                                     ! for predictive variances and covariances (KK microphys)
 
   ! KK microphysics has a feature that clips rrainm_source down to the maximum allowable value if it
   ! grows so large during a timestep that it over-depletes from cloud water (making rcm negative).
@@ -64,7 +64,7 @@ module parameters_microphys
   logical, public :: &
     l_silhs_KK_convergence_adj_mean = .false.
 
-!$omp threadprivate( l_cloud_sed, l_ice_micro, l_graupel, l_hail, &
+!$omp threadprivate( l_cloud_sed, l_ice_microphys, l_graupel, l_hail, &
 !$omp                l_upwind_diff_sed, l_seifert_beheng, l_predict_Nc, &
 !$omp                l_const_Nc_in_cloud, l_subgrid_w, l_arctic_nucl, &
 !$omp                l_fix_pgam, l_in_cloud_Nc_diff, l_var_covar_src, &
@@ -104,9 +104,9 @@ module parameters_microphys
 !$omp threadprivate( lh_microphys_type )
 
   character(len=50), public :: &
-    micro_scheme = "none" ! khairoutdinv_kogan, simplified_ice, coamps, etc.
+    microphys_scheme = "none" ! khairoutdinv_kogan, simplified_ice, coamps, etc.
 
-!$omp threadprivate( micro_scheme )
+!$omp threadprivate( microphys_scheme )
 
   character(len=10), dimension(:), allocatable, public :: & 
     hydromet_list

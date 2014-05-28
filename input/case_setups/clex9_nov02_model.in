@@ -130,9 +130,9 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-micro_scheme = "morrison"
+microphys_scheme = "morrison"
 microphys_start_time = 51411.0
-l_ice_micro = .true.
+l_ice_microphys = .true.
 l_predict_Nc = .true.
 /
 

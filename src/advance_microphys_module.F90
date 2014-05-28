@@ -71,7 +71,7 @@ module advance_microphys_module
 
     use parameters_microphys, only: &
         l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
-        micro_scheme,         & ! The microphysical scheme in use
+        microphys_scheme,         & ! The microphysical scheme in use
         hydromet_list,        & ! Names of the hydrometeor species
         hydromet_tol,         & ! Tolerance values for hydrometeor species
         microphys_start_time    ! When to start the microphysics [s]
@@ -363,7 +363,7 @@ module advance_microphys_module
       ! Store values of surface fluxes for statistics
       ! See notes above.
 
-      if ( trim( micro_scheme ) /= "morrison" ) then
+      if ( trim( microphys_scheme ) /= "morrison" ) then
         call stat_update_var_pt( iprecip_rate_sfc, 1,  & 
                                  max( - ( hydromet(2,iirrainm) &
                                           * hydromet_vel_zt(2,iirrainm) &
@@ -372,7 +372,7 @@ module advance_microphys_module
                                   * ( rho(2) / rho_lw ) & 
                                   * real( sec_per_day, kind = core_rknd ) &
                                   * mm_per_m, sfc )
-      endif ! micro_scheme /= "morrison"
+      endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
                                max( - ( zt2zm( hydromet(:,iirrainm), 1 )  & 

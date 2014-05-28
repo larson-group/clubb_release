@@ -70,21 +70,21 @@ module microphys_driver
         cloud_frac_min
 
     use KK_microphys_module, only: & 
-        KK_local_micro_driver,    & ! Procedure(s)
-        KK_upscaled_micro_driver
+        KK_local_microphys_driver,    & ! Procedure(s)
+        KK_upscaled_microphys_driver
 
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
     use morrison_micro_driver_module, only: &
-        morrison_micro_driver  ! Procedure(s)
+        morrison_microphys_driver  ! Procedure(s)
 
-    use mg_micro_driver_module, only: &
+    use mg_microphys_driver_module, only: &
         mg_microphys_driver  ! Procedure(s)
 
 #ifdef COAMPS_MICRO
-    use coamps_micro_driver_module, only:  & 
-        coamps_micro_driver  ! Procedure(s)
+    use coamps_microphys_driver_module, only:  & 
+        coamps_microphys_driver  ! Procedure(s)
 #endif
 
 #ifdef SILHS
@@ -116,7 +116,7 @@ module microphys_driver
         l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
         lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
-        micro_scheme,         & ! The microphysical scheme in use
+        microphys_scheme,         & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
         microphys_start_time, & ! When to start the microphysics [s]
         sigma_g                 ! Parameter used in the cloud droplet sedimentation code
@@ -399,12 +399,12 @@ module microphys_driver
     ! microphysics.
     ! Note: COAMPS appears to have some K&K elements to it as well.
 
-    select case ( trim( micro_scheme ) )
+    select case ( trim( microphys_scheme ) )
 
     case ( "coamps" )
 
 #ifdef COAMPS_MICRO
-       call coamps_micro_driver & 
+       call coamps_microphys_driver & 
             ( runtype, time_current, dt, & ! In
               rtm, wm_zm, p_in_Pa, exner, rho, & ! In
               thlm, hydromet(:,iiricem), hydromet(:,iirrainm),  &  ! In
@@ -458,7 +458,7 @@ module microphys_driver
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
                  rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                  wpthlp_mc, rtpthlp_mc, & ! Out
-                 morrison_micro_driver )  ! Procedure
+                 morrison_microphys_driver )  ! Procedure
 #else
           stop "Latin hypercube was not enabled at compile time"
           ! Get rid of compiler warnings
@@ -478,7 +478,7 @@ module microphys_driver
           l_latin_hypercube_input = .false.
         
           if ( l_morr_xp2_mc_tndcy ) then
-             !Use the moister rt1/rt2 rather than rtm in morrison micro
+             !Use the moister rt1/rt2 rather than rtm in morrison microphys
              !Also use the colder of thl1/thl2
              where ( pdf_params%rt1 > pdf_params%rt2 )
                 rvm = pdf_params%rt1 - pdf_params%rc1
@@ -496,7 +496,7 @@ module microphys_driver
              thlm_morr = thlm
           endif
 
-          call morrison_micro_driver &
+          call morrison_microphys_driver &
                ( dt, gr%nz, &
                  l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                  exner, rho, cloud_frac, wtmp, &
@@ -562,7 +562,7 @@ module microphys_driver
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
                  rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                  wpthlp_mc, rtpthlp_mc, & ! Out               
-                 KK_local_micro_driver ) ! Procedure
+                 KK_local_microphys_driver ) ! Procedure
 #else
           stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
@@ -589,7 +589,7 @@ module microphys_driver
 
           if ( l_local_kk ) then
 
-             call KK_local_micro_driver( dt, gr%nz, &
+             call KK_local_microphys_driver( dt, gr%nz, &
                                          l_latin_hypercube_input, thlm, wm_zt, &
                                          p_in_Pa, exner, rho, cloud_frac, &
                                          wtmp, delta_zt, rcm, &
@@ -603,7 +603,7 @@ module microphys_driver
 
           else
 
-             call KK_upscaled_micro_driver( dt, gr%nz, n_variables, l_stats_samp, & ! Intent(in)
+             call KK_upscaled_microphys_driver( dt, gr%nz, n_variables, l_stats_samp, & ! Intent(in)
                                             wm_zt, rtm, thlm, p_in_Pa,            & ! Intent(in)
                                             exner, rho, rcm, Nc_in_cloud,         & ! Intent(in)
                                             pdf_params, hydromet_pdf_params,      & ! Intent(in)
@@ -639,7 +639,7 @@ module microphys_driver
 
     case default
       ! Do nothing
-    end select ! micro_scheme
+    end select ! microphys_scheme
 
     if ( l_stats_samp ) then
        call stat_update_var( iNccnm, Nccnm, zt )

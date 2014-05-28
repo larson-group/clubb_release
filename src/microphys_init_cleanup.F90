@@ -39,7 +39,7 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
         l_cloud_sed,                  & ! Cloud water sedimentation (K&K or no microphysics)
-        l_ice_micro,                  & ! Compute ice (COAMPS / Morrison)
+        l_ice_microphys,                  & ! Compute ice (COAMPS / Morrison)
         l_graupel,                    & ! Compute graupel (Morrison)
         l_hail,                       & ! See module_mp_graupel for a description
         l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
@@ -59,7 +59,7 @@ module microphys_init_cleanup
         l_local_kk,                   & ! Use local formula for K&K
         l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
-        micro_scheme,                 & ! The microphysical scheme in use
+        microphys_scheme,                 & ! The microphysical scheme in use
         hydromet_list,                & ! Names of the hydrometeor species
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
         l_gfdl_activation,            & ! Flag to use GFDL activation scheme
@@ -241,8 +241,8 @@ module microphys_init_cleanup
      corr_file_path_below
 
     namelist /microphysics_setting/ &
-      micro_scheme, l_cloud_sed, sigma_g, &
-      l_ice_micro, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
+      microphys_scheme, l_cloud_sed, sigma_g, &
+      l_ice_microphys, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
       l_seifert_beheng, l_predict_Nc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
@@ -330,7 +330,7 @@ module microphys_init_cleanup
        call write_text( "--------------------------------------------------", &
                         l_write_to_file, iunit )
 
-       call write_text ( "micro_scheme = " //  micro_scheme, l_write_to_file, &
+       call write_text ( "microphys_scheme = " //  microphys_scheme, l_write_to_file, &
                          iunit )
        call write_text ( "l_cloud_sed = ", l_cloud_sed, l_write_to_file, iunit )
        call write_text ( "sigma_g = ", sigma_g, l_write_to_file, iunit )
@@ -443,9 +443,9 @@ module microphys_init_cleanup
     ! Initialize the GFDL activation code, if necessary
     if( l_gfdl_activation ) then
        ! Ensure a microphysics that has Ncm is being used
-       if( trim( micro_scheme ) == "coamps" .or. &
-           trim( micro_scheme ) == "morrison" & 
-           .or. trim( micro_scheme ) == "morrison_gettelman") then
+       if( trim( microphys_scheme ) == "coamps" .or. &
+           trim( microphys_scheme ) == "morrison" & 
+           .or. trim( microphys_scheme ) == "morrison_gettelman") then
 
           ! Read in the lookup tables
           call Loading( droplets, droplets2 )
@@ -466,7 +466,7 @@ module microphys_init_cleanup
     ! and don't need to be set consistently among schemes so long as
     ! the 'i' indices point to the correct parts of the array.
 
-    select case ( trim( micro_scheme ) )
+    select case ( trim( microphys_scheme ) )
 
     case ( "morrison" )
 
@@ -514,7 +514,7 @@ module microphys_init_cleanup
           docloudedgeactivation = .false.
        endif
 
-       if ( l_ice_micro ) then
+       if ( l_ice_microphys ) then
           doicemicro = .true.
        else
           doicemicro = .false.
@@ -563,12 +563,12 @@ module microphys_init_cleanup
           stop "Fatal error."
        endif
 
-       if ( .not. l_fix_s_t_correlations .and. l_ice_micro &
+       if ( .not. l_fix_s_t_correlations .and. l_ice_microphys &
             .and. trim( lh_microphys_type ) /= "disabled" ) then
           write(fstderr,*) "The flag l_fix_s_t_correlations must be true" &
                            // " in order to enable latin hypercube sampling" &
                            // " and ice microphysics."
-          write(fstderr,*) "The flag l_ice_micro must be set" &
+          write(fstderr,*) "The flag l_ice_microphys must be set" &
                            // " to false to use this option."
           stop "Fatal error."
        endif
@@ -642,7 +642,7 @@ module microphys_init_cleanup
        iirgraupelm = 4
 
        iiNrm       = 5
-       ! Nsnowm is computed diagnostically in the subroutine coamps_micro_driver
+       ! Nsnowm is computed diagnostically in the subroutine coamps_microphys_driver
        iiNsnowm    = -1
        iiNim       = 6
        iiNgraupelm = -1
@@ -702,7 +702,7 @@ module microphys_init_cleanup
 
     case default
 
-       write(fstderr,*) "Unknown micro_scheme: "// trim( micro_scheme )
+       write(fstderr,*) "Unknown microphys_scheme: "// trim( microphys_scheme )
        stop
 
     end select
@@ -794,9 +794,9 @@ module microphys_init_cleanup
     ! Make sure the user didn't select LH sampling using
     ! coamps, morrison-gettelman, or simplified_ice microphysics
     if ( ( .not. ( lh_microphys_type_int == lh_microphys_disabled ) ) &
-           .and. ( trim( micro_scheme ) == "coamps" .or. &
-                   trim( micro_scheme ) == "morrison_gettelman" .or. &
-                   trim( micro_scheme ) == "simplified_ice" ) ) then
+           .and. ( trim( microphys_scheme ) == "coamps" .or. &
+                   trim( microphys_scheme ) == "morrison_gettelman" .or. &
+                   trim( microphys_scheme ) == "simplified_ice" ) ) then
        stop "LH sampling can not be enabled when using coamps," &
             // " morrison_gettelman, or simplified_ice microphysics types"
     endif
@@ -810,7 +810,7 @@ module microphys_init_cleanup
     ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
     ! a microphysics scheme other than khairoutdinov_kogan (KK)
     if ( l_silhs_KK_convergence_adj_mean .and. &
-          trim( micro_scheme ) /= "khairoutdinov_kogan" ) then
+          trim( microphys_scheme ) /= "khairoutdinov_kogan" ) then
        stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
     endif
 
@@ -827,7 +827,7 @@ module microphys_init_cleanup
     !microphysics by now. 
     !<Changes by janhft 02/19/13>
     if ( l_diagnose_correlations &
-         .and. ( ( trim( micro_scheme ) /= "khairoutdinov_kogan" ) &
+         .and. ( ( trim( microphys_scheme ) /= "khairoutdinov_kogan" ) &
          .and. ( lh_microphys_type_int == lh_microphys_disabled ) ) ) then
        write(fstderr,*) "Error: The diagnose_corr algorithm only works " &
                         // "for KK microphysics by now."
@@ -835,7 +835,7 @@ module microphys_init_cleanup
     endif
 
     if ( ( .not. l_local_kk) .and. &
-         ( trim( micro_scheme ) == "khairoutdinov_kogan" ) .and. &
+         ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) .and. &
          ( lh_microphys_type_int == lh_microphys_interactive ) ) then
        write(fstderr,*) "Error:  KK upscaled microphysics " &
                         // "(l_local_kk = .false.) and interactive Latin " &
@@ -870,7 +870,7 @@ module microphys_init_cleanup
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
                             iirgraupelm, iiNgraupelm, &
-                            l_ice_micro, l_graupel )
+                            l_ice_microphys, l_graupel )
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
@@ -898,13 +898,13 @@ module microphys_init_cleanup
         hydromet_list,  & ! Variable(s)
         l_hydromet_sed, &
         hydromet_tol,   &
-        micro_scheme
+        microphys_scheme
 
     use array_index, only: & 
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm
 
-    use phys_buffer, only: & ! Used for placing wp2_zt in MG micro.
+    use phys_buffer, only: & ! Used for placing wp2_zt in MG microphys.
         pbuf_deallocate
 
     implicit none
@@ -933,7 +933,7 @@ module microphys_init_cleanup
         deallocate( hydromet_tol )
     endif
 
-    if ( trim( micro_scheme ) == "morrison_gettelman" ) then
+    if ( trim( microphys_scheme ) == "morrison_gettelman" ) then
        call pbuf_deallocate()
     endif
 

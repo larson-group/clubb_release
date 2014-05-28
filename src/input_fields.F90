@@ -276,7 +276,7 @@ module inputfields
       lin_ext_zm_bottom
 
     use parameters_microphys, only: &
-        micro_scheme, & ! Variable(s)
+        microphys_scheme, & ! Variable(s)
         l_predict_Nc
 
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
@@ -1054,7 +1054,7 @@ module inputfields
       if ( l_input_rrainm ) then
         if ( iirrainm < 1 ) then
             write(fstderr,*) "Rain water mixing ratio cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_rrainm
@@ -1073,7 +1073,7 @@ module inputfields
       if ( l_input_Nrm ) then
         if ( iiNrm < 1 ) then
             write(fstderr,*) "Rain droplet number conc. cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_Nrm
@@ -1092,7 +1092,7 @@ module inputfields
       if ( l_input_Ncm ) then
         if ( .not. l_predict_Nc ) then
             write(fstderr,*) "Cloud droplet number conc. cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_Ncm
@@ -1111,7 +1111,7 @@ module inputfields
       if ( l_input_rsnowm ) then
         if ( iirsnowm < 1 ) then
             write(fstderr,*) "Snow mixing ratio cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_rsnowm
@@ -1130,7 +1130,7 @@ module inputfields
       if ( l_input_ricem ) then
         if ( iiricem < 1 ) then
             write(fstderr,*) "Ice mixing ratio cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_ricem
@@ -1149,7 +1149,7 @@ module inputfields
       if ( l_input_rgraupelm ) then
         if ( iirgraupelm < 1 ) then
             write(fstderr,*) "Graupel mixing ratio cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_rgraupelm
@@ -1177,7 +1177,7 @@ module inputfields
       if ( l_input_Nim ) then
         if ( iiNim < 1 ) then
             write(fstderr,*) "Ice number conc. cannot be input with"// &
-              " micro_scheme = "//micro_scheme
+              " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
           coamps_variables(k)%l_input_var = l_input_Nim
