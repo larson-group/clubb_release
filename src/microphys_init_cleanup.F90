@@ -196,7 +196,7 @@ module microphys_init_cleanup
     use model_flags, only: &
         l_diagnose_correlations, &
         l_evaporate_cold_rcm, &
-        l_morr_xp2_mc_tndcy
+        l_morr_xp2_mc
 
     implicit none
 
@@ -844,25 +844,25 @@ module microphys_init_cleanup
        stop
     endif
 
-    if ( l_morr_xp2_mc_tndcy .and. &
+    if ( l_morr_xp2_mc .and. &
          ( lh_microphys_type_int /= lh_microphys_disabled ) ) then
        write(fstderr,*) "Error:  The code to include the effects of rain " &
                         // "evaporation on rtp2 and thlp2 in Morrison " &
-                        // "microphysics (l_morr_xp2_mc_tndcy = .true.) and " &
+                        // "microphysics (l_morr_xp2_mc = .true.) and " &
                         // "Latin Hypercube are incompatible."
        stop
     endif
 
-    if ( l_morr_xp2_mc_tndcy .and. l_var_covar_src ) then
-       write(fstderr,*) "Error: The code l_morr_xp2_mc_tndcy and " &
+    if ( l_morr_xp2_mc .and. l_var_covar_src ) then
+       write(fstderr,*) "Error: The code l_morr_xp2_mc and " &
                         // "l_var_covar_src are incompatible, since " &
                         // "they both are used to determine the effect " &
                         // "of microphysics on variances."
        stop
     endif
 
-    if ( l_morr_xp2_mc_tndcy .and. l_evaporate_cold_rcm ) then
-       write(fstderr,*) "Error: l_morr_xp2_mc_tndcy and l_evaporate_cold_rcm " &
+    if ( l_morr_xp2_mc .and. l_evaporate_cold_rcm ) then
+       write(fstderr,*) "Error: l_morr_xp2_mc and l_evaporate_cold_rcm " &
                         //  "are currently incompatible."
        stop
     endif

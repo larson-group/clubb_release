@@ -103,13 +103,13 @@ module microphys_driver
         aeromass_value                    ! Variable(s)
 
     use advance_xp2_xpyp_module, only: &
-        update_xp2_mc_tndcy  ! Procedure(s)
+        update_xp2_mc  ! Procedure(s)
 
     use parameters_model, only: & 
         hydromet_dim   ! Variable(s)
 
     use model_flags, only: &
-        l_morr_xp2_mc_tndcy  ! Flag(s)
+        l_morr_xp2_mc  ! Flag(s)
 
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
@@ -477,7 +477,7 @@ module microphys_driver
        if ( lh_microphys_type /= lh_microphys_interactive ) then
           l_latin_hypercube_input = .false.
         
-          if ( l_morr_xp2_mc_tndcy ) then
+          if ( l_morr_xp2_mc ) then
              !Use the moister rt1/rt2 rather than rtm in morrison microphys
              !Also use the colder of thl1/thl2
              where ( pdf_params%rt1 > pdf_params%rt2 )
@@ -506,8 +506,8 @@ module microphys_driver
                  rrainm_auto, rrainm_accr, rrainm_evap, &
                  Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
 
-          if ( l_morr_xp2_mc_tndcy) then
-             call update_xp2_mc_tndcy( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
+          if ( l_morr_xp2_mc) then
+             call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
                                        wm_zt, exner, rrainm_evap, pdf_params, &      !Intent(in)
                                        rtp2_mc, thlp2_mc,     &                      !Intent(out)
                                        wprtp_mc, wpthlp_mc,     &                    !Intent(out)

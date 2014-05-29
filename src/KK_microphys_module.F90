@@ -178,8 +178,8 @@ module KK_microphys_module
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      Nrm_mc       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
       KK_mean_vol_rad    ! Mean KK rain drop mean volume radius     [m]
@@ -318,7 +318,7 @@ module KK_microphys_module
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
                                  l_latin_hypercube, k, &
-                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                 rrainm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
 
@@ -329,11 +329,11 @@ module KK_microphys_module
 
     ! Explicit contributions to rrainm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrainm_mc_tndcy(1) = zero
-    Nrm_mc_tndcy(1)    = zero
+    rrainm_mc(1) = zero
+    Nrm_mc(1)    = zero
 
-    rrainm_mc_tndcy(nz) = zero
-    Nrm_mc_tndcy(nz)    = zero
+    rrainm_mc(nz) = zero
+    Nrm_mc(nz)    = zero
 
     ! Boundary conditions
     KK_mean_vol_rad(1)  = zero
@@ -356,7 +356,7 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
                           hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
@@ -387,9 +387,9 @@ module KK_microphys_module
                                        rcm_mc, rvm_mc, thlm_mc,              & ! Intent(out)
                                        hydromet_vel_covar_zt_impc,           & ! Intent(out)
                                        hydromet_vel_covar_zt_expc,           & ! Intent(out)
-                                       wprtp_mc_tndcy, wpthlp_mc_tndcy,      & ! Intent(out)
-                                       rtp2_mc_tndcy, thlp2_mc_tndcy,        & ! Intent(out)
-                                       rtpthlp_mc_tndcy )                      ! Intent(out)
+                                       wprtp_mc, wpthlp_mc,      & ! Intent(out)
+                                       rtp2_mc, thlp2_mc,        & ! Intent(out)
+                                       rtpthlp_mc )                      ! Intent(out)
 
     ! Description:
     ! Version of KK microphysics scheme that is analytically upscaled by
@@ -514,11 +514,11 @@ module KK_microphys_module
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      wprtp_mc_tndcy,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
-      rtp2_mc_tndcy,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
-      thlp2_mc_tndcy,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
-      rtpthlp_mc_tndcy    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+      wprtp_mc,   & ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc,  & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc,    & ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc,   & ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc    ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
@@ -526,8 +526,8 @@ module KK_microphys_module
       Nrm,             & ! Mean rain drop concentration, < N_r > [num/kg]
       Vrr,             & ! Mean sedimentation velocity of r_r    [m/s]
       VNr,             & ! Mean sedimentation velocity of N_r    [m/s]
-      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics    [(num/kg)/s]
+      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
+      Nrm_mc       ! Mean (dN_r/dt) due to microphysics    [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
       KK_evap_tndcy,   & ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
@@ -652,11 +652,11 @@ module KK_microphys_module
       VNrpNrp_zt_expc    ! Exp. comp. of <V_Nr'N_r'>: <N_r> eq.  [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      wprtp_mc_tndcy_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
-      wpthlp_mc_tndcy_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
-      rtp2_mc_tndcy_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
-      thlp2_mc_tndcy_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
-      rtpthlp_mc_tndcy_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
+      wprtp_mc_zt,   & ! Micro. tend. for <w'rt'>; t-lev   [m*(kg/kg)/s^2]
+      wpthlp_mc_zt,  & ! Micro. tend. for <w'thl'>; t-lev  [m*K/s^2]
+      rtp2_mc_zt,    & ! Micro. tend. for <rt'^2>; t-lev   [(kg/kg)^2/s]
+      thlp2_mc_zt,   & ! Micro. tend. for <thl'^2>; t-lev  [K^2/s]
+      rtpthlp_mc_zt    ! Micro. tend. for <rt'thl'>; t-lev [K*(kg/kg)/s]
 
     type(KK_microphys_adj_terms_type), dimension(nz) :: &
       adj_terms           ! Adjustments to microphysics terms
@@ -795,11 +795,11 @@ module KK_microphys_module
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
                                          pdf_params(k), k, &
                                          l_const_Nc_in_cloud, l_stats_samp, &
-                                         wprtp_mc_tndcy_zt(k), &
-                                         wpthlp_mc_tndcy_zt(k), &
-                                         rtp2_mc_tndcy_zt(k), &
-                                         thlp2_mc_tndcy_zt(k), &
-                                         rtpthlp_mc_tndcy_zt(k) )
+                                         wprtp_mc_zt(k), &
+                                         wpthlp_mc_zt(k), &
+                                         rtp2_mc_zt(k), &
+                                         thlp2_mc_zt(k), &
+                                         rtpthlp_mc_zt(k) )
 
        endif
 
@@ -831,7 +831,7 @@ module KK_microphys_module
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
                                  l_latin_hypercube, k, &
-                                 rrainm_mc_tndcy(k), Nrm_mc_tndcy(k), &
+                                 rrainm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
 
@@ -858,8 +858,8 @@ module KK_microphys_module
 
     if ( l_var_covar_src ) then
 
-       ! Set values of wprtp_mc_tndcy_zt, wpthlp_mc_tndcy_zt, rtp2_mc_tndcy_zt,
-       ! thlp2_mc_tndcy_zt, and rtpthlp_mc_tndcy_zt to 0 at the lowest
+       ! Set values of wprtp_mc_zt, wpthlp_mc_zt, rtp2_mc_zt,
+       ! thlp2_mc_zt, and rtpthlp_mc_zt to 0 at the lowest
        ! thermodynamic grid level (thermodynamic level 1), which is below the
        ! model lower boundary.  This will prevent an unset value of these
        ! variables (from thermodynamic level 1, which is not part of the above
@@ -867,42 +867,42 @@ module KK_microphys_module
        ! these variables to momentum levels (in this case, the model lower
        ! boundary at momentum level 1).  The interpolated value of these
        ! variables at momentum level 1 is not used in the model code.
-       wprtp_mc_tndcy_zt(1)   = zero
-       wpthlp_mc_tndcy_zt(1)  = zero
-       rtp2_mc_tndcy_zt(1)    = zero
-       thlp2_mc_tndcy_zt(1)   = zero
-       rtpthlp_mc_tndcy_zt(1) = zero
+       wprtp_mc_zt(1)   = zero
+       wpthlp_mc_zt(1)  = zero
+       rtp2_mc_zt(1)    = zero
+       thlp2_mc_zt(1)   = zero
+       rtpthlp_mc_zt(1) = zero
 
        ! Output microphysics tendency terms for
        ! model variances and covariances on momentum levels.
-       wprtp_mc_tndcy   = zt2zm( wprtp_mc_tndcy_zt )
-       wpthlp_mc_tndcy  = zt2zm( wpthlp_mc_tndcy_zt )
-       rtp2_mc_tndcy    = zt2zm( rtp2_mc_tndcy_zt )
-       thlp2_mc_tndcy   = zt2zm( thlp2_mc_tndcy_zt )
-       rtpthlp_mc_tndcy = zt2zm( rtpthlp_mc_tndcy_zt )
+       wprtp_mc   = zt2zm( wprtp_mc_zt )
+       wpthlp_mc  = zt2zm( wpthlp_mc_zt )
+       rtp2_mc    = zt2zm( rtp2_mc_zt )
+       thlp2_mc   = zt2zm( thlp2_mc_zt )
+       rtpthlp_mc = zt2zm( rtpthlp_mc_zt )
 
        ! Set values of microphysics tendency terms to 0 at model lower boundary.
-       wprtp_mc_tndcy(1)   = zero
-       wpthlp_mc_tndcy(1)  = zero
-       rtp2_mc_tndcy(1)    = zero
-       thlp2_mc_tndcy(1)   = zero
-       rtpthlp_mc_tndcy(1) = zero
+       wprtp_mc(1)   = zero
+       wpthlp_mc(1)  = zero
+       rtp2_mc(1)    = zero
+       thlp2_mc(1)   = zero
+       rtpthlp_mc(1) = zero
        ! Set values of microphysics tendency terms to 0 at model upper boundary.
-       wprtp_mc_tndcy(nz)   = zero
-       wpthlp_mc_tndcy(nz)  = zero
-       rtp2_mc_tndcy(nz)    = zero
-       thlp2_mc_tndcy(nz)   = zero
-       rtpthlp_mc_tndcy(nz) = zero
+       wprtp_mc(nz)   = zero
+       wpthlp_mc(nz)  = zero
+       rtp2_mc(nz)    = zero
+       thlp2_mc(nz)   = zero
+       rtpthlp_mc(nz) = zero
 
     else
 
        ! Microphysics tendency terms for model variances and covariances
        ! are set to 0.
-       wprtp_mc_tndcy   = zero
-       wpthlp_mc_tndcy  = zero
-       rtp2_mc_tndcy    = zero
-       thlp2_mc_tndcy   = zero
-       rtpthlp_mc_tndcy = zero
+       wprtp_mc   = zero
+       wpthlp_mc  = zero
+       rtp2_mc    = zero
+       thlp2_mc   = zero
+       rtpthlp_mc = zero
 
     endif
 
@@ -910,11 +910,11 @@ module KK_microphys_module
 
     ! Explicit contributions to rrainm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrainm_mc_tndcy(1) = zero
-    Nrm_mc_tndcy(1)    = zero
+    rrainm_mc(1) = zero
+    Nrm_mc(1)    = zero
 
-    rrainm_mc_tndcy(nz) = zero
-    Nrm_mc_tndcy(nz)    = zero
+    rrainm_mc(nz) = zero
+    Nrm_mc(nz)    = zero
 
     ! Boundary conditions
     KK_mean_vol_rad(1)  = zero
@@ -937,7 +937,7 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
                           hydromet_mc, hydromet_vel )
 
     !!! Turbulent sedimentation above cloud top should have a value of 0.
@@ -1203,7 +1203,7 @@ module KK_microphys_module
                                   KK_Nrm_auto_tndcy, l_src_adj_enabled, &
                                   l_evap_adj_enabled, &
                                   l_latin_hypercube, level, &
-                                  rrainm_mc_tndcy, Nrm_mc_tndcy, &
+                                  rrainm_mc, Nrm_mc, &
                                   rvm_mc, rcm_mc, thlm_mc, &
                                   adj_terms )
 
@@ -1256,8 +1256,8 @@ module KK_microphys_module
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  &
-      rrainm_mc_tndcy, & ! Mean <dr_r/dt> due to microphysics       [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean <dN_r/dt> due to microphysics       [(num/kg)/s]
+      rrainm_mc, & ! Mean <dr_r/dt> due to microphysics       [(kg/kg)/s]
+      Nrm_mc       ! Mean <dN_r/dt> due to microphysics       [(num/kg)/s]
 
     real( kind = core_rknd ), intent(out) :: &
       rcm_mc,  & ! Time tendency of liquid water mixing ratio       [kg/kg/s]
@@ -1378,13 +1378,13 @@ module KK_microphys_module
 
 
     !!! Calculate overall KK microphysics tendencies.
-    rrainm_mc_tndcy = rrainm_evap_net + rrainm_source
-    Nrm_mc_tndcy    = Nrm_evap_net + Nrm_source
+    rrainm_mc = rrainm_evap_net + rrainm_source
+    Nrm_mc    = Nrm_evap_net + Nrm_source
 
     !!! Explicit contributions to thlm and rtm from the microphysics
     rvm_mc  = -rrainm_evap_net
     rcm_mc  = -rrainm_source  ! Accretion + Autoconversion
-    thlm_mc = ( Lv / ( Cp * exner ) ) * rrainm_mc_tndcy
+    thlm_mc = ( Lv / ( Cp * exner ) ) * rrainm_mc
 
     ! Return adjustment terms
     adj_terms%rrainm_src_adj = rrainm_src_adj
@@ -1657,7 +1657,7 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  subroutine KK_microphys_output( nz, Vrr, VNr, rrainm_mc_tndcy, Nrm_mc_tndcy, &
+  subroutine KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     ! Description:
@@ -1684,8 +1684,8 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc_tndcy, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
-      Nrm_mc_tndcy       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
+      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      Nrm_mc       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -1696,8 +1696,8 @@ module KK_microphys_module
     !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
 
     ! Mean field tendencies.
-    hydromet_mc(:,iirrainm) = rrainm_mc_tndcy
-    hydromet_mc(:,iiNrm) = Nrm_mc_tndcy
+    hydromet_mc(:,iirrainm) = rrainm_mc
+    hydromet_mc(:,iiNrm) = Nrm_mc
 
     ! Sedimentation Velocities.
     hydromet_vel(:,iirrainm) = Vrr
