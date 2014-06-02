@@ -84,7 +84,7 @@ module clubb_driver
     use parameters_tunable, only: &
       l_prescribed_avg_deltaz, params_list ! Variable(s)
 
-    use clubb_core, only: &
+    use advance_clubb_core_module, only: &
       setup_clubb_core,  & ! Procedure(s)
       cleanup_clubb_core, &
       advance_clubb_core, &
@@ -552,7 +552,7 @@ module clubb_driver
     rtm_min = 0.0_core_rknd
     rtm_nudge_max_altitude = 0.0_core_rknd
 
-    ! Use the Flatau polynomial approximation for computing saturation in clubb_core
+    ! Use the Flatau polynomial approximation for computing saturation in advance_clubb_core_module
     saturation_formula = "flatau"
 
     sclr_dim   = 0

@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !-----------------------------------------------------------------------
-module clubb_core
+module advance_clubb_core_module
 
 ! Description:
 !   The module containing the `core' of the CLUBB parameterization.
@@ -3313,4 +3313,4 @@ module clubb_core
   end function compute_weighted_average
   !-----------------------------------------------------------------------
 
-end module clubb_core
+end module advance_clubb_core_module
