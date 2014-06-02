@@ -39,19 +39,19 @@ module parameters_microphys
   ! Local Variables
   logical, public :: & 
     l_cloud_sed = .false.,         & ! Cloud water sedimentation (K&K/No microphysics)
-    l_ice_microphys  = .false.,        & ! Compute ice (COAMPS/Morrison)
+    l_ice_microphys  = .false.,    & ! Compute ice (COAMPS/Morrison)
     l_upwind_diff_sed = .false.,   & ! Use upwind differencing approx for sedimentation (K&K/COAMPS)
     l_graupel  = .false.,          & ! Compute graupel (COAMPS/Morrison)
     l_hail  = .false.,             & ! Assumption about graupel/hail? (Morrison)
     l_seifert_beheng  = .false.,   & ! Use Seifert and Behneng warm drizzle (Morrison)
-    l_predict_Nc = .false.,         & ! Predict cloud droplet conconcentration (Morrison)
+    l_predict_Nc = .false.,        & ! Predict cloud droplet conconcentration (Morrison)
     l_const_Nc_in_cloud = .false., & ! Use a constant cloud droplet conc. within cloud (K&K)
     l_subgrid_w = .true.,          & ! Use subgrid w (Morrison)
     l_arctic_nucl = .false.,       & ! Use MPACE observations (Morrison)
     l_fix_pgam = .false.,          & ! Fix pgam (Morrison)
     l_in_cloud_Nc_diff = .true.,   & ! Use in cloud values of Nc for diffusion
     l_var_covar_src = .false.        ! Flag for using upscaled microphysics source terms
-                                     ! for predictive variances and covariances (KK microphys)
+                                     ! for predictive variances and covariances (KK)
 
   ! KK microphysics has a feature that clips rrainm_source down to the maximum allowable value if it
   ! grows so large during a timestep that it over-depletes from cloud water (making rcm negative).

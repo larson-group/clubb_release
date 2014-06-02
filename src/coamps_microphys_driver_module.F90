@@ -74,7 +74,7 @@ module coamps_microphys_driver_module
 ! External Calls
     external ::  & 
       gamma,  & ! From COAMPS, and not the same gamma approx. used in CLUBB
-      adjtq  ! COAMPS microphysics subroutine
+      adjtq     ! COAMPS microphysics subroutine
 
 ! COAMPS parameters
     integer, parameter ::  & 
@@ -406,9 +406,9 @@ module coamps_microphys_driver_module
       ldrizzle  ! is drizzle on?
 
 
-    real ::  & ! Regular precision to be passed into COAMPS microphys. Brian.
-      timea,         & ! Current model time                      [s]
-      deltf         ! Timestep (i.e. dt_main in CLUBB)         [s]
+    real ::  & ! Regular precision to be passed into COAMPS microphysics. Brian.
+      timea, & ! Current model time                      [s]
+      deltf    ! Timestep (i.e. dt_main in CLUBB)        [s]
 
     integer :: & 
       kk,     & ! Number of COAMPS m gridpoints in the vertical (gr%nz-1)
@@ -423,7 +423,7 @@ module coamps_microphys_driver_module
 
 ! Comment by Adam Smith, 25 March 2008
 ! These variables activate rain/drizzle in the COAMPS
-! microphys scheme.  Set these variables to .TRUE. if you need these
+! microphysics scheme.  Set these variables to .TRUE. if you need these
 ! hydrometeors in your simulations.
     ldrizzle = .false.
 
@@ -649,7 +649,7 @@ module coamps_microphys_driver_module
       qg3_flip(1,1,1:kk) = qg3(1,1,kk:1:-1) ! Graupel water mixing ratio
       qs3_flip(1,1,1:kk) = qs3(1,1,kk:1:-1) ! Snow water mixing ratio
 
-      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS microphys
+      w3_flip(1,1,1:kk+1) = w3(1,1,kk+1:1:-1) ! not referenced in COAMPS microphysics
 
       pr3d_flip(1,1,1:kk)    = pr3d(1,1,kk:1:-1) ! top point is undefined
       qsatv3d_flip(1,1,1:kk) = qsatv3d(1,1,kk:1:-1) ! " "

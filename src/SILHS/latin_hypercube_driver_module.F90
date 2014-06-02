@@ -1164,15 +1164,15 @@ module latin_hypercube_driver_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_Ncm_mc,    & ! LH estimate of time tendency of cloud droplet concentration  [num/kg/s]
-      lh_rcm_mc,    & ! LH estimate of time tendency of liquid water mixing ratio    [kg/kg/s]
-      lh_rvm_mc,    & ! LH estimate of time tendency of vapor water mixing ratio     [kg/kg/s]
-      lh_thlm_mc,   & ! LH estimate of time tendency of liquid potential temperature [K/s]
-      lh_rtp2_mc,   & ! LH microphys. tendency for <rt'^2>                        [(kg/kg)^2/s]
-      lh_thlp2_mc,  & ! LH microphys. tendency for <thl'^2>                       [K^2/s]
-      lh_wprtp_mc,  & ! LH microphys. tendency for <w'rt'>                        [m*(kg/kg)/s^2]
-      lh_wpthlp_mc, & ! LH microphys. tendency for <w'thl'>                       [m*K/s^2]
-      lh_rtpthlp_mc   ! LH microphys. tendency for <rt'thl'>                      [K*(kg/kg)/s]
+      lh_Ncm_mc,     & ! LH estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
+      lh_rcm_mc,     & ! LH estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
+      lh_rvm_mc,     & ! LH estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
+      lh_thlm_mc,    & ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
+      lh_rtp2_mc,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
+      lh_thlp2_mc,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
+      lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
+      lh_wpthlp_mc,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
+      lh_rtpthlp_mc    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
 
     ! ---- Begin Code ----
 

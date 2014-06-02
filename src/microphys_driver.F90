@@ -70,8 +70,8 @@ module microphys_driver
         cloud_frac_min
 
     use KK_microphys_module, only: & 
-        KK_local_microphys_driver,    & ! Procedure(s)
-        KK_upscaled_microphys_driver
+        KK_local_microphys,    & ! Procedure(s)
+        KK_upscaled_microphys
 
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
@@ -113,10 +113,10 @@ module microphys_driver
 
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
-        l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
+        l_predict_Nc,         & ! Predict cloud droplet number conc (Morrison)
         lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
-        microphys_scheme,         & ! The microphysical scheme in use
+        microphys_scheme,     & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
         microphys_start_time, & ! When to start the microphysics [s]
         sigma_g                 ! Parameter used in the cloud droplet sedimentation code
@@ -562,7 +562,7 @@ module microphys_driver
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
                  rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
                  wpthlp_mc, rtpthlp_mc, & ! Out               
-                 KK_local_microphys_driver ) ! Procedure
+                 KK_local_microphys ) ! Procedure
 #else
           stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
@@ -589,34 +589,33 @@ module microphys_driver
 
           if ( l_local_kk ) then
 
-             call KK_local_microphys_driver( dt, gr%nz, &
-                                         l_latin_hypercube_input, thlm, wm_zt, &
-                                         p_in_Pa, exner, rho, cloud_frac, &
-                                         wtmp, delta_zt, rcm, &
-                                         Ncm_microphys, s_mellor, rvm, &
-                                         hydromet, &
-                                         hydromet_mc, hydromet_vel_zt, Ncm_mc, &
-                                         rcm_mc, rvm_mc, thlm_mc, &
-                                         rrainm_auto, rrainm_accr, rrainm_evap, &
-                                         Nrm_auto, Nrm_evap, microphys_stats_zt, &
-                                         microphys_stats_sfc )
+             call KK_local_microphys( dt, gr%nz, l_latin_hypercube_input,     & ! In
+                                      thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
+                                      cloud_frac, wtmp, delta_zt, rcm,        & ! In
+                                      Ncm_microphys, s_mellor, rvm, hydromet, & ! In
+                                      hydromet_mc, hydromet_vel_zt,           & ! Out
+                                      Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
+                                      rrainm_auto, rrainm_accr,               & ! Out
+                                      rrainm_evap, Nrm_auto,                  & ! Out
+                                      Nrm_evap, microphys_stats_zt,           & ! Out
+                                      microphys_stats_sfc                     ) ! Out
 
           else
 
-             call KK_upscaled_microphys_driver( dt, gr%nz, n_variables, l_stats_samp, & ! Intent(in)
-                                            wm_zt, rtm, thlm, p_in_Pa,            & ! Intent(in)
-                                            exner, rho, rcm, Nc_in_cloud,         & ! Intent(in)
-                                            pdf_params, hydromet_pdf_params,      & ! Intent(in)
-                                            hydromet, wphydrometp,                & ! Intent(in)
-                                            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
-                                            corr_array_1, corr_array_2,           & ! Intent(in)
-                                            hydromet_mc, hydromet_vel_zt,         & ! Intent(out)
-                                            rcm_mc, rvm_mc, thlm_mc,              & ! Intent(out)
-                                            hydromet_vel_covar_zt_impc,           & ! Intent(out)
-                                            hydromet_vel_covar_zt_expc,           & ! Intent(out)
-                                            wprtp_mc, wpthlp_mc,                  & ! Intent(out)
-                                            rtp2_mc, thlp2_mc,                    & ! Intent(out)
-                                            rtpthlp_mc )                            ! Intent(out)
+             call KK_upscaled_microphys( dt, gr%nz, n_variables, l_stats_samp, & ! In
+                                         wm_zt, rtm, thlm, p_in_Pa,            & ! In
+                                         exner, rho, rcm, Nc_in_cloud,         & ! In
+                                         pdf_params, hydromet_pdf_params,      & ! In
+                                         hydromet, wphydrometp,                & ! In
+                                         mu_x_1, mu_x_2,                       & ! In
+                                         sigma_x_1, sigma_x_2,                 & ! In
+                                         corr_array_1, corr_array_2,           & ! In
+                                         hydromet_mc, hydromet_vel_zt,         & ! Out
+                                         rcm_mc, rvm_mc, thlm_mc,              & ! Out
+                                         hydromet_vel_covar_zt_impc,           & ! Out
+                                         hydromet_vel_covar_zt_expc,           & ! Out
+                                         wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
+                                         thlp2_mc, rtpthlp_mc                  ) ! Out
 
           endif
 
