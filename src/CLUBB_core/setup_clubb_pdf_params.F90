@@ -618,11 +618,11 @@ module setup_clubb_pdf_params
                                    sigma_x_2_n(:,k), corr_array_1_n(:,:,k), &
                                    corr_array_2_n(:,:,k), l_stats_samp )
 
-       !!! Has to be generalized
-       call pack_pdf_params( hm1(k,:), hm2(k,:), mu_x_1, mu_x_2, &  ! Intent(in)
-                             sigma_x_1, sigma_x_2, d_variables, &   ! Intent(in)
-                             precip_frac(k), precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                             hydromet_pdf_params(k) )               ! Intent(out)
+       !!! Pack the PDF parameters
+       call pack_pdf_params( hm1(k,:), hm2(k,:), d_variables, mu_x_1, mu_x_2, & ! In
+                             sigma_x_1, sigma_x_2, precip_frac(k), &            ! In
+                             precip_frac_1(k), precip_frac_2(k), &              ! In
+                             hydromet_pdf_params(k) )                           ! Out
 
        if ( l_use_modified_corr ) then
 
@@ -3497,9 +3497,7 @@ module setup_clubb_pdf_params
         iiPDF_w,                   & ! Variable(s)
         iiPDF_s => iiPDF_s_mellor, &
         iiPDF_t => iiPDF_t_mellor, &
-        iiPDF_Ncn,                 &
-        iiPDF_rrain,               &
-        iiPDF_Nr
+        iiPDF_Ncn
 
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
@@ -3806,15 +3804,14 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_ln_hm_stats
 
   !=============================================================================
-  subroutine pack_pdf_params( hm1, hm2, mu_x_1, mu_x_2, &                   ! Intent(in)
-                              sigma_x_1, sigma_x_2, d_variables, &          ! Intent(in)
-                              precip_frac, precip_frac_1, precip_frac_2, &  ! Intent(in)
-                              hydromet_pdf_params )                         ! Intent(out)
+  subroutine pack_pdf_params( hm1, hm2, d_variables, mu_x_1, mu_x_2, & ! In
+                              sigma_x_1, sigma_x_2, precip_frac, &     ! In
+                              precip_frac_1, precip_frac_2, &          ! In
+                              hydromet_pdf_params )                    ! Out
 
-    ! Description: Setup the structure hydromet_pdf_params.
-
-    !!! This code still has to be generalized to deal with an arbitrary set of
-    !!! hydrometeors.
+    ! Description:
+    ! Pack the standard means and variances involving hydrometeors, as well as a
+    ! few other variables, into the structure hydromet_pdf_params.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3822,76 +3819,86 @@ module setup_clubb_pdf_params
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)
 
+    use index_mapping, only: &
+        hydromet2pdf_idx  ! Procedure(s)
+
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use clubb_precision, only: &
-        core_rknd    ! Constant
-
     use corr_matrix_module, only: &
-        iiPDF_rrain, &
-        iiPDF_Nr, &
-        iiPDF_Ncn
+        iiPDF_Ncn  ! Variable(s)
 
-    use array_index, only: &
-        iirrainm, & ! Variable(s)
-        iiNrm
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: d_variables ! Numeber of variables in the mean/stdev arrays
-
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      mu_x_1,       & ! Mean array (1st PDF component) in-precip (ip)   [units vary]
-      mu_x_2,       & ! Mean array (2nd PDF component) ip               [units vary]
-      sigma_x_1,    & ! Standard deviation array (1st PDF component) ip [units vary]
-      sigma_x_2       ! Standard deviation array (2nd PDF component) ip [units vary]
-
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       hm1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
       hm2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
+
+    integer, intent(in) :: &
+      d_variables    ! Number of variables in the mean/stdev arrays
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      mu_x_1,    & ! Mean array of PDF vars. (1st PDF component)    [units vary]
+      mu_x_2,    & ! Mean array of PDF vars. (2nd PDF component)    [units vary]
+      sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
+      sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
-    ! Output Variables
+    ! Output Variable
     type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
-    ! ---- Begin Code ----
+    ! Local Variables
+    integer :: ivar  ! Loop index
 
-    ! Pack remaining variables into hydromet_pdf_params
-    if ( iirrainm > 0 ) then
-       hydromet_pdf_params%rr1           = hm1(iirrainm)
-       hydromet_pdf_params%rr2           = hm2(iirrainm)
 
-       hydromet_pdf_params%mu_rr_1     = mu_x_1(iiPDF_rrain)
-       hydromet_pdf_params%mu_rr_2     = mu_x_2(iiPDF_rrain)
-       hydromet_pdf_params%sigma_rr_1  = sigma_x_1(iiPDF_rrain)
-       hydromet_pdf_params%sigma_rr_2  = sigma_x_2(iiPDF_rrain)
-    endif
+    ! Pack remaining means and standard deviations into hydromet_pdf_params.
+    do ivar = 1, hydromet_dim, 1
 
-    if ( iiNrm > 0 ) then
-       hydromet_pdf_params%Nr1           = hm1(iiNrm)
-       hydromet_pdf_params%Nr2           = hm2(iiNrm)
+       ! Mean of a hydrometeor (overall) in the 1st PDF component.
+       hydromet_pdf_params%hm1(ivar) = hm1(ivar)
+       ! Mean of a hydrometeor (overall) in the 2nd PDF component.
+       hydromet_pdf_params%hm2(ivar) = hm2(ivar)
 
-       hydromet_pdf_params%mu_Nr_1     = mu_x_1(iiPDF_Nr)
-       hydromet_pdf_params%mu_Nr_2     = mu_x_2(iiPDF_Nr)
-       hydromet_pdf_params%sigma_Nr_1  = sigma_x_1(iiPDF_Nr)
-       hydromet_pdf_params%sigma_Nr_2  = sigma_x_2(iiPDF_Nr)
-    endif
+       ! Mean of a hydrometeor (in-precip) in the 1st PDF component.
+       hydromet_pdf_params%mu_hm_1(ivar) = mu_x_1(hydromet2pdf_idx(ivar))
+       ! Mean of a hydrometeor (in-precip) in the 2nd PDF component.
+       hydromet_pdf_params%mu_hm_2(ivar) = mu_x_2(hydromet2pdf_idx(ivar))
 
-    hydromet_pdf_params%mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
-    hydromet_pdf_params%mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
+       ! Standard deviation of a hydrometeor (in-precip) in the
+       ! 1st PDF component.
+       hydromet_pdf_params%sigma_hm_1(ivar) = sigma_x_1(hydromet2pdf_idx(ivar))
+       ! Standard deviation of a hydrometeor (in-precip) in the
+       ! 2nd PDF component.
+       hydromet_pdf_params%sigma_hm_2(ivar) = sigma_x_2(hydromet2pdf_idx(ivar))
+
+    enddo ! ivar = 1, hydromet_dim, 1
+
+    ! Mean of Ncn (overall) in the 1st PDF component.
+    hydromet_pdf_params%mu_Ncn_1 = mu_x_1(iiPDF_Ncn)
+    ! Mean of Ncn (overall) in the 2nd PDF component.
+    hydromet_pdf_params%mu_Ncn_2 = mu_x_2(iiPDF_Ncn)
+
+    ! Standard deviation of Ncn (overall) in the 1st PDF component.
     hydromet_pdf_params%sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
+    ! Standard deviation of Ncn (overall) in the 2nd PDF component.
     hydromet_pdf_params%sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
+    ! Precipitation fraction (overall).
     hydromet_pdf_params%precip_frac   = precip_frac
+    ! Precipitation fraction (1st PDF component).
     hydromet_pdf_params%precip_frac_1 = precip_frac_1
+    ! Precipitation fraction (2nd PDF component).
     hydromet_pdf_params%precip_frac_2 = precip_frac_2
+
 
     return
 

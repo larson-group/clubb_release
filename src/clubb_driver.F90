@@ -276,7 +276,8 @@ module clubb_driver
         setup_pdf_parameters    ! Procedure(s)
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter ! Type(s)
+        hydromet_pdf_parameter,   & ! Type(s)
+        init_hydromet_pdf_params    ! Procedure(s)
 
     use constants_clubb, only: &
         cloud_frac_min
@@ -915,6 +916,9 @@ module clubb_driver
 
     ! Allocate hydromet_pdf_params
     allocate( hydromet_pdf_params(gr%nz) )
+
+    ! Initialize to 0.
+    call init_hydromet_pdf_params( hydromet_pdf_params )
 
     ! Allocate the correlation arrays
     allocate(corr_array_1(d_variables, d_variables, gr%nz))
