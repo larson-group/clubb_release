@@ -31,27 +31,16 @@ module bugsrad_driver
 ! Description:
 !   Does the necessary operations to interface the CLUBB model with
 !   the BUGS radition scheme.
-
-! Grid Layout:
 !
-! /////////////// Layers from U.S. Standard Atmosphere or sounding   ///////////////
-! ///////////////       Dimension: extend_atmos_range_size           ///////////////
-!                                  .
-!                                  .
-! ---------------         Interpolated Layers                        ---------------
-! ---------------         Dimension: lin_int_buffer                  ---------------
-!                                  .
-!                                  .
-! ///////////////          Top of CLUBB Grid                         ///////////////
-! ///////////////          Dimension: nz                             ///////////////
 ! References:
-! Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
-! McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
-
+!   Stevens, et al., (2001) _Journal of Atmospheric Science_, Vol 58, p.3391-3409
+!
 ! Contact for information on BUGSrad (other than this routine)
 !   Norm Wood <norm@atmos.colostate.edu>
-
-! All code external to this based on the BUGSrad source from 2004/7/10
+!
+! All code external to this based on the BUGSrad source from 2004/7/10, with
+! modifications to use LAPACK rather than Numerical Recipes for band-diagonal
+! solvers when -Dnooverlap is not added to the CPPFLAGS.
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: fstderr, grav, Cp, cloud_frac_min, &
@@ -70,20 +59,24 @@ module bugsrad_driver
       extend_T_in_K, extend_sp_hmdty, extend_o3l
 
     use parameters_radiation, only: &
-      sol_const, &
+      sol_const, & ! Variable(s)
       alvdr, &
       alvdf, &
       alndr, &
       alndf, &
       slr
 
-    use variables_radiation_module, only: radht_LW, radht_SW, Frad_SW, Frad_LW,&
+    use variables_radiation_module, only: &
+      radht_LW, radht_SW, Frad_SW, Frad_LW, & ! Variable(s)
       T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
       radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW
 
     implicit none
 
-    intrinsic :: real
+    ! External
+    external :: bugs_rad ! Subroutine
+
+    intrinsic :: real ! Function
 
     ! Input Variables
     real( kind = dp ), intent(in) :: &

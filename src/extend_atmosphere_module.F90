@@ -1,7 +1,23 @@
-!----------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 ! $Id$
 module extend_atmosphere_module
 
+! Grid Layout:
+!
+! /////////////// Layers from U.S. Standard Atmosphere or sounding   ///////////////
+! ///////////////       Dimension: extend_atmos_range_size           ///////////////
+!                                  .
+!                                  .
+! ---------------         Interpolated Layers                        ---------------
+! ---------------         Dimension: lin_int_buffer_size             ---------------
+!                                  .
+!                                  .
+! ///////////////          Top of CLUBB Grid                         ///////////////
+! ///////////////          Dimension: grid_size                      ///////////////
+!
+! References:
+!   McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
+!-------------------------------------------------------------------------------
   use clubb_precision, only: &
     dp, & ! double precision
     core_rknd
@@ -291,7 +307,7 @@ module extend_atmosphere_module
       ! It is possible we could be above the specified radiation top, check
       ! and roll back if neccessary
       if( extend_alt(k) > real( radiation_top, kind=dp ) ) then
-        k= k-1
+        k = k-1
       end if
 
     else

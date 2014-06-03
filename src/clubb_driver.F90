@@ -1718,7 +1718,8 @@ module clubb_driver
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
       call determine_extend_atmos_bounds( gr%nz, gr%zt,           & ! Intent(in)
-                                          gr%zm, gr%invrs_dzm,       & ! Intent(in)
+!                                         gr%zm, gr%invrs_dzm,       & ! Intent(in)
+                                          gr%zm, gr%dzt,          & ! Intent(in)
                                           radiation_top,             & ! Intent(in)
                                           extend_atmos_bottom_level, & ! Intent(out)
                                           extend_atmos_top_level,    & ! Intent(out)
