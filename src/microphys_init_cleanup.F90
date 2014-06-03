@@ -470,17 +470,53 @@ module microphys_init_cleanup
 
     case ( "morrison" )
 
-       iirrainm    = 1
-       iirsnowm    = 2
-       iiricem     = 3
-       iirgraupelm = 4
+       iirrainm = 1
+       iiNrm    = 2
 
-       iiNrm       = 5
-       iiNsnowm    = 6
-       iiNim       = 7
-       iiNgraupelm = 8
+       if ( l_ice_microphys ) then
 
-       hydromet_dim = 8
+          iiricem  = 3
+          iiNim    = 4
+          iirsnowm = 5
+          iiNsnowm = 6
+
+          doicemicro = .true.
+
+          if ( l_graupel ) then
+
+             iirgraupelm = 7
+             iiNgraupelm = 8
+
+             hydromet_dim = 8
+
+             dograupel = .true.
+
+          else ! l_graupel disabled
+
+             iirgraupelm = -1
+             iiNgraupelm = -1
+
+             hydromet_dim = 6
+
+             dograupel = .false.
+
+          endif ! l_graupel
+
+       else ! l_ice_microphys disabled
+
+          iirsnowm    = -1
+          iiricem     = -1
+          iiNsnowm    = -1
+          iiNim       = -1
+          iirgraupelm = -1
+          iiNgraupelm = -1
+
+          hydromet_dim = 2
+
+          doicemicro = .false.
+          dograupel = .false.
+
+       endif ! l_ice_microphys
 
        ! Set Nc0 in the Morrison code (module_MP_graupel) based on Nc0_in_cloud
        Nc0 = real( Nc0_in_cloud / cm3_per_m3 ) ! Units on Nc0 are per cm^3
@@ -514,22 +550,10 @@ module microphys_init_cleanup
           docloudedgeactivation = .false.
        endif
 
-       if ( l_ice_microphys ) then
-          doicemicro = .true.
-       else
-          doicemicro = .false.
-       endif
-
        if ( l_arctic_nucl ) then
           doarcticicenucl = .true.
        else
           doarcticicenucl = .false.
-       endif
-
-       if ( l_graupel ) then
-          dograupel = .true.
-       else
-          dograupel = .false.
        endif
 
        if ( l_hail ) then
@@ -576,15 +600,7 @@ module microphys_init_cleanup
        allocate( l_hydromet_sed(hydromet_dim) )
 
        ! Sedimentation is handled within the Morrison microphysics
-       l_hydromet_sed(iiNrm)       = .false.
-       l_hydromet_sed(iiNim)       = .false.
-       l_hydromet_sed(iiNgraupelm) = .false.
-       l_hydromet_sed(iiNsnowm)    = .false.
-
-       l_hydromet_sed(iirrainm)    = .false.
-       l_hydromet_sed(iirsnowm)    = .false.
-       l_hydromet_sed(iiricem)     = .false.
-       l_hydromet_sed(iirgraupelm) = .false.
+       l_hydromet_sed(:) = .false.
 
        call GRAUPEL_INIT()
 
