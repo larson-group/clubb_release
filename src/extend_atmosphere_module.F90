@@ -63,8 +63,8 @@ module extend_atmosphere_module
 !$omp threadprivate(extend_sp_hmdty)
 
   ! Pressure in millibars
-  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_pinmb
-!$omp threadprivate(extend_pinmb)
+  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_P_in_mb
+!$omp threadprivate(extend_P_in_mb)
 
 
   ! Ozone ( O_3 / Density )
@@ -146,7 +146,7 @@ module extend_atmosphere_module
     allocate( extend_alt(extend_atmos_dim) )
     allocate( extend_T_in_K(extend_atmos_dim) )
     allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_pinmb(extend_atmos_dim) )
+    allocate( extend_P_in_mb(extend_atmos_dim) )
     allocate( extend_o3l(extend_atmos_dim) )
 
     allocate( alt(extend_atmos_dim) )
@@ -170,7 +170,7 @@ module extend_atmosphere_module
       stop "Feature not implemented"
     end if
 
-    extend_pinmb = real(p_in_Pa/ 100._core_rknd, kind=dp)
+    extend_P_in_mb = real(p_in_Pa/ 100._core_rknd, kind=dp)
 
     ! Convert to temperature from thlm or theta
 
@@ -361,12 +361,12 @@ module extend_atmosphere_module
     end do
 
     i = 0 ! Tracks the number of extension levels used
-    do j=grid_size+lin_int_buffer_size, total_atmos_dim
+    do j = grid_size + lin_int_buffer_size + 1, total_atmos_dim
       ! Take values from the extended atmosphere    
       complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i), kind = core_rknd )
       ! Keep track of where we are in the extended atmosphere
       i = i + 1
-      if ( i+extend_atmos_bottom_level == extend_atmos_dim ) then
+      if ( (i-1)+extend_atmos_bottom_level == extend_atmos_dim ) then
         exit
       else
         cycle ! Loop to next point
@@ -374,7 +374,7 @@ module extend_atmosphere_module
     end do
 
     ! Use a linear extension for the topmost points (generally this is only 1 or 2 points)
-    do j = i, total_atmos_dim + 1
+    do j = grid_size + lin_int_buffer_size + i, total_atmos_dim + 1
       dz_extension = real( complete_momentum(j-1) - complete_momentum(j-2), kind= dp )
       complete_momentum(j) = complete_momentum(j-1) + real( dz_extension, kind = core_rknd )
     end do
@@ -451,7 +451,7 @@ module extend_atmosphere_module
     allocate( extend_alt(extend_atmos_dim) )
     allocate( extend_T_in_K(extend_atmos_dim) )
     allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_pinmb(extend_atmos_dim) )
+    allocate( extend_P_in_mb(extend_atmos_dim) )
     allocate( extend_o3l(extend_atmos_dim) )
 
     extend_alt = real( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
@@ -463,7 +463,7 @@ module extend_atmosphere_module
     extend_sp_hmdty = real( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
                                       atm_input_file ), kind=dp )
 
-    extend_pinmb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+    extend_P_in_mb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
                                    atm_input_file ), kind=dp )
 
     extend_o3l = real( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
@@ -504,8 +504,8 @@ module extend_atmosphere_module
       deallocate( extend_sp_hmdty )
     end if
 
-    if ( allocated( extend_pinmb ) ) then
-      deallocate( extend_pinmb )
+    if ( allocated( extend_P_in_mb ) ) then
+      deallocate( extend_P_in_mb )
     end if
 
     if ( allocated( extend_o3l ) ) then
