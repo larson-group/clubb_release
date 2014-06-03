@@ -76,7 +76,7 @@ module microphys_driver
     use cloud_sed_module, only: &
         cloud_drop_sed  ! Procedure(s)
 
-    use morrison_micro_driver_module, only: &
+    use morrison_microphys_module, only: &
         morrison_microphys_driver  ! Procedure(s)
 
     use mg_microphys_driver_module, only: &

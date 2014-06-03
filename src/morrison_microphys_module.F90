@@ -1,5 +1,5 @@
 ! $Id$
-module morrison_micro_driver_module
+module morrison_microphys_module
 
   implicit none
 
@@ -1044,4 +1044,4 @@ module morrison_micro_driver_module
     return
   end subroutine morrison_microphys_driver
 
-end module morrison_micro_driver_module
+end module morrison_microphys_module
