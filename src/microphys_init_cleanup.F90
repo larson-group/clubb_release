@@ -885,8 +885,7 @@ module microphys_init_cleanup
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            iirgraupelm, iiNgraupelm, &
-                            l_ice_microphys, l_graupel )
+                            iirgraupelm, iiNgraupelm )
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext

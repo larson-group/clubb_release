@@ -424,17 +424,15 @@ module corr_matrix_module
   !-----------------------------------------------------------------------
   subroutine setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                                 iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                iirgraupelm, iiNgraupelm, &
-                                l_ice_microphys, l_graupel )
+                                iirgraupelm, iiNgraupelm )
 
-  ! Description:
-  !
-  !   Setup for the iiPDF indices. These indices are used to address s, t, w
-  !   and the hydrometeors in the mean/stdev/corr arrays
-  !
-  ! References:
-  !
-  !-----------------------------------------------------------------------
+    ! Description:
+    !
+    ! Setup for the iiPDF indices. These indices are used to address s, t, w
+    ! and the hydrometeors in the mean/stdev/corr arrays
+    !
+    ! References:
+    !-----------------------------------------------------------------------
 
     implicit none
 
@@ -443,18 +441,14 @@ module corr_matrix_module
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrainm, & ! Index of rain water mixing ratio
-      iiNrm,    & ! Index of rain drop concentration
-      iiricem,  & ! Index of ice mixing ratio
-      iiNim,    & ! Index of ice crystal concentration
-      iirsnowm, & ! Index of snow mixing ratio
-      iiNsnowm, & ! Index of snow concentration
+      iirrainm,    & ! Index of rain water mixing ratio
+      iiNrm,       & ! Index of rain drop concentration
+      iiricem,     & ! Index of ice mixing ratio
+      iiNim,       & ! Index of ice crystal concentration
+      iirsnowm,    & ! Index of snow mixing ratio
+      iiNsnowm,    & ! Index of snow flake concentration
       iirgraupelm, & ! Index of graupel mixing ratio
-      iiNgraupelm    ! Index of graupel number concentration
-
-    logical, intent(in) :: &
-      l_ice_microphys, &  ! Whether the microphysics scheme will do ice
-      l_graupel       ! True if graupel is used
+      iiNgraupelm    ! Index of graupel concentration
 
     ! Local Variables
     integer :: &
@@ -489,59 +483,39 @@ module corr_matrix_module
              iiPDF_Nr = pdf_count
           endif
 
-          if ( l_ice_microphys ) then
+          if ( i == iiricem ) then
+             pdf_count = pdf_count + 1
+             iiPDF_rice = pdf_count
+          endif
 
-             if ( i == iiricem ) then
-                pdf_count = pdf_count + 1
-                iiPDF_rice = pdf_count
-             endif
+          if ( i == iiNim ) then
+             pdf_count = pdf_count + 1
+             iiPDF_Ni = pdf_count
+          endif
 
-             if ( i == iiNim ) then
-                pdf_count = pdf_count + 1
-                iiPDF_Ni = pdf_count
-             endif
+          if ( i == iirsnowm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_rsnow = pdf_count
+          endif
 
-             if ( i == iirsnowm ) then
-                pdf_count = pdf_count + 1
-                iiPDF_rsnow = pdf_count
-             endif
+          if ( i == iiNsnowm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_Nsnow = pdf_count
+          endif
 
-             if ( i == iiNsnowm ) then
-                pdf_count = pdf_count + 1
-                iiPDF_Nsnow = pdf_count
-             endif
-
-             if ( l_graupel ) then
-                if ( i == iirgraupelm ) then
-                   pdf_count = pdf_count + 1
-                   iiPDF_rgraupel = pdf_count
-                endif
+          if ( i == iirgraupelm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_rgraupel = pdf_count
+          endif
         
-                if ( i == iiNgraupelm ) then
-                   pdf_count = pdf_count + 1
-                   iiPDF_Ngraupel = pdf_count
-                endif   
-             
-             else
-                
-                iiPDF_rgraupel = -1
-                iiPDF_Ngraupel = -1
-             
-             endif
-
-          else
-
-             iiPDF_rice = -1
-             iiPDF_Ni = -1
-             iiPDF_rsnow = -1
-             iiPDF_Nsnow = -1
-
-          endif ! l_ice_microphys
+          if ( i == iiNgraupelm ) then
+             pdf_count = pdf_count + 1
+             iiPDF_Ngraupel = pdf_count
+          endif   
 
        enddo ! i = 1, hydromet_dim, 1
 
     endif ! hydromet_dim > 0
-
 
     d_variables = pdf_count
 
@@ -849,8 +823,7 @@ module corr_matrix_module
  !-----------------------------------------------------------------------------
   subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
                                 iiricem, iiNsnowm, iiNim, &
-                                iirgraupelm, iiNgraupelm, &
-                                l_ice_microphys, l_graupel, iunit )
+                                iirgraupelm, iiNgraupelm, iunit )
 
     ! Description: This subroutine sets up arrays that are necessary for WRF.
     !   
@@ -876,14 +849,11 @@ module corr_matrix_module
       iiNgraupelm, &
       iunit
 
-    logical, intent(in) :: l_ice_microphys, l_graupel
-
     ! ---- Begin Code ----
 
     call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
                             iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            iirgraupelm, iiNgraupelm, &
-                            l_ice_microphys, l_graupel )
+                            iirgraupelm, iiNgraupelm )
 
     ! Setup the arrays and indices containing the correlations, etc.
     call setup_corr_varnce_array( lh_file_path_cloud, lh_file_path_below, iunit )
