@@ -345,6 +345,10 @@ module stats_zt
         icorr_st_1, &
         icorr_st_2, &
         irrtthl, &
+        icorr_ws_1, &
+        icorr_ws_2, &
+        icorr_wt_1, &
+        icorr_wt_2, &
         icrt1, &
         icrt2, &
         icthl1, &
@@ -3564,24 +3568,67 @@ module stats_zt
         icorr_st_1 = k
 
         call stat_assign( var_index=icorr_st_1, var_name="corr_st_1", &
-             var_description="Correlation btw. s and t (1st PDF component) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
+                          var_description="Correlation between s and t" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('corr_st_2')
         icorr_st_2 = k
 
         call stat_assign( var_index=icorr_st_2, var_name="corr_st_2", &
-             var_description="Correlation btw. s and t (2nd PDF component) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
+                          var_description="Correlation between s and t" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('rrtthl')
         irrtthl = k
 
         call stat_assign( var_index=irrtthl, var_name="rrtthl", &
-             var_description="Correlation btw. rt and thl (both components) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
+                          var_description="Correlation between rt and thl" &
+                          // " (both PDF components) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('corr_ws_1')
+        icorr_ws_1 = k
+
+        call stat_assign( var_index=icorr_ws_1, var_name="corr_ws_1", &
+                          var_description="Correlation between w and s" &
+                          // " (1st PDF component) -- should be 0 by" &
+                          // " CLUBB standards [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('corr_ws_2')
+        icorr_ws_2 = k
+
+        call stat_assign( var_index=icorr_ws_2, var_name="corr_ws_2", &
+                          var_description="Correlation between w and s" &
+                          // " (2nd PDF component) -- should be 0 by" &
+                          // " CLUBB standards [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('corr_wt_1')
+        icorr_wt_1 = k
+
+        call stat_assign( var_index=icorr_wt_1, var_name="corr_wt_1", &
+                          var_description="Correlation between w and t" &
+                          // " (1st PDF component) -- should be 0 by" &
+                          // " CLUBB standards [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('corr_wt_2')
+        icorr_wt_2 = k
+
+        call stat_assign( var_index=icorr_wt_2, var_name="corr_wt_2", &
+                          var_description="Correlation between w and t" &
+                          // " (2nd PDF component) -- should be 0 by" &
+                          // " CLUBB standards [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('crt1')

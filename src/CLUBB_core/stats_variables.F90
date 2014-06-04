@@ -599,12 +599,17 @@ module stats_variables
      icorr_st_1 = 0, &
      icorr_st_2 = 0, &
      irrtthl = 0, &
+     icorr_ws_1 = 0, &
+     icorr_ws_2 = 0, &
+     icorr_wt_1 = 0, &
+     icorr_wt_2 = 0, &
      icrt1 = 0, &
      icrt2 = 0, &
      icthl1 = 0, &
      icthl2 = 0
 !$omp  threadprivate( is1, is2, istdev_s1, istdev_s2, isp2, &
-!$omp    istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, icorr_st_2, irrtthl, &
+!$omp    istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, &
+!$omp    icorr_st_2, irrtthl, icorr_ws_1, icorr_ws_2, icorr_wt_1, icorr_wt_2, &
 !$omp    icrt1, icrt2, icthl1, icthl2 )
 
   integer, public :: & 

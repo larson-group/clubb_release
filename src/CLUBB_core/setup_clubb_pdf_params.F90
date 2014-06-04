@@ -3233,7 +3233,11 @@ module setup_clubb_pdf_params
         isigma_Ncn_2
 
     use stats_variables, only : &
-        icorr_whm_1,    & ! Variable(s)
+        icorr_ws_1,     & ! Variable(s)
+        icorr_ws_2,     &
+        icorr_wt_1,     &
+        icorr_wt_2,     &
+        icorr_whm_1,    &
         icorr_whm_2,    &
         icorr_wNcn_1,   &
         icorr_wNcn_2,   &
@@ -3337,6 +3341,42 @@ module setup_clubb_pdf_params
        if ( isigma_Ncn_2 > 0 ) then
           call stat_update_var_pt( isigma_Ncn_2, level, &
                                    sigma_x_2(iiPDF_Ncn), zt )
+       endif
+
+       ! Correlation between w and s in PDF component 1.
+       ! This correlation should always be 0 because both the correlation
+       ! between w and rt and the correlation between w and theta-l within each
+       ! PDF component are defined to be 0 by CLUBB standards.
+       if ( icorr_ws_1 > 0 ) then
+          call stat_update_var_pt( icorr_ws_1, level, &
+                                   corr_array_1(iiPDF_w,iiPDF_s), zt )
+       endif
+
+       ! Correlation between w and s in PDF component 2.
+       ! This correlation should always be 0 because both the correlation
+       ! between w and rt and the correlation between w and theta-l within each
+       ! PDF component are defined to be 0 by CLUBB standards.
+       if ( icorr_ws_2 > 0 ) then
+          call stat_update_var_pt( icorr_ws_2, level, &
+                                   corr_array_2(iiPDF_w,iiPDF_s), zt )
+       endif
+
+       ! Correlation between w and t in PDF component 1.
+       ! This correlation should always be 0 because both the correlation
+       ! between w and rt and the correlation between w and theta-l within each
+       ! PDF component are defined to be 0 by CLUBB standards.
+       if ( icorr_wt_1 > 0 ) then
+          call stat_update_var_pt( icorr_wt_1, level, &
+                                   corr_array_1(iiPDF_w,iiPDF_t), zt )
+       endif
+
+       ! Correlation between w and t in PDF component 2.
+       ! This correlation should always be 0 because both the correlation
+       ! between w and rt and the correlation between w and theta-l within each
+       ! PDF component are defined to be 0 by CLUBB standards.
+       if ( icorr_wt_2 > 0 ) then
+          call stat_update_var_pt( icorr_wt_2, level, &
+                                   corr_array_2(iiPDF_w,iiPDF_t), zt )
        endif
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
