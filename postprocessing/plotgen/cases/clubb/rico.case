@@ -215,8 +215,8 @@
        ]},
        {'plotTitle' => 'Correlation between s and t', 'axisLabel' => 'corr\_st\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_st_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_st_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_st_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_st_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Correlation (in-precip) between s and r_r', 'axisLabel' => 'corr\_srr\_i [-]', 'type' => 'profile', 'lines' =>
        [
