@@ -51,10 +51,10 @@ module variables_radiation_module
 !$omp threadprivate(radht_SW_2d, radht_LW_2d)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
-    P_in_mb, &   ! Pressure in millibars        [mb]
+    p_in_mb, &   ! Pressure in millibars        [mb]
     sp_humidity  ! Specific humidity            [kg/kg]
 
-!$omp threadprivate(P_in_mb, sp_humidity)
+!$omp threadprivate(p_in_mb, sp_humidity)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
     Frad_uLW, & ! LW upwelling flux         [W/m^2]
@@ -125,7 +125,7 @@ module variables_radiation_module
     allocate( cloud_frac_2d(nlen, rad_zt_dim ) )
     allocate( ice_supersat_frac_2d(nlen, rad_zt_dim ) )
 
-    allocate( P_in_mb(nlen, rad_zt_dim) )
+    allocate( p_in_mb(nlen, rad_zt_dim) )
     allocate( sp_humidity(nlen, rad_zt_dim) )
 
     allocate( radht_SW_2d(nlen, rad_zt_dim ) )
@@ -159,7 +159,7 @@ module variables_radiation_module
     ice_supersat_frac_2d = 0.0_dp
     radht_SW_2d = 0.0_dp
     radht_LW_2d = 0.0_dp
-    P_in_mb = 0.0_dp
+    p_in_mb = 0.0_dp
     sp_humidity = 0.0_dp
 
     ! CLUBB zm + extended levels
@@ -200,7 +200,7 @@ module variables_radiation_module
     deallocate( cloud_frac_2d )
     deallocate( ice_supersat_frac_2d )
 
-    deallocate( P_in_mb )
+    deallocate( p_in_mb )
     deallocate( sp_humidity )
 
     deallocate( radht_SW_2d )

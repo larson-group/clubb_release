@@ -50,7 +50,7 @@ module bugsrad_driver
     use grid_class, only: flip  ! Procedure(s)
 
     use extend_atmosphere_module, only: &
-      extend_atmos_dim, extend_alt, extend_P_in_mb, & ! Variable(s)
+      extend_atmos_dim, extend_alt, extend_p_in_mb, & ! Variable(s)
       extend_T_in_K, extend_sp_hmdty, extend_o3l
 
     use parameters_radiation, only: &
@@ -68,7 +68,7 @@ module bugsrad_driver
       radht_LW, radht_SW, Frad_SW, Frad_LW, & ! Variable(s)
       T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
       radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
-      P_in_mb, sp_humidity
+      p_in_mb, sp_humidity
 
     implicit none
 
@@ -123,9 +123,9 @@ module bugsrad_driver
 
 !   real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
 !     sp_humidity, & ! Specific humidity      [kg/kg]
-!     P_in_mb          ! Pressure in millibars  [hPa]
+!     p_in_mb          ! Pressure in millibars  [hPa]
 
-    ! Pressure in millibars for layers (calculated as an average of P_in_mb)
+    ! Pressure in millibars for layers (calculated as an average of p_in_mb)
     real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
@@ -148,7 +148,7 @@ module bugsrad_driver
     buffer = lin_int_buffer + extend_atmos_range_size
 
     ! Convert to millibars
-    P_in_mb(1,1:(nz-1))  = real( p_in_Pa(2:nz) / pascal_per_mb, kind=dp ) ! t grid in CLUBB
+    p_in_mb(1,1:(nz-1))  = real( p_in_Pa(2:nz) / pascal_per_mb, kind=dp ) ! t grid in CLUBB
 
     playerinmb(1,1:nz) = real( p_in_Pam / pascal_per_mb, kind=dp ) ! m grid in CLUBB
 
@@ -191,7 +191,7 @@ module bugsrad_driver
 
     sp_humidity(1,buffer+1:(nz-1)+buffer) = flip( sp_humidity(1,1:(nz-1)), nz-1 )
 
-    P_in_mb(1,(buffer+1):(nz-1+buffer))        = flip( P_in_mb(1,1:(nz-1)), nz-1 )
+    p_in_mb(1,(buffer+1):(nz-1+buffer))        = flip( p_in_mb(1,1:(nz-1)), nz-1 )
     playerinmb(1,(buffer+1):(nz-1+buffer+1)) = flip( playerinmb(1,1:nz), nz )
 
     o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
@@ -232,8 +232,8 @@ module bugsrad_driver
                flip( extend_o3l( extend_atmos_bottom_level:extend_atmos_top_level ), &
                                  extend_atmos_range_size )
 
-    P_in_mb(1,1:extend_atmos_range_size) = &
-               flip( extend_P_in_mb( extend_atmos_bottom_level:extend_atmos_top_level ), &
+    p_in_mb(1,1:extend_atmos_range_size) = &
+               flip( extend_p_in_mb( extend_atmos_bottom_level:extend_atmos_top_level ), &
                    extend_atmos_range_size )
 
     ! Do a linear interpolation to produce the levels between the extended
@@ -250,7 +250,7 @@ module bugsrad_driver
       sp_humidity(1,z) = z1_fact * sp_humidity(1,z1) + z2_fact * sp_humidity(1,z2)
       o3l(1,z) = z1_fact * o3l(1,z1) + z2_fact * o3l(1,z2)
 
-      P_in_mb(1,z) = z1_fact * P_in_mb(1,z1) + z2_fact * P_in_mb(1,z2)
+      p_in_mb(1,z) = z1_fact * p_in_mb(1,z1) + z2_fact * p_in_mb(1,z2)
     end do
 
     ! Do a linear interpolation to find playerinmb.  Since this interpolation
@@ -259,7 +259,7 @@ module bugsrad_driver
     ! defined on momentum levels above the top of the CLUBB model, which are
     ! being defined here at points half-way inbetween the thermodynamic levels
     ! above the top of the CLUBB model.  Brian Griffin; May 13, 2008.
-    playerinmb(1,2:buffer+1) = ( P_in_mb(1,1:buffer) + P_in_mb(1,2:buffer+1) ) / 2._dp
+    playerinmb(1,2:buffer+1) = ( p_in_mb(1,1:buffer) + p_in_mb(1,2:buffer+1) ) / 2._dp
 
     ! Do a linear extension to find playerinmb at the uppermost standard
     ! atmosphere momentum level.  The grid is evenly-spaced at these points.
@@ -283,19 +283,25 @@ module bugsrad_driver
     !open(10, file="profile"//trim(time_char)//"dat")
     !write(10,'(2i4,a10)') nlen, (nz-1)+buffer, "TROPICAL"
     !do i=1, (nz-1)+buffer
-    ! write(10,'(i4,9f12.6)') i, P_in_mb(1,i), playerinmb(1,i),T_in_K(1,i), &
+    ! write(10,'(i4,9f12.6)') i, p_in_mb(1,i), playerinmb(1,i),T_in_K(1,i), &
     !sp_humidity(1,i), 100000.0*o3l(1,i), rcm_in_cloud_2d(1,i), &
     !rcil(1,i), cloud_frac_2d(1,i), diff_pres_lvls(1,i)
     !end do
     !write(10,'(a4,a12,3f12.6)') "","", playerinmb(1,nz+buffer), ts(1), amu0
     !close(10)
 
-
-!  print *, "playerinmb = ", playerinmb
-!  print *, "sp_humidity = ", sp_humidity
+    ! Assertion check for unrealistic pressure
+    do i = 2, size( p_in_mb(1,:) )
+      if ( p_in_mb(1,i-1) > p_in_mb(1,i) ) then
+        write(0,*) "Pressure (i)  [mb] = ", p_in_mb(1,i)
+        write(0,*) "Pressure (i-1) [mb] = ", p_in_mb(1,i-1)
+        write(0,*) "i level = ", i
+        stop "Fatal error: assertion check for pressure in BUGSrad_driver failed"
+      end if
+    end do
 
     call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,              &
-                   P_in_mb, diff_pres_lvls, T_in_K, sp_humidity,         &
+                   p_in_mb, diff_pres_lvls, T_in_K, sp_humidity,         &
                    rcm_in_cloud_2d, rcil, rsnowm_2d, o3l,              &
                    ts, amu0, slr, alvdf,                               &
                    alndf, alvdr, alndr, sol_const,                     &

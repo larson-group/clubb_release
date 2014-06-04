@@ -156,6 +156,7 @@ vars_zm =
 vars_rad_zt =
 'T_in_K_rad', 'rcil_rad', 'o3l_rad', 'rsnowm_rad', 'rcm_in_cloud_rad',
 'cloud_frac_rad', 'ice_supersat_frac_rad', 'radht_rad', 'radht_SW_rad', 'radht_LW_rad',
+'p_in_mb_rad', 'sp_humidity_rad',
 ''
 
 ! fulwcl, fdlwcl, fdswcl and fuswcl were added to calculate clear-sky radiative fluxes

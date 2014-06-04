@@ -63,8 +63,8 @@ module extend_atmosphere_module
 !$omp threadprivate(extend_sp_hmdty)
 
   ! Pressure in millibars
-  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_P_in_mb
-!$omp threadprivate(extend_P_in_mb)
+  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_p_in_mb
+!$omp threadprivate(extend_p_in_mb)
 
 
   ! Ozone ( O_3 / Density )
@@ -146,7 +146,7 @@ module extend_atmosphere_module
     allocate( extend_alt(extend_atmos_dim) )
     allocate( extend_T_in_K(extend_atmos_dim) )
     allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_P_in_mb(extend_atmos_dim) )
+    allocate( extend_p_in_mb(extend_atmos_dim) )
     allocate( extend_o3l(extend_atmos_dim) )
 
     allocate( alt(extend_atmos_dim) )
@@ -170,7 +170,7 @@ module extend_atmosphere_module
       stop "Feature not implemented"
     end if
 
-    extend_P_in_mb = real(p_in_Pa/ 100._core_rknd, kind=dp)
+    extend_p_in_mb = real(p_in_Pa/ 100._core_rknd, kind=dp)
 
     ! Convert to temperature from thlm or theta
 
@@ -217,7 +217,7 @@ module extend_atmosphere_module
 
   !------------------------------------------------------------------------------------------------
   subroutine determine_extend_atmos_bounds( grid_size, zt_grid, &
-                                            zm_grid, zm_grid_spacing, & 
+                                            zm_grid, zm_grid_spacing, p_in_Pa_zm, & 
                                             radiation_top, &
                                             extend_atmos_bottom_level, &
                                             extend_atmos_top_level, &
@@ -239,7 +239,8 @@ module extend_atmosphere_module
 
 
     use constants_clubb, only: &
-      fstderr ! Variable(s)
+      fstderr, & ! Variable(s)
+      pascal_per_mb
 
     use clubb_precision, only: &
       dp, & ! double precision
@@ -254,9 +255,10 @@ module extend_atmosphere_module
     integer, intent(in) :: grid_size ! Size of the model grid  [-]
 
     real( kind = core_rknd ), dimension(grid_size), intent(in) :: &
-      zt_grid,       & ! Thermodynamic grid [m]
-      zm_grid,       & ! Momentum grid [m]
-      zm_grid_spacing  ! Inverse spacing between zm grid levels [m]
+      zt_grid,         & ! Thermodynamic grid        [m]
+      zm_grid,         & ! Momentum grid             [m]
+      zm_grid_spacing, & ! Change per zm grid levels [m]
+      p_in_Pa_zm         ! Pressure                  [Pa]
 
     real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extend to [m]
 
@@ -316,10 +318,10 @@ module extend_atmosphere_module
 
     ! Sanity check and kludge to prevent presure from increasing with height
     ! -dschanen June 4 2014
-
-!   if ( P_in_Pa(j-1) < extend_P_in_mb(j) * pascal_per_mb ) then
-!     extend_P_in_mb(j) = 
-!   end if
+    if ( p_in_Pa_zm(j-1) > extend_p_in_mb(j) * pascal_per_mb ) then
+!     extend_p_in_mb(j) = p_in_Pa_zm(j-1) * 0.95
+      j = j + 1
+    end if
 
     extend_atmos_bottom_level = j
     extend_atmos_top_level = k
@@ -457,7 +459,7 @@ module extend_atmosphere_module
     allocate( extend_alt(extend_atmos_dim) )
     allocate( extend_T_in_K(extend_atmos_dim) )
     allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_P_in_mb(extend_atmos_dim) )
+    allocate( extend_p_in_mb(extend_atmos_dim) )
     allocate( extend_o3l(extend_atmos_dim) )
 
     extend_alt = real( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
@@ -469,7 +471,7 @@ module extend_atmosphere_module
     extend_sp_hmdty = real( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
                                       atm_input_file ), kind=dp )
 
-    extend_P_in_mb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+    extend_p_in_mb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
                                    atm_input_file ), kind=dp )
 
     extend_o3l = real( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
@@ -510,8 +512,8 @@ module extend_atmosphere_module
       deallocate( extend_sp_hmdty )
     end if
 
-    if ( allocated( extend_P_in_mb ) ) then
-      deallocate( extend_P_in_mb )
+    if ( allocated( extend_p_in_mb ) ) then
+      deallocate( extend_p_in_mb )
     end if
 
     if ( allocated( extend_o3l ) ) then

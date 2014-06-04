@@ -40,7 +40,7 @@ module stats_rad_zt
         iradht_rad, &
         iradht_LW_rad, &
         iradht_SW_rad, &
-        iP_in_mb_rad, &
+        ip_in_mb_rad, &
         isp_humidity_rad
 
     use stats_type, only: & 
@@ -71,7 +71,7 @@ module stats_rad_zt
     iradht_rad = 0
     iradht_LW_rad = 0
     iradht_SW_rad = 0
-    iP_in_mb_rad = 0
+    ip_in_mb_rad = 0
     isp_humidity_rad = 0
 
 
@@ -161,10 +161,10 @@ module stats_rad_zt
              l_silhs=.false., grid_kind=rad_zt )
         k = k + 1
 
-      case ('P_in_mb_rad')
-        iP_in_mb_rad = k
+      case ('p_in_mb_rad')
+        ip_in_mb_rad = k
 
-        call stat_assign( var_index=iP_in_mb_rad, var_name="P_in_mb_rad", &
+        call stat_assign( var_index=ip_in_mb_rad, var_name="p_in_mb_rad", &
              var_description="Pressure [hPa]", var_units="hPa", &
              l_silhs=.false., grid_kind=rad_zt )
         k = k + 1

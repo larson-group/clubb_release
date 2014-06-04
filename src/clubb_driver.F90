@@ -1697,18 +1697,22 @@ module clubb_driver
       err_code ! Indicates an error condition
 
     ! Local Variables
+
+    real( kind = core_rknd ), dimension(gr%nz) ::  & 
+      p_in_Pa_zm ! Pressure on momentum levels  [Pa]
+
     real( kind = core_rknd ) ::  &
       rtm_sfc,          & ! Surface total water mixing ratio       [kg/kg]
       thlm_sfc,         & ! Surface liq. water potential temp.     [K]
       cloud_top_height, & ! Cloud top altitude in initial profile  [m]
       em_max                ! Maximum value of initial subgrid TKE   [m^2/s^2]
 
-    integer :: k
-
     character(len=50) :: &
       theta_type, & ! Type of temperature sounding 
       alt_type,   & ! Type of altitude sounding
       subs_type     ! Type of large-scale subsidence sounding
+
+    integer :: k ! Loop index
 
     !---- Begin code ----
 
@@ -1720,9 +1724,19 @@ module clubb_driver
                         alt_type, p_in_Pa, subs_type, wm_zt, &   ! Intent(out)
                         rtm_sfc, thlm_sfc, sclrm, edsclrm )      ! Intent(out)
 
+    ! Covert sounding input to CLUBB compatible input
+    call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
+                                     p_sfc, rtm_sfc, rtm,          & ! Intent(in)
+                                     thlm, p_in_Pa, p_in_Pa_zm,    & ! Intent(inout)
+                                     exner, rho, rho_zm,           & ! Intent(out)
+                                     rcm, thvm, rho_ds_zm,         & ! Intent(out)
+                                     rho_ds_zt, invrs_rho_ds_zm,   & ! Intent(out)
+                                     invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(out)
+                                     thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
+
     if ( trim( rad_scheme ) == "bugsrad" ) then
-      call determine_extend_atmos_bounds( gr%nz, gr%zt,           & ! Intent(in)
-                                          gr%zm, gr%dzt,          & ! Intent(in)
+      call determine_extend_atmos_bounds( gr%nz, gr%zt,              & ! Intent(in)
+                                          gr%zm, gr%dzt, p_in_Pa_zm, & ! Intent(in)
                                           radiation_top,             & ! Intent(in)
                                           extend_atmos_bottom_level, & ! Intent(out)
                                           extend_atmos_top_level,    & ! Intent(out)
@@ -1732,17 +1746,6 @@ module clubb_driver
     else
       ! lin_int_buffer et al. are set to zero in clubb_model_settings.
     end if
-
-
-    ! Covert sounding input to CLUBB compatible input
-    call initialize_clubb_variables( alt_type, theta_type,         & ! Intent(in)
-                                     p_sfc, rtm_sfc, rtm, & !thlm_sfc, & ! Intent(in)
-                                     thlm, p_in_Pa,                & ! Intent(inout)
-                                     exner, rho, rho_zm,           & ! Intent(out)
-                                     rcm, thvm, rho_ds_zm,         & ! Intent(out)
-                                     rho_ds_zt, invrs_rho_ds_zm,   & ! Intent(out)
-                                     invrs_rho_ds_zt, thv_ds_zm,   & ! Intent(out)
-                                     thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
 
     ! Determine initial value cloud droplet number concentration when Nc
     ! is predicted.
@@ -2213,7 +2216,7 @@ module clubb_driver
   !-----------------------------------------------------------------------------
   subroutine initialize_clubb_variables( alt_type, theta_type, &
                                          p_sfc, rtm_sfc, rtm, & !thlm_sfc, &
-                                         thlm, p_in_Pa, &
+                                         thlm, p_in_Pa, p_in_Pa_zm, &
                                          exner, rho, rho_zm, &
                                          rcm, thvm, rho_ds_zm, &
                                          rho_ds_zt, invrs_rho_ds_zm, &
@@ -2302,6 +2305,7 @@ module clubb_driver
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) ::  &
+      p_in_Pa_zm,      & ! Pressure (momentum levels)                [Pa]
       exner,           & ! Exner function (thermodynamic levels)     [-] 
       rho,             & ! Density (thermodynamic levels)            [kg/m^3]
       rho_zm,          & ! Density on momentum levels                [kg/m^3]
@@ -2328,7 +2332,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz) ::  &
       thm,          & ! Potential temperature (thermodynamic levels)   [K]
       thvm_zm,      & ! Theta_v interpolated to momentum levels        [K]
-      p_in_Pa_zm,   & ! Pressure on momentum levels                    [Pa]
       exner_zm,     & ! Exner on momentum levels                       [-]
       th_dry,       & ! Dry potential temperature (thermo. levels)     [K]
       p_dry,        & ! Dry air pressure (thermodynamic levels)        [Pa]
@@ -4214,12 +4217,12 @@ module clubb_driver
       iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
       iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht, &
-      iP_in_mb_rad, isp_humidity_rad
+      ip_in_mb_rad, isp_humidity_rad
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
       rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
-      radht_SW_2d, P_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
+      radht_SW_2d, p_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
     use variables_diagnostic_module, only: &
@@ -4306,8 +4309,8 @@ module clubb_driver
         call stat_update_var( iradht_LW_rad, &
           real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),rad_zt )
 
-        call stat_update_var( iP_in_mb_rad, &
-          real( flip(P_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+        call stat_update_var( ip_in_mb_rad, &
+          real( flip(p_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
 
         call stat_update_var( isp_humidity_rad, &
           real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
