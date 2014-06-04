@@ -166,41 +166,69 @@
           #{'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'astex_a209_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpNrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Correlation between s and w', 'axisLabel' => 'corr\_sw [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation between w and s', 'axisLabel' => 'corr\_ws\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sw', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_ws_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'aut
+o'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_ws_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'aut
+o'}
        ]},
-       {'plotTitle' => 'Correlation between w and rrain', 'axisLabel' => 'corr\_wrr [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation (in-precip) between w and r_r', 'axisLabel' => 'corr\_wrr\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_wrr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_wrr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'}
        ]},
-       {'plotTitle' => 'Correlation between w and Nr', 'axisLabel' => 'corr\_wNr [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation (in-precip) between w and N_r', 'axisLabel' => 'corr\_wNr\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_wNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_wNr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'}
        ]},
-       {'plotTitle' => 'Correlation between w and Ncn', 'axisLabel' => 'corr\_wNcn [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation between w and N_{cn}', 'axisLabel' => 'corr\_wNcn\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_wNcn', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_wNcn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'a
+uto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_wNcn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'a
+uto'}
        ]},
-       {'plotTitle' => 'Correlation between s and rrain', 'axisLabel' => 'corr\_srr [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation between s and t', 'axisLabel' => 'corr\_st\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_srr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_st_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'aut
+o'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_st_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'aut
+o'}
        ]},
-       {'plotTitle' => 'Correlation between s and Nr', 'axisLabel' => 'corr\_sNr [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation (in-precip) between s and r_r', 'axisLabel' => 'corr\_srr\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_srr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_srr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'}
        ]},
-       {'plotTitle' => 'Correlation between s and Ncn', 'axisLabel' => 'corr\_sNcn [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation (in-precip) between s and N_r', 'axisLabel' => 'corr\_sNr\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_sNcn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_sNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_sNr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'au
+to'}
        ]},
-       {'plotTitle' => 'Correlation between rrain and Nr', 'axisLabel' => 'corr\_rrNr [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation between s and N_{cn}', 'axisLabel' => 'corr\_sNcn\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_rrNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_sNcn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_sNcn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Correlation between ln rrain and ln Nr', 'axisLabel' => 'corr\_rrNr\_n [-]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Correlation (in-precip) between r_r and N_r', 'axisLabel' => 'corr\_rrNr\_i [-]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'corr_rrNr_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) between ln r_r and ln N_r', 'axisLabel' => 'corr\_rrNr\_i\_n [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
