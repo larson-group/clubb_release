@@ -14,7 +14,6 @@ module variables_radiation_module
 
   implicit none
 
-
   public :: &
     setup_radiation_variables, &
     cleanup_radiation_variables
@@ -52,6 +51,12 @@ module variables_radiation_module
 !$omp threadprivate(radht_SW_2d, radht_LW_2d)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
+    P_in_mb, &   ! Pressure in millibars        [mb]
+    sp_humidity  ! Specific humidity            [kg/kg]
+
+!$omp threadprivate(P_in_mb, sp_humidity)
+
+  real(kind = dp), public, dimension(:,:), allocatable :: &
     Frad_uLW, & ! LW upwelling flux         [W/m^2]
     Frad_dLW, & ! LW downwelling flux       [W/m^2]
     Frad_uSW, & ! SW upwelling flux         [W/m^2]
@@ -68,7 +73,7 @@ module variables_radiation_module
 !$omp threadprivate(fdswcl, fuswcl, fdlwcl, fulwcl)
 
   ! Constant parameters
-  integer, private, parameter :: &
+  integer, public, parameter :: &
     nlen = 1, &   ! Length of the total domain
     slen = 1      ! Length of the sub domain
 
@@ -120,6 +125,9 @@ module variables_radiation_module
     allocate( cloud_frac_2d(nlen, rad_zt_dim ) )
     allocate( ice_supersat_frac_2d(nlen, rad_zt_dim ) )
 
+    allocate( P_in_mb(nlen, rad_zt_dim) )
+    allocate( sp_humidity(nlen, rad_zt_dim) )
+
     allocate( radht_SW_2d(nlen, rad_zt_dim ) )
     allocate( radht_LW_2d(nlen, rad_zt_dim ) )
 
@@ -133,13 +141,15 @@ module variables_radiation_module
     allocate( fdlwcl(slen, rad_zm_dim ) )
     allocate( fulwcl(slen, rad_zm_dim ) )
 
-
     ! --- Initialization ---
 
+    ! CLUBB zt
     radht_SW = 0.0_core_rknd
     radht_LW = 0.0_core_rknd
     Frad_SW = 0.0_core_rknd
     Frad_LW = 0.0_core_rknd
+
+    ! CLUBB zt + extended levels
     T_in_K = 0.0_dp
     rcil = 0.0_dp
     o3l = 0.0_dp
@@ -149,6 +159,10 @@ module variables_radiation_module
     ice_supersat_frac_2d = 0.0_dp
     radht_SW_2d = 0.0_dp
     radht_LW_2d = 0.0_dp
+    P_in_mb = 0.0_dp
+    sp_humidity = 0.0_dp
+
+    ! CLUBB zm + extended levels
     Frad_uLW = 0.0_dp
     Frad_dLW = 0.0_dp
     Frad_uSW = 0.0_dp
@@ -158,6 +172,7 @@ module variables_radiation_module
     fdlwcl = 0.0_dp
     fulwcl = 0.0_dp
 
+    return
   end subroutine setup_radiation_variables
 
   !---------------------------------------------------------------------
@@ -185,6 +200,9 @@ module variables_radiation_module
     deallocate( cloud_frac_2d )
     deallocate( ice_supersat_frac_2d )
 
+    deallocate( P_in_mb )
+    deallocate( sp_humidity )
+
     deallocate( radht_SW_2d )
     deallocate( radht_LW_2d )
 
@@ -198,7 +216,7 @@ module variables_radiation_module
     deallocate( fdlwcl )
     deallocate( fulwcl )
 
+    return
   end subroutine cleanup_radiation_variables
-    
     
 end module variables_radiation_module

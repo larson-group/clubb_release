@@ -39,7 +39,9 @@ module stats_rad_zt
         iice_supersat_frac_rad, &
         iradht_rad, &
         iradht_LW_rad, &
-        iradht_SW_rad
+        iradht_SW_rad, &
+        iP_in_mb_rad, &
+        isp_humidity_rad
 
     use stats_type, only: & 
         stat_assign ! Procedure
@@ -69,6 +71,9 @@ module stats_rad_zt
     iradht_rad = 0
     iradht_LW_rad = 0
     iradht_SW_rad = 0
+    iP_in_mb_rad = 0
+    isp_humidity_rad = 0
+
 
     ! Assign pointers for statistics variables rad_zt
 
@@ -153,6 +158,22 @@ module stats_rad_zt
 
         call stat_assign( var_index=iradht_SW_rad, var_name="radht_SW_rad", &
              var_description="Short-wave radiative heating rate [K/s]", var_units="K/s", &
+             l_silhs=.false., grid_kind=rad_zt )
+        k = k + 1
+
+      case ('P_in_mb_rad')
+        iP_in_mb_rad = k
+
+        call stat_assign( var_index=iP_in_mb_rad, var_name="P_in_mb_rad", &
+             var_description="Pressure [hPa]", var_units="hPa", &
+             l_silhs=.false., grid_kind=rad_zt )
+        k = k + 1
+
+      case ('sp_humidity_rad')
+        isp_humidity_rad = k
+
+        call stat_assign( var_index=isp_humidity_rad, var_name="sp_humidity_rad", &
+             var_description="Specific humidity [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=rad_zt )
         k = k + 1
 

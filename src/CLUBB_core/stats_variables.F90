@@ -1149,11 +1149,14 @@ module stats_variables
     iice_supersat_frac_rad = 0, &
     iradht_rad = 0, &
     iradht_LW_rad = 0, &
-    iradht_SW_rad = 0
+    iradht_SW_rad = 0, &
+    iP_in_mb_rad = 0, &
+    isp_humidity_rad = 0
 
-!$omp threadprivate(iT_in_K_rad, ircil_rad, io3l_rad)
-!$omp threadprivate(irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad)
-!$omp threadprivate(iradht_rad, iradht_LW_rad, iradht_SW_rad)
+!$omp threadprivate( iT_in_K_rad, ircil_rad, io3l_rad, &
+!$omp   irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
+!$omp   iradht_rad, iradht_LW_rad, iradht_SW_rad, &
+!$omp   iP_in_mb_rad, isp_humidity_rad )
 
   ! Indices for statistics in rad_zm file
   integer, public :: &

@@ -217,12 +217,12 @@ module extend_atmosphere_module
 
   !------------------------------------------------------------------------------------------------
   subroutine determine_extend_atmos_bounds( grid_size, zt_grid, &
-                                              zm_grid, zm_grid_spacing, & 
-                                              radiation_top, &
-                                              extend_atmos_bottom_level, &
-                                              extend_atmos_top_level, &
-                                              extend_atmos_range_size, &
-                                              lin_int_buffer_size )
+                                            zm_grid, zm_grid_spacing, & 
+                                            radiation_top, &
+                                            extend_atmos_bottom_level, &
+                                            extend_atmos_top_level, &
+                                            extend_atmos_range_size, &
+                                            lin_int_buffer_size )
     ! Description: 
     !   This subroutine determines the bottom and top levels of the
     !   extended atmosphere to use for a given radiation_top and grid. It also
@@ -314,6 +314,12 @@ module extend_atmosphere_module
       k = j
     end if
 
+    ! Sanity check and kludge to prevent presure from increasing with height
+    ! -dschanen June 4 2014
+
+!   if ( P_in_Pa(j-1) < extend_P_in_mb(j) * pascal_per_mb ) then
+!     extend_P_in_mb(j) = 
+!   end if
 
     extend_atmos_bottom_level = j
     extend_atmos_top_level = k

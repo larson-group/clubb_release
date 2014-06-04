@@ -1722,7 +1722,6 @@ module clubb_driver
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
       call determine_extend_atmos_bounds( gr%nz, gr%zt,           & ! Intent(in)
-!                                         gr%zm, gr%invrs_dzm,       & ! Intent(in)
                                           gr%zm, gr%dzt,          & ! Intent(in)
                                           radiation_top,             & ! Intent(in)
                                           extend_atmos_bottom_level, & ! Intent(out)
@@ -4214,12 +4213,13 @@ module clubb_driver
       io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
       iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
-      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht
+      iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht, &
+      iP_in_mb_rad, isp_humidity_rad
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
       rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
-      radht_SW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
+      radht_SW_2d, P_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
     use variables_diagnostic_module, only: &
@@ -4306,8 +4306,11 @@ module clubb_driver
         call stat_update_var( iradht_LW_rad, &
           real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),rad_zt )
 
-        call stat_update_var( iradht_SW_rad, &
-          real( flip(radht_SW_2d(1,:), rad_zt_dim), kind = core_rknd  ),rad_zt )
+        call stat_update_var( iP_in_mb_rad, &
+          real( flip(P_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+
+        call stat_update_var( isp_humidity_rad, &
+          real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
 
         call stat_update_var( iFrad_SW_rad, real( flip((Frad_uSW(1,:) - &
              Frad_dSW(1,:)), rad_zm_dim), kind = core_rknd  ), rad_zm )

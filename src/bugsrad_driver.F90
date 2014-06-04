@@ -6,11 +6,6 @@ module bugsrad_driver
 
   public :: compute_bugsrad_radiation, init_radiation
 
-  ! Constant parameters
-  integer, private, parameter :: &
-    nlen = 1, &   ! Length of the total domain
-    slen = 1      ! Length of the sub domain
-
   private ! Default Scope
 
   contains
@@ -67,9 +62,13 @@ module bugsrad_driver
       slr
 
     use variables_radiation_module, only: &
+      slen, nlen ! Constats
+
+    use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, & ! Variable(s)
       T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
-      radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW
+      radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
+      P_in_mb, sp_humidity
 
     implicit none
 
@@ -122,9 +121,9 @@ module bugsrad_driver
     real( kind = core_rknd ), dimension(nz) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
-    real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
-      sp_humidity, & ! Specific humidity      [kg/kg]
-      P_in_mb          ! Pressure in millibars  [hPa]
+!   real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
+!     sp_humidity, & ! Specific humidity      [kg/kg]
+!     P_in_mb          ! Pressure in millibars  [hPa]
 
     ! Pressure in millibars for layers (calculated as an average of P_in_mb)
     real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
