@@ -3241,6 +3241,8 @@ module setup_clubb_pdf_params
         icorr_whm_2,    &
         icorr_wNcn_1,   &
         icorr_wNcn_2,   &
+        icorr_st_1_ca,  &
+        icorr_st_2_ca,  &
         icorr_shm_1,    &
         icorr_shm_2,    &
         icorr_sNcn_1,   &
@@ -3407,6 +3409,36 @@ module setup_clubb_pdf_params
        if ( icorr_wNcn_2 > 0 ) then
           call stat_update_var_pt( icorr_wNcn_2, level, &
                                    corr_array_2(iiPDF_Ncn,iiPDF_w), zt )
+       endif
+
+       ! Correlation between s and t in PDF component 1 found in the
+       ! correlation array.
+       ! The true correlation between s and t in each PDF component is solved
+       ! for by an equation and is part of CLUBB's PDF parameters.  However,
+       ! there is an option in CLUBB, l_fix_s_t_correlations, that sets the
+       ! component correlation between s and t to a constant, prescribed value
+       ! because of SILHS.  The correlation between s and t in PDF component 1
+       ! that is calculated by an equation is stored in stats as "corr_st_1".
+       ! Here, "corr_st_1_ca" outputs whatever value is found in the correlation
+       ! array, whether or not it matches "corr_st_1".
+       if ( icorr_st_1_ca > 0 ) then
+          call stat_update_var_pt( icorr_st_1_ca, level, &
+                                   corr_array_1(iiPDF_t,iiPDF_s), zt )
+       endif
+
+       ! Correlation between s and t in PDF component 2 found in the
+       ! correlation array.
+       ! The true correlation between s and t in each PDF component is solved
+       ! for by an equation and is part of CLUBB's PDF parameters.  However,
+       ! there is an option in CLUBB, l_fix_s_t_correlations, that sets the
+       ! component correlation between s and t to a constant, prescribed value
+       ! because of SILHS.  The correlation between s and t in PDF component 2
+       ! that is calculated by an equation is stored in stats as "corr_st_2".
+       ! Here, "corr_st_2_ca" outputs whatever value is found in the correlation
+       ! array, whether or not it matches "corr_st_2".
+       if ( icorr_st_2_ca > 0 ) then
+          call stat_update_var_pt( icorr_st_2_ca, level, &
+                                   corr_array_2(iiPDF_t,iiPDF_s), zt )
        endif
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
