@@ -949,9 +949,9 @@ module pdf_closure_module
              rtpthvp, thlpthvp, wprcp, wp2rcp, & 
              rtprcp, thlprcp, rcp2, wprtpthlp, & 
              crt1, crt2, cthl1, cthl2, pdf_params, &
-             err_code, & 
              sclrpthvp, sclrprcp, wpsclrp2, & 
-             wpsclrprtp, wpsclrpthlp, wp2sclrp )
+             wpsclrprtp, wpsclrpthlp, wp2sclrp, &
+             err_code )
 
       ! Error Reporting
       ! Joshua Fasching February 2008

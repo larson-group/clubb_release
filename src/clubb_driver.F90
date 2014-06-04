@@ -30,8 +30,8 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine run_clubb & 
-             ( params, runfile, err_code, l_stdout, &
-               model_flags_array )
+             ( params, runfile, l_stdout, &
+               err_code, model_flags_array )
     ! Description:
     !   Subprogram to integrate the pde equations for pdf closure.
 

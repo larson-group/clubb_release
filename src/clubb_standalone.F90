@@ -58,7 +58,7 @@ program clubb_standalone
   err_code = clubb_no_error
 
   ! Run the model
-  call run_clubb( params, namelist_filename, err_code, l_stdout )
+  call run_clubb( params, namelist_filename, l_stdout, err_code )
 
   if ( fatal_error( err_code ) ) then
     stop "Model wasn't valid, check your parameters and timestep"

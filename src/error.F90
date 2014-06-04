@@ -607,11 +607,11 @@ module error
 
       if ( allocated( model_flags_array ) ) then
         call run_clubb &
-             ( params_local, run_file(c_run), run_stat(c_run), l_stdout, &
+             ( params_local, run_file(c_run), l_stdout, run_stat(c_run), &
                model_flags_array(iter,:) )
       else
         call run_clubb & 
-             ( params_local, run_file(c_run), run_stat(c_run), l_stdout )
+             ( params_local, run_file(c_run), l_stdout, run_stat(c_run) )
       end if
 
     end do ! 1..c_run

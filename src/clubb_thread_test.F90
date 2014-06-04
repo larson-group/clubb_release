@@ -80,7 +80,7 @@ program clubb_thread_test
     ! Read in model parameter values
     call read_parameters( iunit, namelist_filename(iter), params )
     ! Run the model
-    call run_clubb( params, namelist_filename(iter), err_code(iter), l_stdout )
+    call run_clubb( params, namelist_filename(iter), l_stdout, err_code(iter) )
   end do ! 1 .. ncases
 !$omp end parallel do
 

@@ -413,8 +413,8 @@ module surface_varnce_module
 
        call surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc,  & 
                                   thlp2_sfc, rtp2_sfc, rtpthlp_sfc, & 
-                                  err_code, & 
-                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
+                                  sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc, &
+                                  err_code )
 
 !       Error reporting
 !       Joshua Fasching February 2008

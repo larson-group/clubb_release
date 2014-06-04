@@ -84,9 +84,9 @@ module numerical_check
                           rtpthvp, thlpthvp, wprcp, wp2rcp, & 
                           rtprcp, thlprcp, rcp2, wprtpthlp, & 
                           crt1, crt2, cthl1, cthl2, pdf_params, &
-                          err_code,  & 
                           sclrpthvp, sclrprcp, wpsclrp2, & 
-                          wpsclrprtp, wpsclrpthlp, wp2sclrp )
+                          wpsclrprtp, wpsclrpthlp, wp2sclrp, &
+                          err_code )
 
 ! Description: This subroutine determines if any of the output
 !   variables for the pdf_closure subroutine carry values that
@@ -432,8 +432,9 @@ module numerical_check
 
 !-----------------------------------------------------------------------
   subroutine surface_varnce_check( wp2_sfc, up2_sfc, vp2_sfc, thlp2_sfc, & 
-           rtp2_sfc, rtpthlp_sfc, err_code, & 
-           sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc )
+           rtp2_sfc, rtpthlp_sfc, &
+           sclrp2_sfc, sclrprtp_sfc, sclrpthlp_sfc, &
+           err_code )
 !
 !       Description:This subroutine determines if any of the output
 !       variables for the surface_varnce subroutine carry values that
