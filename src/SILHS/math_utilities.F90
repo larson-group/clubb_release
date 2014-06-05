@@ -143,11 +143,11 @@ module math_utilities
       n_levels, &
       n_samples
 
-    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
-      x_sample ! Collection of sample points    [units vary]
-
     real( kind = core_rknd ), dimension(n_samples), intent(in) :: &
       weight   ! Weights for individual points of the vector
+
+    real( kind = core_rknd ),dimension(n_levels,n_samples), intent(in) :: &
+      x_sample ! Collection of sample points    [units vary]
 
     ! Return type
     real( kind = core_rknd ), dimension(n_levels) :: mean
