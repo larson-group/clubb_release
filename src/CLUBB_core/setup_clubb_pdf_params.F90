@@ -140,6 +140,7 @@ module setup_clubb_pdf_params
         calc_cholesky_corr_mtx_approx
 
     use corr_matrix_module, only: &
+        assert_corr_symmetric,        & ! Procedure(s)
         sigma2_on_mu2_ip_array_cloud, & ! Variable(s)
         sigma2_on_mu2_ip_array_below, &
         iiPDF_Ncn,                    &
@@ -675,6 +676,10 @@ module setup_clubb_pdf_params
        hydrometp2(nz,i) = zero
     enddo
 
+    if (clubb_at_least_debug_level( 2 )) then
+      call assert_corr_symmetric( corr_array_1_n, d_variables )
+      call assert_corr_symmetric( corr_array_2_n, d_variables )
+    end if
 
     return
 

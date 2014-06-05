@@ -56,7 +56,7 @@ module corr_matrix_module
   private
 
   public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
-            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays
+            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays, assert_corr_symmetric
 
   private :: get_corr_var_index, return_pdf_index, def_corr_idx
 
@@ -934,6 +934,60 @@ module corr_matrix_module
     return
 
   end function hm_idx
-  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------------
+  subroutine assert_corr_symmetric( corr_array, & ! intent(in)
+                                    d_variables ) ! intent(in)
+
+    ! Description:
+    !   Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
+    !   in the correlation array. If this is not the case, stops the program.
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
+
+    use constants_clubb, only: fstderr ! Constant(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables    ! Number of variables in the correlation array
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+      intent(inout) :: corr_array ! Correlation array to be checked
+
+    ! Local Variables
+
+    ! tolerance used for real precision testing
+    real( kind = core_rknd ), parameter :: tol = 1.0e-6_core_rknd
+
+    integer:: n_row, n_col, & !indeces
+    errors !Number of errors found between the two arrays
+
+    !----- Begin Code -----
+
+    errors = 0
+
+    !Do the check
+    do n_col = 1, d_variables
+      do n_row = 1, d_variables
+        if ((corr_array(n_col, n_row) - corr_array(n_row, n_col)) > tol .or. &
+          (corr_array(n_row, n_col) - corr_array(n_col, n_row)) > tol) then
+              errors = errors + 1
+        end if
+      end do
+    end do
+
+    !Report if any errors are found
+    if (errors > 0) then
+      write(fstderr,*) "Correlation array error. A correlation array is non symmetric:"
+      write(fstderr,*) corr_array
+      write(fstderr,*) errors, "errors found."
+      stop
+    end if
+
+  end subroutine assert_corr_symmetric
+  !-----------------------------------------------------------------------------
 
 end module corr_matrix_module
