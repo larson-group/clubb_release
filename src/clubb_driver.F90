@@ -92,8 +92,7 @@ module clubb_driver
 
     use constants_clubb, only: &
       fstdout, fstderr, zero, zero_dp, one_dp, & ! Constant(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd, &
-      rc_tol
+      rt_tol, thl_tol, w_tol, w_tol_sqd
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & ! Constants
@@ -259,9 +258,6 @@ module clubb_driver
     use parameters_model, only: &
         rtm_min, &
         rtm_nudge_max_altitude
-
-    use diagnose_correlations_module, only: &
-        corr_stat_output ! Procedure(s)
 
     use corr_matrix_module, only: &
         corr_array_cloud, & ! Variable(s)
@@ -1296,20 +1292,6 @@ module clubb_driver
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
       if ( .not. trim( microphys_scheme ) == "none" ) then
-
-         ! Determine correlations
-
-         do k = 1, gr%nz
-            if ( rcm(k) > rc_tol ) then
-               corr_array_1(:,:,k) = corr_array_cloud
-               corr_array_2(:,:,k) = corr_array_cloud
-            else
-               corr_array_1(:,:,k) = corr_array_below
-               corr_array_2(:,:,k) = corr_array_below
-            endif
-         end do
-
-         call corr_stat_output( d_variables, gr%nz, corr_array_1 )
 
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &          ! Intent(in)

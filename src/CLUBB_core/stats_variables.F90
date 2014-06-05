@@ -204,20 +204,6 @@ module stats_variables
 !$omp threadprivate( icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_sNcn_1_n, &
 !$omp   icorr_sNcn_2_n, icorr_tNcn_1_n, icorr_tNcn_2_n )
 
-  integer, public :: & ! janhft 09/25/12
-     icorr_sw = 0,   &
-     icorr_srr = 0,  &
-     icorr_sNr = 0,  &
-     icorr_sNcn = 0, &
-     icorr_rrNr = 0, &
-     icorr_wrr = 0,  &
-     icorr_wNr = 0,  &
-     icorr_wNcn = 0
-!$omp threadprivate( icorr_sw, icorr_srr, icorr_sNr, icorr_sNcn, icorr_rrNr, &
-!$omp                icorr_wrr, icorr_wNr, icorr_wNcn )  
-
-
-
   integer, public :: & 
      iNcm = 0,             & ! Brian
      iNccnm = 0,           & 

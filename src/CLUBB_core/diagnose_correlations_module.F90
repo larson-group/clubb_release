@@ -9,7 +9,7 @@ module diagnose_correlations_module
   implicit none 
 
   public :: calc_mean, calc_varnce, calc_w_corr, &
-            corr_stat_output, calc_cholesky_corr_mtx_approx, &
+            calc_cholesky_corr_mtx_approx, &
             cholesky_to_corr_mtx_approx, setup_corr_cholesky_mtx, &
             diagnose_correlations
             
@@ -959,136 +959,6 @@ module diagnose_correlations_module
   end subroutine set_w_corr
 
   !=============================================================================
-  subroutine corr_stat_output( d_variables, nz, corr_array )
-
-    ! Description:
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd   ! Variable(s)
-
-    use stats_type, only: &
-        stat_update_var  ! Procedure(s)
-
-    use stats_variables, only : &
-        icorr_srr,    & ! Variable(s)
-        icorr_sNr,    &
-        icorr_sNcn,   &
-        icorr_rrNr,   &
-        icorr_sw,     &
-        icorr_wrr,    &
-        icorr_wNr,    &
-        icorr_wNcn,   &
-        zt,           &
-        l_stats_samp
-
-    use corr_matrix_module, only: &
-        iiPDF_w,        & ! Variable(s)
-        iiPDF_s_mellor, &
-!        iiPDF_t_mellor, &
-        iiPDF_Ncn,      &
-        iiPDF_rrain,    &
-        iiPDF_Nr
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz,          & ! Number of vertical levels
-      d_variables    ! Number of variables in correlation array
-
-    real( kind = core_rknd ), dimension( d_variables, d_variables, nz ), &
-    intent(in) :: &
-      corr_array    ! Correlation array
-
-
-    !!! Output the correlations
-
-    ! Statistics
-    if ( l_stats_samp ) then
-
-       ! Correlation between w and s.
-       if ( iiPDF_s_mellor > iiPDF_w ) then
-          call stat_update_var( icorr_sw, &
-                                corr_array( iiPDF_s_mellor, iiPDF_w, : ), zt )
-       else
-          call stat_update_var( icorr_sw, &
-                                corr_array( iiPDF_w, iiPDF_s_mellor, : ), zt )
-       endif
-
-       ! Correlation (in-precip) between s and r_r.
-       if ( iiPDF_s_mellor > iiPDF_rrain ) then
-          call stat_update_var( icorr_srr, &
-                                corr_array( iiPDF_s_mellor, iiPDF_rrain, : ), zt )
-       else
-          call stat_update_var( icorr_srr, &
-                                corr_array( iiPDF_rrain, iiPDF_s_mellor, : ), zt )
-       endif
-
-       ! Correlation (in-precip) between s and N_r.
-       if ( iiPDF_s_mellor > iiPDF_Nr ) then
-          call stat_update_var( icorr_sNr, &
-                                corr_array( iiPDF_s_mellor, iiPDF_Nr, : ), zt )
-       else
-          call stat_update_var( icorr_sNr, &
-                                corr_array( iiPDF_Nr, iiPDF_s_mellor, : ), zt )
-       endif
-
-       ! Correlation between s and N_cn.
-       if ( iiPDF_s_mellor > iiPDF_Ncn ) then
-          call stat_update_var( icorr_sNcn, &
-                                corr_array( iiPDF_s_mellor, iiPDF_Ncn, : ), zt )
-       else
-          call stat_update_var( icorr_sNcn, &
-                                corr_array( iiPDF_Ncn, iiPDF_s_mellor, : ), zt )
-       endif
-
-       ! Correlation (in-precip) between r_r and N_r.
-       if ( iiPDF_rrain > iiPDF_Nr ) then
-          call stat_update_var( icorr_rrNr, &
-                                corr_array( iiPDF_rrain, iiPDF_Nr, : ), zt )
-       else
-          call stat_update_var( icorr_rrNr, &
-                                corr_array( iiPDF_Nr, iiPDF_rrain, : ), zt )
-       endif
-
-       ! Correlation between w and r_r.
-       if ( iiPDF_w > iiPDF_rrain ) then
-          call stat_update_var( icorr_wrr, &
-                                corr_array( iiPDF_w, iiPDF_rrain, : ), zt )
-       else
-          call stat_update_var( icorr_wrr, &
-                                corr_array( iiPDF_rrain, iiPDF_w, : ), zt )
-       endif
-
-       ! Correlation between w and N_r.
-       if ( iiPDF_w > iiPDF_Nr ) then
-          call stat_update_var( icorr_wNr, &
-                                corr_array( iiPDF_w, iiPDF_Nr, : ), zt )
-       else
-          call stat_update_var( icorr_wNr, &
-                                corr_array( iiPDF_Nr, iiPDF_w, : ), zt )
-       endif
-
-       ! Correlation between w and N_cn.
-       if ( iiPDF_w > iiPDF_Ncn ) then
-          call stat_update_var( icorr_wNcn, &
-                                corr_array( iiPDF_w, iiPDF_Ncn, : ), zt )
-       else
-          call stat_update_var( icorr_wNcn, &
-                                corr_array( iiPDF_Ncn, iiPDF_w, : ), zt )
-       endif
-
-    endif ! l_stats_samp
-
-
-    return
-
-  end subroutine corr_stat_output
-
-!-----------------------------------------------------------------------
   subroutine unpack_correlations( d_variables, corr_array, & ! Intent(in)
                                   corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
                                   corr_st, corr_srr, corr_sNr, corr_sNcn, &

@@ -141,16 +141,6 @@ module stats_zt
         icorr_hmxhmy_1_n, &
         icorr_hmxhmy_2_n
 
-    use stats_variables, only: & ! janhft 09/25/12
-        icorr_sw,   & ! Variable(s)
-        icorr_srr,  &
-        icorr_sNr,  &
-        icorr_sNcn, &
-        icorr_rrNr, &
-        icorr_wrr,  &
-        icorr_wNr,  &
-        icorr_wNcn
-
     use stats_variables, only: & 
         irel_humidity, &
         irho, & 
@@ -4803,64 +4793,6 @@ module stats_zt
             enddo ! hmy_idx = hmx_idx+1, hydromet_dim, 1
 
          enddo ! hmx_idx = 1, hydromet_dim, 1
-
-      ! changes by janhft 09/25/12
-      case ('corr_sw')
-        icorr_sw = k
-        call stat_assign( var_index=icorr_sw, var_name="corr_sw", &
-             var_description="Correlation between s and w [-]", var_units="-", l_silhs=.false., &
-             grid_kind=zt )
-        k = k + 1
-
-      case ( 'corr_srr' )
-        icorr_srr = k
-        call stat_assign( var_index=icorr_srr, var_name="corr_srr", &
-             var_description="Correlation (in-precip) between s and r_r (corr array) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
-
-      case ( 'corr_sNr' )
-        icorr_sNr = k
-        call stat_assign( var_index=icorr_sNr, var_name="corr_sNr", &
-             var_description="Correlation (in-precip) between s and N_r (corr array) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
-
-      case ( 'corr_sNcn' )
-        icorr_sNcn = k
-        call stat_assign( var_index=icorr_sNcn, var_name="corr_sNcn", &
-             var_description="Correlation between s and N_cn (corr array) [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
-
-      case ( 'corr_rrNr' )
-        icorr_rrNr = k
-        call stat_assign( var_index=icorr_rrNr, var_name="corr_rrNr", &
-             var_description="Correlation (in-precip) between r_r and N_r (corr array) [-]", &
-             var_units="-", l_silhs=.false., grid_kind=zt )
-        k = k + 1
-
-      case ('corr_wrr')
-        icorr_wrr = k
-        call stat_assign( var_index=icorr_wrr, var_name="corr_wrr", &
-             var_description="Correlation between w and rrain [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
-
-      case ('corr_wNr')
-        icorr_wNr = k
-        call stat_assign( var_index=icorr_wNr, var_name="corr_wNr", &
-             var_description="Correlation between w and Nr [-]", var_units="-", l_silhs=.false., &
-             grid_kind=zt )
-        k = k + 1
-
-      case ('corr_wNcn')
-        icorr_wNcn = k
-        call stat_assign( var_index=icorr_wNcn, var_name="corr_wNcn", &
-             var_description="Correlation between w and N_cn [-]", var_units="-", &
-             l_silhs=.false., grid_kind=zt )
-        k = k + 1
-      ! end changes by janhft 09/25/12
 
       case ('wp2hmp')
         iwp2hmp = k

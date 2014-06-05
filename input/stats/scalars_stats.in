@@ -52,8 +52,6 @@ vars_zt =
 'corr_thm_i', 'corr_tNcn_i', 'corr_Ncnhm_i', 'corr_hmxhmy_i',
 'corr_whm_i_n', 'corr_wNcn_i_n', 'corr_shm_i_n', 'corr_sNcn_i_n',
 'corr_thm_i_n', 'corr_tNcn_i_n', 'corr_Ncnhm_i_n', 'corr_hmxhmy_i_n',
-'corr_sw', 'corr_srr', 'corr_sNr', 'corr_sNcn', 'corr_rrNr',
-'corr_wrr', 'corr_wNr', 'corr_wNcn',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'hmp2_zt',
 'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
