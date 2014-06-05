@@ -955,35 +955,37 @@ module corr_matrix_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(inout) :: corr_array ! Correlation array to be checked
+      intent(in) :: corr_array ! Correlation array to be checked
 
     ! Local Variables
 
     ! tolerance used for real precision testing
     real( kind = core_rknd ), parameter :: tol = 1.0e-6_core_rknd
 
-    integer:: n_row, n_col, & !indeces
-    errors !Number of errors found between the two arrays
+    integer :: n_row, n_col !indeces
+
+    logical :: l_error !error found between the two arrays
 
     !----- Begin Code -----
 
-    errors = 0
+    l_error = .false.
 
     !Do the check
     do n_col = 1, d_variables
       do n_row = 1, d_variables
-        if ((corr_array(n_col, n_row) - corr_array(n_row, n_col)) > tol .or. &
-          (corr_array(n_row, n_col) - corr_array(n_col, n_row)) > tol) then
-              errors = errors + 1
+        if (abs(corr_array(n_col, n_row) - corr_array(n_row, n_col)) > tol) then
+          l_error = .true.
+        end if
+        if (n_col == n_row .and. corr_array(n_col, n_row) /= 1.0_core_rknd) then
+          l_error = .true.
         end if
       end do
     end do
 
     !Report if any errors are found
-    if (errors > 0) then
-      write(fstderr,*) "Correlation array error. A correlation array is non symmetric:"
+    if (l_error) then
+      write(fstderr,*) "Error: Correlation array is non symmetric or formatted incorrectly."
       write(fstderr,*) corr_array
-      write(fstderr,*) errors, "errors found."
       stop
     end if
 
