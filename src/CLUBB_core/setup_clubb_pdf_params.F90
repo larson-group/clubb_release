@@ -291,7 +291,7 @@ module setup_clubb_pdf_params
 
     integer :: pdf_idx  ! Index of precipitating hydrometeor in PDF array.
 
-    integer :: k, i, assert_index  ! Loop indices
+    integer :: k, i  ! Loop indices
 
     ! ---- Begin Code ----
 
@@ -676,10 +676,10 @@ module setup_clubb_pdf_params
        hydrometp2(nz,i) = zero
     enddo
 
-    do assert_index = 1, nz
+    do k = 1, nz
       if (clubb_at_least_debug_level( 2 )) then
-        call assert_corr_symmetric( corr_array_1_n(:,:,assert_index), d_variables )
-        call assert_corr_symmetric( corr_array_2_n(:,:,assert_index), d_variables )
+        call assert_corr_symmetric( corr_array_1_n(:,:,k), d_variables )
+        call assert_corr_symmetric( corr_array_2_n(:,:,k), d_variables )
       end if
     end do
 
