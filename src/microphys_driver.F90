@@ -159,7 +159,8 @@ module microphys_driver
     use stats_variables, only: & 
         iNcm_act,      & ! Variable(s)
         iNc_activated, &
-        iNccnm
+        iNccnm,        &
+        irrainm_cond
 
     use stats_subs, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
@@ -188,6 +189,7 @@ module microphys_driver
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type,  & ! Type
         microphys_stats_accumulate, & ! Procedure(s)
+        microphys_get_var,          &
         microphys_stats_cleanup
 
     implicit none
@@ -300,11 +302,7 @@ module microphys_driver
       Ncm_microphys    ! Mean cloud droplet concentration, <N_c>    [num/kg]
 
     real( kind = core_rknd ), dimension(gr%nz) :: & 
-      rrainm_auto, & ! Autoconversion rate for rrainm      [kg/kg/s]
-      rrainm_accr, & ! Accretion rate for rrainm           [kg/kg/s]
-      rrainm_evap, & ! Evaporation rate for rrainm         [kg/kg/s]
-      Nrm_auto,    & ! Change in Nrm due to autoconversion [num/kg/s]
-      Nrm_evap       ! Change in Nrm due to evaporation    [num/kg/s]
+      rrainm_evap    ! Evaporation rate for rrainm         [kg/kg/s]
 
     real( kind = core_rknd ), dimension(1,1,gr%nz) :: & 
       cond ! COAMPS stat for condesation/evap of rcm
@@ -503,15 +501,16 @@ module microphys_driver
                  delta_zt, rcm, Ncm_microphys, s_mellor, rvm, hydromet, &
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                  rcm_mc, rvm_mc, thlm_mc, &
-                 rrainm_auto, rrainm_accr, rrainm_evap, &
-                 Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
+                 microphys_stats_zt, microphys_stats_sfc )
 
           if ( l_morr_xp2_mc) then
-             call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & !Intent(in)  
-                                       wm_zt, exner, rrainm_evap, pdf_params, &      !Intent(in)
-                                       rtp2_mc, thlp2_mc,     &                      !Intent(out)
-                                       wprtp_mc, wpthlp_mc,     &                    !Intent(out)
-                                       rtpthlp_mc )                                 !Intent(out)
+
+            rrainm_evap = microphys_get_var( irrainm_cond, microphys_stats_zt )
+
+            call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
+                                wm_zt, exner, rrainm_evap, pdf_params,      & ! Intent(in)
+                                rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
+                                rtpthlp_mc )                                  ! Intent(out)
 
           else
 
@@ -595,9 +594,7 @@ module microphys_driver
                                       Ncm_microphys, s_mellor, rvm, hydromet, & ! In
                                       hydromet_mc, hydromet_vel_zt,           & ! Out
                                       Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
-                                      rrainm_auto, rrainm_accr,               & ! Out
-                                      rrainm_evap, Nrm_auto,                  & ! Out
-                                      Nrm_evap, microphys_stats_zt,           & ! Out
+                                      microphys_stats_zt,                     & ! Out
                                       microphys_stats_sfc                     ) ! Out
 
           else

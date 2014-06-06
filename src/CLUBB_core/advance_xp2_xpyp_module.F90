@@ -3312,11 +3312,10 @@ module advance_xp2_xpyp_module
   end subroutine pos_definite_variances
 
   !============================================================================
-  subroutine update_xp2_mc( nz, dt, cloud_frac, rcm, rvm, thlm, &
-                                  wm, exner, rrainm_evap, pdf_params, &
-                                  rtp2_mc, thlp2_mc,      &
-                                  wprtp_mc, wpthlp_mc,    &
-                                  rtpthlp_mc                 )
+  subroutine update_xp2_mc( nz, dt, cloud_frac, rcm, rvm, thlm,        &
+                            wm, exner, rrainm_evap, pdf_params,        &
+                            rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                            rtpthlp_mc )
     !Description:
     !This subroutine is for use when l_morr_xp2_mc = .true.
     !The effects of rain evaporation on rtp2 and thlp2 are included by

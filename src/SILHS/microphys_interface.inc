@@ -11,8 +11,7 @@ interface
                             dzq, rcm, Nc, s_mellor, rvm, hydromet, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
-                            rrainm_auto, rrainm_accr, rrainm_evap, &
-                            Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
+                            microphys_stats_zt, microphys_stats_sfc )
 
     use pdf_parameter_module, only: pdf_parameter
 
@@ -64,13 +63,6 @@ interface
       rcm_mc, & ! Time tendency of liquid water mixing ratio    [kg/kg/s]
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
-
-    real( kind = core_rknd ), dimension(nnzp), intent(out) :: &
-      rrainm_auto, & ! Autoconversion budget for rain water mixing ratio [kg/kg/s]
-      rrainm_accr, & ! Accretion budget for rain water mixing ratio      [kg/kg/s]
-      rrainm_evap, & ! Evaporation budget for rain water mixing ratio    [kg/kg/s]
-      Nrm_auto,    & ! Change in Nrm due to autoconversion               [num/kg/s]
-      Nrm_evap       ! Change in Nrm due to evaporation                  [num/kg/s]
 
     type(microphys_stats_vars_type), intent(out) :: &
       microphys_stats_zt, &   ! Output variables for statistical sampling

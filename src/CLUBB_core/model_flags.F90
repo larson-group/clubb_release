@@ -47,7 +47,7 @@ module model_flags
                                  ! is turned off.
 
   logical, parameter, public :: &
-    l_morr_xp2_mc = .false. !Flag to include the effects of rain evaporation
+    l_morr_xp2_mc = .true.        !Flag to include the effects of rain evaporation
                                   !on rtp2 and thlp2.  The moister (rt1 or rt2)
                                   !and colder (thl1 or thl2) will be fed into
                                   !the morrison microphys, and rain evaporation will

@@ -146,11 +146,6 @@ module estimate_scm_microphys_module
       lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
-      lh_rrainm_auto_all,  & ! LH est of time tendency of autoconversion               [kg/kg/s]
-      lh_rrainm_accr_all,  & ! LH est of time tendency of accretion                    [kg/kg/s]
-      lh_rrainm_evap_all,  & ! LH est of time tendency of evaporation                  [kg/kg/s]
-      lh_Nrm_auto_all,     & ! LH est of time tendency of Nrm autoconversion           [#/kg/s]
-      lh_Nrm_evap_all,     & ! lh_est of time tendency of Nrm evaporation              [#/kg/s]
       lh_Ncm_mc_all,       & ! LH est of time tendency of cloud droplet concentration  [#/kg/s]
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
@@ -258,13 +253,6 @@ module estimate_scm_microphys_module
 
     lh_thlm_mc_all(:,:) = 0._core_rknd
 
-    lh_rrainm_auto_all(:,:) = 0._core_rknd
-    lh_rrainm_accr_all(:,:) = 0._core_rknd
-    lh_rrainm_evap_all(:,:) = 0._core_rknd
-
-    lh_Nrm_auto_all(:,:) = 0._core_rknd
-    lh_Nrm_evap_all(:,:) = 0._core_rknd
-
     lh_rtp2_mc(:) = 0.0_core_rknd
     lh_thlp2_mc(:) = 0.0_core_rknd
     lh_wprtp_mc(:) = 0.0_core_rknd
@@ -359,9 +347,6 @@ module estimate_scm_microphys_module
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
-             lh_rrainm_auto_all(:,sample), lh_rrainm_accr_all(:,sample), &
-             lh_rrainm_evap_all(:,sample), &
-             lh_Nrm_auto_all(:,sample), lh_Nrm_evap_all(:,sample), &
              microphys_stats_zt(sample), microphys_stats_sfc(sample) ) ! Out
 
       rt_all_samples(:,sample) = rc_column + rv_column + &

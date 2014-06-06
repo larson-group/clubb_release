@@ -15,7 +15,7 @@ module microphys_stats_vars_module
   private ! Set Default Scope
 
   public :: microphys_stats_vars_type, microphys_stats_alloc, microphys_put_var, &
-            microphys_stats_accumulate, microphys_stats_cleanup
+            microphys_get_var, microphys_stats_accumulate, microphys_stats_cleanup
 
   type microphys_stats_vars_type
 
@@ -164,6 +164,58 @@ module microphys_stats_vars_module
     end if ! l_stats_samp
 
   end subroutine microphys_stats_accumulate
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  function microphys_get_var( stats_index, microphys_stats_vars ) result( stats_var )
+  
+  ! Description:
+  !   Gets the specified statistics variable from the input structure.
+
+  ! References:
+  !   Eric Raut
+  !-----------------------------------------------------------------------
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      stats_index            ! The index of the variable
+
+    type(microphys_stats_vars_type), intent(in) :: &
+      microphys_stats_vars   ! The statistics structure
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(microphys_stats_vars%nz) :: &
+      stats_var              ! The output statistics variable
+
+    ! Local Variables
+    integer :: ivar
+    logical :: l_found
+
+  !-----------------------------------------------------------------------
+
+    ! Initialize variables
+    stats_var = 0._core_rknd
+    l_found = .false.
+
+    !----- Begin Code -----
+    do ivar=1, microphys_stats_vars%num_vars
+      if ( microphys_stats_vars%stats_indices(ivar) == stats_index) then
+
+        stats_var = microphys_stats_vars%output_values(:,ivar)
+        l_found = .true.
+        exit
+
+      end if
+    end do
+
+    if ( .not. l_found ) then
+      stop "Variable not found in microphys_get_var"
+    end if
+
+    return
+  end function microphys_get_var
+  !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
   subroutine microphys_stats_cleanup( microphys_stats_vars )

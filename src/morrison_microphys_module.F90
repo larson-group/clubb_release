@@ -16,8 +16,7 @@ module morrison_microphys_module
                dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
-               rrainm_auto, rrainm_accr, rrainm_evap, &
-               Nrm_auto, Nrm_evap, microphys_stats_zt, microphys_stats_sfc )
+               microphys_stats_zt, microphys_stats_sfc )
 
     ! Description:
     ! Wrapper for the Morrison microphysics
@@ -69,7 +68,9 @@ module morrison_microphys_module
 
     use stats_variables, only: & 
         iprecip_rate_sfc, & !Variables
-        imorr_snow_rate
+        imorr_snow_rate, &
+        iNrm_auto, &
+        iNrm_cond
 
     use stats_variables, only: &
         iPSMLT, & ! Variable(s)
@@ -263,16 +264,17 @@ module morrison_microphys_module
       rvm_mc, & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc   ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rrainm_auto,     & ! Autoconversion rate                 [kg/kg/s]
-      rrainm_accr,     & ! Accretion rate                      [kg/kg/s]
-      rrainm_evap        ! Rain evaporation rate               [kg/kg/s]
-
     type(microphys_stats_vars_type), intent(out) :: &
       microphys_stats_zt, & ! Variables output for statistical sampling (zt grid)
       microphys_stats_sfc   ! Variables output for statistical sampling (sfc grid)
 
     ! Local Variables
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      rrainm_auto,     &  ! Autoconversion rate                 [kg/kg/s]
+      rrainm_accr,     &  ! Accretion rate                      [kg/kg/s]
+      rrainm_evap         ! Rain evaporation rate               [kg/kg/s]
+
     real, dimension(nz) :: & 
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
 
@@ -479,7 +481,7 @@ module morrison_microphys_module
 
     integer :: i, k
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       Nrm_auto, & ! Change in Nrm due to autoconversion               [num/kg/s]
       Nrm_evap    ! Change in Nrm due to evaporation                  [num/kg/s]
 
@@ -910,6 +912,9 @@ module morrison_microphys_module
     call microphys_put_var( irrainm_auto, rrainm_auto, microphys_stats_zt )
     call microphys_put_var( irrainm_accr, rrainm_accr, microphys_stats_zt )
     call microphys_put_var( irrainm_cond, rrainm_evap, microphys_stats_zt )
+
+    call microphys_put_var( iNrm_auto,    Nrm_auto,    microphys_stats_zt )
+    call microphys_put_var( iNrm_cond,    Nrm_evap,    microphys_stats_zt )
 
     ! Update Morrison budgets
     call microphys_put_var( ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )

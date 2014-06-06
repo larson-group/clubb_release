@@ -46,9 +46,7 @@ module KK_microphys_module
                                  Ncm, s_mellor, rvm, hydromet,          & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
-                                 KK_auto_tndcy, KK_accr_tndcy,          & ! Out
-                                 KK_evap_tndcy, KK_Nrm_auto_tndcy,      & ! Out
-                                 KK_Nrm_evap_tndcy, microphys_stats_zt, & ! Out
+                                 microphys_stats_zt,                    & ! Out
                                  microphys_stats_sfc )                    ! Out
 
     ! Description:
@@ -160,18 +158,18 @@ module KK_microphys_module
       rvm_mc,  & ! Time tendency of vapor water mixing ratio     [kg/kg/s]
       thlm_mc    ! Time tendency of liquid potential temperature [K/s]
 
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      KK_auto_tndcy,  &    ! Mean KK (dr_r/dt) due to autoconversion  [(kg/kg)/s]
-      KK_accr_tndcy,  &    ! Mean KK (dr_r/dt) due to accretion       [(kg/kg)/s]
-      KK_evap_tndcy, &     ! Mean KK (dr_r/dt) due to evaporation     [(kg/kg)/s]
-      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation     [(num/kg)/s]
-      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.       [(num/kg)/s]
-
     type(microphys_stats_vars_type), intent(out) :: &
       microphys_stats_zt, & ! Variables output for statistical sampling (zt grid)
       microphys_stats_sfc   ! Variables output for statistical sampling (sfc grid)
 
     ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      KK_auto_tndcy,     & ! Mean KK (dr_r/dt) due to autoconversion   [(kg/kg)/s]
+      KK_accr_tndcy,     & ! Mean KK (dr_r/dt) due to accretion        [(kg/kg)/s]
+      KK_evap_tndcy,     & ! Mean KK (dr_r/dt) due to evaporation      [(kg/kg)/s]
+      KK_Nrm_evap_tndcy, & ! Mean KK (dN_r/dt) due to evaporation      [(num/kg)/s]
+      KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.        [(num/kg)/s]
+
     real( kind = core_rknd ), dimension(nz) ::  &
       rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
