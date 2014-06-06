@@ -66,6 +66,9 @@ module estimate_scm_microphys_module
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
+    use math_utilities, only: &
+      compute_sample_mean             ! Procedure
+
 #ifdef SILHS_KK_CONVERGENCE_TEST
     use array_index, only: &
       iiNrm, & ! Variable(s)
@@ -354,20 +357,6 @@ module estimate_scm_microphys_module
 
       thl_all_samples(:,sample) = thl_column + real( dt, kind=core_rknd ) * lh_thlm_mc_all(:,sample)
 
-      if ( l_lh_cloud_weighted_sampling ) then
-        ! Weight the output results depending on whether we're calling the
-        ! microphysics on clear or cloudy air
-        lh_hydromet_vel_all(:,:,sample) = lh_hydromet_vel_all(:,:,sample) &
-                * lh_sample_point_weights(sample)
-        lh_hydromet_mc_all(:,:,sample) = lh_hydromet_mc_all(:,:,sample) &
-                * lh_sample_point_weights(sample)
-        lh_Ncm_mc_all(:,sample) = lh_Ncm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_rcm_mc_all(:,sample) = lh_rcm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_rvm_mc_all(:,sample) = lh_rvm_mc_all(:,sample) * lh_sample_point_weights(sample)
-        lh_thlm_mc_all(:,sample) = lh_thlm_mc_all(:,sample) * lh_sample_point_weights(sample)
-      end if
-
-
       ! Loop to get new sample
     end do ! sample = 1, num_samples
 
@@ -388,24 +377,21 @@ module estimate_scm_microphys_module
 
     ! Grid box average.
     forall( ivar = 1:hydromet_dim )
-      forall( k = 1:nz )
-        lh_hydromet_vel(k,ivar) = real( sum( lh_hydromet_vel_all(k,ivar,:) ), kind=core_rknd ) &
-                                / real( num_samples, kind=core_rknd )
-        lh_hydromet_mc(k,ivar) = real( sum( lh_hydromet_mc_all(k,ivar,:) ), kind=core_rknd ) &
-                               / real( num_samples, kind=core_rknd )
-      end forall
+
+      lh_hydromet_vel(:,ivar) &
+        = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                               lh_hydromet_vel_all(:,ivar,:) )
+
+      lh_hydromet_mc(:,ivar) &
+        = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                               lh_hydromet_mc_all(:,ivar,:) )
+
     end forall
 
-    forall( k = 1:nz )
-      lh_Ncm_mc(k) = sum( lh_Ncm_mc_all(k,:) ) / &
-                                     real( num_samples, kind=core_rknd )
-      lh_rcm_mc(k) = sum( lh_rcm_mc_all(k,:) ) / &
-                                     real( num_samples, kind=core_rknd )
-      lh_rvm_mc(k) = sum( lh_rvm_mc_all(k,:) ) / &
-                                     real( num_samples, kind=core_rknd )
-      lh_thlm_mc(k) = sum( lh_thlm_mc_all(k,:) ) / &
-                                     real( num_samples, kind=core_rknd )
-    end forall
+    lh_Ncm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_Ncm_mc_all(:,:) )
+    lh_rcm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rcm_mc_all(:,:) )
+    lh_rvm_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rvm_mc_all(:,:) )
+    lh_thlm_mc= compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all(:,:))
 
     ! Sample variables from microphys_stats_vars objects for statistics
     call silhs_microphys_stats &
