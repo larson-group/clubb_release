@@ -57,10 +57,13 @@ module estimate_scm_microphys_module
       time_precision
 
     use stats_variables, only: &
+      zt,           &
+      sfc,          &
       l_stats_samp ! Variable(s)
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
+      microphys_stats_accumulate, &
       microphys_stats_cleanup
 
     use parameters_microphys, only: &
@@ -192,8 +195,12 @@ module estimate_scm_microphys_module
       w_all_points            ! num_samples values of vertical velocity      [m/s]
 
     type(microphys_stats_vars_type), dimension(num_samples) :: &
-      microphys_stats_zt, &   ! Statistics variables output from microphysics on zt grid
-      microphys_stats_sfc     ! Statistics variables on sfc grid
+      microphys_stats_zt_all, &   ! Statistics variables output from microphysics on zt grid
+      microphys_stats_sfc_all     ! Statistics variables on sfc grid
+
+    type(microphys_stats_vars_type) :: &
+      microphys_stats_zt_avg, &   ! Average of zt statistics over all sample points
+      microphys_stats_sfc_avg     ! Average of sfc statistics over all sample points
 
     integer :: ivar, k, sample
 
@@ -350,7 +357,7 @@ module estimate_scm_microphys_module
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
-             microphys_stats_zt(sample), microphys_stats_sfc(sample) ) ! Out
+             microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
 
       rt_all_samples(:,sample) = rc_column + rv_column + &
         real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
@@ -394,23 +401,21 @@ module estimate_scm_microphys_module
     lh_thlm_mc= compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all(:,:))
 
     ! Sample variables from microphys_stats_vars objects for statistics
-    call silhs_microphys_stats &
-         ( num_samples, microphys_stats_zt,  microphys_stats_sfc, &               ! Intent(in)
-           lh_sample_point_weights, l_stats_samp, l_silhs_KK_convergence_adj_mean ) ! Intent(in)
 
-    ! Cleanup microphys_stats_vars objects
-    do ivar=1, num_samples
-      call microphys_stats_cleanup( microphys_stats_zt(ivar) )
-      call microphys_stats_cleanup( microphys_stats_sfc(ivar) )
-    end do
+    microphys_stats_zt_avg =  silhs_microphys_stats_avg( num_samples, microphys_stats_zt_all, &
+                                                         lh_sample_point_weights )
+    microphys_stats_sfc_avg = silhs_microphys_stats_avg( num_samples, microphys_stats_sfc_all, &
+                                                         lh_sample_point_weights )
+
+    call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, zt )
+    call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, sfc )
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
-                                hydromet(:,iiNrm), lh_rrainm_evap, lh_rrainm_auto,  & ! intent(in)
-                                lh_rrainm_accr, l_stats_samp,                       & ! intent(in)
-                                lh_Nrm_auto, lh_Nrm_evap,                           & ! intent(in)
+                                hydromet(:,iiNrm),                                  & ! intent(in)
+                                microphys_stats_zt_avg, l_stats_samp,               & ! intent(in)
                                 lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
@@ -420,17 +425,25 @@ module estimate_scm_microphys_module
       Nc(1) = rcm(1)
     end if
 #endif
+
+    ! Cleanup microphys_stats_vars objects
+    do ivar=1, num_samples
+      call microphys_stats_cleanup( microphys_stats_zt_all(ivar) )
+      call microphys_stats_cleanup( microphys_stats_sfc_all(ivar) )
+    end do
+    call microphys_stats_cleanup( microphys_stats_zt_avg )
+    call microphys_stats_cleanup( microphys_stats_sfc_avg )
+
     return
   end subroutine est_single_column_tndcy
 
   !-----------------------------------------------------------------------
-  subroutine silhs_microphys_stats &
-             ( num_samples, microphys_stats_zt, microphys_stats_sfc, &
-               lh_sample_point_weights, l_stats_samp, &
-               l_silhs_KK_convergence_adj_mean )
+  function silhs_microphys_stats_avg &
+           ( num_samples, microphys_stats_all, lh_sample_point_weights ) &
+           result( microphys_stats_avg )
 
   ! Description:
-  !   Samples variables acquired from call to microphys_sub in SILHS
+  !   Computes a weighted average of all statistical variables 
 
   ! References:
   !   None
@@ -440,19 +453,13 @@ module estimate_scm_microphys_module
     use clubb_precision, only: &
       core_rknd            ! Compile-time constant
 
-    use stats_variables, only: &
-      zt,                & ! Variables
-      sfc,               &
-      irrainm_src_adj,   &
-      iNrm_src_adj,      &
-      irrainm_cond_adj,  &
-      iNrm_cond_adj
-
-    use stats_type, only: &
-      stat_update_var_pt
-
     use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type
+      microphys_stats_vars_type, & ! Type
+      microphys_put_var,         & ! Procedure(s)
+      microphys_stats_alloc
+
+    use math_utilities, only: &
+      compute_sample_mean
 
     implicit none
 
@@ -461,82 +468,54 @@ module estimate_scm_microphys_module
       num_samples           ! Number of SILHS sample points
 
     type(microphys_stats_vars_type), dimension(num_samples), intent(in) :: &
-      microphys_stats_zt, &   ! Variables sampled on zt and sfc grids, respectively
-      microphys_stats_sfc
+      microphys_stats_all   ! Statistics variables
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point
 
-    logical, intent(in) :: &
-      l_stats_samp, &                   ! Are we sampling this timestep?
-      l_silhs_KK_convergence_adj_mean   ! If this is true, certain variables are
-                                        ! not sampled right now.
+    ! Output Variables
+    type(microphys_stats_vars_type) :: &
+      microphys_stats_avg   ! Average of statistical variables
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(num_samples) :: var_values
+    integer :: ivar, svar, nz, num_vars, stats_index
 
-    integer :: ivar, stat_index, sample, k
+    real( kind = core_rknd ), dimension(microphys_stats_all(1)%nz,num_samples) :: &
+      stats_var_all
+
+    real( kind = core_rknd ), dimension(microphys_stats_all(1)%nz) :: &
+      stats_var_avg
 
   !-----------------------------------------------------------------------
     !----- Begin Code-----
 
-    ! Sample variables from microphys_stats_vars objects for statistics
-    if ( l_stats_samp ) then
+    nz = microphys_stats_all(1)%nz
+    num_vars = microphys_stats_all(1)%num_vars
 
-      ! Sample sfc variables (only one grid level needed)
-      do ivar=1, microphys_stats_sfc(1)%num_vars
-        stat_index = microphys_stats_sfc(1)%stats_indices(ivar)
+    call microphys_stats_alloc( nz, num_vars, microphys_stats_avg )
 
-        forall ( sample=1:num_samples )
-          var_values(sample) = microphys_stats_sfc(sample)%output_values(1,ivar)
-        end forall
+    do ivar=1, num_vars
 
-        call stat_update_var_pt( stat_index, 1, &
-             sum( var_values(:) * lh_sample_point_weights(:) ) / &
-              real( num_samples, kind = core_rknd ), sfc )
+      stats_index = microphys_stats_all(1)%stats_indices(ivar)
 
+      do svar=1, num_samples
+        stats_var_all(:,svar) = microphys_stats_all(svar)%output_values(:,ivar)
       end do
 
-      ! Sample zt variables
-      do ivar=1, microphys_stats_zt(1)%num_vars
+      stats_var_avg = compute_sample_mean( nz, num_samples, lh_sample_point_weights, stats_var_all )
 
-        stat_index = microphys_stats_zt(1)%stats_indices(ivar)
+      call microphys_put_var( stats_index, stats_var_avg, microphys_stats_avg )
 
-        ! We don't want to sample the adjustment statistics if
-        ! l_silhs_KK_convergence_adj_mean is true. These will be sampled in
-        ! the subroutine adjust_KK_src_means below.
+    end do
 
-        if ( .not. l_silhs_KK_convergence_adj_mean .or. &
-            ( stat_index /= irrainm_src_adj .and. &
-              stat_index /= iNrm_src_adj .and. &
-              stat_index /= irrainm_cond_adj .and. &
-              stat_index /= iNrm_cond_adj ) ) then
-
-          do k=1, microphys_stats_zt(1)%nz
-
-            forall ( sample=1:num_samples )
-              var_values(sample) = microphys_stats_zt(sample)%output_values(k,ivar)
-            end forall ! sample=1:num_samples
-
-            call stat_update_var_pt( stat_index, k, &
-                 sum( var_values(:) * lh_sample_point_weights(:) ) / &
-                   real( num_samples, kind=core_rknd ), zt )
-
-          end do ! k=1, nz
-
-        end if ! .not. l_silhs_KK_convergence_adj_mean .or. (...)
-      end do ! ivar=1, microphys_stats_zt(1)%num_vars
-
-    end if ! l_stats_samp
     return
-  end subroutine silhs_microphys_stats
+  end function silhs_microphys_stats_avg
+  !-----------------------------------------------------------------------
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
-                                  rrainm_evap, rrainm_auto, rrainm_accr,   &
-                                  l_stats_samp,                            &
-                                  Nrm_auto, Nrm_evap,                      &
+                                  microphys_stats_zt, l_stats_samp,        &
                                   rrainm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
 
@@ -564,12 +543,24 @@ module estimate_scm_microphys_module
       Nr_tol, &
       zero
 
+    use stats_type, only: &
+      stat_update_var ! Procedure
+
     use stats_variables, only: &
       zt, &
+      irrainm_auto, &
+      irrainm_accr, &
+      irrainm_cond, &
+      iNrm_auto, &
+      iNrm_cond, &
       irrainm_src_adj, &
       iNrm_src_adj, &
       irrainm_cond_adj, &
       iNrm_cond_adj
+
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type, &     ! Type
+      microphys_get_var                ! Procedure
 
     implicit none
 
@@ -593,12 +584,10 @@ module estimate_scm_microphys_module
       exner,       & ! Exner function                            [-]
       rcm,         & ! Mean liquid water mixing ratio            [kg/kg]
       rrainm,      & ! Rain water mixing ration                  [kg/kg]
-      Nrm,         & ! Rain drop concentration                   [num/kg]
-      rrainm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
-      rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
-      rrainm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
-      Nrm_auto,    & ! Mean change in Nrm due to autoconversion  [(num/kg)/s]
-      Nrm_evap       ! Mean change in Nrm due to evaporation     [(num/kg)/s]
+      Nrm            ! Rain drop concentration                   [num/kg]
+
+    type(microphys_stats_vars_type), intent(in) :: &
+      microphys_stats_zt ! Statistics variables                  [units vary]
 
     logical, intent(in) :: &
       l_stats_samp   ! Whether to sample this timestep
@@ -612,7 +601,14 @@ module estimate_scm_microphys_module
       thlm_mc      ! Time tendency of thlm                   [(kg/kg)/s]
 
     ! Local Variables
-    type(KK_microphys_adjust_terms_type), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
+      rrainm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
+      rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
+      rrainm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
+      Nrm_auto,    & ! Mean change in Nrm due to autoconversion  [(num/kg)/s]
+      Nrm_evap       ! Mean change in Nrm due to evaporation     [(num/kg)/s]
+
+    type(KK_microphys_adj_terms_type), dimension(nz) :: &
       adj_terms    ! Adjustment terms returned from the adjustment routine
 
     integer :: k
@@ -626,6 +622,13 @@ module estimate_scm_microphys_module
     rcm_mc = zero
     thlm_mc = zero
 
+    rrainm_auto = microphys_get_var( irrainm_auto, microphys_stats_zt )
+    rrainm_accr = microphys_get_var( irrainm_accr, microphys_stats_zt )
+    rrainm_evap = microphys_get_var( irrainm_cond, microphys_stats_zt )
+
+    Nrm_auto    = microphys_get_var( iNrm_auto,    microphys_stats_zt )
+    Nrm_evap    = microphys_get_var( iNrm_cond,    microphys_stats_zt )
+
     ! Loop over each vertical level above the lower boundary
     do k = 2, nz, 1
 
@@ -634,7 +637,7 @@ module estimate_scm_microphys_module
                                 rrainm_evap(k), rrainm_auto(k),            & !intent(in)
                                 rrainm_accr(k), Nrm_evap(k),               & !intent(in)
                                 Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
-                                l_evap_adj_enabled, l_stats_samp,          & !intent(in)
+                                l_evap_adj_enabled,                        & !intent(in)
                                 l_latin_hypercube, k,                      & !intent(in)
                                 rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)

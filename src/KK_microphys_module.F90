@@ -363,10 +363,14 @@ module KK_microphys_module
     call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
     call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_zt )
     call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
-    call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_zt )
-    call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
-    call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_zt )
-    call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
+    if ( l_src_adj_enabled ) then
+      call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_zt )
+      call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
+    end if
+    if ( l_evap_adj_enabled ) then
+      call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_zt )
+      call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
+    end if
 
     return
 
