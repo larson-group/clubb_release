@@ -1,0 +1,8 @@
+! $Id$
+&G_unit_namelist
+! G_unit_tests settings
+l_KK_unit_tests = .true.           ! Flag for KK integrals tests
+l_corr_cholesky_mtx_tests = .true. ! Flag for corr_cholesky_mtx_tests
+l_hole_filling_tests = .true.      ! Flag for hole filling tests
+l_Nc_Ncn_test = .true.             ! Flag for Nc-Ncn Equations tests
+/

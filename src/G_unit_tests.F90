@@ -8,6 +8,9 @@ program G_unit_tests
   ! References:
   !-------------------------------------------------------------------------
 
+  use constants_clubb, only: &
+      fstdout  ! Constant(s)
+
   use KK_integrals_tests, only: &
       KK_integrals_tests_driver  ! Procedure(s)
 
@@ -23,11 +26,29 @@ program G_unit_tests
   implicit none
 
   ! Variables
-  logical, parameter :: &
-    l_KK_unit_tests = .true.,         &
-    l_corr_cholesky_mtx_tests = .true., &
-    l_hole_filling_tests = .true., &
-    l_Nc_Ncn_test = .true.
+  integer, parameter :: iunit = 25
+
+  ! Initialize flags
+  logical :: &
+    l_KK_unit_tests = .true.,           & ! Flag for KK integrals tests
+    l_corr_cholesky_mtx_tests = .true., & ! Flag for corr_cholesky_mtx_tests
+    l_hole_filling_tests = .true.,      & ! Flag for hole filling tests
+    l_Nc_Ncn_test = .true.                ! Flag for Nc-Ncn Equations tests
+
+  ! Definition of namelist
+  namelist /G_unit_namelist/ &
+    l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
+    l_Nc_Ncn_test
+
+
+  ! Read namelist file
+  open(unit=iunit, file="G_unit_tests.in", status='old')
+  read(unit=iunit, nml=G_unit_namelist)
+  close(unit=iunit)
+
+
+  write(fstdout,'(A)') "Running G_unit_tests"
+  write(fstdout,'(A)') " "
 
 
   if ( l_KK_unit_tests ) then
