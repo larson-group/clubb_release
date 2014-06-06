@@ -39,6 +39,9 @@
 # to confirm that the directories exist and if they have any data. The script
 # now only outputs that it is checking a case if the data for that case exists.
 # June 17, 2011.
+#
+# Brian Griffin upgraded this script to compare netCDF output files.
+# June 5, 2014.
 #-------------------------------------------------------------------------------
 
 # Figure out the directory where the script is located
@@ -49,6 +52,9 @@ restoreDir=`pwd`
 
 # If true, differences were detected. This is used to set the exit status
 differences=false
+differencesCtl=false
+differencesDat=false
+differencesNc=false
 
 # If true, there was no data found. This is used to set the exit status
 noData=true
@@ -95,15 +101,17 @@ do
     fi
 done < "RUN_CASES"
 
-# diff the GrADS control (*.ctl) files and the GrADS binary data (*.dat) files
-# for each statistical output type (zt, zm, and sfc) for each case in 
-# run_standalone-all.bash.
+# diff the GrADS control (*.ctl) files and the GrADS binary data (*.dat) files,
+# or netCDF (*.nc) files, for each statistical output type (zt, zm, and sfc) for
+# each case in found in both directories that are part of RUN_CASES.
 # This will loop over all runs in sequence.
 for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
     declare -a DIFF_LIST
 
     dataFound=false
+    dataFoundGrADS=false
+    dataFoundnetCDF=false
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.ctl' ] ; then
         # Compare the zt GrADS control (*_zt.ctl) files
@@ -111,10 +119,12 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZtCtl" ] ; then
             differences=true
+            differencesCtl=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zt.ctl"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.dat' ] ; then
@@ -123,10 +133,26 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZtDat" ] ; then
             differences=true
+            differencesDat=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zt.dat"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
+    fi
+
+    if [ -e $dir1/"${RUN_CASE[$x]}"'_zt.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_zt.nc' ] ; then
+        # Compare the zt netCDF (*_zt.nc) files
+        diffZtNc=$(diff $dir1/"${RUN_CASE[$x]}"'_zt.nc' $dir2/"${RUN_CASE[$x]}"'_zt.nc')
+
+        if [ -n "$diffZtNc" ] ; then
+            differences=true
+            differencesNc=true
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zt.nc"
+        fi
+        
+        dataFound=true
+        dataFoundnetCDF=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.ctl' ] ; then
@@ -135,10 +161,12 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZmCtl" ] ; then
             differences=true
+            differencesCtl=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zm.ctl"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.dat' ] ; then
@@ -147,10 +175,26 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffZmDat" ] ; then
             differences=true
+            differencesDat=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zm.dat"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
+    fi
+
+    if [ -e $dir1/"${RUN_CASE[$x]}"'_zm.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_zm.nc' ] ; then
+        # Compare the zm netCDF (*_zm.nc) files
+        diffZmNc=$(diff $dir1/"${RUN_CASE[$x]}"'_zm.nc' $dir2/"${RUN_CASE[$x]}"'_zm.nc')
+
+        if [ -n "$diffZmNc" ] ; then
+            differences=true
+            differencesNc=true
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_zm.nc"
+        fi
+        
+        dataFound=true
+        dataFoundnetCDF=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.ctl' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.ctl' ] ; then
@@ -159,10 +203,12 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffSfcCtl" ] ; then
             differences=true
+            differencesCtl=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_sfc.ctl"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
     fi
 
     if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.dat' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.dat' ] ; then
@@ -171,14 +217,35 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
         if [ -n "$diffSfcDat" ] ; then
             differences=true
+            differencesDat=true
             DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_sfc.dat"
         fi
         
         dataFound=true
+        dataFoundGrADS=true
+    fi
+
+    if [ -e $dir1/"${RUN_CASE[$x]}"'_sfc.nc' -a -e $dir2/"${RUN_CASE[$x]}"'_sfc.nc' ] ; then
+        # Compare the sfc netCDF (*_sfc.nc) files
+        diffSfcNc=$(diff $dir1/"${RUN_CASE[$x]}"'_sfc.nc' $dir2/"${RUN_CASE[$x]}"'_sfc.nc')
+
+        if [ -n "$diffSfcNc" ] ; then
+            differences=true
+            differencesNc=true
+            DIFF_LIST[${#DIFF_LIST[@]}]="${RUN_CASE[$x]}_sfc.nc"
+        fi
+        
+        dataFound=true
+        dataFoundnetCDF=true
     fi
 
     if [ $dataFound == "true" ] ; then
-      echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
+        if [ $dataFoundGrADS == "true" ] ; then
+            echo 'Diffing '"${RUN_CASE[$x]}"' GrADS control (*.ctl) and binary data (*.dat) files'
+        fi
+        if [ $dataFoundnetCDF == "true" ] ; then
+            echo 'Diffing '"${RUN_CASE[$x]}"' netCDF (*.nc) files'
+        fi
 
       for (( y=0; y < "${#DIFF_LIST[@]}"; y++ )); do
         echo "*** Differences detected in ${DIFF_LIST[$y]}! ***" >&2
@@ -195,6 +262,15 @@ done
 # Determine exit status and exit
 if [ $differences == "true" ] ; then
     echo -e "\nThere were some differences detected!"
+    if [ $differencesCtl == "true" ] ; then
+       echo -e "There were differences detected in GrADS control (*.ctl) files."
+    fi
+    if [ $differencesDat == "true" ] ; then
+       echo -e "There were differences detected in GrADS binary data (*.dat) files."
+    fi
+    if [ $differencesNc == "true" ] ; then
+       echo -e "There were differences detected in netCDF (*.nc) files."
+    fi
     exit 1
 elif [ $noData == "true" ] ; then
     echo -e "\nNo data was found!"

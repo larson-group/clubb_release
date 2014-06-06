@@ -549,6 +549,15 @@ module output_netcdf
     ! Dimensions for variables
     integer, dimension(4) :: var_dim
 
+    ! Enabling l_output_file_run_date allows the date and time that the netCDF
+    ! output file is created to be included in the netCDF output file.
+    ! Disabling l_output_file_run_date means that this information will not be
+    ! included in the netCDF output file.  The advantage of disabling this
+    ! output is that it allows for a check for binary differences between two
+    ! netCDF output files.
+    logical, parameter :: &
+      l_output_file_run_date = .false.
+
 !-------------------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
 
@@ -619,26 +628,48 @@ module output_netcdf
 
     deallocate( stat )
 
-    allocate( stat(5) )
+    if ( l_output_file_run_date ) then
+       allocate( stat(5) )
+    else
+       allocate( stat(4) )
+    endif
 
     ! Define global attributes of the file, for reproducing the results and
     ! determining how a run was configured
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "Conventions", "COARDS" )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "model", "CLUBB" )
 
-    ! Figure out when the model is producing this file
-    call date_and_time( current_date, current_time )
+    i = 2
 
-    stat(3) = nf90_put_att( &
-                         ncf%iounit, NF90_GLOBAL, "created_on", &
-                         current_date(1:4)//'-'//current_date(5:6)//'-'// &
-                         current_date(7:8)//' '// &
-                         current_time(1:2)//':'//current_time(3:4) )
+    if ( l_output_file_run_date ) then
 
-    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
+       ! Enabling l_output_file_run_date allows the date and time that the
+       ! netCDF output file is created to be included in the netCDF output file.
+       ! Disabling l_output_file_run_date means that this information will not
+       ! be included in the netCDF output file.  The advantage of disabling this
+       ! output is that it allows for a check for binary differences between two
+       ! netCDF output files.
+
+       ! Figure out when the model is producing this file
+       call date_and_time( current_date, current_time )
+
+       i = i + 1
+
+       stat(i) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
+                              current_date(1:4)//'-'//current_date(5:6)//'-'// &
+                              current_date(7:8)//' '// &
+                              current_time(1:2)//':'//current_time(3:4) )
+
+    endif ! l_output_file_run_date
+
+    i = i + 1
+
+    stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
                             trim( microphys_scheme ) )
 
-    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
+    i = i + 1
+
+    stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
                             trim( rad_scheme ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
