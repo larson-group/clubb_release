@@ -23,6 +23,9 @@ program G_unit_tests
   use Nc_Ncn_test, only: &
       Nc_Ncn_unit_test ! Procedure(s)
 
+  use read_corr_mtx_test, only: &
+      read_corr_mtx_unit_test ! Procedure(s)
+
   implicit none
 
   ! Variables
@@ -33,12 +36,15 @@ program G_unit_tests
     l_KK_unit_tests = .true.,           & ! Flag for KK integrals tests
     l_corr_cholesky_mtx_tests = .true., & ! Flag for corr_cholesky_mtx_tests
     l_hole_filling_tests = .true.,      & ! Flag for hole filling tests
-    l_Nc_Ncn_test = .true.                ! Flag for Nc-Ncn Equations tests
+    l_Nc_Ncn_test = .true.,             & ! Flag for Nc-Ncn Equations tests
+    l_read_corr_mtx_test = .true.,      & ! Flag for corr matrix read test
+      show_read_test_arrays = .true.      ! If true, the arrays used in
+                                          !   read_corr_mtx_test will be shown
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
-    l_Nc_Ncn_test
+    l_Nc_Ncn_test, l_read_corr_mtx_test
 
 
   ! Read namelist file
@@ -67,6 +73,9 @@ program G_unit_tests
      call Nc_Ncn_unit_test
   endif
 
+  if ( l_read_corr_mtx_test ) then
+     call read_corr_mtx_unit_test(show_read_test_arrays)
+  endif
 
 !===============================================================================
 

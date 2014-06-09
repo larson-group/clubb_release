@@ -3,3 +3,4 @@
 ../src/G_unit_test_types/corr_cholesky_mtx_tests.F90
 ../src/G_unit_test_types/hole_filling_tests.F90
 ../src/G_unit_test_types/Nc_Ncn_test.F90
+../src/G_unit_test_types/read_corr_mtx_test.F90

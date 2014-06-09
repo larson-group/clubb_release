@@ -56,7 +56,8 @@ module corr_matrix_module
   private
 
   public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
-            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays, assert_corr_symmetric
+            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays, &
+            assert_corr_symmetric, print_corr_matrix
 
   private :: get_corr_var_index, return_pdf_index, def_corr_idx
 
@@ -990,6 +991,54 @@ module corr_matrix_module
     end if
 
   end subroutine assert_corr_symmetric
+
+  !-----------------------------------------------------------------------------
+  subroutine print_corr_matrix( d_variables, & ! intent(in)
+                                corr_array ) ! intent(in)
+
+    ! Description:
+    !   Prints the correlation matrix to the console.
+    ! References:
+    !   None
+    !---------------------------------------------------------------------------
+
+    use constants_clubb, only: fstdout ! Constant(s)
+
+    use clubb_precision, only: core_rknd
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables    ! Number of variables in the correlation array
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+      intent(in) :: corr_array ! Correlation array to be printed
+
+    ! Local Variables
+    integer :: n, & ! Loop indeces
+               m, &
+               current_character_index ! keeps track of the position in the string
+
+    character(LEN=72) :: current_line ! The current line to be printed
+    character(LEN=10) :: str_array_value
+
+    !----- Begin Code -----
+
+    current_character_index = 0
+
+    do n = 1, d_variables
+      do m = 1, d_variables
+        write(str_array_value,'(F5.2)') corr_array(m,n)
+        current_line = current_line(1:current_character_index)//str_array_value
+        current_character_index = current_character_index + 6
+      end do
+      write(*, *) current_line
+      current_line = ""
+      current_character_index = 0
+    end do
+
+  end subroutine print_corr_matrix
   !-----------------------------------------------------------------------------
 
 end module corr_matrix_module
