@@ -4,6 +4,12 @@
 # Description:
 # Script to run G_unit_tests, which is the unit testing framework.
 
+# Figure out the directory where the script is located.
+run_dir=`dirname $0`
+
+# Change directories to the one in which the script is located.
+cd $run_dir
+
 # Copy the namelist to the local directory.
 cp "../input_misc/G_unit_tests.in" "G_unit_tests.in"
 
