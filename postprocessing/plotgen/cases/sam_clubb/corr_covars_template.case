@@ -1,0 +1,540 @@
+# Template Correlation and Covariances Case File
+
+%CASE = 
+(
+    'name' => 'Casename',
+    'enabled' => 'true', 
+    'type' => 'standard',
+    'headerText' => 'Template case',
+    'startTime' => 300.0,  # [minutes]
+    'endTime' => 360.0,    # [minutes]
+    'startHeight' => 0.0,   # [m]
+    'endHeight' => 16000.0, # [m]
+    'plots' =>
+    [
+# S
+       {'plotTitle' => 'Correlation of S and W', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and W', 'axisLabel' => '[(kg/kg)(m/s)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and NCL', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and NCL', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and QR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and QR', 'axisLabel' => '[(kg/kg)^2 ]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and NR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and NR', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and QCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and QCI', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and NCI', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and QS', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and NS', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and QG', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of S and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of S and NG', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+# Vertical Velocity
+
+       {'plotTitle' => 'Correlation of W and NCL', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and NCL', 'axisLabel' => '[(m/s)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ncl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and QR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and QR', 'axisLabel' => '[(m/s)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and NR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and NR', 'axisLabel' => '[(m/s)(#/kg) ]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and QCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and QCI', 'axisLabel' => '[(m/s)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and NCI', 'axisLabel' => '[(m/s)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and QS', 'axisLabel' => '[(m/s)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and NS', 'axisLabel' => '[(m/s)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and QG', 'axisLabel' => '[(m/s)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of W and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_w_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of W and NG', 'axisLabel' => '[(m/s)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_w_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+#Cloud liquid number concentration
+
+       {'plotTitle' => 'Correlation of NCL and QR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and QR', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_qr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and NR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and NR', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and QCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and QCI', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and NCI', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and QS', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and NS', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and QG', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCL and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ncl_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCL and NG', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ncl_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Rainwater mixing ratio
+
+       {'plotTitle' => 'Correlation of QR and NR', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and NR', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_nr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and QCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and QCI', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and NCI', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and QS', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and NS', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and QG', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QR and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qr_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QR and NG', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qr_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Rainwater number concentration
+
+       {'plotTitle' => 'Correlation of NR and QCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and QCI', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_qci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NR and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and NCI', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NR and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and QS', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NR and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and NS', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NR and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and QG', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NR and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nr_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NR and NG', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nr_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Cloud-ice mixing ratio
+
+       {'plotTitle' => 'Correlation of QCI and NCI', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qci_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QCI and NCI', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_nci', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QCI and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qci_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QCI and QS', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QCI and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qci_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QCI and NS', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QCI and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qci_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QCI and QG', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QCI and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qci_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QCI and NG', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Cloud-ice number concentration
+
+       {'plotTitle' => 'Correlation of NCI and QS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nci_qs', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCI and QS', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qci_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCI and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nci_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCI and NS', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nci_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCI and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nci_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCI and QG', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nci_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NCI and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_nci_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NCI and NG', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_nci_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Snow mixing ratio
+
+       {'plotTitle' => 'Correlation of QS and NS', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qs_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QS and NS', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qs_ns', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QS and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qs_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QS and QG', 'axisLabel' => '[(kg/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qs_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of QS and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qs_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QS and NG', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qs_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Snow number concentration
+
+       {'plotTitle' => 'Correlation of NS and QG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ns_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NS and QG', 'axisLabel' => '[(#/kg)(kg/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ns_qg', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+       {'plotTitle' => 'Correlation of NS and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_ns_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of NS and NG', 'axisLabel' => '[(#/kg)^2]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_ns_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       
+# Graupel
+
+       {'plotTitle' => 'Correlation of QG and NG', 'axisLabel' => '[-]', 'name' => 'auto', 'type' => 'profile_corr', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'corr_qg_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'Covariance of QG and NG', 'axisLabel' => '[(kg/kg)(#/kg)]', 'name' => 'auto', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'template_case.nc', 'name' => 'auto', 'type' => 'auto',   'expression' => 'covarnce_qg_ng', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]}
+    
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
