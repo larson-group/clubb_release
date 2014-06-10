@@ -6,7 +6,7 @@ vars_zt =
 'rsnowm', 'Nsnowm','Lscale', 'radht',
 'corr_ws_1', 'corr_ws_2', 'corr_whm_i', 'corr_wNcn_i',
 'corr_st_1_ca', 'corr_st_2_ca', 'corr_shm_i', 'corr_sNcn_i',
-'corr_hmxhmy_i', 'corr_hmxhmy_i_n', 'precip_frac', 'ice_supersat_frac',
+'corr_hmxhmy_i', 'precip_frac', 'ice_supersat_frac',
 ''
 
 vars_zm =

@@ -238,11 +238,11 @@
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Correlation (in-precip) between ln r_r and ln N_r', 'axisLabel' => 'corr\_rrNr\_i\_n [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
+#       {'plotTitle' => 'Correlation (in-precip) between ln r_r and ln N_r', 'axisLabel' => 'corr\_rrNr\_i\_n [-]', 'type' => 'profile', 'lines' =>
+#       [
+#          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+#          {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+#       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'CWP / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},

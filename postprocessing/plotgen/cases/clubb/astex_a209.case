@@ -225,11 +225,11 @@ to'}
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Correlation (in-precip) between ln r_r and ln N_r', 'axisLabel' => 'corr\_rrNr\_i\_n [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
+#       {'plotTitle' => 'Correlation (in-precip) between ln r_r and ln N_r', 'axisLabel' => 'corr\_rrNr\_i\_n [-]', 'type' => 'profile', 'lines' =>
+#       [
+#          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rrNr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+#          {'filename' => 'astex_a209_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rrNr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+#       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'astex_a209_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
