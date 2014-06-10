@@ -356,7 +356,7 @@ module advance_clubb_core_module
 
     ! Constant Parameters
     logical, parameter :: &
-      l_avg_Lscale = .true., & ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
+      l_avg_Lscale = .false., & ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
     ! is true, compute_length is called two additional times with
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_length is then calculated.
