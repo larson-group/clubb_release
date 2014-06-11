@@ -58,6 +58,10 @@ module model_flags
                                    ! colder than -37C.  This is to be used for 
                                    ! Morrison microphysics, to prevent excess ice
 
+  logical, parameter, public :: &
+    l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
+                                  ! spline interpolation as opposed to linear interpolation.
+
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
   ! add the logic to check the strings for the new formula in clubb_core and

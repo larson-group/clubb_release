@@ -131,6 +131,7 @@ module grid_class
   !
   ! Chris Golaz, 7/17/99
   ! modified 9/10/99
+  ! schemena, modified 6/11/2014 - Restructered code to add cubic/linear flag
 
   !  References:
 
@@ -148,7 +149,7 @@ module grid_class
   public :: gr, grid, zt2zm, interp_weights_zt2zm_imp, zm2zt, & 
             interp_weights_zm2zt_imp, ddzm, ddzt, & 
             setup_grid, cleanup_grid, setup_grid_heights, &
-            read_grid_heights, flip, zt2zm_linear, zm2zt_linear
+            read_grid_heights, flip
 
   private :: linear_interpolated_azm, linear_interpolated_azmk, & 
              interpolated_azmk_imp, linear_interpolated_azt, & 
@@ -165,7 +166,6 @@ module grid_class
     t_below = 2, & ! Lower thermodynamic level index (gr%weights_zt2zm).
     m_above = 1, & ! Upper momentum level index (gr%weights_zm2zt).
     m_below = 2    ! Lower momentum level index (gr%weights_zm2zt).
-
 
   type grid
 
@@ -213,35 +213,32 @@ module grid_class
 
   ! Interfaces provided for function overloading
 
-  ! Interpolation/extension functions
-  interface zt2zm_linear
+  interface zt2zm
+    ! For l_cubic_interp = .true.
+    ! This version uses cublic spline interpolation of Stefen (1990).
+    !
+    ! For l_cubic_interp = .false.
     ! This performs a linear extension at the highest grid level and therefore
     ! does not guarantee, for positive definite quantities (e.g. wp2), that the
     ! extended point is indeed positive definite.  Positive definiteness can be
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azm and interpolated_azmk.
-    module procedure linear_interpolated_azmk, linear_interpolated_azm
+    module procedure redirect_interpolated_azmk, redirect_interpolated_azm
   end interface
 
-  interface zm2zt_linear
+  interface zm2zt
+    ! For l_cubic_interp = .true.
+    ! This version uses cublic spline interpolation of Stefen (1990).
+    !
+    ! For l_cubic_interp = .false.
     ! This performs a linear extension at the lowest grid level and therefore
     ! does not guarantee, for positive definite quantities (e.g. wp2), that the
     ! extended point is indeed positive definite.  Positive definiteness can be
     ! ensured with a max statement.
     ! In the future, we could add a flag (lposdef) and, when needed, apply the
     ! max statement directly within interpolated_azt and interpolated_aztk.
-    module procedure linear_interpolated_azt, linear_interpolated_aztk
-  end interface
-
-  interface zt2zm
-    ! This version uses cublic spline interpolation of Stefen (1990).
-    module procedure cubic_interpolated_azmk, cubic_interpolated_azm
-  end interface
-
-  interface zm2zt
-    ! As above, but for interpolating zm to zt levels.
-    module procedure cubic_interpolated_aztk, cubic_interpolated_azt
+    module procedure redirect_interpolated_aztk, redirect_interpolated_azt
   end interface
 
   interface interp_weights_zt2zm_imp
@@ -1056,6 +1053,206 @@ module grid_class
   end subroutine read_grid_heights
 
   !=============================================================================
+  function redirect_interpolated_azmk( azt, k )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+      l_cubic_interp, & ! Variable(s)
+      l_quintic_poly_interp
+
+    use constants_clubb, only: &
+      fstdout ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    integer, intent(in) :: &
+      k    ! Vertical level index
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      redirect_interpolated_azmk    ! Variable when interp. to momentum levels
+
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      redirect_interpolated_azmk = cubic_interpolated_azmk( azt, k )
+    else
+      redirect_interpolated_azmk = linear_interpolated_azmk( azt, k )
+    end if
+
+    return
+  end function redirect_interpolated_azmk
+
+  !=============================================================================
+  function redirect_interpolated_azm( azt )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+      l_cubic_interp, & ! Variable(s)
+      l_quintic_poly_interp
+
+    use constants_clubb, only: &
+      fstdout ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      redirect_interpolated_azm    ! Variable when interp. to momentum levels
+
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      redirect_interpolated_azm = cubic_interpolated_azm( azt )
+    else
+      redirect_interpolated_azm = linear_interpolated_azm( azt )
+    end if
+
+    return
+  end function redirect_interpolated_azm
+
+  !=============================================================================
+  function redirect_interpolated_aztk( azt, k )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+      l_cubic_interp, & ! Variable(s)
+      l_quintic_poly_interp
+
+    use constants_clubb, only: &
+      fstdout ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    integer, intent(in) :: &
+      k    ! Vertical level index
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      redirect_interpolated_aztk    ! Variable when interp. to momentum levels
+
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      redirect_interpolated_aztk = cubic_interpolated_aztk( azt, k )
+    else
+      redirect_interpolated_aztk = linear_interpolated_aztk( azt, k )
+    end if
+
+    return
+  end function redirect_interpolated_aztk
+
+  !=============================================================================
+  function redirect_interpolated_azt( azt )
+
+    ! Description:
+    ! Calls the appropriate corresponding function based on l_cubic_temp
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+      l_cubic_interp, & ! Variable(s)
+      l_quintic_poly_interp
+
+    use constants_clubb, only: &
+      fstdout ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      redirect_interpolated_azt    ! Variable when interp. to momentum levels
+
+    ! ---- Begin Code ----
+
+    ! Sanity Check
+    if (l_quintic_poly_interp) then
+      if (.not. l_cubic_interp) then
+        write (fstdout, *) "Error: Model flag l_quintic_poly_interp should not be true if "&
+                         //"l_cubic_interp is false."
+        stop
+      end if
+    end if
+
+    ! Redirect
+    if (l_cubic_interp) then
+      redirect_interpolated_azt = cubic_interpolated_azt( azt )
+    else
+      redirect_interpolated_azt = cubic_interpolated_azt( azt )
+    end if
+
+    return
+  end function redirect_interpolated_azt
+
+  !=============================================================================
+
+
   pure function linear_interpolated_azm( azt )
 
     ! Description:
