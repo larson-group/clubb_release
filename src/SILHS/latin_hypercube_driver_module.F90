@@ -857,7 +857,7 @@ module latin_hypercube_driver_module
                    ( l_cloudy_sample, pdf_params(k_lh_start)%cloud_frac1, & ! In
                      pdf_params(k_lh_start)%cloud_frac2, pdf_params(k_lh_start)%mixt_frac, & !In
                      cloud_frac_thresh, & ! In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! Out
 
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
@@ -865,7 +865,7 @@ module latin_hypercube_driver_module
                      p_matrix(sample,iiPDF_s_mellor), num_samples, & ! In
                      pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
                      pdf_params(k_lh_start)%mixt_frac, & !In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! Out
 
             end if
 
@@ -1514,8 +1514,8 @@ module latin_hypercube_driver_module
       mixt_frac, &      ! Mixture fraction                                       [-]
       cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
 
-    ! Input/Output Variables
-    real(kind=dp), intent(inout) :: &
+    ! Output Variables
+    real(kind=dp), intent(out) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
@@ -1628,8 +1628,8 @@ module latin_hypercube_driver_module
       cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac         ! Mixture fraction                                       [-]
 
-    ! Input/Output Variables
-    real(kind=dp), intent(inout) :: &
+    ! Output Variables
+    real(kind=dp), intent(out) :: &
       X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
