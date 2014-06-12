@@ -1244,7 +1244,7 @@ module grid_class
     if (l_cubic_interp) then
       redirect_interpolated_azt = cubic_interpolated_azt( azt )
     else
-      redirect_interpolated_azt = cubic_interpolated_azt( azt )
+      redirect_interpolated_azt = linear_interpolated_azt( azt )
     end if
 
     return
