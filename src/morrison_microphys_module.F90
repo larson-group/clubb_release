@@ -505,7 +505,7 @@ module morrison_microphys_module
     endif
 
     call microphys_stats_alloc( nz, num_output_zt, microphys_stats_zt )
-    call microphys_stats_alloc( nz, num_output_sfc, microphys_stats_sfc )
+    call microphys_stats_alloc( 1, num_output_sfc, microphys_stats_sfc )
 
 
     ! Determine temperature
