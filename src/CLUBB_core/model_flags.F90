@@ -19,8 +19,8 @@ module model_flags
 
   logical, parameter, public ::  & 
     l_hyper_dfsn         = .false., & ! 4th-order hyper-diffusion
-    l_pos_def            = .false., & ! Flux limiting pos. def. scheme on rtm
-    l_hole_fill          = .true.,  & ! Hole filling pos. def. scheme on wp2,up2,rtp2,etc
+    l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
+    l_hole_fill          = .true.,  & ! Hole filling positive definite scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
     l_clip_turb_adv      = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
     l_gmres              = .false., & ! Use GMRES iterative solver rather than LAPACK
