@@ -1,0 +1,169 @@
+# CAM IOP Case File
+
+%CASE =
+(
+    'name' => 'iop_new',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'CAM IOP Case new variables',
+    'startTime' =>1.,  # [min]
+    'endTime' => 40320.,    # [min]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 12000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'Q', 'axisLabel' => 'Q [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'Q', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'CLDLIQ', 'axisLabel' => 'CLDLIQ [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDLIQ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'CLDICE', 'axisLabel' => 'CLDICE [kg/kg]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDICE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'QRS', 'axisLabel' => 'QRS [K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'QRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'QRL', 'axisLabel' => 'QRL [K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'QRL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WP2', 'axisLabel' => 'WP2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'DIVQ3D', 'axisLabel' => 'DIVQ3D [g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVQ3D*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'RVMTEND+RCMTEND', 'axisLabel' => 'RVMTEND+RCMTEND [g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(RVMTEND_CLUBB+RCMTEND_CLUBB)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => '-PRODPREC', 'axisLabel' => '-PRODPREC [g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '-(PRODPREC*1000*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'EVAPPREC', 'axisLabel' => 'EVAPPREC [g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'EVAPPREC*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'sum', 'axisLabel' => 'sum [g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(DIVQ3D-PRODPREC+EVAPPREC)*1000*86400+(RVMTEND_CLUBB+RCMTEND_CLUBB)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'OMEGA', 'axisLabel' => 'OMEGA [Pa/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'OMEGA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WPRTP', 'axisLabel' => 'WPRTP [W/m^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRTP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WPRCP', 'axisLabel' => 'WPRCP [W/m^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRCP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'T', 'axisLabel' => 'T [K]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'T', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'DIVT3D', 'axisLabel' => 'DIVT3D [K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'DIVT3D*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'STEND_CLUBB', 'axisLabel' => 'STEND_CLUBB [K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'STEND_CLUBB*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'QRS+QRL', 'axisLabel' => 'QRS+QRL [K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '(QRS+QRL)*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WPTHVP_CLUBB', 'axisLabel' => 'WPTHVP_CLUBB [W/m^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPTHVP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WPTHLP_CLUBB', 'axisLabel' => 'WPTHLP_CLUBB [W/m^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPTHLP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WPRCP_CLUBB', 'axisLabel' => 'WPRCP_CLUBB [W/m^2]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRCP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'CLDLOW', 'axisLabel' => 'CLDLOW [-]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLDLOW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'CLDTOT', 'axisLabel' => 'CLDTOT [-]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLDTOT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'CLDHGH', 'axisLabel' => 'CLDHGH [-]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'CLDHGH', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'TGCLDLWP', 'axisLabel' => 'TGCLDLWP [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TGCLDLWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'TGCLDIWP', 'axisLabel' => 'TGCLDIWP [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TGCLDIWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'SHFLX', 'axisLabel' => 'SHFLX [W/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'SHFLX', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'LHFLX', 'axisLabel' => 'LHFLX [W/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'LHFLX', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'TS', 'axisLabel' => 'TS [K]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'TREFHT', 'axisLabel' => 'TREFHT [K]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TREFHT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'QREFHT', 'axisLabel' => 'QREFHT [kg/kg]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QREFHT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'PRECT', 'axisLabel' => 'PRECT [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECT*1000*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'U10', 'axisLabel' => 'U10 [m/s]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'U10', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+#Added from iop.case
+       {'plotTitle' => 'Relative Humidity, RH', 'axisLabel' => 'RELHUM [%]', 'type' => 'profile', 'lines' =>
+       [
+         {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RELHUM', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Q tendency due to moist processes', 'axisLabel' => 'DCQ [kg/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'DCQ*86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'T tendency due to moist processes', 'axisLabel' => 'DTCOND [K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'DTCOND*86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Convective Precipitation rate', 'axisLabel' => 'PRECC [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECC.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Large-scale Precipitation rate', 'axisLabel' => 'PRECL [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
+       [
+          {'filename' => 'se_pac_hi_iop_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECL.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+   ]
+)

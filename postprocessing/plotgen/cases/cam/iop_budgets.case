@@ -7,7 +7,7 @@
     'type' => 'budget',
     'headerText' => 'IOP Budgets',
     'startTime' => 1.,  # [minutes]
-    'endTime' => 2001.,    # [minutes]
+    'endTime' => 40320.,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 3500.0, # [m]
     'plots' =>

@@ -7,7 +7,7 @@
     'type' => 'standard',
     'headerText' => 'CAM IOP Case new variables',
     'startTime' =>1.,  # [min]
-    'endTime' => 2001.,    # [min]
+    'endTime' => 40320.,    # [min]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 12000.0, # [m]
     'plots' =>
