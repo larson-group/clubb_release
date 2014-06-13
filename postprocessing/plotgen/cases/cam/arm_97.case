@@ -6,8 +6,8 @@
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'ARM 97 Minutes 4321-5580',
-    'startTime' => 1.,  # [min]
-    'endTime' => 2.,    # [min]
+    'startTime' => 4321.,  # [min]
+    'endTime' => 5580.,    # [min]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 18000.0, # [m]
     'plots' =>
