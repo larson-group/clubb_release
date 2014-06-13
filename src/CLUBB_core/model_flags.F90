@@ -181,7 +181,7 @@ module model_flags
   namelist /configurable_model_flags/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_use_cloud_cover
+    l_use_cloud_cover, l_calc_thlp2_rad
 
   contains
 
@@ -253,7 +253,7 @@ module model_flags
   subroutine read_model_flags_from_file( iunit, filename )
 
 ! Description:
-!   Read in some of the model flags of interest from a namelist file.  If the
+!   Read in some of the model flags of interest from a namelist file. If the
 !   variable isn't in the file it will just be the default value.
 !
 ! References:

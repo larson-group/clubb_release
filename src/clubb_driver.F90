@@ -1150,6 +1150,12 @@ module clubb_driver
       return
 
     end if
+
+    if ( l_calc_thlp2_rad .and. rad_scheme == "none" ) then
+
+      stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
+
+    end if
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------

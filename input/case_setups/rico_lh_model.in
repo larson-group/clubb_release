@@ -172,7 +172,8 @@ lh_sequence_length = 1,
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "none"
+rad_scheme = "none",
+l_calc_thlp2_rad = .false.,
 /
 
 &stats_setting

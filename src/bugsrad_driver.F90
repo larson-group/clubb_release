@@ -368,6 +368,9 @@ module bugsrad_driver
       dp, & ! double precision
       core_rknd
 
+    use model_flags, only: &
+      l_calc_thlp2_rad
+
     implicit none
 
     ! Constant parameters
@@ -389,7 +392,8 @@ module bugsrad_driver
       kappa, F0, F1, eff_drop_radius, gc, omega, Fs_values, &
       cos_solar_zen_values, cos_solar_zen_times, &
       radiation_top, l_fix_cos_solar_zen, l_sw_radiation, &
-      slr, l_rad_above_cloud, l_use_default_std_atmosphere
+      slr, l_rad_above_cloud, l_use_default_std_atmosphere, &
+      l_calc_thlp2_rad
 
     ! ---- Begin Code ----
 

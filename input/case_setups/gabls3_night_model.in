@@ -150,6 +150,7 @@ microphys_scheme = "none"
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
 rad_scheme = "none",
+l_calc_thlp2_rad = .false.,
 
 ! BUGSrad related settings
 sol_const = 1321.0 ! Solar Constant for July [W/m^2]

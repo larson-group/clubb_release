@@ -6,4 +6,5 @@ l_vert_avg_closure    = .true.,
 l_single_C2_Skw       = .false.,
 l_standard_term_ta    = .false.,
 l_use_cloud_cover     = .true.,
+l_calc_thlp2_rad      = .true.
 /
