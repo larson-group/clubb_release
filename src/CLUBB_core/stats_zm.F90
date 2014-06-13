@@ -316,7 +316,7 @@ module stats_zm
 
     k = 1
 
-    do i = 1, zm%nn
+    do i = 1, zm%num_output_fields
 
       select case ( trim( vars_zm(i) ) )
 
@@ -1791,7 +1791,7 @@ module stats_zm
 
       end select
 
-    end do ! i = 1 .. zm%nn
+    end do ! i = 1 .. zm%num_output_fields
 
     return
   end subroutine stats_init_zm

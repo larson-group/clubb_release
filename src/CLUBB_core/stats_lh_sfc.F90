@@ -61,7 +61,7 @@ module stats_lh_sfc
     ! Assign pointers for statistics variables sfc
 
     k = 1
-    do i = 1, lh_sfc%nn
+    do i = 1, lh_sfc%num_output_fields
 
       select case ( trim( vars_lh_sfc(i) ) )
 
@@ -93,7 +93,7 @@ module stats_lh_sfc
 
       end select
 
-    end do ! i = 1, lh_sfc%nn
+    end do ! i = 1, lh_sfc%num_output_fields
 
     return
   end subroutine stats_init_lh_sfc

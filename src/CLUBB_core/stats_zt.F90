@@ -661,7 +661,7 @@ module stats_zt
 
     ! Assign pointers for statistics variables zt using stat_assign
 
-    tot_zt_loops = zt%nn
+    tot_zt_loops = zt%num_output_fields
 
     if ( any( vars_zt == "hmi" ) ) then
        ! Correct for number of variables found under "hmi".
@@ -4921,7 +4921,7 @@ module stats_zt
       end select ! trim( vars_zt )
 
 
-    end do ! i=1,zt%nn
+    end do ! i=1,zt%num_output_fields
 
 
     return

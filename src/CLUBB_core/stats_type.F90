@@ -35,7 +35,7 @@ module stats_type
   type stats
 
     ! Number of fields to sample
-    integer :: nn    ! Number of variables being output to disk (e.g.
+    integer ::  num_output_fields    ! Number of variables being output to disk (e.g.
                      ! cloud_frac, rain rate, etc.)
 
     integer :: &
@@ -44,16 +44,17 @@ module stats_type
       kk    ! Vertical extent of the variables (Usually gr%nz from grid_class)
 
     ! Vertical levels
-    real( kind = core_rknd ), pointer, dimension(:) :: z ! [m]
+    real( kind = core_rknd ), pointer, dimension(:) :: z ! altitude [m]
 
     ! Array to store sampled fields
 
-    real(kind=stat_rknd), pointer, dimension(:,:,:,:) :: x
-        ! The variable x contains the cumulative sums of n sample values of each
-        ! of the nn output fields (e.g. the sum of the sampled rain rate values)
+    real(kind=stat_rknd), pointer, dimension(:,:,:,:) :: accum_field_values
+        ! The variable accum_field_values contains the cumulative sums
+        ! of accum_num_samples sample values of each
+        ! of the num_output_fields (e.g. the sum of the sampled rain rate values)
 
-    integer(kind=stat_nknd), pointer, dimension(:,:,:,:) :: n
-        ! n is the number of samples for each of the nn fields 
+    integer(kind=stat_nknd), pointer, dimension(:,:,:,:) :: accum_num_samples
+        ! accum_num_samples is the number of samples for each of the num_output_fields fields
         ! and each of the kk vertical levels
 
     ! Tracks if a field is in the process of an update
@@ -61,7 +62,7 @@ module stats_type
 
     ! Data for GrADS / netCDF output
 
-    type (stat_file) ::  f
+    type (stat_file) ::  file
 
   end type stats
 
@@ -98,20 +99,20 @@ module stats_type
     ! Which grid the variable is located on (e.g., zt, zm, sfc)
     type(stats), intent(inout) :: grid_kind
 
-    grid_kind%f%var(var_index)%ptr => grid_kind%x(:,:,:,var_index)
-    grid_kind%f%var(var_index)%name = var_name
-    grid_kind%f%var(var_index)%description = var_description
-    grid_kind%f%var(var_index)%units = var_units
+    grid_kind%file%var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index)
+    grid_kind%file%var(var_index)%name = var_name
+    grid_kind%file%var(var_index)%description = var_description
+    grid_kind%file%var(var_index)%units = var_units
 
-    grid_kind%f%var(var_index)%l_silhs = l_silhs
+    grid_kind%file%var(var_index)%l_silhs = l_silhs
 
     !Example of the old format
     !changed by Joshua Fasching 23 August 2007
 
-    !zt%f%var(ithlm)%ptr => zt%x(:,k)
-    !zt%f%var(ithlm)%name = "thlm"
-    !zt%f%var(ithlm)%description = "thetal (K)"
-    !zt%f%var(ithlm)%units = "K"
+    !zt%file%var(ithlm)%ptr => zt%accum_field_values(:,k)
+    !zt%file%var(ithlm)%name = "thlm"
+    !zt%file%var(ithlm)%description = "thetal (K)"
+    !zt%file%var(ithlm)%units = "K"
 
     return
 
@@ -163,10 +164,11 @@ module stats_type
 
     if ( var_index > 0 ) then
       do k = 1, grid_kind%kk
-        grid_kind%x(clubb_i,clubb_j,k,var_index) =  & 
-             grid_kind%x(clubb_i,clubb_j,k,var_index) + real( value(k), kind=stat_rknd )
-        grid_kind%n(clubb_i,clubb_j,k,var_index) =  & 
-             grid_kind%n(clubb_i,clubb_j,k,var_index) + 1
+        grid_kind%accum_field_values(clubb_i,clubb_j,k,var_index) =  &
+             grid_kind%accum_field_values(clubb_i,clubb_j,k,var_index) + real( value(k), &
+                kind=stat_rknd )
+        grid_kind%accum_num_samples(clubb_i,clubb_j,k,var_index) =  &
+             grid_kind%accum_num_samples(clubb_i,clubb_j,k,var_index) + 1
       end do
     endif
 
@@ -206,11 +208,12 @@ module stats_type
 
     if ( var_index > 0 ) then
 
-      grid_kind%x(clubb_i,clubb_j,grid_level,var_index) = &
-        grid_kind%x(clubb_i,clubb_j,grid_level,var_index) + real( value, kind=stat_rknd )
+      grid_kind%accum_field_values(clubb_i,clubb_j,grid_level,var_index) = &
+        grid_kind%accum_field_values(clubb_i,clubb_j,grid_level,var_index) + &
+          real( value, kind=stat_rknd )
 
-      grid_kind%n(clubb_i,clubb_j,grid_level,var_index) = &
-        grid_kind%n(clubb_i,clubb_j,grid_level,var_index) + 1
+      grid_kind%accum_num_samples(clubb_i,clubb_j,grid_level,var_index) = &
+        grid_kind%accum_num_samples(clubb_i,clubb_j,grid_level,var_index) + 1
 
     endif
 
@@ -327,8 +330,9 @@ module stats_type
       ! Can we begin an update?
       if ( .not. grid_kind%l_in_update(clubb_i,clubb_j,grid_level,var_index) ) then 
 
-        grid_kind%x(clubb_i,clubb_j,grid_level, var_index) =  & 
-                grid_kind%x(clubb_i,clubb_j,grid_level, var_index) - real( value, kind=stat_rknd )
+        grid_kind%accum_field_values(clubb_i,clubb_j,grid_level, var_index) =  &
+                grid_kind%accum_field_values(clubb_i,clubb_j,grid_level, var_index) - &
+                  real( value, kind=stat_rknd )
 
         grid_kind%l_in_update(clubb_i,clubb_j,grid_level, var_index) = .true.  ! Start Record
 
@@ -336,7 +340,7 @@ module stats_type
 
         call clubb_debug( 1, &
           "Beginning an update before finishing previous for variable: "// & 
-          trim( grid_kind%f%var(var_index)%name ) )
+          trim( grid_kind%file%var(var_index)%name ) )
       endif
 
     endif
@@ -455,7 +459,7 @@ module stats_type
       else
 
         call clubb_debug( 1, "Ending before beginning update. For variable "// &
-        grid_kind%f%var(var_index)%name )
+        grid_kind%file%var(var_index)%name )
 
       endif
 
@@ -547,8 +551,9 @@ module stats_type
 
     if ( var_index > 0 ) then
 
-      grid_kind%x(clubb_i,clubb_j,grid_level,var_index )  & 
-         = grid_kind%x(clubb_i,clubb_j,grid_level,var_index ) + real( value, kind=stat_rknd )
+      grid_kind%accum_field_values(clubb_i,clubb_j,grid_level,var_index )  &
+         = grid_kind%accum_field_values(clubb_i,clubb_j,grid_level,var_index ) + &
+          real( value, kind=stat_rknd )
 
     end if
 

@@ -78,7 +78,7 @@ module stats_rad_zt
     ! Assign pointers for statistics variables rad_zt
 
     k = 1
-    do i=1,rad_zt%nn
+    do i=1,rad_zt%num_output_fields
 
       select case ( trim(vars_rad_zt(i)) )
 

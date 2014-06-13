@@ -107,7 +107,7 @@ module stats_sfc
     ! Assign pointers for statistics variables sfc using stat_assign
 
     k = 1
-    do i = 1, sfc%nn
+    do i = 1, sfc%num_output_fields
 
       select case ( trim( vars_sfc(i) ) )
       case ('soil_heat_flux')
@@ -449,7 +449,7 @@ module stats_sfc
 
       end select
 
-    end do ! 1 .. sfc%nn
+    end do ! 1 .. sfc%num_output_fields
 
     return
 

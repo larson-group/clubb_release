@@ -648,7 +648,7 @@ module stats_subs
       stop "stats_init:  number of zt statistical variables exceeds limit"
     end if
 
-    zt%nn = ntot
+    zt%num_output_fields = ntot
     zt%kk = nzmax
     zt%ii = nlon
     zt%jj = nlat
@@ -656,13 +656,14 @@ module stats_subs
     allocate( zt%z( zt%kk ) )
     zt%z = gzt
 
-    allocate( zt%x( zt%ii, zt%jj, zt%kk, zt%nn ) )
-    allocate( zt%n( zt%ii, zt%jj, zt%kk, zt%nn ) )
-    allocate( zt%l_in_update( zt%ii, zt%jj, zt%kk, zt%nn ) )
-    call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
+    allocate( zt%accum_field_values( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
+    allocate( zt %accum_num_samples( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
+    allocate( zt%l_in_update( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
+    call stats_zero( zt%ii, zt%jj, zt%kk, zt%num_output_fields, zt%accum_field_values, &
+      zt%accum_num_samples, zt%l_in_update )
 
-    allocate( zt%f%var( zt%nn ) )
-    allocate( zt%f%z( zt%kk ) )
+    allocate( zt%file%var( zt%num_output_fields ) )
+    allocate( zt%file%z( zt%kk ) )
 
     ! Allocate scratch space
 
@@ -719,14 +720,14 @@ module stats_subs
                        1, zt%kk, nlat, nlon, zt%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
-                       zt%nn, zt%f )
+                       zt%num_output_fields, zt%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, zt%kk, zt%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, zt%nn, &  ! In
-                        zt%f ) ! InOut
+                        time_current+stats_tout, stats_tout, zt%num_output_fields, &  ! In
+                        zt%file ) ! InOut
 #else
       stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -758,7 +759,7 @@ module stats_subs
         stop "stats_init:  number of lh_zt statistical variables exceeds limit"
       end if
 
-      lh_zt%nn = ntot
+      lh_zt%num_output_fields = ntot
       lh_zt%kk = nzmax
       lh_zt%ii = nlon
       lh_zt%jj = nlat
@@ -766,13 +767,14 @@ module stats_subs
       allocate( lh_zt%z( lh_zt%kk ) )
       lh_zt%z = gzt
 
-      allocate( lh_zt%x( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      allocate( lh_zt%n( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      allocate( lh_zt%l_in_update( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn ) )
-      call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, lh_zt%x, lh_zt%n, lh_zt%l_in_update )
+      allocate( lh_zt%accum_field_values( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
+      allocate( lh_zt%accum_num_samples( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
+      allocate( lh_zt%l_in_update( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
+      call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
+        lh_zt%accum_field_values, lh_zt %accum_num_samples, lh_zt%l_in_update )
 
-      allocate( lh_zt%f%var( lh_zt%nn ) )
-      allocate( lh_zt%f%z( lh_zt%kk ) )
+      allocate( lh_zt%file%var( lh_zt%num_output_fields ) )
+      allocate( lh_zt%file%z( lh_zt%kk ) )
 
 
       fname = trim( fname_lh_zt )
@@ -784,14 +786,14 @@ module stats_subs
                          1, lh_zt%kk, nlat, nlon, lh_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         lh_zt%nn, lh_zt%f )
+                         lh_zt%num_output_fields, lh_zt%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname, 1, lh_zt%kk, lh_zt%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_zt%nn, &  ! In
-                          lh_zt%f ) ! InOut
+                          time_current+stats_tout, stats_tout, lh_zt%num_output_fields, &  ! In
+                          lh_zt%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -816,7 +818,7 @@ module stats_subs
         stop "stats_init:  number of lh_sfc statistical variables exceeds limit"
       end if
 
-      lh_sfc%nn = ntot
+      lh_sfc%num_output_fields = ntot
       lh_sfc%kk = 1
       lh_sfc%ii = nlon
       lh_sfc%jj = nlat
@@ -824,15 +826,17 @@ module stats_subs
       allocate( lh_sfc%z( lh_sfc%kk ) )
       lh_sfc%z = gzm(1)
 
-      allocate( lh_sfc%x( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
-      allocate( lh_sfc%n( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
-      allocate( lh_sfc%l_in_update( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn ) )
+      allocate( lh_sfc%accum_field_values( lh_sfc%ii, lh_sfc%jj, &
+        lh_sfc%kk, lh_sfc%num_output_fields ) )
+      allocate( lh_sfc %accum_num_samples( lh_sfc%ii, lh_sfc%jj, &
+        lh_sfc%kk, lh_sfc%num_output_fields ) )
+      allocate( lh_sfc%l_in_update( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields ) )
 
-      call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, &
-                       lh_sfc%x, lh_sfc%n, lh_sfc%l_in_update )
+      call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
+                       lh_sfc%accum_field_values, lh_sfc %accum_num_samples, lh_sfc%l_in_update )
 
-      allocate( lh_sfc%f%var( lh_sfc%nn ) )
-      allocate( lh_sfc%f%z( lh_sfc%kk ) )
+      allocate( lh_sfc%file%var( lh_sfc%num_output_fields ) )
+      allocate( lh_sfc%file%z( lh_sfc%kk ) )
 
       fname = trim( fname_lh_sfc )
 
@@ -843,14 +847,14 @@ module stats_subs
                          1, lh_sfc%kk, nlat, nlon, lh_sfc%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         lh_sfc%nn, lh_sfc%f )
+                         lh_sfc%num_output_fields, lh_sfc%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname, 1, lh_sfc%kk, lh_sfc%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_sfc%nn, &  ! In
-                          lh_sfc%f ) ! InOut
+                          time_current+stats_tout, stats_tout, lh_sfc%num_output_fields, &  ! In
+                          lh_sfc%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -879,7 +883,7 @@ module stats_subs
       stop "stats_init:  number of zm statistical variables exceeds limit"
     end if
 
-    zm%nn = ntot
+    zm%num_output_fields = ntot
     zm%kk = nzmax
     zm%ii = nlon
     zm%jj = nlat
@@ -887,14 +891,15 @@ module stats_subs
     allocate( zm%z( zm%kk ) )
     zm%z = gzm
 
-    allocate( zm%x( zm%ii, zm%jj, zm%kk, zm%nn ) )
-    allocate( zm%n( zm%ii, zm%jj, zm%kk, zm%nn ) )
-    allocate( zm%l_in_update( zm%ii, zm%jj, zm%kk, zm%nn ) )
+    allocate( zm%accum_field_values( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
+    allocate( zm %accum_num_samples( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
+    allocate( zm%l_in_update( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
 
-    call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
+    call stats_zero( zm%ii, zm%jj, zm%kk, zm%num_output_fields, zm%accum_field_values, &
+      zm %accum_num_samples, zm%l_in_update )
 
-    allocate( zm%f%var( zm%nn ) )
-    allocate( zm%f%z( zm%kk ) )
+    allocate( zm%file%var( zm%num_output_fields ) )
+    allocate( zm%file%z( zm%kk ) )
 
     ! Allocate scratch space
 
@@ -944,14 +949,14 @@ module stats_subs
                        1, zm%kk, nlat, nlon, zm%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
-                       zm%nn, zm%f )
+                       zm%num_output_fields, zm%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, zm%kk, zm%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, zm%nn, &  ! In
-                        zm%f ) ! InOut
+                        time_current+stats_tout, stats_tout, zm%num_output_fields, &  ! In
+                        zm%file ) ! InOut
 
 #else
       stop "This CLUBB program was not compiled with netCDF support."
@@ -980,22 +985,25 @@ module stats_subs
         stop "stats_init:  number of rad_zt statistical variables exceeds limit"
       end if
 
-      rad_zt%nn = ntot
+      rad_zt%num_output_fields = ntot
       rad_zt%kk = nnrad_zt
       rad_zt%ii = nlon
       rad_zt%jj = nlat
       allocate( rad_zt%z( rad_zt%kk ) )
       rad_zt%z = grad_zt
 
-      allocate( rad_zt%x( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
-      allocate( rad_zt%n( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
-      allocate( rad_zt%l_in_update( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn ) )
+      allocate( rad_zt%accum_field_values( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
+        rad_zt%num_output_fields ) )
+      allocate( rad_zt%accum_num_samples( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
+        rad_zt%num_output_fields ) )
+      allocate( rad_zt%l_in_update( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields ) )
 
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, &
-                       rad_zt%n, rad_zt%l_in_update )
+      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
+        rad_zt%num_output_fields, rad_zt%accum_field_values, &
+                       rad_zt%accum_num_samples, rad_zt%l_in_update )
 
-      allocate( rad_zt%f%var( rad_zt%nn ) )
-      allocate( rad_zt%f%z( rad_zt%kk ) )
+      allocate( rad_zt%file%var( rad_zt%num_output_fields ) )
+      allocate( rad_zt%file%z( rad_zt%kk ) )
 
       fname = trim( fname_rad_zt )
       if ( l_grads ) then
@@ -1005,7 +1013,7 @@ module stats_subs
                          1, rad_zt%kk, nlat, nlon, rad_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         rad_zt%nn, rad_zt%f )
+                         rad_zt%num_output_fields, rad_zt%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -1013,7 +1021,7 @@ module stats_subs
                           1, rad_zt%kk, rad_zt%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current+stats_tout, stats_tout, & 
-                          rad_zt%nn, rad_zt%f )
+                          rad_zt%num_output_fields, rad_zt%file )
 
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -1040,7 +1048,7 @@ module stats_subs
         stop "stats_init:  number of rad_zm statistical variables exceeds limit"
       end if
 
-      rad_zm%nn = ntot
+      rad_zm%num_output_fields = ntot
       rad_zm%kk = nnrad_zm
       rad_zm%ii = nlon
       rad_zm%jj = nlat
@@ -1048,15 +1056,17 @@ module stats_subs
       allocate( rad_zm%z( rad_zm%kk ) )
       rad_zm%z = grad_zm
 
-      allocate( rad_zm%x( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
-      allocate( rad_zm%n( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
-      allocate( rad_zm%l_in_update( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn ) )
+      allocate( rad_zm%accum_field_values( rad_zm%ii, rad_zm%jj, &
+        rad_zm%kk, rad_zm%num_output_fields ) )
+      allocate( rad_zm%accum_num_samples( rad_zm%ii, rad_zm%jj, &
+        rad_zm%kk, rad_zm%num_output_fields ) )
+      allocate( rad_zm%l_in_update( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields ) )
 
-      call stats_zero( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn, &
-                       rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+      call stats_zero( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields, &
+                       rad_zm%accum_field_values, rad_zm%accum_num_samples, rad_zm%l_in_update )
 
-      allocate( rad_zm%f%var( rad_zm%nn ) )
-      allocate( rad_zm%f%z( rad_zm%kk ) )
+      allocate( rad_zm%file%var( rad_zm%num_output_fields ) )
+      allocate( rad_zm%file%z( rad_zm%kk ) )
 
       fname = trim( fname_rad_zm )
       if ( l_grads ) then
@@ -1066,7 +1076,7 @@ module stats_subs
                          1, rad_zm%kk, nlat, nlon, rad_zm%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+stats_tout, stats_tout, & 
-                         rad_zm%nn, rad_zm%f )
+                         rad_zm%num_output_fields, rad_zm%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
@@ -1074,7 +1084,7 @@ module stats_subs
                           1, rad_zm%kk, rad_zm%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current+stats_tout, stats_tout, & 
-                          rad_zm%nn, rad_zm%f )
+                          rad_zm%num_output_fields, rad_zm%file )
 
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -1103,7 +1113,7 @@ module stats_subs
       stop "stats_init:  number of sfc statistical variables exceeds limit"
     end if
 
-    sfc%nn = ntot
+    sfc%num_output_fields = ntot
     sfc%kk = 1
     sfc%ii = nlon
     sfc%jj = nlat
@@ -1111,14 +1121,15 @@ module stats_subs
     allocate( sfc%z( sfc%kk ) )
     sfc%z = gzm(1)
 
-    allocate( sfc%x( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
-    allocate( sfc%n( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
-    allocate( sfc%l_in_update( sfc%ii, sfc%jj, sfc%kk, sfc%nn ) )
+    allocate( sfc%accum_field_values( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
+    allocate( sfc%accum_num_samples( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
+    allocate( sfc%l_in_update( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
 
-    call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
+    call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, &
+      sfc%accum_field_values, sfc%accum_num_samples, sfc%l_in_update )
 
-    allocate( sfc%f%var( sfc%nn ) )
-    allocate( sfc%f%z( sfc%kk ) )
+    allocate( sfc%file%var( sfc%num_output_fields ) )
+    allocate( sfc%file%z( sfc%kk ) )
 
     fname = trim( fname_sfc )
 
@@ -1129,14 +1140,14 @@ module stats_subs
                        1, sfc%kk, nlat, nlon, sfc%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+stats_tout, stats_tout, & 
-                       sfc%nn, sfc%f )
+                       sfc%num_output_fields, sfc%file )
 
     else ! Open NetCDF files
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, sfc%nn, &  ! In
-                        sfc%f ) ! InOut
+                        time_current+stats_tout, stats_tout, sfc%num_output_fields, &  ! In
+                        sfc%file ) ! InOut
 
 #else
       stop "This CLUBB program was not compiled with netCDF support."
@@ -1377,68 +1388,78 @@ module stats_subs
     end if ! l_error
 
     ! Compute averages
-    call stats_avg( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n )
-    call stats_avg( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n )
+    call stats_avg( zt%ii, zt%jj, zt%kk, zt%num_output_fields, &
+      zt%accum_field_values, zt%accum_num_samples )
+    call stats_avg( zm%ii, zm%jj, zm%kk, zm%num_output_fields, &
+      zm%accum_field_values, zm%accum_num_samples )
     if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call stats_avg( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, lh_zt%x, lh_zt%n )
-      call stats_avg( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, lh_sfc%x, lh_sfc%n )
+      call stats_avg( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
+        lh_zt%accum_field_values, lh_zt%accum_num_samples )
+      call stats_avg( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
+        lh_sfc%accum_field_values, lh_sfc%accum_num_samples )
     end if
     if ( l_output_rad_files ) then
-      call stats_avg( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, rad_zt%x, rad_zt%n )
-      call stats_avg( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%nn, rad_zm%x, rad_zm%n )
+      call stats_avg( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields, &
+        rad_zt%accum_field_values, rad_zt%accum_num_samples )
+      call stats_avg( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields, &
+        rad_zm%accum_field_values, rad_zm%accum_num_samples )
     end if
-    call stats_avg( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n )
+    call stats_avg( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, &
+      sfc%accum_field_values, sfc%accum_num_samples )
 
     ! Only write to the file and zero out the stats fields if we've reach the horizontal
     ! limits of the domain (this is always true in the single-column case because it's 1x1).
     if ( clubb_i == zt%ii .and. clubb_j == zt%jj ) then
       ! Write to file
       if ( l_grads ) then
-        call write_grads( zt%f  )
-        call write_grads( zm%f  )
+        call write_grads( zt%file  )
+        call write_grads( zm%file  )
         if ( lh_microphys_type /= lh_microphys_disabled ) then
-          call write_grads( lh_zt%f  )
-          call write_grads( lh_sfc%f  )
+          call write_grads( lh_zt%file  )
+          call write_grads( lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_grads( rad_zt%f  )
-          call write_grads( rad_zm%f  )
+          call write_grads( rad_zt%file  )
+          call write_grads( rad_zm%file  )
         end if
-        call write_grads( sfc%f  )
+        call write_grads( sfc%file  )
       else ! l_netcdf
 #ifdef NETCDF
-        call write_netcdf( zt%f  )
-        call write_netcdf( zm%f  )
+        call write_netcdf( zt%file  )
+        call write_netcdf( zm%file  )
         if ( lh_microphys_type /= lh_microphys_disabled ) then
-          call write_netcdf( lh_zt%f  )
-          call write_netcdf( lh_sfc%f  )
+          call write_netcdf( lh_zt%file  )
+          call write_netcdf( lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( rad_zt%f  )
-          call write_netcdf( rad_zm%f  )
+          call write_netcdf( rad_zt%file  )
+          call write_netcdf( rad_zm%file  )
         end if
-        call write_netcdf( sfc%f  )
+        call write_netcdf( sfc%file  )
 #else
         stop "This program was not compiled with netCDF support"
 #endif /* NETCDF */
       end if ! l_grads
 
       ! Reset sample fields
-      call stats_zero( zt%ii, zt%jj, zt%kk, zt%nn, zt%x, zt%n, zt%l_in_update )
-      call stats_zero( zm%ii, zm%jj, zm%kk, zm%nn, zm%x, zm%n, zm%l_in_update )
+      call stats_zero( zt%ii, zt%jj, zt%kk, zt%num_output_fields, zt%accum_field_values, &
+        zt%accum_num_samples, zt%l_in_update )
+      call stats_zero( zm%ii, zm%jj, zm%kk, zm%num_output_fields, zm%accum_field_values, &
+        zm%accum_num_samples, zm%l_in_update )
       if ( lh_microphys_type /= lh_microphys_disabled ) then
-        call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%nn, &
-                         lh_zt%x, lh_zt%n, lh_zt%l_in_update )
-        call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%nn, &
-                         lh_sfc%x, lh_sfc%n, lh_sfc%l_in_update )
+        call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
+                         lh_zt%accum_field_values, lh_zt%accum_num_samples, lh_zt%l_in_update )
+        call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
+                         lh_sfc%accum_field_values, lh_sfc%accum_num_samples, lh_sfc%l_in_update )
       end if
       if ( l_output_rad_files ) then
-        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%nn, &
-                         rad_zt%x, rad_zt%n, rad_zt%l_in_update )
-        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%nn, &
-                         rad_zm%x, rad_zm%n, rad_zm%l_in_update )
+        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields, &
+                         rad_zt%accum_field_values, rad_zt%accum_num_samples, rad_zt%l_in_update )
+        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%num_output_fields, &
+                         rad_zm%accum_field_values, rad_zm%accum_num_samples, rad_zm%l_in_update )
       end if
-      call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%nn, sfc%x, sfc%n, sfc%l_in_update )
+      call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, sfc%accum_field_values, &
+        sfc%accum_num_samples, sfc%l_in_update )
 
     end if ! clubb_i = zt%ii .and. clubb_j == zt%jj
 
@@ -2582,13 +2603,13 @@ module stats_subs
 
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF
-      call close_netcdf( zt%f )
-      call close_netcdf( lh_zt%f )
-      call close_netcdf( lh_sfc%f )
-      call close_netcdf( zm%f )
-      call close_netcdf( rad_zt%f )
-      call close_netcdf( rad_zm%f )
-      call close_netcdf( sfc%f )
+      call close_netcdf( zt%file )
+      call close_netcdf( lh_zt%file )
+      call close_netcdf( lh_sfc%file )
+      call close_netcdf( zm%file )
+      call close_netcdf( rad_zt%file )
+      call close_netcdf( rad_zm%file )
+      call close_netcdf( sfc%file )
 #else
       stop "This program was not compiled with netCDF support"
 #endif
@@ -2598,16 +2619,16 @@ module stats_subs
       ! De-allocate all zt variables
       deallocate( zt%z )
 
-      deallocate( zt%x )
+      deallocate( zt%accum_field_values )
 
-      deallocate( zt%n )
+      deallocate( zt%accum_num_samples )
       deallocate( zt%l_in_update )
 
 
-      deallocate( zt%f%var )
-      deallocate( zt%f%z )
-      deallocate( zt%f%rlat )
-      deallocate( zt%f%rlon )
+      deallocate( zt%file%var )
+      deallocate( zt%file%z )
+      deallocate( zt%file%rlat )
+      deallocate( zt%file%rlon )
 
       deallocate ( ztscr01 )
       deallocate ( ztscr02 )
@@ -2635,42 +2656,42 @@ module stats_subs
         ! De-allocate all lh_zt variables
         deallocate( lh_zt%z )
 
-        deallocate( lh_zt%x )
+        deallocate( lh_zt%accum_field_values )
 
-        deallocate( lh_zt%n )
+        deallocate( lh_zt%accum_num_samples )
         deallocate( lh_zt%l_in_update )
 
 
-        deallocate( lh_zt%f%var )
-        deallocate( lh_zt%f%z )
-        deallocate( lh_zt%f%rlat )
-        deallocate( lh_zt%f%rlon )
+        deallocate( lh_zt%file%var )
+        deallocate( lh_zt%file%z )
+        deallocate( lh_zt%file%rlat )
+        deallocate( lh_zt%file%rlon )
 
         ! De-allocate all lh_sfc variables
         deallocate( lh_sfc%z )
 
-        deallocate( lh_sfc%x )
+        deallocate( lh_sfc%accum_field_values )
 
-        deallocate( lh_sfc%n )
+        deallocate( lh_sfc%accum_num_samples )
         deallocate( lh_sfc%l_in_update )
 
 
-        deallocate( lh_sfc%f%var )
-        deallocate( lh_sfc%f%z )
-        deallocate( lh_sfc%f%rlat )
-        deallocate( lh_sfc%f%rlon )
+        deallocate( lh_sfc%file%var )
+        deallocate( lh_sfc%file%z )
+        deallocate( lh_sfc%file%rlat )
+        deallocate( lh_sfc%file%rlon )
       end if
 
       ! De-allocate all zm variables
       deallocate( zm%z )
 
-      deallocate( zm%x )
-      deallocate( zm%n )
+      deallocate( zm%accum_field_values )
+      deallocate( zm%accum_num_samples )
 
-      deallocate( zm%f%var )
-      deallocate( zm%f%z )
-      deallocate( zm%f%rlat )
-      deallocate( zm%f%rlon )
+      deallocate( zm%file%var )
+      deallocate( zm%file%z )
+      deallocate( zm%file%rlat )
+      deallocate( zm%file%rlon )
       deallocate( zm%l_in_update )
 
       deallocate ( zmscr01 )
@@ -2695,23 +2716,23 @@ module stats_subs
         ! De-allocate all rad_zt variables
         deallocate( rad_zt%z )
 
-        deallocate( rad_zt%x )
-        deallocate( rad_zt%n )
+        deallocate( rad_zt%accum_field_values )
+        deallocate( rad_zt%accum_num_samples )
 
-        deallocate( rad_zt%f%var )
-        deallocate( rad_zt%f%z )
-        deallocate( rad_zt%f%rlat )
-        deallocate( rad_zt%f%rlon )
+        deallocate( rad_zt%file%var )
+        deallocate( rad_zt%file%z )
+        deallocate( rad_zt%file%rlat )
+        deallocate( rad_zt%file%rlon )
         deallocate( rad_zt%l_in_update )
 
         ! De-allocate all rad_zm variables
         deallocate( rad_zm%z )
 
-        deallocate( rad_zm%x )
-        deallocate( rad_zm%n )
+        deallocate( rad_zm%accum_field_values )
+        deallocate( rad_zm%accum_num_samples )
 
-        deallocate( rad_zm%f%var )
-        deallocate( rad_zm%f%z )
+        deallocate( rad_zm%file%var )
+        deallocate( rad_zm%file%z )
         deallocate( rad_zm%l_in_update )
 
       end if ! l_output_rad_files
@@ -2719,14 +2740,14 @@ module stats_subs
       ! De-allocate all sfc variables
       deallocate( sfc%z )
 
-      deallocate( sfc%x )
-      deallocate( sfc%n )
+      deallocate( sfc%accum_field_values )
+      deallocate( sfc %accum_num_samples )
       deallocate( sfc%l_in_update )
 
-      deallocate( sfc%f%var )
-      deallocate( sfc%f%z )
-      deallocate( sfc%f%rlat )
-      deallocate( sfc%f%rlon )
+      deallocate( sfc%file%var )
+      deallocate( sfc%file%z )
+      deallocate( sfc%file%rlat )
+      deallocate( sfc%file%rlon )
 
       ! De-allocate scalar indices
       deallocate( isclrm )
@@ -2829,11 +2850,12 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 
   ! Look for errors by checking the number of sampling points
   ! for each variable in the statistics grid at each vertical level.
-  do ivar = 1, stats_grid%nn
+  do ivar = 1, stats_grid%num_output_fields
     do kvar = 1, stats_grid%kk
 
-      l_proper_sample = ( stats_grid%n(1,1,kvar,ivar) == 0 .or. &
-                          stats_grid%n(1,1,kvar,ivar) == floor(stats_tout/stats_tsamp) )
+      l_proper_sample = ( stats_grid %accum_num_samples(1,1,kvar,ivar) == 0 .or. &
+                          stats_grid %accum_num_samples(1,1,kvar,ivar) == &
+                            floor(stats_tout/stats_tsamp) )
 
       if ( .not. l_proper_sample ) then
 
@@ -2841,16 +2863,17 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 
         if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) 'Possible sampling error for variable ',  &
-                           trim(stats_grid%f%var(ivar)%name), ' in stats_grid ',  &
+                           trim(stats_grid%file%var(ivar)%name), ' in stats_grid ',  &
                            'at k = ', kvar,  &
-                           '; stats_grid%n(',kvar,',',ivar,') = ', stats_grid%n(1,1,kvar,ivar)
+                           '; stats_grid %accum_num_samples(',kvar,',',ivar,') = ', &
+                            stats_grid %accum_num_samples(1,1,kvar,ivar)
         end if ! clubb_at_lest_debug_level 1
 
 
       end if ! .not. l_proper_sample
 
     end do ! kvar = 1 .. stats_grid%kk
-  end do ! ivar = 1 .. stats_grid%nn
+  end do ! ivar = 1 .. stats_grid%num_output_fields
 
   return
 end subroutine stats_check_num_samples

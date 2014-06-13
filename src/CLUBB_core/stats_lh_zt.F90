@@ -126,7 +126,7 @@ module stats_lh_zt
     ! Assign pointers for statistics variables zt
 
     k = 1
-    do i = 1, lh_zt%nn
+    do i = 1, lh_zt%num_output_fields
 
       select case ( trim( vars_lh_zt(i) ) )
       case ( 'AKm' )           ! Vince Larson 22 May 2005
@@ -585,7 +585,7 @@ module stats_lh_zt
 
       end select
 
-    end do ! i = 1, lh_zt%nn
+    end do ! i = 1, lh_zt%num_output_fields
 
     return
   end subroutine stats_init_lh_zt
