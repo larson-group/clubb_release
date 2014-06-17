@@ -606,6 +606,9 @@ module corr_matrix_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use error_code, only: &
+      clubb_debug ! Procedure
+
     implicit none
 
     ! External
@@ -650,8 +653,8 @@ module corr_matrix_module
 
     else ! Read in default correlation matrices
 
-       write(fstderr,*) "Warning: "//trim( input_file_cloud )//" was not found! " // &
-                        "The default correlation arrays will be used."
+       call clubb_debug( 1, "Warning: "//trim( input_file_cloud )//" was not found! " // &
+                        "The default correlation arrays will be used." )
 
        call init_default_corr_arrays( )
 
