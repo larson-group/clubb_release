@@ -62,6 +62,11 @@ module model_flags
     l_cubic_interp = .false.      ! Flag to convert grid points with cubic monotonic
                                   ! spline interpolation as opposed to linear interpolation.
 
+  ! See clubb:ticket:632 for details
+  logical, public :: &
+    l_calc_thlp2_rad = .true.         ! Include the contribution of radiation to thlp2
+!$omp threadprivate( l_calc_thlp2_rad )
+
   ! These are the integer constants that represent the various saturation
   ! formulas. To add a new formula, add an additional constant here,
   ! add the logic to check the strings for the new formula in clubb_core and
@@ -164,11 +169,6 @@ module model_flags
   ! See clubb:ticket:514 for details
   logical, parameter, public :: &
     l_use_modified_corr = .true.    ! Use the new correlations code
-
-  ! See clubb:ticket:632 for details
-  logical, public :: &
-    l_calc_thlp2_rad = .true.         ! Include the contribution of radiation to thlp2
-!$omp threadprivate( l_calc_thlp2_rad )
 
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
