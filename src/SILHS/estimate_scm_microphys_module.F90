@@ -543,7 +543,7 @@ module estimate_scm_microphys_module
       Nr_tol, &
       zero
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_update_var ! Procedure
 
     use stats_variables, only: &

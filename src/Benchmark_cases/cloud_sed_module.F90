@@ -111,7 +111,7 @@ contains
         Cp,         &
         Lv
  
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: & 

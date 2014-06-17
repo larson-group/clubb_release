@@ -277,10 +277,10 @@ module advance_clubb_core_module
       ! Read values from namelist
       thlm2T_in_K ! Procedure
 
-    use stats_subs, only: & 
+    use stats_clubb_utilities, only: & 
       stats_accumulate ! Procedure
 
-    use stats_type, only:   & 
+    use stats_type_utilities, only:   & 
       stat_update_var_pt,   & ! Procedure(s)
       stat_update_var,      & 
       stat_begin_update,    &

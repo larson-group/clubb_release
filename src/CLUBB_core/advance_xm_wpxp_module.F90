@@ -125,7 +125,7 @@ module advance_xm_wpxp_module
     use error_code, only:  & 
       clubb_var_out_of_range ! Constant(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
         stat_end_update, &
         stat_update_var
@@ -1366,7 +1366,7 @@ module advance_xm_wpxp_module
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var_pt, & 
         stat_begin_update_pt
 
@@ -1866,7 +1866,7 @@ module advance_xm_wpxp_module
         clubb_at_least_debug_level, & ! Procedure(s)
         clubb_no_error   ! Constant
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_update_var_pt, & 
         stat_end_update_pt, & 
@@ -3095,7 +3095,7 @@ module advance_xm_wpxp_module
         time_precision, &
         core_rknd
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &

@@ -60,7 +60,7 @@ module surface_varnce_module
         iisclr_rt, & ! Index for a scalar emulating rt
         iisclr_thl   ! Index for a scalar emulating thetal
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_end_update_pt, & ! Procedure(s)
         stat_update_var_pt
 

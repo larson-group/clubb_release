@@ -76,7 +76,7 @@ module advance_wp2_wp3_module
         c_K1,  & 
         c_K8
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var
 
     use stats_variables, only: &
@@ -379,7 +379,7 @@ module advance_wp2_wp3_module
         clip_variance, & ! Procedure(s)
         clip_skewness
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_update_var_pt, &
         stat_end_update,  &
@@ -846,7 +846,7 @@ module advance_wp2_wp3_module
         band_solve,  & ! Procedure(s) 
         band_solvex
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var_pt ! Procedure(s)
 
     use csr_matrix_class, only: &
@@ -2535,7 +2535,7 @@ module advance_wp2_wp3_module
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2
 
-    use stats_type, only:  &
+    use stats_type_utilities, only:  &
         stat_update_var_pt,  & ! Procedure(s)
         stat_begin_update_pt,  &
         stat_modify_pt

@@ -256,7 +256,7 @@ module stats_zm
         irtphmp, &
         ithlphmp
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
     use parameters_model, only: &

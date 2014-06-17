@@ -72,7 +72,7 @@ module advance_windm_edsclrm_module
       time_precision, &  ! Variable(s)
       core_rknd
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_begin_update, & ! Subroutines
       stat_end_update, &
       stat_update_var
@@ -1088,7 +1088,7 @@ module advance_windm_edsclrm_module
       sfc,     &   ! Variable(s)
       l_stats_samp
 
-    use stats_type, only:  &
+    use stats_type_utilities, only:  &
       stat_update_var_pt  ! Subroutine
 
     use clubb_precision, only: &
@@ -1170,7 +1170,7 @@ module advance_windm_edsclrm_module
       ztscr06, & 
       zt
 
-    use stats_type, only:  &
+    use stats_type_utilities, only:  &
       stat_end_update_pt,  & ! Subroutines
       stat_update_var_pt
 
@@ -1291,7 +1291,7 @@ module advance_windm_edsclrm_module
     use grid_class, only: & 
         gr
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var
 
     use stats_variables, only:      &
@@ -1648,7 +1648,7 @@ module advance_windm_edsclrm_module
         zt,      &
         l_stats_samp
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_begin_update_pt,  & ! Procedure(s)
         stat_modify_pt
 

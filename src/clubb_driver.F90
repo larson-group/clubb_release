@@ -149,11 +149,11 @@ module clubb_driver
     use stats_variables, only: &
         l_allow_small_stats_tout
 
-    use stats_subs, only:  & 
+    use stats_clubb_utilities, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
       stats_finalize, stats_init
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_update_var ! Procedure
 
     use sounding, only: sclr_max ! Variable(s)
@@ -3295,7 +3295,7 @@ module clubb_driver
       sfc, &
       iT_sfc
 
-    use stats_type, only: stat_update_var_pt ! Procedure(s)
+    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use constants_clubb, only: & 
       Cp, Lv, kappa, p0, & ! Variable(s)
@@ -4223,7 +4223,7 @@ module clubb_driver
 
     use stats_variables, only: l_stats_samp, l_output_rad_files ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_update_var ! Procedure
 
     use clubb_model_settings, only: &

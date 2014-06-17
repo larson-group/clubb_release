@@ -2071,7 +2071,7 @@ module latin_hypercube_driver_module
       compute_sample_mean, & ! Procedure(s)
       compute_sample_variance
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_update_var, & ! Procedure(s)
       stat_update_var_pt
 
@@ -2420,7 +2420,7 @@ module latin_hypercube_driver_module
     use clubb_precision, only: &
       core_rknd
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_update_var
 
     use stats_variables, only: &

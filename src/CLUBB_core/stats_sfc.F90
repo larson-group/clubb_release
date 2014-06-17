@@ -82,7 +82,7 @@ module stats_sfc
       ithlm_spur_src, &
       irsnowm_sd_morr_int
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
     implicit none

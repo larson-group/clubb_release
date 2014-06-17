@@ -109,11 +109,11 @@ module advance_microphys_module
         iNcm,         & ! Variable(s)
         iNc_in_cloud
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
 
-    use stats_subs, only: &
+    use stats_clubb_utilities, only: &
         stats_accumulate_hydromet  ! Procedure(s)
 
     implicit none
@@ -535,7 +535,7 @@ module advance_microphys_module
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
         stat_begin_update,    &
         stat_begin_update_pt, &
@@ -896,7 +896,7 @@ module advance_microphys_module
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
         stat_begin_update,    &
         stat_begin_update_pt, &
@@ -1260,7 +1260,7 @@ module advance_microphys_module
         iNcm_ma, & 
         iNcm_ta
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt, & ! Procedure(s)
         stat_end_update_pt
 
@@ -1883,7 +1883,7 @@ module advance_microphys_module
         irsnowm_ta, &
         irgraupelm_ta
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_begin_update_pt ! Procedure(s)
 
     implicit none

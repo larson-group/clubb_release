@@ -62,7 +62,7 @@ module mg_microphys_driver_module
       ircm_sd_mg_morr,&
       iricem_sd_mg_morr
 
-    use stats_type, only:  & 
+    use stats_type_utilities, only:  & 
       stat_update_var, &
       stat_update_var_pt
       

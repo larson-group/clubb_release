@@ -36,7 +36,7 @@ module stats_lh_sfc
       ilh_vwp, &
       ilh_lwp
       
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
     implicit none

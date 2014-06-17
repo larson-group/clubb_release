@@ -853,7 +853,7 @@ module fill_holes
     use error_code, only: &
         clubb_at_least_debug_level ! Procedure(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_begin_update, & ! Subroutines
         stat_end_update
 

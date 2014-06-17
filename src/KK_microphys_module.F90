@@ -443,7 +443,7 @@ module KK_microphys_module
         core_rknd,      & ! Variable(s)
         time_precision
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
@@ -1418,7 +1418,7 @@ module KK_microphys_module
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
@@ -1520,7 +1520,7 @@ module KK_microphys_module
         iNrm_cond,       &
         iNrm_auto
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
     implicit none

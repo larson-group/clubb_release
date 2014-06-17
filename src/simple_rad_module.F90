@@ -193,7 +193,7 @@ module simple_rad_module
 
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
-    use stats_type, only: stat_update_var_pt ! Procedure(s)
+    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only:  & 
         iz_inversion, sfc, l_stats_samp ! Variable(s)

@@ -531,7 +531,7 @@ module stats_zt
         ihl_on_Cp_residual, &
         iqto_residual
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
     use parameters_model, only: &

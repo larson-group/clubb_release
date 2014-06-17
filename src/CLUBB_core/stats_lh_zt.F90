@@ -101,7 +101,7 @@ module stats_lh_zt
       ilh_precip_frac, &
       ilh_mixt_frac
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
       stat_assign ! Procedure
 
     implicit none

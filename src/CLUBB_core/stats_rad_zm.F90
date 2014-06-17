@@ -37,7 +37,7 @@ module stats_rad_zm
     use stats_variables, only: &
       ifulwcl, ifdlwcl, ifdswcl, ifuswcl ! Variable(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
 

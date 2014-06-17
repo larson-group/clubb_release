@@ -299,7 +299,7 @@ module mono_flux_limiter
     use fill_holes, only: &
         vertical_integral ! Procedure(s)
 
-    use stats_type, only:  &
+    use stats_type_utilities, only:  &
         stat_begin_update,  & ! Procedure(s)
         stat_end_update,  &
         stat_update_var
@@ -1661,7 +1661,7 @@ module mono_flux_limiter
         erf ! Procedure(s)
             ! The error function
 
-    use stats_type, only:  &
+    use stats_type_utilities, only:  &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only:  &

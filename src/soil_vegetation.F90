@@ -81,7 +81,7 @@ module soil_vegetation
     use stats_variables, only: l_stats_samp, sfc, &
                                 iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
 
-    use stats_type, only: stat_update_var_pt ! Procedure(s)
+    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use constants_clubb, only: pi, Cp, stefan_boltzmann ! Variable(s)
 

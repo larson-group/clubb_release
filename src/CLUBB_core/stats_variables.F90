@@ -9,7 +9,7 @@
 module stats_variables
 
 
-  use stats_type, only:  & 
+  use stats_type, only:  &
       stats ! Type
 
   use clubb_precision, only:  & 

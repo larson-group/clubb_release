@@ -129,9 +129,11 @@ module microphys_stats_vars_module
   !   None
   !-----------------------------------------------------------------------
 
-    use stats_type, only: &
-      stats, &        ! Type
+    use stats_type_utilities, only: &
       stat_update_var ! Procedure
+
+    use stats_type, only: &
+      stats           ! Type
 
     implicit none
 

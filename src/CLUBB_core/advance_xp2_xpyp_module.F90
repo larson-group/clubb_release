@@ -123,7 +123,7 @@ module advance_xp2_xpyp_module
       clip_sclrprtp, &
       clip_sclrpthlp
       
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
       stat_modify
 
     use error_code, only:  & 
@@ -1106,7 +1106,7 @@ module advance_xp2_xpyp_module
     use grid_class, only: & 
         gr ! Variable(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
@@ -1222,7 +1222,7 @@ module advance_xp2_xpyp_module
     use grid_class, only: &
       gr ! Derived type variable
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
       stat_end_update_pt, & ! Procedure(s)
       stat_update_var_pt
 
@@ -1413,7 +1413,7 @@ module advance_xp2_xpyp_module
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
         stat_update_var_pt, &
         stat_modify_pt
@@ -1796,7 +1796,7 @@ module advance_xp2_xpyp_module
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
         stat_update_var_pt, &
         stat_modify_pt
@@ -3239,7 +3239,7 @@ module advance_xp2_xpyp_module
     use stats_variables, only:  & 
         zm, l_stats_samp, & 
         irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
-    use stats_type, only:  & 
+    use stats_type_utilities, only:  & 
         stat_begin_update, stat_end_update ! subroutines
 
 

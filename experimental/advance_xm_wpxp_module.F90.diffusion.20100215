@@ -111,7 +111,7 @@ module advance_xm_wpxp_module
     use error_code, only:  & 
         lapack_error     ! Procedure(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_begin_update, &
         stat_end_update, &
         stat_modify
@@ -1275,7 +1275,7 @@ module advance_xm_wpxp_module
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var_pt, & 
         stat_begin_update_pt
 
@@ -1727,7 +1727,7 @@ module advance_xm_wpxp_module
         clubb_at_least_debug_level, & ! Procedure(s)
         lapack_error
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_update_var_pt, & 
         stat_end_update_pt, & 
@@ -2881,7 +2881,7 @@ module advance_xm_wpxp_module
     use stats_precision, only: &
         time_precision
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &

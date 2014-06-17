@@ -54,7 +54,7 @@ module coamps_microphys_driver_module
     use grid_class, only: zt2zm ! Procedure(s)
     use grid_class, only: gr ! Variable(s)
 
-    use stats_type, only: stat_update_var_pt ! Procedure(s)
+    use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
         im_vol_rad_rain, & 

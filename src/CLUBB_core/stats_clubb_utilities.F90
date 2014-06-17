@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 !  $Id$
 !===============================================================================
-module stats_subs
+module stats_clubb_utilities
 
   implicit none
 
@@ -1743,7 +1743,7 @@ module stats_subs
         sclr_dim,  &        ! Variable(s)
         edsclr_dim
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var,  & ! Procedure(s)
         stat_update_var_pt
 
@@ -2203,7 +2203,7 @@ module stats_subs
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
       stat_update_var, & ! Procedure(s)
       stat_update_var_pt
 
@@ -2357,7 +2357,7 @@ module stats_subs
     use parameters_microphys, only: &
         l_predict_Nc  ! Variable(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
@@ -2879,4 +2879,4 @@ subroutine stats_check_num_samples( stats_grid, l_error )
 end subroutine stats_check_num_samples
 !-----------------------------------------------------------------------
 
-end module stats_subs
+end module stats_clubb_utilities

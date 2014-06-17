@@ -77,7 +77,7 @@ module ice_dfsn_module
 
     use T_in_K_module, only: thlm2T_in_K ! Procedure(s)
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var
 
     use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)

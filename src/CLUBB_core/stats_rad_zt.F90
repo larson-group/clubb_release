@@ -43,7 +43,7 @@ module stats_rad_zt
         ip_in_mb_rad, &
         isp_humidity_rad
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
     implicit none

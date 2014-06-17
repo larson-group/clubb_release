@@ -127,7 +127,7 @@ module microphys_driver
     use hydromet_pdf_parameter_module, only:  &
         hydromet_pdf_parameter  ! Type
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_update_var,   & ! Procedure(s)
         stat_begin_update, &
         stat_end_update
@@ -162,7 +162,7 @@ module microphys_driver
         iNccnm,        &
         irrainm_cond
 
-    use stats_subs, only: & 
+    use stats_clubb_utilities, only: & 
         stats_accumulate_lh_tend ! Procedure(s)
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics

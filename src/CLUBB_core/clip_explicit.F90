@@ -73,7 +73,7 @@ module clip_explicit
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
        stat_modify ! Procedure(s)
 
     use stats_variables, only: & 
@@ -458,7 +458,7 @@ module clip_explicit
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_modify, & 
         stat_end_update
@@ -628,7 +628,7 @@ module clip_explicit
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
         stat_modify_pt,       & 
         stat_end_update_pt
@@ -765,7 +765,7 @@ module clip_explicit
         time_precision, & ! Variable(s)
         core_rknd
 
-    use stats_type, only: & 
+    use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_end_update
 
@@ -897,7 +897,7 @@ module clip_explicit
       time_precision, & ! Variable(s)
       core_rknd
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
       stat_begin_update,  & ! Procedure(s)
       stat_end_update
 

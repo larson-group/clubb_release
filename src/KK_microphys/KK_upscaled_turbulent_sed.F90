@@ -69,7 +69,7 @@ module KK_upscaled_turbulent_sed
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 

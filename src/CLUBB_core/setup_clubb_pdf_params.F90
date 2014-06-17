@@ -118,7 +118,7 @@ module setup_clubb_pdf_params
         Cholesky_factor, & ! Procedure(s)
         mirror_lower_triangular_matrix
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var,    & ! Procedure(s)
         stat_update_var_pt
 
@@ -834,7 +834,7 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var  ! Procedure(s)
 
     use stats_variables, only : &
@@ -3226,7 +3226,7 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
@@ -3581,7 +3581,7 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd   ! Variable(s)
 
-    use stats_type, only: &
+    use stats_type_utilities, only: &
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
