@@ -382,7 +382,7 @@ module stats_clubb_utilities
       l_grads  = .false.
 
     case default
-      write(fstderr,*) "In module stats_subs subroutine stats_init: "
+      write(fstderr,*) "In module stats_clubb_utilities subroutine stats_init: "
       write(fstderr,*) "Invalid stats output format "//trim( stats_fmt )
       stop "Fatal error"
 
