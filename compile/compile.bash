@@ -325,6 +325,7 @@ all:	libclubb_param.a libclubb_bugsrad.a clubb_standalone clubb_tuner \
 	$CLUBBStandardsCheck_unreleased_cases
 	perl ../utilities/CLUBBStandardsCheck.pl ../src/KK_microphys/*.F90
 	$CLUBBStandardsCheck_silhs
+	perl ../utilities/CLUBBStandardsCheck.pl ../src/G_unit_test_types/*.F90
 
 libclubb_param.a:
 	cd $objdir; \$(MAKE) -f Make.clubb_param
