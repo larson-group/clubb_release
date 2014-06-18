@@ -92,7 +92,7 @@ program G_unit_tests
 
   ! Stop with exit code if error found
   if (exit_code /= 0) then
-    stop 1
+    call exit(1)
   end if
 
 !===============================================================================

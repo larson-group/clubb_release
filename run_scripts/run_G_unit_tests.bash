@@ -17,10 +17,10 @@ cp "../input_misc/G_unit_tests.in" "G_unit_tests.in"
 ../bin/G_unit_tests
 
 if [ $? != 0 ]; then
-  printf "Error: A G unit test has failed."
+  printf "Error: A G unit test has failed.\n"
   exit 1
 else
-  printf "All tests have succeeded."
+  printf "All tests have succeeded.\n"
   exit 0
 fi
 
