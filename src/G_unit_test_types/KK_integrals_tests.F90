@@ -20,7 +20,7 @@ module KK_integrals_tests
   contains
 
   !=============================================================================
-  subroutine KK_integrals_tests_driver
+  function KK_integrals_tests_driver()
 
     ! Description:
 
@@ -35,6 +35,9 @@ module KK_integrals_tests
 
     implicit none
 
+    ! Output Vars
+    integer :: KK_integrals_tests_driver ! Returns the exit code of the test
+
     ! Local Variables
     integer :: &
       opt  ! Case option involving differing component mean values of the
@@ -46,6 +49,8 @@ module KK_integrals_tests
     real( kind = dp ) :: &
       tol      ! Acceptable percent difference between the results    [-]
 
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
 
     ! Declare the tolerance value, which is the maximum acceptable percent
     ! difference between the results.
@@ -85,18 +90,20 @@ module KK_integrals_tests
     if ( total_mismatches == 0 ) then
 
        write(fstdout,'(A)') "Success!"
+       KK_integrals_tests_driver = 0 ! Exit Code = 0, Success!
 
     else  ! total_mismatches > 0
 
        write(fstdout,'(A,1x,I2,1x,A)') "There were", total_mismatches, &
-                                       "total mismatches found." 
+                                       "total mismatches found."
+       KK_integrals_tests_driver = 1 ! Exit Code = 1, Fail
 
     endif
 
 
     return
 
-  end subroutine KK_integrals_tests_driver
+  end function KK_integrals_tests_driver
 
   !=============================================================================
   subroutine KK_covar_tests( x2_opt, tol, total_mismatches )

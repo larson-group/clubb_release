@@ -16,5 +16,13 @@ cp "../input_misc/G_unit_tests.in" "G_unit_tests.in"
 # Run G_unit_tests
 ../bin/G_unit_tests
 
+if [ $? != 0 ]; then
+  printf "Error: A G unit test has failed."
+  exit 1
+else
+  printf "All tests have succeeded."
+  exit 0
+fi
+
 # Remove the namelist from the local directory.
 rm "G_unit_tests.in"

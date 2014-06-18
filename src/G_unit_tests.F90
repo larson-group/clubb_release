@@ -28,8 +28,11 @@ program G_unit_tests
 
   implicit none
 
-  ! Variables
+  ! Local Constants
   integer, parameter :: iunit = 25
+
+  ! Local Variables
+  integer :: exit_code = 0 ! Assume all of the tests worked.
 
   ! Initialize flags
   logical :: &
@@ -58,24 +61,39 @@ program G_unit_tests
 
 
   if ( l_KK_unit_tests ) then
-     call KK_integrals_tests_driver
-  endif
+     if (KK_integrals_tests_driver() /= 0) then
+       exit_code = 1
+     end if
+  end if
 
   if ( l_corr_cholesky_mtx_tests ) then
-     call corr_cholesky_mtx_tests_driver
-  endif
+     if (corr_cholesky_mtx_tests_driver() /= 0) then
+       exit_code = 1
+     end if
+  end if
 
   if ( l_hole_filling_tests ) then
-     call hole_filling_tests_driver
-  endif
+     if (hole_filling_tests_driver() /= 0) then
+       exit_code = 1
+     end if
+  end if
 
   if ( l_Nc_Ncn_test ) then
-     call Nc_Ncn_unit_test
-  endif
+     if (Nc_Ncn_unit_test() /= 0) then
+       exit_code = 1
+     end if
+  end if
 
   if ( l_read_corr_mtx_test ) then
-     call read_corr_mtx_unit_test(show_read_test_arrays)
-  endif
+     if (read_corr_mtx_unit_test(show_read_test_arrays) /= 0) then
+       exit_code = 1
+     end if
+  end if
+
+  ! Stop with exit code if error found
+  if (exit_code /= 0) then
+    stop 1
+  end if
 
 !===============================================================================
 

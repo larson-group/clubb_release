@@ -13,7 +13,7 @@ module corr_cholesky_mtx_tests
   contains
 
   !=============================================================================
-  subroutine corr_cholesky_mtx_tests_driver
+  function corr_cholesky_mtx_tests_driver()
 
     ! Description:
 
@@ -24,6 +24,9 @@ module corr_cholesky_mtx_tests
         core_rknd
 
     implicit none
+
+    ! Output Vars
+    integer :: corr_cholesky_mtx_tests_driver ! Returns the exit code of the tes
 
     ! Local Variables
     integer :: &
@@ -70,17 +73,19 @@ module corr_cholesky_mtx_tests
     if ( total_mismatches == 0 ) then
 
        print *, "Success!"
+       corr_cholesky_mtx_tests_driver = 0 ! Exit Code = 0, Success!
 
     else  ! total_mismatches > 0
 
        print *, "There were", total_mismatches, "total mismatches found."
+       corr_cholesky_mtx_tests_driver = 1 ! Exit Code = 1, Fail
 
     endif
 
 
     return
 
-  end subroutine corr_cholesky_mtx_tests_driver
+  end function corr_cholesky_mtx_tests_driver
 
   !=============================================================================
   subroutine corr_cholesky_setup_tests( tol, total_mismatches, &

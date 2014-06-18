@@ -12,7 +12,7 @@ module Nc_Ncn_test
   contains
 
   !=============================================================================
-  subroutine Nc_Ncn_unit_test
+  function Nc_Ncn_unit_test()
 
     ! Description:
     ! Unit testing for the Nc-Ncn "back-and-forth" code.
@@ -45,6 +45,9 @@ module Nc_Ncn_test
         core_rknd  ! Variable(s)
 
     implicit none
+
+    ! Output Variables
+    integer :: Nc_Ncn_unit_test ! Returns the exit code of the test
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -84,6 +87,8 @@ module Nc_Ncn_test
 
     integer :: iter  ! Loop index
 
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
 
     write(fstdout,*) ""
     write(fstdout,*) "Nc-Ncn equations unit test"
@@ -373,15 +378,17 @@ module Nc_Ncn_test
 
     if ( num_mismatches == 0 ) then
        write(fstdout,'(1x,A)') "Success!"
+       Nc_Ncn_unit_test = 0 ! Exit Code = 0, Success!
     else ! num_mismatches > 0
        write(fstdout,'(1x,A,I2,A)') "There were ", num_mismatches, &
                                     " total mismatches."
+       Nc_Ncn_unit_test = 1 ! Exit Code = 1, Fail
     endif ! num_mismatches = 0
 
 
     return
 
-  end subroutine Nc_Ncn_unit_test
+  end function Nc_Ncn_unit_test
 
 !===============================================================================
 

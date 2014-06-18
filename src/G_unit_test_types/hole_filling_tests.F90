@@ -12,7 +12,7 @@ module hole_filling_tests
   contains
 
   !=============================================================================
-  subroutine hole_filling_tests_driver
+  function hole_filling_tests_driver()
 
     ! Description:
 
@@ -23,6 +23,9 @@ module hole_filling_tests
         core_rknd
 
     implicit none
+
+    ! Output Vars
+    integer :: hole_filling_tests_driver ! Returns the exit code of the test
 
     ! Local Variables
     integer :: total_errors = 0
@@ -43,10 +46,12 @@ module hole_filling_tests
     if ( total_errors == 0 ) then
 
        print *, "Success!"
+       hole_filling_tests_driver = 0 ! Exit Code = 0, Success!
 
     else  ! total_mismatches > 0
 
        print *, "There were", total_errors, "total errors found."
+       hole_filling_tests_driver = 1 ! Exit Code = 1, Fail
 
     endif
 
@@ -69,13 +74,14 @@ module hole_filling_tests
     else  ! total_mismatches > 0
 
        print *, "There were", total_errors, "total errors found."
+       hole_filling_tests_driver = 1 ! Exit Code = 1, Fail
 
     endif
 
 
     return
 
-  end subroutine hole_filling_tests_driver
+  end function hole_filling_tests_driver
 
   !=============================================================================
   subroutine hole_filling_hm_one_lev_tests( tol, total_errors )

@@ -9,7 +9,7 @@ module read_corr_mtx_test
   contains
 
   !-----------------------------------------------------------------------
-  subroutine read_corr_mtx_unit_test(show_corr_arrays_input)
+  function read_corr_mtx_unit_test(show_corr_arrays_input)
   ! Description:
   ! Tests the read_correlation_matrix subroutine in corr_matrix_module.F90
   !-----------------------------------------------------------------------
@@ -30,10 +30,6 @@ module read_corr_mtx_test
 
   implicit none
 
-  ! Input var
-  logical, optional :: &
-    show_corr_arrays_input ! If true, the correlation arrays will be printed when the test is ran
-
   ! Local Constants
   ! Passed in to read_correlation_matrix
   integer, parameter :: &
@@ -49,6 +45,13 @@ module read_corr_mtx_test
   ! This "renaming" is used to shorten the matrix declarations below.
   integer, parameter :: c = core_rknd
 
+  ! Input vars
+  logical, optional :: &
+    show_corr_arrays_input ! If true, the correlation arrays will be printed when the test is ran
+
+  ! Output Vars
+  integer :: read_corr_mtx_unit_test ! Returns the exit code of the test
+
   ! Local Variables
   real( kind = core_rknd ), dimension(:,:), allocatable :: &
       corr_array, & ! Retrieved correlation variance array
@@ -61,6 +64,7 @@ module read_corr_mtx_test
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
+    print *, ""
     print *, "Performing corr_mtx_test"
     print *, ""
     print *, "=================================================="
@@ -150,14 +154,16 @@ module read_corr_mtx_test
 
     if (errors > 0) then
       print *, "There were ", errors, " errors found"
+      read_corr_mtx_unit_test = 1 ! Exit Code = 1, Fail
     else
       print *, "Success!"
+      read_corr_mtx_unit_test = 0 ! Exit Code = 0, Success!
     end if
 
     print *, "=================================================="
 
     return
-  end subroutine read_corr_mtx_unit_test
+  end function read_corr_mtx_unit_test
   !-----------------------------------------------------------------------
 
 end module read_corr_mtx_test
