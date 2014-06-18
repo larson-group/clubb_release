@@ -14,7 +14,6 @@ module Nc_Ncn_test
   !=============================================================================
   subroutine Nc_Ncn_unit_test
 
-
     ! Description:
     ! Unit testing for the Nc-Ncn "back-and-forth" code.
     
@@ -22,10 +21,11 @@ module Nc_Ncn_test
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        sqrt_2,   & ! Variable(s)
-        one,      &
-        one_half, &
-        zero,     &
+        one_hundred, & ! Variable(s)
+        sqrt_2,      &
+        one,         &
+        one_half,    &
+        zero,        &
         fstdout
 
     use Nc_Ncn_eqns, only: &
@@ -69,17 +69,29 @@ module Nc_Ncn_test
       Nc_in_cloud, & ! Mean cloud droplet concentration (in-cloud)      [num/kg]
       Ncnm           ! Mean simplified cloud nuclei concentration       [num/kg]
 
-     real( kind = core_rknd ) :: &
+    real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>        [-]
       const_corr_sNcn         ! Prescribed correlation between s and Ncn     [-]
 
-     integer :: iter  ! Loop index
+    real( kind = core_rknd ) :: &
+      percent_diff    ! Percent difference between Ncnm before and after     [%]
+
+    real( kind = core_rknd ), parameter :: &
+      tol = 1.0e-13_core_rknd    ! Tolerance for percent difference          [%]
+
+    integer :: &
+      num_mismatches  ! Total number of mismatches
+
+    integer :: iter  ! Loop index
 
 
     write(fstdout,*) ""
     write(fstdout,*) "Nc-Ncn equations unit test"
     write(fstdout,*) "=========================="
     write(fstdout,*) ""
+
+    ! Initialize number of mismatches.
+    num_mismatches = 0
 
     do iter = 1, 10, 1
 
@@ -322,11 +334,49 @@ module Nc_Ncn_test
 
        write(fstdout,*) "Ncnm (from Ncm) = ", Ncnm
 
+       ! Calculate the percent difference between Ncnm (after the back-and-forth
+       ! calculations) and mu_Ncn_1 (which is Ncnm before the back-and-forth
+       ! calculations).
+       percent_diff = one_hundred * abs( ( Ncnm - mu_Ncn_1 ) / mu_Ncn_1 )
+
+       if ( percent_diff <= tol ) then
+
+          ! The percentage difference between Ncnm (here, after back-and-forth
+          ! calculations) and mu_Ncn_1 (here, Ncnm before back-and-forth
+          ! calculations) is very small -- a product of numerical round-off
+          ! error.
+          write(fstdout,*) ""
+          write(fstdout,'(1x,A,I2,A)') "Test iteration ", iter, " is a success!"
+
+       else ! percent_diff > tol
+
+          ! The percentage difference between Ncnm (here, after back-and-forth
+          ! calculations) and mu_Ncn_1 (here, Ncnm before back-and-forth
+          ! calculations) is beyond an acceptable tolerance -- there may be a
+          ! larger problem.
+          write(fstdout,*) ""
+          write(fstdout,'(1x,A,I2,A)') "Test iteration ", iter, &
+                                       " is not successful.  Please check for" &
+                                       // " any changes made to the relevant" &
+                                       // " portion(s) of the CLUBB model code."
+
+          num_mismatches = num_mismatches + 1
+
+       endif ! percent_diff <= tol
+
        write(fstdout,*) ""
        write(fstdout,*) "======================================================"
        write(fstdout,*) ""
 
     enddo ! iter = 1, 10, 1
+
+
+    if ( num_mismatches == 0 ) then
+       write(fstdout,'(1x,A)') "Success!"
+    else ! num_mismatches > 0
+       write(fstdout,'(1x,A,I2,A)') "There were ", num_mismatches, &
+                                    " total mismatches."
+    endif ! num_mismatches = 0
 
 
     return
