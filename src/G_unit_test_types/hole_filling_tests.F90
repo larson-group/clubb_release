@@ -31,7 +31,7 @@ module hole_filling_tests
     integer :: total_errors = 0
 
     real( kind = core_rknd ) :: &
-      tol = 1.0e-6_core_rknd ! Acceptable percent difference between the results    [-]
+      tol = 1.0e-10_core_rknd ! Acceptable absolute diff. between results    [-]
 
     print *, "=================================================="
     print *, " "
@@ -62,7 +62,7 @@ module hole_filling_tests
     print *, "Performing fill_holes_hydromet_tests"
     print *, " "
 
-    call fill_holes_hydromet_tests( total_errors )
+    call fill_holes_hydromet_tests( tol, total_errors )
 
     print *, "=================================================="
     print *, " "
@@ -87,23 +87,30 @@ module hole_filling_tests
   subroutine hole_filling_hm_one_lev_tests( tol, total_errors )
 
     ! Description:
-    ! Tests the subroutine hole_filling_hm_one_lev for conservation and non-negativity.
-    !
-    ! Expected number of errors: 1
+    ! Tests the subroutine hole_filling_hm_one_lev for conservation and
+    ! non-negativity.
 
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        five,  & ! Constant(s)
+        three, &
+        two,   &
+        one,   &
+        zero
+
     use clubb_precision, only: &
-        core_rknd
+        core_rknd  ! Variable(s)
 
     use fill_holes, only: &
-        hole_filling_hm_one_lev
+        hole_filling_hm_one_lev  ! Procedure(s)
 
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: tol
+    real( kind = core_rknd ), intent(in) :: &
+      tol    ! Acceptable absolute difference between results      [-]
 
     ! Input/Output Variable
     integer, intent(inout) :: total_errors
@@ -114,31 +121,38 @@ module hole_filling_tests
     integer :: num_hm_fill
 
     real( kind = core_rknd ), dimension(4) :: &
-      testset1_in, &
-      testset1_out, &
+      testset1_in,   &
+      testset1_out,  &
       testset1_comp
 
     real( kind = core_rknd ), dimension(4) :: &
-      testset2_in, &
-      testset2_out
+      testset2_in,   &
+      testset2_out,  &
+      testset2_comp
 
     real( kind = core_rknd ), dimension(4) :: &
-      testset3_in, &
-      testset3_out
+      testset3_in,   &
+      testset3_out,  &
+      testset3_comp
+
+    logical :: &
+      l_expect_not_filled  ! Flag for expected the hole not to be filled
 
     ! ---- Begin Code ----
 
-    ! Testset 1
+    ! Testset 1 -- hole filled (total mass > total hole)
     num_hm_fill = 4
-    testset1_in(1) = -2._core_rknd
-    testset1_in(2) = 5._core_rknd
-    testset1_in(3) = 6._core_rknd
-    testset1_in(4) = -3._core_rknd
+    testset1_in(1) = -two
+    testset1_in(2) = five
+    testset1_in(3) = 6.0_core_rknd
+    testset1_in(4) = -three
 
-    testset1_comp(1) = 0._core_rknd
-    testset1_comp(2) = 5._core_rknd-25._core_rknd/11._core_rknd
-    testset1_comp(3) = 6._core_rknd-30._core_rknd/11._core_rknd
-    testset1_comp(4) = 0._core_rknd
+    testset1_comp(1) = zero
+    testset1_comp(2) = five-25.0_core_rknd/11.0_core_rknd
+    testset1_comp(3) = 6.0_core_rknd-30.0_core_rknd/11.0_core_rknd
+    testset1_comp(4) = zero
+
+    l_expect_not_filled = .false.
 
     call hole_filling_hm_one_lev( num_hm_fill, testset1_in, testset1_out )
 
@@ -149,36 +163,71 @@ module hole_filling_tests
       print *, "testset1_comp = ", testset1_comp
     endif
 
-    call check_results_one_lev( num_hm_fill, testset1_in, testset1_out, total_errors )
+    call check_results_one_lev( num_hm_fill, testset1_in, testset1_out, &
+                                tol, l_expect_not_filled, &
+                                total_errors )
 
-    ! Testset 2 -- should cause an error
+    ! Testset 2 -- does not fill hole completely (total mass < total hole)
     num_hm_fill = 4
-    testset2_in(1) = 2._core_rknd
-    testset2_in(2) = 1._core_rknd
-    testset2_in(3) = -5._core_rknd
-    testset2_in(4) = 1._core_rknd
+    testset2_in(1) = two
+    testset2_in(2) = one
+    testset2_in(3) = -five
+    testset2_in(4) = one
+
+    testset2_comp(1) = zero
+    testset2_comp(2) = zero
+    testset2_comp(3) = -one
+    testset2_comp(4) = zero
+
+    l_expect_not_filled = .true.
 
     call hole_filling_hm_one_lev( num_hm_fill, testset2_in, testset2_out )
 
-    call check_results_one_lev( num_hm_fill, testset2_in, testset2_out, total_errors )
+    if( any( abs(testset2_out - testset2_comp) > tol ) ) then
+      total_errors = total_errors + 1
+      print *, "---- Mismatch: ----"
+      print *, "testset2_out = ", testset2_out
+      print *, "testset2_comp = ", testset2_comp
+    endif
 
-    ! Testset 3
+    call check_results_one_lev( num_hm_fill, testset2_in, testset2_out, &
+                                tol, l_expect_not_filled, &
+                                total_errors )
+
+    ! Testset 3 -- total hole equals total mass
     num_hm_fill = 4
-    testset3_in(1) = -2._core_rknd
-    testset3_in(2) = 6._core_rknd
-    testset3_in(3) = -2._core_rknd
-    testset3_in(4) = -2._core_rknd
+    testset3_in(1) = -two
+    testset3_in(2) = 6.0_core_rknd
+    testset3_in(3) = -two
+    testset3_in(4) = -two
+
+    testset3_comp(1) = zero
+    testset3_comp(2) = zero
+    testset3_comp(3) = zero
+    testset3_comp(4) = zero
+
+    l_expect_not_filled = .false.
 
     call hole_filling_hm_one_lev( num_hm_fill, testset3_in, testset3_out )
 
-    call check_results_one_lev( num_hm_fill, testset3_in, testset3_out, total_errors )
+    if( any( abs(testset3_out - testset3_comp) > tol ) ) then
+      total_errors = total_errors + 1
+      print *, "---- Mismatch: ----"
+      print *, "testset3_out = ", testset3_out
+      print *, "testset3_comp = ", testset3_comp
+    endif
+
+    call check_results_one_lev( num_hm_fill, testset3_in, testset3_out, &
+                                tol, l_expect_not_filled, &
+                                total_errors )
+
 
     return
 
   end subroutine hole_filling_hm_one_lev_tests
   !=============================================================================
 
-  subroutine fill_holes_hydromet_tests( total_errors )
+  subroutine fill_holes_hydromet_tests( tol, total_errors )
 
     ! Description:
     ! Tests the subroutine fill_holes_hydromet on water substance conservation
@@ -205,6 +254,10 @@ module hole_filling_tests
 
     integer, parameter :: c = core_rknd
 
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      tol    ! Acceptable absolute difference between results      [-]
+
     ! Input/Output Variable
     integer, intent(inout) :: total_errors
 
@@ -217,6 +270,9 @@ module hole_filling_tests
       testset_in,  & ! Testset input
       testset_out    ! Testset after hole filling
 
+    logical, dimension(:), allocatable :: &
+      l_expect_not_filled_lev  ! Flag for expected the hole not to be filled
+
     ! ---- Begin Code ----
 
     hm_dim = 7
@@ -226,6 +282,8 @@ module hole_filling_tests
 
     allocate(l_frozen_hm(hm_dim))
     allocate(l_mix_rat_hm(hm_dim))
+
+    allocate(l_expect_not_filled_lev(hgt_dim))
 
     l_frozen_hm  = (/ .true., .false., .false., .true., .true., .true., .true. /)
     l_mix_rat_hm = (/ .false., .true., .false., .true., .true., .true., .true. /)
@@ -248,6 +306,9 @@ module hole_filling_tests
                             1._c,  4._c,  2._c,  3._c, -1._c,  0._c /), &
                             (/ hgt_dim, hm_dim /) )
 
+    l_expect_not_filled_lev &
+    = (/ .false., .false., .true., .false., .true., .false. /)
+
     do i = 1, hm_dim
        print *, "testset_in(:,",i,") = ", testset_in(:,i)
     enddo
@@ -256,6 +317,7 @@ module hole_filling_tests
 
     call check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
                                    testset_in, testset_out, & ! Intent(in)
+                                   tol, l_expect_not_filled_lev, & ! Intent(in)
                                    total_errors ) ! Intent(inout)
 
     return
@@ -264,7 +326,8 @@ module hole_filling_tests
   !=============================================================================
 
   subroutine check_results_hm_filling( hgt_dim, hm_dim, & ! Intent(in)
-                                       testset_in, testset_result, & ! Intent(in)
+                                       testset_in, testset_result, &
+                                       tol, l_expect_not_filled_lev, & ! Intent(in)
                                        total_errors) ! Intent(inout)
     ! Description:
 
@@ -288,6 +351,12 @@ module hole_filling_tests
     real( kind = core_rknd ), dimension(hgt_dim, hm_dim), intent(in) :: &
       testset_result, &
       testset_in
+
+    real( kind = core_rknd ), intent(in) :: &
+      tol    ! Acceptable absolute difference between results      [-]
+
+    logical, dimension(hgt_dim), intent(in) :: &
+      l_expect_not_filled_lev  ! Flag for expected the hole not to be filled
 
     ! Input/Output Variables
     integer, intent(inout) :: total_errors
@@ -326,25 +395,28 @@ module hole_filling_tests
 
     ! Check if the hole filling was conservative
     do i = 1, hgt_dim
-       call check_results_one_lev( num_frozen_hm, & ! Intent(in)
-                                   testset_frozen_in(i,:), testset_frozen_res(i,:), & ! Intent(in)
-                                   total_errors ) ! Intent(out)
+       call check_results_one_lev( num_frozen_hm, testset_frozen_in(i,:), & ! In
+                                   testset_frozen_res(i,:), & ! In
+                                   tol, l_expect_not_filled_lev(i), & ! In
+                                   total_errors ) ! Out
     enddo
 
     return
 
   end subroutine check_results_hm_filling
 
-
+  !=============================================================================
   subroutine check_results_one_lev( num_hm_fill, testset_in, testset_result, & ! Intent(in)
-                                    total_errors) ! Intent(inout)
+                                    tol, l_expect_not_filled, & ! Intent(in)
+                                    total_errors ) ! Intent(inout)
     ! Description:
 
     ! References:
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero ! Constant(s)
+        zero,    & ! Constant(s)
+        fstderr
 
     use clubb_precision, only: &
         core_rknd
@@ -360,22 +432,35 @@ module hole_filling_tests
       testset_result, &
       testset_in
 
+    real( kind = core_rknd ), intent(in) :: &
+      tol    ! Acceptable absolute difference between results      [-]
+
+    logical, intent(in) :: &
+      l_expect_not_filled  ! Flag for expected the hole not to be filled
+
     ! Input/Output Variable
     integer, intent(inout) :: total_errors
 
     ! ---- Begin Code ----
 
     ! Check if the hole filling was conservative
-    if ( sum(testset_in) /= sum(testset_result) ) then
+    if ( abs( sum( testset_in ) - sum( testset_result ) ) <= tol ) then
+       write (fstderr,*) "Hole-filling was conservative"
+    else ! abs( sum( testset_in ) - sum( testset_result ) ) > tol
+       write (fstderr,*) "Hole-filling was not conservative"
        total_errors = total_errors + 1
-       return
     endif
 
     ! Check if all holes are filled
     if ( any( testset_result < zero ) ) then
-       total_errors = total_errors + 1
-       return
-    endif
+       if ( l_expect_not_filled ) then
+          write (fstderr,*) "Hole not entirely filled, as expected"
+       else ! not l_expect_not_filled
+          write (fstderr,*) "Error: hole not entirely filled"
+          total_errors = total_errors + 1
+       endif ! l_expect_not_filled
+    endif ! any( testset_result ) < 0
+
 
     return
 
