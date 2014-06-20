@@ -416,7 +416,7 @@ module hole_filling_tests
 
     use constants_clubb, only: &
         zero,    & ! Constant(s)
-        fstderr
+        fstdout
 
     use clubb_precision, only: &
         core_rknd
@@ -445,18 +445,18 @@ module hole_filling_tests
 
     ! Check if the hole filling was conservative
     if ( abs( sum( testset_in ) - sum( testset_result ) ) <= tol ) then
-       write (fstderr,*) "Hole-filling was conservative"
+       write (fstdout,*) "Hole-filling was conservative"
     else ! abs( sum( testset_in ) - sum( testset_result ) ) > tol
-       write (fstderr,*) "Hole-filling was not conservative"
+       write (fstdout,*) "Hole-filling was not conservative"
        total_errors = total_errors + 1
     endif
 
     ! Check if all holes are filled
     if ( any( testset_result < zero ) ) then
        if ( l_expect_not_filled ) then
-          write (fstderr,*) "Hole not entirely filled, as expected"
+          write (fstdout,*) "Hole not entirely filled, as expected"
        else ! not l_expect_not_filled
-          write (fstderr,*) "Error: hole not entirely filled"
+          write (fstdout,*) "Error: hole not entirely filled"
           total_errors = total_errors + 1
        endif ! l_expect_not_filled
     endif ! any( testset_result ) < 0
