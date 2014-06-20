@@ -766,7 +766,7 @@ contains
         one,                   &
         one_half,              &
         zero,                  &
-        s_tol => s_mellor_tol, &
+        s_mellor_tol,          &
         Ncn_tol
 
     use anl_erf, only: &
@@ -791,7 +791,7 @@ contains
       bivar_NL_s_Ncn_mean
 
 
-    if ( sigma_s_i <= s_tol .and. sigma_Ncn_i <= Ncn_tol ) then
+    if ( sigma_s_i <= s_mellor_tol .and. sigma_Ncn_i <= Ncn_tol ) then
 
        ! The ith PDF component variances of both s and Ncn are 0.
 
@@ -806,7 +806,7 @@ contains
        endif
 
 
-    elseif ( sigma_s_i <= s_tol ) then
+    elseif ( sigma_s_i <= s_mellor_tol ) then
 
        ! The ith PDF component variance of s is 0.
 
@@ -890,7 +890,7 @@ contains
         one,                   &
         one_half,              &
         zero,                  &
-        s_tol => s_mellor_tol
+        s_mellor_tol
 
     use anl_erf, only: &
         erfc  ! Procedure(s)
@@ -914,7 +914,7 @@ contains
       bivar_Ncnm_eqn_comp
 
 
-    if ( sigma_s_i <= s_tol ) then
+    if ( sigma_s_i <= s_mellor_tol ) then
 
        ! The ith PDF component variances of s is 0.  The value of the ith PDF
        ! component variance of Ncn does not matter in this scenario.
