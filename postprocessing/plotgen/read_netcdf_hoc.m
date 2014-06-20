@@ -24,8 +24,8 @@ num_timesteps = (t2-t1) + 1;
 
 % Read in and average profiles over all timesteps
 avg_field = zeros(nzmax,1);
+field = netcdf.getVar(fid,varnum);
 for t=t1:t2
-   field = netcdf.getVar(fid,varnum);
    %If there are only 2 dimensions, there is no need to squeeze (used for cloud_feedback LES)
    if max(size(dimids)) == 2
      new_field(1:nzmax,1) = field(1:nzmax, t);
