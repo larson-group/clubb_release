@@ -87,12 +87,13 @@ module stats_variables
      iwpthlp2 = 0, & 
      iwp2thlp = 0, & 
      iwprtp2 = 0, & 
-     iwp2rtp = 0
+     iwp2rtp = 0, &
+     iSkw_zt = 0
 !$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
 !$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, iice_supersat_frac, ircm_in_layer, &
 !$omp   ircm_in_cloud, icloud_cover, &
 !$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
-!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp )
+!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iSkw_zt, iSkw_zm )
 
   integer, public :: & 
      iLscale_up = 0, & 
@@ -869,7 +870,8 @@ module stats_variables
      irtprcp = 0, & 
      ircp2 = 0, & 
      iupwp = 0, & 
-     ivpwp = 0
+     ivpwp = 0, &
+     iSkw_zm = 0
 
   integer, public :: &
      irho_zm = 0, & 

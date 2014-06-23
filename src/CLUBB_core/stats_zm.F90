@@ -49,7 +49,8 @@ module stats_zm
         irc_coef, &
         ithlprcp, & 
         irtprcp, & 
-        ircp2
+        ircp2,   &
+        iSkw_zm
 
     use stats_variables, only: &
         iupwp, & 
@@ -1657,6 +1658,13 @@ module stats_zm
         iwp3_on_wp2 = k
         call stat_assign( var_index=iwp3_on_wp2, var_name="wp3_on_wp2", &
              var_description="Smoothed version of wp3 / wp2 [m/s]", var_units="m/s", &
+             l_silhs=.false., grid_kind=zm )
+        k = k + 1
+
+      case ( 'Skw_zm' )
+        iSkw_zm = k
+        call stat_assign( var_index=iSkw_zm, var_name="Skw_zm", &
+             var_description="Skewness of w on momentum levels [-]", var_units="-", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 

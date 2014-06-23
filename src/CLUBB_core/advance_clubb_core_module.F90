@@ -307,7 +307,9 @@ module advance_clubb_core_module
       irsat,         &
       irvm,          &
       irel_humidity, &
-      iwpthlp_zt
+      iwpthlp_zt,    &
+      iSkw_zt,       &
+      iSkw_zm
 
     use stats_variables, only: &
       iwprtp_zt,     &
@@ -831,6 +833,11 @@ module advance_clubb_core_module
 
     Skw_zt(1:gr%nz) = Skw_func( wp2_zt(1:gr%nz), wp3(1:gr%nz) )
     Skw_zm(1:gr%nz) = Skw_func( wp2(1:gr%nz), wp3_zm(1:gr%nz) )
+
+    if (l_stats_samp) then
+      call stat_update_var(iSkw_zt, Skw_zt, zt)
+      call stat_update_var(iSkw_zm, Skw_zm, zm)
+    end if
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent

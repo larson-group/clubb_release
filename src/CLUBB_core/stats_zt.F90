@@ -69,7 +69,8 @@ module stats_zt
         iwp2thvp, & 
         iwp2rcp, & 
         iwprtpthlp, & 
-        isigma_sqd_w_zt
+        isigma_sqd_w_zt, &
+        iSkw_zt
 
     use stats_variables, only: & 
         ihm1, & ! Variable(s)
@@ -3689,6 +3690,13 @@ module stats_zt
         call stat_assign( var_index=ivpwp_zt, var_name="vpwp_zt", &
              var_description="v'w' interpolated to thermodynamic levels [m^2/s^2]", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=zt )
+        k = k + 1
+
+      case ('Skw_zt')
+        iSkw_zt = k
+        call stat_assign( var_index=iSkw_zt, var_name="Skw_zt", &
+             var_description="Skewness of w on thermodynamic levels [-]", &
+             var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       ! Hydrometeor overall variances for each hydrometeor type.
