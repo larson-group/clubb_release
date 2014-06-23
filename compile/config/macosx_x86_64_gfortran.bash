@@ -29,8 +29,9 @@ WARNINGS="-Wall -pedantic" # This enabled most compiler warnings
 # == Machine specific flags ==
 # Note: If the native architecture is 64 bit (most newer Mac's) then the 
 # netCDF and LAPACK libraries used must be 64 bit too
-ARCH="-march=native"
+#ARCH="-march=native"
 #ARCH="-m64"
+ARCH=""
 
 # == Used to promote all real's to double precision ==
 DOUBLE_PRECISION="-fdefault-real-8"
