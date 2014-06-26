@@ -1001,22 +1001,16 @@ module advance_clubb_core_module
                         ( rc1_refined, rc2_refined, pdf_params(k)%mixt_frac )
 
           if ( l_interactive_refined ) then
-            ! Note: this code makes PDF component cloud water mixing ratios and
-            !       cloud fractions inconsistent with the PDF.  Other parts of
-            !       CLUBB require PDF component cloud fractions to remain
-            !       consistent with the PDF.  This code needs to be refactored
-            !       so that cloud_frac1 and cloud_frac2 are preserved.
-            write(fstderr,*) "The code in l_interactive_refined does not " &
-                             // "preserve cloud_frac1 and cloud_frac2 " &
-                             // "as required by other parts of CLUBB."
-            stop "Please refactor before continuing."
+            ! I commented out the lines that modify the values in pdf_params, as it seems that
+            ! these values need to remain consistent with the rest of the PDF.
+            ! Eric Raut Jun 2014
             ! Replace pdf_closure estimates with refined estimates
-            pdf_params(k)%rc1 = rc1_refined
-            pdf_params(k)%rc2 = rc2_refined
+            ! pdf_params(k)%rc1 = rc1_refined
+            ! pdf_params(k)%rc2 = rc2_refined
             rcm(k) = rcm_refined
 
-            pdf_params(k)%cloud_frac1 = cloud_frac1_refined
-            pdf_params(k)%cloud_frac2 = cloud_frac2_refined
+            ! pdf_params(k)%cloud_frac1 = cloud_frac1_refined
+            ! pdf_params(k)%cloud_frac2 = cloud_frac2_refined
             cloud_frac(k) = cloud_frac_refined
           end if
 
