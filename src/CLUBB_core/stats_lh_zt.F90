@@ -82,8 +82,8 @@ module stats_lh_zt
       ilh_Ncp2_zt, &
       ilh_Ncnp2_zt, &
       ilh_cloud_frac, &
-      ilh_s_mellor, &
-      ilh_t_mellor, &
+      ilh_chi, &
+      ilh_eta, &
       ilh_sp2, &
       ilh_rrainm_auto, &
       ilh_rrainm_accr, &
@@ -420,16 +420,16 @@ module stats_lh_zt
              var_units="count", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_s_mellor' )
-        ilh_s_mellor = k
-        call stat_assign( var_index=ilh_s_mellor, var_name="lh_s_mellor", &
+      case ( 'lh_chi' )
+        ilh_chi = k
+        call stat_assign( var_index=ilh_chi, var_name="lh_chi", &
              var_description="Latin hypercube estimate of Mellor's s (extended liq) [kg/kg]", &
              var_units="kg/kg", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_t_mellor' )
-        ilh_t_mellor = k
-        call stat_assign( var_index=ilh_t_mellor, var_name="lh_t_mellor", &
+      case ( 'lh_eta' )
+        ilh_eta = k
+        call stat_assign( var_index=ilh_eta, var_name="lh_eta", &
              var_description="Latin hypercube estimate of Mellor's t [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1

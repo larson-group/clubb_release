@@ -77,7 +77,7 @@ module KK_upscaled_covariances
         Nr_tol 
 
     use constants_clubb, only:  &
-        t_tol => t_mellor_tol  ! Constant
+        t_tol => eta_tol  ! Constant
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
@@ -1834,7 +1834,7 @@ module KK_upscaled_covariances
         quadrivar_NNLL_covar_const_x1x2
 
     use constants_clubb, only: &
-        s_mellor_tol, & ! Constant(s)
+        chi_tol, & ! Constant(s)
         parab_cyl_max_input
 
     use clubb_precision, only: &
@@ -1943,7 +1943,7 @@ module KK_upscaled_covariances
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
     x1_tol = real(x_tol, kind=dp)  ! x is w or t.
-    x2_tol = real(s_mellor_tol, kind=dp)
+    x2_tol = real(chi_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_cc.
     ! The value s_cc is being fed into the parabolic cylinder function.  When
@@ -2073,7 +2073,7 @@ module KK_upscaled_covariances
         trivar_NNL_covar_const_x1x2
 
     use constants_clubb, only: &
-        s_mellor_tol, & ! Constant(s)
+        chi_tol, & ! Constant(s)
         parab_cyl_max_input
 
     use clubb_precision, only: &
@@ -2163,7 +2163,7 @@ module KK_upscaled_covariances
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
     x1_tol = real(x_tol, kind=dp)  ! x is w or t.
-    x2_tol = real(s_mellor_tol, kind=dp)
+    x2_tol = real(chi_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When
@@ -2279,7 +2279,7 @@ module KK_upscaled_covariances
         trivar_NNL_covar_const_all
 
     use constants_clubb, only: &
-        s_mellor_tol, & ! Constant(s)
+        chi_tol, & ! Constant(s)
         parab_cyl_max_input
 
     use clubb_precision, only: &
@@ -2359,7 +2359,7 @@ module KK_upscaled_covariances
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
     x1_tol = real(x_tol, kind=dp)  ! x is w or t.
-    x2_tol = real(s_mellor_tol, kind=dp)
+    x2_tol = real(chi_tol, kind=dp)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When

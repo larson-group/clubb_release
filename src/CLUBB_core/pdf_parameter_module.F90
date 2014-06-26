@@ -38,16 +38,16 @@ module pdf_parameter_module
       crt2,        & ! Coef. on r_t in s/t eqns. (2nd PDF comp.)             [-]
       cthl1,       & ! Coef. on th_l in s/t eqns. (1st PDF comp.)    [(kg/kg)/K]
       cthl2,       & ! Coef. on th_l in s/t eqns. (2nd PDF comp.)    [(kg/kg)/K]
-      s1,          & ! Mean of s (1st PDF component)                     [kg/kg]
-      s2,          & ! Mean of s (2nd PDF component)                     [kg/kg]
-      stdev_s1,    & ! Standard deviation of s (1st PDF component)       [kg/kg]
-      stdev_s2,    & ! Standard deviation of s (2nd PDF component)       [kg/kg]
-      stdev_t1,    & ! Standard deviation of t (1st PDF component)       [kg/kg]
-      stdev_t2,    & ! Standard deviation of t (2nd PDF component)       [kg/kg]
-      covar_st_1,  & ! Covariance of s and t (1st PDF component)     [kg^2/kg^2]
-      covar_st_2,  & ! Covariance of s and t (2nd PDF component)     [kg^2/kg^2]
-      corr_st_1,   & ! Correlation between s and t (1st PDF component)       [-]
-      corr_st_2,   & ! Correlation between s and t (2nd PDF component)       [-]
+      chi_1,          & ! Mean of s (1st PDF component)                     [kg/kg]
+      chi_2,          & ! Mean of s (2nd PDF component)                     [kg/kg]
+      stdev_chi_1,    & ! Standard deviation of s (1st PDF component)       [kg/kg]
+      stdev_chi_2,    & ! Standard deviation of s (2nd PDF component)       [kg/kg]
+      stdev_eta_1,    & ! Standard deviation of t (1st PDF component)       [kg/kg]
+      stdev_eta_2,    & ! Standard deviation of t (2nd PDF component)       [kg/kg]
+      covar_chi_eta_1,  & ! Covariance of s and t (1st PDF component)     [kg^2/kg^2]
+      covar_chi_eta_2,  & ! Covariance of s and t (2nd PDF component)     [kg^2/kg^2]
+      corr_chi_eta_1,   & ! Correlation between s and t (1st PDF component)       [-]
+      corr_chi_eta_2,   & ! Correlation between s and t (2nd PDF component)       [-]
       rsl1,        & ! Mean of r_sl (1st PDF component)                  [kg/kg]
       rsl2,        & ! Mean of r_sl (2nd PDF component)                  [kg/kg]
       rc1,         & ! Mean of r_c (1st PDF component)                   [kg/kg]
@@ -161,25 +161,25 @@ module pdf_parameter_module
       CASE (19)
       	   get_param_at_ind = pp_struct%cthl2
       CASE (20)
-      	   get_param_at_ind = pp_struct%s1
+      	   get_param_at_ind = pp_struct%chi_1
       CASE (21)
-      	   get_param_at_ind = pp_struct%s2
+      	   get_param_at_ind = pp_struct%chi_2
       CASE (22)
-      	   get_param_at_ind = pp_struct%stdev_s1
+      	   get_param_at_ind = pp_struct%stdev_chi_1
       CASE (23)
-      	   get_param_at_ind = pp_struct%stdev_s2
+      	   get_param_at_ind = pp_struct%stdev_chi_2
       CASE (24)
-      	   get_param_at_ind = pp_struct%stdev_t1
+      	   get_param_at_ind = pp_struct%stdev_eta_1
       CASE (25)
-      	   get_param_at_ind = pp_struct%stdev_t2
+      	   get_param_at_ind = pp_struct%stdev_eta_2
       CASE (26)
-      	   get_param_at_ind = pp_struct%covar_st_1
+      	   get_param_at_ind = pp_struct%covar_chi_eta_1
       CASE (27)
-      	   get_param_at_ind = pp_struct%covar_st_2
+      	   get_param_at_ind = pp_struct%covar_chi_eta_2
       CASE (28)
-      	   get_param_at_ind = pp_struct%corr_st_1
+      	   get_param_at_ind = pp_struct%corr_chi_eta_1
       CASE (29)
-      	   get_param_at_ind = pp_struct%corr_st_2
+      	   get_param_at_ind = pp_struct%corr_chi_eta_2
       CASE (30)
       	   get_param_at_ind = pp_struct%rsl1
       CASE (31)
@@ -247,25 +247,25 @@ module pdf_parameter_module
       CASE (19)
       	   pp_struct%cthl2 = val
       CASE (20)
-      	   pp_struct%s1 = val
+      	   pp_struct%chi_1 = val
       CASE (21)
-      	   pp_struct%s2 = val
+      	   pp_struct%chi_2 = val
       CASE (22)
-      	   pp_struct%stdev_s1 = val
+      	   pp_struct%stdev_chi_1 = val
       CASE (23)
-      	   pp_struct%stdev_s2 = val
+      	   pp_struct%stdev_chi_2 = val
       CASE (24)
-      	   pp_struct%stdev_t1 = val
+      	   pp_struct%stdev_eta_1 = val
       CASE (25)
-      	   pp_struct%stdev_t2 = val
+      	   pp_struct%stdev_eta_2 = val
       CASE (26)
-      	   pp_struct%covar_st_1 = val
+      	   pp_struct%covar_chi_eta_1 = val
       CASE (27)
-      	   pp_struct%covar_st_2 = val
+      	   pp_struct%covar_chi_eta_2 = val
       CASE (28)
-      	   pp_struct%corr_st_1 = val
+      	   pp_struct%corr_chi_eta_1 = val
       CASE (29)
-      	   pp_struct%corr_st_2 = val
+      	   pp_struct%corr_chi_eta_2 = val
       CASE (30)
       	   pp_struct%rsl1 = val
       CASE (31)

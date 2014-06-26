@@ -32,7 +32,7 @@ module est_kessler_microphys_module
 
     use constants_clubb, only:  &
       pi,  & ! Variables(s)
-      s_mellor_tol, &
+      chi_tol, &
       zero_threshold
 
     use anl_erf, only:  &
@@ -96,7 +96,7 @@ module est_kessler_microphys_module
 !   real( kind = core_rknd ) :: thl1, thl2, sthl1, sthl2
 !   real( kind = core_rknd ) :: rt1,rt2
 !   real( kind = core_rknd ) :: srt1, srt2
-    real( kind = core_rknd ) :: stdev_s1, stdev_s2, s1, s2
+    real( kind = core_rknd ) :: stdev_chi_1, stdev_chi_2, chi_1, chi_2
     real( kind = core_rknd ) :: cloud_frac1, cloud_frac2
 !   real( kind = core_rknd ) :: rc1, rc2
 
@@ -156,10 +156,10 @@ module est_kessler_microphys_module
 !     cloud_frac2 = pdf_params(level)%cloud_frac2
       cloud_frac1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
       cloud_frac2 = 1.0_core_rknd !     "    "
-      s1          = pdf_params(level)%s1
-      s2          = pdf_params(level)%s2
-      stdev_s1    = pdf_params(level)%stdev_s1
-      stdev_s2    = pdf_params(level)%stdev_s2
+      chi_1          = pdf_params(level)%chi_1
+      chi_2          = pdf_params(level)%chi_2
+      stdev_chi_1    = pdf_params(level)%stdev_chi_1
+      stdev_chi_2    = pdf_params(level)%stdev_chi_2
 
       ! Compute mean cloud fraction and cloud water
 
@@ -212,23 +212,23 @@ module est_kessler_microphys_module
       !        r_crit = 0.7e-3_core_rknd
       r_crit            = 0.2e-3_core_rknd
       K_one             = 1.e-3_core_rknd
-      sn1_crit          = (s1-r_crit)/max( stdev_s1, s_mellor_tol )
+      sn1_crit          = (chi_1-r_crit)/max( stdev_chi_1, chi_tol )
       cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn1_crit/sqrt(2.0_core_rknd)))
-      AK1               = K_one * ( (s1-r_crit)*cloud_frac1_crit  & 
-                         + stdev_s1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._core_rknd*pi)) )
-      sn2_crit          = (s2-r_crit)/max( stdev_s2, s_mellor_tol )
+      AK1               = K_one * ( (chi_1-r_crit)*cloud_frac1_crit  & 
+                         + stdev_chi_1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._core_rknd*pi)) )
+      sn2_crit          = (chi_2-r_crit)/max( stdev_chi_2, chi_tol )
       cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn2_crit/sqrt(2.0_core_rknd)))
-      AK2               = K_one * ( (s2-r_crit)*cloud_frac2_crit  & 
-                         + stdev_s2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._core_rknd*pi)) )
+      AK2               = K_one * ( (chi_2-r_crit)*cloud_frac2_crit  & 
+                         + stdev_chi_2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._core_rknd*pi)) )
       AKm(level)        = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
-      AK1var   = max( zero_threshold, K_one * (s1-r_crit) * AK1  & 
-               + K_one * K_one * (stdev_s1**2) * cloud_frac1_crit  & 
+      AK1var   = max( zero_threshold, K_one * (chi_1-r_crit) * AK1  & 
+               + K_one * K_one * (stdev_chi_1**2) * cloud_frac1_crit  & 
                - AK1**2  )
-      AK2var   = max( zero_threshold, K_one * (s2-r_crit) * AK2  & 
-               + K_one * K_one * (stdev_s2**2) * cloud_frac2_crit  & 
+      AK2var   = max( zero_threshold, K_one * (chi_2-r_crit) * AK2  & 
+               + K_one * K_one * (stdev_chi_2**2) * cloud_frac2_crit  & 
                - AK2**2  )
       ! This formula is for a grid box average:
       AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 

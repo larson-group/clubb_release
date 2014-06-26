@@ -43,7 +43,7 @@ module KK_microphys_module
   subroutine KK_local_microphys( dt, nz, l_latin_hypercube,             & ! In
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
-                                 Ncm, s_mellor, rvm, hydromet,          & ! In
+                                 Ncm, chi, rvm, hydromet,          & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
                                  microphys_stats_zt,                    & ! Out
@@ -136,7 +136,7 @@ module KK_microphys_module
       cloud_frac, & ! Cloud fraction                                  [-]
       rcm,        & ! Mean cloud water mixing ratio                   [kg/kg]
       Ncm,        & ! Mean cloud droplet conc., < N_c >               [num/kg]
-      s_mellor      ! Mean extended liquid water mixing ratio         [kg/kg]
+      chi      ! Mean extended liquid water mixing ratio         [kg/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       w_std_dev, & ! Standard deviation of w (for LH interface)          [m/s]
@@ -256,7 +256,7 @@ module KK_microphys_module
        if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
           KK_evap_tndcy(k)  &
-          = KK_evap_local_mean( s_mellor(k), rrainm(k), Nrm(k), &
+          = KK_evap_local_mean( chi(k), rrainm(k), Nrm(k), &
                                  KK_evap_coef )
 
        else  ! r_r or N_r = 0.
@@ -269,7 +269,7 @@ module KK_microphys_module
        if ( Ncm(k) > Nc_tol ) then
 
           KK_auto_tndcy(k)  &
-          = KK_auto_local_mean( s_mellor(k), Ncm(k), KK_auto_coef )
+          = KK_auto_local_mean( chi(k), Ncm(k), KK_auto_coef )
 
        else  ! N_c = 0.
 
@@ -281,7 +281,7 @@ module KK_microphys_module
        if ( rrainm(k) > rr_tol ) then
 
           KK_accr_tndcy(k)  &
-          = KK_accr_local_mean( s_mellor(k), rrainm(k), KK_accr_coef )
+          = KK_accr_local_mean( chi(k), rrainm(k), KK_accr_coef )
 
        else  ! r_r = 0.
 
@@ -1746,8 +1746,8 @@ module KK_microphys_module
 
     use corr_matrix_module, only: &
         iiPDF_w,        & ! Variable(s)
-        iiPDF_s_mellor, &
-        iiPDF_t_mellor, &
+        iiPDF_chi, &
+        iiPDF_eta, &
         iiPDF_rrain,    &
         iiPDF_Nr,       &
         iiPDF_Ncn
@@ -1861,10 +1861,10 @@ module KK_microphys_module
     ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
     mu_w_1        = mu_x_1(iiPDF_w)
     mu_w_2        = mu_x_2(iiPDF_w)
-    mu_s_1        = mu_x_1(iiPDF_s_mellor)
-    mu_s_2        = mu_x_2(iiPDF_s_mellor)
-    mu_t_1        = mu_x_1(iiPDF_t_mellor)
-    mu_t_2        = mu_x_2(iiPDF_t_mellor)
+    mu_s_1        = mu_x_1(iiPDF_chi)
+    mu_s_2        = mu_x_2(iiPDF_chi)
+    mu_t_1        = mu_x_1(iiPDF_eta)
+    mu_t_2        = mu_x_2(iiPDF_eta)
     mu_rr_1_n     = mu_x_1(iiPDF_rrain)
     mu_rr_2_n     = mu_x_2(iiPDF_rrain)
     mu_Nr_1_n     = mu_x_1(iiPDF_Nr)
@@ -1873,10 +1873,10 @@ module KK_microphys_module
     mu_Ncn_2_n    = mu_x_2(iiPDF_Ncn)
     sigma_w_1     = sigma_x_1(iiPDF_w)
     sigma_w_2     = sigma_x_2(iiPDF_w)
-    sigma_s_1     = sigma_x_1(iiPDF_s_mellor)
-    sigma_s_2     = sigma_x_2(iiPDF_s_mellor)
-    sigma_t_1     = sigma_x_1(iiPDF_t_mellor)
-    sigma_t_2     = sigma_x_2(iiPDF_t_mellor)
+    sigma_s_1     = sigma_x_1(iiPDF_chi)
+    sigma_s_2     = sigma_x_2(iiPDF_chi)
+    sigma_t_1     = sigma_x_1(iiPDF_eta)
+    sigma_t_2     = sigma_x_2(iiPDF_eta)
     sigma_rr_1_n  = sigma_x_1(iiPDF_rrain)
     sigma_rr_2_n  = sigma_x_2(iiPDF_rrain)
     sigma_Nr_1_n  = sigma_x_1(iiPDF_Nr)
@@ -1907,28 +1907,28 @@ module KK_microphys_module
     precip_frac_2 = hydromet_pdf_params%precip_frac_2
 
     ! Unpack corr_array_1 into correlations (1st PDF component).
-    corr_st_1     = corr_array_1(iiPDF_t_mellor, iiPDF_s_mellor)
-    corr_ws_1     = corr_array_1(iiPDF_w,iiPDF_s_mellor)
-    corr_srr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_s_mellor)
-    corr_sNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_s_mellor)
-    corr_sNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_s_mellor)
-    corr_trr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_t_mellor)
-    corr_tNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_t_mellor)
-    corr_tNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_st_1     = corr_array_1(iiPDF_eta, iiPDF_chi)
+    corr_ws_1     = corr_array_1(iiPDF_w,iiPDF_chi)
+    corr_srr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_chi)
+    corr_sNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_chi)
+    corr_sNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_chi)
+    corr_trr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_eta)
+    corr_tNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_eta)
+    corr_tNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_eta)
     corr_wrr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_w)
     corr_wNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_w)
     corr_wNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_w)
     corr_rrNr_1_n = corr_array_1(iiPDF_Nr, iiPDF_rrain)
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
-    corr_st_2     = corr_array_2(iiPDF_t_mellor, iiPDF_s_mellor)
-    corr_ws_2     = corr_array_2(iiPDF_w,iiPDF_s_mellor)
-    corr_srr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_s_mellor)
-    corr_sNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_s_mellor)
-    corr_sNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_s_mellor)
-    corr_trr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_t_mellor)
-    corr_tNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_t_mellor)
-    corr_tNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_st_2     = corr_array_2(iiPDF_eta, iiPDF_chi)
+    corr_ws_2     = corr_array_2(iiPDF_w,iiPDF_chi)
+    corr_srr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_chi)
+    corr_sNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_chi)
+    corr_sNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_chi)
+    corr_trr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_eta)
+    corr_tNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_eta)
+    corr_tNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_eta)
     corr_wrr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_w)
     corr_wNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_w)
     corr_wNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_w)

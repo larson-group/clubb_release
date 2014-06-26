@@ -330,17 +330,17 @@ module stats_zt
         icloud_frac2
 
     use stats_variables, only: &
-        is1, & 
-        is2, & 
-        istdev_s1, & 
-        istdev_s2, &
+        ichi_1, & 
+        ichi_2, & 
+        istdev_chi_1, & 
+        istdev_chi_2, &
         isp2,  &
-        istdev_t1, &
-        istdev_t2, &
-        icovar_st_1, &
-        icovar_st_2, &
-        icorr_st_1, &
-        icorr_st_2, &
+        istdev_eta_1, &
+        istdev_eta_2, &
+        icovar_chi_eta_1, &
+        icovar_chi_eta_2, &
+        icorr_chi_eta_1, &
+        icorr_chi_eta_2, &
         irrtthl, &
         icrt1, &
         icrt2, &
@@ -417,7 +417,7 @@ module stats_zt
 
     use stats_variables, only: &
         iC11_Skw_fnc, & ! Variable(s)
-        is_mellor, &
+        ichi, &
         iwp3_on_wp2_zt, &
         ia3_coef_zt
       
@@ -3485,35 +3485,35 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('s1')
-        is1 = k
+      case ('chi_1')
+        ichi_1 = k
 
-        call stat_assign( var_index=is1, var_name="s1", &
+        call stat_assign( var_index=ichi_1, var_name="chi_1", &
              var_description="pdf parameter: Mellor's s (extended liq) for component 1 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('s2')
-        is2 = k
+      case ('chi_2')
+        ichi_2 = k
 
-        call stat_assign( var_index=is2, var_name="s2", &
+        call stat_assign( var_index=ichi_2, var_name="chi_2", &
              var_description="pdf parameter: Mellor's s (extended liq) for component 2 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('stdev_s1')
-        istdev_s1 = k
+      case ('stdev_chi_1')
+        istdev_chi_1 = k
 
-        call stat_assign( var_index=istdev_s1, var_name="stdev_s1", &
-             var_description="pdf parameter: Std dev of s1 [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=istdev_chi_1, var_name="stdev_chi_1", &
+             var_description="pdf parameter: Std dev of chi_1 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('stdev_s2')
-        istdev_s2 = k
+      case ('stdev_chi_2')
+        istdev_chi_2 = k
 
-        call stat_assign( var_index=istdev_s2, var_name="stdev_s2", &
-             var_description="pdf parameter: Std dev of s2 [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=istdev_chi_2, var_name="stdev_chi_2", &
+             var_description="pdf parameter: Std dev of chi_2 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
@@ -3524,51 +3524,51 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('stdev_t1')
-        istdev_t1 = k
+      case ('stdev_eta_1')
+        istdev_eta_1 = k
 
-        call stat_assign( var_index=istdev_t1, var_name="stdev_t1", &
+        call stat_assign( var_index=istdev_eta_1, var_name="stdev_eta_1", &
              var_description="Standard dev. of t (1st PDF component) [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('stdev_t2')
-        istdev_t2 = k
+      case ('stdev_eta_2')
+        istdev_eta_2 = k
 
-        call stat_assign( var_index=istdev_t2, var_name="stdev_t2", &
+        call stat_assign( var_index=istdev_eta_2, var_name="stdev_eta_2", &
              var_description="Standard dev. of t (2nd PDF component) [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('covar_st_1')
-        icovar_st_1 = k
+      case ('covar_chi_eta_1')
+        icovar_chi_eta_1 = k
 
-        call stat_assign( var_index=icovar_st_1, var_name="covar_st_1", &
+        call stat_assign( var_index=icovar_chi_eta_1, var_name="covar_chi_eta_1", &
              var_description="Covariance of s and t (1st PDF component) [kg^2/kg^2]", &
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('covar_st_2')
-        icovar_st_2 = k
+      case ('covar_chi_eta_2')
+        icovar_chi_eta_2 = k
 
-        call stat_assign( var_index=icovar_st_2, var_name="covar_st_2", &
+        call stat_assign( var_index=icovar_chi_eta_2, var_name="covar_chi_eta_2", &
              var_description="Covariance of s and t (2nd PDF component) [kg^2/kg^2]", &
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('corr_st_1')
-        icorr_st_1 = k
+      case ('corr_chi_eta_1')
+        icorr_chi_eta_1 = k
 
-        call stat_assign( var_index=icorr_st_1, var_name="corr_st_1", &
+        call stat_assign( var_index=icorr_chi_eta_1, var_name="corr_chi_eta_1", &
                           var_description="Correlation between s and t" &
                           // " (1st PDF component) [-]", var_units="-", &
                           l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('corr_st_2')
-        icorr_st_2 = k
+      case ('corr_chi_eta_2')
+        icorr_chi_eta_2 = k
 
-        call stat_assign( var_index=icorr_st_2, var_name="corr_st_2", &
+        call stat_assign( var_index=icorr_chi_eta_2, var_name="corr_chi_eta_2", &
                           var_description="Correlation between s and t" &
                           // " (2nd PDF component) [-]", var_units="-", &
                           l_silhs=.false., grid_kind=zt )
@@ -3744,10 +3744,10 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('s_mellor')
-        is_mellor = k
+      case ('chi')
+        ichi = k
 
-        call stat_assign( var_index=is_mellor, var_name="s_mellor", &
+        call stat_assign( var_index=ichi, var_name="chi", &
              var_description="Mellor's s (extended liq) [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1

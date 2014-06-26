@@ -45,7 +45,7 @@ module estimate_scm_microphys_module
 
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, &
+      iiPDF_chi, &
       iiPDF_w
 
     use error_code, only: &
@@ -164,7 +164,7 @@ module estimate_scm_microphys_module
       Ncn_all_points    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      s_mellor_column    ! 's' (Mellor 1977)                    [kg/kg]
+      chi_column    ! 's' (Mellor 1977)                    [kg/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       rv_column,  & ! Vapor water                               [kg/kg]
@@ -191,7 +191,7 @@ module estimate_scm_microphys_module
       w_all_samples      ! Columns used to calculate covariances [m/s] 
 
     real( kind = dp ), pointer, dimension(:,:) :: &
-      s_mellor_all_points,  & ! num_samples values of 's' (Mellor 1977)      [kg/kg]
+      chi_all_points,  & ! num_samples values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! num_samples values of vertical velocity      [m/s]
 
     type(microphys_stats_vars_type), dimension(num_samples) :: &
@@ -211,7 +211,7 @@ module estimate_scm_microphys_module
     ! ---- Begin Code ----
 
     ! Mellor's 's' is hardwired elsewhere to be the first column
-    s_mellor_all_points => X_nl_all_levs(:,:,iiPDF_s_mellor)
+    chi_all_points => X_nl_all_levs(:,:,iiPDF_chi)
     w_all_points        => X_nl_all_levs(:,:,iiPDF_w)
 
     ! Assertion check
@@ -224,9 +224,9 @@ module estimate_scm_microphys_module
       in_cloud_points     = 0
       out_of_cloud_points = 0
       do sample = 1, num_samples, 1
-        if ( s_mellor_all_points(k_lh_start,sample) > 0._dp ) then
+        if ( chi_all_points(k_lh_start,sample) > 0._dp ) then
           in_cloud_points = in_cloud_points + 1
-        else if ( s_mellor_all_points(k_lh_start,sample) <= 0._dp ) then
+        else if ( chi_all_points(k_lh_start,sample) <= 0._dp ) then
           out_of_cloud_points = out_of_cloud_points + 1
         end if
       end do ! 1..num_samples
@@ -238,10 +238,10 @@ module estimate_scm_microphys_module
           write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
           write(fstderr,*)  "cloud fraction = ", cloud_frac(k_lh_start)
           write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
-          write(fstderr,'(4X,A,A)')  "s_mellor_all_points  ", "weight   "
+          write(fstderr,'(4X,A,A)')  "chi_all_points  ", "weight   "
           do sample = 1, num_samples, 1
             write(fstderr,'(I4,2G20.4)') &
-              sample, s_mellor_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
+              sample, chi_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
           end do
         end if ! clubb_at_least_debug_level 2
         stop "Fatal Error in est_single_column_tndcy "
@@ -295,10 +295,10 @@ module estimate_scm_microphys_module
 
     do sample = 1, num_samples
 
-      s_mellor_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
+      chi_column = real( chi_all_points(:,sample), kind = core_rknd )
 
-      where ( s_mellor_all_points(:,sample) > 0.0_dp )
-        rc_column = real( s_mellor_all_points(:,sample), kind = core_rknd )
+      where ( chi_all_points(:,sample) > 0.0_dp )
+        rc_column = real( chi_all_points(:,sample), kind = core_rknd )
       else where
         rc_column = 0.0_core_rknd
       end where
@@ -334,13 +334,13 @@ module estimate_scm_microphys_module
       if ( l_const_Nc_in_cloud ) then
          ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
          ! sample points.
-         where ( s_mellor_column > 0.0_core_rknd )
+         where ( chi_column > 0.0_core_rknd )
             Nc = Nc_in_cloud
          else where
             Nc = 0.0_core_rknd
          end where
       else ! Nc varies in-cloud
-         where ( s_mellor_column > 0.0_core_rknd )
+         where ( chi_column > 0.0_core_rknd )
             Nc = Ncn_all_points
          else where
             Nc = 0.0_core_rknd
@@ -352,7 +352,7 @@ module estimate_scm_microphys_module
            ( dt, nz, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
              exner, rho, cloud_frac, w_std_dev, & ! In
-             dzq, rc_column, Nc, s_mellor_column, rv_column, & ! In
+             dzq, rc_column, Nc, chi_column, rv_column, & ! In
              hydromet_all_points, & ! In
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
@@ -822,7 +822,7 @@ module estimate_scm_microphys_module
       core_rknd
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor        ! Variable(s)
+      iiPDF_chi        ! Variable(s)
 
     implicit none
 
@@ -843,8 +843,8 @@ module estimate_scm_microphys_module
 
     !----- Begin Code -----
 
-    where ( X_nl_all_levs(:,:,iiPDF_s_mellor) >= 0.0_dp )
-      lh_rc = real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind=core_rknd )
+    where ( X_nl_all_levs(:,:,iiPDF_chi) >= 0.0_dp )
+      lh_rc = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
     elsewhere
       lh_rc = 0.0_core_rknd
     end where

@@ -8,7 +8,7 @@ interface
   subroutine microphys_sub( dt, nnzp, &
                             l_latin_hypercube, thlm, wm, p_in_Pa, &
                             exner, rho, cloud_frac, w_std_dev, &
-                            dzq, rcm, Nc, s_mellor, rvm, hydromet, &
+                            dzq, rcm, Nc, chi, rvm, hydromet, &
                             hydromet_mc, hydromet_vel, Ncm_mc, &
                             rcm_mc, rvm_mc, thlm_mc, &
                             microphys_stats_zt, microphys_stats_sfc )
@@ -45,8 +45,8 @@ interface
 
     real( kind = core_rknd ), dimension(nnzp), intent(in) :: &
       rcm,           & ! Cloud water mixing ratio            [kg/kg]
-      Nc,           & ! Cloud droplet number conc. in cloud [#/kg]
-      s_mellor,      & ! The variable 's' from Mellor        [kg/kg]
+      Nc,            & ! Cloud droplet number conc. in cloud [#/kg]
+      chi,           & ! The variable 's' from Mellor        [kg/kg]
       rvm              ! Vapor water mixing ratio            [kg/kg]
 
     real( kind = core_rknd ), dimension(nnzp,hydromet_dim), intent(in) :: &

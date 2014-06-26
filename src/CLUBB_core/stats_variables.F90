@@ -581,25 +581,25 @@ module stats_variables
 !$omp    irsl1, irsl2, icloud_frac1, icloud_frac2 )
 
   integer, public :: & 
-     is1 = 0, &
-     is2 = 0, &
-     istdev_s1 = 0, & 
-     istdev_s2 = 0, &
+     ichi_1 = 0, &
+     ichi_2 = 0, &
+     istdev_chi_1 = 0, & 
+     istdev_chi_2 = 0, &
      isp2 = 0, &
-     istdev_t1 = 0, &
-     istdev_t2 = 0, &
-     icovar_st_1 = 0, &
-     icovar_st_2 = 0, &
-     icorr_st_1 = 0, &
-     icorr_st_2 = 0, &
+     istdev_eta_1 = 0, &
+     istdev_eta_2 = 0, &
+     icovar_chi_eta_1 = 0, &
+     icovar_chi_eta_2 = 0, &
+     icorr_chi_eta_1 = 0, &
+     icorr_chi_eta_2 = 0, &
      irrtthl = 0, &
      icrt1 = 0, &
      icrt2 = 0, &
      icthl1 = 0, &
      icthl2 = 0
-!$omp  threadprivate( is1, is2, istdev_s1, istdev_s2, isp2, &
-!$omp    istdev_t1, istdev_t2, icovar_st_1, icovar_st_2, icorr_st_1, &
-!$omp    icorr_st_2, irrtthl, icrt1, icrt2, icthl1, icthl2 )
+!$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, isp2, &
+!$omp    istdev_eta_1, istdev_eta_2, icovar_chi_eta_1, icovar_chi_eta_2, icorr_chi_eta_1, &
+!$omp    icorr_chi_eta_2, irrtthl, icrt1, icrt2, icthl1, icthl2 )
 
   integer, public :: & 
     iwp2_zt = 0, & 
@@ -628,8 +628,8 @@ module stats_variables
 !$omp  threadprivate( ihmp2_zt )
 
   integer, public :: &
-    is_mellor = 0
-!$omp threadprivate(is_mellor)
+    ichi = 0
+!$omp threadprivate(ichi)
 
   integer, target, allocatable, dimension(:), public :: & 
     isclrm,   & ! Passive scalar mean (1)
@@ -703,15 +703,15 @@ module stats_variables
     ilh_rvm = 0, &
     ilh_wm = 0, &
     ilh_cloud_frac = 0, &
-    ilh_s_mellor = 0, &
-    ilh_t_mellor = 0, &
+    ilh_chi = 0, &
+    ilh_eta = 0, &
     ilh_precip_frac = 0, &
     ilh_mixt_frac = 0
 
 !$omp threadprivate(ilh_rrainm, ilh_Nrm, ilh_ricem, ilh_Nim, ilh_rsnowm, ilh_Nsnowm, &
 !$omp   ilh_rgraupelm, ilh_Ngraupelm, &
 !$omp   ilh_thlm, ilh_rcm, ilh_Ncm, ilh_Ncnm, ilh_rvm, ilh_wm, ilh_cloud_frac, &
-!$omp   ilh_s_mellor, ilh_t_mellor, ilh_precip_frac, ilh_mixt_frac )
+!$omp   ilh_chi, ilh_eta, ilh_precip_frac, ilh_mixt_frac )
 
   integer, public :: &
     ilh_wp2_zt = 0, &

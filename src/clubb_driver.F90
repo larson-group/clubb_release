@@ -3028,8 +3028,8 @@ module clubb_driver
         l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
         l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
         l_input_wpthvp, l_input_radht, &
-        l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_s1, l_input_s2, &
-        l_input_stdev_s1, l_input_stdev_s2, l_input_rc1, l_input_rc2, &
+        l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
+        l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc1, l_input_rc2, &
         l_input_thvm, l_input_rrainm,l_input_Nrm,  & 
         l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
         l_input_thlm_forcing, l_input_rtm_forcing, & 
@@ -3126,10 +3126,10 @@ module clubb_driver
     l_input_thl1 = .true.
     l_input_thl2 = .true.
     l_input_mixt_frac = .true.
-    l_input_s1   = .true.
-    l_input_s2   = .true.
-    l_input_stdev_s1  = .true.
-    l_input_stdev_s2  = .true.
+    l_input_chi_1   = .true.
+    l_input_chi_2   = .true.
+    l_input_stdev_chi_1  = .true.
+    l_input_stdev_chi_2  = .true.
     l_input_rc1  = .true.
     l_input_rc2  = .true.
     l_input_radht = .true.

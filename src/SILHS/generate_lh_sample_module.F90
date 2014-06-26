@@ -32,10 +32,10 @@ module generate_lh_sample_module
                varnce_w1_in, varnce_w2_in, &
                thl1_in, thl2_in, varnce_thl1_in, varnce_thl2_in, &
                rt1_in, rt2_in, varnce_rt1_in, varnce_rt2_in, &
-               s1_in, s2_in, &
-               stdev_s1_in, stdev_s2_in, &
-               stdev_t1_in, stdev_t2_in, &
-               covar_st_1, covar_st_2, &
+               chi_1_in, chi_2_in, &
+               stdev_chi_1_in, stdev_chi_2_in, &
+               stdev_eta_1_in, stdev_eta_2_in, &
+               covar_chi_eta_1, covar_chi_eta_2, &
                crt1, crt2, cthl1, cthl2, &
                hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
                corr_array_cloud, corr_array_below, &
@@ -75,8 +75,8 @@ module generate_lh_sample_module
 
     use constants_clubb, only:  &
       max_mag_correlation, &  ! Constant
-      s_mellor_tol,  &  ! s tolerance in kg/kg
-      t_mellor_tol,  &  ! t tolerance in kg/kg
+      chi_tol,             &  ! s tolerance in kg/kg
+      eta_tol,             &  ! t tolerance in kg/kg
       rt_tol, &         ! rt tolerance in kg/kg
       thl_tol, &        ! thetal tolerance in K
       w_tol_sqd, &      ! w^2 tolerance in m^2/s^2
@@ -104,8 +104,8 @@ module generate_lh_sample_module
       iiPDF_Ni, &
       iiPDF_Nsnow, &
       iiPDF_Ngraupel, &
-      iiPDF_s_mellor, &
-      iiPDF_t_mellor, &
+      iiPDF_chi, &
+      iiPDF_eta, &
       iiPDF_w
 
     use latin_hypercube_arrays, only: &
@@ -178,14 +178,14 @@ module generate_lh_sample_module
       rt2_in,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
       varnce_rt1_in,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
       varnce_rt2_in,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      s1_in,          & ! Mean of s for 1st normal distribution               [kg/kg]
-      s2_in,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-      stdev_s1_in,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_s2_in,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      stdev_t1_in,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-      stdev_t2_in,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
-      covar_st_1,     & ! Covariance of s and t for 1st normal distribution   [kg/kg]
-      covar_st_2,     & ! Covariance of s and t for 2nd normal distribution   [kg/kg]
+      chi_1_in,          & ! Mean of s for 1st normal distribution               [kg/kg]
+      chi_2_in,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+      stdev_chi_1_in,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+      stdev_chi_2_in,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+      stdev_eta_1_in,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+      stdev_eta_2_in,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+      covar_chi_eta_1,     & ! Covariance of s and t for 1st normal distribution   [kg/kg]
+      covar_chi_eta_2,     & ! Covariance of s and t for 2nd normal distribution   [kg/kg]
       crt1,           & ! Coefficient for s'                                      [-]
       crt2,           & ! Coefficient for s'                                      [-]
       cthl1,          & ! Coefficient for s'                                    [1/K]
@@ -221,7 +221,7 @@ module generate_lh_sample_module
 
     real( kind = core_rknd ) :: &
       rtm,         & ! Mean total water mixing ratio                           [kg/kg]
-      s_mellor,    & ! Mean s_mellor (for when stdev_s1 < s_mellor_tol)        [kg/kg]
+      chi,         & ! Mean chi(chi) (for when stdev_chi_1 < chi_tol)        [kg/kg]
       w1,          & ! Mean of w for 1st normal distribution                     [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                     [m/s]
       varnce_w1,   & ! Variance of w for 1st normal distribution             [m^2/s^2]
@@ -234,14 +234,14 @@ module generate_lh_sample_module
       rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
       varnce_rt1,  & ! Variance of r_t for 1st normal distribution         [kg^2/kg^2]
       varnce_rt2,  & ! Variance of r_t for 2nd normal distribution         [kg^2/kg^2]
-      s1,          & ! Mean of s for 1st normal distribution                   [kg/kg]
-      s2,          & ! Mean of s for 2nd normal distribution                   [kg/kg]
-      t1,          & ! Mean of t for 1st normal distribution                   [kg/kg]
-      t2,          & ! Mean of t for 2nd normal distribution                   [kg/kg]
-      stdev_s1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
-      stdev_s2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
-      stdev_t1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
-      stdev_t2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      chi_1,          & ! Mean of s for 1st normal distribution                   [kg/kg]
+      chi_2,          & ! Mean of s for 2nd normal distribution                   [kg/kg]
+      eta_1,          & ! Mean of t for 1st normal distribution                   [kg/kg]
+      eta_2,          & ! Mean of t for 2nd normal distribution                   [kg/kg]
+      stdev_chi_1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
+      stdev_chi_2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
+      stdev_eta_1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      stdev_eta_2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
 
     ! Means of s, t, w, & hydrometeors for plumes 1 and 2
     real( kind = core_rknd ), dimension(d_variables) :: &
@@ -324,7 +324,7 @@ module generate_lh_sample_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    i = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )
+    i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
@@ -345,8 +345,8 @@ module generate_lh_sample_module
       rt2 = rt2_in
       thl1 = thl1_in
       thl2 = thl2_in
-      s1 = s1_in
-      s2 = s2_in
+      chi_1 = chi_1_in
+      chi_2 = chi_2_in
 
       ! Set variances
       varnce_w1 = varnce_w1_in
@@ -357,11 +357,11 @@ module generate_lh_sample_module
       varnce_thl2 = varnce_thl2_in
 
       ! Set standard deviation of s1/s2
-      stdev_s1 = stdev_s1_in
-      stdev_s2 = stdev_s2_in
+      stdev_chi_1 = stdev_chi_1_in
+      stdev_chi_2 = stdev_chi_2_in
 
-      stdev_t1 = stdev_t1_in
-      stdev_t2 = stdev_t2_in
+      stdev_eta_1 = stdev_eta_1_in
+      stdev_eta_2 = stdev_eta_2_in
 
     else ! don't fixed the correlation of s and t.
 
@@ -395,23 +395,23 @@ module generate_lh_sample_module
             varnce_thl2, thl2 ) ! Out
 
       ! Compute the mean of s1 and s2
-      s_mellor = s1_in * mixt_frac + (1.0_core_rknd-mixt_frac) * s2_in
+      chi = chi_1_in * mixt_frac + (1.0_core_rknd-mixt_frac) * chi_2_in
 
       ! Here the subroutine name is a little misleading since we're imposing the
       ! threshold on a standard deviation rather than a variance.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, s1_in, stdev_s1_in, & ! In
-            stdev_s1, s1 ) ! Out
+          ( chi, chi_tol, chi_1_in, stdev_chi_1_in, & ! In
+            stdev_chi_1, chi_1 ) ! Out
 
       ! See comment above.
       call set_min_varnce_and_mean &
-          ( s_mellor, s_mellor_tol, s2_in, stdev_s2_in, & ! In
-            stdev_s2, s2 ) ! Out
+          ( chi, chi_tol, chi_2_in, stdev_chi_2_in, & ! In
+            stdev_chi_2, chi_2 ) ! Out
 
       ! The mean of t is zero;  we set the standard deviation to allow the 
       ! matrix to be decomposed for the t element
-      stdev_t1 = max( stdev_t1_in, t_mellor_tol )
-      stdev_t2 = max( stdev_t2_in, t_mellor_tol )
+      stdev_eta_1 = max( stdev_eta_1_in, eta_tol )
+      stdev_eta_2 = max( stdev_eta_2_in, eta_tol )
 
     end if ! l_fix_s_t_correlations
 
@@ -532,20 +532,20 @@ module generate_lh_sample_module
     ! Means of s, t, w, Ncn, Nr, rr for Gaussians 1 and 2
 
     ! The mean of t is always 0.
-    t1 = 0._core_rknd
-    t2 = 0._core_rknd
+    eta_1 = 0._core_rknd
+    eta_2 = 0._core_rknd
 
-    mu1((/iiPDF_s_mellor,iiPDF_t_mellor,iiPDF_w/)) &
-      = (/ s1, t1, w1 /)
-    mu2((/iiPDF_s_mellor,iiPDF_t_mellor,iiPDF_w/)) &
-      = (/ s2, t2, w2 /)
+    mu1((/iiPDF_chi,iiPDF_eta,iiPDF_w/)) &
+      = (/ chi_1, eta_1, w1 /)
+    mu2((/iiPDF_chi,iiPDF_eta,iiPDF_w/)) &
+      = (/ chi_2, eta_2, w2 /)
 
     ! Define the variance of s and t
-    tp2_mellor_1 = real(stdev_t1, kind = dp)**2
-    tp2_mellor_2 = real(stdev_t2, kind = dp)**2
+    tp2_mellor_1 = real(stdev_eta_1, kind = dp)**2
+    tp2_mellor_2 = real(stdev_eta_2, kind = dp)**2
 
-    sp2_mellor_1 = real(stdev_s1, kind = dp)**2
-    sp2_mellor_2 = real(stdev_s2, kind = dp)**2
+    sp2_mellor_1 = real(stdev_chi_1, kind = dp)**2
+    sp2_mellor_2 = real(stdev_chi_2, kind = dp)**2
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
@@ -554,10 +554,10 @@ module generate_lh_sample_module
     !   a correlation of exactly 1 without using the modified method -dschanen 11 Oct 2012
     ! max_mag_correlation = 0.99_core_rknd in constants.F90
 
-    sptp_mellor_1 = real(min( max( -max_mag_correlation * stdev_t1 * stdev_s1, covar_st_1 ), &
-      max_mag_correlation * stdev_t1 * stdev_s1 ), kind = dp)
-    sptp_mellor_2 = real(min( max( -max_mag_correlation * stdev_t2 * stdev_s2, covar_st_2 ), &
-      max_mag_correlation * stdev_t2 * stdev_s2 ), kind = dp)
+    sptp_mellor_1 = real(min( max( -max_mag_correlation * stdev_eta_1 * stdev_chi_1, &
+      covar_chi_eta_1 ), max_mag_correlation * stdev_eta_1 * stdev_chi_1 ), kind = dp)
+    sptp_mellor_2 = real(min( max( -max_mag_correlation * stdev_eta_2 * stdev_chi_2, &
+      covar_chi_eta_2 ), max_mag_correlation * stdev_eta_2 * stdev_chi_2 ), kind = dp)
 
     if ( .not. l_fix_s_t_correlations ) then
 
@@ -577,14 +577,14 @@ module generate_lh_sample_module
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
 
       ! Setup the Sigma matrices for s,t
-      Sigma_stw_1(iiPDF_s_mellor,iiPDF_s_mellor) = sp2_mellor_1
-      Sigma_stw_1(iiPDF_t_mellor,iiPDF_t_mellor) = tp2_mellor_1
-      call set_lower_triangular_matrix_dp( 2, iiPDF_s_mellor, iiPDF_t_mellor, sptp_mellor_1, &
+      Sigma_stw_1(iiPDF_chi,iiPDF_chi) = sp2_mellor_1
+      Sigma_stw_1(iiPDF_eta,iiPDF_eta) = tp2_mellor_1
+      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, sptp_mellor_1, &
                                            Sigma_stw_1(1:2,1:2) )
 
-      Sigma_stw_2(iiPDF_s_mellor,iiPDF_s_mellor) = sp2_mellor_2
-      Sigma_stw_2(iiPDF_t_mellor,iiPDF_t_mellor) = tp2_mellor_2
-      call set_lower_triangular_matrix_dp( 2, iiPDF_s_mellor, iiPDF_t_mellor, sptp_mellor_2, &
+      Sigma_stw_2(iiPDF_chi,iiPDF_chi) = sp2_mellor_2
+      Sigma_stw_2(iiPDF_eta,iiPDF_eta) = tp2_mellor_2
+      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, sptp_mellor_2, &
                                            Sigma_stw_2(1:2,1:2) )
       ! Add the w element
       Sigma_stw_1(iiPDF_w,iiPDF_w) = real(varnce_w1, kind = dp)
@@ -646,17 +646,17 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
         end if
 
-        index1 = iiPDF_s_mellor
+        index1 = iiPDF_chi
         index2 = iiPDF_Nr
         ! Covariances involving s and Nr & rr
-        if ( stdev_s1 > s_mellor_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
+        if ( stdev_chi_1 > chi_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_sNr ) ! Out
 
           ! Covariance between s and rain number conc.
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_s1, sigma2_on_mu2_ip_array(index2), & ! In
+               ( corr_sNr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_sNr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -664,23 +664,23 @@ module generate_lh_sample_module
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and Nr
-          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
-          covar_tNr1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) &
-            * real(covar_sNr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
+          ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
+          covar_tNr1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) &
+            * real(covar_sNr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_t_mellor, iiPDF_Nr, real(covar_tNr1, kind=dp) , & ! In
+               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_tNr1, kind=dp) , & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
-        if ( stdev_s2 > s_mellor_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
+        if ( stdev_chi_2 > chi_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_sNr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_s2, sigma2_on_mu2_ip_array(index2), & ! In
+               ( corr_sNr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_sNr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -688,19 +688,19 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and Nr
-          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
-          covar_tNr2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) &
-            * real(covar_sNr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
+          ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
+          covar_tNr2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) &
+            * real(covar_sNr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_t_mellor, iiPDF_Nr, real(covar_tNr2, kind = dp), & ! In
+               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_tNr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
-        index1 = iiPDF_s_mellor
+        index1 = iiPDF_chi
         index2 = iiPDF_rrain
         ! Covariances involving s and Nr & rr
-        if ( stdev_s1 > s_mellor_tol .and. rrainm > real(rr_tol, kind = dp) ) then
+        if ( stdev_chi_1 > chi_tol .and. rrainm > real(rr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
@@ -708,31 +708,31 @@ module generate_lh_sample_module
 
           ! Covariance between s and rain water mixing ratio
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_s1, sigma2_on_mu2_ip_array(index2), & ! In
+               ( corr_srr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_srr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_s_mellor, iiPDF_rrain, real(covar_srr1, kind=dp), & ! In
+               ( d_variables, iiPDF_chi, iiPDF_rrain, real(covar_srr1, kind=dp), & ! In
                  Sigma_stw_1 ) ! In/out
 
           ! Approximate the covariance of t and rr
-          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
-          covar_trr1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) &
-            * real(covar_srr1, kind = dp) ) / real(stdev_s1, kind = dp)**2
+          ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
+          covar_trr1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) &
+            * real(covar_srr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_t_mellor, iiPDF_rrain, real(covar_trr1, kind = dp), & ! In
+               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_trr1, kind = dp), & ! In
                  Sigma_stw_1 ) ! In/out
         end if
 
-        if ( stdev_s2 > s_mellor_tol .and. rrainm > real( rr_tol, kind = dp ) ) then
+        if ( stdev_chi_2 > chi_tol .and. rrainm > real( rr_tol, kind = dp ) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
                  corr_srr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_s2, sigma2_on_mu2_ip_array(index2), & ! In
+               ( corr_srr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
                  covar_srr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
@@ -740,12 +740,12 @@ module generate_lh_sample_module
                  Sigma_stw_2 ) ! In/out
 
           ! Approximate the covariance of t and rr
-          ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
-          covar_trr2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) &
-            * real(covar_srr2, kind = dp) ) / real(stdev_s2, kind = dp)**2
+          ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
+          covar_trr2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) &
+            * real(covar_srr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_t_mellor, iiPDF_rrain, real(covar_trr2, kind = dp), & ! In
+               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_trr2, kind = dp), & ! In
                  Sigma_stw_2 ) ! In/out
         end if
 
@@ -754,41 +754,41 @@ module generate_lh_sample_module
 !     if ( iiPDF_Ncn > 0 ) then
 
       ! Covariances involving s and Ncn (currently disabled)
-!       corr_sNcn = corr_array(iiPDF_s_mellor,iiPDF_Ncn)
+!       corr_sNcn = corr_array(iiPDF_chi,iiPDF_Ncn)
 !       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( sigma2_on_mu2_ip_array(iiPDF_Ncn) )
 
-!       if ( stdev_s1 > s_mellor_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
+!       if ( stdev_chi_1 > chi_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
 !         ! The variable s is already Gaussian
 !         stdev_sNcn1 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNcn, &
-!                   stdev_s1, &
+!                   stdev_chi_1, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_1(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
-!         Sigma_stw_1(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn1, kind = dp)
+!         Sigma_stw_1(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
+!         Sigma_stw_1(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn1, kind = dp)
 
 !         ! Approximate the covariance of t and Ncn
-!         covar_tNcn1 = ( Sigma_stw_1(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNcn1 ) / stdev_s1**2
+!         covar_tNcn1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) * covar_sNcn1 ) / stdev_chi_1**2
 
-!         Sigma_stw_1(iiPDF_t_mellor,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_t_mellor) = real(covar_tNcn2, kind = dp)
+!         Sigma_stw_1(iiPDF_eta,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_eta) = real(covar_tNcn2, kind = dp)
 
 !       end if
 
-!       if ( stdev_s2 > s_mellor_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
+!       if ( stdev_chi_2 > chi_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
 !         stdev_sNcn2 = corr_gaus_LN_to_covar_gaus &
 !                 ( corr_sNcn, &
-!                   stdev_s2, &
+!                   stdev_chi_2, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_2(iiPDF_s_mellor,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_s_mellor) = real(stdev_sNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn2, kind = dp)
 
 !         ! Approximate the covariance of t and Ncn
-!         covar_tNcn2 = ( Sigma_stw_2(iiPDF_t_mellor,iiPDF_s_mellor) * covar_sNcn2 ) / stdev_s2**2
+!         covar_tNcn2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) * covar_sNcn2 ) / stdev_chi_2**2
 
-!         Sigma_stw_2(iiPDF_t_mellor,iiPDF_Ncn) = real(stNcn2, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_t_mellor) = real(stNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_eta,iiPDF_Ncn) = real(stNcn2, kind = dp)
+!         Sigma_stw_2(iiPDF_Ncn,iiPDF_eta) = real(stNcn2, kind = dp)
 
 !       end if
 
@@ -893,11 +893,11 @@ module generate_lh_sample_module
 
         Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
-        temp_3_elements = (/ real(stdev_s1, kind = dp), real(stdev_t1, kind = dp),&
+        temp_3_elements = (/ real(stdev_chi_1, kind = dp), real(stdev_eta_1, kind = dp),&
                              sqrt( real(varnce_w1, kind = dp) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
-        ! values of the standard deviation of s1, t1, and w1
+        ! values of the standard deviation of chi_1, eta_1, and w1
         call row_mult_lower_tri_matrix &
              ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
                Sigma1_Cholesky(1:3,1:3) ) ! Out
@@ -914,7 +914,7 @@ module generate_lh_sample_module
       if ( X_mixt_comp_one_lev == 2 ) then
         Sigma2_Cholesky = 0._dp
 
-        temp_3_elements = (/ real(stdev_s2, kind = dp), real(stdev_t2, kind = dp),&
+        temp_3_elements = (/ real(stdev_chi_2, kind = dp), real(stdev_eta_2, kind = dp),&
                              sqrt( real(varnce_w2, kind = dp) ) /)
 
         ! Multiply the first three elements of the variance matrix by the
@@ -997,8 +997,8 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, & ! Variable(s)
-      iiPDF_t_mellor, &
+      iiPDF_chi, & ! Variable(s)
+      iiPDF_eta, &
       iiPDF_w
 
     use matrix_operations, only: &
@@ -1082,7 +1082,7 @@ module generate_lh_sample_module
     ! ---- Begin Code ----
 
     ! Determine which variables are a lognormal distribution
-    i = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )
+    i = max( iiPDF_chi, iiPDF_eta, iiPDF_w )
     l_d_variable_lognormal(1:i) = .false. ! The 1st 3 variates
     l_d_variable_lognormal(i+1:d_variables) = .true.  ! Hydrometeors
 
@@ -1115,7 +1115,7 @@ module generate_lh_sample_module
       Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
 
       ! Multiply the first three elements of the variance matrix by the
-      ! values of the standard deviation of s1, t1, and w1
+      ! values of the standard deviation of chi_1, eta_1, and w1
       call row_mult_lower_tri_matrix &
            ( d_variables, real( sigma1, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
              Sigma1_Cholesky ) ! Out
@@ -1227,8 +1227,8 @@ module generate_lh_sample_module
 !----------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, & ! Variables
-      iiPDF_t_mellor
+      iiPDF_chi, & ! Variables
+      iiPDF_eta
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
@@ -1307,10 +1307,10 @@ module generate_lh_sample_module
 !            X_u_one_lev, rtp, thlp )
     call st_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
-                     real(mu1(iiPDF_s_mellor), kind = dp), & ! intent(in)
-                     real(mu2(iiPDF_s_mellor), kind = dp), & ! intent(in)
-                     X_nl_one_lev(iiPDF_s_mellor), & ! intent(in)
-                     X_nl_one_lev(iiPDF_t_mellor), & ! intent(in)
+                     real(mu1(iiPDF_chi), kind = dp), & ! intent(in)
+                     real(mu2(iiPDF_chi), kind = dp), & ! intent(in)
+                     X_nl_one_lev(iiPDF_chi), & ! intent(in)
+                     X_nl_one_lev(iiPDF_eta), & ! intent(in)
                      X_mixt_comp_one_lev, & ! intent(in)
                      lh_rt, lh_thl ) ! intent(out)
 
@@ -1325,7 +1325,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine rtpthlp_2_sptp( stdev_s_mellor, varnce_rt, varnce_thl, &
+  subroutine rtpthlp_2_sptp( stdev_chi, varnce_rt, varnce_thl, &
                              rrtthl_covar, crt, cthl, &
                              tp2, sp2, sptp ) ! Out
 
@@ -1355,7 +1355,7 @@ module generate_lh_sample_module
     ! Input Variables
 
     real( kind = dp ), intent(in) :: &
-      stdev_s_mellor, & ! Standard deviation of s_mellor [(kg/kg)^2]
+      stdev_chi, & ! Standard deviation of chi [(kg/kg)^2]
       varnce_rt,      & ! Variance of rt1/rt2
       varnce_thl,     & ! Variance of thl1/thl2
       rrtthl_covar,   & ! Covariance of rt, thl
@@ -1377,15 +1377,15 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    ! Simplified formula. Here we compute the variance t_mellor and covariance
-    ! of s_mellor and t_mellor using formula's derived from the matrix
+    ! Simplified formula. Here we compute the variance eta and covariance
+    ! of chi and eta using formula's derived from the matrix
     ! multiplication on Larson, et al. See figure 14.
     crt_sqd = crt**2
     cthl_sqd = cthl**2
     sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
     tp2 = crt_sqd * varnce_rt + 2._dp * crt * cthl * rrtthl_covar &
         + cthl_sqd * varnce_thl
-    sp2 = stdev_s_mellor**2
+    sp2 = stdev_chi**2
 
     ! Reduce the correlation of s and t Mellor if it's greater than 0.99
     sqrt_sp2_tp2 = sqrt( sp2 * tp2 )
@@ -1930,7 +1930,7 @@ module generate_lh_sample_module
   subroutine st_2_rtthl( rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
                          mu_s1, mu_s2, &
-                         s_mellor, t_mellor, X_mixt_comp_one_lev, &
+                         chi, eta, X_mixt_comp_one_lev, &
                          lh_rt, lh_thl )
 ! Description:
 !   Converts from s, t variables to rt, thl.  Also sets a limit on the value
@@ -1972,8 +1972,8 @@ module generate_lh_sample_module
 
     ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
     real( kind = dp ), intent(in) :: &
-      s_mellor, &  ! [kg/kg]
-      t_mellor     ! [-]
+      chi, &  ! [kg/kg]
+      eta     ! [-]
 
     integer, intent(in) :: &
       X_mixt_comp_one_lev ! Whether we're in the first or second mixture component
@@ -2003,37 +2003,37 @@ module generate_lh_sample_module
 !                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
     if ( X_mixt_comp_one_lev == 1 ) then
-      lh_rt  = real( rt1 + (0.5_dp/crt1)*(s_mellor-mu_s1) +  & 
-                             (0.5_dp/crt1)*t_mellor, kind=core_rknd )
+      lh_rt  = real( rt1 + (0.5_dp/crt1)*(chi-mu_s1) +  & 
+                             (0.5_dp/crt1)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl1)*(s_mellor-mu_s1) & 
-                     + (0.5_dp/cthl1)*t_mellor
+      lh_dev_thl_lim = (-0.5_dp/cthl1)*(chi-mu_s1) & 
+                     + (0.5_dp/cthl1)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
       lh_thl = real( thl1 + lh_dev_thl_lim, kind=core_rknd )
 
         ! Old code
-!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(s_mellor-mu_s1) +  & 
-!                              (0.5_dp/cthl1_clip)*t_mellor, kind=core_rknd )
+!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(chi-mu_s1) +  & 
+!                              (0.5_dp/cthl1_clip)*eta, kind=core_rknd )
 
     else if ( X_mixt_comp_one_lev == 2 ) then
         ! mixture fraction 2
-      lh_rt = real( rt2 + (0.5_dp/crt2)*(s_mellor-mu_s2) +  & 
-                             (0.5_dp/crt2)*t_mellor, kind=core_rknd )
+      lh_rt = real( rt2 + (0.5_dp/crt2)*(chi-mu_s2) +  & 
+                             (0.5_dp/crt2)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl2)*(s_mellor-mu_s2) & 
-                     + (0.5_dp/cthl2)*t_mellor
+      lh_dev_thl_lim = (-0.5_dp/cthl2)*(chi-mu_s2) & 
+                     + (0.5_dp/cthl2)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
       lh_thl = real( thl2 + lh_dev_thl_lim, kind=core_rknd )
 
       ! Old code
-!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(s_mellor-mu_s2) +  & 
-!                           (0.5_dp/cthl2_clip)*t_mellor, kind=core_rknd )
+!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(chi-mu_s2) +  & 
+!                           (0.5_dp/cthl2_clip)*eta, kind=core_rknd )
     else
       stop "Error determining mixture fraction in st_2_rtthl"
 
@@ -2081,11 +2081,11 @@ module generate_lh_sample_module
   end subroutine log_sqd_normalized
 
 !-------------------------------------------------------------------------------
-  subroutine construct_gaus_LN_element( corr_sy, stdev_s, y_sigma2_on_mu2, &
+  subroutine construct_gaus_LN_element( corr_sy, stdev_chi, y_sigma2_on_mu2, &
                                         covar_sy )
 
 ! Description:
-!   Compute the covariance of s_mellor and a lognormal variate,
+!   Compute the covariance of chi and a lognormal variate,
 !   converting from lognormal to gaussian space as required.
 !
 ! References:
@@ -2099,7 +2099,7 @@ module generate_lh_sample_module
 
     real( kind = core_rknd ), intent(in) :: &
       corr_sy,         & ! Correlation between x and y                       [-]
-      stdev_s,         & ! Standard deviation of s                       [kg/kg]
+      stdev_chi,         & ! Standard deviation of s(chi)                [kg/kg]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 over mu_y^2 (ith PDF comp.) ip  [-]
 
     real( kind = core_rknd ), intent(out) :: covar_sy
@@ -2110,7 +2110,7 @@ module generate_lh_sample_module
 
     y_sigma2_on_mu2_gaus = sigma_LN_to_sigma_gaus( y_sigma2_on_mu2 )
 
-    covar_sy = corr_gaus_LN_to_covar_gaus( corr_sy, stdev_s, y_sigma2_on_mu2_gaus )
+    covar_sy = corr_gaus_LN_to_covar_gaus( corr_sy, stdev_chi, y_sigma2_on_mu2_gaus )
 
     return
   end subroutine construct_gaus_LN_element
@@ -2222,8 +2222,8 @@ module generate_lh_sample_module
 !   None.
 !-------------------------------------------------------------------------------
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, & ! Variable(s)
-      iiPDF_t_mellor, &
+      iiPDF_chi, & ! Variable(s)
+      iiPDF_eta, &
       iiPDF_w
 
     use matrix_operations, only: &
@@ -2264,7 +2264,7 @@ module generate_lh_sample_module
 
     ! LN_index is the location of the first variate which is lognormally
     ! distributed (e.g. rain water mixing ratio).
-    LN_index = max( iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w )+1
+    LN_index = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1
 
     corr_stw_matrix = 0.0_dp ! Initialize to 0
 
@@ -2276,8 +2276,8 @@ module generate_lh_sample_module
     ! Set the correlation of s and t. For this part of the code we assume a
     ! fixed correlation in order to only compute the Cholesky factorization
     ! once per simulation.
-    index1 = iiPDF_s_mellor
-    index2 = iiPDF_t_mellor
+    index1 = iiPDF_chi
+    index2 = iiPDF_eta
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
@@ -2289,7 +2289,7 @@ module generate_lh_sample_module
 
     ! The correlation between w and s,t is typically not fixed either, but for
     ! the reasons listed above we compute it using a fixed value.
-    index1 = iiPDF_s_mellor
+    index1 = iiPDF_chi
     index2 = iiPDF_w
 
     call get_lower_triangular_matrix &
@@ -2300,7 +2300,7 @@ module generate_lh_sample_module
            corr_stw_matrix ) ! In/out
 
     ! Obtain the fixed value for the correlation between t and w.
-    index1 = iiPDF_t_mellor
+    index1 = iiPDF_eta
     index2 = iiPDF_w
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
@@ -2330,8 +2330,8 @@ module generate_lh_sample_module
     ! Correlations involving s, t, w and the lognormal variates
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
-           ( d_variables, iiPDF_s_mellor, & ! In
-             iiPDF_t_mellor, iiPDF_w, index1, & ! In
+           ( d_variables, iiPDF_chi, & ! In
+             iiPDF_eta, iiPDF_w, index1, & ! In
              sigma2_on_mu2_ip_array, corr_array, & ! In
              corr_stw_matrix ) ! In/Out
     end do
@@ -2403,8 +2403,8 @@ module generate_lh_sample_module
   end subroutine add_corr_to_matrix_LN_LN
 
 !-------------------------------------------------------------------------------
-  subroutine add_corr_to_matrix_gaus_LN( d_variables, iiPDF_s_mellor, &
-                                         iiPDF_t_mellor, iiPDF_w, index1, &
+  subroutine add_corr_to_matrix_gaus_LN( d_variables, iiPDF_chi, &
+                                         iiPDF_eta, iiPDF_w, index1, &
                                          sigma2_on_mu2_ip_array, corr_array, &
                                          corr_stw_matrix )
 ! Description:
@@ -2427,8 +2427,8 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: &
       d_variables, & ! Total variates
-      iiPDF_s_mellor, & ! Index of s_mellor
-      iiPDF_t_mellor, & ! Index of t_mellor
+      iiPDF_chi, & ! Index of chi
+      iiPDF_eta, & ! Index of eta
       iiPDF_w, &        ! Index of w (vertical velocity)
       index1           ! Index of the lognormal variate
 
@@ -2446,18 +2446,18 @@ module generate_lh_sample_module
     real( kind = core_rknd ) :: &
       corr_sx, &  ! Correlation between s and a lognormal variate
       corr_wx, &  ! Correlation between w and a lognormal variate
-      covar_sx, & ! Lognormal covariance of s_mellor and x
+      covar_sx, & ! Lognormal covariance of chi and x
       covar_wx    ! Lognormal covariance of w and x
 
     real( kind = dp ) :: &
-      covar_tx    ! Lognormal covariance of t_mellor and x
+      covar_tx    ! Lognormal covariance of eta and x
 
     ! ---- Begin Code ----
 
     ! Correlations involving s and lognormal variate x
 
     call get_lower_triangular_matrix &
-         ( d_variables, iiPDF_s_mellor, index1, corr_array, & ! In
+         ( d_variables, iiPDF_chi, index1, corr_array, & ! In
            corr_sx ) ! Out
 
     if ( corr_sx /= 0._core_rknd ) then
@@ -2471,19 +2471,19 @@ module generate_lh_sample_module
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiPDF_s_mellor, index1, real(covar_sx, kind = dp), & ! In
+         ( d_variables, iiPDF_chi, index1, real(covar_sx, kind = dp), & ! In
            corr_stw_matrix ) ! In/out
 
     if ( corr_sx /= 0._core_rknd ) then
       ! Approximate the covariance of t and x
-      ! This formula relies on the fact that iiPDF_s_mellor < iiPDF_t_mellor
-      covar_tx = corr_stw_matrix(iiPDF_t_mellor,iiPDF_s_mellor) * real(covar_sx, kind = dp)
+      ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
+      covar_tx = corr_stw_matrix(iiPDF_eta,iiPDF_chi) * real(covar_sx, kind = dp)
     else
       covar_tx = 0._dp
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiPDF_t_mellor, index1, covar_tx, & ! In
+         ( d_variables, iiPDF_eta, index1, covar_tx, & ! In
            corr_stw_matrix ) ! In/out
 
     ! Correlations involving w and lognormal variate x

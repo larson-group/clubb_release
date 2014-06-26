@@ -50,8 +50,8 @@ module microphys_init_cleanup
         l_arctic_nucl,                & ! Use MPACE observations (Morrison)
         l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
         l_fix_pgam,                   & ! Fix pgam (Morrison)
-        l_fix_s_t_correlations,       & ! Use a fixed correlation for s and t Mellor (SILHS)
-        l_lh_vert_overlap,            & ! Assume maximum overlap for s_mellor (SILHS)
+        l_fix_s_t_correlations,       & ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
+        l_lh_vert_overlap,            & ! Assume maximum overlap for chi(s_mellor) (SILHS)
         l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
         lh_microphys_calls,           & ! # of SILHS samples to call the microphysics with
         lh_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats

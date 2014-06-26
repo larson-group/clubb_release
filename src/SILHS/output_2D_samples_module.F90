@@ -216,7 +216,7 @@ module output_2D_samples_module
       X_mixt_comp_all_levs ! Either 1 or 2
 
     integer, intent(in), dimension(num_samples) :: &
-      p_matrix_s_element ! P matrix at the s_mellor column
+      p_matrix_s_element ! P matrix at the chi(s_mellor) column
 
     integer :: sample, j, k
 

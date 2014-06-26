@@ -13,7 +13,7 @@ module morrison_microphys_module
              ( dt, nz, &
                l_latin_hypercube, thlm, wm_zt, p_in_Pa, &
                exner, rho, cloud_frac, w_std_dev, &
-               dzq, rcm, Ncm, s_mellor, rvm, hydromet, &
+               dzq, rcm, Ncm, chi, rvm, hydromet, &
                hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                rcm_mc, rvm_mc, thlm_mc, &
                microphys_stats_zt, microphys_stats_sfc )
@@ -245,7 +245,7 @@ module morrison_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rcm,          & ! Cloud water mixing ratio                  [kg/kg]
       Ncm,          & ! Grid mean value for cloud droplet conc.    [#/kg]
-      s_mellor,     & ! The variable 's' from Mellor              [kg/kg]
+      chi,     & ! The variable 's' from Mellor              [kg/kg]
       rvm             ! Vapor water mixing ratio                  [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -501,7 +501,7 @@ module morrison_microphys_module
 
     ! Get rid of compiler warnings
     if ( .false. ) then
-       print *, "s_mellor = ", s_mellor
+       print *, "chi = ", chi
     endif
 
     call microphys_stats_alloc( nz, num_output_zt, microphys_stats_zt )

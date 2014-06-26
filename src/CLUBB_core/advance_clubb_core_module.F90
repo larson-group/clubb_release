@@ -979,18 +979,18 @@ module advance_clubb_core_module
       ! of subgrid clouds
       do k=1, gr%nz
 
-        if ( pdf_params(k)%s1/pdf_params(k)%stdev_s1 > -1._core_rknd ) then
+        if ( pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd ) then
 
           ! Recalculate cloud_frac and r_c for each PDF component
 
           call calc_vert_avg_cf_component &
-               ( gr%nz, k, gr%zt, pdf_params%s1, &                    ! Intent(in)
-                 pdf_params%stdev_s1, (/(s_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
+               ( gr%nz, k, gr%zt, pdf_params%chi_1, &                    ! Intent(in)
+                 pdf_params%stdev_chi_1, (/(s_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
                  cloud_frac1_refined, rc1_refined )                   ! Intent(out)
 
           call calc_vert_avg_cf_component & 
-               ( gr%nz, k, gr%zt, pdf_params%s2, &                     ! Intent(in)
-                 pdf_params%stdev_s2, (/(s_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
+               ( gr%nz, k, gr%zt, pdf_params%chi_2, &                     ! Intent(in)
+                 pdf_params%stdev_chi_2, (/(s_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
                  cloud_frac2_refined, rc2_refined )                    ! Intent(out)
 
           cloud_frac_refined = compute_weighted_average &
@@ -1019,7 +1019,7 @@ module advance_clubb_core_module
           ! output to stats!
           cloud_frac_refined = cloud_frac(k)
           rcm_refined = rcm(k)
-        end if ! pdf_params(k)%s1/pdf_params(k)%stdev_s1 > -1._core_rknd
+        end if ! pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd
 
         ! Stats output
         if ( l_stats_samp ) then
@@ -2489,20 +2489,20 @@ module advance_clubb_core_module
         cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
         cloud_frac2_zt, & ! Cloud fraction for 2nd normal distribution              [-]
-        s1_zm,          & ! Mean of s for 1st normal distribution               [kg/kg]
-        s1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
-        s2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-        s2_zt,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-        stdev_s1_zm       ! Standard deviation of s for 1st normal distribution [kg/kg]
+        chi_1_zm,          & ! Mean of s for 1st normal distribution               [kg/kg]
+        chi_1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
+        chi_2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+        chi_2_zt,          & ! Mean of s for 2nd normal distribution               [kg/kg]
+        stdev_chi_1_zm       ! Standard deviation of s for 1st normal distribution [kg/kg]
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        stdev_s1_zt,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-        stdev_s2_zm,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-        stdev_s2_zt,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-        stdev_t1_zm,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-        stdev_t1_zt,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-        stdev_t2_zm,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
-        stdev_t2_zt,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+        stdev_chi_1_zt,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
+        stdev_chi_2_zm,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+        stdev_chi_2_zt,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
+        stdev_eta_1_zm,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+        stdev_eta_1_zt,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
+        stdev_eta_2_zm,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+        stdev_eta_2_zt,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
         rrtthl_zm,      & ! Within-a-normal correlation of r_t and th_l             [-]
         rrtthl_zt,      & ! Within-a-normal correlation of r_t and th_l             [-]
         alpha_thl_zm,   & ! Factor relating to normalized variance for th_l         [-]
@@ -2547,12 +2547,12 @@ module advance_clubb_core_module
         rsl2_zt        = pdf_params%rsl2
         cloud_frac1_zt = pdf_params%cloud_frac1
         cloud_frac2_zt = pdf_params%cloud_frac2
-        s1_zt          = pdf_params%s1
-        s2_zt          = pdf_params%s2
-        stdev_s1_zt    = pdf_params%stdev_s1
-        stdev_s2_zt    = pdf_params%stdev_s2
-        stdev_t1_zt    = pdf_params%stdev_t1
-        stdev_t2_zt    = pdf_params%stdev_t2
+        chi_1_zt          = pdf_params%chi_1
+        chi_2_zt          = pdf_params%chi_2
+        stdev_chi_1_zt    = pdf_params%stdev_chi_1
+        stdev_chi_2_zt    = pdf_params%stdev_chi_2
+        stdev_eta_1_zt    = pdf_params%stdev_eta_1
+        stdev_eta_2_zt    = pdf_params%stdev_eta_2
         rrtthl_zt      = pdf_params%rrtthl
         alpha_thl_zt   = pdf_params%alpha_thl
         alpha_rt_zt    = pdf_params%alpha_rt
@@ -2589,12 +2589,12 @@ module advance_clubb_core_module
           rsl2_zm        = pdf_params_zm%rsl2
           cloud_frac1_zm = pdf_params_zm%cloud_frac1
           cloud_frac2_zm = pdf_params_zm%cloud_frac2
-          s1_zm          = pdf_params_zm%s1
-          s2_zm          = pdf_params_zm%s2
-          stdev_s1_zm    = pdf_params_zm%stdev_s1
-          stdev_s2_zm    = pdf_params_zm%stdev_s2
-          stdev_t1_zm    = pdf_params_zm%stdev_t1
-          stdev_t2_zm    = pdf_params_zm%stdev_t2
+          chi_1_zm          = pdf_params_zm%chi_1
+          chi_2_zm          = pdf_params_zm%chi_2
+          stdev_chi_1_zm    = pdf_params_zm%stdev_chi_1
+          stdev_chi_2_zm    = pdf_params_zm%stdev_chi_2
+          stdev_eta_1_zm    = pdf_params_zm%stdev_eta_1
+          stdev_eta_2_zm    = pdf_params_zm%stdev_eta_2
           rrtthl_zm      = pdf_params_zm%rrtthl
           alpha_thl_zm   = pdf_params_zm%alpha_thl
           alpha_rt_zm    = pdf_params_zm%alpha_rt
@@ -2676,18 +2676,18 @@ module advance_clubb_core_module
           cloud_frac1_zm(gr%nz) = 0.0_core_rknd
           cloud_frac2_zm        = zt2zm( pdf_params%cloud_frac2 )
           cloud_frac2_zm(gr%nz) = 0.0_core_rknd
-          s1_zm                 = zt2zm( pdf_params%s1 )
-          s1_zm(gr%nz)          = 0.0_core_rknd
-          s2_zm                 = zt2zm( pdf_params%s2 )
-          s2_zm(gr%nz)          = 0.0_core_rknd
-          stdev_s1_zm           = zt2zm( pdf_params%stdev_s1 )
-          stdev_s1_zm(gr%nz)    = 0.0_core_rknd
-          stdev_s2_zm           = zt2zm( pdf_params%stdev_s2 )
-          stdev_s2_zm(gr%nz)    = 0.0_core_rknd
-          stdev_t1_zm           = zt2zm( pdf_params%stdev_t1 )
-          stdev_t1_zm(gr%nz)    = 0.0_core_rknd
-          stdev_t2_zm           = zt2zm( pdf_params%stdev_t2 )
-          stdev_t2_zm(gr%nz)    = 0.0_core_rknd
+          chi_1_zm                 = zt2zm( pdf_params%chi_1 )
+          chi_1_zm(gr%nz)          = 0.0_core_rknd
+          chi_2_zm                 = zt2zm( pdf_params%chi_2 )
+          chi_2_zm(gr%nz)          = 0.0_core_rknd
+          stdev_chi_1_zm           = zt2zm( pdf_params%stdev_chi_1 )
+          stdev_chi_1_zm(gr%nz)    = 0.0_core_rknd
+          stdev_chi_2_zm           = zt2zm( pdf_params%stdev_chi_2 )
+          stdev_chi_2_zm(gr%nz)    = 0.0_core_rknd
+          stdev_eta_1_zm           = zt2zm( pdf_params%stdev_eta_1 )
+          stdev_eta_1_zm(gr%nz)    = 0.0_core_rknd
+          stdev_eta_2_zm           = zt2zm( pdf_params%stdev_eta_2 )
+          stdev_eta_2_zm(gr%nz)    = 0.0_core_rknd
           rrtthl_zm             = zt2zm( pdf_params%rrtthl )
           rrtthl_zm(gr%nz)      = 0.0_core_rknd
           alpha_thl_zm          = zt2zm( pdf_params%alpha_thl )
@@ -2762,15 +2762,15 @@ module advance_clubb_core_module
         pdf_params%rsl2        = trapezoid_zt( rsl2_zt, rsl2_zm )
         pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
         pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
-        pdf_params%s1          = trapezoid_zt( s1_zt, s1_zm )
-        pdf_params%s2          = trapezoid_zt( s2_zt, s2_zm )
+        pdf_params%chi_1          = trapezoid_zt( chi_1_zt, chi_1_zm )
+        pdf_params%chi_2          = trapezoid_zt( chi_2_zt, chi_2_zm )
         pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )
         pdf_params%alpha_thl   = trapezoid_zt( alpha_thl_zt, alpha_thl_zm )
         pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
-        pdf_params%stdev_s1    = trapezoid_zt( stdev_s1_zt, stdev_s1_zm )
-        pdf_params%stdev_s2    = trapezoid_zt( stdev_s2_zt, stdev_s2_zm )
-        pdf_params%stdev_t1    = trapezoid_zt( stdev_t1_zt, stdev_t1_zm )
-        pdf_params%stdev_t2    = trapezoid_zt( stdev_t2_zt, stdev_t2_zm )
+        pdf_params%stdev_chi_1    = trapezoid_zt( stdev_chi_1_zt, stdev_chi_1_zm )
+        pdf_params%stdev_chi_2    = trapezoid_zt( stdev_chi_2_zt, stdev_chi_2_zm )
+        pdf_params%stdev_eta_1    = trapezoid_zt( stdev_eta_1_zt, stdev_eta_1_zm )
+        pdf_params%stdev_eta_2    = trapezoid_zt( stdev_eta_2_zt, stdev_eta_2_zm )
       end if
 
       ! End of trapezoidal rule
@@ -2989,8 +2989,8 @@ module advance_clubb_core_module
 
       do k = 1, gr%nz
 
-        s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%s1 + &
-                    (1.0_core_rknd-pdf_params(k)%mixt_frac) * pdf_params(k)%s2
+        s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%chi_1 + &
+                    (1.0_core_rknd-pdf_params(k)%mixt_frac) * pdf_params(k)%chi_2
 
       end do
 
@@ -3073,8 +3073,8 @@ module advance_clubb_core_module
 
             write(fstderr,*) "At grid level k = ", k
             write(fstderr,*) "pdf_params(k)%mixt_frac = ", pdf_params(k)%mixt_frac
-            write(fstderr,*) "pdf_params(k)%s1 = ", pdf_params(k)%s1
-            write(fstderr,*) "pdf_params(k)%s2 = ", pdf_params(k)%s2
+            write(fstderr,*) "pdf_params(k)%chi_1 = ", pdf_params(k)%chi_1
+            write(fstderr,*) "pdf_params(k)%chi_2 = ", pdf_params(k)%chi_2
             write(fstderr,*) "cloud_frac(k) = ", cloud_frac(k)
             write(fstderr,*) "rcm(k) = ", rcm(k)
             write(fstderr,*) "rcm(k+1) = ", rcm(k+1)

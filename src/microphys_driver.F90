@@ -309,7 +309,7 @@ module microphys_driver
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       wtmp,    & ! Standard dev. of w                   [m/s]
-      s_mellor   ! The variable 's' in Mellor (1977)    [kg/kg]
+      chi   ! The variable 's' in Mellor (1977)    [kg/kg]
 
     integer :: k    ! Loop index
 
@@ -379,8 +379,8 @@ module microphys_driver
     aeromass = aeromass_value
 
     ! Determine 's' from Mellor (1977)
-    s_mellor(:) = pdf_params(:)%mixt_frac * pdf_params(:)%s1 &
-                  + ( one - pdf_params(:)%mixt_frac ) * pdf_params(:)%s2
+    chi(:) = pdf_params(:)%mixt_frac * pdf_params(:)%chi_1 &
+                  + ( one - pdf_params(:)%mixt_frac ) * pdf_params(:)%chi_2
 
     ! Compute standard deviation of vertical velocity in the grid column
     wtmp(:) = sqrt( wp2_zt(:) )
@@ -498,7 +498,7 @@ module microphys_driver
                ( dt, gr%nz, &
                  l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
                  exner, rho, cloud_frac, wtmp, &
-                 delta_zt, rcm, Ncm_microphys, s_mellor, rvm, hydromet, &
+                 delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, &
                  rcm_mc, rvm_mc, thlm_mc, &
                  microphys_stats_zt, microphys_stats_sfc )
@@ -591,7 +591,7 @@ module microphys_driver
              call KK_local_microphys( dt, gr%nz, l_latin_hypercube_input,     & ! In
                                       thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
                                       cloud_frac, wtmp, delta_zt, rcm,        & ! In
-                                      Ncm_microphys, s_mellor, rvm, hydromet, & ! In
+                                      Ncm_microphys, chi, rvm, hydromet, & ! In
                                       hydromet_mc, hydromet_vel_zt,           & ! Out
                                       Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
                                       microphys_stats_zt,                     & ! Out

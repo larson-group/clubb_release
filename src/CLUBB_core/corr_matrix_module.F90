@@ -10,10 +10,10 @@ module corr_matrix_module
 
   ! Latin hypercube indices / Correlation array indices
   integer, public :: &
-    iiPDF_s_mellor = -1, &
-    iiPDF_t_mellor = -1, &
+    iiPDF_chi = -1, &
+    iiPDF_eta = -1, &
     iiPDF_w        = -1
-!$omp threadprivate(iiPDF_s_mellor, iiPDF_t_mellor, iiPDF_w)
+!$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
 
   integer, public :: &
    iiPDF_rrain    = -1, &
@@ -189,10 +189,10 @@ module corr_matrix_module
 
     ii_def_corr = -1
 
-      if (iiPDF_x == iiPDF_s_mellor) then
+      if (iiPDF_x == iiPDF_chi) then
          ii_def_corr = ii_s
 
-      elseif (iiPDF_x == iiPDF_t_mellor) then
+      elseif (iiPDF_x == iiPDF_eta) then
         ii_def_corr = ii_t
 
       elseif (iiPDF_x == iiPDF_w) then
@@ -323,7 +323,7 @@ module corr_matrix_module
     allocate( retVars(1:nCols) )
 
     ! Initializing to zero means that correlations we don't have
-    ! (e.g. Nc and any variable other than s_mellor ) are assumed to be 0.
+    ! (e.g. Nc and any variable other than chi ) are assumed to be 0.
     corr_array(:,:) = 0.0_core_rknd
 
     ! Set main diagonal to 1
@@ -381,10 +381,10 @@ module corr_matrix_module
     select case( trim(var_name) )
 
     case( "s" )
-      i = iiPDF_s_mellor
+      i = iiPDF_chi
 
     case( "t" )
-      i = iiPDF_t_mellor
+      i = iiPDF_eta
 
     case( "w" )
       i = iiPDF_w
@@ -460,8 +460,8 @@ module corr_matrix_module
 
     !----- Begin Code -----
 
-    iiPDF_s_mellor = 1 ! Extended liquid water mixing ratio
-    iiPDF_t_mellor = 2 ! 't' orthogonal to 's'
+    iiPDF_chi      = 1 ! Extended liquid water mixing ratio
+    iiPDF_eta      = 2 ! 't' orthogonal to 's'
     iiPDF_w        = 3 ! vertical velocity
     iiPDF_Ncn      = 4 ! Cloud nuclei concentration or extended Nc.
 

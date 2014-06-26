@@ -47,7 +47,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor    ! Variables
+      iiPDF_chi    ! Variables
 
     use latin_hypercube_arrays, only: &
       height_time_matrix ! Variables
@@ -162,7 +162,7 @@ module latin_hypercube_driver_module
     real(kind=dp) :: mean_weight
 
     real(kind=dp), dimension(num_samples) :: &
-      X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
+      X_u_dp1_k_lh_start, X_u_chi_k_lh_start
 
     real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
@@ -296,9 +296,9 @@ module latin_hypercube_driver_module
       do sample = 1, num_samples
 
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
-        ! component 2), and the uniform sample for s_mellor
+        ! component 2), and the uniform sample for chi
         X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_s_mellor)
+        X_u_chi_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_chi)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -315,7 +315,7 @@ module latin_hypercube_driver_module
 
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
-            if ( p_matrix(sample,iiPDF_s_mellor) < ( num_samples / 2 ) ) then
+            if ( p_matrix(sample,iiPDF_chi) < ( num_samples / 2 ) ) then
 
               l_cloudy_sample = .false.
               lh_sample_point_weights(sample) = 2._core_rknd* &
@@ -331,15 +331,15 @@ module latin_hypercube_driver_module
                    ( l_cloudy_sample, pdf_params(k_lh_start)%cloud_frac1, & ! In
                      pdf_params(k_lh_start)%cloud_frac2, pdf_params(k_lh_start)%mixt_frac, & !In
                      cloud_frac_thresh, & ! In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! In/out
 
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
                    ( l_cloudy_sample, & ! In
-                     p_matrix(sample,iiPDF_s_mellor), num_samples, & ! In 
+                     p_matrix(sample,iiPDF_chi), num_samples, & ! In 
                      pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
                      pdf_params(k_lh_start)%mixt_frac, & !In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! In/out
+                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! In/out
 
             end if
 
@@ -369,11 +369,11 @@ module latin_hypercube_driver_module
       end if ! clubb_at_least_debug_level 1
 
       do sample = 1, num_samples
-        ! Correlate s_mellor vertically
+        ! Correlate chi vertically
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_s_mellor_k_lh_start(sample), X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiPDF_s_mellor) ) ! Out
+               X_u_chi_k_lh_start(sample), X_vert_corr, & ! In
+               X_u_all_levs(:,sample,iiPDF_chi) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
         call compute_arb_overlap &
@@ -382,9 +382,9 @@ module latin_hypercube_driver_module
                X_u_all_levs(:,sample,d_variables+1) ) ! Out
 
         ! Use these lines to make all variates vertically correlated, using the
-        ! same correlation we used above for s_mellor and the d+1 variate
+        ! same correlation we used above for chi and the d+1 variate
         do ivar = 1, d_variables
-          if ( ivar /= iiPDF_s_mellor ) then
+          if ( ivar /= iiPDF_chi ) then
             X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
                  ( nz, k_lh_start, &  ! In
@@ -436,7 +436,7 @@ module latin_hypercube_driver_module
         call assert_check_half_cloudy &
              ( num_samples, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiPDF_s_mellor) )
+               X_u_all_levs(k_lh_start,:,iiPDF_chi) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
     end if ! l_lh_cloud_weighted_sampling
@@ -478,10 +478,10 @@ module latin_hypercube_driver_module
                pdf_params(k)%varnce_thl1, pdf_params(k)%varnce_thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%varnce_rt1, pdf_params(k)%varnce_rt2, & ! In
-               pdf_params(k)%s1, pdf_params(k)%s2, & ! In
-               pdf_params(k)%stdev_s1, pdf_params(k)%stdev_s2, & ! In
-               pdf_params(k)%stdev_t1, pdf_params(k)%stdev_t2, & ! In
-               pdf_params(k)%covar_st_1, pdf_params(k)%covar_st_2, & ! In
+               pdf_params(k)%chi_1, pdf_params(k)%chi_2, & ! In
+               pdf_params(k)%stdev_chi_1, pdf_params(k)%stdev_chi_2, & ! In
+               pdf_params(k)%stdev_eta_1, pdf_params(k)%stdev_eta_2, & ! In
+               pdf_params(k)%covar_chi_eta_1, pdf_params(k)%covar_chi_eta_2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                hydromet(k,:), sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
@@ -504,10 +504,10 @@ module latin_hypercube_driver_module
                pdf_params(k)%varnce_thl1, pdf_params(k)%varnce_thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
                pdf_params(k)%varnce_rt1, pdf_params(k)%varnce_rt2, & ! In
-               pdf_params(k)%s1, pdf_params(k)%s2, & ! In
-               pdf_params(k)%stdev_s1, pdf_params(k)%stdev_s2, & ! In
-               pdf_params(k)%stdev_t1, pdf_params(k)%stdev_t2, & ! In
-               pdf_params(k)%covar_st_1, pdf_params(k)%covar_st_2, & ! In
+               pdf_params(k)%chi_1, pdf_params(k)%chi_2, & ! In
+               pdf_params(k)%stdev_chi_1, pdf_params(k)%stdev_chi_2, & ! In
+               pdf_params(k)%stdev_eta_1, pdf_params(k)%stdev_eta_2, & ! In
+               pdf_params(k)%covar_chi_eta_1, pdf_params(k)%covar_chi_eta_2, & ! In
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                hydromet(k,:), sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
@@ -562,7 +562,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor    ! Variables
+      iiPDF_chi    ! Variables
 
     use latin_hypercube_arrays, only: &
       height_time_matrix ! Variables
@@ -682,7 +682,7 @@ module latin_hypercube_driver_module
     real(kind=dp) :: mean_weight
 
     real(kind=dp), dimension(num_samples) :: &
-      X_u_dp1_k_lh_start, X_u_s_mellor_k_lh_start
+      X_u_dp1_k_lh_start, X_u_chi_k_lh_start
 
     real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
@@ -822,9 +822,9 @@ module latin_hypercube_driver_module
       do sample = 1, num_samples
 
         ! Get the uniform sample of d+1 (telling us if we're in component 1 or
-        ! component 2), and the uniform sample for s_mellor
+        ! component 2), and the uniform sample for chi
         X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_s_mellor_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_s_mellor)
+        X_u_chi_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_chi)
 
         if ( l_lh_cloud_weighted_sampling ) then
 
@@ -841,7 +841,7 @@ module latin_hypercube_driver_module
 
             ! Detect which half of the sample points are in clear air and which half are in
             ! the cloudy air
-            if ( p_matrix(sample,iiPDF_s_mellor) < ( num_samples / 2 ) ) then
+            if ( p_matrix(sample,iiPDF_chi) < ( num_samples / 2 ) ) then
 
               l_cloudy_sample = .false.
               lh_sample_point_weights(sample) = 2._core_rknd* &
@@ -857,15 +857,15 @@ module latin_hypercube_driver_module
                    ( l_cloudy_sample, pdf_params(k_lh_start)%cloud_frac1, & ! In
                      pdf_params(k_lh_start)%cloud_frac2, pdf_params(k_lh_start)%mixt_frac, & !In
                      cloud_frac_thresh, & ! In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! Out
+                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! Out
 
             else ! Transpose and scale the points to be in or out of cloud
               call choose_X_u_scaled &
                    ( l_cloudy_sample, & ! In
-                     p_matrix(sample,iiPDF_s_mellor), num_samples, & ! In
+                     p_matrix(sample,iiPDF_chi), num_samples, & ! In
                      pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
                      pdf_params(k_lh_start)%mixt_frac, & !In
-                     X_u_dp1_k_lh_start(sample), X_u_s_mellor_k_lh_start(sample) ) ! Out
+                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! Out
 
             end if
 
@@ -895,11 +895,11 @@ module latin_hypercube_driver_module
       end if ! clubb_at_least_debug_level 1
 
       do sample = 1, num_samples
-        ! Correlate s_mellor vertically
+        ! Correlate chi vertically
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_s_mellor_k_lh_start(sample), X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiPDF_s_mellor) ) ! Out
+               X_u_chi_k_lh_start(sample), X_vert_corr, & ! In
+               X_u_all_levs(:,sample,iiPDF_chi) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
         call compute_arb_overlap &
@@ -916,9 +916,9 @@ module latin_hypercube_driver_module
                X_u_all_levs(:,sample,d_variables+2) )
 
         ! Use these lines to make all variates vertically correlated, using the
-        ! same correlation we used above for s_mellor and the d+1 variate
+        ! same correlation we used above for chi and the d+1 variate
         do ivar = 1, d_variables
-          if ( ivar /= iiPDF_s_mellor ) then
+          if ( ivar /= iiPDF_chi ) then
             X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
                  ( nz, k_lh_start, &  ! In
@@ -985,7 +985,7 @@ module latin_hypercube_driver_module
         call assert_check_half_cloudy &
              ( num_samples, pdf_params(k_lh_start)%cloud_frac1, &
                pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiPDF_s_mellor) )
+               X_u_all_levs(k_lh_start,:,iiPDF_chi) )
 
       end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
     end if ! l_lh_cloud_weighted_sampling
@@ -1209,8 +1209,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, & ! Variables
-      iiPDF_t_mellor, &
+      iiPDF_chi, & ! Variables
+      iiPDF_eta, &
       iiPDF_w, &
       iiPDF_rrain, & 
       iiPDF_rice, &
@@ -1270,13 +1270,13 @@ module latin_hypercube_driver_module
       allocate( variable_names(d_variables+2), variable_descriptions(d_variables+2), &
                 variable_units(d_variables+2) )
 
-      variable_names(iiPDF_s_mellor)        = "s_mellor"
-      variable_descriptions(iiPDF_s_mellor) = "The variable 's' from Mellor 1977"
-      variable_units(iiPDF_s_mellor)        = "kg/kg"
+      variable_names(iiPDF_chi)        = "chi"
+      variable_descriptions(iiPDF_chi) = "The variable 's' from Mellor 1977"
+      variable_units(iiPDF_chi)        = "kg/kg"
 
-      variable_names(iiPDF_t_mellor)        = "t_mellor"
-      variable_descriptions(iiPDF_t_mellor) = "The variable 't' from Mellor 1977"
-      variable_units(iiPDF_t_mellor)        = "kg/kg"
+      variable_names(iiPDF_eta)        = "eta"
+      variable_descriptions(iiPDF_eta) = "The variable 't' from Mellor 1977"
+      variable_units(iiPDF_eta)        = "kg/kg"
 
       variable_names(iiPDF_w)        = "w"
       variable_descriptions(iiPDF_w) = "Vertical velocity"
@@ -1357,11 +1357,11 @@ module latin_hypercube_driver_module
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
 
-      variable_names(iiPDF_s_mellor)        = "s_mellor"
-      variable_descriptions(iiPDF_s_mellor) = "Uniform dist of the variable 's' from Mellor 1977"
+      variable_names(iiPDF_chi)        = "chi"
+      variable_descriptions(iiPDF_chi) = "Uniform dist of the variable 's' from Mellor 1977"
 
-      variable_names(iiPDF_t_mellor)        = "t_mellor"
-      variable_descriptions(iiPDF_t_mellor) = "Uniform dist of the variable 't' from Mellor 1977"
+      variable_names(iiPDF_eta)        = "eta"
+      variable_descriptions(iiPDF_eta) = "Uniform dist of the variable 't' from Mellor 1977"
 
       variable_names(iiPDF_w)        = "w"
       variable_descriptions(iiPDF_w) = "Uniform dist of the vertical velocity"
@@ -1476,7 +1476,7 @@ module latin_hypercube_driver_module
   subroutine choose_X_u_reject &
              ( l_cloudy_sample, cloud_frac1, &
               cloud_frac2, mixt_frac, cloud_frac_thresh, &
-              X_u_dp1_element, X_u_s_mellor_element )
+              X_u_dp1_element, X_u_chi_element )
 
 ! Description:
 !   Find a clear or cloudy point for sampling using the rejection method.
@@ -1516,7 +1516,7 @@ module latin_hypercube_driver_module
 
     ! Output Variables
     real(kind=dp), intent(out) :: &
-      X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
+      X_u_dp1_element, X_u_chi_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
     real(kind=core_rknd) :: cloud_frac_i
@@ -1541,7 +1541,7 @@ module latin_hypercube_driver_module
     call genrand_real3( rand )
     X_u_dp1_element      = real(rand, kind = dp)
     call genrand_real3( rand )
-    X_u_s_mellor_element = real(rand, kind = dp)
+    X_u_chi_element = real(rand, kind = dp)
     ! Here we use the rejection method to find a value in either the
     ! clear or cloudy part of the grid box
     do i = 1, itermax
@@ -1556,10 +1556,10 @@ module latin_hypercube_driver_module
 !       X_mixt_comp_one_lev = 2
       end if
 
-      if ( X_u_s_mellor_element >= 1._dp-real(cloud_frac_i, kind = dp) .and. l_cloudy_sample ) then
+      if ( X_u_chi_element >= 1._dp-real(cloud_frac_i, kind = dp) .and. l_cloudy_sample ) then
         ! If we're looking for the cloudy part of the grid box, then exit this loop
         exit
-      else if ( X_u_s_mellor_element < ( 1._dp-real(cloud_frac_i, kind = dp) ) &
+      else if ( X_u_chi_element < ( 1._dp-real(cloud_frac_i, kind = dp) ) &
                 .and. .not. l_cloudy_sample ) then
         ! If we're looking for the clear part of the grid box, then exit this loop
         exit
@@ -1577,7 +1577,7 @@ module latin_hypercube_driver_module
           call genrand_real3( rand )
           X_u_dp1_element      = real(rand, kind = dp)
           call genrand_real3( rand )
-          X_u_s_mellor_element = real(rand, kind = dp)
+          X_u_chi_element = real(rand, kind = dp)
         end if
       end if ! Looking for a clear or cloudy point
 
@@ -1592,7 +1592,7 @@ module latin_hypercube_driver_module
                p_matrix_element, num_samples, &
                cloud_frac1, cloud_frac2, &
                mixt_frac, &
-               X_u_dp1_element, X_u_s_mellor_element )
+               X_u_dp1_element, X_u_chi_element )
 
 ! Description:
 !   Find a clear or cloudy point for sampling.
@@ -1630,7 +1630,7 @@ module latin_hypercube_driver_module
 
     ! Output Variables
     real(kind=dp), intent(out) :: &
-      X_u_dp1_element, X_u_s_mellor_element ! Elements from X_u (uniform dist.)
+      X_u_dp1_element, X_u_chi_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
     real(kind=dp) :: cloud_frac_i, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
@@ -1668,12 +1668,12 @@ module latin_hypercube_driver_module
       ! Scale and translate sample point to reside in cloud
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
-        X_u_s_mellor_element = 1._dp + 2._dp &
+        X_u_chi_element = 1._dp + 2._dp &
           * (real(p_matrix_element, kind = dp)/real(num_samples, kind = dp) &
           - 1._dp) * cloud_frac_i &
           + real(rand, kind = dp) * ( 2._dp/real( num_samples, kind=dp ) ) * cloud_frac_i
       else
-        X_u_s_mellor_element = cloud_frac_i * real(rand, kind = dp) &
+        X_u_chi_element = cloud_frac_i * real(rand, kind = dp) &
           + (1._dp-cloud_frac_i)
       end if
 
@@ -1701,12 +1701,12 @@ module latin_hypercube_driver_module
       ! Scale and translate sample point to reside in clear air (no cloud)
       if ( l_use_p_matrix ) then
         ! New formula based on p_matrix
-        X_u_s_mellor_element = real( p_matrix_element, kind=dp ) &
+        X_u_chi_element = real( p_matrix_element, kind=dp ) &
           * (2._dp/real(num_samples, kind = dp) ) * (1._dp-cloud_frac_i) &
           + (2._dp/real(num_samples, kind = dp) * (1._dp-cloud_frac_i) &
           * real(rand, kind = dp))
       else
-        X_u_s_mellor_element = (1._dp-cloud_frac_i) &
+        X_u_chi_element = (1._dp-cloud_frac_i) &
           * real(rand, kind = dp)
       end if
 
@@ -1787,7 +1787,7 @@ module latin_hypercube_driver_module
                                   X_u_one_var_k_lh_start, vert_corr, &
                                   X_u_one_var_all_levs )
 ! Description:
-!   Re-computes X_u (uniform sample) for a single variate (e.g. s_mellor) using
+!   Re-computes X_u (uniform sample) for a single variate (e.g. chi) using
 !   an arbitrary correlation specified by the input vert_corr variable (which
 !   can vary with height).
 !   This is an improved algorithm that doesn't require us to convert from a
@@ -1815,7 +1815,7 @@ module latin_hypercube_driver_module
       k_lh_start   ! Starting k level          [-]
 
     real(kind=dp), intent(in) :: &
-      X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. s_mellor) at k_lh_start [-]
+      X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. chi) at k_lh_start [-]
 
     real(kind=dp), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
@@ -1901,7 +1901,7 @@ module latin_hypercube_driver_module
   subroutine assert_check_half_cloudy &
              ( num_samples, cloud_frac1, &
                cloud_frac2, X_mixt_comp_k_lh_start, &
-               X_u_s_mellor_k_lh_start )
+               X_u_chi_k_lh_start )
 ! Description:
 !   Verify that half the points are in cloud if cloud weighted sampling is
 !   enabled and other conditions are met. We stop rather than exiting gracefully
@@ -1931,7 +1931,7 @@ module latin_hypercube_driver_module
       X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
 
     real(kind=dp), dimension(num_samples), intent(in) :: &
-      X_u_s_mellor_k_lh_start   ! Uniform distribution for s_mellor at k_lh_start [-]
+      X_u_chi_k_lh_start   ! Uniform distribution for chi at k_lh_start [-]
 
     ! Local Variables
     real(kind = core_rknd) :: cloud_frac_i
@@ -1950,7 +1950,7 @@ module latin_hypercube_driver_module
       else
         cloud_frac_i = cloud_frac2
       end if
-      if ( X_u_s_mellor_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_i, kind = dp) ) then
+      if ( X_u_chi_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_i, kind = dp) ) then
         number_cloudy_samples = number_cloudy_samples + 1
       else
         ! Do nothing, the air is clear
@@ -1958,8 +1958,8 @@ module latin_hypercube_driver_module
     end do
     if ( number_cloudy_samples /= ( num_samples / 2 ) ) then
       write(fstderr,*) "Error, half of all samples aren't in cloud"
-      write(fstderr,*) "X_u s_mellor random = ", &
-        X_u_s_mellor_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
+      write(fstderr,*) "X_u chi random = ", &
+        X_u_chi_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
         "cloudy samples =", number_cloudy_samples
       write(fstderr,*) "cloud_frac1 = ", cloud_frac1
       write(fstderr,*) "cloud_frac2 = ", cloud_frac2
@@ -2049,9 +2049,9 @@ module latin_hypercube_driver_module
       ilh_rvm, &
       ilh_wm, &
       ilh_cloud_frac, &
-      ilh_s_mellor, &
+      ilh_chi, &
       ilh_sp2, &
-      ilh_t_mellor
+      ilh_eta
 
     use stats_variables, only: &
       ilh_wp2_zt, &  ! Variable(s)
@@ -2086,8 +2086,8 @@ module latin_hypercube_driver_module
       iiNgraupelm
 
     use corr_matrix_module, only: &
-      iiPDF_s_mellor, & ! Variable(s)
-      iiPDF_t_mellor, &
+      iiPDF_chi, & ! Variable(s)
+      iiPDF_eta, &
       iiPDF_w, &
       iiPDF_Ncn
 
@@ -2158,9 +2158,9 @@ module latin_hypercube_driver_module
       lh_Ncp2_zt,    & ! Average value of the variance of the LH est. of Nc.            [#^2/kg^2]
       lh_Ncnp2_zt,   & ! Average value of the variance of the LH est. of Ncn.           [#^2/kg^2]
       lh_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
-      lh_s_mellor,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
-      lh_t_mellor,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
-      lh_sp2           ! Average value of the variance of the LH est. of s_mellor       [kg/kg]
+      lh_chi,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
+      lh_eta,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
+      lh_sp2           ! Average value of the variance of the LH est. of chi       [kg/kg]
 
 
     real(kind=core_rknd) :: xtmp
@@ -2170,7 +2170,7 @@ module latin_hypercube_driver_module
     ! ---- Begin Code ----
 
     ! Clip 's' from Mellor to obtain cloud-water mixing ratio
-    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind=core_rknd ) )
+    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd ) )
 
     if ( l_stats_samp ) then
 
@@ -2274,7 +2274,7 @@ module latin_hypercube_driver_module
       if ( ilh_cloud_frac > 0 ) then
         lh_cloud_frac(:) = 0._core_rknd
         do sample = 1, num_samples
-          where ( X_nl_all_levs(:,sample,iiPDF_s_mellor) > 0._dp )
+          where ( X_nl_all_levs(:,sample,iiPDF_chi) > 0._dp )
             lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0_core_rknd * lh_sample_point_weights(sample)
           end where
         end do
@@ -2283,31 +2283,31 @@ module latin_hypercube_driver_module
         call stat_update_var( ilh_cloud_frac, lh_cloud_frac, lh_zt )
       end if
 
-      ! Latin hypercube estimate of s_mellor
-      if ( ilh_s_mellor > 0 ) then
-        lh_s_mellor(1:nz) &
+      ! Latin hypercube estimate of chi
+      if ( ilh_chi > 0 ) then
+        lh_chi(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_s_mellor), &
+                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_chi), &
                                      kind = core_rknd ) )
-        call stat_update_var( ilh_s_mellor, lh_s_mellor, lh_zt )
+        call stat_update_var( ilh_chi, lh_chi, lh_zt )
       end if
 
-      ! Latin hypercube estimate of variance of s_mellor
+      ! Latin hypercube estimate of variance of chi
       if ( ilh_sp2 > 0 ) then
         lh_sp2(1:nz) &
         = compute_sample_variance( nz, num_samples, &
-                                   real( X_nl_all_levs(:,:,iiPDF_s_mellor), kind = core_rknd ), &
-                                   lh_sample_point_weights, lh_s_mellor(1:nz) )
+                                   real( X_nl_all_levs(:,:,iiPDF_chi), kind = core_rknd ), &
+                                   lh_sample_point_weights, lh_chi(1:nz) )
         call stat_update_var( ilh_sp2, lh_sp2, lh_zt )
       end if
 
-      ! Latin hypercube estimate of t_mellor
-      if ( ilh_t_mellor > 0 ) then
-        lh_t_mellor(1:nz) &
+      ! Latin hypercube estimate of eta
+      if ( ilh_eta > 0 ) then
+        lh_eta(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_t_mellor), &
+                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_eta), &
                                      kind = core_rknd ) )
-        call stat_update_var( ilh_t_mellor, lh_t_mellor, lh_zt )
+        call stat_update_var( ilh_eta, lh_eta, lh_zt )
       end if
 
       if ( ilh_wp2_zt > 0 ) then

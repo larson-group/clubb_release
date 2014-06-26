@@ -229,7 +229,7 @@ module diagnose_correlations_module
         Nr_tol,       &
         Ncn_tol,      &
         w_tol,        & ! [m/s]
-        s_mellor_tol    ! [kg/kg]
+        chi_tol    ! [kg/kg]
 
     implicit none
 
@@ -270,8 +270,8 @@ module diagnose_correlations_module
       wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
 
     real( kind = core_rknd ) :: &
-      s_mellor_m,      & ! Mean of s_mellor                              [kg/kg]
-      stdev_s_mellor     ! Standard deviation of s_mellor                [kg/kg]
+      chi_m,      & ! Mean of chi (s_mellor)                             [kg/kg]
+      stdev_chi     ! Standard deviation of chi (s_mellor)               [kg/kg]
 
     integer :: k ! vertical loop iterator
 
@@ -282,22 +282,22 @@ module diagnose_correlations_module
 
     do k = 1, nz
 
-       s_mellor_m &
-       = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%s1, &
-                    pdf_params(k)%s2 )
+       chi_m &
+       = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%chi_1, &
+                    pdf_params(k)%chi_2 )
 
-       stdev_s_mellor &
+       stdev_chi &
        = sqrt( pdf_params(k)%mixt_frac &
-               * ( ( pdf_params(k)%s1 - s_mellor_m )**2 &
-                     + pdf_params(k)%stdev_s1**2 ) &
+               * ( ( pdf_params(k)%chi_1 - chi_m )**2 &
+                     + pdf_params(k)%stdev_chi_1**2 ) &
              + ( one - pdf_params(k)%mixt_frac ) &
-               * ( ( pdf_params(k)%s2 - s_mellor_m )**2 &
-                     + pdf_params(k)%stdev_s2**2 ) &
+               * ( ( pdf_params(k)%chi_2 - chi_m )**2 &
+                     + pdf_params(k)%stdev_chi_2**2 ) &
              )
 
        corr_sw(k) &
-       = calc_w_corr( wpsp_zt(k), stdev_w(k), stdev_s_mellor, &
-                      w_tol, s_mellor_tol )
+       = calc_w_corr( wpsp_zt(k), stdev_w(k), stdev_chi, &
+                      w_tol, chi_tol )
 
        corr_wrr(k) &
        = calc_w_corr( wprrp_zt(k), stdev_w(k), sigma_rr_1, w_tol, rr_tol )
@@ -387,7 +387,7 @@ module diagnose_correlations_module
     do k = 1, nz
       wpsp_zm(k) = pdf_params(k)%mixt_frac &
                    * ( one - pdf_params(k)%mixt_frac ) &
-                   * ( pdf_params(k)%s1 - pdf_params(k)%s2 ) &
+                   * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
                    * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
     enddo
 
@@ -926,7 +926,7 @@ module diagnose_correlations_module
 
     use corr_matrix_module, only: &
       iiPDF_w,           & ! Variable(s)
-      iiPDF_s_mellor,    &
+      iiPDF_chi,    &
       iiPDF_rrain,       &
       iiPDF_Nr,          &
       iiPDF_Ncn
@@ -951,7 +951,7 @@ module diagnose_correlations_module
 
     ! ----- Begin Code -----
 
-      corr_array(iiPDF_w, iiPDF_s_mellor, :) = corr_sw
+      corr_array(iiPDF_w, iiPDF_chi, :) = corr_sw
       corr_array(iiPDF_w, iiPDF_rrain, :) = corr_wrr
       corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
       corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
@@ -974,8 +974,8 @@ module diagnose_correlations_module
 
     use corr_matrix_module, only: &
         iiPDF_w,        & ! Variable(s)
-        iiPDF_s_mellor, &
-        iiPDF_t_mellor, &
+        iiPDF_chi, &
+        iiPDF_eta, &
         iiPDF_rrain,    &
         iiPDF_Nr,       &
         iiPDF_Ncn
@@ -1008,30 +1008,30 @@ module diagnose_correlations_module
 
     ! ---- Begin Code ----
 
-!    corr_ws   = corr_array(iiPDF_w, iiPDF_s_mellor)
+!    corr_ws   = corr_array(iiPDF_w, iiPDF_chi)
 !    corr_wrr  = corr_array(iiPDF_w, iiPDF_rrain)
 !    corr_wNr  = corr_array(iiPDF_w, iiPDF_Nr)
 !    corr_wNcn = corr_array(iiPDF_w, iiPDF_Ncn)
-!    corr_st   = corr_array(iiPDF_s_mellor, iiPDF_t_mellor)
-!    corr_srr  = corr_array(iiPDF_s_mellor, iiPDF_rrain)
-!    corr_sNr  = corr_array(iiPDF_s_mellor, iiPDF_Nr)
-!    corr_sNcn = corr_array(iiPDF_s_mellor, iiPDF_Ncn)
-!    corr_trr  = corr_array(iiPDF_t_mellor, iiPDF_rrain)
-!    corr_tNr  = corr_array(iiPDF_t_mellor, iiPDF_Nr)
-!    corr_tNcn = corr_array(iiPDF_t_mellor, iiPDF_Ncn)
+!    corr_st   = corr_array(iiPDF_chi, iiPDF_eta)
+!    corr_srr  = corr_array(iiPDF_chi, iiPDF_rrain)
+!    corr_sNr  = corr_array(iiPDF_chi, iiPDF_Nr)
+!    corr_sNcn = corr_array(iiPDF_chi, iiPDF_Ncn)
+!    corr_trr  = corr_array(iiPDF_eta, iiPDF_rrain)
+!    corr_tNr  = corr_array(iiPDF_eta, iiPDF_Nr)
+!    corr_tNcn = corr_array(iiPDF_eta, iiPDF_Ncn)
 !    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
-    corr_ws   = corr_array(iiPDF_s_mellor, iiPDF_w)
+    corr_ws   = corr_array(iiPDF_chi, iiPDF_w)
     corr_wrr  = corr_array(iiPDF_rrain, iiPDF_w)
     corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
     corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
-    corr_st   = corr_array(iiPDF_t_mellor, iiPDF_s_mellor)
-    corr_srr  = corr_array(iiPDF_rrain, iiPDF_s_mellor)
-    corr_sNr  = corr_array(iiPDF_Nr, iiPDF_s_mellor)
-    corr_sNcn = corr_array(iiPDF_Ncn, iiPDF_s_mellor)
-    corr_trr  = corr_array(iiPDF_rrain, iiPDF_t_mellor)
-    corr_tNr  = corr_array(iiPDF_Nr, iiPDF_t_mellor)
-    corr_tNcn = corr_array(iiPDF_Ncn, iiPDF_t_mellor)
+    corr_st   = corr_array(iiPDF_eta, iiPDF_chi)
+    corr_srr  = corr_array(iiPDF_rrain, iiPDF_chi)
+    corr_sNr  = corr_array(iiPDF_Nr, iiPDF_chi)
+    corr_sNcn = corr_array(iiPDF_Ncn, iiPDF_chi)
+    corr_trr  = corr_array(iiPDF_rrain, iiPDF_eta)
+    corr_tNr  = corr_array(iiPDF_Nr, iiPDF_eta)
+    corr_tNcn = corr_array(iiPDF_Ncn, iiPDF_eta)
     corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
   end subroutine unpack_correlations

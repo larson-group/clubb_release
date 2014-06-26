@@ -292,8 +292,8 @@ module constants_clubb
     w_tol        = 2.e-2_core_rknd, & ! [m/s]
     thl_tol      = 1.e-2_core_rknd, & ! [K]
     rt_tol       = 1.e-8_core_rknd, & ! [kg/kg]
-    s_mellor_tol = 1.e-8_core_rknd, & ! [kg/kg]
-    t_mellor_tol = s_mellor_tol       ! [kg/kg]
+    chi_tol = 1.e-8_core_rknd, & ! [kg/kg]
+    eta_tol = chi_tol       ! [kg/kg]
 
   ! Tolerances for use by the monatonic flux limiter.
   ! rt_tol_mfl is larger than rt_tol. rt_tol is extremely small

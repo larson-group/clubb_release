@@ -544,7 +544,7 @@ module KK_upscaled_means
         trivar_NLL_mean_const_all
 
     use constants_clubb, only: &
-        s_mellor_tol,        & ! Constant(s)
+        chi_tol,        & ! Constant(s)
         rr_tol,              &
         Nr_tol,              &
         parab_cyl_max_input, &
@@ -645,7 +645,7 @@ module KK_upscaled_means
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real( s_mellor_tol, kind = dp )
+    x1_tol = real( chi_tol, kind = dp )
     x2_tol = real( rr_tol, kind = dp )
     x3_tol = real( Nr_tol, kind = dp )
 
@@ -799,7 +799,7 @@ module KK_upscaled_means
         bivar_NL_mean_const_all
 
     use constants_clubb, only: &
-        s_mellor_tol,        & ! Constant(s)
+        chi_tol,        & ! Constant(s)
         parab_cyl_max_input, &
         zero
 
@@ -875,7 +875,7 @@ module KK_upscaled_means
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real( s_mellor_tol, kind = dp )
+    x1_tol = real( chi_tol, kind = dp )
     x2_tol = real( y_tol, kind = dp )  ! y is N_cn (auto) or r_r (accr)
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
@@ -974,7 +974,7 @@ module KK_upscaled_means
         bivar_NL_mean_const_x2
 
     use constants_clubb, only: &
-        s_mellor_tol,        & ! Constant(s)
+        chi_tol,        & ! Constant(s)
         Nc_tol,              &
         parab_cyl_max_input, &
         zero
@@ -1033,7 +1033,7 @@ module KK_upscaled_means
     ! When the standard deviation of a variable is below the tolerance values,
     ! it is considered to be zero, and the variable is considered to have a
     ! constant value.
-    x1_tol = real( s_mellor_tol, kind = dp )
+    x1_tol = real( chi_tol, kind = dp )
 
     ! Determine the value of the parabolic cylinder function input value, s_c.
     ! The value s_c is being fed into the parabolic cylinder function.  When

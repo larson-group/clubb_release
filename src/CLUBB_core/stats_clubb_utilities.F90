@@ -1559,23 +1559,23 @@ module stats_clubb_utilities
         icloud_frac2
 
     use stats_variables, only: & 
-        is1, & ! Variable(s)
-        is2, &
-        istdev_s1, &
-        istdev_s2, &
+        ichi_1, & ! Variable(s)
+        ichi_2, &
+        istdev_chi_1, &
+        istdev_chi_2, &
         isp2, &
-        istdev_t1, &
-        istdev_t2, &
-        icovar_st_1, &
-        icovar_st_2, &
-        icorr_st_1, &
-        icorr_st_2, &
+        istdev_eta_1, &
+        istdev_eta_2, &
+        icovar_chi_eta_1, &
+        icovar_chi_eta_2, &
+        icorr_chi_eta_1, &
+        icorr_chi_eta_2, &
         icrt1, &
         icrt2, &
         icthl1, &
         icthl2, &
         irrtthl, &
-        is_mellor
+        ichi
 
     use stats_variables, only: &
         iwp2_zt, &  ! Variable(s)
@@ -1832,7 +1832,7 @@ module stats_clubb_utilities
       T_in_K, &   ! Absolute temperature         [K]
       rsati,  &   ! Saturation w.r.t ice         [kg/kg]
       shear,  &   ! Wind shear production term   [m^2/s^3]
-      s_mellor, & ! Mellor's 's'                 [kg/kg]
+      chi, & ! Mellor's 's'                 [kg/kg]
       sp2         ! Variance of Mellor's 's'     [kg/kg]
       
 
@@ -1913,16 +1913,16 @@ module stats_clubb_utilities
       call stat_update_var( irsl2, pdf_params%rsl2, zt )
       call stat_update_var( icloud_frac1, pdf_params%cloud_frac1, zt )
       call stat_update_var( icloud_frac2, pdf_params%cloud_frac2, zt )
-      call stat_update_var( is1, pdf_params%s1, zt )
-      call stat_update_var( is2, pdf_params%s2, zt )
-      call stat_update_var( istdev_s1, pdf_params%stdev_s1, zt )
-      call stat_update_var( istdev_s2, pdf_params%stdev_s2, zt )
-      call stat_update_var( istdev_t1, pdf_params%stdev_t1, zt )
-      call stat_update_var( istdev_t2, pdf_params%stdev_t2, zt )
-      call stat_update_var( icovar_st_1, pdf_params%covar_st_1, zt )
-      call stat_update_var( icovar_st_2, pdf_params%covar_st_2, zt )
-      call stat_update_var( icorr_st_1, pdf_params%corr_st_1, zt )
-      call stat_update_var( icorr_st_2, pdf_params%corr_st_2, zt )
+      call stat_update_var( ichi_1, pdf_params%chi_1, zt )
+      call stat_update_var( ichi_2, pdf_params%chi_2, zt )
+      call stat_update_var( istdev_chi_1, pdf_params%stdev_chi_1, zt )
+      call stat_update_var( istdev_chi_2, pdf_params%stdev_chi_2, zt )
+      call stat_update_var( istdev_eta_1, pdf_params%stdev_eta_1, zt )
+      call stat_update_var( istdev_eta_2, pdf_params%stdev_eta_2, zt )
+      call stat_update_var( icovar_chi_eta_1, pdf_params%covar_chi_eta_1, zt )
+      call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, zt )
+      call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, zt )
+      call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, zt )
       call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
       call stat_update_var( icrt1, pdf_params%crt1, zt )
       call stat_update_var( icrt2, pdf_params%crt2, zt )
@@ -1941,17 +1941,17 @@ module stats_clubb_utilities
       call stat_update_var( ia3_coef_zt, a3_coef_zt, zt )
       call stat_update_var( iwp3_on_wp2_zt, wp3_on_wp2_zt, zt )
 
-      if ( is_mellor > 0 ) then
+      if ( ichi > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
-        s_mellor(:) = pdf_params%mixt_frac * pdf_params%s1 &
-                    + (1.0_core_rknd-pdf_params%mixt_frac) * pdf_params%s2
-        call stat_update_var( is_mellor, s_mellor, zt )
+        chi(:) = pdf_params%mixt_frac * pdf_params%chi_1 &
+                    + (1.0_core_rknd-pdf_params%mixt_frac) * pdf_params%chi_2
+        call stat_update_var( ichi, chi, zt )
       end if
 
-      ! Calculate variance of s_mellor
+      ! Calculate variance of chi
       if ( isp2 > 0 ) then
-        sp2 = compute_variance_binormal( s_mellor, pdf_params%s1, pdf_params%s2, &
-                                         pdf_params%stdev_s1, pdf_params%stdev_s2, &
+        sp2 = compute_variance_binormal( chi, pdf_params%chi_1, pdf_params%chi_2, &
+                                         pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
                                          pdf_params%mixt_frac )
         call stat_update_var( isp2, sp2, zt )
       end if
