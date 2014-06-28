@@ -6,7 +6,7 @@
     'enabled' => 'true',
     'type' => 'standard',
     'headerText' => 'CAM IOP Case variables for se_pac_hi_iop',
-    'startTime' =>1.,  # [min]
+    'startTime' => 1.0,  # [min]
     'endTime' => 40000.,    # [min]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 12000.0, # [m]
