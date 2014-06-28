@@ -1490,6 +1490,9 @@ module stats_clubb_utilities
     !   None
     !----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        cloud_frac_min  ! Constant
+
     use stats_variables, only: & 
         zt, & ! Variables
         zm, & 
@@ -1665,7 +1668,8 @@ module stats_clubb_utilities
 
     use stats_variables, only: &
       ia3_coef, & ! Variables
-      ia3_coef_zt
+      ia3_coef_zt, &
+      ircm_in_cloud
 
     use grid_class, only: & 
         gr ! Variable
@@ -1829,12 +1833,12 @@ module stats_clubb_utilities
     integer :: isclr, k
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K, &   ! Absolute temperature         [K]
-      rsati,  &   ! Saturation w.r.t ice         [kg/kg]
-      shear,  &   ! Wind shear production term   [m^2/s^3]
-      chi, & ! Mellor's 's'                 [kg/kg]
-      sp2         ! Variance of Mellor's 's'     [kg/kg]
-      
+      T_in_K,      &  ! Absolute temperature         [K]
+      rsati,       &  ! Saturation w.r.t ice         [kg/kg]
+      shear,       &  ! Wind shear production term   [m^2/s^3]
+      chi,         &  ! Mellor's 's'                 [kg/kg]
+      sp2,         &  ! Variance of Mellor's 's'     [kg/kg]
+      rcm_in_cloud    ! rcm in cloud                 [kg/kg]
 
     real( kind = core_rknd ) :: xtmp
 
@@ -1968,6 +1972,17 @@ module stats_clubb_utilities
           call stat_update_var( iedsclrm(isclr), edsclrm(:,isclr), zt )
           call stat_update_var( iedsclrm_f(isclr), edsclrm_forcing(:,isclr), zt )
         end do
+      end if
+
+      ! Calculate rcm in cloud
+      if ( ircm_in_cloud > 0 ) then
+        where ( cloud_frac(:) > cloud_frac_min )
+            rcm_in_cloud(:) = rcm / cloud_frac
+        else where
+            rcm_in_cloud(:) = rcm
+        end where
+
+        call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
       end if
 
       ! zm variables

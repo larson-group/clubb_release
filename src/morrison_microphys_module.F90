@@ -51,7 +51,6 @@ module morrison_microphys_module
         irsnowm_sd_morr, &
         irgraupelm_sd_morr, &
         ircm_sd_mg_morr, &
-        ircm_in_cloud, &
         irrainm_auto, &
         irrainm_accr, &
         irrainm_cond, &
@@ -435,10 +434,6 @@ module morrison_microphys_module
       NI_INST, & ! Change in ice number concentration due to instantaneous processes
       NS_INST, & ! Change in snow number concentration due to instantaneous processes
       NG_INST    ! Change in graupel number concentration due to instantaneous processes
-
-
-    real( kind = core_rknd ), dimension(nz) :: & 
-      rcm_in_cloud     ! Liquid water in cloud           [kg/kg]
 
     real( kind = core_rknd ), dimension(nz) :: & ! Temporary variables 
       rrainm,    & ! Mean rain water mixing ratio            [kg/kg]
@@ -900,14 +895,6 @@ module morrison_microphys_module
        call microphys_put_var( irsnowm_sd_morr_int, (/rsnowm_sd_morr_int/), microphys_stats_sfc )
 
     endif
-
-    where ( cloud_frac(:) > real( cloud_frac_thresh, kind = core_rknd ) ) 
-      rcm_in_cloud(:) = rcm / cloud_frac
-    else where
-      rcm_in_cloud(:) = rcm
-    end where
-
-    call microphys_put_var( ircm_in_cloud, rcm_in_cloud, microphys_stats_zt )
 
     call microphys_put_var( irrainm_auto, rrainm_auto, microphys_stats_zt )
     call microphys_put_var( irrainm_accr, rrainm_accr, microphys_stats_zt )
