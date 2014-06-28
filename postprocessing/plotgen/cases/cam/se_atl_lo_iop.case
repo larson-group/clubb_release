@@ -2,10 +2,10 @@
 
 %CASE =
 (
-    'name' => 'iop_new',
+    'name' => 'se_atl_lo_iop',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'CAM IOP Case new variables',
+    'headerText' => 'CAM IOP Case variables for se_atl_lo_iop',
     'startTime' =>1.,  # [min]
     'endTime' => 40000.,    # [min]
     'startHeight' => 0.0,  # [m]

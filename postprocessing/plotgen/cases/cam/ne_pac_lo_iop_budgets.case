@@ -2,10 +2,10 @@
 
 %CASE = 
 (
-    'name' => 'iop_budgets',
+    'name' => 'ne_pac_lo_iop_budgets',
     'enabled' => 'true',
     'type' => 'budget',
-    'headerText' => 'IOP Budgets',
+    'headerText' => 'IOP Budgets for ne_pac_lo_iop',
     'startTime' => 1.,  # [minutes]
     'endTime' => 40000.,    # [minutes]
     'startHeight' => 0.0,  # [m]

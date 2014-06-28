@@ -2,10 +2,10 @@
 
 %CASE = 
 (
-    'name' => 'iop_clubbvars',
+    'name' => 'se_pac_hi_iop_clubbvars',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'CAM IOP CLUBB variables',
+    'headerText' => 'CAM IOP CLUBB variables for se_pac_hi_iop',
     'startTime' => 1.0,  # [minutes]
     'endTime' => 40000.,   # [minutes]
     'startHeight' => 0.0,  # [m]
