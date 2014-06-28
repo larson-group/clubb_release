@@ -17,11 +17,15 @@ ConsoleOutput.message(['End Time: ' int2str(endTime) ' min.']);
 ConsoleOutput.message(['Start Height: ' int2str(startHeight) ' m']);
 ConsoleOutput.message(['End Height: ' int2str(endHeight) ' m']);
 
+% I commented out this "sanity check". It doesn't seem to be necessary to me.
+% A situation where startTime==endTime is useful for plotting a file with only one
+% output time (see clubb:ticket:707).
+% Eric Raut June 2014
 %Quick sanity check
-if startTime == endTime
-    ConsoleOutput.severe('Start time and end time are the same, nothing to plot.');
-	return;
-end
+%if startTime == endTime
+%    ConsoleOutput.severe('Start time and end time are the same, nothing to plot.');
+%	return;
+%end
 
 %Figure out the number of optional arguments passed in
 optargin = size(varargin,2);

@@ -75,7 +75,18 @@ time = netcdf.getVar( nc_file, varTime );
 
 t_time_steps = size(time,1);
 
-dt = time(t_time_steps) - time(t_time_steps - 1);
+if (t_time_steps > 1)
+  % dt is defined as the difference between any two successive outputs in
+  % the file. We only check one pair of such outputs here.
+  dt = time(t_time_steps) - time(t_time_steps - 1);
+else if (t_time_steps == 1)
+  % We cannot use two output times for comparison. Let's define dt as the
+  % amount of simulation time before the first (and only) output!
+  dt = time(1);
+else
+  % dt is undefined.
+  dt = -999.0;
+end
 
 timeInfo = netcdf.getAtt( nc_file, varTime, 'units' );
 
