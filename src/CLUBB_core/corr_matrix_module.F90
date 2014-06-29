@@ -603,9 +603,6 @@ module corr_matrix_module
       fstderr, &  ! Constant(s)
       zero
 
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
     use error_code, only: &
       clubb_debug ! Procedure
 
@@ -1004,8 +1001,6 @@ module corr_matrix_module
     ! References:
     !   None
     !---------------------------------------------------------------------------
-
-    use constants_clubb, only: fstdout ! Constant(s)
 
     use clubb_precision, only: core_rknd
 

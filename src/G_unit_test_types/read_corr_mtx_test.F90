@@ -25,7 +25,6 @@ module read_corr_mtx_test
   use matrix_operations, only: print_lower_triangular_matrix ! Procedure
 
   use constants_clubb, only: &
-        one,  & ! Constant(s)
         zero
 
   implicit none

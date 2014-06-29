@@ -54,13 +54,8 @@ module KK_microphys_module
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr
-
     use constants_clubb, only: &
-        one,    & ! Constant(s)
         zero,   &
-        rho_lw, &
         rr_tol, &
         Nr_tol, &
         Nc_tol
@@ -314,7 +309,6 @@ module KK_microphys_module
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
-                                 l_latin_hypercube, k, &
                                  rrainm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
@@ -381,7 +375,7 @@ module KK_microphys_module
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm, Nc_in_cloud,      & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
-                                    hydromet, wphydrometp,             & ! In
+                                    hydromet,                          & ! In
                                     mu_x_1, mu_x_2,                    & ! In
                                     sigma_x_1, sigma_x_2,              & ! In
                                     corr_array_1, corr_array_2,        & ! In
@@ -487,8 +481,7 @@ module KK_microphys_module
       hydromet_pdf_params
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
-      wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
+      hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
     real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
       mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
@@ -666,9 +659,6 @@ module KK_microphys_module
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
       l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
 
-    logical, parameter :: &
-      l_latin_hypercube = .false.    ! Upscaled KK cannot be used with L.H.
-
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
       k                  ! Loop index
@@ -831,7 +821,6 @@ module KK_microphys_module
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
-                                 l_latin_hypercube, k, &
                                  rrainm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
@@ -1203,7 +1192,6 @@ module KK_microphys_module
                                   KK_accr_tndcy, KK_Nrm_evap_tndcy, &
                                   KK_Nrm_auto_tndcy, l_src_adj_enabled, &
                                   l_evap_adj_enabled, &
-                                  l_latin_hypercube, level, &
                                   rrainm_mc, Nrm_mc, &
                                   rvm_mc, rcm_mc, thlm_mc, &
                                   adj_terms )
@@ -1249,11 +1237,7 @@ module KK_microphys_module
 
     logical, intent(in) :: &
       l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled, & ! Flag to enable rrainm/Nrm evaporation adjustment
-      l_latin_hypercube     ! Flag for Latin hypercube input. Used for stats. [-]
-
-    integer, intent(in) :: & 
-      level    ! Vertical level index
+      l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  &

@@ -732,7 +732,6 @@ module fill_holes
         time_precision
 
     use constants_clubb, only: &
-        zero, & ! Constant(s)
         zero_threshold, &
         Lv, &
         Ls, &

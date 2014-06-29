@@ -138,8 +138,7 @@ module microphys_init_cleanup
         Nr_tol,     &
         Ni_tol,     &
         Ns_tol,     &
-        Ng_tol,     &
-        Nc_tol
+        Ng_tol
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -161,8 +160,7 @@ module microphys_init_cleanup
         GRAUPEL_INIT ! Subroutine
 
     use cldwat2m_micro, only: &
-        ini_micro,             & ! Subroutine
-        l_use_CLUBB_pdf_in_mg    ! Flag
+        ini_micro                ! Subroutine
 
     use microp_aero, only: &
         ini_microp_aero ! Subroutine

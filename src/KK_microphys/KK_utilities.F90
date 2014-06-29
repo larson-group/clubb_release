@@ -245,7 +245,6 @@ module KK_utilities
 
     use constants_clubb, only: & 
         T_freeze_K, & ! Constant(s)
-        ep,         &
         rho_lw,     & 
         Lv,         & 
         Rv

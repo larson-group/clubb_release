@@ -603,7 +603,7 @@ module microphys_driver
                                          wm_zt, rtm, thlm, p_in_Pa,            & ! In
                                          exner, rho, rcm, Nc_in_cloud,         & ! In
                                          pdf_params, hydromet_pdf_params,      & ! In
-                                         hydromet, wphydrometp,                & ! In
+                                         hydromet,                             & ! In
                                          mu_x_1, mu_x_2,                       & ! In
                                          sigma_x_1, sigma_x_2,                 & ! In
                                          corr_array_1, corr_array_2,           & ! In

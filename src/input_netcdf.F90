@@ -309,8 +309,7 @@ module input_netcdf
     use netcdf, only: &
       NF90_NOERR, & ! Constant(s)
       NF90_MAX_VAR_DIMS, &
-      NF90_FLOAT, &
-      NF90_MAX_NAME
+      NF90_FLOAT
 
     use stat_file_module, only: &
       stat_file ! Type(s)

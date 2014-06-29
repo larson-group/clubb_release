@@ -66,7 +66,6 @@ module setup_clubb_pdf_params
         zero,           &
         rc_tol,         &
         Ncn_tol,        &
-        cloud_frac_min, &
         fstderr,        &
         zero_threshold
 

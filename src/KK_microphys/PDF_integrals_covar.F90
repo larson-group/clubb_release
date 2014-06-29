@@ -816,7 +816,6 @@ module PDF_integrals_covars
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        one_half_dp,   &  ! Constant(s)
         zero_dp
 
     use clubb_precision, only: &

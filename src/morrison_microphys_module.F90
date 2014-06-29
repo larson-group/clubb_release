@@ -31,9 +31,6 @@ module morrison_microphys_module
     use module_MP_graupel, only: &
         M2005MICRO_GRAUPEL  ! Procedure
 
-    use module_MP_graupel, only: &
-        cloud_frac_thresh ! Constant
-
     use grid_class, only: &
         gr
 

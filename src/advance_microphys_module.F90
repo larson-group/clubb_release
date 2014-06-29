@@ -872,7 +872,6 @@ module advance_microphys_module
         one,             &
         one_half,        &
         zero,            &
-        zero_threshold,  &
         rho_lw,          &
         mvr_cloud_max,   &
         cloud_frac_min,  &

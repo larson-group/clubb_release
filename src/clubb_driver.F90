@@ -275,9 +275,6 @@ module clubb_driver
         hydromet_pdf_parameter,   & ! Type(s)
         init_hydromet_pdf_params    ! Procedure(s)
 
-    use constants_clubb, only: &
-        cloud_frac_min
-
     use fill_holes, only: &
         vertical_avg  ! Procedure(s)
 
@@ -4202,7 +4199,7 @@ module clubb_driver
       iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & ! Variables
       iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
       io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
-      iradht_rad, iradht_LW_rad, iradht_SW_rad, iFrad_SW_rad, &
+      iradht_rad, iradht_LW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
       iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht, &
       ip_in_mb_rad, isp_humidity_rad

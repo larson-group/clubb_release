@@ -66,13 +66,13 @@ module estimate_scm_microphys_module
       microphys_stats_accumulate, &
       microphys_stats_cleanup
 
-    use parameters_microphys, only: &
-      l_silhs_KK_convergence_adj_mean ! Variable(s)
-
     use math_utilities, only: &
       compute_sample_mean             ! Procedure
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
+    use parameters_microphys, only: &
+      l_silhs_KK_convergence_adj_mean ! Variable(s)
+
     use array_index, only: &
       iiNrm, & ! Variable(s)
       iirrainm
@@ -569,9 +569,7 @@ module estimate_scm_microphys_module
       ! Whether to adjust rrainm_source to not over-deplete cloud water
       l_src_adj_enabled = .true.,  &
       ! Whether to adjust rrainm_evap to not over-evaporate rain
-      l_evap_adj_enabled = .true., &
-      ! This subroutine is called from Latin hypercube.
-      l_latin_hypercube = .true.
+      l_evap_adj_enabled = .true.
 
     ! Input variables
     real( kind = time_precision ), intent(in) :: &
@@ -638,7 +636,6 @@ module estimate_scm_microphys_module
                                 rrainm_accr(k), Nrm_evap(k),               & !intent(in)
                                 Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
                                 l_evap_adj_enabled,                        & !intent(in)
-                                l_latin_hypercube, k,                      & !intent(in)
                                 rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)
                                 adj_terms(k) )                               !intent(out)
