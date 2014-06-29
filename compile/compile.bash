@@ -83,7 +83,7 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_microphys -lclubb_morrison -lmicrophys_utils -lclubb_param"
+REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_parabolic -lclubb_KK_microphys -lclubb_morrison -lmicrophys_utils -lclubb_param"
 
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
@@ -190,7 +190,8 @@ repository_file_lists=( \
 	$dir/file_list/clubb_tuner_files \
 	$dir/file_list/G_unit_tests_files \
 	$dir/file_list/int2txt_files \
-	$dir/file_list/jacobian_files )
+	$dir/file_list/jacobian_files \
+        $dir/file_list/clubb_parabolic_files )
 
 # ------------------------------------------------------------------------------
 #  Determine which restricted files are in the source directory and make a list
@@ -245,8 +246,12 @@ $mkmf -t $bindir/mkmf_template \
   -e $all_files_list "$generated_lists_dir"/clubb_microphys_utils_files
 
 $mkmf -t $bindir/mkmf_template \
+  -p $libdir/libclubb_parabolic.a -m Make.clubb_parabolic -c "${CPPDEFS}" \
+  -e $all_files_list $dir/file_list/clubb_parabolic_files
+
+$mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_KK_microphys.a -m Make.clubb_KK_microphys -c "${CPPDEFS}" \
-  -e $all_files_list $dir/file_list/clubb_KK_microphys_files
+  -o "${WARNINGS}" -e $all_files_list $dir/file_list/clubb_KK_microphys_files
 
 $mkmf -t $bindir/mkmf_template \
   -p $libdir/libclubb_coamps.a -m Make.clubb_coamps -c "${CPPDEFS}" \
@@ -336,7 +341,10 @@ libclubb_bugsrad.a: libclubb_param.a
 libmicrophys_utils.a: libclubb_param.a
 	cd $objdir; \$(MAKE) -f Make.microphys_utils
 
-libclubb_KK_microphys.a: libclubb_param.a libmicrophys_utils.a
+libclubb_parabolic.a: libclubb_param.a
+	cd $objdir; \$(MAKE) -f Make.clubb_parabolic
+
+libclubb_KK_microphys.a: libclubb_param.a libmicrophys_utils.a libclubb_parabolic.a
 	cd $objdir; \$(MAKE) -f Make.clubb_KK_microphys
 
 libclubb_coamps.a: libclubb_param.a

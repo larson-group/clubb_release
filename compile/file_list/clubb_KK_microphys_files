@@ -9,7 +9,4 @@
 ../src/KK_microphys/PDF_integrals_means.F90
 ../src/KK_microphys/PDF_integrals_covar.F90
 ../src/KK_microphys/PDF_integrals_all_MM.F90
-../src/Parabolic_constants.f90
-../src/AiryFunction.f90
-../src/Parabolic.f90
 ../src/text_writer.F90
