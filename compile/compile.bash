@@ -83,7 +83,7 @@ fi
 
 # ------------------------------------------------------------------------------
 # Required libraries + platform specific libraries from LDFLAGS
-REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_parabolic -lclubb_KK_microphys -lclubb_morrison -lmicrophys_utils -lclubb_param"
+REQ_LIBS="-lclubb_mg -lclubb_bugsrad -lclubb_KK_microphys -lclubb_parabolic -lclubb_morrison -lmicrophys_utils -lclubb_param"
 
 OPT_LIBS="-lclubb_other"
 # ------------------------------------------------------------------------------
