@@ -107,7 +107,6 @@ else
 	dt = 1 * dt;
 end
 
-dt
 time_step_length = dt;
 
 for i=5:numvars-1
