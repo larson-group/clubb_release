@@ -1,0 +1,78 @@
+# TWP-ICE Case File
+
+%CASE = 
+(
+    'name' => 'twp_ice_forcings',
+    'enabled' => 'true',
+    'type' => 'standard',
+    'headerText' => 'TWP-ICE',
+    'startTime' => 1.,  # [min]
+    'endTime' => 2.,    # [min]
+    'startHeight' => 0.0,  # [m]
+    'endHeight' => 18000.0, # [m]
+    'plots' =>
+    [
+       {'plotTitle' => 'DIVT3D', 'axisLabel' => '[K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'TTEND', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'DIVT3D .* 86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'UOBS', 'axisLabel' => '[m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'UOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'WOBS', 'axisLabel' => '[m/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => '-OMEGA ./(9.81.*RHO_CLUBB)', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'QTEND', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'QTEND', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'DIVQ3D .* 86400 .* 1000', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'unudge', 'axisLabel' => '[m/s/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'UNUDGE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'um_ndg .* 86400', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'vnudge', 'axisLabel' => '[m/s/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'VNUDGE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'vm_ndg .* 86400', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'tnudge', 'axisLabel' => '[K/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'TNUDGE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'qnudge', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'QNUDGE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+			 {'plotTitle' => 'qnudge', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'QNUDGE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'LHFLX', 'axisLabel' => '[W/m^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'LHFLX', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'LHFLX', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'SHFLX', 'axisLabel' => '[W/m^2]', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'SHFLX', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => 'SHFLX', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
