@@ -1151,7 +1151,7 @@ module generate_lh_sample_module
     if ( .not. l_in_precip_one_lev ) then
 
       call zero_precip_hydromets( d_variables, & ! Intent(in)
-                                X_nl_one_lev ) ! Intent(inout)
+                                  X_nl_one_lev ) ! Intent(inout)
 
     end if
 
@@ -1572,6 +1572,7 @@ module generate_lh_sample_module
              X_nl_one_lev(1:d_variables) ) ! Out
 
     else
+      print *, X_mixt_comp_one_lev
       stop "Error determining mixture component in gaus_mixt_points"
 
     end if ! X_mixt_comp_one_lev
