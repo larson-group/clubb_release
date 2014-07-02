@@ -678,8 +678,8 @@ module corr_matrix_module
         end do ! 1..d_variables
         if ( l_warning ) then
           write(fstderr,*) "Warning: the specified correlations for s and Nc are non-zero."
-          write(fstderr,*) "The latin hypercube code will not converge to the analytic solution "// &
-            "using these settings."
+          write(fstderr,*) "The latin hypercube code will not converge to the analytic solution &
+            &using these settings."
         end if
        end if ! l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0
 
