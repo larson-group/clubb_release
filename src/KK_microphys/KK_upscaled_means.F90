@@ -19,11 +19,11 @@ module KK_upscaled_means
   contains
 
   !=============================================================================
-  subroutine KK_upscaled_means_driver( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+  subroutine KK_upscaled_means_driver( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
                                        mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
                                        mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                        mu_Nr_2_n, mu_Ncn_1_n, mu_Ncn_2_n, &
-                                       sigma_s_1, sigma_s_2, &
+                                       sigma_chi_1, sigma_chi_2, &
                                        sigma_rr_1, sigma_rr_2, sigma_Nr_1, &
                                        sigma_Nr_2, sigma_Ncn_1, sigma_Ncn_2, &
                                        sigma_rr_1_n, sigma_rr_2_n, &
@@ -52,8 +52,8 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_chi_1,      & ! Mean of chi (old s) (1st PDF component)         [kg/kg]
+      mu_chi_2,      & ! Mean of chi (old s) (2nd PDF component)         [kg/kg]
       mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
@@ -66,8 +66,8 @@ module KK_upscaled_means
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip       [ln(num/kg)]
       mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
       mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_chi_1,   & ! Standard deviation of chi (1st PDF component)   [kg/kg]
+      sigma_chi_2,   & ! Standard deviation of chi (2nd PDF component)   [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
@@ -108,9 +108,9 @@ module KK_upscaled_means
 
     !!! Calculate the upscaled KK evaporation tendency.
     KK_evap_tndcy  &
-    = KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+    = KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                              mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             mu_Nr_2_n, sigma_s_1, sigma_s_2, sigma_rr_1, &
+                             mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
                              sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                              sigma_Nr_2_n, corr_srr_1_n, corr_srr_2_n, &
@@ -121,18 +121,18 @@ module KK_upscaled_means
 
     !!! Calculate the upscaled KK autoconversion tendency.
     KK_auto_tndcy  &
-    = KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
-                             mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
-                             sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
+    = KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+                             mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
+                             sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
                              sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
                              corr_sNcn_2_n, KK_auto_coef, mixt_frac )
 
 
     !!! Calculate the upscaled KK accretion tendency.
     KK_accr_tndcy  &
-    = KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                             mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
-                             sigma_s_2, sigma_rr_1, sigma_rr_2, &
+    = KK_accr_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                             mu_rr_1_n, mu_rr_2_n, sigma_chi_1, &
+                             sigma_chi_2, sigma_rr_1, sigma_rr_2, &
                              sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
                              corr_srr_2_n, KK_accr_coef, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
@@ -154,9 +154,9 @@ module KK_upscaled_means
   end subroutine KK_upscaled_means_driver
 
   !=============================================================================
-  function KK_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+  function KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                                   mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                  mu_Nr_2_n, sigma_s_1, sigma_s_2, sigma_rr_1, &
+                                  mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
                                   sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
                                   sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
                                   sigma_Nr_2_n, corr_srr_1_n, corr_srr_2_n, &
@@ -186,8 +186,8 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_chi_1,      & ! Mean of chi (old s) (1st PDF component)         [kg/kg]
+      mu_chi_2,      & ! Mean of chi (old s) (2nd PDF component)         [kg/kg]
       mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
@@ -196,8 +196,8 @@ module KK_upscaled_means
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
       mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
       mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_chi_1,   & ! Standard deviation of chi (1st PDF component)   [kg/kg]
+      sigma_chi_2,   & ! Standard deviation of chi (2nd PDF component)   [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF component) ip  [#/kg]
@@ -238,15 +238,15 @@ module KK_upscaled_means
     = KK_evap_coef &
       * ( mixt_frac &
           * precip_frac_1 &
-          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
-                                mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
+          * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+                                mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                 sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
                                 corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
-                                mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
+          * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+                                mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                 sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
                                 corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
@@ -258,9 +258,9 @@ module KK_upscaled_means
   end function KK_evap_upscaled_mean
 
   !=============================================================================
-  function KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
-                                  mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
-                                  sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
+  function KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+                                  mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
+                                  sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
                                   sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
                                   corr_sNcn_2_n, KK_auto_coef, mixt_frac )
 
@@ -290,14 +290,14 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_chi_1,      & ! Mean of chi (old s) (1st PDF component)         [kg/kg]
+      mu_chi_2,      & ! Mean of chi (old s) (2nd PDF component)         [kg/kg]
       mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
       mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
       mu_Ncn_1_n,    & ! Mean of ln Ncn (1st PDF component)         [ln(num/kg)]
       mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_chi_1,   & ! Standard deviation of chi (1st PDF component)   [kg/kg]
+      sigma_chi_2,   & ! Standard deviation of chi (2nd PDF component)   [kg/kg]
       sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
       sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
       sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF comp.) [ln(#/kg)]
@@ -325,11 +325,11 @@ module KK_upscaled_means
     KK_auto_upscaled_mean  &
     = KK_auto_coef &
       * ( mixt_frac &
-          * bivar_NL_mean_eq( mu_s_1, mu_Ncn_1, mu_Ncn_1_n, sigma_s_1, &
+          * bivar_NL_mean_eq( mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_chi_1, &
                               sigma_Ncn_1, sigma_Ncn_1_n, corr_sNcn_1_n, &
                               Nc_tol, alpha_exp, beta_exp ) &
         + ( one - mixt_frac ) &
-          * bivar_NL_mean_eq( mu_s_2, mu_Ncn_2, mu_Ncn_2_n, sigma_s_2, &
+          * bivar_NL_mean_eq( mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_chi_2, &
                               sigma_Ncn_2, sigma_Ncn_2_n, corr_sNcn_2_n, &
                               Nc_tol, alpha_exp, beta_exp ) &
         )
@@ -340,9 +340,9 @@ module KK_upscaled_means
   end function KK_auto_upscaled_mean
 
   !=============================================================================
-  function KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                  mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
-                                  sigma_s_2, sigma_rr_1, sigma_rr_2, &
+  function KK_accr_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                                  mu_rr_1_n, mu_rr_2_n, sigma_chi_1, &
+                                  sigma_chi_2, sigma_rr_1, sigma_rr_2, &
                                   sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
                                   corr_srr_2_n, KK_accr_coef, mixt_frac, &
                                   precip_frac_1, precip_frac_2 )
@@ -369,14 +369,14 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_chi_1,      & ! Mean of chi (old s) (1st PDF component)         [kg/kg]
+      mu_chi_2,      & ! Mean of chi (old s) (2nd PDF component)         [kg/kg]
       mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip                [-]
       mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_chi_1,   & ! Standard deviation of chi (1st PDF component)   [kg/kg]
+      sigma_chi_2,   & ! Standard deviation of chi (2nd PDF component)   [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
@@ -407,12 +407,12 @@ module KK_upscaled_means
     = KK_accr_coef &
       * ( mixt_frac &
           * precip_frac_1 &
-          * bivar_NL_mean_eq( mu_s_1, mu_rr_1, mu_rr_1_n, sigma_s_1, &
+          * bivar_NL_mean_eq( mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_chi_1, &
                               sigma_rr_1, sigma_rr_1_n, corr_srr_1_n, &
                               rr_tol, alpha_exp, beta_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * bivar_NL_mean_eq( mu_s_2, mu_rr_2, mu_rr_2_n, sigma_s_2, &
+          * bivar_NL_mean_eq( mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_chi_2, &
                               sigma_rr_2, sigma_rr_2_n, corr_srr_2_n, &
                               rr_tol, alpha_exp, beta_exp ) &
         )
@@ -512,8 +512,8 @@ module KK_upscaled_means
   end function KK_mvr_upscaled_mean
 
   !=============================================================================
-  function trivar_NLL_mean_eq( mu_s_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, &
-                               mu_Nr_i_n, sigma_s_i, sigma_rr_i, &
+  function trivar_NLL_mean_eq( mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, &
+                               mu_Nr_i_n, sigma_chi_i, sigma_rr_i, &
                                sigma_Nr_i, sigma_rr_i_n, sigma_Nr_i_n, &
                                corr_srr_i_n, corr_sNr_i_n, corr_rrNr_i_n, &
                                alpha_exp_in, beta_exp_in, gamma_exp_in )
@@ -558,12 +558,12 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_i,        & ! Mean of s (ith PDF component)                   [kg/kg]
+      mu_chi_i,      & ! Mean of chi (old s) (ith PDF component)         [kg/kg]
       mu_rr_i,       & ! Mean of rr (ith PDF component) in-precip (ip)   [kg/kg]
       mu_Nr_i,       & ! Mean of Nr (ith PDF component) ip              [num/kg]
       mu_rr_i_n,     & ! Mean of ln rr (ith PDF component) in-precip (ip)    [-]
       mu_Nr_i_n,     & ! Mean of ln Nr (ith PDF component) ip                [-]
-      sigma_s_i,     & ! Standard deviation of s (ith PDF component)     [kg/kg]
+      sigma_chi_i,   & ! Standard deviation of chi (ith PDF component)   [kg/kg]
       sigma_rr_i,    & ! Standard deviation of rr (ith PDF component) ip [kg/kg]
       sigma_Nr_i,    & ! Standard deviation of Nr (ith PDF component) ip  [#/kg]
       sigma_rr_i_n,  & ! Standard deviation of ln rr (ith PDF component) ip  [-]
@@ -610,7 +610,7 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real( mu_s_i, kind = dp )
+    mu_x1 = real( mu_chi_i, kind = dp )
     if ( beta_exp_in >= zero ) then
        mu_x2 = real( mu_rr_i, kind = dp )
     else ! exponent beta < 0
@@ -625,7 +625,7 @@ module KK_upscaled_means
     mu_x3_n = real( mu_Nr_i_n, kind = dp )
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = real( sigma_s_i, kind = dp )
+    sigma_x1   = real( sigma_chi_i, kind = dp )
     sigma_x2   = real( sigma_rr_i, kind = dp )
     sigma_x3   = real( sigma_Nr_i, kind = dp )
     sigma_x2_n = real( sigma_rr_i_n, kind = dp )
@@ -769,7 +769,7 @@ module KK_upscaled_means
   end function trivar_NLL_mean_eq
 
   !=============================================================================
-  function bivar_NL_mean_eq( mu_s_i, mu_y_i, mu_y_i_n, sigma_s_i, &
+  function bivar_NL_mean_eq( mu_chi_i, mu_y_i, mu_y_i_n, sigma_chi_i, &
                              sigma_y_i, sigma_y_i_n, corr_sy_i_n, &
                              y_tol, alpha_exp_in, beta_exp_in )
 
@@ -811,10 +811,10 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_i,      & ! Mean of s (ith PDF component)                    [kg/kg]
+      mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)          [kg/kg]
       mu_y_i,      & ! Mean of y (ith PDF component)                        [-]
       mu_y_i_n,    & ! Mean of ln y (ith PDF component)                     [-]
-      sigma_s_i,   & ! Standard deviation of s (ith PDF component)      [kg/kg]
+      sigma_chi_i, & ! Standard deviation of chi (ith PDF component)    [kg/kg]
       sigma_y_i,   & ! Standard deviation of y (ith PDF component)          [-]
       sigma_y_i_n, & ! Standard deviation of ln y (ith PDF component)       [-]
       corr_sy_i_n    ! Correlation between s and ln y (ith PDF component)   [-]
@@ -851,7 +851,7 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real( mu_s_i, kind = dp )
+    mu_x1 = real( mu_chi_i, kind = dp )
     if ( beta_exp_in >= zero ) then
        mu_x2 = real( mu_y_i, kind = dp )   ! y is N_cn (auto) or r_r (accr)
     else ! exponent beta < 0
@@ -860,7 +860,7 @@ module KK_upscaled_means
     mu_x2_n = real( mu_y_i_n, kind = dp ) ! y is N_cn (auto) or r_r (accr)
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1   = real( sigma_s_i, kind = dp )
+    sigma_x1   = real( sigma_chi_i, kind = dp )
     sigma_x2   = real( sigma_y_i, kind = dp )   ! y is N_cn (auto) or r_r (accr)
     sigma_x2_n = real( sigma_y_i_n, kind = dp ) ! y is N_cn (auto) or r_r (accr)
 
@@ -948,7 +948,7 @@ module KK_upscaled_means
   end function bivar_NL_mean_eq
 
   !=============================================================================
-  function bivar_NL_mean_eq_Nc0( mu_s_i, Nc_in_cloud, sigma_s_i, &
+  function bivar_NL_mean_eq_Nc0( mu_chi_i, Nc_in_cloud, sigma_chi_i, &
                                  alpha_exp_in, beta_exp_in )
 
     ! Description:
@@ -987,9 +987,9 @@ module KK_upscaled_means
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_i,       & ! Mean of s (ith PDF component)                   [kg/kg]
-      Nc_in_cloud, & ! Constant in-cloud value of cloud droplet conc. [num/kg]
-      sigma_s_i       ! Standard deviation of s (ith PDF component)     [kg/kg]
+      mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)          [kg/kg]
+      Nc_in_cloud, & ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+      sigma_chi_i    ! Standard deviation of chi (ith PDF component)    [kg/kg]
 
     real( kind = core_rknd ), intent(in) :: &
       alpha_exp_in,  & ! Exponent alpha, corresponding to s                 [-]
@@ -1015,7 +1015,7 @@ module KK_upscaled_means
 
 
     ! Means for the ith PDF component. 
-    mu_x1 = real( mu_s_i, kind = dp )
+    mu_x1 = real( mu_chi_i, kind = dp )
     if ( beta_exp_in >= zero ) then
        Nc0 = real( Nc_in_cloud, kind = dp )
     else ! exponent beta < 0
@@ -1023,7 +1023,7 @@ module KK_upscaled_means
     endif
 
     ! Standard deviations for the ith PDF component.
-    sigma_x1 = real( sigma_s_i, kind = dp )
+    sigma_x1 = real( sigma_chi_i, kind = dp )
 
     ! Exponents.
     alpha_exp = real( alpha_exp_in, kind = dp )
