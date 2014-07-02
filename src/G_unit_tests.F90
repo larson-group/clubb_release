@@ -4,8 +4,60 @@
 program G_unit_tests
 
   ! Description:
+  ! The unit testing framework for various pieces of CLUBB code.
 
   ! References:
+
+  ! Musical References:
+  !
+  !                               USIN' CLUBB
+  !                               ===========
+  !         (Parody to be rapped to the beat of "In Da Club" by 50 Cent)
+  !
+  ! Go, go, go, go, go, go, go, go CLUBB!
+  ! Commit 7000!
+  ! We gonna party like its a birthday!
+  ! We gonna sip Bicardi like its a birthday!
+  ! And we don't care cause it's commit 7000!
+  !
+  ! (Chorus 2x)
+  ! You will find me usin' CLUBB, chewin' on a sub,
+  ! Mumma, I got what ya need if you need beneath the grid.
+  ! I'm into PDFs, I ain't into mass flux junk,
+  ! So come checkout CLUBB, if ya like the stuff we did.
+  !
+  ! (Verse)
+  ! My code's as pretty as a Benz on Dubs,
+  ! But the Sun Compiler's squaking -- always drama usin' CLUBB.
+  ! When we match the LES everybody shows us love,
+  ! And when we don't have low clouds nobody shows us love.
+  ! But homie ain't nothing change, ...
+  !
+  ! Need more verses ... place yours here!
+  ! 
+  !
+  ! (Chorus 2x)
+  !
+  ! (Bridge)
+  ! The micro handles rain, ice, and snow,
+  ! plus we got all our fancy schemes,
+  ! An-al-y-tic micro and SILHS,
+  ! We're best on the subgrid and that won't change.
+  !
+  ! (Verse)
+  ! And you're gonna love it, way more than you hate it,
+  ! Oh, you mad?  I thought you'd be happy we made it.
+  ! We're the best darn param. for subgrid clouds,
+  ! And when you use us for micro ya know you'll be wowwed.
+  !
+  ! Need more verses ... place yours here!
+  !
+  !
+  ! (Chorus 2x)
+  !
+  ! Don't try to act like you don't know what we be usin' either,
+  ! We be usin' CLUBB all the time, it's about the blast off!
+  ! G-UNIT (tests)
   !-------------------------------------------------------------------------
 
   use constants_clubb, only: &
