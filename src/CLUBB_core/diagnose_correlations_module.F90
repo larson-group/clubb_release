@@ -258,13 +258,13 @@ module diagnose_correlations_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      corr_sw,       & ! Correlation between w and s (both components)       [-]
+      corr_chi_w,       & ! Correlation between w and chi(s_mellor) (both components)       [-]
       corr_wrr,      & ! Correlation between w and rr (both components)      [-]
       corr_wNr,      & ! Correlation between w and Nr (both components)      [-]
       corr_wNcn        ! Correlation between w and Ncn (both components)     [-]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpsp_zt,   & ! Covariance of s and w on the zt-grid    [(m/s)(kg/kg)]
+      wpchip_zt,   & ! Covariance of chi and w on the zt-grid    [(m/s)(kg/kg)]
       wprrp_zt,  & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
       wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
       wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
@@ -278,7 +278,7 @@ module diagnose_correlations_module
     ! ----- Begin Code -----
 
     call approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncnm, & ! Intent(in)
-                         wpsp_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
+                         wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
 
     do k = 1, nz
 
@@ -295,8 +295,8 @@ module diagnose_correlations_module
                      + pdf_params(k)%stdev_chi_2**2 ) &
              )
 
-       corr_sw(k) &
-       = calc_w_corr( wpsp_zt(k), stdev_w(k), stdev_chi, &
+       corr_chi_w(k) &
+       = calc_w_corr( wpchip_zt(k), stdev_w(k), stdev_chi, &
                       w_tol, chi_tol )
 
        corr_wrr(k) &
@@ -311,7 +311,7 @@ module diagnose_correlations_module
     enddo
 
     call set_w_corr( nz, d_variables, & ! Intent(in)
-                         corr_sw, corr_wrr, corr_wNr, corr_wNcn, &
+                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
                          corr_array ) ! Intent(inout)
 
   end subroutine approx_w_corr
@@ -319,7 +319,7 @@ module diagnose_correlations_module
 
   !-----------------------------------------------------------------------
   subroutine approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncnm, & ! Intent(in)
-                             wpsp_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
+                             wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
     ! Description:
     ! Approximate the covariances of w with the hydrometeors using Eddy
     ! diffusivity.
@@ -367,14 +367,14 @@ module diagnose_correlations_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) ::  &
-      wpsp_zt,   & ! Covariance of s and w on the zt-grid     [(m/s)(kg/kg)]
+      wpchip_zt,   & ! Covariance of chi(s) and w on the zt-grid     [(m/s)(kg/kg)]
       wprrp_zt,  & ! Covariance of r_r and w on the zt-grid   [(m/s)(kg/kg)]
       wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid   [(m/s)(#/kg)]
       wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpsp_zm,   & ! Covariance of s and w on the zm-grid     [(m/s)(kg/kg)]
+      wpchip_zm,   & ! Covariance of chi(s) and w on the zm-grid     [(m/s)(kg/kg)]
       wprrp_zm,  & ! Covariance of r_r and w on the zm-grid   [(m/s)(kg/kg)]
       wpNrp_zm,  & ! Covariance of N_r and w on the zm-grid   [(m/s)(#/kg)]
       wpNcnp_zm    ! Covariance of N_cn and w on the zm-grid  [(m/s)(#/kg)]
@@ -385,7 +385,7 @@ module diagnose_correlations_module
 
     ! calculate the covariances of w with the hydrometeors
     do k = 1, nz
-      wpsp_zm(k) = pdf_params(k)%mixt_frac &
+      wpchip_zm(k) = pdf_params(k)%mixt_frac &
                    * ( one - pdf_params(k)%mixt_frac ) &
                    * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
                    * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
@@ -417,7 +417,7 @@ module diagnose_correlations_module
     wpNcnp_zm(nz) = wpNcnp_zm(nz-1)
 
     ! interpolate back to zt-grid
-    wpsp_zt   = zm2zt(wpsp_zm)
+    wpchip_zt   = zm2zt(wpchip_zm)
     wprrp_zt  = zm2zt(wprrp_zm)
     wpNrp_zt  = zm2zt(wpNrp_zm)
     wpNcnp_zt = zm2zt(wpNcnp_zm)
@@ -911,7 +911,7 @@ module diagnose_correlations_module
 
   !-----------------------------------------------------------------------
   subroutine set_w_corr( nz, d_variables, & ! Intent(in)
-                         corr_sw, corr_wrr, corr_wNr, corr_wNcn, &
+                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
                          corr_array ) ! Intent(inout)
 
     ! Description:
@@ -939,7 +939,7 @@ module diagnose_correlations_module
       d_variables    ! Number of Variables to be diagnosed
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      corr_sw,       & ! Correlation between s & w (both components)         [-]
+      corr_chi_w,       & ! Correlation between chi (s) & w (both components)         [-]
       corr_wrr,      & ! Correlation between rr & w (both components)        [-]
       corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
       corr_wNcn        ! Correlation between Ncn & w (both components)       [-]
@@ -951,7 +951,7 @@ module diagnose_correlations_module
 
     ! ----- Begin Code -----
 
-      corr_array(iiPDF_w, iiPDF_chi, :) = corr_sw
+      corr_array(iiPDF_w, iiPDF_chi, :) = corr_chi_w
       corr_array(iiPDF_w, iiPDF_rrain, :) = corr_wrr
       corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
       corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
@@ -960,9 +960,9 @@ module diagnose_correlations_module
 
   !=============================================================================
   subroutine unpack_correlations( d_variables, corr_array, & ! Intent(in)
-                                  corr_ws, corr_wrr, corr_wNr, corr_wNcn, &
-                                  corr_st, corr_srr, corr_sNr, corr_sNcn, &
-                                  corr_trr, corr_tNr, corr_tNcn, corr_rrNr )  
+                                  corr_w_chi, corr_wrr, corr_wNr, corr_wNcn, &
+                                  corr_chi_eta, corr_chi_rr, corr_chi_Nr, corr_chi_Ncn, &
+                                  corr_eta_rr, corr_eta_Nr, corr_eta_Ncn, corr_rrNr )  
 
     ! Description:
 
@@ -993,17 +993,17 @@ module diagnose_correlations_module
 
     ! Output variables
     real( kind = core_rknd ), intent(out) :: &
-      corr_ws,     & ! Correlation between w and s (1st PDF component)     [-]
+      corr_w_chi,     & ! Correlation between w and chi(s) (1st PDF component)     [-]
       corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
       corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
       corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_st,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_srr,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_sNr,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNcn,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_trr,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_tNr,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNcn,   & ! Correlation between t and Ncn (1st PDF component)   [-]
+      corr_chi_eta,     & ! Correlation between chi(s) and eta(t) (1st PDF component)     [-]
+      corr_chi_rr,    & ! Correlation between chi(s) and rr (1st PDF component) ip [-]
+      corr_chi_Nr,    & ! Correlation between chi(s) and Nr (1st PDF component) ip [-]
+      corr_chi_Ncn,   & ! Correlation between chi(s) and Ncn (1st PDF component)   [-]
+      corr_eta_rr,    & ! Correlation between eta(t) and rr (1st PDF component) ip [-]
+      corr_eta_Nr,    & ! Correlation between eta(t) and Nr (1st PDF component) ip [-]
+      corr_eta_Ncn,   & ! Correlation between (t) and Ncn (1st PDF component)   [-]
       corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
 
     ! ---- Begin Code ----
@@ -1021,17 +1021,17 @@ module diagnose_correlations_module
 !    corr_tNcn = corr_array(iiPDF_eta, iiPDF_Ncn)
 !    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
-    corr_ws   = corr_array(iiPDF_chi, iiPDF_w)
+    corr_w_chi   = corr_array(iiPDF_chi, iiPDF_w)
     corr_wrr  = corr_array(iiPDF_rrain, iiPDF_w)
     corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
     corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
-    corr_st   = corr_array(iiPDF_eta, iiPDF_chi)
-    corr_srr  = corr_array(iiPDF_rrain, iiPDF_chi)
-    corr_sNr  = corr_array(iiPDF_Nr, iiPDF_chi)
-    corr_sNcn = corr_array(iiPDF_Ncn, iiPDF_chi)
-    corr_trr  = corr_array(iiPDF_rrain, iiPDF_eta)
-    corr_tNr  = corr_array(iiPDF_Nr, iiPDF_eta)
-    corr_tNcn = corr_array(iiPDF_Ncn, iiPDF_eta)
+    corr_chi_eta   = corr_array(iiPDF_eta, iiPDF_chi)
+    corr_chi_rr  = corr_array(iiPDF_rrain, iiPDF_chi)
+    corr_chi_Nr  = corr_array(iiPDF_Nr, iiPDF_chi)
+    corr_chi_Ncn = corr_array(iiPDF_Ncn, iiPDF_chi)
+    corr_eta_rr  = corr_array(iiPDF_rrain, iiPDF_eta)
+    corr_eta_Nr  = corr_array(iiPDF_Nr, iiPDF_eta)
+    corr_eta_Ncn = corr_array(iiPDF_Ncn, iiPDF_eta)
     corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
   end subroutine unpack_correlations

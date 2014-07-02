@@ -388,7 +388,7 @@ module pdf_utilities
 
   !=============================================================================
   pure function calc_corr_sx( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
-                              sigma_s_i, corr_rtx_i, corr_thlx_i )  &
+                              sigma_chi_i, corr_rtx_i, corr_thlx_i )  &
   result( corr_sx_i )
 
     ! Description:
@@ -450,7 +450,7 @@ module pdf_utilities
       cthl_i,      & ! Coefficient of th_l for s' (ith PDF component)      [1/K]
       sigma_rt_i,  & ! Standard deviation of r_t (ith PDF component)     [kg/kg]
       sigma_thl_i, & ! Standard deviation of th_l (ith PDF component)        [K]
-      sigma_s_i,   & ! Standard deviation of s (ith PDF component)       [kg/kg]
+      sigma_chi_i,   & ! Standard deviation of s (ith PDF component)       [kg/kg]
       corr_rtx_i,  & ! Correlation between r_t and x (ith PDF component)     [-]
       corr_thlx_i    ! Correlation between th_l and x (ith PDF component)    [-]
 
@@ -460,12 +460,12 @@ module pdf_utilities
 
 
     ! Calculate the correlation of s and x in the ith PDF component.
-    if ( sigma_s_i > zero ) then
+    if ( sigma_chi_i > zero ) then
 
-       corr_sx_i = crt_i * ( sigma_rt_i / sigma_s_i ) * corr_rtx_i  &
-                   - cthl_i * ( sigma_thl_i / sigma_s_i ) * corr_thlx_i
+       corr_sx_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rtx_i  &
+                   - cthl_i * ( sigma_thl_i / sigma_chi_i ) * corr_thlx_i
 
-    else  ! sigma_s_i = 0
+    else  ! sigma_chi_i = 0
 
        ! The variance of s_(i) is 0.  This means that s is constant within the
        ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation

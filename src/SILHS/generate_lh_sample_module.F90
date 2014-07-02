@@ -13,7 +13,7 @@ module generate_lh_sample_module
 
   private :: sample_points, gaus_mixt_points, & 
     truncate_gaus_mixt, &
-    st_2_rtthl, log_sqd_normalized, choose_permuted_random, &
+    chi_eta_2_rtthl, log_sqd_normalized, choose_permuted_random, &
     set_min_varnce_and_mean, construct_gaus_LN_element, &
     construct_LN_LN_element, corr_LN_to_covar_gaus, &
     corr_gaus_LN_to_covar_gaus, mu_LN_to_mu_gaus, &
@@ -45,25 +45,25 @@ module generate_lh_sample_module
 !   This subroutine generates a Latin Hypercube sample.
 
 ! Assumptions:
-!   The l_fix_s_t_correlations = false code does not set the correlation 
+!   The l_fix_chi_eta_correlations = false code does not set the correlation 
 !   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the 
 !   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
 !   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
-!   correlation between rr and Ncn when the correlation between s and Ncn is
+!   correlation between rr and Ncn when the correlation between chi(s) and Ncn is
 !   non-zero, and the code would have to halt.
 !
-!   One implication of this is that if l_fix_s_t_correlations = false 
-!   then the correlation of s and Ncn must be set to 
+!   One implication of this is that if l_fix_chi_eta_correlations = false 
+!   then the correlation of chi(s) and Ncn must be set to 
 !   zero in the correlation file to check the convergence of a non-interactive
 !   SILHS solution against the analytic K&K solution.
 !
-!   The l_fix_s_t_correlations = true code does not have the above limitation
-!   but will use a value for the covariance of the s and t that is not necessarily 
+!   The l_fix_chi_eta_correlations = true code does not have the above limitation
+!   but will use a value for the covariance of the chi(s) and eta(t) that is not necessarily 
 !   equal to the one computed by the PDF, so setting the correlation of 
-!   s and Ncn to zero is not needed.
-!   It will also fix the value of the correlation between s and t in the 
+!   chi(s) and Ncn to zero is not needed.
+!   It will also fix the value of the correlation between chi(s) and eta(t) in the 
 !   analytic K&K code, which should allow for convergence between the two solutions.
 !   If it does not, then there is probably a new bug in the code.
 
@@ -110,12 +110,12 @@ module generate_lh_sample_module
 
     use latin_hypercube_arrays, only: &
       l_fixed_corr_initialized, & ! Variable(s)
-      corr_stw_cloud_Cholesky, & 
-      corr_stw_below_Cholesky, &
-      corr_stw_cloud_scaling, & 
-      corr_stw_below_scaling, &
-      l_corr_stw_cloud_scaling, & 
-      l_corr_stw_below_scaling
+      corr_chi_eta_w_cloud_Cholesky, & 
+      corr_chi_eta_w_below_Cholesky, &
+      corr_chi_eta_w_cloud_scaling, & 
+      corr_chi_eta_w_below_scaling, &
+      l_corr_chi_eta_w_cloud_scaling, & 
+      l_corr_chi_eta_w_below_scaling
 
     use matrix_operations, only: &
       set_lower_triangular_matrix_dp, & ! Procedures
@@ -136,7 +136,7 @@ module generate_lh_sample_module
       max_mag_correlation 
 
     use parameters_microphys, only: &
-      l_fix_s_t_correlations ! Varible(s)
+      l_fix_chi_eta_correlations ! Varible(s)
 
     use clubb_precision, only: &
       dp, & ! double precision
@@ -178,14 +178,14 @@ module generate_lh_sample_module
       rt2_in,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
       varnce_rt1_in,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
       varnce_rt2_in,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-      chi_1_in,          & ! Mean of s for 1st normal distribution               [kg/kg]
-      chi_2_in,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-      stdev_chi_1_in,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-      stdev_chi_2_in,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-      stdev_eta_1_in,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-      stdev_eta_2_in,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
-      covar_chi_eta_1,     & ! Covariance of s and t for 1st normal distribution   [kg/kg]
-      covar_chi_eta_2,     & ! Covariance of s and t for 2nd normal distribution   [kg/kg]
+      chi_1_in,          & ! Mean of chi(s) for 1st normal distribution               [kg/kg]
+      chi_2_in,          & ! Mean of chi(s) for 2nd normal distribution               [kg/kg]
+      stdev_chi_1_in,    & ! Standard deviation of chi(s) for 1st normal distribution [kg/kg]
+      stdev_chi_2_in,    & ! Standard deviation of chi(s) for 2nd normal distribution [kg/kg]
+      stdev_eta_1_in,    & ! Standard deviation of eta(t) for 1st normal distribution [kg/kg]
+      stdev_eta_2_in,    & ! Standard deviation of eta(t) for 2nd normal distribution [kg/kg]
+      covar_chi_eta_1,     & ! Covariance of chi(s) and eta(t) for 1st normal distribution   [kg/kg]
+      covar_chi_eta_2,     & ! Covariance of chi(s) and eta(t) for 2nd normal distribution   [kg/kg]
       crt1,           & ! Coefficient for s'                                      [-]
       crt2,           & ! Coefficient for s'                                      [-]
       cthl1,          & ! Coefficient for s'                                    [1/K]
@@ -221,7 +221,7 @@ module generate_lh_sample_module
 
     real( kind = core_rknd ) :: &
       rtm,         & ! Mean total water mixing ratio                           [kg/kg]
-      chi,         & ! Mean chi(chi) (for when stdev_chi_1 < chi_tol)        [kg/kg]
+      chi,         & ! Mean chi(s) (for when stdev_chi_1 < chi_tol)        [kg/kg]
       w1,          & ! Mean of w for 1st normal distribution                     [m/s]
       w2,          & ! Mean of w for 2nd normal distribution                     [m/s]
       varnce_w1,   & ! Variance of w for 1st normal distribution             [m^2/s^2]
@@ -234,24 +234,24 @@ module generate_lh_sample_module
       rt2,         & ! Mean of r_t for 2nd normal distribution                 [kg/kg]
       varnce_rt1,  & ! Variance of r_t for 1st normal distribution         [kg^2/kg^2]
       varnce_rt2,  & ! Variance of r_t for 2nd normal distribution         [kg^2/kg^2]
-      chi_1,          & ! Mean of s for 1st normal distribution                   [kg/kg]
-      chi_2,          & ! Mean of s for 2nd normal distribution                   [kg/kg]
-      eta_1,          & ! Mean of t for 1st normal distribution                   [kg/kg]
-      eta_2,          & ! Mean of t for 2nd normal distribution                   [kg/kg]
-      stdev_chi_1,    & ! Standard deviation of s for 1st normal distribution     [kg/kg]
-      stdev_chi_2,    & ! Standard deviation of s for 2nd normal distribution     [kg/kg]
-      stdev_eta_1,    & ! Standard deviation of t for the 1st normal distribution [kg/kg]
-      stdev_eta_2       ! Standard deviation of t for the 1st normal distribution [kg/kg]
+      chi_1,          & ! Mean of chi(s) for 1st normal distribution                   [kg/kg]
+      chi_2,          & ! Mean of chi(s) for 2nd normal distribution                   [kg/kg]
+      eta_1,          & ! Mean of eta(t) for 1st normal distribution                   [kg/kg]
+      eta_2,          & ! Mean of eta(t) for 2nd normal distribution                   [kg/kg]
+      stdev_chi_1,    & ! Standard deviation of chi(s) for 1st normal distribution     [kg/kg]
+      stdev_chi_2,    & ! Standard deviation of chi(s) for 2nd normal distribution     [kg/kg]
+      stdev_eta_1,    & ! Standard deviation of eta(t) for the 1st normal distribution [kg/kg]
+      stdev_eta_2       ! Standard deviation of eta(t) for the 1st normal distribution [kg/kg]
 
-    ! Means of s, t, w, & hydrometeors for plumes 1 and 2
+    ! Means of chi(s), eta(t), w, & hydrometeors for plumes 1 and 2
     real( kind = core_rknd ), dimension(d_variables) :: &
       mu1, mu2
 
-    ! Columns of Sigma_stw, X_nl_one_lev:  1   2   3   4 ... d_variables
+    ! Columns of Sigma_chi_eta_w, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                      s   t   w   hydrometeors
     real( kind = dp ), dimension(d_variables,d_variables) :: &
-      Sigma_stw_1, & ! Covariance of s,t, w + hydrometeors for plume 1
-      Sigma_stw_2    ! Covariance of s,t, w + hydrometeors for plume 2
+      Sigma_chi_eta_w_1, & ! Covariance of chi(s),t, w + hydrometeors for plume 1
+      Sigma_chi_eta_w_2    ! Covariance of chi(s),t, w + hydrometeors for plume 2
 
     real( kind = dp ) :: &
       var_Ncn1, & ! PDF param for width of plume 1.              [(#/kg)^2]
@@ -260,19 +260,19 @@ module generate_lh_sample_module
       var_Nr1,  & ! PDF param for width of plume 1.              [(#/kg)^2]
       var_Nr2     ! PDF param for width of plume 2.              [(#/kg^2]
 
-    real( kind = core_rknd ) :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_srr, corr_sNr, &
-            covar_sNr1, covar_sNr2, covar_srr1, covar_srr2
+    real( kind = core_rknd ) :: corr_rrNr, covar_rrNr1, covar_rrNr2, corr_chi_rr, corr_chi_Nr, &
+            covar_chi_Nr1, covar_chi_Nr2, covar_chi_rr1, covar_chi_rr2
 
-    real( kind = dp ) :: covar_trr1, covar_trr2, covar_tNr2, covar_tNr1
+    real( kind = dp ) :: covar_eta_rr1, covar_eta_rr2, covar_eta_Nr2, covar_eta_Nr1
 
 !   real :: &
 !     stdev_Ncn, & ! Standard deviation of Ncn   [#/kg]
-!     corr_tNcn, & ! Correlation between t and Ncn [-]
-!     corr_sNcn, & ! Correlation between s and Ncn [-]
-!     covar_tNcn1,    & ! Covariance of t and Ncn1      []
-!     covar_tNcn2,    & ! Covariance of t and Ncn2      []
-!     covar_sNcn1,    & ! Covariance of s and Ncn1      [# kg/kg^2]
-!     covar_sNcn2       ! Covariance of s and Ncn2      [# kg/kg^2]
+!     corr_tNcn, & ! Correlation between eta(t) and Ncn [-]
+!     corr_sNcn, & ! Correlation between chi(s) and Ncn [-]
+!     covar_tNcn1,    & ! Covariance of eta(t) and Ncn1      []
+!     covar_tNcn2,    & ! Covariance of eta(t) and Ncn2      []
+!     covar_sNcn1,    & ! Covariance of chi(s) and Ncn1      [# kg/kg^2]
+!     covar_sNcn2       ! Covariance of chi(s) and Ncn2      [# kg/kg^2]
 
 !   real( kind = dp ), dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
 
@@ -283,10 +283,10 @@ module generate_lh_sample_module
       var_rr2    ! PDF param for width of plume 2.   [(kg/kg)^2]
 
     real( kind = dp ) :: &
-      tp2_mellor_2, sp2_mellor_2,  & ! Variance of s,t         [(kg/kg)^2]
-      sptp_mellor_2,               & ! Covariance of s and t   [kg/kg]
-      tp2_mellor_1, sp2_mellor_1,  & ! Variance of s,t         [(kg/kg)^2]
-      sptp_mellor_1                  ! Covariance of s and t   [kg/kg]
+      etap2_2, chip2_2,  & ! Variance of chi(s),eta(t)         [(kg/kg)^2]
+      chip_etap_2,               & ! Covariance of chi(s) and eta(t)   [kg/kg]
+      etap2_1, chip2_1,  & ! Variance of chi(s),eta(t)         [(kg/kg)^2]
+      chip_etap_1                  ! Covariance of chi(s) and eta(t)   [kg/kg]
 
 
     real( kind = dp ), dimension(d_variables,d_variables) :: &
@@ -300,10 +300,10 @@ module generate_lh_sample_module
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     real( kind = dp ), dimension(d_variables,d_variables) :: &
-      Corr_stw_1, Corr_stw_2 ! Correlation matrix for Sigma_stw_1,2
+      Corr_chi_eta_w_1, Corr_chi_eta_w_2 ! Correlation matrix for Sigma_chi_eta_w_1,2
 
     real( kind = dp ), dimension(:,:), allocatable :: &
-      corr_stw_matrix ! Correlation matrix      [-]
+      corr_chi_eta_w_matrix ! Correlation matrix      [-]
 
     real( kind = dp ), dimension(3) :: &
       temp_3_elements
@@ -315,7 +315,7 @@ module generate_lh_sample_module
       corr_array => null()  ! Correlation array pointer
 
     real( kind = dp ), pointer, dimension(:,:) :: &
-      corr_stw_matrix_Cholesky => null() ! Pointer to the correct Cholesky factorization
+      corr_chi_eta_w_matrix_Cholesky => null() ! Pointer to the correct Cholesky factorization
 
     logical :: l_in_cloud
 
@@ -330,7 +330,7 @@ module generate_lh_sample_module
 
     ! Input pdf parameters.
 
-    if ( l_fix_s_t_correlations ) then
+    if ( l_fix_chi_eta_correlations ) then
 
       ! For fixed correlations, these don't appear in the correlation matrix, so
       ! we don't need them to be over some threshold.  In deep convective cases
@@ -363,7 +363,7 @@ module generate_lh_sample_module
       stdev_eta_1 = stdev_eta_1_in
       stdev_eta_2 = stdev_eta_2_in
 
-    else ! don't fixed the correlation of s and t.
+    else ! don't fixed the correlation of chi(s) and eta(t).
 
       ! In this case we may need to set the variance to minimum value or the
       ! variance matrix cannot be decomposed
@@ -408,12 +408,12 @@ module generate_lh_sample_module
           ( chi, chi_tol, chi_2_in, stdev_chi_2_in, & ! In
             stdev_chi_2, chi_2 ) ! Out
 
-      ! The mean of t is zero;  we set the standard deviation to allow the 
+      ! The mean of eta(t) is zero;  we set the standard deviation to allow the 
       ! matrix to be decomposed for the t element
       stdev_eta_1 = max( stdev_eta_1_in, eta_tol )
       stdev_eta_2 = max( stdev_eta_2_in, eta_tol )
 
-    end if ! l_fix_s_t_correlations
+    end if ! l_fix_chi_eta_correlations
 
     !---------------------------------------------------------------------------
     ! Generate a set of sample points for a microphysics/radiation scheme
@@ -529,9 +529,9 @@ module generate_lh_sample_module
     end if
 
 
-    ! Means of s, t, w, Ncn, Nr, rr for Gaussians 1 and 2
+    ! Means of chi(s), eta(t), w, Ncn, Nr, rr for Gaussians 1 and 2
 
-    ! The mean of t is always 0.
+    ! The mean of eta(t) is always 0.
     eta_1 = 0._core_rknd
     eta_2 = 0._core_rknd
 
@@ -540,12 +540,12 @@ module generate_lh_sample_module
     mu2((/iiPDF_chi,iiPDF_eta,iiPDF_w/)) &
       = (/ chi_2, eta_2, w2 /)
 
-    ! Define the variance of s and t
-    tp2_mellor_1 = real(stdev_eta_1, kind = dp)**2
-    tp2_mellor_2 = real(stdev_eta_2, kind = dp)**2
+    ! Define the variance of chi(s) and eta(t)
+    etap2_1 = real(stdev_eta_1, kind = dp)**2
+    etap2_2 = real(stdev_eta_2, kind = dp)**2
 
-    sp2_mellor_1 = real(stdev_chi_1, kind = dp)**2
-    sp2_mellor_2 = real(stdev_chi_2, kind = dp)**2
+    chip2_1 = real(stdev_chi_1, kind = dp)**2
+    chip2_2 = real(stdev_chi_2, kind = dp)**2
 
     ! An old subroutine, gaus_rotate, couldn't handle large correlations;
     !   I assume the replacement, gaus_condt, has equal trouble.
@@ -554,65 +554,65 @@ module generate_lh_sample_module
     !   a correlation of exactly 1 without using the modified method -dschanen 11 Oct 2012
     ! max_mag_correlation = 0.99_core_rknd in constants.F90
 
-    sptp_mellor_1 = real(min( max( -max_mag_correlation * stdev_eta_1 * stdev_chi_1, &
+    chip_etap_1 = real(min( max( -max_mag_correlation * stdev_eta_1 * stdev_chi_1, &
       covar_chi_eta_1 ), max_mag_correlation * stdev_eta_1 * stdev_chi_1 ), kind = dp)
-    sptp_mellor_2 = real(min( max( -max_mag_correlation * stdev_eta_2 * stdev_chi_2, &
+    chip_etap_2 = real(min( max( -max_mag_correlation * stdev_eta_2 * stdev_chi_2, &
       covar_chi_eta_2 ), max_mag_correlation * stdev_eta_2 * stdev_chi_2 ), kind = dp)
 
-    if ( .not. l_fix_s_t_correlations ) then
+    if ( .not. l_fix_chi_eta_correlations ) then
 
       ! Covariance (not correlation) matrices of rt-thl-w
       !    for Gaussians 1 and 2
       ! For now, assume no within-plume correlation of w with
-      !    any other variables when the s and t correlations are not fixed.
+      !    any other variables when the chi(s) and eta(t) correlations are not fixed.
 
       ! If l_Sigma_scaling = .true., we are dealing with a correlation Cholesky
       ! matrix here. But we need the covariance Cholesky matrix in sample_points.
       ! Therefore the results are rescaled in sample_points.
 
-      ! Sigma_stw_1,2
-      Sigma_stw_1 = 0._dp ! Start with no covariance, and add matrix elements
-      Sigma_stw_2 = 0._dp
+      ! Sigma_chi_eta_w_1,2
+      Sigma_chi_eta_w_1 = 0._dp ! Start with no covariance, and add matrix elements
+      Sigma_chi_eta_w_2 = 0._dp
 
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
 
       ! Setup the Sigma matrices for s,t
-      Sigma_stw_1(iiPDF_chi,iiPDF_chi) = sp2_mellor_1
-      Sigma_stw_1(iiPDF_eta,iiPDF_eta) = tp2_mellor_1
-      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, sptp_mellor_1, &
-                                           Sigma_stw_1(1:2,1:2) )
+      Sigma_chi_eta_w_1(iiPDF_chi,iiPDF_chi) = chip2_1
+      Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_eta) = etap2_1
+      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, chip_etap_1, &
+                                           Sigma_chi_eta_w_1(1:2,1:2) )
 
-      Sigma_stw_2(iiPDF_chi,iiPDF_chi) = sp2_mellor_2
-      Sigma_stw_2(iiPDF_eta,iiPDF_eta) = tp2_mellor_2
-      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, sptp_mellor_2, &
-                                           Sigma_stw_2(1:2,1:2) )
+      Sigma_chi_eta_w_2(iiPDF_chi,iiPDF_chi) = chip2_2
+      Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_eta) = etap2_2
+      call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, chip_etap_2, &
+                                           Sigma_chi_eta_w_2(1:2,1:2) )
       ! Add the w element
-      Sigma_stw_1(iiPDF_w,iiPDF_w) = real(varnce_w1, kind = dp)
+      Sigma_chi_eta_w_1(iiPDF_w,iiPDF_w) = real(varnce_w1, kind = dp)
 
-      Sigma_stw_2(iiPDF_w,iiPDF_w) = real(varnce_w2, kind = dp)
+      Sigma_chi_eta_w_2(iiPDF_w,iiPDF_w) = real(varnce_w2, kind = dp)
 
       if ( iiPDF_Ncn > 0 ) then
         ! var_Ncn1,2 = PDF param for width of plume 1,2. [var_Ncn1,2] = (#/kg)**2
         var_Ncn1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_Ncn), kind=dp ) )
         var_Ncn2 = var_Ncn1
-        Sigma_stw_1(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn1
-        Sigma_stw_2(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn2
+        Sigma_chi_eta_w_1(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn1
+        Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_Ncn) = var_Ncn2
       end if
 
       if ( iiPDF_Nr > 0 ) then
         ! var_Nr1,2 = PDF param for width of plume 1,2. [var_Nr1,2] = (#/kg)**2
         var_Nr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_Nr), kind=dp ) )
         var_Nr2 = var_Nr1
-        Sigma_stw_1(iiPDF_Nr,iiPDF_Nr) = var_Nr1
-        Sigma_stw_2(iiPDF_Nr,iiPDF_Nr) = var_Nr2
+        Sigma_chi_eta_w_1(iiPDF_Nr,iiPDF_Nr) = var_Nr1
+        Sigma_chi_eta_w_2(iiPDF_Nr,iiPDF_Nr) = var_Nr2
       end if
 
       if ( iiPDF_rrain > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
         var_rr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_rrain), kind=dp ) )
         var_rr2 = var_rr1
-        Sigma_stw_1(iiPDF_rrain,iiPDF_rrain) = var_rr1
-        Sigma_stw_2(iiPDF_rrain,iiPDF_rrain) = var_rr2
+        Sigma_chi_eta_w_1(iiPDF_rrain,iiPDF_rrain) = var_rr1
+        Sigma_chi_eta_w_2(iiPDF_rrain,iiPDF_rrain) = var_rr2
       end if
 
       if ( iiPDF_rrain > 0 .and. iiPDF_Nr > 0 ) then
@@ -640,120 +640,120 @@ module generate_lh_sample_module
 
           call set_lower_triangular_matrix_dp &
                ( d_variables, index1, index2, real(covar_rrNr1, kind=dp), & ! In
-                 Sigma_stw_1 ) ! In/out
+                 Sigma_chi_eta_w_1 ) ! In/out
           call set_lower_triangular_matrix_dp &
                ( d_variables, index1, index2, real(covar_rrNr2, kind=dp), & ! In
-                 Sigma_stw_2 ) ! In/out
+                 Sigma_chi_eta_w_2 ) ! In/out
         end if
 
         index1 = iiPDF_chi
         index2 = iiPDF_Nr
-        ! Covariances involving s and Nr & rr
+        ! Covariances involving chi(s) and Nr & rr
         if ( stdev_chi_1 > chi_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
-                 corr_sNr ) ! Out
+                 corr_chi_Nr ) ! Out
 
-          ! Covariance between s and rain number conc.
+          ! Covariance between chi(s) and rain number conc.
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
-                 covar_sNr1 ) ! Out
+               ( corr_chi_Nr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
+                 covar_chi_Nr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, real(covar_sNr1, kind=dp), & ! In
-                 Sigma_stw_1 ) ! In/out
+               ( d_variables, index1, index2, real(covar_chi_Nr1, kind=dp), & ! In
+                 Sigma_chi_eta_w_1 ) ! In/out
 
-          ! Approximate the covariance of t and Nr
+          ! Approximate the covariance of eta(t) and Nr
           ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
-          covar_tNr1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) &
-            * real(covar_sNr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
+          covar_eta_Nr1 = ( Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_chi) &
+            * real(covar_chi_Nr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_tNr1, kind=dp) , & ! In
-                 Sigma_stw_1 ) ! In/out
+               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_eta_Nr1, kind=dp) , & ! In
+                 Sigma_chi_eta_w_1 ) ! In/out
         end if
 
         if ( stdev_chi_2 > chi_tol .and. Nrm > real(Nr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
-                 corr_sNr ) ! Out
+                 corr_chi_Nr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_sNr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
-                 covar_sNr2 ) ! Out
+               ( corr_chi_Nr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
+                 covar_chi_Nr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, real(covar_sNr2, kind=dp), & ! In
-                 Sigma_stw_2 ) ! In/out
+               ( d_variables, index1, index2, real(covar_chi_Nr2, kind=dp), & ! In
+                 Sigma_chi_eta_w_2 ) ! In/out
 
-          ! Approximate the covariance of t and Nr
+          ! Approximate the covariance of eta(t) and Nr
           ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
-          covar_tNr2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) &
-            * real(covar_sNr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
+          covar_eta_Nr2 = ( Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_chi) &
+            * real(covar_chi_Nr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_tNr2, kind = dp), & ! In
-                 Sigma_stw_2 ) ! In/out
+               ( d_variables, iiPDF_eta, iiPDF_Nr, real(covar_eta_Nr2, kind = dp), & ! In
+                 Sigma_chi_eta_w_2 ) ! In/out
         end if
 
         index1 = iiPDF_chi
         index2 = iiPDF_rrain
-        ! Covariances involving s and Nr & rr
+        ! Covariances involving chi(s) and Nr & rr
         if ( stdev_chi_1 > chi_tol .and. rrainm > real(rr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
-                 corr_srr ) ! Out
+                 corr_chi_rr ) ! Out
 
-          ! Covariance between s and rain water mixing ratio
+          ! Covariance between chi(s) and rain water mixing ratio
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
-                 covar_srr1 ) ! Out
+               ( corr_chi_rr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
+                 covar_eta_rr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_chi, iiPDF_rrain, real(covar_srr1, kind=dp), & ! In
-                 Sigma_stw_1 ) ! In/out
+               ( d_variables, iiPDF_chi, iiPDF_rrain, real(covar_chi_rr1, kind=dp), & ! In
+                 Sigma_chi_eta_w_1 ) ! In/out
 
-          ! Approximate the covariance of t and rr
+          ! Approximate the covariance of eta(t) and rr
           ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
-          covar_trr1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) &
-            * real(covar_srr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
+          covar_eta_rr1 = ( Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_chi) &
+            * real(covar_chi_rr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_trr1, kind = dp), & ! In
-                 Sigma_stw_1 ) ! In/out
+               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_eta_rr1, kind = dp), & ! In
+                 Sigma_chi_eta_w_1 ) ! In/out
         end if
 
         if ( stdev_chi_2 > chi_tol .and. rrainm > real( rr_tol, kind = dp ) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
-                 corr_srr ) ! Out
+                 corr_chi_rr ) ! Out
 
           call construct_gaus_LN_element &
-               ( corr_srr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
-                 covar_srr2 ) ! Out
+               ( corr_chi_rr, stdev_chi_2, sigma2_on_mu2_ip_array(index2), & ! In
+                 covar_chi_rr2 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, index1, index2, real(covar_srr2, kind=dp), & ! In
-                 Sigma_stw_2 ) ! In/out
+               ( d_variables, index1, index2, real(covar_chi_rr2, kind=dp), & ! In
+                 Sigma_chi_eta_w_2 ) ! In/out
 
-          ! Approximate the covariance of t and rr
+          ! Approximate the covariance of eta(t) and rr
           ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
-          covar_trr2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) &
-            * real(covar_srr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
+          covar_eta_rr2 = ( Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_chi) &
+            * real(covar_chi_rr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_trr2, kind = dp), & ! In
-                 Sigma_stw_2 ) ! In/out
+               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_eta_rr2, kind = dp), & ! In
+                 Sigma_chi_eta_w_2 ) ! In/out
         end if
 
       end if ! if iiPDF_rrain > 0 .and. iiPDF_Nr > 0
 
 !     if ( iiPDF_Ncn > 0 ) then
 
-      ! Covariances involving s and Ncn (currently disabled)
+      ! Covariances involving chi(s) and Ncn (currently disabled)
 !       corr_sNcn = corr_array(iiPDF_chi,iiPDF_Ncn)
 !       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( sigma2_on_mu2_ip_array(iiPDF_Ncn) )
 
@@ -764,14 +764,14 @@ module generate_lh_sample_module
 !                   stdev_chi_1, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_1(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
-!         Sigma_stw_1(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn1, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn1, kind = dp)
 
-!         ! Approximate the covariance of t and Ncn
-!         covar_tNcn1 = ( Sigma_stw_1(iiPDF_eta,iiPDF_chi) * covar_sNcn1 ) / stdev_chi_1**2
+!         ! Approximate the covariance of eta(t) and Ncn
+!         covar_tNcn1 = ( Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_chi) * covar_sNcn1 ) / stdev_chi_1**2
 
-!         Sigma_stw_1(iiPDF_eta,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_eta) = real(covar_tNcn2, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(covar_tNcn2, kind = dp)
 
 !       end if
 
@@ -781,14 +781,14 @@ module generate_lh_sample_module
 !                   stdev_chi_2, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_stw_2(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn2, kind = dp)
 
-!         ! Approximate the covariance of t and Ncn
-!         covar_tNcn2 = ( Sigma_stw_2(iiPDF_eta,iiPDF_chi) * covar_sNcn2 ) / stdev_chi_2**2
+!         ! Approximate the covariance of eta(t) and Ncn
+!         covar_tNcn2 = ( Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_chi) * covar_sNcn2 ) / stdev_chi_2**2
 
-!         Sigma_stw_2(iiPDF_eta,iiPDF_Ncn) = real(stNcn2, kind = dp)
-!         Sigma_stw_2(iiPDF_Ncn,iiPDF_eta) = real(stNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_Ncn) = real(stNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(stNcn2, kind = dp)
 
 !       end if
 
@@ -796,30 +796,30 @@ module generate_lh_sample_module
 
       if ( clubb_at_least_debug_level( 2 ) ) then
 
-        call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_1, Corr_stw_1 )
-        call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_stw_2, Corr_stw_2 )
+        call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_chi_eta_w_1, Corr_chi_eta_w_1 )
+        call symm_covar_matrix_2_corr_matrix( d_variables, Sigma_chi_eta_w_2, Corr_chi_eta_w_2 )
 
-        if ( any( Corr_stw_1 > 1.0_dp ) .or. any( Corr_stw_1 < -1.0_dp ) ) then
-          write(fstderr,*) "Sigma_stw_1 has a correlation > 1 or < -1"
+        if ( any( Corr_chi_eta_w_1 > 1.0_dp ) .or. any( Corr_chi_eta_w_1 < -1.0_dp ) ) then
+          write(fstderr,*) "Sigma_chi_eta_w_1 has a correlation > 1 or < -1"
           call print_lower_triangular_matrix( fstderr, d_variables, &
-            real( Corr_stw_1, kind = core_rknd ) )
+            real( Corr_chi_eta_w_1, kind = core_rknd ) )
         end if
-        if ( any( Corr_stw_2 > 1.0_dp ) .or. any( Corr_stw_2 < -1.0_dp ) ) then
-          write(fstderr,*) "Sigma_stw_2 has a correlation > 1 or < -1"
+        if ( any( Corr_chi_eta_w_2 > 1.0_dp ) .or. any( Corr_chi_eta_w_2 < -1.0_dp ) ) then
+          write(fstderr,*) "Sigma_chi_eta_w_2 has a correlation > 1 or < -1"
           call print_lower_triangular_matrix( fstderr, d_variables, &
-            real( Corr_stw_2, kind = core_rknd ) )
+            real( Corr_chi_eta_w_2, kind = core_rknd ) )
         end if
 
       end if ! clubb_at_least_debug_level( 2 )
 
-      ! Compute cholesky factorization Sigma_stw_1 / Sigma_stw_2
+      ! Compute cholesky factorization Sigma_chi_eta_w_1 / Sigma_chi_eta_w_2
       if ( X_mixt_comp_one_lev == 1 ) then
-        call Cholesky_factor( d_variables, Sigma_stw_1, & ! In
+        call Cholesky_factor( d_variables, Sigma_chi_eta_w_1, & ! In
                               Sigma1_scaling, Sigma1_Cholesky, l_Sigma1_scaling ) ! Out
       end if
 
       if ( X_mixt_comp_one_lev == 2 ) then
-        call Cholesky_factor( d_variables, real(Sigma_stw_2, kind = dp), & ! In
+        call Cholesky_factor( d_variables, real(Sigma_chi_eta_w_2, kind = dp), & ! In
                               Sigma2_scaling, Sigma2_Cholesky, l_Sigma2_scaling ) ! Out
       end if
 
@@ -831,43 +831,43 @@ module generate_lh_sample_module
       ! Cholesky matrix for the sampling, we have to convert the correlation Cholesky matrix
       ! before we feed it to sample points.
       !
-      ! Attention: corr_stw_matrix_Cholesky is not a correlation matrix. It is rather a mixture
-      ! of a correlation and covariance matrix (see description of costruct_corr_stw_matrix).
+      ! Attention:corr_chi_eta_w_matrix_Cholesky is not a correlation matrix. It is rather a mixture
+      ! of a correlation and covariance matrix (see description of costruct_corr_chi_eta_w_matrix).
 
       ! Compute the Cholesky factorization of the correlations if it's not
       ! already computed.
       if ( .not. l_fixed_corr_initialized ) then
 
-        allocate( corr_stw_matrix(d_variables,d_variables), &
-                  corr_stw_cloud_Cholesky(d_variables,d_variables), &
-                  corr_stw_below_Cholesky(d_variables,d_variables), &
-                  corr_stw_cloud_scaling(d_variables), &
-                  corr_stw_below_scaling(d_variables) )
+        allocate( corr_chi_eta_w_matrix(d_variables,d_variables), &
+                  corr_chi_eta_w_cloud_Cholesky(d_variables,d_variables), &
+                  corr_chi_eta_w_below_Cholesky(d_variables,d_variables), &
+                  corr_chi_eta_w_cloud_scaling(d_variables), &
+                  corr_chi_eta_w_below_scaling(d_variables) )
 
-        call construct_corr_stw_matrix &
+        call construct_corr_chi_eta_w_matrix &
              ( d_variables, corr_array_cloud, & ! In
                sigma2_on_mu2_ip_array_cloud, & ! In
-               corr_stw_matrix ) ! Out
+               corr_chi_eta_w_matrix ) ! Out
 
         ! Compute choleksy factorization for the correlation matrix (in cloud)
-        call Cholesky_factor( d_variables, real(corr_stw_matrix, kind = dp), & ! In
-                              corr_stw_cloud_scaling, corr_stw_cloud_Cholesky, & ! Out
-                              l_corr_stw_cloud_scaling ) ! Out
+        call Cholesky_factor( d_variables, real(corr_chi_eta_w_matrix, kind = dp), & ! In
+                              corr_chi_eta_w_cloud_scaling, corr_chi_eta_w_cloud_Cholesky, & ! Out
+                              l_corr_chi_eta_w_cloud_scaling ) ! Out
 
         ! This subroutine constructs a matrix where the first 3x3 elements are correlations
         ! and the other elements are LN covariances
-        call construct_corr_stw_matrix &
+        call construct_corr_chi_eta_w_matrix &
              ( d_variables, corr_array_below, & ! In
                sigma2_on_mu2_ip_array_below, & ! In
-               corr_stw_matrix ) ! Out
+               corr_chi_eta_w_matrix ) ! Out
 
         ! Compute choleksy factorization for the correlation matrix (out of cloud)
-        call Cholesky_factor( d_variables, real(corr_stw_matrix, kind = dp), & ! In
-                              corr_stw_below_scaling, corr_stw_below_Cholesky, &  ! Out
-                              l_corr_stw_below_scaling ) ! Out
+        call Cholesky_factor( d_variables, real(corr_chi_eta_w_matrix, kind = dp), & ! In
+                              corr_chi_eta_w_below_scaling, corr_chi_eta_w_below_Cholesky, &  ! Out
+                              l_corr_chi_eta_w_below_scaling ) ! Out
 
 
-        deallocate( corr_stw_matrix )
+        deallocate( corr_chi_eta_w_matrix )
 
         l_fixed_corr_initialized = .true.
 
@@ -876,17 +876,17 @@ module generate_lh_sample_module
       ! Determine if the point is in or out of cloud for the purposes of picking
       ! the values of the correlations to use
       if ( l_in_cloud ) then
-        l_Sigma1_scaling = l_corr_stw_cloud_scaling
-        l_Sigma2_scaling = l_corr_stw_cloud_scaling
-        corr_stw_matrix_Cholesky => corr_stw_cloud_Cholesky
-        Sigma1_scaling = corr_stw_cloud_scaling
-        Sigma2_scaling = corr_stw_cloud_scaling
+        l_Sigma1_scaling = l_corr_chi_eta_w_cloud_scaling
+        l_Sigma2_scaling = l_corr_chi_eta_w_cloud_scaling
+        corr_chi_eta_w_matrix_Cholesky => corr_chi_eta_w_cloud_Cholesky
+        Sigma1_scaling = corr_chi_eta_w_cloud_scaling
+        Sigma2_scaling = corr_chi_eta_w_cloud_scaling
       else
-        l_Sigma1_scaling = l_corr_stw_below_scaling
-        l_Sigma2_scaling = l_corr_stw_below_scaling
-        corr_stw_matrix_Cholesky => corr_stw_below_Cholesky
-        Sigma1_scaling = corr_stw_below_scaling
-        Sigma2_scaling = corr_stw_below_scaling
+        l_Sigma1_scaling = l_corr_chi_eta_w_below_scaling
+        l_Sigma2_scaling = l_corr_chi_eta_w_below_scaling
+        corr_chi_eta_w_matrix_Cholesky => corr_chi_eta_w_below_Cholesky
+        Sigma1_scaling = corr_chi_eta_w_below_scaling
+        Sigma2_scaling = corr_chi_eta_w_below_scaling
       end if
 
       if ( X_mixt_comp_one_lev == 1 ) then
@@ -899,14 +899,14 @@ module generate_lh_sample_module
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of chi_1, eta_1, and w1
         call row_mult_lower_tri_matrix &
-             ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
+             ( 3, temp_3_elements, corr_chi_eta_w_matrix_Cholesky(1:3,1:3), & ! In
                Sigma1_Cholesky(1:3,1:3) ) ! Out
 
         ! Set the remaining elements (the lognormal variates) to the value
         ! contained in the matrix, since they don't vary in space in time
         do ivar1 = 4, d_variables
           do ivar2 = 4, ivar1
-            Sigma1_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
+            Sigma1_Cholesky(ivar1,ivar2) = corr_chi_eta_w_matrix_Cholesky(ivar1,ivar2)
           end do
         end do
       end if ! X_mixt_comp_one_lev == 1
@@ -920,19 +920,19 @@ module generate_lh_sample_module
         ! Multiply the first three elements of the variance matrix by the
         ! values of the standard deviation of s2, t2, and w2
         call row_mult_lower_tri_matrix &
-             ( 3, temp_3_elements, corr_stw_matrix_Cholesky(1:3,1:3), & ! In
+             ( 3, temp_3_elements, corr_chi_eta_w_matrix_Cholesky(1:3,1:3), & ! In
                Sigma2_Cholesky(1:3,1:3) ) ! Out
 
         ! Set the remaining elements (the lognormal variates) to the value
         ! contained in the matrix, since they don't vary in space in time
         do ivar1 = 4, d_variables
           do ivar2 = 4, ivar1
-            Sigma2_Cholesky(ivar1,ivar2) = corr_stw_matrix_Cholesky(ivar1,ivar2)
+            Sigma2_Cholesky(ivar1,ivar2) = corr_chi_eta_w_matrix_Cholesky(ivar1,ivar2)
           end do
         end do
       end if ! X_mixt_comp_one_lev == 2
 
-    end if ! l_fix_s_t_correlations
+    end if ! l_fix_chi_eta_correlations
 
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
@@ -959,8 +959,8 @@ module generate_lh_sample_module
                thl1, thl2, rt1, rt2, & ! In
                crt1, crt2, cthl1, cthl2, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
-               corr_stw_matrix_Cholesky_1, & ! In
-               corr_stw_matrix_Cholesky_2, & ! In
+               corr_Cholesky_mtx_1, & ! In
+               corr_Cholesky_mtx_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
                l_in_precip_one_lev, & ! In
                lh_rt, lh_thl, X_nl_one_lev ) ! Out
@@ -968,25 +968,25 @@ module generate_lh_sample_module
 !   This subroutine generates a Latin Hypercube sample.
 
 ! Assumptions:
-!   The l_fix_s_t_correlations = false code does not set the correlation
+!   The l_fix_chi_eta_correlations = false code does not set the correlation
 !   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the
 !   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
 !   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
-!   correlation between rr and Ncn when the correlation between s and Ncn is
+!   correlation between rr and Ncn when the correlation between chi(s) and Ncn is
 !   non-zero, and the code would have to halt.
 !
-!   One implication of this is that if l_fix_s_t_correlations = false
-!   then the correlation of s and Ncn must be set to
+!   One implication of this is that if l_fix_chi_eta_correlations = false
+!   then the correlation of chi(s) and Ncn must be set to
 !   zero in the correlation file to check the convergence of a non-interactive
 !   SILHS solution against the analytic K&K solution.
 !
-!   The l_fix_s_t_correlations = true code does not have the above limitation
-!   but will use a value for the covariance of the s and t that is not necessarily
+!   The l_fix_chi_eta_correlations = true code does not have the above limitation
+!   but will use a value for the covariance of the chi(s) and eta(t) that is not necessarily
 !   equal to the one computed by the PDF, so setting the correlation of
-!   s and Ncn to zero is not needed.
-!   It will also fix the value of the correlation between s and t in the
+!   chi(s) and Ncn to zero is not needed.
+!   It will also fix the value of the correlation between chi(s) and eta(t) in the
 !   analytic K&K code, which should allow for convergence between the two solutions.
 !   If it does not, then there is probably a new bug in the code.
 
@@ -1033,14 +1033,14 @@ module generate_lh_sample_module
       cthl2          ! Coefficient for s'                        [1/K]
 
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
-      corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
-      corr_stw_matrix_Cholesky_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
+      corr_Cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
+      corr_Cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      mu1,    & ! Means of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>)  [units vary]
-      mu2,    & ! Means of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>)  [units vary]
-      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
-      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
+      mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
+      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
     real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
@@ -1117,7 +1117,7 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of chi_1, eta_1, and w1
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma1, kind = dp ), corr_stw_matrix_Cholesky_1, & ! In
+           ( d_variables, real( sigma1, kind = dp ), corr_Cholesky_mtx_1, & ! In
              Sigma1_Cholesky ) ! Out
 
     elseif ( X_mixt_comp_one_lev == 2 ) then
@@ -1126,7 +1126,7 @@ module generate_lh_sample_module
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma2, kind = dp ), corr_stw_matrix_Cholesky_2, & ! In
+           ( d_variables, real( sigma2, kind = dp ), corr_Cholesky_mtx_2, & ! In
              Sigma2_Cholesky ) ! Out
 
     end if ! X_mixt_comp_one_lev == 1
@@ -1247,12 +1247,12 @@ module generate_lh_sample_module
 
     ! Thermodynamic constants for plumes 1 and 2, units of kg/kg
     real( kind = dp ), intent(in) :: &
-      crt1,  & ! coefficient relating rt, s and t for Gaus comp 1
-      cthl1, & ! coeff relating thl, s and t for component 1
-      crt2,  & ! coefficient relating rt, s and t for component 2
-      cthl2    ! coefficient relating thl, s and t for comp. 2
+      crt1,  & ! coefficient relating rt, chi(s) and eta(t) for Gaus comp 1
+      cthl1, & ! coeff relating thl, chi(s) and eta(t) for component 1
+      crt2,  & ! coefficient relating rt, chi(s) and eta(t) for component 2
+      cthl2    ! coefficient relating thl, chi(s) and eta(t) for comp. 2
 
-    ! Latin hypercube variables, i.e. s, t, w, etc.
+    ! Latin hypercube variables, i.e. chi, eta, w, etc.
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
 
@@ -1266,7 +1266,7 @@ module generate_lh_sample_module
       X_mixt_comp_one_lev ! Whether we're in the 1st or 2nd mixture component
 
     ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
-    !                                           s   t   w   hydrometeors
+    !                                           chi eta w   hydrometeors
     real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, & ! [units vary]
       Sigma2_Cholesky
@@ -1297,7 +1297,7 @@ module generate_lh_sample_module
                            X_u_one_lev, X_mixt_comp_one_lev, & ! intent(in)
                            X_nl_one_lev ) ! intent(out)
 
-! Transform s (column 1) and t (column 2) back to rt and thl
+! Transform chi(s) (column 1) and eta(t) (column 2) back to rt and thl
 !   This is only needed if you need total water mixing ratio and liquid potential
 !   samples points.
 !     call sptp_2_rtpthlp &
@@ -1305,7 +1305,7 @@ module generate_lh_sample_module
 !            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
 !            X_nl_one_lev(2), &
 !            X_u_one_lev, rtp, thlp )
-    call st_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
+    call chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
                      real(mu1(iiPDF_chi), kind = dp), & ! intent(in)
                      real(mu2(iiPDF_chi), kind = dp), & ! intent(in)
@@ -1325,9 +1325,9 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine rtpthlp_2_sptp( stdev_chi, varnce_rt, varnce_thl, &
+  subroutine rtpthlp_2_chip_etap( stdev_chi, varnce_rt, varnce_thl, &
                              rrtthl_covar, crt, cthl, &
-                             tp2, sp2, sptp ) ! Out
+                             chip2, etap2, chip_etap ) ! Out
 
 ! Description:
 !   Transform covariance matrix from rt', theta_l' coordinates
@@ -1341,7 +1341,7 @@ module generate_lh_sample_module
 !
 ! Notes:
 !   We no longer use this subroutine since the code in pdf_closure will compute
-!   the value of the variance of t, s, and the covariance of the two directly.
+!   the value of the variance of eta(t), s, and the covariance of the two directly.
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1364,15 +1364,15 @@ module generate_lh_sample_module
     ! Output Variables
 
     real( kind = dp ), intent(out) :: &
-      tp2, sp2,  &    ! Variance of s,t         [(kg/kg)^2]
-      sptp            ! Covariance of s and t   [kg/kg]
+      etap2, chip2,  &    ! Variance of chi(s),t         [(kg/kg)^2]
+      chip_etap            ! Covariance of chi(s) and eta(t)   [kg/kg]
 
     ! Local Variables
 
     real( kind = dp ) :: crt_sqd, cthl_sqd
 
     real( kind = dp ) :: &
-      sqrt_sp2_tp2, & ! sqrt of the product of the variances of s and t [kg/kg]
+      sqrt_chip2_etap2, & ! sqrt of the product of the variances of chi(s) and eta(t) [kg/kg]
       max_mag_corr_dp
 
     ! ---- Begin Code ----
@@ -1382,21 +1382,21 @@ module generate_lh_sample_module
     ! multiplication on Larson, et al. See figure 14.
     crt_sqd = crt**2
     cthl_sqd = cthl**2
-    sptp = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
-    tp2 = crt_sqd * varnce_rt + 2._dp * crt * cthl * rrtthl_covar &
+    chip_etap = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
+    etap2 = crt_sqd * varnce_rt + 2._dp * crt * cthl * rrtthl_covar &
         + cthl_sqd * varnce_thl
-    sp2 = stdev_chi**2
+    chip2 = stdev_chi**2
 
-    ! Reduce the correlation of s and t Mellor if it's greater than 0.99
-    sqrt_sp2_tp2 = sqrt( sp2 * tp2 )
+    ! Reduce the correlation of chi(s) and eta(t) Mellor if it's greater than 0.99
+    sqrt_chip2_etap2 = sqrt( chip2 * etap2 )
     max_mag_corr_dp = real( max_mag_correlation, kind=dp )
-    sptp = min( max( -max_mag_corr_dp * sqrt_sp2_tp2, sptp ), &
-                max_mag_corr_dp * sqrt_sp2_tp2 )
+    chip_etap = min( max( -max_mag_corr_dp * sqrt_chip2_etap2, chip_etap ), &
+                max_mag_corr_dp * sqrt_chip2_etap2 )
 
 !   sptp = 0.3 * sqrt( sp2 ) * sqrt( tp2 )
 
     return
-  end subroutine rtpthlp_2_sptp
+  end subroutine rtpthlp_2_chip_etap
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -1927,13 +1927,13 @@ module generate_lh_sample_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine st_2_rtthl( rt1, thl1, rt2, thl2, & 
+  subroutine chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & 
                          crt1, cthl1, crt2, cthl2, & 
-                         mu_s1, mu_s2, &
+                         mu_chi_1, mu_chi_2, &
                          chi, eta, X_mixt_comp_one_lev, &
                          lh_rt, lh_thl )
 ! Description:
-!   Converts from s, t variables to rt, thl.  Also sets a limit on the value
+!   Converts from chi(s), eta(t) variables to rt, thl.  Also sets a limit on the value
 !   of cthl1 and cthl2 to prevent extreme values of temperature.
 !
 ! References:
@@ -1968,9 +1968,9 @@ module generate_lh_sample_module
       cthl1, cthl2   ! Constants from plumes 1 & 2 of thetal
 
     real( kind = dp ), intent(in) :: &
-      mu_s1, mu_s2 ! Mean for s1 and s2         [kg/kg]
+      mu_chi_1, mu_chi_2 ! Mean for chi_1 and chi_2         [kg/kg]
 
-    ! n-dimensional column vector of Mellor's s and t, including mean and perturbation
+    ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
     real( kind = dp ), intent(in) :: &
       chi, &  ! [kg/kg]
       eta     ! [-]
@@ -2003,11 +2003,11 @@ module generate_lh_sample_module
 !                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
 
     if ( X_mixt_comp_one_lev == 1 ) then
-      lh_rt  = real( rt1 + (0.5_dp/crt1)*(chi-mu_s1) +  & 
+      lh_rt  = real( rt1 + (0.5_dp/crt1)*(chi-mu_chi_1) +  & 
                              (0.5_dp/crt1)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl1)*(chi-mu_s1) & 
+      lh_dev_thl_lim = (-0.5_dp/cthl1)*(chi-mu_chi_1) & 
                      + (0.5_dp/cthl1)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
@@ -2015,16 +2015,16 @@ module generate_lh_sample_module
       lh_thl = real( thl1 + lh_dev_thl_lim, kind=core_rknd )
 
         ! Old code
-!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(chi-mu_s1) +  & 
+!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(chi-mu_chi_1) +  & 
 !                              (0.5_dp/cthl1_clip)*eta, kind=core_rknd )
 
     else if ( X_mixt_comp_one_lev == 2 ) then
         ! mixture fraction 2
-      lh_rt = real( rt2 + (0.5_dp/crt2)*(chi-mu_s2) +  & 
+      lh_rt = real( rt2 + (0.5_dp/crt2)*(chi-mu_chi_2) +  & 
                              (0.5_dp/crt2)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl2)*(chi-mu_s2) & 
+      lh_dev_thl_lim = (-0.5_dp/cthl2)*(chi-mu_chi_2) & 
                      + (0.5_dp/cthl2)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
@@ -2032,15 +2032,15 @@ module generate_lh_sample_module
       lh_thl = real( thl2 + lh_dev_thl_lim, kind=core_rknd )
 
       ! Old code
-!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(chi-mu_s2) +  & 
+!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(chi-mu_chi_2) +  & 
 !                           (0.5_dp/cthl2_clip)*eta, kind=core_rknd )
     else
-      stop "Error determining mixture fraction in st_2_rtthl"
+      stop "Error determining mixture fraction in chi_eta_2_rtthl"
 
     end if
 
     return
-  end subroutine st_2_rtthl
+  end subroutine chi_eta_2_rtthl
 !-------------------------------------------------------------------------------
   subroutine log_sqd_normalized( Xm, sigma2_on_mu2_ip, &
                                  X1, X2 )
@@ -2195,13 +2195,13 @@ module generate_lh_sample_module
   end subroutine set_min_varnce_and_mean
 
 !-------------------------------------------------------------------------------
-  subroutine construct_corr_stw_matrix &
+  subroutine construct_corr_chi_eta_w_matrix &
              ( d_variables, corr_array, &
                sigma2_on_mu2_ip_array, &
-               corr_stw_matrix )
+               corr_chi_eta_w_matrix )
 ! Description:
 !   Construct a correlation matrix containing s,t,w and the lognormal variates.
-!   This code is only called when l_fix_s_t_correlations is true.  It does not
+!   This code is only called when l_fix_chi_eta_correlations is true.  It does not
 !   assume zero correlation between w and the other variates.
 !
 !   The matrix is i.e. a mixture, where the first 3 rows contain the correlations for s,t,w and
@@ -2250,13 +2250,13 @@ module generate_lh_sample_module
 
     ! Output variables
     real( kind = dp ), dimension(d_variables,d_variables), intent(out) :: &
-      corr_stw_matrix ! Correlations between variates with some terms in lognormal space
+      corr_chi_eta_w_matrix ! Correlations between variates with some terms in lognormal space
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      corr_st, & ! Correlation for s,t  [-]
-      corr_sw, & ! Correlation for w,s  [-]
-      corr_tw    ! Correlation for w,t  [-]
+      corr_chi_eta, & ! Correlation for s,t  [-]
+      corr_chi_w, & ! Correlation for w,s  [-]
+      corr_eta_w    ! Correlation for w,t  [-]
 
     integer :: i, index1, index2, LN_index
 
@@ -2266,14 +2266,14 @@ module generate_lh_sample_module
     ! distributed (e.g. rain water mixing ratio).
     LN_index = max( iiPDF_chi, iiPDF_eta, iiPDF_w )+1
 
-    corr_stw_matrix = 0.0_dp ! Initialize to 0
+    corr_chi_eta_w_matrix = 0.0_dp ! Initialize to 0
 
     do i = 1, LN_index-1, 1
       ! Set main diagonal to 1
-      corr_stw_matrix(i,i) = 1.0_dp
+      corr_chi_eta_w_matrix(i,i) = 1.0_dp
     end do
 
-    ! Set the correlation of s and t. For this part of the code we assume a
+    ! Set the correlation of chi(s) and eta(t). For this part of the code we assume a
     ! fixed correlation in order to only compute the Cholesky factorization
     ! once per simulation.
     index1 = iiPDF_chi
@@ -2281,11 +2281,11 @@ module generate_lh_sample_module
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
-            corr_st ) ! Out
+            corr_chi_eta ) ! Out
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, real(corr_st, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+         ( d_variables, index1, index2, real(corr_chi_eta, kind = dp), & ! In
+           corr_chi_eta_w_matrix ) ! In/out
 
     ! The correlation between w and s,t is typically not fixed either, but for
     ! the reasons listed above we compute it using a fixed value.
@@ -2294,26 +2294,26 @@ module generate_lh_sample_module
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
-            corr_sw ) ! Out
+            corr_chi_w ) ! Out
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, real(corr_sw, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+         ( d_variables, index1, index2, real(corr_chi_w, kind = dp), & ! In
+           corr_chi_eta_w_matrix ) ! In/out
 
-    ! Obtain the fixed value for the correlation between t and w.
+    ! Obtain the fixed value for the correlation between eta(t) and w.
     index1 = iiPDF_eta
     index2 = iiPDF_w
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
-            corr_tw ) ! Out
+            corr_eta_w ) ! Out
 
     ! Add the correlation to the matrix
     call set_lower_triangular_matrix_dp &
-         ( d_variables, index1, index2, real(corr_tw, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+         ( d_variables, index1, index2, real(corr_eta_w, kind = dp), & ! In
+           corr_chi_eta_w_matrix ) ! In/out
 
     ! Compute the main diagonal for each lognormal variate
     forall ( i = LN_index:d_variables )
-      corr_stw_matrix(i,i)&
+      corr_chi_eta_w_matrix(i,i)&
       = real(log( 1._core_rknd + sigma2_on_mu2_ip_array(i) ), kind = dp)
     end forall
 
@@ -2323,26 +2323,26 @@ module generate_lh_sample_module
         call add_corr_to_matrix_LN_LN &
              ( d_variables, index1, index2, & ! In
                sigma2_on_mu2_ip_array, corr_array, & ! In
-               corr_stw_matrix ) ! In/Out
+               corr_chi_eta_w_matrix ) ! In/Out
       end do
     end do
 
-    ! Correlations involving s, t, w and the lognormal variates
+    ! Correlations involving chi, eta, w and the lognormal variates
     do index1 = LN_index, d_variables
       call add_corr_to_matrix_gaus_LN &
            ( d_variables, iiPDF_chi, & ! In
              iiPDF_eta, iiPDF_w, index1, & ! In
              sigma2_on_mu2_ip_array, corr_array, & ! In
-             corr_stw_matrix ) ! In/Out
+             corr_chi_eta_w_matrix ) ! In/Out
     end do
 
     return
-  end subroutine construct_corr_stw_matrix
+  end subroutine construct_corr_chi_eta_w_matrix
 
 !-------------------------------------------------------------------------------
   subroutine add_corr_to_matrix_LN_LN( d_variables, index1, index2, &
                                        sigma2_on_mu2_ip_array, corr_array, &
-                                       corr_stw_matrix )
+                                       corr_chi_eta_w_matrix )
 ! Description:
 !   Added a correlation between two lognormally distributed variates to a
 !   correlation matrix.
@@ -2372,7 +2372,7 @@ module generate_lh_sample_module
 
     ! Input/Output Variables
     real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
-      corr_stw_matrix ! Correlation matrix      [-]
+      corr_chi_eta_w_matrix ! Correlation matrix      [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -2397,7 +2397,7 @@ module generate_lh_sample_module
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, index1, index2, real(covar_xy, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+           corr_chi_eta_w_matrix ) ! In/out
 
     return
   end subroutine add_corr_to_matrix_LN_LN
@@ -2406,7 +2406,7 @@ module generate_lh_sample_module
   subroutine add_corr_to_matrix_gaus_LN( d_variables, iiPDF_chi, &
                                          iiPDF_eta, iiPDF_w, index1, &
                                          sigma2_on_mu2_ip_array, corr_array, &
-                                         corr_stw_matrix )
+                                         corr_chi_eta_w_matrix )
 ! Description:
 !   Add a correlation between s,t Mellor, w and a lognormal variate to a
 !   correlation matrix.
@@ -2440,51 +2440,51 @@ module generate_lh_sample_module
 
     ! Input/Output Variables
     real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
-      corr_stw_matrix ! Correlation matrix      [-]
+      corr_chi_eta_w_matrix ! Correlation matrix      [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      corr_sx, &  ! Correlation between s and a lognormal variate
+      corr_chi_x, &  ! Correlation between chi(s) and a lognormal variate
       corr_wx, &  ! Correlation between w and a lognormal variate
-      covar_sx, & ! Lognormal covariance of chi and x
+      covar_chi_x, & ! Lognormal covariance of chi and x
       covar_wx    ! Lognormal covariance of w and x
 
     real( kind = dp ) :: &
-      covar_tx    ! Lognormal covariance of eta and x
+      covar_eta_x    ! Lognormal covariance of eta and x
 
     ! ---- Begin Code ----
 
-    ! Correlations involving s and lognormal variate x
+    ! Correlations involving chi(s) and lognormal variate x
 
     call get_lower_triangular_matrix &
          ( d_variables, iiPDF_chi, index1, corr_array, & ! In
-           corr_sx ) ! Out
+           corr_chi_x ) ! Out
 
-    if ( corr_sx /= 0._core_rknd ) then
-      ! Covariance between s and lognormal variate x
+    if ( corr_chi_x /= 0._core_rknd ) then
+      ! Covariance between chi(s) and lognormal variate x
       ! The variable x could be rrain, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
-           ( corr_sx, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
-             covar_sx ) ! Out
+           ( corr_chi_x, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
+             covar_chi_x ) ! Out
     else
-      covar_sx = 0._core_rknd
+      covar_chi_x = 0._core_rknd
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiPDF_chi, index1, real(covar_sx, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+         ( d_variables, iiPDF_chi, index1, real(covar_chi_x, kind = dp), & ! In
+           corr_chi_eta_w_matrix ) ! In/out
 
-    if ( corr_sx /= 0._core_rknd ) then
-      ! Approximate the covariance of t and x
+    if ( corr_chi_x /= 0._core_rknd ) then
+      ! Approximate the covariance of eta(t) and x
       ! This formula relies on the fact that iiPDF_chi < iiPDF_eta
-      covar_tx = corr_stw_matrix(iiPDF_eta,iiPDF_chi) * real(covar_sx, kind = dp)
+      covar_eta_x = corr_chi_eta_w_matrix(iiPDF_eta,iiPDF_chi) * real(covar_chi_x, kind = dp)
     else
-      covar_tx = 0._dp
+      covar_eta_x = 0._dp
     end if
 
     call set_lower_triangular_matrix_dp &
-         ( d_variables, iiPDF_eta, index1, covar_tx, & ! In
-           corr_stw_matrix ) ! In/out
+         ( d_variables, iiPDF_eta, index1, covar_eta_x, & ! In
+           corr_chi_eta_w_matrix ) ! In/out
 
     ! Correlations involving w and lognormal variate x
 
@@ -2504,7 +2504,7 @@ module generate_lh_sample_module
 
     call set_lower_triangular_matrix_dp &
          ( d_variables, iiPDF_w, index1, real(covar_wx, kind = dp), & ! In
-           corr_stw_matrix ) ! In/out
+           corr_chi_eta_w_matrix ) ! In/out
 
     return
   end subroutine add_corr_to_matrix_gaus_LN

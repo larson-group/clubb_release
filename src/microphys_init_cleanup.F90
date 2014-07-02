@@ -50,7 +50,7 @@ module microphys_init_cleanup
         l_arctic_nucl,                & ! Use MPACE observations (Morrison)
         l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
         l_fix_pgam,                   & ! Fix pgam (Morrison)
-        l_fix_s_t_correlations,       & ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
+        l_fix_chi_eta_correlations,   & ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
         l_lh_vert_overlap,            & ! Assume maximum overlap for chi(s_mellor) (SILHS)
         l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
         lh_microphys_calls,           & ! # of SILHS samples to call the microphysics with
@@ -245,7 +245,7 @@ module microphys_init_cleanup
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
-      l_fix_s_t_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
+      l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
       rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud, Ncnp2_on_Ncnm2, &
       rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below, &
       rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, &
@@ -362,7 +362,7 @@ module microphys_init_cleanup
        call write_text ( "lh_seed = ", lh_seed, l_write_to_file, iunit )
        call write_text ( "l_lh_cloud_weighted_sampling = ", &
                          l_lh_cloud_weighted_sampling, l_write_to_file, iunit )
-       call write_text ( "l_fix_s_t_correlations = ", l_fix_s_t_correlations, &
+       call write_text ( "l_fix_chi_eta_correlations = ", l_fix_chi_eta_correlations, &
                          l_write_to_file, iunit )
        call write_text ( "l_silhs_KK_convergence_adj_mean = ", &
                          l_silhs_KK_convergence_adj_mean, &
@@ -585,9 +585,9 @@ module microphys_init_cleanup
           stop "Fatal error."
        endif
 
-       if ( .not. l_fix_s_t_correlations .and. l_ice_microphys &
+       if ( .not. l_fix_chi_eta_correlations .and. l_ice_microphys &
             .and. trim( lh_microphys_type ) /= "disabled" ) then
-          write(fstderr,*) "The flag l_fix_s_t_correlations must be true" &
+          write(fstderr,*) "The flag l_fix_chi_eta_correlations must be true" &
                            // " in order to enable latin hypercube sampling" &
                            // " and ice microphysics."
           write(fstderr,*) "The flag l_ice_microphys must be set" &

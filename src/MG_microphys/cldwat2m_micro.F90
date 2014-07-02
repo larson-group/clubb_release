@@ -864,10 +864,10 @@ subroutine mmicro_pcond ( sub_column,           &
     real( kind = core_rknd ) :: &
       mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
       mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_t_1,        & ! Mean of t (1st PDF component)                   [kg/kg]
-      mu_t_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
+      mu_chi_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
+      mu_chi_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
+      mu_eta_1,        & ! Mean of t (1st PDF component)                   [kg/kg]
+      mu_eta_2,        & ! Mean of t (2nd PDF component)                   [kg/kg]
       mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
       mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
       mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
@@ -882,10 +882,10 @@ subroutine mmicro_pcond ( sub_column,           &
       mu_Ncn_2_n,    & ! Mean of ln Ncn (2nd PDF component)         [ln(num/kg)]
       sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
       sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_t_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
-      sigma_t_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
+      sigma_chi_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
+      sigma_chi_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
+      sigma_eta_1,     & ! Standard deviation of t (1st PDF component)     [kg/kg]
+      sigma_eta_2,     & ! Standard deviation of t (2nd PDF component)     [kg/kg]
       sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
       sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
       sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF comp.) ip    [num/kg]
@@ -900,28 +900,28 @@ subroutine mmicro_pcond ( sub_column,           &
       sigma_Ncn_2_n    ! Standard dev. of ln Ncn (2nd PDF comp.)    [ln(num/kg)]
 
     real( kind = core_rknd ) :: &
-      corr_ws_1,     & ! Correlation between w and s (1st PDF component)     [-]
-      corr_ws_2,     & ! Correlation between w and s (2nd PDF component)     [-]
+      corr_w_chi_1,     & ! Correlation between w and chi(s) (1st PDF component)     [-]
+      corr_w_chi_2,     & ! Correlation between w and chi(s) (2nd PDF component)     [-]
       corr_wrr_1,    & ! Correlation between w and rr (1st PDF component) ip [-]
       corr_wrr_2,    & ! Correlation between w and rr (2nd PDF component) ip [-]
       corr_wNr_1,    & ! Correlation between w and Nr (1st PDF component) ip [-]
       corr_wNr_2,    & ! Correlation between w and Nr (2nd PDF component) ip [-]
       corr_wNcn_1,   & ! Correlation between w and Ncn (1st PDF component)   [-]
       corr_wNcn_2,   & ! Correlation between w and Ncn (2nd PDF component)   [-]
-      corr_st_1,     & ! Correlation between s and t (1st PDF component)     [-]
-      corr_st_2,     & ! Correlation between s and t (2nd PDF component)     [-]
-      corr_srr_1,    & ! Correlation between s and rr (1st PDF component) ip [-]
-      corr_srr_2,    & ! Correlation between s and rr (2nd PDF component) ip [-]
-      corr_sNr_1,    & ! Correlation between s and Nr (1st PDF component) ip [-]
-      corr_sNr_2,    & ! Correlation between s and Nr (2nd PDF component) ip [-]
-      corr_sNcn_1,   & ! Correlation between s and Ncn (1st PDF component)   [-]
-      corr_sNcn_2,   & ! Correlation between s and Ncn (2nd PDF component)   [-]
-      corr_trr_1,    & ! Correlation between t and rr (1st PDF component) ip [-]
-      corr_trr_2,    & ! Correlation between t and rr (2nd PDF component) ip [-]
-      corr_tNr_1,    & ! Correlation between t and Nr (1st PDF component) ip [-]
-      corr_tNr_2,    & ! Correlation between t and Nr (2nd PDF component) ip [-]
-      corr_tNcn_1,   & ! Correlation between t and Ncn (1st PDF component)   [-]
-      corr_tNcn_2,   & ! Correlation between t and Ncn (2nd PDF component)   [-]
+      corr_chi_eta_1,     & ! Correlation between chi(s) and eta(t) (1st PDF component)     [-]
+      corr_chi_eta_2,     & ! Correlation between chi(s) and eta(t) (2nd PDF component)     [-]
+      corr_chi_rr_1,    & ! Correlation between chi(s) and rr (1st PDF component) ip [-]
+      corr_chi_rr_2,    & ! Correlation between chi(s) and rr (2nd PDF component) ip [-]
+      corr_chi_Nr_1,    & ! Correlation between chi(s) and Nr (1st PDF component) ip [-]
+      corr_chi_Nr_2,    & ! Correlation between chi(s) and Nr (2nd PDF component) ip [-]
+      corr_chi_Ncn_1,   & ! Correlation between chi(s) and Ncn (1st PDF component)   [-]
+      corr_chi_Ncn_2,   & ! Correlation between chi(s) and Ncn (2nd PDF component)   [-]
+      corr_eta_rr_1,    & ! Correlation between eta(t) and rr (1st PDF component) ip [-]
+      corr_eta_rr_2,    & ! Correlation between eta(t) and rr (2nd PDF component) ip [-]
+      corr_eta_Nr_1,    & ! Correlation between eta(t) and Nr (1st PDF component) ip [-]
+      corr_eta_Nr_2,    & ! Correlation between eta(t) and Nr (2nd PDF component) ip [-]
+      corr_eta_Ncn_1,   & ! Correlation between eta(t) and Ncn (1st PDF component)   [-]
+      corr_eta_Ncn_2,   & ! Correlation between eta(t) and Ncn (2nd PDF component)   [-]
       corr_rrNr_1,   & ! Correlation between rr & Nr (1st PDF component) ip  [-]
       corr_rrNr_2      ! Correlation between rr & Nr (2nd PDF component) ip  [-]
 
@@ -932,18 +932,18 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_wNr_2_n,  & ! Correlation between w and ln Nr (2nd PDF comp.) ip  [-]
       corr_wNcn_1_n, & ! Correlation between w and ln Ncn (1st PDF comp.)    [-]
       corr_wNcn_2_n, & ! Correlation between w and ln Ncn (2nd PDF comp.)    [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_sNcn_1_n, & ! Correlation between s and ln Ncn (1st PDF comp.)    [-]
-      corr_sNcn_2_n, & ! Correlation between s and ln Ncn (2nd PDF comp.)    [-]
-      corr_trr_1_n,  & ! Correlation between t and ln rr (1st PDF comp.) ip  [-]
-      corr_trr_2_n,  & ! Correlation between t and ln rr (2nd PDF comp.) ip  [-]
-      corr_tNr_1_n,  & ! Correlation between t and ln Nr (1st PDF comp.) ip  [-]
-      corr_tNr_2_n,  & ! Correlation between t and ln Nr (2nd PDF comp.) ip  [-]
-      corr_tNcn_1_n, & ! Correlation between t and ln Ncn (1st PDF comp.)    [-]
-      corr_tNcn_2_n, & ! Correlation between t and ln Ncn (2nd PDF comp.)    [-]
+      corr_chi_rr_1_n,  & ! Correlation between chi(s) and ln rr (1st PDF comp.) ip  [-]
+      corr_chi_rr_2_n,  & ! Correlation between chi(s) and ln rr (2nd PDF comp.) ip  [-]
+      corr_chi_Nr_1_n,  & ! Correlation between chi(s) and ln Nr (1st PDF comp.) ip  [-]
+      corr_chi_Nr_2_n,  & ! Correlation between chi(s) and ln Nr (2nd PDF comp.) ip  [-]
+      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
+      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
+      corr_eta_rr_1_n,  & ! Correlation between eta(t) and ln rr (1st PDF comp.) ip  [-]
+      corr_eta_rr_2_n,  & ! Correlation between eta(t) and ln rr (2nd PDF comp.) ip  [-]
+      corr_eta_Nr_1_n,  & ! Correlation between eta(t) and ln Nr (1st PDF comp.) ip  [-]
+      corr_eta_Nr_2_n,  & ! Correlation between eta(t) and ln Nr (2nd PDF comp.) ip  [-]
+      corr_eta_Ncn_1_n, & ! Correlation between eta(t) and ln Ncn (1st PDF comp.)    [-]
+      corr_eta_Ncn_2_n, & ! Correlation between eta(t) and ln Ncn (2nd PDF comp.)    [-]
       corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
       corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
       KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
@@ -1862,10 +1862,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)
                  mu_w_2        = mu_x_2_n(iiPDF_w)
-                 mu_s_1        = mu_x_1_n(iiPDF_chi)
-                 mu_s_2        = mu_x_2_n(iiPDF_chi)
-                 mu_t_1        = mu_x_1_n(iiPDF_eta)
-                 mu_t_2        = mu_x_2_n(iiPDF_eta)
+                 mu_chi_1        = mu_x_1_n(iiPDF_chi)
+                 mu_chi_2        = mu_x_2_n(iiPDF_chi)
+                 mu_eta_1        = mu_x_1_n(iiPDF_eta)
+                 mu_eta_2        = mu_x_2_n(iiPDF_eta)
                  mu_rr_1_n     = mu_x_1_n(iiPDF_rrain)
                  mu_rr_2_n     = mu_x_2_n(iiPDF_rrain)
                  mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
@@ -1874,10 +1874,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
                  sigma_w_1     = sigma_x_1_n(iiPDF_w)
                  sigma_w_2     = sigma_x_2_n(iiPDF_w)
-                 sigma_s_1     = sigma_x_1_n(iiPDF_chi)
-                 sigma_s_2     = sigma_x_2_n(iiPDF_chi)
-                 sigma_t_1     = sigma_x_1_n(iiPDF_eta)
-                 sigma_t_2     = sigma_x_2_n(iiPDF_eta)
+                 sigma_chi_1     = sigma_x_1_n(iiPDF_chi)
+                 sigma_chi_2     = sigma_x_2_n(iiPDF_chi)
+                 sigma_eta_1     = sigma_x_1_n(iiPDF_eta)
+                 sigma_eta_2     = sigma_x_2_n(iiPDF_eta)
                  sigma_rr_1_n  = sigma_x_1_n(iiPDF_rrain)
                  sigma_rr_2_n  = sigma_x_2_n(iiPDF_rrain)
                  sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
@@ -1891,28 +1891,28 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
-                 corr_st_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
-                 corr_ws_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
-                 corr_srr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_chi)
-                 corr_sNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
-                 corr_sNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
-                 corr_trr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_eta)
-                 corr_tNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
-                 corr_tNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
+                 corr_chi_eta_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
+                 corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
+                 corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_chi)
+                 corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
+                 corr_chi_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
+                 corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_eta)
+                 corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
+                 corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
                  corr_wrr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_w)
                  corr_wNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_w)
                  corr_wNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
                  corr_rrNr_1_n = corr_array_1_n(iiPDF_Nr, iiPDF_rrain)
 
                  ! Unpack corr_array_2 into correlations (2nd PDF component).
-                 corr_st_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
-                 corr_ws_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
-                 corr_srr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_chi)
-                 corr_sNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
-                 corr_sNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
-                 corr_trr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_eta)
-                 corr_tNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
-                 corr_tNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
+                 corr_chi_eta_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
+                 corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
+                 corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_chi)
+                 corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
+                 corr_chi_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
+                 corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_eta)
+                 corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
+                 corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
                  corr_wrr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_w)
                  corr_wNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_w)
                  corr_wNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
@@ -1927,11 +1927,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! autoconversion rate.  Divide the result by cloud fraction
                  ! (lcldm) to find the mean in-cloud rate.
                  prc(k) = real( &
-                 KK_auto_upscaled_mean( mu_s_1, mu_s_2, mu_Ncn_1, mu_Ncn_2, &
-                                        mu_Ncn_1_n, mu_Ncn_2_n, sigma_s_1, &
-                                        sigma_s_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                        sigma_Ncn_1_n, sigma_Ncn_2_n, corr_sNcn_1_n, &
-                                        corr_sNcn_2_n, KK_auto_coef, mixt_frac ), &
+                 KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+                                        mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
+                                        sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
+                                        sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
+                                        corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac ), &
                           kind = r8 ) / lcldm(i,k)
                  nprc(k) = prc(k)/cons22
                  nprc1(k) = prc(k)/(qcic(i,k)/ncic(i,k))
@@ -2416,10 +2416,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)
                  mu_w_2        = mu_x_2_n(iiPDF_w)
-                 mu_s_1        = mu_x_1_n(iiPDF_chi)
-                 mu_s_2        = mu_x_2_n(iiPDF_chi)
-                 mu_t_1        = mu_x_1_n(iiPDF_eta)
-                 mu_t_2        = mu_x_2_n(iiPDF_eta)
+                 mu_chi_1        = mu_x_1_n(iiPDF_chi)
+                 mu_chi_2        = mu_x_2_n(iiPDF_chi)
+                 mu_eta_1        = mu_x_1_n(iiPDF_eta)
+                 mu_eta_2        = mu_x_2_n(iiPDF_eta)
                  mu_rr_1_n     = mu_x_1_n(iiPDF_rrain)
                  mu_rr_2_n     = mu_x_2_n(iiPDF_rrain)
                  mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
@@ -2428,10 +2428,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
                  sigma_w_1     = sigma_x_1_n(iiPDF_w)
                  sigma_w_2     = sigma_x_2_n(iiPDF_w)
-                 sigma_s_1     = sigma_x_1_n(iiPDF_chi)
-                 sigma_s_2     = sigma_x_2_n(iiPDF_chi)
-                 sigma_t_1     = sigma_x_1_n(iiPDF_eta)
-                 sigma_t_2     = sigma_x_2_n(iiPDF_eta)
+                 sigma_chi_1     = sigma_x_1_n(iiPDF_chi)
+                 sigma_chi_2     = sigma_x_2_n(iiPDF_chi)
+                 sigma_eta_1     = sigma_x_1_n(iiPDF_eta)
+                 sigma_eta_2     = sigma_x_2_n(iiPDF_eta)
                  sigma_rr_1_n  = sigma_x_1_n(iiPDF_rrain)
                  sigma_rr_2_n  = sigma_x_2_n(iiPDF_rrain)
                  sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
@@ -2445,28 +2445,28 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
-                 corr_st_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
-                 corr_ws_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
-                 corr_srr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_chi)
-                 corr_sNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
-                 corr_sNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
-                 corr_trr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_eta)
-                 corr_tNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
-                 corr_tNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
+                 corr_chi_eta_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
+                 corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
+                 corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_chi)
+                 corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
+                 corr_chi_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
+                 corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_eta)
+                 corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
+                 corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
                  corr_wrr_1_n  = corr_array_1_n(iiPDF_rrain, iiPDF_w)
                  corr_wNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_w)
                  corr_wNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
                  corr_rrNr_1_n = corr_array_1_n(iiPDF_Nr, iiPDF_rrain)
 
                  ! Unpack corr_array_2 into correlations (2nd PDF component).
-                 corr_st_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
-                 corr_ws_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
-                 corr_srr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_chi)
-                 corr_sNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
-                 corr_sNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
-                 corr_trr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_eta)
-                 corr_tNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
-                 corr_tNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
+                 corr_chi_eta_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
+                 corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
+                 corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_chi)
+                 corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
+                 corr_chi_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
+                 corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_eta)
+                 corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
+                 corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
                  corr_wrr_2_n  = corr_array_2_n(iiPDF_rrain, iiPDF_w)
                  corr_wNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_w)
                  corr_wNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
@@ -2478,11 +2478,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! accretion rate.  Divide the result by cloud fraction (lcldm)
                  ! to find the mean in-cloud rate.
                  !pra(k) = real( &
-                 !KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                 !                       mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
-                 !                       sigma_s_2, sigma_rr_1, sigma_rr_2, &
-                 !                       sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
-                 !                       corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                 !KK_accr_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                 !                       mu_rr_1_n, mu_rr_2_n, sigma_chi_1, &
+                 !                       sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                 !                       sigma_rr_1_n, sigma_rr_2_n, corr_chi_rr_1_n, &
+                 !                       corr_chi_rr_2_n, KK_accr_coef, mixt_frac, &
                  !                       real( cldmax(i,k), kind = core_rknd ), &
                  !                       real( cldmax(i,k), kind = core_rknd ) ), &
                  !         kind = r8 ) / lcldm(i,k)
@@ -2490,11 +2490,11 @@ subroutine mmicro_pcond ( sub_column,           &
                  ! introduced to MG, use the code below that automatically
                  ! has a precip_frac of 1 for each component.
                  pra(k) = real( &
-                 KK_accr_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
-                                        mu_rr_1_n, mu_rr_2_n, sigma_s_1, &
-                                        sigma_s_2, sigma_rr_1, sigma_rr_2, &
-                                        sigma_rr_1_n, sigma_rr_2_n, corr_srr_1_n, &
-                                        corr_srr_2_n, KK_accr_coef, mixt_frac, &
+                 KK_accr_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                                        mu_rr_1_n, mu_rr_2_n, sigma_chi_1, &
+                                        sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                                        sigma_rr_1_n, sigma_rr_2_n, corr_chi_rr_1_n, &
+                                        corr_chi_rr_2_n, KK_accr_coef, mixt_frac, &
                                         one, one ), &
                           kind = r8 ) / lcldm(i,k)
                  npra(k) = pra(k)/(qcic(i,k)/ncic(i,k))

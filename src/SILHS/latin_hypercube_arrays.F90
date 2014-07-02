@@ -19,22 +19,22 @@ module latin_hypercube_arrays
 !$omp threadprivate(l_fixed_corr_initialized)
 
   real( kind = dp ), allocatable, dimension(:,:), target, public :: &
-    corr_stw_cloud_Cholesky, & ! Cholesky factorization of the correlation matrix
-    corr_stw_below_Cholesky    ! Cholesky factorization of the correlation matrix
+    corr_chi_eta_w_cloud_Cholesky, & ! Cholesky factorization of the correlation matrix
+    corr_chi_eta_w_below_Cholesky    ! Cholesky factorization of the correlation matrix
 
-!$omp threadprivate(corr_stw_cloud_Cholesky, corr_stw_below_Cholesky)
+!$omp threadprivate(corr_chi_eta_w_cloud_Cholesky, corr_chi_eta_w_below_Cholesky)
 
   real( kind = dp ), allocatable, dimension(:), public :: &
-    corr_stw_cloud_scaling, & ! Scaling factors for the correlation matrix [-]
-    corr_stw_below_scaling    ! Scaling factors for the correlation matrix [-]
+    corr_chi_eta_w_cloud_scaling, & ! Scaling factors for the correlation matrix [-]
+    corr_chi_eta_w_below_scaling    ! Scaling factors for the correlation matrix [-]
 
-!$omp threadprivate(corr_stw_cloud_scaling, corr_stw_below_scaling)
+!$omp threadprivate(corr_chi_eta_w_cloud_scaling, corr_chi_eta_w_below_scaling)
 
   logical, public :: &
-    l_corr_stw_cloud_scaling, & ! Whether we're scaling the correlation matrix
-    l_corr_stw_below_scaling
+    l_corr_chi_eta_w_cloud_scaling, & ! Whether we're scaling the correlation matrix
+    l_corr_chi_eta_w_below_scaling
 
-!$omp threadprivate(l_corr_stw_cloud_scaling, l_corr_stw_below_scaling)
+!$omp threadprivate(l_corr_chi_eta_w_cloud_scaling, l_corr_chi_eta_w_below_scaling)
 
   integer, allocatable, dimension(:,:,:), public :: & 
     height_time_matrix ! matrix of rand ints
@@ -58,20 +58,20 @@ module latin_hypercube_arrays
 
     ! ---- Begin Code ----
 
-    if ( allocated( corr_stw_cloud_Cholesky ) ) then
-      deallocate( corr_stw_cloud_Cholesky )
+    if ( allocated( corr_chi_eta_w_cloud_Cholesky ) ) then
+      deallocate( corr_chi_eta_w_cloud_Cholesky )
     end if
 
-    if ( allocated( corr_stw_below_Cholesky ) ) then
-      deallocate( corr_stw_below_Cholesky )
+    if ( allocated( corr_chi_eta_w_below_Cholesky ) ) then
+      deallocate( corr_chi_eta_w_below_Cholesky )
     end if
 
-    if ( allocated( corr_stw_cloud_scaling ) ) then
-      deallocate( corr_stw_cloud_scaling )
+    if ( allocated( corr_chi_eta_w_cloud_scaling ) ) then
+      deallocate( corr_chi_eta_w_cloud_scaling )
     end if
 
-    if ( allocated( corr_stw_below_scaling ) ) then
-      deallocate( corr_stw_below_scaling )
+    if ( allocated( corr_chi_eta_w_below_scaling ) ) then
+      deallocate( corr_chi_eta_w_below_scaling )
     end if
 
     if ( allocated( height_time_matrix ) ) then

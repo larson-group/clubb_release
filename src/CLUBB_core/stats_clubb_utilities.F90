@@ -513,33 +513,33 @@ module stats_clubb_utilities
        ! statistical variables.
        ntot = ntot + 2
     endif
-    if ( any( vars_zt == "corr_shm_i" ) ) then
-       ! Correct for number of variables found under "corr_shm_i".
-       ! Subtract "corr_shm_i" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_chi_hm_i" ) ) then
+       ! Correct for number of variables found under "corr_chi_hm_i".
+       ! Subtract "corr_chi_hm_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
-    if ( any( vars_zt == "corr_sNcn_i" ) ) then
-       ! Correct for number of variables found under "corr_sNcn_i".
-       ! Subtract "corr_sNcn_i" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_chi_Ncn_i" ) ) then
+       ! Correct for number of variables found under "corr_chi_Ncn_i".
+       ! Subtract "corr_chi_Ncn_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) to the number of zt
        ! statistical variables.
        ntot = ntot + 2
     endif
-    if ( any( vars_zt == "corr_thm_i" ) ) then
-       ! Correct for number of variables found under "corr_thm_i".
-       ! Subtract "corr_thm_i" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_eta_hm_i" ) ) then
+       ! Correct for number of variables found under "corr_eta_hm_i".
+       ! Subtract "corr_eta_hm_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
-    if ( any( vars_zt == "corr_tNcn_i" ) ) then
-       ! Correct for number of variables found under "corr_tNcn_i".
-       ! Subtract "corr_tNcn_i" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_eta_Ncn_i" ) ) then
+       ! Correct for number of variables found under "corr_eta_Ncn_i".
+       ! Subtract "corr_eta_Ncn_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) to the number of zt
        ! statistical variables.
@@ -580,33 +580,33 @@ module stats_clubb_utilities
        ! statistical variables.
        ntot = ntot + 2
     endif
-    if ( any( vars_zt == "corr_shm_i_n" ) ) then
-       ! Correct for number of variables found under "corr_shm_i_n".
-       ! Subtract "corr_shm_i_n" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_chi_hm_i_n" ) ) then
+       ! Correct for number of variables found under "corr_chi_hm_i_n".
+       ! Subtract "corr_chi_hm_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
-    if ( any( vars_zt == "corr_sNcn_i_n" ) ) then
-       ! Correct for number of variables found under "corr_sNcn_i_n".
-       ! Subtract "corr_sNcn_i_n" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_chi_Ncn_i_n" ) ) then
+       ! Correct for number of variables found under "corr_chi_Ncn_i_n".
+       ! Subtract "corr_chi_Ncn_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) to the number of zt
        ! statistical variables.
        ntot = ntot + 2
     endif
-    if ( any( vars_zt == "corr_thm_i_n" ) ) then
-       ! Correct for number of variables found under "corr_thm_i_n".
-       ! Subtract "corr_thm_i_n" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_eta_hm_i_n" ) ) then
+       ! Correct for number of variables found under "corr_eta_hm_i_n".
+       ! Subtract "corr_eta_hm_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
        ntot = ntot + 2 * hydromet_dim
     endif
-    if ( any( vars_zt == "corr_tNcn_i_n" ) ) then
-       ! Correct for number of variables found under "corr_tNcn_i_n".
-       ! Subtract "corr_tNcn_i_n" from the number of zt statistical variables.
+    if ( any( vars_zt == "corr_eta_Ncn_i_n" ) ) then
+       ! Correct for number of variables found under "corr_eta_Ncn_i_n".
+       ! Subtract "corr_eta_Ncn_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) to the number of zt
        ! statistical variables.
@@ -1566,7 +1566,7 @@ module stats_clubb_utilities
         ichi_2, &
         istdev_chi_1, &
         istdev_chi_2, &
-        isp2, &
+        ichip2, &
         istdev_eta_1, &
         istdev_eta_2, &
         icovar_chi_eta_1, &
@@ -1837,7 +1837,7 @@ module stats_clubb_utilities
       rsati,       &  ! Saturation w.r.t ice         [kg/kg]
       shear,       &  ! Wind shear production term   [m^2/s^3]
       chi,         &  ! Mellor's 's'                 [kg/kg]
-      sp2,         &  ! Variance of Mellor's 's'     [kg/kg]
+      chip2,         &  ! Variance of Mellor's 's'     [kg/kg]
       rcm_in_cloud    ! rcm in cloud                 [kg/kg]
 
     real( kind = core_rknd ) :: xtmp
@@ -1953,11 +1953,11 @@ module stats_clubb_utilities
       end if
 
       ! Calculate variance of chi
-      if ( isp2 > 0 ) then
-        sp2 = compute_variance_binormal( chi, pdf_params%chi_1, pdf_params%chi_2, &
+      if ( ichip2 > 0 ) then
+        chip2 = compute_variance_binormal( chi, pdf_params%chi_1, pdf_params%chi_2, &
                                          pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
                                          pdf_params%mixt_frac )
-        call stat_update_var( isp2, sp2, zt )
+        call stat_update_var( ichip2, chip2, zt )
       end if
 
       if ( sclr_dim > 0 ) then
@@ -2583,20 +2583,20 @@ module stats_clubb_utilities
         isigma_hm_2_n, &
         icorr_whm_1, &
         icorr_whm_2, &
-        icorr_shm_1, &
-        icorr_shm_2, &
-        icorr_thm_1, &
-        icorr_thm_2, &
+        icorr_chi_hm_1, &
+        icorr_chi_hm_2, &
+        icorr_eta_hm_1, &
+        icorr_eta_hm_2, &
         icorr_Ncnhm_1, &
         icorr_Ncnhm_2, &
         icorr_hmxhmy_1, &
         icorr_hmxhmy_2, &
         icorr_whm_1_n, &
         icorr_whm_2_n, &
-        icorr_shm_1_n, &
-        icorr_shm_2_n, &
-        icorr_thm_1_n, &
-        icorr_thm_2_n, &
+        icorr_chi_hm_1_n, &
+        icorr_chi_hm_2_n, &
+        icorr_eta_hm_1_n, &
+        icorr_eta_hm_2_n, &
         icorr_Ncnhm_1_n, &
         icorr_Ncnhm_2_n, &
         icorr_hmxhmy_1_n, &
@@ -2794,20 +2794,20 @@ module stats_clubb_utilities
       deallocate( isigma_hm_2_n )
       deallocate( icorr_whm_1 )
       deallocate( icorr_whm_2 )
-      deallocate( icorr_shm_1 )
-      deallocate( icorr_shm_2 )
-      deallocate( icorr_thm_1 )
-      deallocate( icorr_thm_2 )
+      deallocate( icorr_chi_hm_1 )
+      deallocate( icorr_chi_hm_2 )
+      deallocate( icorr_eta_hm_1 )
+      deallocate( icorr_eta_hm_2 )
       deallocate( icorr_Ncnhm_1 )
       deallocate( icorr_Ncnhm_2 )
       deallocate( icorr_hmxhmy_1 )
       deallocate( icorr_hmxhmy_2 )
       deallocate( icorr_whm_1_n )
       deallocate( icorr_whm_2_n )
-      deallocate( icorr_shm_1_n )
-      deallocate( icorr_shm_2_n )
-      deallocate( icorr_thm_1_n )
-      deallocate( icorr_thm_2_n )
+      deallocate( icorr_chi_hm_1_n )
+      deallocate( icorr_chi_hm_2_n )
+      deallocate( icorr_eta_hm_1_n )
+      deallocate( icorr_eta_hm_2_n )
       deallocate( icorr_Ncnhm_1_n )
       deallocate( icorr_Ncnhm_2_n )
       deallocate( icorr_hmxhmy_1_n )

@@ -548,7 +548,7 @@ module latin_hypercube_driver_module
              ( iter, d_variables, num_samples, sequence_length, nz, & ! In
                pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
-               corr_stw_matrix_Cholesky_1, corr_stw_matrix_Cholesky_2, & ! In
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
                hydromet_pdf_params, & ! In
                X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
                lh_sample_point_weights ) ! Out
@@ -657,8 +657,8 @@ module latin_hypercube_driver_module
 
     ! More Input Variables!
     real( kind = dp ), dimension(d_variables,d_variables,nz), intent(in) :: &
-      corr_stw_matrix_Cholesky_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
-      corr_stw_matrix_Cholesky_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
+      corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
+      corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
     real( kind = core_rknd ), dimension(d_variables,nz), intent(in) :: &
       mu1,    & ! Means of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>)  [units vary]
@@ -1027,8 +1027,8 @@ module latin_hypercube_driver_module
                pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
                pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               corr_stw_matrix_Cholesky_1(:,:,k), & ! In
-               corr_stw_matrix_Cholesky_2(:,:,k), & ! In
+               corr_cholesky_mtx_1(:,:,k), & ! In
+               corr_cholesky_mtx_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                l_in_precip(k,sample), & ! In
                lh_rt(k,sample), lh_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
@@ -2050,7 +2050,7 @@ module latin_hypercube_driver_module
       ilh_wm, &
       ilh_cloud_frac, &
       ilh_chi, &
-      ilh_sp2, &
+      ilh_chip2, &
       ilh_eta
 
     use stats_variables, only: &
@@ -2160,7 +2160,7 @@ module latin_hypercube_driver_module
       lh_cloud_frac, & ! Average value of the latin hypercube est. of cloud fraction    [-]
       lh_chi,   & ! Average value of the latin hypercube est. of Mellor's s        [kg/kg]
       lh_eta,   & ! Average value of the latin hypercube est. of Mellor's t        [kg/kg]
-      lh_sp2           ! Average value of the variance of the LH est. of chi       [kg/kg]
+      lh_chip2           ! Average value of the variance of the LH est. of chi       [kg/kg]
 
 
     real(kind=core_rknd) :: xtmp
@@ -2293,12 +2293,12 @@ module latin_hypercube_driver_module
       end if
 
       ! Latin hypercube estimate of variance of chi
-      if ( ilh_sp2 > 0 ) then
-        lh_sp2(1:nz) &
+      if ( ilh_chip2 > 0 ) then
+        lh_chip2(1:nz) &
         = compute_sample_variance( nz, num_samples, &
                                    real( X_nl_all_levs(:,:,iiPDF_chi), kind = core_rknd ), &
                                    lh_sample_point_weights, lh_chi(1:nz) )
-        call stat_update_var( ilh_sp2, lh_sp2, lh_zt )
+        call stat_update_var( ilh_chip2, lh_chip2, lh_zt )
       end if
 
       ! Latin hypercube estimate of eta

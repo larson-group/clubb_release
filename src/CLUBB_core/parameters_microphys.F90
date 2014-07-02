@@ -81,11 +81,11 @@ module parameters_microphys
 
   ! Flags for the Latin Hypercube sampling code 
   logical, public :: &
-    l_fix_s_t_correlations = .true., &        ! Use a fixed correlation for s and t Mellor(chi/eta) 
+    l_fix_chi_eta_correlations = .true., &    ! Use a fixed correlation for s and t Mellor(chi/eta) 
     l_lh_cloud_weighted_sampling  = .true., & ! Limit noise by sampling in-cloud
     l_lh_vert_overlap = .true.                ! Assume maximum overlap for s_mellor (chi)
 
-!$omp threadprivate( l_fix_s_t_correlations, l_lh_cloud_weighted_sampling, &
+!$omp threadprivate( l_fix_chi_eta_correlations, l_lh_cloud_weighted_sampling, &
 !$omp                l_lh_vert_overlap )
 
   integer, public :: &

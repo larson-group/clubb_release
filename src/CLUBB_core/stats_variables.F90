@@ -137,26 +137,26 @@ module stats_variables
      isigma_hm_2_n,   &
      icorr_whm_1,     &
      icorr_whm_2,     &
-     icorr_shm_1,     &
-     icorr_shm_2,     &
-     icorr_thm_1,     &
-     icorr_thm_2,     &
+     icorr_chi_hm_1,     &
+     icorr_chi_hm_2,     &
+     icorr_eta_hm_1,     &
+     icorr_eta_hm_2,     &
      icorr_Ncnhm_1,   &
      icorr_Ncnhm_2,   &
      icorr_whm_1_n,   &
      icorr_whm_2_n,   &
-     icorr_shm_1_n,   &
-     icorr_shm_2_n,   &
-     icorr_thm_1_n,   &
-     icorr_thm_2_n,   &
+     icorr_chi_hm_1_n,   &
+     icorr_chi_hm_2_n,   &
+     icorr_eta_hm_1_n,   &
+     icorr_eta_hm_2_n,   &
      icorr_Ncnhm_1_n, &
      icorr_Ncnhm_2_n
 !$omp threadprivate( imu_hm_1, imu_hm_2, imu_hm_1_n, imu_hm_2_n, &
 !$omp   isigma_hm_1, isigma_hm_2, isigma_hm_1_n, isigma_hm_2_n, &
-!$omp   icorr_whm_1, icorr_whm_2, icorr_shm_1, icorr_shm_2, &
-!$omp   icorr_thm_1, icorr_thm_2, icorr_Ncnhm_1, icorr_Ncnhm_2, &
-!$omp   icorr_whm_1_n, icorr_whm_2_n, icorr_shm_1_n, icorr_shm_2_n, &
-!$omp   icorr_thm_1_n, icorr_thm_2_n, icorr_Ncnhm_1_n, icorr_Ncnhm_2_n )
+!$omp   icorr_whm_1, icorr_whm_2, icorr_chi_hm_1, icorr_chi_hm_2, &
+!$omp   icorr_eta_hm_1, icorr_eta_hm_2, icorr_Ncnhm_1, icorr_Ncnhm_2, &
+!$omp   icorr_whm_1_n, icorr_whm_2_n, icorr_chi_hm_1_n, icorr_chi_hm_2_n, &
+!$omp   icorr_eta_hm_1_n, icorr_eta_hm_2_n, icorr_Ncnhm_1_n, icorr_Ncnhm_2_n )
 
   integer, dimension(:,:), allocatable, public :: &
      icorr_hmxhmy_1,   &
@@ -179,31 +179,31 @@ module stats_variables
 !$omp   isigma_Ncn_1, isigma_Ncn_2, isigma_Ncn_1_n, isigma_Ncn_2_n )
 
   integer, public :: &
-     icorr_ws_1 = 0,    &
-     icorr_ws_2 = 0,    &
-     icorr_wt_1 = 0,    &
-     icorr_wt_2 = 0,    &
+     icorr_w_chi_1 = 0,    &
+     icorr_w_chi_2 = 0,    &
+     icorr_w_eta_1 = 0,    &
+     icorr_w_eta_2 = 0,    &
      icorr_wNcn_1 = 0,  &
      icorr_wNcn_2 = 0,  &
-     icorr_st_1_ca = 0, &
-     icorr_st_2_ca = 0, &
-     icorr_sNcn_1 = 0,  &
-     icorr_sNcn_2 = 0,  &
-     icorr_tNcn_1 = 0,  &
-     icorr_tNcn_2 = 0
-!$omp threadprivate( icorr_ws_1, icorr_ws_2, icorr_wt_1, icorr_wt_2, &
-!$omp   icorr_wNcn_1, icorr_wNcn_2, icorr_st_1_ca, icorr_st_2_ca, &
-!$omp   icorr_sNcn_1, icorr_sNcn_2, icorr_tNcn_1, icorr_tNcn_2 )
+     icorr_chi_eta_1_ca = 0, &
+     icorr_chi_eta_2_ca = 0, &
+     icorr_chi_Ncn_1 = 0,  &
+     icorr_chi_Ncn_2 = 0,  &
+     icorr_eta_Ncn_1 = 0,  &
+     icorr_eta_Ncn_2 = 0
+!$omp threadprivate( icorr_w_chi_1, icorr_w_chi_2, icorr_w_eta_1, icorr_w_eta_2, &
+!$omp   icorr_wNcn_1, icorr_wNcn_2, icorr_chi_eta_1_ca, icorr_chi_eta_2_ca, &
+!$omp   icorr_chi_Ncn_1, icorr_chi_Ncn_2, icorr_eta_Ncn_1, icorr_eta_Ncn_2 )
 
   integer, public :: &
      icorr_wNcn_1_n = 0, &
      icorr_wNcn_2_n = 0, &
-     icorr_sNcn_1_n = 0, &
-     icorr_sNcn_2_n = 0, &
-     icorr_tNcn_1_n = 0, &
-     icorr_tNcn_2_n = 0
-!$omp threadprivate( icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_sNcn_1_n, &
-!$omp   icorr_sNcn_2_n, icorr_tNcn_1_n, icorr_tNcn_2_n )
+     icorr_chi_Ncn_1_n = 0, &
+     icorr_chi_Ncn_2_n = 0, &
+     icorr_eta_Ncn_1_n = 0, &
+     icorr_eta_Ncn_2_n = 0
+!$omp threadprivate( icorr_wNcn_1_n, icorr_wNcn_2_n, icorr_chi_Ncn_1_n, &
+!$omp   icorr_chi_Ncn_2_n, icorr_eta_Ncn_1_n, icorr_eta_Ncn_2_n )
 
   integer, public :: & 
      iNcm = 0,             & ! Brian
@@ -585,7 +585,7 @@ module stats_variables
      ichi_2 = 0, &
      istdev_chi_1 = 0, & 
      istdev_chi_2 = 0, &
-     isp2 = 0, &
+     ichip2 = 0, &
      istdev_eta_1 = 0, &
      istdev_eta_2 = 0, &
      icovar_chi_eta_1 = 0, &
@@ -597,7 +597,7 @@ module stats_variables
      icrt2 = 0, &
      icthl1 = 0, &
      icthl2 = 0
-!$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, isp2, &
+!$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, ichip2, &
 !$omp    istdev_eta_1, istdev_eta_2, icovar_chi_eta_1, icovar_chi_eta_2, icorr_chi_eta_1, &
 !$omp    icorr_chi_eta_2, irrtthl, icrt1, icrt2, icthl1, icthl2 )
 
@@ -722,9 +722,9 @@ module stats_variables
     ilh_rtp2_zt = 0, &
     ilh_thlp2_zt = 0, &
     ilh_rrainp2_zt = 0, &
-    ilh_sp2 = 0 ! Eric Raut
+    ilh_chip2 = 0 ! Eric Raut
 !$omp threadprivate( ilh_wp2_zt, ilh_Nrp2_zt, ilh_Ncnp2_zt, ilh_Ncp2_zt, &
-!$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrainp2_zt, ilh_sp2 )
+!$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrainp2_zt, ilh_chip2 )
 
 
   ! Indices for Morrison budgets

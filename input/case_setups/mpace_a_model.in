@@ -171,7 +171,7 @@ l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
 lh_microphys_calls = 4,
 lh_sequence_length = 1,
-l_fix_s_t_correlations = .true.,
+l_fix_chi_eta_correlations = .true.,
 
 ! two aerosol mode defaults from MPACE (from Hugh)
 aer_rm1 = 0.052e-6  

@@ -595,7 +595,7 @@ module corr_matrix_module
       Ng_sigma2_on_mu2_ip_below
 
     use parameters_microphys, only: &
-      l_fix_s_t_correlations ! Variable(s)
+      l_fix_chi_eta_correlations ! Variable(s)
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
@@ -664,7 +664,7 @@ module corr_matrix_module
     call mirror_lower_triangular_matrix( d_variables, corr_array_below )
 
     ! Sanity check to avoid confusing non-convergence results.
-    if ( .not. l_fix_s_t_correlations .and. iiPDF_Ncn > 0 ) then
+    if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
       l_warning = .false.
       do i = 1, d_variables
         if ( ( corr_array_cloud(i,iiPDF_Ncn) /= zero .or.  &
@@ -683,7 +683,7 @@ module corr_matrix_module
            stop "Exiting..."
         end if
       end if
-    end if ! l_fix_s_t_correlations
+    end if ! l_fix_chi_eta_correlations
 
     if ( iiPDF_Ncn > 0 ) then
       sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2

@@ -186,7 +186,7 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
              ( nz, num_samples, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
-               p_matrix_s_element )
+               p_matrix_chi_element )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -216,7 +216,7 @@ module output_2D_samples_module
       X_mixt_comp_all_levs ! Either 1 or 2
 
     integer, intent(in), dimension(num_samples) :: &
-      p_matrix_s_element ! P matrix at the chi(s_mellor) column
+      p_matrix_chi_element ! P matrix at the chi(s_mellor) column
 
     integer :: sample, j, k
 
@@ -234,7 +234,7 @@ module output_2D_samples_module
         real( X_mixt_comp_all_levs(1:nz,sample), kind=dp )
       do k = 1, nz 
         uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = &
-          real( p_matrix_s_element(sample), kind=dp )
+          real( p_matrix_chi_element(sample), kind=dp )
       end do
     end do
 

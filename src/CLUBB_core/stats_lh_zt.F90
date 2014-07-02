@@ -84,7 +84,7 @@ module stats_lh_zt
       ilh_cloud_frac, &
       ilh_chi, &
       ilh_eta, &
-      ilh_sp2, &
+      ilh_chip2, &
       ilh_rrainm_auto, &
       ilh_rrainm_accr, &
       ilh_rrainm_evap, &
@@ -434,9 +434,9 @@ module stats_lh_zt
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_sp2' )
-        ilh_sp2 = k
-        call stat_assign( var_index=ilh_sp2, var_name="lh_sp2", &
+      case ( 'lh_chip2' )
+        ilh_chip2 = k
+        call stat_assign( var_index=ilh_chip2, var_name="lh_chip2", &
              var_description="Latin hypercube estimate of variance of s [kg/kg]", &
              var_units="kg/kg", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1

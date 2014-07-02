@@ -113,7 +113,7 @@ module est_kessler_microphys_module
 
     ! Variables needed for exact Kessler autoconversion, AKm
     real( kind = core_rknd ) :: r_crit, K_one
-    real( kind = core_rknd ) :: sn1_crit, cloud_frac1_crit, sn2_crit, cloud_frac2_crit
+    real( kind = core_rknd ) :: chi_n_1_crit, cloud_frac1_crit, chi_n_2_crit, cloud_frac2_crit
     real( kind = core_rknd ) :: AK1, AK2
 
     ! Variables needed for exact std of Kessler autoconversion, AKstd
@@ -212,14 +212,14 @@ module est_kessler_microphys_module
       !        r_crit = 0.7e-3_core_rknd
       r_crit            = 0.2e-3_core_rknd
       K_one             = 1.e-3_core_rknd
-      sn1_crit          = (chi_1-r_crit)/max( stdev_chi_1, chi_tol )
-      cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn1_crit/sqrt(2.0_core_rknd)))
+      chi_n_1_crit          = (chi_1-r_crit)/max( stdev_chi_1, chi_tol )
+      cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_1_crit/sqrt(2.0_core_rknd)))
       AK1               = K_one * ( (chi_1-r_crit)*cloud_frac1_crit  & 
-                         + stdev_chi_1*exp(-0.5_core_rknd*sn1_crit**2)/(sqrt(2._core_rknd*pi)) )
-      sn2_crit          = (chi_2-r_crit)/max( stdev_chi_2, chi_tol )
-      cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(sn2_crit/sqrt(2.0_core_rknd)))
+                         + stdev_chi_1*exp(-0.5_core_rknd*chi_n_1_crit**2)/(sqrt(2._core_rknd*pi)) )
+      chi_n_2_crit          = (chi_2-r_crit)/max( stdev_chi_2, chi_tol )
+      cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_2_crit/sqrt(2.0_core_rknd)))
       AK2               = K_one * ( (chi_2-r_crit)*cloud_frac2_crit  & 
-                         + stdev_chi_2*exp(-0.5_core_rknd*sn2_crit**2)/(sqrt(2._core_rknd*pi)) )
+                         + stdev_chi_2*exp(-0.5_core_rknd*chi_n_2_crit**2)/(sqrt(2._core_rknd*pi)) )
       AKm(level)        = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
