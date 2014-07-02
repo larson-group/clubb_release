@@ -5,81 +5,81 @@
     'name' => 'twp_ice',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'TWP ICE Minutes 1-9900',
+    'headerText' => 'TWP ICE Minutes 1-22800',
     'startTime' => 1.0,  # [min]
-    'endTime' => 9900.,    # [min]
-    'startHeight' => 0.0,  # [m]
+    'endTime' => 2.,    # [min]
+    'startHeight' => 25.0,  # [m]
     'endHeight' => 19000.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(THETAL + 2500.4.*(THETA./TABS).*(QI./1000))', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'SL / 1004', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Need CAM's value of specific heat, cp
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TABS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'T', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Need CAM's value of specific heat, cp
        ]},
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TLFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHLP_CLUBB ./ (1 .* 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #RHO changed to 1
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '((QTFLUX) ./ (RHO * 2.5104e+6))', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '((QTFLUX) ./ (RHO * 2.5104e+6))', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRTP_clubb ./ (1)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # RHO changed to 1 
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'CLD * 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'CLOUDLIQ_FRAC_EM4 * 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLOUD * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QCL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QCL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDLIQ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB.^2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP3_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TL2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TL2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'THLP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QT2 / 1000000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QT2 / 1000000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TQ', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'TQ', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTPTHLP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'WOBS', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'WOBS', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '-OMEGA ./(9.81.*1)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # RHO changed to 1
        ]},
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
@@ -94,45 +94,45 @@
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'U2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'V2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
        ]},
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qr', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qr', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AQRAIN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nr .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nr .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'ANRAIN./1','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nc .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Nc .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qg', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qg', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
 #         {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'rgraupelm * 0', #'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qi', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qi', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDICE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ni .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'Ni .* 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNI./1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #RHO changed to 1
        ]},
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'qs', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'AQSNOW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
@@ -141,7 +141,7 @@
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/TWP_ICE/twp_ice_truncated.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TVFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/raut/work/cam_ticket_15/TWPICE_128kmx128kmx64_2km_Morrison_20min_06302014.nc', 'type' => 'les', 'name' => 'LES', 'expression' => '(TVFLUX) ./ (RHO * 1004)', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHVP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Is a reference temp of 300 correct? ./(9.81 * 300)
        ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
