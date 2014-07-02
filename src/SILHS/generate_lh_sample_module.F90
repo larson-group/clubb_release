@@ -709,7 +709,7 @@ module generate_lh_sample_module
           ! Covariance between chi(s) and rain water mixing ratio
           call construct_gaus_LN_element &
                ( corr_chi_rr, stdev_chi_1, sigma2_on_mu2_ip_array(index2), & ! In
-                 covar_eta_rr1 ) ! Out
+                 covar_chi_rr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
                ( d_variables, iiPDF_chi, iiPDF_rrain, real(covar_chi_rr1, kind=dp), & ! In
