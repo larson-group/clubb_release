@@ -99,7 +99,7 @@ module parameters_microphys
 
   ! Determines how the latin hypercube samples should be used with the microphysics
   integer, public :: &
-    lh_microphys_type = 0
+    lh_microphys_type = 3
 
 !$omp threadprivate( lh_microphys_type )
 
