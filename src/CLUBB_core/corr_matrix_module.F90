@@ -604,7 +604,8 @@ module corr_matrix_module
       zero
 
     use error_code, only: &
-      clubb_debug ! Procedure
+      clubb_debug, & ! Procedure(s)
+      clubb_at_least_debug_level
 
     implicit none
 
@@ -664,26 +665,25 @@ module corr_matrix_module
     call mirror_lower_triangular_matrix( d_variables, corr_array_below )
 
     ! Sanity check to avoid confusing non-convergence results.
-    if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
-      l_warning = .false.
-      do i = 1, d_variables
-        if ( ( corr_array_cloud(i,iiPDF_Ncn) /= zero .or.  &
-               corr_array_below(i,iiPDF_Ncn) /= zero ) .and. &
-             i /= iiPDF_Ncn ) then
-          l_warning = .true.
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
+        l_warning = .false.
+        do i = 1, d_variables
+          if ( ( corr_array_cloud(i,iiPDF_Ncn) /= zero .or.  &
+                 corr_array_below(i,iiPDF_Ncn) /= zero ) .and. &
+               i /= iiPDF_Ncn ) then
+            l_warning = .true.
+          end if
+        end do ! 1..d_variables
+        if ( l_warning ) then
+          write(fstderr,*) "Warning: the specified correlations for s and Nc are non-zero."
+          write(fstderr,*) "The latin hypercube code will not converge to the analytic solution "// &
+            "using these settings."
         end if
-      end do ! 1..d_variables
-      if ( l_warning ) then
-        write(fstderr,*) "Warning: the specified correlations for s and Nc are non-zero."
-        write(fstderr,*) "The latin hypercube code will not converge to the analytic solution "// &
-          "using these settings."
-        write(fstderr,'(A)',advance='no') "Continue? "
-        read(*,*) response
-        if ( response(1:1) /= 'y' .and. response(1:1) /= 'Y' ) then
-           stop "Exiting..."
-        end if
-      end if
-    end if ! l_fix_chi_eta_correlations
+       end if ! l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0
+
+    end if ! clubb_at_least_debug_level( 2 )
 
     if ( iiPDF_Ncn > 0 ) then
       sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
