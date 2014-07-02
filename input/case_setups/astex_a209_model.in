@@ -146,6 +146,7 @@ r_0 = 100.0e-6,
 l_cloud_sed = .true.,
 ! This parameter is only used with l_cloud_sed = .true.
 sigma_g = 1.2,
+l_var_covar_src = .true.
 /
 
 &gfdl_activation_setting
