@@ -31,6 +31,8 @@ def arrayOfFileNames(files):
             # Ends with .F90? Remove that extension only
             if (filename.endswith(".F90")):
                 filename = filename.replace(".F90", "")
+            if (filename.endswith(".f90")):
+                filename = filename.replace(".f90", "")
             # Remove directory tree
             directories = filename.split("/")
             filename = directories[len(directories)-1]
