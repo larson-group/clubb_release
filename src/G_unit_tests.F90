@@ -58,6 +58,34 @@ program G_unit_tests
   ! Don't try to act like you don't know what we be usin' either,
   ! We be usin' CLUBB all the time, it's about the blast off!
   ! G-UNIT (tests)
+  !
+  ! -----
+  !
+  ! (Tune switches to "Handlebars" by Flobots)
+  !
+  ! I can ride my CLUBB going standalone.
+  !                     going standalone.
+  !                     going standalone.
+  ! I can ride my CLUBB with no host model.
+  !                     with no host model.
+  !                     with no host model.
+  !
+  ! Hey, hey, look at me. Advancing prognostic moments like I'm supposed to be.
+  ! On top... and the bottom of the domain; staggered grid for conveniency.
+  ! I can write code to conserve water; my residual has no negativity.
+  ! I discretize implicitly to prevent numerical instability!
+  !
+  ! I can advance a point-based microphysics scheme; no I don't ignore subgrid variability!
+  ! I can upscale it by numerical integration, or derive the integral analytically.
+  ! Just give me some sounding terms... once I find the right PDF family,
+  ! I can close those higher order moments, so making assumptions there's no need cause
+  !
+  ! I can resolve a grid box with a PDF!
+  !                          with a PDF!
+  !                          with a PDF!
+  !                          with a PDF!
+  !                          with a PDFFFFFFFFFFFFFFFFFFF!!!!!!!!!!!!!!!!
+  ! (interlude)
   !-------------------------------------------------------------------------
 
   use constants_clubb, only: &
