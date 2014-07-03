@@ -85,12 +85,12 @@
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'UW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/ARM9707_128kmx128kmx64_2km_Morrison.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'UW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'not_arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'UPWP_CLUBB ./ 1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # RHO changed to 1
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/LES_files/bomex_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'VW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/LES_files/ARM9707_128kmx128kmx64_2km_Morrison.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'VW', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'not_arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'VPWP_CLUBB ./ 1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # RHO changed to 1
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
