@@ -86,6 +86,33 @@ program G_unit_tests
   !                          with a PDF!
   !                          with a PDFFFFFFFFFFFFFFFFFFF!!!!!!!!!!!!!!!!
   ! (interlude)
+  !
+  ! -----
+  !
+  !  (Tune switches to "Singing in the Rain" by Ignacio Herbert Brown)
+  !
+  !  I'm singing in the rain,
+  !  just singing (and parameterizing subgrid variability) in the rain
+  !  What a glorious feeling (when the Bitten tests run and then)
+  !  I'm happy again.
+  !  I'm laughing at clouds
+  !  so dark up above.
+  !  The sun's in my heart
+  !  And I'm ready for love (or at least another simulation of RICO).
+  !  Let the stormy clouds (from ARM97) chase
+  !  everyone (especially parameterizations lacking a rigorous theoretical basis) from the place.
+  !  (They have too much convective inhibition
+  !  to produce satisfactory results in the GCSS intercomparison.)
+  !  I walk down the lane
+  !  with a happy refrain,
+  !  just singing,
+  !  singing (and also parameterizing) in the rain.
+  !
+  !  Dancing in the rain (because my co-workers tired of my singing and kicked me out of W404)
+  !  Dee-ah dee-ah dee-ah
+  !  Dee-ah dee-ah dee-ah
+  !  I'm happy again (as long as the 2 lines above weren't a new and unfamiliar compiler warning)!
+  !  I'm singing and dancing in the rain (are any of the doors to EMS unlocked on a weekend?). 
   !-------------------------------------------------------------------------
 
   use constants_clubb, only: &
