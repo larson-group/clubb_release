@@ -275,7 +275,7 @@ module stats_clubb_utilities
 
     ! Reads list of variables that should be output to GrADS/NetCDF (namelist &statsnl)
 
-    open(unit=iunit, file=fnamelist, delim='apostrophe')
+    open(unit=iunit, file=fnamelist)
     read(unit=iunit, nml=statsnl, iostat=read_status, end=100)
     if ( read_status /= 0 ) then
       if ( read_status > 0 ) then
