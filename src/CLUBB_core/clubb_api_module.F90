@@ -42,17 +42,9 @@ module clubb_api_module
 
 
   use clubb_precision, only : time_precision, &
-    ! The precisions below are arbitrary, and could be adjusted as
-    ! needed for long simulations or time averaging.  Note that on
-    ! most machines 12 digits of precision will use a data type
-    ! which is 8 bytes long.
     core_rknd, &
     stat_nknd, &
     stat_rknd, &
-    ! This definition of double precision must use a real type that is 64 bits
-    ! wide, because (at least) the LAPACK routines depend on this definition being
-    ! accurate. Otherwise, LAPACK must be recompiled, or some other trickery must
-    ! be done.
     dp
 
   use constants_clubb, only : &
@@ -76,7 +68,7 @@ module clubb_api_module
     T_freeze_K, & ! Freezing point of water [K]
     var_length, & ! Maximum variable name length in CLUBB GrADS or netCDF output
     zero, & ! 0.0_core_rknd
-    zero_threshold ! Defining a threshold on a physical quantity to be 0.
+    zero_threshold, & ! Defining a threshold on a physical quantity to be 0.
     ! Tolerances
     Nc_tol, & ! Tolerance value for N_c  [#/kg]
     Ng_tol, & ! Tolerance value for N_s [#/kg]
@@ -90,7 +82,7 @@ module clubb_api_module
     rs_tol, & ! Tolerance value for r_s [kg/kg]
     rt_tol, & ! [kg/kg]
     thl_tol, & ! [K]
-    w_tol_sqd, & ! [m^2/s^2]
+    w_tol_sqd ! [m^2/s^2]
 
   use corr_matrix_module, only : &
     corr_array_cloud, &
@@ -138,7 +130,7 @@ module clubb_api_module
     LH_sequence_length, &
     LH_seed, &
     l_local_kk, &
-    l_fix_s_t_correlations, &
+    l_fix_chi_eta_correlations, &
     l_lh_cloud_weighted_sampling, &
     LH_sequence_length, &
     hydromet_tol, &
@@ -219,6 +211,172 @@ module clubb_api_module
     wp2_zt, &
     wphydrometp
 
+  !================================================================================================
+  ! The variables below are only used by CLUBB_standalone
+  !================================================================================================
+
+  use variables_prognostic_module, only : &
+    sens_ht, &
+    latent_ht, &
+    thlm, &
+    rtm, &
+    um, &
+    vm, &
+    wp2, &
+    rcm, &
+    wm_zt, &
+    wm_zm, &
+    exner, &
+    p_in_Pa, &
+    rho_zm, &
+    upwp, &
+    vpwp, &
+    wpthlp, &
+    wprcp, &
+    rho, &
+    wprtp, &
+    up2, &
+    vp2, &
+    wp3, &
+    rtp2, &
+    pdf_params, &
+    thlp2, &
+    rtpthlp, &
+    cloud_frac, &
+    ice_supersat_frac, &
+    rcm_in_layer, &
+    cloud_cover, &
+    sigma_sqd_w, &
+    sclrm, &
+    sclrp2, &
+    sclrprtp, &
+    sclrpthlp, &
+    wpsclrp, &
+    edsclrm
+
+   use variables_prognostic_module, only : &
+    rho_ds_zm, &
+    rho_ds_zt, &
+    invrs_rho_ds_zm, &
+    invrs_rho_ds_zt, &
+    thv_ds_zm, &
+    thv_ds_zt, &
+    T_sfc, &
+    p_sfc, &
+    wpthlp_sfc, &
+    wprtp_sfc, &
+    upwp_sfc, &
+    vpwp_sfc, &
+    wpedsclrp_sfc, &
+    wpsclrp_sfc, &
+    thlm_forcing, &
+    rtm_forcing, &
+    um_forcing, &
+    vm_forcing, &
+    wprtp_forcing, &
+    wpthlp_forcing, &
+    rtp2_forcing, &
+    thlp2_forcing, &
+    rtpthlp_forcing, &
+    edsclrm_forcing, &
+    sclrm_forcing
+
+  use sponge_layer_damping, only : &
+    thlm_sponge_damp_settings, &
+    rtm_sponge_damp_settings, &
+    uv_sponge_damp_settings, &
+    thlm_sponge_damp_profile, &
+    rtm_sponge_damp_profile, &
+    uv_sponge_damp_profile
+
+  use parameters_radiation, only : &
+    rad_scheme, &
+      nparam, &
+      l_fix_cos_solar_zen, &
+      l_use_default_std_atmosphere, &
+      l_sw_radiation, &
+      l_rad_above_cloud, &
+      Fs_values, &
+      cos_solar_zen_values, &
+      cos_solar_zen_times, &
+      radiation_top, &
+      sol_const, &
+      alvdr, &
+      alvdf, &
+      alndr, &
+      alndf, &
+      slr, &
+      kappa, &
+      F0, &
+      F1, &
+      eff_drop_radius, &
+      gc, &
+      omega
+
+  use input_names, only : &
+    time_name, &
+    rt_name, &
+    latent_ht_name, &
+    sens_ht_name, &
+    CO2_umol_name, &
+    upwp_sfc_name, &
+    vpwp_sfc_name, &
+    T_sfc_name,    &
+    wpthlp_sfc_name, &
+    wpqtp_sfc_name, &
+    z_name, &
+    pressure_name, &
+    press_mb_name, &
+    ozone_name, &
+    temperature_name, &
+    temperature_f_name, &
+    rt_f_name, &
+    sp_humidity_f_name, &
+    thetal_f_name, &
+    theta_f_name, &
+    wm_name, &
+    omega_name, &
+    um_ref_name, &
+    vm_ref_name, &
+    um_f_name, &
+    vm_f_name, &
+    ug_name,&
+    vg_name, &
+    um_name, &
+    vm_name, &
+    omega_mb_hr_name
+
+  use endian, only : &
+    little_endian, &
+    big_endian
+
+  use variables_radiation_module, only : &
+    radht_LW, &
+    radht_SW, &
+    Frad_SW, &
+    Frad_LW, &
+    T_in_k, &
+    rcil, &
+    o3l, &
+    rsnowm_2d, &
+    rcm_in_cloud_2d, &
+    cloud_frac_2d, &
+    ice_supersat_frac_2d, &
+    radht_LW_2d, &
+    radht_SW_2d, &
+    p_in_mb, &
+    sp_humidity, &
+    Frad_uLW, &
+    Frad_dLW, &
+    Frad_uSW, &
+    Frad_dSW, &
+    fdswcl, &
+    fuswcl, &
+    fdlwcl, &
+    fulwcl, &
+    slen, &
+    nlen
+
   implicit none
 
   private
@@ -243,11 +401,14 @@ module clubb_api_module
     stats_init_zm_api, &
     stats_init_zt_api, &
     thlm2T_in_K_api
+    ! Used only by CLUBB_standalone
+    !initialize_tau_sponge_damp_api, finalize_tau_sponge_damp_api, &
+
 
 contains
 
   !================================================================================================
-  ! advance_clubb_core
+  ! advance_clubb_core - Advances the model one timestep.
   !================================================================================================
 
   subroutine advance_clubb_core_api( &
@@ -284,15 +445,6 @@ contains
     qclvar, &                                               ! intent(out)
 #endif
     pdf_params )                                            ! intent(out)
-
-    ! Description:
-    !   Subroutine to advance the model one timestep
-
-    ! References:
-    !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-    !     Method and Model Description'' Golaz, et al. (2002)
-    !   JAS, Vol. 59, pp. 3540--3551.
-    !-----------------------------------------------------------------------
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -404,13 +556,9 @@ contains
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
 #endif
 
-      ! Eddy passive scalar variable
       real( kind = core_rknd ), intent(inout), dimension(gr%nz,edsclr_dim) :: &
       edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
-    ! Variables that need to be output for use in other parts of the CLUBB
-    ! code, such as microphysics (rcm, pdf_params), forcings (rcm), and/or
-    ! BUGSrad (cloud_cover).
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
@@ -437,16 +585,13 @@ contains
 #endif
 
       !!! Output Variable
-      ! Diagnostic, for if some calculation goes amiss.
-      integer, intent(inout) :: err_code
+      integer, intent(inout) :: err_code ! Diagnostic, for if some calculation goes amiss.
 
 #ifdef GFDL
     ! hlg, 2010-06-16
     real( kind = core_rknd ), intent(inOUT), dimension(gr%nz, min(1,sclr_dim) , 2) :: &
       RH_crit  ! critical relative humidity for droplet and ice nucleation
-    ! ---> h1g, 2012-06-14
     logical, intent(in)                 ::  do_liquid_only_in_clubb
-    ! <--- h1g, 2012-06-14
 #endif
     call advance_clubb_core( &
       l_implemented, dt, fcor, sfc_elevation, hydromet_dim, & ! intent(in)
@@ -485,7 +630,7 @@ contains
   end subroutine advance_clubb_core_api
 
   !================================================================================================
-  ! setup_clubb_core
+  ! setup_clubb_core - Sets up the model for execution.
   !================================================================================================
 
   subroutine setup_clubb_core_api( &
@@ -504,14 +649,6 @@ contains
       cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
 #endif
     err_code )                                           ! intent(out)
-
-    !
-    ! Description:
-    !   Subroutine to set up the model for execution.
-    !
-    ! References:
-    !   None
-    !-------------------------------------------------------------------------
 
     use advance_clubb_core_module, only : setup_clubb_core
 
@@ -550,19 +687,12 @@ contains
 
     ! Input Variables
 
-    ! Grid definition
     integer, intent(in) :: nzmax  ! Vertical grid levels            [#]
-    !                      Only true when used in a host model
-    !                      CLUBB determines what nzmax should be
-    !                      given zm_init and zm_top when
-    !                      running in standalone mode.
 
     real( kind = core_rknd ), intent(in) ::  &
       sfc_elevation  ! Elevation of ground level    [m AMSL]
 
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
-    logical, intent(in) :: l_implemented   ! (T/F)
+    logical, intent(in) :: l_implemented   ! (T/F) CLUBB implemented in host model?
 
     ! If CLUBB is running on it's own, this option determines
     ! if it is using:
@@ -657,29 +787,12 @@ contains
   end subroutine setup_clubb_core_api
 
   !================================================================================================
-  ! set_Lscale_max
+  ! set_Lscale_max - Sets the maximum allowable value of Lscale.
   !================================================================================================
 
   subroutine set_Lscale_max_api( &
     l_implemented, host_dx, host_dy, &
     Lscale_max )
-
-    ! Description:
-    !   This subroutine sets the value of Lscale_max, which is the maximum
-    !   allowable value of Lscale.  For standard CLUBB, it is set to a very large
-    !   value so that Lscale will not be limited.  However, when CLUBB is running
-    !   as part of a host model, the value of Lscale_max is dependent on the size
-    !   of the host model's horizontal grid spacing.  The smaller the host model's
-    !   horizontal grid spacing, the smaller the value of Lscale_max.  When Lscale
-    !   is limited to a small value, the value of time-scale Tau is reduced, which
-    !   in turn produces greater damping on CLUBB's turbulent parameters.  This
-    !   is the desired effect on turbulent parameters for a host model with small
-    !   horizontal grid spacing, for small areas usually contain much less
-    !   variation in meteorological quantities than large areas.
-
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
 
     use advance_clubb_core_module, only : set_Lscale_max
 
@@ -704,21 +817,11 @@ contains
   end subroutine set_Lscale_max_api
 
   !================================================================================================
-  ! gregorian2julian_day
+  ! gregorian2julian_day - Computes the number of days since 1 January 4713 BC.
   !================================================================================================
 
   integer function gregorian2julian_day_api( &
     day, month, year )
-
-    !
-    ! Description:
-    !   Computes the Julian Date (gregorian2julian), or the number of days since
-    !   1 January 4713 BC, given a Gregorian Calender date (day, month, year).
-    !
-    ! Reference:
-    !   Fliegel, H. F. and van Flandern, T. C.,
-    !   Communications of the ACM, Vol. 11, No. 10 (October, 1968)
-    !----------------------------------------------------------------------
 
     use calendar, only : gregorian2julian_day
 
@@ -735,7 +838,7 @@ contains
   end function gregorian2julian_day_api
 
   !================================================================================================
-  ! compute_current_date
+  ! compute_current_date - Computes the current date and the seconds since that date.
   !================================================================================================
 
   subroutine compute_current_date_api( &
@@ -745,15 +848,6 @@ contains
     current_day, current_month, &
     current_year, &
     seconds_since_current_date )
-
-    !
-    ! Description:
-    !   Computes the current Gregorian date from a previous date and
-    !   the seconds that have transpired since that date.
-    !
-    ! References:
-    !   None
-    !----------------------------------------------------------------------------
 
     use calendar, only : compute_current_date
 
@@ -789,20 +883,11 @@ contains
   end subroutine compute_current_date_api
 
   !================================================================================================
-  ! leap_year
+  ! leap_year - Determines if the given year is a leap year.
   !================================================================================================
 
   logical function leap_year_api( &
     year )
-
-
-    !
-    ! Description:
-    !   Determines if the given year is a leap year.
-    !
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------------
 
     use calendar, only : leap_year
 
@@ -819,19 +904,11 @@ contains
   end function leap_year_api
 
   !================================================================================================
-  ! setup_corr_varnce_array
+  ! setup_corr_varnce_array - Creates a correlation array with x'^2/xm^2 variables on the diagonal
   !================================================================================================
 
   subroutine setup_corr_varnce_array_api( &
     input_file_cloud, input_file_below, iunit )
-
-    ! Description:
-    !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
-    !   elements to be correlations between various variables.
-
-    ! References:
-    !   None.
-    !-------------------------------------------------------------------------------
 
     use corr_matrix_module, only : setup_corr_varnce_array
 
@@ -859,21 +936,13 @@ contains
   end subroutine setup_corr_varnce_array_api
 
   !================================================================================================
-  ! setup_pdf_indices
+  ! setup_pdf_indices - Sets up the iiPDF indices.
   !================================================================================================
 
   subroutine setup_pdf_indices_api( &
     hydromet_dim, iirrainm, iiNrm, &
     iiricem, iiNim, iirsnowm, iiNsnowm, &
     iirgraupelm, iiNgraupelm )
-
-    ! Description:
-    !
-    ! Setup for the iiPDF indices. These indices are used to address s, t, w
-    ! and the hydrometeors in the mean/stdev/corr arrays
-    !
-    ! References:
-    !-----------------------------------------------------------------------
 
     use corr_matrix_module, only : setup_pdf_indices
 
@@ -900,17 +969,11 @@ contains
   end subroutine setup_pdf_indices_api
 
   !================================================================================================
-  ! reportError
+  ! reportError - Reports the meaning of an error code to the console.
   !================================================================================================
 
   subroutine reportError_api( &
     err_code)
-
-    !
-    ! Description:
-    !   Reports meaning of error code to console.
-    !
-    !-------------------------------------------------------------------------------
 
     use error_code, only : reportError
 
@@ -924,18 +987,11 @@ contains
   end subroutine reportError_api
 
   !================================================================================================
-  ! fatal_error
+  ! fatal_error - Checks to see if an error code is usually one which causes an exit elsewhere.
   !================================================================================================
 
   elemental function fatal_error_api( &
     err_code )
-
-    !
-    ! Description: Checks to see if the err_code is one that usually
-    !   causes an exit in other parts of CLUBB.
-    ! References:
-    !   None
-    !-------------------------------------------------------------------------------
 
     use error_code, only : fatal_error
 
@@ -952,23 +1008,11 @@ contains
   end function fatal_error_api
 
   !================================================================================================
-  ! set_clubb_debug_level
+  ! set_clubb_debug_level - Controls the importance of error messages sent to the console.
   !================================================================================================
 
   subroutine set_clubb_debug_level_api( &
     level )
-
-    !
-    !  Description:
-    !    Accessor for clubb_debug_level
-    !
-    !   0 => Print no debug messages to the screen
-    !   1 => Print lightweight debug messages, e.g. print statements
-    !   2 => Print debug messages that require extra testing,
-    !        e.g. checks for NaNs and spurious negative values.
-    !  References:
-    !    None
-    !-------------------------------------------------------------------------------
 
     use error_code, only : set_clubb_debug_level
 
@@ -982,16 +1026,11 @@ contains
   end subroutine set_clubb_debug_level_api
 
   !================================================================================================
-  ! clubb_at_least_debug_level
+  ! clubb_at_least_debug_level - Checks to see if clubb has been set to a specified debug level.
   !================================================================================================
 
   logical function clubb_at_least_debug_level_api( &
     level )
-
-    !
-    ! Description:
-    !   Checks to see if clubb has been set to a specified debug level
-    !------------------------------------------------------------------
 
     use error_code, only : clubb_at_least_debug_level
 
@@ -1005,107 +1044,12 @@ contains
   end function clubb_at_least_debug_level_api
 
   !================================================================================================
-  ! vertical_avg
+  ! vertical_avg - Computes the density-weighted vertical average of a field.
   !================================================================================================
 
   function vertical_avg_api( &
     total_idx, rho_ds, &
     field, invrs_dz )
-
-    ! Description:
-    ! Computes the density-weighted vertical average of a field.
-    !
-    ! The average value of a function, f, over a set domain, [a,b], is
-    ! calculated by the equation:
-    !
-    ! f_avg = ( INT(a:b) f*g ) / ( INT(a:b) g );
-    !
-    ! as long as f is continous and g is nonnegative and integrable.  Therefore,
-    ! the density-weighted (by dry, static, base-static density) vertical
-    ! average value of any model field, x, is calculated by the equation:
-    !
-    ! x_avg|_z = ( INT(z_bot:z_top) x rho_ds dz )
-    !            / ( INT(z_bot:z_top) rho_ds dz );
-    !
-    ! where z_bot is the bottom of the vertical domain, and z_top is the top of
-    ! the vertical domain.
-    !
-    ! This calculation is done slightly differently depending on whether x is a
-    ! thermodynamic-level or a momentum-level variable.
-    !
-    ! Thermodynamic-level computation:
-
-    !
-    ! For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the
-    ! numerator integral, is calculated as:
-    !
-    ! SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k);
-    !
-    ! where k is the index of the given thermodynamic level, x and rho_ds are
-    ! both thermodynamic-level variables, and delta_z(k) = zm(k) - zm(k-1).  The
-    ! indices k_bot and k_top are the indices of the respective lower and upper
-    ! thermodynamic levels involved in the integration.
-    !
-    ! Likewise, INT(z_bot:z_top) rho_ds dz, which is the denominator integral,
-    ! is calculated as:
-    !
-    ! SUM(k_bot:k_top) rho_ds(k) delta_z(k).
-    !
-    ! The first (k=1) thermodynamic level is below ground (or below the
-    ! official lower boundary at the first momentum level), so it should not
-    ! count in a vertical average, whether that vertical average is used for
-    ! the hole-filling scheme or for statistical purposes. Begin no lower
-    ! than level k=2, which is the first thermodynamic level above ground (or
-    ! above the model lower boundary).
-    !
-    ! For cases where hole-filling over the entire (global) vertical domain
-    ! is desired, or where statistics over the entire (global) vertical
-    ! domain are desired, the lower (thermodynamic-level) index of k = 2 and
-    ! the upper (thermodynamic-level) index of k = gr%nz, means that the
-    ! overall vertical domain will be gr%zm(gr%nz) - gr%zm(1).
-    !
-    !
-    ! Momentum-level computation:
-    !
-    ! For numerical purposes, INT(z_bot:z_top) x rho_ds dz, which is the
-    ! numerator integral, is calculated as:
-    !
-    ! SUM(k_bot:k_top) x(k) rho_ds(k) delta_z(k);
-    !
-    ! where k is the index of the given momentum level, x and rho_ds are both
-    ! momentum-level variables, and delta_z(k) = zt(k+1) - zt(k).  The indices
-    ! k_bot and k_top are the indices of the respective lower and upper momentum
-    ! levels involved in the integration.
-    !
-    ! Likewise, INT(z_bot:z_top) rho_ds dz, which is the denominator integral,
-    ! is calculated as:
-    !
-    ! SUM(k_bot:k_top) rho_ds(k) delta_z(k).
-    !
-    ! The first (k=1) momentum level is right at ground level (or right at
-    ! the official lower boundary).  The momentum level variables that call
-    ! the hole-filling scheme have set values at the surface (or lower
-    ! boundary), and those set values should not be changed.  Therefore, the
-    ! vertical average (for purposes of hole-filling) should not include the
-    ! surface level (or lower boundary level).  For hole-filling purposes,
-    ! begin no lower than level k=2, which is the second momentum level above
-    ! ground (or above the model lower boundary).  Likewise, the value at the
-    ! model upper boundary (k=gr%nz) is also set for momentum level
-    ! variables.  That value should also not be changed.
-    !
-    ! However, this function is also used to keep track (for statistical
-    ! purposes) of the vertical average of certain variables.  In that case,
-    ! the vertical average needs to be taken over the entire vertical domain
-    ! (level 1 to level gr%nz).
-    !
-    !
-    ! In both the thermodynamic-level computation and the momentum-level
-    ! computation, the numerator integral is divided by the denominator integral
-    ! in order to find the average value (over the vertical domain) of x.
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
 
     use fill_holes, only : vertical_avg
 
@@ -1134,7 +1078,7 @@ contains
   end function vertical_avg_api
 
   !================================================================================================
-  ! fill_holes_driver
+  ! fill_holes_driver - Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
   !================================================================================================
 
   subroutine fill_holes_driver_api( &
@@ -1142,20 +1086,6 @@ contains
     l_fill_holes_hm,             & ! Intent(in)
     rho_ds_zm, rho_ds_zt, exner, & ! Intent(in)
     thlm_mc, rvm_mc, hydromet )    ! Intent(inout)
-
-    ! Description:
-    ! Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
-    ! The hole filling conserves water substance between all same-phase (frozen or liquid)
-    ! hydrometeors at each height level.
-    !
-    ! Attention: The hole filling for the liquid phase hydrometeors is not yet implemented
-    !
-    ! Attention: l_frozen_hm and l_mix_rat_hm need to be set up before this subroutine is called!
-    !
-    ! References:
-    !
-    ! None
-    !-----------------------------------------------------------------------
 
     use fill_holes, only : fill_holes_driver
 
@@ -1212,29 +1142,13 @@ contains
   end subroutine fill_holes_driver_api
 
   !================================================================================================
-  ! fill_holes_vertical
+  ! fill_holes_vertical - clips values of 'field' that are below 'threshold' as much as possible.
   !================================================================================================
 
   subroutine fill_holes_vertical_api( &
     num_pts, threshold, field_grid, &
     rho_ds, rho_ds_zm, &
     field )
-
-    ! Description:
-    ! This subroutine clips values of 'field' that are below 'threshold' as much
-    ! as possible (i.e. "fills holes"), but conserves the total integrated mass
-    ! of 'field'.  This prevents clipping from acting as a spurious source.
-    !
-    ! Mass is conserved by reducing the clipped field everywhere by a constant
-    ! multiplicative coefficient.
-    !
-    ! This subroutine does not guarantee that the clipped field will exceed
-    ! threshold everywhere; blunt clipping is needed for that.
-
-    ! References:
-    !   ``Numerical Methods for Wave Equations in Geophysical Fluid
-    !     Dynamics'', Durran (1999), p. 292.
-    !-----------------------------------------------------------------------
 
     use fill_holes, only : fill_holes_vertical
 
@@ -1267,21 +1181,12 @@ contains
   end subroutine fill_holes_vertical_api
 
   !================================================================================================
-  ! vertical_integral
+  ! vertical_integral - Computes the vertical integral.
   !================================================================================================
 
   function vertical_integral_api( &
     total_idx, rho_ds, &
     field, invrs_dz )
-
-    ! Description:
-    ! Computes the vertical integral. rho_ds, field, and invrs_dz must all be
-    ! of size total_idx and should all start at the same index.
-    !
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
 
     use fill_holes, only : vertical_integral
 
@@ -1308,7 +1213,7 @@ contains
   end function vertical_integral_api
 
   !================================================================================================
-  ! setup_grid
+  ! setup_grid - Sets up the CLUBB vertical grid.
   !================================================================================================
 
   subroutine setup_grid_api( &
@@ -1316,15 +1221,6 @@ contains
     grid_type, deltaz, zm_init, zm_top,      &
     momentum_heights, thermodynamic_heights, &
     begin_height, end_height )
-
-    ! Description:
-    !   Grid Constructor
-    !
-    !   This subroutine sets up the CLUBB vertical grid.
-    !
-    ! References:
-    !   ``Equations for CLUBB'',  Sec. 8,  Grid Configuration.
-    !-----------------------------------------------------------------------
 
     use grid_class, only : setup_grid
 
@@ -1387,21 +1283,13 @@ contains
   end subroutine setup_grid_api
 
   !================================================================================================
-  ! setup_grid_heights
+  ! setup_grid_heights - Sets the heights and interpolation weights of the column.
   !================================================================================================
 
   subroutine setup_grid_heights_api( &
     l_implemented, grid_type,  &
     deltaz, zm_init, momentum_heights,  &
     thermodynamic_heights )
-
-    ! Description:
-    !   Sets the heights and interpolation weights of the column.
-    !   This is seperated from setup_grid for those host models that have heights
-    !   that vary with time.
-    ! References:
-    !   None
-    !------------------------------------------------------------------------------
 
     use grid_class, only : setup_grid_heights, gr
 
@@ -1451,17 +1339,10 @@ contains
   end subroutine setup_grid_heights_api
 
   !================================================================================================
-  ! cleanup_grid
+  ! cleanup_grid - De-allocates the memory for the grid.
   !================================================================================================
 
   subroutine cleanup_grid_api
-
-    ! Description:
-    !   De-allocates the memory for the grid
-    !
-    ! References:
-    !   None
-    !------------------------------------------------------------------------------
 
     use grid_class, only : cleanup_grid
 
@@ -1472,46 +1353,12 @@ contains
   end subroutine cleanup_grid_api
 
   !================================================================================================
-  ! lin_int
+  ! lin_int - Computes a linear interpolation of the value of a variable.
   !================================================================================================
 
   function lin_int_api( &
     height_int, height_high, height_low, &
     var_high, var_low )
-
-    ! Description:
-    ! This function computes a linear interpolation of the value of variable.
-    ! Given two known values of a variable at two height values, the value
-    ! of that variable at a height between those two height levels (rather
-    ! than a height outside of those two height levels) is computed.
-    !
-    ! Here is a diagram:
-    !
-    !  ################################ Height high, know variable value
-    !
-    !
-    !
-    !  -------------------------------- Height to be interpolated to; linear interpolation
-    !
-    !
-    !
-    !
-    !
-    !  ################################ Height low, know variable value
-    !
-    !
-    ! FORMULA:
-    !
-    ! variable(@ Height interpolation) =
-    !
-    ! [ (variable(@ Height high) - variable(@ Height low)) / (Height high - Height low) ]
-    ! * (Height interpolation - Height low)  +  variable(@ Height low)
-
-    ! Comments from WRF-HOC, Brian Griffin.
-
-    ! References:
-    ! None
-    !-------------------------------------------------------------------------------
 
     use interpolation, only : lin_int
 
@@ -1534,22 +1381,11 @@ contains
   end function lin_int_api
 
   !================================================================================================
-  ! linear_interpolation
+  ! linear_interpolation - Linear interpolation for 25 June 1996 altocumulus case.
   !================================================================================================
 
   subroutine linear_interpolation_api( &
     nparam, xlist, tlist, xvalue, tvalue )
-
-    ! Description:
-    !   Linear interpolation for 25 June 1996 altocumulus case.
-
-    !   For example, to interpolate between two temperatures in space, put
-    !   your spatial coordinates in x-list and your temperature values in
-    !   tlist.  The point in question should have its spatial value stored
-    !   in xvalue, and tvalue will be the temperature at that point.
-
-    ! Author: Michael Falk for COAMPS.
-    !-------------------------------------------------------------------------------
 
     use interpolation, only : linear_interpolation
 
@@ -1577,18 +1413,11 @@ contains
   end subroutine linear_interpolation_api
 
   !================================================================================================
-  ! read_parameters
+  ! read_parameters - Read a namelist containing the model parameters.
   !================================================================================================
 
   subroutine read_parameters_api( &
     iunit, filename, params )
-
-    ! Description:
-    ! Read a namelist containing the model parameters
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
 
     use parameters_tunable, only : read_parameters
 
@@ -1611,20 +1440,13 @@ contains
   end subroutine read_parameters_api
 
   !================================================================================================
-  ! setup_parameters
+  ! setup_parameters - Sets up model parameters.
   !================================================================================================
 
   subroutine setup_parameters_api( &
     deltaz, params, nzmax, &
     grid_type, momentum_heights, thermodynamic_heights, &
     err_code )
-
-    ! Description:
-    ! Subroutine to setup model parameters
-
-    ! References:
-    ! None
-    !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
       fstderr ! Variable(s)
@@ -1683,22 +1505,12 @@ contains
   end subroutine setup_parameters_api
 
   !================================================================================================
-  ! adj_low_res_nu
+  ! adj_low_res_nu - Adjusts values of background eddy diffusivity based on vertical grid spacing.
   !================================================================================================
 
   subroutine adj_low_res_nu_api( &
     nzmax, grid_type, deltaz, & ! Intent(in)
     momentum_heights, thermodynamic_heights )  ! Intent(in)
-
-    ! Description:
-    !   Adjust the values of background eddy diffusivity based on
-    !   vertical grid spacing.
-    !   This code was made into a public subroutine so that it may be
-    !   called multiple times per model run in scenarios where grid
-    !   altitudes, and hence average grid spacing, change through space
-    !   and/or time.  This occurs, for example, when CLUBB is
-    !   implemented in WRF.  --ldgrant Jul 2010
-    !----------------------------------------------------------------------
 
     use parameters_tunable, only : adj_low_res_nu
 
@@ -1743,7 +1555,7 @@ contains
 
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
   !================================================================================================
-  ! pack_pdf_params
+  ! pack_pdf_params - Returns a two dimensional real array with all values.
   !================================================================================================
 
   subroutine pack_pdf_params_api( &
@@ -1771,7 +1583,7 @@ contains
   end subroutine pack_pdf_params_api
 
   !================================================================================================
-  ! unpack_pdf_params
+  ! unpack_pdf_params - Returns a pdf_parameter array with nz instances of pdf_parameter.
   !================================================================================================
 
   subroutine unpack_pdf_params_api( &
@@ -1795,18 +1607,11 @@ contains
 #endif
 
   !================================================================================================
-  ! sat_mixrat_liq
+  ! sat_mixrat_liq - Computes the saturation mixing ratio of liquid water.
   !================================================================================================
 
   elemental real( kind = core_rknd ) function  sat_mixrat_liq_api( &
     p_in_Pa, T_in_K )
-
-    ! Description:
-    !   Used to compute the saturation mixing ratio of liquid water.
-
-    ! References:
-    !   Formula from Emanuel 1994, 4.4.14
-    !-------------------------------------------------------------------------
 
     use saturation, only : sat_mixrat_liq
 
@@ -1836,11 +1641,6 @@ contains
     corr_array_1_n, corr_array_2_n, &            ! Intent(out)
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
     hydromet_pdf_params, hydrometp2 )            ! Intent(out)
-
-    ! Description:
-
-    ! References:
-    !-----------------------------------------------------------------------
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -1979,7 +1779,7 @@ contains
   end subroutine setup_pdf_parameters_api
 
   !================================================================================================
-  ! stats_init
+  ! stats_init - Initializes the statistics saving functionality of the CLUBB model.
   !================================================================================================
 
   subroutine stats_init_api( &
@@ -1988,14 +1788,6 @@ contains
     nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
     grad_zt, nnrad_zm, grad_zm, day, month, year, &
     rlon, rlat, time_current, delt )
-
-    !
-    ! Description:
-    !   Initializes the statistics saving functionality of the CLUBB model.
-    !
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
 
     use stats_clubb_utilities, only : stats_init
 
@@ -2060,17 +1852,12 @@ contains
   end subroutine stats_init_api
 
   !================================================================================================
-  ! stats_begin_timestep
+  ! stats_begin_timestep - Sets flags determining specific timestep info.
   !================================================================================================
 
   subroutine stats_begin_timestep_api( &
     time_elapsed )
 
-    !     Description:
-    !       Given the elapsed time, set flags determining specifics such as
-    !       if this time set should be sampled or if this is the first or
-    !       last time step.
-    !-----------------------------------------------------------------------
 
     use stats_clubb_utilities, only : stats_begin_timestep
 
@@ -2088,19 +1875,10 @@ contains
   end subroutine stats_begin_timestep_api
 
   !================================================================================================
-  ! stats_end_timestep
+  ! stats_end_timestep - Calls statistics to be written to the output format.
   !================================================================================================
 
   subroutine stats_end_timestep_api
-
-    ! Description:
-    !   Called when the stats timestep has ended. This subroutine
-    !   is responsible for calling statistics to be written to the output
-    !   format.
-    !
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
 
     use stats_clubb_utilities, only : stats_end_timestep
 
@@ -2111,18 +1889,11 @@ contains
   end subroutine stats_end_timestep_api
 
   !================================================================================================
-  ! stats_accumulate_hydromet
+  ! stats_accumulate_hydromet - Computes stats related the hydrometeors.
   !================================================================================================
 
   subroutine stats_accumulate_hydromet_api( &
     hydromet, rho_ds_zt )
-
-    ! Description:
-    !   Compute stats related the hydrometeors
-
-    ! References:
-    !   None
-    !------------------------------------------------------------------------------
 
     use stats_clubb_utilities, only : stats_accumulate_hydromet
 
@@ -2140,15 +1911,10 @@ contains
   end subroutine stats_accumulate_hydromet_api
 
   !================================================================================================
-  ! stats_finalize
+  ! stats_finalize - Close NetCDF files and deallocate scratch space and stats file structures.
   !================================================================================================
 
   subroutine stats_finalize_api
-
-    !     Description:
-    !     Close NetCDF files and deallocate scratch space and
-    !     stats file structures.
-    !-----------------------------------------------------------------------
 
     use stats_clubb_utilities, only : stats_finalize
 
@@ -2159,16 +1925,12 @@ contains
   end subroutine stats_finalize_api
 
   !================================================================================================
-  ! stats_init_rad_zm
+  ! stats_init_rad_zm - Initializes array indices for rad_zm variables.
   !================================================================================================
 
   subroutine stats_init_rad_zm_api( &
     vars_rad_zm, l_error )
     use stats_rad_zm, only : stats_init_rad_zm, nvarmax_rad_zm
-
-    !     Description:
-    !     Initializes array indices for rad_zm variables
-    !-----------------------------------------------------------------------
 
     implicit none
 
@@ -2183,18 +1945,11 @@ contains
   end subroutine stats_init_rad_zm_api
 
   !================================================================================================
-  ! stats_init_rad_zt
+  ! stats_init_rad_zt - Initializes array indices for zt.
   !================================================================================================
 
   subroutine stats_init_rad_zt_api( &
     vars_rad_zt, l_error )
-
-    ! Description:
-    !   Initializes array indices for zt
-    !
-    ! References:
-    !   None
-    !-----------------------------------------------------------------------
 
     use stats_rad_zt, only : stats_init_rad_zt, nvarmax_rad_zt
 
@@ -2211,21 +1966,11 @@ contains
   end subroutine stats_init_rad_zt_api
 
   !================================================================================================
-  ! stats_init_zm
+  ! stats_init_zm - Initializes array indices for zm.
   !================================================================================================
 
   subroutine stats_init_zm_api( &
     vars_zm, l_error )
-
-    ! Description:
-    !   Initializes array indices for zm
-
-    ! Note:
-    !   All code that is within subroutine stats_init_zm, including variable
-    !   allocation code, is not called if l_stats is false.  This subroutine is
-    !   called only when l_stats is true.
-
-    !-----------------------------------------------------------------------
 
     use stats_zm, only : stats_init_zm, nvarmax_zm
 
@@ -2243,21 +1988,11 @@ contains
   end subroutine stats_init_zm_api
 
   !================================================================================================
-  ! stats_init_zt
+  ! stats_init_zt - Initializes array indices for zt.
   !================================================================================================
 
   subroutine stats_init_zt_api( &
     vars_zt, l_error )
-
-    ! Description:
-    ! Initializes array indices for zt
-
-    ! Note:
-    ! All code that is within subroutine stats_init_zt, including variable
-    ! allocation code, is not called if l_stats is false.  This subroutine is
-    ! called only when l_stats is true.
-
-    !-----------------------------------------------------------------------
 
     use stats_zt, only : stats_init_zt, nvarmax_zt
 
@@ -2275,20 +2010,12 @@ contains
   end subroutine stats_init_zt_api
 
   !================================================================================================
-  ! thlm2T_in_K
+  ! thlm2T_in_K - Calculates absolute temperature from liquid water potential temperature.
   !================================================================================================
 
   elemental function thlm2T_in_K_api( &
     thlm, exner, rcm )  &
     result( T_in_K )
-
-    ! Description:
-    !   Calculates absolute temperature from liquid water potential
-    !   temperature.  (Does not include ice.)
-
-    ! References:
-    !   Cotton and Anthes (1989), "Storm and Cloud Dynamics", Eqn. (2.51).
-    !-------------------------------------------------------------------------------
 
     use T_in_K_module, only : thlm2T_in_K
 
@@ -2307,5 +2034,9 @@ contains
       thlm, exner, rcm )
 
   end function thlm2T_in_K_api
+
+  !================================================================================================
+  ! The subroutines and functions below are only used by CLUBB_standalone
+  !================================================================================================
 
 end module clubb_api_module
