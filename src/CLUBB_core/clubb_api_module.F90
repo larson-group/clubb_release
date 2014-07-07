@@ -1457,6 +1457,9 @@ contains
     use parameter_indices, only:  &
       nparams ! Variable(s)
 
+    use parameters_tunable, only: &
+      setup_parameters
+
     implicit none
 
     ! Input Variables
@@ -1502,6 +1505,7 @@ contains
       grid_type, momentum_heights, thermodynamic_heights, &
       err_code )
 
+    return
   end subroutine setup_parameters_api
 
   !================================================================================================
