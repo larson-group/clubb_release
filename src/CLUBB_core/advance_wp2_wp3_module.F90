@@ -849,7 +849,7 @@ module advance_wp2_wp3_module
     use stats_type_utilities, only: & 
         stat_update_var_pt ! Procedure(s)
 
-    use csr_matrix_class, only: &
+    use csr_matrix_module, only: &
         csr_intlc_5b_5b_ia, & ! Variables
         csr_intlc_5b_5b_ja, &
         intlc_5d_5d_ja_size
@@ -1830,7 +1830,7 @@ module advance_wp2_wp3_module
         iwp3_dp1, &
         iwp3_4hd
 
-    use csr_matrix_class, only: &
+    use csr_matrix_module, only: &
         intlc_5d_5d_ja_size ! Variable
 
     implicit none

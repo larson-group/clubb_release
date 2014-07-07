@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module csr_matrix_class
+module csr_matrix_module
 
   ! Description:
   ! This module contains some of the matrix description arrays required by
@@ -66,7 +66,7 @@ module csr_matrix_class
   public :: csr_tridiag_ia, csr_tridiag_ja, &
             csr_banddiag5_135_ia, csr_banddiag5_135_ja, &
             csr_banddiag5_12345_ia, csr_banddiag5_12345_ja, &
-            initialize_csr_class, &
+            initialize_csr_matrix, &
             ia_size, tridiag_ja_size, band12345_ja_size, band135_ja_size, &
             csr_intlc_s3b_f5b_ia, csr_intlc_s3b_f5b_ja, &
             csr_intlc_trid_5b_ia, csr_intlc_trid_5b_ja, &
@@ -112,7 +112,7 @@ module csr_matrix_class
   contains
 
   !============================================================================
-  subroutine initialize_csr_class
+  subroutine initialize_csr_matrix
 
     ! Description:
     ! PARDISO matrix array initialization
@@ -517,6 +517,6 @@ module csr_matrix_class
       end do
     end if ! l_print_ia_ja
 
-  end subroutine initialize_csr_class
+  end subroutine initialize_csr_matrix
 
-end module csr_matrix_class
+end module csr_matrix_module

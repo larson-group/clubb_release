@@ -112,13 +112,12 @@ module gmres_wrap
       csr_ia       ! IA-array portion of the matrix description in CSR format.
                    ! This describes the indices of the JA-array that start
                    ! new rows. For more details, check the documentation in
-                   ! the csr_matrix_class module.
+                   ! the csr_matrix_module.
 
     integer, dimension(elements), intent(in) :: &
       csr_ja       ! JA-array portion of the matrix description in CSR format.
                    ! This describes which columns of a are nonzero. For more
-                   ! details, check the documentation in the csr_matrix_class
-                   ! module.
+                   ! details, check the documentation in the csr_matrix_module.
 
     integer, intent(in) :: &
       tempsize     ! Denotes the size of the temporary array used for GMRES

@@ -2045,8 +2045,8 @@ module advance_clubb_core_module
         setup_model_flags    ! Subroutine
 
 #ifdef MKL
-      use csr_matrix_class, only: &
-        initialize_csr_class, & ! Subroutine
+      use csr_matrix_module, only: &
+        initialize_csr_matrix, & ! Subroutine
         intlc_5d_5d_ja_size     ! Variable
 
       use gmres_wrap, only: &
@@ -2259,7 +2259,7 @@ module advance_clubb_core_module
 #ifdef MKL
       ! Initialize the CSR matrix class.
       if ( l_gmres ) then
-        call initialize_csr_class
+        call initialize_csr_matrix
       end if
 
       if ( l_gmres ) then
