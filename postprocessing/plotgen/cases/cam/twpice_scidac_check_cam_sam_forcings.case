@@ -3,7 +3,7 @@
 %CASE = 
 (
     'name' => 'twp_ice_forcings',
-    'enabled' => 'true',
+    'enabled' => 'false',
     'type' => 'standard',
     'headerText' => 'TWP-ICE Minutes 1-38520',
     'startTime' => 1.,  # [min]
@@ -25,7 +25,7 @@
        {'plotTitle' => 'WOBS', 'axisLabel' => '[m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'twpice_sam.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => '-OMEGA ./(9.81.*RHO_CLUBB)', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => '-OMEGA ./(9.81.*RHO)', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'QTEND', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
        [

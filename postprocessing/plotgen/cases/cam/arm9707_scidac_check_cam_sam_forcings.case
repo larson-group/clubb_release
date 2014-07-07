@@ -3,7 +3,7 @@
 %CASE = 
 (
     'name' => 'arm_97_forcings',
-    'enabled' => 'true',
+    'enabled' => 'false',
     'type' => 'standard',
     'headerText' => 'ARM 97 Minutes 1 -41720',
     'startTime' => 1.,  # [min]
@@ -25,7 +25,7 @@
        {'plotTitle' => 'WOBS', 'axisLabel' => '[m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm9707_sam.nc', 'type' => 'auto', 'name' => 'SAM', 'expression' => 'WOBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => '-OMEGA ./(9.81.*RHO_CLUBB)', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'SCAM-CLUBB', 'expression' => '-OMEGA ./(9.81.*RHO)', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'QTEND', 'axisLabel' => '[g/kg/day]', 'type' => 'profile', 'lines' =>
        [
