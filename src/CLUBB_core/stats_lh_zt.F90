@@ -437,7 +437,7 @@ module stats_lh_zt
       case ( 'lh_chip2' )
         ilh_chip2 = k
         call stat_assign( var_index=ilh_chip2, var_name="lh_chip2", &
-             var_description="Latin hypercube estimate of variance of s [kg/kg]", &
+             var_description="Latin hypercube estimate of variance of chi(s) [kg/kg]", &
              var_units="kg/kg", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 

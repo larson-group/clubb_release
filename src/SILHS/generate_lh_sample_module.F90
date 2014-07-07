@@ -48,7 +48,7 @@ module generate_lh_sample_module
 !   The l_fix_chi_eta_correlations = false code does not set the correlation 
 !   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the 
-!   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
+!   correlation of e.g. chi(s) & Ncn and chi(s) & rr, we do not know the correlation of
 !   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
 !   correlation between rr and Ncn when the correlation between chi(s) and Ncn is
@@ -248,10 +248,10 @@ module generate_lh_sample_module
       mu1, mu2
 
     ! Columns of Sigma_chi_eta_w, X_nl_one_lev:  1   2   3   4 ... d_variables
-    !                                      s   t   w   hydrometeors
+    !                                            s   t   w   hydrometeors
     real( kind = dp ), dimension(d_variables,d_variables) :: &
-      Sigma_chi_eta_w_1, & ! Covariance of chi(s),t, w + hydrometeors for plume 1
-      Sigma_chi_eta_w_2    ! Covariance of chi(s),t, w + hydrometeors for plume 2
+      Sigma_chi_eta_w_1, & ! Covariance of chi(s),eta(t), w + hydrometeors for plume 1
+      Sigma_chi_eta_w_2    ! Covariance of chi(s),eta(t), w + hydrometeors for plume 2
 
     real( kind = dp ) :: &
       var_Ncn1, & ! PDF param for width of plume 1.              [(#/kg)^2]
@@ -267,14 +267,14 @@ module generate_lh_sample_module
 
 !   real :: &
 !     stdev_Ncn, & ! Standard deviation of Ncn   [#/kg]
-!     corr_tNcn, & ! Correlation between eta(t) and Ncn [-]
-!     corr_sNcn, & ! Correlation between chi(s) and Ncn [-]
-!     covar_tNcn1,    & ! Covariance of eta(t) and Ncn1      []
-!     covar_tNcn2,    & ! Covariance of eta(t) and Ncn2      []
-!     covar_sNcn1,    & ! Covariance of chi(s) and Ncn1      [# kg/kg^2]
-!     covar_sNcn2       ! Covariance of chi(s) and Ncn2      [# kg/kg^2]
+!     corr_eta_Ncn, & ! Correlation between eta(t) and Ncn [-]
+!     corr_chi_Ncn, & ! Correlation between chi(s) and Ncn [-]
+!     covar_eta_Ncn1,    & ! Covariance of eta(t) and Ncn1      []
+!     covar_eta_Ncn2,    & ! Covariance of eta(t) and Ncn2      []
+!     covar_chi_Ncn1,    & ! Covariance of chi(s) and Ncn1      [# kg/kg^2]
+!     covar_chi_Ncn2       ! Covariance of chi(s) and Ncn2      [# kg/kg^2]
 
-!   real( kind = dp ), dimension(2,2) :: corr_st_mellor_1, corr_st_mellor_2
+!   real( kind = dp ), dimension(2,2) :: corr_chi_eta_1, corr_chi_eta_2
 
     ! rr = specific rain content. [rr] = kg rain / kg air
     real( kind = dp ) :: &
@@ -335,7 +335,7 @@ module generate_lh_sample_module
       ! For fixed correlations, these don't appear in the correlation matrix, so
       ! we don't need them to be over some threshold.  In deep convective cases
       ! we don't want e.g. the variance of rt aloft to be rt_tol^2 necessarily,
-      ! since this can lead to negative values of total water, so using the fixed s,t
+      ! since this can lead to negative values of total water, so using the fixed chi(s),eta(t)
       ! code may work better for those cases. -dschanen 15 Oct 2012
 
       ! Set means
@@ -394,7 +394,7 @@ module generate_lh_sample_module
           ( thlm, thl_tol**2, thl2_in, varnce_thl2_in, & ! In
             varnce_thl2, thl2 ) ! Out
 
-      ! Compute the mean of s1 and s2
+      ! Compute the mean of chi_1 and chi_2
       chi = chi_1_in * mixt_frac + (1.0_core_rknd-mixt_frac) * chi_2_in
 
       ! Here the subroutine name is a little misleading since we're imposing the
@@ -576,7 +576,7 @@ module generate_lh_sample_module
 
       ! Convert each Gaussian from rt-thl-w variables to s-t-w vars.
 
-      ! Setup the Sigma matrices for s,t
+      ! Setup the Sigma matrices for chi(s),eta(t)
       Sigma_chi_eta_w_1(iiPDF_chi,iiPDF_chi) = chip2_1
       Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_eta) = etap2_1
       call set_lower_triangular_matrix_dp( 2, iiPDF_chi, iiPDF_eta, chip_etap_1, &
@@ -754,41 +754,41 @@ module generate_lh_sample_module
 !     if ( iiPDF_Ncn > 0 ) then
 
       ! Covariances involving chi(s) and Ncn (currently disabled)
-!       corr_sNcn = corr_array(iiPDF_chi,iiPDF_Ncn)
+!       corr_chi_Ncn = corr_array(iiPDF_chi,iiPDF_Ncn)
 !       stdev_Ncn = real( Ncnm, kind = core_rknd ) * sqrt( sigma2_on_mu2_ip_array(iiPDF_Ncn) )
 
 !       if ( stdev_chi_1 > chi_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
-!         ! The variable s is already Gaussian
-!         stdev_sNcn1 = corr_gaus_LN_to_covar_gaus &
-!                 ( corr_sNcn, &
+!         ! The variable chi(s) is already Gaussian
+!         stdev_chi_Ncn1 = corr_gaus_LN_to_covar_gaus &
+!                 ( corr_chi_Ncn, &
 !                   stdev_chi_1, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_chi_eta_w_1(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn1, kind = dp)
-!         Sigma_chi_eta_w_1(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn1, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_chi,iiPDF_Ncn) = real(stdev_chi_Ncn1, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_Ncn,iiPDF_chi) = real(stdev_chi_Ncn1, kind = dp)
 
 !         ! Approximate the covariance of eta(t) and Ncn
-!         covar_tNcn1 = ( Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_chi) * covar_sNcn1 ) / stdev_chi_1**2
+!     covar_eta_Ncn1 = ( Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_chi) * covar_chi_Ncn1 ) / stdev_chi_1**2
 
-!         Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_Ncn) = real(covar_tNcn1, kind = dp)
-!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(covar_tNcn2, kind = dp)
+!         Sigma_chi_eta_w_1(iiPDF_eta,iiPDF_Ncn) = real(covar_eta_Ncn1, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(covar_eta_Ncn2, kind = dp)
 
 !       end if
 
 !       if ( stdev_chi_2 > chi_tol .and. Ncnm > real(Ncn_tol, kind = dp) ) then
-!         stdev_sNcn2 = corr_gaus_LN_to_covar_gaus &
-!                 ( corr_sNcn, &
+!         stdev_chi_Ncn2 = corr_gaus_LN_to_covar_gaus &
+!                 ( corr_chi_Ncn, &
 !                   stdev_chi_2, &
 !                   sigma_LN_to_sigma_gaus( sigma2_on_mu2_ip_array(iiPDF_Ncn) ) )
 
-!         Sigma_chi_eta_w_2(iiPDF_chi,iiPDF_Ncn) = real(stdev_sNcn2, kind = dp)
-!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_chi) = real(stdev_sNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_chi,iiPDF_Ncn) = real(stdev_chi_Ncn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_chi) = real(stdev_chi_Ncn2, kind = dp)
 
 !         ! Approximate the covariance of eta(t) and Ncn
-!         covar_tNcn2 = ( Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_chi) * covar_sNcn2 ) / stdev_chi_2**2
+!     covar_eta_Ncn2 = ( Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_chi) * covar_chi_Ncn2 ) / stdev_chi_2**2
 
-!         Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_Ncn) = real(stNcn2, kind = dp)
-!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(stNcn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_eta,iiPDF_Ncn) = real(covar_eta_Ncn2, kind = dp)
+!         Sigma_chi_eta_w_2(iiPDF_Ncn,iiPDF_eta) = real(covar_eta_Ncn2, kind = dp)
 
 !       end if
 
@@ -971,7 +971,7 @@ module generate_lh_sample_module
 !   The l_fix_chi_eta_correlations = false code does not set the correlation
 !   between Ncn and the other variates (i.e. it assumes they are all zero).
 !   We do this is because while we have data for the
-!   correlation of e.g. s & Ncn and s & rr, we do not know the correlation of
+!   correlation of e.g. chi(s) & Ncn and chi(s) & rr, we do not know the correlation of
 !   Ncn and rr.
 !   It would not be possible to decompose a covariance matrix with zero
 !   correlation between rr and Ncn when the correlation between chi(s) and Ncn is
@@ -1341,7 +1341,7 @@ module generate_lh_sample_module
 !
 ! Notes:
 !   We no longer use this subroutine since the code in pdf_closure will compute
-!   the value of the variance of eta(t), s, and the covariance of the two directly.
+!   the value of the variance of eta(t), chi(s), and the covariance of the two directly.
 !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1364,7 +1364,7 @@ module generate_lh_sample_module
     ! Output Variables
 
     real( kind = dp ), intent(out) :: &
-      etap2, chip2,  &    ! Variance of chi(s),t         [(kg/kg)^2]
+      etap2, chip2,  &    ! Variance of chi(s), eta(t)         [(kg/kg)^2]
       chip_etap            ! Covariance of chi(s) and eta(t)   [kg/kg]
 
     ! Local Variables
@@ -2201,11 +2201,11 @@ module generate_lh_sample_module
                sigma2_on_mu2_ip_array, &
                corr_chi_eta_w_matrix )
 ! Description:
-!   Construct a correlation matrix containing s,t,w and the lognormal variates.
+!   Construct a correlation matrix containing chi(s),eta(t),w and the lognormal variates.
 !   This code is only called when l_fix_chi_eta_correlations is true.  It does not
 !   assume zero correlation between w and the other variates.
 !
-!   The matrix is i.e. a mixture, where the first 3 rows contain the correlations for s,t,w and
+!   The matrix is i.e. a mixture, where the first 3 rows contain the correlations for chi,eta,w and
 !   the remaining elements are normalized covariances. So the matrix looks like
 !
 !   --                     --
@@ -2255,9 +2255,9 @@ module generate_lh_sample_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      corr_chi_eta, & ! Correlation for s,t  [-]
-      corr_chi_w, & ! Correlation for w,s  [-]
-      corr_eta_w    ! Correlation for w,t  [-]
+      corr_chi_eta, & ! Correlation for chi(s),eta(t)  [-]
+      corr_chi_w, & ! Correlation for w,chi(s)  [-]
+      corr_eta_w    ! Correlation for w,eta(t)  [-]
 
     integer :: i, index1, index2, LN_index
 
@@ -2288,7 +2288,7 @@ module generate_lh_sample_module
          ( d_variables, index1, index2, real(corr_chi_eta, kind = dp), & ! In
            corr_chi_eta_w_matrix ) ! In/out
 
-    ! The correlation between w and s,t is typically not fixed either, but for
+    ! The correlation between w and chi(s),eta(t) is typically not fixed either, but for
     ! the reasons listed above we compute it using a fixed value.
     index1 = iiPDF_chi
     index2 = iiPDF_w
@@ -2409,7 +2409,7 @@ module generate_lh_sample_module
                                          sigma2_on_mu2_ip_array, corr_array, &
                                          corr_chi_eta_w_matrix )
 ! Description:
-!   Add a correlation between s,t Mellor, w and a lognormal variate to a
+!   Add a correlation between chi(s),eta(t) Mellor, w and a lognormal variate to a
 !   correlation matrix.
 ! References:
 !   None

@@ -164,7 +164,7 @@ contains
     !
     ! Nc = Ncn * H(s);
     !
-    ! where extended liquid water mixing ratio, s, is equal to cloud water
+    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
@@ -260,7 +260,7 @@ contains
     !
     ! Nc = Ncn * H(s);
     !
-    ! where extended liquid water mixing ratio, s, is equal to cloud water
+    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
@@ -354,7 +354,7 @@ contains
     !
     ! Nc = Ncn * H(s);
     !
-    ! where extended liquid water mixing ratio, s, is equal to cloud water
+    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
@@ -482,7 +482,7 @@ contains
     !
     ! Nc = Ncn * H(s);
     !
-    ! where extended liquid water mixing ratio, s, is equal to cloud water
+    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.

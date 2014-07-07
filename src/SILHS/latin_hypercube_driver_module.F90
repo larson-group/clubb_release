@@ -661,10 +661,10 @@ module latin_hypercube_driver_module
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
     real( kind = core_rknd ), dimension(d_variables,nz), intent(in) :: &
-      mu1,    & ! Means of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>)  [units vary]
-      mu2,    & ! Means of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>)  [units vary]
-      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (s, t, w, <hydrometeors>) [units vary]
-      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (s, t, w, <hydrometeors>) [units vary]
+      mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
+      sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
+      sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params

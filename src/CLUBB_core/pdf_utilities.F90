@@ -15,7 +15,7 @@ module pdf_utilities
             corr_NL2NN_dp, &
             corr_LL2NN,    &
             corr_LL2NN_dp, &
-            calc_corr_sx,  &
+            calc_corr_chi_x,  &
             calc_xp2
 
   contains
@@ -387,14 +387,14 @@ module pdf_utilities
   end function corr_LL2NN_dp
 
   !=============================================================================
-  pure function calc_corr_sx( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
+  pure function calc_corr_chi_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
                               sigma_chi_i, corr_rtx_i, corr_thlx_i )  &
-  result( corr_sx_i )
+  result( corr_chi_x_i )
 
     ! Description:
     ! This function calculates the correlation between extended liquid water
-    ! mixing ratio, s, and a generic variable x, within the ith component of the
-    ! PDF.  The variable s can be split into mean and turbulent components, such
+    ! mixing ratio, chi(s), and a generic variable x, within the ith component of the
+    ! PDF.  The variable chi(s) can be split into mean and turbulent components, such
     ! that:
     !
     ! s = <s> + s';
@@ -416,16 +416,16 @@ module pdf_utilities
     !
     ! This equation can be rewritten as:
     !
-    ! sigma_s(i) * sigma_x(i) * corr_sx(i)
+    ! sigma_s(i) * sigma_x(i) * corr_chi_x(i)
     !   = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rtx(i)
     !     - Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thlx(i).
     !
-    ! This equation can be solved for corr_sx(i):
+    ! This equation can be solved for corr_chi_x(i):
     !
-    ! corr_sx(i) = Coef_rt(i) * ( sigma_rt(i) / sigma_s(i) ) * corr_rtx(i)
+    ! corr_chi_x(i) = Coef_rt(i) * ( sigma_rt(i) / sigma_s(i) ) * corr_rtx(i)
     !              - Coef_thl(i) * ( sigma_thl(i) / sigma_s(i) ) * corr_thlx(i).
     !
-    ! The correlation between s and x within the ith component of the PDF is
+    ! The correlation between chi(s) and x within the ith component of the PDF is
     ! calculated.
 
     ! References:
@@ -446,38 +446,38 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      crt_i,       & ! Coefficient of r_t for s' (ith PDF component)         [-]
-      cthl_i,      & ! Coefficient of th_l for s' (ith PDF component)      [1/K]
+      crt_i,       & ! Coefficient of r_t for chi(s') (ith PDF component)         [-]
+      cthl_i,      & ! Coefficient of th_l for chi(s') (ith PDF component)      [1/K]
       sigma_rt_i,  & ! Standard deviation of r_t (ith PDF component)     [kg/kg]
       sigma_thl_i, & ! Standard deviation of th_l (ith PDF component)        [K]
-      sigma_chi_i,   & ! Standard deviation of s (ith PDF component)       [kg/kg]
+      sigma_chi_i,   & ! Standard deviation of chi(s) (ith PDF component)       [kg/kg]
       corr_rtx_i,  & ! Correlation between r_t and x (ith PDF component)     [-]
       corr_thlx_i    ! Correlation between th_l and x (ith PDF component)    [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_sx_i  ! Correlation of s and x (ith PDF component)   [-]
+      corr_chi_x_i  ! Correlation of chi(s) and x (ith PDF component)   [-]
 
 
-    ! Calculate the correlation of s and x in the ith PDF component.
+    ! Calculate the correlation of chi(s) and x in the ith PDF component.
     if ( sigma_chi_i > zero ) then
 
-       corr_sx_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rtx_i  &
+       corr_chi_x_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rtx_i  &
                    - cthl_i * ( sigma_thl_i / sigma_chi_i ) * corr_thlx_i
 
     else  ! sigma_chi_i = 0
 
-       ! The variance of s_(i) is 0.  This means that s is constant within the
+       ! The variance of chi_(i) is 0.  This means that chi is constant within the
        ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
-       ! between s and x is 0 in the ith PDF component.
-       corr_sx_i = zero
+       ! between chi and x is 0 in the ith PDF component.
+       corr_chi_x_i = zero
 
     endif
 
 
     return
 
-  end function calc_corr_sx
+  end function calc_corr_chi_x
 
   !=============================================================================
   pure function calc_xp2( mu_x_1, mu_x_2, &

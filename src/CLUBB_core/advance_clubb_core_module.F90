@@ -379,7 +379,7 @@ module advance_clubb_core_module
                                           ! Only has meaning if l_refined_grid_in_cloud is .true.
 
     real( kind = core_rknd ), parameter :: &
-      s_at_liq_sat = 0._core_rknd  ! Value of s at saturation with respect to ice
+      chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with respect to ice
                                    ! (zero for liquid)
 
     !!! Input Variables
@@ -985,12 +985,12 @@ module advance_clubb_core_module
 
           call calc_vert_avg_cf_component &
                ( gr%nz, k, gr%zt, pdf_params%chi_1, &                    ! Intent(in)
-                 pdf_params%stdev_chi_1, (/(s_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
+                 pdf_params%stdev_chi_1, (/(chi_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
                  cloud_frac1_refined, rc1_refined )                   ! Intent(out)
 
           call calc_vert_avg_cf_component & 
                ( gr%nz, k, gr%zt, pdf_params%chi_2, &                     ! Intent(in)
-                 pdf_params%stdev_chi_2, (/(s_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
+                 pdf_params%stdev_chi_2, (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
                  cloud_frac2_refined, rc2_refined )                    ! Intent(out)
 
           cloud_frac_refined = compute_weighted_average &
@@ -2489,20 +2489,20 @@ module advance_clubb_core_module
         cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
         cloud_frac2_zt, & ! Cloud fraction for 2nd normal distribution              [-]
-        chi_1_zm,          & ! Mean of s for 1st normal distribution               [kg/kg]
-        chi_1_zt,          & ! Mean of s for 1st normal distribution               [kg/kg]
-        chi_2_zm,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-        chi_2_zt,          & ! Mean of s for 2nd normal distribution               [kg/kg]
-        stdev_chi_1_zm       ! Standard deviation of s for 1st normal distribution [kg/kg]
+        chi_1_zm,          & ! Mean of chi(s) for 1st normal distribution               [kg/kg]
+        chi_1_zt,          & ! Mean of chi(s) for 1st normal distribution               [kg/kg]
+        chi_2_zm,          & ! Mean of chi(s) for 2nd normal distribution               [kg/kg]
+        chi_2_zt,          & ! Mean of chi(s) for 2nd normal distribution               [kg/kg]
+        stdev_chi_1_zm       ! Standard deviation of chi(s) for 1st normal distribution [kg/kg]
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        stdev_chi_1_zt,    & ! Standard deviation of s for 1st normal distribution [kg/kg]
-        stdev_chi_2_zm,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-        stdev_chi_2_zt,    & ! Standard deviation of s for 2nd normal distribution [kg/kg]
-        stdev_eta_1_zm,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-        stdev_eta_1_zt,    & ! Standard deviation of t for 1st normal distribution [kg/kg]
-        stdev_eta_2_zm,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
-        stdev_eta_2_zt,    & ! Standard deviation of t for 2nd normal distribution [kg/kg]
+        stdev_chi_1_zt,    & ! Standard deviation of chi(s) for 1st normal distribution [kg/kg]
+        stdev_chi_2_zm,    & ! Standard deviation of chi(s) for 2nd normal distribution [kg/kg]
+        stdev_chi_2_zt,    & ! Standard deviation of chi(s) for 2nd normal distribution [kg/kg]
+        stdev_eta_1_zm,    & ! Standard deviation of eta(t) for 1st normal distribution [kg/kg]
+        stdev_eta_1_zt,    & ! Standard deviation of eta(t) for 1st normal distribution [kg/kg]
+        stdev_eta_2_zm,    & ! Standard deviation of eta(t) for 2nd normal distribution [kg/kg]
+        stdev_eta_2_zt,    & ! Standard deviation of eta(t) for 2nd normal distribution [kg/kg]
         rrtthl_zm,      & ! Within-a-normal correlation of r_t and th_l             [-]
         rrtthl_zt,      & ! Within-a-normal correlation of r_t and th_l             [-]
         alpha_thl_zm,   & ! Factor relating to normalized variance for th_l         [-]

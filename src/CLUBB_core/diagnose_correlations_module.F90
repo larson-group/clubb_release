@@ -1008,17 +1008,17 @@ module diagnose_correlations_module
 
     ! ---- Begin Code ----
 
-!    corr_ws   = corr_array(iiPDF_w, iiPDF_chi)
+!    corr_w_chi   = corr_array(iiPDF_w, iiPDF_chi)
 !    corr_wrr  = corr_array(iiPDF_w, iiPDF_rrain)
 !    corr_wNr  = corr_array(iiPDF_w, iiPDF_Nr)
 !    corr_wNcn = corr_array(iiPDF_w, iiPDF_Ncn)
-!    corr_st   = corr_array(iiPDF_chi, iiPDF_eta)
-!    corr_srr  = corr_array(iiPDF_chi, iiPDF_rrain)
-!    corr_sNr  = corr_array(iiPDF_chi, iiPDF_Nr)
-!    corr_sNcn = corr_array(iiPDF_chi, iiPDF_Ncn)
-!    corr_trr  = corr_array(iiPDF_eta, iiPDF_rrain)
-!    corr_tNr  = corr_array(iiPDF_eta, iiPDF_Nr)
-!    corr_tNcn = corr_array(iiPDF_eta, iiPDF_Ncn)
+!    corr_chi_eta   = corr_array(iiPDF_chi, iiPDF_eta)
+!    corr_chi_rr  = corr_array(iiPDF_chi, iiPDF_rrain)
+!    corr_chi_Nr  = corr_array(iiPDF_chi, iiPDF_Nr)
+!    corr_chi_Ncn = corr_array(iiPDF_chi, iiPDF_Ncn)
+!    corr_eta_rr  = corr_array(iiPDF_eta, iiPDF_rrain)
+!    corr_eta_Nr  = corr_array(iiPDF_eta, iiPDF_Nr)
+!    corr_eta_Ncn = corr_array(iiPDF_eta, iiPDF_Ncn)
 !    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
 
     corr_w_chi   = corr_array(iiPDF_chi, iiPDF_w)

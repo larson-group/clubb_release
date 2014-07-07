@@ -162,10 +162,10 @@ module corr_matrix_module
     ! Constant Parameters
 
     ! Indices that represent the order in the default corr arrays
-    ! (s, t, w, Ncn, rr, Nr, ri, Ni, rs, Ns, rg, Ng)
+    ! (chi(s), eta(t), w, Ncn, rr, Nr, ri, Ni, rs, Ns, rg, Ng)
     integer, parameter :: &
-    ii_s = 1, &
-    ii_t = 2, &
+    ii_chi = 1, &
+    ii_eta = 2, &
     ii_w = 3, &
     ii_Ncn = 4, &
     ii_rr = 5, &
@@ -190,10 +190,10 @@ module corr_matrix_module
     ii_def_corr = -1
 
       if (iiPDF_x == iiPDF_chi) then
-         ii_def_corr = ii_s
+         ii_def_corr = ii_chi
 
       elseif (iiPDF_x == iiPDF_eta) then
-        ii_def_corr = ii_t
+        ii_def_corr = ii_eta
 
       elseif (iiPDF_x == iiPDF_w) then
         ii_def_corr = ii_w
@@ -429,7 +429,7 @@ module corr_matrix_module
 
     ! Description:
     !
-    ! Setup for the iiPDF indices. These indices are used to address s, t, w
+    ! Setup for the iiPDF indices. These indices are used to address chi(s), eta(t), w
     ! and the hydrometeors in the mean/stdev/corr arrays
     !
     ! References:
@@ -677,7 +677,7 @@ module corr_matrix_module
           end if
         end do ! 1..d_variables
         if ( l_warning ) then
-          write(fstderr,*) "Warning: the specified correlations for s and Nc are non-zero."
+          write(fstderr,*) "Warning: the specified correlations for chi(s) and Nc are non-zero."
           write(fstderr,*) "The latin hypercube code will not converge to the analytic solution &
             &using these settings."
         end if

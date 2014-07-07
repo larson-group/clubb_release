@@ -214,7 +214,7 @@ module matrix_operations
         exit
       case( 1: )
         if ( clubb_at_least_debug_level( 1 ) ) then
-          ! This shouldn't happen now that the s and t Mellor elements have been
+          ! This shouldn't happen now that the s and t Mellor(chi/eta) elements have been
           ! modified to never be perfectly correlated, but it's here just in case.
           ! -dschanen 10 Sept 2010
           write(fstderr,*) "Cholesky_factor: leading minor of order ", &

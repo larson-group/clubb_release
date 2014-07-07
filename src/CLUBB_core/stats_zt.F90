@@ -3520,7 +3520,7 @@ module stats_zt
       case ('chip2')
         ichip2 = k
         call stat_assign( var_index=ichip2, var_name="chip2", &
-             var_description="Variance of s (overall) [(kg/kg)^2]", var_units="(kg/kg)^2", &
+             var_description="Variance of chi(s) (overall) [(kg/kg)^2]", var_units="(kg/kg)^2", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
@@ -3528,16 +3528,16 @@ module stats_zt
         istdev_eta_1 = k
 
         call stat_assign( var_index=istdev_eta_1, var_name="stdev_eta_1", &
-             var_description="Standard dev. of t (1st PDF component) [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=zt )
+             var_description="Standard dev. of eta(t) (1st PDF component) [kg/kg]", &
+             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('stdev_eta_2')
         istdev_eta_2 = k
 
         call stat_assign( var_index=istdev_eta_2, var_name="stdev_eta_2", &
-             var_description="Standard dev. of t (2nd PDF component) [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=zt )
+             var_description="Standard dev. of eta(t) (2nd PDF component) [kg/kg]", &
+             var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
       case ('covar_chi_eta_1')
