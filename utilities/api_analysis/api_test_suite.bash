@@ -1,6 +1,14 @@
-if [ ! -f /CLUBB/ ] || [ ! -f /SAM/ ] || [ ! -f /CAM/ ] || [ ! -f /WRF/ ] ; then
-    echo "This script requires a freshly checked out version of CLUBB, SAM, CAM, and WRF, named respectively."
-fi
+echo "Checking out CLUBB"
+svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk CLUBB
+
+echo "Checking out SAM"
+svn co http://carson.math.uwm.edu/repos/sam_repos/trunk SAM
+
+echo "Checking out WRF"
+svn co http://carson.math.uwm.edu/repos/wrf/trunk WRF
+
+echo "Checking out CAM"
+svn co https://svn-ccsm-models.cgd.ucar.edu/cam1/branches/subcol_SILHS_UWM CAM
 
 echo "Moving CLUBB_core"
 mv CLUBB/src/CLUBB_core CLUBB_core
@@ -25,3 +33,15 @@ python api_commitment_test.py -cpu CLUBB_core WRF --exclude-dir="clubb","silhs" 
 
 python create_module_table.py CLUBB_core> output.html
 
+echo "Removing Dependencies"
+rm -rf CLUBB
+rm -rf SAM
+rm -rf WRF
+rm -rf CAM
+rm -rf CLUBB_core
+
+rm -rf clubb_standalone_modules.txt
+rm -rf clubb_core_modules.txt
+rm -rf sam_modules.txt
+rm -rf wrf_modules.txt
+rm -rf cam_modules.txt
