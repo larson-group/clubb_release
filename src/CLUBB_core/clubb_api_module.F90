@@ -409,9 +409,12 @@ module clubb_api_module
     initialize_tau_sponge_damp_api, finalize_tau_sponge_damp_api, &
     stdev_L2N_api,  corr_NL2NN_api, &
     mean_L2N_dp_api, stdev_L2N_dp_api,  &
-    corr_NL2NN_dp_api, corr_LL2NN_dp_api
-    !open_netcdf_api, write_netcdf_api, close_netcdf_api, &
-    !Ncnm_to_Nc_in_cloud_api, Nc_in_cloud_to_Ncnm_api, Ncnm_to_Ncm, Ncm_to_Ncnm_api, &
+    corr_NL2NN_dp_api, corr_LL2NN_dp_api, &
+#ifdef NETCDF
+    open_netcdf_api, write_netcdf_api, close_netcdf_api, &
+#endif
+
+    Ncnm_to_Nc_in_cloud_api, Nc_in_cloud_to_Ncnm_api, Ncnm_to_Ncm_api, Ncm_to_Ncnm_api
     !term_ma_zt_lh_apis, &
     !set_lower_triangular_matrix_dp_api, get_lower_triangular_matrix_api, &
     !row_mult_lower_tri_matrix_api, print_lower_triangular_matrix_api, &
@@ -2271,6 +2274,7 @@ contains
 
   end function corr_LL2NN_dp_api
 
+#ifdef NETCDF
   !================================================================================================
   ! open_netcdf - Defines the structure used to reference the file 'ncf'
   !================================================================================================
@@ -2366,6 +2370,7 @@ contains
       ncf )
 
   end subroutine close_netcdf_api
+#endif
 
   !================================================================================================
   ! Ncnm_to_Nc_in_cloud - Calculates the in-cloud mean of cloud droplet concentration.
