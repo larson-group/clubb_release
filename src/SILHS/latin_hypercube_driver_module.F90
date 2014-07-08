@@ -9,7 +9,7 @@ module latin_hypercube_driver_module
   logical, parameter, private :: &
     l_diagnostic_iter_check      = .true., &  ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
-    l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
+    l_output_2D_uniform_dist     = .true.    ! Output a 2D netCDF file of the uniform distribution
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)

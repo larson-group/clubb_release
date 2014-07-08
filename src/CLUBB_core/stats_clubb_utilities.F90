@@ -726,7 +726,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, zt%kk, zt%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, zt%num_output_fields, &  ! In
+                        time_current, stats_tout, zt%num_output_fields, &  ! In
                         zt%file ) ! InOut
 #else
       stop "This CLUBB program was not compiled with netCDF support."
@@ -792,7 +792,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname, 1, lh_zt%kk, lh_zt%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_zt%num_output_fields, &  ! In
+                          time_current, stats_tout, lh_zt%num_output_fields, &  ! In
                           lh_zt%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -853,7 +853,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname, 1, lh_sfc%kk, lh_sfc%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current+stats_tout, stats_tout, lh_sfc%num_output_fields, &  ! In
+                          time_current, stats_tout, lh_sfc%num_output_fields, &  ! In
                           lh_sfc%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -955,7 +955,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, zm%kk, zm%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, zm%num_output_fields, &  ! In
+                        time_current, stats_tout, zm%num_output_fields, &  ! In
                         zm%file ) ! InOut
 
 #else
@@ -1020,7 +1020,7 @@ module stats_clubb_utilities
         call open_netcdf( nlat, nlon, fdir, fname,  & 
                           1, rad_zt%kk, rad_zt%z, & 
                           day, month, year, rlat, rlon, & 
-                          time_current+stats_tout, stats_tout, & 
+                          time_current, stats_tout, & 
                           rad_zt%num_output_fields, rad_zt%file )
 
 #else
@@ -1083,7 +1083,7 @@ module stats_clubb_utilities
         call open_netcdf( nlat, nlon, fdir, fname,  & 
                           1, rad_zm%kk, rad_zm%z, & 
                           day, month, year, rlat, rlon, & 
-                          time_current+stats_tout, stats_tout, & 
+                          time_current, stats_tout, & 
                           rad_zm%num_output_fields, rad_zm%file )
 
 #else
@@ -1146,7 +1146,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
       call open_netcdf( nlat, nlon, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current+stats_tout, stats_tout, sfc%num_output_fields, &  ! In
+                        time_current, stats_tout, sfc%num_output_fields, &  ! In
                         sfc%file ) ! InOut
 
 #else
