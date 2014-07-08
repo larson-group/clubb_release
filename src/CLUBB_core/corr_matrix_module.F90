@@ -12,7 +12,7 @@ module corr_matrix_module
   integer, public :: &
     iiPDF_chi = -1, &
     iiPDF_eta = -1, &
-    iiPDF_w        = -1
+    iiPDF_w   = -1
 !$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
 
   integer, public :: &
@@ -105,8 +105,8 @@ module corr_matrix_module
     ! in ../../input/case_setups/arm_97_corr_array_cloud.in (for "below-cloud").
     corr_array_cloud_def = reshape( &
 
-(/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! s
-  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
+(/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
+  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
   0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
   0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
   0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
@@ -119,15 +119,15 @@ module corr_matrix_module
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
 
     shape(corr_array_cloud_def) )
-!  s     t     w       Ncn     rr       Nr        ri      Ni      rs      Ns      rg    Ng
+!  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
 
     corr_array_cloud_def = transpose( corr_array_cloud_def )
 
 
     corr_array_below_def = reshape( &
 
-(/1._c, .3_c , .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! s
-  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! t
+(/1._c, .3_c , .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
+  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
   0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
   0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
   0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
@@ -140,7 +140,7 @@ module corr_matrix_module
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
 
     shape(corr_array_below_def) )
-!  s     t     w       Ncn     rr       Nr       ri       Ni      rs      Ns      rg    Ng
+!  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
 
     corr_array_below_def = transpose( corr_array_below_def )
 
@@ -380,10 +380,10 @@ module corr_matrix_module
 
     select case( trim(var_name) )
 
-    case( "s" )
+    case( "chi" )
       i = iiPDF_chi
 
-    case( "t" )
+    case( "eta" )
       i = iiPDF_eta
 
     case( "w" )
@@ -392,25 +392,25 @@ module corr_matrix_module
     case( "Ncn" )
       i = iiPDF_Ncn
 
-    case( "rrain" )
+    case( "rr" )
       i = iiPDF_rrain
 
     case( "Nr" )
       i = iiPDF_Nr
 
-    case( "rice" )
+    case( "ri" )
       i = iiPDF_rice
 
     case( "Ni" )
       i = iiPDF_Ni
 
-    case( "rsnow" )
+    case( "rs" )
       i = iiPDF_rsnow
 
-    case( "Nsnow" )
+    case( "Ns" )
       i = iiPDF_Nsnow
         
-    case( "rgraupel" )
+    case( "rg" )
       i = iiPDF_rgraupel
 
     case( "Ng" )
@@ -621,7 +621,6 @@ module corr_matrix_module
       input_file_below    ! Path to the out of cloud correlation file
 
     ! Local variables
-    character(len=1) :: response
     logical :: l_warning, corr_file_exist
     integer :: i
 
@@ -677,9 +676,10 @@ module corr_matrix_module
           end if
         end do ! 1..d_variables
         if ( l_warning ) then
-          write(fstderr,*) "Warning: the specified correlations for chi(s) and Nc are non-zero."
-          write(fstderr,*) "The latin hypercube code will not converge to the analytic solution &
-            &using these settings."
+          write(fstderr,*) "Warning: the specified correlations for chi" &
+                           // " (old s) and Ncn are non-zero."
+          write(fstderr,*) "The latin hypercube code will not converge to" &
+                           // " the analytic solution using these settings."
         end if
        end if ! l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0
 
