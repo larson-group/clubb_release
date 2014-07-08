@@ -13,18 +13,18 @@ module setup_clubb_pdf_params
             compute_corr,         &
             normalize_corr
 
-  private :: component_means_hydromet, &
-             precip_fraction,          &
-             component_mean_hm_ip,     &
-             component_stdev_hm_ip,    &
-             component_corr_wx,        &
-             component_corr_chi_eta,        &
-             component_corr_whm_ip,    &
-             component_corr_xhm_ip,    &
-             component_corr_hmxhmy_ip, &
-             calc_corr_whm,            &
-             pdf_param_hm_stats,       &
-             pdf_param_ln_hm_stats,    &
+  private :: component_means_hydromet,  &
+             precip_fraction,           &
+             component_mean_hm_ip,      &
+             component_stdev_hm_ip,     &
+             component_corr_w_x,        &
+             component_corr_chi_eta,    &
+             component_corr_w_hm_ip,    &
+             component_corr_x_hm_ip,    &
+             component_corr_hmx_hmy_ip, &
+             calc_corr_w_hm,            &
+             pdf_param_hm_stats,        &
+             pdf_param_ln_hm_stats,     &
              pack_pdf_params
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
@@ -215,28 +215,28 @@ module setup_clubb_pdf_params
       corr_cholesky_mtx_2_dp
 
     real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
-      corr_mtx_approx_1,   & ! Approximated corr. matrix (C = LL'), 1st comp. [-]
-      corr_mtx_approx_2      ! Approximated corr. matrix (C = LL'), 2nd comp. [-]
+      corr_mtx_approx_1, & ! Approximated corr. matrix (C = LL'), 1st comp. [-]
+      corr_mtx_approx_2    ! Approximated corr. matrix (C = LL'), 2nd comp. [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      mu_chi_1,      & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,      & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      sigma_chi_1,   & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2,   & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      rc1,         & ! Mean of r_c (1st PDF component)                 [kg/kg]
-      rc2,         & ! Mean of r_c (2nd PDF component)                 [kg/kg]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)              [-]
-      cloud_frac2, & ! Cloud fraction (2nd PDF component)              [-]
-      mixt_frac      ! Mixture fraction                                [-]
+      mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
+      mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
+      sigma_chi_1, & ! Standard deviation of chi (1st PDF component)     [kg/kg]
+      sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
+      rc1,         & ! Mean of r_c (1st PDF component)                   [kg/kg]
+      rc2,         & ! Mean of r_c (2nd PDF component)                   [kg/kg]
+      cloud_frac1, & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac2, & ! Cloud fraction (2nd PDF component)                [-]
+      mixt_frac      ! Mixture fraction                                  [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpchip_zm,     & ! Covariance of chi(s) and w (momentum levels)   [(m/s)(kg/kg)]
-      wpNcnp_zm,   & ! Covariance of N_cn and w (momentum levs.) [(m/s)(num/kg)]
-      wpchip_zt,     & ! Covariance of chi(s) and w on t-levs           [(m/s)(kg/kg)]
-      wpNcnp_zt      ! Covariance of N_cn and w on t-levs        [(m/s)(num/kg)]
+      wpchip_zm, & ! Covariance of chi and w (momentum levels)   [(m/s)(kg/kg)]
+      wpNcnp_zm, & ! Covariance of N_cn and w (momentum levs.)   [(m/s)(num/kg)]
+      wpchip_zt, & ! Covariance of chi and w on t-levs           [(m/s)(kg/kg)]
+      wpNcnp_zt    ! Covariance of N_cn and w on t-levs          [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
@@ -247,7 +247,7 @@ module setup_clubb_pdf_params
       wphydrometp_zt    ! Covariance of w and hm interp. to t-levs. [(m/s)units]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      precip_frac,   & ! Precipitation fraction (overall)           [-]
+      Precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
@@ -270,13 +270,13 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn         ! Prescribed correlation between chi(s) and Ncn     [-]
+      const_corr_chi_Ncn      ! Prescribed correlation of chi (old s) & Ncn  [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      wm_zt                ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+      wm_zt              ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
 
     logical :: l_corr_array_scaling
 
@@ -1686,22 +1686,24 @@ module setup_clubb_pdf_params
     ! Mean of vertical velocity, w, in PDF component 2.
     mu_x_2(iiPDF_w) = pdf_params%w2
 
-    ! Mean of extended liquid water mixing ratio, chi, in PDF component 1.
+    ! Mean of extended liquid water mixing ratio, chi (old s),
+    ! in PDF component 1.
     mu_x_1(iiPDF_chi) = pdf_params%chi_1
 
-    ! Mean of extended liquid water mixing ratio, chi, in PDF component 2.
+    ! Mean of extended liquid water mixing ratio, chi (old s),
+    ! in PDF component 2.
     mu_x_2(iiPDF_chi) = pdf_params%chi_2
 
-    ! Mean of eta(t) in PDF component 1.
-    ! Set the component mean values of eta(t) to 0.
-    ! The component mean values of eta(t) are not important.  They can be set to
+    ! Mean of eta (old t) in PDF component 1.
+    ! Set the component mean values of eta to 0.
+    ! The component mean values of eta are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
     mu_x_1(iiPDF_eta) = zero
 
-    ! Mean of eta(t) in PDF component 2.
-    ! Set the component mean values of eta(t) to 0.
-    ! The component mean values of eta(t) are not important.  They can be set to
+    ! Mean of eta (old t) in PDF component 2.
+    ! Set the component mean values of eta to 0.
+    ! The component mean values of eta are not important.  They can be set to
     ! anything.  They cancel out in the model code.  However, the best thing to
     ! do is to set them to 0 and avoid any kind of numerical error.
     mu_x_2(iiPDF_eta) = zero
@@ -1736,18 +1738,18 @@ module setup_clubb_pdf_params
     ! Standard deviation of vertical velocity, w, in PDF component 2.
     sigma_x_2(iiPDF_w) = sqrt( pdf_params%varnce_w2 )
 
-    ! Standard deviation of extended liquid water mixing ratio, chi,
+    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 1.
     sigma_x_1(iiPDF_chi) = pdf_params%stdev_chi_1
 
-    ! Standard deviation of extended liquid water mixing ratio, chi,
+    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 2.
     sigma_x_2(iiPDF_chi) = pdf_params%stdev_chi_2
 
-    ! Standard deviation of eta(t) in PDF component 1.
+    ! Standard deviation of eta (old t) in PDF component 1.
     sigma_x_1(iiPDF_eta) = pdf_params%stdev_eta_1
 
-    ! Standard deviation of eta(t) in PDF component 2.
+    ! Standard deviation of eta (old t) in PDF component 2.
     sigma_x_2(iiPDF_eta) = pdf_params%stdev_eta_2
 
     ! Standard deviation of simplified cloud nuclei concentration, Ncn,
@@ -1874,7 +1876,7 @@ module setup_clubb_pdf_params
       rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
       cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
       cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
-      wpchip,          & ! Covariance of w and chi(s)                      [(m/s)kg/kg]
+      wpchip,        & ! Covariance of w and chi (old s)            [(m/s)kg/kg]
       wpNcnp,        & ! Covariance of w and N_cn (overall)       [(m/s) num/kg]
       stdev_w,       & ! Standard deviation of w                           [m/s]
       mixt_frac,     & ! Mixture fraction                                    [-]
@@ -1901,25 +1903,25 @@ module setup_clubb_pdf_params
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
     intent(out) :: &
-      corr_array_1, & ! Correlation array 1st component (order: chi,eta,w,Ncn <hydrometeors>)   [-]
-      corr_array_2    ! Correlation array 2nd component (order: chi,eta,w,Ncn <hydrometeors>)   [-]
+      corr_array_1, & ! Correlation array (1st PDF component) [-]
+      corr_array_2    ! Correlation array (2nd PDF component) [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
       sigma_Ncn_1
 
     real( kind = core_rknd ), dimension(d_variables)  :: &
-      corr_whm_1, & ! Correlation between w and hm (1st PDF component) ip    [-]
-      corr_whm_2    ! Correlation between w and hm (2nd PDF component) ip    [-]
+      corr_w_hm_1, & ! Correlation of w and hm (1st PDF component) ip    [-]
+      corr_w_hm_2    ! Correlation of w and hm (2nd PDF component) ip    [-]
 
     real( kind = core_rknd ) :: &
-      chi_m,     & ! Mean of chi (s_mellor)                    [kg/kg]
-      stdev_chi, & ! Standard deviation of chi (s_mellor)      [kg/kg]
-      corr_w_chi,        & ! Correlation between w and chi(s) (overall)              [-]
-      corr_wNcn         ! Correlation between w and Ncn (overall)            [-]
+      chi_m,      & ! Mean of chi (s_mellor)                    [kg/kg]
+      stdev_chi,  & ! Standard deviation of chi (s_mellor)      [kg/kg]
+      corr_w_chi, & ! Correlation of w and chi (overall)        [-]
+      corr_w_Ncn    ! Correlation of w and Ncn (overall)        [-]
 
     logical :: &
-      l_limit_corr_chi_eta    ! If true, we limit the correlation between chi(s) and t(eta) [-]
+      l_limit_corr_chi_eta    ! Flag to limit the correlation of chi and eta [-]
 
     integer :: ivar, jvar ! Loop iterators
 
@@ -1930,9 +1932,9 @@ module setup_clubb_pdf_params
 
     !!! Correlations
 
-    ! Initialize corr_whm_1 and corr_whm_2 arrays to 0.
-    corr_whm_1 = zero
-    corr_whm_2 = zero
+    ! Initialize corr_w_hm_1 and corr_w_hm_2 arrays to 0.
+    corr_w_hm_1 = zero
+    corr_w_hm_2 = zero
 
     ! Calculate correlations involving w by first calculating total covariances
     ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.
@@ -1953,17 +1955,17 @@ module setup_clubb_pdf_params
        corr_w_chi &
        = calc_w_corr( wpchip, stdev_w, stdev_chi, w_tol, chi_tol )
 
-       corr_wNcn = calc_w_corr( wpNcnp, stdev_w, sigma_Ncn_1, w_tol, Ncn_tol )
+       corr_w_Ncn = calc_w_corr( wpNcnp, stdev_w, sigma_Ncn_1, w_tol, Ncn_tol )
 
        do jvar = iiPDF_Ncn+1, d_variables
 
-          call calc_corr_whm( wm_zt, wphydrometp_zt(pdf2hydromet_idx(jvar)), &
-                              mu_x_1(iiPDF_w), mu_x_2(iiPDF_w), &
-                              mu_x_1(jvar), mu_x_2(jvar), &
-                              sigma_x_1(iiPDF_w), sigma_x_2(iiPDF_w), &
-                              sigma_x_1(jvar), sigma_x_2(jvar), &
-                              mixt_frac, precip_frac_1, precip_frac_2, &
-                              corr_whm_1(jvar), corr_whm_2(jvar) )
+          call calc_corr_w_hm( wm_zt, wphydrometp_zt(pdf2hydromet_idx(jvar)), &
+                               mu_x_1(iiPDF_w), mu_x_2(iiPDF_w), &
+                               mu_x_1(jvar), mu_x_2(jvar), &
+                               sigma_x_1(iiPDF_w), sigma_x_2(iiPDF_w), &
+                               sigma_x_1(jvar), sigma_x_2(jvar), &
+                               mixt_frac, precip_frac_1, precip_frac_2, &
+                               corr_w_hm_1(jvar), corr_w_hm_2(jvar) )
 
        enddo ! jvar = iiPDF_Ncn+1, d_variables
 
@@ -1971,8 +1973,8 @@ module setup_clubb_pdf_params
     endif
 
     ! In order to decompose the correlation matrix that we may or may not make
-    ! (l_use_modified_corr), we must not have a perfect correlation between chi
-    ! and eta. Thus, we impose a limitation.
+    ! (l_use_modified_corr), we must not have a perfect correlation of chi and
+    ! eta. Thus, we impose a limitation.
     if ( l_use_modified_corr ) then
       l_limit_corr_chi_eta = .true.
     else
@@ -1991,73 +1993,76 @@ module setup_clubb_pdf_params
     end do
 
 
-    !!! This code assumes the following order in the prescribed correlation arrays (iiPDF indices):
+    !!! This code assumes the following order in the prescribed correlation
+    !!! arrays (iiPDF indices):
     !!! chi, eta, w, Ncn, <hydrometeors> (indices increasing from left to right)
 
-    ! Correlation between chi(s) and eta(t)
+    ! Correlation of chi (old s) and eta (old t)
     corr_array_1(iiPDF_eta, iiPDF_chi) &
     = component_corr_chi_eta( pdf_params%corr_chi_eta_1, rc1, cloud_frac1, &
-                         corr_array_cloud(iiPDF_eta, iiPDF_chi), &
-                         corr_array_below(iiPDF_eta, iiPDF_chi), &
-                         l_limit_corr_chi_eta )
+                              corr_array_cloud(iiPDF_eta, iiPDF_chi), &
+                              corr_array_below(iiPDF_eta, iiPDF_chi), &
+                              l_limit_corr_chi_eta )
 
     corr_array_2(iiPDF_eta, iiPDF_chi) &
     = component_corr_chi_eta( pdf_params%corr_chi_eta_2, rc2, cloud_frac2, &
-                         corr_array_cloud(iiPDF_eta, iiPDF_chi), &
-                         corr_array_below(iiPDF_eta, iiPDF_chi), &
-                         l_limit_corr_chi_eta )
+                              corr_array_cloud(iiPDF_eta, iiPDF_chi), &
+                              corr_array_below(iiPDF_eta, iiPDF_chi), &
+                              l_limit_corr_chi_eta )
 
-    ! Correlation between chi(s) and w
+    ! Correlation of chi (old s) and w
     corr_array_1(iiPDF_w, iiPDF_chi) &
-    = component_corr_wx( corr_w_chi, rc1, cloud_frac1, &
-                         corr_array_cloud(iiPDF_w, iiPDF_chi), &
-                         corr_array_below(iiPDF_w, iiPDF_chi) )
+    = component_corr_w_x( corr_w_chi, rc1, cloud_frac1, &
+                          corr_array_cloud(iiPDF_w, iiPDF_chi), &
+                          corr_array_below(iiPDF_w, iiPDF_chi) )
 
     corr_array_2(iiPDF_w, iiPDF_chi) &
-    = component_corr_wx( corr_w_chi, rc2, cloud_frac2, &
-                         corr_array_cloud(iiPDF_w, iiPDF_chi), &
-                         corr_array_below(iiPDF_w, iiPDF_chi) )
+    = component_corr_w_x( corr_w_chi, rc2, cloud_frac2, &
+                          corr_array_cloud(iiPDF_w, iiPDF_chi), &
+                          corr_array_below(iiPDF_w, iiPDF_chi) )
 
 
-    ! Correlation between chi(s) and Ncn
+    ! Correlation of chi (old s) and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_chi) &
-    = component_corr_xhm_ip( rc1, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_chi), &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_chi) )
+    = component_corr_x_hm_ip( rc1, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_chi), &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_chi) )
 
     corr_array_2(iiPDF_Ncn, iiPDF_chi) &
-    = component_corr_xhm_ip( rc2, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_chi), &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_chi) )
+    = component_corr_x_hm_ip( rc2, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_chi), &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_chi) )
 
-    ! Correlation between chi(s) and the hydrometeors
+    ! Correlation of chi (old s) and the hydrometeors
     ivar = iiPDF_chi
     do jvar = iiPDF_Ncn+1, d_variables
        corr_array_1(jvar, ivar) &
-       = component_corr_xhm_ip( rc1, cloud_frac1,&
-                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+       = component_corr_x_hm_ip( rc1, cloud_frac1,&
+                                 corr_array_cloud(jvar, ivar), &
+                                 corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_xhm_ip( rc2, cloud_frac2,&
-                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+       = component_corr_x_hm_ip( rc2, cloud_frac2,&
+                                 corr_array_cloud(jvar, ivar), &
+                                 corr_array_below(jvar, ivar) )
     enddo
 
-    ! Correlation between eta(t) and w
+    ! Correlation of eta (old t) and w
     corr_array_1(iiPDF_w, iiPDF_eta) = zero
     corr_array_2(iiPDF_w, iiPDF_eta) = zero
 
-    ! Correlation between eta(t) and Ncn
+    ! Correlation of eta (old t) and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_eta) &
-    = component_corr_xhm_ip( rc1, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_eta), &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_eta) )
+    = component_corr_x_hm_ip( rc1, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_eta), &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_eta) )
 
     corr_array_2(iiPDF_Ncn, iiPDF_eta) &
-    = component_corr_xhm_ip( rc2, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_eta), &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_eta) )
+    = component_corr_x_hm_ip( rc2, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_eta), &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_eta) )
 
-    ! Correlation between eta(t) and the hydrometeors
+    ! Correlation of eta (old t) and the hydrometeors
     ivar = iiPDF_eta
     do jvar = iiPDF_Ncn+1, d_variables
 
@@ -2065,84 +2070,87 @@ module setup_clubb_pdf_params
 
           corr_array_1(jvar, ivar) &
           = component_corr_eta_hm_ip( corr_array_1( iiPDF_eta, iiPDF_chi), &
-                                   corr_array_1( jvar, iiPDF_chi) )
+                                      corr_array_1( jvar, iiPDF_chi) )
 
           corr_array_2(jvar, ivar) &
           = component_corr_eta_hm_ip( corr_array_2( iiPDF_eta, iiPDF_chi), &
-                                   corr_array_2( jvar, iiPDF_chi) )
+                                      corr_array_2( jvar, iiPDF_chi) )
 
        else ! .not. l_use_modified_corr
 
           corr_array_1(jvar, ivar) &
-          = component_corr_xhm_ip( rc1, cloud_frac1, &
-                                   corr_array_cloud(jvar, ivar), &
-                                   corr_array_below(jvar, ivar) )
+          = component_corr_x_hm_ip( rc1, cloud_frac1, &
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
 
           corr_array_2(jvar, ivar) &
-          = component_corr_xhm_ip( rc2, cloud_frac2, &
-                                   corr_array_cloud(jvar, ivar), &
-                                   corr_array_below(jvar, ivar) )
+          = component_corr_x_hm_ip( rc2, cloud_frac2, &
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
 
        endif ! l_use_modified_corr
 
     enddo
 
 
-    ! Correlation between w and Ncn
+    ! Correlation of w and Ncn
     corr_array_1(iiPDF_Ncn, iiPDF_w) &
-    = component_corr_whm_ip( corr_wNcn, rc1, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
-                             corr_array_below(iiPDF_Ncn, iiPDF_w) )
+    = component_corr_w_hm_ip( corr_w_Ncn, rc1, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
+                              corr_array_below(iiPDF_Ncn, iiPDF_w) )
 
     corr_array_2(iiPDF_Ncn, iiPDF_w) &
-    = component_corr_whm_ip( corr_wNcn, rc2, one, &
-                             corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
-                             corr_array_below(iiPDF_Ncn, iiPDF_w) )
+    = component_corr_w_hm_ip( corr_w_Ncn, rc2, one, &
+                              corr_array_cloud(iiPDF_Ncn, iiPDF_w), &
+                              corr_array_below(iiPDF_Ncn, iiPDF_w) )
 
-    ! Correlation between w and the hydrometeors
+    ! Correlation of w and the hydrometeors
     ivar = iiPDF_w
     do jvar = iiPDF_Ncn+1, d_variables
 
        corr_array_1(jvar, ivar) &
-       = component_corr_whm_ip( corr_whm_1(jvar), rc1, cloud_frac1, &
-                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+       = component_corr_w_hm_ip( corr_w_hm_1(jvar), rc1, cloud_frac1, &
+                                 corr_array_cloud(jvar, ivar), &
+                                 corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_whm_ip( corr_whm_2(jvar), rc2, cloud_frac2, &
-                                corr_array_cloud(jvar, ivar), corr_array_below(jvar, ivar) )
+       = component_corr_w_hm_ip( corr_w_hm_2(jvar), rc2, cloud_frac2, &
+                                 corr_array_cloud(jvar, ivar), &
+                                 corr_array_below(jvar, ivar) )
 
     enddo
 
-    ! Correlation between Ncn and the hydrometeors
+    ! Correlation of Ncn and the hydrometeors
     ivar = iiPDF_Ncn
     do jvar = iiPDF_Ncn+1, d_variables
        corr_array_1(jvar, ivar) &
-       = component_corr_hmxhmy_ip( rc1, cloud_frac1, &
-                                   corr_array_cloud(jvar, ivar), &
-                                   corr_array_below(jvar, ivar) )
+       = component_corr_hmx_hmy_ip( rc1, cloud_frac1, &
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_hmxhmy_ip( rc2, cloud_frac2, &
-                                   corr_array_cloud(jvar, ivar), &
-                                   corr_array_below(jvar, ivar) )
+       = component_corr_hmx_hmy_ip( rc2, cloud_frac2, &
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
     enddo
 
-    ! Correlation between two hydrometeors
+    ! Correlation of two hydrometeors
     do ivar = iiPDF_Ncn+1, d_variables-1
        do jvar = ivar+1, d_variables
 
           corr_array_1(jvar, ivar) &
-          = component_corr_hmxhmy_ip( rc1, cloud_frac1, &
-                                      corr_array_cloud(jvar, ivar), &
-                                      corr_array_below(jvar, ivar) )
+          = component_corr_hmx_hmy_ip( rc1, cloud_frac1, &
+                                       corr_array_cloud(jvar, ivar), &
+                                       corr_array_below(jvar, ivar) )
 
           corr_array_2(jvar, ivar) &
-          = component_corr_hmxhmy_ip( rc2, cloud_frac2, &
-                                      corr_array_cloud(jvar, ivar), &
-                                      corr_array_below(jvar, ivar) )
+          = component_corr_hmx_hmy_ip( rc2, cloud_frac2, &
+                                       corr_array_cloud(jvar, ivar), &
+                                       corr_array_below(jvar, ivar) )
 
        enddo ! jvar
     enddo ! ivar
+
 
     return
 
@@ -2250,14 +2258,14 @@ module setup_clubb_pdf_params
   end function component_stdev_hm_ip
 
   !=============================================================================
-  function component_corr_wx( corr_wx, rci, cloud_fraci, &
-                              corr_wx_NN_cloud, corr_wx_NN_below ) &
-  result( corr_wx_i )
+  function component_corr_w_x( corr_w_x, rc_i, cloud_frac_i, &
+                               corr_w_x_NN_cloud, corr_w_x_NN_below ) &
+  result( corr_w_x_i )
 
     ! Description:
-    ! Calculates the correlation between w and x within the ith PDF component.
+    ! Calculates the correlation of w and x within the ith PDF component.
     ! Here, x is a variable with a normally distributed individual marginal PDF,
-    ! such as s or t.
+    ! such as chi or eta.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2277,17 +2285,17 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_wx,     & ! Correlation between w and x (overall)          [-]
-      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
-      cloud_fraci    ! Cloud fraction (ith PDF component)             [-]
+      corr_w_x,     & ! Correlation of w and x (overall)               [-]
+      rc_i,         & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
+      cloud_frac_i    ! Cloud fraction (ith PDF component)             [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_wx_NN_cloud, & ! Corr. btwn. w and x (ith PDF comp.); cloudy levs [-]
-      corr_wx_NN_below    ! Corr. btwn. w and x (ith PDF comp.); clear levs  [-]
+      corr_w_x_NN_cloud, & ! Corr. of w and x (ith PDF comp.); cloudy levs [-]
+      corr_w_x_NN_below    ! Corr. of w and x (ith PDF comp.); clear levs  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_wx_i    ! Correlation between w and x (ith PDF component)  [-]
+      corr_w_x_i    ! Correlation of w and x (ith PDF component)  [-]
 
     ! Local Variables
 
@@ -2295,15 +2303,15 @@ module setup_clubb_pdf_params
     ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
     ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
     ! but the single component covariance and correlation are defined to be 0.
-    ! Since the component covariances (or correlations) between w and chi(s) and
-    ! between w and eta(t) are based on the covariances (or correlations) between w
-    ! and r_t and between w and theta_l, the single component correlation and
-    ! covariance of w and chi(s), as well as w and eta(t), are defined to be 0.
+    ! Since the component covariances (or correlations) of w and chi (old s) and
+    ! of w and eta (old t) are based on the covariances (or correlations) of w
+    ! and r_t and of w and theta_l, the single component correlation and
+    ! covariance of w and chi, as well of as w and eta, are defined to be 0.
     logical, parameter :: &
       l_follow_CLUBB_PDF_standards = .true.
 
 
-    ! Correlation between w and x in the ith PDF component.
+    ! Correlation of w and x in the ith PDF component.
     if ( l_follow_CLUBB_PDF_standards ) then
 
        ! The component correlations of w and r_t and the component correlations
@@ -2311,11 +2319,11 @@ module setup_clubb_pdf_params
        ! other words, w and r_t (theta_l) have overall covariance w'r_t'
        ! (w'theta_l'), but the single component covariance and correlation are
        ! defined to be 0.  Since the component covariances (or correlations)
-       ! between w and chi(s) and between w and eta(t) are based on the covariances (or
-       ! correlations) between w and r_t and between w and theta_l, the single
-       ! component correlation and covariance of w and chi(s), as well as w and eta(t),
-       ! are defined to be 0.
-       corr_wx_i = zero
+       ! of w and chi (old s) and of w and eta (old t) are based on the
+       ! covariances (or correlations) of w and r_t and of w and theta_l, the
+       ! single component correlation and covariance of w and chi, as well as of
+       ! w and eta, are defined to be 0.
+       corr_w_x_i = zero
 
     else ! not following CLUBB PDF standards
 
@@ -2323,16 +2331,16 @@ module setup_clubb_pdf_params
        !           CLUBB PDF are not being obeyed.  The use of this code is
        !           inconsistent with the rest of CLUBB's PDF.
        if ( l_calc_w_corr ) then
-          corr_wx_i = corr_wx
+          corr_w_x_i = corr_w_x
        else ! use prescribed parameter values
           if ( l_interp_prescribed_params ) then
-             corr_wx_i = cloud_fraci * corr_wx_NN_cloud &
-                         + ( one - cloud_fraci ) * corr_wx_NN_below
+             corr_w_x_i = cloud_frac_i * corr_w_x_NN_cloud &
+                          + ( one - cloud_frac_i ) * corr_w_x_NN_below
           else
-             if ( rci > rc_tol ) then
-                corr_wx_i = corr_wx_NN_cloud
+             if ( rc_i > rc_tol ) then
+                corr_w_x_i = corr_w_x_NN_cloud
              else
-                corr_wx_i = corr_wx_NN_below
+                corr_w_x_i = corr_w_x_NN_below
              endif
           endif ! l_interp_prescribed_params
        endif ! l_calc_w_corr
@@ -2342,16 +2350,18 @@ module setup_clubb_pdf_params
 
     return
 
-  end function component_corr_wx
+  end function component_corr_w_x
 
   !=============================================================================
-  function component_corr_chi_eta( pdf_corr_chi_eta_i, rci, cloud_fraci, &
-                              corr_chi_eta_NN_cloud, corr_chi_eta_NN_below, &
-                              l_limit_corr_chi_eta ) &
+  function component_corr_chi_eta( pdf_corr_chi_eta_i, rc_i, cloud_frac_i, &
+                                   corr_chi_eta_NN_cloud, &
+                                   corr_chi_eta_NN_below, &
+                                   l_limit_corr_chi_eta ) &
   result( corr_chi_eta_i )
 
     ! Description:
-    ! Calculates the correlation between chi(s) and eta(t) within the ith PDF component.
+    ! Calculates the correlation of chi (old s) and eta (old t) within the
+    ! ith PDF component.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2371,32 +2381,32 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      pdf_corr_chi_eta_i, & ! Correlation between chi(s) and eta(t) (ith PDF component)     [-]
-      rci,           & ! Mean cloud water mixing ratio (ith PDF comp.)   [kg/kg]
-      cloud_fraci      ! Cloud fraction (ith PDF component)                  [-]
+      pdf_corr_chi_eta_i, & ! Correlation of chi and eta (ith PDF component) [-]
+      rc_i,               & ! Mean cloud water mix. rat. (ith PDF comp.) [kg/kg]
+      cloud_frac_i          ! Cloud fraction (ith PDF component)             [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_chi_eta_NN_cloud, & ! Corr. btwn. chi(s) and t(eta) (ith PDF comp.); cloudy levs [-]
-      corr_chi_eta_NN_below    ! Corr. btwn. chi(s) and t(eta) (ith PDF comp.); clear levs  [-]
+      corr_chi_eta_NN_cloud, & ! Corr. of chi & eta (ith PDF comp.); cloudy  [-]
+      corr_chi_eta_NN_below    ! Corr. of chi & eta (ith PDF comp.); clear   [-]
 
     logical, intent(in) :: &
-      l_limit_corr_chi_eta    ! We must limit the correlation between chi(s) and t(eta) if we
-                          ! are to take the Cholesky decomposition of the
-                          ! resulting correlation matrix. This is because a
-                          ! perfect correlation between chi(s) and t(eta) was found to be
-                          ! unrealizable.
+      l_limit_corr_chi_eta    ! We must limit the correlation of chi and eta if
+                              ! we are to take the Cholesky decomposition of the
+                              ! resulting correlation matrix. This is because a
+                              ! perfect correlation of chi and eta was found to
+                              ! be unrealizable.
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_chi_eta_i    ! Correlation between chi(s) and t(eta) (ith PDF component)         [-]
+      corr_chi_eta_i    ! Correlation of chi and eta (ith PDF component)     [-]
 
 
-    ! Correlation between chi(s) and t(eta) in the ith PDF component.
+    ! Correlation of chi (old s) and eta (old t) in the ith PDF component.
 
-    ! The PDF variables chi(s) and t(eta) result from a transformation of the PDF
-    ! involving r_t and theta_l.  The correlation between chi(s) and t(eta) depends on the
-    ! correlation between r_t and theta_l, as well as the variances of r_t and
-    ! theta_l, and other factors.  The correlation between chi(s) and t(eta) is subject to
+    ! The PDF variables chi and eta result from a transformation of the PDF
+    ! involving r_t and theta_l.  The correlation of chi and eta depends on the
+    ! correlation of r_t and theta_l, as well as the variances of r_t and
+    ! theta_l, and other factors.  The correlation of chi and eta is subject to
     ! change at every vertical level and model time step, and is calculated as
     ! part of the CLUBB PDF parameters.
     if ( .not. l_fix_chi_eta_correlations ) then
@@ -2404,17 +2414,17 @@ module setup_clubb_pdf_params
        ! Preferred, more accurate version.
        corr_chi_eta_i = pdf_corr_chi_eta_i
 
-    else ! fix the correlation between chi(s) and t(eta).
+    else ! fix the correlation of chi (old s) and eta (old t).
 
        ! WARNING:  this code is inconsistent with the rest of CLUBB's PDF.  This
        !           code is necessary because SILHS is lazy and wussy, and only
        !           wants to declare correlation arrays at the start of the model
        !           run, rather than updating them throughout the model run.
        if ( l_interp_prescribed_params ) then
-          corr_chi_eta_i = cloud_fraci * corr_chi_eta_NN_cloud &
-                      + ( one - cloud_fraci ) * corr_chi_eta_NN_below
+          corr_chi_eta_i = cloud_frac_i * corr_chi_eta_NN_cloud &
+                           + ( one - cloud_frac_i ) * corr_chi_eta_NN_below
        else
-          if ( rci > rc_tol ) then
+          if ( rc_i > rc_tol ) then
              corr_chi_eta_i = corr_chi_eta_NN_cloud
           else
              corr_chi_eta_i = corr_chi_eta_NN_below
@@ -2423,14 +2433,15 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! We cannot have a perfect correlation between chi(s) and t(eta) if we plan to
-    ! decompose this matrix and we don't want the Cholesky_factor code to
-    ! throw a fit.
+    ! We cannot have a perfect correlation of chi (old s) and eta (old t) if we
+    ! plan to decompose this matrix and we don't want the Cholesky_factor code
+    ! to throw a fit.
     if ( l_limit_corr_chi_eta ) then
 
-       corr_chi_eta_i = max( min( corr_chi_eta_i, max_mag_correlation ), -max_mag_correlation )
+       corr_chi_eta_i = max( min( corr_chi_eta_i, max_mag_correlation ), &
+                             -max_mag_correlation )
 
-    end if
+    endif
 
 
     return
@@ -2438,12 +2449,12 @@ module setup_clubb_pdf_params
   end function component_corr_chi_eta
 
   !=============================================================================
-  function component_corr_whm_ip( corr_whm_i_in, rci, cloud_fraci, &
-                                  corr_whm_NL_cloud, corr_whm_NL_below ) &
-  result( corr_whm_i )
+  function component_corr_w_hm_ip( corr_w_hm_i_in, rc_i, cloud_frac_i, &
+                                   corr_w_hm_NL_cloud, corr_w_hm_NL_below ) &
+  result( corr_w_hm_i )
 
     ! Description:
-    ! Calculates the in-precip correlation between w and a hydrometeor species
+    ! Calculates the in-precip correlation of w and a hydrometeor species
     ! within the ith PDF component.
 
     ! References:
@@ -2463,49 +2474,48 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_whm_i_in, & ! Correlation between w and hm (ith PDF comp.) ip     [-]
-      rci,           & ! Mean cloud water mixing ratio (ith PDF comp.)   [kg/kg]
-      cloud_fraci      ! Cloud fraction (ith PDF component)                  [-]
+      corr_w_hm_i_in, & ! Correlation of w and hm (ith PDF comp.) ip     [-]
+      rc_i,           & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
+      cloud_frac_i      ! Cloud fraction (ith PDF component)             [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_whm_NL_cloud, & ! Corr. btwn. w and hm (ith PDF comp.) ip; cloudy [-]
-      corr_whm_NL_below    ! Corr. btwn. w and hm (ith PDF comp.) ip; clear  [-]
+      corr_w_hm_NL_cloud, & ! Corr. of w and hm (ith PDF comp.) ip; cloudy [-]
+      corr_w_hm_NL_below    ! Corr. of w and hm (ith PDF comp.) ip; clear  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_whm_i    ! Correlation between w and hm (ith PDF component) ip  [-]
+      corr_w_hm_i    ! Correlation of w and hm (ith PDF component) ip  [-]
 
 
-    ! Correlation (in-precip) between w and the hydrometeor in the ith
-    ! PDF component.
+    ! Correlation (in-precip) of w and the hydrometeor in the ith PDF component.
     if ( l_calc_w_corr ) then
-       corr_whm_i = corr_whm_i_in
+       corr_w_hm_i = corr_w_hm_i_in
     else ! use prescribed parameter values
        if ( l_interp_prescribed_params ) then
-          corr_whm_i = cloud_fraci * corr_whm_NL_cloud &
-                       + ( one - cloud_fraci ) * corr_whm_NL_below
+          corr_w_hm_i = cloud_frac_i * corr_w_hm_NL_cloud &
+                        + ( one - cloud_frac_i ) * corr_w_hm_NL_below
        else
-          if ( rci > rc_tol ) then
-             corr_whm_i = corr_whm_NL_cloud
+          if ( rc_i > rc_tol ) then
+             corr_w_hm_i = corr_w_hm_NL_cloud
           else
-             corr_whm_i = corr_whm_NL_below
+             corr_w_hm_i = corr_w_hm_NL_below
           endif
        endif ! l_interp_prescribed_params
     endif ! l_calc_w_corr
 
     return
 
-  end function component_corr_whm_ip
+  end function component_corr_w_hm_ip
 
   !=============================================================================
-  function component_corr_xhm_ip( rci, cloud_fraci, &
-                                  corr_xhm_NL_cloud, corr_xhm_NL_below ) &
-  result( corr_xhm_i )
+  function component_corr_x_hm_ip( rc_i, cloud_frac_i, &
+                                   corr_x_hm_NL_cloud, corr_x_hm_NL_below ) &
+  result( corr_x_hm_i )
 
     ! Description:
-    ! Calculates the in-precip correlation between x and a hydrometeor species
+    ! Calculates the in-precip correlation of x and a hydrometeor species
     ! within the ith PDF component.  Here, x is a variable with a normally
-    ! distributed individual marginal PDF, such as s or t.
+    ! distributed individual marginal PDF, such as chi or eta.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -2521,43 +2531,42 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
-      cloud_fraci    ! Cloud fraction (ith PDF component)            [-]
+      rc_i,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_frac_i    ! Cloud fraction (ith PDF component)            [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_xhm_NL_cloud, & ! Corr. btwn. x and hm (ith PDF comp.) ip; cloudy [-]
-      corr_xhm_NL_below    ! Corr. btwn. x and hm (ith PDF comp.) ip; clear  [-]
+      corr_x_hm_NL_cloud, & ! Corr. of x and hm (ith PDF comp.) ip; cloudy [-]
+      corr_x_hm_NL_below    ! Corr. of x and hm (ith PDF comp.) ip; clear  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_xhm_i    ! Correlation between x and hm (ith PDF component) ip  [-]
+      corr_x_hm_i    ! Correlation of x and hm (ith PDF component) ip  [-]
 
 
-    ! Correlation (in-precip) between x and the hydrometeor in the ith
-    ! PDF component.
+    ! Correlation (in-precip) of x and the hydrometeor in the ith PDF component.
     if ( l_interp_prescribed_params ) then
-       corr_xhm_i = cloud_fraci * corr_xhm_NL_cloud &
-                    + ( one - cloud_fraci ) * corr_xhm_NL_below
+       corr_x_hm_i = cloud_frac_i * corr_x_hm_NL_cloud &
+                     + ( one - cloud_frac_i ) * corr_x_hm_NL_below
     else
-       if ( rci > rc_tol ) then
-          corr_xhm_i = corr_xhm_NL_cloud
+       if ( rc_i > rc_tol ) then
+          corr_x_hm_i = corr_x_hm_NL_cloud
        else
-          corr_xhm_i = corr_xhm_NL_below
+          corr_x_hm_i = corr_x_hm_NL_below
        endif
     endif
 
     return
 
-  end function component_corr_xhm_ip
+  end function component_corr_x_hm_ip
 
   !=============================================================================
-  function component_corr_hmxhmy_ip( rci, cloud_fraci, &
-                                     corr_hmxhmy_LL_cloud, &
-                                     corr_hmxhmy_LL_below ) &
-  result( corr_hmxhmy_i )
+  function component_corr_hmx_hmy_ip( rc_i, cloud_frac_i, &
+                                      corr_hmx_hmy_LL_cloud, &
+                                      corr_hmx_hmy_LL_below ) &
+  result( corr_hmx_hmy_i )
 
     ! Description:
-    ! Calculates the in-precip correlation between hydrometeor x and
+    ! Calculates the in-precip correlation of hydrometeor x and
     ! hydrometeor y within the ith PDF component.
 
     ! References:
@@ -2574,48 +2583,47 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rci,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
-      cloud_fraci    ! Cloud fraction (ith PDF component)            [-]
+      rc_i,         & ! Mean cloud water mixing ratio (ith PDF comp.) [kg/kg]
+      cloud_frac_i    ! Cloud fraction (ith PDF component)            [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      corr_hmxhmy_LL_cloud, & ! Corr.: hmx & hmy (ith PDF comp.) ip; cloudy [-]
-      corr_hmxhmy_LL_below    ! Corr.: hmx & hmy (ith PDF comp.) ip; clear  [-]
+      corr_hmx_hmy_LL_cloud, & ! Corr.: hmx & hmy (ith PDF comp.) ip; cloudy [-]
+      corr_hmx_hmy_LL_below    ! Corr.: hmx & hmy (ith PDF comp.) ip; clear  [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_hmxhmy_i   ! Correlation between hmx & hmy (ith PDF component) ip [-]
+      corr_hmx_hmy_i   ! Correlation of hmx & hmy (ith PDF component) ip [-]
 
 
-    ! Correlation (in-precip) between hydrometeor x and hydrometeor y in the
+    ! Correlation (in-precip) of hydrometeor x and hydrometeor y in the
     ! ith PDF component.
     if ( l_interp_prescribed_params ) then
-       corr_hmxhmy_i = cloud_fraci * corr_hmxhmy_LL_cloud &
-                       + ( one - cloud_fraci ) * corr_hmxhmy_LL_below
+       corr_hmx_hmy_i = cloud_frac_i * corr_hmx_hmy_LL_cloud &
+                        + ( one - cloud_frac_i ) * corr_hmx_hmy_LL_below
     else
-       if ( rci > rc_tol ) then
-          corr_hmxhmy_i = corr_hmxhmy_LL_cloud
+       if ( rc_i > rc_tol ) then
+          corr_hmx_hmy_i = corr_hmx_hmy_LL_cloud
        else
-          corr_hmxhmy_i = corr_hmxhmy_LL_below
+          corr_hmx_hmy_i = corr_hmx_hmy_LL_below
        endif
     endif
 
     return
 
-  end function component_corr_hmxhmy_ip
+  end function component_corr_hmx_hmy_ip
 
   !=============================================================================
-  pure function component_corr_eta_hm_ip( corr_chi_eta_i, corr_chi_hm_i ) result( corr_eta_hm_i )
+  pure function component_corr_eta_hm_ip( corr_chi_eta_i, corr_chi_hm_i ) &
+  result( corr_eta_hm_i )
 
     ! Description:
-    !   Estimates the correlation between eta and a hydrometeor species
-    !   using the correlation between chi and eta, and between
-    !   chi and the hydrometeor. This facilities the Cholesky
-    !   decomposability of the correlation array that will inevitably be
-    !   decomposed for SILHS purposes. Without this estimation, we have found
-    !   that the resulting correlation matrix cannot be decomposed.
+    ! Estimates the correlation of eta and a hydrometeor species using the
+    ! correlation of chi and eta and the correlation of chi and the hydrometeor.
+    ! This facilities the Cholesky decomposability of the correlation array that
+    ! will inevitably be decomposed for SILHS purposes. Without this estimation,
+    ! we have found that the resulting correlation matrix cannot be decomposed.
 
     ! References:
-    !   See clubb:ticket:514
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -2625,19 +2633,19 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_chi_eta_i,    & ! Component correlation of chi(s) and t(eta)                [-]
-      corr_chi_hm_i      ! Component correlation of chi(s) and the hydrometeor  [-]
+      corr_chi_eta_i, & ! Component correlation of chi and eta              [-]
+      corr_chi_hm_i     ! Component correlation of chi and the hydrometeor  [-]
 
     ! Output Variables
     real( kind = core_rknd ) :: &
-      corr_eta_hm_i      ! Component correlation of eta(t) and the hydrometeor  [-]
+      corr_eta_hm_i     ! Component correlation of eta and the hydrometeor  [-]
 
-  !-----------------------------------------------------------------------
 
-    !----- Begin Code -----
     corr_eta_hm_i = corr_chi_eta_i * corr_chi_hm_i
 
+
     return
+
   end function component_corr_eta_hm_ip
 
   !=============================================================================
@@ -2712,10 +2720,11 @@ module setup_clubb_pdf_params
     integer :: ivar  ! Loop index
 
 
-    ! The means and standard deviations in each PDF component of w, chi(s), and eta(t) do
-    ! not need to be normalized, since w, chi(s), and eta(t) already follow assumed normal
-    ! distributions in each PDF component.  The normalized means and standard
-    ! deviations are the same as the actual means and standard deviations.    
+    ! The means and standard deviations in each PDF component of w, chi (old s),
+    ! and eta (old t) do not need to be normalized, since w, chi, and eta
+    ! already follow assumed normal distributions in each PDF component.  The
+    ! normalized means and standard deviations are the same as the actual means
+    ! and standard deviations.    
     mu_x_1_n = mu_x_1
     mu_x_2_n = mu_x_2
     sigma_x_1_n = sigma_x_1
@@ -2852,7 +2861,7 @@ module setup_clubb_pdf_params
     use corr_matrix_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
-        iiPDF_w,        &
+        iiPDF_w,  &
         iiPDF_Ncn
 
     use parameters_microphys, only: &
@@ -2890,54 +2899,55 @@ module setup_clubb_pdf_params
     integer :: ivar, jvar ! Loop indices
 
 
-    ! The correlations in each PDF component between two of w, chi(s), and eta(t) do not
-    ! need to be normalized, since w, chi(s), and eta(t) already follow assumed normal
-    ! distributions in each PDF component.  The normalized correlations between
-    ! any two of these variables are the same as the actual correlations.    
+    ! The correlations in each PDF component between two of w, chi (old s), and
+    ! eta (old t) do not need to be normalized, since w, chi, and eta already
+    ! follow assumed normal distributions in each PDF component.  The normalized
+    ! correlations between any two of these variables are the same as the actual
+    ! correlations.    
     corr_array_1_n = corr_array_1
     corr_array_2_n = corr_array_2
 
 
-    !!! Calculate the normalized correlation between variables that have
+    !!! Calculate the normalized correlation of variables that have
     !!! an assumed normal distribution and variables that have an assumed
     !!! lognormal distribution for the ith PDF component, given their
     !!! correlation and the normalized standard deviation of the variable with
     !!! the assumed lognormal distribution.
 
-    ! Normalize the correlations between s/t/w and N_cn.
+    ! Normalize the correlations between chi/eta/w and N_cn.
 
-    ! Normalize the correlation between w and N_cn in PDF component 1.
+    ! Normalize the correlation of w and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_w), sigma_x_1_n(iiPDF_Ncn), &
                   Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between w and N_cn in PDF component 2.
+    ! Normalize the correlation of w and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_w), sigma_x_2_n(iiPDF_Ncn), &
                   Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between chi(s) and N_cn in PDF component 1.
+    ! Normalize the correlation of chi (old s) and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_chi) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_chi), &
                   sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between chi(s) and N_cn in PDF component 2.
+    ! Normalize the correlation of chi (old s) and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_chi) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_chi), &
                   sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between eta(t) and N_cn in PDF component 1.
+    ! Normalize the correlation of eta (old t) and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_eta) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_eta), &
                   sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlation between eta(t) and N_cn in PDF component 2.
+    ! Normalize the correlation of eta (old t) and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_eta) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_eta), &
                   sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
 
-    ! Normalize the correlations (in-precip) between s/t/w and the precipitating
-    ! hydrometeors.
+    ! Normalize the correlations (in-precip) between chi/eta/w and the
+    ! precipitating hydrometeors.
     do ivar = iiPDF_chi, iiPDF_w
        do jvar = iiPDF_Ncn+1, d_variables
 
@@ -2957,7 +2967,7 @@ module setup_clubb_pdf_params
     enddo ! ivar = iiPDF_chi, iiPDF_w
 
 
-    !!! Calculate the normalized correlation between two variables that both
+    !!! Calculate the normalized correlation of two variables that both
     !!! have an assumed lognormal distribution for the ith PDF component, given
     !!! their correlation and both of their normalized standard deviations.
 
@@ -3010,13 +3020,13 @@ module setup_clubb_pdf_params
   end subroutine normalize_corr
 
   !=============================================================================
-  subroutine calc_corr_whm( wm, wphydrometp, &
-                            mu_w_1, mu_w_2, &
-                            mu_hm_1, mu_hm_2, &
-                            sigma_w_1, sigma_w_2, &
-                            sigma_hm_1, sigma_hm_2, &
-                            mixt_frac, precip_frac_1, precip_frac_2, &
-                            corr_whm_1, corr_whm_2 )
+  subroutine calc_corr_w_hm( wm, wphydrometp, &
+                             mu_w_1, mu_w_2, &
+                             mu_hm_1, mu_hm_2, &
+                             sigma_w_1, sigma_w_2, &
+                             sigma_hm_1, sigma_hm_2, &
+                             mixt_frac, precip_frac_1, precip_frac_2, &
+                             corr_w_hm_1, corr_w_hm_2 )
 
     ! Description:
     ! Calculates the PDF component correlation (in-precip) between vertical
@@ -3026,28 +3036,28 @@ module setup_clubb_pdf_params
     !
     ! <w'hm'> = mixt_frac * precip_frac_1
     !           * ( ( mu_w_1 - <w> ) * mu_hm_1
-    !               + corr_wrr_1 * sigma_w_1 * sigma_rr_1 )
+    !               + corr_w_rr_1 * sigma_w_1 * sigma_rr_1 )
     !           + ( 1 - mixt_frac ) * precip_frac_2
     !             * ( ( mu_w_2 - <w> ) * mu_hm_2
-    !                 + corr_wrr_2 * sigma_w_2 * sigma_rr_2 ).
+    !                 + corr_w_rr_2 * sigma_w_2 * sigma_rr_2 ).
     !
     ! The overall covariance is provided, so the component correlation is solved
-    ! by setting corr_wrr_1 = corr_wrr_2 ( = corr_wrr ).  The equation is:
+    ! by setting corr_w_rr_1 = corr_w_rr_2 ( = corr_w_rr ).  The equation is:
     !
-    ! corr_wrr
+    ! corr_w_rr
     ! = ( <w'hm'>
     !     - mixt_frac * precip_frac_1 * ( mu_w_1 - <w> ) * mu_hm_1
     !     - ( 1 - mixt_frac ) * precip_frac_2 * ( mu_w_2 - <w> ) * mu_hm_2 )
     !   / ( mixt_frac * precip_frac_1 * sigma_w_1 * sigma_hm_1
     !       + ( 1 - mixt_frac ) * precip_frac_2 * sigma_w_2 * sigma_hm_2 );
     !
-    ! again, where corr_wrr_1 = corr_wrr_2 = corr_wrr.  When either w or hm is
-    ! constant in one PDF component, but both w and hm vary in the other PDF
+    ! again, where corr_w_rr_1 = corr_w_rr_2 = corr_w_rr.  When either w or hm
+    ! isbconstant in one PDF component, but both w and hm vary in the other PDF
     ! component, the equation for <w'hm'> is written as:
     !
     ! <w'hm'> = mixt_frac * precip_frac_1
     !           * ( ( mu_w_1 - <w> ) * mu_hm_1
-    !               + corr_wrr_1 * sigma_w_1 * sigma_rr_1 )
+    !               + corr_w_rr_1 * sigma_w_1 * sigma_rr_1 )
     !           + ( 1 - mixt_frac ) * precip_frac_2
     !             * ( mu_w_2 - <w> ) * mu_hm_2.
     !
@@ -3055,18 +3065,18 @@ module setup_clubb_pdf_params
     ! component 2, but both w and hm vary in PDF component 1.  When both w and
     ! hm vary in PDF component 2, but at least one of w or hm is constant in PDF
     ! component 1, the equation is similar.  The above equation can be rewritten
-    ! to solve for corr_wrr_1, such that:
+    ! to solve for corr_w_rr_1, such that:
     !
-    ! corr_wrr_1
+    ! corr_w_rr_1
     ! = ( <w'hm'>
     !     - mixt_frac * precip_frac_1 * ( mu_w_1 - <w> ) * mu_hm_1
     !     - ( 1 - mixt_frac ) * precip_frac_2 * ( mu_w_2 - <w> ) * mu_hm_2 )
     !   / ( mixt_frac * precip_frac_1 * sigma_w_1 * sigma_hm_1 ).
     !
-    ! Since either w or hm is constant in PDF component 2, corr_wrr_2 is
+    ! Since either w or hm is constant in PDF component 2, corr_w_rr_2 is
     ! undefined.  When both w and hm vary in PDF component 2, but at least one
     ! of w or hm is constant in PDF component 1, the equation is similar, but
-    ! is in terms of corr_wrr_2, while corr_wrr_1 is undefined.  When either w
+    ! is in terms of corr_w_rr_2, while corr_w_rr_1 is undefined.  When either w
     ! or hm is constant in both PDF components, the equation for <w'hm'> is:
     !
     ! <w'hm'> = mixt_frac * precip_frac_1
@@ -3074,7 +3084,7 @@ module setup_clubb_pdf_params
     !           + ( 1 - mixt_frac ) * precip_frac_2
     !             * ( mu_w_2 - <w> ) * mu_hm_2.
     !
-    ! When this is the case, both corr_wrr_1 and corr_wrr_2 are undefined.
+    ! When this is the case, both corr_w_rr_1 and corr_w_rr_2 are undefined.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -3107,22 +3117,22 @@ module setup_clubb_pdf_params
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      corr_whm_1, & ! Correlation between w and hm (1st PDF component) ip    [-]
-      corr_whm_2    ! Correlation between w and hm (2nd PDF component) ip    [-]
+      corr_w_hm_1, & ! Correlation of w and hm (1st PDF component) ip    [-]
+      corr_w_hm_2    ! Correlation of w and hm (2nd PDF component) ip    [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      corr_whm    ! Correlation between w and hm (both PDF components) ip    [-]
+      corr_w_hm    ! Correlation of w and hm (both PDF components) ip    [-]
 
 
-    ! Calculate the PDF component correlation between vertical velocity, w, and
+    ! Calculate the PDF component correlation of vertical velocity, w, and
     ! a hydrometeor, hm, in precipitation.
     if ( sigma_w_1 * sigma_hm_1 > zero .and. &
          sigma_w_2 * sigma_hm_2 > zero ) then
 
        ! Both w and hm vary in both PDF components.
-       ! Calculate corr_whm (where corr_whm_1 = corr_whm_2 = corr_whm).
-       corr_whm &
+       ! Calculate corr_w_hm (where corr_w_hm_1 = corr_w_hm_2 = corr_w_hm).
+       corr_w_hm &
        = ( wphydrometp &
            - mixt_frac * precip_frac_1 * ( mu_w_1 - wm ) * mu_hm_1 &
            - ( one - mixt_frac ) * precip_frac_2 * ( mu_w_2 - wm ) * mu_hm_2 ) &
@@ -3130,59 +3140,59 @@ module setup_clubb_pdf_params
              + ( one - mixt_frac ) * precip_frac_2 * sigma_w_2 * sigma_hm_2 )
 
        ! Check that the PDF component correlations have reasonable values.
-       if ( corr_whm > max_mag_correlation ) then
-          corr_whm = max_mag_correlation
-       elseif ( corr_whm < -max_mag_correlation ) then
-          corr_whm = -max_mag_correlation
+       if ( corr_w_hm > max_mag_correlation ) then
+          corr_w_hm = max_mag_correlation
+       elseif ( corr_w_hm < -max_mag_correlation ) then
+          corr_w_hm = -max_mag_correlation
        endif
 
        ! The PDF component correlations between w and hm (in-precip) are equal.
-       corr_whm_1 = corr_whm
-       corr_whm_2 = corr_whm
+       corr_w_hm_1 = corr_w_hm
+       corr_w_hm_2 = corr_w_hm
 
 
     elseif ( sigma_w_1 * sigma_hm_1 > zero ) then
 
        ! Both w and hm vary in PDF component 1, but at least one of w and hm is
        ! constant in PDF component 2.
-       ! Calculate the PDF component 1 correlation between w and hm (in-precip).
-       corr_whm_1 &
+       ! Calculate the PDF component 1 correlation of w and hm (in-precip).
+       corr_w_hm_1 &
        = ( wphydrometp &
            - mixt_frac * precip_frac_1 * ( mu_w_1 - wm ) * mu_hm_1 &
            - ( one - mixt_frac ) * precip_frac_2 * ( mu_w_2 - wm ) * mu_hm_2 ) &
          / ( mixt_frac * precip_frac_1 * sigma_w_1 * sigma_hm_1 )
 
        ! Check that the PDF component 1 correlation has a reasonable value.
-       if ( corr_whm_1 > max_mag_correlation ) then
-          corr_whm_1 = max_mag_correlation
-       elseif ( corr_whm_1 < -max_mag_correlation ) then
-          corr_whm_1 = -max_mag_correlation
+       if ( corr_w_hm_1 > max_mag_correlation ) then
+          corr_w_hm_1 = max_mag_correlation
+       elseif ( corr_w_hm_1 < -max_mag_correlation ) then
+          corr_w_hm_1 = -max_mag_correlation
        endif
 
        ! The PDF component 2 correlation is undefined.
-       corr_whm_2 = zero
+       corr_w_hm_2 = zero
        
 
     elseif ( sigma_w_2 * sigma_hm_2 > zero ) then
 
        ! Both w and hm vary in PDF component 2, but at least one of w and hm is
        ! constant in PDF component 1.
-       ! Calculate the PDF component 2 correlation between w and hm (in-precip).
-       corr_whm_2 &
+       ! Calculate the PDF component 2 correlation of w and hm (in-precip).
+       corr_w_hm_2 &
        = ( wphydrometp &
            - mixt_frac * precip_frac_1 * ( mu_w_1 - wm ) * mu_hm_1 &
            - ( one - mixt_frac ) * precip_frac_2 * ( mu_w_2 - wm ) * mu_hm_2 ) &
          / ( ( one - mixt_frac ) * precip_frac_2 * sigma_w_2 * sigma_hm_2 )
 
        ! Check that the PDF component 2 correlation has a reasonable value.
-       if ( corr_whm_2 > max_mag_correlation ) then
-          corr_whm_2 = max_mag_correlation
-       elseif ( corr_whm_2 < -max_mag_correlation ) then
-          corr_whm_2 = -max_mag_correlation
+       if ( corr_w_hm_2 > max_mag_correlation ) then
+          corr_w_hm_2 = max_mag_correlation
+       elseif ( corr_w_hm_2 < -max_mag_correlation ) then
+          corr_w_hm_2 = -max_mag_correlation
        endif
 
        ! The PDF component 1 correlation is undefined.
-       corr_whm_1 = zero
+       corr_w_hm_1 = zero
        
 
     else    ! sigma_w_1 * sigma_hm_1 = 0 .and. sigma_w_2 * sigma_hm_2 = 0.
@@ -3190,8 +3200,8 @@ module setup_clubb_pdf_params
        ! At least one of w and hm is constant in both PDF components.
 
        ! The PDF component 1 and component 2 correlations are both undefined.
-       corr_whm_1 = zero
-       corr_whm_2 = zero
+       corr_w_hm_1 = zero
+       corr_w_hm_2 = zero
 
 
     endif
@@ -3199,7 +3209,7 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine calc_corr_whm
+  end subroutine calc_corr_w_hm
 
   !=============================================================================
   subroutine pdf_param_hm_stats( d_variables, level, mu_x_1, mu_x_2, &
@@ -3217,9 +3227,9 @@ module setup_clubb_pdf_params
         pdf2hydromet_idx  ! Procedure(s)
 
     use corr_matrix_module, only: &
-        iiPDF_w,                   & ! Variable(s)
-        iiPDF_chi,            &
-        iiPDF_eta,            &
+        iiPDF_w,   & ! Variable(s)
+        iiPDF_chi, &
+        iiPDF_eta, &
         iiPDF_Ncn
 
     use clubb_precision, only: &
@@ -3239,28 +3249,28 @@ module setup_clubb_pdf_params
         isigma_Ncn_2
 
     use stats_variables, only : &
-        icorr_w_chi_1,     & ! Variable(s)
-        icorr_w_chi_2,     &
-        icorr_w_eta_1,     &
-        icorr_w_eta_2,     &
-        icorr_whm_1,    &
-        icorr_whm_2,    &
-        icorr_wNcn_1,   &
-        icorr_wNcn_2,   &
+        icorr_w_chi_1,       & ! Variable(s)
+        icorr_w_chi_2,       &
+        icorr_w_eta_1,       &
+        icorr_w_eta_2,       &
+        icorr_w_hm_1,        &
+        icorr_w_hm_2,        &
+        icorr_w_Ncn_1,       &
+        icorr_w_Ncn_2,       &
         icorr_chi_eta_1_ca,  &
         icorr_chi_eta_2_ca,  &
-        icorr_chi_hm_1,    &
-        icorr_chi_hm_2,    &
-        icorr_chi_Ncn_1,   &
-        icorr_chi_Ncn_2,   &
-        icorr_eta_hm_1,    &
-        icorr_eta_hm_2,    &
-        icorr_eta_Ncn_1,   &
-        icorr_eta_Ncn_2,   &
-        icorr_Ncnhm_1,  &
-        icorr_Ncnhm_2,  &
-        icorr_hmxhmy_1, &
-        icorr_hmxhmy_2, &
+        icorr_chi_hm_1,      &
+        icorr_chi_hm_2,      &
+        icorr_chi_Ncn_1,     &
+        icorr_chi_Ncn_2,     &
+        icorr_eta_hm_1,      &
+        icorr_eta_hm_2,      &
+        icorr_eta_Ncn_1,     &
+        icorr_eta_Ncn_2,     &
+        icorr_Ncn_hm_1,       &
+        icorr_Ncn_hm_2,       &
+        icorr_hmx_hmy_1,     &
+        icorr_hmx_hmy_2,     &
         zt
 
     implicit none
@@ -3351,36 +3361,36 @@ module setup_clubb_pdf_params
                                    sigma_x_2(iiPDF_Ncn), zt )
        endif
 
-       ! Correlation between w and chi(s) in PDF component 1.
+       ! Correlation of w and chi (old s) in PDF component 1.
        ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation between w and theta-l within each
+       ! between w and rt and the correlation of w and theta-l within each
        ! PDF component are defined to be 0 by CLUBB standards.
        if ( icorr_w_chi_1 > 0 ) then
           call stat_update_var_pt( icorr_w_chi_1, level, &
                                    corr_array_1(iiPDF_w,iiPDF_chi), zt )
        endif
 
-       ! Correlation between w and chi(s) in PDF component 2.
+       ! Correlation of w and chi (old s) in PDF component 2.
        ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation between w and theta-l within each
+       ! between w and rt and the correlation of w and theta-l within each
        ! PDF component are defined to be 0 by CLUBB standards.
        if ( icorr_w_chi_2 > 0 ) then
           call stat_update_var_pt( icorr_w_chi_2, level, &
                                    corr_array_2(iiPDF_w,iiPDF_chi), zt )
        endif
 
-       ! Correlation between w and eta(t) in PDF component 1.
+       ! Correlation of w and eta (old t) in PDF component 1.
        ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation between w and theta-l within each
+       ! between w and rt and the correlation of w and theta-l within each
        ! PDF component are defined to be 0 by CLUBB standards.
        if ( icorr_w_eta_1 > 0 ) then
           call stat_update_var_pt( icorr_w_eta_1, level, &
                                    corr_array_1(iiPDF_w,iiPDF_eta), zt )
        endif
 
-       ! Correlation between w and eta(t) in PDF component 2.
+       ! Correlation of w and eta (old t) in PDF component 2.
        ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation between w and theta-l within each
+       ! between w and rt and the correlation of w and theta-l within each
        ! PDF component are defined to be 0 by CLUBB standards.
        if ( icorr_w_eta_2 > 0 ) then
           call stat_update_var_pt( icorr_w_eta_2, level, &
@@ -3389,59 +3399,61 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between w and the precipitating hydrometeor
+          ! Correlation (in-precip) of w and the precipitating hydrometeor
           ! in PDF component 1.
-          if ( icorr_whm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_whm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_w_hm_1(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_1(ivar,iiPDF_w), zt )
           endif
 
-          ! Correlation (in-precip) between w and the precipitating hydrometeor
+          ! Correlation (in-precip) of w and the precipitating hydrometeor
           ! in PDF component 2.
-          if ( icorr_whm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_whm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_w_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_w_hm_2(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_2(ivar,iiPDF_w), zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between w and N_cn in PDF component 1.
-       if ( icorr_wNcn_1 > 0 ) then
-          call stat_update_var_pt( icorr_wNcn_1, level, &
+       ! Correlation of w and N_cn in PDF component 1.
+       if ( icorr_w_Ncn_1 > 0 ) then
+          call stat_update_var_pt( icorr_w_Ncn_1, level, &
                                    corr_array_1(iiPDF_Ncn,iiPDF_w), zt )
        endif
 
-       ! Correlation between w and N_cn in PDF component 2.
-       if ( icorr_wNcn_2 > 0 ) then
-          call stat_update_var_pt( icorr_wNcn_2, level, &
+       ! Correlation of w and N_cn in PDF component 2.
+       if ( icorr_w_Ncn_2 > 0 ) then
+          call stat_update_var_pt( icorr_w_Ncn_2, level, &
                                    corr_array_2(iiPDF_Ncn,iiPDF_w), zt )
        endif
 
-       ! Correlation between chi(s) and t(eta) in PDF component 1 found in the
-       ! correlation array.
-       ! The true correlation between chi(s) and t(eta) in each PDF component is solved
-       ! for by an equation and is part of CLUBB's PDF parameters.  However,
-       ! there is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
-       ! component correlation between chi(s) and t(eta) to a constant, prescribed value
-       ! because of SILHS.  The correlation between chi(s) and t(eta) in PDF component 1
-       ! that is calculated by an equation is stored in stats as "corr_chi_eta_1".
-       ! Here, "corr_chi_eta_1_ca" outputs whatever value is found in the correlation
-       ! array, whether or not it matches "corr_chi_eta_1".
+       ! Correlation of chi (old s) and eta (old t) in PDF component 1 found in
+       ! the correlation array.
+       ! The true correlation of chi and eta in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of chi and eta to a constant, prescribed value
+       ! because of SILHS.  The correlation of chi and eta in PDF component 1
+       ! that is calculated by an equation is stored in stats as
+       ! "corr_chi_eta_1".  Here, "corr_chi_eta_1_ca" outputs whatever value is
+       ! found in the correlation array, whether or not it matches
+       ! "corr_chi_eta_1".
        if ( icorr_chi_eta_1_ca > 0 ) then
           call stat_update_var_pt( icorr_chi_eta_1_ca, level, &
                                    corr_array_1(iiPDF_eta,iiPDF_chi), zt )
        endif
 
-       ! Correlation between chi(s) and t(eta) in PDF component 2 found in the
-       ! correlation array.
-       ! The true correlation between chi(s) and t(eta) in each PDF component is solved
-       ! for by an equation and is part of CLUBB's PDF parameters.  However,
-       ! there is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
-       ! component correlation between chi(s) and t(eta) to a constant, prescribed value
-       ! because of SILHS.  The correlation between chi(s) and t(eta) in PDF component 2
-       ! that is calculated by an equation is stored in stats as "corr_chi_eta_2".
-       ! Here, "corr_chi_eta_2_ca" outputs whatever value is found in the correlation
-       ! array, whether or not it matches "corr_chi_eta_2".
+       ! Correlation of chi (old s) and eta (old t) in PDF component 2 found in
+       ! the correlation array.
+       ! The true correlation of chi and eta in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of chi and eta to a constant, prescribed value
+       ! because of SILHS.  The correlation of chi and eta in PDF component 2
+       ! that is calculated by an equation is stored in stats as
+       ! "corr_chi_eta_2".  Here, "corr_chi_eta_2_ca" outputs whatever value is
+       ! found in the correlation array, whether or not it matches
+       ! "corr_chi_eta_2".
        if ( icorr_chi_eta_2_ca > 0 ) then
           call stat_update_var_pt( icorr_chi_eta_2_ca, level, &
                                    corr_array_2(iiPDF_eta,iiPDF_chi), zt )
@@ -3449,15 +3461,15 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between chi(s) and the precipitating hydrometeor
-          ! in PDF component 1.
+          ! Correlation (in-precip) of chi (old s) and the precipitating
+          ! hydrometeor in PDF component 1.
           if ( icorr_chi_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
              call stat_update_var_pt( icorr_chi_hm_1(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_1(ivar,iiPDF_chi), zt )
           endif
 
-          ! Correlation (in-precip) between chi(s) and the precipitating hydrometeor
-          ! in PDF component 2.
+          ! Correlation (in-precip) of chi (old s) and the precipitating
+          ! hydrometeor in PDF component 2.
           if ( icorr_chi_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
              call stat_update_var_pt( icorr_chi_hm_2(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_2(ivar,iiPDF_chi), zt )
@@ -3465,13 +3477,13 @@ module setup_clubb_pdf_params
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between chi(s) and N_cn in PDF component 1.
+       ! Correlation of chi (old s) and N_cn in PDF component 1.
        if ( icorr_chi_Ncn_1 > 0 ) then
           call stat_update_var_pt( icorr_chi_Ncn_1, level, &
                                    corr_array_1(iiPDF_Ncn,iiPDF_chi), zt )
        endif
 
-       ! Correlation between chi(s) and N_cn in PDF component 2.
+       ! Correlation of chi (old s) and N_cn in PDF component 2.
        if ( icorr_chi_Ncn_2 > 0 ) then
           call stat_update_var_pt( icorr_chi_Ncn_2, level, &
                                    corr_array_2(iiPDF_Ncn,iiPDF_chi), zt )
@@ -3479,15 +3491,15 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between eta(t) and the precipitating hydrometeor
-          ! in PDF component 1.
+          ! Correlation (in-precip) of eta (old t) and the precipitating
+          ! hydrometeor in PDF component 1.
           if ( icorr_eta_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
              call stat_update_var_pt( icorr_eta_hm_1(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_1(ivar,iiPDF_eta), zt )
           endif
 
-          ! Correlation (in-precip) between eta(t) and the precipitating hydrometeor
-          ! in PDF component 2.
+          ! Correlation (in-precip) of eta (old t) and the precipitating
+          ! hydrometeor in PDF component 2.
           if ( icorr_eta_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
              call stat_update_var_pt( icorr_eta_hm_2(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_2(ivar,iiPDF_eta), zt )
@@ -3495,13 +3507,13 @@ module setup_clubb_pdf_params
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between eta(t) and N_cn in PDF component 1.
+       ! Correlation of eta (old t) and N_cn in PDF component 1.
        if ( icorr_eta_Ncn_1 > 0 ) then
           call stat_update_var_pt( icorr_eta_Ncn_1, level, &
                                    corr_array_1(iiPDF_Ncn,iiPDF_eta), zt )
        endif
 
-       ! Correlation between eta(t) and N_cn in PDF component 2.
+       ! Correlation of eta (old t) and N_cn in PDF component 2.
        if ( icorr_eta_Ncn_2 > 0 ) then
           call stat_update_var_pt( icorr_eta_Ncn_2, level, &
                                    corr_array_2(iiPDF_Ncn,iiPDF_eta), zt )
@@ -3509,17 +3521,17 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between N_cn and the precipitating
+          ! Correlation (in-precip) of N_cn and the precipitating
           ! hydrometeor in PDF component 1.
-          if ( icorr_Ncnhm_1(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_Ncnhm_1(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_1(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncn_hm_1(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_1(ivar,iiPDF_Ncn), zt )
           endif
 
-          ! Correlation (in-precip) between N_cn and the precipitating
+          ! Correlation (in-precip) of N_cn and the precipitating
           ! hydrometeor in PDF component 2.
-          if ( icorr_Ncnhm_2(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_Ncnhm_2(pdf2hydromet_idx(ivar)), &
+          if ( icorr_Ncn_hm_2(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_Ncn_hm_2(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_2(ivar,iiPDF_Ncn), zt )
           endif
 
@@ -3528,22 +3540,22 @@ module setup_clubb_pdf_params
        do ivar = iiPDF_Ncn+1, d_variables, 1
          do jvar = ivar+1, d_variables, 1
 
-           ! Correlation (in-precip) between two different hydrometeors (hmx and
+           ! Correlation (in-precip) of two different hydrometeors (hmx and
            ! hmy) in PDF component 1.
-           if ( icorr_hmxhmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
+           if ( icorr_hmx_hmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
                 > 0 ) then
              call stat_update_var_pt( &
-                icorr_hmxhmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-                level, corr_array_1(jvar,ivar), zt )
+               icorr_hmx_hmy_1(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
+               level, corr_array_1(jvar,ivar), zt )
            endif
 
-           ! Correlation (in-precip) between two different hydrometeors (hmx and
+           ! Correlation (in-precip) of two different hydrometeors (hmx and
            ! hmy) in PDF component 2.
-           if ( icorr_hmxhmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
+           if ( icorr_hmx_hmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)) &
                 > 0 ) then
              call stat_update_var_pt( &
-                icorr_hmxhmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-                level, corr_array_2(jvar,ivar), zt )
+               icorr_hmx_hmy_2(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
+               level, corr_array_2(jvar,ivar), zt )
            endif
 
          enddo ! jvar = ivar+1, d_variables, 1
@@ -3594,10 +3606,10 @@ module setup_clubb_pdf_params
         isigma_Ncn_2_n
 
     use stats_variables, only : &
-        icorr_whm_1_n,    & ! Variables
-        icorr_whm_2_n,    &
-        icorr_wNcn_1_n,   &
-        icorr_wNcn_2_n,   &
+        icorr_w_hm_1_n,    & ! Variables
+        icorr_w_hm_2_n,    &
+        icorr_w_Ncn_1_n,   &
+        icorr_w_Ncn_2_n,   &
         icorr_chi_hm_1_n,    &
         icorr_chi_hm_2_n,    &
         icorr_chi_Ncn_1_n,   &
@@ -3606,10 +3618,10 @@ module setup_clubb_pdf_params
         icorr_eta_hm_2_n,    &
         icorr_eta_Ncn_1_n,   &
         icorr_eta_Ncn_2_n,   &
-        icorr_Ncnhm_1_n,  &
-        icorr_Ncnhm_2_n,  &
-        icorr_hmxhmy_1_n, &
-        icorr_hmxhmy_2_n, &
+        icorr_Ncn_hm_1_n,  &
+        icorr_Ncn_hm_2_n,  &
+        icorr_hmx_hmy_1_n, &
+        icorr_hmx_hmy_2_n, &
         zt
 
     implicit none
@@ -3748,55 +3760,55 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between w and ln hm in PDF component 1.
-          if ( icorr_whm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_whm_1_n(pdf2hydromet_idx(ivar)), &
+          ! Correlation (in-precip) of w and ln hm in PDF component 1.
+          if ( icorr_w_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_w_hm_1_n(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_1_n(ivar,iiPDF_w), zt )
           endif
 
-          ! Correlation (in-precip) between w and ln hm in PDF component 2.
-          if ( icorr_whm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_whm_2_n(pdf2hydromet_idx(ivar)), &
+          ! Correlation (in-precip) of w and ln hm in PDF component 2.
+          if ( icorr_w_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt( icorr_w_hm_2_n(pdf2hydromet_idx(ivar)), &
                                       level, corr_array_2_n(ivar,iiPDF_w), zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between w and ln N_cn in PDF component 1.
-       if ( icorr_wNcn_1_n > 0 ) then
-          call stat_update_var_pt( icorr_wNcn_1_n, level, &
+       ! Correlation of w and ln N_cn in PDF component 1.
+       if ( icorr_w_Ncn_1_n > 0 ) then
+          call stat_update_var_pt( icorr_w_Ncn_1_n, level, &
                                    corr_array_1_n(iiPDF_Ncn,iiPDF_w), zt )
        endif
 
-       ! Correlation between w and ln N_cn in PDF component 2.
-       if ( icorr_wNcn_2_n > 0 ) then
-          call stat_update_var_pt( icorr_wNcn_2_n, level, &
+       ! Correlation of w and ln N_cn in PDF component 2.
+       if ( icorr_w_Ncn_2_n > 0 ) then
+          call stat_update_var_pt( icorr_w_Ncn_2_n, level, &
                                    corr_array_2_n(iiPDF_Ncn,iiPDF_w), zt )
        endif
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between chi(s) and ln hm in PDF component 1.
+          ! Correlation (in-precip) of chi (old s) and ln hm in PDF component 1.
           if ( icorr_chi_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_chi_hm_1_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_1_n(ivar,iiPDF_chi), zt )
+             call stat_update_var_pt(icorr_chi_hm_1_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_1_n(ivar,iiPDF_chi), zt )
           endif
 
-          ! Correlation (in-precip) between chi(s) and ln hm in PDF component 2.
+          ! Correlation (in-precip) of chi( old s) and ln hm in PDF component 2.
           if ( icorr_chi_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_chi_hm_2_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_2_n(ivar,iiPDF_chi), zt )
+             call stat_update_var_pt(icorr_chi_hm_2_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_2_n(ivar,iiPDF_chi), zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between chi(s) and ln N_cn in PDF component 1.
+       ! Correlation of chi (old s) and ln N_cn in PDF component 1.
        if ( icorr_chi_Ncn_1_n > 0 ) then
           call stat_update_var_pt( icorr_chi_Ncn_1_n, level, &
                                    corr_array_1_n(iiPDF_Ncn,iiPDF_chi), zt )
        endif
 
-       ! Correlation between chi(s) and ln N_cn in PDF component 2.
+       ! Correlation of chi(old s) and ln N_cn in PDF component 2.
        if ( icorr_chi_Ncn_2_n > 0 ) then
           call stat_update_var_pt( icorr_chi_Ncn_2_n, level, &
                                    corr_array_2_n(iiPDF_Ncn,iiPDF_chi), zt )
@@ -3804,27 +3816,27 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between eta(t) and ln hm in PDF component 1.
+          ! Correlation (in-precip) of eta (old t) and ln hm in PDF component 1.
           if ( icorr_eta_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_eta_hm_1_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_1_n(ivar,iiPDF_eta), zt )
+             call stat_update_var_pt(icorr_eta_hm_1_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_1_n(ivar,iiPDF_eta), zt )
           endif
 
-          ! Correlation (in-precip) between eta(t) and ln hm in PDF component 2.
+          ! Correlation (in-precip) of eta (old t) and ln hm in PDF component 2.
           if ( icorr_eta_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_eta_hm_2_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_2_n(ivar,iiPDF_eta), zt )
+             call stat_update_var_pt(icorr_eta_hm_2_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_2_n(ivar,iiPDF_eta), zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
 
-       ! Correlation between eta(t) and ln N_cn in PDF component 1.
+       ! Correlation of eta (old t) and ln N_cn in PDF component 1.
        if ( icorr_eta_Ncn_1_n > 0 ) then
           call stat_update_var_pt( icorr_eta_Ncn_1_n, level, &
                                    corr_array_1_n(iiPDF_Ncn,iiPDF_eta), zt )
        endif
 
-       ! Correlation between eta(t) and ln N_cn in PDF component 2.
+       ! Correlation of eta (old t) and ln N_cn in PDF component 2.
        if ( icorr_eta_Ncn_2_n > 0 ) then
           call stat_update_var_pt( icorr_eta_Ncn_2_n, level, &
                                    corr_array_2_n(iiPDF_Ncn,iiPDF_eta), zt )
@@ -3832,20 +3844,20 @@ module setup_clubb_pdf_params
 
        do ivar = iiPDF_Ncn+1, d_variables, 1
 
-          ! Correlation (in-precip) between ln N_cn and ln hm in PDF
+          ! Correlation (in-precip) of ln N_cn and ln hm in PDF
           ! component 1.
-          if ( icorr_Ncnhm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_Ncnhm_1_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_1_n(ivar,iiPDF_Ncn), &
-                                      zt )
+          if ( icorr_Ncn_hm_1_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt(icorr_Ncn_hm_1_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_1_n(ivar,iiPDF_Ncn), &
+                                     zt )
           endif
 
-          ! Correlation (in-precip) between ln N_cn and ln hm in PDF
+          ! Correlation (in-precip) of ln N_cn and ln hm in PDF
           ! component 2.
-          if ( icorr_Ncnhm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
-             call stat_update_var_pt( icorr_Ncnhm_2_n(pdf2hydromet_idx(ivar)), &
-                                      level, corr_array_2_n(ivar,iiPDF_Ncn), &
-                                      zt )
+          if ( icorr_Ncn_hm_2_n(pdf2hydromet_idx(ivar)) > 0 ) then
+             call stat_update_var_pt(icorr_Ncn_hm_2_n(pdf2hydromet_idx(ivar)), &
+                                     level, corr_array_2_n(ivar,iiPDF_Ncn), &
+                                     zt )
           endif
 
        enddo ! ivar = iiPDF_Ncn+1, d_variables, 1
@@ -3853,22 +3865,22 @@ module setup_clubb_pdf_params
        do ivar = iiPDF_Ncn+1, d_variables, 1
          do jvar = ivar+1, d_variables, 1
 
-           ! Correlation (in-precip) between ln hmx and ln hmy (two different
+           ! Correlation (in-precip) of ln hmx and ln hmy (two different
            ! hydrometeors) in PDF component 1.
-           if ( icorr_hmxhmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
+           if (icorr_hmx_hmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
                 > 0 ) then
              call stat_update_var_pt( &
-              icorr_hmxhmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-              level, corr_array_1_n(jvar,ivar), zt )
+             icorr_hmx_hmy_1_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
+             level, corr_array_1_n(jvar,ivar), zt )
            endif
 
-           ! Correlation (in-precip) between ln hmx and ln hmy (two different
+           ! Correlation (in-precip) of ln hmx and ln hmy (two different
            ! hydrometeors) in PDF component 2.
-           if ( icorr_hmxhmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
+           if (icorr_hmx_hmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar))&
                 > 0 ) then
              call stat_update_var_pt( &
-              icorr_hmxhmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
-              level, corr_array_2_n(jvar,ivar), zt )
+             icorr_hmx_hmy_2_n(pdf2hydromet_idx(jvar),pdf2hydromet_idx(ivar)), &
+             level, corr_array_2_n(jvar,ivar), zt )
            endif
 
          enddo ! jvar = ivar+1, d_variables, 1
