@@ -254,7 +254,7 @@ module clubb_api_module
     wpsclrp, &
     edsclrm
 
-   use variables_prognostic_module, only : &
+  use variables_prognostic_module, only : &
     rho_ds_zm, &
     rho_ds_zt, &
     invrs_rho_ds_zm, &
@@ -291,27 +291,31 @@ module clubb_api_module
 
   use parameters_radiation, only : &
     rad_scheme, &
-      nparam, &
-      l_fix_cos_solar_zen, &
-      l_use_default_std_atmosphere, &
-      l_sw_radiation, &
-      l_rad_above_cloud, &
-      Fs_values, &
-      cos_solar_zen_values, &
-      cos_solar_zen_times, &
-      radiation_top, &
-      sol_const, &
-      alvdr, &
-      alvdf, &
-      alndr, &
-      alndf, &
-      slr, &
-      kappa, &
-      F0, &
-      F1, &
-      eff_drop_radius, &
-      gc, &
-      omega
+    nparam, &
+    l_fix_cos_solar_zen, &
+    l_use_default_std_atmosphere, &
+    l_sw_radiation, &
+    l_rad_above_cloud, &
+    Fs_values, &
+    cos_solar_zen_values, &
+    cos_solar_zen_times, &
+    radiation_top, &
+    sol_const, &
+    alvdr, &
+    alvdf, &
+    alndr, &
+    alndf, &
+    slr, &
+    kappa, &
+    F0, &
+    F1, &
+    eff_drop_radius, &
+    gc, &
+    omega
+
+  use input_reader, only : &
+    one_dim_read_var, &
+    two_dim_read_var
 
   use input_names, only : &
     time_name, &
@@ -400,10 +404,33 @@ module clubb_api_module
     stats_init_rad_zt_api, &
     stats_init_zm_api, &
     stats_init_zt_api, &
-    thlm2T_in_K_api
+    thlm2T_in_K_api, &
     ! Used only by CLUBB_standalone
-    !initialize_tau_sponge_damp_api, finalize_tau_sponge_damp_api, &
-
+    initialize_tau_sponge_damp_api, finalize_tau_sponge_damp_api, &
+    stdev_L2N_api,  corr_NL2NN_api, &
+    mean_L2N_dp_api, stdev_L2N_dp_api,  &
+    corr_NL2NN_dp_api, corr_LL2NN_dp_api
+    !open_netcdf_api, write_netcdf_api, close_netcdf_api, &
+    !Ncnm_to_Nc_in_cloud_api, Nc_in_cloud_to_Ncnm_api, Ncnm_to_Ncm, Ncm_to_Ncnm_api, &
+    !term_ma_zt_lh_apis, &
+    !set_lower_triangular_matrix_dp_api, get_lower_triangular_matrix_api, &
+    !row_mult_lower_tri_matrix_api, print_lower_triangular_matrix_api, &
+    !Cholesky_factor_api, symm_covar_matrix_2_corr_matrix_api, &
+    !tridag_solve_api, &
+    !read_one_dim_file_api, one_dim_read_var_api, &
+    !fill_blanks_one_dim_vars_api, read_x_profile_api, &
+    !get_target_index_api, deallocate_one_dim_vars_api, count_columns_api, read_x_table_api, &
+    !read_two_dim_file_api, two_dim_read_var_api, fill_blanks_two_dim_vars_api, &
+    !file_read_1d_api, file_read_2d_api, &
+    !byte_order_swap_api, &
+    !diffusion_zt_lhs_api, &
+    !setup_corr_cholesky_mtx_api, cholesky_to_corr_mtx_approx_api, &
+    !erfc_api, &
+    !update_xp2_mc_api, &
+    !xpwp_fnc_api, &
+    !setup_radiation_variables_api, cleanup_radiation_variables_api, &
+    !hydrostatic_api, inverse_hydrostatic_api, &
+    !lin_ext_zt_bottom_api, lin_ext_zm_bottom_api
 
 contains
 
@@ -2040,7 +2067,1212 @@ contains
   end function thlm2T_in_K_api
 
   !================================================================================================
-  ! The subroutines and functions below are only used by CLUBB_standalone
+  ! The subroutines and functions below are only used by CLUBB_standalone.
   !================================================================================================
+
+  !================================================================================================
+  ! initialize_tau_sponge_damp - Initializes tau_sponge_damp used for damping.
+  !================================================================================================
+
+  subroutine initialize_tau_sponge_damp_api( &
+    dt, settings, damping_profile )
+
+    use sponge_layer_damping, only : &
+      initialize_tau_sponge_damp, sponge_damp_settings, sponge_damp_profile
+
+    implicit none
+
+    ! Input Variable(s)
+    real(kind=time_precision), intent(in) :: dt ! Model Timestep [s]
+
+    type(sponge_damp_settings), intent(in) :: &
+      settings
+
+    type(sponge_damp_profile), intent(out) :: &
+      damping_profile
+
+    call initialize_tau_sponge_damp( &
+      dt, settings, damping_profile )
+
+  end subroutine initialize_tau_sponge_damp_api
+
+  !================================================================================================
+  ! finalize_tau_sponge_damp - Frees memory allocated in initialize_tau_sponge_damp.
+  !================================================================================================
+
+  subroutine finalize_tau_sponge_damp_api( &
+    damping_profile )
+
+    use sponge_layer_damping, only : &
+      finalize_tau_sponge_damp, sponge_damp_profile
+
+    implicit none
+
+    type(sponge_damp_profile), intent(inout) :: &
+      damping_profile ! Information for damping the profile
+
+    call finalize_tau_sponge_damp( &
+      damping_profile )
+
+  end subroutine finalize_tau_sponge_damp_api
+
+  !================================================================================================
+  ! stdev_L2N - Finds the standard deviation of ln x (sigma_x_n) for the ith component of the PDF.
+  !================================================================================================
+
+  function stdev_L2N_api( &
+    sigma2_on_mu2 ) result ( sigma_x_n )
+
+    use pdf_utilities, only : stdev_L2N
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  &
+      sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
+
+    sigma_x_n = stdev_L2N( &
+      sigma2_on_mu2 )
+
+  end function stdev_L2N_api
+
+  !================================================================================================
+  ! corr_NL2NN - Finds correlation between x and ln y (corr_xy_n) for the ith component of the PDF.
+  !================================================================================================
+
+  function corr_NL2NN_api( &
+    corr_xy, sigma_y_n, y_sigma2_on_mu2 ) result ( corr_xy_n )
+
+    use pdf_utilities, only : corr_NL2NN
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  &
+      corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
+
+    corr_xy_n = corr_NL2NN( &
+      corr_xy, sigma_y_n, y_sigma2_on_mu2 )
+
+  end function corr_NL2NN_api
+
+  !================================================================================================
+  ! mean_L2N_dp - Finds the mean of ln x (mu_x_n) for the ith component of the PDF.
+  !================================================================================================
+
+  function mean_L2N_dp_api( &
+    mu_x, sigma2_on_mu2 ) result ( mu_x_n )
+
+    use pdf_utilities, only : mean_L2N_dp
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) ::  &
+      mu_x,          & ! Mean of x (ith PDF component)                     [-]
+      sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      mu_x_n  ! Mean of ln x (ith PDF component)           [-]
+
+    mu_x_n = mean_L2N_dp( &
+      mu_x, sigma2_on_mu2 )
+
+  end function mean_L2N_dp_api
+
+  !================================================================================================
+  ! stdev_L2N_dp - Finds standard deviation of ln x (sigma_x_n) for the ith component of the PDF.
+  !================================================================================================
+
+  function stdev_L2N_dp_api( &
+    sigma2_on_mu2 ) result ( sigma_x_n )
+
+    use pdf_utilities, only : stdev_L2N_dp
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) ::  &
+      sigma2_on_mu2    ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)    [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      sigma_x_n  ! Standard deviation of ln x (ith PDF component)   [-]
+
+    sigma_x_n = stdev_L2N_dp( &
+      sigma2_on_mu2 )
+
+  end function stdev_L2N_dp_api
+
+  !================================================================================================
+  ! corr_NL2NN_dp - Finds correlation between x and ln y (corr_xy_n) for ith component of the PDF.
+  !================================================================================================
+
+  function corr_NL2NN_dp_api( &
+    corr_xy, sigma_y_n, y_sigma2_on_mu2 ) result ( corr_xy_n )
+
+    use pdf_utilities, only : corr_NL2NN_dp
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
+
+    corr_xy_n = corr_NL2NN_dp( &
+      corr_xy, sigma_y_n, y_sigma2_on_mu2 )
+
+  end function corr_NL2NN_dp_api
+
+  !================================================================================================
+  ! corr_LL2NN_dp - finds correlation between ln x and ln y (corr_xy_n) for ith component of PDF.
+  !================================================================================================
+
+  function corr_LL2NN_dp_api( &
+    corr_xy, sigma_x_n, sigma_y_n, &
+    x_sigma2_on_mu2, y_sigma2_on_mu2 ) result ( corr_xy_n )
+
+    use pdf_utilities, only : corr_LL2NN_dp
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
+      sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
+      x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
+      y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  &
+      corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
+
+    corr_xy_n = corr_LL2NN_dp( &
+      corr_xy, sigma_x_n, sigma_y_n, &
+      x_sigma2_on_mu2, y_sigma2_on_mu2 )
+
+  end function corr_LL2NN_dp_api
+
+  !================================================================================================
+  ! open_netcdf - Defines the structure used to reference the file 'ncf'
+  !================================================================================================
+
+  subroutine open_netcdf_api( &
+    nlat, nlon, fdir, fname, ia, iz, zgrid,  &
+    day, month, year, rlat, rlon, &
+    time, dtwrite, nvar, ncf )
+
+    use output_netcdf, only : open_netcdf
+
+    use stat_file_module, only: &
+      stat_file ! Type
+
+    implicit none
+
+    ! Input Variables
+    character(len=*), intent(in) ::  &
+      fdir,   & ! Directory name of file
+      fname     ! File name
+
+    integer, intent(in) ::  &
+      nlat, nlon,       & ! Number of points in the X and Y
+      day, month, year, & ! Time
+      ia, iz,           & ! First and last grid point
+      nvar                ! Number of variables
+
+    real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
+      rlat ! Latitudes   [degrees_E]
+
+    real( kind = core_rknd ), dimension(nlon), intent(in) ::  &
+      rlon ! Longitudes  [degrees_N]
+
+    real(kind=time_precision), intent(in) :: &
+      dtwrite ! Time between write intervals   [s]
+
+    real(kind=time_precision), intent(in) ::  &
+      time   ! Current time                    [s]
+
+    real( kind = core_rknd ), dimension(:), intent(in) ::  &
+      zgrid  ! The model grid                  [m]
+
+    ! Input/output Variables
+    type (stat_file), intent(inout) :: ncf
+
+    call open_netcdf( &
+      nlat, nlon, fdir, fname, ia, iz, zgrid,  &
+      day, month, year, rlat, rlon, &
+      time, dtwrite, nvar, ncf )
+
+  end subroutine open_netcdf_api
+
+  !================================================================================================
+  ! write_netcdf - Writes some data to the NetCDF dataset, but doesn't close it.
+  !================================================================================================
+
+  subroutine write_netcdf_api( &
+    ncf )
+
+    use output_netcdf, only : write_netcdf
+
+    use stat_file_module, only: &
+      stat_file ! Type
+
+    implicit none
+
+    ! Input
+    type (stat_file), intent(inout) :: ncf    ! The file
+
+    call write_netcdf( &
+      ncf )
+
+  end subroutine write_netcdf_api
+
+  !================================================================================================
+  ! close_netcdf - Close a previously opened stats file.
+  !================================================================================================
+
+  subroutine close_netcdf_api( &
+    ncf )
+
+    use output_netcdf, only : close_netcdf
+
+    use stat_file_module, only: &
+      stat_file ! Type
+
+    implicit none
+
+    ! Input
+    type (stat_file), intent(inout) :: ncf    ! The file
+
+    call close_netcdf( &
+      ncf )
+
+  end subroutine close_netcdf_api
+
+  !================================================================================================
+  ! Ncnm_to_Nc_in_cloud - Calculates the in-cloud mean of cloud droplet concentration.
+  !================================================================================================
+
+  function Ncnm_to_Nc_in_cloud_api( &
+    mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+    sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
+    sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+    corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac, &
+    cloud_frac_1, cloud_frac_2 ) result ( Nc_in_cloud )
+
+    use Nc_Ncn_eqns, only : Ncnm_to_Nc_in_cloud
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_chi_1,        & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
+      mu_chi_2,        & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      sigma_chi_1,     & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
+      sigma_chi_2,     & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
+      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
+      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac_2     ! Cloud fraction (2nd PDF component)                  [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      Nc_in_cloud    ! Mean cloud droplet concentration (in-cloud)      [num/kg]
+
+    Nc_in_cloud = Ncnm_to_Nc_in_cloud( &
+      mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+      sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
+      sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+      corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac, &
+      cloud_frac_1, cloud_frac_2 )
+
+  end function Ncnm_to_Nc_in_cloud_api
+
+  !================================================================================================
+  ! Nc_in_cloud_to_Ncnm - Calculates the overall mean of simplified cloud nuclei concentration.
+  !================================================================================================
+
+  function Nc_in_cloud_to_Ncnm_api( &
+    mu_chi_1, mu_chi_2, sigma_chi_1, &
+    sigma_chi_2, mixt_frac, Nc_in_cloud, &
+    cloud_frac_1, cloud_frac_2, &
+    const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn ) result ( Ncnm )
+
+    use Nc_Ncn_eqns, only : Nc_in_cloud_to_Ncnm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_chi_1,    & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
+      mu_chi_2,    & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
+      sigma_chi_1, & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
+      sigma_chi_2, & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
+      mixt_frac    ! Mixture fraction                                [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      Nc_in_cloud,          & ! Mean cloud droplet conc. (in-cloud)     [num/kg]
+      cloud_frac_1,         & ! Cloud fraction (1st PDF component)           [-]
+      cloud_frac_2,         & ! Cloud fraction (2nd PDF component)           [-]
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
+      const_corr_chi_Ncn         ! Prescribed correlation between chi(s) and Ncn     [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
+
+    Ncnm = Nc_in_cloud_to_Ncnm( &
+      mu_chi_1, mu_chi_2, sigma_chi_1, &
+      sigma_chi_2, mixt_frac, Nc_in_cloud, &
+      cloud_frac_1, cloud_frac_2, &
+      const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
+
+  end function Nc_in_cloud_to_Ncnm_api
+
+  !================================================================================================
+  ! Ncnm_to_Ncm - Calculates the overall mean of cloud droplet concentration.
+  !================================================================================================
+
+  function Ncnm_to_Ncm_api( &
+    mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+    sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
+    sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+    corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac ) result ( Ncm )
+
+    use Nc_Ncn_eqns, only : Ncnm_to_Ncm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_chi_1,        & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
+      mu_chi_2,        & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
+      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
+      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
+      sigma_chi_1,     & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
+      sigma_chi_2,     & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
+      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
+      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
+      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
+      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
+      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
+      mixt_frac        ! Mixture fraction                                    [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      Ncm    ! Mean cloud droplet concentration (overall)    [num/kg]
+
+    Ncm = Ncnm_to_Ncm( &
+      mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
+      sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
+      sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
+      corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, mixt_frac )
+
+  end function Ncnm_to_Ncm_api
+
+  !================================================================================================
+  ! Ncm_to_Ncnm - Calculates the overall mean of simplified cloud nuclei concentration.
+  !================================================================================================
+
+  function Ncm_to_Ncnm_api( &
+    mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
+    mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
+    const_corr_chi_Ncn, Ncnm_val_denom_0 ) result ( Ncnm )
+
+    use Nc_Ncn_eqns, only : Ncm_to_Ncnm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_chi_1,    & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
+      mu_chi_2,    & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
+      sigma_chi_1, & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
+      sigma_chi_2, & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
+      mixt_frac    ! Mixture fraction                                [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      Ncm,                  & ! Mean cloud droplet conc. (overall)      [num/kg]
+      const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
+      const_corr_chi_Ncn,      & ! Prescribed correlation between chi(s) and Ncn     [-]
+      Ncnm_val_denom_0        ! Ncnm value -- denominator in eqn. is 0  [num/kg]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      Ncnm    ! Mean simplified cloud nuclei concentration (overall)    [num/kg]
+
+    Ncnm = Ncm_to_Ncnm( &
+      mu_chi_1, mu_chi_2, sigma_chi_1, sigma_chi_2, &
+      mixt_frac, Ncm, const_Ncnp2_on_Ncnm2, &
+      const_corr_chi_Ncn, Ncnm_val_denom_0 )
+
+  end function Ncm_to_Ncnm_api
+
+  !================================================================================================
+  ! term_ma_zt_lhs - Computes the Mean advection of var_zt.
+  !================================================================================================
+
+  function term_ma_zt_lhs_api( &
+    wm_zt, invrs_dzt, level, &
+    invrs_dzm_k, invrs_dzm_km1 ) result ( lhs )
+
+    use mean_adv, only : term_ma_zt_lhs
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wm_zt,        &    ! wm_zt(k)                        [m/s]
+      invrs_dzt,    &    ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzm_k,  &    ! Inverse of grid spacing (k)     [1/m]
+      invrs_dzm_km1      ! Inverse of grid spacing (k-1)   [1/m]
+
+
+    integer, intent(in) :: &
+      level ! Central thermodynamic level (on which calculation occurs).
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(3) :: lhs
+
+    lhs = term_ma_zt_lhs( &
+      wm_zt, invrs_dzt, level, &
+      invrs_dzm_k, invrs_dzm_km1 )
+
+  end function term_ma_zt_lhs_api
+
+  !================================================================================================
+  ! set_lower_triangular_matrix_dp - Sets a value for the lower triangular portion of a matrix.
+  !================================================================================================
+
+  subroutine set_lower_tri_matrix_dp_api( &
+    d_variables, index1, index2, xpyp, matrix )
+
+    use matrix_operations, only : set_lower_triangular_matrix_dp
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1, index2 ! Indices for 2 variates (the order doesn't matter)
+
+    real( kind = dp ), intent(in) :: &
+      xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
+
+    ! Input/Output Variables
+    real( kind = dp ), dimension(d_variables,d_variables), intent(inout) :: &
+      matrix ! The lower triangular matrix
+
+    call set_lower_triangular_matrix_dp( &
+      d_variables, index1, index2, xpyp, matrix )
+
+  end subroutine set_lower_tri_matrix_dp_api
+
+  !================================================================================================
+  ! get_lower_triangular_matrix - Returns a value from the lower triangular portion of a matrix.
+  !================================================================================================
+
+  subroutine get_lower_triangular_matrix_api( &
+    d_variables, index1, index2, matrix, xpyp )
+
+    use matrix_operations, only : get_lower_triangular_matrix
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables, & ! Number of variates
+      index1, index2 ! Indices for 2 variates (the order doesn't matter)
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+      matrix ! The covariance matrix
+
+    real( kind = core_rknd ), intent(out) :: &
+      xpyp ! Value from the matrix (usually a correlation or covariance) [units vary]
+
+    call get_lower_triangular_matrix( &
+      d_variables, index1, index2, matrix, xpyp )
+
+  end subroutine get_lower_triangular_matrix_api
+
+  !================================================================================================
+  ! row_mult_lower_tri_matrix - Row-wise multiply of the elements of a lower triangular matrix.
+  !================================================================================================
+
+  subroutine row_mult_lower_tri_matrix_api( &
+    ndim, xvector, tmatrix_in, tmatrix_out )
+
+    use matrix_operations, only : row_mult_lower_tri_matrix
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: ndim
+
+    real( kind = dp ), dimension(ndim), intent(in) :: &
+      xvector ! Factors to be multiplied across a row [units vary]
+
+    ! Input Variables
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: &
+      tmatrix_in ! nxn matrix (usually a correlation matrix) [units vary]
+
+    ! Output Variables
+    real( kind = dp ), dimension(ndim,ndim), intent(inout) :: &
+      tmatrix_out ! nxn matrix (usually a covariance matrix) [units vary]
+
+    call row_mult_lower_tri_matrix( &
+      ndim, xvector, tmatrix_in, tmatrix_out )
+
+  end subroutine row_mult_lower_tri_matrix_api
+
+  !================================================================================================
+  ! print_lower_triangular_matrix - Print the values of lower triangular matrix.
+  !================================================================================================
+
+  subroutine print_lower_tri_matrix_api( &
+    iunit, ndim, matrix )
+
+    use matrix_operations, only : print_lower_triangular_matrix
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iunit, & ! File I/O logical unit (usually 6 for stdout and 0 for stderr)
+      ndim     ! Dimension of the matrix
+
+    real( kind = core_rknd ), dimension(ndim,ndim), intent(in) :: &
+      matrix ! Lower triangular matrix [units vary]
+
+    call print_lower_triangular_matrix( &
+      iunit, ndim, matrix )
+
+  end subroutine print_lower_tri_matrix_api
+
+  !================================================================================================
+  ! Cholesky_factor - Create a Cholesky factorization of a_input.
+  !================================================================================================
+
+  subroutine Cholesky_factor_api( &
+    ndim, a_input, a_scaling, a_Cholesky, l_scaled )
+
+    use matrix_operations, only : Cholesky_factor
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: ndim
+
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: a_input
+
+    ! Output Variables
+    real( kind = dp ), dimension(ndim), intent(out) :: a_scaling
+
+    real( kind = dp ), dimension(ndim,ndim), intent(out) :: a_Cholesky
+
+    logical, intent(out) :: l_scaled
+
+    call Cholesky_factor( &
+      ndim, a_input, a_scaling, a_Cholesky, l_scaled )
+
+  end subroutine Cholesky_factor_api
+
+  !================================================================================================
+  ! symm_covar_matrix_2_corr_matrix - Converts a matrix of covariances to a matrix of correlations.
+  !================================================================================================
+
+  subroutine symm_covar_mtx_2_corr_mtx_api( &
+    ndim, covar, corr )
+
+    use matrix_operations, only : symm_covar_matrix_2_corr_matrix
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: ndim
+
+    real( kind = dp ), dimension(ndim,ndim), intent(in) :: &
+      covar ! Covariance Matrix [units vary]
+
+    ! Output Variables
+    real( kind = dp ), dimension(ndim,ndim), intent(out) :: &
+      corr ! Correlation Matrix [-]
+
+    call symm_covar_matrix_2_corr_matrix( &
+      ndim, covar, corr )
+
+  end subroutine symm_covar_mtx_2_corr_mtx_api
+
+  !================================================================================================
+  ! tridag_solve - Solves a tridiagonal system of equations.
+  !================================================================================================
+
+  subroutine tridag_solve_api( &
+    solve_type, ndim, nrhs, &
+    supd, diag, subd, rhs, &
+    solution, err_code )
+
+    use lapack_wrap, only : tridag_solve
+
+    implicit none
+
+    ! Input variables
+    character(len=*), intent(in) ::  &
+      solve_type ! Used to write a message if this fails
+
+    integer, intent(in) ::  &
+      ndim,  & ! N-dimension of matrix
+      nrhs     ! # of right hand sides to back subst. after LU-decomp.
+
+    ! Input/Output variables
+    real( kind = core_rknd ), intent(inout), dimension(ndim) ::  &
+      diag,       & ! Main diagonal
+      subd, supd ! Sub and super diagonal
+
+    real( kind = core_rknd ), intent(inout), dimension(ndim,nrhs) ::  &
+      rhs ! RHS input
+
+    ! Output variables
+    real( kind = core_rknd ), intent(out), dimension(ndim,nrhs) ::  &
+      solution ! Solution
+
+    integer, intent(out) ::  &
+      err_code ! Used to determine when a decomp. failed
+
+    call tridag_solve( &
+      solve_type, ndim, nrhs, &
+      supd, diag, subd, rhs, &
+      solution, err_code )
+
+  end subroutine tridag_solve_api
+
+  !================================================================================================
+  ! read_one_dim_file - Reads from a file containing data that varies in one dimension.
+  !================================================================================================
+
+  subroutine read_one_dim_file_api( &
+    iunit, nCol, filename, read_vars )
+
+    use input_reader, only : read_one_dim_file
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: iunit ! I/O unit
+
+    integer, intent(in) :: nCol ! Number of columns expected in the data file
+
+    character(len=*), intent(in)  :: filename ! Name of the file being read from
+
+    ! Output Variable(s)
+    type (one_dim_read_var), dimension(nCol),intent(out) :: &
+      read_vars ! Structured information from the file
+
+    call read_one_dim_file( &
+      iunit, nCol, filename, read_vars )
+
+  end subroutine read_one_dim_file_api
+
+  !================================================================================================
+  ! fill_blanks_one_dim_vars - Fills blank spots with linearly inerpolated values.
+  !================================================================================================
+
+  subroutine fill_blanks_one_dim_vars_api( &
+    num_vars, one_dim_vars )
+
+    use input_reader, only : fill_blanks_one_dim_vars
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
+
+    ! Input/Output Variable(s)
+    type(one_dim_read_var), dimension(num_vars), intent(inout) :: &
+      one_dim_vars ! Read data that may have gaps.
+
+    call fill_blanks_one_dim_vars( &
+      num_vars, one_dim_vars )
+
+  end subroutine fill_blanks_one_dim_vars_api
+
+  !================================================================================================
+  ! read_x_profile - Searches for the var specified by target_name in the collection of retVars.
+  !================================================================================================
+
+  function read_x_profile_api( &
+    nvar, dim_size, target_name, retVars, &
+    input_file ) result( x )
+
+    use input_reader, only : read_x_profile
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      nvar,  & ! Number of variables in retVars
+      dim_size ! Size of the array returned
+
+    character(len=*), intent(in) :: &
+      target_name  ! Name of the variable that is being searched for
+
+    type(one_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars ! Collection being searched
+
+    character(len=*), optional, intent(in) :: &
+      input_file ! Name of the input file containing the variables
+
+    ! Output Variable(s)
+    real( kind = core_rknd ), dimension(dim_size) :: x
+
+    x = read_x_profile( &
+      nvar, dim_size, target_name, retVars, &
+      input_file )
+
+  end function read_x_profile_api
+
+  !================================================================================================
+  ! get_target_index - Returns index of variable specified by target_name in collection of retVars.
+  !================================================================================================
+
+  function get_target_index_api( &
+    nvar, target_name, retVars ) result( i )
+
+    use input_reader, only : get_target_index
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: nvar                    ! Number of variables in retVars
+
+    character(len=*), intent(in) :: target_name           ! Variable being searched for
+
+    type(one_dim_read_var), dimension(nvar), intent(in) :: retVars ! Collection being searched
+
+    ! Output Variable
+    integer :: i
+
+    i = get_target_index( &
+      nvar, target_name, retVars)
+
+  end function get_target_index_api
+
+  !================================================================================================
+  ! deallocate_one_dim_vars - Deallocates pointer stored in one_dim_vars%value for the whole array.
+  !================================================================================================
+
+  subroutine deallocate_one_dim_vars_api( &
+    num_vars, one_dim_vars )
+
+    use input_reader, only : deallocate_one_dim_vars
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
+
+    type(one_dim_read_var), dimension(num_vars), intent(inout) :: &
+      one_dim_vars ! Read data that may have gaps.
+
+    call deallocate_one_dim_vars( &
+      num_vars, one_dim_vars )
+
+  end subroutine deallocate_one_dim_vars_api
+
+  !================================================================================================
+  ! count_columns - Counts the number of columns in a file.
+  !================================================================================================
+
+  function count_columns_api( &
+    iunit, filename ) result( nCols )
+
+    use input_reader, only : count_columns
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: iunit ! I/O unit
+    character(len=*), intent(in) :: filename ! Name of the file being read from
+
+    ! Output Variable
+    integer :: nCols ! The number of data columns in the selected file
+
+    nCols = count_columns( &
+      iunit, filename )
+
+  end function count_columns_api
+
+  !================================================================================================
+  ! read_x_table - Returns the variable specified by target_name in the collection of retVars.
+  !================================================================================================
+
+  function read_x_table_api( &
+    nvar, xdim, ydim, target_name, retVars ) result( x )
+
+    use input_reader, only : read_x_table
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: nvar ! Number of variables in retVars
+
+    integer, intent(in) :: xdim, ydim
+
+    character(len=*), intent(in) :: &
+      target_name ! Name of the variable that is being searched for
+
+    type(two_dim_read_var), dimension(nvar), intent(in) :: &
+      retVars ! Collection of data being searched through
+
+    ! Output Variable(s)
+    real( kind = core_rknd ), dimension( xdim, ydim ) :: x
+
+    x = read_x_table( &
+      nvar, xdim, ydim, target_name, retVars )
+
+  end function read_x_table_api
+
+  !================================================================================================
+  ! read_two_dim_file
+  !================================================================================================
+
+  subroutine read_two_dim_file_api( &
+    iunit, nCol, filename, read_vars, other_dim )
+
+    use input_reader, only : read_two_dim_file
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: iunit ! File I/O unit
+
+    integer, intent(in) :: nCol ! Number of columns expected in the data file
+
+    character(len=*), intent(in) :: filename ! Name of the file being read from
+
+    ! Output Variable(s)
+    type (two_dim_read_var), dimension(nCol),intent(out) :: read_vars
+
+    type (one_dim_read_var), intent(out) :: other_dim
+
+    call read_two_dim_file( &
+      iunit, nCol, filename, read_vars, other_dim )
+
+  end subroutine read_two_dim_file_api
+
+!  !================================================================================================
+!  ! fill_blanks_two_dim_vars
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! file_read_1d
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! file_read_2d
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! byte_order_swap
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! diffusion_zt_lhs
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! setup_corr_cholesky_mtx
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! cholesky_to_corr_mtx_approx
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! erfc
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! update_xp2_mc
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! xpwp_fnc
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! setup_radiation_variables
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! cleanup_radiation_variables
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! hydrostatic
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! inverse_hydrostatic
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! lin_ext_zt_bottom
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
+!
+!  !================================================================================================
+!  ! lin_ext_zm_bottom
+!  !================================================================================================
+!
+!  subroutine name_api( &
+!     args)
+!
+!    use modName, only : name
+!
+!    implicit none
+!
+!    inOutVars
+!
+!    call name( &
+!      args)
+!
+!  end subroutine name_api
 
 end module clubb_api_module
