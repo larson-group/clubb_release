@@ -1067,7 +1067,7 @@ module latin_hypercube_driver_module
              ( dt, nz, num_samples, d_variables, &
                X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
                pdf_params, p_in_Pa, exner, rho, &
-               rcm, w_std_dev, delta_zt, cloud_frac, &
+               rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
@@ -1146,7 +1146,6 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac,  & ! Cloud fraction               [-]
-      w_std_dev,   & ! Standard deviation of w      [m/s]
       delta_zt,    & ! Change in meters with height [m]
       rcm,         & ! Liquid water mixing ratio    [kg/kg]
       p_in_Pa,     & ! Pressure                     [Pa]
@@ -1180,7 +1179,7 @@ module latin_hypercube_driver_module
     ! As a test of SILHS, compute an estimate of Kessler microphysics
     if ( clubb_at_least_debug_level( 2 ) ) then
        call est_kessler_microphys &
-            ( nz, num_samples, d_variables, &                  ! Intent(in)
+            ( nz, num_samples, d_variables, &                    ! Intent(in)
               X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
               X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
               lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
@@ -1189,10 +1188,10 @@ module latin_hypercube_driver_module
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( dt, nz, num_samples, d_variables, &                     ! Intent(in)
+         ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
            k_lh_start, lh_rt, lh_thl, &                              ! Intent(in)
            X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in) 
-           p_in_Pa, exner, rho, cloud_frac, w_std_dev, &             ! Intent(in)
+           p_in_Pa, exner, rho, &                                    ! Intent(in)
            delta_zt, hydromet, rcm, Nc_in_cloud, &                   ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)

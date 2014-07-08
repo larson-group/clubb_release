@@ -411,7 +411,13 @@ module constants_clubb
     cm3_per_m3   = 1.e6_core_rknd,  & ! Cubic centimeters per cubic meter
     micron_per_m = 1.e6_core_rknd,  & ! Micrometers per meter
     cm_per_m     = 100._core_rknd,  & ! Centimeters per meter
-    mm_per_m     = 1000._core_rknd    ! Millimeters per meter  
+    mm_per_m     = 1000._core_rknd    ! Millimeters per meter
+
+  !-----------------------------------------------------------------------------
+  ! Unused variable
+  !-----------------------------------------------------------------------------
+  real( kind = core_rknd ), parameter, public :: &
+    unused_var = -999._core_rknd      ! The standard value for unused variables
 
 !=============================================================================
 

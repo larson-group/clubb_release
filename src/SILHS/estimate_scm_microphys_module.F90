@@ -17,7 +17,7 @@ module estimate_scm_microphys_module
              ( dt, nz, num_samples, d_variables, &
                k_lh_start, lh_rt, lh_thl, &
                X_nl_all_levs, lh_sample_point_weights, &
-               p_in_Pa, exner, rho, cloud_frac, w_std_dev, &
+               p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, Nc_in_cloud,  &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
@@ -33,7 +33,8 @@ module estimate_scm_microphys_module
 
     use constants_clubb, only:  &
       fstderr, &  ! Constant(s)
-      zero_threshold
+      zero_threshold, &
+      unused_var
 
     use parameters_model, only: &
       hydromet_dim ! Variable
@@ -113,8 +114,6 @@ module estimate_scm_microphys_module
       p_in_Pa,    & ! Pressure                 [Pa]
       exner,      & ! Exner function           [-]
       rho,        & ! Density on thermo. grid  [kg/m^3]
-      cloud_frac, & ! Cloud fraction           [-]
-      w_std_dev,  & ! Standard deviation of w    [m/s]
       dzq,        & ! Difference in height per gridbox   [m]
       rcm           ! Mean liquid water mixing ratio     [kg/kg]
 
@@ -194,6 +193,12 @@ module estimate_scm_microphys_module
       chi_all_points,  & ! num_samples values of 's' (Mellor 1977)      [kg/kg]
       w_all_points            ! num_samples values of vertical velocity      [m/s]
 
+    ! These parameters are not used by the microphysics scheme when SILHS is
+    ! turned on.
+    real( kind = core_rknd ), dimension(nz) :: &
+      cloud_frac_unused, &
+      w_std_dev_unused
+
     type(microphys_stats_vars_type), dimension(num_samples) :: &
       microphys_stats_zt_all, &   ! Statistics variables output from microphysics on zt grid
       microphys_stats_sfc_all     ! Statistics variables on sfc grid
@@ -236,7 +241,7 @@ module estimate_scm_microphys_module
           write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
           write(fstderr,*) "in_cloud_points =", in_cloud_points
           write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
-          write(fstderr,*)  "cloud fraction = ", cloud_frac(k_lh_start)
+          !write(fstderr,*)  "cloud fraction = ", cloud_frac(k_lh_start)
           write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
           write(fstderr,'(4X,A,A)')  "chi_all_points  ", "weight   "
           do sample = 1, num_samples, 1
@@ -347,11 +352,13 @@ module estimate_scm_microphys_module
          end where
       endif
 
+      cloud_frac_unused = unused_var
+      w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, & ! In
              l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
-             exner, rho, cloud_frac, w_std_dev, & ! In
+             exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
              dzq, rc_column, Nc, chi_column, rv_column, & ! In
              hydromet_all_points, & ! In
              lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out

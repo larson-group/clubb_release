@@ -530,6 +530,8 @@ module output_netcdf
 
     implicit none
 
+    intrinsic :: date_and_time
+
     ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf
 

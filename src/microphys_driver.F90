@@ -31,7 +31,7 @@ module microphys_driver
   subroutine microphys_schemes( dt, time_current, n_variables, runtype, & ! In
                                 thlm, p_in_Pa, exner, rho, rho_zm, rtm, & ! In
                                 rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &  ! In
-                                hydromet, wphydrometp, Nc_in_cloud, &     ! In
+                                hydromet, Nc_in_cloud, &                  ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
                                 lh_rt, lh_thl, lh_sample_point_weights, & ! In
@@ -221,8 +221,7 @@ module microphys_driver
       wp2_zt        ! w'^2 on the thermo. grid                  [m^2/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      hydromet,    & ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
-      wphydrometp    ! Covariance < w'h_m' > (momentum levels)      [(m/s)units]
+      hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration      [num/kg]
@@ -450,7 +449,7 @@ module microphys_driver
                ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
-                 rcm, wtmp, delta_zt, cloud_frac, & ! In
+                 rcm, delta_zt, cloud_frac, & ! In
                  hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
@@ -555,7 +554,7 @@ module microphys_driver
                ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
-                 rcm, wtmp, delta_zt, cloud_frac, & ! In
+                 rcm, delta_zt, cloud_frac, & ! In
                  hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out

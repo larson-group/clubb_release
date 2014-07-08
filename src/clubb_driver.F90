@@ -1381,7 +1381,7 @@ module clubb_driver
       call microphys_schemes( dt_main, time_current, d_variables, runtype, & ! In
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, &      ! In
                               rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &       ! In
-                              hydromet, wphydrometp, Nc_in_cloud, &          ! In
+                              hydromet, Nc_in_cloud, &                       ! In
                               pdf_params, hydromet_pdf_params, &             ! In
                               X_nl_all_levs, X_mixt_comp_all_levs, &         ! In
                               lh_rt, lh_thl, lh_sample_point_weights, &      ! In
