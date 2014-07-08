@@ -246,6 +246,56 @@
           #{'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpNrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'Correlation of w and \chi', 'axisLabel' => 'corr\_w\_chi\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_chi_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_chi_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) of w and r_r', 'axisLabel' => 'corr\_w\_rr\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_rr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_rr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) of w and N_r', 'axisLabel' => 'corr\_w\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation of w and N_{cn}', 'axisLabel' => 'corr\_w\_Ncn\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_Ncn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_Ncn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation of \chi and \eta', 'axisLabel' => 'corr\_chi\_eta\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_eta_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_eta_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) of \chi and r_r', 'axisLabel' => 'corr\_chi\_rr\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_rr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_rr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) of \chi and N_r', 'axisLabel' => 'corr\_chi\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation of \chi and N_{cn}', 'axisLabel' => 'corr\_chi\_Ncn\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_Ncn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_Ncn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Correlation (in-precip) of r_r and N_r', 'axisLabel' => 'corr\_rr\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rr_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rr_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+#       {'plotTitle' => 'Correlation (in-precip) of ln r_r and ln N_r', 'axisLabel' => 'corr\_rr\_Nr\_i\_n [-]', 'type' => 'profile', 'lines' =>
+#       [
+#          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rr_Nr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+#          {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rr_Nr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+#       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_do_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
