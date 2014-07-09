@@ -15,7 +15,7 @@
 !               PLEASE REMEMBER, IF ANY CODE IS CHANGED IN THIS DOCUMENT,
 !                   THE CHANGES MUST BE PROPOGATED TO ALL HOST MODELS.
 !
-module clubb_api_module
+module silhs_api_module
 
   implicit none
 
@@ -572,4 +572,4 @@ contains
 
   end subroutine copy_X_nl_into_rc_all_pts_api
 
-end module clubb_api_module
+end module silhs_api_module
