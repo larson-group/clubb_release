@@ -16,6 +16,12 @@ mv CLUBB/src/CLUBB_core CLUBB_core
 echo "removing .svn folder from CLUBB_core"
 rm -rf CLUBB_core/.svn
 
+echo "removing api from CLUBB_core"
+rm  CLUBB_core/clubb_api_module.F90
+
+echo "moving SILHS to CLUBB_core"
+mv CLUBB/src/SILHS/* CLUBB_core/
+
 echo "testing CLUBB_standalone"
 python api_commitment_test.py -cpu CLUBB_core CLUBB > clubb_standalone_modules.txt
 
