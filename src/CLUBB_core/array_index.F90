@@ -17,19 +17,19 @@ module array_index
   ! Variables
   ! Microphysics mixing ratios
   integer, public :: &
-    iirrainm,    & ! Hydrometeor array index for rain water mixing ratio, rr
-    iirsnowm,    & ! Hydrometeor array index for snow mixing ratio, rs
-    iiricem,     & ! Hydrometeor array index for ice mixing ratio, ri
-    iirgraupelm    ! Hydrometeor array index for graupel mixing ratio, rg
-!$omp threadprivate(iirrainm, iirsnowm, iiricem, iirgraupelm)
+    iirrm,    & ! Hydrometeor array index for rain water mixing ratio, rr
+    iirsm,    & ! Hydrometeor array index for snow mixing ratio, rs
+    iirim,     & ! Hydrometeor array index for ice mixing ratio, ri
+    iirgm    ! Hydrometeor array index for graupel mixing ratio, rg
+!$omp threadprivate(iirrm, iirsm, iirim, iirgm)
 
   ! Microphysics concentrations
   integer, public :: &
     iiNrm,       & ! Hydrometeor array index for rain drop concentration, Nr
-    iiNsnowm,    & ! Hydrometeor array index for snow concentration, Ns
+    iiNsm,    & ! Hydrometeor array index for snow concentration, Ns
     iiNim,       & ! Hydrometeor array index for ice concentration, Ni
-    iiNgraupelm    ! Hydrometeor array index for graupel concentration, Ng
-!$omp threadprivate(iiNrm, iiNsnowm, iiNim, iiNgraupelm)
+    iiNgm    ! Hydrometeor array index for graupel concentration, Ng
+!$omp threadprivate(iiNrm, iiNsm, iiNim, iiNgm)
 
   ! Scalar quantities
   integer, public :: & 

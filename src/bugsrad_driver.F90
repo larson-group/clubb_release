@@ -16,7 +16,7 @@ module bugsrad_driver
                extend_atmos_bottom_level,           &
                extend_atmos_top_level,              &
                amu0, &
-               thlm, rcm, rtm, rsnowm, rim,& 
+               thlm, rcm, rtm, rsm, rim,& 
                cloud_frac, ice_supersat_frac,       &
                p_in_Pa, p_in_Pam, exner, rho_zm,    &
                radht, Frad,                         &
@@ -66,7 +66,7 @@ module bugsrad_driver
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, & ! Variable(s)
-      T_in_K, rcil, o3l, rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
+      T_in_K, rcil, o3l, rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, &
       radht_SW_2d, radht_LW_2d, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       p_in_mb, sp_humidity
 
@@ -92,7 +92,7 @@ module bugsrad_driver
       alt,              & ! Altitudes of the model              [m]
       thlm,             & ! Liquid potential temp.              [K]
       rcm,              & ! Liquid water mixing ratio           [kg/kg]
-      rsnowm,           & ! Snow water mixing ratio             [kg/kg]
+      rsm,           & ! Snow water mixing ratio             [kg/kg]
       rim,              & ! Ice water mixing ratio              [kg/kg]
       rtm,              & ! Total water mixing ratio            [kg/kg]
       rho_zm,           & ! Density                             [kg/m^3]
@@ -181,7 +181,7 @@ module bugsrad_driver
 
     ! Convert and transpose as needed
     rcil(1,buffer+1:(nz-1)+buffer)            = flip( real( rim(2:nz),kind=dp ), nz-1 )
-    rsnowm_2d(1,buffer+1:(nz-1)+buffer)       = flip( real( rsnowm(2:nz),kind=dp ), nz-1 )
+    rsm_2d(1,buffer+1:(nz-1)+buffer)       = flip( real( rsm(2:nz),kind=dp ), nz-1 )
     rcm_in_cloud_2d(1,buffer+1:(nz-1)+buffer) = flip( real( rcm_in_cloud(2:nz),kind=dp ), nz-1 )
     cloud_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( real( cloud_frac(2:nz),kind=dp ), nz-1 )
     ice_supersat_frac_2d(1,buffer+1:(nz-1)+buffer)   = flip( real( ice_supersat_frac(2:nz), &
@@ -197,7 +197,7 @@ module bugsrad_driver
     o3l(1,buffer+1:(nz-1)+buffer) = flip( o3l(1,1:(nz-1)), nz-1 )
 
     ! Assume these are all zero above the CLUBB profile
-    rsnowm_2d(1,1:buffer)             = 0.0_dp
+    rsm_2d(1,1:buffer)             = 0.0_dp
     rcil(1,1:buffer)                  = 0.0_dp
     rcm_in_cloud_2d(1,1:buffer)       = 0.0_dp
     cloud_frac_2d(1,1:buffer)         = 0.0_dp
@@ -302,7 +302,7 @@ module bugsrad_driver
 
     call bugs_rad( nlen, slen, (nz-1)+buffer, playerinmb,              &
                    p_in_mb, diff_pres_lvls, T_in_K, sp_humidity,         &
-                   rcm_in_cloud_2d, rcil, rsnowm_2d, o3l,              &
+                   rcm_in_cloud_2d, rcil, rsm_2d, o3l,              &
                    ts, amu0, slr, alvdf,                               &
                    alndf, alvdr, alndr, sol_const,                     &
                    real( grav, kind=dp ), real( Cp, kind=dp ), radht_SW_2d, radht_LW_2d, &

@@ -1211,14 +1211,14 @@ module latin_hypercube_driver_module
       iiPDF_chi, & ! Variables
       iiPDF_eta, &
       iiPDF_w, &
-      iiPDF_rrain, & 
-      iiPDF_rice, &
-      iiPDF_rsnow, &
-      iiPDF_rgraupel, &
+      iiPDF_rr, & 
+      iiPDF_ri, &
+      iiPDF_rs, &
+      iiPDF_rg, &
       iiPDF_Nr, &
       iiPDF_Ni, &
-      iiPDF_Nsnow, &
-      iiPDF_Ngraupel, &
+      iiPDF_Ns, &
+      iiPDF_Ng, &
       iiPDF_Ncn
 
     use parameters_microphys, only: &
@@ -1281,25 +1281,25 @@ module latin_hypercube_driver_module
       variable_descriptions(iiPDF_w) = "Vertical velocity"
       variable_units(iiPDF_w)        = "m/s"
 
-      if ( iiPDF_rrain > 0 ) then
-        variable_names(iiPDF_rrain)        = "rrain"
-        variable_descriptions(iiPDF_rrain) = "Rain water mixing ratio"
-        variable_units(iiPDF_rrain)        = "kg/kg"
+      if ( iiPDF_rr > 0 ) then
+        variable_names(iiPDF_rr)        = "rrain"
+        variable_descriptions(iiPDF_rr) = "Rain water mixing ratio"
+        variable_units(iiPDF_rr)        = "kg/kg"
       end if
-      if ( iiPDF_rice > 0 ) then
-        variable_names(iiPDF_rice)        = "rice"
-        variable_descriptions(iiPDF_rice) = "Ice water mixing ratio"
-        variable_units(iiPDF_rice)        = "kg/kg"
+      if ( iiPDF_ri > 0 ) then
+        variable_names(iiPDF_ri)        = "rice"
+        variable_descriptions(iiPDF_ri) = "Ice water mixing ratio"
+        variable_units(iiPDF_ri)        = "kg/kg"
       end if
-      if ( iiPDF_rsnow > 0 ) then
-        variable_names(iiPDF_rsnow)        = "rsnow"
-        variable_descriptions(iiPDF_rsnow) = "Snow water mixing ratio"
-        variable_units(iiPDF_rsnow)        = "kg/kg"
+      if ( iiPDF_rs > 0 ) then
+        variable_names(iiPDF_rs)        = "rsnow"
+        variable_descriptions(iiPDF_rs) = "Snow water mixing ratio"
+        variable_units(iiPDF_rs)        = "kg/kg"
       end if
-      if ( iiPDF_rgraupel > 0 ) then
-        variable_names(iiPDF_rgraupel)        = "rgraupel"
-        variable_descriptions(iiPDF_rgraupel) = "Graupel water mixing ratio"
-        variable_units(iiPDF_rgraupel)        = "kg/kg"
+      if ( iiPDF_rg > 0 ) then
+        variable_names(iiPDF_rg)        = "rgraupel"
+        variable_descriptions(iiPDF_rg) = "Graupel water mixing ratio"
+        variable_units(iiPDF_rg)        = "kg/kg"
       end if
 
       if ( iiPDF_Nr > 0 ) then
@@ -1317,15 +1317,15 @@ module latin_hypercube_driver_module
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
-      if ( iiPDF_Nsnow > 0 ) then
-        variable_names(iiPDF_Nsnow)        = "Nsnow"
-        variable_descriptions(iiPDF_Nsnow) = "Snow number concentration"
-        variable_units(iiPDF_Nsnow)        = "count/kg"
+      if ( iiPDF_Ns > 0 ) then
+        variable_names(iiPDF_Ns)        = "Nsnow"
+        variable_descriptions(iiPDF_Ns) = "Snow number concentration"
+        variable_units(iiPDF_Ns)        = "count/kg"
       end if
-      if ( iiPDF_Ngraupel > 0 ) then
-        variable_names(iiPDF_Ngraupel)        = "Ngraupel"
-        variable_descriptions(iiPDF_Ngraupel) = "Graupel number concentration"
-        variable_units(iiPDF_Ngraupel)        = "count/kg"
+      if ( iiPDF_Ng > 0 ) then
+        variable_names(iiPDF_Ng)        = "Ngraupel"
+        variable_descriptions(iiPDF_Ng) = "Graupel number concentration"
+        variable_units(iiPDF_Ng)        = "count/kg"
       end if
 
       i = d_variables + 1
@@ -1366,25 +1366,25 @@ module latin_hypercube_driver_module
       variable_descriptions(iiPDF_w) = "Uniform dist of the vertical velocity"
 
 
-      if ( iiPDF_rrain > 0 ) then
-        variable_names(iiPDF_rrain)        = "rrain"
-        variable_descriptions(iiPDF_rrain) = "Rain water mixing ratio"
-        variable_units(iiPDF_rrain)        = "kg/kg"
+      if ( iiPDF_rr > 0 ) then
+        variable_names(iiPDF_rr)        = "rrain"
+        variable_descriptions(iiPDF_rr) = "Rain water mixing ratio"
+        variable_units(iiPDF_rr)        = "kg/kg"
       end if
-      if ( iiPDF_rice > 0 ) then
-        variable_names(iiPDF_rice)        = "rice"
-        variable_descriptions(iiPDF_rice) = "Ice water mixing ratio"
-        variable_units(iiPDF_rice)        = "kg/kg"
+      if ( iiPDF_ri > 0 ) then
+        variable_names(iiPDF_ri)        = "rice"
+        variable_descriptions(iiPDF_ri) = "Ice water mixing ratio"
+        variable_units(iiPDF_ri)        = "kg/kg"
       end if
-      if ( iiPDF_rsnow > 0 ) then
-        variable_names(iiPDF_rsnow)        = "rsnow"
-        variable_descriptions(iiPDF_rsnow) = "Snow water mixing ratio"
-        variable_units(iiPDF_rsnow)        = "kg/kg"
+      if ( iiPDF_rs > 0 ) then
+        variable_names(iiPDF_rs)        = "rsnow"
+        variable_descriptions(iiPDF_rs) = "Snow water mixing ratio"
+        variable_units(iiPDF_rs)        = "kg/kg"
       end if
-      if ( iiPDF_rgraupel > 0 ) then
-        variable_names(iiPDF_rgraupel)        = "rgraupel"
-        variable_descriptions(iiPDF_rgraupel) = "Graupel water mixing ratio"
-        variable_units(iiPDF_rgraupel)        = "kg/kg"
+      if ( iiPDF_rg > 0 ) then
+        variable_names(iiPDF_rg)        = "rgraupel"
+        variable_descriptions(iiPDF_rg) = "Graupel water mixing ratio"
+        variable_units(iiPDF_rg)        = "kg/kg"
       end if
 
       if ( iiPDF_Nr > 0 ) then
@@ -1402,15 +1402,15 @@ module latin_hypercube_driver_module
         variable_descriptions(iiPDF_Ni) = "Ice number concentration"
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
-      if ( iiPDF_Nsnow > 0 ) then
-        variable_names(iiPDF_Nsnow)        = "Nsnow"
-        variable_descriptions(iiPDF_Nsnow) = "Snow number concentration"
-        variable_units(iiPDF_Nsnow)        = "count/kg"
+      if ( iiPDF_Ns > 0 ) then
+        variable_names(iiPDF_Ns)        = "Nsnow"
+        variable_descriptions(iiPDF_Ns) = "Snow number concentration"
+        variable_units(iiPDF_Ns)        = "count/kg"
       end if
-      if ( iiPDF_Ngraupel > 0 ) then
-        variable_names(iiPDF_Ngraupel)        = "Ngraupel"
-        variable_descriptions(iiPDF_Ngraupel) = "Graupel number concentration"
-        variable_units(iiPDF_Ngraupel)        = "count/kg"
+      if ( iiPDF_Ng > 0 ) then
+        variable_names(iiPDF_Ng)        = "Ngraupel"
+        variable_descriptions(iiPDF_Ng) = "Graupel number concentration"
+        variable_units(iiPDF_Ng)        = "count/kg"
       end if
 
       i = d_variables + 1
@@ -2033,14 +2033,14 @@ module latin_hypercube_driver_module
 
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)
-      ilh_rrainm, &
+      ilh_rrm, &
       ilh_Nrm, &
-      ilh_ricem, &
+      ilh_rim, &
       ilh_Nim, &
-      ilh_rsnowm, &
-      ilh_Nsnowm, &
-      ilh_rgraupelm, &
-      ilh_Ngraupelm, &
+      ilh_rsm, &
+      ilh_Nsm, &
+      ilh_rgm, &
+      ilh_Ngm, &
       ilh_thlm, &
       ilh_rcm, &
       ilh_Ncm, &
@@ -2060,7 +2060,7 @@ module latin_hypercube_driver_module
       ilh_rcp2_zt, &
       ilh_rtp2_zt, &
       ilh_thlp2_zt, &
-      ilh_rrainp2_zt, &
+      ilh_rrp2_zt, &
       ilh_vwp, &
       ilh_lwp, &
       lh_zt, &
@@ -2075,14 +2075,14 @@ module latin_hypercube_driver_module
       stat_update_var_pt
 
     use array_index, only: &
-      iirrainm, & ! Variables
-      iirsnowm, & 
-      iiricem, & 
-      iirgraupelm, & 
+      iirrm, & ! Variables
+      iirsm, & 
+      iirim, & 
+      iirgm, & 
       iiNrm, &
-      iiNsnowm, &
+      iiNsm, &
       iiNim, &
-      iiNgraupelm
+      iiNgm
 
     use corr_matrix_module, only: &
       iiPDF_chi, & ! Variable(s)
@@ -2149,7 +2149,7 @@ module latin_hypercube_driver_module
       lh_rvm,        & ! Average value of the latin hypercube est. of rv                [kg/kg]
       lh_wm,         & ! Average value of the latin hypercube est. of vertical velocity [m/s]
       lh_wp2_zt,     & ! Average value of the variance of the LH est. of vert. vel.     [m^2/s^2]
-      lh_rrainp2_zt, & ! Average value of the variance of the LH est. of rrain.         [(kg/kg)^2]
+      lh_rrp2_zt, & ! Average value of the variance of the LH est. of rr.         [(kg/kg)^2]
       lh_rcp2_zt,    & ! Average value of the variance of the LH est. of rc.            [(kg/kg)^2]
       lh_rtp2_zt,    & ! Average value of the variance of the LH est. of rt             [kg^2/kg^2]
       lh_thlp2_zt,   & ! Average value of the variance of the LH est. of thetal         [K^2]
@@ -2218,8 +2218,8 @@ module latin_hypercube_driver_module
         call stat_update_var( ilh_wm, lh_wm, lh_zt )
       end if
 
-      if ( ilh_rrainm + ilh_Nrm + ilh_ricem + ilh_Nim + ilh_rsnowm + ilh_Nsnowm + &
-           ilh_rgraupelm + ilh_Ngraupelm + ilh_Ncnm + ilh_Ncm > 0 ) then
+      if ( ilh_rrm + ilh_Nrm + ilh_rim + ilh_Nim + ilh_rsm + ilh_Nsm + &
+           ilh_rgm + ilh_Ngm + ilh_Ncnm + ilh_Ncm > 0 ) then
 
         lh_hydromet = 0._core_rknd
         call copy_X_nl_into_hydromet_all_pts( nz, d_variables, num_samples, & ! In
@@ -2341,11 +2341,11 @@ module latin_hypercube_driver_module
       end if
 
       ! Compute the variance of rain water mixing ratio
-      if ( iirrainm > 0 .and. ilh_rrainp2_zt > 0 ) then
-        lh_rrainp2_zt = compute_sample_variance &
-                        ( nz, num_samples, hydromet_all_points(:,:,iirrainm), &
-                          lh_sample_point_weights, lh_hydromet(:,iirrainm) )
-        call stat_update_var( ilh_rrainp2_zt, lh_rrainp2_zt, lh_zt )
+      if ( iirrm > 0 .and. ilh_rrp2_zt > 0 ) then
+        lh_rrp2_zt = compute_sample_variance &
+                        ( nz, num_samples, hydromet_all_points(:,:,iirrm), &
+                          lh_sample_point_weights, lh_hydromet(:,iirrm) )
+        call stat_update_var( ilh_rrp2_zt, lh_rrp2_zt, lh_zt )
       end if
 
       ! Compute the variance of cloud nuclei concentration (simplifed)
@@ -2373,29 +2373,29 @@ module latin_hypercube_driver_module
 
       ! Averages of points being fed into the microphysics
       ! These are for diagnostic purposes, and are not needed for anything
-      if ( iirrainm > 0 ) then
-        call stat_update_var( ilh_rrainm, lh_hydromet(:,iirrainm), lh_zt )
+      if ( iirrm > 0 ) then
+        call stat_update_var( ilh_rrm, lh_hydromet(:,iirrm), lh_zt )
       end if
       if ( iiNrm > 0 ) then
         call stat_update_var( ilh_Nrm, lh_hydromet(:,iiNrm), lh_zt )
       end if
-      if ( iiricem > 0 ) then
-        call stat_update_var( ilh_ricem, lh_hydromet(:,iiricem), lh_zt )
+      if ( iirim > 0 ) then
+        call stat_update_var( ilh_rim, lh_hydromet(:,iirim), lh_zt )
       end if
       if ( iiNim > 0 ) then
         call stat_update_var( ilh_Nim, lh_hydromet(:,iiNim), lh_zt )
       end if
-      if ( iirsnowm > 0 ) then
-        call stat_update_var( ilh_rsnowm, lh_hydromet(:,iirsnowm), lh_zt )
+      if ( iirsm > 0 ) then
+        call stat_update_var( ilh_rsm, lh_hydromet(:,iirsm), lh_zt )
       end if
-      if ( iiNsnowm > 0 ) then
-        call stat_update_var( ilh_Nsnowm, lh_hydromet(:,iiNsnowm), lh_zt )
+      if ( iiNsm > 0 ) then
+        call stat_update_var( ilh_Nsm, lh_hydromet(:,iiNsm), lh_zt )
       end if
-      if ( iirgraupelm > 0 ) then
-        call stat_update_var( ilh_rgraupelm, lh_hydromet(:,iirgraupelm), lh_zt )
+      if ( iirgm > 0 ) then
+        call stat_update_var( ilh_rgm, lh_hydromet(:,iirgm), lh_zt )
       end if
-      if ( iiNgraupelm > 0 ) then
-        call stat_update_var( ilh_Ngraupelm, lh_hydromet(:,iiNgraupelm), lh_zt )
+      if ( iiNgm > 0 ) then
+        call stat_update_var( ilh_Ngm, lh_hydromet(:,iiNgm), lh_zt )
       end if
 
     end if ! l_stats_samp

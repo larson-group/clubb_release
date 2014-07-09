@@ -30,8 +30,8 @@ module KK_microphys_module
   type KK_microphys_adj_terms_type
 
     real( kind = core_rknd ) :: &
-      rrainm_src_adj = zero, &  ! Total adj. to rrainm source terms [(kg/kg)/s]
-      rrainm_cond_adj = zero, & ! Total adj. to rrainm evap terms   [(kg/kg)/s]
+      rrm_src_adj = zero, &  ! Total adj. to rrm source terms [(kg/kg)/s]
+      rrm_cond_adj = zero, & ! Total adj. to rrm evap terms   [(kg/kg)/s]
       Nrm_src_adj = zero, &     ! Total adj. to Nrm source terms    [(num/kg)/s]
       Nrm_cond_adj = zero       ! Total adj. to Nrm evap terms      [(num/kg)/s]
 
@@ -97,11 +97,11 @@ module KK_microphys_module
         iNrm_cond, &
         iNrm_cond_adj, &
         iNrm_src_adj, &
-        irrainm_accr, &
-        irrainm_auto, &
-        irrainm_cond, &
-        irrainm_cond_adj, &
-        irrainm_src_adj
+        irrm_accr, &
+        irrm_auto, &
+        irrm_cond, &
+        irrm_cond_adj, &
+        irrm_src_adj
 
     implicit none
 
@@ -166,11 +166,11 @@ module KK_microphys_module
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.        [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      rrm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      rrm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -186,8 +186,8 @@ module KK_microphys_module
       adj_terms    ! Adjustments to microphysics terms
 
     logical :: &
-      l_src_adj_enabled,   & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled     ! Flag to enable rrainm/Nrm evaporation adjustment
+      l_src_adj_enabled,   & ! Flag to enable rrm/Nrm source adjustment
+      l_evap_adj_enabled     ! Flag to enable rrm/Nrm evaporation adjustment
 
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
@@ -203,7 +203,7 @@ module KK_microphys_module
 
     !!! Initialize microphysics fields.
     call KK_microphys_init( nz, hydromet, &
-                            hydromet_mc, hydromet_vel, rrainm, Nrm, &
+                            hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                             KK_Nrm_auto_tndcy, &
@@ -234,10 +234,10 @@ module KK_microphys_module
 
 
        !!! Calculate the local KK rain drop mean volume radius.
-       if ( rrainm(k) > rr_tol ) then
+       if ( rrm(k) > rr_tol ) then
 
           KK_mean_vol_rad(k)  &
-          = KK_mvr_local_mean( rrainm(k), Nrm(k), KK_mvr_coef )
+          = KK_mvr_local_mean( rrm(k), Nrm(k), KK_mvr_coef )
 
        else  ! r_r or N_r = 0.
 
@@ -248,10 +248,10 @@ module KK_microphys_module
        !!! Calculate the values of the local KK microphysics tendencies.
 
        !!! Calculate the local KK evaporation tendency.
-       if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+       if ( rrm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
           KK_evap_tndcy(k)  &
-          = KK_evap_local_mean( chi(k), rrainm(k), Nrm(k), &
+          = KK_evap_local_mean( chi(k), rrm(k), Nrm(k), &
                                  KK_evap_coef )
 
        else  ! r_r or N_r = 0.
@@ -273,10 +273,10 @@ module KK_microphys_module
        endif
 
        !!! Calculate the local KK accretion tendency.
-       if ( rrainm(k) > rr_tol ) then
+       if ( rrm(k) > rr_tol ) then
 
           KK_accr_tndcy(k)  &
-          = KK_accr_local_mean( chi(k), rrainm(k), KK_accr_coef )
+          = KK_accr_local_mean( chi(k), rrm(k), KK_accr_coef )
 
        else  ! r_r = 0.
 
@@ -288,10 +288,10 @@ module KK_microphys_module
        !!! KK rain drop concentration microphysics tendencies.
 
        !!! Calculate the KK N_r evaporation tendency.
-       if ( rrainm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
+       if ( rrm(k) > rr_tol .and. Nrm(k) > Nr_tol ) then
 
           KK_Nrm_evap_tndcy(k)  &
-          = KK_Nrm_evap_local_mean( KK_evap_tndcy(k), Nrm(k), rrainm(k), dt )
+          = KK_Nrm_evap_local_mean( KK_evap_tndcy(k), Nrm(k), rrm(k), dt )
 
        else  ! r_r or N_r = 0.
 
@@ -304,12 +304,12 @@ module KK_microphys_module
 
 
        !!! Calculate any necessary adjustments to KK microphysics tendencies.
-       call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
+       call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k), &
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
-                                 rrainm_mc(k), Nrm_mc(k), &
+                                 rrm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
 
@@ -318,12 +318,12 @@ module KK_microphys_module
 
     !!! Boundary conditions for microphysics tendencies.
 
-    ! Explicit contributions to rrainm and Nrm from microphysics are not set at
+    ! Explicit contributions to rrm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrainm_mc(1) = zero
+    rrm_mc(1) = zero
     Nrm_mc(1)    = zero
 
-    rrainm_mc(nz) = zero
+    rrm_mc(nz) = zero
     Nrm_mc(nz)    = zero
 
     ! Boundary conditions
@@ -347,22 +347,22 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
+    call KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     !!! Output values for statistics
-    call microphys_put_var( irrainm_cond, KK_evap_tndcy, microphys_stats_zt )
-    call microphys_put_var( irrainm_auto, KK_auto_tndcy, microphys_stats_zt )
-    call microphys_put_var( irrainm_accr, KK_accr_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrm_cond, KK_evap_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrm_auto, KK_auto_tndcy, microphys_stats_zt )
+    call microphys_put_var( irrm_accr, KK_accr_tndcy, microphys_stats_zt )
     call microphys_put_var( im_vol_rad_rain, KK_mean_vol_rad, microphys_stats_zt )
     call microphys_put_var( iNrm_cond, KK_Nrm_evap_tndcy, microphys_stats_zt )
     call microphys_put_var( iNrm_auto, KK_Nrm_auto_tndcy, microphys_stats_zt )
     if ( l_src_adj_enabled ) then
-      call microphys_put_var( irrainm_src_adj, adj_terms%rrainm_src_adj, microphys_stats_zt )
+      call microphys_put_var( irrm_src_adj, adj_terms%rrm_src_adj, microphys_stats_zt )
       call microphys_put_var( iNrm_src_adj, adj_terms%Nrm_src_adj, microphys_stats_zt )
     end if
     if ( l_evap_adj_enabled ) then
-      call microphys_put_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, microphys_stats_zt )
+      call microphys_put_var( irrm_cond_adj, adj_terms%rrm_cond_adj, microphys_stats_zt )
       call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
     end if
 
@@ -430,7 +430,7 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrainm, & ! Constant(s)
+        iirrm, & ! Constant(s)
         iiNrm
 
     use clubb_precision, only: &
@@ -445,9 +445,9 @@ module KK_microphys_module
         iVNrpNrp_expcalc, &
         zm, &
         zt, &
-        irrainm_src_adj, &
+        irrm_src_adj, &
         iNrm_src_adj, &
-        irrainm_cond_adj, &
+        irrm_cond_adj, &
         iNrm_cond_adj
 
     implicit none
@@ -516,11 +516,11 @@ module KK_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r > [kg/kg]
+      rrm,          & ! Mean rain water mixing ratio, < r_r > [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r > [num/kg]
       Vrr,             & ! Mean sedimentation velocity of r_r    [m/s]
       VNr,             & ! Mean sedimentation velocity of N_r    [m/s]
-      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
+      rrm_mc, & ! Mean (dr_r/dt) due to microphysics    [(kg/kg)/s]
       Nrm_mc       ! Mean (dN_r/dt) due to microphysics    [(num/kg)/s]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -656,8 +656,8 @@ module KK_microphys_module
       adj_terms           ! Adjustments to microphysics terms
 
     logical :: &
-      l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
+      l_src_adj_enabled,  & ! Flag to enable rrm/Nrm source adjustment
+      l_evap_adj_enabled    ! Flag to enable rrm/Nrm evaporation adjustment
 
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
@@ -667,7 +667,7 @@ module KK_microphys_module
 
     !!! Initialize microphysics fields.
     call KK_microphys_init( nz, hydromet, &
-                            hydromet_mc, hydromet_vel, rrainm, Nrm, &
+                            hydromet_mc, hydromet_vel, rrm, Nrm, &
                             KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                             KK_Nrm_auto_tndcy, &
@@ -739,7 +739,7 @@ module KK_microphys_module
        !!! <V_rr'rr'> and <V_Nr'Nr'>.  Each turbulent sedimentation term has an
        !!! implicit component and an explicit component to be used in the
        !!! predictive equation for the hydrometeor.
-       call KK_sed_vel_covars( rrainm(k), rr1, rr2, Nrm(k), &
+       call KK_sed_vel_covars( rrm(k), rr1, rr2, Nrm(k), &
                                Nr1, Nr2, KK_mean_vol_rad(k), &
                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
                                mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
@@ -755,7 +755,7 @@ module KK_microphys_module
        if ( l_var_covar_src ) then
 
           call KK_upscaled_covar_driver( wm_zt(k), rtm(k), thlm(k), &
-                                         exner(k), rrainm(k), Nrm(k), &
+                                         exner(k), rrm(k), Nrm(k), &
                                          mu_w_1, mu_w_2, mu_s_1, mu_s_2, &
                                          mu_t_1, mu_t_2, mu_rr_1, mu_rr_2, &
                                          mu_Nr_1, mu_Nr_2, mu_Ncn_1, mu_Ncn_2, &
@@ -816,12 +816,12 @@ module KK_microphys_module
 
 
        !!! Calculate any necessary adjustments to KK microphysics tendencies.
-       call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k), &
+       call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k), &
                                  KK_evap_tndcy(k), KK_auto_tndcy(k), &
                                  KK_accr_tndcy(k), KK_Nrm_evap_tndcy(k), &
                                  KK_Nrm_auto_tndcy(k), l_src_adj_enabled, &
                                  l_evap_adj_enabled, &
-                                 rrainm_mc(k), Nrm_mc(k), &
+                                 rrm_mc(k), Nrm_mc(k), &
                                  rvm_mc(k), rcm_mc(k), thlm_mc(k), &
                                  adj_terms(k) )
 
@@ -898,12 +898,12 @@ module KK_microphys_module
 
     !!! Boundary conditions for microphysics tendencies.
 
-    ! Explicit contributions to rrainm and Nrm from microphysics are not set at
+    ! Explicit contributions to rrm and Nrm from microphysics are not set at
     ! thermodynamic level k = 1 because it is below the model lower boundary.
-    rrainm_mc(1) = zero
+    rrm_mc(1) = zero
     Nrm_mc(1)    = zero
 
-    rrainm_mc(nz) = zero
+    rrm_mc(nz) = zero
     Nrm_mc(nz)    = zero
 
     ! Boundary conditions
@@ -927,7 +927,7 @@ module KK_microphys_module
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
-    call KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
+    call KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
                               hydromet_mc, hydromet_vel )
 
     !!! Turbulent sedimentation above cloud top should have a value of 0.
@@ -957,8 +957,8 @@ module KK_microphys_module
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
     ! (<V_rr'r_r'> and <V_Nr'N_r'>) are fed into the output arrays.
-    hydromet_vel_covar_zt_impc(:,iirrainm) = Vrrprrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iirrainm) = Vrrprrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iirrm) = Vrrprrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iirrm) = Vrrprrp_zt_expc
     hydromet_vel_covar_zt_impc(:,iiNrm) = VNrpNrp_zt_impc
     hydromet_vel_covar_zt_expc(:,iiNrm) = VNrpNrp_zt_expc
 
@@ -972,7 +972,7 @@ module KK_microphys_module
           ! compared to the < V_rr'r_r' > results used in the code, which are
           ! calculated semi-implicitly.
           call stat_update_var( iVrrprrp_expcalc, &
-                                zt2zm( Vrrprrp_zt_impc * rrainm &
+                                zt2zm( Vrrprrp_zt_impc * rrm &
                                        + Vrrprrp_zt_expc ), zm )
 
        endif
@@ -990,16 +990,16 @@ module KK_microphys_module
        endif
 
        ! Stats output for microphysics adjustment terms
-       if ( irrainm_src_adj > 0 ) then
-         call stat_update_var( irrainm_src_adj, adj_terms%rrainm_src_adj, zt )
+       if ( irrm_src_adj > 0 ) then
+         call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, zt )
        end if
 
        if ( iNrm_src_adj > 0 ) then
          call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
        end if
 
-       if ( irrainm_cond_adj > 0 ) then
-         call stat_update_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, zt )
+       if ( irrm_cond_adj > 0 ) then
+         call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, zt )
        end if
 
        if ( iNrm_cond_adj > 0 ) then
@@ -1015,7 +1015,7 @@ module KK_microphys_module
 
   !=============================================================================
   subroutine KK_microphys_init( nz, hydromet, &
-                                hydromet_mc, hydromet_vel, rrainm, Nrm, &
+                                hydromet_mc, hydromet_vel, rrm, Nrm, &
                                 KK_evap_tndcy, KK_auto_tndcy, KK_accr_tndcy, &
                                 KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                                 KK_Nrm_auto_tndcy, &
@@ -1033,7 +1033,7 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrainm, & ! Constant(s)
+        iirrm, & ! Constant(s)
         iiNrm
 
     use clubb_precision, only: &
@@ -1054,7 +1054,7 @@ module KK_microphys_module
       hydromet_vel    ! Hydrometeor sedimentation velocity [m/s]
 
     real( kind = core_rknd ), dimension(nz), intent(out) ::  &
-      rrainm, & ! Mean rain water mixing ratio (overall), < r_r >    [kg/kg]
+      rrm, & ! Mean rain water mixing ratio (overall), < r_r >    [kg/kg]
       Nrm       ! Mean rain drop concentration (overall), < N_r >    [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -1066,8 +1066,8 @@ module KK_microphys_module
       KK_Nrm_auto_tndcy    ! Mean KK (dN_r/dt) due to autoconv.     [(num/kg)/s]
 
     logical, intent(out) :: &
-      l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
+      l_src_adj_enabled,  & ! Flag to enable rrm/Nrm source adjustment
+      l_evap_adj_enabled    ! Flag to enable rrm/Nrm evaporation adjustment
 
 
     !!! Initialize microphysics tendencies and rain drop mean volume radius.
@@ -1084,7 +1084,7 @@ module KK_microphys_module
     hydromet_vel(:,:) = zero
 
     ! Set up mean field variables for <r_r> and <N_r>.
-    rrainm = hydromet(:,iirrainm)
+    rrm = hydromet(:,iirrm)
     Nrm    = hydromet(:,iiNrm)
 
     ! Set KK microphysics tendency adjustment flags
@@ -1187,12 +1187,12 @@ module KK_microphys_module
   end subroutine KK_tendency_coefs
 
   !=============================================================================
-  subroutine KK_microphys_adjust( dt, exner, rcm, rrainm, Nrm, &
+  subroutine KK_microphys_adjust( dt, exner, rcm, rrm, Nrm, &
                                   KK_evap_tndcy, KK_auto_tndcy, &
                                   KK_accr_tndcy, KK_Nrm_evap_tndcy, &
                                   KK_Nrm_auto_tndcy, l_src_adj_enabled, &
                                   l_evap_adj_enabled, &
-                                  rrainm_mc, Nrm_mc, &
+                                  rrm_mc, Nrm_mc, &
                                   rvm_mc, rcm_mc, thlm_mc, &
                                   adj_terms )
 
@@ -1225,7 +1225,7 @@ module KK_microphys_module
     real( kind = core_rknd ), intent(in) :: &
       exner,  & ! Exner function                           [-]
       rcm,    & ! Mean cloud water mixing ratio            [kg/kg]
-      rrainm, & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      rrm, & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm       ! Mean rain drop concentration, < N_r >    [num/kg]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1236,12 +1236,12 @@ module KK_microphys_module
       KK_Nrm_auto_tndcy    ! Mean KK <N_r> autoconversion tendency  [(num/kg)/s]
 
     logical, intent(in) :: &
-      l_src_adj_enabled,  & ! Flag to enable rrainm/Nrm source adjustment
-      l_evap_adj_enabled    ! Flag to enable rrainm/Nrm evaporation adjustment
+      l_src_adj_enabled,  & ! Flag to enable rrm/Nrm source adjustment
+      l_evap_adj_enabled    ! Flag to enable rrm/Nrm evaporation adjustment
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  &
-      rrainm_mc, & ! Mean <dr_r/dt> due to microphysics       [(kg/kg)/s]
+      rrm_mc, & ! Mean <dr_r/dt> due to microphysics       [(kg/kg)/s]
       Nrm_mc       ! Mean <dN_r/dt> due to microphysics       [(num/kg)/s]
 
     real( kind = core_rknd ), intent(out) :: &
@@ -1255,24 +1255,24 @@ module KK_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ) ::  &
-      rrainm_source,   & ! Total source term rate for rrainm        [(kg/kg)/s]
+      rrm_source,   & ! Total source term rate for rrm        [(kg/kg)/s]
       Nrm_source,      & ! Total source term rate for Nrm           [(num/kg)/s]
-      rrainm_src_adj,  & ! Total adjustment to rrainm source terms  [(kg/kg)/s]
+      rrm_src_adj,  & ! Total adjustment to rrm source terms  [(kg/kg)/s]
       Nrm_src_adj,     & ! Total adjustment to Nrm source terms     [(num/kg)/s]
-      rrainm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
+      rrm_evap_net, & ! Net evaporation rate of <r_r>            [(kg/kg)/s]
       Nrm_evap_net       ! Net evaporation rate of <N_r>            [(num/kg)/s]
 
     real( kind = core_rknd ) :: &
-      rrainm_src_max,    & ! Maximum allowable rrainm source rate    [(kg/kg)/s]
-      rrainm_auto_ratio, & ! Ratio of rrainm autoconv to overall source term [-]
+      rrm_src_max,    & ! Maximum allowable rrm source rate    [(kg/kg)/s]
+      rrm_auto_ratio, & ! Ratio of rrm autoconv to overall source term [-]
       total_rc_needed      ! Amount of r_c needed to over the timestep
                            ! for rain source terms                       [kg/kg]
   !-----------------------------------------------------------------------
 
     !---- Begin Code -----
 
-    !!! Source-adjustment code for rrainm and Nrm.
-    rrainm_source = KK_auto_tndcy + KK_accr_tndcy
+    !!! Source-adjustment code for rrm and Nrm.
+    rrm_source = KK_auto_tndcy + KK_accr_tndcy
     Nrm_source = KK_Nrm_auto_tndcy
 
     if ( l_src_adj_enabled ) then
@@ -1284,52 +1284,52 @@ module KK_microphys_module
        ! source rate multiplied by the duration of the time step cannot exceed
        ! the total amount of cloud water available.  If it does, then the rate
        ! must be adjusted.
-       total_rc_needed = rrainm_source * real( dt, kind = core_rknd )
+       total_rc_needed = rrm_source * real( dt, kind = core_rknd )
 
        if ( total_rc_needed > rcm ) then
 
           ! The maximum allowable rate of the source terms is rcm/dt.
-          rrainm_src_max = rcm / real( dt, kind = core_rknd )
+          rrm_src_max = rcm / real( dt, kind = core_rknd )
 
           ! The amount of adjustment to the source terms.
           ! This value should always be negative.
-          rrainm_src_adj = rrainm_src_max - rrainm_source
+          rrm_src_adj = rrm_src_max - rrm_source
 
           ! Reset the value of the source terms to the maximum allowable value
           ! of the source terms.
-          rrainm_source = rrainm_src_max
+          rrm_source = rrm_src_max
 
-          ! The rrainm source terms are made up of autoconversion and accretion.
+          ! The rrm source terms are made up of autoconversion and accretion.
           ! Only the sum of those two terms is corrected.  However, Nrm has only
           ! an autoconversion term for a source term.  Assume that change in the
-          ! rrainm autoconversion term is proportional to to the total rrainm
-          ! adjustment rate by the ratio of rrainm autoconversion to the overall
-          ! source term.  Then, plug the rrainm autoconversion adjustment into
+          ! rrm autoconversion term is proportional to to the total rrm
+          ! adjustment rate by the ratio of rrm autoconversion to the overall
+          ! source term.  Then, plug the rrm autoconversion adjustment into
           ! the equation for Nrm autoconversion to determine the effect on the
           ! Nrm source term.
-          rrainm_auto_ratio = KK_auto_tndcy /  &
+          rrm_auto_ratio = KK_auto_tndcy /  &
                               ( KK_auto_tndcy + KK_accr_tndcy )
-          Nrm_src_adj = KK_Nrm_auto_mean( rrainm_auto_ratio * rrainm_src_adj )
+          Nrm_src_adj = KK_Nrm_auto_mean( rrm_auto_ratio * rrm_src_adj )
 
           ! Change Nrm by Nrm_src_adj.  Nrm_src_adj will always be negative.
           Nrm_source = Nrm_source + Nrm_src_adj
 
        else ! total_rc_needed <= rcm: enough available cloud water.
 
-          rrainm_src_adj = zero
+          rrm_src_adj = zero
           Nrm_src_adj    = zero
 
        endif
 
     else ! l_src_adj_enabled is false: source adjustment is disabled.
 
-       rrainm_src_adj = zero
+       rrm_src_adj = zero
        Nrm_src_adj    = zero
 
     endif
 
 
-    !!! Evaporation-adjustment code for rrainm and Nrm.
+    !!! Evaporation-adjustment code for rrm and Nrm.
     if ( l_evap_adj_enabled ) then
 
        ! Prevent over-evaporation of rain over a long model time step.
@@ -1338,15 +1338,15 @@ module KK_microphys_module
        ! cannot be so great as to result in negative rain.
 
        ! Calculate net evaporation rate of <r_r>.
-       rrainm_evap_net = max( KK_evap_tndcy, &
-                              - rrainm / real( dt, kind = core_rknd ) )
+       rrm_evap_net = max( KK_evap_tndcy, &
+                              - rrm / real( dt, kind = core_rknd ) )
 
        ! Recalcuate the net evaporation rate of <N_r> based on the net
        ! evaporation rate of <r_r>.
-       if ( KK_evap_tndcy /= rrainm_evap_net .and. &
-            rrainm > rr_tol .and. Nrm > Nr_tol ) then
+       if ( KK_evap_tndcy /= rrm_evap_net .and. &
+            rrm > rr_tol .and. Nrm > Nr_tol ) then
           Nrm_evap_net &
-          = KK_Nrm_evap_local_mean( rrainm_evap_net, Nrm, rrainm, dt )
+          = KK_Nrm_evap_local_mean( rrm_evap_net, Nrm, rrm, dt )
        else
           Nrm_evap_net = KK_Nrm_evap_tndcy
        endif
@@ -1356,25 +1356,25 @@ module KK_microphys_module
 
     else ! l_evap_adj_enabled is false: evaporation adjustment is disabled.
 
-       rrainm_evap_net = KK_evap_tndcy
+       rrm_evap_net = KK_evap_tndcy
        Nrm_evap_net    = KK_Nrm_evap_tndcy
 
     endif
 
 
     !!! Calculate overall KK microphysics tendencies.
-    rrainm_mc = rrainm_evap_net + rrainm_source
+    rrm_mc = rrm_evap_net + rrm_source
     Nrm_mc    = Nrm_evap_net + Nrm_source
 
     !!! Explicit contributions to thlm and rtm from the microphysics
-    rvm_mc  = -rrainm_evap_net
-    rcm_mc  = -rrainm_source  ! Accretion + Autoconversion
-    thlm_mc = ( Lv / ( Cp * exner ) ) * rrainm_mc
+    rvm_mc  = -rrm_evap_net
+    rcm_mc  = -rrm_source  ! Accretion + Autoconversion
+    thlm_mc = ( Lv / ( Cp * exner ) ) * rrm_mc
 
     ! Return adjustment terms
-    adj_terms%rrainm_src_adj = rrainm_src_adj
+    adj_terms%rrm_src_adj = rrm_src_adj
     adj_terms%Nrm_src_adj = Nrm_src_adj
-    adj_terms%rrainm_cond_adj = rrainm_evap_net - KK_evap_tndcy
+    adj_terms%rrm_cond_adj = rrm_evap_net - KK_evap_tndcy
     adj_terms%Nrm_cond_adj = Nrm_evap_net - KK_Nrm_evap_tndcy
 
     return
@@ -1498,9 +1498,9 @@ module KK_microphys_module
     use stats_variables, only: &
         zt,              & ! Variable(s)
         im_vol_rad_rain, &
-        irrainm_cond,    &
-        irrainm_auto,    &
-        irrainm_accr,    &
+        irrm_cond,    &
+        irrm_auto,    &
+        irrm_accr,    &
         iNrm_cond,       &
         iNrm_auto
 
@@ -1529,16 +1529,16 @@ module KK_microphys_module
     if ( l_stats_samp ) then
 
        ! Mean rain water mixing ratio microphysics tendencies.
-       if ( irrainm_cond > 0 ) then
-          call stat_update_var_pt( irrainm_cond, level, KK_evap_tndcy, zt )
+       if ( irrm_cond > 0 ) then
+          call stat_update_var_pt( irrm_cond, level, KK_evap_tndcy, zt )
        endif
 
-       if ( irrainm_auto > 0 ) then
-          call stat_update_var_pt( irrainm_auto, level, KK_auto_tndcy, zt )
+       if ( irrm_auto > 0 ) then
+          call stat_update_var_pt( irrm_auto, level, KK_auto_tndcy, zt )
        endif
 
-       if ( irrainm_accr > 0 ) then
-          call stat_update_var_pt( irrainm_accr, level, KK_accr_tndcy, zt )
+       if ( irrm_accr > 0 ) then
+          call stat_update_var_pt( irrm_accr, level, KK_accr_tndcy, zt )
        endif
 
        ! Rain drop mean volume radius.
@@ -1642,7 +1642,7 @@ module KK_microphys_module
   end subroutine KK_sedimentation
 
   !=============================================================================
-  subroutine KK_microphys_output( nz, Vrr, VNr, rrainm_mc, Nrm_mc, &
+  subroutine KK_microphys_output( nz, Vrr, VNr, rrm_mc, Nrm_mc, &
                                   hydromet_mc, hydromet_vel )
 
     ! Description:
@@ -1654,7 +1654,7 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrainm, & ! Constant(s)
+        iirrm, & ! Constant(s)
         iiNrm
 
     use clubb_precision, only: &
@@ -1669,7 +1669,7 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
       Vrr,             & ! Mean sedimentation velocity of < r_r >   [m/s]
       VNr,             & ! Mean sedimentation velocity of < N_r >   [m/s]
-      rrainm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
+      rrm_mc, & ! Mean (dr_r/dt) due to microphysics       [(kg/kg)/s]
       Nrm_mc       ! Mean (dN_r/dt) due to microphysics       [(num/kg)/s]
 
     ! Output Variables
@@ -1681,11 +1681,11 @@ module KK_microphys_module
     !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
 
     ! Mean field tendencies.
-    hydromet_mc(:,iirrainm) = rrainm_mc
+    hydromet_mc(:,iirrm) = rrm_mc
     hydromet_mc(:,iiNrm) = Nrm_mc
 
     ! Sedimentation Velocities.
-    hydromet_vel(:,iirrainm) = Vrr
+    hydromet_vel(:,iirrm) = Vrr
     hydromet_vel(:,iiNrm) = VNr
 
 
@@ -1732,12 +1732,12 @@ module KK_microphys_module
         iiPDF_w,        & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
-        iiPDF_rrain,    &
+        iiPDF_rr,    &
         iiPDF_Nr,       &
         iiPDF_Ncn
 
     use array_index, only: &
-        iirr => iirrainm, & ! Variable(s)
+        iirr => iirrm, & ! Variable(s)
         iiNr => iiNrm
 
     use clubb_precision, only: &
@@ -1849,8 +1849,8 @@ module KK_microphys_module
     mu_s_2        = mu_x_2(iiPDF_chi)
     mu_t_1        = mu_x_1(iiPDF_eta)
     mu_t_2        = mu_x_2(iiPDF_eta)
-    mu_rr_1_n     = mu_x_1(iiPDF_rrain)
-    mu_rr_2_n     = mu_x_2(iiPDF_rrain)
+    mu_rr_1_n     = mu_x_1(iiPDF_rr)
+    mu_rr_2_n     = mu_x_2(iiPDF_rr)
     mu_Nr_1_n     = mu_x_1(iiPDF_Nr)
     mu_Nr_2_n     = mu_x_2(iiPDF_Nr)
     mu_Ncn_1_n    = mu_x_1(iiPDF_Ncn)
@@ -1861,8 +1861,8 @@ module KK_microphys_module
     sigma_s_2     = sigma_x_2(iiPDF_chi)
     sigma_t_1     = sigma_x_1(iiPDF_eta)
     sigma_t_2     = sigma_x_2(iiPDF_eta)
-    sigma_rr_1_n  = sigma_x_1(iiPDF_rrain)
-    sigma_rr_2_n  = sigma_x_2(iiPDF_rrain)
+    sigma_rr_1_n  = sigma_x_1(iiPDF_rr)
+    sigma_rr_2_n  = sigma_x_2(iiPDF_rr)
     sigma_Nr_1_n  = sigma_x_1(iiPDF_Nr)
     sigma_Nr_2_n  = sigma_x_2(iiPDF_Nr)
     sigma_Ncn_1_n = sigma_x_1(iiPDF_Ncn)
@@ -1893,30 +1893,30 @@ module KK_microphys_module
     ! Unpack corr_array_1 into correlations (1st PDF component).
     corr_st_1     = corr_array_1(iiPDF_eta, iiPDF_chi)
     corr_ws_1     = corr_array_1(iiPDF_w,iiPDF_chi)
-    corr_srr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_chi)
+    corr_srr_1_n  = corr_array_1(iiPDF_rr, iiPDF_chi)
     corr_sNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_chi)
     corr_sNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_chi)
-    corr_trr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_eta)
+    corr_trr_1_n  = corr_array_1(iiPDF_rr, iiPDF_eta)
     corr_tNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_eta)
     corr_tNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_eta)
-    corr_wrr_1_n  = corr_array_1(iiPDF_rrain, iiPDF_w)
+    corr_wrr_1_n  = corr_array_1(iiPDF_rr, iiPDF_w)
     corr_wNr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_w)
     corr_wNcn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_w)
-    corr_rrNr_1_n = corr_array_1(iiPDF_Nr, iiPDF_rrain)
+    corr_rrNr_1_n = corr_array_1(iiPDF_Nr, iiPDF_rr)
 
     ! Unpack corr_array_2 into correlations (2nd PDF component).
     corr_st_2     = corr_array_2(iiPDF_eta, iiPDF_chi)
     corr_ws_2     = corr_array_2(iiPDF_w,iiPDF_chi)
-    corr_srr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_chi)
+    corr_srr_2_n  = corr_array_2(iiPDF_rr, iiPDF_chi)
     corr_sNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_chi)
     corr_sNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_chi)
-    corr_trr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_eta)
+    corr_trr_2_n  = corr_array_2(iiPDF_rr, iiPDF_eta)
     corr_tNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_eta)
     corr_tNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_eta)
-    corr_wrr_2_n  = corr_array_2(iiPDF_rrain, iiPDF_w)
+    corr_wrr_2_n  = corr_array_2(iiPDF_rr, iiPDF_w)
     corr_wNr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_w)
     corr_wNcn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_w)
-    corr_rrNr_2_n = corr_array_2(iiPDF_Nr, iiPDF_rrain)
+    corr_rrNr_2_n = corr_array_2(iiPDF_Nr, iiPDF_rr)
 
 
     return

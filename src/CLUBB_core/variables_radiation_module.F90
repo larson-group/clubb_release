@@ -36,12 +36,12 @@ module variables_radiation_module
 !$omp threadprivate(T_in_K, rcil, o3l)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
-    rsnowm_2d,& ! Two-dimensional copies of the input parameters
+    rsm_2d,& ! Two-dimensional copies of the input parameters
     rcm_in_cloud_2d, &
     cloud_frac_2d, &
     ice_supersat_frac_2d
 
-!$omp threadprivate(rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
+!$omp threadprivate(rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, &
 !$omp   ice_supersat_frac_2d)
 
   real(kind = dp), public, dimension(:,:), allocatable :: &
@@ -120,7 +120,7 @@ module variables_radiation_module
     allocate( rcil(nlen, rad_zt_dim ) )
     allocate( o3l(nlen, rad_zt_dim ) )
 
-    allocate( rsnowm_2d(nlen, rad_zt_dim ) )
+    allocate( rsm_2d(nlen, rad_zt_dim ) )
     allocate( rcm_in_cloud_2d(nlen, rad_zt_dim ) )
     allocate( cloud_frac_2d(nlen, rad_zt_dim ) )
     allocate( ice_supersat_frac_2d(nlen, rad_zt_dim ) )
@@ -153,7 +153,7 @@ module variables_radiation_module
     T_in_K = 0.0_dp
     rcil = 0.0_dp
     o3l = 0.0_dp
-    rsnowm_2d = 0.0_dp
+    rsm_2d = 0.0_dp
     rcm_in_cloud_2d = 0.0_dp
     cloud_frac_2d = 0.0_dp
     ice_supersat_frac_2d = 0.0_dp
@@ -195,7 +195,7 @@ module variables_radiation_module
     deallocate( rcil )
     deallocate( o3l )
 
-    deallocate( rsnowm_2d )
+    deallocate( rsm_2d )
     deallocate( rcm_in_cloud_2d )
     deallocate( cloud_frac_2d )
     deallocate( ice_supersat_frac_2d )

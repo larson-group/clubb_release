@@ -115,11 +115,11 @@ module stats_zm
         iVrr, &
         iVNc, & 
         iVrc, &
-        iVNice, & 
-        iVrice, &
-        iVNsnow, &
-        iVrsnow, &
-        iVrgraupel, &
+        iVNi, & 
+        iVri, &
+        iVNs, &
+        iVrs, &
+        iVrg, &
         iVrrprrp, &
         iVNrpNrp, &
         iVrrprrp_expcalc, &
@@ -679,41 +679,41 @@ module stats_zm
         k = k + 1
 
       case ('VNsnow')
-        iVNsnow = k
+        iVNs = k
 
-        call stat_assign( var_index=iVNsnow, var_name="VNsnow", &
+        call stat_assign( var_index=iVNs, var_name="VNsnow", &
              var_description="Snow concentration fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
       case ('Vrsnow')
-        iVrsnow = k
+        iVrs = k
 
-        call stat_assign( var_index=iVrsnow, var_name="Vrsnow", &
+        call stat_assign( var_index=iVrs, var_name="Vrsnow", &
              var_description="Snow mixing ratio fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
       case ('Vrgraupel')
-        iVrgraupel = k
+        iVrg = k
 
-        call stat_assign( var_index=iVrgraupel, var_name="Vrgraupel", &
+        call stat_assign( var_index=iVrg, var_name="Vrgraupel", &
              var_description="Graupel sedimentation velocity [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
       case ('VNice')
-        iVNice = k
+        iVNi = k
 
-        call stat_assign( var_index=iVNice, var_name="VNice", &
+        call stat_assign( var_index=iVNi, var_name="VNice", &
              var_description="Cloud ice concentration fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
       case ('Vrice')
-        iVrice = k
+        iVri = k
 
-        call stat_assign( var_index=iVrice, var_name="Vrice", &
+        call stat_assign( var_index=iVri, var_name="Vrice", &
              var_description="Cloud ice mixing ratio fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1

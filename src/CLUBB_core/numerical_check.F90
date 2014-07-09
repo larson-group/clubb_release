@@ -502,7 +502,7 @@ module numerical_check
   end subroutine surface_varnce_check
 
 !-----------------------------------------------------------------------
-  subroutine rad_check( thlm, rcm, rtm, ricem,  & 
+  subroutine rad_check( thlm, rcm, rtm, rim,  & 
                         cloud_frac, p_in_Pa, exner, rho_zm )
 ! Description:
 !   Checks radiation input variables. If they are < 0 it reports
@@ -526,7 +526,7 @@ module numerical_check
       thlm,           & ! Liquid Water Potential Temperature   [K/s]
       rcm,            & ! Liquid Water Mixing Ratio            [kg/kg]
       rtm,            & ! Total Water Mixing Ratio             [kg/kg]
-      ricem,          & ! Ice Water Mixing Ratio               [kg/kg]
+      rim,          & ! Ice Water Mixing Ratio               [kg/kg]
       cloud_frac,     & ! Cloud Fraction                       [-]
       p_in_Pa,        & ! Pressure                             [Pa]
       exner,          & ! Exner Function                       [-]
@@ -543,7 +543,7 @@ module numerical_check
     call check_negative( rcm, gr%nz ,"rcm", proc_name )
     call check_negative( rtm, gr%nz ,"rtm", proc_name )
     call check_negative( rvm, gr%nz ,"rvm", proc_name )
-    call check_negative( ricem, gr%nz ,"ricem", proc_name )
+    call check_negative( rim, gr%nz ,"ricem", proc_name )
     call check_negative( cloud_frac, gr%nz ,"cloud_frac", proc_name )
     call check_negative( p_in_Pa, gr%nz ,"p_in_Pa", proc_name )
     call check_negative( exner, gr%nz ,"exner", proc_name )

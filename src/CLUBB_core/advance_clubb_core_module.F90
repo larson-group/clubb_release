@@ -349,7 +349,7 @@ module advance_clubb_core_module
       compute_sigma_sqd_w ! Procedure(s)
 
     use array_index, only: &
-      iirrainm            ! Variable
+      iirrm            ! Variable
 
     implicit none
 
@@ -705,7 +705,7 @@ module advance_clubb_core_module
       rcm_refined            ! rcm gridbox mean on refined grid
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrainm                 ! Rain water mixing ratio
+      rrm                 ! Rain water mixing ratio
 
     !----- Begin Code -----
 
@@ -1226,14 +1226,14 @@ module advance_clubb_core_module
       
       !Also added rain for completeness. storer-3/4/14
 
-      if ( iirrainm > 0 ) then
-        rrainm = hydromet(:,iirrainm)
+      if ( iirrm > 0 ) then
+        rrm = hydromet(:,iirrm)
       else
-        rrainm = zero
+        rrm = zero
       end if
 
-      thlm_frz = thlm - (Lv / (Cp*exner) ) * rrainm - (Ls / (Cp*exner) ) * rfrzm 
-      rtm_frz = rtm + rrainm + rfrzm
+      thlm_frz = thlm - (Lv / (Cp*exner) ) * rrm - (Ls / (Cp*exner) ) * rfrzm 
+      rtm_frz = rtm + rrm + rfrzm
 
 
       do k = 1, gr%nz, 1

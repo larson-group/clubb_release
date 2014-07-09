@@ -215,7 +215,7 @@ module stats_variables
      ised_rcm = 0,         & ! Brian
      irsat = 0,            & ! Brian
      irsati = 0,           & 
-     irrainm = 0,          & ! Brian
+     irrm = 0,          & ! Brian
      im_vol_rad_rain = 0,  & ! Brian
      im_vol_rad_cloud = 0, & ! COAMPS only. dschanen 6 Dec 2006
      iprecip_rate_zt = 0,    & ! Brian
@@ -226,7 +226,7 @@ module stats_variables
      iradht_SW = 0,        & !   "           "   Short-wave component
      irel_humidity = 0
 !$omp  threadprivate( iNcm, iNccnm, iNc_activated, isnowslope, &
-!$omp    ised_rcm, irsat, irsati, irrainm, &
+!$omp    ised_rcm, irsat, irsati, irrm, &
 !$omp    im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp    iprecip_rate_zt, iAKm, ilh_AKm, &
 !$omp    iradht, iradht_LW, iradht_SW, &
@@ -267,9 +267,9 @@ module stats_variables
   integer, public :: & 
      iNrm = 0,       & ! Rain droplet number concentration
      iNim = 0,       & ! Ice number concentration
-     iNsnowm = 0,    & ! Snow number concentration
-     iNgraupelm = 0    ! Graupel number concentration
-!$omp   threadprivate(iNrm, iNim, iNsnowm, iNgraupelm)
+     iNsm = 0,    & ! Snow number concentration
+     iNgm = 0    ! Graupel number concentration
+!$omp   threadprivate(iNrm, iNim, iNsm, iNgm)
 
   integer, public :: & 
      iT_in_K      ! Absolute temperature
@@ -286,15 +286,15 @@ module stats_variables
 !$omp   threadprivate(ieff_rad_rain, ieff_rad_graupel)
 
   integer, public :: & 
-    irsnowm = 0, &
-    irgraupelm = 0, & 
-    iricem = 0, & 
+    irsm = 0, &
+    irgm = 0, & 
+    irim = 0, & 
     idiam = 0,           & ! Diameter of ice crystal           [m]
     imass_ice_cryst = 0, & ! Mass of a single ice crystal      [kg]
     ircm_icedfs = 0,     & ! Change in liquid water due to ice [kg/kg/s]
     iu_T_cm = 0         ! Fallspeed of ice crystal in cm/s  [cm s^{-1}]
 
-!$omp threadprivate(irsnowm, irgraupelm, iricem, idiam, &
+!$omp threadprivate(irsm, irgm, irim, idiam, &
 !$omp   imass_ice_cryst, ircm_icedfs, iu_T_cm)
 
 
@@ -378,27 +378,27 @@ module stats_variables
 
   ! Rain mixing ratio budgets
   integer, public :: & 
-     irrainm_bt = 0, &
-     irrainm_ma = 0, &
-     irrainm_ta = 0, &
-     irrainm_sd = 0, &
-     irrainm_ts = 0, &
-     irrainm_sd_morr = 0, &
-     irrainm_cond = 0, &
-     irrainm_auto = 0, &
-     irrainm_accr = 0, &
-     irrainm_cond_adj = 0, &
-     irrainm_src_adj = 0, &
-     irrainm_mc = 0, &
-     irrainm_hf = 0, &
-     irrainm_wvhf = 0, &
-     irrainm_cl = 0
+     irrm_bt = 0, &
+     irrm_ma = 0, &
+     irrm_ta = 0, &
+     irrm_sd = 0, &
+     irrm_ts = 0, &
+     irrm_sd_morr = 0, &
+     irrm_cond = 0, &
+     irrm_auto = 0, &
+     irrm_accr = 0, &
+     irrm_cond_adj = 0, &
+     irrm_src_adj = 0, &
+     irrm_mc = 0, &
+     irrm_hf = 0, &
+     irrm_wvhf = 0, &
+     irrm_cl = 0
 
-!$omp   threadprivate(irrainm_bt, irrainm_ma, irrainm_ta, irrainm_sd)
-!$omp   threadprivate(irrainm_ts, irrainm_sd_morr)
-!$omp   threadprivate(irrainm_cond, irrainm_auto, irrainm_accr)
-!$omp   threadprivate(irrainm_cond_adj, irrainm_src_adj )
-!$omp   threadprivate(irrainm_mc, irrainm_hf, irrainm_wvhf, irrainm_cl)
+!$omp   threadprivate(irrm_bt, irrm_ma, irrm_ta, irrm_sd)
+!$omp   threadprivate(irrm_ts, irrm_sd_morr)
+!$omp   threadprivate(irrm_cond, irrm_auto, irrm_accr)
+!$omp   threadprivate(irrm_cond_adj, irrm_src_adj )
+!$omp   threadprivate(irrm_mc, irrm_hf, irrm_wvhf, irrm_cl)
 
   integer, public :: &
      iNrm_bt = 0, &
@@ -420,70 +420,70 @@ module stats_variables
 
   ! Snow/Ice/Graupel mixing ratio budgets
   integer, public :: & 
-     irsnowm_bt = 0, & 
-     irsnowm_ma = 0, & 
-     irsnowm_sd = 0, & 
-     irsnowm_sd_morr = 0, &
-     irsnowm_ta = 0, & 
-     irsnowm_mc = 0, & 
-     irsnowm_hf = 0, &
-     irsnowm_wvhf = 0, &
-     irsnowm_cl = 0, &
-     irsnowm_sd_morr_int = 0
+     irsm_bt = 0, & 
+     irsm_ma = 0, & 
+     irsm_sd = 0, & 
+     irsm_sd_morr = 0, &
+     irsm_ta = 0, & 
+     irsm_mc = 0, & 
+     irsm_hf = 0, &
+     irsm_wvhf = 0, &
+     irsm_cl = 0, &
+     irsm_sd_morr_int = 0
 
-!$omp   threadprivate(irsnowm_bt, irsnowm_ma, irsnowm_sd, irsnowm_sd_morr, irsnowm_ta)
-!$omp   threadprivate(irsnowm_mc, irsnowm_hf, irsnowm_wvhf, irsnowm_cl)
-
-  integer, public :: & 
-     irgraupelm_bt = 0, & 
-     irgraupelm_ma = 0, & 
-     irgraupelm_sd = 0, & 
-     irgraupelm_sd_morr = 0, &
-     irgraupelm_ta = 0, & 
-     irgraupelm_mc = 0, & 
-     irgraupelm_hf = 0, &
-     irgraupelm_wvhf = 0, &
-     irgraupelm_cl = 0
-
-!$omp   threadprivate(irgraupelm_bt, irgraupelm_ma, irgraupelm_sd, irgraupelm_sd_morr)
-!$omp   threadprivate(irgraupelm_ta, irgraupelm_mc)
-!$omp   threadprivate(irgraupelm_hf, irgraupelm_wvhf, irgraupelm_cl)
+!$omp   threadprivate(irsm_bt, irsm_ma, irsm_sd, irsm_sd_morr, irsm_ta)
+!$omp   threadprivate(irsm_mc, irsm_hf, irsm_wvhf, irsm_cl)
 
   integer, public :: & 
-     iricem_bt = 0, & 
-     iricem_ma = 0, & 
-     iricem_sd = 0, & 
-     iricem_sd_mg_morr = 0, &
-     iricem_ta = 0, & 
-     iricem_mc = 0, & 
-     iricem_hf = 0, &
-     iricem_wvhf = 0, &
-     iricem_cl = 0
+     irgm_bt = 0, & 
+     irgm_ma = 0, & 
+     irgm_sd = 0, & 
+     irgm_sd_morr = 0, &
+     irgm_ta = 0, & 
+     irgm_mc = 0, & 
+     irgm_hf = 0, &
+     irgm_wvhf = 0, &
+     irgm_cl = 0
 
-!$omp   threadprivate(iricem_bt, iricem_ma, iricem_sd, iricem_sd_mg_morr, iricem_ta)
-!$omp   threadprivate(iricem_mc, iricem_hf, iricem_wvhf, iricem_cl)
+!$omp   threadprivate(irgm_bt, irgm_ma, irgm_sd, irgm_sd_morr)
+!$omp   threadprivate(irgm_ta, irgm_mc)
+!$omp   threadprivate(irgm_hf, irgm_wvhf, irgm_cl)
+
+  integer, public :: & 
+     irim_bt = 0, & 
+     irim_ma = 0, & 
+     irim_sd = 0, & 
+     irim_sd_mg_morr = 0, &
+     irim_ta = 0, & 
+     irim_mc = 0, & 
+     irim_hf = 0, &
+     irim_wvhf = 0, &
+     irim_cl = 0
+
+!$omp   threadprivate(irim_bt, irim_ma, irim_sd, irim_sd_mg_morr, irim_ta)
+!$omp   threadprivate(irim_mc, irim_hf, irim_wvhf, irim_cl)
 
   integer, public :: &
-    iNsnowm_bt = 0,  &
-    iNsnowm_ma = 0,  &
-    iNsnowm_sd = 0,  &
-    iNsnowm_ta = 0,  &
-    iNsnowm_mc = 0,  &
-    iNsnowm_cl = 0
+    iNsm_bt = 0,  &
+    iNsm_ma = 0,  &
+    iNsm_sd = 0,  &
+    iNsm_ta = 0,  &
+    iNsm_mc = 0,  &
+    iNsm_cl = 0
 
-!$omp threadprivate(iNsnowm_bt, iNsnowm_ma, iNsnowm_sd, iNsnowm_ta, &
-!$omp   iNsnowm_mc, iNsnowm_cl)
+!$omp threadprivate(iNsm_bt, iNsm_ma, iNsm_sd, iNsm_ta, &
+!$omp   iNsm_mc, iNsm_cl)
 
   integer, public :: &
-    iNgraupelm_bt = 0, &
-    iNgraupelm_ma = 0, &
-    iNgraupelm_sd = 0, &
-    iNgraupelm_ta = 0, &
-    iNgraupelm_mc = 0, &
-    iNgraupelm_cl = 0
+    iNgm_bt = 0, &
+    iNgm_ma = 0, &
+    iNgm_sd = 0, &
+    iNgm_ta = 0, &
+    iNgm_mc = 0, &
+    iNgm_cl = 0
 
-!$omp threadprivate(iNgraupelm_bt, iNgraupelm_ma, iNgraupelm_sd, &
-!$omp   iNgraupelm_ta, iNgraupelm_mc, iNgraupelm_cl)
+!$omp threadprivate(iNgm_bt, iNgm_ma, iNgm_sd, &
+!$omp   iNgm_ta, iNgm_mc, iNgm_cl)
 
   integer, public :: &
     iNim_bt = 0, &
@@ -654,50 +654,50 @@ module stats_variables
     ilh_rvm_mc = 0,       & ! Latin hypercube estimate of rvm_mc
     ilh_rcm_mc = 0,       & ! Latin hypercube estimate of rcm_mc
     ilh_Ncm_mc = 0,       & ! Latin hypercube estimate of Ncm_mc
-    ilh_rrainm_mc = 0,    & ! Latin hypercube estimate of rrainm_mc
+    ilh_rrm_mc = 0,    & ! Latin hypercube estimate of rrm_mc
     ilh_Nrm_mc = 0,       & ! Latin hypercube estimate of Nrm_mc
-    ilh_rsnowm_mc = 0,    & ! Latin hypercube estimate of rsnowm_mc
-    ilh_Nsnowm_mc = 0,    & ! Latin hypercube estimate of Nsnowm_mc
-    ilh_rgraupelm_mc = 0, & ! Latin hypercube estimate of rgraupelm_mc
-    ilh_Ngraupelm_mc = 0, & ! Latin hypercube estimate of Ngraupelm_mc
-    ilh_ricem_mc = 0,     & ! Latin hypercube estimate of ricem_mc
+    ilh_rsm_mc = 0,    & ! Latin hypercube estimate of rsnowm_mc
+    ilh_Nsm_mc = 0,    & ! Latin hypercube estimate of Nsnowm_mc
+    ilh_rgm_mc = 0, & ! Latin hypercube estimate of rgraupelm_mc
+    ilh_Ngm_mc = 0, & ! Latin hypercube estimate of Ngraupelm_mc
+    ilh_rim_mc = 0,     & ! Latin hypercube estimate of ricem_mc
     ilh_Nim_mc = 0          ! Latin hypercube estimate of Nim_mc
 !$omp   threadprivate( ilh_thlm_mc, ilh_rvm_mc, ilh_rcm_mc, ilh_Ncm_mc, &
-!$omp     ilh_rrainm_mc,  ilh_Nrm_mc, ilh_rsnowm_mc, ilh_Nsnowm_mc, &
-!$omp     ilh_rgraupelm_mc, ilh_Ngraupelm_mc, ilh_ricem_mc, ilh_Nim_mc )
+!$omp     ilh_rrm_mc,  ilh_Nrm_mc, ilh_rsm_mc, ilh_Nsm_mc, &
+!$omp     ilh_rgm_mc, ilh_Ngm_mc, ilh_rim_mc, ilh_Nim_mc )
 
   integer, public :: &
-    ilh_rrainm_auto = 0, & ! Latin hypercube estimate of autoconversion
-    ilh_rrainm_accr = 0, & ! Latin hypercube estimate of accretion
-    ilh_rrainm_evap = 0, & ! Latin hypercube estimate of evaporation
+    ilh_rrm_auto = 0, & ! Latin hypercube estimate of autoconversion
+    ilh_rrm_accr = 0, & ! Latin hypercube estimate of accretion
+    ilh_rrm_evap = 0, & ! Latin hypercube estimate of evaporation
     ilh_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
     ilh_Nrm_cond    = 0    ! Latin hypercube estimate of Nrm evaporation
 
-!$omp   threadprivate( ilh_rrainm_auto, ilh_rrainm_accr, ilh_rrainm_evap, &
+!$omp   threadprivate( ilh_rrm_auto, ilh_rrm_accr, ilh_rrm_evap, &
 !$omp                  ilh_Nrm_auto, ilh_Nrm_cond )
 
   integer, public :: &
-    ilh_rrainm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
-    ilh_rrainm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
+    ilh_rrm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
+    ilh_rrm_cond_adj = 0, & ! Latin hypercube estimate of evap adjustment (KK only!)
     ilh_Nrm_src_adj     = 0, & ! Latin hypercube estimate of Nrm source adjustmet (KK only!)
     ilh_Nrm_cond_adj    = 0    ! Latin hypercube estimate of Nrm evap adjustment (KK only!)
-!$omp   threadprivate( ilh_rrainm_src_adj, ilh_rrainm_cond_adj, ilh_Nrm_src_adj, &
+!$omp   threadprivate( ilh_rrm_src_adj, ilh_rrm_cond_adj, ilh_Nrm_src_adj, &
 !$omp                  ilh_Nrm_cond_adj     )
 
   integer, public :: &
-    ilh_Vrr = 0, & ! Latin hypercube estimate of rrainm sedimentation velocity
+    ilh_Vrr = 0, & ! Latin hypercube estimate of rrm sedimentation velocity
     ilh_VNr = 0    ! Latin hypercube estimate of Nrm sedimentation velocity
 !$omp   threadprivate(ilh_Vrr,  ilh_VNr)
 
   integer, public :: &
-    ilh_rrainm = 0, &
+    ilh_rrm = 0, &
     ilh_Nrm = 0, &
-    ilh_ricem = 0, &
+    ilh_rim = 0, &
     ilh_Nim = 0, &
-    ilh_rsnowm = 0, &
-    ilh_Nsnowm = 0, &
-    ilh_rgraupelm = 0, &
-    ilh_Ngraupelm = 0, &
+    ilh_rsm = 0, &
+    ilh_Nsm = 0, &
+    ilh_rgm = 0, &
+    ilh_Ngm = 0, &
     ilh_thlm = 0, &
     ilh_rcm = 0, &
     ilh_Ncm = 0, &
@@ -710,8 +710,8 @@ module stats_variables
     ilh_precip_frac = 0, &
     ilh_mixt_frac = 0
 
-!$omp threadprivate(ilh_rrainm, ilh_Nrm, ilh_ricem, ilh_Nim, ilh_rsnowm, ilh_Nsnowm, &
-!$omp   ilh_rgraupelm, ilh_Ngraupelm, &
+!$omp threadprivate(ilh_rrm, ilh_Nrm, ilh_rim, ilh_Nim, ilh_rsm, ilh_Nsm, &
+!$omp   ilh_rgm, ilh_Ngm, &
 !$omp   ilh_thlm, ilh_rcm, ilh_Ncm, ilh_Ncnm, ilh_rvm, ilh_wm, ilh_cloud_frac, &
 !$omp   ilh_chi, ilh_eta, ilh_precip_frac, ilh_mixt_frac )
 
@@ -723,10 +723,10 @@ module stats_variables
     ilh_rcp2_zt = 0, &
     ilh_rtp2_zt = 0, &
     ilh_thlp2_zt = 0, &
-    ilh_rrainp2_zt = 0, &
+    ilh_rrp2_zt = 0, &
     ilh_chip2 = 0 ! Eric Raut
 !$omp threadprivate( ilh_wp2_zt, ilh_Nrp2_zt, ilh_Ncnp2_zt, ilh_Ncp2_zt, &
-!$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrainp2_zt, ilh_chip2 )
+!$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrp2_zt, ilh_chip2 )
 
 
   ! Indices for Morrison budgets
@@ -933,13 +933,13 @@ module stats_variables
     iVrr = 0,    &
     iVNc = 0,    &
     iVrc = 0,    &
-    iVNsnow = 0, &
-    iVrsnow = 0, &
-    iVNice = 0,  &
-    iVrice = 0,  &
-    iVrgraupel = 0
+    iVNs = 0, &
+    iVrs = 0, &
+    iVNi = 0,  &
+    iVri = 0,  &
+    iVrg = 0
 
-!$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNsnow, iVrsnow, iVNice, iVrice, iVrgraupel)
+!$omp   threadprivate(iVNr, iVrr, iVNc, iVrc, iVNs, iVrs, iVNi, iVri, iVrg)
 
   ! Covariance of sedimentation velocity and hydrometeor, <V_xx'x_x'>.
   integer, public :: &
@@ -1135,7 +1135,7 @@ module stats_variables
     iT_in_K_rad = 0, &
     ircil_rad = 0, &
     io3l_rad = 0, &
-    irsnowm_rad = 0, &
+    irsm_rad = 0, &
     ircm_in_cloud_rad = 0, &
     icloud_frac_rad = 0, & 
     iice_supersat_frac_rad = 0, &
@@ -1146,7 +1146,7 @@ module stats_variables
     isp_humidity_rad = 0
 
 !$omp threadprivate( iT_in_K_rad, ircil_rad, io3l_rad, &
-!$omp   irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
+!$omp   irsm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
 !$omp   iradht_rad, iradht_LW_rad, iradht_SW_rad, &
 !$omp   ip_in_mb_rad, isp_humidity_rad )
 
@@ -1182,11 +1182,11 @@ module stats_variables
     iz_inversion = 0, & 
     iprecip_rate_sfc = 0,    &    ! Brian
     irain_flux_sfc = 0,   &    ! Brian
-    irrainm_sfc = 0, & ! Brian
+    irrm_sfc = 0, & ! Brian
     iwpthlp_sfc = 0
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
-!$omp   iprecip_rate_sfc, irain_flux_sfc, irrainm_sfc, &
+!$omp   iprecip_rate_sfc, irain_flux_sfc, irrm_sfc, &
 !$omp   iwpthlp_sfc )
 
   integer, public :: &

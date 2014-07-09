@@ -22,14 +22,14 @@ module clubb_api_module
     zm2zt_api => zm2zt    ! requires a use statement "interface" here.
 
   use array_index, only : &
-    iiNgraupelm, & ! Hydrometeor array index for graupel concentration, Ng
+    iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
     iiNim, & ! Hydrometeor array index for ice concentration, Ni
     iiNrm, & ! Hydrometeor array index for rain drop concentration, Nr
-    iiNsnowm, & ! Hydrometeor array index for snow concentration, Ns
-    iirgraupelm, & ! Hydrometeor array index for graupel mixing ratio, rg
-    iiricem, & ! Hydrometeor array index for ice mixing ratio, ri
-    iirrainm, & ! Hydrometeor array index for rain water mixing ratio, rr
-    iirsnowm, & ! Hydrometeor array index for snow mixing ratio, rs
+    iiNsm, & ! Hydrometeor array index for snow concentration, Ns
+    iirgm, & ! Hydrometeor array index for graupel mixing ratio, rg
+    iirim, & ! Hydrometeor array index for ice mixing ratio, ri
+    iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
+    iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
     l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
     l_mix_rat_hm, & ! if true, then the quantity is a hydrometeor mixing ratio
     ! Scalars
@@ -89,16 +89,16 @@ module clubb_api_module
     corr_array_below, &
     d_variables, &
     iiPDF_chi, &
-    iiPDF_rrain, &
+    iiPDF_rr, &
     iiPDF_w, &
     iiPDF_Nr, &
-    iiPDF_rice, &
+    iiPDF_ri, &
     iiPDF_Ni, &
     iiPDF_Ncn, &
-    iiPDF_rsnow, &
-    iiPDF_Nsnow, &
-    iiPDF_rgraupel, &
-    iiPDF_Ngraupel, &
+    iiPDF_rs, &
+    iiPDF_Ns, &
+    iiPDF_rg, &
+    iiPDF_Ng, &
     sigma2_on_mu2_ip_array_cloud, &
     sigma2_on_mu2_ip_array_below
 
@@ -365,7 +365,7 @@ module clubb_api_module
     T_in_k, &
     rcil, &
     o3l, &
-    rsnowm_2d, &
+    rsm_2d, &
     rcm_in_cloud_2d, &
     cloud_frac_2d, &
     ice_supersat_frac_2d, &
@@ -973,9 +973,9 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_indices_api( &
-    hydromet_dim, iirrainm, iiNrm, &
-    iiricem, iiNim, iirsnowm, iiNsnowm, &
-    iirgraupelm, iiNgraupelm )
+    hydromet_dim, iirrm, iiNrm, &
+    iirim, iiNim, iirsm, iiNsm, &
+    iirgm, iiNgm )
 
     use corr_matrix_module, only : setup_pdf_indices
 
@@ -986,19 +986,19 @@ contains
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrainm,    & ! Index of rain water mixing ratio
+      iirrm,    & ! Index of rain water mixing ratio
       iiNrm,       & ! Index of rain drop concentration
-      iiricem,     & ! Index of ice mixing ratio
+      iirim,     & ! Index of ice mixing ratio
       iiNim,       & ! Index of ice crystal concentration
-      iirsnowm,    & ! Index of snow mixing ratio
-      iiNsnowm,    & ! Index of snow flake concentration
-      iirgraupelm, & ! Index of graupel mixing ratio
-      iiNgraupelm    ! Index of graupel concentration
+      iirsm,    & ! Index of snow mixing ratio
+      iiNsm,    & ! Index of snow flake concentration
+      iirgm, & ! Index of graupel mixing ratio
+      iiNgm    ! Index of graupel concentration
 
     call setup_pdf_indices( &
-      hydromet_dim, iirrainm, iiNrm, &
-      iiricem, iiNim, iirsnowm, iiNsnowm, &
-      iirgraupelm, iiNgraupelm )
+      hydromet_dim, iirrm, iiNrm, &
+      iirim, iiNim, iirsm, iiNsm, &
+      iirgm, iiNgm )
   end subroutine setup_pdf_indices_api
 
   !================================================================================================

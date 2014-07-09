@@ -1214,26 +1214,26 @@ module fill_holes
         iwpNcp
 
     use stats_variables, only: &
-        irrainm_bt,       & ! Variable(s)
-        irrainm_mc,       &
-        irrainm_hf,       &
-        irrainm_wvhf,     &
-        irrainm_cl,       &
-        iricem_bt,        &
-        iricem_mc,        &
-        iricem_hf,        &
-        iricem_wvhf,      &
-        iricem_cl,        &
-        irgraupelm_bt,    &
-        irgraupelm_mc,    &
-        irgraupelm_hf,    &
-        irgraupelm_wvhf,  &
-        irgraupelm_cl,    &
-        irsnowm_bt,       &
-        irsnowm_mc,       &
-        irsnowm_hf,       &
-        irsnowm_wvhf,     &
-        irsnowm_cl
+        irrm_bt,       & ! Variable(s)
+        irrm_mc,       &
+        irrm_hf,       &
+        irrm_wvhf,     &
+        irrm_cl,       &
+        irim_bt,        &
+        irim_mc,        &
+        irim_hf,        &
+        irim_wvhf,      &
+        irim_cl,        &
+        irgm_bt,    &
+        irgm_mc,    &
+        irgm_hf,    &
+        irgm_wvhf,  &
+        irgm_cl,    &
+        irsm_bt,       &
+        irsm_mc,       &
+        irsm_hf,       &
+        irsm_wvhf,     &
+        irsm_cl
 
     use stats_variables, only: &
         iNrm_bt,       & ! Variable(s)
@@ -1242,12 +1242,12 @@ module fill_holes
         iNim_bt,       &
         iNim_cl,       &
         iNim_mc,       &
-        iNsnowm_bt,    &
-        iNsnowm_cl,    &
-        iNsnowm_mc,    &
-        iNgraupelm_bt, &
-        iNgraupelm_cl, &
-        iNgraupelm_mc, &
+        iNsm_bt,    &
+        iNsm_cl,    &
+        iNsm_mc,    &
+        iNgm_bt, &
+        iNgm_cl, &
+        iNgm_mc, &
         iNcm_bt,       &
         iNcm_cl,       &
         iNcm_mc
@@ -1281,33 +1281,33 @@ module fill_holes
 
       select case ( trim( hydromet_list(ihm) ) )
       case ( "rrainm" )
-        ixrm_bt   = irrainm_bt
-        ixrm_hf   = irrainm_hf
-        ixrm_wvhf = irrainm_wvhf
-        ixrm_cl   = irrainm_cl
-        ixrm_mc   = irrainm_mc
+        ixrm_bt   = irrm_bt
+        ixrm_hf   = irrm_hf
+        ixrm_wvhf = irrm_wvhf
+        ixrm_cl   = irrm_cl
+        ixrm_mc   = irrm_mc
 
         iwpxrp    = iwprrp
 
         max_velocity = -9.1_core_rknd ! m/s
 
       case ( "ricem" )
-        ixrm_bt   = iricem_bt
-        ixrm_hf   = iricem_hf
-        ixrm_wvhf = iricem_wvhf
-        ixrm_cl   = iricem_cl
-        ixrm_mc   = iricem_mc
+        ixrm_bt   = irim_bt
+        ixrm_hf   = irim_hf
+        ixrm_wvhf = irim_wvhf
+        ixrm_cl   = irim_cl
+        ixrm_mc   = irim_mc
 
         iwpxrp    = iwprip
 
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "rsnowm" )
-        ixrm_bt   = irsnowm_bt
-        ixrm_hf   = irsnowm_hf
-        ixrm_wvhf = irsnowm_wvhf
-        ixrm_cl   = irsnowm_cl
-        ixrm_mc   = irsnowm_mc
+        ixrm_bt   = irsm_bt
+        ixrm_hf   = irsm_hf
+        ixrm_wvhf = irsm_wvhf
+        ixrm_cl   = irsm_cl
+        ixrm_mc   = irsm_mc
 
         iwpxrp    = iwprsp
 
@@ -1319,11 +1319,11 @@ module fill_holes
         max_velocity = -2.0_core_rknd ! m/s
 
       case ( "rgraupelm" )
-        ixrm_bt   = irgraupelm_bt
-        ixrm_hf   = irgraupelm_hf
-        ixrm_wvhf = irgraupelm_wvhf
-        ixrm_cl   = irgraupelm_cl
-        ixrm_mc   = irgraupelm_mc
+        ixrm_bt   = irgm_bt
+        ixrm_hf   = irgm_hf
+        ixrm_wvhf = irgm_wvhf
+        ixrm_cl   = irgm_cl
+        ixrm_mc   = irgm_mc
 
         iwpxrp    = iwprgp
 
@@ -1352,11 +1352,11 @@ module fill_holes
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "Nsnowm" )
-        ixrm_bt   = iNsnowm_bt
+        ixrm_bt   = iNsm_bt
         ixrm_hf   = 0
         ixrm_wvhf = 0
-        ixrm_cl   = iNsnowm_cl
-        ixrm_mc   = iNsnowm_mc
+        ixrm_cl   = iNsm_cl
+        ixrm_mc   = iNsm_mc
 
         iwpxrp    = iwpNsp
 
@@ -1368,11 +1368,11 @@ module fill_holes
         max_velocity = -2.0_core_rknd ! m/s
 
       case ( "Ngraupelm" )
-        ixrm_bt   = iNgraupelm_bt
+        ixrm_bt   = iNgm_bt
         ixrm_hf   = 0
         ixrm_wvhf = 0
-        ixrm_cl   = iNgraupelm_cl
-        ixrm_mc   = iNgraupelm_mc
+        ixrm_cl   = iNgm_cl
+        ixrm_mc   = iNgm_mc
 
         iwpxrp    = iwpNgp
 

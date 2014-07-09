@@ -42,16 +42,16 @@ module morrison_microphys_module
         zero
 
     use stats_variables, only: & 
-        irsnowm_sd_morr, & ! Variables
-        iricem_sd_mg_morr, & 
-        irrainm_sd_morr, & 
-        irsnowm_sd_morr, &
-        irgraupelm_sd_morr, &
+        irsm_sd_morr, & ! Variables
+        irim_sd_mg_morr, & 
+        irrm_sd_morr, & 
+        irsm_sd_morr, &
+        irgm_sd_morr, &
         ircm_sd_mg_morr, &
-        irrainm_auto, &
-        irrainm_accr, &
-        irrainm_cond, &
-        irsnowm_sd_morr_int, &
+        irrm_auto, &
+        irrm_accr, &
+        irrm_cond, &
+        irsm_sd_morr_int, &
         ihl_on_Cp_residual, &
         iqto_residual
 
@@ -180,8 +180,8 @@ module morrison_microphys_module
         l_graupel
 
     use array_index, only:  & 
-        iirrainm, iirsnowm, iiricem, iirgraupelm, &
-        iiNrm, iiNsnowm, iiNim, iiNgraupelm
+        iirrm, iirsm, iirim, iirgm, &
+        iiNrm, iiNsm, iiNim, iiNgm
 
     use constants_clubb, only: &
         sec_per_day
@@ -267,9 +267,9 @@ module morrison_microphys_module
     ! Local Variables
 
     real( kind = core_rknd ), dimension(nz) :: &
-      rrainm_auto,     &  ! Autoconversion rate                 [kg/kg/s]
-      rrainm_accr,     &  ! Accretion rate                      [kg/kg/s]
-      rrainm_evap         ! Rain evaporation rate               [kg/kg/s]
+      rrm_auto,     &  ! Autoconversion rate                 [kg/kg/s]
+      rrm_accr,     &  ! Accretion rate                      [kg/kg/s]
+      rrm_evap         ! Rain evaporation rate               [kg/kg/s]
 
     real, dimension(nz) :: & 
       effc, effi, effg, effs, effr ! Effective droplet radii [μ]
@@ -282,10 +282,10 @@ module morrison_microphys_module
       Ncm_mc_r4,        & ! Temporary array for cloud number conc.      [#/kg/s]
       rvm_r4,           & ! Temporary array for vapor water mixing ratio [kg/kg]
       rcm_sten,         & ! Mean rc sedimentation tendency             [kg/kg/s]
-      rrainm_sten,      & ! Mean rr sedimentation tendency             [kg/kg/s]
-      ricem_sten,       & ! Mean ri sedimentation tendency             [kg/kg/s]
-      rsnowm_sten,      & ! Mean rs sedimentation tendency             [kg/kg/s]
-      rgraupelm_sten,   & ! Mean rg sedimentation tendency             [kg/kg/s]
+      rrm_sten,      & ! Mean rr sedimentation tendency             [kg/kg/s]
+      rim_sten,       & ! Mean ri sedimentation tendency             [kg/kg/s]
+      rsm_sten,      & ! Mean rs sedimentation tendency             [kg/kg/s]
+      rgm_sten,   & ! Mean rg sedimentation tendency             [kg/kg/s]
       morr_rain_vel_r4, & ! Rain fall velocity from Morrison microphysics  [m/s]
       cloud_frac_in       ! Cloud frac used as input for the Morrison scheme [-]
 
@@ -294,67 +294,67 @@ module morrison_microphys_module
     ! quantity is negative, it subtracts from the prognostic variable.
     real, dimension(nz) :: &
       PSMLT,  & ! Freezing of rain to form snow.
-                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
       EVPMS,  & ! Evaporation of melted snow.
-                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
       PRACS,  & ! Collection of rain by snow.
-                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
       EVPMG,  & ! Evaporation of melted graupel.
-                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
       PRACG,  & ! Negative of collection of rain by graupel.
-                !    Adds to rrainm, subtracts from rgraupelm [kg/kg/s]
+                !    Adds to rrm, subtracts from rgm [kg/kg/s]
       PGMLT,  & ! Negative of melting of graupel.
-                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
       MNUCCC, & ! Contact freezing of cloud droplets.
-                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
       PSACWS, & ! Collection of cloud water by snow.
-                !    Adds to rsnowm, subtracts from rcm [kg/kg/s]
+                !    Adds to rsm, subtracts from rcm [kg/kg/s]
       PSACWI, & ! Collection of cloud water by cloud ice.
-                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
       QMULTS, & ! Splintering from cloud droplets accreted onto snow.
-                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
       QMULTG, & ! Splintering from droplets accreted onto graupel.
-                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
       PSACWG, & ! Collection of cloud water by graupel.
-                !    Adds to rgraupelm, subtracts from rcm [kg/kg/s]
+                !    Adds to rgm, subtracts from rcm [kg/kg/s]
       PGSACW, & ! Reclassification of rimed snow as graupel.
-                !    Adds to rgraupelm, subtracts from rcm [kg/kg/s]
+                !    Adds to rgm, subtracts from rcm [kg/kg/s]
       PRD,    & ! Depositional growth of cloud ice.
-                !    Adds to ricem, subtracts from rcm [kg/kg/s]
+                !    Adds to rim, subtracts from rcm [kg/kg/s]
       PRCI,   & ! Autoconversion of cloud ice to snow.
-                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
       PRAI,   & ! Collection of cloud ice by snow.
-                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
       QMULTR, & ! Splintering from rain droplets accreted onto snow.
-                !    Adds to ricem, subtracts from rrainm [kg/kg/s]
+                !    Adds to rim, subtracts from rrm [kg/kg/s]
       QMULTRG,& ! Splintering from rain droplets accreted onto graupel.
-                !    Adds to ricem, subtracts from rrainm [kg/kg/s]
+                !    Adds to rim, subtracts from rrm [kg/kg/s]
       MNUCCD, & ! Freezing of aerosol.
-                !    Adds to ricem, subtracts from rvm [kg/kg/s]
+                !    Adds to rim, subtracts from rvm [kg/kg/s]
       PRACI,  & ! Collection of cloud ice by rain.
-                !    Adds to rgraupelm, subtracts from ricem [kg/kg/s]
+                !    Adds to rgm, subtracts from rim [kg/kg/s]
       PRACIS, & ! Collection of cloud ice by rain.
-                !    Adds to rsnowm, subtracts from ricem [kg/kg/s]
+                !    Adds to rsm, subtracts from rim [kg/kg/s]
       EPRD,   & ! Negative of sublimation of cloud ice.
-                !    Adds to ricem, subtracts from rvm [kg/kg/s]
+                !    Adds to rim, subtracts from rvm [kg/kg/s]
       MNUCCR, & ! Contact freezing of rain droplets.
-                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
       PIACR,  & ! Collection of cloud ice by rain.
-                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
       PIACRS, & ! Collection of cloud ice by rain.
-                !    Adds to rsnowm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rsm, subtracts from rrm [kg/kg/s]
       PGRACS, & ! Collection of rain by snow.
-                !    Adds to rgraupelm, subtracts from rrainm [kg/kg/s]
+                !    Adds to rgm, subtracts from rrm [kg/kg/s]
       PRDS,   & ! Depositional growth of snow.
-                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
       EPRDS,  & ! Negative of sublimation of snow.
-                !    Adds to rsnowm, subtracts from rvm [kg/kg/s]
+                !    Adds to rsm, subtracts from rvm [kg/kg/s]
       PSACR,  & ! Collection of snow by rain.
-                !    Adds to rgraupelm, subtracts from rsnowm [kg/kg/s]
+                !    Adds to rgm, subtracts from rsm [kg/kg/s]
       PRDG,   & ! Depositional growth of graupel.
-                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
       EPRDG     ! Negative of sublimation of graupel.
-                !    Adds to rgraupelm, subtracts from rvm [kg/kg/s]
+                !    Adds to rgm, subtracts from rvm [kg/kg/s]
 
     real, dimension(nz) :: &
       NGSTEN, & ! Graupel sedimentation tendency [#/kg/s]
@@ -369,26 +369,26 @@ module morrison_microphys_module
       NSMLTR, & ! Melting of snow to form rain. Subtracts from Nrm [#/kg/s]
       NGMLTR, & ! Melting of graupel to form rain. Subtracts from Nrm [#/kg/s]
       NPRACS, & ! Collection of rainwater by snow. Subtracts from Nrm [#/kg/s]
-      NNUCCR, & ! Contact freezing of rain. Adds to Ngraupelm, subtracts from Nrm [#/kg/s]
+      NNUCCR, & ! Contact freezing of rain. Adds to Ngm, subtracts from Nrm [#/kg/s]
       NIACR,  & ! Collection of cloud ice by rain.
-                !    Adds to Ngraupelm, subtracts from Nrm and Nim [#/kg/s] 
+                !    Adds to Ngm, subtracts from Nrm and Nim [#/kg/s] 
       NIACRS, & ! Collection of cloud ice by rain.
-                !    Adds to Nsnowm, subtracts from Nrm and Nim [#/kg/s]
+                !    Adds to Nsm, subtracts from Nrm and Nim [#/kg/s]
       NGRACS, & ! Collection of rain by snow.
-                !    Adds to Ngraupelm, subtracts from Nrm and Nsnowm [#/kg/s]
+                !    Adds to Ngm, subtracts from Nrm and Nsm [#/kg/s]
       NSMLTS, & ! Melting of snow
-                !    Adds to Nsnowm [#/kg/s]
+                !    Adds to Nsm [#/kg/s]
       NSAGG, &  ! Self collection of snow
-                !    Adds to Nsnowm [#/kg/s]
+                !    Adds to Nsm [#/kg/s]
       NPRCI, &  ! Autoconversion of cloud ice to snow
-                !    Adds to Nsnowm, subtracts from Nim [#/kg/s]
+                !    Adds to Nsm, subtracts from Nim [#/kg/s]
       NSCNG, &  ! Conversion of snow to graupel
-                !    Adds to Ngraupelm, subtracts from Nsnowm [#/kg/s]
-      NSUBS, &  ! Loss of Nsnowm due to sublimation
-                !    Adds to Nsnowm [#/kg/s]
-      PRA,   &  ! Accretion. Adds to rrainm, subtracts from rcm [kg/kg/s]
-      PRC,   &  ! Autoconversion. Adds to rrainm, subtracts from rcm [kg/kg/s]
-      PRE       ! Rain evaporation. Subtracts from rrainm [kg/kg/s]              
+                !    Adds to Ngm, subtracts from Nsm [#/kg/s]
+      NSUBS, &  ! Loss of Nsm due to sublimation
+                !    Adds to Nsm [#/kg/s]
+      PRA,   &  ! Accretion. Adds to rrm, subtracts from rcm [kg/kg/s]
+      PRC,   &  ! Autoconversion. Adds to rrm, subtracts from rcm [kg/kg/s]
+      PRE       ! Rain evaporation. Subtracts from rrm [kg/kg/s]              
           
     real, dimension(nz) :: &
       PCC, &    ! Saturation adjustment 
@@ -407,8 +407,8 @@ module morrison_microphys_module
       NMULTRG,& ! Ice mult. due to accretion of rain by graupel. Adds to Nim [#/kg/s]
       NNUCCD, & ! Primary ice nucleation, freezing of aerosol. Adds to Nim [#/kg/s]
       NSUBI, &  ! Loss of ice due to sublimation. Subtracts from Nim [#/kg/s]
-      NGMLTG, & ! Loss of graupel due to melting. Subtracts from Ngraupelm [#/kg/s]
-      NSUBG, &  ! Loss of graupel due to sublimation. Subtracts from Ngraupelm [#/kg/s]
+      NGMLTG, & ! Loss of graupel due to melting. Subtracts from Ngm [#/kg/s]
+      NSUBG, &  ! Loss of graupel due to sublimation. Subtracts from Ngm [#/kg/s]
       NACT,  &  ! Cloud droplet formation by aerosol activation. Adds to Ncm [#/kg/s]
       SIZEFIX_NR, &  ! Adjustment to rain drop number concentration for large/small drops 
       SIZEFIX_NC, &  ! Adjustment to cloud drop number concentration for large/small drops
@@ -433,10 +433,10 @@ module morrison_microphys_module
       NG_INST    ! Change in graupel number concentration due to instantaneous processes
 
     real( kind = core_rknd ), dimension(nz) :: & ! Temporary variables 
-      rrainm,    & ! Mean rain water mixing ratio            [kg/kg]
-      ricem,     & ! Mean ice mixing ratio                   [kg/kg]
-      rsnowm,    & ! Mean snow mixing ratio                  [kg/kg]
-      rgraupelm    ! Mean graupel mixing ratio               [kg/kg]
+      rrm,    & ! Mean rain water mixing ratio            [kg/kg]
+      rim,     & ! Mean ice mixing ratio                   [kg/kg]
+      rsm,    & ! Mean snow mixing ratio                  [kg/kg]
+      rgm    ! Mean graupel mixing ratio               [kg/kg]
 
     real :: Morr_snow_rate, Morr_precip_rate
 
@@ -445,22 +445,22 @@ module morrison_microphys_module
       hydromet_mc_r4
 
     real, dimension(nz) :: & ! Temporary variables
-      rrainm_r4,       & ! Mean rain water mixing ratio            [kg/kg]
+      rrm_r4,       & ! Mean rain water mixing ratio            [kg/kg]
       Nrm_r4,          & ! Mean rain drop concentration            [num/kg]
-      ricem_r4,        & ! Mean ice mixing ratio                   [kg/kg]
+      rim_r4,        & ! Mean ice mixing ratio                   [kg/kg]
       Nim_r4,          & ! Mean ice crystal concentration          [num/kg]
-      rsnowm_r4,       & ! Mean snow mixing ratio                  [kg/kg]
-      Nsnowm_r4,       & ! Mean snow flake concentration           [num/kg]
-      rgraupelm_r4,    & ! Mean graupel mixing ratio               [kg/kg]
-      Ngraupelm_r4,    & ! Mean graupel concentration              [num/kg]
-      rrainm_mc_r4,    & ! Mean rain water mixing ratio tendency   [kg/kg/s]
+      rsm_r4,       & ! Mean snow mixing ratio                  [kg/kg]
+      Nsm_r4,       & ! Mean snow flake concentration           [num/kg]
+      rgm_r4,    & ! Mean graupel mixing ratio               [kg/kg]
+      Ngm_r4,    & ! Mean graupel concentration              [num/kg]
+      rrm_mc_r4,    & ! Mean rain water mixing ratio tendency   [kg/kg/s]
       Nrm_mc_r4,       & ! Mean rain drop concentration tendency   [num/kg/s]
-      ricem_mc_r4,     & ! Mean ice mixing ratio tendency          [kg/kg/s]
+      rim_mc_r4,     & ! Mean ice mixing ratio tendency          [kg/kg/s]
       Nim_mc_r4,       & ! Mean ice crystal concentration tendency [num/kg/s]
-      rsnowm_mc_r4,    & ! Mean snow mixing ratio tendency         [kg/kg/s]
-      Nsnowm_mc_r4,    & ! Mean snow flake concentration tendency  [num/kg/s]
-      rgraupelm_mc_r4, & ! Mean graupel mixing ratio tendency      [kg/kg/s]
-      Ngraupelm_mc_r4    ! Mean graupel concentration tendency     [num/kg/s]
+      rsm_mc_r4,    & ! Mean snow mixing ratio tendency         [kg/kg/s]
+      Nsm_mc_r4,    & ! Mean snow flake concentration tendency  [num/kg/s]
+      rgm_mc_r4, & ! Mean graupel mixing ratio tendency      [kg/kg/s]
+      Ngm_mc_r4    ! Mean graupel concentration tendency     [num/kg/s]
 
     real, dimension(nz) :: &
       rcm_mc_r4,    &
@@ -478,7 +478,7 @@ module morrison_microphys_module
       Nrm_evap    ! Change in Nrm due to evaporation                  [num/kg/s]
 
     ! Local Variables
-    real( kind = core_rknd ) :: rsnowm_sd_morr_int
+    real( kind = core_rknd ) :: rsm_sd_morr_int
 
     real( kind = core_rknd ), dimension(nz) :: &
       hl_before, &
@@ -548,10 +548,10 @@ module morrison_microphys_module
     hydromet_mc(1:nz,:) = 0.0_core_rknd
     Ncm_mc(1:nz) = 0.0_core_rknd
     rcm_sten = 0.0
-    rrainm_sten(1:nz) = 0.0
-    ricem_sten(1:nz) = 0.0
-    rsnowm_sten(1:nz) = 0.0
-    rgraupelm_sten(1:nz) = 0.0
+    rrm_sten(1:nz) = 0.0
+    rim_sten(1:nz) = 0.0
+    rsm_sten(1:nz) = 0.0
+    rgm_sten(1:nz) = 0.0
 
     ! Initialize effective radius to zero
     effc = 0.0
@@ -668,95 +668,95 @@ module morrison_microphys_module
 
 
     ! Unpack hydrometeor arrays.
-    rrainm = hydromet(:,iirrainm)
+    rrm = hydromet(:,iirrm)
 
-    rrainm_r4 = hydromet_r4(:,iirrainm)
+    rrm_r4 = hydromet_r4(:,iirrm)
     Nrm_r4    = hydromet_r4(:,iiNrm)
 
-    rrainm_mc_r4 = hydromet_mc_r4(:,iirrainm)
+    rrm_mc_r4 = hydromet_mc_r4(:,iirrm)
     Nrm_mc_r4    = hydromet_mc_r4(:,iiNrm)
 
     if ( l_ice_microphys ) then
 
-       ricem  = hydromet(:,iiricem)
-       rsnowm = hydromet(:,iirsnowm)
+       rim  = hydromet(:,iirim)
+       rsm = hydromet(:,iirsm)
 
-       ricem_r4  = hydromet_r4(:,iiricem)
+       rim_r4  = hydromet_r4(:,iirim)
        Nim_r4    = hydromet_r4(:,iiNim)
-       rsnowm_r4 = hydromet_r4(:,iirsnowm)
-       Nsnowm_r4 = hydromet_r4(:,iiNsnowm)
+       rsm_r4 = hydromet_r4(:,iirsm)
+       Nsm_r4 = hydromet_r4(:,iiNsm)
 
-       ricem_mc_r4  = hydromet_mc_r4(:,iiricem)
+       rim_mc_r4  = hydromet_mc_r4(:,iirim)
        Nim_mc_r4    = hydromet_mc_r4(:,iiNim)
-       rsnowm_mc_r4 = hydromet_mc_r4(:,iirsnowm)
-       Nsnowm_mc_r4 = hydromet_mc_r4(:,iiNsnowm)
+       rsm_mc_r4 = hydromet_mc_r4(:,iirsm)
+       Nsm_mc_r4 = hydromet_mc_r4(:,iiNsm)
 
        if ( l_graupel ) then
 
-          rgraupelm = hydromet(:,iirgraupelm)
+          rgm = hydromet(:,iirgm)
 
-          rgraupelm_r4 = hydromet_r4(:,iirgraupelm)
-          Ngraupelm_r4 = hydromet_r4(:,iiNgraupelm)
+          rgm_r4 = hydromet_r4(:,iirgm)
+          Ngm_r4 = hydromet_r4(:,iiNgm)
 
-          rgraupelm_mc_r4 = hydromet_mc_r4(:,iirgraupelm)
-          Ngraupelm_mc_r4 = hydromet_mc_r4(:,iiNgraupelm)
+          rgm_mc_r4 = hydromet_mc_r4(:,iirgm)
+          Ngm_mc_r4 = hydromet_mc_r4(:,iiNgm)
 
        else ! l_graupel disabled
 
-          rgraupelm = zero
+          rgm = zero
 
-          rgraupelm_r4 = 0.0
-          Ngraupelm_r4 = 0.0
+          rgm_r4 = 0.0
+          Ngm_r4 = 0.0
 
-          rgraupelm_mc_r4 = 0.0
-          Ngraupelm_mc_r4 = 0.0
+          rgm_mc_r4 = 0.0
+          Ngm_mc_r4 = 0.0
 
        endif ! l_graupel
 
     else ! l_ice_microphys disabled
 
-       ricem     = zero
-       rsnowm    = zero
-       rgraupelm = zero
+       rim     = zero
+       rsm    = zero
+       rgm = zero
 
-       ricem_r4     = 0.0
+       rim_r4     = 0.0
        Nim_r4       = 0.0
-       rsnowm_r4    = 0.0
-       Nsnowm_r4    = 0.0
-       rgraupelm_r4 = 0.0
-       Ngraupelm_r4 = 0.0
+       rsm_r4    = 0.0
+       Nsm_r4    = 0.0
+       rgm_r4 = 0.0
+       Ngm_r4 = 0.0
 
-       ricem_mc_r4     = 0.0
+       rim_mc_r4     = 0.0
        Nim_mc_r4       = 0.0
-       rsnowm_mc_r4    = 0.0
-       Nsnowm_mc_r4    = 0.0
-       rgraupelm_mc_r4 = 0.0
-       Ngraupelm_mc_r4 = 0.0
+       rsm_mc_r4    = 0.0
+       Nsm_mc_r4    = 0.0
+       rgm_mc_r4 = 0.0
+       Ngm_mc_r4 = 0.0
 
     endif ! l_ice_microphys
 
     hl_before = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
-                - Lv * ( rcm + rrainm ) &
-                - Ls * ( ricem + rsnowm + rgraupelm )
+                - Lv * ( rcm + rrm ) &
+                - Ls * ( rim + rsm + rgm )
 
-    qto_before = rvm + rcm + rrainm + ricem + rsnowm + rgraupelm
+    qto_before = rvm + rcm + rrm + rim + rsm + rgm
 
     ! Call the Morrison microphysics
     call M2005MICRO_GRAUPEL &
-         ( rcm_mc_r4, ricem_mc_r4, rsnowm_mc_r4, &
-           rrainm_mc_r4, Ncm_mc_r4, &
-           Nim_mc_r4, Nsnowm_mc_r4, &
-           Nrm_mc_r4, rcm_r4, ricem_r4, &
-           rsnowm_r4, rrainm_r4, Ncm_r4, &
-           Nim_r4, Nsnowm_r4, Nrm_r4, &
+         ( rcm_mc_r4, rim_mc_r4, rsm_mc_r4, &
+           rrm_mc_r4, Ncm_mc_r4, &
+           Nim_mc_r4, Nsm_mc_r4, &
+           Nrm_mc_r4, rcm_r4, rim_r4, &
+           rsm_r4, rrm_r4, Ncm_r4, &
+           Nim_r4, Nsm_r4, Nrm_r4, &
            T_in_K_mc, rvm_mc_r4, T_in_K, rvm_r4, P_in_pa_r4, rho_r4, dzq_r4, &
            wm_zt_r4, w_std_dev_r4, morr_rain_vel_r4, &
            Morr_precip_rate, Morr_snow_rate, effc, effi, effs, effr, real( dt ), &
            1,1, 1,1, 1,nz, 1,1, 1,1, 2,nz, &
-           rgraupelm_mc_r4, Ngraupelm_mc_r4, &
-           rgraupelm_r4, Ngraupelm_r4, effg, &
-           rgraupelm_sten, rrainm_sten, &
-           ricem_sten, rsnowm_sten, &
+           rgm_mc_r4, Ngm_mc_r4, &
+           rgm_r4, Ngm_r4, effg, &
+           rgm_sten, rrm_sten, &
+           rim_sten, rsm_sten, &
            rcm_sten, &
            NGSTEN, NRSTEN, NISTEN, NSSTEN, NCSTEN, &
            cloud_frac_in, &
@@ -780,59 +780,59 @@ module morrison_microphys_module
 
     hl_after = Cp * real( T_in_K, kind = core_rknd ) + grav * gr%zt &
                - Lv * ( real( rcm_r4, kind = core_rknd) &
-                        + real( rrainm_r4, kind = core_rknd ) ) &
-               - Ls * ( real( ricem_r4, kind = core_rknd ) &
-                        + real( rsnowm_r4, kind = core_rknd ) &
-                        + real( rgraupelm_r4, kind = core_rknd ) )
+                        + real( rrm_r4, kind = core_rknd ) ) &
+               - Ls * ( real( rim_r4, kind = core_rknd ) &
+                        + real( rsm_r4, kind = core_rknd ) &
+                        + real( rgm_r4, kind = core_rknd ) )
 
     hl_on_Cp_residual &
     = ( hl_after - hl_before &
         - dt * Lv * ( real( rcm_sten, kind = core_rknd ) &
-                      + real( rrainm_sten, kind = core_rknd ) ) &
-        - dt * Ls * ( real( ricem_sten, kind = core_rknd ) &
-                      + real( rsnowm_sten, kind = core_rknd ) &
-                      + real( rgraupelm_sten, kind = core_rknd ) ) ) / Cp
+                      + real( rrm_sten, kind = core_rknd ) ) &
+        - dt * Ls * ( real( rim_sten, kind = core_rknd ) &
+                      + real( rsm_sten, kind = core_rknd ) &
+                      + real( rgm_sten, kind = core_rknd ) ) ) / Cp
 
     qto_after = real( rvm_r4, kind = core_rknd ) &
                 + real( rcm_r4, kind = core_rknd ) &
-                + real( rrainm_r4, kind = core_rknd ) &
-                + real( ricem_r4, kind = core_rknd ) &
-                + real( rsnowm_r4, kind = core_rknd ) &
-                + real( rgraupelm_r4, kind = core_rknd )
+                + real( rrm_r4, kind = core_rknd ) &
+                + real( rim_r4, kind = core_rknd ) &
+                + real( rsm_r4, kind = core_rknd ) &
+                + real( rgm_r4, kind = core_rknd )
 
     qto_residual = qto_after - qto_before &
                    - dt * ( real( rcm_sten, kind = core_rknd ) &
-                            + real( rrainm_sten, kind = core_rknd ) &
-                            + real( ricem_sten, kind = core_rknd ) &
-                            + real( rsnowm_sten, kind = core_rknd ) &
-                            + real( rgraupelm_sten, kind = core_rknd) )
+                            + real( rrm_sten, kind = core_rknd ) &
+                            + real( rim_sten, kind = core_rknd ) &
+                            + real( rsm_sten, kind = core_rknd ) &
+                            + real( rgm_sten, kind = core_rknd) )
 
     ! Pack hydrometeor arrays.
-    hydromet_r4(:,iirrainm) = rrainm_r4
+    hydromet_r4(:,iirrm) = rrm_r4
     hydromet_r4(:,iiNrm)    = Nrm_r4
 
-    hydromet_mc_r4(:,iirrainm) = rrainm_mc_r4
+    hydromet_mc_r4(:,iirrm) = rrm_mc_r4
     hydromet_mc_r4(:,iiNrm)    = Nrm_mc_r4
 
     if ( l_ice_microphys ) then
 
-       hydromet_r4(:,iiricem)  = ricem_r4
+       hydromet_r4(:,iirim)  = rim_r4
        hydromet_r4(:,iiNim)    = Nim_r4
-       hydromet_r4(:,iirsnowm) = rsnowm_r4
-       hydromet_r4(:,iiNsnowm) = Nsnowm_r4
+       hydromet_r4(:,iirsm) = rsm_r4
+       hydromet_r4(:,iiNsm) = Nsm_r4
 
-       hydromet_mc_r4(:,iiricem)  = ricem_mc_r4
+       hydromet_mc_r4(:,iirim)  = rim_mc_r4
        hydromet_mc_r4(:,iiNim)    = Nim_mc_r4
-       hydromet_mc_r4(:,iirsnowm) = rsnowm_mc_r4
-       hydromet_mc_r4(:,iiNsnowm) = Nsnowm_mc_r4
+       hydromet_mc_r4(:,iirsm) = rsm_mc_r4
+       hydromet_mc_r4(:,iiNsm) = Nsm_mc_r4
 
        if ( l_graupel ) then
 
-          hydromet_r4(:,iirgraupelm) = rgraupelm_r4
-          hydromet_r4(:,iiNgraupelm) = Ngraupelm_r4
+          hydromet_r4(:,iirgm) = rgm_r4
+          hydromet_r4(:,iiNgm) = Ngm_r4
 
-          hydromet_mc_r4(:,iirgraupelm) = rgraupelm_mc_r4
-          hydromet_mc_r4(:,iiNgraupelm) = Ngraupelm_mc_r4
+          hydromet_mc_r4(:,iirgm) = rgm_mc_r4
+          hydromet_mc_r4(:,iiNgm) = Ngm_mc_r4
 
        endif
 
@@ -842,9 +842,9 @@ module morrison_microphys_module
     rcm_mc = real( rcm_mc_r4, kind = core_rknd )
     rvm_mc = real( rvm_mc_r4, kind = core_rknd )
 
-    rrainm_auto = real( PRC, kind = core_rknd )
-    rrainm_accr = real( PRA, kind = core_rknd )
-    rrainm_evap = real( PRE, kind = core_rknd )
+    rrm_auto = real( PRC, kind = core_rknd )
+    rrm_accr = real( PRA, kind = core_rknd )
+    rrm_evap = real( PRE, kind = core_rknd )
 
     Nrm_auto = real( NPRC1, kind = core_rknd )
     Nrm_evap = real( NSUBR, kind = core_rknd )
@@ -874,28 +874,28 @@ module morrison_microphys_module
     ! Multiply by -1 so that negative is associated with falling precip
     morr_rain_vel_r4(:) = morr_rain_vel_r4(:) * (-1.0)
     do k = 1, nz, 1
-      hydromet_vel_zt(k,iirrainm) = real( morr_rain_vel_r4(k), kind = core_rknd )
+      hydromet_vel_zt(k,iirrm) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
     
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-       rsnowm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
-                            real( rsnowm_sten(2:nz), kind=core_rknd ), &
+       rsm_sd_morr_int = vertical_integral( (nz - 2 + 1), rho_ds_zt(2:nz), &
+                            real( rsm_sten(2:nz), kind=core_rknd ), &
                             gr%invrs_dzt(2:nz) )
 
-       if ( rsnowm_sd_morr_int > maxval( real( rsnowm_sten(2:nz), &
+       if ( rsm_sd_morr_int > maxval( real( rsm_sten(2:nz), &
                                                kind=core_rknd ) ) ) then
-          print *, "Warning: rsnowm_sd_morr was not conservative!" // &
-                   " rsnowm_sd_morr_verical_integr = ", rsnowm_sd_morr_int
+          print *, "Warning: rsm_sd_morr was not conservative!" // &
+                   " rsm_sd_morr_verical_integr = ", rsm_sd_morr_int
        endif
 
-       call microphys_put_var( irsnowm_sd_morr_int, (/rsnowm_sd_morr_int/), microphys_stats_sfc )
+       call microphys_put_var( irsm_sd_morr_int, (/rsm_sd_morr_int/), microphys_stats_sfc )
 
     endif
 
-    call microphys_put_var( irrainm_auto, rrainm_auto, microphys_stats_zt )
-    call microphys_put_var( irrainm_accr, rrainm_accr, microphys_stats_zt )
-    call microphys_put_var( irrainm_cond, rrainm_evap, microphys_stats_zt )
+    call microphys_put_var( irrm_auto, rrm_auto, microphys_stats_zt )
+    call microphys_put_var( irrm_accr, rrm_accr, microphys_stats_zt )
+    call microphys_put_var( irrm_cond, rrm_evap, microphys_stats_zt )
 
     call microphys_put_var( iNrm_auto,    Nrm_auto,    microphys_stats_zt )
     call microphys_put_var( iNrm_cond,    Nrm_evap,    microphys_stats_zt )
@@ -903,14 +903,14 @@ module morrison_microphys_module
     ! Update Morrison budgets
     call microphys_put_var( ihl_on_Cp_residual, hl_on_Cp_residual, microphys_stats_zt )
     call microphys_put_var( iqto_residual, qto_residual, microphys_stats_zt )
-    call microphys_put_var( irgraupelm_sd_morr, &
-              real( rgraupelm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( irrainm_sd_morr, &
-              real( rrainm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( irsnowm_sd_morr, &
-              real( rsnowm_sten, kind = core_rknd ), microphys_stats_zt )
-    call microphys_put_var( iricem_sd_mg_morr, &
-              real( ricem_sten, kind = core_rknd ), microphys_stats_zt )
+    call microphys_put_var( irgm_sd_morr, &
+              real( rgm_sten, kind = core_rknd ), microphys_stats_zt )
+    call microphys_put_var( irrm_sd_morr, &
+              real( rrm_sten, kind = core_rknd ), microphys_stats_zt )
+    call microphys_put_var( irsm_sd_morr, &
+              real( rsm_sten, kind = core_rknd ), microphys_stats_zt )
+    call microphys_put_var( irim_sd_mg_morr, &
+              real( rim_sten, kind = core_rknd ), microphys_stats_zt )
     call microphys_put_var( ircm_sd_mg_morr, &
               real( rcm_sten, kind = core_rknd), microphys_stats_zt )
     call microphys_put_var( iPRC,real(PRC,kind=core_rknd),microphys_stats_zt )

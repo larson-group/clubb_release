@@ -33,7 +33,7 @@ module stats_rad_zt
         iT_in_K_rad, & ! Variable(s)
         ircil_rad, &
         io3l_rad, &
-        irsnowm_rad, &
+        irsm_rad, &
         ircm_in_cloud_rad, &
         icloud_frac_rad, & 
         iice_supersat_frac_rad, &
@@ -64,7 +64,7 @@ module stats_rad_zt
     iT_in_K_rad = 0
     ircil_rad = 0
     io3l_rad = 0
-    irsnowm_rad = 0
+    irsm_rad = 0
     ircm_in_cloud_rad = 0
     icloud_frac_rad = 0
     iice_supersat_frac_rad = 0
@@ -106,9 +106,9 @@ module stats_rad_zt
         k = k + 1
 
       case ('rsnowm_rad')
-        irsnowm_rad = k
+        irsm_rad = k
 
-        call stat_assign( var_index=irsnowm_rad, var_name="rsnowm_rad", &
+        call stat_assign( var_index=irsm_rad, var_name="rsnowm_rad", &
              var_description="Snow water mixing ratio [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=rad_zt )
         k = k + 1

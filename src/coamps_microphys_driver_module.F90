@@ -17,12 +17,12 @@ module coamps_microphys_driver_module
   subroutine coamps_microphys_driver & 
          ( runtype, timea_in, deltf_in, & 
            rtm, wm_zm, p_in_Pa, exner, rho, & 
-           thlm, ricem, rrainm, rgraupelm, rsnowm, & 
+           thlm, rim, rrm, rgm, rsm, & 
            rcm, Ncm, Nrm, Nim, &
            Nccnm, cond, &
-           Vrsnow, Vrice, Vrr, VNr, Vrgraupel, & 
+           Vrs, Vri, Vrr, VNr, Vrg, & 
            ritend, rrtend, rgtend,  & 
-           rsnowtend, nrmtend, & 
+           rstend, nrmtend, & 
            ncmtend, nimtend, & 
            rvm_mc, rcm_mc, thlm_mc )
 
@@ -62,7 +62,7 @@ module coamps_microphys_driver_module
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration and snowslope
        isnowslope, & 
-       iNsnowm
+       iNsm
 ! End of ajsmith4's addition
 
     use parameters_microphys, only: l_graupel, l_ice_microphys ! Variable(s)
@@ -176,10 +176,10 @@ module coamps_microphys_driver_module
       thlm       ! Liquid potential temperature                    [K]
 
     real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 
-      ricem,      & ! Ice water mixing ratio     [kg/kg]
-      rrainm,     & ! Rain water mixing ratio    [kg/kg]
-      rgraupelm,  & ! Graupel water mixing ratio [kg/kg]
-      rsnowm,     & ! Snow water mixing ratio    [kg/kg]
+      rim,      & ! Ice water mixing ratio     [kg/kg]
+      rrm,     & ! Rain water mixing ratio    [kg/kg]
+      rgm,  & ! Graupel water mixing ratio [kg/kg]
+      rsm,     & ! Snow water mixing ratio    [kg/kg]
       Nrm,        & ! Number of rain drops       [count/kg]
       Ncm,        & ! Number of cloud droplets   [count/kg]
       Nim           ! Number of ice crystals     [count/kg]
@@ -195,7 +195,7 @@ module coamps_microphys_driver_module
       ritend,     & ! d(ri)/dt                   [kg/kg/s]
       rrtend,     & ! d(rr)/dt                   [kg/kg/s]
       rgtend,     & ! d(rg)/dt                   [kg/kg/s]
-      rsnowtend,  & ! d(rsnow)/dt                [kg/kg/s]
+      rstend,  & ! d(rs)/dt                [kg/kg/s]
       rvm_mc,     & ! d(rv)/dt                   [kg/kg/s]
       rcm_mc,     & ! d(rc)/dt                   [kg/kg/s]
       thlm_mc,    & ! d(thlm)/dt                 [K/s]
@@ -206,9 +206,9 @@ module coamps_microphys_driver_module
     real(kind = core_rknd), dimension(gr%nz), intent(out) :: & 
       Vrr,       & ! Rain mixing ratio fall speed        [m/s]
       VNr,       & ! Rain conc. fall speed               [m/s]
-      Vrsnow,    & ! Snow mixing ratio fall speed        [m/s]
-      Vrgraupel, & ! Graupel fall speed                  [m/s]
-      Vrice      ! Pristine ice mixing ratio fall speed  [m/s]
+      Vrs,    & ! Snow mixing ratio fall speed        [m/s]
+      Vrg, & ! Graupel fall speed                  [m/s]
+      Vri      ! Pristine ice mixing ratio fall speed  [m/s]
 
 ! Local Variables
 
@@ -217,7 +217,7 @@ module coamps_microphys_driver_module
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
-    real, dimension(gr%nz) :: Nsnowm ! [count/kg]
+    real, dimension(gr%nz) :: Nsm ! [count/kg]
 ! End of ajsmith4's addition
 
 ! Variables on the w grid
@@ -568,10 +568,10 @@ module coamps_microphys_driver_module
 ! Setup COAMPS m (mass) grid variables
       qt3(1,1,1:kk)  = real(rtm(2:kk+1))
       qc3(1,1,1:kk)  = real(rcm(2:kk+1))
-      qr3(1,1,1:kk)  = real(rrainm(2:kk+1))
-      qg3(1,1,1:kk)  = real(rgraupelm(2:kk+1))
-      qs3(1,1,1:kk)  = real(rsnowm(2:kk+1))
-      qi3(1,1,1:kk)  = real(ricem(2:kk+1))
+      qr3(1,1,1:kk)  = real(rrm(2:kk+1))
+      qg3(1,1,1:kk)  = real(rgm(2:kk+1))
+      qs3(1,1,1:kk)  = real(rsm(2:kk+1))
+      qi3(1,1,1:kk)  = real(rim(2:kk+1))
       exbm(1,1,1:kk) = real(exner(2:kk+1))
       rbm(1,1,1:kk)  = real(rho(2:kk+1))
       th3(1,1,1:kk)  = thm(2:kk+1)
@@ -837,18 +837,18 @@ module coamps_microphys_driver_module
 ! Addition by Adam Smith, 24 April 2008
 ! Adding snow particle number concentration
 ! Values of snowslope < 1.0 lead to excessive and
-! unrealistic Nsnowm outside of the snow region.
+! unrealistic Nsm outside of the snow region.
 ! The "if" statement prevents these results.
 !-------------------------------------------------
       do k = 1, kk, 1
         if (snowslope(1,1,k) < 2.0) then
           snowslope(1,1,k) = 0.
-          Nsnowm(k+1) = 0.0
+          Nsm(k+1) = 0.0
         else
-          Nsnowm(k+1) = snzero / snowslope(1,1,k)
+          Nsm(k+1) = snzero / snowslope(1,1,k)
         end if
         ! Convert to #/kg for comparison to Morrison -dschanen 12 Nov 2009
-        Nsnowm(k+1) = Nsnowm(k+1) / real(rho(k+1))
+        Nsm(k+1) = Nsm(k+1) / real(rho(k+1))
       end do
 
 !-------------------------------------------------
@@ -865,21 +865,21 @@ module coamps_microphys_driver_module
 
       Vrr      = zt2zm( real(fallr(1,1,:), kind = core_rknd) )
       VNr      = zt2zm( real(falln(1,1,:), kind = core_rknd) )
-      Vrsnow    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
-      Vrice     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
-      Vrgraupel = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
+      Vrs    = zt2zm( real(snowv(1,1,:), kind = core_rknd) )
+      Vri     = zt2zm( real(falli(1,1,:), kind = core_rknd) )
+      Vrg = zt2zm( real(fallg(1,1,:), kind = core_rknd) )
 
 ! Compute tendencies
       do k=1, kk, 1
-        rrtend(k+1)    = ( real(qr3(1,1,k), kind = core_rknd) - rrainm(k+1) ) &
+        rrtend(k+1)    = ( real(qr3(1,1,k), kind = core_rknd) - rrm(k+1) ) &
                            / real(deltf, kind = core_rknd)
-        rgtend(k+1)    = ( real(qg3(1,1,k), kind = core_rknd) - rgraupelm(k+1) )&
+        rgtend(k+1)    = ( real(qg3(1,1,k), kind = core_rknd) - rgm(k+1) )&
                            / real(deltf, kind = core_rknd)
-        ritend(k+1)    = ( real(qi3(1,1,k), kind = core_rknd) - ricem(k+1) ) &
+        ritend(k+1)    = ( real(qi3(1,1,k), kind = core_rknd) - rim(k+1) ) &
                            / real(deltf, kind = core_rknd)
         nrmtend(k+1)   = ( (real(nr3(1,1,k), kind = core_rknd)*cm3_per_m3) - Nrm(k+1) ) &
                            / real(deltf, kind = core_rknd) ! Conversion factor
-        rsnowtend(k+1) = ( real(qs3(1,1,k), kind = core_rknd) - rsnowm(k+1) ) &
+        rstend(k+1) = ( real(qs3(1,1,k), kind = core_rknd) - rsm(k+1) ) &
                            / real(deltf, kind = core_rknd)
         ! nc3 is in (m^3/cm^3)*kg^-1, and needs to be converted to kg^-1.
         ncmtend(k+1)   = ( ( real( nc3(1,1,k), kind = core_rknd ) * cm3_per_m3 ) &
@@ -901,7 +901,7 @@ module coamps_microphys_driver_module
       rgtend(1)    = 0.0_core_rknd
       ritend(1)    = 0.0_core_rknd
       nrmtend(1)   = 0.0_core_rknd
-      rsnowtend(1) = 0.0_core_rknd
+      rstend(1) = 0.0_core_rknd
       ncmtend(1)   = 0.0_core_rknd
       nimtend(1)   = 0.0_core_rknd
       rcm_mc(1)    = 0.0_core_rknd
@@ -927,7 +927,7 @@ module coamps_microphys_driver_module
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
         do k=2, kk+1
-          call stat_update_var_pt( iNsnowm, k, real(Nsnowm(k), kind = core_rknd) ,zt )
+          call stat_update_var_pt( iNsm, k, real(Nsm(k), kind = core_rknd) ,zt )
         end do
 
       end if

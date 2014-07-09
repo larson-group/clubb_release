@@ -16,19 +16,19 @@ module corr_matrix_module
 !$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
 
   integer, public :: &
-   iiPDF_rrain    = -1, &
-   iiPDF_rsnow    = -1, &
-   iiPDF_rice     = -1, &
-   iiPDF_rgraupel = -1
-!$omp threadprivate(iiPDF_rrain, iiPDF_rsnow, iiPDF_rice, iiPDF_rgraupel)
+   iiPDF_rr    = -1, &
+   iiPDF_rs    = -1, &
+   iiPDF_ri     = -1, &
+   iiPDF_rg = -1
+!$omp threadprivate(iiPDF_rr, iiPDF_rs, iiPDF_ri, iiPDF_rg)
 
   integer, public :: &
    iiPDF_Nr       = -1, &
-   iiPDF_Nsnow    = -1, &
+   iiPDF_Ns    = -1, &
    iiPDF_Ni       = -1, &
-   iiPDF_Ngraupel = -1, &
+   iiPDF_Ng = -1, &
    iiPDF_Ncn      = -1
-!$omp threadprivate(iiPDF_Nr, iiPDF_Nsnow, iiPDF_Ni, iiPDF_Ngraupel, iiPDF_Ncn)
+!$omp threadprivate(iiPDF_Nr, iiPDF_Ns, iiPDF_Ni, iiPDF_Ng, iiPDF_Ncn)
 
   integer, parameter, public :: &
     d_var_total = 12 ! Size of the default correlation arrays
@@ -201,28 +201,28 @@ module corr_matrix_module
       elseif (iiPDF_x == iiPDF_Ncn) then
         ii_def_corr = ii_Ncn
 
-      elseif (iiPDF_x == iiPDF_rrain) then
+      elseif (iiPDF_x == iiPDF_rr) then
         ii_def_corr = ii_rr
 
       elseif (iiPDF_x == iiPDF_Nr) then
         ii_def_corr = ii_Nr
 
-      elseif (iiPDF_x == iiPDF_rice) then
+      elseif (iiPDF_x == iiPDF_ri) then
         ii_def_corr = ii_ri
 
       elseif (iiPDF_x == iiPDF_Ni) then
         ii_def_corr = ii_Ni
 
-      elseif (iiPDF_x == iiPDF_rsnow) then
+      elseif (iiPDF_x == iiPDF_rs) then
         ii_def_corr = ii_rs
 
-      elseif (iiPDF_x == iiPDF_Nsnow) then
+      elseif (iiPDF_x == iiPDF_Ns) then
         ii_def_corr = ii_Ns
 
-      elseif (iiPDF_x == iiPDF_rgraupel) then
+      elseif (iiPDF_x == iiPDF_rg) then
         ii_def_corr = ii_rg
 
-      elseif (iiPDF_x == iiPDF_Ngraupel) then
+      elseif (iiPDF_x == iiPDF_Ng) then
         ii_def_corr = ii_Ng
 
       endif
@@ -393,28 +393,28 @@ module corr_matrix_module
       i = iiPDF_Ncn
 
     case( "rr" )
-      i = iiPDF_rrain
+      i = iiPDF_rr
 
     case( "Nr" )
       i = iiPDF_Nr
 
     case( "ri" )
-      i = iiPDF_rice
+      i = iiPDF_ri
 
     case( "Ni" )
       i = iiPDF_Ni
 
     case( "rs" )
-      i = iiPDF_rsnow
+      i = iiPDF_rs
 
     case( "Ns" )
-      i = iiPDF_Nsnow
+      i = iiPDF_Ns
         
     case( "rg" )
-      i = iiPDF_rgraupel
+      i = iiPDF_rg
 
     case( "Ng" )
-      i = iiPDF_Ngraupel
+      i = iiPDF_Ng
 
     end select
 
@@ -423,9 +423,9 @@ module corr_matrix_module
   end function get_corr_var_index
 
   !-----------------------------------------------------------------------
-  subroutine setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
-                                iiricem, iiNim, iirsnowm, iiNsnowm, &
-                                iirgraupelm, iiNgraupelm )
+  subroutine setup_pdf_indices( hydromet_dim, iirrm, iiNrm, &
+                                iirim, iiNim, iirsm, iiNsm, &
+                                iirgm, iiNgm )
 
     ! Description:
     !
@@ -442,14 +442,14 @@ module corr_matrix_module
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrainm,    & ! Index of rain water mixing ratio
+      iirrm,    & ! Index of rain water mixing ratio
       iiNrm,       & ! Index of rain drop concentration
-      iiricem,     & ! Index of ice mixing ratio
+      iirim,     & ! Index of ice mixing ratio
       iiNim,       & ! Index of ice crystal concentration
-      iirsnowm,    & ! Index of snow mixing ratio
-      iiNsnowm,    & ! Index of snow flake concentration
-      iirgraupelm, & ! Index of graupel mixing ratio
-      iiNgraupelm    ! Index of graupel concentration
+      iirsm,    & ! Index of snow mixing ratio
+      iiNsm,    & ! Index of snow flake concentration
+      iirgm, & ! Index of graupel mixing ratio
+      iiNgm    ! Index of graupel concentration
 
     ! Local Variables
     integer :: &
@@ -474,9 +474,9 @@ module corr_matrix_module
 
        do i = 1, hydromet_dim, 1
 
-          if ( i == iirrainm ) then
+          if ( i == iirrm ) then
              pdf_count = pdf_count + 1
-             iiPDF_rrain = pdf_count
+             iiPDF_rr = pdf_count
           endif
 
           if ( i == iiNrm ) then
@@ -484,9 +484,9 @@ module corr_matrix_module
              iiPDF_Nr = pdf_count
           endif
 
-          if ( i == iiricem ) then
+          if ( i == iirim ) then
              pdf_count = pdf_count + 1
-             iiPDF_rice = pdf_count
+             iiPDF_ri = pdf_count
           endif
 
           if ( i == iiNim ) then
@@ -494,24 +494,24 @@ module corr_matrix_module
              iiPDF_Ni = pdf_count
           endif
 
-          if ( i == iirsnowm ) then
+          if ( i == iirsm ) then
              pdf_count = pdf_count + 1
-             iiPDF_rsnow = pdf_count
+             iiPDF_rs = pdf_count
           endif
 
-          if ( i == iiNsnowm ) then
+          if ( i == iiNsm ) then
              pdf_count = pdf_count + 1
-             iiPDF_Nsnow = pdf_count
+             iiPDF_Ns = pdf_count
           endif
 
-          if ( i == iirgraupelm ) then
+          if ( i == iirgm ) then
              pdf_count = pdf_count + 1
-             iiPDF_rgraupel = pdf_count
+             iiPDF_rg = pdf_count
           endif
         
-          if ( i == iiNgraupelm ) then
+          if ( i == iiNgm ) then
              pdf_count = pdf_count + 1
-             iiPDF_Ngraupel = pdf_count
+             iiPDF_Ng = pdf_count
           endif   
 
        enddo ! i = 1, hydromet_dim, 1
@@ -689,52 +689,52 @@ module corr_matrix_module
       sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
-    if ( iiPDF_rrain > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rrain) = rr_sigma2_on_mu2_ip_cloud
+    if ( iiPDF_rr > 0 ) then
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rr) = rr_sigma2_on_mu2_ip_cloud
       if ( iiPDF_Nr > 0 ) then
         sigma2_on_mu2_ip_array_cloud(iiPDF_Nr) = Nr_sigma2_on_mu2_ip_cloud
       end if ! iiPDF_Nr > 0
-    end if ! iiPDF_rrain > 0
+    end if ! iiPDF_rr > 0
 
-    if ( iiPDF_rsnow > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rsnow) = rs_sigma2_on_mu2_ip_cloud
-
-
-      if ( iiPDF_Nsnow > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Nsnow) = Ns_sigma2_on_mu2_ip_cloud
+    if ( iiPDF_rs > 0 ) then
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rs) = rs_sigma2_on_mu2_ip_cloud
 
 
-      end if ! iiPDF_Nsnow > 0
-    end if ! iiPDF_rsnow > 0
+      if ( iiPDF_Ns > 0 ) then
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ns) = Ns_sigma2_on_mu2_ip_cloud
 
-    if ( iiPDF_rice > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rice) = ri_sigma2_on_mu2_ip_cloud
+
+      end if ! iiPDF_Ns > 0
+    end if ! iiPDF_rs > 0
+
+    if ( iiPDF_ri > 0 ) then
+      sigma2_on_mu2_ip_array_cloud(iiPDF_ri) = ri_sigma2_on_mu2_ip_cloud
 
 
       if ( iiPDF_Ni > 0 ) then
         sigma2_on_mu2_ip_array_cloud(iiPDF_Ni) = Ni_sigma2_on_mu2_ip_cloud
 
       end if ! iiPDF_Ni > 0
-    end if ! iiPDF_rice > 0
+    end if ! iiPDF_ri > 0
 
     ! Sampling for graupel (disabled)
-    if ( iiPDF_rgraupel > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rgraupel) = rg_sigma2_on_mu2_ip_cloud
+    if ( iiPDF_rg > 0 ) then
+      sigma2_on_mu2_ip_array_cloud(iiPDF_rg) = rg_sigma2_on_mu2_ip_cloud
 
 
-      if ( iiPDF_Ngraupel > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ngraupel) = Ng_sigma2_on_mu2_ip_cloud
+      if ( iiPDF_Ng > 0 ) then
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ng) = Ng_sigma2_on_mu2_ip_cloud
 
 
-      end if ! iiPDF_Ngraupel > 0
-    end if ! iiPDF_rgraupel > 0
+      end if ! iiPDF_Ng > 0
+    end if ! iiPDF_rg > 0
 
     if ( iiPDF_Ncn > 0 ) then
       sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
     end if
 
-    if ( iiPDF_rrain > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rrain) = rr_sigma2_on_mu2_ip_below
+    if ( iiPDF_rr > 0 ) then
+      sigma2_on_mu2_ip_array_below(iiPDF_rr) = rr_sigma2_on_mu2_ip_below
 
 
 
@@ -743,38 +743,38 @@ module corr_matrix_module
 
 
       end if ! iiPDF_Nr > 0
-    end if ! iiPDF_rrain > 0
+    end if ! iiPDF_rr > 0
 
-    if ( iiPDF_rsnow > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rsnow) = rs_sigma2_on_mu2_ip_below
+    if ( iiPDF_rs > 0 ) then
+      sigma2_on_mu2_ip_array_below(iiPDF_rs) = rs_sigma2_on_mu2_ip_below
 
 
-      if ( iiPDF_Nsnow > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Nsnow) = Ns_sigma2_on_mu2_ip_below
+      if ( iiPDF_Ns > 0 ) then
+        sigma2_on_mu2_ip_array_below(iiPDF_Ns) = Ns_sigma2_on_mu2_ip_below
 
-      end if ! iiPDF_Nsnow > 0
-    end if ! iiPDF_rsnow > 0
+      end if ! iiPDF_Ns > 0
+    end if ! iiPDF_rs > 0
 
-    if ( iiPDF_rice > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rice) = ri_sigma2_on_mu2_ip_below
+    if ( iiPDF_ri > 0 ) then
+      sigma2_on_mu2_ip_array_below(iiPDF_ri) = ri_sigma2_on_mu2_ip_below
 
 
       if ( iiPDF_Ni > 0 ) then
         sigma2_on_mu2_ip_array_below(iiPDF_Ni) =  Ni_sigma2_on_mu2_ip_below
       end if ! iiPDF_Ni > 0
 
-    end if ! iiPDF_rice > 0
+    end if ! iiPDF_ri > 0
 
-    if ( iiPDF_rgraupel > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rgraupel) = rg_sigma2_on_mu2_ip_below
-
-
-      if ( iiPDF_Ngraupel > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Ngraupel) = Ng_sigma2_on_mu2_ip_below
+    if ( iiPDF_rg > 0 ) then
+      sigma2_on_mu2_ip_array_below(iiPDF_rg) = rg_sigma2_on_mu2_ip_below
 
 
-      end if ! iiPDF_Ngraupel > 0
-    end if ! iiPDF_rgraupel > 0
+      if ( iiPDF_Ng > 0 ) then
+        sigma2_on_mu2_ip_array_below(iiPDF_Ng) = Ng_sigma2_on_mu2_ip_below
+
+
+      end if ! iiPDF_Ng > 0
+    end if ! iiPDF_rg > 0
 
     return
   end subroutine setup_corr_varnce_array
@@ -822,9 +822,9 @@ module corr_matrix_module
   end subroutine cleanup_corr_matrix_arrays
 
  !-----------------------------------------------------------------------------
-  subroutine init_clubb_arrays( hydromet_dim, iirrainm, iiNrm, iirsnowm, & ! Variables
-                                iiricem, iiNsnowm, iiNim, &
-                                iirgraupelm, iiNgraupelm, iunit )
+  subroutine init_clubb_arrays( hydromet_dim, iirrm, iiNrm, iirsm, & ! Variables
+                                iirim, iiNsm, iiNim, &
+                                iirgm, iiNgm, iunit )
 
     ! Description: This subroutine sets up arrays that are necessary for WRF.
     !   
@@ -840,21 +840,21 @@ module corr_matrix_module
     ! Input Variables
     integer, intent(in) :: &
       hydromet_dim, &
-      iirrainm, &
+      iirrm, &
       iiNrm, &
-      iirsnowm, & 
-      iiricem, & 
-      iiNsnowm, &
+      iirsm, & 
+      iirim, & 
+      iiNsm, &
       iiNim, &
-      iirgraupelm, &
-      iiNgraupelm, &
+      iirgm, &
+      iiNgm, &
       iunit
 
     ! ---- Begin Code ----
 
-    call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
-                            iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            iirgraupelm, iiNgraupelm )
+    call setup_pdf_indices( hydromet_dim, iirrm, iiNrm, &
+                            iirim, iiNim, iirsm, iiNsm, &
+                            iirgm, iiNgm )
 
     ! Setup the arrays and indices containing the correlations, etc.
     call setup_corr_varnce_array( lh_file_path_cloud, lh_file_path_below, iunit )
@@ -874,14 +874,14 @@ module corr_matrix_module
   !-----------------------------------------------------------------------
 
     use array_index, only: &
-        iirrainm, &
+        iirrm, &
         iiNrm, &
-        iirsnowm, &
-        iiNsnowm, &
-        iiricem, &
+        iirsm, &
+        iiNsm, &
+        iirim, &
         iiNim, &
-        iirgraupelm, &
-        iiNgraupelm
+        iirgm, &
+        iiNgm
 
       implicit none
 
@@ -900,36 +900,36 @@ module corr_matrix_module
     ! Get rid of an annoying compiler warning.
     ii_idx = 1
 
-    if ( iiPDF_idx == iiPDF_rrain ) then
-       ii_idx = iirrainm
+    if ( iiPDF_idx == iiPDF_rr ) then
+       ii_idx = iirrm
     endif
 
     if ( iiPDF_idx == iiPDF_Nr ) then
        ii_idx = iiNrm
     endif
 
-    if ( iiPDF_idx == iiPDF_rsnow ) then
-       ii_idx = iirsnowm
+    if ( iiPDF_idx == iiPDF_rs ) then
+       ii_idx = iirsm
     endif
 
-    if ( iiPDF_idx == iiPDF_Nsnow ) then
-       ii_idx = iiNsnowm
+    if ( iiPDF_idx == iiPDF_Ns ) then
+       ii_idx = iiNsm
     endif
 
-    if ( iiPDF_idx == iiPDF_rice ) then
-       ii_idx = iiricem
+    if ( iiPDF_idx == iiPDF_ri ) then
+       ii_idx = iirim
     endif
 
     if ( iiPDF_idx == iiPDF_Ni ) then
        ii_idx = iiNim
     endif
 
-    if ( iiPDF_idx == iiPDF_rgraupel ) then
-       ii_idx = iirgraupelm
+    if ( iiPDF_idx == iiPDF_rg ) then
+       ii_idx = iirgm
     endif
 
-    if ( iiPDF_idx == iiPDF_Ngraupel ) then
-       ii_idx = iiNgraupelm
+    if ( iiPDF_idx == iiPDF_Ng ) then
+       ii_idx = iiNgm
     endif
 
     return

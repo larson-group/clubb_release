@@ -37,10 +37,10 @@ module inputfields
     l_input_chi_1 = .false., l_input_chi_2 = .false., &
     l_input_stdev_chi_1 = .false., l_input_stdev_chi_2 = .false., &
     l_input_rc1 = .false., l_input_rc2 = .false., &
-    l_input_thvm = .false., l_input_rrainm = .false., &
+    l_input_thvm = .false., l_input_rrm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
-    l_input_rsnowm = .false., l_input_ricem = .false., &
-    l_input_rgraupelm = .false., l_input_Nccnm = .false., l_input_Nim = .false., & 
+    l_input_rsm = .false., l_input_rim = .false., &
+    l_input_rgm = .false., l_input_Nccnm = .false., l_input_Nim = .false., & 
     l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
@@ -265,7 +265,7 @@ module inputfields
         sec_per_day
 
     use array_index, only:  & 
-        iirrainm, iiNrm, iirsnowm, iiricem, iirgraupelm, iiNim
+        iirrm, iiNrm, iirsm, iirim, iirgm, iiNim
 
     use stat_file_utils, only: & 
       LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -306,8 +306,8 @@ module inputfields
     integer :: k  ! Array index
  
     real( kind = core_rknd), dimension(gr%nz), target :: &
-      temp_Nrm, temp_Ncm, temp_rgraupelm, temp_ricem, &
-      temp_rrainm, temp_rsnowm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
+      temp_Nrm, temp_Ncm, temp_rgm, temp_rim, &
+      temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
       temp_Nim ! temporary variable
 
     type (input_field), dimension(:), allocatable :: &
@@ -368,34 +368,34 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rrainm, stat_files(clubb_zt), "rrainm", gr%nz, timestep, & 
+           ( l_input_rrm, stat_files(clubb_zt), "rrainm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
-      if ( l_input_rrainm ) then
-        hydromet(1:gr%nz,iirrainm) = tmp1(1:gr%nz)
+      if ( l_input_rrm ) then
+        hydromet(1:gr%nz,iirrm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rsnowm, stat_files(clubb_zt), "rsnowm", gr%nz, timestep, & 
+           ( l_input_rsm, stat_files(clubb_zt), "rsnowm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
-      if ( l_input_rsnowm ) then
-        hydromet(1:gr%nz,iirsnowm) = tmp1(1:gr%nz)
+      if ( l_input_rsm ) then
+        hydromet(1:gr%nz,iirsm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_ricem, stat_files(clubb_zt), "ricem", gr%nz, timestep, & 
+           ( l_input_rim, stat_files(clubb_zt), "ricem", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
-      if ( l_input_ricem ) then
-        hydromet(1:gr%nz,iiricem) = tmp1(1:gr%nz)
+      if ( l_input_rim ) then
+        hydromet(1:gr%nz,iirim) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rgraupelm, stat_files(clubb_zt), "rgraupelm", gr%nz, timestep, & 
+           ( l_input_rgm, stat_files(clubb_zt), "rgraupelm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
-      if ( l_input_rgraupelm ) then
-        hydromet(1:gr%nz,iirgraupelm) = tmp1(1:gr%nz)
+      if ( l_input_rgm ) then
+        hydromet(1:gr%nz,iirgm) = tmp1(1:gr%nz)
       end if
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -1049,17 +1049,17 @@ module inputfields
 
       k = k + 1
 
-      temp_rrainm = 0.0_core_rknd! initialize to 0.0
+      temp_rrm = 0.0_core_rknd! initialize to 0.0
 
-      if ( l_input_rrainm ) then
-        if ( iirrainm < 1 ) then
+      if ( l_input_rrm ) then
+        if ( iirrm < 1 ) then
             write(fstderr,*) "Rain water mixing ratio cannot be input with"// &
               " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
-          coamps_variables(k)%l_input_var = l_input_rrainm
+          coamps_variables(k)%l_input_var = l_input_rrm
           coamps_variables(k)%input_name = "qrm"
-          coamps_variables(k)%clubb_var => temp_rrainm
+          coamps_variables(k)%clubb_var => temp_rrm
           coamps_variables(k)%adjustment = 1.0_core_rknd
           coamps_variables(k)%clubb_grid_type = "zt"
           coamps_variables(k)%input_file_index = coamps_sm
@@ -1106,17 +1106,17 @@ module inputfields
         end if
       end if
 
-      temp_rsnowm = 0.0_core_rknd! initialize to 0.0
+      temp_rsm = 0.0_core_rknd! initialize to 0.0
 
-      if ( l_input_rsnowm ) then
-        if ( iirsnowm < 1 ) then
+      if ( l_input_rsm ) then
+        if ( iirsm < 1 ) then
             write(fstderr,*) "Snow mixing ratio cannot be input with"// &
               " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
-          coamps_variables(k)%l_input_var = l_input_rsnowm
+          coamps_variables(k)%l_input_var = l_input_rsm
           coamps_variables(k)%input_name = "qsm"
-          coamps_variables(k)%clubb_var => temp_rsnowm
+          coamps_variables(k)%clubb_var => temp_rsm
           coamps_variables(k)%adjustment = 1.0_core_rknd
           coamps_variables(k)%clubb_grid_type = "zt"
           coamps_variables(k)%input_file_index = coamps_sm
@@ -1125,17 +1125,17 @@ module inputfields
         end if
       end if
 
-      temp_ricem = 0.0_core_rknd! initialize to 0.0
+      temp_rim = 0.0_core_rknd! initialize to 0.0
 
-      if ( l_input_ricem ) then
-        if ( iiricem < 1 ) then
+      if ( l_input_rim ) then
+        if ( iirim < 1 ) then
             write(fstderr,*) "Ice mixing ratio cannot be input with"// &
               " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
-          coamps_variables(k)%l_input_var = l_input_ricem
+          coamps_variables(k)%l_input_var = l_input_rim
           coamps_variables(k)%input_name = "qim"
-          coamps_variables(k)%clubb_var => temp_ricem
+          coamps_variables(k)%clubb_var => temp_rim
           coamps_variables(k)%adjustment = 1.0_core_rknd
           coamps_variables(k)%clubb_grid_type = "zt"
           coamps_variables(k)%input_file_index = coamps_sm
@@ -1144,17 +1144,17 @@ module inputfields
         end if
       end if
 
-      temp_rgraupelm = 0.0_core_rknd! initialize to 0.0
+      temp_rgm = 0.0_core_rknd! initialize to 0.0
 
-      if ( l_input_rgraupelm ) then
-        if ( iirgraupelm < 1 ) then
+      if ( l_input_rgm ) then
+        if ( iirgm < 1 ) then
             write(fstderr,*) "Graupel mixing ratio cannot be input with"// &
               " microphys_scheme = "//microphys_scheme
             l_fatal_error = .true.
         else
-          coamps_variables(k)%l_input_var = l_input_rgraupelm
+          coamps_variables(k)%l_input_var = l_input_rgm
           coamps_variables(k)%input_name = "qgm"
-          coamps_variables(k)%clubb_var => temp_rgraupelm
+          coamps_variables(k)%clubb_var => temp_rgm
           coamps_variables(k)%adjustment = 1.0_core_rknd
           coamps_variables(k)%clubb_grid_type = "zt"
           coamps_variables(k)%input_file_index = coamps_sm
@@ -1385,9 +1385,9 @@ module inputfields
         endif
       endif
 
-      if ( l_input_rrainm ) then
-        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirrainm) = &
-                    temp_rrainm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
+      if ( l_input_rrm ) then
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirrm) = &
+                    temp_rrm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_Nrm ) then
@@ -1400,19 +1400,19 @@ module inputfields
                     temp_Ncm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
-      if ( l_input_rsnowm ) then
-        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirsnowm) = &
-                    temp_rsnowm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
+      if ( l_input_rsm ) then
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirsm) = &
+                    temp_rsm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
-      if ( l_input_ricem ) then
-        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iiricem) = &
-                    temp_ricem(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
+      if ( l_input_rim ) then
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirim) = &
+                    temp_rim(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
-      if ( l_input_rgraupelm ) then
-        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirgraupelm) = &
-                    temp_rgraupelm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
+      if ( l_input_rgm ) then
+        hydromet(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm),iirgm) = &
+                    temp_rgm(k_lowest_zt(coamps_sm):k_highest_zt(coamps_sm))
       end if
 
       if ( l_input_Nim ) then
@@ -1859,11 +1859,11 @@ module inputfields
 
       k = k + 1
 
-      temp_rrainm = 0.0_core_rknd! initialize to 0.0
+      temp_rrm = 0.0_core_rknd! initialize to 0.0
 
-      SAM_variables(k)%l_input_var = l_input_rrainm
+      SAM_variables(k)%l_input_var = l_input_rrm
       SAM_variables(k)%input_name = "QPL"
-      SAM_variables(k)%clubb_var => temp_rrainm
+      SAM_variables(k)%clubb_var => temp_rrm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
@@ -1895,33 +1895,33 @@ module inputfields
 
       k = k + 1
 
-      temp_rsnowm = 0.0_core_rknd! initialize to 0.0
+      temp_rsm = 0.0_core_rknd! initialize to 0.0
 
-      SAM_variables(k)%l_input_var = l_input_rsnowm
+      SAM_variables(k)%l_input_var = l_input_rsm
       SAM_variables(k)%input_name = "QS"
-      SAM_variables(k)%clubb_var => temp_rsnowm
+      SAM_variables(k)%clubb_var => temp_rsm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
-      temp_ricem = 0.0_core_rknd! initialize to 0.0
+      temp_rim = 0.0_core_rknd! initialize to 0.0
 
-      SAM_variables(k)%l_input_var = l_input_ricem
+      SAM_variables(k)%l_input_var = l_input_rim
       SAM_variables(k)%input_name = "QI"
-      SAM_variables(k)%clubb_var => temp_ricem
+      SAM_variables(k)%clubb_var => temp_rim
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
-      temp_rgraupelm = 0.0_core_rknd ! initialize to 0.0
+      temp_rgm = 0.0_core_rknd ! initialize to 0.0
 
-      SAM_variables(k)%l_input_var = l_input_rgraupelm
+      SAM_variables(k)%l_input_var = l_input_rgm
       SAM_variables(k)%input_name = "QG"
-      SAM_variables(k)%clubb_var => temp_rgraupelm
+      SAM_variables(k)%clubb_var => temp_rgm
       SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
@@ -2119,24 +2119,24 @@ module inputfields
                  temp_Nim(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if( l_input_rrainm .and. iirrainm > 0) then
-        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrainm) = &
-                   temp_rrainm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      if( l_input_rrm .and. iirrm > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrm) = &
+                   temp_rrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if( l_input_rgraupelm .and. iirgraupelm > 0) then
-        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirgraupelm) = &
-                   temp_rgraupelm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      if( l_input_rgm .and. iirgm > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirgm) = &
+                   temp_rgm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if( l_input_ricem .and. iiricem > 0) then
-        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiricem) = &
-                   temp_ricem(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      if( l_input_rim .and. iirim > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirim) = &
+                   temp_rim(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
-      if( l_input_rsnowm .and. iirsnowm > 0) then
-        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirsnowm) = &
-                   temp_rsnowm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      if( l_input_rsm .and. iirsm > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirsm) = &
+                   temp_rsm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
@@ -2797,8 +2797,8 @@ module inputfields
       l_input_wpthvp, l_input_radht, &
       l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
       l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc1, l_input_rc2, &
-      l_input_thvm, l_input_rrainm,l_input_Nrm,  & 
-      l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
+      l_input_thvm, l_input_rrm,l_input_Nrm,  & 
+      l_input_rsm, l_input_rim, l_input_rgm,  & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
       l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
@@ -2850,11 +2850,11 @@ module inputfields
     l_input_rc1 = .false.
     l_input_rc2 = .false.
     l_input_thvm = .false.
-    l_input_rrainm = .false.
+    l_input_rrm = .false.
     l_input_Nrm = .false.
-    l_input_rsnowm = .false.
-    l_input_ricem = .false.
-    l_input_rgraupelm = .false.
+    l_input_rsm = .false.
+    l_input_rim = .false.
+    l_input_rgm = .false.
     l_input_thlm_forcing = .false.
     l_input_rtm_forcing = .false.
     l_input_up2 = .false.

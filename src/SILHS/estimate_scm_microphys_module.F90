@@ -76,7 +76,7 @@ module estimate_scm_microphys_module
 
     use array_index, only: &
       iiNrm, & ! Variable(s)
-      iirrainm
+      iirrm
 #endif
 
     implicit none
@@ -420,10 +420,10 @@ module estimate_scm_microphys_module
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
-      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrainm),           & ! intent(in)
+      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrm),           & ! intent(in)
                                 hydromet(:,iiNrm),                                  & ! intent(in)
                                 microphys_stats_zt_avg, l_stats_samp,               & ! intent(in)
-                                lh_hydromet_mc(:,iirrainm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
+                                lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
     end if
 #else
@@ -521,9 +521,9 @@ module estimate_scm_microphys_module
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------
-  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrainm, Nrm,         &
+  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm,         &
                                   microphys_stats_zt, l_stats_samp,        &
-                                  rrainm_mc, Nrm_mc,                       &
+                                  rrm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
 
   ! Description:
@@ -555,14 +555,14 @@ module estimate_scm_microphys_module
 
     use stats_variables, only: &
       zt, &
-      irrainm_auto, &
-      irrainm_accr, &
-      irrainm_cond, &
+      irrm_auto, &
+      irrm_accr, &
+      irrm_cond, &
       iNrm_auto, &
       iNrm_cond, &
-      irrainm_src_adj, &
+      irrm_src_adj, &
       iNrm_src_adj, &
-      irrainm_cond_adj, &
+      irrm_cond_adj, &
       iNrm_cond_adj
 
     use microphys_stats_vars_module, only: &
@@ -573,9 +573,9 @@ module estimate_scm_microphys_module
 
     ! Local Constants
     logical, parameter :: &
-      ! Whether to adjust rrainm_source to not over-deplete cloud water
+      ! Whether to adjust rrm_source to not over-deplete cloud water
       l_src_adj_enabled = .true.,  &
-      ! Whether to adjust rrainm_evap to not over-evaporate rain
+      ! Whether to adjust rrm_evap to not over-evaporate rain
       l_evap_adj_enabled = .true.
 
     ! Input variables
@@ -588,7 +588,7 @@ module estimate_scm_microphys_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       exner,       & ! Exner function                            [-]
       rcm,         & ! Mean liquid water mixing ratio            [kg/kg]
-      rrainm,      & ! Rain water mixing ration                  [kg/kg]
+      rrm,      & ! Rain water mixing ration                  [kg/kg]
       Nrm            ! Rain drop concentration                   [num/kg]
 
     type(microphys_stats_vars_type), intent(in) :: &
@@ -599,7 +599,7 @@ module estimate_scm_microphys_module
 
     ! Output variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      rrainm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
+      rrm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
       Nrm_mc,    & ! Mean change in Nrm due to microphysics  [(kg/kg)/s]
       rvm_mc,    & ! Time tendency of rvm                    [(kg/kg)/s]
       rcm_mc,    & ! Time tendency of rcm                    [(kg/kg)/s]
@@ -607,9 +607,9 @@ module estimate_scm_microphys_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      rrainm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
-      rrainm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
-      rrainm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
+      rrm_evap, & ! Mean change in rain due to evap           [(kg/kg)/s]
+      rrm_auto, & ! Mean change in rain due to autoconversion [(kg/kg)/s]
+      rrm_accr, & ! Mean change in rain due to accretion      [(kg/kg)/s]
       Nrm_auto,    & ! Mean change in Nrm due to autoconversion  [(num/kg)/s]
       Nrm_evap       ! Mean change in Nrm due to evaporation     [(num/kg)/s]
 
@@ -621,15 +621,15 @@ module estimate_scm_microphys_module
     !----- Begin code -----
 
     ! Initialize output
-    rrainm_mc = zero
+    rrm_mc = zero
     Nrm_mc = zero
     rvm_mc = zero
     rcm_mc = zero
     thlm_mc = zero
 
-    rrainm_auto = microphys_get_var( irrainm_auto, microphys_stats_zt )
-    rrainm_accr = microphys_get_var( irrainm_accr, microphys_stats_zt )
-    rrainm_evap = microphys_get_var( irrainm_cond, microphys_stats_zt )
+    rrm_auto = microphys_get_var( irrm_auto, microphys_stats_zt )
+    rrm_accr = microphys_get_var( irrm_accr, microphys_stats_zt )
+    rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
 
     Nrm_auto    = microphys_get_var( iNrm_auto,    microphys_stats_zt )
     Nrm_evap    = microphys_get_var( iNrm_cond,    microphys_stats_zt )
@@ -638,19 +638,19 @@ module estimate_scm_microphys_module
     do k = 2, nz, 1
 
       ! We call KK_microphys_adjust to adjust the means of the mc terms
-      call KK_microphys_adjust( dt, exner(k), rcm(k), rrainm(k), Nrm(k),   & !intent(in)
-                                rrainm_evap(k), rrainm_auto(k),            & !intent(in)
-                                rrainm_accr(k), Nrm_evap(k),               & !intent(in)
+      call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k),   & !intent(in)
+                                rrm_evap(k), rrm_auto(k),            & !intent(in)
+                                rrm_accr(k), Nrm_evap(k),               & !intent(in)
                                 Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
                                 l_evap_adj_enabled,                        & !intent(in)
-                                rrainm_mc(k), Nrm_mc(k),                   & !intent(out)
+                                rrm_mc(k), Nrm_mc(k),                   & !intent(out)
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)
                                 adj_terms(k) )                               !intent(out)
     end do ! k = 2, nz, 1
 
     ! Set boundary conditions
-    rrainm_mc(1) = zero
-    rrainm_mc(nz) = zero
+    rrm_mc(1) = zero
+    rrm_mc(nz) = zero
 
     Nrm_mc(1) = zero
     Nrm_mc(nz) = zero
@@ -667,16 +667,16 @@ module estimate_scm_microphys_module
     ! Statistical sampling
     if ( l_stats_samp ) then
 
-      if ( irrainm_src_adj > 0 ) then
-        call stat_update_var( irrainm_src_adj, adj_terms%rrainm_src_adj, zt )
+      if ( irrm_src_adj > 0 ) then
+        call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, zt )
       end if
 
       if ( iNrm_src_adj > 0 ) then
         call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
       end if
 
-      if ( irrainm_cond_adj > 0 ) then
-        call stat_update_var( irrainm_cond_adj, adj_terms%rrainm_cond_adj, zt )
+      if ( irrm_cond_adj > 0 ) then
+        call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, zt )
       end if
 
       if ( iNrm_cond_adj > 0 ) then
@@ -704,23 +704,23 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use array_index, only: &
-      iirrainm, & ! Variables
-      iirsnowm, & 
-      iiricem, & 
-      iirgraupelm, & 
+      iirrm, & ! Variables
+      iirsm, & 
+      iirim, & 
+      iirgm, & 
       iiNrm, &
-      iiNsnowm, &
+      iiNsm, &
       iiNim, &
-      iiNgraupelm
+      iiNgm
 
     use corr_matrix_module, only: &
-      iiPDF_rrain, &
-      iiPDF_rsnow, &
-      iiPDF_rice, &
-      iiPDF_rgraupel, &
+      iiPDF_rr, &
+      iiPDF_rs, &
+      iiPDF_ri, &
+      iiPDF_rg, &
       iiPDF_Nr, &
-      iiPDF_Nsnow, &
-      iiPDF_Ngraupel, &
+      iiPDF_Ns, &
+      iiPDF_Ng, &
       iiPDF_Ncn, &
       iiPDF_Ni
 
@@ -752,40 +752,40 @@ module estimate_scm_microphys_module
     do sample = 1, num_samples
       ! Copy the sample points into the temporary arrays
       do ivar = 1, hydromet_dim, 1
-        if ( ivar == iirrainm .and. iiPDF_rrain > 0 ) then
+        if ( ivar == iirrm .and. iiPDF_rr > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rrain), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rr), kind = core_rknd )
 
-        else if ( ivar == iirsnowm .and. iiPDF_rsnow > 0 ) then
+        else if ( ivar == iirsm .and. iiPDF_rs > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rsnow), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rs), kind = core_rknd )
 
-        else if ( ivar == iiricem .and. iiPDF_rice > 0 ) then
+        else if ( ivar == iirim .and. iiPDF_ri > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rice), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_ri), kind = core_rknd )
 
-        else if ( ivar == iirgraupelm .and. iiPDF_rgraupel > 0 ) then
+        else if ( ivar == iirgm .and. iiPDF_rg > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rgraupel), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_rg), kind = core_rknd )
 
         else if ( ivar == iiNrm .and. iiPDF_Nr > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_Nr), kind = core_rknd )
 
-        else if ( ivar == iiNsnowm .and. iiPDF_Nsnow > 0 ) then
+        else if ( ivar == iiNsm .and. iiPDF_Ns > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Nsnow), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Ns), kind = core_rknd )
 
-        else if ( ivar == iiNgraupelm .and. iiPDF_Ngraupel > 0 ) then
+        else if ( ivar == iiNgm .and. iiPDF_Ng > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Ngraupel), kind = core_rknd )
+            real( X_nl_all_levs(:,sample,iiPDF_Ng), kind = core_rknd )
 
         else if ( ivar == iiNim .and. iiPDF_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration

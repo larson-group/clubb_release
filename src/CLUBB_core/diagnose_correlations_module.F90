@@ -206,7 +206,7 @@ module diagnose_correlations_module
 
   !-----------------------------------------------------------------------
   subroutine approx_w_corr( nz, d_variables, pdf_params, & ! Intent(in)
-                            rrainm, Nrm, Ncnm, &
+                            rrm, Nrm, Ncnm, &
                             stdev_w, sigma_rr_1, &
                             sigma_Nr_1, sigma_Ncn_1, &
                             corr_array) ! Intent(out)
@@ -242,7 +242,7 @@ module diagnose_correlations_module
       pdf_params    ! PDF parameters                         [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+      rrm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
       Ncnm,            & ! Mean cloud nuclei conc., < N_cn >        [num/kg]
       stdev_w            ! Standard deviation of w                              [m/s]
@@ -277,7 +277,7 @@ module diagnose_correlations_module
 
     ! ----- Begin Code -----
 
-    call approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncnm, & ! Intent(in)
+    call approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
                          wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
 
     do k = 1, nz
@@ -318,7 +318,7 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine approx_w_covar( nz, pdf_params, rrainm, Nrm, Ncnm, & ! Intent(in)
+  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
                              wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
     ! Description:
     ! Approximate the covariances of w with the hydrometeors using Eddy
@@ -361,7 +361,7 @@ module diagnose_correlations_module
       pdf_params    ! PDF parameters                         [units vary]
 
     real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-      rrainm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
+      rrm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
       Nrm,             & ! Mean rain drop concentration, < N_r >      [num/kg]
       Ncnm               ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
 
@@ -394,13 +394,13 @@ module diagnose_correlations_module
 ! same for wpNrp
 !    wprrp_zm(1:nz-1) &
 !    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
-!                rrainm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
-!                rrainm(2:nz) / max( precip_frac(2:nz), eps ), &
+!                rrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+!                rrm(2:nz) / max( precip_frac(2:nz), eps ), &
 !                gr%invrs_dzm(1:nz-1) )
 
     wprrp_zm(1:nz-1) &
     = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
-                rrainm(1:nz-1), rrainm(2:nz), &
+                rrm(1:nz-1), rrm(2:nz), &
                 gr%invrs_dzm(1:nz-1) )
 
     wpNrp_zm(1:nz-1) &
@@ -927,7 +927,7 @@ module diagnose_correlations_module
     use corr_matrix_module, only: &
       iiPDF_w,           & ! Variable(s)
       iiPDF_chi,    &
-      iiPDF_rrain,       &
+      iiPDF_rr,       &
       iiPDF_Nr,          &
       iiPDF_Ncn
 
@@ -952,7 +952,7 @@ module diagnose_correlations_module
     ! ----- Begin Code -----
 
       corr_array(iiPDF_w, iiPDF_chi, :) = corr_chi_w
-      corr_array(iiPDF_w, iiPDF_rrain, :) = corr_wrr
+      corr_array(iiPDF_w, iiPDF_rr, :) = corr_wrr
       corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
       corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
 
@@ -976,7 +976,7 @@ module diagnose_correlations_module
         iiPDF_w,        & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
-        iiPDF_rrain,    &
+        iiPDF_rr,    &
         iiPDF_Nr,       &
         iiPDF_Ncn
 
@@ -1009,30 +1009,30 @@ module diagnose_correlations_module
     ! ---- Begin Code ----
 
 !    corr_w_chi   = corr_array(iiPDF_w, iiPDF_chi)
-!    corr_wrr  = corr_array(iiPDF_w, iiPDF_rrain)
+!    corr_wrr  = corr_array(iiPDF_w, iiPDF_rr)
 !    corr_wNr  = corr_array(iiPDF_w, iiPDF_Nr)
 !    corr_wNcn = corr_array(iiPDF_w, iiPDF_Ncn)
 !    corr_chi_eta   = corr_array(iiPDF_chi, iiPDF_eta)
-!    corr_chi_rr  = corr_array(iiPDF_chi, iiPDF_rrain)
+!    corr_chi_rr  = corr_array(iiPDF_chi, iiPDF_rr)
 !    corr_chi_Nr  = corr_array(iiPDF_chi, iiPDF_Nr)
 !    corr_chi_Ncn = corr_array(iiPDF_chi, iiPDF_Ncn)
-!    corr_eta_rr  = corr_array(iiPDF_eta, iiPDF_rrain)
+!    corr_eta_rr  = corr_array(iiPDF_eta, iiPDF_rr)
 !    corr_eta_Nr  = corr_array(iiPDF_eta, iiPDF_Nr)
 !    corr_eta_Ncn = corr_array(iiPDF_eta, iiPDF_Ncn)
-!    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
+!    corr_rrNr = corr_array(iiPDF_rr, iiPDF_Nr)
 
     corr_w_chi   = corr_array(iiPDF_chi, iiPDF_w)
-    corr_wrr  = corr_array(iiPDF_rrain, iiPDF_w)
+    corr_wrr  = corr_array(iiPDF_rr, iiPDF_w)
     corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
     corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
     corr_chi_eta   = corr_array(iiPDF_eta, iiPDF_chi)
-    corr_chi_rr  = corr_array(iiPDF_rrain, iiPDF_chi)
+    corr_chi_rr  = corr_array(iiPDF_rr, iiPDF_chi)
     corr_chi_Nr  = corr_array(iiPDF_Nr, iiPDF_chi)
     corr_chi_Ncn = corr_array(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr  = corr_array(iiPDF_rrain, iiPDF_eta)
+    corr_eta_rr  = corr_array(iiPDF_rr, iiPDF_eta)
     corr_eta_Nr  = corr_array(iiPDF_Nr, iiPDF_eta)
     corr_eta_Ncn = corr_array(iiPDF_Ncn, iiPDF_eta)
-    corr_rrNr = corr_array(iiPDF_rrain, iiPDF_Nr)
+    corr_rrNr = corr_array(iiPDF_rr, iiPDF_Nr)
 
   end subroutine unpack_correlations
 

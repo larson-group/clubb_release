@@ -2198,19 +2198,19 @@ module stats_clubb_utilities
       gr ! Variable(s)
 
     use array_index, only:  & 
-      iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm
+      iirrm, iirsm, iirim, iirgm, & ! Variable(s)
+      iiNrm, iiNsm, iiNim, iiNgm
 
     use stats_variables, only: &
       sfc, & ! Variable(s)
-      irrainm, & 
-      irsnowm, & 
-      iricem, & 
-      irgraupelm, & 
+      irrm, & 
+      irsm, & 
+      irim, & 
+      irgm, & 
       iNim, & 
       iNrm, & 
-      iNsnowm, &
-      iNgraupelm, &
+      iNsm, &
+      iNgm, &
       iswp, &
       irwp, &
       iiwp
@@ -2245,21 +2245,21 @@ module stats_clubb_utilities
 
     if ( l_stats_samp ) then
 
-      if ( iirrainm > 0 ) then
-        call stat_update_var( irrainm, hydromet(:,iirrainm), zt )
+      if ( iirrm > 0 ) then
+        call stat_update_var( irrm, hydromet(:,iirrm), zt )
       end if
 
-      if ( iirsnowm > 0 ) then
-        call stat_update_var( irsnowm, hydromet(:,iirsnowm), zt )
+      if ( iirsm > 0 ) then
+        call stat_update_var( irsm, hydromet(:,iirsm), zt )
       end if
 
-      if ( iiricem > 0 ) then
-        call stat_update_var( iricem, hydromet(:,iiricem), zt )
+      if ( iirim > 0 ) then
+        call stat_update_var( irim, hydromet(:,iirim), zt )
       end if
 
-      if ( iirgraupelm > 0 ) then
-        call stat_update_var( irgraupelm,  & 
-                              hydromet(:,iirgraupelm), zt )
+      if ( iirgm > 0 ) then
+        call stat_update_var( irgm,  & 
+                              hydromet(:,iirgm), zt )
       end if
 
       if ( iiNim > 0 ) then
@@ -2270,50 +2270,50 @@ module stats_clubb_utilities
         call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
       end if
 
-      if ( iiNsnowm > 0 ) then
-        call stat_update_var( iNsnowm, hydromet(:,iiNsnowm), zt )
+      if ( iiNsm > 0 ) then
+        call stat_update_var( iNsm, hydromet(:,iiNsm), zt )
       end if
 
-      if ( iiNgraupelm > 0 ) then
-        call stat_update_var( iNgraupelm, hydromet(:,iiNgraupelm), zt )
+      if ( iiNgm > 0 ) then
+        call stat_update_var( iNgm, hydromet(:,iiNgm), zt )
       end if
 
       ! Snow Water Path
-      if ( iswp > 0 .and. iirsnowm > 0 ) then
+      if ( iswp > 0 .and. iirsm > 0 ) then
 
         ! Calculate snow water path
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirsnowm), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirsm), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iswp, 1, xtmp, sfc )
 
-      end if ! iswp > 0 .and. iirsnowm > 0
+      end if ! iswp > 0 .and. iirsm > 0
 
       ! Ice Water Path
-      if ( iiwp > 0 .and. iiricem > 0 ) then
+      if ( iiwp > 0 .and. iirim > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iiricem), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirim), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, sfc )
 
       end if
 
       ! Rain Water Path
-      if ( irwp > 0 .and. iirrainm > 0 ) then
+      if ( irwp > 0 .and. iirrm > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirrainm), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirrm), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( irwp, 1, xtmp, sfc )
 
-      end if ! irwp > 0 .and. irrainm > 0
+      end if ! irwp > 0 .and. irrm > 0
     end if ! l_stats_samp
 
     return
@@ -2334,19 +2334,19 @@ module stats_clubb_utilities
       gr ! Variable(s)
 
     use array_index, only:  & 
-      iirrainm, iirsnowm, iiricem, iirgraupelm, & ! Variable(s)
-      iiNrm, iiNsnowm, iiNim, iiNgraupelm
+      iirrm, iirsm, iirim, iirgm, & ! Variable(s)
+      iiNrm, iiNsm, iiNim, iiNgm
 
     use stats_variables, only: &
-      ilh_rrainm_mc, & ! Variable(s)
-      ilh_rsnowm_mc, & 
-      ilh_ricem_mc, & 
-      ilh_rgraupelm_mc, & 
+      ilh_rrm_mc, & ! Variable(s)
+      ilh_rsm_mc, & 
+      ilh_rim_mc, & 
+      ilh_rgm_mc, & 
       ilh_Ncm_mc, &
       ilh_Nim_mc, & 
       ilh_Nrm_mc, & 
-      ilh_Nsnowm_mc, &
-      ilh_Ngraupelm_mc, &
+      ilh_Nsm_mc, &
+      ilh_Ngm_mc, &
       ilh_rcm_mc, &
       ilh_rvm_mc, &
       ilh_thlm_mc
@@ -2404,20 +2404,20 @@ module stats_clubb_utilities
         call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
       end if
 
-      if ( iirrainm > 0 ) then
-        call stat_update_var( ilh_rrainm_mc, lh_hydromet_mc(:,iirrainm), lh_zt )
+      if ( iirrm > 0 ) then
+        call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirrm), lh_zt )
       end if
 
-      if ( iirsnowm > 0 ) then
-        call stat_update_var( ilh_rsnowm_mc, lh_hydromet_mc(:,iirsnowm), lh_zt )
+      if ( iirsm > 0 ) then
+        call stat_update_var( ilh_rsm_mc, lh_hydromet_mc(:,iirsm), lh_zt )
       end if
 
-      if ( iiricem > 0 ) then
-        call stat_update_var( ilh_ricem_mc, lh_hydromet_mc(:,iiricem), lh_zt )
+      if ( iirim > 0 ) then
+        call stat_update_var( ilh_rim_mc, lh_hydromet_mc(:,iirim), lh_zt )
       end if
 
-      if ( iirgraupelm > 0 ) then
-        call stat_update_var( ilh_rgraupelm_mc, lh_hydromet_mc(:,iirgraupelm), lh_zt )
+      if ( iirgm > 0 ) then
+        call stat_update_var( ilh_rgm_mc, lh_hydromet_mc(:,iirgm), lh_zt )
       end if
 
       if ( iiNim > 0 ) then
@@ -2428,12 +2428,12 @@ module stats_clubb_utilities
         call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNrm), lh_zt )
       end if
 
-      if ( iiNsnowm > 0 ) then
-        call stat_update_var( ilh_Nsnowm_mc, lh_hydromet_mc(:,iiNsnowm), lh_zt )
+      if ( iiNsm > 0 ) then
+        call stat_update_var( ilh_Nsm_mc, lh_hydromet_mc(:,iiNsm), lh_zt )
       end if
 
-      if ( iiNgraupelm > 0 ) then
-        call stat_update_var( ilh_Ngraupelm_mc, lh_hydromet_mc(:,iiNgraupelm), lh_zt )
+      if ( iiNgm > 0 ) then
+        call stat_update_var( ilh_Ngm_mc, lh_hydromet_mc(:,iiNgm), lh_zt )
       end if
 
       call stat_update_var( iAKm, AKm, lh_zt )

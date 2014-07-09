@@ -109,7 +109,7 @@ module clubb_driver
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
-      iiricem, iirsnowm, iirgraupelm
+      iirim, iirsm, iirgm
 
     use microphys_driver, only: &
         microphys_schemes  ! Procedure(s)
@@ -427,7 +427,7 @@ module clubb_driver
       params  ! Model parameters, C1, nu2, etc.
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      rrainm, & ! Overall mean rain water mixing ratio               [kg/kg]
+      rrm, & ! Overall mean rain water mixing ratio               [kg/kg]
       Nrm       ! Overall mean rain drop concentration               [num/kg]
 
     real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
@@ -904,7 +904,7 @@ module clubb_driver
     allocate( rvm_mc(gr%nz), rcm_mc(gr%nz), thlm_mc(gr%nz) )
 
     ! Allocate hydrometeor variables.
-    allocate( rrainm(gr%nz) )
+    allocate( rrm(gr%nz) )
     allocate( Nrm(gr%nz) )
 
     ! Allocate hydromet_pdf_params
@@ -1236,14 +1236,14 @@ module clubb_driver
 
       ! Compute total water in ice phase mixing ratio
       rfrzm = zero
-      if ( iiricem > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iiricem)
+      if ( iirim > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirim)
       end if
-      if ( iirsnowm > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirsnowm)
+      if ( iirsm > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirsm)
       end if
-      if ( iirgraupelm > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirgraupelm)
+      if ( iirgm > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirgm)
       end if
 
       rcm_zm = zt2zm( rcm )
@@ -3027,8 +3027,8 @@ module clubb_driver
         l_input_wpthvp, l_input_radht, &
         l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
         l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc1, l_input_rc2, &
-        l_input_thvm, l_input_rrainm,l_input_Nrm,  & 
-        l_input_rsnowm, l_input_ricem, l_input_rgraupelm,  & 
+        l_input_thvm, l_input_rrm,l_input_Nrm,  & 
+        l_input_rsm, l_input_rim, l_input_rgm,  & 
         l_input_thlm_forcing, l_input_rtm_forcing, & 
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
         l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
@@ -3133,20 +3133,20 @@ module clubb_driver
 
     select case ( trim( microphys_scheme ) )
     case ( "coamps" )
-      l_input_rrainm = .true.
-      l_input_rsnowm = .true.
-      l_input_ricem = .true.
-      l_input_rgraupelm = .true.
+      l_input_rrm = .true.
+      l_input_rsm = .true.
+      l_input_rim = .true.
+      l_input_rgm = .true.
       l_input_Nccnm = .true.
       l_input_Ncm = .true.
       l_input_Nrm = .true.
       l_input_Nim =  .true.
 
     case ( "morrison" )
-      l_input_rrainm = .true.
-      l_input_rsnowm = .true.
-      l_input_ricem = .true.
-      l_input_rgraupelm = .true.
+      l_input_rrm = .true.
+      l_input_rsm = .true.
+      l_input_rim = .true.
+      l_input_rgm = .true.
       l_input_Nccnm = .false.
       if ( l_predict_Nc ) then
         l_input_Ncm = .true.
@@ -3157,10 +3157,10 @@ module clubb_driver
       l_input_Nim =  .true.
 
     case ( "morrison_gettelman" )
-      l_input_rrainm = .false.
-      l_input_rsnowm = .false.
-      l_input_ricem = .true.
-      l_input_rgraupelm = .false.
+      l_input_rrm = .false.
+      l_input_rsm = .false.
+      l_input_rim = .true.
+      l_input_rgm = .false.
       l_input_Nccnm = .false.
       if ( l_predict_Nc ) then
         l_input_Ncm = .true.
@@ -3171,20 +3171,20 @@ module clubb_driver
       l_input_Nim =  .true.
 
     case ( "khairoutdinov_kogan" )
-      l_input_rrainm = .true.
-      l_input_rsnowm = .false.
-      l_input_ricem = .false.
-      l_input_rgraupelm = .false.
+      l_input_rrm = .true.
+      l_input_rsm = .false.
+      l_input_rim = .false.
+      l_input_rgm = .false.
       l_input_Nccnm = .false.
       l_input_Ncm = .false.
       l_input_Nrm = .true.
       l_input_Nim = .false.
 
     case default
-      l_input_rrainm = .false.
-      l_input_rsnowm = .false.
-      l_input_ricem = .false.
-      l_input_rgraupelm = .false.
+      l_input_rrm = .false.
+      l_input_rsm = .false.
+      l_input_rim = .false.
+      l_input_rgm = .false.
       l_input_Nccnm = .false.
       l_input_Ncm = .false.
       l_input_Nrm = .false.
@@ -3888,7 +3888,7 @@ module clubb_driver
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
-    use array_index, only: iirsnowm, iiricem ! Variable(s)
+    use array_index, only: iirsm, iirim ! Variable(s)
 
     use grid_class, only: gr ! Instance of a type
 
@@ -3961,8 +3961,8 @@ module clubb_driver
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
-      rsnowm,   & ! Snow mixing ratio                   [kg/kg]
-      ricem       ! Prisitine ice water mixing ratio    [kg/kg]
+      rsm,   & ! Snow mixing ratio                   [kg/kg]
+      rim       ! Prisitine ice water mixing ratio    [kg/kg]
 
     real( kind = core_rknd ) :: Fs0, amu0_core_rknd
 
@@ -4019,16 +4019,16 @@ module clubb_driver
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
       ! Copy snow and ice
-      if ( iirsnowm > 0 ) then
-        rsnowm = hydromet(1:gr%nz,iirsnowm)
+      if ( iirsm > 0 ) then
+        rsm = hydromet(1:gr%nz,iirsm)
       else
-        rsnowm = 0.0_core_rknd
+        rsm = 0.0_core_rknd
       endif
 
-      if ( iiricem > 0 ) then
-        ricem = hydromet(1:gr%nz,iiricem)
+      if ( iirim > 0 ) then
+        rim = hydromet(1:gr%nz,iirim)
       else
-        ricem = 0.0_core_rknd
+        rim = 0.0_core_rknd
       end if
 
       ! NaN checks added to detect possible errors with BUGSrad
@@ -4051,13 +4051,13 @@ module clubb_driver
           err_code_radiation = clubb_var_equals_NaN
         end if
 
-        if ( is_nan_2d( rsnowm ) ) then
-          write(fstderr,*) "rsnowm before BUGSrad is NaN"
+        if ( is_nan_2d( rsm ) ) then
+          write(fstderr,*) "rsm before BUGSrad is NaN"
           err_code_radiation = clubb_var_equals_NaN
         end if
 
-        if ( is_nan_2d( ricem ) ) then
-          write(fstderr,*) "ricem before BUGSrad is NaN"
+        if ( is_nan_2d( rim ) ) then
+          write(fstderr,*) "rim before BUGSrad is NaN"
           err_code_radiation = clubb_var_equals_NaN
         end if
 
@@ -4082,7 +4082,7 @@ module clubb_driver
         end if
 
         ! Check for impossible negative values
-        call rad_check( thlm, rcm, rtm, ricem, &             ! Intent(in)
+        call rad_check( thlm, rcm, rtm, rim, &             ! Intent(in)
                         cloud_frac, p_in_Pa, exner, rho_zm ) ! Intent(in)
 
       end if  ! clubb_at_least_debug_level( 2 )
@@ -4093,7 +4093,7 @@ module clubb_driver
              extend_atmos_bottom_level,               & ! Intent(in)
              extend_atmos_top_level,                  & ! Intent(in)
              amu0,                                    & ! Intent(in)
-             thlm, rcm, rtm, rsnowm, ricem,           & ! Intent(in)
+             thlm, rcm, rtm, rsm, rim,           & ! Intent(in)
              cloud_frac, ice_supersat_frac,           & ! Intent(in)
              p_in_Pa, zt2zm( p_in_Pa ), exner, rho_zm,& ! Intent(in)
              radht, Frad,                             & ! Intent(out)
@@ -4198,7 +4198,7 @@ module clubb_driver
     use stats_variables, only: &
       iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & ! Variables
       iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
-      io3l_rad, irsnowm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
+      io3l_rad, irsm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
       iradht_rad, iradht_LW_rad, iFrad_SW_rad, &
       iFrad_LW_rad, iFrad_SW_up_rad, iFrad_LW_up_rad, iFrad_SW_down_rad, &
       iFrad_LW_down_rad, ifdswcl, ifuswcl, ifdlwcl, ifulwcl, iradht, &
@@ -4206,7 +4206,7 @@ module clubb_driver
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & ! Variables
-      rsnowm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
+      rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
       radht_SW_2d, p_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
@@ -4276,7 +4276,7 @@ module clubb_driver
         call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim), &
                  kind = core_rknd  ), rad_zt )
 
-        call stat_update_var( irsnowm_rad, real( flip(rsnowm_2d(1,:), rad_zt_dim), &
+        call stat_update_var( irsm_rad, real( flip(rsm_2d(1,:), rad_zt_dim), &
                  kind = core_rknd  ), rad_zt )
 
         call stat_update_var( ircm_in_cloud_rad, &

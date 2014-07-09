@@ -86,7 +86,7 @@ module advance_microphys_module
         clubb_no_error                ! Constant(s)
 
     use array_index, only:  & 
-        iirrainm  ! Variable(s)
+        iirrm  ! Variable(s)
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
@@ -103,7 +103,7 @@ module advance_microphys_module
         iFprec, &
         iprecip_rate_sfc, & 
         irain_flux_sfc, & 
-        irrainm_sfc
+        irrm_sfc
 
     use stats_variables, only: & 
         iNcm,         & ! Variable(s)
@@ -319,7 +319,7 @@ module advance_microphys_module
       call stat_update_var( iNc_in_cloud, Nc_in_cloud, zt )
     endif ! l_stats_samp
 
-    if ( l_stats_samp .and. iirrainm > 0 ) then
+    if ( l_stats_samp .and. iirrm > 0 ) then
 
       ! Rainfall rate (mm/day) is defined on thermodynamic levels.  The rainfall
       ! rate is given by the equation:
@@ -335,9 +335,9 @@ module advance_microphys_module
       ! Rainfall rate is defined as positive.  Since V_rr is always negative,
       ! the minus (-) sign is necessary.
       call stat_update_var( iprecip_rate_zt,  & 
-                            max( - ( hydromet(:,iirrainm) &
-                                     * hydromet_vel_zt(:,iirrainm) &
-                                     + hydromet_vel_covar_zt(:,iirrainm) ), &
+                            max( - ( hydromet(:,iirrm) &
+                                     * hydromet_vel_zt(:,iirrm) &
+                                     + hydromet_vel_covar_zt(:,iirrm) ), &
                                  zero ) &
                             * ( rho / rho_lw ) & 
                             * real( sec_per_day, kind = core_rknd ) &
@@ -354,9 +354,9 @@ module advance_microphys_module
       ! It is generally a convention in meteorology to show Precipitation Flux
       ! as a positive downward quantity, so the minus (-) sign is necessary.
       call stat_update_var( iFprec,  & 
-                            max( - ( zt2zm( hydromet(:,iirrainm) )  & 
-                                     * hydromet_vel(:,iirrainm) &
-                                     + hydromet_vel_covar(:,iirrainm) ), &
+                            max( - ( zt2zm( hydromet(:,iirrm) )  & 
+                                     * hydromet_vel(:,iirrm) &
+                                     + hydromet_vel_covar(:,iirrm) ), &
                                  zero ) &
                             * rho_zm * Lv, zm )
 
@@ -365,9 +365,9 @@ module advance_microphys_module
 
       if ( trim( microphys_scheme ) /= "morrison" ) then
         call stat_update_var_pt( iprecip_rate_sfc, 1,  & 
-                                 max( - ( hydromet(2,iirrainm) &
-                                          * hydromet_vel_zt(2,iirrainm) &
-                                          + hydromet_vel_covar_zt(2,iirrainm) ), &
+                                 max( - ( hydromet(2,iirrm) &
+                                          * hydromet_vel_zt(2,iirrm) &
+                                          + hydromet_vel_covar_zt(2,iirrm) ), &
                                       zero ) &
                                   * ( rho(2) / rho_lw ) & 
                                   * real( sec_per_day, kind = core_rknd ) &
@@ -375,17 +375,17 @@ module advance_microphys_module
       endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
-                               max( - ( zt2zm( hydromet(:,iirrainm), 1 )  & 
-                                        * hydromet_vel(1,iirrainm) &
-                                        + hydromet_vel_covar(1,iirrainm) ), &
+                               max( - ( zt2zm( hydromet(:,iirrm), 1 )  & 
+                                        * hydromet_vel(1,iirrm) &
+                                        + hydromet_vel_covar(1,iirrm) ), &
                                     zero ) &
                                * rho_zm(1) * Lv, sfc )
 
       ! Also store the value of surface rain water mixing ratio.
-      call stat_update_var_pt( irrainm_sfc, 1,  & 
-                               ( zt2zm( hydromet(:,iirrainm), 1 ) ), sfc )
+      call stat_update_var_pt( irrm_sfc, 1,  & 
+                               ( zt2zm( hydromet(:,iirrm), 1 ) ), sfc )
 
-    endif ! l_stats_samp and iirrainm > 0
+    endif ! l_stats_samp and iirrm > 0
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
@@ -549,7 +549,7 @@ module advance_microphys_module
 
     ! Stats for <V_rr'rr"> and <V_Nr'Nr'>
     use array_index, only:  & 
-        iirrainm, &! Variable(s)
+        iirrm, &! Variable(s)
         iiNrm
 
     use stats_variables, only: & 
@@ -811,7 +811,7 @@ module advance_microphys_module
           if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
 
              ! Covariance of sedimentation velocity of r_r and r_r.
-             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrainm), &
+             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrm), &
                                    zm )
 
           elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
@@ -1213,19 +1213,19 @@ module advance_microphys_module
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
-        irrainm_ma, & 
-        irrainm_sd, & 
-        irrainm_ts, & 
-        irrainm_ta, & 
-        iricem_ma, & 
-        iricem_sd, & 
-        iricem_ta, & 
-        irsnowm_ma, & 
-        irsnowm_sd, & 
-        irsnowm_ta, & 
-        irgraupelm_ma, & 
-        irgraupelm_sd, & 
-        irgraupelm_ta, & 
+        irrm_ma, & 
+        irrm_sd, & 
+        irrm_ts, & 
+        irrm_ta, & 
+        irim_ma, & 
+        irim_sd, & 
+        irim_ta, & 
+        irsm_ma, & 
+        irsm_sd, & 
+        irsm_ta, & 
+        irgm_ma, & 
+        irgm_sd, & 
+        irgm_ta, & 
         l_stats_samp, & 
         ztscr01, & 
         ztscr02, & 
@@ -1248,12 +1248,12 @@ module advance_microphys_module
         iNim_ma, & 
         iNim_sd, & 
         iNim_ta, & 
-        iNsnowm_ma, & 
-        iNsnowm_sd, & 
-        iNsnowm_ta, & 
-        iNgraupelm_ma, & 
-        iNgraupelm_sd, & 
-        iNgraupelm_ta
+        iNsm_ma, & 
+        iNsm_sd, & 
+        iNsm_ta, & 
+        iNgm_ma, & 
+        iNgm_sd, & 
+        iNgm_ta
 
     use stats_variables, only: & 
         iNcm_ma, & 
@@ -1309,24 +1309,24 @@ module advance_microphys_module
 
     select case( solve_type )
     case( "rrainm" )
-      ihmm_ma = irrainm_ma
-      ihmm_ta = irrainm_ta
-      ihmm_sd = irrainm_sd
-      ihmm_ts = irrainm_ts
+      ihmm_ma = irrm_ma
+      ihmm_ta = irrm_ta
+      ihmm_sd = irrm_sd
+      ihmm_ts = irrm_ts
     case( "ricem" )
-      ihmm_ma = iricem_ma
-      ihmm_ta = iricem_ta
-      ihmm_sd = iricem_sd
+      ihmm_ma = irim_ma
+      ihmm_ta = irim_ta
+      ihmm_sd = irim_sd
       ihmm_ts = 0
     case( "rsnowm" )
-      ihmm_ma = irsnowm_ma
-      ihmm_ta = irsnowm_ta
-      ihmm_sd = irsnowm_sd
+      ihmm_ma = irsm_ma
+      ihmm_ta = irsm_ta
+      ihmm_sd = irsm_sd
       ihmm_ts = 0
     case( "rgraupelm" )
-      ihmm_ma = irgraupelm_ma
-      ihmm_ta = irgraupelm_ta
-      ihmm_sd = irgraupelm_sd
+      ihmm_ma = irgm_ma
+      ihmm_ta = irgm_ta
+      ihmm_sd = irgm_sd
       ihmm_ts = 0
     case( "Ncm" )
       ihmm_ma = iNcm_ma
@@ -1344,14 +1344,14 @@ module advance_microphys_module
       ihmm_sd = iNim_sd
       ihmm_ts = 0
     case( "Nsnowm" )
-      ihmm_ma = iNsnowm_ma
-      ihmm_ta = iNsnowm_ta
-      ihmm_sd = iNsnowm_sd
+      ihmm_ma = iNsm_ma
+      ihmm_ta = iNsm_ta
+      ihmm_sd = iNsm_sd
       ihmm_ts = 0
     case( "Ngraupelm" )
-      ihmm_ma = iNgraupelm_ma
-      ihmm_ta = iNgraupelm_ta
-      ihmm_sd = iNgraupelm_sd
+      ihmm_ma = iNgm_ma
+      ihmm_ta = iNgm_ta
+      ihmm_sd = iNgm_sd
       ihmm_ts = 0
     case default
       ihmm_ma = 0
@@ -1500,34 +1500,34 @@ module advance_microphys_module
         l_upwind_diff_sed  ! Use "upwind" differencing approx. for sedimentation
 
     use stats_variables, only: & 
-        irrainm_ma, & ! Variable(s)
-        irrainm_sd, & 
-        irrainm_ts, & 
-        irrainm_ta, & 
+        irrm_ma, & ! Variable(s)
+        irrm_sd, & 
+        irrm_ts, & 
+        irrm_ta, & 
         iNrm_ma, & 
         iNrm_sd, & 
         iNrm_ts, & 
         iNrm_ta, & 
         iNcm_ma, &
         iNcm_ta, &
-        iricem_ma, & 
-        iricem_sd, & 
-        iricem_ta, & 
-        irsnowm_ma, & 
-        irsnowm_sd, & 
-        irsnowm_ta, & 
-        irgraupelm_ma, & 
-        irgraupelm_sd, & 
-        irgraupelm_ta, & 
+        irim_ma, & 
+        irim_sd, & 
+        irim_ta, & 
+        irsm_ma, & 
+        irsm_sd, & 
+        irsm_ta, & 
+        irgm_ma, & 
+        irgm_sd, & 
+        irgm_ta, & 
         iNim_ma, & 
         iNim_sd, & 
         iNim_ta, & 
-        iNsnowm_ma, & 
-        iNsnowm_sd, & 
-        iNsnowm_ta, & 
-        iNgraupelm_ma, & 
-        iNgraupelm_sd, & 
-        iNgraupelm_ta
+        iNsm_ma, & 
+        iNsm_sd, & 
+        iNsm_ta, & 
+        iNgm_ma, & 
+        iNgm_sd, & 
+        iNgm_ta
 
     use stats_variables, only: & 
         ztscr01, & 
@@ -1605,29 +1605,29 @@ module advance_microphys_module
 
     select case( solve_type )
     case ( "rrainm" )
-      ihmm_ma = irrainm_ma
-      ihmm_ta = irrainm_ta
-      ihmm_sd = irrainm_sd
-      ihmm_ts = irrainm_ts
+      ihmm_ma = irrm_ma
+      ihmm_ta = irrm_ta
+      ihmm_sd = irrm_sd
+      ihmm_ts = irrm_ts
     case ( "Nrm" )
       ihmm_ma = iNrm_ma
       ihmm_ta = iNrm_ta
       ihmm_sd = iNrm_sd
       ihmm_ts = iNrm_ts
     case ( "ricem" )
-      ihmm_ma = iricem_ma
-      ihmm_ta = iricem_ta
-      ihmm_sd = iricem_sd
+      ihmm_ma = irim_ma
+      ihmm_ta = irim_ta
+      ihmm_sd = irim_sd
       ihmm_ts = 0
     case ( "rsnowm" )
-      ihmm_ma = irsnowm_ma
-      ihmm_ta = irsnowm_ta
-      ihmm_sd = irsnowm_sd
+      ihmm_ma = irsm_ma
+      ihmm_ta = irsm_ta
+      ihmm_sd = irsm_sd
       ihmm_ts = 0
     case ( "rgraupelm" )
-      ihmm_ma = irgraupelm_ma
-      ihmm_ta = irgraupelm_ta
-      ihmm_sd = irgraupelm_sd
+      ihmm_ma = irgm_ma
+      ihmm_ta = irgm_ta
+      ihmm_sd = irgm_sd
       ihmm_ts = 0
     case ( "Ncm" )
       ihmm_ma = iNcm_ma
@@ -1640,14 +1640,14 @@ module advance_microphys_module
       ihmm_sd = iNim_sd
       ihmm_ts = 0
     case( "Nsnowm" )
-      ihmm_ma = iNsnowm_ma
-      ihmm_ta = iNsnowm_ta
-      ihmm_sd = iNsnowm_sd
+      ihmm_ma = iNsm_ma
+      ihmm_ta = iNsm_ta
+      ihmm_sd = iNsm_sd
       ihmm_ts = 0
     case( "Ngraupelm" )
-      ihmm_ma = iNgraupelm_ma
-      ihmm_ta = iNgraupelm_ta
-      ihmm_sd = iNgraupelm_sd
+      ihmm_ma = iNgm_ma
+      ihmm_ta = iNgm_ta
+      ihmm_sd = iNgm_sd
       ihmm_ts = 0
     case default
       ihmm_ma = 0
@@ -1866,8 +1866,8 @@ module advance_microphys_module
         core_rknd
 
     use stats_variables, only: & 
-        irrainm_ta, & ! Variable(s)
-        irrainm_ts, &
+        irrm_ta, & ! Variable(s)
+        irrm_ts, &
         iNrm_ta, &
         iNrm_ts, &
         zt, &
@@ -1875,12 +1875,12 @@ module advance_microphys_module
 
     use stats_variables, only: &
         iNim_ta, &
-        iNsnowm_ta, &
-        iNgraupelm_ta, &
+        iNsm_ta, &
+        iNgm_ta, &
         iNcm_ta, &
-        iricem_ta, &
-        irsnowm_ta, &
-        irgraupelm_ta
+        irim_ta, &
+        irsm_ta, &
+        irgm_ta
 
     use stats_type_utilities, only: &
         stat_begin_update_pt ! Procedure(s)
@@ -1932,19 +1932,19 @@ module advance_microphys_module
 
     select case( solve_type )
     case ( "rrainm" )
-      ihmm_ta = irrainm_ta
-      ihmm_ts = irrainm_ts
+      ihmm_ta = irrm_ta
+      ihmm_ts = irrm_ts
     case ( "Nrm" )
       ihmm_ta = iNrm_ta
       ihmm_ts = iNrm_ts
     case( "ricem" )
-      ihmm_ta = iricem_ta
+      ihmm_ta = irim_ta
       ihmm_ts = 0
     case( "rsnowm" )
-      ihmm_ta = irsnowm_ta
+      ihmm_ta = irsm_ta
       ihmm_ts = 0
     case( "rgraupelm" )
-      ihmm_ta = irgraupelm_ta
+      ihmm_ta = irgm_ta
       ihmm_ts = 0
     case( "Ncm" )
       ihmm_ta = iNcm_ta
@@ -1953,10 +1953,10 @@ module advance_microphys_module
       ihmm_ta = iNim_ta
       ihmm_ts = 0
     case( "Nsnowm" )
-      ihmm_ta = iNsnowm_ta
+      ihmm_ta = iNsm_ta
       ihmm_ts = 0
     case( "Ngraupelm" )
-      ihmm_ta = iNgraupelm_ta
+      ihmm_ta = iNgm_ta
       ihmm_ts = 0
     case default
       ihmm_ta = 0

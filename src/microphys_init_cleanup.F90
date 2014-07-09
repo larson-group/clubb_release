@@ -120,14 +120,14 @@ module microphys_init_cleanup
     use array_index, only: & 
         l_frozen_hm, & ! Variables
         l_mix_rat_hm,&
-        iirrainm,    &
+        iirrm,    &
         iiNrm,       &
-        iirsnowm,    &
-        iiricem,     &
-        iirgraupelm, &
-        iiNsnowm,    & 
+        iirsm,    &
+        iirim,     &
+        iirgm, &
+        iiNsm,    & 
         iiNim,       &
-        iiNgraupelm
+        iiNgm
 
     use constants_clubb, only: &
         cm3_per_m3, &
@@ -468,22 +468,22 @@ module microphys_init_cleanup
 
     case ( "morrison" )
 
-       iirrainm = 1
+       iirrm = 1
        iiNrm    = 2
 
        if ( l_ice_microphys ) then
 
-          iiricem  = 3
+          iirim  = 3
           iiNim    = 4
-          iirsnowm = 5
-          iiNsnowm = 6
+          iirsm = 5
+          iiNsm = 6
 
           doicemicro = .true.
 
           if ( l_graupel ) then
 
-             iirgraupelm = 7
-             iiNgraupelm = 8
+             iirgm = 7
+             iiNgm = 8
 
              hydromet_dim = 8
 
@@ -491,8 +491,8 @@ module microphys_init_cleanup
 
           else ! l_graupel disabled
 
-             iirgraupelm = -1
-             iiNgraupelm = -1
+             iirgm = -1
+             iiNgm = -1
 
              hydromet_dim = 6
 
@@ -502,12 +502,12 @@ module microphys_init_cleanup
 
        else ! l_ice_microphys disabled
 
-          iirsnowm    = -1
-          iiricem     = -1
-          iiNsnowm    = -1
+          iirsm    = -1
+          iirim     = -1
+          iiNsm    = -1
           iiNim       = -1
-          iirgraupelm = -1
-          iiNgraupelm = -1
+          iirgm = -1
+          iiNgm = -1
 
           hydromet_dim = 2
 
@@ -604,15 +604,15 @@ module microphys_init_cleanup
 
     case ( "morrison_gettelman" )
 
-       iirrainm    = -1
-       iirsnowm    = -1
-       iiricem     = 1
-       iirgraupelm = -1
+       iirrm    = -1
+       iirsm    = -1
+       iirim     = 1
+       iirgm = -1
 
        iiNrm       = -1
-       iiNsnowm    = -1
+       iiNsm    = -1
        iiNim       = 2
-       iiNgraupelm = -1
+       iiNgm = -1
 
        hydromet_dim = 2
 
@@ -632,7 +632,7 @@ module microphys_init_cleanup
        allocate( l_hydromet_sed(hydromet_dim) )
 
        ! Sedimentation is handled within the MG microphysics
-       l_hydromet_sed(iiricem) = .false.
+       l_hydromet_sed(iirim) = .false.
        l_hydromet_sed(iiNim)   = .false.
 
        ! Initialize constants for aerosols
@@ -650,16 +650,16 @@ module microphys_init_cleanup
           stop "Fatal Error"
        endif
 
-       iirrainm    = 1
-       iirsnowm    = 2
-       iiricem     = 3
-       iirgraupelm = 4
+       iirrm    = 1
+       iirsm    = 2
+       iirim     = 3
+       iirgm = 4
 
        iiNrm       = 5
        ! Nsnowm is computed diagnostically in the subroutine coamps_microphys_driver
-       iiNsnowm    = -1
+       iiNsm    = -1
        iiNim       = 6
-       iiNgraupelm = -1
+       iiNgm = -1
 
        hydromet_dim = 6
 
@@ -668,10 +668,10 @@ module microphys_init_cleanup
        l_hydromet_sed(iiNrm) = .true.
        l_hydromet_sed(iiNim) = .false.
 
-       l_hydromet_sed(iirrainm)    = .true.
-       l_hydromet_sed(iirsnowm)    = .true.
-       l_hydromet_sed(iiricem)     = .true.
-       l_hydromet_sed(iirgraupelm) = .true.
+       l_hydromet_sed(iirrm)    = .true.
+       l_hydromet_sed(iirsm)    = .true.
+       l_hydromet_sed(iirim)     = .true.
+       l_hydromet_sed(iirgm) = .true.
 
     case ( "khairoutdinov_kogan" )
 
@@ -681,34 +681,34 @@ module microphys_init_cleanup
           stop "Fatal Error"
        endif
 
-       iirrainm    = 1
-       iirsnowm    = -1
-       iiricem     = -1
-       iirgraupelm = -1
+       iirrm    = 1
+       iirsm    = -1
+       iirim     = -1
+       iirgm = -1
 
        iiNrm       = 2
-       iiNsnowm    = -1
+       iiNsm    = -1
        iiNim       = -1
-       iiNgraupelm = -1
+       iiNgm = -1
 
        hydromet_dim = 2
 
        allocate( l_hydromet_sed(hydromet_dim) )
 
-       l_hydromet_sed(iirrainm) = .true.
+       l_hydromet_sed(iirrm) = .true.
        l_hydromet_sed(iiNrm)    = .true.
 
     case ( "simplified_ice", "none" )
 
-       iirrainm    = -1
-       iirsnowm    = -1
-       iiricem     = -1
-       iirgraupelm = -1
+       iirrm    = -1
+       iirsm    = -1
+       iirim     = -1
+       iirgm = -1
 
        iiNrm       = -1
-       iiNsnowm    = -1
+       iiNsm    = -1
        iiNim       = -1
-       iiNgraupelm = -1
+       iiNgm = -1
 
        hydromet_dim = 0
 
@@ -726,33 +726,33 @@ module microphys_init_cleanup
     allocate( hydromet_tol(hydromet_dim) )
     allocate( l_mix_rat_hm(hydromet_dim) )
     allocate( l_frozen_hm(hydromet_dim) )
-    if ( iirrainm > 0 ) then
+    if ( iirrm > 0 ) then
        ! The microphysics scheme predicts rain water mixing ratio, rr.
-       hydromet_list(iirrainm) = "rrainm"
-       l_mix_rat_hm(iirrainm)  = .true.
-       l_frozen_hm(iirrainm)   = .false.
-       hydromet_tol(iirrainm)  = rr_tol
+       hydromet_list(iirrm) = "rrainm"
+       l_mix_rat_hm(iirrm)  = .true.
+       l_frozen_hm(iirrm)   = .false.
+       hydromet_tol(iirrm)  = rr_tol
     endif
-    if ( iiricem > 0 ) then
+    if ( iirim > 0 ) then
        ! The microphysics scheme predicts ice mixing ratio, ri.
-       hydromet_list(iiricem) = "ricem"
-       l_mix_rat_hm(iiricem)  = .true.
-       l_frozen_hm(iiricem)   = .true.
-       hydromet_tol(iiricem)  = ri_tol
+       hydromet_list(iirim) = "ricem"
+       l_mix_rat_hm(iirim)  = .true.
+       l_frozen_hm(iirim)   = .true.
+       hydromet_tol(iirim)  = ri_tol
     endif
-    if ( iirsnowm > 0 ) then
+    if ( iirsm > 0 ) then
        ! The microphysics scheme predicts snow mixing ratio, rs.
-       hydromet_list(iirsnowm) = "rsnowm"
-       l_mix_rat_hm(iirsnowm)  = .true.
-       l_frozen_hm(iirsnowm)   = .true.
-       hydromet_tol(iirsnowm)  = rs_tol
+       hydromet_list(iirsm) = "rsnowm"
+       l_mix_rat_hm(iirsm)  = .true.
+       l_frozen_hm(iirsm)   = .true.
+       hydromet_tol(iirsm)  = rs_tol
     endif
-    if ( iirgraupelm > 0 ) then
+    if ( iirgm > 0 ) then
        ! The microphysics scheme predicts graupel mixing ratio, rg.
-       hydromet_list(iirgraupelm) = "rgraupelm"
-       l_mix_rat_hm(iirgraupelm)  = .true.
-       l_frozen_hm(iirgraupelm)   = .true.
-       hydromet_tol(iirgraupelm)  = rg_tol
+       hydromet_list(iirgm) = "rgraupelm"
+       l_mix_rat_hm(iirgm)  = .true.
+       l_frozen_hm(iirgm)   = .true.
+       hydromet_tol(iirgm)  = rg_tol
     endif
     if ( iiNrm > 0 ) then
        ! The microphysics scheme predicts rain drop concentration, Nr.
@@ -768,19 +768,19 @@ module microphys_init_cleanup
        l_frozen_hm(iiNim)   = .true.
        hydromet_tol(iiNim)  = Ni_tol
     endif
-    if ( iiNsnowm > 0 ) then
+    if ( iiNsm > 0 ) then
        ! The microphysics scheme predicts snowflake concentration, Ns.
-       hydromet_list(iiNsnowm) = "Nsnowm"
-       l_mix_rat_hm(iiNsnowm)  = .false.
-       l_frozen_hm(iiNsnowm)   = .true.
-       hydromet_tol(iiNsnowm)  = Ns_tol
+       hydromet_list(iiNsm) = "Nsnowm"
+       l_mix_rat_hm(iiNsm)  = .false.
+       l_frozen_hm(iiNsm)   = .true.
+       hydromet_tol(iiNsm)  = Ns_tol
     endif
-    if ( iiNgraupelm > 0 ) then
+    if ( iiNgm > 0 ) then
        ! The microphysics scheme predicts graupel concentration, Ng.
-       hydromet_list(iiNgraupelm) = "Ngraupelm"
-       l_mix_rat_hm(iiNgraupelm)  = .false.
-       l_frozen_hm(iiNgraupelm)   = .true.
-       hydromet_tol(iiNgraupelm)  = Ng_tol
+       hydromet_list(iiNgm) = "Ngraupelm"
+       l_mix_rat_hm(iiNgm)  = .false.
+       l_frozen_hm(iiNgm)   = .true.
+       hydromet_tol(iiNgm)  = Ng_tol
     endif
 
     ! Sanity check
@@ -881,9 +881,9 @@ module microphys_init_cleanup
        stop
     endif
 
-    call setup_pdf_indices( hydromet_dim, iirrainm, iiNrm, &
-                            iiricem, iiNim, iirsnowm, iiNsnowm, &
-                            iirgraupelm, iiNgraupelm )
+    call setup_pdf_indices( hydromet_dim, iirrm, iiNrm, &
+                            iirim, iiNim, iirsm, iiNsm, &
+                            iirgm, iiNgm )
 
     corr_file_path_cloud = corr_input_path//trim( runtype )//cloud_file_ext
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext

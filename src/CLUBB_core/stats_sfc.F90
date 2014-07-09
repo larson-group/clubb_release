@@ -46,7 +46,7 @@ module stats_sfc
         iz_inversion, & 
         iprecip_rate_sfc, & 
         irain_flux_sfc, & 
-        irrainm_sfc
+        irrm_sfc
 
     use stats_variables, only: &
         iwpthlp_sfc, &
@@ -80,7 +80,7 @@ module stats_sfc
     use stats_variables, only: &
       irtm_spur_src,            &
       ithlm_spur_src, &
-      irsnowm_sd_morr_int
+      irsm_sd_morr_int
 
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
@@ -231,9 +231,9 @@ module stats_sfc
         k = k + 1
 
       case ('rrainm_sfc')       ! Brian
-        irrainm_sfc = k
+        irrm_sfc = k
 
-        call stat_assign( var_index=irrainm_sfc, var_name="rrainm_sfc", &
+        call stat_assign( var_index=irrm_sfc, var_name="rrainm_sfc", &
              var_description="Surface rain water mixing ratio [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=sfc )
         k = k + 1
@@ -435,9 +435,9 @@ module stats_sfc
         k = k + 1
 
       case ('rs_sd_morr_int')
-        irsnowm_sd_morr_int = k
+        irsm_sd_morr_int = k
 
-        call stat_assign( var_index=irsnowm_sd_morr_int, var_name="rs_sd_morr_int", &
+        call stat_assign( var_index=irsm_sd_morr_int, var_name="rs_sd_morr_int", &
              var_description="rsnowm_sd_morr vertical integral [(kg/kg)/s]", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=sfc )
         k = k + 1

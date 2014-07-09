@@ -86,24 +86,24 @@ module generate_lh_sample_module
 
     use array_index, only: &
       iiNim,    & ! Variables
-      iiNsnowm, &
+      iiNsm, &
       iiNrm,    &
-      iirrainm, &
-      iiricem, &
-      iirsnowm, &
-      iiNgraupelm, &
-      iirgraupelm
+      iirrm, &
+      iirim, &
+      iirsm, &
+      iiNgm, &
+      iirgm
 
     use corr_matrix_module, only: &
-      iiPDF_rrain, & ! Variables
-      iiPDF_rsnow, &
-      iiPDF_rice, &
-      iiPDF_rgraupel, &
+      iiPDF_rr, & ! Variables
+      iiPDF_rs, &
+      iiPDF_ri, &
+      iiPDF_rg, &
       iiPDF_Nr, &
       iiPDF_Ncn, &
       iiPDF_Ni, &
-      iiPDF_Nsnow, &
-      iiPDF_Ngraupel, &
+      iiPDF_Ns, &
+      iiPDF_Ng, &
       iiPDF_chi, &
       iiPDF_eta, &
       iiPDF_w
@@ -278,7 +278,7 @@ module generate_lh_sample_module
 
     ! rr = specific rain content. [rr] = kg rain / kg air
     real( kind = dp ) :: &
-      rrainm, &  ! rain water mixing ratio         [kg/kg]
+      rrm, &  ! rain water mixing ratio         [kg/kg]
       var_rr1, & ! PDF param for width of plume 1     [(kg/kg)^2]
       var_rr2    ! PDF param for width of plume 2.   [(kg/kg)^2]
 
@@ -420,7 +420,7 @@ module generate_lh_sample_module
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of hydrometeors (e.g. rrain, Ncn) to constants.
+    !    but we set means, covariance of hydrometeors (e.g. rr, Ncn) to constants.
 
 
     ! Standard sample for testing purposes when n=2
@@ -468,13 +468,13 @@ module generate_lh_sample_module
     end if
 
     ! rr = specific rain content. [rr] = kg rain / kg air
-    ! rrainm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
+    ! rrm  = mean of rr; rrp2 = variance of rr, must have rrp2>0.
     ! rr1  = PDF parameter for mean of plume 1. [rr1] = (kg/kg)
     ! rr2  = PDF parameter for mean of plume 2. [rr2] = (kg/kg)
 
-    if ( iiPDF_rrain > 0 ) then
+    if ( iiPDF_rr > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rrain, real(hydromet(iirrainm), kind = dp), & ! In
+           ( d_variables, iiPDF_rr, real(hydromet(iirrm), kind = dp), & ! In
              sigma2_on_mu2_ip_array, &! In
              mu1, mu2 ) ! In/out
     end if
@@ -486,23 +486,23 @@ module generate_lh_sample_module
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiPDF_rsnow > 0 ) then
+    if ( iiPDF_rs > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rsnow, real(hydromet(iirsnowm),kind = dp), & ! In
+           ( d_variables, iiPDF_rs, real(hydromet(iirsm),kind = dp), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiPDF_Nsnow > 0 ) then
+    if ( iiPDF_Ns > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Nsnow, real(hydromet(iiNsnowm),kind = dp), & ! In
+           ( d_variables, iiPDF_Ns, real(hydromet(iiNsm),kind = dp), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiPDF_rice > 0 ) then
+    if ( iiPDF_ri > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rice, real(hydromet(iiricem),kind = dp), & ! In
+           ( d_variables, iiPDF_ri, real(hydromet(iirim),kind = dp), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
@@ -514,16 +514,16 @@ module generate_lh_sample_module
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiPDF_rgraupel > 0 ) then
+    if ( iiPDF_rg > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_rgraupel, real(hydromet(iirgraupelm),kind = dp), & ! In
+           ( d_variables, iiPDF_rg, real(hydromet(iirgm),kind = dp), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
 
-    if ( iiPDF_Ngraupel > 0 ) then
+    if ( iiPDF_Ng > 0 ) then
       call add_mu_element_LN &
-           ( d_variables, iiPDF_Ngraupel, real(hydromet(iiNgraupelm),kind = dp), & ! In
+           ( d_variables, iiPDF_Ng, real(hydromet(iiNgm),kind = dp), & ! In
              sigma2_on_mu2_ip_array, & ! In
              mu1, mu2 ) ! In/out
     end if
@@ -607,24 +607,24 @@ module generate_lh_sample_module
         Sigma_chi_eta_w_2(iiPDF_Nr,iiPDF_Nr) = var_Nr2
       end if
 
-      if ( iiPDF_rrain > 0 ) then
+      if ( iiPDF_rr > 0 ) then
         ! var_rr1,2 = PDF param for width of plume 1,2. [var_rr1,2] = (kg/kg)**2
-        var_rr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_rrain), kind=dp ) )
+        var_rr1 = log( 1._dp+ real( sigma2_on_mu2_ip_array(iiPDF_rr), kind=dp ) )
         var_rr2 = var_rr1
-        Sigma_chi_eta_w_1(iiPDF_rrain,iiPDF_rrain) = var_rr1
-        Sigma_chi_eta_w_2(iiPDF_rrain,iiPDF_rrain) = var_rr2
+        Sigma_chi_eta_w_1(iiPDF_rr,iiPDF_rr) = var_rr1
+        Sigma_chi_eta_w_2(iiPDF_rr,iiPDF_rr) = var_rr2
       end if
 
-      if ( iiPDF_rrain > 0 .and. iiPDF_Nr > 0 ) then
+      if ( iiPDF_rr > 0 .and. iiPDF_Nr > 0 ) then
 
-        rrainm = real(hydromet(iirrainm), kind = dp)
+        rrm = real(hydromet(iirrm), kind = dp)
         Nrm = real(hydromet(iiNrm), kind = dp)
 
-        index1 = iiPDF_rrain
+        index1 = iiPDF_rr
         index2 = iiPDF_Nr
 
         ! Covariance between rain water mixing ratio rain number concentration
-        if ( rrainm > real(rr_tol, kind = dp) .and. Nrm > real(Nr_tol, kind = dp) ) then
+        if ( rrm > real(rr_tol, kind = dp) .and. Nrm > real(Nr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
@@ -698,9 +698,9 @@ module generate_lh_sample_module
         end if
 
         index1 = iiPDF_chi
-        index2 = iiPDF_rrain
+        index2 = iiPDF_rr
         ! Covariances involving chi(s) and Nr & rr
-        if ( stdev_chi_1 > chi_tol .and. rrainm > real(rr_tol, kind = dp) ) then
+        if ( stdev_chi_1 > chi_tol .and. rrm > real(rr_tol, kind = dp) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
@@ -712,7 +712,7 @@ module generate_lh_sample_module
                  covar_chi_rr1 ) ! Out
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_chi, iiPDF_rrain, real(covar_chi_rr1, kind=dp), & ! In
+               ( d_variables, iiPDF_chi, iiPDF_rr, real(covar_chi_rr1, kind=dp), & ! In
                  Sigma_chi_eta_w_1 ) ! In/out
 
           ! Approximate the covariance of eta(t) and rr
@@ -721,11 +721,11 @@ module generate_lh_sample_module
             * real(covar_chi_rr1, kind = dp) ) / real(stdev_chi_1, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_eta_rr1, kind = dp), & ! In
+               ( d_variables, iiPDF_eta, iiPDF_rr, real(covar_eta_rr1, kind = dp), & ! In
                  Sigma_chi_eta_w_1 ) ! In/out
         end if
 
-        if ( stdev_chi_2 > chi_tol .and. rrainm > real( rr_tol, kind = dp ) ) then
+        if ( stdev_chi_2 > chi_tol .and. rrm > real( rr_tol, kind = dp ) ) then
 
           call get_lower_triangular_matrix &
                ( d_variables, index1, index2, corr_array, & ! In
@@ -745,11 +745,11 @@ module generate_lh_sample_module
             * real(covar_chi_rr2, kind = dp) ) / real(stdev_chi_2, kind = dp)**2
 
           call set_lower_triangular_matrix_dp &
-               ( d_variables, iiPDF_eta, iiPDF_rrain, real(covar_eta_rr2, kind = dp), & ! In
+               ( d_variables, iiPDF_eta, iiPDF_rr, real(covar_eta_rr2, kind = dp), & ! In
                  Sigma_chi_eta_w_2 ) ! In/out
         end if
 
-      end if ! if iiPDF_rrain > 0 .and. iiPDF_Nr > 0
+      end if ! if iiPDF_rr > 0 .and. iiPDF_Nr > 0
 
 !     if ( iiPDF_Ncn > 0 ) then
 
@@ -1091,7 +1091,7 @@ module generate_lh_sample_module
     !---------------------------------------------------------------------------
 
     ! We prognose rt-thl-w,
-    !    but we set means, covariance of hydrometeors (e.g. rrain, Ncn) to constants.
+    !    but we set means, covariance of hydrometeors (e.g. rr, Ncn) to constants.
 
 
     ! Standard sample for testing purposes when n=2
@@ -2382,7 +2382,7 @@ module generate_lh_sample_module
 
     ! ---- Begin Code ----
 
-    ! Lognormal covariance between two lognormal variates (e.g. rrain and Nr )
+    ! Lognormal covariance between two lognormal variates (e.g. rr and Nr )
 
     call get_lower_triangular_matrix &
          ( d_variables, index1, index2, corr_array, & ! In
@@ -2463,7 +2463,7 @@ module generate_lh_sample_module
 
     if ( corr_chi_x /= 0._core_rknd ) then
       ! Covariance between chi(s) and lognormal variate x
-      ! The variable x could be rrain, Nr, Ncn, et cetera.
+      ! The variable x could be rr, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
            ( corr_chi_x, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
              covar_chi_x ) ! Out
@@ -2495,7 +2495,7 @@ module generate_lh_sample_module
 
     if ( corr_wx /= 0._core_rknd ) then
       ! Covariance between w and lognormal variate x
-      ! The variable x could be rrain, Nr, Ncn, et cetera.
+      ! The variable x could be rr, Nr, Ncn, et cetera.
       call construct_gaus_LN_element &
            ( corr_wx, 1.0_core_rknd, sigma2_on_mu2_ip_array(index1), & ! In
              covar_wx ) ! Out

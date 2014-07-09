@@ -53,10 +53,10 @@ module parameters_microphys
     l_var_covar_src = .false.        ! Flag for using upscaled microphysics source terms
                                      ! for predictive variances and covariances (KK)
 
-  ! KK microphysics has a feature that clips rrainm_source down to the maximum allowable value if it
+  ! KK microphysics has a feature that clips rrm_source down to the maximum allowable value if it
   ! grows so large during a timestep that it over-depletes from cloud water (making rcm negative).
   ! In KK upscaled microphysics, in which the microphysics equations are analytically integrated
-  ! over the entire grid-box, this clipping is only performed for the mean value of rrainm_source.
+  ! over the entire grid-box, this clipping is only performed for the mean value of rrm_source.
   ! However, in Latin hypercube sampling, this adjustment is performed for every sample point. Thus,
   ! in order to test convergence of SILHS to the KK analytic solution, we must turn this adjustment
   ! off for individual sample points, and only do it for the mean. This flag does that when it is
