@@ -403,10 +403,7 @@ module clubb_api_module
     setup_pdf_parameters_api, &
     stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate_hydromet_api, stats_finalize_api, &
-    stats_init_rad_zm_api, &
-    stats_init_rad_zt_api, &
-    stats_init_zm_api, &
-    stats_init_zt_api, &
+    stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
     thlm2T_in_K_api, &
     ! Used only by CLUBB_standalone
     initialize_tau_sponge_damp_api, finalize_tau_sponge_damp_api, &
@@ -416,27 +413,26 @@ module clubb_api_module
 #ifdef NETCDF
     open_netcdf_api, write_netcdf_api, close_netcdf_api, &
 #endif
-
-    Ncnm_to_Nc_in_cloud_api, Nc_in_cloud_to_Ncnm_api, Ncnm_to_Ncm_api, Ncm_to_Ncnm_api
-    !term_ma_zt_lh_apis, &
-    !set_lower_triangular_matrix_dp_api, get_lower_triangular_matrix_api, &
-    !row_mult_lower_tri_matrix_api, print_lower_triangular_matrix_api, &
-    !Cholesky_factor_api, symm_covar_matrix_2_corr_matrix_api, &
-    !tridag_solve_api, &
-    !read_one_dim_file_api, one_dim_read_var_api, &
-    !fill_blanks_one_dim_vars_api, read_x_profile_api, &
-    !get_target_index_api, deallocate_one_dim_vars_api, count_columns_api, read_x_table_api, &
-    !read_two_dim_file_api, two_dim_read_var_api, fill_blanks_two_dim_vars_api, &
-    !file_read_1d_api, file_read_2d_api, &
-    !byte_order_swap_api, &
-    !diffusion_zt_lhs_api, &
-    !setup_corr_cholesky_mtx_api, cholesky_to_corr_mtx_approx_api, &
-    !erfc_api, &
-    !update_xp2_mc_api, &
-    !xpwp_fnc_api, &
-    !setup_radiation_variables_api, cleanup_radiation_variables_api, &
-    !hydrostatic_api, inverse_hydrostatic_api, &
-    !lin_ext_zt_bottom_api, lin_ext_zm_bottom_api
+    Ncnm_to_Nc_in_cloud_api, Nc_in_cloud_to_Ncnm_api, Ncnm_to_Ncm_api, Ncm_to_Ncnm_api, &
+    term_ma_zt_lhs_api, &
+    set_lower_tri_matrix_dp_api, get_lower_tri_matrix_api, &
+    row_mult_lower_tri_matrix_api, print_lower_tri_matrix_api, &
+    Cholesky_factor_api, symm_covar_mtx_2_corr_mtx_api, &
+    tridag_solve_api, &
+    read_one_dim_file_api, &
+    fill_blanks_one_dim_vars_api, read_x_profile_api, &
+    get_target_index_api, deallocate_one_dim_vars_api, count_columns_api, read_x_table_api, &
+    read_two_dim_file_api, fill_blanks_two_dim_vars_api, &
+    file_read_1d_api, file_read_2d_api, &
+    byte_order_swap_api, &
+    diffusion_zt_lhs_api, &
+    setup_corr_cholesky_mtx_api, cholesky_to_corr_mtx_approx_api, &
+    erfc_api, &
+    update_xp2_mc_api, &
+    xpwp_fnc_api, &
+    setup_radiation_variables_api, cleanup_radiation_variables_api, &
+    hydrostatic_api, inverse_hydrostatic_api, &
+    lin_ext_zt_bottom_api, lin_ext_zm_bottom_api
 
 contains
 
@@ -2606,7 +2602,7 @@ contains
   ! get_lower_triangular_matrix - Returns a value from the lower triangular portion of a matrix.
   !================================================================================================
 
-  subroutine get_lower_triangular_matrix_api( &
+  subroutine get_lower_tri_matrix_api( &
     d_variables, index1, index2, matrix, xpyp )
 
     use matrix_operations, only : get_lower_triangular_matrix
@@ -2628,7 +2624,7 @@ contains
     call get_lower_triangular_matrix( &
       d_variables, index1, index2, matrix, xpyp )
 
-  end subroutine get_lower_triangular_matrix_api
+  end subroutine get_lower_tri_matrix_api
 
   !================================================================================================
   ! row_mult_lower_tri_matrix - Row-wise multiply of the elements of a lower triangular matrix.
