@@ -2257,15 +2257,16 @@ contains
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  &
+    real( kind = dp ), intent(in) ::  &
       corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
       sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
+
     ! Return Variable
-    real( kind = core_rknd ) ::  &
+    real( kind = dp ) ::  &
       corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
 
     corr_xy_n = corr_LL2NN_dp( &
