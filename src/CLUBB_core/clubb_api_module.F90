@@ -212,8 +212,11 @@ module clubb_api_module
     wphydrometp
 
   !================================================================================================
-  ! The variables below are only used by CLUBB_standalone
+  ! The interface and variables below are only used by CLUBB_standalone
   !================================================================================================
+
+  use endian, only : &
+    byte_order_swap_api => byte_order_swap
 
   use variables_prognostic_module, only : &
     sens_ht, &
@@ -1535,7 +1538,6 @@ contains
       grid_type, momentum_heights, thermodynamic_heights, &
       err_code )
 
-    return
   end subroutine setup_parameters_api
 
   !================================================================================================
@@ -2966,7 +2968,7 @@ contains
   end function read_x_table_api
 
   !================================================================================================
-  ! read_two_dim_file
+  ! read_two_dim_file - Reads from a file containing data that varies in two dimensions.
   !================================================================================================
 
   subroutine read_two_dim_file_api( &
@@ -2993,292 +2995,452 @@ contains
 
   end subroutine read_two_dim_file_api
 
-!  !================================================================================================
-!  ! fill_blanks_two_dim_vars
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! file_read_1d
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! file_read_2d
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! byte_order_swap
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! diffusion_zt_lhs
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! setup_corr_cholesky_mtx
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! cholesky_to_corr_mtx_approx
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! erfc
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! update_xp2_mc
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! xpwp_fnc
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! setup_radiation_variables
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! cleanup_radiation_variables
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! hydrostatic
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! inverse_hydrostatic
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! lin_ext_zt_bottom
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
-!
-!  !================================================================================================
-!  ! lin_ext_zm_bottom
-!  !================================================================================================
-!
-!  subroutine name_api( &
-!     args)
-!
-!    use modName, only : name
-!
-!    implicit none
-!
-!    inOutVars
-!
-!    call name( &
-!      args)
-!
-!  end subroutine name_api
+  !================================================================================================
+  ! fill_blanks_two_dim_vars - Fills in blank spots with linearly interpolated values.
+  !================================================================================================
+
+  subroutine fill_blanks_two_dim_vars_api( &
+     num_vars, other_dim, two_dim_vars )
+
+    use input_reader, only : fill_blanks_two_dim_vars
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: num_vars ! Number of elements in one_dim_vars
+
+    ! Input/Output Variable(s)
+    type(one_dim_read_var), intent(in) :: other_dim ! Read data
+
+    type(two_dim_read_var), dimension(num_vars), intent(inout) ::  &
+      two_dim_vars ! Read data that may have gaps.
+
+    call fill_blanks_two_dim_vars( &
+      num_vars, other_dim, two_dim_vars )
+
+  end subroutine fill_blanks_two_dim_vars_api
+
+  !================================================================================================
+  ! file_read_1d - Read data files for mpace_a.
+  !================================================================================================
+
+  subroutine file_read_1d_api( &
+     file_unit, path_and_filename,  &
+     num_datapts, entries_per_line, variable )
+
+    use file_functions, only : file_read_1d
+
+    implicit none
+
+    integer, intent(in) :: &
+     file_unit,          & ! Unit number of file being read.
+     num_datapts,        & ! Total number of data points being read in.
+     entries_per_line   ! Number of data points
+    ! on one line of the file being read.
+
+    character(*), intent(in) :: &
+     path_and_filename  ! Path to file and filename of file being read.
+
+    real( kind = core_rknd ), dimension(num_datapts), intent(out) :: &
+     variable           ! Data values output into variable
+
+    call file_read_1d( &
+      file_unit, path_and_filename,  &
+      num_datapts, entries_per_line, variable )
+
+  end subroutine file_read_1d_api
+
+  !================================================================================================
+  ! file_read_2d  - Read data files for mpace_a.
+  !================================================================================================
+
+  subroutine file_read_2d_api( &
+     device, file_path, file_dimension1, &
+     file_dimension2, file_per_line, variable )
+
+    use file_functions, only : file_read_2d
+
+    implicit none
+
+    integer, intent(in) :: &
+      device, &
+      file_dimension1, &
+      file_dimension2, &
+      file_per_line
+
+    character(*), intent(in) :: &
+      file_path
+
+    real( kind = core_rknd ), dimension(file_dimension1,file_dimension2), intent(out) :: &
+      variable
+
+    call file_read_2d( &
+      device, file_path, file_dimension1, &
+     file_dimension2, file_per_line, variable )
+
+  end subroutine file_read_2d_api
+
+  !================================================================================================
+  ! diffusion_zt_lhs - Vertical eddy diffusion of var_zt.
+  !================================================================================================
+
+  function diffusion_zt_lhs_api( &
+     K_zm, K_zmm1, nu,  &
+     invrs_dzmm1, invrs_dzm,  &
+     invrs_dzt, level ) result( lhs )
+
+    use diffusion, only : diffusion_zt_lhs
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      K_zm,        & ! Coef. of eddy diffusivity at momentum level (k)   [m^2/s]
+      K_zmm1,      & ! Coef. of eddy diffusivity at momentum level (k-1) [m^2/s
+      invrs_dzt,   & ! Inverse of grid spacing over thermo. level (k)    [1/m]
+      invrs_dzm,   & ! Inverse of grid spacing over momentum level (k)   [1/m]
+      invrs_dzmm1    ! Inverse of grid spacing over momentum level (k-1) [1/m]
+
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      nu             ! Background constant coef. of eddy diffusivity     [m^2/s]
+
+    integer, intent(in) ::  &
+      level     ! Thermodynamic level where calculation occurs.          [-]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(3) :: lhs
+
+    lhs = diffusion_zt_lhs( &
+      K_zm, K_zmm1, nu,  &
+     invrs_dzmm1, invrs_dzm,  &
+     invrs_dzt, level )
+
+  end function diffusion_zt_lhs_api
+
+  !================================================================================================
+  ! setup_corr_cholesky_mtx - Calculates transposed corr cholesky matrix from corr matrix.
+  !================================================================================================
+
+  subroutine setup_corr_cholesky_mtx_api( &
+    n_variables, corr_matrix, &
+    corr_cholesky_mtx_t )
+
+    use diagnose_correlations_module, only : setup_corr_cholesky_mtx
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_matrix ! correlation matrix [-]
+
+    ! Output Variables
+    ! correlation cholesky matrix transposed L', C = LL'; see reference 1 formula 10
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
+      corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
+
+    call setup_corr_cholesky_mtx( &
+      n_variables, corr_matrix, &
+    corr_cholesky_mtx_t )
+
+  end subroutine setup_corr_cholesky_mtx_api
+
+  !================================================================================================
+  ! cholesky_to_corr_mtx_approx - Approximates correlation matrix from correlation cholesky matrix.
+  !================================================================================================
+
+  subroutine cholesky_to_corr_mtx_approx_api( &
+     n_variables, corr_cholesky_mtx_t, &
+     corr_matrix_approx )
+
+    use diagnose_correlations_module, only : cholesky_to_corr_mtx_approx
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      n_variables  ! number of variables in the correlation matrix [-]
+
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(in) :: &
+      corr_cholesky_mtx_t ! transposed correlation cholesky matrix [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(n_variables,n_variables), intent(out) :: &
+      corr_matrix_approx ! correlation matrix [-]
+
+    call cholesky_to_corr_mtx_approx( &
+      n_variables, corr_cholesky_mtx_t, &
+      corr_matrix_approx )
+
+  end subroutine cholesky_to_corr_mtx_approx_api
+
+  !================================================================================================
+  ! erfc - Computes the complement of the error function.
+  !================================================================================================
+
+  function erfc_api( &
+      x ) result( erfcx )
+
+    use anl_erf, only : erfc
+
+    implicit none
+
+    ! Input Variable
+    real( kind = core_rknd), intent(in) :: x
+
+    ! Return Variable
+    real( kind = core_rknd) :: erfcx
+
+    erfcx = erfc( &
+       x )
+
+  end function erfc_api
+
+  !================================================================================================
+  ! update_xp2_mc - Includes the effects of rain evaporation on rtp2 and thlp2.
+  !================================================================================================
+
+  subroutine update_xp2_mc_api( &
+     nz, dt, cloud_frac, rcm, rvm, thlm,        &
+     wm, exner, rrainm_evap, pdf_params,        &
+     rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+     rtpthlp_mc )
+
+    use advance_xp2_xpyp_module, only : update_xp2_mc
+
+    implicit none
+
+    !input parameters
+    integer, intent(in) :: nz ! Points in the Vertical        [-]
+
+    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      cloud_frac, &       !Cloud fraction                        [-]
+      rcm, &              !Cloud water mixing ratio              [kg/kg]
+      rvm, &              !Vapor water mixing ratio              [kg/kg]
+      thlm, &             !Liquid potential temperature          [K]
+      wm, &               !Mean vertical velocity                [m/s]
+      exner, &            !Exner function                        [-]
+      rrainm_evap         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    !input/output variables
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2]
+      rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+
+    call update_xp2_mc( &
+      nz, dt, cloud_frac, rcm, rvm, thlm,        &
+      wm, exner, rrainm_evap, pdf_params,        &
+      rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+      rtpthlp_mc )
+
+  end subroutine update_xp2_mc_api
+
+  !================================================================================================
+  ! xpwp_fnc - Compute x'w' from x<k>, x<k+1>, Kh and invrs_dzm.
+  !================================================================================================
+
+  elemental function xpwp_fnc_api( &
+     Km_zm, xm, xmp1, invrs_dzm )
+
+    use advance_windm_edsclrm_module, only : xpwp_fnc
+
+    implicit none
+
+    ! Input variables
+    real( kind = core_rknd ), intent(in) :: &
+      Km_zm,     & ! Eddy diff. (k momentum level)                 [m^2/s]
+      xm,        & ! x (k thermo level)                            [units vary]
+      xmp1,      & ! x (k+1 thermo level)                          [units vary]
+      invrs_dzm    ! Inverse of the grid spacing (k thermo level)  [1/m]
+
+    ! Output variable
+    real( kind = core_rknd ) :: &
+      xpwp_fnc_api ! x'w'   [(units vary)(m/s)]
+
+    xpwp_fnc_api = xpwp_fnc( &
+      Km_zm, xm, xmp1, invrs_dzm )
+
+  end function xpwp_fnc_api
+
+  !================================================================================================
+  ! setup_radiation_variables - Sets up prognostic scalar and array variables for CLUBB model code.
+  !================================================================================================
+
+  subroutine setup_radiation_variables_api( &
+     nzmax, lin_int_buffer, &
+     extend_atmos_range_size )
+
+    use variables_radiation_module, only : setup_radiation_variables
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nzmax, & ! Number of grid levels [-]
+      lin_int_buffer,& ! Number of interpolated levels between the computational
+                       ! grid and the extended atmosphere [-]
+      extend_atmos_range_size ! The number of levels in the extended atmosphere [-]
+
+    call setup_radiation_variables( &
+      nzmax, lin_int_buffer, &
+     extend_atmos_range_size )
+
+  end subroutine setup_radiation_variables_api
+
+  !================================================================================================
+  ! cleanup_radiation_variables - Deallocate variables defined in module global.
+  !================================================================================================
+
+  subroutine cleanup_radiation_variables_api( )
+
+    use variables_radiation_module, only : cleanup_radiation_variables
+
+    implicit none
+
+    call cleanup_radiation_variables( )
+
+  end subroutine cleanup_radiation_variables_api
+
+  !================================================================================================
+  ! hydrostatic -Integrates the hydrostatic equation.
+  !================================================================================================
+
+  subroutine hydrostatic_api( &
+     thvm, p_sfc, &
+     p_in_Pa, p_in_Pa_zm, &
+     exner, exner_zm, &
+     rho, rho_zm )
+
+    use hydrostatic_module, only : hydrostatic
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      p_sfc    ! Pressure at the surface                     [Pa]
+
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
+      thvm    ! Virtual potential temperature               [K]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
+      p_in_Pa,    & ! Pressure (thermodynamic levels)         [Pa]
+      p_in_Pa_zm, & ! Pressure on momentum levels             [Pa]
+      exner,      & ! Exner function (thermodynamic levels)   [-]
+      exner_zm,   & ! Exner function on momentum levels       [-]
+      rho,        & ! Density (thermodynamic levels)          [kg/m^3]
+      rho_zm        ! Density on momentum levels              [kg/m^3]
+
+    call hydrostatic( &
+      thvm, p_sfc, &
+      p_in_Pa, p_in_Pa_zm, &
+      exner, exner_zm, &
+      rho, rho_zm )
+
+  end subroutine hydrostatic_api
+
+  !================================================================================================
+  ! inverse_hydrostatic - Integrates the inverse of hydrostatic equation.
+  !================================================================================================
+
+  subroutine inverse_hydrostatic_api( &
+     p_sfc, zm_init, nlevels, &
+     thvm, exner, z )
+
+    use hydrostatic_module, only : inverse_hydrostatic
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      p_sfc,    & ! Pressure at the surface      [Pa]
+      zm_init    ! Altitude at the surface      [m]
+
+    integer, intent(in) ::  &
+      nlevels  ! Number of levels in the sounding [-]
+
+    real( kind = core_rknd ), intent(in), dimension(nlevels) ::  &
+      thvm,  & ! Virtual potential temperature   [K]
+      exner    ! Exner function                  [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out), dimension(nlevels) ::  &
+      z        ! Height                    [m]
+
+    call inverse_hydrostatic( &
+      p_sfc, zm_init, nlevels, &
+     thvm, exner, z )
+
+  end subroutine inverse_hydrostatic_api
+
+  !================================================================================================
+  ! lin_ext_zt_bottom - Computes the value of a thermodynamic-level variable at a bottom grid level.
+  !================================================================================================
+
+  function lin_ext_zt_bottom_api( &
+     var_ztp2, var_ztp1,  &
+     ztp2, ztp1, zt ) result( var_zt )
+
+    use extrapolation, only : lin_ext_zt_bottom
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      var_ztp2,    & ! Thermodynamic level variable at level (k+2)  [units vary]
+      var_ztp1,    & ! Thermodynamic level variable at level (k+1)  [units vary]
+      ztp2,        & ! Altitude at thermodynamic level (k+2)        [m]
+      ztp1,        & ! Altitude at thermodynamic level (k+1)        [m]
+      zt             ! Altitude at thermodynamic level (k)          [m]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: var_zt   ! Thermodynamic level variable at level (k)    [units vary]
+
+    var_zt = lin_ext_zt_bottom( &
+      var_ztp2, var_ztp1,  &
+      ztp2, ztp1, zt )
+
+  end function lin_ext_zt_bottom_api
+
+  !================================================================================================
+  ! lin_ext_zm_bottom - Computes the value of a momentum-level variable at a bottom grid level.
+  !================================================================================================
+
+  function lin_ext_zm_bottom_api( &
+     var_zmp2, var_zmp1,  &
+     zmp2, zmp1, zm ) result( var_zm )
+
+    use extrapolation, only : lin_ext_zm_bottom
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      var_zmp2,    & ! Momentum level variable at level (k+2)  [units vary]
+      var_zmp1,    & ! Momentum level variable at level (k+1)  [units vary]
+      zmp2,        & ! Altitude at momentum level (k+2)        [m]
+      zmp1,        & ! Altitude at momentum level (k+1)        [m]
+      zm             ! Altitude at momentum level (k)          [m]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: var_zm   ! Momentum level variable at level (k)    [units vary]
+
+    var_zm = lin_ext_zm_bottom( &
+      var_zmp2, var_zmp1,  &
+      zmp2, zmp1, zm )
+
+  end function lin_ext_zm_bottom_api
 
 end module clubb_api_module
