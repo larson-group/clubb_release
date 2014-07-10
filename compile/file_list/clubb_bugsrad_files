@@ -21,3 +21,4 @@
 ../src/BUGSrad/two_rt_sw.F
 ../src/BUGSrad/two_rt_sw_iter.F
 ../src/BUGSrad/two_rt_sw_ocastrndm.F90
+../src/variables_radiation_module.F90

@@ -39,3 +39,5 @@
 ../src/input_fields.F90
 ../src/input_grads.F90
 ../src/gfdl_activation.F90
+../src/extrapolation.F90
+../src/hydrostatic_module.F90

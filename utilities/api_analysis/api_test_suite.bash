@@ -19,6 +19,9 @@ rm -rf CLUBB_core/.svn
 echo "removing api from CLUBB_core"
 rm  CLUBB_core/clubb_api_module.F90
 
+echo "removing api from SILHS"
+rm  CLUBB/src/SILHS/silhs_api_module.F90
+
 echo "moving SILHS to CLUBB_core"
 mv CLUBB/src/SILHS/* CLUBB_core/
 
