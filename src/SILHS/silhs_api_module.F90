@@ -21,10 +21,11 @@ module silhs_api_module
 
   private
 
+#ifdef SILHS
   public  &
-    LH_subcolumn_generator_api, &
-    LH_subcolumn_generator_mod_api, &
-    stats_accumulate_LH_api, &
+    lh_subcolumn_generator_api, &
+    lh_subcolumn_generator_mod_api, &
+    stats_accumulate_lh_api, &
     latin_hypercube_2D_output_api, &
     latin_hypercube_2D_close_api, &
     lh_microphys_driver_api, &
@@ -36,10 +37,10 @@ module silhs_api_module
 contains
 
   !================================================================================================
-  ! LH_subcolumn_generator - Generates sample points of moisture, temperature, et cetera.
+  ! lh_subcolumn_generator - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
 
-  subroutine LH_subcolumn_generator_api( &
+  subroutine lh_subcolumn_generator_api( &
     iter, d_variables, num_samples, sequence_length, nz, &
     thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
     hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
@@ -47,7 +48,7 @@ contains
     X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
     lh_sample_point_weights )
 
-    use latin_hypercube_driver_module, only : LH_subcolumn_generator
+    use latin_hypercube_driver_module, only : lh_subcolumn_generator
 
     use parameters_model, only: hydromet_dim ! Variable
 
@@ -108,7 +109,7 @@ contains
     real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
       lh_sample_point_weights
 
-    call LH_subcolumn_generator( &
+    call lh_subcolumn_generator( &
       iter, d_variables, num_samples, sequence_length, nz, &
       thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
       hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
@@ -116,13 +117,13 @@ contains
       X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
       lh_sample_point_weights )
 
-  end subroutine LH_subcolumn_generator_api
+  end subroutine lh_subcolumn_generator_api
 
   !================================================================================================
-  ! LH_subcolumn_generator_mod - Generates sample points of moisture, temperature, et cetera.
+  ! lh_subcolumn_generator_mod - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
 
-  subroutine LH_subcolumn_generator_mod_api( &
+  subroutine lh_subcolumn_generator_mod_api( &
     iter, d_variables, num_samples, sequence_length, nz, & ! In
     pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
@@ -131,7 +132,7 @@ contains
     X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
     lh_sample_point_weights ) ! Out
 
-    use latin_hypercube_driver_module, only : LH_subcolumn_generator_mod
+    use latin_hypercube_driver_module, only : lh_subcolumn_generator_mod
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -190,7 +191,7 @@ contains
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
-    call LH_subcolumn_generator_mod( &
+    call lh_subcolumn_generator_mod( &
       iter, d_variables, num_samples, sequence_length, nz, & ! In
       pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
       mu1, mu2, sigma1, sigma2, & ! In
@@ -199,18 +200,18 @@ contains
       X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
       lh_sample_point_weights ) ! Out
 
-  end subroutine LH_subcolumn_generator_mod_api
+  end subroutine lh_subcolumn_generator_mod_api
 
   !================================================================================================
-  ! stats_accumulate_LH - Clips subcolumns from latin hypercube and creates stats.
+  ! stats_accumulate_lh - Clips subcolumns from latin hypercube and creates stats.
   !================================================================================================
 
-  subroutine stats_accumulate_LH_api( &
+  subroutine stats_accumulate_lh_api( &
     nz, num_samples, d_variables, rho_ds_zt, &
     lh_sample_point_weights, X_nl_all_levs, &
     lh_thl, lh_rt, Nc_in_cloud )
 
-    use latin_hypercube_driver_module, only : stats_accumulate_LH
+    use latin_hypercube_driver_module, only : stats_accumulate_lh
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
@@ -241,12 +242,12 @@ contains
       ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
       Nc_in_cloud
 
-    call stats_accumulate_LH( &
+    call stats_accumulate_lh( &
       nz, num_samples, d_variables, rho_ds_zt, &
       lh_sample_point_weights, X_nl_all_levs, &
       lh_thl, lh_rt, Nc_in_cloud )
 
-  end subroutine stats_accumulate_LH_api
+  end subroutine stats_accumulate_lh_api
 
   !================================================================================================
   ! est_kessler_microphys - Computes microphysical grid box means of Kessler autoconversion scheme.
@@ -305,7 +306,7 @@ contains
 
     ! For comparison, estimate kth liquid water using Monte Carlo
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_rcm_avg ! LH estimate of grid box avg liquid water [kg/kg]
+      lh_rcm_avg ! lh estimate of grid box avg liquid water [kg/kg]
 
     call est_kessler_microphys( &
       nz, num_samples, d_variables, &
@@ -446,20 +447,20 @@ contains
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
-      lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
+      lh_hydromet_mc, & ! lh estimate of hydrometeor time tendency          [(units vary)/s]
+      lh_hydromet_vel   ! lh estimate of hydrometeor sedimentation velocity [m/s]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_Ncm_mc,     & ! LH estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
-      lh_rcm_mc,     & ! LH estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
-      lh_rvm_mc,     & ! LH estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
-      lh_thlm_mc,    & ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
-      lh_rtp2_mc,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
-      lh_thlp2_mc,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
-      lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
-      lh_wpthlp_mc,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
-      lh_rtpthlp_mc    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
+      lh_Ncm_mc,     & ! lh estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
+      lh_rcm_mc,     & ! lh estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
+      lh_rvm_mc,     & ! lh estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
+      lh_thlm_mc,    & ! lh estimate of time tndcy. of liquid potential temp.  [K/s]
+      lh_rtp2_mc,    & ! lh microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
+      lh_thlp2_mc,   & ! lh microphysics tendency for <thl'^2>                 [K^2/s]
+      lh_wprtp_mc,   & ! lh microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
+      lh_wpthlp_mc,  & ! lh microphysics tendency for <w'thl'>                 [m*K/s^2]
+      lh_rtpthlp_mc    ! lh microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
 
     call lh_microphys_driver( &
       dt, nz, num_samples, d_variables, &
@@ -571,5 +572,6 @@ contains
     X_nl_all_levs, lh_rc )
 
   end subroutine copy_X_nl_into_rc_all_pts_api
+#endif
 
 end module silhs_api_module
