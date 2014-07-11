@@ -321,7 +321,8 @@ contains
   ! The functions and subroutines below are only used by CLUBB_standalone
   !================================================================================================
   !================================================================================================
-  ! latin_hypercube_2D_output
+  ! latin_hypercube_2D_output - Outputs all samples of uniform and normal/lognormal variates
+  !                             Super cool, but probably only applicable to CLUBB standalone
   !================================================================================================
 
   subroutine latin_hypercube_2D_output_api( &

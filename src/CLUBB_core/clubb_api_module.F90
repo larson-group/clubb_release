@@ -136,6 +136,7 @@ module clubb_api_module
     Nc0_in_cloud, & ! Initial cloud droplet concentration  [num/m^3]
     l_const_Nc_in_cloud, & ! Use a constant cloud droplet conc. within cloud (K&K)
     l_silhs_KK_convergence_adj_mean, & ! When true, turns off clipping by mean value of rrm_source
+                                       ! DON'T USE ME IF YOU ARE NOT CLUBB STANDALONE
     l_predict_Nc, & ! Predict cloud droplet conconcentration (Morrison)
     rr_sigma2_on_mu2_ip_cloud, & ! sigma_rr_i^2/mu_rr_i^2  [-]
     rr_sigma2_on_mu2_ip_below, & ! sigma_rr_i^2/mu_rr_i^2  [-]
