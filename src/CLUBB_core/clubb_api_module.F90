@@ -361,7 +361,8 @@ module clubb_api_module
 
   private
 
-  public  advance_clubb_core_api, setup_clubb_core_api, set_Lscale_max_api, &
+  ! Making the functions and subroutines public
+  public advance_clubb_core_api, setup_clubb_core_api, set_Lscale_max_api, &
     gregorian2julian_day_api, compute_current_date_api, leap_year_api, &
     setup_corr_varnce_array_api, setup_pdf_indices_api, &
     reportError_api, fatal_error_api, set_clubb_debug_level_api, clubb_at_least_debug_level_api, &
@@ -403,6 +404,62 @@ module clubb_api_module
     erfc_api, &
     update_xp2_mc_api, &
     xpwp_fnc_api
+
+  ! Making the variables public
+  public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
+    iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl, iisclr_CO2, iisclr_rt, iisclr_thl, &
+    core_rknd, stat_nknd, stat_rknd, dp, &
+    cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, pi, pi_dp, radians_per_deg_dp, &
+    Rd, Rv, sec_per_day, sec_per_hr, sec_per_min, T_freeze_K, var_length, zero, zero_threshold, &
+    Nc_tol, Ng_tol, Ni_tol, Nr_tol, Ns_tol, rg_tol, rho_lw, &
+    ri_tol, rr_tol, rs_tol, rt_tol, thl_tol, w_tol_sqd, &
+    corr_array_cloud, corr_array_below, d_variables, &
+    iiPDF_chi, iiPDF_rr, iiPDF_w, iiPDF_Nr, iiPDF_ri, iiPDF_Ni, iiPDF_Ncn, iiPDF_rs, &
+    iiPDF_Ns, iiPDF_rg, iiPDF_Ng, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
+    clubb_no_error, gr, hydromet_pdf_parameter, &
+    l_use_boussinesq, l_diagnose_correlations, l_calc_w_corr, &
+    l_use_cloud_cover, l_use_precip_frac, l_tke_aniso, &
+    l_lh_vert_overlap, LH_microphys_type, hydromet_list, hydromet_tol, &
+    LH_microphys_disabled, LH_microphys_interactive, LH_microphys_non_interactive, &
+    LH_microphys_calls, LH_sequence_length, LH_seed, &
+    l_local_kk, l_fix_chi_eta_correlations, l_lh_cloud_weighted_sampling, &
+    Nc0_in_cloud, l_const_Nc_in_cloud, l_silhs_KK_convergence_adj_mean, l_predict_Nc, &
+    rr_sigma2_on_mu2_ip_cloud, rr_sigma2_on_mu2_ip_below, ri_sigma2_on_mu2_ip_cloud, &
+    ri_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_below, &
+    rs_sigma2_on_mu2_ip_cloud, rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_cloud, &
+    Ns_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_below, &
+    rg_sigma2_on_mu2_ip_cloud, rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_cloud, &
+    Ng_sigma2_on_mu2_ip_below, Ncnp2_on_Ncnm2, &
+    hydromet_dim, Lscale_max, &
+    l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, &
+#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+    num_pdf_params, &
+#endif
+    pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, &
+    zt, zm, rad_zt, rad_zm, sfc, l_stats_last, stats_tsamp, stats_tout, &
+    l_output_rad_files, l_stats, l_stats_samp, l_grads, &
+    nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp
+  ! Only used by CLUBB_standalone
+  public sens_ht, latent_ht, thlm, rtm, um, vm, wp2, rcm, wm_zt, wm_zm, exner, p_in_Pa, &
+    rho_zm, upwp, vpwp, wpthlp, wprcp, rho, wprtp, up2, vp2, wp3, rtp2, pdf_params, thlp2, &
+    rtpthlp, cloud_frac, ice_supersat_frac, rcm_in_layer, cloud_cover, sigma_sqd_w, &
+    sclrm, sclrp2, sclrprtp, sclrpthlp, wpsclrp, edsclrm, &
+    rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, T_sfc, p_sfc, &
+    wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc, wpedsclrp_sfc, wpsclrp_sfc, &
+    thlm_forcing, rtm_forcing, um_forcing, vm_forcing, wprtp_forcing, wpthlp_forcing, &
+    rtp2_forcing, thlp2_forcing, rtpthlp_forcing, edsclrm_forcing, sclrm_forcing, &
+    thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
+    thlm_sponge_damp_profile, rtm_sponge_damp_profile, uv_sponge_damp_profile, &
+    rad_scheme, nparam, l_fix_cos_solar_zen, l_use_default_std_atmosphere, l_sw_radiation, &
+    l_rad_above_cloud, Fs_values, cos_solar_zen_values, cos_solar_zen_times, radiation_top, &
+    sol_const, alvdr, alvdf, alndr, alndf, slr, kappa, F0, F1, eff_drop_radius, gc, omega, &
+    one_dim_read_var, two_dim_read_var, &
+    time_name, rt_name, latent_ht_name, sens_ht_name, CO2_umol_name, upwp_sfc_name, &
+    vpwp_sfc_name, T_sfc_name, wpthlp_sfc_name, wpqtp_sfc_name, z_name, pressure_name, &
+    press_mb_name, ozone_name, temperature_name,temperature_f_name, rt_f_name, &
+    sp_humidity_f_name, thetal_f_name, theta_f_name, wm_name, omega_name, &
+    um_ref_name, vm_ref_name, um_f_name, vm_f_name, ug_name, vg_name, um_name, vm_name, &
+    omega_mb_hr_name, little_endian, big_endian
 
 contains
 
