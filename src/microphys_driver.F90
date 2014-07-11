@@ -119,7 +119,8 @@ module microphys_driver
         microphys_scheme,     & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
         microphys_start_time, & ! When to start the microphysics [s]
-        sigma_g                 ! Parameter used in the cloud droplet sedimentation code
+        sigma_g,              & ! Parameter used in the cloud droplet sedimentation code
+        l_silhs_KK_convergence_adj_mean ! Flag used to adjust a run of KK upscaled or SILHS
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
@@ -612,6 +613,13 @@ module microphys_driver
                                          hydromet_vel_covar_zt_expc,           & ! Out
                                          wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
                                          thlp2_mc, rtpthlp_mc                  ) ! Out
+
+             if ( l_silhs_KK_convergence_adj_mean ) then
+               ! SILHS cannot currently predict the turbulent sedimentation
+               ! terms, so zero them out for a convergence test.
+               hydromet_vel_covar_zt_impc = zero
+               hydromet_vel_covar_zt_expc = zero
+             end if
 
           endif
 
