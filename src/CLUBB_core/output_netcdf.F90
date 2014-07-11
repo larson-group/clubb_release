@@ -480,7 +480,8 @@ module output_netcdf
 
     use netcdf, only: & 
       NF90_NOERR,  & ! Constants
-      NF90_FLOAT,  & 
+      NF90_FLOAT,  &
+      NF90_DOUBLE, & 
       NF90_GLOBAL, &
       nf90_def_var,  & ! Procedure(s)
       nf90_strerror, & 
@@ -537,6 +538,8 @@ module output_netcdf
 
     ! Local Variables
     integer, dimension(:), allocatable :: stat
+    
+    integer :: netcdf_precision ! Level of precision for netCDF output
 
     real( kind = core_rknd ), dimension(nparams) :: params ! Tunable parameters
 
@@ -589,12 +592,22 @@ module output_netcdf
 
     l_error = .false.
 
+
+    select case (core_rknd)
+      case ( selected_real_kind( p=5 ) )
+        netcdf_precision = NF90_FLOAT
+      case ( selected_real_kind( p=12 ) )
+        netcdf_precision = NF90_DOUBLE
+      case default
+        netcdf_precision = NF90_DOUBLE
+    end select
+
     do i = 1, ncf%nvar, 1
 !     stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), &
 !                  NF90_FLOAT, (/ncf%TimeDimId, ncf%AltDimId, &
 !                  ncf%LatDimId, ncf%LongDimId/), ncf%var(i)%indx )
       stat(i) = nf90_def_var( ncf%iounit, trim( ncf%var(i)%name ), & 
-                NF90_FLOAT, var_dim(:), ncf%var(i)%indx )
+                netcdf_precision, var_dim(:), ncf%var(i)%indx )
       if ( stat(i) /= NF90_NOERR ) then
         write(fstderr,*) "Error defining variable ",  & 
           ncf%var(i)%name //": ", trim( nf90_strerror( stat(i) ) )
