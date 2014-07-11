@@ -560,10 +560,10 @@ module estimate_scm_microphys_module
       irrm_cond, &
       iNrm_auto, &
       iNrm_cond, &
-      irrm_src_adj, &
-      iNrm_src_adj, &
-      irrm_cond_adj, &
-      iNrm_cond_adj
+      ilh_rrm_src_adj, &
+      ilh_Nrm_src_adj, &
+      ilh_rrm_cond_adj, &
+      ilh_Nrm_cond_adj
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &     ! Type
@@ -667,20 +667,20 @@ module estimate_scm_microphys_module
     ! Statistical sampling
     if ( l_stats_samp ) then
 
-      if ( irrm_src_adj > 0 ) then
-        call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, zt )
+      if ( ilh_rrm_src_adj > 0 ) then
+        call stat_update_var( ilh_rrm_src_adj, adj_terms%rrm_src_adj, zt )
       end if
 
-      if ( iNrm_src_adj > 0 ) then
-        call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
+      if ( ilh_Nrm_src_adj > 0 ) then
+        call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, zt )
       end if
 
-      if ( irrm_cond_adj > 0 ) then
-        call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, zt )
+      if ( ilh_rrm_cond_adj > 0 ) then
+        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, zt )
       end if
 
-      if ( iNrm_cond_adj > 0 ) then
-        call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
+      if ( ilh_Nrm_cond_adj > 0 ) then
+        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
       end if
 
     end if ! l_stats_samp
