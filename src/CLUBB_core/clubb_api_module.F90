@@ -45,7 +45,7 @@ module clubb_api_module
     core_rknd, &
     stat_nknd, &
     stat_rknd, &
-    dp
+    dp  ! Double Precision
 
   use constants_clubb, only : &
     cm3_per_m3, & ! Cubic centimeters per cubic meter
@@ -85,7 +85,7 @@ module clubb_api_module
     w_tol_sqd ! [m^2/s^2]
 
   use corr_matrix_module, only : &
-    corr_array_cloud, &
+    corr_array_cloud, & !
     corr_array_below, &
     d_variables, &
     iiPDF_chi, &
@@ -103,7 +103,7 @@ module clubb_api_module
     sigma2_on_mu2_ip_array_below
 
   use error_code, only : &
-    clubb_no_error
+    clubb_no_error ! Enum representing that no errors have occurred in CLUBB
 
   use grid_class, only : &
     gr
@@ -112,63 +112,62 @@ module clubb_api_module
     hydromet_pdf_parameter
 
   use model_flags, only : &
-    l_use_boussinesq, &
-    l_diagnose_correlations, &
-    l_calc_w_corr, &
-    l_use_cloud_cover, &
-    l_use_precip_frac, &
-    l_tke_aniso
+    l_use_boussinesq, & ! Use Boussinesq form of predictive equations (default is Anelastic).
+    l_diagnose_correlations, & ! Diagnose correlations instead of using fixed ones
+    l_calc_w_corr, & ! Calculate the correlations between w and the hydrometeors
+    l_use_cloud_cover, & ! helps to increase cloudiness at coarser grid resolutions.
+    l_use_precip_frac, & ! Flag to use precipitation fraction in KK microphysics.
+    l_tke_aniso ! For anisotropic turbulent kinetic energy,
 
   use parameters_microphys, only : &
-    l_lh_vert_overlap, &
-    LH_microphys_type, &
+    l_lh_vert_overlap, & ! Assume maximum overlap for s_mellor (chi)
+    LH_microphys_type, & ! How the latin hypercube samples should be used with the microphysics
     hydromet_list, &
-    LH_microphys_disabled, &
-    LH_microphys_interactive, &
-    LH_microphys_non_interactive, &
-    LH_microphys_calls, &
-    LH_sequence_length, &
-    LH_seed, &
-    l_local_kk, &
-    l_fix_chi_eta_correlations, &
-    l_lh_cloud_weighted_sampling, &
-    LH_sequence_length, &
-    hydromet_tol, &
-    Nc0_in_cloud, &
-    l_const_Nc_in_cloud, &
-    l_silhs_KK_convergence_adj_mean, &
-    l_predict_Nc, &
-    rr_sigma2_on_mu2_ip_cloud, &
-    rr_sigma2_on_mu2_ip_below, &
-    ri_sigma2_on_mu2_ip_cloud, &
-    ri_sigma2_on_mu2_ip_below, &
-    Nr_sigma2_on_mu2_ip_cloud, &
-    Nr_sigma2_on_mu2_ip_below, &
-    rs_sigma2_on_mu2_ip_cloud, &
-    rs_sigma2_on_mu2_ip_below, &
-    Ns_sigma2_on_mu2_ip_cloud, &
-    Ns_sigma2_on_mu2_ip_below, &
-    Ni_sigma2_on_mu2_ip_cloud, &
-    Ni_sigma2_on_mu2_ip_below, &
-    rg_sigma2_on_mu2_ip_cloud, &
-    rg_sigma2_on_mu2_ip_below, &
-    Ng_sigma2_on_mu2_ip_cloud, &
-    Ng_sigma2_on_mu2_ip_below, &
-    Ncnp2_on_Ncnm2
+    hydromet_tol, & ! Tolerance values for all hydrometeors    [units vary]
+    LH_microphys_disabled, & ! Disable Latin hypercube entirely
+    LH_microphys_interactive, & ! Feed the samples into the microphysics and allow feedback
+    LH_microphys_non_interactive, & ! Feed the samples into the microphysics with no feedback
+    LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
+    LH_sequence_length, & ! Number of timesteps before the latin hypercube seq. repeats
+    LH_seed, & ! Seed for the Mersenne
+    l_local_kk, & ! Local drizzle for Khairoutdinov & Kogan microphysics
+    l_fix_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
+    l_lh_cloud_weighted_sampling, & ! Limit noise by sampling in-cloud
+    Nc0_in_cloud, & ! Initial cloud droplet concentration  [num/m^3]
+    l_const_Nc_in_cloud, & ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_silhs_KK_convergence_adj_mean, & ! When true, turns off clipping by mean value of rrm_source
+    l_predict_Nc, & ! Predict cloud droplet conconcentration (Morrison)
+    rr_sigma2_on_mu2_ip_cloud, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    rr_sigma2_on_mu2_ip_below, & ! sigma_rr_i^2/mu_rr_i^2  [-]
+    ri_sigma2_on_mu2_ip_cloud, & ! sigma_ri_i^2/mu_ri_i^2  [-]
+    ri_sigma2_on_mu2_ip_below, & ! sigma_ri_i^2/mu_ri_i^2  [-]
+    Nr_sigma2_on_mu2_ip_cloud, & ! sigma_Nr_i^2/mu_Nr_i^2  [-]
+    Nr_sigma2_on_mu2_ip_below, & ! sigma_Nr_i^2/mu_Nr_i^2  [-]
+    rs_sigma2_on_mu2_ip_cloud, & ! sigma_rs_i^2/mu_rs_i^2  [-]
+    rs_sigma2_on_mu2_ip_below, & ! sigma_rs_i^2/mu_rs_i^2  [-]
+    Ns_sigma2_on_mu2_ip_cloud, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
+    Ns_sigma2_on_mu2_ip_below, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
+    Ni_sigma2_on_mu2_ip_cloud, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
+    Ni_sigma2_on_mu2_ip_below, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
+    rg_sigma2_on_mu2_ip_cloud, & ! sigma_rg_i^2/mu_rg_i^2  [-]
+    rg_sigma2_on_mu2_ip_below, & ! sigma_rg_i^2/mu_rg_i^2  [-]
+    Ng_sigma2_on_mu2_ip_cloud, & ! sigma_Ng_i^2/mu_Ng_i^2  [-]
+    Ng_sigma2_on_mu2_ip_below, & ! sigma_Ng_i^2/mu_Ng_i^2  [-]
+    Ncnp2_on_Ncnm2 ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
 
   use parameters_model, only : &
-    hydromet_dim, &
-    Lscale_max
+    hydromet_dim, & ! Number of hydrometeor species
+    Lscale_max ! Maximum allowable value for Lscale [m].
 
   use parameters_tunable, only : &
-    l_prescribed_avg_deltaz, &
-    C7, &
-    C8, &
-    C11, &
-    C11b, &
-    gamma_coef, &
-    mu, &
-    mult_coef
+    l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    C7, & ! Low Skewness in C7 Skw. Function    [-]
+    C8, & ! Coef. #1 in C8 Skewness Equation    [-]
+    C11, & ! Low Skewness in C11 Skw. Function   [-]
+    C11b, & ! High Skewness in C11 Skw. Function  [-]
+    gamma_coef, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
+    mu, & ! Fract entrain rate per unit alt  [1/m]
+    mult_coef ! Coef. applied to log(avg dz/thresh)[-]
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -177,39 +176,39 @@ module clubb_api_module
     pdf_parameter
 
   use stat_file_module, only : &
-    clubb_i, &
-    clubb_j
+    clubb_i, &    ! Used to output multiple columns
+    clubb_j       ! The indices must not exceed nlon (for i) or nlat (for j).
 
   use stats_rad_zm, only : &
-    nvarmax_rad_zm
+    nvarmax_rad_zm ! Maximum variables allowed
 
   use stats_rad_zt, only : &
-    nvarmax_rad_zt
+    nvarmax_rad_zt  ! Maximum variables allowed
 
   use stats_variables, only : &
-    zt, &
-    zm, &
-    rad_zt, &
-    rad_zm, &
+    zt, & ! zt grid
+    zm, & ! zm grid
+    rad_zt, & ! rad_zt grid
+    rad_zm, & ! rad_zm grid
     sfc, &
-    l_stats_last, &
-    stats_tsamp, &
-    stats_tout, &
-    l_output_rad_files, &
-    l_stats, &
-    l_stats_samp, &
-    l_grads
+    l_stats_last, & ! Last time step of output period
+    stats_tsamp, & ! Sampling interval   [s]
+    stats_tout, & ! Output interval     [s]
+    l_output_rad_files, & ! Flag to turn off radiation statistics output
+    l_stats, & ! Main flag to turn statistics on/off
+    l_stats_samp, & ! Sample flag for current time step
+    l_grads ! Output to GrADS format
 
   use stats_zm, only : &
-    nvarmax_zm
+    nvarmax_zm ! Maximum variables allowed
 
   use stats_zt, only : &
-    nvarmax_zt
+    nvarmax_zt ! Maximum variables allowed
 
   use variables_diagnostic_module, only : &
-    Lscale, &
-    wp2_zt, &
-    wphydrometp
+    Lscale, & ! Mixing lengths
+    wp2_zt, & ! w'^2 on thermo. grid     [m^2/s^2]
+    wphydrometp ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
 
   !================================================================================================
   ! The interface and variables below are only used by CLUBB_standalone
