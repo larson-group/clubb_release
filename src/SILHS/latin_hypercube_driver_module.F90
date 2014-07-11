@@ -1602,7 +1602,6 @@ module latin_hypercube_driver_module
     use mt95, only: genrand_real3 ! Procedure
 
     use mt95, only: genrand_real ! Constant
-    use mt95, only: r8 => genrand_real ! Constant
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)

@@ -1737,8 +1737,8 @@ module KK_microphys_module
         iiPDF_Ncn
 
     use array_index, only: &
-        iirr => iirrm, & ! Variable(s)
-        iiNr => iiNrm
+        iirrm, & ! Variable(s)
+        iiNrm
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1869,23 +1869,23 @@ module KK_microphys_module
     sigma_Ncn_2_n = sigma_x_2(iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
-    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirr)
-    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirr)
-    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNr)
-    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNr)
+    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirrm)
+    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirrm)
+    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNrm)
+    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNrm)
     mu_Ncn_1    = hydromet_pdf_params%mu_Ncn_1
     mu_Ncn_2    = hydromet_pdf_params%mu_Ncn_2
-    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirr)
-    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirr)
-    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNr)
-    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNr)
+    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirrm)
+    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirrm)
+    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNrm)
+    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNrm)
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr1           = hydromet_pdf_params%hm1(iirr)
-    rr2           = hydromet_pdf_params%hm2(iirr)
-    Nr1           = hydromet_pdf_params%hm1(iiNr)
-    Nr2           = hydromet_pdf_params%hm2(iiNr)
+    rr1           = hydromet_pdf_params%hm1(iirrm)
+    rr2           = hydromet_pdf_params%hm2(iirrm)
+    Nr1           = hydromet_pdf_params%hm1(iiNrm)
+    Nr2           = hydromet_pdf_params%hm2(iiNrm)
     precip_frac   = hydromet_pdf_params%precip_frac
     precip_frac_1 = hydromet_pdf_params%precip_frac_1
     precip_frac_2 = hydromet_pdf_params%precip_frac_2

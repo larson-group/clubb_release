@@ -171,7 +171,7 @@ module microphys_driver
         pbuf_setval
 
     use shr_kind_mod, only: &
-        r8 => shr_kind_r8  ! Variable(s)
+        shr_kind_r8  ! Variable(s)
 
     use parameters_microphys, only: &
         lh_microphys_type,        & ! Determines how the LH samples are used
@@ -537,7 +537,7 @@ module microphys_driver
        ! the way LH is currently set up.
        call pbuf_add( 'WP2', 1, gr%nz, 1 )
        call pbuf_allocate()
-       call pbuf_setval( 'WP2', real( wp2_zt, kind=r8 ) )
+       call pbuf_setval( 'WP2', real( wp2_zt, kind=shr_kind_r8 ) )
 
        rvm = rtm - rcm
        call mg_microphys_driver &
