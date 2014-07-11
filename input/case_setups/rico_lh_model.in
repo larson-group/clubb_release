@@ -1,4 +1,4 @@
-! $Id: rico_model.in 4731 2010-09-13 21:47:38Z meyern@uwm.edu $
+! $Id$
 ! Parameter file for GCSS RICO case
 ! Edited by Michael Falk, 12 December 2006
 
@@ -6,7 +6,7 @@
 
 ! Model Settings
 
-runtype = "rico"  ! Case name.
+runtype = "rico_lh"  ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
 nzmax = 128       ! Number of vertical levels.
@@ -61,8 +61,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main = 60.0   ! Model timestep [s]
-dt_rad  = 60.0   ! Radiation timestep [s] 
+dt_main    = 60.0   ! Model timestep [s]
+dt_rad = 300.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -134,6 +134,8 @@ iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 l_prescribed_avg_deltaz = .false.
 
+l_diagnose_correlations = .false.
+l_calc_w_corr = .false.
 /
 
 &gfdl_activation_setting
@@ -143,31 +145,30 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-microphys_scheme = "khairoutdinov_kogan",
+microphys_scheme = "khairoutdinov_kogan"
 
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
-!!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain.
-rr_sigma2_on_mu2_ip_cloud = 0.766  
-Nr_sigma2_on_mu2_ip_cloud = 0.429  
+!!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
+! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
+rr_sigma2_on_mu2_ip_cloud = 1.0
+Nr_sigma2_on_mu2_ip_cloud = 1.0
 rr_sigma2_on_mu2_ip_below = 1.0
 Nr_sigma2_on_mu2_ip_below = 1.0
-Ncnp2_on_Ncnm2            = 2.2  
+Ncnp2_on_Ncnm2            = 2.2
 
-C_evap = 0.5
-r_0 = 100.0e-6
 !!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
-Nc0_in_cloud = 70.e6 ! #/m^3 
+Nc0_in_cloud  = 70.e6 ! num/m^3
+l_const_Nc_in_cloud = .true.
+l_var_covar_src = .false.
 
-! Addition for using latin hypercube sampling
-lh_microphys_type = "interactive",
+! Addition for using SILHS
+lh_microphys_type = "interactive"
 l_local_kk = .true.,
-l_lh_vert_overlap = .true.,
-l_lh_cloud_weighted_sampling = .true.,
 l_fix_chi_eta_correlations = .true.,
-lh_microphys_calls = 2,
-lh_sequence_length = 1,
-
+l_lh_vert_overlap = .true.,
+lh_microphys_calls = 8  ! A reasonable default
+lh_sequence_length = 1
 /
 
 &radiation_setting
@@ -180,14 +181,14 @@ l_calc_thlp2_rad = .false.,
 
 ! Statistics Settings
 
-l_stats      = .true.   ! Flag for statistical output.
-fname_prefix = "rico_lh"   ! Prefix of output filename.
-stats_tsamp  = 60.     ! Frequency of statistical sampling [s]
-                        ! For most complete sampling, let 
-                        ! stats_tsamp = dt_main
-                        ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 300.     ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
+l_stats      = .true.    ! Flag for statistical output.
+fname_prefix = "rico_lh" ! Prefix of output filename.
+stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
+                         ! For most complete sampling, let 
+                         ! stats_tsamp = dt_main
+                         ! (stats_tsamp must multiply evenly into stats_tout)
+stats_tout   = 60.       ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
