@@ -70,6 +70,10 @@ module estimate_scm_microphys_module
     use math_utilities, only: &
       compute_sample_mean             ! Procedure
 
+    use parameters_microphys, only: &
+      lh_microphys_type,            &           ! Variable
+      lh_microphys_non_interactive              ! Constant
+
 #ifdef SILHS_KK_CONVERGENCE_TEST
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -408,14 +412,15 @@ module estimate_scm_microphys_module
     lh_thlm_mc= compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all(:,:))
 
     ! Sample variables from microphys_stats_vars objects for statistics
-
     microphys_stats_zt_avg =  silhs_microphys_stats_avg( num_samples, microphys_stats_zt_all, &
                                                          lh_sample_point_weights )
     microphys_stats_sfc_avg = silhs_microphys_stats_avg( num_samples, microphys_stats_sfc_all, &
                                                          lh_sample_point_weights )
 
-    call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, zt )
-    call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, sfc )
+    if ( lh_microphys_type /= lh_microphys_non_interactive ) then
+      call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, zt )
+      call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, sfc )
+    end if
 
 #ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
