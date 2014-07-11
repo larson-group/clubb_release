@@ -426,10 +426,12 @@ module estimate_scm_microphys_module
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrm),           & ! intent(in)
-                                hydromet(:,iiNrm),                                  & ! intent(in)
-                                microphys_stats_zt_avg, l_stats_samp,               & ! intent(in)
+                                hydromet(:,iiNrm),                               & ! intent(in)
+                                microphys_stats_zt_avg, l_stats_samp,            & ! intent(in)
+                                lh_hydromet_vel(:,iirrm),                        & ! intent(inout)
+                                lh_hydromet_vel(:,iiNrm),                        & ! intent(inout)
                                 lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
-                                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                    ! intent(out)
+                                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                 ! intent(out)
     end if
 #else
     ! Eliminate the resulting compiler warning
@@ -527,7 +529,8 @@ module estimate_scm_microphys_module
 #ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm,         &
-                                  microphys_stats_zt, l_stats_samp,        &
+                                  microphys_stats_zt, l_stats_samp,     &
+                                  lh_Vrr, lh_VNr,                       &
                                   rrm_mc, Nrm_mc,                       &
                                   rvm_mc, rcm_mc, thlm_mc )
 
@@ -602,6 +605,11 @@ module estimate_scm_microphys_module
     logical, intent(in) :: &
       l_stats_samp   ! Whether to sample this timestep
 
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      lh_Vrr, &         ! Mean sedimentation velocity of < r_r > [m/s]
+      lh_VNr            ! Mean sedimentation velocity of < N_r > [m/s]
+
     ! Output variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
       rrm_mc, & ! Mean change in rain due to microphysics [(kg/kg)/s] 
@@ -643,15 +651,28 @@ module estimate_scm_microphys_module
     do k = 2, nz, 1
 
       ! We call KK_microphys_adjust to adjust the means of the mc terms
-      call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k),   & !intent(in)
-                                rrm_evap(k), rrm_auto(k),            & !intent(in)
-                                rrm_accr(k), Nrm_evap(k),               & !intent(in)
+      call KK_microphys_adjust( dt, exner(k), rcm(k), rrm(k), Nrm(k),      & !intent(in)
+                                rrm_evap(k), rrm_auto(k),                  & !intent(in)
+                                rrm_accr(k), Nrm_evap(k),                  & !intent(in)
                                 Nrm_auto(k), l_src_adj_enabled,            & !intent(in)
                                 l_evap_adj_enabled,                        & !intent(in)
-                                rrm_mc(k), Nrm_mc(k),                   & !intent(out)
+                                rrm_mc(k), Nrm_mc(k),                      & !intent(out)
                                 rvm_mc(k), rcm_mc(k), thlm_mc(k),          & !intent(out)
                                 adj_terms(k) )                               !intent(out)
     end do ! k = 2, nz, 1
+
+    ! Clip positive values of Vrr and VNr
+    do k = 1, nz-1, 1
+
+      if ( lh_Vrr(k) > zero ) then
+        lh_Vrr(k) = zero
+      end if
+
+      if ( lh_VNr(k) > zero ) then
+        lh_VNr(k) = zero
+      end if
+
+    end do
 
     ! Set boundary conditions
     rrm_mc(1) = zero

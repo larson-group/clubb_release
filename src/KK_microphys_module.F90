@@ -43,7 +43,7 @@ module KK_microphys_module
   subroutine KK_local_microphys( dt, nz, l_latin_hypercube,             & ! In
                                  thlm, wm_zt, p_in_Pa, exner, rho,      & ! In
                                  cloud_frac, w_std_dev, dzq, rcm,       & ! In
-                                 Ncm, chi, rvm, hydromet,          & ! In
+                                 Ncm, chi, rvm, hydromet,               & ! In
                                  hydromet_mc, hydromet_vel,             & ! Out
                                  Ncm_mc, rcm_mc, rvm_mc, thlm_mc,       & ! Out
                                  microphys_stats_zt,                    & ! Out
@@ -187,7 +187,8 @@ module KK_microphys_module
 
     logical :: &
       l_src_adj_enabled,   & ! Flag to enable rrm/Nrm source adjustment
-      l_evap_adj_enabled     ! Flag to enable rrm/Nrm evaporation adjustment
+      l_evap_adj_enabled,  & ! Flag to enable rrm/Nrm evaporation adjustment
+      l_clip_positive_sed    ! Flag to enable Vrr/VNr positive clipping
 
     integer :: &
       cloud_top_level, & ! Vertical level index of cloud top 
@@ -208,19 +209,21 @@ module KK_microphys_module
                             KK_mean_vol_rad, KK_Nrm_evap_tndcy, &
                             KK_Nrm_auto_tndcy, &
                             l_src_adj_enabled, l_evap_adj_enabled )
+    l_clip_positive_sed = .true.
 
     ! The time tendency of cloud droplet concentration is only present because
     ! of Latin Hypercube interface.  Ncm_mc is needed for other microphysics
     ! schemes, but not KK.  Simply set Ncm_mc to 0.
     Ncm_mc = zero
 
-    ! Do not use l_src_adj or l_evap_adj when l_silhs_KK_convergence_adj_mean is
+    ! Do not use these adjustments when l_silhs_KK_convergence_adj_mean is
     ! true. We need to do this to get Latin hypercube to converge to KK
     ! analytic. The adjustment code will be called by Latin hypercube for the
     ! means only.
     if ( l_silhs_KK_convergence_adj_mean .and. l_latin_hypercube ) then
       l_src_adj_enabled = .false.
       l_evap_adj_enabled = .false.
+      l_clip_positive_sed = .false.
     end if
 
     !!! Microphysics tendency loop.
@@ -343,7 +346,8 @@ module KK_microphys_module
     cloud_top_level = get_cloud_top_level( nz, rcm )
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
+    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+                           l_clip_positive_sed )
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
@@ -452,6 +456,9 @@ module KK_microphys_module
 
     implicit none
 
+    ! Local Constants
+    logical, parameter :: &
+      l_clip_positive_sed = .true.  ! Clip positive Vrr and VNr terms to zero
 
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
@@ -751,7 +758,6 @@ module KK_microphys_module
                                Vrrprrp_zt_impc(k), Vrrprrp_zt_expc(k), &
                                VNrpNrp_zt_impc(k), VNrpNrp_zt_expc(k) )
 
-
        if ( l_var_covar_src ) then
 
           call KK_upscaled_covar_driver( wm_zt(k), rtm(k), thlm(k), &
@@ -923,7 +929,8 @@ module KK_microphys_module
     cloud_top_level = get_cloud_top_level( nz, rcm )
 
     !!! Microphysics sedimentation velocities.
-    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
+    call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+                           l_clip_positive_sed )
 
     !!! Output hydrometeor mean tendencies and mean sedimentation velocities
     !!! in output arrays.
@@ -1563,7 +1570,8 @@ module KK_microphys_module
   end subroutine KK_stats_output
 
   !=============================================================================
-  subroutine KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr )
+  subroutine KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
+                               l_clip_positive_sed )
 
     ! Description:
 
@@ -1583,16 +1591,19 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,              & ! Number of model vertical grid levels
-      cloud_top_level    ! Vertical level index of cloud top
+      nz,              &  ! Number of model vertical grid levels
+      cloud_top_level     ! Vertical level index of cloud top
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      KK_mean_vol_rad    ! KK rain drop mean volume radius       [m]
+      KK_mean_vol_rad     ! KK rain drop mean volume radius       [m]
+
+    logical, intent(in) :: &
+      l_clip_positive_sed ! Clip positive values of Vrr and VNr   [T/F]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(:), intent(inout) ::  &
-      Vrr, & ! Mean sedimentation velocity of < r_r >            [m/s]
-      VNr    ! Mean sedimentation velocity of < N_r >            [m/s]
+      Vrr, & ! Mean sedimentation velocity of < r_r >             [m/s]
+      VNr    ! Mean sedimentation velocity of < N_r >             [m/s]
 
     ! Local Variables
     integer :: k ! Loop iterator
@@ -1605,21 +1616,26 @@ module KK_microphys_module
        Vrr(k) = - ( 0.012_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) ) &
                     - 0.2_core_rknd )
 
-       ! Mean sedimentation velocity of rain water mixing ratio cannot have a
-       ! positive value.
-       if ( Vrr(k) > zero ) then
-          Vrr(k) = zero
-       endif
-
        ! Mean sedimentation velocity of rain drop concentration.
        VNr(k) = - ( 0.007_core_rknd * ( micron_per_m * KK_mean_vol_rad(k) )  &
                     - 0.1_core_rknd )
 
-       ! Mean sedimentation velocity of rain drop concentration cannot have a
-       ! positive value.
-       if ( VNr(k) > zero ) then
-          VNr(k) = zero
-       endif
+       if ( l_clip_positive_sed ) then
+
+         ! Mean sedimentation velocity of rain water mixing ratio cannot
+         ! have a
+         ! positive value.
+         if ( Vrr(k) > zero ) then
+            Vrr(k) = zero
+         endif
+
+         ! Mean sedimentation velocity of rain drop concentration cannot have a
+         ! positive value.
+         if ( VNr(k) > zero ) then
+            VNr(k) = zero
+         endif
+
+       end if
 
     enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
 
