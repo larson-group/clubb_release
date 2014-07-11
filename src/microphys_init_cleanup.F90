@@ -828,15 +828,6 @@ module microphys_init_cleanup
        stop "l_silhs_KK_convergence_adj_mean requires khairoutdinov_kogan microphysics"
     endif
 
-    ! Stop the run if user has selected l_silhs_KK_convergence_adj_mean and not
-    ! included the preprocessor flag SILHS_KK_CONVERGENCE_TEST
-#ifndef SILHS_KK_CONVERGENCE_TEST
-    if (l_silhs_KK_convergence_adj_mean) then
-       stop "Use of the l_silhs_KK_convergence_adj_mean flag requires the &
-            &preprocessor flag SILHS_KK_CONVERGENCE_TEST"
-    endif
-#endif
-
     !The algorithm for diagnosing the correlations only works with the KK
     !microphysics by now. 
     !<Changes by janhft 02/19/13>

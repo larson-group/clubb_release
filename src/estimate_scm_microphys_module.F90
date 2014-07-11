@@ -5,8 +5,7 @@ module estimate_scm_microphys_module
 
   implicit none
 
-  public :: est_single_column_tndcy, copy_X_nl_into_hydromet_all_pts, &
-            copy_X_nl_into_rc_all_pts
+  public :: est_single_column_tndcy
 
   private ! Default scope
 
@@ -74,14 +73,16 @@ module estimate_scm_microphys_module
       lh_microphys_type,            &           ! Variable
       lh_microphys_non_interactive              ! Constant
 
-#ifdef SILHS_KK_CONVERGENCE_TEST
+    use latin_hypercube_driver_module, only: &
+      copy_X_nl_into_hydromet_all_pts    ! Procedure
+
+
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
     use array_index, only: &
       iiNrm, & ! Variable(s)
       iirrm
-#endif
 
     implicit none
 
@@ -422,7 +423,6 @@ module estimate_scm_microphys_module
       call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, sfc )
     end if
 
-#ifdef SILHS_KK_CONVERGENCE_TEST
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrm),           & ! intent(in)
@@ -433,12 +433,6 @@ module estimate_scm_microphys_module
                                 lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                 ! intent(out)
     end if
-#else
-    ! Eliminate the resulting compiler warning
-    if (.false.) then
-      Nc(1) = rcm(1)
-    end if
-#endif
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples
@@ -526,7 +520,6 @@ module estimate_scm_microphys_module
   end function silhs_microphys_stats_avg
   !-----------------------------------------------------------------------
 
-#ifdef SILHS_KK_CONVERGENCE_TEST
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm,         &
                                   microphys_stats_zt, l_stats_samp,     &
@@ -712,176 +705,6 @@ module estimate_scm_microphys_module
     end if ! l_stats_samp
 
   end subroutine adjust_KK_src_means
-#endif /*SILHS_KK_CONVERGENCE_TEST*/
-  !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_hydromet_all_pts( nz, d_variables, num_samples, &
-                                      X_nl_all_levs, &
-                                      hydromet, &
-                                      hydromet_all_points, &
-                                      Ncn_all_points )
-
-  ! Description:
-  !   Copy the points from the latin hypercube sample to an array with just the
-  !   hydrometeors
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
-    use parameters_model, only: &
-      hydromet_dim ! Variable
-
-    use array_index, only: &
-      iirrm, & ! Variables
-      iirsm, & 
-      iirim, & 
-      iirgm, & 
-      iiNrm, &
-      iiNsm, &
-      iiNim, &
-      iiNgm
-
-    use corr_matrix_module, only: &
-      iiPDF_rr, &
-      iiPDF_rs, &
-      iiPDF_ri, &
-      iiPDF_rg, &
-      iiPDF_Nr, &
-      iiPDF_Ns, &
-      iiPDF_Ng, &
-      iiPDF_Ncn, &
-      iiPDF_Ni
-
-    use clubb_precision, only: &
-      dp, & ! double precision
-      core_rknd
-
-    implicit none
-
-    integer, intent(in) :: &
-      nz,            & ! Number of vertical levels
-      d_variables,   & ! Number of variates
-      num_samples    ! Number of calls to microphysics
-
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim), intent(out) :: &
-      hydromet_all_points ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
-      Ncn_all_points    ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
-
-    integer :: sample, ivar
-
-    do sample = 1, num_samples
-      ! Copy the sample points into the temporary arrays
-      do ivar = 1, hydromet_dim, 1
-        if ( ivar == iirrm .and. iiPDF_rr > 0 ) then
-          ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rr), kind = core_rknd )
-
-        else if ( ivar == iirsm .and. iiPDF_rs > 0 ) then
-          ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rs), kind = core_rknd )
-
-        else if ( ivar == iirim .and. iiPDF_ri > 0 ) then
-          ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_ri), kind = core_rknd )
-
-        else if ( ivar == iirgm .and. iiPDF_rg > 0 ) then
-          ! Use a sampled value of rain water mixing ratio
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_rg), kind = core_rknd )
-
-        else if ( ivar == iiNrm .and. iiPDF_Nr > 0 ) then
-          ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Nr), kind = core_rknd )
-
-        else if ( ivar == iiNsm .and. iiPDF_Ns > 0 ) then
-          ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Ns), kind = core_rknd )
-
-        else if ( ivar == iiNgm .and. iiPDF_Ng > 0 ) then
-          ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Ng), kind = core_rknd )
-
-        else if ( ivar == iiNim .and. iiPDF_Ni > 0 ) then
-          ! Use a sampled value of rain droplet number concentration
-          hydromet_all_points(:,sample,ivar) = &
-            real( X_nl_all_levs(:,sample,iiPDF_Ni), kind = core_rknd )
-
-        else ! Use the mean field, rather than a sample point
-          ! This is the case for hail and graupel in the Morrison microphysics
-          ! currently -dschanen 23 March 2010
-          hydromet_all_points(:,sample,ivar) = hydromet(:,ivar)
-
-        end if
-      end do ! 1..hydromet_dim
-      ! Copy Ncn into Ncn all points
-      if ( iiPDF_Ncn > 0 ) then
-        Ncn_all_points(:,sample) = &
-          real( X_nl_all_levs(:,sample,iiPDF_Ncn), kind=core_rknd )
-      end if
-    end do ! 1..num_samples
-
-    return
-  end subroutine copy_X_nl_into_hydromet_all_pts
-  !-----------------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_rc_all_pts &
-             ( nz, d_variables, num_samples, X_nl_all_levs, &
-               lh_rc )
-  ! Description:
-  !   Extracts a sample of rc from X_nl_all_levs, where rc = s * H(s), for each
-  !   subcolumn.
-
-  ! References:
-  !   none
-  !-----------------------------------------------------------------------------
-    use clubb_precision, only: &
-      dp, &
-      core_rknd
-
-    use corr_matrix_module, only: &
-      iiPDF_chi        ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz, &            ! Number of vertical levels
-      d_variables, &   ! Number of lognormal variates
-      num_samples      ! Number of SILHS samples per variate
-
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
-      X_nl_all_levs    ! Normal-lognormal SILHS sample   [units vary]
-
-    ! Output variables
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
-      lh_rc            ! SILHS samples of rc       [kg/kg]
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    where ( X_nl_all_levs(:,:,iiPDF_chi) >= 0.0_dp )
-      lh_rc = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
-    elsewhere
-      lh_rc = 0.0_core_rknd
-    end where
-
-    return
-  end subroutine copy_X_nl_into_rc_all_pts
-  !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
   subroutine lh_moments ( n_samples, lh_weights, nz, & 

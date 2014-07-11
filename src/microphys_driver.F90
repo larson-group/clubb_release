@@ -88,7 +88,7 @@ module microphys_driver
 #endif
 
 #ifdef SILHS
-    use latin_hypercube_driver_module, only: &
+    use lh_microphys_driver_module, only: &
         lh_microphys_driver  ! Procedure(s)
 #endif /* SILHS */
 

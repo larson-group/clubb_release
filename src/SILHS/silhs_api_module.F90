@@ -28,7 +28,6 @@ module silhs_api_module
     stats_accumulate_lh_api, &
     latin_hypercube_2D_output_api, &
     latin_hypercube_2D_close_api, &
-    lh_microphys_driver_api, &
     cleanup_lh_arrays_api, &
     copy_X_nl_into_hm_all_pts_api, &
     copy_X_nl_into_rc_all_pts_api, &
@@ -373,111 +372,6 @@ contains
   end subroutine latin_hypercube_2D_close_api
 
   !================================================================================================
-  ! lh_microphys_driver - Computes an estimate of the change due to microphysics.
-  !================================================================================================
-
-  subroutine lh_microphys_driver_api( &
-    dt, nz, num_samples, d_variables, &
-    X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
-    pdf_params, p_in_Pa, exner, rho, &
-    rcm, delta_zt, cloud_frac, &
-    hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
-    lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
-    lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
-    lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
-    lh_wpthlp_mc, lh_rtpthlp_mc, &
-    microphys_sub )
-
-    use latin_hypercube_driver_module, only : lh_microphys_driver
-
-    use parameters_model, only: hydromet_dim ! Variable
-
-    use pdf_parameter_module, only: &
-      pdf_parameter  ! Type
-
-
-    use clubb_precision, only: &
-      dp, & ! double precision
-      core_rknd, &
-      time_precision
-
-    implicit none
-
-    ! Interface block
-#include "microphys_interface.inc"
-
-    ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
-      dt ! Model timestep       [s]
-
-    integer, intent(in) :: &
-      d_variables,     & ! Number of variables to sample
-      num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz               ! Number of vertical model levels
-
-    ! Input Variables
-    real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    integer, intent(in), dimension(nz,num_samples) :: &
-      X_mixt_comp_all_levs ! Which mixture component we're in
-
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
-      lh_sample_point_weights ! Weight given the individual sample points
-
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params ! PDF parameters       [units vary]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      cloud_frac,  & ! Cloud fraction               [-]
-      delta_zt,    & ! Change in meters with height [m]
-      rcm,         & ! Liquid water mixing ratio    [kg/kg]
-      p_in_Pa,     & ! Pressure                     [Pa]
-      exner,       & ! Exner function               [-]
-      rho            ! Density on thermo. grid      [kg/m^3]
-
-    real( kind = core_rknd), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
-      lh_hydromet_mc, & ! lh estimate of hydrometeor time tendency          [(units vary)/s]
-      lh_hydromet_vel   ! lh estimate of hydrometeor sedimentation velocity [m/s]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_Ncm_mc,     & ! lh estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
-      lh_rcm_mc,     & ! lh estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
-      lh_rvm_mc,     & ! lh estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
-      lh_thlm_mc,    & ! lh estimate of time tndcy. of liquid potential temp.  [K/s]
-      lh_rtp2_mc,    & ! lh microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
-      lh_thlp2_mc,   & ! lh microphysics tendency for <thl'^2>                 [K^2/s]
-      lh_wprtp_mc,   & ! lh microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
-      lh_wpthlp_mc,  & ! lh microphysics tendency for <w'thl'>                 [m*K/s^2]
-      lh_rtpthlp_mc    ! lh microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
-
-    call lh_microphys_driver( &
-      dt, nz, num_samples, d_variables, &
-      X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
-      pdf_params, p_in_Pa, exner, rho, &
-      rcm, delta_zt, cloud_frac, &
-      hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
-      lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
-      lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
-      lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
-      lh_wpthlp_mc, lh_rtpthlp_mc, &
-      microphys_sub )
-
-  end subroutine lh_microphys_driver_api
-
-  !================================================================================================
   ! cleanup_latin_hypercube_arrays - De-allocate latin hypercube arrays.
   !================================================================================================
 
@@ -502,7 +396,7 @@ contains
     hydromet_all_points, &
     Ncn_all_points )
 
-    use estimate_scm_microphys_module, only : copy_X_nl_into_hydromet_all_pts
+    use latin_hypercube_driver_module, only : copy_X_nl_into_hydromet_all_pts
 
     use parameters_model, only: &
       hydromet_dim ! Variable
@@ -547,7 +441,7 @@ contains
     nz, d_variables, num_samples, &
     X_nl_all_levs, lh_rc )
 
-    use estimate_scm_microphys_module, only : copy_X_nl_into_rc_all_pts
+    use latin_hypercube_driver_module, only : copy_X_nl_into_rc_all_pts
 
     use clubb_precision, only: &
       dp, &
@@ -570,7 +464,7 @@ contains
 
     call copy_X_nl_into_rc_all_pts( &
       nz, d_variables, num_samples, &
-    X_nl_all_levs, lh_rc )
+      X_nl_all_levs, lh_rc )
 
   end subroutine copy_X_nl_into_rc_all_pts_api
 #endif

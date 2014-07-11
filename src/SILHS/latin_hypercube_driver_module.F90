@@ -22,8 +22,9 @@ module latin_hypercube_driver_module
   private ! Default scope
 
 #ifdef SILHS
-  public :: lh_subcolumn_generator, lh_microphys_driver, latin_hypercube_2D_output, &
-    latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator_mod
+  public :: lh_subcolumn_generator, latin_hypercube_2D_output, &
+    latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator_mod, &
+    copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts
 
   private :: stats_accumulate_uniform_lh
 
@@ -1061,146 +1062,6 @@ module latin_hypercube_driver_module
     return
   end subroutine lh_subcolumn_generator_mod
 
-
-  !=============================================================================
-  subroutine lh_microphys_driver &
-             ( dt, nz, num_samples, d_variables, &
-               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
-               pdf_params, p_in_Pa, exner, rho, &
-               rcm, delta_zt, cloud_frac, &
-               hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
-               lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
-               lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
-               lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
-               lh_wpthlp_mc, lh_rtpthlp_mc, &
-               microphys_sub )
-
-    ! Description:
-    !   Computes an estimate of the change due to microphysics given a set of
-    !   subcolumns of thlm, rtm, et cetera from the subcolumn generator.
-    !
-    ! References:
-    !   None
-    !---------------------------------------------------------------------------
-
-    use variables_diagnostic_module, only: & 
-      lh_AKm,  & 
-      AKm, & 
-      AKstd, & 
-      AKstd_cld, & 
-      AKm_rcm, & 
-      AKm_rcc, & 
-      lh_rcm_avg
-
-    use parameters_model, only: hydromet_dim ! Variable
-
-    use pdf_parameter_module, only: &
-      pdf_parameter  ! Type
-
-    use est_kessler_microphys_module, only: &
-      est_kessler_microphys
-
-    use clubb_precision, only: &
-      dp, & ! double precision
-      core_rknd, &
-      time_precision
-
-    use error_code, only: &
-      clubb_at_least_debug_level ! Procedure
-
-    use estimate_scm_microphys_module, only: &
-      est_single_column_tndcy
-
-    implicit none
-
-    ! Interface block
-#include "microphys_interface.inc"
-
-    ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
-      dt ! Model timestep       [s]
-
-    integer, intent(in) :: &
-      d_variables,     & ! Number of variables to sample
-      num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
-      nz               ! Number of vertical model levels
-
-    ! Input Variables
-    real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    integer, intent(in), dimension(nz,num_samples) :: &
-      X_mixt_comp_all_levs ! Which mixture component we're in
-
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
-      lh_sample_point_weights ! Weight given the individual sample points
-
-    type(pdf_parameter), dimension(nz), intent(in) :: & 
-      pdf_params ! PDF parameters       [units vary]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      cloud_frac,  & ! Cloud fraction               [-]
-      delta_zt,    & ! Change in meters with height [m]
-      rcm,         & ! Liquid water mixing ratio    [kg/kg]
-      p_in_Pa,     & ! Pressure                     [Pa]
-      exner,       & ! Exner function               [-]
-      rho            ! Density on thermo. grid      [kg/m^3]
-
-    real( kind = core_rknd), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
-      lh_hydromet_mc, & ! LH estimate of hydrometeor time tendency          [(units vary)/s]
-      lh_hydromet_vel   ! LH estimate of hydrometeor sedimentation velocity [m/s]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_Ncm_mc,     & ! LH estimate of time tndcy. of cloud droplet conc.     [num/kg/s]
-      lh_rcm_mc,     & ! LH estimate of time tndcy. of liq. water mixing ratio [kg/kg/s]
-      lh_rvm_mc,     & ! LH estimate of time tndcy. of vapor water mix. ratio  [kg/kg/s]
-      lh_thlm_mc,    & ! LH estimate of time tndcy. of liquid potential temp.  [K/s]
-      lh_rtp2_mc,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
-      lh_thlp2_mc,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
-      lh_wprtp_mc,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
-      lh_wpthlp_mc,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
-      lh_rtpthlp_mc    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
-
-    ! ---- Begin Code ----
-
-    ! Perform LH and analytic microphysical calculations
-    ! As a test of SILHS, compute an estimate of Kessler microphysics
-    if ( clubb_at_least_debug_level( 2 ) ) then
-       call est_kessler_microphys &
-            ( nz, num_samples, d_variables, &                    ! Intent(in)
-              X_nl_all_levs, pdf_params, rcm, cloud_frac, &      ! Intent(in)
-              X_mixt_comp_all_levs, lh_sample_point_weights, &   ! Intent(in)
-              lh_AKm, AKm, AKstd, AKstd_cld, &                   ! Intent(out)
-              AKm_rcm, AKm_rcc, lh_rcm_avg )                     ! Intent(out)
-    end if
-
-    ! Call the latin hypercube microphysics driver for microphys_sub
-    call est_single_column_tndcy &
-         ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
-           k_lh_start, lh_rt, lh_thl, &                              ! Intent(in)
-           X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in) 
-           p_in_Pa, exner, rho, &                                    ! Intent(in)
-           delta_zt, hydromet, rcm, Nc_in_cloud, &                   ! Intent(in)
-           lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
-           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
-           lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                   ! Intent(out)
-           lh_wpthlp_mc, lh_rtpthlp_mc, &                            ! Intent(out)
-           microphys_sub )                                           ! Intent(Procedure)
-
-    return
-  end subroutine lh_microphys_driver
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
              ( fname_prefix, fdir, stats_tout, nz, &
@@ -2089,9 +1950,6 @@ module latin_hypercube_driver_module
       iiPDF_w, &
       iiPDF_Ncn
 
-    use estimate_scm_microphys_module, only: &
-      copy_X_nl_into_hydromet_all_pts ! Procedure(s)
-
     use constants_clubb, only: &
       zero_threshold    ! Constant(s)
 
@@ -2486,6 +2344,177 @@ module latin_hypercube_driver_module
 
     return
   end subroutine stats_accumulate_uniform_lh
+
+  !-----------------------------------------------------------------------------
+  subroutine copy_X_nl_into_hydromet_all_pts( nz, d_variables, num_samples, &
+                                      X_nl_all_levs, &
+                                      hydromet, &
+                                      hydromet_all_points, &
+                                      Ncn_all_points )
+
+  ! Description:
+  !   Copy the points from the latin hypercube sample to an array with just the
+  !   hydrometeors
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------------
+    use parameters_model, only: &
+      hydromet_dim ! Variable
+
+    use array_index, only: &
+      iirrm, & ! Variables
+      iirsm, & 
+      iirim, & 
+      iirgm, & 
+      iiNrm, &
+      iiNsm, &
+      iiNim, &
+      iiNgm
+
+    use corr_matrix_module, only: &
+      iiPDF_rr, &
+      iiPDF_rs, &
+      iiPDF_ri, &
+      iiPDF_rg, &
+      iiPDF_Nr, &
+      iiPDF_Ns, &
+      iiPDF_Ng, &
+      iiPDF_Ncn, &
+      iiPDF_Ni
+
+    use clubb_precision, only: &
+      dp, & ! double precision
+      core_rknd
+
+    implicit none
+
+    integer, intent(in) :: &
+      nz,            & ! Number of vertical levels
+      d_variables,   & ! Number of variates
+      num_samples    ! Number of calls to microphysics
+
+    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet ! Hydrometeor species    [units vary]
+
+    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim), intent(out) :: &
+      hydromet_all_points ! Hydrometeor species    [units vary]
+
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      Ncn_all_points    ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
+
+    integer :: sample, ivar
+
+    do sample = 1, num_samples
+      ! Copy the sample points into the temporary arrays
+      do ivar = 1, hydromet_dim, 1
+        if ( ivar == iirrm .and. iiPDF_rr > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_rr), kind = core_rknd )
+
+        else if ( ivar == iirsm .and. iiPDF_rs > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_rs), kind = core_rknd )
+
+        else if ( ivar == iirim .and. iiPDF_ri > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_ri), kind = core_rknd )
+
+        else if ( ivar == iirgm .and. iiPDF_rg > 0 ) then
+          ! Use a sampled value of rain water mixing ratio
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_rg), kind = core_rknd )
+
+        else if ( ivar == iiNrm .and. iiPDF_Nr > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_Nr), kind = core_rknd )
+
+        else if ( ivar == iiNsm .and. iiPDF_Ns > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_Ns), kind = core_rknd )
+
+        else if ( ivar == iiNgm .and. iiPDF_Ng > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_Ng), kind = core_rknd )
+
+        else if ( ivar == iiNim .and. iiPDF_Ni > 0 ) then
+          ! Use a sampled value of rain droplet number concentration
+          hydromet_all_points(:,sample,ivar) = &
+            real( X_nl_all_levs(:,sample,iiPDF_Ni), kind = core_rknd )
+
+        else ! Use the mean field, rather than a sample point
+          ! This is the case for hail and graupel in the Morrison microphysics
+          ! currently -dschanen 23 March 2010
+          hydromet_all_points(:,sample,ivar) = hydromet(:,ivar)
+
+        end if
+      end do ! 1..hydromet_dim
+      ! Copy Ncn into Ncn all points
+      if ( iiPDF_Ncn > 0 ) then
+        Ncn_all_points(:,sample) = &
+          real( X_nl_all_levs(:,sample,iiPDF_Ncn), kind=core_rknd )
+      end if
+    end do ! 1..num_samples
+
+    return
+  end subroutine copy_X_nl_into_hydromet_all_pts
+  !-----------------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------------
+  subroutine copy_X_nl_into_rc_all_pts &
+             ( nz, d_variables, num_samples, X_nl_all_levs, &
+               lh_rc )
+  ! Description:
+  !   Extracts a sample of rc from X_nl_all_levs, where rc = s * H(s), for each
+  !   subcolumn.
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------------
+    use clubb_precision, only: &
+      dp, &
+      core_rknd
+
+    use corr_matrix_module, only: &
+      iiPDF_chi        ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz, &            ! Number of vertical levels
+      d_variables, &   ! Number of lognormal variates
+      num_samples      ! Number of SILHS samples per variate
+
+    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+      X_nl_all_levs    ! Normal-lognormal SILHS sample   [units vary]
+
+    ! Output variables
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      lh_rc            ! SILHS samples of rc       [kg/kg]
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    where ( X_nl_all_levs(:,:,iiPDF_chi) >= 0.0_dp )
+      lh_rc = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
+    elsewhere
+      lh_rc = 0.0_core_rknd
+    end where
+
+    return
+  end subroutine copy_X_nl_into_rc_all_pts
+  !-----------------------------------------------------------------------
+
 
 #endif /* SILHS */
 
