@@ -1,9 +1,9 @@
-# RICO case file for non-interactive lh runs!!
+# RICO case file for non-interactive SILHS runs!!
 
 %CASE = 
 (
-    'name' => 'rico',
-    'enabled' => 'true',
+    'name' => 'rico_lh',
+    'enabled' => 'false',
     'type' => 'standard',
     'headerText' => 'Header Text',
     'startTime' => 4201.0,  # [minutes]
