@@ -99,7 +99,8 @@ module stats_lh_zt
 
     use stats_variables, only: &
       ilh_precip_frac, &
-      ilh_mixt_frac
+      ilh_mixt_frac, &
+      ilh_m_vol_rad_rain
 
     use stats_type_utilities, only: & 
       stat_assign ! Procedure
@@ -575,6 +576,13 @@ module stats_lh_zt
              var_description="Latin hypercube estimate of mixture fraction (weight of 1st PDF &
              &component [-]", &
              var_units="-", l_silhs=.true., grid_kind=lh_zt )
+        k = k + 1
+
+      case ( 'lh_m_vol_rad_rain' )
+        ilh_m_vol_rad_rain = k
+        call stat_assign( var_index=ilh_m_vol_rad_rain, var_name="lh_m_vol_rad_rain", &
+             var_description="SILHS est. of rain radius", var_units="m", &
+             l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
       case default

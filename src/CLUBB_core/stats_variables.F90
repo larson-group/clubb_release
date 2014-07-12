@@ -671,7 +671,8 @@ module stats_variables
     ilh_rrm_accr = 0, & ! Latin hypercube estimate of accretion
     ilh_rrm_evap = 0, & ! Latin hypercube estimate of evaporation
     ilh_Nrm_auto    = 0, & ! Latin hypercube estimate of Nrm autoconversion
-    ilh_Nrm_cond    = 0    ! Latin hypercube estimate of Nrm evaporation
+    ilh_Nrm_cond    = 0, & ! Latin hypercube estimate of Nrm evaporation
+    ilh_m_vol_rad_rain = 0
 
 !$omp   threadprivate( ilh_rrm_auto, ilh_rrm_accr, ilh_rrm_evap, &
 !$omp                  ilh_Nrm_auto, ilh_Nrm_cond )

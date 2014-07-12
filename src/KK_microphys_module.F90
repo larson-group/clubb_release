@@ -1639,11 +1639,13 @@ module KK_microphys_module
 
     enddo ! Sedimentation velocity loop: k = 1, nz-1, 1
 
-    !!! Mean sedimentation above cloud top should have a value of 0.
-    if ( cloud_top_level > 1 ) then
-       Vrr(cloud_top_level+1:nz-1) = zero
-       VNr(cloud_top_level+1:nz-1) = zero
-    endif
+    if ( l_clip_positive_sed ) then
+      !!! Mean sedimentation above cloud top should have a value of 0.
+      if ( cloud_top_level > 1 ) then
+         Vrr(cloud_top_level+1:nz-1) = zero
+         VNr(cloud_top_level+1:nz-1) = zero
+      endif
+    end if
 
     !!! Boundary conditions for sedimentation velocities.
 

@@ -102,7 +102,7 @@ vars_lh_zt =
 'lh_Nrm', 'lh_Nim', 'lh_Ncnm', 'lh_Ncm', 'lh_Ngraupelm', 'lh_Nsnowm',
 'lh_rcm_avg', 'lh_rrainm_auto', 'lh_rrainm_accr', 'lh_rrainm_evap',
 'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrainm_src_adj', 'lh_rrainm_cond_adj',
-'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac',
+'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac', 'lh_m_vol_rad_rain',
 ''
 
 vars_lh_sfc =

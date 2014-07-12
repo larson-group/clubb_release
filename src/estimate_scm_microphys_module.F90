@@ -542,6 +542,9 @@ module estimate_scm_microphys_module
       KK_microphys_adjust, &      ! Procedure
       KK_microphys_adj_terms_type ! Type
 
+    use KK_utilities, only: &
+      get_cloud_top_level         ! Procedure
+
     use clubb_precision, only: &
       time_precision, &
       core_rknd
@@ -555,7 +558,8 @@ module estimate_scm_microphys_module
       stat_update_var ! Procedure
 
     use stats_variables, only: &
-      zt, &
+      zt,        &
+      lh_zt,     &
       irrm_auto, &
       irrm_accr, &
       irrm_cond, &
@@ -564,7 +568,9 @@ module estimate_scm_microphys_module
       ilh_rrm_src_adj, &
       ilh_Nrm_src_adj, &
       ilh_rrm_cond_adj, &
-      ilh_Nrm_cond_adj
+      ilh_Nrm_cond_adj, &
+      im_vol_rad_rain, &
+      ilh_m_vol_rad_rain
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &     ! Type
@@ -622,7 +628,7 @@ module estimate_scm_microphys_module
     type(KK_microphys_adj_terms_type), dimension(nz) :: &
       adj_terms    ! Adjustment terms returned from the adjustment routine
 
-    integer :: k
+    integer :: k, cloud_top_level
 
     !----- Begin code -----
 
@@ -667,6 +673,14 @@ module estimate_scm_microphys_module
 
     end do
 
+    cloud_top_level = get_cloud_top_level( nz, rcm )
+
+    !!! Mean sedimentation above cloud top should have a value of 0.
+    if ( cloud_top_level > 1 ) then
+       lh_Vrr(cloud_top_level+1:nz-1) = zero
+       lh_VNr(cloud_top_level+1:nz-1) = zero
+    endif
+
     ! Set boundary conditions
     rrm_mc(1) = zero
     rrm_mc(nz) = zero
@@ -687,19 +701,24 @@ module estimate_scm_microphys_module
     if ( l_stats_samp ) then
 
       if ( ilh_rrm_src_adj > 0 ) then
-        call stat_update_var( ilh_rrm_src_adj, adj_terms%rrm_src_adj, zt )
+        call stat_update_var( ilh_rrm_src_adj, adj_terms%rrm_src_adj, lh_zt )
       end if
 
       if ( ilh_Nrm_src_adj > 0 ) then
-        call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, zt )
+        call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, lh_zt )
       end if
 
       if ( ilh_rrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, zt )
+        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, lh_zt )
       end if
 
       if ( ilh_Nrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
+        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, lh_zt )
+      end if
+
+      if ( ilh_m_vol_rad_rain > 0 ) then
+        call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
+             im_vol_rad_rain, microphys_stats_zt ), lh_zt )
       end if
 
     end if ! l_stats_samp
