@@ -101,9 +101,9 @@
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QIADV', 'expression' => 'QIADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QIDIFF', 'expression' => 'QIDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QILSADV', 'expression' => 'QILSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY-QISED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QISED', 'expression' => 'QISED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(-1.*(QIADV+QIDIFF+QILSADV+QIMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(-1.*(QIADV+QIDIFF+QILSADV+QIMPHY+QISED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
     ]}, 
 
@@ -130,9 +130,9 @@
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRADV', 'expression' => 'QRADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRDIFF', 'expression' => 'QRDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRLSADV', 'expression' => 'QRLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY-QRSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QRSED', 'expression' => 'QRSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(-1.*(QRADV+QRDIFF+QRLSADV+QRMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(-1.*(QRADV+QRDIFF+QRLSADV+QRMPHY+QRSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'QR3D Morrison Budget Terms', 'axisLabel' => 'QR3D [(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -159,9 +159,9 @@
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSADV', 'expression' => 'QSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSDIFF', 'expression' => 'QSDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSLSADV', 'expression' => 'QSLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY-QSSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QSSED', 'expression' => 'QSSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(-1.*(QSADV+QSDIFF+QSLSADV+QSMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(-1.*(QSADV+QSDIFF+QSLSADV+QSMPHY+QSSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
     ]},
 
@@ -185,9 +185,9 @@
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGADV', 'expression' => 'QGADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGDIFF', 'expression' => 'QGDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGLSADV', 'expression' => 'QGLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY-QGSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QGSED', 'expression' => 'QGSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(-1.*(QGADV+QGDIFF+QGLSADV+QGMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '<FILENAME>.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(-1.*(QGADV+QGDIFF+QGLSADV+QGMPHY+QGSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     
     ]}, 
 

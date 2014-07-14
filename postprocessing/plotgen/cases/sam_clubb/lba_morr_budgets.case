@@ -153,10 +153,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIADV', 'expression' => 'QIADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIDIFF', 'expression' => 'QIDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QILSADV', 'expression' => 'QILSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY-QISED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => 'QIMPHY * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QISED', 'expression' => 'QISED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QISTO', 'expression' => 'QISTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(QISTO - 1.*(QIADV+QIDIFF+QILSADV+QIMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(QISTO - 1.*(QIADV+QIDIFF+QILSADV+QIMPHY+QISED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'QI Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -180,7 +180,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'QI Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY-QISED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QI\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -190,10 +190,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIADV', 'expression' => '(NIADV ./RHO )* (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIDIFF', 'expression' => '(NIDIFF ./RHO )* (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NILSADV', 'expression' => '(NILSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '((NIMPHY-NISED) ./RHO ) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '(NIMPHY ./RHO ) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NISED', 'expression' => '(NISED ./ RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NISTO', 'expression' => '(NISTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NI\_RES', 'expression' => '((NISTO - 1.*(NIADV+NIDIFF+NILSADV+NIMPHY)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NI\_RES', 'expression' => '((NISTO - 1.*(NIADV+NIDIFF+NILSADV+NIMPHY+NISED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
     ]},
 
@@ -220,7 +220,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'NI Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '((NIMPHY-NISED) ./RHO)* (1.0e6/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '((NIMPHY) ./RHO)* (1.0e6/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -229,10 +229,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRADV', 'expression' => 'QRADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRDIFF', 'expression' => 'QRDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRLSADV', 'expression' => 'QRLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY-QRSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRSED', 'expression' => 'QRSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRSTO', 'expression' => 'QRSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(QRSTO - 1.*(QRADV+QRDIFF+QRLSADV+QRMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(QRSTO - 1.*(QRADV+QRDIFF+QRLSADV+QRMPHY+QRSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'QR Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -256,7 +256,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'QR Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY-QRSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -265,10 +265,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRADV', 'expression' => '(NRADV ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRDIFF', 'expression' => '(NRDIFF ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRLSADV', 'expression' => '(NRLSADV ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY-NRSED) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRSED', 'expression' => '(NRSED ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRSTO', 'expression' => '(NRSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NR\_RES', 'expression' => '((NRSTO - 1.*(NRADV+NRDIFF+NRLSADV+NRMPHY)) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NR\_RES', 'expression' => '((NRSTO - 1.*(NRADV+NRDIFF+NRLSADV+NRMPHY+NRSED)) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'NR Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -292,7 +292,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'NR Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY-NRSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
 	  {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -301,10 +301,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSADV', 'expression' => 'QSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSDIFF', 'expression' => 'QSDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSLSADV', 'expression' => 'QSLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY-QSSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSSED', 'expression' => 'QSSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSSTO', 'expression' => 'QSSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(QSSTO - 1.*(QSADV+QSDIFF+QSLSADV+QSMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(QSSTO - 1.*(QSADV+QSDIFF+QSLSADV+QSMPHY+QSSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
 
@@ -327,7 +327,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'QS Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY-QSSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -336,10 +336,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSADV', 'expression' => '(NSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSDIFF', 'expression' => '(NSDIFF ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSLSADV', 'expression' => '(NSLSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY-NSSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSSED', 'expression' => '(NSSED ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSSTO', 'expression' => '(NSSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NS\_RES', 'expression' => '((NSSTO - 1.*(NSADV+NSDIFF+NSLSADV+NSMPHY)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NS\_RES', 'expression' => '((NSSTO - 1.*(NSADV+NSDIFF+NSLSADV+NSMPHY+NSSED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'NS Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -359,7 +359,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'NS Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY-NSSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -368,10 +368,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGADV', 'expression' => 'QGADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGDIFF', 'expression' => 'QGDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGLSADV', 'expression' => 'QGLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY-QGSED) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGSED', 'expression' => 'QGSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGSTO', 'expression' => 'QGSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(QGSTO - 1.*(QGADV+QGDIFF+QGLSADV+QGMPHY)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(QGSTO - 1.*(QGADV+QGDIFF+QGLSADV+QGMPHY+QGSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'QG Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -394,7 +394,7 @@ name => 'LBA_MORR_BUDGETS',
 
        {'plotTitle' => 'QG Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY-QGSED) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
@@ -403,10 +403,10 @@ name => 'LBA_MORR_BUDGETS',
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGADV', 'expression' => '(NGADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGDIFF', 'expression' => '(NGDIFF ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGLSADV', 'expression' => '(NGLSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY-NGSED) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGSED', 'expression' => '(NGSED ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGSTO', 'expression' => '(NGSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NG\_RES', 'expression' => '((NGSTO - 1.*(NGADV+NGDIFF+NGLSADV+NGMPHY)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NG\_RES', 'expression' => '((NGSTO - 1.*(NGADV+NGDIFF+NGLSADV+NGMPHY+NGSED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
     ]},
 
        {'plotTitle' => 'NG Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
@@ -425,7 +425,7 @@ name => 'LBA_MORR_BUDGETS',
     
        {'plotTitle' => 'NG Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY-NGSED) ./RHO)  * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY) ./RHO)  * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'LBA_128x128x128_1km_mor.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
