@@ -149,12 +149,13 @@ l_prescribed_avg_deltaz = .false.
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "coamps"
 l_ice_microphys = .true.
-
+l_predict_Nc = .true.
 /
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "none" ! Use non-interactive radiation?
+rad_scheme = "none", ! Use non-interactive radiation?
+l_calc_thlp2_rad = .false. ,
 
 ! Flag indicating if U.S. Std Atmosphere should 
 ! be used to extend the grid in radiation.
