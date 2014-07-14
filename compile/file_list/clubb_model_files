@@ -43,3 +43,4 @@
 ../src/hydrostatic_module.F90
 ../src/estimate_scm_microphys_module.F90
 ../src/lh_microphys_driver_module.F90
+../src/parameters_radiation.F90

@@ -22,6 +22,10 @@ rm  CLUBB_core/clubb_api_module.F90
 echo "removing api from SILHS"
 rm  CLUBB/src/SILHS/silhs_api_module.F90
 
+echo "removing G_Unit_Tests from CLUBB"
+rm -rf CLUBB/src/G_unit_test_types
+rm CLUBB/src/G_unit_tests.F90
+
 echo "moving SILHS to CLUBB_core"
 mv CLUBB/src/SILHS/* CLUBB_core/
 

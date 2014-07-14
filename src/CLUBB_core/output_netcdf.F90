@@ -523,8 +523,8 @@ module output_netcdf
       l_local_kk, & ! Logicals
       l_cloud_sed
 
-    use parameters_radiation, only: &
-      rad_scheme
+    !use p!arameters_radiation, only: & !
+    !  rad_scheme
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -684,8 +684,8 @@ module output_netcdf
 
     i = i + 1
 
-    stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
-                            trim( rad_scheme ) )
+    !stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "rad_scheme", &
+    !                        trim( rad_scheme ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model information"

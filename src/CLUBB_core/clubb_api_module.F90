@@ -291,30 +291,30 @@ module clubb_api_module
     thlm_sponge_damp_profile, &
     rtm_sponge_damp_profile, &
     uv_sponge_damp_profile
-
-  use parameters_radiation, only : &
-    rad_scheme, &
-    nparam, &
-    l_fix_cos_solar_zen, &
-    l_use_default_std_atmosphere, &
-    l_sw_radiation, &
-    l_rad_above_cloud, &
-    Fs_values, &
-    cos_solar_zen_values, &
-    cos_solar_zen_times, &
-    radiation_top, &
-    sol_const, &
-    alvdr, &
-    alvdf, &
-    alndr, &
-    alndf, &
-    slr, &
-    kappa, &
-    F0, &
-    F1, &
-    eff_drop_radius, &
-    gc, &
-    omega
+!
+!  use parameters_radiation, only : &
+!    rad_scheme, &
+!    nparam, &
+!    l_fix_cos_solar_zen, &
+!    l_use_default_std_atmosphere, &
+!    l_sw_radiation, &
+!    l_rad_above_cloud, &
+!    Fs_values, &
+!    cos_solar_zen_values, &
+!    cos_solar_zen_times, &
+!    radiation_top, &
+!    sol_const, &
+!    alvdr, &
+!    alvdf, &
+!    alndr, &
+!    alndf, &
+!    slr, &
+!    kappa, &
+!    F0, &
+!    F1, &
+!    eff_drop_radius, &
+!    gc, &
+!    omega
 
   use input_reader, only : &
     one_dim_read_var, &
@@ -450,9 +450,6 @@ module clubb_api_module
     rtp2_forcing, thlp2_forcing, rtpthlp_forcing, edsclrm_forcing, sclrm_forcing, &
     thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
     thlm_sponge_damp_profile, rtm_sponge_damp_profile, uv_sponge_damp_profile, &
-    rad_scheme, nparam, l_fix_cos_solar_zen, l_use_default_std_atmosphere, l_sw_radiation, &
-    l_rad_above_cloud, Fs_values, cos_solar_zen_values, cos_solar_zen_times, radiation_top, &
-    sol_const, alvdr, alvdf, alndr, alndf, slr, kappa, F0, F1, eff_drop_radius, gc, omega, &
     one_dim_read_var, two_dim_read_var, &
     time_name, rt_name, latent_ht_name, sens_ht_name, CO2_umol_name, upwp_sfc_name, &
     vpwp_sfc_name, T_sfc_name, wpthlp_sfc_name, wpqtp_sfc_name, z_name, pressure_name, &
