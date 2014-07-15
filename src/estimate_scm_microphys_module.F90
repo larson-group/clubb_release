@@ -728,27 +728,27 @@ module estimate_scm_microphys_module
 
       if ( ilh_rrm_auto > 0 ) then
         call stat_update_var( ilh_rrm_auto, microphys_get_var( &
-             ilh_rrm_auto, microphys_stats_zt ), lh_zt )
+             irrm_auto, microphys_stats_zt ), lh_zt )
       end if
 
       if ( ilh_rrm_accr > 0 ) then
         call stat_update_var( ilh_rrm_accr, microphys_get_var( &
-             ilh_rrm_accr, microphys_stats_zt ), lh_zt )
+             irrm_accr, microphys_stats_zt ), lh_zt )
       end if
 
       if ( ilh_rrm_auto > 0 ) then
         call stat_update_var( ilh_rrm_evap, microphys_get_var( &
-             ilh_rrm_evap, microphys_stats_zt ), lh_zt )
+             irrm_cond, microphys_stats_zt ), lh_zt )
       end if
 
       if ( ilh_Nrm_auto > 0 ) then
         call stat_update_var( ilh_Nrm_auto, microphys_get_var( &
-             ilh_Nrm_auto, microphys_stats_zt ), lh_zt )
+             iNrm_auto, microphys_stats_zt ), lh_zt )
       end if
 
       if ( ilh_Nrm_cond > 0 ) then
         call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
-             ilh_Nrm_cond, microphys_stats_zt ), lh_zt )
+             iNrm_cond, microphys_stats_zt ), lh_zt )
       end if
 
     end if ! l_stats_samp

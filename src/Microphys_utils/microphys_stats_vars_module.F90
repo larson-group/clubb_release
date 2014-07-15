@@ -88,6 +88,9 @@ module microphys_stats_vars_module
   !   None
   !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+      fstderr           ! Constant
+
     implicit none
 
     ! Input/Output Variables
@@ -106,13 +109,16 @@ module microphys_stats_vars_module
     !----- Begin Code -----
     if ( microphys_stats_vars%num_vars == microphys_stats_vars%alloc_size ) then
       ! There is no more room in the structure. Do nothing (for now).
-      stop "Invalid allocation size"
+      write(fstderr,*) "Invalid allocation size"
+      stop "Fatal error in microphys_put_var"
     end if
 
-    microphys_stats_vars%num_vars = microphys_stats_vars%num_vars + 1
+    if ( var_index > 0 ) then
+      microphys_stats_vars%num_vars = microphys_stats_vars%num_vars + 1
 
-    microphys_stats_vars%stats_indices(microphys_stats_vars%num_vars) = var_index
-    microphys_stats_vars%output_values(:,microphys_stats_vars%num_vars) = value
+      microphys_stats_vars%stats_indices(microphys_stats_vars%num_vars) = var_index
+      microphys_stats_vars%output_values(:,microphys_stats_vars%num_vars) = value
+    end if
 
     return
   end subroutine microphys_put_var
