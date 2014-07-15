@@ -804,7 +804,7 @@ simulation at the restart time.
     the model file:
 
     l_restart = .true.
-    restart_path = restart/<CASE NAME>
+    restart_path_case = restart/<CASE NAME>
     time_restart = initial time of restart run in seconds
 
     Compute time_restart as (time_initial + n_out * stats_tout), where n_out
