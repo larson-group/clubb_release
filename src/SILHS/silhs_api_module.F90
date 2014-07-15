@@ -23,7 +23,6 @@ module silhs_api_module
 
 #ifdef SILHS
   public  &
-    lh_subcolumn_generator_api, &
     lh_subcolumn_generator_mod_api, &
     stats_accumulate_lh_api, &
     latin_hypercube_2D_output_api, &
@@ -34,89 +33,6 @@ module silhs_api_module
     est_kessler_microphys_api
 
 contains
-
-  !================================================================================================
-  ! lh_subcolumn_generator - Generates sample points of moisture, temperature, et cetera.
-  !================================================================================================
-
-  subroutine lh_subcolumn_generator_api( &
-    iter, d_variables, num_samples, sequence_length, nz, &
-    thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
-    hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
-    corr_array_cloud, corr_array_below, Lscale_vert_avg, &
-    X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
-    lh_sample_point_weights )
-
-    use latin_hypercube_driver_module, only : lh_subcolumn_generator
-
-    use parameters_model, only: hydromet_dim ! Variable
-
-    use pdf_parameter_module, only: &
-      pdf_parameter  ! Type
-
-    use clubb_precision, only: &
-      dp, & ! double precision
-      core_rknd
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      iter,            & ! Model iteration number
-      d_variables,     & ! Number of variables to sample
-      num_samples,     & ! Number of samples per variable
-      sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
-      nz                 ! Number of vertical model levels
-
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params ! PDF parameters       [units vary]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      thlm,      & ! Liquid potential temperature       [K]
-      wm_zt,     & ! Mean w                             [m/s]
-      delta_zm     ! Difference in moment. altitudes    [m]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rcm,  & ! Liquid water mixing ratio                              [kg/kg]
-      Ncnm, & ! Cloud nuclei concentration (simplified); Nc=Ncn*H(s)   [#/kg]
-      rvm     ! Vapor water mixing ratio                               [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
-      hydromet ! Hydrometeor species    [units vary]
-
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      sigma2_on_mu2_ip_array_cloud, & ! sigma_x^2/mu_x^2 ip; cloudy levs. [-]
-      sigma2_on_mu2_ip_array_below    ! sigma_x^2/mu_x^2 ip; clear levs.  [-]
-
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
-      corr_array_cloud, & ! Correlation for hydrometeor species [-]
-      corr_array_below
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
-
-    ! Output Variables
-    real( kind = dp ), intent(out), dimension(nz,num_samples,d_variables) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
-
-    integer, intent(out), dimension(nz,num_samples) :: &
-      X_mixt_comp_all_levs ! Which mixture component we're in
-
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
-    real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
-      lh_sample_point_weights
-
-    call lh_subcolumn_generator( &
-      iter, d_variables, num_samples, sequence_length, nz, &
-      thlm, pdf_params, wm_zt, delta_zm, rcm, Ncnm, rvm, &
-      hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
-      corr_array_cloud, corr_array_below, Lscale_vert_avg, &
-      X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
-      lh_sample_point_weights )
-
-  end subroutine lh_subcolumn_generator_api
 
   !================================================================================================
   ! lh_subcolumn_generator_mod - Generates sample points of moisture, temperature, et cetera.

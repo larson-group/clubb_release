@@ -1706,9 +1706,6 @@ contains
       Ncn_tol,        &
       cloud_frac_min
 
-    use model_flags, only: &
-      l_use_modified_corr
-
     use Nc_Ncn_eqns, only: &
       Nc_in_cloud_to_Ncnm  ! Procedure(s)
 

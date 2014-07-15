@@ -80,8 +80,7 @@ module setup_clubb_pdf_params
 
     use model_flags, only: &
         l_use_precip_frac,   & ! Flag(s)
-        l_calc_w_corr,       &
-        l_use_modified_corr
+        l_calc_w_corr
 
     use parameters_microphys, only: &
         l_const_Nc_in_cloud, & ! Flag(s)
@@ -624,36 +623,32 @@ module setup_clubb_pdf_params
                              precip_frac_1(k), precip_frac_2(k), &              ! In
                              hydromet_pdf_params(k) )                           ! Out
 
-       if ( l_use_modified_corr ) then
+       if ( l_diagnose_correlations ) then
 
-          if ( l_diagnose_correlations ) then
+          call calc_cholesky_corr_mtx_approx &
+                         ( d_variables, corr_array_1_n(:,:,k), &           ! intent(in)
+                           corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
 
-             call calc_cholesky_corr_mtx_approx &
-                            ( d_variables, corr_array_1_n(:,:,k), &           ! intent(in)
-                              corr_cholesky_mtx_1(:,:,k), corr_mtx_approx_1 ) ! intent(out)
+          call calc_cholesky_corr_mtx_approx &
+                         ( d_variables, corr_array_2_n(:,:,k), &           ! intent(in)
+                           corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
 
-             call calc_cholesky_corr_mtx_approx &
-                            ( d_variables, corr_array_2_n(:,:,k), &           ! intent(in)
-                              corr_cholesky_mtx_2(:,:,k), corr_mtx_approx_2 ) ! intent(out)
+          corr_array_1_n(:,:,k) = corr_mtx_approx_1
+          corr_array_2_n(:,:,k) = corr_mtx_approx_2
 
-             corr_array_1_n(:,:,k) = corr_mtx_approx_1
-             corr_array_2_n(:,:,k) = corr_mtx_approx_2
+       else
 
-          else
+          ! Compute choleksy factorization for the correlation matrix (out of
+          ! cloud)
+          call Cholesky_factor( d_variables, real(corr_array_1_n(:,:,k), kind = dp), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
+                                l_corr_array_scaling ) ! Out
 
-             ! Compute choleksy factorization for the correlation matrix (out of
-             ! cloud)
-             call Cholesky_factor( d_variables, real(corr_array_1_n(:,:,k), kind = dp), & ! In
-                                   corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
-                                   l_corr_array_scaling ) ! Out
-
-             call Cholesky_factor( d_variables, real(corr_array_2_n(:,:,k), kind = dp), & ! In
-                                   corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
-                                   l_corr_array_scaling ) ! Out
-             corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
-             corr_cholesky_mtx_2(:,:,k) = real( corr_cholesky_mtx_2_dp(:,:,k), kind = core_rknd )
-          endif
-
+          call Cholesky_factor( d_variables, real(corr_array_2_n(:,:,k), kind = dp), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
+                                l_corr_array_scaling ) ! Out
+          corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
+          corr_cholesky_mtx_2(:,:,k) = real( corr_cholesky_mtx_2_dp(:,:,k), kind = core_rknd )
        endif
 
        ! For ease of use later in the code, we make the correlation arrays
@@ -1840,8 +1835,7 @@ module setup_clubb_pdf_params
         zero
 
     use model_flags, only: &
-        l_calc_w_corr, &
-        l_use_modified_corr
+        l_calc_w_corr
 
     use diagnose_correlations_module, only: &
         calc_mean,        & ! Procedure(s)
@@ -1972,14 +1966,11 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! In order to decompose the correlation matrix that we may or may not make
-    ! (l_use_modified_corr), we must not have a perfect correlation of chi and
+    ! In order to decompose the correlation matrix,
+    ! we must not have a perfect correlation of chi and
     ! eta. Thus, we impose a limitation.
-    if ( l_use_modified_corr ) then
-      l_limit_corr_chi_eta = .true.
-    else
-      l_limit_corr_chi_eta = .false.
-    end if
+    l_limit_corr_chi_eta = .true.
+
 
     ! Initialize the correlation arrays
     corr_array_1 = zero
@@ -2065,31 +2056,13 @@ module setup_clubb_pdf_params
     ! Correlation of eta (old t) and the hydrometeors
     ivar = iiPDF_eta
     do jvar = iiPDF_Ncn+1, d_variables
+      corr_array_1(jvar, ivar) &
+      = component_corr_eta_hm_ip( corr_array_1( iiPDF_eta, iiPDF_chi), &
+                                  corr_array_1( jvar, iiPDF_chi) )
 
-       if ( l_use_modified_corr ) then
-
-          corr_array_1(jvar, ivar) &
-          = component_corr_eta_hm_ip( corr_array_1( iiPDF_eta, iiPDF_chi), &
-                                      corr_array_1( jvar, iiPDF_chi) )
-
-          corr_array_2(jvar, ivar) &
-          = component_corr_eta_hm_ip( corr_array_2( iiPDF_eta, iiPDF_chi), &
-                                      corr_array_2( jvar, iiPDF_chi) )
-
-       else ! .not. l_use_modified_corr
-
-          corr_array_1(jvar, ivar) &
-          = component_corr_x_hm_ip( rc1, cloud_frac1, &
-                                    corr_array_cloud(jvar, ivar), &
-                                    corr_array_below(jvar, ivar) )
-
-          corr_array_2(jvar, ivar) &
-          = component_corr_x_hm_ip( rc2, cloud_frac2, &
-                                    corr_array_cloud(jvar, ivar), &
-                                    corr_array_below(jvar, ivar) )
-
-       endif ! l_use_modified_corr
-
+      corr_array_2(jvar, ivar) &
+      = component_corr_eta_hm_ip( corr_array_2( iiPDF_eta, iiPDF_chi), &
+                                  corr_array_2( jvar, iiPDF_chi) )
     enddo
 
 

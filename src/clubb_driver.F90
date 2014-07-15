@@ -194,8 +194,7 @@ module clubb_driver
       lh_sequence_length
 
     use latin_hypercube_driver_module, only: &
-      lh_subcolumn_generator, & ! Procedure(s)
-      lh_subcolumn_generator_mod, &
+      lh_subcolumn_generator_mod, & ! Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
       latin_hypercube_2D_close
@@ -246,7 +245,6 @@ module clubb_driver
         l_rtm_nudge, &
         l_diagnose_correlations, &
         l_calc_w_corr, &
-        l_use_modified_corr, &
         l_silhs_rad
 
     use soil_vegetation, only: &
@@ -1325,33 +1323,15 @@ module clubb_driver
           Lscale_vert_avg = -999._core_rknd
         end if
 
-        if ( l_use_modified_corr ) then
-           call lh_subcolumn_generator_mod &
-                ( itime, d_variables, lh_microphys_calls, lh_sequence_length, gr%nz, & ! In
-                  pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
-                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
-                  real( corr_cholesky_mtx_1, kind = dp ), & ! In
-                  real( corr_cholesky_mtx_2, kind = dp ), & ! In
-                  hydromet_pdf_params, & ! In
-                  X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
-                  lh_sample_point_weights ) ! Out
-        else
-           ! Ncn is the only variable in the PDF where the overall mean is equal
-           ! to the mean in each PDF component (Ncnm = mu_Ncn_1 = mu_Ncn_2).  In
-           ! order to avoid passing Ncnm out of setup_pdf_parameters and into
-           ! run_clubb and then into this subroutine (advance_clubb_microphys) for
-           ! this call to lh_subcolumn_generator (which isn't even used anymore
-           ! since l_use_modified_corr is hardwired to .true.), mu_Ncn_1 (already
-           ! found in this subroutine as part of mu_x_1) will be used in place of
-           ! Ncnm in this subroutine call.
-           call lh_subcolumn_generator &
-                ( itime, d_variables, lh_microphys_calls, lh_sequence_length, gr%nz, & ! In
-                  thlm, pdf_params, wm_zt, gr%dzt, rcm, mu_x_1(iiPDF_Ncn,:), rtm-rcm, & ! In
-                  hydromet, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, & ! In
-                  corr_array_cloud, corr_array_below, Lscale_vert_avg, & ! In
-                  X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
-                  lh_sample_point_weights ) ! Out
-        endif
+       call lh_subcolumn_generator_mod &
+            ( itime, d_variables, lh_microphys_calls, lh_sequence_length, gr%nz, & ! In
+              pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
+              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+              real( corr_cholesky_mtx_1, kind = dp ), & ! In
+              real( corr_cholesky_mtx_2, kind = dp ), & ! In
+              hydromet_pdf_params, & ! In
+              X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+              lh_sample_point_weights ) ! Out
 
         call stats_accumulate_lh &
              ( gr%nz, lh_microphys_calls, d_variables, rho_ds_zt, & ! In

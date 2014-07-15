@@ -166,10 +166,6 @@ module model_flags
     l_calc_w_corr = .false.    ! Calculate the correlations between w and the hydrometeors
 !$omp threadprivate(l_diagnose_correlations, l_calc_w_corr)
 
-  ! See clubb:ticket:514 for details
-  logical, parameter, public :: &
-    l_use_modified_corr = .true.    ! Use the new correlations code
-
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
 
