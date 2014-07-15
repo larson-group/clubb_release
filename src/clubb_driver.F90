@@ -194,7 +194,7 @@ module clubb_driver
       lh_sequence_length
 
     use latin_hypercube_driver_module, only: &
-      lh_subcolumn_generator, & ! Procedure(s)
+      lh_subcolumn_generator_mod, & ! Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
       latin_hypercube_2D_close
@@ -1323,7 +1323,7 @@ module clubb_driver
           Lscale_vert_avg = -999._core_rknd
         end if
 
-       call lh_subcolumn_generator &
+       call lh_subcolumn_generator_mod &
             ( itime, d_variables, lh_microphys_calls, lh_sequence_length, gr%nz, & ! In
               pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In

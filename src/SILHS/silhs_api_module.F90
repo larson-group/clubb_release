@@ -23,7 +23,7 @@ module silhs_api_module
 
 #ifdef SILHS
   public  &
-    lh_subcolumn_generator_api, &
+    lh_subcolumn_generator_mod_api, &
     stats_accumulate_lh_api, &
     latin_hypercube_2D_output_api, &
     latin_hypercube_2D_close_api, &
@@ -35,10 +35,10 @@ module silhs_api_module
 contains
 
   !================================================================================================
-  ! lh_subcolumn_generator - Generates sample points of moisture, temperature, et cetera.
+  ! lh_subcolumn_generator_mod - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
 
-  subroutine lh_subcolumn_generator_api( &
+  subroutine lh_subcolumn_generator_mod_api( &
     iter, d_variables, num_samples, sequence_length, nz, & ! In
     pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
     mu1, mu2, sigma1, sigma2, & ! In
@@ -47,7 +47,7 @@ contains
     X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
     lh_sample_point_weights ) ! Out
 
-    use latin_hypercube_driver_module, only : lh_subcolumn_generator
+    use latin_hypercube_driver_module, only : lh_subcolumn_generator_mod
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -106,7 +106,7 @@ contains
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
-    call lh_subcolumn_generator( &
+    call lh_subcolumn_generator_mod( &
       iter, d_variables, num_samples, sequence_length, nz, & ! In
       pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
       mu1, mu2, sigma1, sigma2, & ! In
@@ -115,7 +115,7 @@ contains
       X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
       lh_sample_point_weights ) ! Out
 
-  end subroutine lh_subcolumn_generator_api
+  end subroutine lh_subcolumn_generator_mod_api
 
   !================================================================================================
   ! stats_accumulate_lh - Clips subcolumns from latin hypercube and creates stats.
