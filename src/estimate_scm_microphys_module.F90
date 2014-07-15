@@ -565,6 +565,11 @@ module estimate_scm_microphys_module
       irrm_cond, &
       iNrm_auto, &
       iNrm_cond, &
+      ilh_rrm_auto, &
+      ilh_rrm_accr, &
+      ilh_rrm_evap, &
+      ilh_Nrm_auto, &
+      ilh_Nrm_cond, &
       ilh_rrm_src_adj, &
       ilh_Nrm_src_adj, &
       ilh_rrm_cond_adj, &
@@ -719,6 +724,31 @@ module estimate_scm_microphys_module
       if ( ilh_m_vol_rad_rain > 0 ) then
         call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
              im_vol_rad_rain, microphys_stats_zt ), lh_zt )
+      end if
+
+      if ( ilh_rrm_auto > 0 ) then
+        call stat_update_var( ilh_rrm_auto, microphys_get_var( &
+             ilh_rrm_auto, microphys_stats_zt ), lh_zt )
+      end if
+
+      if ( ilh_rrm_accr > 0 ) then
+        call stat_update_var( ilh_rrm_accr, microphys_get_var( &
+             ilh_rrm_accr, microphys_stats_zt ), lh_zt )
+      end if
+
+      if ( ilh_rrm_auto > 0 ) then
+        call stat_update_var( ilh_rrm_evap, microphys_get_var( &
+             ilh_rrm_evap, microphys_stats_zt ), lh_zt )
+      end if
+
+      if ( ilh_Nrm_auto > 0 ) then
+        call stat_update_var( ilh_Nrm_auto, microphys_get_var( &
+             ilh_Nrm_auto, microphys_stats_zt ), lh_zt )
+      end if
+
+      if ( ilh_Nrm_cond > 0 ) then
+        call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
+             ilh_Nrm_cond, microphys_stats_zt ), lh_zt )
       end if
 
     end if ! l_stats_samp
