@@ -695,7 +695,6 @@ sub buildMatlabStringStd()
 
         my @lines;
         push(@lines, @{$plots[$count]{'lines'}});
-
         for(my $lineNum = 0; $lineNum < @lines; $lineNum++)
         {
             my $name = $lines[$lineNum]{'name'};
@@ -760,7 +759,7 @@ sub buildMatlabStringStd()
 				    }
 	    	                    $fileCounter++;
 				}
-			    }	
+			    }
 			}
 		}
 		else # This is a "difference run"
@@ -818,6 +817,12 @@ sub buildMatlabStringStd()
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
             {
                 my $file = "$lines[$lineNum]{'filename'}";
+				unless (-e $file)
+				{
+				    # See if the user specified a relative path.
+					# Try the first input directory.
+					$file = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
+				}
                 if(-e $file)
                 {
                     my $title = $name;
@@ -840,13 +845,13 @@ sub buildMatlabStringStd()
 			$lineColor = $lineColors[$lineColorCounter];
     		    }
 
-		    if(($lineWidth eq "auto") || ($lineStyle eq "auto") || ($lineColor eq "auto"))
+		    if(("$lines[$lineNum]{'lineWidth'}" eq "auto") || ("$lines[$lineNum]{'lineType'}" eq "auto") || ("$lines[$lineNum]{'lineColor'}" eq "auto"))
 		    {
-			incrementLineTypes();
+					incrementLineTypes();
 		    }
 
                     $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
-                }                
+                }
             }
         }
 
