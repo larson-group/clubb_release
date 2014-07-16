@@ -77,7 +77,7 @@ module KK_upscaled_covariances
         Nr_tol 
 
     use constants_clubb, only:  &
-        t_tol => eta_tol  ! Constant
+        eta_tol  ! Constant
 
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
@@ -279,7 +279,7 @@ module KK_upscaled_covariances
                            corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                            mixt_frac, precip_frac_1, precip_frac_2, &
                            rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
-                           KK_evap_coef, t_tol, crt1, crt2 )
+                           KK_evap_coef, eta_tol, crt1, crt2 )
 
     else  ! r_r or N_r = 0.
 
@@ -304,7 +304,7 @@ module KK_upscaled_covariances
                             corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                             mixt_frac, precip_frac_1, precip_frac_2, &
                             thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
-                            KK_evap_coef, t_tol, cthl1, cthl2 )
+                            KK_evap_coef, eta_tol, cthl1, cthl2 )
 
     else  ! r_r or N_r = 0.
 
@@ -333,7 +333,7 @@ module KK_upscaled_covariances
                         corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n, &
                         corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                         rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
-                        KK_auto_coef, t_tol, crt1, crt2, mixt_frac, &
+                        KK_auto_coef, eta_tol, crt1, crt2, mixt_frac, &
                         Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Calculate the covariance of liquid water potential temperature and
@@ -346,7 +346,7 @@ module KK_upscaled_covariances
                          corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n, &
                          corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                          thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
-                         KK_auto_coef, t_tol, cthl1, cthl2, mixt_frac, &
+                         KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                          Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Calculate the covariance of vertical velocity and KK accretion tendency.
@@ -379,7 +379,7 @@ module KK_upscaled_covariances
                            corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
                            corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
                            rtm, mu_rt_1, mu_rt_2, KK_accr_tndcy, &
-                           KK_accr_coef, t_tol, crt1, crt2, mixt_frac, &
+                           KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, &
                            precip_frac_1, precip_frac_2 )
 
     else  ! r_r = 0.
@@ -400,7 +400,7 @@ module KK_upscaled_covariances
                             corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
                             corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
                             thlm, mu_thl_1, mu_thl_2, KK_accr_tndcy, &
-                            KK_accr_coef, t_tol, cthl1, cthl2, mixt_frac, &
+                            KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                             precip_frac_1, precip_frac_2 )
 
     else  ! r_r = 0.
@@ -639,7 +639,7 @@ module KK_upscaled_covariances
                              corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                              mixt_frac, precip_frac_1, precip_frac_2, &
                              rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
-                             KK_evap_coef, t_tol, crt1, crt2 )
+                             KK_evap_coef, eta_tol, crt1, crt2 )
 
     ! Description:
 
@@ -711,7 +711,7 @@ module KK_upscaled_covariances
       mu_rt_2,       & ! Mean of rt (2nd PDF component)                  [kg/kg]
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
       KK_evap_coef,  & ! KK evap. coef.  [(kg/kg)^(1-alpha-beta)(#/kg)^-gamma/s]
-      t_tol,         & ! Tolerance value of t                            [kg/kg]
+      eta_tol,       & ! Tolerance value of eta                          [kg/kg]
       crt1,          & ! Coefficient c_rt (1st PDF component)                [-]
       crt2             ! Coefficient c_rt (2nd PDF component)                [-]
 
@@ -743,7 +743,7 @@ module KK_upscaled_covariances
                                        sigma_Nr_1_n, corr_eta_chi_1, corr_eta_rr_1_n, &
                                        corr_eta_Nr_1_n, corr_chi_rr_1_n, &
                                        corr_chi_Nr_1_n, corr_rr_Nr_1_n, mu_eta_1, &
-                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       KK_evap_tndcy, KK_evap_coef, eta_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
               + trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
@@ -769,7 +769,7 @@ module KK_upscaled_covariances
                                        sigma_Nr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, &
                                        corr_eta_Nr_2_n, corr_chi_rr_2_n, &
                                        corr_chi_Nr_2_n, corr_rr_Nr_2_n, mu_eta_2, &
-                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       KK_evap_tndcy, KK_evap_coef, eta_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
               + trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
@@ -807,7 +807,7 @@ module KK_upscaled_covariances
                               corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                               mixt_frac, precip_frac_1, precip_frac_2, &
                               thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
-                              KK_evap_coef, t_tol, cthl1, cthl2 )
+                              KK_evap_coef, eta_tol, cthl1, cthl2 )
 
     ! Description:
 
@@ -879,7 +879,7 @@ module KK_upscaled_covariances
       mu_thl_2,      & ! Mean of thl (2nd PDF component)                     [K]
       KK_evap_tndcy, & ! KK evaporation tendency                     [(kg/kg)/s]
       KK_evap_coef,  & ! KK evap. coef.  [(kg/kg)^(1-alpha-beta)(#/kg)^-gamma/s]
-      t_tol,         & ! Tolerance value of t                            [kg/kg]
+      eta_tol,       & ! Tolerance value of eta                          [kg/kg]
       cthl1,         & ! Coefficient c_thl (1st PDF component)       [(kg/kg)/K]
       cthl2            ! Coefficient c_thl (2nd PDF component)       [(kg/kg)/K]
 
@@ -911,7 +911,7 @@ module KK_upscaled_covariances
                                        sigma_Nr_1_n, corr_eta_chi_1, corr_eta_rr_1_n, &
                                        corr_eta_Nr_1_n, corr_chi_rr_1_n, &
                                        corr_chi_Nr_1_n, corr_rr_Nr_1_n, mu_eta_1, &
-                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       KK_evap_tndcy, KK_evap_coef, eta_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
               - trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
@@ -937,7 +937,7 @@ module KK_upscaled_covariances
                                        sigma_Nr_2_n, corr_eta_chi_2, corr_eta_rr_2_n, &
                                        corr_eta_Nr_2_n, corr_chi_rr_2_n, &
                                        corr_chi_Nr_2_n, corr_rr_Nr_2_n, mu_eta_2, &
-                                       KK_evap_tndcy, KK_evap_coef, t_tol, &
+                                       KK_evap_tndcy, KK_evap_coef, eta_tol, &
                                        alpha_exp, beta_exp, gamma_exp )  &
               - trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
@@ -1085,7 +1085,7 @@ module KK_upscaled_covariances
                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n, &
                              corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                              rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
-                             KK_auto_coef, t_tol, crt1, crt2, mixt_frac, &
+                             KK_auto_coef, eta_tol, crt1, crt2, mixt_frac, &
                              Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
@@ -1140,7 +1140,7 @@ module KK_upscaled_covariances
       mu_rt_2,          & ! Mean of rt (2nd PDF component)               [kg/kg]
       KK_auto_tndcy,    & ! KK autoconversion tendency               [(kg/kg)/s]
       KK_auto_coef,     & ! KK auto. coef.  [(kg/kg)^(1-alpha) (num/kg)^-beta/s]
-      t_tol,            & ! Tolerance value of t                         [kg/kg]
+      eta_tol,          & ! Tolerance value of eta                       [kg/kg]
       crt1,             & ! Coefficient c_rt (1st PDF component)             [-]
       crt2,             & ! Coefficient c_rt (2nd PDF component)             [-]
       mixt_frac,        & ! Mixture fraction                                 [-]
@@ -1175,7 +1175,7 @@ module KK_upscaled_covariances
              * ( trivar_NNL_covar_eq_Nc0( mu_eta_1, mu_chi_1, Nc_in_cloud, &
                                           sigma_eta_1, sigma_chi_1, corr_eta_chi_1, &
                                           mu_eta_1, KK_auto_tndcy, KK_auto_coef, &
-                                          t_tol, alpha_exp, beta_exp )  &
+                                          eta_tol, alpha_exp, beta_exp )  &
                  + bivar_NL_mean_eq_Nc0( mu_chi_1, Nc_in_cloud, sigma_chi_1, &
                                          alpha_exp + one, beta_exp )  &
                ) &
@@ -1192,7 +1192,7 @@ module KK_upscaled_covariances
              * ( trivar_NNL_covar_eq_Nc0( mu_eta_2, mu_chi_2, Nc_in_cloud, &
                                           sigma_eta_2, sigma_chi_2, corr_eta_chi_2, &
                                           mu_eta_2, KK_auto_tndcy, KK_auto_coef, &
-                                          t_tol, alpha_exp, beta_exp )  &
+                                          eta_tol, alpha_exp, beta_exp )  &
                  + bivar_NL_mean_eq_Nc0( mu_chi_2, Nc_in_cloud, sigma_chi_2, &
                                          alpha_exp + one, beta_exp )  &
                ) &
@@ -1212,7 +1212,7 @@ module KK_upscaled_covariances
                                       sigma_eta_1, sigma_chi_1, sigma_Ncn_1_n, &
                                       corr_eta_chi_1, corr_eta_Ncn_1_n, corr_chi_Ncn_1_n, &
                                       mu_eta_1, KK_auto_tndcy, KK_auto_coef, &
-                                      t_tol, alpha_exp, beta_exp )  &
+                                      eta_tol, alpha_exp, beta_exp )  &
                  + bivar_NL_mean_eq( mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_chi_1, &
                                      sigma_Ncn_1, sigma_Ncn_1_n, corr_chi_Ncn_1_n,&
                                      Nc_tol, alpha_exp + one, beta_exp )  &
@@ -1232,7 +1232,7 @@ module KK_upscaled_covariances
                                       sigma_eta_2, sigma_chi_2, sigma_Ncn_2_n, &
                                       corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, &
                                       mu_eta_2, KK_auto_tndcy, KK_auto_coef, &
-                                      t_tol, alpha_exp, beta_exp )  &
+                                      eta_tol, alpha_exp, beta_exp )  &
                  + bivar_NL_mean_eq( mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_chi_2, &
                                      sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n,&
                                      Nc_tol, alpha_exp + one, beta_exp )  &
@@ -1262,7 +1262,7 @@ module KK_upscaled_covariances
                               corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n, &
                               corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                               thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
-                              KK_auto_coef, t_tol, cthl1, cthl2, mixt_frac, &
+                              KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                               Nc_in_cloud, l_const_Nc_in_cloud )
 
     ! Description:
@@ -1317,7 +1317,7 @@ module KK_upscaled_covariances
       mu_thl_2,         & ! Mean of thl (2nd PDF component)                  [K]
       KK_auto_tndcy,    & ! KK autoconversion tendency               [(kg/kg)/s]
       KK_auto_coef,     & ! KK auto. coef.  [(kg/kg)^(1-alpha) (num/kg)^-beta/s]
-      t_tol,            & ! Tolerance value of t                         [kg/kg]
+      eta_tol,          & ! Tolerance value of eta                       [kg/kg]
       cthl1,            & ! Coefficient c_thl (1st PDF component)    [(kg/kg)/K]
       cthl2,            & ! Coefficient c_thl (2nd PDF component)    [(kg/kg)/K]
       mixt_frac,        & ! Mixture fraction                                 [-]
@@ -1352,7 +1352,7 @@ module KK_upscaled_covariances
              * ( trivar_NNL_covar_eq_Nc0( mu_eta_1, mu_chi_1, Nc_in_cloud, &
                                           sigma_eta_1, sigma_chi_1, corr_eta_chi_1, &
                                           mu_eta_1, KK_auto_tndcy, KK_auto_coef, &
-                                          t_tol, alpha_exp, beta_exp )  &
+                                          eta_tol, alpha_exp, beta_exp )  &
                  - bivar_NL_mean_eq_Nc0( mu_chi_1, Nc_in_cloud, sigma_chi_1, &
                                          alpha_exp + one, beta_exp )  &
                ) &
@@ -1369,7 +1369,7 @@ module KK_upscaled_covariances
              * ( trivar_NNL_covar_eq_Nc0( mu_eta_2, mu_chi_2, Nc_in_cloud, &
                                           sigma_eta_2, sigma_chi_2, corr_eta_chi_2, &
                                           mu_eta_2, KK_auto_tndcy, KK_auto_coef, &
-                                          t_tol, alpha_exp, beta_exp )  &
+                                          eta_tol, alpha_exp, beta_exp )  &
                  - bivar_NL_mean_eq_Nc0( mu_chi_2, Nc_in_cloud, sigma_chi_2, &
                                          alpha_exp + one, beta_exp )  &
                ) &
@@ -1389,7 +1389,7 @@ module KK_upscaled_covariances
                                       sigma_eta_1, sigma_chi_1, sigma_Ncn_1_n, &
                                       corr_eta_chi_1, corr_eta_Ncn_1_n, corr_chi_Ncn_1_n, &
                                       mu_eta_1, KK_auto_tndcy, KK_auto_coef, &
-                                      t_tol, alpha_exp, beta_exp )  &
+                                      eta_tol, alpha_exp, beta_exp )  &
                  - bivar_NL_mean_eq( mu_chi_1, mu_Ncn_1, mu_Ncn_1_n, sigma_chi_1, &
                                      sigma_Ncn_1, sigma_Ncn_1_n, corr_chi_Ncn_1_n,&
                                      Nc_tol, alpha_exp + one, beta_exp )  &
@@ -1409,7 +1409,7 @@ module KK_upscaled_covariances
                                       sigma_eta_2, sigma_chi_2, sigma_Ncn_2_n, &
                                       corr_eta_chi_2, corr_eta_Ncn_2_n, corr_chi_Ncn_2_n, &
                                       mu_eta_2, KK_auto_tndcy, KK_auto_coef, &
-                                      t_tol, alpha_exp, beta_exp )  &
+                                      eta_tol, alpha_exp, beta_exp )  &
                  - bivar_NL_mean_eq( mu_chi_2, mu_Ncn_2, mu_Ncn_2_n, sigma_chi_2, &
                                      sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n,&
                                      Nc_tol, alpha_exp + one, beta_exp )  &
@@ -1540,7 +1540,7 @@ module KK_upscaled_covariances
                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
                              corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
                              rtm, mu_rt_1, mu_rt_2, KK_accr_tndcy, &
-                             KK_accr_coef, t_tol, crt1, crt2, mixt_frac, &
+                             KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -1594,7 +1594,7 @@ module KK_upscaled_covariances
       mu_rt_2,         & ! Mean of rt (2nd PDF component)                [kg/kg]
       KK_accr_tndcy,   & ! KK accretion tendency                     [(kg/kg)/s]
       KK_accr_coef,    & ! KK accretion coefficient [(kg/kg)^(1-alpha-beta) / s]
-      t_tol,           & ! Tolerance value of t                          [kg/kg]
+      eta_tol,         & ! Tolerance value of eta                        [kg/kg]
       crt1,            & ! Coefficient c_rt (1st PDF component)              [-]
       crt2,            & ! Coefficient c_rt (2nd PDF component)              [-]
       mixt_frac,       & ! Mixture fraction                                  [-]
@@ -1626,7 +1626,7 @@ module KK_upscaled_covariances
                                    sigma_eta_1, sigma_chi_1, sigma_rr_1_n, &
                                    corr_eta_chi_1, corr_eta_rr_1_n, corr_chi_rr_1_n, &
                                    mu_eta_1, KK_accr_tndcy, KK_accr_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
+                                   eta_tol, alpha_exp, beta_exp )  &
               + bivar_NL_mean_eq( mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_chi_1, &
                                   sigma_rr_1, sigma_rr_1_n, corr_chi_rr_1_n, &
                                   rr_tol, alpha_exp + one, beta_exp )  &
@@ -1646,7 +1646,7 @@ module KK_upscaled_covariances
                                    sigma_eta_2, sigma_chi_2, sigma_rr_2_n, &
                                    corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, &
                                    mu_eta_2, KK_accr_tndcy, KK_accr_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
+                                   eta_tol, alpha_exp, beta_exp )  &
               + bivar_NL_mean_eq( mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_chi_2, &
                                   sigma_rr_2, sigma_rr_2_n, corr_chi_rr_2_n, &
                                   rr_tol, alpha_exp + one, beta_exp )  &
@@ -1674,7 +1674,7 @@ module KK_upscaled_covariances
                               corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
                               corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
                               thlm, mu_thl_1, mu_thl_2, KK_accr_tndcy, &
-                              KK_accr_coef, t_tol, cthl1, cthl2, mixt_frac, &
+                              KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                               precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -1728,7 +1728,7 @@ module KK_upscaled_covariances
       mu_thl_2,        & ! Mean of thl (2nd PDF component)                   [K]
       KK_accr_tndcy,   & ! KK accretion tendency                     [(kg/kg)/s]
       KK_accr_coef,    & ! KK accretion coefficient [(kg/kg)^(1-alpha-beta) / s]
-      t_tol,           & ! Tolerance value of t                          [kg/kg]
+      eta_tol,         & ! Tolerance value of eta                        [kg/kg]
       cthl1,           & ! Coefficient c_thl (1st PDF component)     [(kg/kg)/K]
       cthl2,           & ! Coefficient c_thl (2nd PDF component)     [(kg/kg)/K]
       mixt_frac,       & ! Mixture fraction                                  [-]
@@ -1760,7 +1760,7 @@ module KK_upscaled_covariances
                                    sigma_eta_1, sigma_chi_1, sigma_rr_1_n, &
                                    corr_eta_chi_1, corr_eta_rr_1_n, corr_chi_rr_1_n, &
                                    mu_eta_1, KK_accr_tndcy, KK_accr_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
+                                   eta_tol, alpha_exp, beta_exp )  &
               - bivar_NL_mean_eq( mu_chi_1, mu_rr_1, mu_rr_1_n, sigma_chi_1, &
                                   sigma_rr_1, sigma_rr_1_n, corr_chi_rr_1_n, &
                                   rr_tol, alpha_exp + one, beta_exp )  &
@@ -1780,7 +1780,7 @@ module KK_upscaled_covariances
                                    sigma_eta_2, sigma_chi_2, sigma_rr_2_n, &
                                    corr_eta_chi_2, corr_eta_rr_2_n, corr_chi_rr_2_n, &
                                    mu_eta_2, KK_accr_tndcy, KK_accr_coef, &
-                                   t_tol, alpha_exp, beta_exp )  &
+                                   eta_tol, alpha_exp, beta_exp )  &
               - bivar_NL_mean_eq( mu_chi_2, mu_rr_2, mu_rr_2_n, sigma_chi_2, &
                                   sigma_rr_2, sigma_rr_2_n, corr_chi_rr_2_n, &
                                   rr_tol, alpha_exp + one, beta_exp )  &
