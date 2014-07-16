@@ -183,14 +183,14 @@ sub main()
 
     # If thinLines is enabled then make it so we only use thin solid lines
     if($thinLines == 1){
-	@lineStyles = ("-");
-	@lineWidths = (1);
+  @lineStyles = ("-");
+  @lineWidths = (1);
     }
 
     # If ensembleTuner is enabled then change the colors to match that of 
     # the other ensemble plotter
     if($ensembleTuner == 1){
-	@lineColors = ("[1,.65,0.]","[0.,0.,1]","[0.,1,0.]","[.63,.13,.94]","[0,0,0]");
+  @lineColors = ("[1,.65,0.]","[0.,0.,1]","[0.,1,0.]","[.63,.13,.94]","[0,0,0]");
     }
 
 
@@ -271,7 +271,7 @@ sub main()
     }
     else # Parent
     {
-	sleep(1);
+  sleep(1);
         # Now fork to create images in the background. This should hopefully
         # speed things up a little
         my $convertPid = fork();
@@ -293,33 +293,33 @@ sub main()
                 {
                     OutputWriter->writeSamSubHeader($outputIndex);
                 }
-		if($plotBudgets == 1)
-		{
-		    OutputWriter->writeSamBudgetSubHeader($outputIndex);
-		}
+    if($plotBudgets == 1)
+    {
+        OutputWriter->writeSamBudgetSubHeader($outputIndex);
+    }
             }
             elsif($plotgenMode eq "plotgen")
             {
                 OutputWriter->writeHeader($outputIndex, "Plotgen");
             }
-	          elsif($plotgenMode eq "wrfgen")
-	          {
-		            OutputWriter->writeHeader($outputIndex, "WRFGen");
-	          }
-		  elsif($plotgenMode eq "camgen")
-		  {
-			OutputWriter->writeHeader($outputIndex, "CAMGen");
-		  }
-		  elsif($plotgenMode eq "gfdlgen")
-		  {
-			OutputWriter->writeHeader($outputIndex, "GFDLGen");
-		 
-		#Only print the GFDL header if it is in nightly mode
-		 if($nightly == 1)
-		 	{
-				OutputWriter->writeGfdlHeader($outputIndex);
-			}
-		  }
+            elsif($plotgenMode eq "wrfgen")
+            {
+                OutputWriter->writeHeader($outputIndex, "WRFGen");
+            }
+      elsif($plotgenMode eq "camgen")
+      {
+      OutputWriter->writeHeader($outputIndex, "CAMGen");
+      }
+      elsif($plotgenMode eq "gfdlgen")
+      {
+      OutputWriter->writeHeader($outputIndex, "GFDLGen");
+     
+    #Only print the GFDL header if it is in nightly mode
+     if($nightly == 1)
+      {
+        OutputWriter->writeGfdlHeader($outputIndex);
+      }
+      }
     
             runCases();
 
@@ -356,15 +356,15 @@ sub getCasePath()
     }
     elsif($plotgenMode eq "wrfgen")
     {
-	return"$casePath/wrf";
+  return"$casePath/wrf";
     }
     elsif($plotgenMode eq "camgen")
     {
-	return"$casePath/cam";
+  return"$casePath/cam";
     }
     elsif($plotgenMode eq "gfdlgen")
     {
-	return"$casePath/gfdl";
+  return"$casePath/gfdl";
     }
 }
 
@@ -420,50 +420,50 @@ sub runCases()
             if($runCase eq 'true' && dataExists($CASE::CASE) && ($CASE::CASE{'enabled'} ne 'false'))
             {
                 push(@casesExecuted, $CASE::CASE{'name'});
-		if( ($CASE::CASE{'type'} eq "budget" && $plotBudgets == 1) || ($CASE::CASE{'type'} eq "morrbudget" && $plotMorrBudgets == 1) || ($CASE::CASE{'type'} eq "standard") )
-		{
-		        # Print the case title to the HTML page
-		        OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
-		        OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
-		
-		        # Print any additional text/html specified
-		        if($nightly == 1) # If in nightly mode
-		        {
-		            my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
-		            my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
-		            
-		            # Check to see if there was any additional text specified. If there was,
-		            # write it to the HTML file.
-		            if($nightlySubText ne "")
-		            {
-		                OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
-		            }
-		            
-		            if($nightlySubHtml ne "")
-		            {
-		                OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
-		            }
-		        }
-		        else # If not in nightly mode
-		        {
-		            my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
-		            my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
-		        
-			    if($CASE::CASE{'type'} eq "morrbudget")	
-    		     	    {
-				OutputWriter->writeMorrBudgetSubHeader($outputIndex, $subText);
-			    }
-		            if($subText ne "")
-		            {
-		                OutputWriter->writeSubHeader($outputIndex, $subText);
-		            }
-		            
-		            if($subHtml ne "")
-		            {
-		                OutputWriter->writeSubHtml($outputIndex, $subHtml);
-		            }
-		
-		        }
+    if( ($CASE::CASE{'type'} eq "budget" && $plotBudgets == 1) || ($CASE::CASE{'type'} eq "morrbudget" && $plotMorrBudgets == 1) || ($CASE::CASE{'type'} eq "standard") )
+    {
+            # Print the case title to the HTML page
+            OutputWriter->writeCaseTitle($outputIndex, $CASE::CASE{'headerText'});
+            OutputWriter->writeNavPageCase("$outputTemp/$navigationPage", $CASE::CASE{'name'}, $CASE::CASE{'headerText'});
+    
+            # Print any additional text/html specified
+            if($nightly == 1) # If in nightly mode
+            {
+                my $nightlySubText = $CASE::CASE{'nightlyOutput'}{'subText'};
+                my $nightlySubHtml = $CASE::CASE{'nightlyOutput'}{'subHtml'};
+                
+                # Check to see if there was any additional text specified. If there was,
+                # write it to the HTML file.
+                if($nightlySubText ne "")
+                {
+                    OutputWriter->writeSubHeader($outputIndex, $nightlySubText);
+                }
+                
+                if($nightlySubHtml ne "")
+                {
+                    OutputWriter->writeSubHtml($outputIndex, $nightlySubHtml);
+                }
+            }
+            else # If not in nightly mode
+            {
+                my $subText = $CASE::CASE{'additionalOutput'}{'subText'};
+                my $subHtml = $CASE::CASE{'additionalOutput'}{'subHtml'};
+            
+          if($CASE::CASE{'type'} eq "morrbudget") 
+                  {
+        OutputWriter->writeMorrBudgetSubHeader($outputIndex, $subText);
+          }
+                if($subText ne "")
+                {
+                    OutputWriter->writeSubHeader($outputIndex, $subText);
+                }
+                
+                if($subHtml ne "")
+                {
+                    OutputWriter->writeSubHtml($outputIndex, $subHtml);
+                }
+    
+            }
                 }
                 # Check to see if this is a budget plot or standard plot
                 if($CASE::CASE{'type'} eq "budget" && $plotBudgets || $CASE::CASE{'type'} eq "morrbudget" && $plotMorrBudgets)
@@ -665,7 +665,7 @@ sub buildMatlabStringStd()
         $lineStyleCounter = 0;
         $lineColorCounter = 0;
         $lineWidthCounter = 0;
-	my $fileCounter 	  = 0;
+  my $fileCounter     = 0;
 
         my $plotTitle = $plots[$count]{'plotTitle'};
         my $units = $plots[$count]{'axisLabel'};
@@ -705,124 +705,124 @@ sub buildMatlabStringStd()
             {
                 if ($diffRun == 0)
                 {
-		        foreach (@inputDirs)
-		        {
-		            my $file = "$_/$lines[$lineNum]{'filename'}";
+            foreach (@inputDirs)
+            {
+                my $file = "$_/$lines[$lineNum]{'filename'}";
 
-		            if($dataFileType eq "netcdf")
-		            {
-		                # Replace all .ctl file extensions with .nc
-		                # By default, the case files have .ctl extensions
-		                $file =~ s/.ctl/.nc/g;
-		            }
+                if($dataFileType eq "netcdf")
+                {
+                    # Replace all .ctl file extensions with .nc
+                    # By default, the case files have .ctl extensions
+                    $file =~ s/.ctl/.nc/g;
+                }
 
-		            if(-e $file)
-		            {
-		                my $title;
-		                my $folderName = basename($_);
-		                $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
+                if(-e $file)
+                {
+                    my $title;
+                    my $folderName = basename($_);
+                    $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
 
-		                if($name eq "auto")
-		                {
-		                    $title = $folderName;
-		                }
-		                else
-		                {
-		                    $title = $name;
+                    if($name eq "auto")
+                    {
+                        $title = $folderName;
+                    }
+                    else
+                    {
+                        $title = $name;
 
-		                    # Replace any '{0}' with the folder name
-		                    $title =~ s/\{0\}/$folderName/;
-		                }
+                        # Replace any '{0}' with the folder name
+                        $title =~ s/\{0\}/$folderName/;
+                    }
 
-		                my $lineWidth = $lineWidths[$lineWidthCounter];
-		                my $lineStyle = $lineStyles[$lineStyleCounter];
-		                my $lineColor = $lineColors[$lineColorCounter];
-		                
-		                $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
+                    my $lineWidth = $lineWidths[$lineWidthCounter];
+                    my $lineStyle = $lineStyles[$lineStyleCounter];
+                    my $lineColor = $lineColors[$lineColorCounter];
+                    
+                    $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
 
-				# Used for ensemble runs to make a group of plots all the same color
-				# The five(5) is used to set the number of files per group
-				if($ensembleTuner == 1){
-				    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
-					incrementLineTypes();
-				    }
-	    	                    $fileCounter++;
-				}
-				else{
-					incrementLineTypes();
-				}
-			    }
-			    else{		
-			    	if($ensembleTuner == 1){
-				    if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
-					incrementLineTypes();
-				    }
-	    	                    $fileCounter++;
-				}
-			    }
-			}
-		}
-		else # This is a "difference run"
-		{
-		    my $file1 = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
-		    my $file2 = "$inputDirs[1]/$lines[$lineNum]{'filename'}";
-		    #Ticket 543
-		    #If a CaseName_lh_sfc file is found in the output, the lh_morr_rain_rate should be output
-		    #for the Surface rainfall rate plot
-		    my $lhSfcFile1 = $inputDirs[0] . "/" . $caseName . "_lh_sfc.ctl";
-		    my $lhSfcFile2 = $inputDirs[1] . "/" . $caseName . "_lh_sfc.ctl";
-		    if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile1 && -e $lhSfcFile2)
-		    {
-			$file1 = $lhSfcFile1;
-			$file2 = $lhSfcFile2;
-			$expression = "lh_morr_rain_rate";
-		    }
+        # Used for ensemble runs to make a group of plots all the same color
+        # The five(5) is used to set the number of files per group
+        if($ensembleTuner == 1){
+            if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+          incrementLineTypes();
+            }
+                            $fileCounter++;
+        }
+        else{
+          incrementLineTypes();
+        }
+          }
+          else{   
+            if($ensembleTuner == 1){
+            if(((($fileCounter+1) % 10) == 0) && ($fileCounter != 0)){
+          incrementLineTypes();
+            }
+                            $fileCounter++;
+        }
+          }
+      }
+    }
+    else # This is a "difference run"
+    {
+        my $file1 = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
+        my $file2 = "$inputDirs[1]/$lines[$lineNum]{'filename'}";
+        #Ticket 543
+        #If a CaseName_lh_sfc file is found in the output, the lh_morr_rain_rate should be output
+        #for the Surface rainfall rate plot
+        my $lhSfcFile1 = $inputDirs[0] . "/" . $caseName . "_lh_sfc.ctl";
+        my $lhSfcFile2 = $inputDirs[1] . "/" . $caseName . "_lh_sfc.ctl";
+        if($plotTitle eq "Surface rainfall rate" && -e $lhSfcFile1 && -e $lhSfcFile2)
+        {
+      $file1 = $lhSfcFile1;
+      $file2 = $lhSfcFile2;
+      $expression = "lh_morr_rain_rate";
+        }
 
-	            if($dataFileType eq "netcdf")
-	            {
-	                # Replace all .ctl file extensions with .nc
-	                # By default, the case files have .ctl extensions
-	                $file1 =~ s/.ctl/.nc/g;
-	                $file2 =~ s/.ctl/.nc/g;
-	            }
+              if($dataFileType eq "netcdf")
+              {
+                  # Replace all .ctl file extensions with .nc
+                  # By default, the case files have .ctl extensions
+                  $file1 =~ s/.ctl/.nc/g;
+                  $file2 =~ s/.ctl/.nc/g;
+              }
 
-	            if(-e $file1 && -e $file2)
-	            {
-	                my $title;
-	                my $folderName1 = basename($inputDirs[0]);
-	                my $folderName2 = basename($inputDirs[1]);
-	                my $folderName = $folderName2 . "-" . $folderName1;
-	                $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
+              if(-e $file1 && -e $file2)
+              {
+                  my $title;
+                  my $folderName1 = basename($inputDirs[0]);
+                  my $folderName2 = basename($inputDirs[1]);
+                  my $folderName = $folderName2 . "-" . $folderName1;
+                  $folderName =~ s/_/\\_/g; # Replace all '_' with '\_' for MATLAB
 
-	                if($name eq "auto")
-	                {
-	                    $title = $folderName;
-	                }
-	                else
-	                {
-	                    $title = $name;
+                  if($name eq "auto")
+                  {
+                      $title = $folderName;
+                  }
+                  else
+                  {
+                      $title = $name;
 
-	                    # Replace any '{0}' with the folder name
-	                    $title =~ s/\{0\}/$folderName/;
-	                }
+                      # Replace any '{0}' with the folder name
+                      $title =~ s/\{0\}/$folderName/;
+                  }
 
-	                my $lineWidth = $lineWidths[$lineWidthCounter];
-	                my $lineStyle = $lineStyles[$lineStyleCounter];
-	                my $lineColor = $lineColors[$lineColorCounter];
-	                $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
-			incrementLineTypes();
-		    }
-		}
+                  my $lineWidth = $lineWidths[$lineWidthCounter];
+                  my $lineStyle = $lineStyles[$lineStyleCounter];
+                  my $lineColor = $lineColors[$lineColorCounter];
+                  $matlabArgs = "$matlabArgs, \'$file1\', \'$file2\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
+      incrementLineTypes();
+        }
+    }
             }
             elsif(($type eq "les" && $plotLes == 1) || ($type eq "dec17" && $plotDec) || ($type eq "bestever" && $plotBest))
             {
                 my $file = "$lines[$lineNum]{'filename'}";
-				unless (-e $file)
-				{
-				    # See if the user specified a relative path.
-					# Try the first input directory.
-					$file = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
-				}
+        unless (-e $file)
+        {
+            # See if the user specified a relative path.
+          # Try the first input directory.
+          $file = "$inputDirs[0]/$lines[$lineNum]{'filename'}";
+        }
                 if(-e $file)
                 {
                     my $title = $name;
@@ -832,23 +832,23 @@ sub buildMatlabStringStd()
                     my $lineColor = $lines[$lineNum]{'lineColor'};
 
 
-		    if($lineWidth eq "auto")
-		    {
-			$lineWidth = $lineWidths[$lineWidthCounter];
-		    }
-		    if($lineStyle eq "auto")
-		    {
-			$lineStyle = $lineStyles[$lineStyleCounter];
-		    }
-		    if($lineColor eq "auto")
-		    {
-			$lineColor = $lineColors[$lineColorCounter];
-    		    }
+        if($lineWidth eq "auto")
+        {
+      $lineWidth = $lineWidths[$lineWidthCounter];
+        }
+        if($lineStyle eq "auto")
+        {
+      $lineStyle = $lineStyles[$lineStyleCounter];
+        }
+        if($lineColor eq "auto")
+        {
+      $lineColor = $lineColors[$lineColorCounter];
+            }
 
-		    if(("$lines[$lineNum]{'lineWidth'}" eq "auto") || ("$lines[$lineNum]{'lineType'}" eq "auto") || ("$lines[$lineNum]{'lineColor'}" eq "auto"))
-		    {
-					incrementLineTypes();
-		    }
+        if(("$lines[$lineNum]{'lineWidth'}" eq "auto") || ("$lines[$lineNum]{'lineType'}" eq "auto") || ("$lines[$lineNum]{'lineColor'}" eq "auto"))
+        {
+          incrementLineTypes();
+        }
 
                     $matlabArgs = "$matlabArgs, \'$file\', \'$file\', \'$expression\', \'$title\', $lineWidth, \'$lineStyle\', \'$lineColor\' ...\n";
                 }
@@ -1075,9 +1075,9 @@ sub readArgs()
    # Loop through each agrument and see if it has a '-', then see if the remaining letters
    # are a valid option
    foreach (@ARGV) {
-	if((substr $_, 0, 1) eq '-'){
-	$option = substr $_, 1;	
-	$numOptions++;
+  if((substr $_, 0, 1) eq '-'){
+  $option = substr $_, 1; 
+  $numOptions++;
 
    switch ($option) {
     case 'r' { $overwrite = 1; } # Option to overwrite file or folder if it already exsists
@@ -1121,13 +1121,13 @@ sub readArgs()
     my $fileNum = $numArgs - $numOptions;
     my $i;
     for ($i = 0; $i<$fileNum; $i++){
-    	@fileArgs[$i] = @ARGV[$numOptions];
-	$numOptions++;
+      @fileArgs[$i] = @ARGV[$numOptions];
+  $numOptions++;
     }
 
     if($ensembleTuner == 1){
-	$thinLines = 1;
-	$displayLegend = 0;
+  $thinLines = 1;
+  $displayLegend = 0;
     }
 
     my $currentCount = 0;
