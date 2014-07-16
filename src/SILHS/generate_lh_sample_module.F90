@@ -9,7 +9,7 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_uniform_sample, &
-     ltqnorm, multiply_Cholesky, generate_lh_sample_mod
+     ltqnorm, multiply_Cholesky, generate_lh_sample
 
   private :: sample_points, gaus_mixt_points, & 
     truncate_gaus_mixt, &
@@ -24,7 +24,7 @@ module generate_lh_sample_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine generate_lh_sample_mod &
+  subroutine generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
                thl1, thl2, rt1, rt2, & ! In
                crt1, crt2, cthl1, cthl2, & ! In
@@ -227,7 +227,7 @@ module generate_lh_sample_module
 
 
     return
-  end subroutine generate_lh_sample_mod
+  end subroutine generate_lh_sample
 
 !---------------------------------------------------------------------------------------------------
   subroutine zero_precip_hydromets( d_variables, X_nl_one_lev )

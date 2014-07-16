@@ -23,7 +23,7 @@ module latin_hypercube_driver_module
 
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
-    latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator_mod, &
+    latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts
 
   private :: stats_accumulate_uniform_lh
@@ -31,7 +31,7 @@ module latin_hypercube_driver_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine lh_subcolumn_generator_mod &
+  subroutine lh_subcolumn_generator &
              ( iter, d_variables, num_samples, sequence_length, nz, & ! In
                pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
@@ -58,7 +58,7 @@ module latin_hypercube_driver_module
       permute_height_time ! Procedure
 
     use generate_lh_sample_module, only: &
-      generate_lh_sample_mod, & ! Procedure
+      generate_lh_sample, & ! Procedure
       generate_uniform_sample
 
     use output_2D_samples_module, only: &
@@ -507,7 +507,7 @@ module latin_hypercube_driver_module
     do k = 1, nz
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, num_samples, 1
-        call generate_lh_sample_mod &
+        call generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
                pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
                pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
@@ -546,7 +546,7 @@ module latin_hypercube_driver_module
     end if ! Some rv_all_points(:,sample) < 0
 
     return
-  end subroutine lh_subcolumn_generator_mod
+  end subroutine lh_subcolumn_generator
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
