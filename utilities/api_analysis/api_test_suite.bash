@@ -36,7 +36,7 @@ echo "testing CLUBB_core"
 python api_commitment_test.py -cpu CLUBB_core CLUBB_core > clubb_core_modules.txt
 
 echo "testing SAM"
-python api_commitment_test.py -cpu CLUBB_core SAM --exclude-dir="CLUBB","SILHS" > sam_modules.txt
+python api_commitment_test.py -cpu CLUBB_core SAM/SRC --exclude-dir="CLUBB","SILHS" > sam_modules.txt
 
 echo "testing CAM"
 python api_commitment_test.py -cpu CLUBB_core CAM --exclude-dir="clubb","silhs" > cam_modules.txt
