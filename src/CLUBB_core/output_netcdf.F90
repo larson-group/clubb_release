@@ -641,9 +641,9 @@ module output_netcdf
     deallocate( stat )
 
     if ( l_output_file_run_date ) then
-       allocate( stat(5) )
-    else
        allocate( stat(4) )
+    else
+       allocate( stat(3) )
     endif
 
     ! Define global attributes of the file, for reproducing the results and
@@ -651,7 +651,8 @@ module output_netcdf
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "Conventions", "COARDS" )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "model", "CLUBB" )
 
-    i = 2
+    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
+                            trim( microphys_scheme ) )
 
     if ( l_output_file_run_date ) then
 
@@ -665,19 +666,12 @@ module output_netcdf
        ! Figure out when the model is producing this file
        call date_and_time( current_date, current_time )
 
-       i = i + 1
-
-       stat(i) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
+       stat(4) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
                               current_date(1:4)//'-'//current_date(5:6)//'-'// &
                               current_date(7:8)//' '// &
                               current_time(1:2)//':'//current_time(3:4) )
 
     endif ! l_output_file_run_date
-
-    i = i + 1
-
-    stat(i) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
-                            trim( microphys_scheme ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model information"
