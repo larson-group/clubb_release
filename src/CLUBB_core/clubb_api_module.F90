@@ -395,7 +395,7 @@ module clubb_api_module
     byte_order_swap_api, &
     diffusion_zt_lhs_api, &
     update_xp2_mc_api, &
-    xpwp_fnc_api
+    xpwp_fnc_api, calculate_spurious_source_api
 
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
@@ -2030,6 +2030,37 @@ contains
       thlm, exner, rcm )
 
   end function thlm2T_in_K_api
+
+  !================================================================================================
+  ! calculate_spurious_source - Checks whether there is conservation within the column.
+  !================================================================================================
+  function calculate_spurious_source_api ( &
+    integral_after, integral_before, &
+    flux_top, flux_sfc, &
+    integral_forcing, dt ) result( spurious_source )
+
+    use numerical_check, only : calculate_spurious_source
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      integral_after, &   ! Vertically-integrated quantity after dt time  [units vary]
+      integral_before, &  ! Vertically-integrated quantity before dt time [units vary]
+      flux_top, &         ! Total flux at the top of the domain           [units vary]
+      flux_sfc, &         ! Total flux at the bottom of the domain        [units vary]
+      integral_forcing, & ! Vertically-integrated forcing                 [units vary]
+      dt                  ! Timestep size                                 [s]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: spurious_source ! [units vary]
+
+    spurious_source = calculate_spurious_source( &
+      integral_after, integral_before, &
+      flux_top, flux_sfc, &
+      integral_forcing, dt )
+
+  end function calculate_spurious_source_api
 
   !================================================================================================
   ! The subroutines and functions below are only used by CLUBB_standalone.
