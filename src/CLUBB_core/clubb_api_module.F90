@@ -363,8 +363,8 @@ module clubb_api_module
   private
 
   ! Making the functions and subroutines public
-  public advance_clubb_core_api, setup_clubb_core_api, set_Lscale_max_api, &
-    gregorian2julian_day_api, compute_current_date_api, leap_year_api, &
+  public advance_clubb_core_api, setup_clubb_core_api, cleanup_clubb_core_api, &
+    set_Lscale_max_api, gregorian2julian_day_api, compute_current_date_api, leap_year_api, &
     setup_corr_varnce_array_api, setup_pdf_indices_api, &
     reportError_api, fatal_error_api, set_clubb_debug_level_api, clubb_at_least_debug_level_api, &
     vertical_avg_api, fill_holes_driver_api, fill_holes_vertical_api, vertical_integral_api, &
@@ -809,6 +809,25 @@ contains
       err_code )                                           ! intent(out)
 
   end subroutine setup_clubb_core_api
+
+  !================================================================================================
+  ! cleanup_clubb_core_api - Frees memory used by the model.
+  !================================================================================================
+
+  subroutine cleanup_clubb_core_api( &
+    l_implemented )
+
+    use advance_clubb_core_module, only : cleanup_clubb_core
+
+    implicit none
+
+    ! Flag to see if CLUBB is running on it's own,
+    ! or if it's implemented as part of a host model.
+    logical, intent(in) :: l_implemented   ! (T/F)
+
+    call cleanup_clubb_core( &
+    l_implemented )
+  end subroutine cleanup_clubb_core_api
 
   !================================================================================================
   ! set_Lscale_max - Sets the maximum allowable value of Lscale.
