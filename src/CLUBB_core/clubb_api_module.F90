@@ -41,7 +41,8 @@ module clubb_api_module
     iisclr_thl
 
 
-  use clubb_precision, only : time_precision, &
+  use clubb_precision, only : &
+    time_precision, &
     core_rknd, &
     stat_nknd, &
     stat_rknd, &
@@ -396,7 +397,7 @@ module clubb_api_module
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
     iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl, iisclr_CO2, iisclr_rt, iisclr_thl, &
-    core_rknd, stat_nknd, stat_rknd, dp, &
+    time_precision, core_rknd, stat_nknd, stat_rknd, dp, &
     cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, pi, pi_dp, radians_per_deg_dp, &
     Rd, Rv, sec_per_day, sec_per_hr, sec_per_min, T_freeze_K, var_length, zero, zero_threshold, &
     Nc_tol, Ng_tol, Ni_tol, Nr_tol, Ns_tol, rg_tol, rho_lw, &
