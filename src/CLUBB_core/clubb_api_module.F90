@@ -58,6 +58,7 @@ module clubb_api_module
     grav, & ! Gravitational acceleration     [m/s^2]
     Ls, & ! Latent heat of sublimation          [J/kg]
     Lv, & ! Latent heat of vaporization         [J/kg]
+    Lf, & ! Latent heat of fusion               [J/kg]
     pi, & ! The ratio of radii to their circumference
     pi_dp, & ! pi in double precision
     radians_per_deg_dp, &
@@ -401,7 +402,7 @@ module clubb_api_module
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
     iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl, iisclr_CO2, iisclr_rt, iisclr_thl, &
     time_precision, core_rknd, stat_nknd, stat_rknd, dp, &
-    cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, pi, pi_dp, radians_per_deg_dp, &
+    cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, Lf, pi, pi_dp, radians_per_deg_dp,&
     Rd, Rv, sec_per_day, sec_per_hr, sec_per_min, T_freeze_K, var_length, zero, zero_threshold, &
     Nc_tol, Ng_tol, Ni_tol, Nr_tol, Ns_tol, rg_tol, rho_lw, &
     ri_tol, rr_tol, rs_tol, rt_tol, thl_tol, w_tol_sqd, &
