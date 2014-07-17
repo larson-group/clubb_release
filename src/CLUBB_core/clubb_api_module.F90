@@ -171,6 +171,9 @@ module clubb_api_module
     mu, & ! Fract entrain rate per unit alt  [1/m]
     mult_coef ! Coef. applied to log(avg dz/thresh)[-]
 
+  use parameter_indices, only:  &
+    nparams ! Variable(s)
+
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
@@ -420,7 +423,7 @@ module clubb_api_module
     rg_sigma2_on_mu2_ip_cloud, rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_cloud, &
     Ng_sigma2_on_mu2_ip_below, Ncnp2_on_Ncnm2, &
     hydromet_dim, Lscale_max, &
-    l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, &
+    l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 #endif
