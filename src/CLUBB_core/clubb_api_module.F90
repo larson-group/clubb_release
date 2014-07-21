@@ -21,6 +21,10 @@ module clubb_api_module
     zt2zm_api => zt2zm, & ! The interface implementation of these subroutines
     zm2zt_api => zm2zt    ! requires a use statement "interface" here.
 
+  ! This allows use of mt95's overloaded '=' operator at the
+  ! expense of making the entire module visible.
+  use mt95
+
   use array_index, only : &
     iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
     iiNim, & ! Hydrometeor array index for ice concentration, Ni
