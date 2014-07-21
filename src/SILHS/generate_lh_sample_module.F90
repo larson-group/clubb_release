@@ -37,29 +37,6 @@ module generate_lh_sample_module
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
-! Assumptions:
-!   The l_fix_chi_eta_correlations = false code does not set the correlation
-!   between Ncn and the other variates (i.e. it assumes they are all zero).
-!   We do this is because while we have data for the
-!   correlation of e.g. chi(s) & Ncn and chi(s) & rr, we do not know the correlation of
-!   Ncn and rr.
-!   It would not be possible to decompose a covariance matrix with zero
-!   correlation between rr and Ncn when the correlation between chi(s) and Ncn is
-!   non-zero, and the code would have to halt.
-!
-!   One implication of this is that if l_fix_chi_eta_correlations = false
-!   then the correlation of chi(s) and Ncn must be set to
-!   zero in the correlation file to check the convergence of a non-interactive
-!   SILHS solution against the analytic K&K solution.
-!
-!   The l_fix_chi_eta_correlations = true code does not have the above limitation
-!   but will use a value for the covariance of the chi(s) and eta(t) that is not necessarily
-!   equal to the one computed by the PDF, so setting the correlation of
-!   chi(s) and Ncn to zero is not needed.
-!   It will also fix the value of the correlation between chi(s) and eta(t) in the
-!   analytic K&K code, which should allow for convergence between the two solutions.
-!   If it does not, then there is probably a new bug in the code.
-
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,
