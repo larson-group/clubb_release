@@ -221,7 +221,7 @@ module latin_hypercube_driver_module
 
       ! Check for a bug where the iteration number isn't incrementing correctly,
       ! which will lead to improper sampling.
-    else if ( l_diagnostic_iter_check ) then
+    else if ( l_diagnostic_iter_check .and. sequence_length > 1 ) then
 
       if ( prior_iter /= iter-1 ) then
         write(fstderr,*) "The iteration number in latin_hypercube_driver is"// &
