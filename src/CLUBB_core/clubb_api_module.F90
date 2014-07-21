@@ -21,9 +21,7 @@ module clubb_api_module
     zt2zm_api => zt2zm, & ! The interface implementation of these subroutines
     zm2zt_api => zm2zt    ! requires a use statement "interface" here.
 
-  ! This allows use of mt95's overloaded '=' operator at the
-  ! expense of making the entire module visible.
-  use mt95
+  use mt95, only : assignment( = )
 
   use array_index, only : &
     iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
@@ -400,7 +398,7 @@ module clubb_api_module
     byte_order_swap_api, &
     diffusion_zt_lhs_api, &
     update_xp2_mc_api, &
-    xpwp_fnc_api, calculate_spurious_source_api
+    xpwp_fnc_api, calculate_spurious_source_api, assignment( = )
 
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
