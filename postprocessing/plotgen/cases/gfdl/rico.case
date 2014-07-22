@@ -155,12 +155,12 @@
           {'filename' => 'rico_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QPL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rrainm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrainm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
@@ -178,19 +178,19 @@
           {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'liq_drp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QG ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rgraupelm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rgraupelm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rgm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rgm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QI ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'ricem', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'ricem', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
@@ -201,18 +201,18 @@
           {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_num ./(pf_forc ./(287.04 .* temp .* (1 + 0.608 * sphum - liq_wat-ice_wat)))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QS ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rsnowm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsnowm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/rico_zt.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'rsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuserChris_Golaz_best_ever/rico_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
+          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
   	 {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/RICO/RICO_128x128x230_dz40m100m2s_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>

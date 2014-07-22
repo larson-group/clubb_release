@@ -102,9 +102,9 @@
           {'filename' => 'dycoms2_rf01_fixed_sst_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
@@ -116,13 +116,13 @@
           {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'liq_drp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
@@ -130,14 +130,14 @@
           {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_num ./(pf_forc ./(287.04 .* temp .* (1 + 0.608 * sphum - liq_wat-ice_wat)))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf01_fixed_sst_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf01_fixed_sst_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 
        ]},
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>

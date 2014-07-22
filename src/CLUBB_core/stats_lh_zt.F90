@@ -209,11 +209,11 @@ module stats_lh_zt
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_mc' )
+      case ( 'lh_rrm_mc' )
         ilh_rrm_mc = k
 
-        call stat_assign( var_index=ilh_rrm_mc, var_name="lh_rrainm_mc", &
-             var_description="Latin hypercube estimate of rrainm_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_rrm_mc, var_name="lh_rrm_mc", &
+             var_description="Latin hypercube estimate of rrm_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -225,43 +225,43 @@ module stats_lh_zt
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case('lh_rsnowm_mc')
+      case('lh_rsm_mc')
         ilh_rsm_mc = k
 
-        call stat_assign( var_index=ilh_rsm_mc, var_name="lh_rsnowm_mc", &
-             var_description="Latin hypercube estimate of rsnowm_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_rsm_mc, var_name="lh_rsm_mc", &
+             var_description="Latin hypercube estimate of rsm_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_Nsnowm_mc' )
+      case ( 'lh_Nsm_mc' )
         ilh_Nsm_mc = k
 
-        call stat_assign( var_index=ilh_Nsm_mc, var_name="lh_Nsnowm_mc", &
-             var_description="Latin hypercube estimate of Nsnowm_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_Nsm_mc, var_name="lh_Nsm_mc", &
+             var_description="Latin hypercube estimate of Nsm_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rgraupelm_mc' )
+      case ( 'lh_rgm_mc' )
         ilh_rgm_mc = k
 
-        call stat_assign( var_index=ilh_rgm_mc, var_name="lh_rgraupelm_mc", &
-             var_description="Latin hypercube estimate of rgraupelm_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_rgm_mc, var_name="lh_rgm_mc", &
+             var_description="Latin hypercube estimate of rgm_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_Ngraupelm_mc' )
+      case ( 'lh_Ngm_mc' )
         ilh_Ngm_mc = k
 
-        call stat_assign( var_index=ilh_Ngm_mc, var_name="lh_Ngraupelm_mc", &
-             var_description="Latin hypercube estimate of Ngraupelm_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_Ngm_mc, var_name="lh_Ngm_mc", &
+             var_description="Latin hypercube estimate of Ngm_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_ricem_mc' )
+      case ( 'lh_rim_mc' )
         ilh_rim_mc = k
 
-        call stat_assign( var_index=ilh_rim_mc, var_name="lh_ricem_mc", &
-             var_description="Latin hypercube estimate of ricem_mc [kg/kg/s]", &
+        call stat_assign( var_index=ilh_rim_mc, var_name="lh_rim_mc", &
+             var_description="Latin hypercube estimate of rim_mc [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -277,7 +277,7 @@ module stats_lh_zt
         ilh_Vrr = k
 
         call stat_assign( var_index=ilh_Vrr, var_name="lh_Vrr", &
-             var_description="Latin hypercube estimate of rrainm sedimentation velocity [m/s]", &
+             var_description="Latin hypercube estimate of rrm sedimentation velocity [m/s]", &
              var_units="m/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -298,11 +298,11 @@ module stats_lh_zt
 
         k = k + 1
 
-      case ( 'lh_rrainm' )
+      case ( 'lh_rrm' )
         ilh_rrm = k
 
-        call stat_assign( var_index=ilh_rrm, var_name="lh_rrainm", &
-             var_description="Latin hypercube estimate of rrainm [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=ilh_rrm, var_name="lh_rrm", &
+             var_description="Latin hypercube estimate of rrm [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -314,11 +314,11 @@ module stats_lh_zt
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_ricem' )
+      case ( 'lh_rim' )
         ilh_rim = k
 
-        call stat_assign( var_index=ilh_rim, var_name="lh_ricem", &
-             var_description="Latin hypercube estimate of ricem [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=ilh_rim, var_name="lh_rim", &
+             var_description="Latin hypercube estimate of rim [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -330,36 +330,36 @@ module stats_lh_zt
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rsnowm' )
+      case ( 'lh_rsm' )
         ilh_rsm = k
 
-        call stat_assign( var_index=ilh_rsm, var_name="lh_rsnowm", &
-             var_description="Latin hypercube estimate of rsnowm [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=ilh_rsm, var_name="lh_rsm", &
+             var_description="Latin hypercube estimate of rsm [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_Nsnowm' )
+      case ( 'lh_Nsm' )
         ilh_Nsm = k
 
-        call stat_assign( var_index=ilh_Nsm, var_name="lh_Nsnowm", &
-             var_description="Latin hypercube estimate of Nsnowm [count/kg]", &
+        call stat_assign( var_index=ilh_Nsm, var_name="lh_Nsm", &
+             var_description="Latin hypercube estimate of Nsm [count/kg]", &
              var_units="count/kg", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
 
-      case ( 'lh_rgraupelm' )
+      case ( 'lh_rgm' )
         ilh_rgm = k
 
-        call stat_assign( var_index=ilh_rgm, var_name="lh_rgraupelm", &
-             var_description="Latin hypercube estimate of rgraupelm [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=ilh_rgm, var_name="lh_rgm", &
+             var_description="Latin hypercube estimate of rgm [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_Ngraupelm' )
+      case ( 'lh_Ngm' )
         ilh_Ngm = k
 
-        call stat_assign( var_index=ilh_Ngm, var_name="lh_Ngraupelm", &
-             var_description="Latin hypercube estimate of Ngraupelm [kg/kg]", var_units="kg/kg", &
+        call stat_assign( var_index=ilh_Ngm, var_name="lh_Ngm", &
+             var_description="Latin hypercube estimate of Ngm [kg/kg]", var_units="kg/kg", &
              l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
@@ -491,30 +491,30 @@ module stats_lh_zt
              var_units="K^2", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainp2_zt' )
+      case ( 'lh_rrp2_zt' )
         ilh_rrp2_zt = k
-        call stat_assign( var_index=ilh_rrp2_zt, var_name="lh_rrainp2_zt", &
-             var_description="Variance of the latin hypercube estimate of rrain [kg^2/kg^2]", &
+        call stat_assign( var_index=ilh_rrp2_zt, var_name="lh_rrp2_zt", &
+             var_description="Variance of the latin hypercube estimate of rr [kg^2/kg^2]", &
              var_units="kg^2/kg^2", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_auto' )
+      case ( 'lh_rrm_auto' )
         ilh_rrm_auto = k
-        call stat_assign( var_index=ilh_rrm_auto, var_name="lh_rrainm_auto", &
+        call stat_assign( var_index=ilh_rrm_auto, var_name="lh_rrm_auto", &
              var_description="Latin hypercube estimate of autoconversion [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_accr' )
+      case ( 'lh_rrm_accr' )
         ilh_rrm_accr = k
-        call stat_assign( var_index=ilh_rrm_accr, var_name="lh_rrainm_accr", &
+        call stat_assign( var_index=ilh_rrm_accr, var_name="lh_rrm_accr", &
              var_description="Latin hypercube estimate of accretion [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_evap' )
+      case ( 'lh_rrm_evap' )
         ilh_rrm_evap = k
-        call stat_assign( var_index=ilh_rrm_evap, var_name="lh_rrainm_evap", &
+        call stat_assign( var_index=ilh_rrm_evap, var_name="lh_rrm_evap", &
              var_description="Latin hypercube estimate of evaporation [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
@@ -533,16 +533,16 @@ module stats_lh_zt
              var_units="num/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_src_adj' )
+      case ( 'lh_rrm_src_adj' )
         ilh_rrm_src_adj = k
-        call stat_assign( var_index=ilh_rrm_src_adj, var_name="lh_rrainm_src_adj", &
+        call stat_assign( var_index=ilh_rrm_src_adj, var_name="lh_rrm_src_adj", &
              var_description="Latin hypercube estimate of source adjustment (KK only!) [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
-      case ( 'lh_rrainm_cond_adj' )
+      case ( 'lh_rrm_cond_adj' )
         ilh_rrm_cond_adj = k
-        call stat_assign( var_index=ilh_rrm_cond_adj, var_name="lh_rrainm_cond_adj", &
+        call stat_assign( var_index=ilh_rrm_cond_adj, var_name="lh_rrm_cond_adj", &
              var_description="Latin hypercube estimate of evap adjustment (KK only!) [kg/kg/s]", &
              var_units="kg/kg/s", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1

@@ -381,7 +381,7 @@ netcdf.putVar( ncid_avg, thetalvarid, time_average( thlm_array, model_timestep, 
 netcdf.putVar( ncid_avg, qtvarid, 1000 * time_average( rtm_array, model_timestep, average_time_interval, sizet, nzmax ) );
 netcdf.putVar( ncid_avg, qsvarid, 1000 * time_average( rsat_array, model_timestep, average_time_interval, sizet, nzmax ) );
 netcdf.putVar( ncid_avg, qlvarid, 1000 * time_average( rcm_array, model_timestep, average_time_interval, sizet, nzmax ) );
-netcdf.putVar( ncid_avg, qrvarid, 1000 * time_average( rrainm_array, model_timestep, average_time_interval, sizet, nzmax ) );
+netcdf.putVar( ncid_avg, qrvarid, 1000 * time_average( rrm_array, model_timestep, average_time_interval, sizet, nzmax ) );
 netcdf.putVar( ncid_avg, cfvarid, time_average( cloud_frac_array, model_timestep, average_time_interval, sizet, nzmax ) );
 netcdf.putVar( ncid_avg, rhovarid, time_average( rho_array, model_timestep, average_time_interval, sizet, nzmax ) );
 netcdf.putVar( ncid_avg, wthlvarid, time_average( ( rho_zm_array .* convert_units.Cp .* wpthlp_array), model_timestep, average_time_interval, sizet, nzmax ) ); % check

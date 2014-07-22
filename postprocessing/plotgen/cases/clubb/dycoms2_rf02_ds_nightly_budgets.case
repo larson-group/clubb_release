@@ -158,17 +158,17 @@
           {'filename' => 'dycoms2_rf02_ds_restart_zm.ctl', 'type' => 'auto', 'name' => 'rtpthlp\_residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_cl + rtpthlp_sf + rtpthlp_forcing)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'rrainm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' =>
+       {'plotTitle' => 'rrm budgets', 'axisLabel' => '[kg/(kg s)]', 'type' =>
  'profile', 'lines' =>
        [
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_bt', 'expression' => 'rrainm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ma', 'expression' => 'rrainm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd', 'expression' => 'rrainm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ta', 'expression' => 'rrainm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ts', 'expression' => 'rrainm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_fill\_clip', 'expression' => 'rrainm_hf + rrainm_wvhf + rrainm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_residual', 'expression' => 'rrainm_bt - (rrainm_ma + rrainm_sd + rrainm_ta + rrainm_ts + rrainm_hf + rrainm_wvhf + rrainm_cl + rrainm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_bt', 'expression' => 'rrm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ma', 'expression' => 'rrm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_sd', 'expression' => 'rrm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ta', 'expression' => 'rrm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ts', 'expression' => 'rrm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_fill\_clip', 'expression' => 'rrm_hf + rrm_wvhf + rrm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_mc', 'expression' => 'rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'dycoms2_rf02_ds_restart_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_residual', 'expression' => 'rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
 
        ]},
 

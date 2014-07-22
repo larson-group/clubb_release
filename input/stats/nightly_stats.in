@@ -1,9 +1,9 @@
 &statsnl
 vars_zt =
 'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
-'um', 'vm', 'wm_zt', 'rrainm', 'Nrm',
-'Ncm', 'Nc_in_cloud', 'rgraupelm', 'ricem', 'Nim',
-'rsnowm', 'Nsnowm','Lscale', 'radht',
+'um', 'vm', 'wm_zt', 'rrm', 'Nrm',
+'Ncm', 'Nc_in_cloud', 'rgm', 'rim', 'Nim',
+'rsm', 'Nsm','Lscale', 'radht',
 'corr_w_chi_1', 'corr_w_chi_2', 'corr_w_hm_i', 'corr_w_Ncn_i',
 'corr_chi_eta_1_ca', 'corr_chi_eta_2_ca', 'corr_chi_hm_i', 'corr_chi_Ncn_i',
 'corr_hmx_hmy_i', 'precip_frac', 'ice_supersat_frac',

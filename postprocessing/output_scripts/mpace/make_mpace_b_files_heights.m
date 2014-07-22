@@ -65,19 +65,19 @@ T_array = (thlm_array .* exner_array) + (Lv/Cp).*rcm_array;
 rvm_array = rtm_array - rcm_array;
 RH_array = rvm_array ./ rsm_array;
 
-rsnowm_array = (Ni * m_array) ./ (rhot_array);
+rsm_array = (Ni * m_array) ./ (rhot_array);
 snc_array = (thlm_array .* 0) + Ni;
 
-if ((sum(sum(rsnowm_array))) == 0)
+if ((sum(sum(rsm_array))) == 0)
     snc_array = snc_array .* 0;
 end
 
-size_snow_array = size(rsnowm_array);
+size_snow_array = size(rsm_array);
 snow_width = size_snow_array(1);
 snow_length = size_snow_array(2);
 for i = 1:snow_width
     for j = 1:snow_length
-        if (rsnowm_array(i,j) > .000001)
+        if (rsm_array(i,j) > .000001)
             hydro_array(i,j) = 1;
         else
             hydro_array(i,j) = 0;
@@ -92,7 +92,7 @@ end
 
 % Set up list of variables and output file parameters
 variablelist = ['p          ';'height     ';'T          ';'rvm        ';
-                'RH         ';'rcm        ';'rsnowm     ';'cf         ';
+                'RH         ';'rcm        ';'rsm     ';'cf         ';
                 'um         ';'vm         ';'radht      ';'radht_SW   ';
                 'radht_LW   ';'hydro      ';'snc        ';];
 
@@ -309,12 +309,12 @@ for v=1:3
                 rho = rhom_array(zz,tt);
                 q   = 0.5*(rvm_array(zz,tt)+rvm_array(zz+1,tt));
                 qc  = 0.5*(rcm_array(zz,tt)+rcm_array(zz+1,tt));
-                qi   = 0.5*(rsnowm_array(zz,tt)+rsnowm_array(zz+1,tt));
+                qi   = 0.5*(rsm_array(zz,tt)+rsm_array(zz+1,tt));
                 dz  = z(zz+1)-z(zz);
                 precwat(tt) = precwat(tt) + (rho * q * dz);
                 lwp(tt)     = lwp(tt) + (rho * qc * dz);
                 cip(tt)     = cip(tt) + (rho * qi * dz);
-                snowrate(tt) = 0.5*(rsnowm_array(1,tt));
+                snowrate(tt) = 0.5*(rsm_array(1,tt));
             end
         end
 
@@ -346,7 +346,7 @@ for v=1:3
         field5 = field2; % Surface rain rate
 
         u_T_cm_sfc = max(u_T_cm_array)
-        field6= rsnowm_array(2,:) .* rhot_array(2,:) .* (u_T_cm_sfc(:)'./100); %sfc turb flux of momentum (N/m^2) F8.4
+        field6= rsm_array(2,:) .* rhot_array(2,:) .* (u_T_cm_sfc(:)'./100); %sfc turb flux of momentum (N/m^2) F8.4
 
         multfactor(:) = 0;
         multfactor   = [1; 1; 1; 1; 1; 86400;];

@@ -230,10 +230,10 @@ module stats_sfc
              grid_kind=sfc )
         k = k + 1
 
-      case ('rrainm_sfc')       ! Brian
+      case ('rrm_sfc')       ! Brian
         irrm_sfc = k
 
-        call stat_assign( var_index=irrm_sfc, var_name="rrainm_sfc", &
+        call stat_assign( var_index=irrm_sfc, var_name="rrm_sfc", &
              var_description="Surface rain water mixing ratio [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=sfc )
         k = k + 1
@@ -438,7 +438,7 @@ module stats_sfc
         irsm_sd_morr_int = k
 
         call stat_assign( var_index=irsm_sd_morr_int, var_name="rs_sd_morr_int", &
-             var_description="rsnowm_sd_morr vertical integral [(kg/kg)/s]", &
+             var_description="rsm_sd_morr vertical integral [(kg/kg)/s]", &
              var_units="(kg/kg)/s", l_silhs=.true., grid_kind=sfc )
         k = k + 1
 

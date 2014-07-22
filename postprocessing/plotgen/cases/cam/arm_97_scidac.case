@@ -150,7 +150,7 @@
 #
 # Rain
 #
-      {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+      {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QR./1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AQRAIN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -171,7 +171,7 @@
 #
 # Graupel
 #
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QG/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
        ]},
@@ -184,7 +184,7 @@
 #
 # Cloud Ice
 #
-       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QI/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDICE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -205,13 +205,13 @@
 #
 # Snow
 #
-       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QS/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'AQSNOW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'NS.*(100^3)./RHO', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ANSNOW./RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 

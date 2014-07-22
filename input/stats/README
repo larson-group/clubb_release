@@ -3,7 +3,7 @@ This directory contains files with statistics that can be output from CLUBB.
 Important notes:
 
 Some variables are only non-zero when code options are enabled.  For example, 
-the hydrometeors rrainm, ricem, etc. will only be non-zero when a microphysics
+the hydrometeors rrm, rim, etc. will only be non-zero when a microphysics
 scheme is enabled.  Many radiation variables (e.g. upwelling short-wave 
 radiative flux) will only be output if BUGSrad is being used.
 

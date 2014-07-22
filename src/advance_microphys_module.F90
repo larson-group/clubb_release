@@ -808,7 +808,7 @@ module advance_microphys_module
 
           endif
 
-          if ( trim( hydromet_list(i) ) == "rrainm" .and. iVrrprrp > 0 ) then
+          if ( trim( hydromet_list(i) ) == "rrm" .and. iVrrprrp > 0 ) then
 
              ! Covariance of sedimentation velocity of r_r and r_r.
              call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrm), &
@@ -1308,22 +1308,22 @@ module advance_microphys_module
     ihmm_ts = 0
 
     select case( solve_type )
-    case( "rrainm" )
+    case( "rrm" )
       ihmm_ma = irrm_ma
       ihmm_ta = irrm_ta
       ihmm_sd = irrm_sd
       ihmm_ts = irrm_ts
-    case( "ricem" )
+    case( "rim" )
       ihmm_ma = irim_ma
       ihmm_ta = irim_ta
       ihmm_sd = irim_sd
       ihmm_ts = 0
-    case( "rsnowm" )
+    case( "rsm" )
       ihmm_ma = irsm_ma
       ihmm_ta = irsm_ta
       ihmm_sd = irsm_sd
       ihmm_ts = 0
-    case( "rgraupelm" )
+    case( "rgm" )
       ihmm_ma = irgm_ma
       ihmm_ta = irgm_ta
       ihmm_sd = irgm_sd
@@ -1343,12 +1343,12 @@ module advance_microphys_module
       ihmm_ta = iNim_ta
       ihmm_sd = iNim_sd
       ihmm_ts = 0
-    case( "Nsnowm" )
+    case( "Nsm" )
       ihmm_ma = iNsm_ma
       ihmm_ta = iNsm_ta
       ihmm_sd = iNsm_sd
       ihmm_ts = 0
-    case( "Ngraupelm" )
+    case( "Ngm" )
       ihmm_ma = iNgm_ma
       ihmm_ta = iNgm_ta
       ihmm_sd = iNgm_sd
@@ -1604,7 +1604,7 @@ module advance_microphys_module
     ihmm_ts = 0
 
     select case( solve_type )
-    case ( "rrainm" )
+    case ( "rrm" )
       ihmm_ma = irrm_ma
       ihmm_ta = irrm_ta
       ihmm_sd = irrm_sd
@@ -1614,17 +1614,17 @@ module advance_microphys_module
       ihmm_ta = iNrm_ta
       ihmm_sd = iNrm_sd
       ihmm_ts = iNrm_ts
-    case ( "ricem" )
+    case ( "rim" )
       ihmm_ma = irim_ma
       ihmm_ta = irim_ta
       ihmm_sd = irim_sd
       ihmm_ts = 0
-    case ( "rsnowm" )
+    case ( "rsm" )
       ihmm_ma = irsm_ma
       ihmm_ta = irsm_ta
       ihmm_sd = irsm_sd
       ihmm_ts = 0
-    case ( "rgraupelm" )
+    case ( "rgm" )
       ihmm_ma = irgm_ma
       ihmm_ta = irgm_ta
       ihmm_sd = irgm_sd
@@ -1639,12 +1639,12 @@ module advance_microphys_module
       ihmm_ta = iNim_ta
       ihmm_sd = iNim_sd
       ihmm_ts = 0
-    case( "Nsnowm" )
+    case( "Nsm" )
       ihmm_ma = iNsm_ma
       ihmm_ta = iNsm_ta
       ihmm_sd = iNsm_sd
       ihmm_ts = 0
-    case( "Ngraupelm" )
+    case( "Ngm" )
       ihmm_ma = iNgm_ma
       ihmm_ta = iNgm_ta
       ihmm_sd = iNgm_sd
@@ -1931,19 +1931,19 @@ module advance_microphys_module
     ihmm_ts = 0
 
     select case( solve_type )
-    case ( "rrainm" )
+    case ( "rrm" )
       ihmm_ta = irrm_ta
       ihmm_ts = irrm_ts
     case ( "Nrm" )
       ihmm_ta = iNrm_ta
       ihmm_ts = iNrm_ts
-    case( "ricem" )
+    case( "rim" )
       ihmm_ta = irim_ta
       ihmm_ts = 0
-    case( "rsnowm" )
+    case( "rsm" )
       ihmm_ta = irsm_ta
       ihmm_ts = 0
-    case( "rgraupelm" )
+    case( "rgm" )
       ihmm_ta = irgm_ta
       ihmm_ts = 0
     case( "Ncm" )
@@ -1952,10 +1952,10 @@ module advance_microphys_module
     case( "Nim" )
       ihmm_ta = iNim_ta
       ihmm_ts = 0
-    case( "Nsnowm" )
+    case( "Nsm" )
       ihmm_ta = iNsm_ta
       ihmm_ts = 0
-    case( "Ngraupelm" )
+    case( "Ngm" )
       ihmm_ta = iNgm_ta
       ihmm_ts = 0
     case default

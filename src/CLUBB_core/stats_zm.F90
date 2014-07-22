@@ -650,7 +650,7 @@ module stats_zm
         iVNr = k
 
         call stat_assign( var_index=iVNr, var_name="VNr", &
-             var_description="rrainm concentration fallspeed [m/s]", var_units="m/s", &
+             var_description="rrm concentration fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
@@ -658,7 +658,7 @@ module stats_zm
         iVrr = k
 
         call stat_assign( var_index=iVrr, var_name="Vrr", &
-             var_description="rrainm mixing ratio fallspeed [m/s]", var_units="m/s", &
+             var_description="rrm mixing ratio fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
@@ -678,42 +678,42 @@ module stats_zm
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('VNsnow')
+      case ('VNs')
         iVNs = k
 
-        call stat_assign( var_index=iVNs, var_name="VNsnow", &
+        call stat_assign( var_index=iVNs, var_name="VNs", &
              var_description="Snow concentration fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('Vrsnow')
+      case ('Vrs')
         iVrs = k
 
-        call stat_assign( var_index=iVrs, var_name="Vrsnow", &
+        call stat_assign( var_index=iVrs, var_name="Vrs", &
              var_description="Snow mixing ratio fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('Vrgraupel')
+      case ('Vrg')
         iVrg = k
 
-        call stat_assign( var_index=iVrg, var_name="Vrgraupel", &
+        call stat_assign( var_index=iVrg, var_name="Vrg", &
              var_description="Graupel sedimentation velocity [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('VNice')
+      case ('VNi')
         iVNi = k
 
-        call stat_assign( var_index=iVNi, var_name="VNice", &
+        call stat_assign( var_index=iVNi, var_name="VNi", &
              var_description="Cloud ice concentration fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('Vrice')
+      case ('Vri')
         iVri = k
 
-        call stat_assign( var_index=iVri, var_name="Vrice", &
+        call stat_assign( var_index=iVri, var_name="Vri", &
              var_description="Cloud ice mixing ratio fallspeed [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1

@@ -119,10 +119,10 @@
           {'filename' => 'arm_97_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrainm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QPL / 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrainm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/m^3]', 'type' => 'profile', 'lines' =>
@@ -137,15 +137,15 @@
           {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'liq_drp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QG ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgraupelm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'ricem [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QI ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ricem', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
@@ -154,16 +154,16 @@
           {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim * rho', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_num', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsnowm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QS ./ 1000', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsnowm [num/m^3]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/m^3]', 'type' => 'profile', 'lines' =>
        [
    {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/ARM9707/ARM9707_128x128x128_2km_LES.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0., 0. ]'},
-          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsnowm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'arm_97_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'arm97_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'nsout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
 
        ]},

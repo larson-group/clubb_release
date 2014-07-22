@@ -158,7 +158,7 @@
        ]},
        
        #Graupel Mixing Ratio
-       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgraupelm [kg/kg]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'QG / 1000', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},

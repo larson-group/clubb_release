@@ -368,7 +368,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rrm, stat_files(clubb_zt), "rrainm", gr%nz, timestep, & 
+           ( l_input_rrm, stat_files(clubb_zt), "rrm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rrm ) then
         hydromet(1:gr%nz,iirrm) = tmp1(1:gr%nz)
@@ -376,7 +376,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rsm, stat_files(clubb_zt), "rsnowm", gr%nz, timestep, & 
+           ( l_input_rsm, stat_files(clubb_zt), "rsm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rsm ) then
         hydromet(1:gr%nz,iirsm) = tmp1(1:gr%nz)
@@ -384,7 +384,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rim, stat_files(clubb_zt), "ricem", gr%nz, timestep, & 
+           ( l_input_rim, stat_files(clubb_zt), "rim", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rim ) then
         hydromet(1:gr%nz,iirim) = tmp1(1:gr%nz)
@@ -392,7 +392,7 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rgm, stat_files(clubb_zt), "rgraupelm", gr%nz, timestep, & 
+           ( l_input_rgm, stat_files(clubb_zt), "rgm", gr%nz, timestep, & 
              gr%zt, tmp1(1:gr%nz), l_read_error )
       if ( l_input_rgm ) then
         hydromet(1:gr%nz,iirgm) = tmp1(1:gr%nz)

@@ -656,7 +656,7 @@ module microphys_init_cleanup
        iirgm = 4
 
        iiNrm       = 5
-       ! Nsnowm is computed diagnostically in the subroutine coamps_microphys_driver
+       ! Nsm is computed diagnostically in the subroutine coamps_microphys_driver
        iiNsm    = -1
        iiNim       = 6
        iiNgm = -1
@@ -728,28 +728,28 @@ module microphys_init_cleanup
     allocate( l_frozen_hm(hydromet_dim) )
     if ( iirrm > 0 ) then
        ! The microphysics scheme predicts rain water mixing ratio, rr.
-       hydromet_list(iirrm) = "rrainm"
+       hydromet_list(iirrm) = "rrm"
        l_mix_rat_hm(iirrm)  = .true.
        l_frozen_hm(iirrm)   = .false.
        hydromet_tol(iirrm)  = rr_tol
     endif
     if ( iirim > 0 ) then
        ! The microphysics scheme predicts ice mixing ratio, ri.
-       hydromet_list(iirim) = "ricem"
+       hydromet_list(iirim) = "rim"
        l_mix_rat_hm(iirim)  = .true.
        l_frozen_hm(iirim)   = .true.
        hydromet_tol(iirim)  = ri_tol
     endif
     if ( iirsm > 0 ) then
        ! The microphysics scheme predicts snow mixing ratio, rs.
-       hydromet_list(iirsm) = "rsnowm"
+       hydromet_list(iirsm) = "rsm"
        l_mix_rat_hm(iirsm)  = .true.
        l_frozen_hm(iirsm)   = .true.
        hydromet_tol(iirsm)  = rs_tol
     endif
     if ( iirgm > 0 ) then
        ! The microphysics scheme predicts graupel mixing ratio, rg.
-       hydromet_list(iirgm) = "rgraupelm"
+       hydromet_list(iirgm) = "rgm"
        l_mix_rat_hm(iirgm)  = .true.
        l_frozen_hm(iirgm)   = .true.
        hydromet_tol(iirgm)  = rg_tol
@@ -770,14 +770,14 @@ module microphys_init_cleanup
     endif
     if ( iiNsm > 0 ) then
        ! The microphysics scheme predicts snowflake concentration, Ns.
-       hydromet_list(iiNsm) = "Nsnowm"
+       hydromet_list(iiNsm) = "Nsm"
        l_mix_rat_hm(iiNsm)  = .false.
        l_frozen_hm(iiNsm)   = .true.
        hydromet_tol(iiNsm)  = Ns_tol
     endif
     if ( iiNgm > 0 ) then
        ! The microphysics scheme predicts graupel concentration, Ng.
-       hydromet_list(iiNgm) = "Ngraupelm"
+       hydromet_list(iiNgm) = "Ngm"
        l_mix_rat_hm(iiNgm)  = .false.
        l_frozen_hm(iiNgm)   = .true.
        hydromet_tol(iiNgm)  = Ng_tol

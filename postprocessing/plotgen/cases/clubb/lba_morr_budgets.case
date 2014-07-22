@@ -172,19 +172,19 @@
 
 
 
-       {'plotTitle' => 'ricem Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rim Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_bt', 'expression' => 'ricem_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_ma', 'expression' => 'ricem_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd', 'expression' => 'ricem_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_ta', 'expression' => 'ricem_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_fill\_clip', 'expression' => 'ricem_hf + ricem_wvhf + ricem_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sd\_mg\_morr', 'expression' => 'ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_residual', 'expression' => ' ricem_bt - ( ricem_ma + ricem_sd + ricem_ta + ricem_hf + ricem_wvhf + ricem_cl + ricem_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_bt', 'expression' => 'rim_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_ma', 'expression' => 'rim_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_sd', 'expression' => 'rim_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_ta', 'expression' => 'rim_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_fill\_clip', 'expression' => 'rim_hf + rim_wvhf + rim_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_mc', 'expression' => 'rim_mc-rim_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_sd\_mg\_morr', 'expression' => 'rim_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_residual', 'expression' => ' rim_bt - ( rim_ma + rim_sd + rim_ta + rim_hf + rim_wvhf + rim_cl + rim_mc )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'ricem Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rim Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PRD', 'expression' => 'PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'EPRD', 'expression' => 'EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -200,13 +200,13 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-PRACI', 'expression' => '-PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-PRACIS', 'expression' => '-PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'QI\_INST', 'expression' => 'QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'ricem Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rim Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_mc', 'expression' => 'ricem_mc-ricem_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'ricem\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_mc', 'expression' => 'rim_mc-rim_sd_mg_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rim\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 
@@ -249,20 +249,20 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nim\_sum', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'rrainm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_bt', 'expression' => 'rrainm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ma', 'expression' => 'rrainm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd', 'expression' => 'rrainm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ta', 'expression' => 'rrainm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_ts', 'expression' => 'rrainm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_fill\_clip', 'expression' => 'rrainm_hf + rrainm_wvhf + rrainm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc - rrainm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sd\_morr', 'expression' => 'rrainm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_residual', 'expression' => 'rrainm_bt - (rrainm_ma + rrainm_sd + rrainm_ta + rrainm_ts + rrainm_hf + rrainm_wvhf + rrainm_cl + rrainm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_bt', 'expression' => 'rrm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ma', 'expression' => 'rrm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_sd', 'expression' => 'rrm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ta', 'expression' => 'rrm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_ts', 'expression' => 'rrm_ts', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_fill\_clip', 'expression' => 'rrm_hf + rrm_wvhf + rrm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_mc', 'expression' => 'rrm_mc - rrm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_sd\_morr', 'expression' => 'rrm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_residual', 'expression' => 'rrm_bt - (rrm_ma + rrm_sd + rrm_ta + rrm_ts + rrm_hf + rrm_wvhf + rrm_cl + rrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'rrainm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PRE', 'expression' => 'PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PRA', 'expression' => 'PRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -278,13 +278,13 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'QR\_INST', 'expression' => 'QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'rrainm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_mc', 'expression' => 'rrainm_mc-rrainm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrainm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_mc', 'expression' => 'rrm_mc-rrm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rrm\_sum', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Nrm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
@@ -326,19 +326,19 @@
        ]},
 
 
-       {'plotTitle' => 'rsnowm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rsm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_bt', 'expression' => 'rsnowm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_ma', 'expression' => 'rsnowm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sd', 'expression' => 'rsnowm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_ta', 'expression' => 'rsnowm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_fill\_clip', 'expression' => 'rsnowm_hf + rsnowm_wvhf + rsnowm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_mc', 'expression' => 'rsnowm_mc - rsnowm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sd\_morr', 'expression' => 'rsnowm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_residual', 'expression' => 'rsnowm_bt - (rsnowm_ma + rsnowm_sd + rsnowm_ta + rsnowm_hf + rsnowm_wvhf + rsnowm_cl + rsnowm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_bt', 'expression' => 'rsm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_ma', 'expression' => 'rsm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_sd', 'expression' => 'rsm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_ta', 'expression' => 'rsm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_fill\_clip', 'expression' => 'rsm_hf + rsm_wvhf + rsm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_mc', 'expression' => 'rsm_mc - rsm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_sd\_morr', 'expression' => 'rsm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_residual', 'expression' => 'rsm_bt - (rsm_ma + rsm_sd + rsm_ta + rsm_hf + rsm_wvhf + rsm_cl + rsm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'rsnowm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rsm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PRAI', 'expression' => 'PRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => 'PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -352,28 +352,28 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => 'EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'QS\_INST', 'expression' => 'QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'rsnowm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rsm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_mc', 'expression' => 'rsnowm_mc-rsnowm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsnowm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_mc', 'expression' => 'rsm_mc-rsm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rsm\_sum', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'nsnowm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_bt', 'expression' => 'Nsnowm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ma', 'expression' => 'Nsnowm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_sd', 'expression' => 'Nsnowm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ta', 'expression' => 'Nsnowm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_cl', 'expression' => 'Nsnowm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_mc', 'expression' => 'Nsnowm_mc - NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_bt', 'expression' => 'Nsm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ma', 'expression' => 'Nsm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_sd', 'expression' => 'Nsm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_ta', 'expression' => 'Nsm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_cl', 'expression' => 'Nsm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_mc', 'expression' => 'Nsm_mc - NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NSSTEN', 'expression' => 'NSSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_residual', 'expression' => 'Nsnowm_bt - (Nsnowm_ma + Nsnowm_sd + Nsnowm_ta + Nsnowm_cl + Nsnowm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'nsnowm\_residual', 'expression' => 'Nsm_bt - (Nsm_ma + Nsm_sd + Nsm_ta + Nsm_cl + Nsm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'Nsnowm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Nsm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NS', 'expression' => 'SIZEFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NS', 'expression' => '-NEGFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -385,28 +385,28 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NS\_INST', 'expression' => 'NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'Nsnowm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Nsm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_mc', 'expression' => 'Nsnowm_mc - NSSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsnowm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsm\_mc', 'expression' => 'Nsm_mc - NSSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Nsm\_sum', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'rgraupelm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rgm Budgets', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_bt', 'expression' => 'rgraupelm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_ma', 'expression' => 'rgraupelm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd', 'expression' => 'rgraupelm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_ta', 'expression' => 'rgraupelm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_fill\_clip', 'expression' => 'rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sd\_morr', 'expression' => 'rgraupelm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_residual', 'expression' => 'rgraupelm_bt - (rgraupelm_ma + rgraupelm_sd + rgraupelm_ta  + rgraupelm_hf + rgraupelm_wvhf + rgraupelm_cl + rgraupelm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_bt', 'expression' => 'rgm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_ma', 'expression' => 'rgm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_sd', 'expression' => 'rgm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_ta', 'expression' => 'rgm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_fill\_clip', 'expression' => 'rgm_hf + rgm_wvhf + rgm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_mc', 'expression' => 'rgm_mc - rgm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_sd\_morr', 'expression' => 'rgm_sd_morr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_residual', 'expression' => 'rgm_bt - (rgm_ma + rgm_sd + rgm_ta  + rgm_hf + rgm_wvhf + rgm_cl + rgm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'rgraupelm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rgm Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PRACG', 'expression' => 'PRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PSACWG', 'expression' => 'PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -421,28 +421,28 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => 'EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'QG\_INST', 'expression' => 'QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'rgraupelm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rgm Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_mc', 'expression' => 'rgraupelm_mc - rgraupelm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgraupelm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_mc', 'expression' => 'rgm_mc - rgm_sd_morr', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'rgm\_sum', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
-       {'plotTitle' => 'Ngraupelm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Ngm Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_bt', 'expression' => 'Ngraupelm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_ma', 'expression' => 'Ngraupelm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sd', 'expression' => 'Ngraupelm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_ta', 'expression' => 'Ngraupelm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_cl', 'expression' => 'Ngraupelm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_mc', 'expression' => 'Ngraupelm_mc - NGSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_bt', 'expression' => 'Ngm_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_ma', 'expression' => 'Ngm_ma', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_sd', 'expression' => 'Ngm_sd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_ta', 'expression' => 'Ngm_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_cl', 'expression' => 'Ngm_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_mc', 'expression' => 'Ngm_mc - NGSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NGSTEN', 'expression' => 'NGSTEN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_residual', 'expression' => 'Ngraupelm_bt - (Ngraupelm_ma + Ngraupelm_sd + Ngraupelm_ta  + Ngraupelm_cl + Ngraupelm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_residual', 'expression' => 'Ngm_bt - (Ngm_ma + Ngm_sd + Ngm_ta  + Ngm_cl + Ngm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
     ]},
 
-       {'plotTitle' => 'Ngraupelm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Ngm Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'SIZEFIX\_NG', 'expression' => 'SIZEFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => '-NEGFIX\_NG', 'expression' => '-NEGFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -453,13 +453,13 @@
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NIACR', 'expression' => 'NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NSUBG', 'expression' => 'NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'NG\_INST', 'expression' => 'NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
     
-       {'plotTitle' => 'Ngraupelm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'Ngm Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_mc', 'expression' => 'Ngraupelm_mc - NGSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngraupelm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_mc', 'expression' => 'Ngm_mc - NGSTEN', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'Ngm\_sum', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
 

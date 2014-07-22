@@ -629,22 +629,22 @@ module latin_hypercube_driver_module
       variable_units(iiPDF_w)        = "m/s"
 
       if ( iiPDF_rr > 0 ) then
-        variable_names(iiPDF_rr)        = "rrain"
+        variable_names(iiPDF_rr)        = "rr"
         variable_descriptions(iiPDF_rr) = "Rain water mixing ratio"
         variable_units(iiPDF_rr)        = "kg/kg"
       end if
       if ( iiPDF_ri > 0 ) then
-        variable_names(iiPDF_ri)        = "rice"
+        variable_names(iiPDF_ri)        = "ri"
         variable_descriptions(iiPDF_ri) = "Ice water mixing ratio"
         variable_units(iiPDF_ri)        = "kg/kg"
       end if
       if ( iiPDF_rs > 0 ) then
-        variable_names(iiPDF_rs)        = "rsnow"
+        variable_names(iiPDF_rs)        = "rs"
         variable_descriptions(iiPDF_rs) = "Snow water mixing ratio"
         variable_units(iiPDF_rs)        = "kg/kg"
       end if
       if ( iiPDF_rg > 0 ) then
-        variable_names(iiPDF_rg)        = "rgraupel"
+        variable_names(iiPDF_rg)        = "rg"
         variable_descriptions(iiPDF_rg) = "Graupel water mixing ratio"
         variable_units(iiPDF_rg)        = "kg/kg"
       end if
@@ -665,12 +665,12 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
       if ( iiPDF_Ns > 0 ) then
-        variable_names(iiPDF_Ns)        = "Nsnow"
+        variable_names(iiPDF_Ns)        = "Ns"
         variable_descriptions(iiPDF_Ns) = "Snow number concentration"
         variable_units(iiPDF_Ns)        = "count/kg"
       end if
       if ( iiPDF_Ng > 0 ) then
-        variable_names(iiPDF_Ng)        = "Ngraupel"
+        variable_names(iiPDF_Ng)        = "Ng"
         variable_descriptions(iiPDF_Ng) = "Graupel number concentration"
         variable_units(iiPDF_Ng)        = "count/kg"
       end if
@@ -714,22 +714,22 @@ module latin_hypercube_driver_module
 
 
       if ( iiPDF_rr > 0 ) then
-        variable_names(iiPDF_rr)        = "rrain"
+        variable_names(iiPDF_rr)        = "rr"
         variable_descriptions(iiPDF_rr) = "Rain water mixing ratio"
         variable_units(iiPDF_rr)        = "kg/kg"
       end if
       if ( iiPDF_ri > 0 ) then
-        variable_names(iiPDF_ri)        = "rice"
+        variable_names(iiPDF_ri)        = "ri"
         variable_descriptions(iiPDF_ri) = "Ice water mixing ratio"
         variable_units(iiPDF_ri)        = "kg/kg"
       end if
       if ( iiPDF_rs > 0 ) then
-        variable_names(iiPDF_rs)        = "rsnow"
+        variable_names(iiPDF_rs)        = "rs"
         variable_descriptions(iiPDF_rs) = "Snow water mixing ratio"
         variable_units(iiPDF_rs)        = "kg/kg"
       end if
       if ( iiPDF_rg > 0 ) then
-        variable_names(iiPDF_rg)        = "rgraupel"
+        variable_names(iiPDF_rg)        = "rg"
         variable_descriptions(iiPDF_rg) = "Graupel water mixing ratio"
         variable_units(iiPDF_rg)        = "kg/kg"
       end if
@@ -750,12 +750,12 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ni)        = "count/kg"
       end if
       if ( iiPDF_Ns > 0 ) then
-        variable_names(iiPDF_Ns)        = "Nsnow"
+        variable_names(iiPDF_Ns)        = "Ns"
         variable_descriptions(iiPDF_Ns) = "Snow number concentration"
         variable_units(iiPDF_Ns)        = "count/kg"
       end if
       if ( iiPDF_Ng > 0 ) then
-        variable_names(iiPDF_Ng)        = "Ngraupel"
+        variable_names(iiPDF_Ng)        = "Ng"
         variable_descriptions(iiPDF_Ng) = "Graupel number concentration"
         variable_units(iiPDF_Ng)        = "count/kg"
       end if

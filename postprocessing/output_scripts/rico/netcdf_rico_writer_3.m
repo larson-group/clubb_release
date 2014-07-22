@@ -94,7 +94,7 @@ rho_array = p_in_Pa_array ./ (R .* T_array);
 qtm_array = rtm_array ./ (1 + rtm_array);
 qsm_array = rsat_array ./ (1 + rsat_array);
 qcm_array = rcm_array ./ (1 + rcm_array);
-qrm_array = rrainm_array ./ (1 + rrainm_array);
+qrm_array = rrm_array ./ (1 + rrm_array);
 
 wpqtp_array = wprtp_array ./ (1 + rtm_array);
 

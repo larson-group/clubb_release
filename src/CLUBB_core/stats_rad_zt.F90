@@ -105,10 +105,10 @@ module stats_rad_zt
              grid_kind=rad_zt )
         k = k + 1
 
-      case ('rsnowm_rad')
+      case ('rsm_rad')
         irsm_rad = k
 
-        call stat_assign( var_index=irsm_rad, var_name="rsnowm_rad", &
+        call stat_assign( var_index=irsm_rad, var_name="rsm_rad", &
              var_description="Snow water mixing ratio [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=rad_zt )
         k = k + 1

@@ -778,9 +778,9 @@ module fill_holes
           ! Adjust the tendency of thlm_mc according to whether the
           ! effect is an evaporation or sublimation tendency.
           select case ( trim( hydromet_name ) )
-          case( "rrainm" )
+          case( "rrm" )
              thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
-          case( "ricem", "rsnowm", "rgraupelm" )
+          case( "rim", "rsm", "rgm" )
              thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
           case default
              stop "Fatal error in microphys_driver"
@@ -1280,7 +1280,7 @@ module fill_holes
       max_velocity = zero
 
       select case ( trim( hydromet_list(ihm) ) )
-      case ( "rrainm" )
+      case ( "rrm" )
         ixrm_bt   = irrm_bt
         ixrm_hf   = irrm_hf
         ixrm_wvhf = irrm_wvhf
@@ -1291,7 +1291,7 @@ module fill_holes
 
         max_velocity = -9.1_core_rknd ! m/s
 
-      case ( "ricem" )
+      case ( "rim" )
         ixrm_bt   = irim_bt
         ixrm_hf   = irim_hf
         ixrm_wvhf = irim_wvhf
@@ -1302,7 +1302,7 @@ module fill_holes
 
         max_velocity = -1.2_core_rknd ! m/s
 
-      case ( "rsnowm" )
+      case ( "rsm" )
         ixrm_bt   = irsm_bt
         ixrm_hf   = irsm_hf
         ixrm_wvhf = irsm_wvhf
@@ -1318,7 +1318,7 @@ module fill_holes
         ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
         max_velocity = -2.0_core_rknd ! m/s
 
-      case ( "rgraupelm" )
+      case ( "rgm" )
         ixrm_bt   = irgm_bt
         ixrm_hf   = irgm_hf
         ixrm_wvhf = irgm_wvhf
@@ -1351,7 +1351,7 @@ module fill_holes
 
         max_velocity = -1.2_core_rknd ! m/s
 
-      case ( "Nsnowm" )
+      case ( "Nsm" )
         ixrm_bt   = iNsm_bt
         ixrm_hf   = 0
         ixrm_wvhf = 0
@@ -1367,7 +1367,7 @@ module fill_holes
         ! happens in the COAMPS microphysics -dschanen 29 Sept 2009
         max_velocity = -2.0_core_rknd ! m/s
 
-      case ( "Ngraupelm" )
+      case ( "Ngm" )
         ixrm_bt   = iNgm_bt
         ixrm_hf   = 0
         ixrm_wvhf = 0

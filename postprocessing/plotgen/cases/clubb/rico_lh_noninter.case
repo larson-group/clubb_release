@@ -32,10 +32,10 @@
           {'filename' => 'rico_lh_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'rrainm\_mc', 'axisLabel' => 'rrainm\_mc', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm\_mc', 'axisLabel' => 'rrm\_mc', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrainm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrainm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Nrm\_mc', 'axisLabel' => 'Nrm\_mc', 'type' => 'profile', 'lines' =>
        [
@@ -52,20 +52,20 @@
           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mvrr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_m_vol_rad_rain', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'rrainm\_auto', 'axisLabel' => 'rrainm\_auto', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm\_auto', 'axisLabel' => 'rrm\_auto', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrainm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrainm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_auto', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'rrainm\_accr', 'axisLabel' => 'rrainm\_accr', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm\_accr', 'axisLabel' => 'rrm\_accr', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrainm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrainm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_accr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
-       {'plotTitle' => 'rrainm\_cond', 'axisLabel' => 'rrainm\_cond', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'rrm\_cond', 'axisLabel' => 'rrm\_cond', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrainm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrainm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_cond', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_evap', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Nrm\_auto', 'axisLabel' => 'Nrm\_auto', 'type' => 'profile', 'lines' =>
        [

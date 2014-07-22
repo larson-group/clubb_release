@@ -656,11 +656,11 @@ module stats_variables
     ilh_Ncm_mc = 0,       & ! Latin hypercube estimate of Ncm_mc
     ilh_rrm_mc = 0,    & ! Latin hypercube estimate of rrm_mc
     ilh_Nrm_mc = 0,       & ! Latin hypercube estimate of Nrm_mc
-    ilh_rsm_mc = 0,    & ! Latin hypercube estimate of rsnowm_mc
-    ilh_Nsm_mc = 0,    & ! Latin hypercube estimate of Nsnowm_mc
-    ilh_rgm_mc = 0, & ! Latin hypercube estimate of rgraupelm_mc
-    ilh_Ngm_mc = 0, & ! Latin hypercube estimate of Ngraupelm_mc
-    ilh_rim_mc = 0,     & ! Latin hypercube estimate of ricem_mc
+    ilh_rsm_mc = 0,    & ! Latin hypercube estimate of rsm_mc
+    ilh_Nsm_mc = 0,    & ! Latin hypercube estimate of Nsm_mc
+    ilh_rgm_mc = 0, & ! Latin hypercube estimate of rgm_mc
+    ilh_Ngm_mc = 0, & ! Latin hypercube estimate of Ngm_mc
+    ilh_rim_mc = 0,     & ! Latin hypercube estimate of rim_mc
     ilh_Nim_mc = 0          ! Latin hypercube estimate of Nim_mc
 !$omp   threadprivate( ilh_thlm_mc, ilh_rvm_mc, ilh_rcm_mc, ilh_Ncm_mc, &
 !$omp     ilh_rrm_mc,  ilh_Nrm_mc, ilh_rsm_mc, ilh_Nsm_mc, &

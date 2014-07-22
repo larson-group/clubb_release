@@ -543,7 +543,7 @@ module numerical_check
     call check_negative( rcm, gr%nz ,"rcm", proc_name )
     call check_negative( rtm, gr%nz ,"rtm", proc_name )
     call check_negative( rvm, gr%nz ,"rvm", proc_name )
-    call check_negative( rim, gr%nz ,"ricem", proc_name )
+    call check_negative( rim, gr%nz ,"rim", proc_name )
     call check_negative( cloud_frac, gr%nz ,"cloud_frac", proc_name )
     call check_negative( p_in_Pa, gr%nz ,"p_in_Pa", proc_name )
     call check_negative( exner, gr%nz ,"exner", proc_name )
