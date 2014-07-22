@@ -14,7 +14,7 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               k_lh_start, lh_rt, lh_thl, &
+               lh_rt, lh_thl, &
                X_nl_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, Nc_in_cloud,  &
@@ -95,18 +95,14 @@ module estimate_scm_microphys_module
     logical, parameter :: &
       l_latin_hypercube = .true. ! We are the Latin hypercube!
 
-    logical, parameter :: &
-      l_check_lh_cloud_weighting = .true. ! Verify every other sample point is out of cloud
-
     ! Input Variables
     real( kind = time_precision ), intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
       nz,            & ! Number of vertical levels
-      num_samples, & ! Number of calls to microphysics (normally=2)
-      d_variables,   & ! Number of variates (normally=5) 
-      k_lh_start       ! Starting level for computing arbitrary overlap
+      num_samples,   & ! Number of calls to microphysics
+      d_variables      ! Number of variates
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_rt, & ! num_samples values of total water mixing ratio     [kg/kg]
@@ -196,7 +192,7 @@ module estimate_scm_microphys_module
 
     real( kind = dp ), pointer, dimension(:,:) :: &
       chi_all_points,  & ! num_samples values of 's' (Mellor 1977)      [kg/kg]
-      w_all_points            ! num_samples values of vertical velocity      [m/s]
+      w_all_points       ! num_samples values of vertical velocity      [m/s]
 
     ! These parameters are not used by the microphysics scheme when SILHS is
     ! turned on.
@@ -214,49 +210,11 @@ module estimate_scm_microphys_module
 
     integer :: ivar, k, sample
 
-    integer :: &
-      in_cloud_points, &
-      out_of_cloud_points
-
     ! ---- Begin Code ----
 
     ! Mellor's 's' is hardwired elsewhere to be the first column
     chi_all_points => X_nl_all_levs(:,:,iiPDF_chi)
     w_all_points        => X_nl_all_levs(:,:,iiPDF_w)
-
-    ! Assertion check
-    if ( l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling .and. &
-         all( lh_sample_point_weights(:) /= 1.0_core_rknd ) ) then 
-        ! The 1.0 indicates cloud_frac is > 0.5
-
-      ! Verify every other sample point is out of cloud if we're doing
-      ! cloud weighted sampling
-      in_cloud_points     = 0
-      out_of_cloud_points = 0
-      do sample = 1, num_samples, 1
-        if ( chi_all_points(k_lh_start,sample) > 0._dp ) then
-          in_cloud_points = in_cloud_points + 1
-        else if ( chi_all_points(k_lh_start,sample) <= 0._dp ) then
-          out_of_cloud_points = out_of_cloud_points + 1
-        end if
-      end do ! 1..num_samples
-      if ( in_cloud_points /= out_of_cloud_points ) then
-        if ( clubb_at_least_debug_level( 2 ) ) then
-          write(fstderr,*) "In est_single_column_tndcy:"
-          write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
-          write(fstderr,*) "in_cloud_points =", in_cloud_points
-          write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
-          !write(fstderr,*)  "cloud fraction = ", cloud_frac(k_lh_start)
-          write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
-          write(fstderr,'(4X,A,A)')  "chi_all_points  ", "weight   "
-          do sample = 1, num_samples, 1
-            write(fstderr,'(I4,2G20.4)') &
-              sample, chi_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
-          end do
-        end if ! clubb_at_least_debug_level 2
-        stop "Fatal Error in est_single_column_tndcy "
-     end if  ! in_cloud_points /= out_of_cloud_points
-    end if ! l_check_lh_cloud_weighting .and. l_lh_cloud_weighted_sampling
 
     lh_hydromet_vel(:,:) = 0._core_rknd
 

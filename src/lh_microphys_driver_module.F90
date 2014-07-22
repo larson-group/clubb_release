@@ -50,9 +50,6 @@ contains
     use est_kessler_microphys_module, only: &
       est_kessler_microphys
 
-    use latin_hypercube_driver_module, only: &
-      k_lh_start     ! Variable
-
     use clubb_precision, only: &
       dp, & ! double precision
       core_rknd, &
@@ -142,7 +139,7 @@ contains
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
          ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
-           k_lh_start, lh_rt, lh_thl, &                              ! Intent(in)
+           lh_rt, lh_thl, &                                          ! Intent(in)
            X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in) 
            p_in_Pa, exner, rho, &                                    ! Intent(in)
            delta_zt, hydromet, rcm, Nc_in_cloud, &                   ! Intent(in)

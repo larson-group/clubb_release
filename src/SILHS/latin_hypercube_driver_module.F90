@@ -15,10 +15,6 @@ module latin_hypercube_driver_module
     prior_iter ! Prior iteration number (for diagnostic purposes)
 !$omp threadprivate( prior_iter )
 
-  integer, public :: k_lh_start ! For an assertion check
-!$omp threadprivate( k_lh_start )
-
-
   private ! Default scope
 
 #ifdef SILHS
@@ -165,9 +161,6 @@ module latin_hypercube_driver_module
 
     real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
-    ! Try to obtain 12 digit accuracy for a diagnostic mean
-    real(kind=dp) :: mean_weight
-
     real(kind=dp), dimension(num_samples) :: &
       X_u_dp1_k_lh_start, X_u_chi_k_lh_start
 
@@ -180,8 +173,9 @@ module latin_hypercube_driver_module
     integer :: nt_repeat
 
     integer :: &
-      i_rmd, &   ! Remainder of ( iter-1 / sequence_length )
-      k, sample  ! Loop iterators
+      k_lh_start, & ! Height for preferentially sampling within cloud
+      i_rmd, &      ! Remainder of ( iter-1 / sequence_length )
+      k, sample     ! Loop iterators
 
     integer :: ivar ! Loop iterator
 
@@ -201,11 +195,14 @@ module latin_hypercube_driver_module
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
 
+    logical :: l_error, l_error_in_sub
+
     ! Precipitation fraction in a component of the PDF, for each sample
     real( kind = dp ), dimension(num_samples) :: precip_frac_i
 
     ! ---- Begin Code ----
 
+    l_error = .false.
     ! Get rid of compiler warning
     l_small_nonzero_cloud_frac = .false.
 
@@ -464,42 +461,6 @@ module latin_hypercube_driver_module
 
     end do ! k = 1 .. nz
 
-    ! Assertion check for whether half of sample points are cloudy.
-    ! This is for the uniform sample only.  Another assertion check is in the
-    ! estimate_kessler_microphys_module for X_nl_all_levs.
-    if ( l_lh_cloud_weighted_sampling ) then
-      if ( clubb_at_least_debug_level( 2 ) .and. l_small_nonzero_cloud_frac ) then
-        call assert_check_half_cloudy &
-             ( num_samples, pdf_params(k_lh_start)%cloud_frac1, &
-               pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiPDF_chi) )
-
-      end if ! Maximal overlap, debug_level 2, and cloud-weighted averaging
-    end if ! l_lh_cloud_weighted_sampling
-
-    ! Assertion check to ensure that the sample point weights sum to approximately 1
-    if ( l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 ) ) then
-      mean_weight = 0._dp
-      do sample = 1, num_samples
-        mean_weight = mean_weight + real( lh_sample_point_weights(sample), kind=dp )
-      end do
-      mean_weight = mean_weight / real( num_samples, kind=dp )
-
-      ! Using more precision for mean_weight should make this work out.
-      ! The formula below could probably be redefined to estimate maximal ulps
-      ! given the precision of lh_sample_point_weights and the number of
-      ! num_samples, but the formula below seems to be an ok approximation
-      ! when we're using 4 or 8 byte precision floats.
-      ! -dschanen 19 Nov 2010
-      if ( abs( mean_weight - 1.0_dp ) > &
-          real( num_samples, kind=dp ) * max( epsilon( mean_weight ), &
-            real( epsilon( lh_sample_point_weights ), kind=dp ) ) ) then
-        write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
-        stop
-      end if
-
-    end if ! l_lh_cloud_weighted_sampling .and. clubb_at_least_debug_level( 2 )
-
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
                                       lh_sample_point_weights)
 
@@ -534,6 +495,39 @@ module latin_hypercube_driver_module
                                         X_mixt_comp_all_levs, p_matrix )
     end if
 
+    ! Various nefarious assertion checks
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      ! Assertion check for whether half of sample points are cloudy.
+      if ( l_lh_cloud_weighted_sampling .and. l_small_nonzero_cloud_frac ) then
+
+        ! Check for half cloudy points in uniform space
+        call assert_half_cloudy_uniform &
+             ( num_samples, pdf_params(k_lh_start)%cloud_frac1, &
+               pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
+               X_u_all_levs(k_lh_start,:,iiPDF_chi), l_error_in_sub )
+
+        l_error = l_error .or. l_error_in_sub
+
+        ! Check for half cloudy points in normal/lognormal space
+        call assert_half_cloudy_normal &
+             ( nz, num_samples, k_lh_start, X_nl_all_levs(:,:,iiPDF_chi), &
+               lh_sample_point_weights, l_error_in_sub )
+
+        l_error = l_error .or. l_error_in_sub
+
+      end if ! l_lh_cloud_weighted_sampling .and. l_small_nonzero_cloud_frac
+      
+      if ( l_lh_cloud_weighted_sampling ) then
+
+        call assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
+                                          l_error_in_sub )
+        l_error = l_error .or. l_error_in_sub
+
+      end if ! l_lh_cloud_weighted_sampling
+
+    end if ! clubb_at_least_debug_level( 2 )
+
     ! Verify total water isn't negative
     if ( any( lh_rt < 0._core_rknd) ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
@@ -545,8 +539,164 @@ module latin_hypercube_driver_module
       end where
     end if ! Some rv_all_points(:,sample) < 0
 
+    ! Stop the run if an error occurred
+    if ( l_error ) then
+      stop "Fatal error in lh_subcolumn_generator"
+    end if
+
     return
   end subroutine lh_subcolumn_generator
+
+!-------------------------------------------------------------------------------
+  subroutine assert_half_cloudy_normal( nz, num_samples, k_lh_start, chi_all_points, &
+                                        lh_sample_point_weights, l_error )
+
+  ! Description:
+  !   Performs an assertion check that half of the SILHS samples are in cloud after
+  !   transformation to normal/lognormal space
+  
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+  
+    ! Included Modules
+    use clubb_precision, only: &
+      dp,           & ! Constant(s)
+      core_rknd
+
+    use constants_clubb, only: &
+      zero_dp, &      ! Constant
+      fstderr
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,            & ! Number of vertical levels
+      num_samples,   & ! Number of SILHS sample points
+      k_lh_start       ! Vertical level for preferentially sampling within cloud
+
+    real( kind = dp ), dimension(nz,num_samples), intent(in) :: &
+      chi_all_points   ! Sample values of extended liquid water mixing ratio, chi
+
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+      lh_sample_point_weights ! Weight of each SILHS sample
+
+    ! Output Variables
+    logical :: &
+      l_error          ! True if the assertion check fails
+
+    ! Local Variables
+    integer :: &
+      in_cloud_points, &        ! Number of sample points in cloud
+      out_of_cloud_points       ! Number of sample points out of cloud
+
+    integer :: sample
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    l_error = .false.
+
+    ! Verify every other sample point is out of cloud if we're doing
+    ! cloud weighted sampling
+    in_cloud_points     = 0
+    out_of_cloud_points = 0
+    do sample = 1, num_samples, 1
+      if ( chi_all_points(k_lh_start,sample) > 0._dp ) then
+        in_cloud_points = in_cloud_points + 1
+      else if ( chi_all_points(k_lh_start,sample) <= 0._dp ) then
+        out_of_cloud_points = out_of_cloud_points + 1
+      end if
+    end do ! 1..num_samples
+    if ( in_cloud_points /= out_of_cloud_points ) then
+      write(fstderr,*) "In est_single_column_tndcy:"
+      write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
+      write(fstderr,*) "in_cloud_points =", in_cloud_points
+      write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
+      write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
+      write(fstderr,'(4X,A,A)')  "chi_all_points  ", "weight   "
+      do sample = 1, num_samples, 1
+        write(fstderr,'(I4,2G20.4)') &
+          sample, chi_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
+      end do
+      ! This will hopefully stop the run at some unknown point in the future
+      l_error = .true.
+    end if  ! in_cloud_points /= out_of_cloud_points
+
+    return
+  end subroutine assert_half_cloudy_normal
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
+                                          l_error )
+
+  ! Description:
+  !   Performs an assertion check that the average of all the sample points is one.
+  
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+  
+    ! Included Modules
+    use clubb_precision, only: &
+      dp,           & ! Precision(s) are required to be compile-time constant(s)
+      core_rknd
+
+    use constants_clubb, only: &
+      zero_dp, &      ! Constant
+      one_dp, &
+      fstderr
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      num_samples      ! Number of SILHS sample points
+
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+      lh_sample_point_weights ! Weight of each SILHS sample
+
+    ! Output Variables
+    logical :: &
+      l_error          ! True if the assertion check fails
+
+    ! Local Variables
+
+    ! Try to obtain 12 digit accuracy for a diagnostic mean
+    real( kind = dp ) :: mean_weight
+
+    integer :: sample
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    l_error = .false.
+
+    ! Assertion check to ensure that the sample point weights sum to approximately 1
+    mean_weight = 0._dp
+    do sample = 1, num_samples
+      mean_weight = mean_weight + real( lh_sample_point_weights(sample), kind=dp )
+    end do
+    mean_weight = mean_weight / real( num_samples, kind=dp )
+
+    ! Using more precision for mean_weight should make this work out.
+    ! The formula below could probably be redefined to estimate maximal ulps
+    ! given the precision of lh_sample_point_weights and the number of
+    ! num_samples, but the formula below seems to be an ok approximation
+    ! when we're using 4 or 8 byte precision floats.
+    ! -dschanen 19 Nov 2010
+    if ( abs( mean_weight - 1.0_dp ) > &
+        real( num_samples, kind=dp ) * max( epsilon( mean_weight ), &
+          real( epsilon( lh_sample_point_weights ), kind=dp ) ) ) then
+      write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
+      l_error = .true.
+    end if
+
+    return
+  end subroutine assert_unity_sample_weights
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
@@ -1243,14 +1393,13 @@ module latin_hypercube_driver_module
   end subroutine compute_arb_overlap
 
 !-------------------------------------------------------------------------------
-  subroutine assert_check_half_cloudy &
+  subroutine assert_half_cloudy_uniform &
              ( num_samples, cloud_frac1, &
                cloud_frac2, X_mixt_comp_k_lh_start, &
-               X_u_chi_k_lh_start )
+               X_u_chi_k_lh_start, l_error )
 ! Description:
 !   Verify that half the points are in cloud if cloud weighted sampling is
-!   enabled and other conditions are met. We stop rather than exiting gracefully
-!   if this assertion check fails.
+!   enabled and other conditions are met.
 
 ! References:
 !   None.
@@ -1277,6 +1426,10 @@ module latin_hypercube_driver_module
 
     real(kind=dp), dimension(num_samples), intent(in) :: &
       X_u_chi_k_lh_start   ! Uniform distribution for chi at k_lh_start [-]
+
+    ! Output Variables
+    logical, intent(out) :: &
+      l_error              ! True if the assertion check failed.
 
     ! Local Variables
     real(kind = core_rknd) :: cloud_frac_i
@@ -1308,11 +1461,11 @@ module latin_hypercube_driver_module
         "cloudy samples =", number_cloudy_samples
       write(fstderr,*) "cloud_frac1 = ", cloud_frac1
       write(fstderr,*) "cloud_frac2 = ", cloud_frac2
-      !stop "Fatal Error"
+      l_error = .true.
     end if
 
     return
-  end subroutine assert_check_half_cloudy
+  end subroutine assert_half_cloudy_uniform
 
 !-------------------------------------------------------------------------------
   function compute_vert_corr( nz, delta_zm, Lscale_vert_avg ) result( vert_corr )
