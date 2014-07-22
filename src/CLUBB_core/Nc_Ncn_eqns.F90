@@ -8,10 +8,10 @@ module Nc_Ncn_eqns
   ! Ncn, where Nc is cloud droplet concentration and Ncn is simplified cloud
   ! nuclei concentration.  The equation that relates the two is:
   !
-  ! Nc = Ncn * H(s);
+  ! Nc = Ncn * H(chi);
   !
-  ! where s is extended liquid water mixing ratio, which is equal to cloud water
-  ! mixing ratio, rc, when both are positive.  However, s is negative in
+  ! where chi is extended liquid water mixing ratio, which is equal to cloud
+  ! water mixing ratio, rc, when both are positive.  However, chi is negative in
   ! subsaturated air.
   !
   ! Equation are provided relating mean cloud droplet concentration (overall),
@@ -101,7 +101,7 @@ module Nc_Ncn_eqns
   ! |  |  Ncm/Nc-in-cloud:          Populate sample points      Use PDF params.
   ! |  |  used to find micro.       using PDF params (Ncn).         of Ncn
   ! |  |    tendencies.             At every sample point:      (mu_Ncn_i, etc.)
-  ! |  |         |                     Nc = Ncn * H(s).          to find micro.
+  ! |  |         |                    Nc = Ncn * H(chi).         to find micro.
   ! |  |         |                  Use sample-point Nc to         tendencies.
   ! |  |         |                  find micro. tendencies             |
   ! |  |         |                when calling micro. scheme.          |
@@ -162,9 +162,9 @@ contains
     ! cloud fraction.  At any point, cloud droplet concentration, Nc, is given
     ! by:
     !
-    ! Nc = Ncn * H(s);
+    ! Nc = Ncn * H(chi);
     !
-    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
+    ! where extended liquid water mixing ratio, chi, is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
@@ -187,21 +187,21 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_1,        & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,        & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
-      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      sigma_chi_1,     & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2,     & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
-      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
-      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
-      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
-      cloud_frac_2     ! Cloud fraction (2nd PDF component)                  [-]
+      mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
+      mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
+      mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
+      mu_Ncn_2,         & ! Mean of Ncn (2nd PDF component)             [num/kg]
+      sigma_chi_1,      & ! Standard deviation of chi (1st PDF comp.)    [kg/kg]
+      sigma_chi_2,      & ! Standard deviation of chi (2nd PDF comp.)    [kg/kg]
+      sigma_Ncn_1,      & ! Standard deviation of Ncn (1st PDF comp.)   [num/kg]
+      sigma_Ncn_2,      & ! Standard deviation of Ncn (2nd PDF comp.)   [num/kg]
+      sigma_Ncn_1_n,    & ! Standard deviation of ln Ncn (1st PDF component) [-]
+      sigma_Ncn_2_n,    & ! Standard deviation of ln Ncn (2nd PDF component) [-]
+      corr_chi_Ncn_1_n, & ! Correlation of chi and ln Ncn (1st PDF comp.)    [-]
+      corr_chi_Ncn_2_n, & ! Correlation of chi and ln Ncn (2nd PDF comp.)    [-]
+      mixt_frac,        & ! Mixture fraction                                 [-]
+      cloud_frac_1,     & ! Cloud fraction (1st PDF component)               [-]
+      cloud_frac_2        ! Cloud fraction (2nd PDF component)               [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -258,9 +258,9 @@ contains
     !
     ! At any point, cloud droplet concentration, Nc, is given by:
     !
-    ! Nc = Ncn * H(s);
+    ! Nc = Ncn * H(chi);
     !
-    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
+    ! where extended liquid water mixing ratio, chi, is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
@@ -284,18 +284,18 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_1,    & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,    & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      sigma_chi_1, & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2, & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      mixt_frac    ! Mixture fraction                                [-]
+      mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
+      mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
+      sigma_chi_1, & ! Standard deviation of chi (1st PDF component)     [kg/kg]
+      sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
+      mixt_frac      ! Mixture fraction                                      [-]
 
     real( kind = core_rknd ), intent(in) :: &
       Nc_in_cloud,          & ! Mean cloud droplet conc. (in-cloud)     [num/kg]
       cloud_frac_1,         & ! Cloud fraction (1st PDF component)           [-]
       cloud_frac_2,         & ! Cloud fraction (2nd PDF component)           [-]
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn         ! Prescribed correlation between chi(s) and Ncn     [-]
+      const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -352,22 +352,22 @@ contains
     ! the PDF parameters involving the simplified cloud nuclei concentration,
     ! Ncn.  At any point, cloud droplet concentration, Nc, is given by:
     !
-    ! Nc = Ncn * H(s);
+    ! Nc = Ncn * H(chi);
     !
-    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
+    ! where extended liquid water mixing ratio, chi, is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
     !
     ! The overall mean of cloud droplet concentration, <Nc>, is found by
-    ! integrating over the PDF of chi(s) and Ncn, such that:
+    ! integrating over the PDF of chi and Ncn, such that:
     !
-    ! <Nc> = INT(-inf:inf) INT(0:inf) Ncn * H(s) * P(s,Ncn) dNcn ds;
+    ! <Nc> = INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P(chi,Ncn) dNcn dchi;
     !
     ! which can also be written as:
     !
     ! <Nc> = SUM(i=1,n) mixt_frac_i
-    !        * INT(-inf:inf) INT(0:inf) Ncn * H(s) * P_i(s,Ncn) dNcn ds;
+    !        * INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P_i(chi,Ncn) dNcn dchi;
     !
     ! where n is the number of multivariate joint PDF components, mixt_frac_i is
     ! the weight of the ith PDF component, and P_i is the functional form of the
@@ -376,48 +376,48 @@ contains
     ! This equation is rewritten as:
     !
     ! <Nc> = SUM(i=1,n) mixt_frac_i
-    !        * INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds.
+    !        * INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi.
     !
-    ! When both chi(s) and Ncn vary in the ith PDF component, the integral is
+    ! When both chi and Ncn vary in the ith PDF component, the integral is
     ! evaluated and the result is:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
     !
     ! which can be reduced to:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * mu_Ncn_i
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
     !
-    ! When s is constant, but Ncn varies, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi is constant, but Ncn varies, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
     !
-    ! When s varies, but Ncn is constant, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi varies, but Ncn is constant, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
     !
-    ! When both chi(s) and Ncn are constant in the ith PDF component, the integral is
+    ! When both chi and Ncn are constant in the ith PDF component, the integral
     ! is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
 
@@ -434,19 +434,19 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_1,        & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,        & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      mu_Ncn_1,      & ! Mean of Ncn (1st PDF component)                [num/kg]
-      mu_Ncn_2,      & ! Mean of Ncn (2nd PDF component)                [num/kg]
-      sigma_chi_1,     & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2,     & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Ncn_2,   & ! Standard deviation of Ncn (2nd PDF component)  [num/kg]
-      sigma_Ncn_1_n, & ! Standard deviation of ln Ncn (1st PDF component)    [-]
-      sigma_Ncn_2_n, & ! Standard deviation of ln Ncn (2nd PDF component)    [-]
-      corr_chi_Ncn_1_n, & ! Correlation between chi(s) and ln Ncn (1st PDF comp.)    [-]
-      corr_chi_Ncn_2_n, & ! Correlation between chi(s) and ln Ncn (2nd PDF comp.)    [-]
-      mixt_frac        ! Mixture fraction                                    [-]
+      mu_chi_1,         & ! Mean of chi (old s) (1st PDF component)      [kg/kg]
+      mu_chi_2,         & ! Mean of chi (old s) (2nd PDF component)      [kg/kg]
+      mu_Ncn_1,         & ! Mean of Ncn (1st PDF component)             [num/kg]
+      mu_Ncn_2,         & ! Mean of Ncn (2nd PDF component)             [num/kg]
+      sigma_chi_1,      & ! Standard deviation of chi (1st PDF comp.)    [kg/kg]
+      sigma_chi_2,      & ! Standard deviation of chi (2nd PDF comp.)    [kg/kg]
+      sigma_Ncn_1,      & ! Standard deviation of Ncn (1st PDF comp.)   [num/kg]
+      sigma_Ncn_2,      & ! Standard deviation of Ncn (2nd PDF comp.)   [num/kg]
+      sigma_Ncn_1_n,    & ! Standard deviation of ln Ncn (1st PDF component) [-]
+      sigma_Ncn_2_n,    & ! Standard deviation of ln Ncn (2nd PDF component) [-]
+      corr_chi_Ncn_1_n, & ! Correlation of chi and ln Ncn (1st PDF comp.)    [-]
+      corr_chi_Ncn_2_n, & ! Correlation of chi and ln Ncn (2nd PDF comp.)    [-]
+      mixt_frac           ! Mixture fraction                                 [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -457,10 +457,10 @@ contains
     Ncm &
     = mixt_frac &
       * bivar_NL_chi_Ncn_mean( mu_chi_1, mu_Ncn_1, sigma_chi_1, &
-                             sigma_Ncn_1, sigma_Ncn_1_n, corr_chi_Ncn_1_n ) &
+                               sigma_Ncn_1, sigma_Ncn_1_n, corr_chi_Ncn_1_n ) &
       + ( one - mixt_frac ) &
         * bivar_NL_chi_Ncn_mean( mu_chi_2, mu_Ncn_2, sigma_chi_2, &
-                               sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n )
+                                 sigma_Ncn_2, sigma_Ncn_2_n, corr_chi_Ncn_2_n )
 
 
     return
@@ -480,22 +480,22 @@ contains
     !
     ! At any point, cloud droplet concentration, Nc, is given by:
     !
-    ! Nc = Ncn * H(s);
+    ! Nc = Ncn * H(chi);
     !
-    ! where extended liquid water mixing ratio, chi(s), is equal to cloud water
+    ! where extended liquid water mixing ratio, chi, is equal to cloud water
     ! ratio, rc, when positive.  When the atmosphere is saturated at this point,
     ! cloud water is found, and Nc = Ncn.  Otherwise, only clear air is found,
     ! and Nc = 0.
     !
     ! The overall mean of cloud droplet concentration, <Nc>, is found by
-    ! integrating over the PDF of chi(s) and Ncn, such that:
+    ! integrating over the PDF of chi and Ncn, such that:
     !
-    ! <Nc> = INT(-inf:inf) INT(0:inf) Ncn * H(s) * P(s,Ncn) dNcn ds;
+    ! <Nc> = INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P(chi,Ncn) dNcn dchi;
     !
     ! which can also be written as:
     !
     ! <Nc> = SUM(i=1,n) mixt_frac_i
-    !        * INT(-inf:inf) INT(0:inf) Ncn * H(s) * P_i(s,Ncn) dNcn ds;
+    !        * INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P_i(chi,Ncn) dNcn dchi;
     !
     ! where n is the number of multivariate joint PDF components, mixt_frac_i is
     ! the weight of the ith PDF component, and P_i is the functional form of the
@@ -504,48 +504,48 @@ contains
     ! This equation is rewritten as:
     !
     ! <Nc> = SUM(i=1,n) mixt_frac_i
-    !        * INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds.
+    !        * INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi.
     !
-    ! When both chi(s) and Ncn vary in the ith PDF component, the integral is
+    ! When both chi and Ncn vary in the ith PDF component, the integral is
     ! evaluated and the result is:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
     !
     ! which can be reduced to:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * mu_Ncn_i
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
     !
-    ! When s is constant, but Ncn varies, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi is constant, but Ncn varies, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
     !
-    ! When s varies, but Ncn is constant, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi varies, but Ncn is constant, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
     !
-    ! When both chi(s) and Ncn are constant in the ith PDF component, the integral is
+    ! When both chi and Ncn are constant in the ith PDF component, the integral
     ! is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
     !
@@ -588,7 +588,8 @@ contains
     !
     ! which can be rewritten as:
     !
-    ! rho_chi_Ncn_i_n * sigma_Ncn_i_n = rho_chi_Ncn * sqrt( <Ncn'^2> / <Ncn>^2 ).
+    ! rho_chi_Ncn_i_n * sigma_Ncn_i_n
+    ! = rho_chi_Ncn * sqrt( <Ncn'^2> / <Ncn>^2 ).
     !
     ! Substituting all of this into the equation for <Nc>, the equation for <Nc>
     ! becomes:
@@ -611,8 +612,8 @@ contains
     !
     ! In order to isolate <Ncn>, the value of <Ncn'^2>/<Ncn>^2 is set to a
     ! constant value, const_Ncn.  The value of this constant does not depend on
-    ! <Ncn>.  Likewise, the value of rho_chi_Ncn does not depend on <Ncn>.  Solving
-    ! for <Ncn>, the equation becomes:
+    ! <Ncn>.  Likewise, the value of rho_chi_Ncn does not depend on <Ncn>.
+    ! Solving for <Ncn>, the equation becomes:
     !
     ! <Ncn>
     ! = <Nc> / ( SUM(i=1,n) mixt_frac_i
@@ -627,7 +628,7 @@ contains
     !              |
     !              | 1; where sigma_chi_i = 0 and mu_chi_i > 0;
     !              |
-    !              | 0; where sigma_chi_i = 0 and mu_chi_i <= 0                 ).
+    !              | 0; where sigma_chi_i = 0 and mu_chi_i <= 0               ).
     !              ---
     !
     ! When the denominator term is 0, there is only clear air.  Both the
@@ -648,16 +649,16 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_1,    & ! Mean of chi(s) (1st PDF component)                   [kg/kg]
-      mu_chi_2,    & ! Mean of chi(s) (2nd PDF component)                   [kg/kg]
-      sigma_chi_1, & ! Standard deviation of chi(s) (1st PDF component)     [kg/kg]
-      sigma_chi_2, & ! Standard deviation of chi(s) (2nd PDF component)     [kg/kg]
-      mixt_frac    ! Mixture fraction                                [-]
+      mu_chi_1,    & ! Mean of chi (old s) (1st PDF component)           [kg/kg]
+      mu_chi_2,    & ! Mean of chi (old s) (2nd PDF component)           [kg/kg]
+      sigma_chi_1, & ! Standard deviation of chi (1st PDF component)     [kg/kg]
+      sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
+      mixt_frac      ! Mixture fraction                                      [-]
 
     real( kind = core_rknd ), intent(in) :: &
       Ncm,                  & ! Mean cloud droplet conc. (overall)      [num/kg]
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn,      & ! Prescribed correlation between chi(s) and Ncn     [-]
+      const_corr_chi_Ncn,   & ! Prescribed correlation of chi and Ncn        [-]
       Ncnm_val_denom_0        ! Ncnm value -- denominator in eqn. is 0  [num/kg]
 
     ! Return Variable
@@ -698,63 +699,63 @@ contains
 
   !=============================================================================
   function bivar_NL_chi_Ncn_mean( mu_chi_i, mu_Ncn_i, sigma_chi_i, &
-                                sigma_Ncn_i, sigma_Ncn_i_n, corr_chi_Ncn_i_n )
+                                  sigma_Ncn_i, sigma_Ncn_i_n, corr_chi_Ncn_i_n )
 
     ! Description:
-    ! The double integral over Ncn * H(s) multiplied by the
-    ! bivariate normal-lognormal joint PDF of chi(s) and Ncn is evaluated.  The
+    ! The double integral over Ncn * H(chi) multiplied by the
+    ! bivariate normal-lognormal joint PDF of chi and Ncn is evaluated.  The
     ! integral is given by:
     !
-    ! INT(-inf:inf) INT(0:inf) Ncn * H(s) * P_i(s,Ncn) dNcn ds;
+    ! INT(-inf:inf) INT(0:inf) Ncn * H(chi) * P_i(chi,Ncn) dNcn dchi;
     !
     ! which reduces to:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi;
     !
-    ! where the individual marginal distribution of chi(s) is normal in the ith PDF
+    ! where the individual marginal distribution of chi is normal in the ith PDF
     ! component and the individual marginal distribution of Ncn is lognormal in
     ! the ith PDF component.
     !
-    ! When both chi(s) and Ncn vary in the ith PDF component, the integral is
+    ! When both chi and Ncn vary in the ith PDF component, the integral is
     ! evaluated and the result is:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * exp{ mu_Ncn_i_n + (1/2) * sigma_Ncn_i_n^2 }
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) );
     !
     ! which can be reduced to:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = (1/2) * mu_Ncn_i
     !   * erfc( - ( 1 / sqrt(2) ) * ( ( mu_chi_i / sigma_chi_i )
     !                                 + rho_chi_Ncn_i_n * sigma_Ncn_i_n ) ).
     !
-    ! When s is constant, but Ncn varies, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi is constant, but Ncn varies, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
     !
-    ! When s varies, but Ncn is constant, in the ith PDF component, the integral
-    ! is evaluated and results in:
+    ! When chi varies, but Ncn is constant, in the ith PDF component, the
+    ! integral is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi
     ! = mu_Ncn_i * (1/2) * erfc( - ( mu_chi_i / ( sqrt(2) * sigma_chi_i ) ) ).
     !
-    ! When both chi(s) and Ncn are constant in the ith PDF component, the integral is
+    ! When both chi and Ncn are constant in the ith PDF component, the integral
     ! is evaluated and results in:
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = mu_Ncn_i;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = mu_Ncn_i;
     !
     ! when mu_chi_i > 0; and
     !
-    ! INT(0:inf) INT(0:inf) Ncn * P_i(s,Ncn) dNcn ds = 0;
+    ! INT(0:inf) INT(0:inf) Ncn * P_i(chi,Ncn) dNcn dchi = 0;
     !
     ! when mu_chi_i <= 0.
 
@@ -762,11 +763,11 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        sqrt_2,                & ! Constant(s)
-        one,                   &
-        one_half,              &
-        zero,                  &
-        chi_tol,          &
+        sqrt_2,   & ! Constant(s)
+        one,      &
+        one_half, &
+        zero,     &
+        chi_tol,  &
         Ncn_tol
 
     use anl_erf, only: &
@@ -779,12 +780,12 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_i,        & ! Mean of chi(s) (ith PDF component)                   [kg/kg]
-      mu_Ncn_i,      & ! Mean of Ncn (ith PDF component)                [num/kg]
-      sigma_chi_i,     & ! Standard deviation of chi(s) (ith PDF component)     [kg/kg]
-      sigma_Ncn_i,   & ! Standard deviation of Ncn (ith PDF component)  [num/kg]
-      sigma_Ncn_i_n, & ! Standard deviation of ln Ncn (ith PDF component)    [-]
-      corr_chi_Ncn_i_n    ! Correlation between chi(s) and ln Ncn (ith PDF comp.)    [-]
+      mu_chi_i,         & ! Mean of chi (old s) (ith PDF component)      [kg/kg]
+      mu_Ncn_i,         & ! Mean of Ncn (ith PDF component)             [num/kg]
+      sigma_chi_i,      & ! Standard deviation of chi (ith PDF comp.)    [kg/kg]
+      sigma_Ncn_i,      & ! Standard deviation of Ncn (ith PDF comp.)   [num/kg]
+      sigma_Ncn_i_n,    & ! Standard deviation of ln Ncn (ith PDF component) [-]
+      corr_chi_Ncn_i_n    ! Correlation of chi and ln Ncn (ith PDF comp.)    [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -793,7 +794,7 @@ contains
 
     if ( sigma_chi_i <=chi_tol .and. sigma_Ncn_i <= Ncn_tol ) then
 
-       ! The ith PDF component variances of both chi(s) and Ncn are 0.
+       ! The ith PDF component variances of both chi and Ncn are 0.
 
        if ( mu_chi_i > zero ) then
 
@@ -808,7 +809,7 @@ contains
 
     elseif ( sigma_chi_i <= chi_tol ) then
 
-       ! The ith PDF component variance of chi(s) is 0.
+       ! The ith PDF component variance of chi is 0.
 
        if ( mu_chi_i > zero ) then
 
@@ -831,7 +832,7 @@ contains
 
     else
 
-       ! Both chi(s) and Ncn vary in the ith PDF component. 
+       ! Both chi and Ncn vary in the ith PDF component. 
 
        bivar_NL_chi_Ncn_mean &
        = one_half * mu_Ncn_i &
@@ -868,12 +869,12 @@ contains
     !              |
     !              | 1; where sigma_chi_i = 0 and mu_chi_i > 0;
     !              |
-    !              | 0; where sigma_chi_i = 0 and mu_chi_i <= 0                 ).
+    !              | 0; where sigma_chi_i = 0 and mu_chi_i <= 0               ).
     !              ---
     !
     ! In the above equation, const_Ncn = <Ncn'^2> / <Ncn>^2.  It is a constant,
-    ! prescribed parameter.  Likewise, rho_chi_Ncn is a parameter that is not based
-    ! on the value of <Ncn>.
+    ! prescribed parameter.  Likewise, rho_chi_Ncn is a parameter that is not
+    ! based on the value of <Ncn>.
     !
     ! When the denominator term is 0, there is only clear air.  Both the
     ! numerator (<Nc>) and the denominator have a value of 0, and <Ncn> is set
@@ -886,10 +887,10 @@ contains
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        sqrt_2,                & ! Constant(s)
-        one,                   &
-        one_half,              &
-        zero,                  &
+        sqrt_2,   & ! Constant(s)
+        one,      &
+        one_half, &
+        zero,     &
         chi_tol
 
     use anl_erf, only: &
@@ -902,12 +903,12 @@ contains
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_chi_i,    & ! Mean of chi(s) (ith PDF component)                   [kg/kg]
-      sigma_chi_i    ! Standard deviation of chi(s) (ith PDF component)     [kg/kg]
+      mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      sigma_chi_i    ! Standard deviation of chi (ith PDF component)     [kg/kg]
 
     real( kind = core_rknd ), intent(in) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn         ! Prescribed correlation between chi(s) and Ncn     [-]
+      const_corr_chi_Ncn      ! Prescribed correlation of chi and Ncn        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -916,7 +917,7 @@ contains
 
     if ( sigma_chi_i <= chi_tol ) then
 
-       ! The ith PDF component variances of chi(s) is 0.  The value of the ith PDF
+       ! The ith PDF component variances of chi is 0.  The value of the ith PDF
        ! component variance of Ncn does not matter in this scenario.
 
        if ( mu_chi_i > zero ) then
@@ -940,7 +941,7 @@ contains
 
     else
 
-       ! Both chi(s) and Ncn vary in the ith PDF component. 
+       ! Both chi and Ncn vary in the ith PDF component. 
 
        bivar_Ncnm_eqn_comp &
        = one_half &

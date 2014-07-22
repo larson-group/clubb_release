@@ -1474,8 +1474,8 @@ module latin_hypercube_driver_module
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       rc_all_points,  & ! Cloud water mixing ratio for all levels        [kg/kg]
-      Nc_all_points,  & ! Cloud droplet conc. for all levels             [#/kg]
-      Ncn_all_points, & ! Cloud nuclei conc. for all levels; Nc=Ncn*H(s) [#/kg]
+      Nc_all_points,  & ! Cloud droplet conc. for all levels              [#/kg]
+      Ncn_all_points, & ! Cloud nuclei conc. for all levs.; Nc=Ncn*H(chi) [#/kg]
       rv_all_points     ! Vapor mixing ratio for all levels              [kg/kg]
 
     real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
@@ -1889,7 +1889,7 @@ module latin_hypercube_driver_module
       hydromet_all_points ! Hydrometeor species    [units vary]
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
-      Ncn_all_points    ! Cloud nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
+      Ncn_all_points    ! Cloud nuclei conc. (simplified); Nc=Ncn*H(chi)  [#/kg]
 
     integer :: sample, ivar
 
@@ -1959,8 +1959,8 @@ module latin_hypercube_driver_module
              ( nz, d_variables, num_samples, X_nl_all_levs, &
                lh_rc )
   ! Description:
-  !   Extracts a sample of rc from X_nl_all_levs, where rc = s * H(s), for each
-  !   subcolumn.
+  !   Extracts a sample of rc from X_nl_all_levs, where rc = chi * H(chi), for
+  !   each subcolumn.
 
   ! References:
   !   none

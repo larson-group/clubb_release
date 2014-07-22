@@ -165,7 +165,7 @@ module estimate_scm_microphys_module
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      Ncn_all_points    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(s)   [#/kg]
+      Ncn_all_points    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       chi_column    ! 's' (Mellor 1977)                    [kg/kg]
@@ -339,7 +339,7 @@ module estimate_scm_microphys_module
                                     hydromet_all_points, &  ! Out
                                     Ncn_all_points ) ! Out
 
-      ! Set Nc = Ncn * H(s).  For l_const_Nc_in_cloud, Ncn should have a
+      ! Set Nc = Ncn * H(chi).  For l_const_Nc_in_cloud, Ncn should have a
       ! constant value of Nc_in_cloud.
       if ( l_const_Nc_in_cloud ) then
          ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all

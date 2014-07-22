@@ -224,7 +224,7 @@ module pdf_closure_module
       thl2,        & ! Mean of th_l (2nd PDF component)                      [K]
       varnce_thl1, & ! Variance of th_l (1st PDF component)                [K^2]
       varnce_thl2, & ! Variance of th_l (2nd PDF component)                [K^2]
-      rrtthl,      & ! Correlation between r_t and th_l (both components)    [-]
+      rrtthl,      & ! Correlation of r_t and th_l (both components)         [-]
       alpha_thl,   & ! Factor relating to normalized variance for th_l       [-]
       alpha_rt,    & ! Factor relating to normalized variance for r_t        [-]
       crt1,        & ! Coef. on r_t in s/t eqns. (1st PDF comp.)             [-]
@@ -233,28 +233,28 @@ module pdf_closure_module
       cthl2          ! Coef. on th_l in s/t eqns. (2nd PDF comp.)    [(kg/kg)/K]
 
     real( kind = core_rknd ) :: &
-      chi_1,            & ! Mean of chi(s) (1st PDF component)                     [kg/kg]
-      chi_2,            & ! Mean of chi(s) (2nd PDF component)                     [kg/kg]
-      stdev_chi_1,      & ! Standard deviation of chi(s) (1st PDF component)       [kg/kg]
-      stdev_chi_2,      & ! Standard deviation of chi(s) (2nd PDF component)       [kg/kg]
-      stdev_eta_1,      & ! Standard deviation of eta(t) (1st PDF component)       [kg/kg]
-      stdev_eta_2,      & ! Standard deviation of eta(t) (2nd PDF component)       [kg/kg]
-      covar_chi_eta_1,  & ! Covariance of chi(s) and eta(t) (1st PDF component)     [kg^2/kg^2]
-      covar_chi_eta_2,  & ! Covariance of chi(s) and eta(t) (2nd PDF component)     [kg^2/kg^2]
-      corr_chi_eta_1,   & ! Correlation between chi(s) and eta(t) (1st PDF component)       [-]
-      corr_chi_eta_2,   & ! Correlation between chi(s) and eta(t) (2nd PDF component)       [-]
-      rsl1,             & ! Mean of r_sl (1st PDF component)                  [kg/kg]
-      rsl2,             & ! Mean of r_sl (2nd PDF component)                  [kg/kg]
-      rc1,              & ! Mean of r_c (1st PDF component)                   [kg/kg]
-      rc2,              & ! Mean of r_c (2nd PDF component)                   [kg/kg]
-      cloud_frac1,      & ! Cloud fraction (1st PDF component)                    [-]
-      cloud_frac2,      & ! Cloud fraction (2nd PDF component)                    [-]
-      mixt_frac           ! Weight of 1st PDF component (Sk_w dependent)          [-]
+      chi_1,           & ! Mean of chi (old s) (1st PDF component)       [kg/kg]
+      chi_2,           & ! Mean of chi (old s) (2nd PDF component)       [kg/kg]
+      stdev_chi_1,     & ! Standard deviation of chi (1st PDF component) [kg/kg]
+      stdev_chi_2,     & ! Standard deviation of chi (2nd PDF component) [kg/kg]
+      stdev_eta_1,     & ! Standard dev. of eta (old t) (1st PDF comp.)  [kg/kg]
+      stdev_eta_2,     & ! Standard dev. of eta (old t) (2nd PDF comp.)  [kg/kg]
+      covar_chi_eta_1, & ! Covariance of chi and eta (1st PDF comp.) [kg^2/kg^2]
+      covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
+      corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
+      corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
+      rsl1,            & ! Mean of r_sl (1st PDF component)              [kg/kg]
+      rsl2,            & ! Mean of r_sl (2nd PDF component)              [kg/kg]
+      rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
+      rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
+      cloud_frac1,     & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac2,     & ! Cloud fraction (2nd PDF component)                [-]
+      mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
     ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
     !        These are used to calculate the scalar widths
-    !        varnce_thl1, varnce_thl2, varnce_rt1, and varnce_rt2 as in Eq. (34) of
-    !        Larson and Golaz (2005)
+    !        varnce_thl1, varnce_thl2, varnce_rt1, and varnce_rt2 as in Eq. (34)
+    !        of Larson and Golaz (2005)
 
     ! Passive scalar local variables
 
@@ -534,7 +534,7 @@ module pdf_closure_module
         rrtthl = 0.0_core_rknd
       end if ! varnce_rt1*varnce_thl1 > 0 .and. varnce_rt2*varnce_thl2 > 0
 
-      ! Sub-plume correlation, rsclrthl, between passive scalar and theta_l.
+      ! Sub-plume correlation, rsclrthl, of passive scalar and theta_l.
       if ( l_scalar_calc ) then
         do i=1, sclr_dim
           if ( varnce_sclr1(i)*varnce_thl1 > 0._core_rknd .and. &
@@ -554,8 +554,7 @@ module pdf_closure_module
             rsclrthl(i) = 0.0_core_rknd
           end if
 
-          ! Sub-plume correlation, rsclrrt, between passive scalar
-          !   and total water.
+          ! Sub-plume correlation, rsclrrt, of passive scalar and total water.
 
           if ( varnce_sclr1(i)*varnce_rt1 > 0._core_rknd .and. &
                varnce_sclr2(i)*varnce_rt2 > 0._core_rknd ) then
@@ -705,7 +704,7 @@ module pdf_closure_module
     cthl2 = ( (1._core_rknd + beta2 * rt2) / ( 1._core_rknd + beta2*rsl2 )**2 ) & 
              * ( Cp/Lv ) * beta2 * rsl2 * exner
 
-    ! Standard deviation of chi(s) for each component.
+    ! Standard deviation of chi for each component.
     ! Include subplume correlation of qt, thl
     ! Because of round-off error,
     ! stdev_chi_1 (and probably stdev_chi_2) can become negative when rrtthl=1
@@ -723,7 +722,7 @@ module pdf_closure_module
                           + cthl2**2 * varnce_thl2,  &
                           zero_threshold )  )
 
-    ! Standard deviation of eta(t) for each component.
+    ! Standard deviation of eta for each component.
     stdev_eta_1 = sqrt( max( crt1**2 * varnce_rt1  &
                           + two * rrtthl * crt1 * cthl1  &
                                 * sqrt( varnce_rt1 * varnce_thl1 )  &
@@ -736,12 +735,12 @@ module pdf_closure_module
                           + cthl2**2 * varnce_thl2,  &
                           zero_threshold )  )
 
-    ! Covariance of chi(s) and eta(t) for each component.
+    ! Covariance of chi and eta for each component.
     covar_chi_eta_1 = crt1**2 * varnce_rt1 - cthl1**2 * varnce_thl1
 
     covar_chi_eta_2 = crt2**2 * varnce_rt2 - cthl2**2 * varnce_thl2
 
-    ! Correlation between chi(s) and eta(t) for each component.
+    ! Correlation of chi and eta for each component.
     if ( stdev_chi_1 * stdev_eta_1 > zero ) then
       corr_chi_eta_1 = covar_chi_eta_1 / ( stdev_chi_1 * stdev_eta_1 )
     else
@@ -767,7 +766,7 @@ module pdf_closure_module
     l_calc_ice_supersat_frac = .true.
 #endif
 
-    ! We need to introduce a threshold value for the variance of chi(s)
+    ! We need to introduce a threshold value for the variance of chi
 
     ! Calculate cloud_frac1 and rc1
     call calc_cloud_frac_component(chi_1, stdev_chi_1, chi_at_liq_sat, cloud_frac1, rc1)
@@ -846,7 +845,7 @@ module pdf_closure_module
 
     rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp
 
-    ! Account for subplume correlation between scalar, theta_v.
+    ! Account for subplume correlation of scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
     !  where the ``scalar'' in this paper is w.
     if ( l_scalar_calc ) then
@@ -930,8 +929,8 @@ module pdf_closure_module
     pdf_params%stdev_eta_2      = stdev_eta_2
     pdf_params%covar_chi_eta_1  = covar_chi_eta_1
     pdf_params%covar_chi_eta_2  = covar_chi_eta_2
-    pdf_params%corr_chi_eta_1    = corr_chi_eta_1
-    pdf_params%corr_chi_eta_2    = corr_chi_eta_2
+    pdf_params%corr_chi_eta_1   = corr_chi_eta_1
+    pdf_params%corr_chi_eta_2   = corr_chi_eta_2
     pdf_params%rsl1             = rsl1
     pdf_params%rsl2             = rsl2
     pdf_params%rc1              = rc1
@@ -1070,44 +1069,44 @@ module pdf_closure_module
     !
     ! The equation for cloud water mixing ratio, rc, at any point is:
     !
-    ! rc = s * H(s);
+    ! rc = chi * H(chi);
     !
     ! and the equation for cloud fraction at a point, fc, is:
     !
-    ! fc = H(s);
+    ! fc = H(chi);
     !
-    ! where where extended liquid water mixing ratio, chi(s), is equal to cloud
+    ! where where extended liquid water mixing ratio, chi, is equal to cloud
     ! water mixing ratio, rc, when positive.  When the atmosphere is saturated
-    ! at this point, cloud water is found, and rc = s, while fc = 1.  Otherwise,
-    ! clear air is found at this point, and rc = fc = 0.
+    ! at this point, cloud water is found, and rc = chi, while fc = 1.
+    ! Otherwise, clear air is found at this point, and rc = fc = 0.
     !
     ! The mean of rc and fc is calculated by integrating over the PDF, such
     ! that:
     !
-    ! <rc> = INT(-inf:inf) s * H(s) * P(s) ds; and
+    ! <rc> = INT(-inf:inf) chi * H(chi) * P(chi) dchi; and
     !
-    ! cloud_frac = <fc> = INT(-inf:inf) H(s) * P(s) ds.
+    ! cloud_frac = <fc> = INT(-inf:inf) H(chi) * P(chi) dchi.
     !
     ! This can be rewritten as:
     !
-    ! <rc> = INT(0:inf) s * P(s) ds; and
+    ! <rc> = INT(0:inf) chi * P(chi) dchi; and
     !
-    ! cloud_frac = <fc> = INT(0:inf) P(s) ds;
+    ! cloud_frac = <fc> = INT(0:inf) P(chi) dchi;
     !
     ! and further rewritten as:
     !
-    ! <rc> = SUM(i=1,N) mixt_frac_i INT(0:inf) s * P_i(s) ds; and
+    ! <rc> = SUM(i=1,N) mixt_frac_i INT(0:inf) chi * P_i(chi) dchi; and
     !
-    ! cloud_frac = SUM(i=1,N) mixt_frac_i INT(0:inf) P_i(s) ds;
+    ! cloud_frac = SUM(i=1,N) mixt_frac_i INT(0:inf) P_i(chi) dchi;
     !
     ! where N is the number of PDF components.  The equation for mean rc in the
     ! ith PDF component is:
     !
-    ! rc_i = INT(0:inf) s * P_i(s) ds;
+    ! rc_i = INT(0:inf) chi * P_i(chi) dchi;
     !
     ! and the equation for cloud fraction in the ith PDF component is:
     ! 
-    ! cloud_frac_i = INT(0:inf) P_i(s) ds.
+    ! cloud_frac_i = INT(0:inf) P_i(chi) dchi.
     !
     ! The component values are related to the overall values by:
     !
@@ -1119,12 +1118,12 @@ module pdf_closure_module
     !-----------------------------------------------------------------------
     
     use constants_clubb, only: &
-        chi_tol, & ! Tolerance for pdf parameter s       [kg/kg]
-        sqrt_2pi,     & ! sqrt(2*pi)
-        sqrt_2,       & ! sqrt(2)
-        one,          & ! 1
-        one_half,     & ! 1/2
-        zero            ! 0
+        chi_tol,  & ! Tolerance for pdf parameter chi       [kg/kg]
+        sqrt_2pi, & ! sqrt(2*pi)
+        sqrt_2,   & ! sqrt(2)
+        one,      & ! 1
+        one_half, & ! 1/2
+        zero        ! 0
 
     use anl_erf, only:  & 
         erf ! Procedure(s) -- The error function
@@ -1136,9 +1135,9 @@ module pdf_closure_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mean_chi_i,  & ! Mean of chi(s) (ith PDF component)                       [kg/kg]
-      stdev_chi_i, & ! Standard deviation of chi(s) (ith PDF component)         [kg/kg]
-      chi_at_sat     ! Value of chi(s) at saturation (0--liquid; negative--ice) [kg/kg]
+      mean_chi_i,  & ! Mean of chi (old s) (ith PDF component)           [kg/kg]
+      stdev_chi_i, & ! Standard deviation of chi (ith PDF component)     [kg/kg]
+      chi_at_sat     ! Value of chi at saturation (0--liquid; neg.--ice) [kg/kg]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1151,7 +1150,7 @@ module pdf_closure_module
     !----- Begin Code -----
     if ( stdev_chi_i > chi_tol ) then
 
-       ! The value of chi(s) varies in the ith PDF component.
+       ! The value of chi varies in the ith PDF component.
 
        zeta_i = ( mean_chi_i - chi_at_sat ) / stdev_chi_i
 
@@ -1162,7 +1161,7 @@ module pdf_closure_module
 
     else ! stdev_chi_i <= chi_tol
 
-       ! The value of chi(s) does not vary in the ith PDF component.
+       ! The value of chi does not vary in the ith PDF component.
        if ( ( mean_chi_i - chi_at_sat ) < zero ) then
           ! All clear air in the ith PDF component.
           cloud_frac_i = zero
@@ -1279,22 +1278,22 @@ module pdf_closure_module
       k           ! Level at which cloud_frac is to be computed       [count]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      z_vals,   & ! Height at each vertical level                     [m]
-      chi,      & ! Value of chi(s_mellor)                                 [kg/kg]
-      stdev_chi,  & ! Standard deviation of chi(s_mellor)             [kg/kg]
-      chi_at_sat    ! Value of chi(s) at saturation with respect to ice      [kg/kg]
+      z_vals,    & ! Height at each vertical level                   [m]
+      chi,       & ! Value of chi (old s)                            [kg/kg]
+      stdev_chi, & ! Standard deviation of chi                       [kg/kg]
+      chi_at_sat   ! Value of chi at saturation with respect to ice  [kg/kg]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      cloud_frac_i, & ! Vertically averaged cloud fraction                [-]
-      rc_i            ! Vertically averaged cloud water mixing ratio      [kg/kg]
+      cloud_frac_i, & ! Vertically averaged cloud fraction               [-]
+      rc_i            ! Vertically averaged cloud water mixing ratio     [kg/kg]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(n_points) :: &
-      chi_ref,           &   ! chi(s_mellor) evaluated on refined grid     [kg/kg]
-      stdev_chi_ref,     &   ! stdev_chi evaluated on refined grid    [kg/kg]
-      cloud_frac_ref,    &   ! cloud_frac evaluated on refined grid   [-]
-      rc_ref                 ! r_c evaluated on refined grid          [kg/kg]
+      chi_ref,           &   ! chi (old s) evaluated on refined grid     [kg/kg]
+      stdev_chi_ref,     &   ! stdev_chi evaluated on refined grid       [kg/kg]
+      cloud_frac_ref,    &   ! cloud_frac evaluated on refined grid      [-]
+      rc_ref                 ! r_c evaluated on refined grid             [kg/kg]
       
   !-----------------------------------------------------------------------
 
@@ -1332,9 +1331,9 @@ module pdf_closure_module
 
   ! Input Variables
   integer, intent(in) :: &
-    n_points, &       ! Number of points to interpolate to (must be odd and >= 3)
-    nz, &             ! Total number of vertical levels
-    k                 ! Center of interpolation array
+    n_points, & ! Number of points to interpolate to (must be odd and >= 3)
+    nz,       & ! Total number of vertical levels
+    k           ! Center of interpolation array
 
   real( kind = core_rknd ), dimension(nz), intent(in) :: &
     z_vals, &         ! Height at each vertical level           [m]
