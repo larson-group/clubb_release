@@ -66,7 +66,7 @@
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/atex_zm.ctl', 'type' => 'bestever', 'name' => 'HOC \"best-ever\"', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/atex_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'atex_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'atex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB.^2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
+          {'filename' => 'atex_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [

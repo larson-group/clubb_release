@@ -51,7 +51,7 @@
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/weberjk/SciDAC/SAM/arm9707_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB.^2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
+          {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>

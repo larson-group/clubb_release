@@ -46,7 +46,7 @@
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/raut/work/cam_ticket_15/ARM9707_128kmx128kmx64_2km_Morrison.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'W2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
-          {'filename' => 'not_arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB.^2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
+          {'filename' => 'not_arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
