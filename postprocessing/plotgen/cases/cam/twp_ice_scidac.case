@@ -139,14 +139,6 @@
           {'filename' => '/home/weberjk/SciDAC/SAM/twpice_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'NC .* (100^3)./RHO', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNC./RHO', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
-       
-       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/weberjk/SciDAC/SAM/twpice_sam.nc', 'type' => 'les', 'name' => 'LES', 'expression' => 'QCL / 1000', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'twp_ice_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDLIQ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-      
-
 #
 # Rain
 #
