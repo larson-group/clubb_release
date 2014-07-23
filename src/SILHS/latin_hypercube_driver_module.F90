@@ -583,7 +583,7 @@ module latin_hypercube_driver_module
       lh_sample_point_weights ! Weight of each SILHS sample
 
     ! Output Variables
-    logical :: &
+    logical, intent(out) :: &
       l_error          ! True if the assertion check fails
 
     ! Local Variables
@@ -659,7 +659,7 @@ module latin_hypercube_driver_module
       lh_sample_point_weights ! Weight of each SILHS sample
 
     ! Output Variables
-    logical :: &
+    logical, intent(out) :: &
       l_error          ! True if the assertion check fails
 
     ! Local Variables
@@ -1439,6 +1439,7 @@ module latin_hypercube_driver_module
     integer :: sample  ! Loop iterator
 
     ! ---- Begin Code ----
+    l_error = .false.
 
     number_cloudy_samples = 0
 
