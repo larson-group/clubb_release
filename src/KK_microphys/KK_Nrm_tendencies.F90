@@ -13,16 +13,16 @@ module KK_Nrm_tendencies
   contains
 
   !=============================================================================
-  function KK_Nrm_evap_upscaled_mean( mu_s_1, mu_s_2, mu_rr_1, mu_rr_2, &
+  function KK_Nrm_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
                                       mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
-                                      mu_Nr_1_n, mu_Nr_2_n, sigma_s_1, &
-                                      sigma_s_2, sigma_rr_1, sigma_rr_2, &
+                                      mu_Nr_1_n, mu_Nr_2_n, sigma_chi_1, &
+                                      sigma_chi_2, sigma_rr_1, sigma_rr_2, &
                                       sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
                                       sigma_rr_2_n, sigma_Nr_1_n, &
-                                      sigma_Nr_2_n, corr_srr_1_n, &
-                                      corr_srr_2_n, corr_sNr_1_n, &
-                                      corr_sNr_2_n, corr_rrNr_1_n, &
-                                      corr_rrNr_2_n, KK_evap_coef, mixt_frac, &
+                                      sigma_Nr_2_n, corr_chi_rr_1_n, &
+                                      corr_chi_rr_2_n, corr_chi_Nr_1_n, &
+                                      corr_chi_Nr_2_n, corr_rr_Nr_1_n, &
+                                      corr_rr_Nr_2_n, KK_evap_coef, mixt_frac, &
                                       precip_frac_1, precip_frac_2, dt )
 
     ! Description:
@@ -70,27 +70,27 @@ module KK_Nrm_tendencies
     !
     ! The equation for r_r evaporation rate is:
     !
-    ! (dr_r/dt)|_evap = KK_evap_coef s^alpha r_r^beta N_r^gamma;
+    ! (dr_r/dt)|_evap = KK_evap_coef chi^alpha r_r^beta N_r^gamma;
     !
     ! which is substituted into the (dN_r/dt)|_evap equation, which in turn
     ! becomes:
     !
     ! (dN_r/dt)|_evap
     ! = Delta_t^(nu-1) ( N_r / r_r^nu )
-    !   ( KK_evap_coef s^alpha r_r^beta N_r^gamma )^nu;
+    !   ( KK_evap_coef chi^alpha r_r^beta N_r^gamma )^nu;
     !
     ! and can be rewritten as:
     !
     ! (dN_r/dt)|_evap
     ! = Delta_t^(nu-1) KK_evap_coef^nu
-    !   s^(alpha nu) r_r^((beta - 1) nu) N_r^(gamma nu + 1).
+    !   chi^(alpha nu) r_r^((beta - 1) nu) N_r^(gamma nu + 1).
     !
     ! The mean value of < N_r > evaporation rate, < (dN_r/dt)|_evap >, is found
-    ! by integrating over a trivariate PDF of s, r_r, and N_r.
+    ! by integrating over a trivariate PDF of chi, r_r, and N_r.
     !
     ! When nu is set to 1, as suggested, the equation simply becomes:
     !
-    ! (dN_r/dt)|_evap = KK_evap_coef s^alpha r_r^(beta - 1) N_r^(gamma + 1).
+    ! (dN_r/dt)|_evap = KK_evap_coef chi^alpha r_r^(beta - 1) N_r^(gamma + 1).
 
     ! References:
     !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
@@ -119,39 +119,39 @@ module KK_Nrm_tendencies
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_s_1,        & ! Mean of s (1st PDF component)                   [kg/kg]
-      mu_s_2,        & ! Mean of s (2nd PDF component)                   [kg/kg]
-      mu_rr_1,       & ! Mean of rr (1st PDF component) in-precip (ip)   [kg/kg]
-      mu_rr_2,       & ! Mean of rr (2nd PDF component) ip               [kg/kg]
-      mu_Nr_1,       & ! Mean of Nr (1st PDF component) ip              [num/kg]
-      mu_Nr_2,       & ! Mean of Nr (2nd PDF component) ip              [num/kg]
-      mu_rr_1_n,     & ! Mean of ln rr (1st PDF component) ip                [-]
-      mu_rr_2_n,     & ! Mean of ln rr (2nd PDF component) ip                [-]
-      mu_Nr_1_n,     & ! Mean of ln Nr (1st PDF component) ip                [-]
-      mu_Nr_2_n,     & ! Mean of ln Nr (2nd PDF component) ip                [-]
-      sigma_s_1,     & ! Standard deviation of s (1st PDF component)     [kg/kg]
-      sigma_s_2,     & ! Standard deviation of s (2nd PDF component)     [kg/kg]
-      sigma_rr_1,    & ! Standard deviation of rr (1st PDF component) ip [kg/kg]
-      sigma_rr_2,    & ! Standard deviation of rr (2nd PDF component) ip [kg/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (1st PDF component) ip  [#/kg]
-      sigma_Nr_2,    & ! Standard deviation of Nr (2nd PDF component) ip  [#/kg]
-      sigma_rr_1_n,  & ! Standard deviation of ln rr (1st PDF component) ip  [-]
-      sigma_rr_2_n,  & ! Standard deviation of ln rr (2nd PDF component) ip  [-]
-      sigma_Nr_1_n,  & ! Standard deviation of ln Nr (1st PDF component) ip  [-]
-      sigma_Nr_2_n,  & ! Standard deviation of ln Nr (2nd PDF component) ip  [-]
-      corr_srr_1_n,  & ! Correlation between s and ln rr (1st PDF comp.) ip  [-]
-      corr_srr_2_n,  & ! Correlation between s and ln rr (2nd PDF comp.) ip  [-]
-      corr_sNr_1_n,  & ! Correlation between s and ln Nr (1st PDF comp.) ip  [-]
-      corr_sNr_2_n,  & ! Correlation between s and ln Nr (2nd PDF comp.) ip  [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-      KK_evap_coef,  & ! KK evaporation coefficient                  [(kg/kg)/s]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
+      mu_chi_1,        & ! Mean of chi (old s) (1st PDF component)       [kg/kg]
+      mu_chi_2,        & ! Mean of chi (old s) (2nd PDF component)       [kg/kg]
+      mu_rr_1,         & ! Mean of rr (1st PDF component) in-precip (ip) [kg/kg]
+      mu_rr_2,         & ! Mean of rr (2nd PDF component) ip             [kg/kg]
+      mu_Nr_1,         & ! Mean of Nr (1st PDF component) ip            [num/kg]
+      mu_Nr_2,         & ! Mean of Nr (2nd PDF component) ip            [num/kg]
+      mu_rr_1_n,       & ! Mean of ln rr (1st PDF component) ip      [ln(kg/kg)]
+      mu_rr_2_n,       & ! Mean of ln rr (2nd PDF component) ip      [ln(kg/kg)]
+      mu_Nr_1_n,       & ! Mean of ln Nr (1st PDF component) ip     [ln(num/kg)]
+      mu_Nr_2_n,       & ! Mean of ln Nr (2nd PDF component) ip     [ln(num/kg)]
+      sigma_chi_1,     & ! Standard deviation of chi (1st PDF component) [kg/kg]
+      sigma_chi_2,     & ! Standard deviation of chi (2nd PDF component) [kg/kg]
+      sigma_rr_1,      & ! Standard deviation of rr (1st PDF comp.) ip   [kg/kg]
+      sigma_rr_2,      & ! Standard deviation of rr (2nd PDF comp.) ip   [kg/kg]
+      sigma_Nr_1,      & ! Standard deviation of Nr (1st PDF comp.) ip  [num/kg]
+      sigma_Nr_2,      & ! Standard deviation of Nr (2nd PDF comp.) ip  [num/kg]
+      sigma_rr_1_n,    & ! Standard deviation of ln rr (1st PDF comp.) ip    [-]
+      sigma_rr_2_n,    & ! Standard deviation of ln rr (2nd PDF comp.) ip    [-]
+      sigma_Nr_1_n,    & ! Standard deviation of ln Nr (1st PDF comp.) ip    [-]
+      sigma_Nr_2_n,    & ! Standard deviation of ln Nr (2nd PDF comp.) ip    [-]
+      corr_chi_rr_1_n, & ! Correlation of chi and ln rr (1st PDF comp.) ip   [-]
+      corr_chi_rr_2_n, & ! Correlation of chi and ln rr (2nd PDF comp.) ip   [-]
+      corr_chi_Nr_1_n, & ! Correlation of chi and ln Nr (1st PDF comp.) ip   [-]
+      corr_chi_Nr_2_n, & ! Correlation of chi and ln Nr (2nd PDF comp.) ip   [-]
+      corr_rr_Nr_1_n,  & ! Correlation of ln rr & ln Nr (1st PDF comp.) ip   [-]
+      corr_rr_Nr_2_n,  & ! Correlation of ln rr & ln Nr (2nd PDF comp.) ip   [-]
+      KK_evap_coef,    & ! KK evaporation coefficient                [(kg/kg)/s]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
+      precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
 
     real( kind = time_precision ), intent(in) :: &
-      dt               ! Model time step duration                            [s]
+      dt                 ! Model time step duration                          [s]
 
     ! Return Variables
     real( kind = core_rknd ) :: &
@@ -159,7 +159,7 @@ module KK_Nrm_tendencies
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha_exp, & ! Exponent on s                                           [-]
+      alpha_exp, & ! Exponent on chi                                         [-]
       beta_exp,  & ! Exponent on r_r                                         [-]
       gamma_exp    ! Exponent on N_r                                         [-]
 
@@ -175,17 +175,17 @@ module KK_Nrm_tendencies
       * KK_evap_coef**KK_Nrm_evap_nu &
       * ( mixt_frac &
           * precip_frac_1 &
-          * trivar_NLL_mean_eq( mu_s_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
-                                mu_Nr_1_n, sigma_s_1, sigma_rr_1, &
+          * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
+                                mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                 sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                corr_srr_1_n, corr_sNr_1_n, corr_rrNr_1_n, &
+                                corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
-          * trivar_NLL_mean_eq( mu_s_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
-                                mu_Nr_2_n, sigma_s_2, sigma_rr_2, &
+          * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
+                                mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                 sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                corr_srr_2_n, corr_sNr_2_n, corr_rrNr_2_n, &
+                                corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
 

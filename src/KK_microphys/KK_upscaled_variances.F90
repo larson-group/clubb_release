@@ -15,7 +15,7 @@ module KK_upscaled_variances
                             mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
                             sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                            sigma_Nr_2_n, corr_rrNr_1_n, corr_rrNr_2_n, &
+                            sigma_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                             KK_mean_vol_rad, KK_mvr_coef, mixt_frac, &
                             precip_frac_1, precip_frac_2 )
 
@@ -60,8 +60,8 @@ module KK_upscaled_variances
       sigma_rr_2_n,    & ! Standard deviation of ln rr (2nd PDF comp.) ip    [-]
       sigma_Nr_1_n,    & ! Standard deviation of ln Nr (1st PDF comp.) ip    [-]
       sigma_Nr_2_n,    & ! Standard deviation of ln Nr (2nd PDF comp.) ip    [-]
-      corr_rrNr_1_n,   & ! Corr. betw. ln rr & ln Nr (1st PDF comp.) ip      [-]
-      corr_rrNr_2_n,   & ! Corr. betw. ln rr & ln Nr (2nd PDF comp.) ip      [-]
+      corr_rr_Nr_1_n,  & ! Correlation of ln rr & ln Nr (1st PDF comp.) ip   [-]
+      corr_rr_Nr_2_n,  & ! Correlation of ln rr & ln Nr (2nd PDF comp.) ip   [-]
       KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
       KK_mvr_coef,     & ! KK mean volume radius coefficient                 [m]
       mixt_frac,       & ! Mixture fraction                                  [-]
@@ -89,13 +89,13 @@ module KK_upscaled_variances
           * precip_frac_1 &
           * bivar_LL_mean_eq( mu_rr_1, mu_Nr_1, mu_rr_1_n, mu_Nr_1_n, &
                               sigma_rr_1, sigma_Nr_1, sigma_rr_1_n, &
-                              sigma_Nr_1_n, corr_rrNr_1_n, &
+                              sigma_Nr_1_n, corr_rr_Nr_1_n, &
                               two * alpha_exp, two * beta_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
           * bivar_LL_mean_eq( mu_rr_2, mu_Nr_2, mu_rr_2_n, mu_Nr_2_n, &
                               sigma_rr_2, sigma_Nr_2, sigma_rr_2_n, &
-                              sigma_Nr_2_n, corr_rrNr_2_n, &
+                              sigma_Nr_2_n, corr_rr_Nr_2_n, &
                               two * alpha_exp, two * beta_exp ) &
         ) &
       - KK_mean_vol_rad**2
