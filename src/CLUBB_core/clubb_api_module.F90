@@ -21,7 +21,10 @@ module clubb_api_module
     zt2zm_api => zt2zm, & ! The interface implementation of these subroutines
     zm2zt_api => zm2zt    ! requires a use statement "interface" here.
 
-  use mt95, only : assignment( = )
+  use mt95, only : &
+    assignment( = ), &
+    genrand_state, & ! Internal representation of the RNG state.
+    genrand_srepr ! Public representation of the RNG state. Should be used to save the RNG state.
 
   use array_index, only : &
     iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
