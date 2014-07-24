@@ -242,7 +242,7 @@ module clubb_api_module
     stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate_hydromet_api, stats_finalize_api, &
     stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
-    thlm2T_in_K_api, calculate_spurious_source_api, assignment( = )
+    thlm2T_in_K_api, calculate_spurious_source_api, assignment( = ), genrand_state, genrand_srepr
 
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
