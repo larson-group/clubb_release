@@ -16,18 +16,18 @@ module corr_matrix_module
 !$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
 
   integer, public :: &
-   iiPDF_rr    = -1, &
-   iiPDF_rs    = -1, &
-   iiPDF_ri     = -1, &
+   iiPDF_rr = -1, &
+   iiPDF_rs = -1, &
+   iiPDF_ri = -1, &
    iiPDF_rg = -1
 !$omp threadprivate(iiPDF_rr, iiPDF_rs, iiPDF_ri, iiPDF_rg)
 
   integer, public :: &
-   iiPDF_Nr       = -1, &
-   iiPDF_Ns    = -1, &
-   iiPDF_Ni       = -1, &
-   iiPDF_Ng = -1, &
-   iiPDF_Ncn      = -1
+   iiPDF_Nr  = -1, &
+   iiPDF_Ns  = -1, &
+   iiPDF_Ni  = -1, &
+   iiPDF_Ng  = -1, &
+   iiPDF_Ncn = -1
 !$omp threadprivate(iiPDF_Nr, iiPDF_Ns, iiPDF_Ni, iiPDF_Ng, iiPDF_Ncn)
 
   integer, parameter, public :: &
@@ -56,7 +56,7 @@ module corr_matrix_module
   private
 
   public :: read_correlation_matrix, setup_pdf_indices, setup_corr_varnce_array, &
-            cleanup_corr_matrix_arrays, hm_idx, init_clubb_arrays, &
+            cleanup_corr_matrix_arrays, init_clubb_arrays, &
             assert_corr_symmetric, print_corr_matrix
 
   private :: get_corr_var_index, return_pdf_index, def_corr_idx
@@ -162,17 +162,17 @@ module corr_matrix_module
     ! Constant Parameters
 
     ! Indices that represent the order in the default corr arrays
-    ! (chi(s), eta(t), w, Ncn, rr, Nr, ri, Ni, rs, Ns, rg, Ng)
+    ! (chi (old s), eta (old t), w, Ncn, rr, Nr, ri, Ni, rs, Ns, rg, Ng)
     integer, parameter :: &
     ii_chi = 1, &
     ii_eta = 2, &
-    ii_w = 3, &
+    ii_w = 3,   &
     ii_Ncn = 4, &
-    ii_rr = 5, &
-    ii_Nr = 6, &
-    ii_ri = 7, &
-    ii_Ni = 8, &
-    ii_rs = 9, &
+    ii_rr = 5,  &
+    ii_Nr = 6,  &
+    ii_ri = 7,  &
+    ii_Ni = 8,  &
+    ii_rs = 9,  &
     ii_Ns = 10, &
     ii_rg = 11, &
     ii_Ng = 12
@@ -442,12 +442,12 @@ module corr_matrix_module
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrm,    & ! Index of rain water mixing ratio
-      iiNrm,       & ! Index of rain drop concentration
-      iirim,     & ! Index of ice mixing ratio
-      iiNim,       & ! Index of ice crystal concentration
-      iirsm,    & ! Index of snow mixing ratio
-      iiNsm,    & ! Index of snow flake concentration
+      iirrm, & ! Index of rain water mixing ratio
+      iiNrm, & ! Index of rain drop concentration
+      iirim, & ! Index of ice mixing ratio
+      iiNim, & ! Index of ice crystal concentration
+      iirsm, & ! Index of snow mixing ratio
+      iiNsm, & ! Index of snow flake concentration
       iirgm, & ! Index of graupel mixing ratio
       iiNgm    ! Index of graupel concentration
 
@@ -460,10 +460,10 @@ module corr_matrix_module
 
     !----- Begin Code -----
 
-    iiPDF_chi      = 1 ! Extended liquid water mixing ratio
-    iiPDF_eta      = 2 ! 't' orthogonal to 's'
-    iiPDF_w        = 3 ! vertical velocity
-    iiPDF_Ncn      = 4 ! Cloud nuclei concentration or extended Nc.
+    iiPDF_chi = 1 ! Extended liquid water mixing ratio, chi
+    iiPDF_eta = 2 ! 'eta' orthogonal to 'chi'
+    iiPDF_w   = 3 ! vertical velocity
+    iiPDF_Ncn = 4 ! Simplified cloud nuclei concentration or extended Nc.
 
     pdf_count = iiPDF_Ncn
 
@@ -862,79 +862,6 @@ module corr_matrix_module
     return    
 
   end subroutine init_clubb_arrays
-
-  !-----------------------------------------------------------------------
-  function hm_idx(iiPDF_idx) result(ii_idx)
-  ! Description:
-  ! Returns the position of a certain hydrometeor within the hydromet arrays
-  ! according to its iiPDF index.
-
-  ! References:
-  !
-  !-----------------------------------------------------------------------
-
-    use array_index, only: &
-        iirrm, &
-        iiNrm, &
-        iirsm, &
-        iiNsm, &
-        iirim, &
-        iiNim, &
-        iirgm, &
-        iiNgm
-
-      implicit none
-
-    ! Input Variables
-    integer, intent(in) :: iiPDF_idx
-
-    ! Return Variable
-    integer :: ii_idx
-
-    ! Local Variables
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    ! Get rid of an annoying compiler warning.
-    ii_idx = 1
-
-    if ( iiPDF_idx == iiPDF_rr ) then
-       ii_idx = iirrm
-    endif
-
-    if ( iiPDF_idx == iiPDF_Nr ) then
-       ii_idx = iiNrm
-    endif
-
-    if ( iiPDF_idx == iiPDF_rs ) then
-       ii_idx = iirsm
-    endif
-
-    if ( iiPDF_idx == iiPDF_Ns ) then
-       ii_idx = iiNsm
-    endif
-
-    if ( iiPDF_idx == iiPDF_ri ) then
-       ii_idx = iirim
-    endif
-
-    if ( iiPDF_idx == iiPDF_Ni ) then
-       ii_idx = iiNim
-    endif
-
-    if ( iiPDF_idx == iiPDF_rg ) then
-       ii_idx = iirgm
-    endif
-
-    if ( iiPDF_idx == iiPDF_Ng ) then
-       ii_idx = iiNgm
-    endif
-
-    return
-
-  end function hm_idx
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array, & ! intent(in)
