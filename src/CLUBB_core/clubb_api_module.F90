@@ -24,7 +24,9 @@ module clubb_api_module
   use mt95, only : &
     assignment( = ), &
     genrand_state, & ! Internal representation of the RNG state.
-    genrand_srepr ! Public representation of the RNG state. Should be used to save the RNG state.
+    genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state.
+    genrand_intg, &
+    genrand_init_api => genrand_init
 
   use array_index, only : &
     iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
@@ -242,7 +244,8 @@ module clubb_api_module
     stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate_hydromet_api, stats_finalize_api, &
     stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
-    thlm2T_in_K_api, calculate_spurious_source_api, assignment( = ), genrand_state, genrand_srepr
+    thlm2T_in_K_api, calculate_spurious_source_api, genrand_init_api
+
 
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
@@ -277,7 +280,8 @@ module clubb_api_module
     pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, &
     zt, zm, rad_zt, rad_zm, sfc, l_stats_last, stats_tsamp, stats_tout, &
     l_output_rad_files, l_stats, l_stats_samp, l_grads, &
-    nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp
+    nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp, &
+    assignment( = ), genrand_state, genrand_srepr, genrand_intg
 
 contains
 
