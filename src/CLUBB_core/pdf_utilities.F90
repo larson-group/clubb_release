@@ -27,8 +27,8 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
     ! ln x (mu_x_n) for the ith component of the PDF, given the mean of x (mu_x)
-    ! and the variance of x (sigma_chiqd_x) for the ith component of the PDF.
-    ! The value ln x is distributed normally when x is distributed lognormally.
+    ! and the variance of x (sigma_sqd_x) for the ith component of the PDF. The
+    ! value ln x is distributed normally when x is distributed lognormally.
 
     ! References:
     !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
@@ -69,8 +69,8 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
     ! ln x (mu_x_n) for the ith component of the PDF, given the mean of x (mu_x)
-    ! and the variance of x (sigma_chiqd_x) for the ith component of the PDF.
-    ! The value ln x is distributed normally when x is distributed lognormally.
+    ! and the variance of x (sigma_sqd_x) for the ith component of the PDF. The
+    ! value ln x is distributed normally when x is distributed lognormally.
     ! This function uses double precision variables.
 
     ! References:
@@ -112,7 +112,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
     ! deviation of ln x (sigma_x_n) for the ith component of the PDF, given the
-    ! mean of x (mu_x) and the variance of x (sigma_chiqd_x) for the ith component
+    ! mean of x (mu_x) and the variance of x (sigma_sqd_x) for the ith component
     ! of the PDF.  The value ln x is distributed normally when x is distributed
     ! lognormally.
 
@@ -154,7 +154,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
     ! deviation of ln x (sigma_x_n) for the ith component of the PDF, given the
-    ! mean of x (mu_x) and the variance of x (sigma_chiqd_x) for the ith component
+    ! mean of x (mu_x) and the variance of x (sigma_sqd_x) for the ith component
     ! of the PDF.  The value ln x is distributed normally when x is distributed
     ! lognormally.
     ! This function uses double precision variables.
