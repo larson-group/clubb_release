@@ -7,15 +7,15 @@ module pdf_utilities
 
   private ! Set default scope to private
 
-  public :: mean_L2N,      &
-            mean_L2N_dp,   &
-            stdev_L2N,     &
-            stdev_L2N_dp,  &
-            corr_NL2NN,    &
-            corr_NL2NN_dp, &
-            corr_LL2NN,    &
-            corr_LL2NN_dp, &
-            calc_corr_chi_x,  &
+  public :: mean_L2N,        &
+            mean_L2N_dp,     &
+            stdev_L2N,       &
+            stdev_L2N_dp,    &
+            corr_NL2NN,      &
+            corr_NL2NN_dp,   &
+            corr_LL2NN,      &
+            corr_LL2NN_dp,   &
+            calc_corr_chi_x, &
             calc_xp2
 
   contains
@@ -27,7 +27,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
     ! ln x (mu_x_n) for the ith component of the PDF, given the mean of x (mu_x)
-    ! and the variance of x (sigma_sqd_x) for the ith component of the PDF.
+    ! and the variance of x (sigma_chiqd_x) for the ith component of the PDF.
     ! The value ln x is distributed normally when x is distributed lognormally.
 
     ! References:
@@ -69,7 +69,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the mean of
     ! ln x (mu_x_n) for the ith component of the PDF, given the mean of x (mu_x)
-    ! and the variance of x (sigma_sqd_x) for the ith component of the PDF.
+    ! and the variance of x (sigma_chiqd_x) for the ith component of the PDF.
     ! The value ln x is distributed normally when x is distributed lognormally.
     ! This function uses double precision variables.
 
@@ -112,7 +112,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
     ! deviation of ln x (sigma_x_n) for the ith component of the PDF, given the
-    ! mean of x (mu_x) and the variance of x (sigma_sqd_x) for the ith component
+    ! mean of x (mu_x) and the variance of x (sigma_chiqd_x) for the ith component
     ! of the PDF.  The value ln x is distributed normally when x is distributed
     ! lognormally.
 
@@ -154,7 +154,7 @@ module pdf_utilities
     ! Description:
     ! For a lognormally-distributed variable x, this function finds the standard
     ! deviation of ln x (sigma_x_n) for the ith component of the PDF, given the
-    ! mean of x (mu_x) and the variance of x (sigma_sqd_x) for the ith component
+    ! mean of x (mu_x) and the variance of x (sigma_chiqd_x) for the ith component
     ! of the PDF.  The value ln x is distributed normally when x is distributed
     ! lognormally.
     ! This function uses double precision variables.
@@ -191,16 +191,16 @@ module pdf_utilities
   end function stdev_L2N_dp
 
   !=============================================================================
-  pure function corr_NL2NN( corr_xy, sigma_y_n, y_sigma2_on_mu2 )  &
-  result( corr_xy_n )
+  pure function corr_NL2NN( corr_x_y, sigma_y_n, y_sigma2_on_mu2 )  &
+  result( corr_x_y_n )
 
     ! Description:
     ! For a normally-distributed variable x and a lognormally-distributed
-    ! variable y, this function finds the correlation between x and ln y
-    ! (corr_xy_n) for the ith component of the PDF, given the correlation
-    ! between x and y (corr_xy) and the standard deviation of ln y (sigma_y_n)
-    ! for the ith component of the PDF.  The value ln y is distributed normally
-    ! when y is distributed lognormally.
+    ! variable y, this function finds the correlation of x and ln y (corr_x_y_n)
+    ! for the ith component of the PDF, given the correlation of x and y
+    ! (corr_x_y) and the standard deviation of ln y (sigma_y_n) for the ith
+    ! component of the PDF.  The value ln y is distributed normally when y is
+    ! distributed lognormally.
 
     ! References:
     !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
@@ -215,17 +215,17 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
-      corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
+      corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
 
 
-    ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
+    ! Find the correlation of x and ln y for the ith component of the PDF.
+    corr_x_y_n = corr_x_y * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
 
 
     return
@@ -233,16 +233,16 @@ module pdf_utilities
   end function corr_NL2NN
 
   !=============================================================================
-  pure function corr_NL2NN_dp( corr_xy, sigma_y_n, y_sigma2_on_mu2 )  &
-  result( corr_xy_n )
+  pure function corr_NL2NN_dp( corr_x_y, sigma_y_n, y_sigma2_on_mu2 )  &
+  result( corr_x_y_n )
 
     ! Description:
     ! For a normally-distributed variable x and a lognormally-distributed
-    ! variable y, this function finds the correlation between x and ln y
-    ! (corr_xy_n) for the ith component of the PDF, given the correlation
-    ! between x and y (corr_xy) and the standard deviation of ln y (sigma_y_n)
-    ! for the ith component of the PDF.  The value ln y is distributed normally
-    ! when y is distributed lognormally.
+    ! variable y, this function finds the correlation of x and ln y (corr_x_y_n)
+    ! for the ith component of the PDF, given the correlation of x and y
+    ! (corr_x_y) and the standard deviation of ln y (sigma_y_n) for the ith
+    ! component of the PDF.  The value ln y is distributed normally when y is
+    ! distributed lognormally.
     ! This function uses double precision variables.
 
     ! References:
@@ -258,17 +258,17 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = dp ), intent(in) :: &
-      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       y_sigma2_on_mu2    ! Ratio:  sigma_y^2 / mu_y^2 (ith PDF component)   [-]
 
     ! Return Variable
     real( kind = dp ) ::  &
-      corr_xy_n  ! Correlation between x and ln y (ith PDF component) [-]
+      corr_x_y_n  ! Correlation of x and ln y (ith PDF component) [-]
 
 
-    ! Find the correlation between x and ln y for the ith component of the PDF.
-    corr_xy_n = corr_xy * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
+    ! Find the correlation of x and ln y for the ith component of the PDF.
+    corr_x_y_n = corr_x_y * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
 
 
     return
@@ -276,17 +276,17 @@ module pdf_utilities
   end function corr_NL2NN_dp
 
   !=============================================================================
-  pure function corr_LL2NN( corr_xy, sigma_x_n, sigma_y_n, &
+  pure function corr_LL2NN( corr_x_y, sigma_x_n, sigma_y_n, &
                             x_sigma2_on_mu2, y_sigma2_on_mu2 )  &
-  result( corr_xy_n )
+  result( corr_x_y_n )
 
     ! Description:
     ! For lognormally-distributed variables x and y, this function finds the
-    ! correlation between ln x and ln y (corr_xy_n) for the ith component of the
-    ! PDF, given the correlation between x and y (corr_xy), the standard
-    ! deviation of ln x (sigma_x_n), and the standard deviation of ln y
-    ! (sigma_y_n) for the ith component of the PDF.  The value of ln x (or ln y)
-    ! is distributed normally when x (or y) is distributed lognormally.
+    ! correlation of ln x and ln y (corr_x_y_n) for the ith component of the
+    ! PDF, given the correlation of x and y (corr_x_y), the standard deviation
+    ! of ln x (sigma_x_n), and the standard deviation of ln y (sigma_y_n) for
+    ! the ith component of the PDF.  The value of ln x (or ln y) is distributed
+    ! normally when x (or y) is distributed lognormally.
 
     ! References:
     !  Garvey, P. R., 2000: Probability methods for cost uncertainty analysis.
@@ -304,7 +304,7 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  &
-      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
@@ -312,21 +312,21 @@ module pdf_utilities
 
     ! Return Variable
     real( kind = core_rknd ) ::  &
-      corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
+      corr_x_y_n  ! Correlation of ln x and ln y (ith PDF component)  [-]
 
     ! Local Variable
     real( kind = core_rknd ) ::  &
       log_arg    ! Input into the ln function    [-]
 
 
-    log_arg = one + corr_xy * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 )
-    ! Find the correlation between ln x and ln y for the ith component of the
+    log_arg = one + corr_x_y * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 )
+    ! Find the correlation of ln x and ln y for the ith component of the
     ! PDF.
-!    corr_xy_n = log( one + corr_xy * sqrt( exp( sigma_x_n**2 ) - one )  &
-!                                   * sqrt( exp( sigma_y_n**2 ) - one )  )  &
-!                / ( sigma_x_n * sigma_y_n )
+!    corr_x_y_n = log( one + corr_x_y * sqrt( exp( sigma_x_n**2 ) - one )  &
+!                                     * sqrt( exp( sigma_y_n**2 ) - one )  )  &
+!                 / ( sigma_x_n * sigma_y_n )
 
-     corr_xy_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
+     corr_x_y_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
 
 
     return
@@ -334,17 +334,17 @@ module pdf_utilities
   end function corr_LL2NN
 
   !=============================================================================
-  pure function corr_LL2NN_dp( corr_xy, sigma_x_n, sigma_y_n, &
+  pure function corr_LL2NN_dp( corr_x_y, sigma_x_n, sigma_y_n, &
                                x_sigma2_on_mu2, y_sigma2_on_mu2 )  &
-  result( corr_xy_n )
+  result( corr_x_y_n )
 
     ! Description:
     ! For lognormally-distributed variables x and y, this function finds the
-    ! correlation between ln x and ln y (corr_xy_n) for the ith component of the
-    ! PDF, given the correlation between x and y (corr_xy), the standard
-    ! deviation of ln x (sigma_x_n), and the standard deviation of ln y
-    ! (sigma_y_n) for the ith component of the PDF.  The value of ln x (or ln y)
-    ! is distributed normally when x (or y) is distributed lognormally.
+    ! correlation of ln x and ln y (corr_x_y_n) for the ith component of the
+    ! PDF, given the correlation of x and y (corr_x_y), the standard deviation
+    ! of ln x (sigma_x_n), and the standard deviation of ln y (sigma_y_n) for
+    ! the ith component of the PDF.  The value of ln x (or ln y) is distributed
+    ! normally when x (or y) is distributed lognormally.
     ! This function uses double precision variables.
 
     ! References:
@@ -363,7 +363,7 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = dp ), intent(in) ::  &
-      corr_xy,         & ! Correlation between x and y (ith PDF component)  [-]
+      corr_x_y,        & ! Correlation of x and y (ith PDF component)       [-]
       sigma_x_n,       & ! Standard deviation of ln x (ith PDF component)   [-]
       sigma_y_n,       & ! Standard deviation of ln y (ith PDF component)   [-]
       x_sigma2_on_mu2, & ! Ratio:  sigma_x^2 / mu_x^2 (ith PDF component)   [-]
@@ -372,13 +372,13 @@ module pdf_utilities
 
     ! Return Variable
     real( kind = dp ) ::  &
-      corr_xy_n  ! Correlation between ln x and ln y (ith PDF component)  [-]
+      corr_x_y_n  ! Correlation of ln x and ln y (ith PDF component)  [-]
 
 
-    ! Find the correlation between ln x and ln y for the ith component of the
+    ! Find the correlation of ln x and ln y for the ith component of the
     ! PDF.
-    corr_xy_n &
-    = log( one_dp + corr_xy * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 ) ) &
+    corr_x_y_n &
+    = log( one_dp + corr_x_y * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 ) ) &
       / ( sigma_x_n * sigma_y_n )
 
 
@@ -388,44 +388,45 @@ module pdf_utilities
 
   !=============================================================================
   pure function calc_corr_chi_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
-                              sigma_chi_i, corr_rtx_i, corr_thlx_i )  &
+                                 sigma_chi_i, corr_rt_x_i, corr_thl_x_i )  &
   result( corr_chi_x_i )
 
     ! Description:
-    ! This function calculates the correlation between extended liquid water
-    ! mixing ratio, chi(s), and a generic variable x, within the ith component of the
-    ! PDF.  The variable chi(s) can be split into mean and turbulent components, such
-    ! that:
+    ! This function calculates the correlation of extended liquid water mixing
+    ! ratio, chi (old s), and a generic variable x, within the ith component of
+    ! the PDF.  The variable chi can be split into mean and turbulent
+    ! components, such that:
     !
-    ! s = <s> + s';
+    ! chi = <chi> + chi';
     !
     ! where < > denotes a mean field an ' denotes a turbulent component.
     !
-    ! The linearized equation for s' is given in Larson et al. (2001), where
+    ! The linearized equation for chi' is given in Larson et al. (2001), where
     ! within the ith component of the PDF:
     !
-    ! s_(i)' = Coef_rt(i) * r_t(i)' - Coef_thl(i) * th_l(i)'.
+    ! chi_(i)' = Coef_rt(i) * r_t(i)' - Coef_thl(i) * th_l(i)'.
     !
-    ! The equation for s' can be multiplied by x'.  The equation becomes:
+    ! The equation for chi' can be multiplied by x'.  The equation becomes:
     !
-    ! s'x'_(i) = Coef_rt(i) * r_t'x'_(i) - Coef_thl(i) * th_l'x'_(i).
+    ! chi'x'_(i) = Coef_rt(i) * r_t'x'_(i) - Coef_thl(i) * th_l'x'_(i).
     !
-    ! Averaging both sides, the covariance <s'x'> is given by the equation:
+    ! Averaging both sides, the covariance <chi'x'> is given by the equation:
     !
-    ! <s'x'_(i)> = Coef_rt(i) * <r_t'x'_(i)> - Coef_thl(i) * <th_l'x'_(i)>.
+    ! <chi'x'_(i)> = Coef_rt(i) * <r_t'x'_(i)> - Coef_thl(i) * <th_l'x'_(i)>.
     !
     ! This equation can be rewritten as:
     !
-    ! sigma_s(i) * sigma_x(i) * corr_chi_x(i)
-    !   = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rtx(i)
-    !     - Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thlx(i).
+    ! sigma_chi(i) * sigma_x(i) * corr_chi_x(i)
+    !   = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rt_x(i)
+    !     - Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thl_x(i).
     !
     ! This equation can be solved for corr_chi_x(i):
     !
-    ! corr_chi_x(i) = Coef_rt(i) * ( sigma_rt(i) / sigma_s(i) ) * corr_rtx(i)
-    !              - Coef_thl(i) * ( sigma_thl(i) / sigma_s(i) ) * corr_thlx(i).
+    ! corr_chi_x(i)
+    ! = Coef_rt(i) * ( sigma_rt(i) / sigma_chi(i) ) * corr_rt_x(i)
+    !   - Coef_thl(i) * ( sigma_thl(i) / sigma_chi(i) ) * corr_thl_x(i).
     !
-    ! The correlation between chi(s) and x within the ith component of the PDF is
+    ! The correlation of chi and x within the ith component of the PDF is
     ! calculated.
 
     ! References:
@@ -446,30 +447,31 @@ module pdf_utilities
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      crt_i,       & ! Coefficient of r_t for chi(s') (ith PDF component)         [-]
-      cthl_i,      & ! Coefficient of th_l for chi(s') (ith PDF component)      [1/K]
-      sigma_rt_i,  & ! Standard deviation of r_t (ith PDF component)     [kg/kg]
-      sigma_thl_i, & ! Standard deviation of th_l (ith PDF component)        [K]
-      sigma_chi_i,   & ! Standard deviation of chi(s) (ith PDF component)       [kg/kg]
-      corr_rtx_i,  & ! Correlation between r_t and x (ith PDF component)     [-]
-      corr_thlx_i    ! Correlation between th_l and x (ith PDF component)    [-]
+      crt_i,        & ! Coefficient of r_t for chi (old s) (ith PDF comp.)   [-]
+      cthl_i,       & ! Coefficient of th_l for chi (ith PDF comp.)  [(kg/kg)/K]
+      sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+      sigma_thl_i,  & ! Standard deviation of th_l (ith PDF component)       [K]
+      sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+      corr_rt_x_i,  & ! Correlation of r_t and x (ith PDF component)         [-]
+      corr_thl_x_i    ! Correlation of th_l and x (ith PDF component)        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
-      corr_chi_x_i  ! Correlation of chi(s) and x (ith PDF component)   [-]
+      corr_chi_x_i  ! Correlation of chi and x (ith PDF component)   [-]
 
 
-    ! Calculate the correlation of chi(s) and x in the ith PDF component.
+    ! Calculate the correlation of chi and x in the ith PDF component.
     if ( sigma_chi_i > zero ) then
 
-       corr_chi_x_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rtx_i  &
-                   - cthl_i * ( sigma_thl_i / sigma_chi_i ) * corr_thlx_i
+       corr_chi_x_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rt_x_i  &
+                      - cthl_i * ( sigma_thl_i / sigma_chi_i ) * corr_thl_x_i
 
     else  ! sigma_chi_i = 0
 
-       ! The variance of chi_(i) is 0.  This means that chi is constant within the
-       ! ith PDF component and covariance <s'x'_(i)> is also 0.  The correlation
-       ! between chi and x is 0 in the ith PDF component.
+       ! The variance of chi_(i) is 0.  This means that chi is constant within
+       ! the ith PDF component and covariance <chi'x'_(i)> is also 0.  The
+       ! correlation of chi and x is undefined in the ith PDF component, so a
+       ! value of 0 will be used.
        corr_chi_x_i = zero
 
     endif

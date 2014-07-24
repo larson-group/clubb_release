@@ -13,24 +13,24 @@ module index_mapping
 
   ! Hydrometeor array indices
   use array_index, only: &
-      iirrm,    & ! Hydrometeor array index for rain water mixing ratio, rr
-      iirsm,    & ! Hydrometeor array index for snow mixing ratio, rs
-      iirim,     & ! Hydrometeor array index for ice mixing ratio, ri
+      iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
+      iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
+      iirim, & ! Hydrometeor array index for ice mixing ratio, ri
       iirgm, & ! Hydrometeor array index for graupel mixing ratio, rg
-      iiNrm,       & ! Hydrometeor array index for rain drop concentration, Nr
-      iiNsm,    & ! Hydrometeor array index for snow concentration, Ns
-      iiNim,       & ! Hydrometeor array index for ice concentration, Ni
+      iiNrm, & ! Hydrometeor array index for rain drop concentration, Nr
+      iiNsm, & ! Hydrometeor array index for snow concentration, Ns
+      iiNim, & ! Hydrometeor array index for ice concentration, Ni
       iiNgm    ! Hydrometeor array index for graupel concentration, Ng
 
   ! PDF array indices
   use corr_matrix_module, only: &
-      iiPDF_rr,    & ! PDF array index for rain water mixing ratio, rr
-      iiPDF_rs,    & ! PDF array index for snow mixing ratio, rs
-      iiPDF_ri,     & ! PDF array index for ice mixing ratio, ri
+      iiPDF_rr, & ! PDF array index for rain water mixing ratio, rr
+      iiPDF_rs, & ! PDF array index for snow mixing ratio, rs
+      iiPDF_ri, & ! PDF array index for ice mixing ratio, ri
       iiPDF_rg, & ! PDF array index for graupel mixing ratio, rg
-      iiPDF_Nr,       & ! PDF array index for rain drop concentration, Nr
-      iiPDF_Ns,    & ! PDF array index for snow concentration, Ns
-      iiPDF_Ni,       & ! PDF array index for ice concentration, Ni
+      iiPDF_Nr, & ! PDF array index for rain drop concentration, Nr
+      iiPDF_Ns, & ! PDF array index for snow concentration, Ns
+      iiPDF_Ni, & ! PDF array index for ice concentration, Ni
       iiPDF_Ng    ! PDF array index for graupel concentration, Ng
 
   implicit none
