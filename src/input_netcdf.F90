@@ -51,9 +51,9 @@ module input_netcdf
       gregorian2julian_date
 
     use clubb_model_settings, only: &
-      clubb_day   => day, &
-      clubb_month => month, &
-      clubb_year  => year
+      day, &
+      month, &
+      year
 
     implicit none
 
@@ -87,9 +87,15 @@ module input_netcdf
 
     integer, dimension(NF90_MAX_VAR_DIMS) :: dimIds
 
+    integer :: clubb_day, clubb_month, clubb_year
+
 !-----------------------------------------------------------------------
 
     ! ---- Begin Code ----
+    ! Initialize clubb_day, month, and year
+    clubb_day = day
+    clubb_month = month
+    clubb_year = year
 
     ! Initialize l_error to false
     l_error = .false.
