@@ -592,7 +592,7 @@ module numerical_check
       edsclr_dim, &
       hydromet_dim
 
-    use parameters_microphys, only: &
+    use array_index, only: &
       hydromet_list ! Variable(s)
 
     implicit none

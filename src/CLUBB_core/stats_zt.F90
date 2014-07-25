@@ -540,11 +540,9 @@ module stats_zt
         sclr_dim,     &
         edsclr_dim
 
-    use parameters_microphys, only: &
-        hydromet_list  ! Variable(s)
-
     use array_index, only: &
-        l_mix_rat_hm  ! Variable(s)
+        hydromet_list, &  ! Variable(s)
+        l_mix_rat_hm
 
     implicit none
 

@@ -174,7 +174,7 @@ module KK_upscaled_means
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_evap_Supersat_exp, & ! Variable(s)
         KK_evap_rr_exp,       &
         KK_evap_Nr_exp
@@ -279,7 +279,7 @@ module KK_upscaled_means
         one,    & ! Constant(s)
         Nc_tol
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_auto_rc_exp, & ! Variable(s)
         KK_auto_Nc_exp
 
@@ -358,7 +358,7 @@ module KK_upscaled_means
         one,    & ! Constant(s)
         rr_tol
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_accr_rc_exp, & ! Variable(s)
         KK_accr_rr_exp
 
@@ -441,7 +441,7 @@ module KK_upscaled_means
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 

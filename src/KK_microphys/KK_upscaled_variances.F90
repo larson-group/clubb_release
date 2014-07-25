@@ -33,7 +33,7 @@ module KK_upscaled_variances
     use KK_upscaled_means, only:  &
         bivar_LL_mean_eq  ! Procedure(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 

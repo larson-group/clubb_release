@@ -31,12 +31,13 @@ module stats_variables
     l_stats            = .false., & ! Main flag to turn statistics on/off
     l_output_rad_files = .false., & ! Flag to turn off radiation statistics output
     l_netcdf           = .false., & ! Output to NetCDF format
-    l_grads            = .false., &  ! Output to GrADS format
+    l_grads            = .false., & ! Output to GrADS format
+    l_silhs_out        = .false., & ! Output SILHS files (lh_zt and lh_sfc)
     l_allow_small_stats_tout = .false. ! Do not stop if output timestep is too low for
                       ! requested format, e.g. l_grads = .true. and
                       ! stats_tout < 60.0
 
-!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, &
+!$omp   threadprivate(l_stats, l_output_rad_files, l_netcdf, l_grads, l_silhs_out, &
 !$omp     l_allow_small_stats_tout)
 
   logical, public :: & 

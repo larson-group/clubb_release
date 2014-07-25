@@ -20,7 +20,7 @@ module stats_clubb_utilities
                          stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
                          nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
                          grad_zt, nnrad_zm, grad_zm, day, month, year, &
-                         rlon, rlat, time_current, delt )
+                         rlon, rlat, time_current, delt, l_silhs_out_in )
     !
     ! Description:
     !   Initializes the statistics saving functionality of the CLUBB model.
@@ -53,26 +53,27 @@ module stats_clubb_utilities
       ztscr20, & 
       ztscr21
 
-    use stats_variables, only: & 
-      lh_zt, &  ! Variable(s)
+    use stats_variables, only: &
+      l_silhs_out, & ! Variable(s)
+      lh_zt, &
       lh_sfc
 
-    use stats_variables, only: & 
+    use stats_variables, only: &
       zm,      & ! Variables
-      zmscr01, & 
-      zmscr02, & 
-      zmscr03, & 
-      zmscr04, & 
-      zmscr05, & 
-      zmscr06, & 
-      zmscr07, & 
-      zmscr08, & 
-      zmscr09, & 
-      zmscr10, & 
-      zmscr11, & 
-      zmscr12, & 
-      zmscr13, & 
-      zmscr14, & 
+      zmscr01, &
+      zmscr02, &
+      zmscr03, &
+      zmscr04, &
+      zmscr05, &
+      zmscr06, &
+      zmscr07, &
+      zmscr08, &
+      zmscr09, &
+      zmscr10, &
+      zmscr11, &
+      zmscr12, &
+      zmscr13, &
+      zmscr14, &
       zmscr15, &
       zmscr16, &
       zmscr17, &
@@ -80,37 +81,37 @@ module stats_clubb_utilities
 
     use stats_variables, only: &
       rad_zm,  &
-      sfc,     & 
+      sfc,     &
       l_stats, &
-      l_output_rad_files, & 
-      stats_tsamp,   & 
-      stats_tout,    & 
-      l_stats_samp,  & 
-      l_stats_last, & 
-      fname_zt, & 
-      fname_lh_zt, & 
-      fname_lh_sfc, & 
+      l_output_rad_files, &
+      stats_tsamp,   &
+      stats_tout,    &
+      l_stats_samp,  &
+      l_stats_last, &
+      fname_zt, &
+      fname_lh_zt, &
+      fname_lh_sfc, &
       fname_zm, &
       fname_rad_zt, &
-      fname_rad_zm, & 
-      fname_sfc, & 
-      l_netcdf, & 
+      fname_rad_zm, &
+      fname_sfc, &
+      l_netcdf, &
       l_grads
 
-    use clubb_precision, only: & 
+    use clubb_precision, only: &
       time_precision, & ! Constant(s)
       core_rknd
 
-    use output_grads, only: & 
+    use output_grads, only: &
       open_grads ! Procedure
 
 #ifdef NETCDF
-    use output_netcdf, only: & 
+    use output_netcdf, only: &
       open_netcdf     ! Procedure
 #endif
 
     use stats_zm, only: &
-      nvarmax_zm, & ! Constant(s) 
+      nvarmax_zm, & ! Constant(s)
       stats_init_zm ! Procedure(s)
 
     use stats_zt, only: & 
@@ -145,10 +146,6 @@ module stats_clubb_utilities
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
-
-    use parameters_microphys, only: &
-      lh_microphys_disabled, & ! Constant
-      lh_microphys_type ! Variable
 
     implicit none
 
@@ -202,6 +199,8 @@ module stats_clubb_utilities
     real(kind=time_precision), intent(in) ::  & 
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
+    logical, intent(in) :: &
+      l_silhs_out_in  ! Whether to output SILHS files (lh_zt, lh_sfc)  [boolean]
 
     ! Local Variables
     logical :: l_error
@@ -256,6 +255,7 @@ module stats_clubb_utilities
     stats_tsamp = stats_tsamp_in
     stats_tout  = stats_tout_in
     stats_fmt   = trim( stats_fmt_in )
+    l_silhs_out = l_silhs_out_in
 
     if ( .not. l_stats ) then
       l_stats_samp  = .false.
@@ -319,7 +319,7 @@ module stats_clubb_utilities
         ivar = ivar + 1
       end do
 
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
+      if ( l_silhs_out ) then
         write(fstdout,*) "vars_lh_zt = "
         ivar = 1
         do while ( vars_lh_zt(ivar) /= '' )
@@ -333,7 +333,7 @@ module stats_clubb_utilities
           write(fstdout,*) vars_lh_sfc(ivar)
           ivar = ivar + 1
         end do
-      end if ! lh_microphys_type /= lh_microphys_disabled
+      end if ! l_silhs_out
 
       if ( l_output_rad_files ) then
         write(fstdout,*) "vars_rad_zt = "
@@ -741,7 +741,7 @@ module stats_clubb_utilities
 
     ! Setup output file for lh_zt (Latin Hypercube stats)
 
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
+    if ( l_silhs_out ) then
 
       ivar = 1
       do while ( ichar(vars_lh_zt(ivar)(1:1)) /= 0  & 
@@ -863,7 +863,7 @@ module stats_clubb_utilities
 
       call stats_init_lh_sfc( vars_lh_sfc, l_error )
 
-    end if ! lh_microphys_type /= lh_microphys_disabled
+    end if ! l_silhs_out
 
     ! Initialize zm (momentum points)
 
@@ -1326,19 +1326,14 @@ module stats_clubb_utilities
         zm, & 
         rad_zt, &
         rad_zm, &
-        sfc, & 
-        l_stats_last, & 
+        sfc, &
+        l_stats_last, &
         l_output_rad_files, & 
-        l_grads
+        l_grads, &
+        l_silhs_out
 
-    use output_grads, only: & 
+    use output_grads, only: &
         write_grads ! Procedure(s)
-
-    use parameters_microphys, only: &
-      lh_microphys_disabled  ! Constant
-
-    use parameters_microphys, only: &
-      lh_microphys_type    ! Variable(s)
 
     use stat_file_module, only: &
       clubb_i, & ! Variable(s)
@@ -1370,7 +1365,7 @@ module stats_clubb_utilities
     call stats_check_num_samples( zt, l_error )
     call stats_check_num_samples( zm, l_error )
     call stats_check_num_samples( sfc, l_error )
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
+    if ( l_silhs_out ) then
       call stats_check_num_samples( lh_zt, l_error )
       call stats_check_num_samples( lh_sfc, l_error )
     end if
@@ -1392,7 +1387,7 @@ module stats_clubb_utilities
       zt%accum_field_values, zt%accum_num_samples )
     call stats_avg( zm%ii, zm%jj, zm%kk, zm%num_output_fields, &
       zm%accum_field_values, zm%accum_num_samples )
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
+    if ( l_silhs_out ) then
       call stats_avg( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
         lh_zt%accum_field_values, lh_zt%accum_num_samples )
       call stats_avg( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
@@ -1414,7 +1409,7 @@ module stats_clubb_utilities
       if ( l_grads ) then
         call write_grads( zt%file  )
         call write_grads( zm%file  )
-        if ( lh_microphys_type /= lh_microphys_disabled ) then
+        if ( l_silhs_out ) then
           call write_grads( lh_zt%file  )
           call write_grads( lh_sfc%file  )
         end if
@@ -1427,7 +1422,7 @@ module stats_clubb_utilities
 #ifdef NETCDF
         call write_netcdf( zt%file  )
         call write_netcdf( zm%file  )
-        if ( lh_microphys_type /= lh_microphys_disabled ) then
+        if ( l_silhs_out ) then
           call write_netcdf( lh_zt%file  )
           call write_netcdf( lh_sfc%file  )
         end if
@@ -1446,7 +1441,7 @@ module stats_clubb_utilities
         zt%accum_num_samples, zt%l_in_update )
       call stats_zero( zm%ii, zm%jj, zm%kk, zm%num_output_fields, zm%accum_field_values, &
         zm%accum_num_samples, zm%l_in_update )
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
+      if ( l_silhs_out ) then
         call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
                          lh_zt%accum_field_values, lh_zt%accum_num_samples, lh_zt%l_in_update )
         call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
@@ -2369,9 +2364,6 @@ module stats_clubb_utilities
       AKm_rcm, &
       AKm_rcc
 
-    use parameters_microphys, only: &
-        l_predict_Nc  ! Variable(s)
-
     use stats_type_utilities, only: & 
         stat_update_var ! Procedure(s)
 
@@ -2400,9 +2392,7 @@ module stats_clubb_utilities
       call stat_update_var( ilh_rcm_mc, lh_rcm_mc, lh_zt )
       call stat_update_var( ilh_rvm_mc, lh_rvm_mc, lh_zt )
 
-      if ( l_predict_Nc ) then
-        call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
-      end if
+      call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
 
       if ( iirrm > 0 ) then
         call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirrm), lh_zt )
@@ -2509,7 +2499,8 @@ module stats_clubb_utilities
         sfc, & 
         l_netcdf, & 
         l_stats, &
-        l_output_rad_files
+        l_output_rad_files, &
+        l_silhs_out
 
     use stats_variables, only: & 
         ztscr01, &  ! Variable(s)
@@ -2603,12 +2594,6 @@ module stats_clubb_utilities
         icorr_hmx_hmy_2_n, &
         ihmp2_zt
 
-    use parameters_microphys, only: &
-        lh_microphys_disabled ! Constant(s)
-
-    use parameters_microphys, only: &
-        lh_microphys_type ! Variable(s)
-
 #ifdef NETCDF
     use output_netcdf, only:  & 
         close_netcdf ! Procedure
@@ -2667,7 +2652,7 @@ module stats_clubb_utilities
       deallocate ( ztscr20 )
       deallocate ( ztscr21 )
 
-      if ( lh_microphys_type /= lh_microphys_disabled ) then
+      if ( l_silhs_out ) then
         ! De-allocate all lh_zt variables
         deallocate( lh_zt%z )
 
@@ -2695,7 +2680,7 @@ module stats_clubb_utilities
         deallocate( lh_sfc%file%z )
         deallocate( lh_sfc%file%rlat )
         deallocate( lh_sfc%file%rlon )
-      end if
+      end if ! l_silhs_out
 
       ! De-allocate all zm variables
       deallocate( zm%z )

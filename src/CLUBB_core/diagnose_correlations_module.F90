@@ -35,7 +35,7 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-!    use corr_matrix_module, only: &
+!    use corr_varnce_module, only: &
 !        iiPDF_w ! Variable(s)
 
     use constants_clubb, only: &
@@ -869,7 +869,7 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_w ! Variable(s)
 
     implicit none
@@ -924,7 +924,7 @@ module diagnose_correlations_module
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_w,           & ! Variable(s)
       iiPDF_chi,    &
       iiPDF_rr,       &
@@ -972,7 +972,7 @@ module diagnose_correlations_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_w,        & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &

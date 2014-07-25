@@ -12,6 +12,9 @@ module array_index
   !   None
   !-------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd      ! Precision
+
   implicit none
 
   ! Variables
@@ -43,6 +46,16 @@ module array_index
     l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
     l_mix_rat_hm   ! if true, then the quantity is a hydrometeor mixing ratio
 !$omp threadprivate(l_frozen_hm, l_mix_rat_hm)
+
+  character(len=10), dimension(:), allocatable, public :: & 
+    hydromet_list
+
+!$omp threadprivate( hydromet_list )
+
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
+    hydromet_tol    ! Tolerance values for all hydrometeors    [units vary]
+
+!$omp threadprivate( hydromet_tol )   
 
   private ! Default Scope
 

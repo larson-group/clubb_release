@@ -518,11 +518,6 @@ module output_netcdf
       l_uv_nudge, &
       l_tke_aniso
 
-    use parameters_microphys, only: &
-      microphys_scheme, & ! Variable(s)
-      l_local_kk, & ! Logicals
-      l_cloud_sed
-
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -641,18 +636,15 @@ module output_netcdf
     deallocate( stat )
 
     if ( l_output_file_run_date ) then
-       allocate( stat(4) )
-    else
        allocate( stat(3) )
+    else
+       allocate( stat(2) )
     endif
 
     ! Define global attributes of the file, for reproducing the results and
     ! determining how a run was configured
     stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "Conventions", "COARDS" )
     stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "model", "CLUBB" )
-
-    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "microphys_scheme", &
-                            trim( microphys_scheme ) )
 
     if ( l_output_file_run_date ) then
 
@@ -666,7 +658,7 @@ module output_netcdf
        ! Figure out when the model is producing this file
        call date_and_time( current_date, current_time )
 
-       stat(4) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
+       stat(3) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
                               current_date(1:4)//'-'//current_date(5:6)//'-'// &
                               current_date(7:8)//' '// &
                               current_time(1:2)//':'//current_time(3:4) )
@@ -683,21 +675,19 @@ module output_netcdf
 
     ! Write the model flags to the file
     deallocate( stat )
-    allocate( stat(10) ) ! # of model flags
+    allocate( stat(8) ) ! # of model flags
 
-    stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_local_kk", lchar( l_local_kk ) )
-    stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
-    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
-    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_clip_semi_implicit", &
+    stat(1) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_pos_def", lchar( l_pos_def ) )
+    stat(2) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_hole_fill", lchar( l_hole_fill ) )
+    stat(3) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_clip_semi_implicit", &
       lchar( l_clip_semi_implicit ) )
-    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
+    stat(4) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_standard_term_ta", &
       lchar( l_standard_term_ta ) )
-    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
+    stat(5) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_single_C2_Skw", &
       lchar( l_single_C2_Skw ) )
-    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
-    stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_cloud_sed", lchar( l_cloud_sed ) )
-    stat(9) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
-    stat(10) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
+    stat(6) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_gamma_Skw", lchar( l_gamma_Skw ) )
+    stat(7) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_uv_nudge", lchar( l_uv_nudge ) )
+    stat(8) = nf90_put_att( ncf%iounit, NF90_GLOBAL, "l_tke_aniso", lchar( l_tke_aniso ) )
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model flags"

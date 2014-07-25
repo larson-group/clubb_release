@@ -105,7 +105,7 @@ module KK_Nrm_tendencies
     use KK_upscaled_means, only: &
         trivar_NLL_mean_eq  ! Procedure(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_evap_Supersat_exp, & ! Variable(s)
         KK_evap_rr_exp,       &
         KK_evap_Nr_exp,       &
@@ -254,7 +254,7 @@ module KK_Nrm_tendencies
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_Nrm_evap_nu  ! Variable(s)
 
     use clubb_precision, only: &
@@ -318,7 +318,7 @@ module KK_Nrm_tendencies
         pi,          &
         four_thirds
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         r_0 ! Constant(s)
 
     use clubb_precision, only: &

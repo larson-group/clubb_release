@@ -44,7 +44,7 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_chi    ! Variables
 
     use latin_hypercube_arrays, only: &
@@ -71,7 +71,7 @@ module latin_hypercube_driver_module
       fstderr, & ! Constant
       zero_threshold
 
-    use parameters_microphys, only: &
+    use parameters_silhs, only: &
       l_lh_vert_overlap, &  ! Variables
       l_lh_cloud_weighted_sampling
 
@@ -701,10 +701,10 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine latin_hypercube_2D_output &
              ( fname_prefix, fdir, stats_tout, nz, &
-               zt, time_initial )
+               zt, time_initial, num_samples )
 !-------------------------------------------------------------------------------
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_chi, & ! Variables
       iiPDF_eta, &
       iiPDF_w, &
@@ -718,9 +718,6 @@ module latin_hypercube_driver_module
       iiPDF_Ng, &
       iiPDF_Ncn
 
-    use parameters_microphys, only: &
-      lh_microphys_calls ! Variable
-
     use clubb_precision, only: &
       time_precision, & ! Constant
       core_rknd
@@ -732,7 +729,7 @@ module latin_hypercube_driver_module
       lognormal_sample_file, & ! Instance of a type
       uniform_sample_file
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       d_variables ! Variable
 
 
@@ -752,6 +749,8 @@ module latin_hypercube_driver_module
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       zt ! Altitudes [m]
+
+    integer, intent(in) :: num_samples
 
     ! Local Variables
     character(len=100), allocatable, dimension(:) :: &
@@ -835,7 +834,7 @@ module latin_hypercube_driver_module
       variable_descriptions(i) = "Liquid potential temperature"
       variable_units(i)        = "K"
 
-      call open_2D_samples_file( nz, lh_microphys_calls, d_variables+2, & ! In
+      call open_2D_samples_file( nz, num_samples, d_variables+2, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
@@ -925,7 +924,7 @@ module latin_hypercube_driver_module
       ! Set all the units
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity
 
-      call open_2D_samples_file( nz, lh_microphys_calls, i, & ! In
+      call open_2D_samples_file( nz, num_samples, i, & ! In
                                  trim( fname_prefix )//"_u", fdir, & ! In
                                  time_initial, stats_tout, zt, & ! In
                                  variable_names(1:i), variable_descriptions(1:i), & ! In
@@ -1528,7 +1527,7 @@ module latin_hypercube_driver_module
 
     use grid_class, only: gr
 
-    use parameters_microphys, only: &
+    use model_flags, only: &
         l_const_Nc_in_cloud ! Variable(s)
 
     use stats_variables, only: &
@@ -1584,7 +1583,7 @@ module latin_hypercube_driver_module
       iiNim, &
       iiNgm
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_chi, & ! Variable(s)
       iiPDF_eta, &
       iiPDF_w, &
@@ -2011,7 +2010,7 @@ module latin_hypercube_driver_module
       iiNim, &
       iiNgm
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_rr, &
       iiPDF_rs, &
       iiPDF_ri, &
@@ -2123,7 +2122,7 @@ module latin_hypercube_driver_module
       dp, &
       core_rknd
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_chi        ! Variable(s)
 
     implicit none

@@ -44,28 +44,29 @@ module microphys_init_cleanup
         l_hail,                       & ! See module_mp_graupel for a description
         l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
         l_predict_Nc,                  & ! Predict cloud droplet number conc
-        l_const_Nc_in_cloud,          & ! Use a constant cloud droplet conc. within cloud (K&K)
         specify_aerosol,              & ! Specify aerosol (Morrison)
         l_subgrid_w,                  & ! Use subgrid w  (Morrison)
         l_arctic_nucl,                & ! Use MPACE observations (Morrison)
         l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
         l_fix_pgam,                   & ! Fix pgam (Morrison)
-        l_fix_chi_eta_correlations,   & ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
-        l_lh_vert_overlap,            & ! Assume maximum overlap for chi(s_mellor) (SILHS)
-        l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
-        lh_microphys_calls,           & ! # of SILHS samples to call the microphysics with
         lh_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
         lh_seed,                      & ! Integer seed for the Mersenne twister
         l_local_kk,                   & ! Use local formula for K&K
         l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
         microphys_scheme,                 & ! The microphysical scheme in use
-        hydromet_list,                & ! Names of the hydrometeor species
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
         l_gfdl_activation,            & ! Flag to use GFDL activation scheme
         microphys_start_time,         & ! When to start the microphysics [s]
         sigma_g,                      & ! Parameter used in the cloud droplet sedimentation code
         Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
+
+    use parameters_silhs, only: &
+        l_lh_vert_overlap,            & ! Assume maximum overlap for chi(s_mellor) (SILHS)
+        l_lh_cloud_weighted_sampling    ! Sample preferentially within cloud (SILHS)
+
+    use parameters_microphys, only: &
+        lh_microphys_calls              ! SILHS sample points
 
     use parameters_microphys, only: &
         lh_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
@@ -80,31 +81,15 @@ module microphys_init_cleanup
         morrison_power_law,  &
         morrison_lognormal
 
-    use parameters_microphys, only: &
-        rr_sigma2_on_mu2_ip_cloud, &
-        Nr_sigma2_on_mu2_ip_cloud, &
-        rr_sigma2_on_mu2_ip_below, &
-        Nr_sigma2_on_mu2_ip_below, &
-        Ncnp2_on_Ncnm2,            &
-        rs_sigma2_on_mu2_ip_cloud, &
-        Ns_sigma2_on_mu2_ip_cloud, &
-        ri_sigma2_on_mu2_ip_cloud, &
-        Ni_sigma2_on_mu2_ip_cloud, &
-        rg_sigma2_on_mu2_ip_cloud, &
-        Ng_sigma2_on_mu2_ip_cloud, &
-        rs_sigma2_on_mu2_ip_below, &
-        Ns_sigma2_on_mu2_ip_below, &
-        ri_sigma2_on_mu2_ip_below, &
-        Ni_sigma2_on_mu2_ip_below, &
-        rg_sigma2_on_mu2_ip_below, &
-        Ng_sigma2_on_mu2_ip_below, &
+    use parameters_KK, only: &
         C_evap,                    &
         r_0
 
     use parameters_microphys, only: &
         lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
-    use parameters_microphys, only: &
+    use array_index, only: &
+        hydromet_list,                & ! Names of the hydrometeor species
         hydromet_tol  ! Variable(s)
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
@@ -187,14 +172,17 @@ module microphys_init_cleanup
     use clubb_precision, only:  & 
         core_rknd
 
-    use corr_matrix_module, only: &
-        setup_pdf_indices, &  ! Procedure(s)
+    use corr_varnce_module, only: &
+        sigma2_on_mu2_ratios_type, & ! Type
+        setup_pdf_indices, &         ! Procedure(s)
         setup_corr_varnce_array
 
     use model_flags, only: &
         l_diagnose_correlations, &
         l_evaporate_cold_rcm, &
-        l_morr_xp2_mc
+        l_morr_xp2_mc, &
+        l_const_Nc_in_cloud, &  ! Use a constant cloud droplet conc. within cloud (K&K)
+        l_fix_chi_eta_correlations  ! Use a fixed correlation for chi/eta(s/t Mellor) (SILHS)
 
     implicit none
 
@@ -238,6 +226,8 @@ module microphys_init_cleanup
      corr_file_path_cloud, &
      corr_file_path_below
 
+    type(sigma2_on_mu2_ratios_type) :: sigma2_on_mu2_ratios
+
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
       l_ice_microphys, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
@@ -246,14 +236,7 @@ module microphys_init_cleanup
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
       l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      rr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_cloud, Ncnp2_on_Ncnm2, &
-      rr_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_below, &
-      rs_sigma2_on_mu2_ip_cloud, Ns_sigma2_on_mu2_ip_cloud, &
-      ri_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_cloud, &
-      rg_sigma2_on_mu2_ip_cloud, Ng_sigma2_on_mu2_ip_cloud, &
-      rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_below, &
-      ri_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_below, &
-      rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_below, &
+      sigma2_on_mu2_ratios, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -370,39 +353,39 @@ module microphys_init_cleanup
        call write_text ( "l_lh_vert_overlap = ", l_lh_vert_overlap, &
                          l_write_to_file, iunit )
        call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", &
-                         rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "Nr_sigma2_on_mu2_ip_cloud = ", &
-                         Nr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "rr_sigma2_on_mu2_ip_below = ", &
-                         rr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "Nr_sigma2_on_mu2_ip_below = ", &
-                         Nr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
+                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+       call write_text ( "Ncnp2_on_Ncnm2 = ", sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2, &
                          l_write_to_file, iunit )
        call write_text ( "rs_sigma2_on_mu2_ip_cloud = ", &
-                         rs_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "Ns_sigma2_on_mu2_ip_cloud = ", &
-                         Ns_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "ri_sigma2_on_mu2_ip_cloud = ", &
-                         ri_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "Ni_sigma2_on_mu2_ip_cloud = ", &
-                         Ni_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "rg_sigma2_on_mu2_ip_cloud = ", &
-                         rg_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "Ng_sigma2_on_mu2_ip_cloud = ", &
-                         Ng_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
        call write_text ( "rs_sigma2_on_mu2_ip_below = ", &
-                         rs_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "Ns_sigma2_on_mu2_ip_below = ", &
-                         Ns_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "ri_sigma2_on_mu2_ip_below = ", &
-                         ri_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "Ni_sigma2_on_mu2_ip_below = ", &
-                         Ni_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "rg_sigma2_on_mu2_ip_below = ", &
-                         rg_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "Ng_sigma2_on_mu2_ip_below = ", &
-                         Ng_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
+                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
        call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
        call write_text ( "microphys_start_time = ", &
@@ -881,7 +864,8 @@ module microphys_init_cleanup
 
     ! Allocate and set the arrays containing the correlations
     ! and the X'^2 / X'^2 terms
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit )
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit, & ! Intent(in)
+                                  sigma2_on_mu2_ratios )                               ! Intent(in)
 
 
     return
@@ -899,12 +883,12 @@ module microphys_init_cleanup
     !-----------------------------------------------------------------------
 
     use parameters_microphys, only: &
-        hydromet_list,  & ! Variable(s)
         l_hydromet_sed, &
-        hydromet_tol,   &
         microphys_scheme
 
-    use array_index, only: & 
+    use array_index, only: &
+        hydromet_list,  & ! Variable(s)
+        hydromet_tol,   &
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm
 

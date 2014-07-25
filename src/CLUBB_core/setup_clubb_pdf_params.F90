@@ -82,11 +82,12 @@ module setup_clubb_pdf_params
         l_use_precip_frac,   & ! Flag(s)
         l_calc_w_corr
 
-    use parameters_microphys, only: &
-        l_const_Nc_in_cloud, & ! Flag(s)
-        hydromet_list,       & ! Variable(s)
-        hydromet_tol,        &
-        Ncnp2_on_Ncnm2
+    use array_index, only: &
+        hydromet_list, &       ! Variable(s)
+        hydromet_tol
+
+    use model_flags, only: &
+        l_const_Nc_in_cloud    ! Flag(s)
 
     use Nc_Ncn_eqns, only: &
         Nc_in_cloud_to_Ncnm  ! Procedure(s)
@@ -137,7 +138,7 @@ module setup_clubb_pdf_params
         diagnose_correlations, & ! Procedure(s)
         calc_cholesky_corr_mtx_approx
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         assert_corr_symmetric,        & ! Procedure(s)
         sigma2_on_mu2_ip_array_cloud, & ! Variable(s)
         sigma2_on_mu2_ip_array_below, &
@@ -378,7 +379,7 @@ module setup_clubb_pdf_params
     ! over the grid level.
     if ( .not. l_const_Nc_in_cloud ) then
        ! Ncn varies at each vertical level.
-       const_Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
+       const_Ncnp2_on_Ncnm2 = sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn)
     else  ! l_const_Nc_in_cloud
        ! Ncn is constant at each vertical level.
        const_Ncnp2_on_Ncnm2 = zero
@@ -822,7 +823,7 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use parameters_microphys, only: &
+    use array_index, only: &
         hydromet_tol  ! Variable(s)
 
     use clubb_precision, only: &
@@ -1061,11 +1062,9 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use parameters_microphys, only: &
-        hydromet_tol  ! Variable(s)
-
     use array_index, only: &
-        l_mix_rat_hm  ! Variable(s)
+        l_mix_rat_hm, &  ! Variable(s)
+        hydromet_tol  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1608,10 +1607,11 @@ module setup_clubb_pdf_params
         one,  & ! Constant(s)
         zero
 
-    use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2,      & ! Variable(s)
-        hydromet_tol,        &
-        l_const_Nc_in_cloud
+    use array_index, only: &
+        hydromet_tol
+
+    use model_flags, only: &
+        l_const_Nc_in_cloud ! Variable(s)
 
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
@@ -1619,7 +1619,7 @@ module setup_clubb_pdf_params
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,        &
@@ -1754,7 +1754,8 @@ module setup_clubb_pdf_params
        ! Ncn varies in both PDF components.
        sigma_x_1(iiPDF_Ncn) &
        = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc1, one, &
-                                Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn), &
+                                sigma2_on_mu2_ip_array_below(iiPDF_Ncn) )
 
     else ! l_const_Nc_in_cloud
 
@@ -1770,7 +1771,8 @@ module setup_clubb_pdf_params
        ! Ncn varies in both PDF components.
        sigma_x_2(iiPDF_Ncn) &
        = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc2, one, &
-                                Ncnp2_on_Ncnm2, Ncnp2_on_Ncnm2 )
+                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn), &
+                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) )
 
     else ! l_const_Nc_in_cloud
 
@@ -1853,7 +1855,7 @@ module setup_clubb_pdf_params
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,        &
@@ -2344,7 +2346,7 @@ module setup_clubb_pdf_params
         rc_tol, &
         max_mag_correlation
 
-    use parameters_microphys, only: &
+    use model_flags, only: &
         l_fix_chi_eta_correlations  ! Variable(s)
 
     use clubb_precision, only: &
@@ -2646,12 +2648,11 @@ module setup_clubb_pdf_params
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_Ncn  ! Variable(s)
 
-    use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2, & ! Variable(s)
-        hydromet_tol
+    use array_index, only: &
+        hydromet_tol  ! Variable(s)
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -2717,7 +2718,8 @@ module setup_clubb_pdf_params
     ! in PDF component 1.
     if ( Ncnm > Ncn_tol ) then
 
-       mu_x_1_n(iiPDF_Ncn) = mean_L2N( mu_x_1(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+       mu_x_1_n(iiPDF_Ncn) = mean_L2N( mu_x_1(iiPDF_Ncn), &
+                             sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     else
 
@@ -2732,13 +2734,13 @@ module setup_clubb_pdf_params
 
     ! Normalized standard deviation of simplified cloud nuclei concentration,
     ! N_cn, in PDF component 1.
-    sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2 )
+    sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalized mean of simplified cloud nuclei concentration, N_cn,
     ! in PDF component 2.
     if ( Ncnm > Ncn_tol ) then
 
-       mu_x_2_n(iiPDF_Ncn) = mean_L2N( mu_x_2(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+       mu_x_2_n(iiPDF_Ncn) = mean_L2N( mu_x_2(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     else
 
@@ -2753,7 +2755,7 @@ module setup_clubb_pdf_params
 
     ! Normalized standard deviation of simplified cloud nuclei concentration,
     ! N_cn, in PDF component 2.
-    sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( Ncnp2_on_Ncnm2 )
+    sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
 
     ! Normalize precipitating hydrometeor means and standard deviations.
@@ -2831,14 +2833,11 @@ module setup_clubb_pdf_params
         corr_NL2NN, & ! Procedure(s)
         corr_LL2NN
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,  &
         iiPDF_Ncn
-
-    use parameters_microphys, only: &
-        Ncnp2_on_Ncnm2  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -2892,32 +2891,32 @@ module setup_clubb_pdf_params
     ! Normalize the correlation of w and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_w), sigma_x_1_n(iiPDF_Ncn), &
-                  Ncnp2_on_Ncnm2 )
+                  sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlation of w and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_w) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_w), sigma_x_2_n(iiPDF_Ncn), &
-                  Ncnp2_on_Ncnm2 )
+                  sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlation of chi (old s) and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_chi) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_chi), &
-                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlation of chi (old s) and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_chi) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_chi), &
-                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlation of eta (old t) and N_cn in PDF component 1.
     corr_array_1_n(iiPDF_Ncn, iiPDF_eta) &
     = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_eta), &
-                  sigma_x_1_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlation of eta (old t) and N_cn in PDF component 2.
     corr_array_2_n(iiPDF_Ncn, iiPDF_eta) &
     = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_eta), &
-                  sigma_x_2_n(iiPDF_Ncn), Ncnp2_on_Ncnm2 )
+                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Normalize the correlations (in-precip) between chi/eta/w and the
     ! precipitating hydrometeors.
@@ -2954,14 +2953,14 @@ module setup_clubb_pdf_params
        corr_array_1_n(jvar, ivar) &
        = corr_LL2NN( corr_array_1(jvar, ivar), &
                      sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                     Ncnp2_on_Ncnm2, sigma2_on_mu2_ip_1(jvar) )
+                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
 
        ! Normalize the correlation (in-precip) between N_cn and a precipitating
        ! hydrometeor, hm, in PDF component 2.
        corr_array_2_n(jvar, ivar) &
        = corr_LL2NN( corr_array_2(jvar, ivar), &
                      sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                     Ncnp2_on_Ncnm2, sigma2_on_mu2_ip_2(jvar) )
+                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
 
     enddo ! jvar = ivar+1, d_variables
 
@@ -3199,7 +3198,7 @@ module setup_clubb_pdf_params
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
@@ -3556,7 +3555,7 @@ module setup_clubb_pdf_params
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_w,                   & ! Variable(s)
         iiPDF_chi,            &
         iiPDF_eta,            &
@@ -3888,7 +3887,7 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_Ncn  ! Variable(s)
 
     use clubb_precision, only: &

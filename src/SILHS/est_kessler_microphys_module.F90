@@ -282,7 +282,7 @@ module est_kessler_microphys_module
 !   use error_code, only:  &
 !     clubb_at_least_debug_level  ! Procedure(s)
 
-    use parameters_microphys, only: &
+    use parameters_silhs, only: &
       l_lh_cloud_weighted_sampling ! Variable(s)
 
     use clubb_precision, only: &

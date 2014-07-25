@@ -190,8 +190,10 @@ module clubb_driver
       lh_seed,               &
       microphys_scheme,          &
       lh_microphys_calls,    &
-      l_lh_vert_overlap,     &
       lh_sequence_length
+
+    use parameters_silhs, only: &
+      l_lh_vert_overlap       ! Variable
 
     use latin_hypercube_driver_module, only: &
       lh_subcolumn_generator, & ! Procedure(s)
@@ -257,7 +259,7 @@ module clubb_driver
         rtm_min, &
         rtm_nudge_max_altitude
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         corr_array_cloud, & ! Variable(s)
         corr_array_below, &
         d_variables, &
@@ -469,6 +471,8 @@ module clubb_driver
 
     integer :: &
       err_code_microphys
+
+    logical :: l_silhs_out    ! Whether to output SILHS files
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
@@ -1076,6 +1080,16 @@ module clubb_driver
       l_output_rad_files = .true.
     end if
 
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+      l_silhs_out = .true.
+    else
+      l_silhs_out = .false.
+    end if
+#else
+      l_silhs_out = .false.
+#endif
+
     ! This is a kludge added because the grid used by BUGSrad does
     ! not include CLUBB's ghost point. -nielsenb 20 Oct 2009
     if ( l_output_rad_files ) then
@@ -1085,14 +1099,14 @@ module clubb_driver
                        gr%nz, nlon, nlat, gr%zt, gr%zm, total_atmos_dim - 1, & ! Intent(in)
                        complete_alt(2:total_atmos_dim), total_atmos_dim, & ! Intent(in)
                        complete_momentum(2:total_atmos_dim + 1), day, month, year, & ! Intent(in)
-                       (/rlon/), (/rlat/), time_current, dt_main ) ! Intent(in)
+                       (/rlon/), (/rlat/), time_current, dt_main, l_silhs_out ) ! Intent(in)
     else
       ! Initialize statistics output
       call stats_init( iunit, fname_prefix, fdir, l_stats, & ! Intent(in)
                        stats_fmt, stats_tsamp, stats_tout, runfile, & ! Intent(in)
                        gr%nz, nlon, nlat, gr%zt, gr%zm, 0, & ! Intent(in)
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
-                       (/rlon/), (/rlat/), time_current, dt_main ) ! Intent(in)
+                       (/rlon/), (/rlat/), time_current, dt_main, l_silhs_out ) ! Intent(in)
     end if
   
 
@@ -1102,7 +1116,7 @@ module clubb_driver
       ! Setup 2D output of all subcolumns (if enabled)
       call latin_hypercube_2D_output &
            ( fname_prefix, fdir, stats_tout, gr%nz, &
-             gr%zt, time_initial  )
+             gr%zt, time_initial, lh_microphys_calls )
 
     end if
 #endif /* SILHS */

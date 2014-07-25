@@ -837,7 +837,7 @@ module fill_holes
         rho_ice,         &
         fstderr
 
-    use parameters_microphys, only: &
+    use array_index, only: &
         hydromet_list, & ! Names of the hydrometeor species
         hydromet_tol
 
@@ -1199,7 +1199,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
 
-    use parameters_microphys, only: &
+    use array_index, only: &
         hydromet_list  ! Names of the hydrometeor species
 
     use stats_variables, only: &

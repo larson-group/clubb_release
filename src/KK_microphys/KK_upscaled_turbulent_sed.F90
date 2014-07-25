@@ -363,7 +363,7 @@ module KK_upscaled_turbulent_sed
     ! References:
     !-----------------------------------------------------------------------
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
@@ -544,7 +544,7 @@ module KK_upscaled_turbulent_sed
     use constants_clubb, only: &
         one    ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
@@ -671,7 +671,7 @@ module KK_upscaled_turbulent_sed
     use KK_upscaled_means, only:  &
         bivar_LL_mean_eq  ! Procedure(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
@@ -841,7 +841,7 @@ module KK_upscaled_turbulent_sed
     ! References:
     !-----------------------------------------------------------------------
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
@@ -1022,7 +1022,7 @@ module KK_upscaled_turbulent_sed
     use constants_clubb, only: &
         one    ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 
@@ -1149,7 +1149,7 @@ module KK_upscaled_turbulent_sed
     use KK_upscaled_means, only:  &
         bivar_LL_mean_eq  ! Procedure(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_mvr_rr_exp, & ! Variable(s)
         KK_mvr_Nr_exp
 

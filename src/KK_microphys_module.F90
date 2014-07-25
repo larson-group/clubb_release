@@ -404,9 +404,11 @@ module KK_microphys_module
     use constants_clubb, only: &
         zero    ! Constant(s)
 
+    use model_flags, only: &
+        l_const_Nc_in_cloud
+
     use parameters_microphys, only: &
-        l_var_covar_src,     & ! Flag for using variance/covariance src terms
-        l_const_Nc_in_cloud    ! Flag to use a const. value of N_c within cloud
+        l_var_covar_src        ! Flag for using variance/covariance src terms
 
     use KK_upscaled_means, only: &
         KK_upscaled_means_driver ! Procedure(s)
@@ -1133,7 +1135,7 @@ module KK_microphys_module
         rho_lw,       &
         cm3_per_m3
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_auto_Nc_exp,      & ! Constant(s)
         C_evap
 
@@ -1746,7 +1748,7 @@ module KK_microphys_module
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         iiPDF_w,        & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &

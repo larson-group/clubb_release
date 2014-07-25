@@ -23,7 +23,7 @@ module index_mapping
       iiNgm    ! Hydrometeor array index for graupel concentration, Ng
 
   ! PDF array indices
-  use corr_matrix_module, only: &
+  use corr_varnce_module, only: &
       iiPDF_rr, & ! PDF array index for rain water mixing ratio, rr
       iiPDF_rs, & ! PDF array index for snow mixing ratio, rs
       iiPDF_ri, & ! PDF array index for ice mixing ratio, ri

@@ -11,11 +11,11 @@ module read_corr_mtx_test
   !-----------------------------------------------------------------------
   function read_corr_mtx_unit_test(show_corr_arrays_input)
   ! Description:
-  ! Tests the read_correlation_matrix subroutine in corr_matrix_module.F90
+  ! Tests the read_correlation_matrix subroutine in corr_varnce_module.F90
   !-----------------------------------------------------------------------
 
   ! Included Modules
-  use corr_matrix_module, &
+  use corr_varnce_module, &
     only: read_correlation_matrix, & !Subroutine(s)
       setup_pdf_indices, &
       print_corr_matrix

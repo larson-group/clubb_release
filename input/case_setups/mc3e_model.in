@@ -141,17 +141,17 @@ l_ice_microphys = .true.
 l_graupel = .true.
 
 ! Addition for using latin hypercube sampling
-rr_sigma2_on_mu2_ip_cloud = 0.766
-Nr_sigma2_on_mu2_ip_cloud = 0.429
-rs_sigma2_on_mu2_ip_cloud = 0.766
-Ns_sigma2_on_mu2_ip_cloud = 0.429
+sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 0.766
+sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 0.429
+sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud = 0.766
+sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud = 0.429
 
-rr_sigma2_on_mu2_ip_below = 0.897
-Nr_sigma2_on_mu2_ip_below = 1.0
-rs_sigma2_on_mu2_ip_below = 0.766
-Ns_sigma2_on_mu2_ip_below = 0.429
+sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 0.897
+sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 1.0
+sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below = 0.766
+sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below = 0.429
 
-Ncnp2_on_Ncnm2            = 0.003
+sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2            = 0.003
 
 /
 

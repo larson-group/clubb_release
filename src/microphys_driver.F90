@@ -184,7 +184,7 @@ module microphys_driver
         dp,             &
         core_rknd
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
         d_variables ! Variable(s)
 
     use microphys_stats_vars_module, only: &

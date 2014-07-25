@@ -29,6 +29,8 @@ module clubb_api_module
     genrand_init_api => genrand_init
 
   use array_index, only : &
+    hydromet_list, &
+    hydromet_tol, & ! Tolerance values for all hydrometeors    [units vary]
     iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
     iiNim, & ! Hydrometeor array index for ice concentration, Ni
     iiNrm, & ! Hydrometeor array index for rain drop concentration, Nr
@@ -93,7 +95,7 @@ module clubb_api_module
     thl_tol, & ! [K]
     w_tol_sqd ! [m^2/s^2]
 
-  use corr_matrix_module, only : &
+  use corr_varnce_module, only : &
     corr_array_cloud, & !
     corr_array_below, &
     d_variables, &
@@ -126,44 +128,9 @@ module clubb_api_module
     l_calc_w_corr, & ! Calculate the correlations between w and the hydrometeors
     l_use_cloud_cover, & ! helps to increase cloudiness at coarser grid resolutions.
     l_use_precip_frac, & ! Flag to use precipitation fraction in KK microphysics.
-    l_tke_aniso ! For anisotropic turbulent kinetic energy,
-
-  use parameters_microphys, only : &
-    l_lh_vert_overlap, & ! Assume maximum overlap for s_mellor (chi)
-    LH_microphys_type, & ! How the latin hypercube samples should be used with the microphysics
-    hydromet_list, &
-    hydromet_tol, & ! Tolerance values for all hydrometeors    [units vary]
-    LH_microphys_disabled, & ! Disable Latin hypercube entirely
-    LH_microphys_interactive, & ! Feed the samples into the microphysics and allow feedback
-    LH_microphys_non_interactive, & ! Feed the samples into the microphysics with no feedback
-    LH_microphys_calls, & ! Number of latin hypercube samples to call the microphysics with
-    LH_sequence_length, & ! Number of timesteps before the latin hypercube seq. repeats
-    LH_seed, & ! Seed for the Mersenne
-    l_local_kk, & ! Local drizzle for Khairoutdinov & Kogan microphysics
+    l_tke_aniso, & ! For anisotropic turbulent kinetic energy
     l_fix_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
-    l_lh_cloud_weighted_sampling, & ! Limit noise by sampling in-cloud
-    Nc0_in_cloud, & ! Initial cloud droplet concentration  [num/m^3]
-    l_const_Nc_in_cloud, & ! Use a constant cloud droplet conc. within cloud (K&K)
-    l_silhs_KK_convergence_adj_mean, & ! When true, turns off clipping by mean value of rrm_source
-                                       ! DON'T USE ME IF YOU ARE NOT CLUBB STANDALONE
-    l_predict_Nc, & ! Predict cloud droplet conconcentration (Morrison)
-    rr_sigma2_on_mu2_ip_cloud, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-    rr_sigma2_on_mu2_ip_below, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-    ri_sigma2_on_mu2_ip_cloud, & ! sigma_ri_i^2/mu_ri_i^2  [-]
-    ri_sigma2_on_mu2_ip_below, & ! sigma_ri_i^2/mu_ri_i^2  [-]
-    Nr_sigma2_on_mu2_ip_cloud, & ! sigma_Nr_i^2/mu_Nr_i^2  [-]
-    Nr_sigma2_on_mu2_ip_below, & ! sigma_Nr_i^2/mu_Nr_i^2  [-]
-    rs_sigma2_on_mu2_ip_cloud, & ! sigma_rs_i^2/mu_rs_i^2  [-]
-    rs_sigma2_on_mu2_ip_below, & ! sigma_rs_i^2/mu_rs_i^2  [-]
-    Ns_sigma2_on_mu2_ip_cloud, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
-    Ns_sigma2_on_mu2_ip_below, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
-    Ni_sigma2_on_mu2_ip_cloud, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
-    Ni_sigma2_on_mu2_ip_below, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
-    rg_sigma2_on_mu2_ip_cloud, & ! sigma_rg_i^2/mu_rg_i^2  [-]
-    rg_sigma2_on_mu2_ip_below, & ! sigma_rg_i^2/mu_rg_i^2  [-]
-    Ng_sigma2_on_mu2_ip_cloud, & ! sigma_Ng_i^2/mu_Ng_i^2  [-]
-    Ng_sigma2_on_mu2_ip_below, & ! sigma_Ng_i^2/mu_Ng_i^2  [-]
-    Ncnp2_on_Ncnm2 ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
+    l_const_Nc_in_cloud   ! Use a constant cloud droplet conc. within cloud (K&K)
 
   use parameters_model, only : &
     hydromet_dim, & ! Number of hydrometeor species
@@ -261,17 +228,8 @@ module clubb_api_module
     clubb_no_error, gr, hydromet_pdf_parameter, &
     l_use_boussinesq, l_diagnose_correlations, l_calc_w_corr, &
     l_use_cloud_cover, l_use_precip_frac, l_tke_aniso, &
-    l_lh_vert_overlap, LH_microphys_type, hydromet_list, hydromet_tol, &
-    LH_microphys_disabled, LH_microphys_interactive, LH_microphys_non_interactive, &
-    LH_microphys_calls, LH_sequence_length, LH_seed, &
-    l_local_kk, l_fix_chi_eta_correlations, l_lh_cloud_weighted_sampling, &
-    Nc0_in_cloud, l_const_Nc_in_cloud, l_silhs_KK_convergence_adj_mean, l_predict_Nc, &
-    rr_sigma2_on_mu2_ip_cloud, rr_sigma2_on_mu2_ip_below, ri_sigma2_on_mu2_ip_cloud, &
-    ri_sigma2_on_mu2_ip_below, Nr_sigma2_on_mu2_ip_cloud, Nr_sigma2_on_mu2_ip_below, &
-    rs_sigma2_on_mu2_ip_cloud, rs_sigma2_on_mu2_ip_below, Ns_sigma2_on_mu2_ip_cloud, &
-    Ns_sigma2_on_mu2_ip_below, Ni_sigma2_on_mu2_ip_cloud, Ni_sigma2_on_mu2_ip_below, &
-    rg_sigma2_on_mu2_ip_cloud, rg_sigma2_on_mu2_ip_below, Ng_sigma2_on_mu2_ip_cloud, &
-    Ng_sigma2_on_mu2_ip_below, Ncnp2_on_Ncnm2, &
+    l_fix_chi_eta_correlations, &
+    l_const_Nc_in_cloud, &
     hydromet_dim, Lscale_max, &
     l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -787,9 +745,9 @@ contains
   !================================================================================================
 
   subroutine setup_corr_varnce_array_api( &
-    input_file_cloud, input_file_below, iunit )
+    input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
 
-    use corr_matrix_module, only : setup_corr_varnce_array
+    use corr_varnce_module, only : setup_corr_varnce_array, sigma2_on_mu2_ratios_type
 
     implicit none
 
@@ -801,11 +759,14 @@ contains
       iunit ! The file unit
 
     character(len=*), intent(in) :: &
-      input_file_cloud, & ! Path to the in cloud correlation file
-      input_file_below    ! Path to the out of cloud correlation file
+      input_file_cloud, &  ! Path to the in cloud correlation file
+      input_file_below     ! Path to the out of cloud correlation file
+
+    type(sigma2_on_mu2_ratios_type), intent(in) :: &
+      sigma2_on_mu2_ratios ! Prescribed sigma^2/mu^2 ratios
 
     call setup_corr_varnce_array( &
-      input_file_cloud, input_file_below, iunit )
+      input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
 
   end subroutine setup_corr_varnce_array_api
 
@@ -818,7 +779,7 @@ contains
     iirim, iiNim, iirsm, iiNsm, &
     iirgm, iiNgm )
 
-    use corr_matrix_module, only : setup_pdf_indices
+    use corr_varnce_module, only : setup_pdf_indices
 
     implicit none
 
@@ -1615,7 +1576,7 @@ contains
     stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
     nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
     grad_zt, nnrad_zm, grad_zm, day, month, year, &
-    rlon, rlat, time_current, delt )
+    rlon, rlat, time_current, delt, l_silhs_out_in )
 
     use stats_clubb_utilities, only : stats_init
 
@@ -1671,12 +1632,15 @@ contains
     real(kind=time_precision), intent(in) ::  &
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
+    logical, intent(in) :: &
+      l_silhs_out_in  ! Whether to output SILHS files (lh_zt,lh_sfc) [dimensionless]
+
     call stats_init( &
       iunit, fname_prefix, fdir, l_stats_in, &
       stats_fmt_in, stats_tsamp_in, stats_tout_in, fnamelist, &
       nzmax, nlon, nlat, gzt, gzm, nnrad_zt, &
       grad_zt, nnrad_zm, grad_zm, day, month, year, &
-      rlon, rlat, time_current, delt )
+      rlon, rlat, time_current, delt, l_silhs_out_in )
   end subroutine stats_init_api
 
   !================================================================================================

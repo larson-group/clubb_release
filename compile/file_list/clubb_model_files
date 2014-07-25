@@ -44,3 +44,5 @@
 ../src/estimate_scm_microphys_module.F90
 ../src/lh_microphys_driver_module.F90
 ../src/parameters_radiation.F90
+../src/parameters_microphys.F90
+../src/KK_microphys_module.F90

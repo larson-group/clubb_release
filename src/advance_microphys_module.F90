@@ -72,8 +72,6 @@ module advance_microphys_module
     use parameters_microphys, only: &
         l_predict_Nc,          & ! Predict cloud droplet number conc (Morrison)
         microphys_scheme,         & ! The microphysical scheme in use
-        hydromet_list,        & ! Names of the hydrometeor species
-        hydromet_tol,         & ! Tolerance values for hydrometeor species
         microphys_start_time    ! When to start the microphysics [s]
 
     use clubb_precision, only:  & 
@@ -86,7 +84,9 @@ module advance_microphys_module
         clubb_no_error                ! Constant(s)
 
     use array_index, only:  & 
-        iirrm  ! Variable(s)
+        hydromet_list, & ! Names of the hydrometeor species
+        hydromet_tol,         & ! Tolerance values for hydrometeor species
+        iirrm            ! Variable(s)
 
     use stats_variables, only: & 
         zt,  & ! Variable(s)
@@ -523,8 +523,7 @@ module advance_microphys_module
         nu_hm_vert_res_dep  ! Variable(s)
 
     use parameters_microphys, only: &
-        hydromet_list,     & ! Variable(s)
-        l_hydromet_sed,    &
+        l_hydromet_sed,    & ! Variable(s)
         l_upwind_diff_sed
 
     use error_code, only:  & 
@@ -549,6 +548,7 @@ module advance_microphys_module
 
     ! Stats for <V_rr'rr"> and <V_Nr'Nr'>
     use array_index, only:  & 
+        hydromet_list,     & ! Variable(s)
         iirrm, &! Variable(s)
         iiNrm
 

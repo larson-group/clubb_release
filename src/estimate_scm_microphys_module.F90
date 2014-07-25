@@ -39,12 +39,12 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      l_lh_cloud_weighted_sampling, & ! Variable(s)
-      l_const_Nc_in_cloud, &
       l_var_covar_src
 
+    use model_flags, only: &
+      l_const_Nc_in_cloud
 
-    use corr_matrix_module, only: &
+    use corr_varnce_module, only: &
       iiPDF_chi, &
       iiPDF_w
 

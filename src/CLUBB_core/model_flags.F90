@@ -40,7 +40,7 @@ module model_flags
                                 ! predictive equations.  The predictive
                                 ! equations are anelastic by default.
 
-  logical, public :: &
+  logical, parameter, public :: &
     l_use_precip_frac = .true.   ! Flag to use precipitation fraction in KK
                                  ! microphysics.  The precipitation fraction
                                  ! is automatically set to 1 when this flag
@@ -168,6 +168,12 @@ module model_flags
 
   logical, parameter, public :: &
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
+
+  logical, public :: &
+    l_const_Nc_in_cloud = .false.,      & ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_fix_chi_eta_correlations = .true.   ! Use a fixed correlation for s and t Mellor(chi/eta) 
+
+!$omp threadprivate( l_const_Nc_in_cloud, l_fix_chi_eta_correlations )
 
 #ifdef GFDL
   logical, public :: &

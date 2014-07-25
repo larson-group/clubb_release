@@ -528,7 +528,7 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_evap_Supersat_exp, & ! Variable(s)
         KK_evap_rr_exp,       &
         KK_evap_Nr_exp
@@ -653,7 +653,7 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_evap_Supersat_exp, & ! Variable(s)
         KK_evap_rr_exp,       &
         KK_evap_Nr_exp
@@ -821,7 +821,7 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         trivar_NLL_mean_eq  ! Procedure
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_evap_Supersat_exp, & ! Variable(s)
         KK_evap_rr_exp,       &
         KK_evap_Nr_exp
@@ -982,7 +982,7 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_auto_rc_exp, & ! Variable(s)
         KK_auto_Nc_exp
 
@@ -1102,7 +1102,7 @@ module KK_upscaled_covariances
         bivar_NL_mean_eq,     & ! Procedure(s)
         bivar_NL_mean_eq_Nc0
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_auto_rc_exp, & ! Variable(s)
         KK_auto_Nc_exp
 
@@ -1279,7 +1279,7 @@ module KK_upscaled_covariances
         bivar_NL_mean_eq,     & ! Procedure(s)
         bivar_NL_mean_eq_Nc0
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_auto_rc_exp, & ! Variable(s)
         KK_auto_Nc_exp
 
@@ -1451,7 +1451,7 @@ module KK_upscaled_covariances
     use constants_clubb, only: &
         one  ! Constant(s)
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_accr_rc_exp, & ! Variable(s)
         KK_accr_rr_exp
 
@@ -1556,7 +1556,7 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_accr_rc_exp, & ! Variable(s)
         KK_accr_rr_exp
 
@@ -1690,7 +1690,7 @@ module KK_upscaled_covariances
     use KK_upscaled_means, only:  &
         bivar_NL_mean_eq
 
-    use parameters_microphys, only: &
+    use parameters_KK, only: &
         KK_accr_rc_exp, & ! Variable(s)
         KK_accr_rr_exp
 

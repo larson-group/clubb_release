@@ -427,13 +427,13 @@ subroutine mmicro_pcond ( sub_column,           &
    use parameters_model, only: &
        hydromet_dim  ! Variable(s)
 
-   use parameters_microphys, only: &
+   use parameters_KK, only: &
        KK_auto_Nc_exp  ! Variable(s)
 
    use clubb_precision, only: &
        core_rknd  ! Variable(s)
 
-   use corr_matrix_module, only: &
+   use corr_varnce_module, only: &
        d_variables, &
        corr_array_cloud, &
        corr_array_below, &
