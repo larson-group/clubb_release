@@ -2481,10 +2481,10 @@ module advance_clubb_core_module
         rc1_zt,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
         rc2_zm,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
         rc2_zt,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-        rsl1_zm,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-        rsl1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-        rsl2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-        rsl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+        rsatl1_zm,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+        rsatl1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+        rsatl2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+        rsatl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
         cloud_frac1_zm, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
@@ -2543,8 +2543,8 @@ module advance_clubb_core_module
         mixt_frac_zt   = pdf_params%mixt_frac
         rc1_zt         = pdf_params%rc1
         rc2_zt         = pdf_params%rc2
-        rsl1_zt        = pdf_params%rsl1
-        rsl2_zt        = pdf_params%rsl2
+        rsatl1_zt        = pdf_params%rsatl1
+        rsatl2_zt        = pdf_params%rsatl2
         cloud_frac1_zt = pdf_params%cloud_frac1
         cloud_frac2_zt = pdf_params%cloud_frac2
         chi_1_zt          = pdf_params%chi_1
@@ -2585,8 +2585,8 @@ module advance_clubb_core_module
           mixt_frac_zm   = pdf_params_zm%mixt_frac
           rc1_zm         = pdf_params_zm%rc1
           rc2_zm         = pdf_params_zm%rc2
-          rsl1_zm        = pdf_params_zm%rsl1
-          rsl2_zm        = pdf_params_zm%rsl2
+          rsatl1_zm        = pdf_params_zm%rsatl1
+          rsatl2_zm        = pdf_params_zm%rsatl2
           cloud_frac1_zm = pdf_params_zm%cloud_frac1
           cloud_frac2_zm = pdf_params_zm%cloud_frac2
           chi_1_zm          = pdf_params_zm%chi_1
@@ -2668,10 +2668,10 @@ module advance_clubb_core_module
           rc1_zm(gr%nz)         = 0.0_core_rknd
           rc2_zm                = zt2zm( pdf_params%rc2 )
           rc2_zm(gr%nz)         = 0.0_core_rknd
-          rsl1_zm               = zt2zm( pdf_params%rsl1 )
-          rsl1_zm(gr%nz)        = 0.0_core_rknd
-          rsl2_zm               = zt2zm( pdf_params%rsl2 )
-          rsl2_zm(gr%nz)        = 0.0_core_rknd
+          rsatl1_zm               = zt2zm( pdf_params%rsatl1 )
+          rsatl1_zm(gr%nz)        = 0.0_core_rknd
+          rsatl2_zm               = zt2zm( pdf_params%rsatl2 )
+          rsatl2_zm(gr%nz)        = 0.0_core_rknd
           cloud_frac1_zm        = zt2zm( pdf_params%cloud_frac1 )
           cloud_frac1_zm(gr%nz) = 0.0_core_rknd
           cloud_frac2_zm        = zt2zm( pdf_params%cloud_frac2 )
@@ -2758,8 +2758,8 @@ module advance_clubb_core_module
         pdf_params%mixt_frac   = trapezoid_zt( mixt_frac_zt, mixt_frac_zm )
         pdf_params%rc1         = trapezoid_zt( rc1_zt, rc1_zm )
         pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
-        pdf_params%rsl1        = trapezoid_zt( rsl1_zt, rsl1_zm )
-        pdf_params%rsl2        = trapezoid_zt( rsl2_zt, rsl2_zm )
+        pdf_params%rsatl1        = trapezoid_zt( rsatl1_zt, rsatl1_zm )
+        pdf_params%rsatl2        = trapezoid_zt( rsatl2_zt, rsatl2_zm )
         pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
         pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
         pdf_params%chi_1          = trapezoid_zt( chi_1_zt, chi_1_zm )

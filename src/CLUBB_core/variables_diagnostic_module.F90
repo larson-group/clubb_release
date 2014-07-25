@@ -410,8 +410,8 @@ module variables_diagnostic_module
     pdf_params_zm(:)%covar_chi_eta_2  = zero
     pdf_params_zm(:)%corr_chi_eta_1    = zero
     pdf_params_zm(:)%corr_chi_eta_2    = zero
-    pdf_params_zm(:)%rsl1             = zero
-    pdf_params_zm(:)%rsl2             = zero
+    pdf_params_zm(:)%rsatl1             = zero
+    pdf_params_zm(:)%rsatl2             = zero
     pdf_params_zm(:)%rc1              = zero
     pdf_params_zm(:)%rc2              = zero
     pdf_params_zm(:)%cloud_frac1      = zero
@@ -447,8 +447,8 @@ module variables_diagnostic_module
     pdf_params_zm_frz(:)%covar_chi_eta_2  = zero
     pdf_params_zm_frz(:)%corr_chi_eta_1    = zero
     pdf_params_zm_frz(:)%corr_chi_eta_2    = zero
-    pdf_params_zm_frz(:)%rsl1             = zero
-    pdf_params_zm_frz(:)%rsl2             = zero
+    pdf_params_zm_frz(:)%rsatl1             = zero
+    pdf_params_zm_frz(:)%rsatl2             = zero
     pdf_params_zm_frz(:)%rc1              = zero
     pdf_params_zm_frz(:)%rc2              = zero
     pdf_params_zm_frz(:)%cloud_frac1      = zero

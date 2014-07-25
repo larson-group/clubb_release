@@ -243,8 +243,8 @@ module pdf_closure_module
       covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
-      rsl1,            & ! Mean of r_sl (1st PDF component)              [kg/kg]
-      rsl2,            & ! Mean of r_sl (2nd PDF component)              [kg/kg]
+      rsatl1,            & ! Mean of r_sl (1st PDF component)              [kg/kg]
+      rsatl2,            & ! Mean of r_sl (2nd PDF component)              [kg/kg]
       rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
       cloud_frac1,     & ! Cloud fraction (1st PDF component)                [-]
@@ -647,39 +647,39 @@ module pdf_closure_module
     if( sclr_dim > 0  .and.  (.not. do_liquid_only_in_clubb) ) then ! h1g, 2010-06-16 begin mod
 
       if( tl1 > t1_combined ) then
-        rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+        rsatl1 = sat_mixrat_liq( p_in_Pa, tl1 )
       elseif( tl1 > t2_combined )  then
-        rsl1 = sat_mixrat_liq( p_in_Pa, tl1 ) * (tl1 - t2_combined)/(t1_combined - t2_combined) &
+        rsatl1 = sat_mixrat_liq( p_in_Pa, tl1 ) * (tl1 - t2_combined)/(t1_combined - t2_combined) &
              + sat_mixrat_ice( p_in_Pa, tl1 ) * (t1_combined - tl1)/(t1_combined - t2_combined)
       elseif( tl1 > t3_combined )  then
-        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 ) &
+        rsatl1 = sat_mixrat_ice( p_in_Pa, tl1 ) &
              + sat_mixrat_ice( p_in_Pa, tl1 ) * (RH_crit(1, 1) -1._core_rknd ) &
                * ( t2_combined -tl1)/(t2_combined - t3_combined)
       else
-        rsl1 = sat_mixrat_ice( p_in_Pa, tl1 ) * RH_crit(1, 1)
+        rsatl1 = sat_mixrat_ice( p_in_Pa, tl1 ) * RH_crit(1, 1)
       endif
 
       if( tl2 > t1_combined ) then
-        rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+        rsatl2 = sat_mixrat_liq( p_in_Pa, tl2 )
       elseif( tl2 > t2_combined )  then
-        rsl2 = sat_mixrat_liq( p_in_Pa, tl2 ) * (tl2 - t2_combined)/(t1_combined - t2_combined) &
+        rsatl2 = sat_mixrat_liq( p_in_Pa, tl2 ) * (tl2 - t2_combined)/(t1_combined - t2_combined) &
              + sat_mixrat_ice( p_in_Pa, tl2 ) * (t1_combined - tl2)/(t1_combined - t2_combined)
       elseif( tl2 > t3_combined )  then
-        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 ) &
+        rsatl2 = sat_mixrat_ice( p_in_Pa, tl2 ) &
              + sat_mixrat_ice( p_in_Pa, tl2 )* (RH_crit(1, 2) -1._core_rknd) &
                * ( t2_combined -tl2)/(t2_combined - t3_combined)
       else
-        rsl2 = sat_mixrat_ice( p_in_Pa, tl2 ) * RH_crit(1, 2)
+        rsatl2 = sat_mixrat_ice( p_in_Pa, tl2 ) * RH_crit(1, 2)
       endif
 
     else !sclr_dim <= 0  or  do_liquid_only_in_clubb = .T.
-      rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
-      rsl2 = sat_mixrat_liq( p_in_Pa, tl2 )
+      rsatl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+      rsatl2 = sat_mixrat_liq( p_in_Pa, tl2 )
 
     endif !sclr_dim > 0
 #else
-    rsl1 = sat_mixrat_liq( p_in_Pa, tl1 )
-    rsl2 = sat_mixrat_liq( p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
+    rsatl1 = sat_mixrat_liq( p_in_Pa, tl1 )
+    rsatl2 = sat_mixrat_liq( p_in_Pa, tl2 ) ! h1g, 2010-06-16 end mod
 #endif
 
     ! SD's beta (eqn. 8)
@@ -687,8 +687,8 @@ module pdf_closure_module
     beta2 = ep * ( Lv/(Rd*tl2) ) * ( Lv/(Cp*tl2) )
 
     ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-    chi_1 = ( rt1 - rsl1 ) / ( 1._core_rknd + beta1 * rsl1 )
-    chi_2 = ( rt2 - rsl2 ) / ( 1._core_rknd + beta2 * rsl2 )
+    chi_1 = ( rt1 - rsatl1 ) / ( 1._core_rknd + beta1 * rsatl1 )
+    chi_2 = ( rt2 - rsatl2 ) / ( 1._core_rknd + beta2 * rsatl2 )
 
     ! Coefficients for s'
     ! For each normal distribution in the sum of two normal distributions,
@@ -696,13 +696,13 @@ module pdf_closure_module
     ! therefore, x's' = crt * x'rt'  +  cthl * x'thl'.
     ! Larson et al. May, 2001.
 
-    crt1  = 1._core_rknd/( 1._core_rknd + beta1*rsl1)
-    crt2  = 1._core_rknd/( 1._core_rknd + beta2*rsl2)
+    crt1  = 1._core_rknd/( 1._core_rknd + beta1*rsatl1)
+    crt2  = 1._core_rknd/( 1._core_rknd + beta2*rsatl2)
 
-    cthl1 = ( (1._core_rknd + beta1 * rt1) / ( 1._core_rknd + beta1*rsl1)**2 ) & 
-             * ( Cp/Lv ) * beta1 * rsl1 * exner
-    cthl2 = ( (1._core_rknd + beta2 * rt2) / ( 1._core_rknd + beta2*rsl2 )**2 ) & 
-             * ( Cp/Lv ) * beta2 * rsl2 * exner
+    cthl1 = ( (1._core_rknd + beta1 * rt1) / ( 1._core_rknd + beta1*rsatl1)**2 ) & 
+             * ( Cp/Lv ) * beta1 * rsatl1 * exner
+    cthl2 = ( (1._core_rknd + beta2 * rt2) / ( 1._core_rknd + beta2*rsatl2 )**2 ) & 
+             * ( Cp/Lv ) * beta2 * rsatl2 * exner
 
     ! Standard deviation of chi for each component.
     ! Include subplume correlation of qt, thl
@@ -778,7 +778,7 @@ module pdf_closure_module
       ! We must compute chi_at_ice_sat1 and chi_at_ice_sat2
       if (tl1 <= T_freeze_K) then
         rt_at_ice_sat1 = sat_mixrat_ice( p_in_Pa, tl1 )
-        chi_at_ice_sat1 = ( rt_at_ice_sat1 - rsl1 ) / ( 1._core_rknd + beta1 * rsl1 )
+        chi_at_ice_sat1 = ( rt_at_ice_sat1 - rsatl1 ) / ( 1._core_rknd + beta1 * rsatl1 )
       else
         ! If the temperature is warmer than freezing (> 0C) then ice_supersat_frac
         ! is not defined, so we use chi_at_liq_sat
@@ -787,7 +787,7 @@ module pdf_closure_module
 
       if (tl2 <= T_freeze_K) then
         rt_at_ice_sat2 = sat_mixrat_ice( p_in_Pa, tl2 )
-        chi_at_ice_sat2 = ( rt_at_ice_sat2 - rsl2 ) / ( 1._core_rknd + beta2 * rsl2 )
+        chi_at_ice_sat2 = ( rt_at_ice_sat2 - rsatl2 ) / ( 1._core_rknd + beta2 * rsatl2 )
       else
         ! If the temperature is warmer than freezing (> 0C) then ice_supersat_frac
         ! is not defined, so we use chi_at_liq_sat
@@ -931,8 +931,8 @@ module pdf_closure_module
     pdf_params%covar_chi_eta_2  = covar_chi_eta_2
     pdf_params%corr_chi_eta_1   = corr_chi_eta_1
     pdf_params%corr_chi_eta_2   = corr_chi_eta_2
-    pdf_params%rsl1             = rsl1
-    pdf_params%rsl2             = rsl2
+    pdf_params%rsatl1             = rsatl1
+    pdf_params%rsatl2             = rsatl2
     pdf_params%rc1              = rc1
     pdf_params%rc2              = rc2
     pdf_params%cloud_frac1      = cloud_frac1
@@ -1034,8 +1034,8 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%covar_chi_eta_2 = ", pdf_params%covar_chi_eta_2
         write(fstderr,*) "pdf_params%corr_chi_eta_1 = ", pdf_params%corr_chi_eta_1
         write(fstderr,*) "pdf_params%corr_chi_eta_2 = ", pdf_params%corr_chi_eta_2
-        write(fstderr,*) "pdf_params%rsl1 = ", pdf_params%rsl1
-        write(fstderr,*) "pdf_params%rsl2 = ", pdf_params%rsl2
+        write(fstderr,*) "pdf_params%rsatl1 = ", pdf_params%rsatl1
+        write(fstderr,*) "pdf_params%rsatl2 = ", pdf_params%rsatl2
         write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
         write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
         write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1

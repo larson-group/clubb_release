@@ -127,7 +127,7 @@ module mixing_length
     real( kind = core_rknd ) :: thl_par_j, rt_par_j, rc_par_j, thv_par_j
 
     ! Used in latent heating calculation
-    real( kind = core_rknd ) :: tl_par_j, rsl_par_j, beta_par_j, & 
+    real( kind = core_rknd ) :: tl_par_j, rsatl_par_j, beta_par_j, & 
             s_par_j
 
     ! Parcel quantities at grid level j-1
@@ -291,14 +291,14 @@ module mixing_length
         ! theta_l of the parcel and r_t of the parcel at grid level j.
         tl_par_j = thl_par_j*exner(j)
         if ( l_sat_mixrat_lookup ) then
-          rsl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
+          rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
         else
-          rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
+          rsatl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
         end if
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1._core_rknd+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsatl_par_j)/(1._core_rknd+beta_par_j*rsatl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of entraining parcel at grid level j.
@@ -588,14 +588,14 @@ module mixing_length
         ! theta_l of the parcel and r_t of the parcel at grid level j.
         tl_par_j = thl_par_j*exner(j)
         if ( l_sat_mixrat_lookup ) then
-          rsl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
+          rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
         else
-          rsl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
+          rsatl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
         end if
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
-        s_par_j = (rt_par_j-rsl_par_j)/(1._core_rknd+beta_par_j*rsl_par_j)
+        s_par_j = (rt_par_j-rsatl_par_j)/(1._core_rknd+beta_par_j*rsatl_par_j)
         rc_par_j = max( s_par_j, zero_threshold )
 
         ! theta_v of the entraining parcel at grid level j.

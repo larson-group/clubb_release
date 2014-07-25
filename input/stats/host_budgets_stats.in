@@ -18,7 +18,7 @@ vars_zt =
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp1', 'wp3_bp2',
 'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_4hd', 'wp3_cl',
 'mixt_frac', 'w1', 'w2', 'varnce_w1', 'varnce_w2', 'thl1', 'thl2', 'varnce_thl1', 'varnce_thl2',
-'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsl1', 'rsl2', 
+'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsatl1', 'rsatl2', 
 'cloud_frac1', 'cloud_frac2', 'a3_coef_zt', 'wp3_on_wp2_zt',
 'chi_1', 'chi_2', 'stdev_chi_1', 'stdev_chi_2', 'stdev_eta_1', 'stdev_eta_2', 'covar_chi_eta_1', 'covar_chi_eta_2',
 'corr_chi_eta_1', 'corr_chi_eta_2', 'rrtthl', 'chi',

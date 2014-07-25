@@ -386,8 +386,8 @@ module variables_prognostic_module
     pdf_params(:)%covar_chi_eta_2  = zero
     pdf_params(:)%corr_chi_eta_1    = zero
     pdf_params(:)%corr_chi_eta_2    = zero
-    pdf_params(:)%rsl1             = zero
-    pdf_params(:)%rsl2             = zero
+    pdf_params(:)%rsatl1             = zero
+    pdf_params(:)%rsatl2             = zero
     pdf_params(:)%rc1              = zero
     pdf_params(:)%rc2              = zero
     pdf_params(:)%cloud_frac1      = zero
@@ -423,8 +423,8 @@ module variables_prognostic_module
     pdf_params_frz(:)%covar_chi_eta_2  = zero
     pdf_params_frz(:)%corr_chi_eta_1    = zero
     pdf_params_frz(:)%corr_chi_eta_2    = zero
-    pdf_params_frz(:)%rsl1             = zero
-    pdf_params_frz(:)%rsl2             = zero
+    pdf_params_frz(:)%rsatl1             = zero
+    pdf_params_frz(:)%rsatl2             = zero
     pdf_params_frz(:)%rc1              = zero
     pdf_params_frz(:)%rc2              = zero
     pdf_params_frz(:)%cloud_frac1      = zero

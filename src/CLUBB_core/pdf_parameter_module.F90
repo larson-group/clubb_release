@@ -48,8 +48,8 @@ module pdf_parameter_module
       covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
-      rsl1,            & ! Saturation mixing ratio r_sat(mu_Tl_1,p)      [kg/kg]
-      rsl2,            & ! Saturation mixing ratio r_sat(mu_Tl_2,p)      [kg/kg]
+      rsatl1,            & ! Saturation mixing ratio r_sat(mu_Tl_1,p)      [kg/kg]
+      rsatl2,            & ! Saturation mixing ratio r_sat(mu_Tl_2,p)      [kg/kg]
       rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
       cloud_frac1,     & ! Cloud fraction (1st PDF component)                [-]
@@ -181,9 +181,9 @@ module pdf_parameter_module
       CASE (29)
       	   get_param_at_ind = pp_struct%corr_chi_eta_2
       CASE (30)
-      	   get_param_at_ind = pp_struct%rsl1
+      	   get_param_at_ind = pp_struct%rsatl1
       CASE (31)
-      	   get_param_at_ind = pp_struct%rsl2
+      	   get_param_at_ind = pp_struct%rsatl2
       CASE (32)
       	   get_param_at_ind = pp_struct%rc1
       CASE (33)
@@ -267,9 +267,9 @@ module pdf_parameter_module
       CASE (29)
       	   pp_struct%corr_chi_eta_2 = val
       CASE (30)
-      	   pp_struct%rsl1 = val
+      	   pp_struct%rsatl1 = val
       CASE (31)
-      	   pp_struct%rsl2 = val
+      	   pp_struct%rsatl2 = val
       CASE (32)
       	   pp_struct%rc1 = val
       CASE (33)

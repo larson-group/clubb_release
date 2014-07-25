@@ -324,8 +324,8 @@ module stats_zt
         ivarnce_rt2, & 
         irc1, & 
         irc2, & 
-        irsl1, & 
-        irsl2, & 
+        irsatl1, & 
+        irsatl2, & 
         icloud_frac1, & 
         icloud_frac2
 
@@ -3452,18 +3452,18 @@ module stats_zt
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rsl1')
-        irsl1 = k
+      case ('rsatl1')
+        irsatl1 = k
 
-        call stat_assign( var_index=irsl1, var_name="rsl1", &
+        call stat_assign( var_index=irsatl1, var_name="rsatl1", &
              var_description="pdf parameter: sat mix rat based on tl1 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rsl2')
-        irsl2 = k
+      case ('rsatl2')
+        irsatl2 = k
 
-        call stat_assign( var_index=irsl2, var_name="rsl2", &
+        call stat_assign( var_index=irsatl2, var_name="rsatl2", &
              var_description="pdf parameter: sat mix rat based on tl2 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1

@@ -1551,8 +1551,8 @@ module stats_clubb_utilities
         ivarnce_rt2, & 
         irc1, & 
         irc2, & 
-        irsl1, & 
-        irsl2, & 
+        irsatl1, & 
+        irsatl2, & 
         icloud_frac1, & 
         icloud_frac2
 
@@ -1908,8 +1908,8 @@ module stats_clubb_utilities
       call stat_update_var( ivarnce_rt2, pdf_params%varnce_rt2, zt )
       call stat_update_var( irc1, pdf_params%rc1, zt )
       call stat_update_var( irc2, pdf_params%rc2, zt )
-      call stat_update_var( irsl1, pdf_params%rsl1, zt )
-      call stat_update_var( irsl2, pdf_params%rsl2, zt )
+      call stat_update_var( irsatl1, pdf_params%rsatl1, zt )
+      call stat_update_var( irsatl2, pdf_params%rsatl2, zt )
       call stat_update_var( icloud_frac1, pdf_params%cloud_frac1, zt )
       call stat_update_var( icloud_frac2, pdf_params%cloud_frac2, zt )
       call stat_update_var( ichi_1, pdf_params%chi_1, zt )
