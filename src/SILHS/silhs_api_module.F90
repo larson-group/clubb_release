@@ -22,6 +22,10 @@ module silhs_api_module
   private
 
 #ifdef SILHS
+  use parameters_silhs, only: &
+    l_lh_vert_overlap, &          ! Variable(s)
+    l_lh_cloud_weighted_sampling
+
   public  &
     lh_subcolumn_generator_api, &
     stats_accumulate_lh_api, &
