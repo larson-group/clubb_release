@@ -232,6 +232,7 @@ module clubb_api_module
     l_const_Nc_in_cloud, &
     hydromet_dim, Lscale_max, &
     l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
+    hydromet_list, hydromet_tol, &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 #endif
