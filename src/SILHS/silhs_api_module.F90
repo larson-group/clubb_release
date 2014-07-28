@@ -17,14 +17,17 @@
 !
 module silhs_api_module
 
+#ifdef SILHS
+  use parameters_silhs, only: &
+    l_lh_vert_overlap, &          ! Variable(s)
+    l_lh_cloud_weighted_sampling
+#endif
+
   implicit none
 
   private
 
 #ifdef SILHS
-  use parameters_silhs, only: &
-    l_lh_vert_overlap, &          ! Variable(s)
-    l_lh_cloud_weighted_sampling
 
   public  &
     lh_subcolumn_generator_api, &
