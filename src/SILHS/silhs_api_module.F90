@@ -29,7 +29,9 @@ module silhs_api_module
   public  &
     lh_subcolumn_generator_api, &
     stats_accumulate_lh_api, &
-    est_kessler_microphys_api
+    est_kessler_microphys_api, &
+    l_lh_vert_overlap, &
+    l_lh_cloud_weighted_sampling
 
 contains
 
