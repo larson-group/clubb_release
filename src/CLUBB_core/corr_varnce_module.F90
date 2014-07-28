@@ -46,6 +46,9 @@ module corr_varnce_module
       Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd    ! sigma_Ng_i^2/mu_Ng_i^2  [-]
 
     ! Prescribed parameter for <N_cn'^2> / <N_cn>^2 at any grid level.
+    ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
+    !       throughout the entire grid box, so the parameter below should be
+    !       ignored.
     real( kind = core_rknd ) :: &
       Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
 
