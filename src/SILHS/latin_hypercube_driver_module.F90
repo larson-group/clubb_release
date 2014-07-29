@@ -1527,9 +1527,6 @@ module latin_hypercube_driver_module
 
     use grid_class, only: gr
 
-    use model_flags, only: &
-        l_const_Nc_in_cloud ! Variable(s)
-
     use stats_variables, only: &
       l_stats_samp, & ! Variable(s)
       ilh_rrm, &
@@ -1724,23 +1721,12 @@ module latin_hypercube_driver_module
                                       hydromet_all_points, &  ! Out
                                       Ncn_all_points ) ! Out
 
-        if ( l_const_Nc_in_cloud ) then
-           ! For l_const_Nc_in_cloud, we want to use the same value of Nc for
-           ! all sample points.
-           do k = 1, nz, 1
-              where ( rc_all_points(k,:) > 0.0_core_rknd )
-                 Nc_all_points(k,:) = Nc_in_cloud(k)
-              else where
-                 Nc_all_points(k,:) = 0.0_core_rknd
-              end where
-           enddo ! k = 1, nz, 1
-        else ! Nc varies in-cloud
-           where ( rc_all_points > 0.0_core_rknd )
-              Nc_all_points = Ncn_all_points
-           else where
-              Nc_all_points = 0.0_core_rknd
-           end where
-        endif
+        ! Convert from Ncn to Nc ( Nc = Ncn * H(chi) )
+        where ( rc_all_points > 0.0_core_rknd )
+           Nc_all_points = Ncn_all_points
+        else where
+           Nc_all_points = 0.0_core_rknd
+        end where
 
         ! Get rid of an annoying compiler warning.
         ivar = 1

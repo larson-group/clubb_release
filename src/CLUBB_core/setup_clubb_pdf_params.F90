@@ -2639,7 +2639,8 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        Ncn_tol  ! Constant(s)
+        Ncn_tol, &  ! Constant(s)
+        zero
 
     use pdf_utilities, only: &
         mean_L2N,  & ! Procedure(s)
@@ -2659,6 +2660,9 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_const_Nc_in_cloud ! Variable
 
     implicit none
 
@@ -2732,10 +2736,6 @@ module setup_clubb_pdf_params
 
     endif
 
-    ! Normalized standard deviation of simplified cloud nuclei concentration,
-    ! N_cn, in PDF component 1.
-    sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
     ! Normalized mean of simplified cloud nuclei concentration, N_cn,
     ! in PDF component 2.
     if ( Ncnm > Ncn_tol ) then
@@ -2754,9 +2754,16 @@ module setup_clubb_pdf_params
     endif
 
     ! Normalized standard deviation of simplified cloud nuclei concentration,
-    ! N_cn, in PDF component 2.
-    sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
+    ! N_cn, in PDF components 1 and 2.
+    if ( l_const_Nc_in_cloud ) then
+      ! Ncn does not vary in the grid box.
+      sigma_x_1_n(iiPDF_Ncn) = zero
+      sigma_x_2_n(iiPDF_Ncn) = zero
+    else
+      ! Ncn (perhaps) varies in the grid box.
+      sigma_x_1_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      sigma_x_2_n(iiPDF_Ncn) = stdev_L2N( sigma2_on_mu2_ip_2(iiPDF_Ncn) )
+    end if
 
     ! Normalize precipitating hydrometeor means and standard deviations.
     do ivar = iiPDF_Ncn+1, d_variables, 1
@@ -2829,6 +2836,9 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        zero          ! Constant
+
     use pdf_utilities, only: &
         corr_NL2NN, & ! Procedure(s)
         corr_LL2NN
@@ -2841,6 +2851,9 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_const_Nc_in_cloud  ! Variable!!
 
     implicit none
 
@@ -2879,44 +2892,59 @@ module setup_clubb_pdf_params
     corr_array_1_n = corr_array_1
     corr_array_2_n = corr_array_2
 
-
     !!! Calculate the normalized correlation of variables that have
     !!! an assumed normal distribution and variables that have an assumed
     !!! lognormal distribution for the ith PDF component, given their
     !!! correlation and the normalized standard deviation of the variable with
     !!! the assumed lognormal distribution.
 
-    ! Normalize the correlations between chi/eta/w and N_cn.
+    if ( l_const_Nc_in_cloud ) then
 
-    ! Normalize the correlation of w and N_cn in PDF component 1.
-    corr_array_1_n(iiPDF_Ncn, iiPDF_w) &
-    = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_w), sigma_x_1_n(iiPDF_Ncn), &
-                  sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      ! Ncn does not vary in the grid box. Consequently, the correlation between
+      ! Ncn and any other variate is not defined. Here, we set the correlations
+      ! between Ncn and chi/eta/w to zero.
+      corr_array_1_n(iiPDF_Ncn, iiPDF_w) = zero
+      corr_array_2_n(iiPDF_Ncn, iiPDF_w) = zero
+      corr_array_1_n(iiPDF_Ncn, iiPDF_chi) = zero
+      corr_array_2_n(iiPDF_Ncn, iiPDF_chi) = zero
+      corr_array_1_n(iiPDF_Ncn, iiPDF_eta) = zero
+      corr_array_2_n(iiPDF_Ncn, iiPDF_eta) = zero
 
-    ! Normalize the correlation of w and N_cn in PDF component 2.
-    corr_array_2_n(iiPDF_Ncn, iiPDF_w) &
-    = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_w), sigma_x_2_n(iiPDF_Ncn), &
-                  sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+    else ! .not. l_const_Nc_in_cloud
 
-    ! Normalize the correlation of chi (old s) and N_cn in PDF component 1.
-    corr_array_1_n(iiPDF_Ncn, iiPDF_chi) &
-    = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_chi), &
-                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      ! Normalize the correlations between chi/eta/w and N_cn.
 
-    ! Normalize the correlation of chi (old s) and N_cn in PDF component 2.
-    corr_array_2_n(iiPDF_Ncn, iiPDF_chi) &
-    = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_chi), &
-                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      ! Normalize the correlation of w and N_cn in PDF component 1.
+      corr_array_1_n(iiPDF_Ncn, iiPDF_w) &
+      = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_w), sigma_x_1_n(iiPDF_Ncn), &
+                    sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-    ! Normalize the correlation of eta (old t) and N_cn in PDF component 1.
-    corr_array_1_n(iiPDF_Ncn, iiPDF_eta) &
-    = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_eta), &
-                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      ! Normalize the correlation of w and N_cn in PDF component 2.
+      corr_array_2_n(iiPDF_Ncn, iiPDF_w) &
+      = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_w), sigma_x_2_n(iiPDF_Ncn), &
+                    sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-    ! Normalize the correlation of eta (old t) and N_cn in PDF component 2.
-    corr_array_2_n(iiPDF_Ncn, iiPDF_eta) &
-    = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_eta), &
-                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+      ! Normalize the correlation of chi (old s) and N_cn in PDF component 1.
+      corr_array_1_n(iiPDF_Ncn, iiPDF_chi) &
+      = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_chi), &
+                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Normalize the correlation of chi (old s) and N_cn in PDF component 2.
+      corr_array_2_n(iiPDF_Ncn, iiPDF_chi) &
+      = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_chi), &
+                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Normalize the correlation of eta (old t) and N_cn in PDF component 1.
+      corr_array_1_n(iiPDF_Ncn, iiPDF_eta) &
+      = corr_NL2NN( corr_array_1(iiPDF_Ncn, iiPDF_eta), &
+                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Normalize the correlation of eta (old t) and N_cn in PDF component 2.
+      corr_array_2_n(iiPDF_Ncn, iiPDF_eta) &
+      = corr_NL2NN( corr_array_2(iiPDF_Ncn, iiPDF_eta), &
+                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+    end if ! l_const_Nc_in_cloud
 
     ! Normalize the correlations (in-precip) between chi/eta/w and the
     ! precipitating hydrometeors.
@@ -2948,19 +2976,30 @@ module setup_clubb_pdf_params
     ivar = iiPDF_Ncn
     do jvar = ivar+1, d_variables
 
-       ! Normalize the correlation (in-precip) between N_cn and a precipitating
-       ! hydrometeor, hm, in PDF component 1.
-       corr_array_1_n(jvar, ivar) &
-       = corr_LL2NN( corr_array_1(jvar, ivar), &
-                     sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
+       if ( l_const_Nc_in_cloud ) then
 
-       ! Normalize the correlation (in-precip) between N_cn and a precipitating
-       ! hydrometeor, hm, in PDF component 2.
-       corr_array_2_n(jvar, ivar) &
-       = corr_LL2NN( corr_array_2(jvar, ivar), &
-                     sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
+         ! Ncn does not vary, so these correlations are undefined. Set them to
+         ! zero.
+         corr_array_1_n(jvar,ivar) = zero
+         corr_array_2_n(jvar,ivar) = zero
+
+       else ! .not. l_const_Nc_in_cloud
+
+         ! Normalize the correlation (in-precip) between N_cn and a precipitating
+         ! hydrometeor, hm, in PDF component 1.
+         corr_array_1_n(jvar, ivar) &
+         = corr_LL2NN( corr_array_1(jvar, ivar), &
+                       sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
+                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
+
+         ! Normalize the correlation (in-precip) between N_cn and a precipitating
+         ! hydrometeor, hm, in PDF component 2.
+         corr_array_2_n(jvar, ivar) &
+         = corr_LL2NN( corr_array_2(jvar, ivar), &
+                       sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
+                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
+
+       end if ! l_const_Nc_in_cloud
 
     enddo ! jvar = ivar+1, d_variables
 

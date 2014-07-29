@@ -297,23 +297,12 @@ module estimate_scm_microphys_module
                                     hydromet_all_points, &  ! Out
                                     Ncn_all_points ) ! Out
 
-      ! Set Nc = Ncn * H(chi).  For l_const_Nc_in_cloud, Ncn should have a
-      ! constant value of Nc_in_cloud.
-      if ( l_const_Nc_in_cloud ) then
-         ! For l_const_Nc_in_cloud, we want to use the same value of Nc for all
-         ! sample points.
-         where ( chi_column > 0.0_core_rknd )
-            Nc = Nc_in_cloud
-         else where
-            Nc = 0.0_core_rknd
-         end where
-      else ! Nc varies in-cloud
-         where ( chi_column > 0.0_core_rknd )
-            Nc = Ncn_all_points
-         else where
-            Nc = 0.0_core_rknd
-         end where
-      endif
+      ! Set Nc = Ncn * H(chi).
+      where ( chi_column > 0.0_core_rknd )
+        Nc = Ncn_all_points
+      else where
+        Nc = 0.0_core_rknd
+      end where
 
       cloud_frac_unused = unused_var
       w_std_dev_unused  = unused_var

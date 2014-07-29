@@ -368,8 +368,7 @@ module corr_varnce_module
     ! Allocate all arrays based on d_variables
     allocate( retVars(1:nCols) )
 
-    ! Initializing to zero means that correlations we don't have
-    ! (e.g. Nc and any variable other than chi ) are assumed to be 0.
+    ! Initializing to zero means that correlations we don't have are assumed to be 0.
     corr_array(:,:) = 0.0_core_rknd
 
     ! Set main diagonal to 1
@@ -620,7 +619,8 @@ module corr_varnce_module
 !-------------------------------------------------------------------------------
 
     use model_flags, only: &
-      l_fix_chi_eta_correlations ! Variable(s)
+      l_fix_chi_eta_correlations, & ! Variable(s)
+      l_const_Nc_in_cloud
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
@@ -714,7 +714,16 @@ module corr_varnce_module
     end if ! clubb_at_least_debug_level( 2 )
 
     if ( iiPDF_Ncn > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
+
+      if ( l_const_Nc_in_cloud ) then
+        ! Ncn is constant throughout every grid box!
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = zero
+        sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = zero
+      else
+        sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
+        sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
+      end if
+
     end if
 
     if ( iiPDF_rr > 0 ) then
@@ -756,10 +765,6 @@ module corr_varnce_module
 
       end if ! iiPDF_Ng > 0
     end if ! iiPDF_rg > 0
-
-    if ( iiPDF_Ncn > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
-    end if
 
     if ( iiPDF_rr > 0 ) then
       sigma2_on_mu2_ip_array_below(iiPDF_rr) = sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below

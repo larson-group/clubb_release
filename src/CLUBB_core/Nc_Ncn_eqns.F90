@@ -313,7 +313,7 @@ contains
     ! such as the trapezoidal rule calculation.
     ! Cloud fraction can be recalculated here from cloud_frac_1 and cloud_frac_2
     ! as long neither of these variables are altered by any factor.  They can
-    ! only be calculated from PDF.
+    ! only be calculated from the PDF.
     cloud_frac = mixt_frac * cloud_frac_1 + ( one - mixt_frac ) * cloud_frac_2
 
     if ( cloud_frac > cloud_frac_min &
