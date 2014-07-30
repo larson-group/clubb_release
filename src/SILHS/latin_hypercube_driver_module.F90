@@ -20,7 +20,7 @@ module latin_hypercube_driver_module
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
-    copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts
+    copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc
 
   private :: stats_accumulate_uniform_lh
 
@@ -1722,11 +1722,8 @@ module latin_hypercube_driver_module
                                       Ncn_all_points ) ! Out
 
         ! Convert from Ncn to Nc ( Nc = Ncn * H(chi) )
-        where ( rc_all_points > 0.0_core_rknd )
-           Nc_all_points = Ncn_all_points
-        else where
-           Nc_all_points = 0.0_core_rknd
-        end where
+        Nc_all_points = Ncn_to_Nc &
+        ( Ncn_all_points, real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd ) )
 
         ! Get rid of an annoying compiler warning.
         ivar = 1
@@ -2140,6 +2137,49 @@ module latin_hypercube_driver_module
   end subroutine copy_X_nl_into_rc_all_pts
   !-----------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
+  elemental function Ncn_to_Nc( Ncn, chi ) result ( Nc )
+
+  ! Description:
+  !   Converts a sample of Ncn to a sample of Nc, where
+  !   Nc = Ncn * H(chi)
+  !   and H(x) is the Heaviside step function.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd    ! Our awesome generalized precision (constant)
+
+    use constants_clubb, only: &
+      zero         ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      Ncn,  &  ! Simplified cloud nuclei concentration N_cn  [num/kg]
+      chi      ! Extended cloud water mixing ratio           [kg/kg]
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      Nc       ! Cloud droplet concentration                 [num/kg]
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    if ( chi > zero ) then
+      Nc = Ncn
+    else
+      Nc = zero
+    end if
+
+    return
+  end function Ncn_to_Nc
+  !-----------------------------------------------------------------------
 
 #endif /* SILHS */
 
