@@ -74,8 +74,8 @@ module estimate_scm_microphys_module
       lh_microphys_non_interactive              ! Constant
 
     use latin_hypercube_driver_module, only: &
-      copy_X_nl_into_hydromet_all_pts    ! Procedure
-
+      copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
+      Ncn_to_Nc
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -298,11 +298,7 @@ module estimate_scm_microphys_module
                                     Ncn_all_points ) ! Out
 
       ! Set Nc = Ncn * H(chi).
-      where ( chi_column > 0.0_core_rknd )
-        Nc = Ncn_all_points
-      else where
-        Nc = 0.0_core_rknd
-      end where
+      Nc = Ncn_to_Nc( Ncn_all_points, chi_column )
 
       cloud_frac_unused = unused_var
       w_std_dev_unused  = unused_var
