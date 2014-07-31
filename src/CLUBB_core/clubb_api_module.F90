@@ -294,7 +294,7 @@ contains
     logical, intent(in) ::  &
       l_implemented ! Is this part of a larger host model (T/F) ?
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt  ! Current timestep duration    [s]
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -941,7 +941,7 @@ contains
 
     logical, intent(in) :: l_fill_holes_hm
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -1503,7 +1503,7 @@ contains
       nz,          & ! Number of model vertical grid levels
       d_variables    ! Number of variables in the correlation array
 
-    real( kind = time_precision ), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -1596,7 +1596,7 @@ contains
     character(len=*), intent(in) :: &
       stats_fmt_in    ! Format of the stats file output
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       stats_tsamp_in,  & ! Sampling interval   [s]
       stats_tout_in      ! Output interval     [s]
 
@@ -1627,10 +1627,10 @@ contains
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  &
       rlat  ! Latitude(s)  [Degrees N]
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = time_precision ), intent(in) ::  &
       time_current ! Model time                         [s]
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
     logical, intent(in) :: &
@@ -1649,7 +1649,7 @@ contains
   !================================================================================================
 
   subroutine stats_begin_timestep_api( &
-    time_elapsed )
+    itime, stats_nsamp, stats_nout )
 
 
     use stats_clubb_utilities, only : stats_begin_timestep
@@ -1660,11 +1660,13 @@ contains
     intrinsic :: mod
 
     ! Input Variable(s)
-    real(kind=time_precision), intent(in) ::  &
-      time_elapsed ! Elapsed model time       [s]
+    integer, intent(in) ::  &
+      itime,        & ! Elapsed model time       [timestep]
+      stats_nsamp,  & ! Stats sampling interval  [timestep]
+      stats_nout      ! Stats output interval    [timestep]
 
     call stats_begin_timestep( &
-      time_elapsed )
+      itime, stats_nsamp, stats_nout )
   end subroutine stats_begin_timestep_api
 
   !================================================================================================

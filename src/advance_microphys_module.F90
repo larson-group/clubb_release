@@ -119,7 +119,7 @@ module advance_microphys_module
     implicit none
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt           ! Model timestep duration         [s]
 
     real( kind = time_precision ), intent(in) ::  & 
@@ -340,7 +340,7 @@ module advance_microphys_module
                                      + hydromet_vel_covar_zt(:,iirrm) ), &
                                  zero ) &
                             * ( rho / rho_lw ) & 
-                            * real( sec_per_day, kind = core_rknd ) &
+                            * sec_per_day &
                             * mm_per_m, zt )
 
       ! Precipitation Flux (W/m^2) is defined on momentum levels.  The
@@ -370,7 +370,7 @@ module advance_microphys_module
                                           + hydromet_vel_covar_zt(2,iirrm) ), &
                                       zero ) &
                                   * ( rho(2) / rho_lw ) & 
-                                  * real( sec_per_day, kind = core_rknd ) &
+                                  * sec_per_day &
                                   * mm_per_m, sfc )
       endif ! microphys_scheme /= "morrison"
 
@@ -531,8 +531,7 @@ module advance_microphys_module
         clubb_no_error
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
@@ -559,7 +558,7 @@ module advance_microphys_module
     implicit none
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -647,7 +646,7 @@ module advance_microphys_module
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
              call stat_begin_update( ixrm_bt, &
                                      hydromet(:,i) &
-                                     / real( dt, kind = core_rknd ), zt )
+                                     / dt, zt )
           else
              ! The mean hydrometeor field at thermodynamic level k = 1 is simply
              ! set to the value of the mean hydrometeor field at k = 2.
@@ -655,7 +654,7 @@ module advance_microphys_module
              do k = 2, gr%nz, 1
                 call stat_begin_update_pt( ixrm_bt, k, &
                                            hydromet(k,i) &
-                                           / real( dt, kind = core_rknd ), zt )
+                                           / dt, zt )
              enddo
           endif
 
@@ -829,7 +828,7 @@ module advance_microphys_module
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
              call stat_end_update( ixrm_bt, &
                                    hydromet(:,i) &
-                                   / real( dt, kind = core_rknd ), zt )
+                                   / dt, zt )
           else
              ! The mean hydrometeor field at thermodynamic level k = 1 is simply
              ! set to the value of the mean hydrometeor field at k = 2.  Don't
@@ -837,7 +836,7 @@ module advance_microphys_module
              do k = 2, gr%nz, 1
                 call stat_end_update_pt( ixrm_bt, k, &
                                          hydromet(k,i) &
-                                         / real( dt, kind = core_rknd ), zt )
+                                         / dt, zt )
              enddo
           endif
 
@@ -892,8 +891,7 @@ module advance_microphys_module
         clubb_no_error
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_update_var,      & ! Procedure(s)
@@ -914,7 +912,7 @@ module advance_microphys_module
     implicit none
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt    ! Duration of one model time step         [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -997,10 +995,10 @@ module advance_microphys_module
              call stat_begin_update_pt( iNcm_bt, k, &
                                         ( Nc_in_cloud(k) &
                                          * max(cloud_frac(k),cloud_frac_min) ) &
-                                        / real( dt, kind = core_rknd ), zt )
+                                        / dt, zt )
           else
              call stat_begin_update_pt( iNcm_bt, k, &
-                                        Ncm(k) / real( dt, kind = core_rknd ), &
+                                        Ncm(k) / dt, &
                                         zt )
           endif
        enddo
@@ -1107,7 +1105,7 @@ module advance_microphys_module
     ! Store the previous value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
        call stat_begin_update( iNcm_cl, &
-                               Ncm / real( dt, kind = core_rknd ), zt )
+                               Ncm / dt, zt )
     endif
 
     if ( any( Ncm < Ncm_min ) ) then
@@ -1123,7 +1121,7 @@ module advance_microphys_module
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
        call stat_end_update( iNcm_cl, &
-                             Ncm / real( dt, kind = core_rknd ), zt )
+                             Ncm / dt, zt )
     endif
 
     ! Calculate the minimum threshold value for in-cloud mean cloud droplet
@@ -1171,7 +1169,7 @@ module advance_microphys_module
        ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
        do k = 2, gr%nz, 1
           call stat_end_update_pt( iNcm_bt, k, &
-                                   Ncm(k) / real( dt, kind = core_rknd ), zt )
+                                   Ncm(k) / dt, zt )
        enddo ! k = 2, gr%nz, 1
 
     endif ! l_stats_samp
@@ -1482,8 +1480,7 @@ module advance_microphys_module
         zt2zm    ! Procedure(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -1559,7 +1556,7 @@ module advance_microphys_module
     logical, intent(in) ::  & 
       l_sed    ! Whether to add a hydrometeor sedimentation term.
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt       ! Model timestep                                          [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -1672,7 +1669,7 @@ module advance_microphys_module
        kp1 = min( k+1, gr%nz )
 
        ! LHS time tendency.
-       lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / real( dt, kind = core_rknd ) )
+       lhs(k_tdiag,k) = lhs(k_tdiag,k) + ( one / dt )
 
        ! LHS turbulent advection term.
        ! - (1/rho_ds) * d( rho_ds * <w'h_m'> ) / dz.
@@ -1862,8 +1859,7 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_variables, only: & 
         irrm_ta, & ! Variable(s)
@@ -1891,7 +1887,7 @@ module advance_microphys_module
     character(len=*), intent(in) :: &
       solve_type  ! Description of which hydrometeor is being solved for.
 
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt    ! Duration of model timestep     [s]
 
     logical, intent(in) :: &
@@ -1979,7 +1975,7 @@ module advance_microphys_module
        kp1 = min( k+1, gr%nz )
 
        ! RHS time tendency.
-       rhs(k) = hmm(k) / real( dt, kind = core_rknd )
+       rhs(k) = hmm(k) / dt
 
        ! RHS microphysics tendency term (autoconversion, accretion, evaporation,
        ! etc.).

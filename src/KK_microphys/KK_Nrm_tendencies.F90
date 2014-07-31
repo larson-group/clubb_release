@@ -150,7 +150,7 @@ module KK_Nrm_tendencies
       precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
       precip_frac_2      ! Precipitation fraction (2nd PDF component)        [-]
 
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model time step duration                          [s]
 
     ! Return Variables
@@ -171,7 +171,7 @@ module KK_Nrm_tendencies
 
     ! Calculate the mean KK < N_r > evaporation tendency.
     KK_Nrm_evap_upscaled_mean &
-    = real( dt, kind = core_rknd )**( KK_Nrm_evap_nu - one ) &
+    = dt**( KK_Nrm_evap_nu - one ) &
       * KK_evap_coef**KK_Nrm_evap_nu &
       * ( mixt_frac &
           * precip_frac_1 &
@@ -269,7 +269,7 @@ module KK_Nrm_tendencies
       Nrm,               & ! Mean rain drop concentration, < N_r >  [num/kg]
       rrm                  ! Mean rain water mixing ratio, < r_r >  [kg/kg]
 
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt                   ! Model time step duration               [s]
 
     ! Return Variables
@@ -279,7 +279,7 @@ module KK_Nrm_tendencies
 
     ! Calculate the local KK < N_r > evaporation tendency.
     KK_Nrm_evap_local_mean &
-    = real( dt, kind = core_rknd )**( KK_Nrm_evap_nu - one ) &
+    = dt**( KK_Nrm_evap_nu - one ) &
       * ( Nrm / rrm**KK_Nrm_evap_nu ) * KK_rrm_evap_tndcy**KK_Nrm_evap_nu
 
 

@@ -52,8 +52,8 @@ contains
 
     use clubb_precision, only: &
       dp, & ! double precision
-      core_rknd, &
-      time_precision
+      core_rknd
+      
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
@@ -67,7 +67,7 @@ contains
 #include "microphys_interface.inc"
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &

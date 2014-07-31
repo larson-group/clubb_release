@@ -53,8 +53,7 @@ module estimate_scm_microphys_module
 
     use clubb_precision, only: &
       dp, & ! double precision
-      core_rknd, &
-      time_precision
+      core_rknd
 
     use stats_variables, only: &
       zt,           &
@@ -96,7 +95,7 @@ module estimate_scm_microphys_module
       l_latin_hypercube = .true. ! We are the Latin hypercube!
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt ! Model timestep       [s]
 
     integer, intent(in) :: &
@@ -252,7 +251,7 @@ module estimate_scm_microphys_module
     if ( l_var_covar_src ) then
       rt_all_samples = lh_rt
       thl_all_samples = lh_thl
-      w_all_samples = w_all_points
+      w_all_samples = real(w_all_points, kind=core_rknd)
 
       call lh_moments ( num_samples, lh_sample_point_weights, nz, &           ! Intent (in)
                        rt_all_samples, thl_all_samples, w_all_samples, &        ! Intent (in)
@@ -315,9 +314,9 @@ module estimate_scm_microphys_module
              microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
 
       rt_all_samples(:,sample) = rc_column + rv_column + &
-        real( dt, kind=core_rknd ) * ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
+        dt* ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
 
-      thl_all_samples(:,sample) = thl_column + real( dt, kind=core_rknd ) * lh_thlm_mc_all(:,sample)
+      thl_all_samples(:,sample) = thl_column + dt * lh_thlm_mc_all(:,sample)
 
       ! Loop to get new sample
     end do ! sample = 1, num_samples
@@ -489,8 +488,7 @@ module estimate_scm_microphys_module
       get_cloud_top_level         ! Procedure
 
     use clubb_precision, only: &
-      time_precision, &
-      core_rknd
+      core_rknd ! Variable(s)
 
     use constants_clubb, only: &
       rr_tol, & ! Constant(s)
@@ -534,7 +532,7 @@ module estimate_scm_microphys_module
       l_evap_adj_enabled = .true.
 
     ! Input variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt   ! Model timestep
 
     integer, intent(in) :: &

@@ -93,8 +93,7 @@ module advance_wp2_wp3_module
         l_hyper_dfsn ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use error_code, only:  & 
         fatal_error,  & ! Procedure(s)
@@ -108,7 +107,7 @@ module advance_wp2_wp3_module
     intrinsic :: exp
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Model timestep                            [s]
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -365,8 +364,7 @@ module advance_wp2_wp3_module
         l_gmres
 
     use clubb_precision, only:  & 
-        time_precision, &  ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use lapack_wrap, only:  & 
         band_solve,  & ! Procedure(s) 
@@ -461,7 +459,7 @@ module advance_wp2_wp3_module
       nrhs = 1      ! Number of RHS vectors
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -767,7 +765,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( iwp2_pd, wp2 / real( dt, kind = core_rknd ), zm )
+      call stat_begin_update( iwp2_pd, wp2 / dt, zm )
     endif
 
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
@@ -787,7 +785,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
-      call stat_end_update( iwp2_pd, wp2 / real( dt, kind = core_rknd ), zm )
+      call stat_end_update( iwp2_pd, wp2 / dt, zm )
     endif
 
 
@@ -827,8 +825,7 @@ module advance_wp2_wp3_module
         gr  ! Variable(s) 
 
     use clubb_precision, only:  & 
-        time_precision, &  ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
 #ifdef MKL
     use error_code, only: &
@@ -870,7 +867,7 @@ module advance_wp2_wp3_module
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -1093,7 +1090,6 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zt_lhs
 
     use clubb_precision, only: &
-        time_precision, &
         core_rknd
 
     use stats_variables, only: & 
@@ -1189,7 +1185,7 @@ module advance_wp2_wp3_module
       t_km2_tdiag = 9    ! Thermodynamic sub-sub diagonal index for w'^3.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -1274,7 +1270,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(m_k_mdiag,k_wp2) & 
-      = + 1.0_core_rknd / real( dt, kind = core_rknd )
+      = + 1.0_core_rknd / dt
 
       ! LHS mean advection (ma) term.
       lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wp2) & 
@@ -1465,7 +1461,7 @@ module advance_wp2_wp3_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_wp3) & 
-      =  + 1.0_core_rknd / real( dt, kind = core_rknd )
+      =  + 1.0_core_rknd / dt
 
       ! LHS mean advection (ma) term.
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k_wp3) & 
@@ -1766,7 +1762,6 @@ module advance_wp2_wp3_module
         hyper_dfsn_4th_ord_zt_lhs
 
     use clubb_precision, only: &
-        time_precision, &
         core_rknd
 
     use stats_variables, only: & 
@@ -1866,7 +1861,7 @@ module advance_wp2_wp3_module
      !t_km2_tdiag    ! Thermodynamic sub-sub diagonal index for w'^3.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep length                            [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -2527,8 +2522,7 @@ module advance_wp2_wp3_module
         diffusion_zt_lhs
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable
-        core_rknd
+        core_rknd ! Variable
 
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
@@ -2550,7 +2544,7 @@ module advance_wp2_wp3_module
       l_wp3_2nd_buoyancy_term = .true.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep length                           [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -2643,7 +2637,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp2) & 
-      = + ( 1.0_core_rknd / real( dt, kind = core_rknd ) ) * wp2(k)
+      = + ( 1.0_core_rknd / dt ) * wp2(k)
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp2) & 
@@ -2798,7 +2792,7 @@ module advance_wp2_wp3_module
 
       ! RHS time tendency.
       rhs(k_wp3) = & 
-      + ( 1.0_core_rknd / real( dt, kind = core_rknd ) * wp3(k) )
+      + ( 1.0_core_rknd / dt * wp3(k) )
 
       ! RHS turbulent advection (ta) and turbulent production (tp) terms.
 !     rhs(k_wp3)  & 

@@ -289,8 +289,7 @@ module mono_flux_limiter
         fstderr
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use error_code, only:  &
         fatal_error, &  ! Procedure(s)
@@ -345,7 +344,7 @@ module mono_flux_limiter
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt          ! Model timestep length                           [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -449,8 +448,8 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, wpxp / real( dt, kind = core_rknd ), zm )
-       call stat_begin_update( ixm_mfl, xm / real( dt, kind = core_rknd ), zt )
+       call stat_begin_update( iwpxp_mfl, wpxp / dt, zm )
+       call stat_begin_update( ixm_mfl, xm / dt, zt )
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
        call stat_update_var( ithlm_enter_mfl, xm, zt )
@@ -518,8 +517,8 @@ module mono_flux_limiter
        ! Find the value of xm without the contribution from the turbulent
        ! advection term.
        ! Note:  the contribution of xm_forcing at level gr%nz should be 0.
-       xm_without_ta(k) = xm_old(k) + real( dt, kind = core_rknd )*xm_forcing(k) &
-                          + real( dt, kind = core_rknd )*m_adv_term
+       xm_without_ta(k) = xm_old(k) + dt*xm_forcing(k) &
+                          + dt*m_adv_term
 
        ! Find the minimum usuable value of variable x at each vertical level.
        ! Since variable x must be one of theta_l, r_t, or a scalar, all of
@@ -562,14 +561,14 @@ module mono_flux_limiter
        ! Find the upper limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_max(k)  &
        = invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (real( dt, kind = core_rknd )*gr%invrs_dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - min_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )
 
        ! Find the lower limit for w'x' for a monotonic turbulent flux.
        wpxp_mfl_min(k)  &
        = invrs_rho_ds_zm(k)  &
-                  * (   ( rho_ds_zt(k) / (real( dt, kind = core_rknd )*gr%invrs_dzt(k)) )  &
+                  * (   ( rho_ds_zt(k) / (dt*gr%invrs_dzt(k)) )  &
                         * ( xm_without_ta(k) - max_x_allowable(k) )  &
                       + rho_ds_zm(km1) * wpxp(km1)  )
 
@@ -739,7 +738,7 @@ module mono_flux_limiter
              ! rate of change multiplied by the time step length.  Add the
              ! product to xm to find the new xm resulting from the monotonic
              ! flux limiter.
-             xm(k) = xm(k) + dxm_dt_mfl_adjust(k) * real( dt, kind = core_rknd )
+             xm(k) = xm(k) + dxm_dt_mfl_adjust(k) * dt
 
           enddo
 
@@ -814,9 +813,9 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( iwpxp_mfl, wpxp / real( dt, kind = core_rknd ), zm )
+       call stat_end_update( iwpxp_mfl, wpxp / dt, zm )
 
-       call stat_end_update( ixm_mfl, xm / real( dt, kind = core_rknd ), zt )
+       call stat_end_update( ixm_mfl, xm / dt, zt )
 
        if ( solve_type == mono_flux_thlm ) then
           call stat_update_var( ithlm_exit_mfl, xm, zt )
@@ -854,8 +853,7 @@ module mono_flux_limiter
         term_ma_zt_lhs ! Procedure(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -866,7 +864,7 @@ module mono_flux_limiter
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt     ! Model timestep length                      [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -914,7 +912,7 @@ module mono_flux_limiter
 
        ! LHS xm time tendency.
        lhs(k_tdiag,k) &
-       = lhs(k_tdiag,k) + 1.0_core_rknd / real( dt, kind = core_rknd )
+       = lhs(k_tdiag,k) + 1.0_core_rknd / dt
 
     enddo ! xm loop: 2..gr%nz
 
@@ -948,13 +946,12 @@ module mono_flux_limiter
         gr  ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep length                    [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -987,7 +984,7 @@ module mono_flux_limiter
        km1 = max( k-1, 1 )
 
        ! RHS xm time tendency.
-       rhs(k) = rhs(k) + xm_old(k) / real( dt, kind = core_rknd )
+       rhs(k) = rhs(k) + xm_old(k) / dt
 
        ! RHS xm turbulent advection (ta) term.
        ! Note:  Normally, the turbulent advection (ta) term is treated
@@ -1149,8 +1146,7 @@ module mono_flux_limiter
         gr  ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     implicit none
    
@@ -1162,7 +1158,7 @@ module mono_flux_limiter
       const_thick = 150.0_core_rknd  ! Constant thickness value               [m]
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt ! Model timestep length                       [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -1182,7 +1178,7 @@ module mono_flux_limiter
       vert_vel_up,  & ! Average upwards vertical velocity component   [m/s]
       vert_vel_down   ! Average downwards vertical velocity component [m/s]
 
-    real(kind=time_precision) ::  &
+    real(kind = core_rknd ) ::  &
       dt_one_grid_lev, & ! Amount of time to travel one grid box           [s]
       dt_all_grid_levs   ! Running count of amount of time taken to travel [s]
 
@@ -1305,7 +1301,7 @@ module mono_flux_limiter
           j = k - 1
 
           ! Initialize the overall delta t counter to 0.
-          dt_all_grid_levs = 0.0_time_precision
+          dt_all_grid_levs = 0.0_core_rknd
 
           do ! loop downwards until answer is found.
 
@@ -1314,8 +1310,8 @@ module mono_flux_limiter
 
                 ! Compute the amount of time it takes to travel one grid level
                 ! upwards:  delta_t = delta_z / vert_vel_up.
-                dt_one_grid_lev = real( (1.0_core_rknd/gr%invrs_dzm(j)) / vert_vel_up(j), &
-                                        kind=time_precision )
+                dt_one_grid_lev =  (1.0_core_rknd/gr%invrs_dzm(j)) / vert_vel_up(j)
+                                       
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
@@ -1379,7 +1375,7 @@ module mono_flux_limiter
           j = k + 1
 
           ! Initialize the overall delta t counter to 0.
-          dt_all_grid_levs = 0.0_time_precision
+          dt_all_grid_levs = 0.0_core_rknd
 
           do ! loop upwards until answer is found.
 
@@ -1392,12 +1388,11 @@ module mono_flux_limiter
                 !        distance traveled is downwards.  Since vert_vel_down
                 !        has a negative value, dt_one_grid_lev will be a
                 !        positive value.
-                dt_one_grid_lev = real( -(1.0_core_rknd/gr%invrs_dzm(j-1)) / vert_vel_down(j-1), &
-                                        kind=time_precision )
+                dt_one_grid_lev = -(1.0_core_rknd/gr%invrs_dzm(j-1)) / vert_vel_down(j-1)
 
                 ! Total time elapsed for crossing all grid levels that have been
                 ! passed, thus far.
-                dt_all_grid_levs = real( dt_all_grid_levs + dt_one_grid_lev, kind=time_precision )
+                dt_all_grid_levs = dt_all_grid_levs + dt_one_grid_lev
 
                 ! Stop if has taken more than one model time step (overall) to
                 ! travel the entire extent of the current vertical grid level.

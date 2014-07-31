@@ -11,8 +11,7 @@ module constants_clubb
   !---------------------------------------------------------------------------
 
   use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      dp, &
+      dp, & ! Variable(s)
       core_rknd
 
 #ifdef CLUBB_CAM /* Set constants as they're set in CAM */
@@ -395,11 +394,11 @@ module constants_clubb
   !-----------------------------------------------------------------------------
   ! Useful conversion factors.
   !-----------------------------------------------------------------------------
-  real(kind=time_precision), parameter, public ::  & 
-    sec_per_day = 86400.0_time_precision, & ! Seconds in a day.
-    sec_per_hr  = 3600.0_time_precision,  & ! Seconds in an hour.
-    sec_per_min = 60.0_time_precision,    & ! Seconds in a minute.
-    min_per_hr = 60.0_time_precision        ! Minutes in an hour.
+  real(kind=core_rknd), parameter, public ::  & 
+    sec_per_day = 86400.0_core_rknd, & ! Seconds in a day.
+    sec_per_hr  = 3600.0_core_rknd,  & ! Seconds in an hour.
+    sec_per_min = 60.0_core_rknd,    & ! Seconds in a minute.
+    min_per_hr = 60.0_core_rknd        ! Minutes in an hour.
 
   real( kind = core_rknd ), parameter, public :: & 
     g_per_kg = 1000.0_core_rknd     ! Grams in a kilogram.

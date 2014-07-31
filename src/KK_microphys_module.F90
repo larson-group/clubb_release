@@ -113,7 +113,7 @@ module KK_microphys_module
       num_stats_sfc = 0           ! No sfc variables sampled in this routine
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
@@ -463,7 +463,7 @@ module KK_microphys_module
       l_clip_positive_sed = .true.  ! Clip positive Vrr and VNr terms to zero
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt          ! Model time step duration                 [s]
 
     integer, intent(in) :: &
@@ -1232,7 +1232,7 @@ module KK_microphys_module
     implicit none
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt        ! Model time step duration                 [s]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1297,12 +1297,12 @@ module KK_microphys_module
        ! source rate multiplied by the duration of the time step cannot exceed
        ! the total amount of cloud water available.  If it does, then the rate
        ! must be adjusted.
-       total_rc_needed = rrm_source * real( dt, kind = core_rknd )
+       total_rc_needed = rrm_source * dt
 
        if ( total_rc_needed > rcm ) then
 
           ! The maximum allowable rate of the source terms is rcm/dt.
-          rrm_src_max = rcm / real( dt, kind = core_rknd )
+          rrm_src_max = rcm / dt
 
           ! The amount of adjustment to the source terms.
           ! This value should always be negative.
@@ -1351,7 +1351,7 @@ module KK_microphys_module
 
        ! Calculate net evaporation rate of <r_r>.
        rrm_evap_net = max( KK_evap_tndcy, &
-                              - rrm / real( dt, kind = core_rknd ) )
+                              - rrm / dt )
 
        ! Recalcuate the net evaporation rate of <N_r> based on the net
        ! evaporation rate of <r_r>.
@@ -1364,7 +1364,7 @@ module KK_microphys_module
        endif
 
        Nrm_evap_net = max( Nrm_evap_net, &
-                           - Nrm / real( dt, kind = core_rknd ) )
+                           - Nrm / dt )
 
     else ! l_evap_adj_enabled is false: evaporation adjustment is disabled.
 

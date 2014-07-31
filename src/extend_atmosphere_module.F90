@@ -318,7 +318,7 @@ module extend_atmosphere_module
 
     ! Sanity check and kludge to prevent presure from increasing with height
     ! -dschanen June 4 2014
-    if ( p_in_Pa_zm(j-1) > extend_p_in_mb(j) * pascal_per_mb ) then
+    if ( real(p_in_Pa_zm(j-1),kind=dp) > extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) ) then
 !     extend_p_in_mb(j) = p_in_Pa_zm(j-1) * 0.95
       j = j + 1
     end if

@@ -183,7 +183,7 @@ module gabls2
     ! lowest model level isn't at 10 m,
     ! from ATEX specification (Stevens, et al. 2000, eq 3)
     time_in_hours_init = 14._time_precision
-    time_in_hours = real( (time - time_initial) / sec_per_hr + &
+    time_in_hours = real( (time - time_initial) / real(sec_per_hr,kind=time_precision) + &
       time_in_hours_init, kind = core_rknd ) 
     ! at initial time,
     ! time_in_hours = 14

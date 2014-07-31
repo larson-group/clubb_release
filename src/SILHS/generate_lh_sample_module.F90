@@ -149,8 +149,8 @@ module generate_lh_sample_module
     ! need any rescaling here.
     l_Sigma1_scaling = .false.
     l_Sigma2_scaling = .false.
-    Sigma1_scaling = one
-    Sigma2_scaling = one
+    Sigma1_scaling = real(one, kind=dp)
+    Sigma2_scaling = real(one, kind=dp)
 
     if ( X_mixt_comp_one_lev == 1 ) then
 

@@ -122,7 +122,7 @@ module lba
     ! From Table A.1.
     ft = real( max( 0._core_rknd,  & 
                  cos( 0.5_core_rknd * pi * ( (5.25_core_rknd - &
-                 real( time/sec_per_hr, kind = core_rknd )) / 5.25_core_rknd ) ) & 
+                 real( time,kind=core_rknd)/sec_per_hr) / 5.25_core_rknd ) ) & 
             ), kind = core_rknd ) ! Known magic number
 
     wpthlp_sfc =  convert_sens_ht_to_km_s( ( 270._core_rknd * &

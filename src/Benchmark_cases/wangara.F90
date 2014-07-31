@@ -112,11 +112,11 @@ module wangara
 
     ! Compute UTC time of the day in seconds
 
-    time_utc = mod( time, sec_per_day )
+    time_utc = mod( time, real( sec_per_day, kind=time_precision ) )
 
     ! Now convert UTC time to Australia EST (local time)
     est_offset = 36000._time_precision
-    time_est = mod( time_utc + est_offset, sec_per_day )
+    time_est = mod( time_utc + est_offset, real( sec_per_day, kind=time_precision ) )
 
     if ( time_est < 27000._time_precision .or. time_est > 63000._time_precision ) then
       write(fstderr,*) "wangara_sfclyr: error local time must" & 

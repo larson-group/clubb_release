@@ -113,8 +113,7 @@ module advance_xp2_xpyp_module
       zm2zt ! Procedure(s)
 
     use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      core_rknd
+      core_rknd ! Variable(s)
 
     use clip_explicit, only: & 
       clip_covar,  & ! Procedure(s)
@@ -189,7 +188,7 @@ module advance_xp2_xpyp_module
 
     logical, intent(in) :: l_iter ! Whether variances are prognostic
 
-    real(kind=time_precision), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt             ! Model timestep                                [s]
 
     ! Passive scalar input
@@ -514,7 +513,7 @@ module advance_xp2_xpyp_module
     
       ! This overwrites stats clipping data from clip_variance
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, -rtp2 / real( dt, kind = core_rknd ), zm )
+        call stat_modify( irtp2_cl, -rtp2 / dt, zm )
       endif
       
       do k = 1, gr%nz
@@ -525,7 +524,7 @@ module advance_xp2_xpyp_module
       end do ! k = 1..gr%nz
       
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, rtp2 / real( dt, kind = core_rknd ), zm )
+        call stat_modify( irtp2_cl, rtp2 / dt, zm )
       endif
       
     end if ! l_clip_large_rtp2
@@ -843,8 +842,7 @@ module advance_xp2_xpyp_module
         l_upwind_xpyp_ta ! Constant(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use diffusion, only:  & 
         diffusion_zm_lhs ! Procedure(s)
@@ -895,7 +893,7 @@ module advance_xp2_xpyp_module
       km1_mdiag = 3    ! Momentum subdiagonal index.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt ! Timestep length                             [s]
 
     logical, intent(in) :: & 
@@ -995,7 +993,7 @@ module advance_xp2_xpyp_module
 
       ! LHS time tendency.
       if ( l_iter ) then
-        lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( one / real( dt, kind = core_rknd ) )
+        lhs(k_mdiag,k) = lhs(k_mdiag,k) + ( one / dt )
       endif
 
       if ( l_stats_samp ) then
@@ -1410,8 +1408,7 @@ module advance_xp2_xpyp_module
         l_upwind_xpyp_ta ! Constant(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
@@ -1439,7 +1436,7 @@ module advance_xp2_xpyp_module
     ! Input Variables
     integer, intent(in) :: solve_type
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                              [s]
 
     logical, intent(in) :: & 
@@ -1612,7 +1609,7 @@ module advance_xp2_xpyp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k,1) = rhs(k,1) + one/real( dt, kind = core_rknd ) * xap2(k)
+        rhs(k,1) = rhs(k,1) + one/dt * xap2(k)
       endif
 
       if ( l_stats_samp ) then
@@ -1793,8 +1790,7 @@ module advance_xp2_xpyp_module
         l_upwind_xpyp_ta ! Constant(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
@@ -1825,7 +1821,7 @@ module advance_xp2_xpyp_module
     ! Input Variables
     integer, intent(in) :: solve_type
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                              [s]
 
     logical, intent(in) :: & 
@@ -1993,7 +1989,7 @@ module advance_xp2_xpyp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k,1) = rhs(k,1) + one/real( dt, kind = core_rknd ) * xapxbp(k)
+        rhs(k,1) = rhs(k,1) + one/dt * xapxbp(k)
       endif
 
       ! RHS <x'y'> forcing.
@@ -3234,7 +3230,7 @@ module advance_xp2_xpyp_module
 
     use fill_holes, only: fill_holes_vertical
     use grid_class, only: gr
-    use clubb_precision, only: time_precision, core_rknd
+    use clubb_precision, only: core_rknd
 
     use stats_variables, only:  & 
         zm, l_stats_samp, & 
@@ -3252,7 +3248,7 @@ module advance_xp2_xpyp_module
     integer, intent(in) :: & 
       solve_type
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt        ! Model timestep              [s]
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -3285,7 +3281,7 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( ixp2_pd, xp2_np1 / real( dt, kind = core_rknd ), &   ! Intent(in)
+      call stat_begin_update( ixp2_pd, xp2_np1 / dt, &   ! Intent(in)
                               zm )                               ! Intent(inout)
     endif
 
@@ -3303,7 +3299,7 @@ module advance_xp2_xpyp_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_end_update( ixp2_pd, xp2_np1 / real( dt, kind = core_rknd ), & ! Intent(in)
+      call stat_end_update( ixp2_pd, xp2_np1 / dt, & ! Intent(in)
                             zm )                             ! Intent(inout)
     endif
 
@@ -3336,15 +3332,15 @@ module advance_xp2_xpyp_module
       Lv
 
     use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      time_precision
+      core_rknd ! Variable(s)
+      
 
     implicit none
 
     !input parameters
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
-    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac, &       !Cloud fraction                        [-]
@@ -3410,7 +3406,7 @@ module advance_xp2_xpyp_module
                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%rt2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt2 )
 
-    rtp2_mc_zt = rrm_evap**2 * pf_const * real(dt, kind=core_rknd) &
+    rtp2_mc_zt = rrm_evap**2 * pf_const * dt &
                        + 2.0_core_rknd * abs(rrm_evap) * sqrt(temp_rtp2 * pf_const)
                        !use absolute value of evaporation, as evaporation will add
                        !to rt1
@@ -3423,7 +3419,7 @@ module advance_xp2_xpyp_module
                     * ( ( pdf_params%thl2 - thlm )**2 + pdf_params%varnce_thl2 )
 
     thlp2_mc_zt = ( rrm_evap * Lv / ( Cp * exner) )**2 &
-                       * pf_const * real(dt,kind=core_rknd) &
+                       * pf_const * dt &
                        + 2.0_core_rknd * abs(rrm_evap) * Lv / ( Cp * exner ) &
                        * sqrt(temp_thlp2 * pf_const)
     
@@ -3446,7 +3442,7 @@ module advance_xp2_xpyp_module
                               * ( ( Lv / (cp * exner ) ) * sqrt( temp_rtp2 ) &
                                 + sqrt( temp_thlp2 ) ) &
                             - ( Lv / (cp * exner ) ) * pf_const &
-                                * ( rrm_evap )**2 * real(dt,kind=core_rknd)
+                                * ( rrm_evap )**2 * dt
 
     wprtp_mc = zt2zm( wprtp_mc_zt )
     wpthlp_mc = zt2zm( wpthlp_mc_zt )

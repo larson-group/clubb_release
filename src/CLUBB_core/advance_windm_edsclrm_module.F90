@@ -69,8 +69,7 @@ module advance_windm_edsclrm_module
       l_tke_aniso
 
     use clubb_precision, only:  &
-      time_precision, &  ! Variable(s)
-      core_rknd
+      core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
       stat_begin_update, & ! Subroutines
@@ -117,7 +116,7 @@ module advance_windm_edsclrm_module
       dummy_nu  ! Used to feed zero values into function calls
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt                 ! Model timestep                             [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
@@ -316,8 +315,8 @@ module advance_windm_edsclrm_module
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ium_sdmp, um/real( dt, kind = core_rknd ), zt )
-        call stat_begin_update( ivm_sdmp, vm/real( dt, kind = core_rknd ), zt )
+        call stat_begin_update( ium_sdmp, um/dt, zt )
+        call stat_begin_update( ivm_sdmp, vm/dt, zt )
       endif
 
       um(1:gr%nz) = sponge_damp_xm( dt, um_ref(1:gr%nz), um(1:gr%nz), &
@@ -325,8 +324,8 @@ module advance_windm_edsclrm_module
       vm(1:gr%nz) = sponge_damp_xm( dt, vm_ref(1:gr%nz), vm(1:gr%nz), &
                                       uv_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ium_sdmp, um/real( dt, kind = core_rknd ), zt )
-        call stat_end_update( ivm_sdmp, vm/real( dt, kind = core_rknd ), zt )
+        call stat_end_update( ium_sdmp, um/dt, zt )
+        call stat_end_update( ivm_sdmp, vm/dt, zt )
       endif
 
     endif
@@ -350,25 +349,25 @@ module advance_windm_edsclrm_module
 
       ! Reflect nudging in budget
       if( l_stats_samp ) then
-        call stat_begin_update( ium_ndg, um / real( dt, kind = core_rknd ), &         ! Intent(in)
+        call stat_begin_update( ium_ndg, um / dt, &         ! Intent(in)
                                 zt )                              ! Intent(inout)
-        call stat_begin_update( ivm_ndg, vm / real( dt, kind = core_rknd ), &         ! Intent(in)
+        call stat_begin_update( ivm_ndg, vm / dt, &         ! Intent(in)
                                 zt )                              ! Intent(inout)
       end if
       
       um(1:gr%nz) = um(1:gr%nz) &
-        - ((um(1:gr%nz) - um_ref(1:gr%nz)) * (real( dt, kind = core_rknd )/ts_nudge))
+        - ((um(1:gr%nz) - um_ref(1:gr%nz)) * (dt/ts_nudge))
       vm(1:gr%nz) = vm(1:gr%nz) &
-        - ((vm(1:gr%nz) - vm_ref(1:gr%nz)) * (real( dt, kind = core_rknd )/ts_nudge))
+        - ((vm(1:gr%nz) - vm_ref(1:gr%nz)) * (dt/ts_nudge))
     endif
 
     if( l_stats_samp ) then
 
       ! Reflect nudging in budget
       if ( l_uv_nudge ) then
-        call stat_end_update( ium_ndg, um / real( dt, kind = core_rknd ), &         ! Intent(in)
+        call stat_end_update( ium_ndg, um / dt, &         ! Intent(in)
                               zt )                              ! Intent(inout)
-        call stat_end_update( ivm_ndg, vm / real( dt, kind = core_rknd ), &         ! Intent(in)
+        call stat_end_update( ivm_ndg, vm / dt, &         ! Intent(in)
                               zt )                              ! Intent(inout)
       end if
       
@@ -1423,8 +1422,7 @@ module advance_windm_edsclrm_module
         gr  ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -1454,7 +1452,7 @@ module advance_windm_edsclrm_module
       km1_tdiag = 3       ! Thermodynamic subdiagonal index.
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1533,7 +1531,7 @@ module advance_windm_edsclrm_module
 
       ! LHS time tendency.
       lhs(k_tdiag,k)  &
-      = lhs(k_tdiag,k) + 1.0_core_rknd / real( dt, kind = core_rknd )
+      = lhs(k_tdiag,k) + 1.0_core_rknd / dt
 
       if ( l_stats_samp ) then
 
@@ -1636,8 +1634,7 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use diffusion, only:  & 
         diffusion_zt_lhs ! Procedure(s)
@@ -1664,7 +1661,7 @@ module advance_windm_edsclrm_module
     integer, intent(in) :: &
       solve_type ! Description of what is being solved for
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt                 ! Model timestep                             [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -1747,7 +1744,7 @@ module advance_windm_edsclrm_module
       rhs(k) = rhs(k) + xm_tndcy(k)
 
       ! RHS time tendency
-      rhs(k) = rhs(k) + 1.0_core_rknd / real ( dt, kind = core_rknd ) * xm(k)
+      rhs(k) = rhs(k) + 1.0_core_rknd / dt * xm(k)
 
       if ( l_stats_samp ) then
 
@@ -1839,7 +1836,7 @@ module advance_windm_edsclrm_module
     rhs(k) = rhs(k) + xm_tndcy(k)
 
     ! RHS time tendency term at the upper boundary.
-    rhs(k) = rhs(k) + 1.0_core_rknd / real( dt, kind = core_rknd ) * xm(k)
+    rhs(k) = rhs(k) + 1.0_core_rknd / dt * xm(k)
 
     if ( l_stats_samp ) then
 

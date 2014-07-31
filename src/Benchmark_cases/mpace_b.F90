@@ -105,10 +105,10 @@ module mpace_b
      t_tendency = min( -4._core_rknd,-15._core_rknd* &
        (1._core_rknd-((p_sfc-p_in_Pa(k))/21818._core_rknd)) ) ! K/day - known magic number
      thlm_forcing(k) = (t_tendency * ((p_sfc/p_in_Pa(k)) ** (Rd/Cp)))  & 
-                      / real(sec_per_day, kind = core_rknd) ! K/s
+                      / sec_per_day ! K/s
      rtm_forcing(k)  = min( 0.164_core_rknd,-3._core_rknd* &
        (1._core_rknd-((p_sfc-p_in_Pa(k))/15171._core_rknd)) ) /  & 
-                   g_per_kg / real(sec_per_day, kind = core_rknd) ! known magic number
+                   g_per_kg / sec_per_day ! known magic number
                    ! g/kg/day -> kg/kg/s
     end do
 

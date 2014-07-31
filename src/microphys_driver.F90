@@ -196,7 +196,7 @@ module microphys_driver
     implicit none
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt           ! Timestep         [s]
 
     real( kind = time_precision ), intent(in) ::  & 
@@ -681,11 +681,11 @@ module microphys_driver
                 = Ncm_mc(k) &
                   + ( ( max( Ndrop_max(k), Ncm_microphys(k) ) &
                         - Ncm_microphys(k) ) &
-                      / real( dt, kind = core_rknd ) )
+                      / dt )
              else
                 Ncm_mc(k) &
                 = Ncm_mc(k) &
-                  - ( Ncm_microphys(k) / real( dt, kind = core_rknd ) )
+                  - ( Ncm_microphys(k) / dt )
              endif
 
           enddo

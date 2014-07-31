@@ -259,8 +259,7 @@ module advance_clubb_core_module
       advance_wp2_wp3 ! Procedure
 
     use clubb_precision, only:  & 
-      time_precision, & ! Variable(s)
-      core_rknd
+      core_rknd ! Variable(s)
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
@@ -386,7 +385,7 @@ module advance_clubb_core_module
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt  ! Current timestep duration    [s]
 
     real( kind = core_rknd ), intent(in) ::  & 
@@ -755,32 +754,32 @@ module advance_clubb_core_module
     ! Set up budget stats variables.
     if ( l_stats_samp ) then
 
-      call stat_begin_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &          ! intent(in)
+      call stat_begin_update( iwp2_bt, wp2 / dt, &                  ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ), &          ! intent(in)
+      call stat_begin_update( ivp2_bt, vp2 / dt, &                  ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( iup2_bt, up2 / real( dt , kind = core_rknd ),  &         ! intent(in)
+      call stat_begin_update( iup2_bt, up2 / dt,  &                 ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &      ! intent(in)
+      call stat_begin_update( iwprtp_bt, wprtp / dt, &              ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ),  &   ! intent(in)
+      call stat_begin_update( iwpthlp_bt, wpthlp / dt,  &           ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &        ! intent(in)
+      call stat_begin_update( irtp2_bt, rtp2 / dt, &                ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &      ! intent(in)
+      call stat_begin_update( ithlp2_bt, thlp2 / dt, &              ! intent(in)
                               zm )                                  ! intent(inout)
-      call stat_begin_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &  ! intent(in)
+      call stat_begin_update( irtpthlp_bt, rtpthlp / dt, &          ! intent(in)
                               zm )                                  ! intent(inout)
 
-      call stat_begin_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &          ! intent(in)
+      call stat_begin_update( irtm_bt, rtm / dt, &                  ! intent(in)
                               zt )                                  ! intent(inout)
-      call stat_begin_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &        ! intent(in)
+      call stat_begin_update( ithlm_bt, thlm / dt, &                ! intent(in)
                               zt )                                  ! intent(inout)
-      call stat_begin_update( ium_bt, um / real( dt , kind = core_rknd ), &            ! intent(in)
+      call stat_begin_update( ium_bt, um / dt, &                    ! intent(in)
                               zt )                                  ! intent(inout)
-      call stat_begin_update( ivm_bt, vm / real( dt , kind = core_rknd ), &            ! intent(in)
+      call stat_begin_update( ivm_bt, vm / dt, &                    ! intent(in)
                               zt )                                  ! intent(inout)
-      call stat_begin_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &          ! intent(in)
+      call stat_begin_update( iwp3_bt, wp3 / dt, &                  ! intent(in)
                               zt )                                  ! intent(inout)
 
     end if
@@ -1034,7 +1033,7 @@ module advance_clubb_core_module
     if( l_rtm_nudge ) then
       ! Nudge rtm to prevent excessive drying
       where( rtm < rtm_min .and. gr%zt < rtm_nudge_max_altitude )
-        rtm = rtm + (rtm_ref - rtm) * ( real( dt, kind = core_rknd ) / ts_nudge )
+        rtm = rtm + (rtm_ref - rtm) * ( dt / ts_nudge )
       end where
     end if
 
@@ -1281,7 +1280,7 @@ module advance_clubb_core_module
       if( l_rtm_nudge ) then
         ! Nudge rtm to prevent excessive drying
         where( rtm < rtm_min .and. gr%zt < rtm_nudge_max_altitude )
-          rtm = rtm + (rtm_ref - rtm) * ( real( dt, kind = core_rknd ) / ts_nudge )
+          rtm = rtm + (rtm_ref - rtm) * ( dt / ts_nudge )
         end where
       end if
 
@@ -1600,22 +1599,22 @@ module advance_clubb_core_module
         ! Reflect surface varnce changes in budget
         if ( l_stats_samp ) then
           call stat_begin_update_pt( ithlp2_sf, 1,      &      ! intent(in)
-           thlp2(1) / real( dt , kind = core_rknd ),    &      ! intent(in)
+           thlp2(1) / dt,    &                                 ! intent(in)
                                      zm )                      ! intent(inout)
           call stat_begin_update_pt( irtp2_sf, 1,       &      ! intent(in)
-            rtp2(1) / real( dt , kind = core_rknd ),    &      ! intent(in)
+            rtp2(1) / dt,    &                                 ! intent(in)
                                      zm )                      ! intent(inout)
           call stat_begin_update_pt( irtpthlp_sf, 1,    &      ! intent(in)
-            rtpthlp(1) / real( dt , kind = core_rknd ), &      ! intent(in)
+            rtpthlp(1) / dt, &                                 ! intent(in)
                                      zm )                      ! intent(inout)
           call stat_begin_update_pt( iup2_sf, 1,        &      ! intent(in)
-            up2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
+            up2(1) / dt,     &                                 ! intent(in)
                                      zm )                      ! intent(inout)
           call stat_begin_update_pt( ivp2_sf, 1,        &      ! intent(in)
-            vp2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
+            vp2(1) / dt,     &                                 ! intent(in)
                                      zm )                      ! intent(inout)
           call stat_begin_update_pt( iwp2_sf, 1,        &      ! intent(in)
-            wp2(1) / real( dt , kind = core_rknd ),     &      ! intent(in)
+            wp2(1) / dt,     &                                 ! intent(in)
                                      zm )                      ! intent(inout)
         end if
 
@@ -1635,22 +1634,22 @@ module advance_clubb_core_module
         ! Update surface stats
         if ( l_stats_samp ) then
           call stat_end_update_pt( ithlp2_sf, 1, &                ! intent(in)
-            thlp2(1) / real( dt , kind = core_rknd ), &           ! intent(in)
+            thlp2(1) / dt, &                                      ! intent(in)
                                    zm )                           ! intent(inout)
           call stat_end_update_pt( irtp2_sf, 1, &                 ! intent(in)
-            rtp2(1) / real( dt , kind = core_rknd ), &            ! intent(in)
+            rtp2(1) / dt, &                                       ! intent(in)
                                    zm )                           ! intent(inout)
           call stat_end_update_pt( irtpthlp_sf, 1, &              ! intent(in)
-            rtpthlp(1) / real( dt , kind = core_rknd ), &         ! intent(in)
+            rtpthlp(1) / dt, &                                    ! intent(in)
                                    zm )                           ! intent(inout)
           call stat_end_update_pt( iup2_sf, 1, &                  ! intent(in)
-            up2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+            up2(1) / dt, &                                        ! intent(in)
                                    zm )                           ! intent(inout)
           call stat_end_update_pt( ivp2_sf, 1, &                  ! intent(in)
-            vp2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+            vp2(1) / dt, &                                        ! intent(in)
                                    zm )                           ! intent(inout)
           call stat_end_update_pt( iwp2_sf, 1, &                  ! intent(in)
-            wp2(1) / real( dt , kind = core_rknd ), &             ! intent(in)
+            wp2(1) / dt, &                                        ! intent(in)
                                    zm )                           ! intent(inout)
         end if
 
@@ -1839,32 +1838,32 @@ module advance_clubb_core_module
 
       if ( l_stats_samp ) then
 
-        call stat_end_update( iwp2_bt, wp2 / real( dt , kind = core_rknd ), &        ! intent(in)
+        call stat_end_update( iwp2_bt, wp2 / dt, &                ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( ivp2_bt, vp2 / real( dt , kind = core_rknd ),&         ! intent(in)
+        call stat_end_update( ivp2_bt, vp2 / dt,&                 ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( iup2_bt, up2 / real( dt , kind = core_rknd ), &        ! intent(in)
+        call stat_end_update( iup2_bt, up2 / dt, &                ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( iwprtp_bt, wprtp / real( dt , kind = core_rknd ), &    ! intent(in)
+        call stat_end_update( iwprtp_bt, wprtp / dt, &            ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( iwpthlp_bt, wpthlp / real( dt , kind = core_rknd ), &  ! intent(in)
+        call stat_end_update( iwpthlp_bt, wpthlp / dt, &          ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( irtp2_bt, rtp2 / real( dt , kind = core_rknd ), &      ! intent(in)
+        call stat_end_update( irtp2_bt, rtp2 / dt, &              ! intent(in)
                               zm )                                ! intent(inout)
-        call stat_end_update( ithlp2_bt, thlp2 / real( dt , kind = core_rknd ), &    ! intent(in) 
+        call stat_end_update( ithlp2_bt, thlp2 / dt, &            ! intent(in) 
                               zm )                                ! intent(inout)
-        call stat_end_update( irtpthlp_bt, rtpthlp / real( dt , kind = core_rknd ), &! intent(in)
+        call stat_end_update( irtpthlp_bt, rtpthlp / dt, &        ! intent(in)
                               zm )                                ! intent(inout)
 
-        call stat_end_update( irtm_bt, rtm / real( dt , kind = core_rknd ), &        ! intent(in)
+        call stat_end_update( irtm_bt, rtm / dt, &                ! intent(in)
                               zt )                                ! intent(inout)
-        call stat_end_update( ithlm_bt, thlm / real( dt , kind = core_rknd ), &      ! intent(in)
+        call stat_end_update( ithlm_bt, thlm / dt, &              ! intent(in)
                               zt )                                ! intent(inout)
-        call stat_end_update( ium_bt, um / real( dt , kind = core_rknd ), &          ! intent(in)
+        call stat_end_update( ium_bt, um / dt, &                  ! intent(in)
                               zt )                                ! intent(inout)
-        call stat_end_update( ivm_bt, vm / real( dt , kind = core_rknd ), &          ! intent(in)
+        call stat_end_update( ivm_bt, vm / dt, &                  ! intent(in)
                               zt )                                ! intent(inout)
-        call stat_end_update( iwp3_bt, wp3 / real( dt , kind = core_rknd ), &        ! intent(in)
+        call stat_end_update( iwp3_bt, wp3 / dt, &                ! intent(in)
                               zt )                                ! intent(inout)
 
       end if ! l_stats_samp
@@ -1952,7 +1951,7 @@ module advance_clubb_core_module
                                        rtm_integral_before, &
                                        rtm_flux_top, rtm_flux_sfc, &
                                        rtm_integral_forcing, &
-                                       real( dt , kind = core_rknd ) )
+                                       dt )
 
           ! Calculate the spurious source for thlm
           thlm_flux_top = rho_ds_zm(gr%nz) * wpthlp(gr%nz)
@@ -1976,7 +1975,7 @@ module advance_clubb_core_module
                                        thlm_integral_before, &
                                        thlm_flux_top, thlm_flux_sfc, &
                                        thlm_integral_forcing, &
-                                       real( dt , kind = core_rknd ) )
+                                       dt )
         else ! If l_implemented is false, we don't want spurious source output
           rtm_spur_src = -9999.0_core_rknd
           thlm_spur_src = -9999.0_core_rknd

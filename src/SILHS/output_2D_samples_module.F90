@@ -58,7 +58,9 @@ module output_2D_samples_module
       variable_units           ! Units on the variables
 
     real(kind=time_precision), intent(in) :: & 
-      time,   & ! Start time                      [s] 
+      time      ! Start time                      [s] 
+    
+    real(kind=core_rknd), intent(in) :: &
       dtwrite   ! Interval for writing to disk    [s] 
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: & 

@@ -87,10 +87,10 @@ module stat_file_module
        rlat, & ! Latitude                   [Degrees N]
        rlon    ! Longitude                  [Degrees E]
 
-     real(kind=time_precision) :: & 
+     real( kind = core_rknd ) :: & 
        dtwrite ! Interval between output    [Seconds]
 
-     real(kind=time_precision) ::  & 
+     real( kind = time_precision ) ::  & 
        time    ! Start time                 [Seconds]
 
      ! Statistical Variables

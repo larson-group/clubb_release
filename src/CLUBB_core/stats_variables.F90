@@ -13,17 +13,16 @@ module stats_variables
       stats ! Type
 
   use clubb_precision, only:  & 
-      time_precision, & ! Variable
-      core_rknd
+      core_rknd ! Variable(s)
 
   implicit none
 
   private ! Set Default Scope
 
   ! Sampling and output frequencies
-  real(kind=time_precision), public :: &
-    stats_tsamp = 0._time_precision, & ! Sampling interval   [s]
-    stats_tout  = 0._time_precision  ! Output interval     [s]
+  real( kind = core_rknd ), public :: &
+    stats_tsamp = 0._core_rknd, & ! Sampling interval   [s]
+    stats_tout  = 0._core_rknd ! Output interval     [s]
 
 !$omp   threadprivate(stats_tsamp, stats_tout)
 

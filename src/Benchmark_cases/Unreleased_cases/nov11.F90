@@ -57,7 +57,7 @@ module nov11
       time,            & ! Current time          [s]
       time_initial       ! Initial time          [s]
 
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=core_rknd), intent(in) :: & 
       dt              ! Timestep              [s]
 
     ! Input/Output variables
@@ -81,7 +81,7 @@ module nov11
 ! only the first timestep after 3600.0 seconds.
 !-----------------------------------------------------------------------
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
-         time <  time_initial + 3600.0_time_precision + dt ) then
+         time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
       do k = 1, gr%nz, 1
         if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then
@@ -146,7 +146,7 @@ module nov11
       time,            & ! Current time          [s]
       time_initial       ! Initial time          [s]
 
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=core_rknd), intent(in) :: & 
       dt              ! Timestep              [s]
 
     ! Input/Output variables
@@ -258,7 +258,7 @@ module nov11
 ! only the first timestep after 3600.0 seconds.
 !-----------------------------------------------------------------------
     if ( time >= time_initial + 3600.0_time_precision  .and. & 
-         time <  time_initial + 3600.0_time_precision + dt ) then
+         time <  time_initial + 3600.0_time_precision + real(dt,kind=time_precision) ) then
 
       do k = 1, gr%nz, 1
         if ( gr%zt(k) > ( 2900.0_core_rknd + gr%zm(1) ) ) then

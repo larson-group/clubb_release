@@ -253,8 +253,9 @@ module input_netcdf
       netcdf_idate = gregorian2julian_date( netcdf_day, netcdf_month, netcdf_year)
       delta_d = real( netcdf_idate - clubb_idate, kind=time_precision )
 
-      ncf%time = (hours * sec_per_hr) + (minutes * sec_per_min) + seconds + &
-                 (delta_d * sec_per_day)
+      ncf%time = (hours * real(sec_per_hr,kind=time_precision)) + &
+                 (minutes * real(sec_per_min,kind=time_precision)) &
+                + seconds + (delta_d * real(sec_per_day,kind=time_precision))
 
       ! Get rid of compiler warning
       multiplier = 0.0_time_precision
@@ -262,10 +263,10 @@ module input_netcdf
       ! Figure out what units Time is in so dtwrite can be set correctly
       select case ( time( 1:index ( time, ' ' ) ) )
       case ( "hours" )
-        multiplier = sec_per_hr
+        multiplier = real(sec_per_hr, kind=time_precision)
 
       case ( "minutes" )
-        multiplier = sec_per_min
+        multiplier = real(sec_per_min, kind=time_precision)
 
       case ( "seconds" )
         multiplier = 1._time_precision
@@ -287,7 +288,7 @@ module input_netcdf
         return
       end if
 
-      ncf%dtwrite = real( (write_times(2) - write_times(1)), kind = time_precision) * multiplier
+      ncf%dtwrite =  (write_times(2) - write_times(1)) * real(multiplier,kind=core_rknd)
 
     end if
 
@@ -427,7 +428,7 @@ module input_netcdf
            return
 
         case ( "K/day" ) 
-          x = x / real(sec_per_day, kind = core_rknd)
+          x = x / sec_per_day
 
         case default
           ! Do nothing

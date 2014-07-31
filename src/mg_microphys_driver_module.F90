@@ -108,8 +108,7 @@ module mg_microphys_driver_module
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
-      dp, &
-      time_precision
+      dp
 
     use fill_holes, only: &
       vertical_integral ! Procedure(s)
@@ -127,7 +126,7 @@ module mg_microphys_driver_module
     logical, parameter :: sub_column = .false.
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
@@ -539,7 +538,7 @@ module mg_microphys_driver_module
     T_in_K_new(1) = T_in_K(1)
    
     ! Compute total change in thlm using ( thlm_new - thlm_old ) / dt
-    thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / real( dt, kind = core_rknd )
+    thlm_mc = ( T_in_K2thlm( T_in_K_new, exner, rcm_new ) - thlm ) / dt
 
     ! Rate of change of thlm due to microphysics
     !
@@ -577,7 +576,7 @@ module mg_microphys_driver_module
       ! Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( iprecip_rate_sfc, 1, &
                                real( prect(icol), kind = core_rknd ) * mm_per_m * &
-                               real( sec_per_day, kind = core_rknd ), sfc )
+                               sec_per_day, sfc )
 
      ! Snow water path is updated in stats_subs.F90
      ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsm) / max( 0.0001, cldfsnow ) * &

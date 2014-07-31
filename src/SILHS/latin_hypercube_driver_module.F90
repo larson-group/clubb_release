@@ -740,8 +740,10 @@ module latin_hypercube_driver_module
       fname_prefix, & ! Prefix for file name
       fdir            ! Directory for output
 
+    real(kind=core_rknd), intent(in) :: &
+      stats_tout    ! Frequency to write to disk        [s]
+
     real(kind=time_precision), intent(in) :: &
-      stats_tout, & ! Frequency to write to disk        [s]
       time_initial  ! Initial time                      [s]
 
     integer, intent(in) :: &

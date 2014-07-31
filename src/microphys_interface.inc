@@ -17,14 +17,14 @@ interface
 
     use parameters_model, only: hydromet_dim
 
-    use clubb_precision, only: core_rknd, time_precision
+    use clubb_precision, only: core_rknd
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type   ! Type
 
     ! Input Variables
 
-    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nnzp ! Points in the Vertical        [-]
 

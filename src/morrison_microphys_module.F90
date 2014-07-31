@@ -187,8 +187,8 @@ module morrison_microphys_module
         sec_per_day
 
     use clubb_precision, only: &
-        core_rknd, & ! Variable(s)
-        time_precision
+        core_rknd   ! Variable(s)
+        
 
     use variables_prognostic_module, only: &
         rho_ds_zt
@@ -219,7 +219,7 @@ module morrison_microphys_module
       w_thresh = 0.1_core_rknd ! Minimum value w for latin hypercube [m/s]
 
     ! Input Variables
-    real( kind = time_precision ), intent(in) :: dt ! Model timestep        [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
 
     integer, intent(in) :: nz ! Points in the Vertical        [-]
 
@@ -853,19 +853,19 @@ module morrison_microphys_module
     ! M2005MICRO_GRAUPEL don't include the clipping term.
     do i = 1, hydromet_dim, 1
        hydromet_mc(2:,i) = ( real( hydromet_r4(2:,i), kind = core_rknd ) - &
-                             hydromet(2:,i) ) / real( dt, kind = core_rknd )
+                             hydromet(2:,i) ) / dt
     end do
 
     hydromet_mc(1,:) = 0.0_core_rknd ! Boundary condition
 
     Ncm_mc(2:) = ( real( Ncm_r4(2:), kind = core_rknd ) - Ncm(2:) ) &
-                 / real( dt, kind = core_rknd )
+                 / dt
 
     Ncm_mc(1) = 0.0_core_rknd ! Boundary condition
 
     ! Update thetal based on absolute temperature
     thlm_mc = ( T_in_K2thlm( real( T_in_K, kind = core_rknd ), exner, &
-                real( rcm_r4, kind = core_rknd ) ) - thlm ) / real( dt, kind = core_rknd )
+                real( rcm_r4, kind = core_rknd ) ) - thlm ) / dt
 
     ! Sedimentation is handled within the Morrison microphysics
     hydromet_vel_zt(:,:) = 0.0_core_rknd
@@ -1024,11 +1024,11 @@ module morrison_microphys_module
       ! Snow and Rain rates at the bottom of the domain, in mm/day
     call microphys_put_var( iprecip_rate_sfc, &
       (/ real(Morr_precip_rate, kind = core_rknd) * &
-      real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ) /), microphys_stats_sfc )
+      sec_per_day / dt /), microphys_stats_sfc )
 
     call microphys_put_var( imorr_snow_rate, &
       (/ real(Morr_snow_rate, kind = core_rknd) * &
-      real( sec_per_day, kind = core_rknd) / real( dt, kind = core_rknd ) /), microphys_stats_sfc )
+      sec_per_day / dt /), microphys_stats_sfc )
 
     return
   end subroutine morrison_microphys_driver

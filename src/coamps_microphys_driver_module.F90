@@ -162,8 +162,10 @@ module coamps_microphys_driver_module
 !       from CLUBB with precision "time_precision".  I have redefined
 !       "timea" and "deltf" below to be regular precision variables
 !       that are passed throughout COAMPS microphysics.  Brian; 4/5/2008.
-    real(kind=time_precision), intent(in) :: & 
-      timea_in,         & ! Current model time                   [s]
+    real( kind = time_precision ), intent(in) :: & 
+      timea_in          ! Current model time                   [s]
+
+    real( kind= core_rknd ), intent(in) :: &
       deltf_in         ! Timestep (i.e. dt_main in CLUBB)      [s]
 
     real(kind = core_rknd), dimension(gr%nz), intent(in) :: & 

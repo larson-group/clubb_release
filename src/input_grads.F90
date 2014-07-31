@@ -201,8 +201,10 @@ module input_grads
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
 
-        grads_file%time = real( ihour, kind=time_precision ) * sec_per_hr &
-                        + real( imin, kind=time_precision ) * sec_per_min
+        grads_file%time = real( ihour, kind=time_precision ) * &
+                          real( sec_per_hr,kind=time_precision) &
+                        + real( imin, kind=time_precision ) *  &
+                          real(sec_per_min, kind=time_precision)
 
         read(unit=date(7:8),fmt=*) grads_file%day
         read(unit=date(12:15),fmt=*) grads_file%year
@@ -443,7 +445,7 @@ module input_grads
     ! _model.in to restart
     ! Joshua Fasching March 2008
 
-    nrec = ( max( nint( real( itime, kind=time_precision ) &
+    nrec = ( max( nint( real( itime, kind=core_rknd) &
                         /(grads_file%dtwrite/sec_per_min) &
                       ), & ! nint &
               1 ) & ! max

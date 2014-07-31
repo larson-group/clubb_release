@@ -70,7 +70,7 @@ module sponge_layer_damping
 
     use grid_class, only: gr ! Variable(s)
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
 
@@ -78,7 +78,7 @@ module sponge_layer_damping
     intrinsic :: associated
 
     ! Input Variable(s)
-    real(kind=time_precision), intent(in) :: dt ! Model Timestep
+    real( kind = core_rknd ), intent(in) :: dt ! Model Timestep
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       xm_ref ! Reference to damp to [-]
@@ -108,7 +108,7 @@ module sponge_layer_damping
 ! reduce noise in rtm in cloud_feedback_s12 (CGILS) 
 !        xm_p(k) = xm(k) - real( ( ( xm(k) - xm_ref(k) ) / & 
 !                        damping_profile%tau_sponge_damp(k) ) * dt )
-        dt_on_tau = real( dt, kind = core_rknd ) / damping_profile%tau_sponge_damp(k)
+        dt_on_tau = dt / damping_profile%tau_sponge_damp(k)
 
 ! Really, we should be using xm_ref at time n+1 rather than n.
 ! However, for steady profiles of xm_ref, it won't matter.        
@@ -135,7 +135,7 @@ module sponge_layer_damping
     ! References:
     !   None
     !-------------------------------------------------------------------------------------------
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
     
     use constants_clubb, only: fstderr ! Constant(s)
 
@@ -146,7 +146,7 @@ module sponge_layer_damping
     implicit none
 
     ! Input Variable(s)
-    real(kind=time_precision), intent(in) :: dt ! Model Timestep [s]
+    real( kind = core_rknd ), intent(in) :: dt ! Model Timestep [s]
 
     type(sponge_damp_settings), intent(in) :: &
         settings
@@ -160,7 +160,7 @@ module sponge_layer_damping
 
     allocate( damping_profile%tau_sponge_damp(1:gr%nz))
 
-    if( settings%tau_sponge_damp_min < 2._core_rknd * real( dt, kind = core_rknd ) ) then
+    if( settings%tau_sponge_damp_min < 2._core_rknd * dt ) then
       write(fstderr,*) 'Error: in damping() tau_sponge_damp_min is too small!'
       stop
     end if

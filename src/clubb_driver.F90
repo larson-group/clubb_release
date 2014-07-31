@@ -355,9 +355,13 @@ module clubb_driver
       fname_prefix, &! Prefix of stats filenames, to be followed by, for example "_zt"
       fdir           ! Output directory
 
-    real(kind=time_precision) :: & 
+    real( kind = core_rknd ) :: & 
       stats_tsamp,   & ! Stats sampling interval [s]
       stats_tout       ! Stats output interval   [s]
+
+    integer :: &
+      stats_nsamp,   & ! Stats sampling interval [timestep]
+      stats_nout       ! Stats output interval   [timestep]
 
     ! Grid altitude arrays
     real( kind = core_rknd ), dimension(:), allocatable ::  & 
@@ -714,8 +718,8 @@ module clubb_driver
       call write_text( "time_final = ", real( time_final, kind = core_rknd ), &
            l_write_to_file, iunit )
 
-      call write_text( "dt_main = ", real( dt_main, kind = core_rknd ), l_write_to_file, iunit )
-      call write_text( "dt_rad = ", real( dt_rad, kind = core_rknd ), l_write_to_file, iunit )
+      call write_text( "dt_main = ", dt_main, l_write_to_file, iunit )
+      call write_text( "dt_rad = ",  dt_rad, l_write_to_file, iunit )
 
       call write_text( "sfctype = ", sfctype, l_write_to_file, iunit )
       call write_text( "T_sfc = ", T_sfc, l_write_to_file, iunit )
@@ -1036,7 +1040,8 @@ module clubb_driver
 
       ! Ensure that iteration num, iinit, is an integer, so that model time is
       !   incremented correctly by iteration number at end of timestep
-      if ( mod( (time_restart-time_initial) , dt_main ) /= 0._time_precision ) then
+      if ( mod( (time_restart-time_initial), &
+       real(dt_main, kind=time_precision) ) /= 0._time_precision ) then
 
         write(fstderr,*) "Error: (time_restart-time_initial) ",  & 
           "is not a multiple of dt_main."
@@ -1047,7 +1052,7 @@ module clubb_driver
 
       end if ! mod( (time_restart-time_initial) , dt_main ) /= 0
 
-      iinit = floor( ( time_current - time_initial ) / dt_main ) + 1
+      iinit = floor( ( time_current - time_initial ) / real(dt_main,kind=time_precision) ) + 1
 
       call restart_clubb &
            ( iunit, runfile,                  &            ! Intent(in)
@@ -1123,7 +1128,7 @@ module clubb_driver
 
     ! Time integration
     ! Call advance_clubb_core once per each statistics output time
-    ifinal = floor( ( time_final - time_initial ) / dt_main )
+    ifinal = floor( ( time_final - time_initial ) / real(dt_main, kind=time_precision) )
 
     ! Setup filenames and variables to set for setfields, if enabled
     if ( l_input_fields ) then
@@ -1131,17 +1136,17 @@ module clubb_driver
     end if
 
     ! check to make sure dt_rad is a mutliple of dt_main
-    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=time_precision)) &
-          > 1.e-8_time_precision) then
+    if ( abs(dt_rad/dt_main - real(floor(dt_rad/dt_main), kind=core_rknd)) &
+          > 1.e-8_core_rknd) then
       stop "dt_rad must be a multiple of dt_main"
     end if
 
     if( l_stats ) then
 
-      if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=time_precision)) &
-            < 1.e-8_time_precision) .or. &
-         ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=time_precision)) &
-            < 1.e-8_time_precision)) ) then
+      if ( .not. (( abs(dt_rad/stats_tout - real(floor(dt_rad/stats_tout), kind=core_rknd)) &
+            < 1.e-8_core_rknd) .or. &
+         ( abs(stats_tout/dt_rad - real(floor(stats_tout/dt_rad), kind=core_rknd)) &
+            < 1.e-8_core_rknd)) ) then
         stop "dt_rad must be a multiple of stats_tout or stats_tout must be a mulitple of dt_rad"
       end if
 
@@ -1160,6 +1165,9 @@ module clubb_driver
       stop "The options rad_scheme == none and l_calc_thlp2_rad are incompatible."
 
     end if
+    stats_nsamp = nint( stats_tsamp / dt_main )
+    stats_nout = nint( stats_tout / dt_main )
+
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
@@ -1167,14 +1175,8 @@ module clubb_driver
     do itime = iinit, ifinal, 1
       ! When this time step is over, the time will be time + dt_main
 
-      ! We use elapsed time for stats_begin_step
-      if ( .not. l_restart ) then
-        call stats_begin_timestep( time_current-time_initial+dt_main ) ! Intent(in)
-      else
-        ! Different elapsed time for restart
-        ! Joshua Fasching March 2008
-        call stats_begin_timestep( time_current-time_restart+dt_main ) ! Intent(in)
-      end if
+      ! We use integer timestep for stats_begin_step
+        call stats_begin_timestep( itime, stats_nsamp, stats_nout ) ! Intent(in)
 
       ! If we're doing an inputfields run, get the values for our
       ! model arrays from a netCDF or GrADS file
@@ -1182,7 +1184,7 @@ module clubb_driver
         l_restart_input = .false.
         call compute_timestep( &
              iunit, stat_files(1), l_restart_input,  &  ! Intent(in)
-             time_current-time_initial+dt_main, &       ! Intent(in)
+             time_current-time_initial+real(dt_main,kind=time_precision), &    ! Intent(in)
              itime_nearest )    ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
@@ -1288,8 +1290,8 @@ module clubb_driver
 
       if ( clubb_at_least_debug_level( 2 ) ) then
          do k = 1, gr%nz
-            if ( pdf_params(k)%mixt_frac > one_dp .or. &
-                 pdf_params(k)%mixt_frac < zero_dp ) then
+            if ( real(pdf_params(k)%mixt_frac, kind=dp) > one_dp .or. &
+                 real(pdf_params(k)%mixt_frac, kind=dp) < zero_dp ) then
 
                write(fstderr,*) "Error in gaus_mixt_points:  mixture " &
                                 // "fraction, mixt_frac, does not lie in [0,1]."
@@ -1449,8 +1451,9 @@ module clubb_driver
       ! in order to facilitate use of stats.
       ! A host model, e.g. WRF, would advance time outside
       ! of advance_clubb_core.  Vince Larson 7 Feb 2006
-      time_current = time_initial + real( itime, kind=time_precision ) * dt_main
-
+      time_current = time_initial + real( itime, kind=time_precision ) * &
+                                    real(dt_main, kind=time_precision)
+     
       ! This was moved from above to be less confusing to the user,
       ! since before it would appear as though the last timestep
       ! was not executed. -dschanen 19 May 08
@@ -3387,7 +3390,7 @@ module clubb_driver
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
+    real(kind=core_rknd), intent(in) :: & 
       dt         ! Model timestep                            [s]
 
     ! Input/Output Variables
@@ -3797,7 +3800,7 @@ module clubb_driver
     if ( l_soil_veg ) then
       wpthep = wpthlp_sfc + (Lv/Cp) * ((p0/p_sfc)**kappa) * wprtp_sfc
 
-      call advance_soil_veg( real( dt, kind = core_rknd ), rho_zm(1), &
+      call advance_soil_veg( dt, rho_zm(1), &
                              Frad_SW_down(1) - Frad_SW_up(1), Frad_SW_down(1), &
                              Frad_LW_down(1), wpthep, soil_heat_flux )
     else

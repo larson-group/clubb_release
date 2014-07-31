@@ -69,8 +69,7 @@ module ice_dfsn_module
         cm_per_m
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use saturation, only:  & 
         sat_mixrat_liq ! Procedure(s)
@@ -91,7 +90,7 @@ module ice_dfsn_module
     real(kind = core_rknd), parameter :: N_i = 2000._core_rknd
 
     ! Input variables
-    real(kind=time_precision), intent(in)::  & 
+    real( kind = core_rknd ), intent(in)::  & 
       dt      ! Model timestep                                     [s]
 
     real(kind = core_rknd), dimension(gr%nz), intent(in)::  & 
@@ -240,8 +239,8 @@ module ice_dfsn_module
            * (mass_ice_cryst(k)/a_coef)**(1._core_rknd/b_expn)
 
         ! Ensure that liquid is not over-depleted
-        IF ( rcm(k) + rcm_icedfsn(k)*real( dt, kind = core_rknd ) < 0.0_core_rknd ) THEN
-          rcm_icedfsn(k) = -rcm(k)/real( dt, kind = core_rknd )
+        IF ( rcm(k) + rcm_icedfsn(k)*dt < 0.0_core_rknd ) THEN
+          rcm_icedfsn(k) = -rcm(k)/dt
         end if
 
         !---------------Brian's comment-----------------------------------!

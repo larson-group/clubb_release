@@ -86,14 +86,14 @@ module clubb_model_settings
 
 !$omp threadprivate(sfctype)
 
-  real(kind=time_precision), public :: & 
+  real(kind = time_precision ), public :: & 
     time_initial, & ! Time of start of simulation     [s]
     time_final,   & ! Time end of simulation          [s]
     time_current   !  Current time of simulation      [s]
 !$omp threadprivate(time_initial, time_final, &
 !$omp               time_current)
 
-  real(kind=time_precision), public ::  & 
+  real(kind = core_rknd ), public ::  & 
     dt_main,  & ! Main model timestep                    [s]
     dt_rad      ! Closure model timestep                 [s]
 !$omp threadprivate(dt_main, dt_rad)
@@ -143,8 +143,8 @@ module clubb_model_settings
     time_final   = 21600._time_precision
     time_current = 0._time_precision
 
-    dt_main = 60._time_precision
-    dt_rad  = 600._time_precision
+    dt_main = 60._core_rknd
+    dt_rad  = 600._core_rknd
 
     return
   end subroutine initialize_clubb_model_settings

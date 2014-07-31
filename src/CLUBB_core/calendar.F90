@@ -191,14 +191,14 @@ module calendar
 
     ! Determine the amount of days that have passed since start date
     days_since_start =  & 
-          floor( seconds_since_previous_date / sec_per_day )
+          floor( seconds_since_previous_date / real(sec_per_day,kind=time_precision) )
 
     ! Set days_since_1jan4713 to the present Julian date
     days_since_1jan4713bc = days_since_1jan4713bc + days_since_start
 
     ! Set Present time to be seconds since the Julian date
     seconds_since_current_date = seconds_since_previous_date &
-      - ( real( days_since_start, kind=time_precision ) * sec_per_day )
+      - ( real( days_since_start, kind=time_precision ) * real(sec_per_day,kind=time_precision) )
 
     call julian2gregorian_date & 
            ( days_since_1jan4713bc, & 

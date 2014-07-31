@@ -70,8 +70,7 @@ module clip_explicit
         l_tke_aniso ! Logical
 
     use clubb_precision, only: & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
        stat_modify ! Procedure(s)
@@ -85,7 +84,7 @@ module clip_explicit
     implicit none
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt ! Timestep [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -160,11 +159,11 @@ module clip_explicit
       
       if ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  -wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  -wprtp / dt,  & ! intent(in)
                           zm )                               ! intent(inout)
       elseif ( wprtp_cl_num == 3 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, -wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, -wprtp / dt,  & ! intent(in)
                           zm )                               ! intent(inout)
       endif
     endif
@@ -189,11 +188,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wprtp_cl_num == 1 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt,  wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwprtp_bt,  wprtp / dt,  & ! intent(in)
                           zm )                              ! intent(inout)
       elseif ( wprtp_cl_num == 2 ) then
         ! wprtp total time tendency (effect of clipping)
-        call stat_modify( iwprtp_bt, wprtp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwprtp_bt, wprtp / dt,  & ! intent(in)
                           zm )                              ! intent(inout)
       ! if wprtp_cl_num == 3 do nothing since
       ! iwprtp_bt stat_end_update is called outside of this method
@@ -229,11 +228,11 @@ module clip_explicit
       
       if ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / dt,  & ! intent(in)
                           zm )                                 ! intent(inout)
       elseif ( wpthlp_cl_num == 3 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, -wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, -wpthlp / dt,  & ! intent(in)
                           zm )                                 ! intent(inout)
       endif
     endif
@@ -259,11 +258,11 @@ module clip_explicit
     if ( l_stats_samp ) then
       if ( wpthlp_cl_num == 1 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / dt,  & ! intent(in)
                           zm )                                ! intent(inout)
       elseif ( wpthlp_cl_num == 2 ) then
         ! wpthlp total time tendency (effect of clipping)
-        call stat_modify( iwpthlp_bt, wpthlp / real( dt, kind = core_rknd ),  & ! intent(in)
+        call stat_modify( iwpthlp_bt, wpthlp / dt,  & ! intent(in)
                           zm )                                ! intent(inout)
                           
       ! if wpthlp_cl_num == 3 do nothing since
@@ -455,8 +454,7 @@ module clip_explicit
         max_mag_correlation ! Constant(s)
 
     use clubb_precision, only: & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -480,7 +478,7 @@ module clip_explicit
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt     ! Model timestep; used here for STATS           [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -517,9 +515,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_first_clip_ts ) then
-        call stat_begin_update( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
+        call stat_begin_update( ixpyp_cl, xpyp / dt, zm )
       else
-        call stat_modify( ixpyp_cl, -xpyp / real( dt, kind = core_rknd ), zm )
+        call stat_modify( ixpyp_cl, -xpyp / dt, zm )
       endif
     endif
 
@@ -565,9 +563,9 @@ module clip_explicit
 
     if ( l_stats_samp ) then
       if ( l_last_clip_ts ) then
-        call stat_end_update( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
+        call stat_end_update( ixpyp_cl, xpyp / dt, zm )
       else
-        call stat_modify( ixpyp_cl, xpyp / real( dt, kind = core_rknd ), zm )
+        call stat_modify( ixpyp_cl, xpyp / dt, zm )
       endif
     endif
 
@@ -625,8 +623,7 @@ module clip_explicit
         zero
 
     use clubb_precision, only: & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_begin_update_pt, & ! Procedure(s)
@@ -651,7 +648,7 @@ module clip_explicit
       l_first_clip_ts, & ! First instance of clipping in a timestep.
       l_last_clip_ts     ! Last instance of clipping in a timestep.
 
-    real( kind = time_precision ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt     ! Model timestep; used here for STATS        [s]
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -686,10 +683,10 @@ module clip_explicit
     if ( l_stats_samp ) then
        if ( l_first_clip_ts ) then
           call stat_begin_update_pt( ixpyp_cl, level, &
-                                     xpyp / real( dt, kind = core_rknd ), zm )
+                                     xpyp / dt, zm )
        else
           call stat_modify_pt( ixpyp_cl, level, &
-                               -xpyp / real( dt, kind = core_rknd ), zm )
+                               -xpyp / dt, zm )
        endif
     endif
 
@@ -728,10 +725,10 @@ module clip_explicit
     if ( l_stats_samp ) then
        if ( l_last_clip_ts ) then
           call stat_end_update_pt( ixpyp_cl, level, &
-                                   xpyp / real( dt, kind = core_rknd ), zm )
+                                   xpyp / dt, zm )
        else
           call stat_modify_pt( ixpyp_cl, level, &
-                               xpyp / real( dt, kind = core_rknd ), zm )
+                               xpyp / dt, zm )
        endif
     endif
 
@@ -762,8 +759,7 @@ module clip_explicit
         gr ! Variable(s)
 
     use clubb_precision, only: & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
@@ -784,7 +780,7 @@ module clip_explicit
     integer, intent(in) :: & 
       solve_type  ! Variable being solved; used for STATS.
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt          ! Model timestep; used here for STATS     [s]
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -820,7 +816,7 @@ module clip_explicit
 
 
     if ( l_stats_samp ) then
-      call stat_begin_update( ixp2_cl, xp2 / real( dt, kind = core_rknd ), zm )
+      call stat_begin_update( ixp2_cl, xp2 / dt, zm )
     endif
 
     ! Limit the value of x'^2 at threshold.
@@ -841,7 +837,7 @@ module clip_explicit
     enddo
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixp2_cl, xp2 / real( dt, kind = core_rknd ), zm )
+      call stat_end_update( ixp2_cl, xp2 / dt, zm )
     endif
 
 
@@ -894,8 +890,7 @@ module clip_explicit
       gr ! Variable(s)
 
     use clubb_precision, only: & 
-      time_precision, & ! Variable(s)
-      core_rknd
+      core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
       stat_begin_update,  & ! Procedure(s)
@@ -912,7 +907,7 @@ module clip_explicit
     intrinsic :: sign, sqrt, real
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dt               ! Model timestep; used here for STATS        [s]
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -928,13 +923,13 @@ module clip_explicit
     ! ---- Begin Code ----
 
     if ( l_stats_samp ) then
-      call stat_begin_update( iwp3_cl, wp3 / real( dt, kind = core_rknd ), zt )
+      call stat_begin_update( iwp3_cl, wp3 / dt, zt )
     endif
 
     call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
 
     if ( l_stats_samp ) then
-      call stat_end_update( iwp3_cl, wp3 / real( dt, kind = core_rknd ), zt )
+      call stat_end_update( iwp3_cl, wp3 / dt, zt )
     endif
 
     return

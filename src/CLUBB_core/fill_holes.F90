@@ -728,8 +728,7 @@ module fill_holes
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        core_rknd, &
-        time_precision
+        core_rknd
 
     use constants_clubb, only: &
         zero_threshold, &
@@ -742,7 +741,7 @@ module fill_holes
     ! Input Variables
     integer, intent(in) :: nz
 
-    real( kind = time_precision ), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
     character(len=10), intent(in) :: hydromet_name
@@ -770,7 +769,7 @@ module fill_holes
 
           ! Set temp to the time tendency applied to vapor and removed
           ! from the hydrometeor.
-          temp = hydromet(k) / real( dt, kind = core_rknd )
+          temp = hydromet(k) / dt
 
           ! Adjust the tendency rvm_mc accordingly
           rvm_mc(k) = rvm_mc(k) + temp
@@ -821,8 +820,7 @@ module fill_holes
         gr  ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd, & ! Variable(s)
-        time_precision
+        core_rknd   ! Variable(s)
 
     use constants_clubb, only: &
         pi,              &
@@ -869,7 +867,7 @@ module fill_holes
 
     logical, intent(in) :: l_fill_holes_hm
 
-    real(kind=time_precision), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt           ! Timestep         [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -921,7 +919,7 @@ module fill_holes
                                     max_velocity )                 ! Intent(inout)
 
           call stat_begin_update( ixrm_hf, hydromet(:,i) &
-                                           / real( dt, kind = core_rknd ), zt )
+                                           / dt, zt )
 
        enddo ! i = 1, hydromet_dim
 
@@ -970,7 +968,7 @@ module fill_holes
       ! hole-filling scheme.
 !      if ( l_stats_samp ) then
 !         call stat_begin_update( ixrm_hf, hydromet(:,i) &
-!                                          / real( dt, kind = core_rknd ), zt )
+!                                          / dt, zt )
 !      endif
 
       ! If we're dealing with a mixing ratio and hole filling is enabled,
@@ -992,14 +990,14 @@ module fill_holes
       ! hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_end_update( ixrm_hf, hydromet(:,i) &
-                                        / real( dt, kind = core_rknd ), zt )
+                                        / dt, zt )
       endif
 
       ! Store the previous value of the hydrometeor for the effect of the water
       ! vapor hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_begin_update( ixrm_wvhf, hydromet(:,i) &
-                                            / real( dt, kind = core_rknd ), zt )
+                                            / dt, zt )
       endif
 
       if ( any( hydromet(:,i) < zero_threshold ) ) then
@@ -1021,7 +1019,7 @@ module fill_holes
       ! hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_end_update( ixrm_wvhf, hydromet(:,i) &
-                                          / real( dt, kind = core_rknd ), zt )
+                                          / dt, zt )
       endif
 
       ! Clipping for hydrometeor mixing ratios.
@@ -1032,7 +1030,7 @@ module fill_holes
          if ( l_stats_samp ) then
             call stat_begin_update( ixrm_cl, &
                                     hydromet(:,i) &
-                                    / real( dt, kind = core_rknd ), &
+                                    / dt, &
                                     zt )
          endif
 
@@ -1054,7 +1052,7 @@ module fill_holes
 
                rvm_mc(k) &
                = rvm_mc(k) &
-                 + ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+                 + ( hydromet(k,i) / dt )
 
                if ( .not. l_frozen_hm(i) ) then
 
@@ -1063,14 +1061,14 @@ module fill_holes
                   thlm_mc(k) &
                   = thlm_mc(k) &
                     - ( Lv / ( Cp * exner(k) ) ) &
-                      * ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+                      * ( hydromet(k,i) / dt )
 
                else ! Frozen hydrometeor mixing ratio
 
                   thlm_mc(k) &
                   = thlm_mc(k) &
                     - ( Ls / ( Cp * exner(k) ) ) &
-                      * ( hydromet(k,i) / real( dt, kind = core_rknd ) )
+                      * ( hydromet(k,i) / dt )
 
                endif ! l_frozen_hm(i)
 
@@ -1084,7 +1082,7 @@ module fill_holes
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then
             call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                           / real( dt, kind = core_rknd ), zt )
+                                           / dt, zt )
          endif
 
       endif ! l_mix_rat_hm(i)
@@ -1107,7 +1105,7 @@ module fill_holes
          if ( l_stats_samp ) then
             call stat_begin_update( ixrm_cl, &
                                     hydromet(:,i) &
-                                    / real( dt, kind = core_rknd ), &
+                                    / dt, &
                                     zt )
          endif
 
@@ -1166,7 +1164,7 @@ module fill_holes
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then
             call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                           / real( dt, kind = core_rknd ), zt )
+                                           / dt, zt )
          endif
 
       endif ! .not. l_mix_rat_hm(i)

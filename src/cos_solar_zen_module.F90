@@ -111,7 +111,7 @@ module cos_solar_zen_module
     ! h = 2*pi_dp*t_since_noon/86400
 
     ! Determine the number of hours
-    hour = present_time / sec_per_hr
+    hour = present_time / real(sec_per_hr,kind=time_precision)
 
     t = 2._dp*pi_dp*real(jul_day-1, kind=dp) / real(days_in_year, kind=dp)
 

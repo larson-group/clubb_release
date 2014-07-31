@@ -114,8 +114,7 @@ module advance_xm_wpxp_module
         calc_turb_adv_range ! Procedure(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use error_code, only:  & 
         clubb_at_least_debug_level, & ! Procedure(s)
@@ -159,7 +158,7 @@ module advance_xm_wpxp_module
       l_iter = .true. ! True when the means and fluxes are prognosed
 
     ! Input Variables
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                 [s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
@@ -806,24 +805,24 @@ module advance_xm_wpxp_module
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( irtm_sdmp, rtm / real( dt, kind = core_rknd ), zt )
+        call stat_begin_update( irtm_sdmp, rtm / dt, zt )
       end if
       rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
-        call stat_end_update( irtm_sdmp, rtm / real( dt, kind = core_rknd ), zt )
+        call stat_end_update( irtm_sdmp, rtm / dt, zt )
       end if
     endif
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ithlm_sdmp, thlm / real( dt, kind = core_rknd ), zt )
+        call stat_begin_update( ithlm_sdmp, thlm / dt, zt )
       end if
       thlm(1:gr%nz) = sponge_damp_xm( dt, thlm_ref(1:gr%nz), thlm(1:gr%nz), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ithlm_sdmp, thlm / real( dt, kind = core_rknd ), zt )
+        call stat_end_update( ithlm_sdmp, thlm / dt, zt )
       end if
     endif
 
@@ -866,8 +865,7 @@ module advance_xm_wpxp_module
         l_upwind_wpxp_ta
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use diffusion, only:  & 
         diffusion_zm_lhs ! Procedure(s)
@@ -954,7 +952,7 @@ module advance_xm_wpxp_module
     ! Input variables
     logical, intent(in) :: l_iter
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
@@ -1050,7 +1048,7 @@ module advance_xm_wpxp_module
 
       ! LHS time tendency.
       lhs(t_k_tdiag,k_xm) & 
-      = lhs(t_k_tdiag,k_xm) + one / real( dt, kind = core_rknd )
+      = lhs(t_k_tdiag,k_xm) + one / dt
 
       if (l_stats_samp) then
 
@@ -1179,7 +1177,7 @@ module advance_xm_wpxp_module
       ! LHS time tendency.
       if ( l_iter ) then
         lhs(m_k_mdiag,k_wpxp) &
-        = lhs(m_k_mdiag,k_wpxp) + one / real(dt, kind = core_rknd)
+        = lhs(m_k_mdiag,k_wpxp) + one / dt
       endif
 
       ! LHS portion of semi-implicit clipping term.
@@ -1360,8 +1358,7 @@ module advance_xm_wpxp_module
         l_upwind_wpxp_ta
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use clip_semi_implicit, only: & 
         clip_semi_imp_rhs ! Procedure(s)
@@ -1399,7 +1396,7 @@ module advance_xm_wpxp_module
 
     logical, intent(in) :: l_iter
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt                 ! Timestep                                  [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
@@ -1502,7 +1499,7 @@ module advance_xm_wpxp_module
       ! xm: Right-hand side (explicit xm portion of the code).
 
       ! RHS time tendency.
-      rhs(k_xm) = rhs(k_xm) + xm(k) / real( dt, kind = core_rknd )
+      rhs(k_xm) = rhs(k_xm) + xm(k) / dt
 
       ! RHS xm forcings.
       ! Note: xm forcings include the effects of microphysics,
@@ -1549,7 +1546,7 @@ module advance_xm_wpxp_module
 
       ! RHS time tendency.
       if ( l_iter ) then
-        rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / real( dt, kind = core_rknd )
+        rhs(k_wpxp) = rhs(k_wpxp) + wpxp(k) / dt
       end if
 
       ! RHS <w'x'> forcing.
@@ -1834,8 +1831,7 @@ module advance_xm_wpxp_module
         l_clip_semi_implicit ! Variable(s)
 
     use clubb_precision, only:  & 
-        time_precision, & ! Variable(s)
-        core_rknd
+        core_rknd ! Variable(s)
 
     use mono_flux_limiter, only: &
         monotonic_turbulent_flux_limit ! Procedure(s)
@@ -1945,7 +1941,7 @@ module advance_xm_wpxp_module
     integer, intent(in) ::  & 
       solve_type  ! Variables being solved for.
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       dt  ! Timestep   [s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  & 
@@ -2242,7 +2238,7 @@ module advance_xm_wpxp_module
 
     ! Computed value before clipping
     if ( l_stats_samp ) then
-      call stat_begin_update( ixm_cl, xm / real( dt, kind = core_rknd ), & ! Intent(in)
+      call stat_begin_update( ixm_cl, xm / dt, & ! Intent(in)
                               zt )                       ! Intent(inout)
     end if
 
@@ -2273,7 +2269,7 @@ module advance_xm_wpxp_module
     end if !  any( xm < xm_threshold ) .and. l_hole_fill
 
     if ( l_stats_samp ) then
-      call stat_end_update( ixm_cl, xm / real( dt, kind = core_rknd ), & ! Intent(in) 
+      call stat_end_update( ixm_cl, xm / dt, & ! Intent(in) 
                             zt )                       ! Intent(inout)
     end if
 
@@ -2333,7 +2329,7 @@ module advance_xm_wpxp_module
     if ( l_stats_samp ) then
 
       ! wpxp time tendency
-      call stat_modify( iwpxp_bt, wpxp / real( dt, kind = core_rknd ), zm )
+      call stat_modify( iwpxp_bt, wpxp / dt, zm )
       ! Brian Griffin; July 5, 2008.
 
     endif
@@ -3092,8 +3088,7 @@ module advance_xm_wpxp_module
         gr  ! Variable(s); gr%nz only.
 
     use clubb_precision, only: &
-        time_precision, &
-        core_rknd
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
@@ -3110,7 +3105,7 @@ module advance_xm_wpxp_module
     integer, intent(in) :: &
       solve_type    ! Variable that is being solved for.
 
-    real(kind=time_precision), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       dt            ! Model timestep                            [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -3144,7 +3139,7 @@ module advance_xm_wpxp_module
     ! highest.
     do k = 2, gr%nz, 1
       xm_tndcy_wpxp_cl(k) = - invrs_dzt(k) * ( wpxp_chnge(k) - wpxp_chnge(k-1) )
-      xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * real( dt, kind = core_rknd )
+      xm(k) = xm(k) + xm_tndcy_wpxp_cl(k) * dt
     enddo
 
     if ( l_stats_samp ) then

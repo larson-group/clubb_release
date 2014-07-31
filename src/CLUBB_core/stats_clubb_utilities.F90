@@ -162,7 +162,7 @@ module stats_clubb_utilities
     character(len=*), intent(in) :: &
       stats_fmt_in    ! Format of the stats file output
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       stats_tsamp_in,  & ! Sampling interval   [s]
       stats_tout_in      ! Output interval     [s]
 
@@ -193,10 +193,10 @@ module stats_clubb_utilities
     real( kind = core_rknd ), dimension(nlat), intent(in) ::  & 
       rlat  ! Latitude(s)  [Degrees N]
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = time_precision ), intent(in) ::  & 
       time_current ! Model time                         [s]
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  & 
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
     logical, intent(in) :: &
@@ -392,8 +392,8 @@ module stats_clubb_utilities
 
     ! The model time step length, delt (which is dt_main), should multiply
     ! evenly into the statistical sampling time step length, stats_tsamp.
-    if ( abs( stats_tsamp/delt - real( floor( stats_tsamp/delt ), kind=time_precision ) )  & 
-           > 1.e-8_time_precision ) then
+    if ( abs( stats_tsamp/delt - real( floor( stats_tsamp/delt ), kind=core_rknd ) )  & 
+           > 1.e-8_core_rknd) then
       l_error = .true.  ! This will cause the run to stop.
       write(fstderr,*) 'Error:  stats_tsamp should be an even multiple of ',  &
                        'delt (which is dt_main).  Check the appropriate ',  &
@@ -405,8 +405,8 @@ module stats_clubb_utilities
     ! The statistical sampling time step length, stats_tsamp, should multiply
     ! evenly into the statistical output time step length, stats_tout.
     if ( abs( stats_tout/stats_tsamp &
-           - real( floor( stats_tout/stats_tsamp ), kind=time_precision ) ) & 
-         > 1.e-8_time_precision ) then
+           - real( floor( stats_tout/stats_tsamp ), kind=core_rknd) ) & 
+         > 1.e-8_core_rknd) then
       l_error = .true.  ! This will cause the run to stop.
       write(fstderr,*) 'Error:  stats_tout should be an even multiple of ',  &
                        'stats_tsamp.  Check the appropriate model.in file.'
@@ -719,7 +719,7 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  & 
                        1, zt%kk, nlat, nlon, zt%z, & 
                        day, month, year, rlat, rlon, & 
-                       time_current+stats_tout, stats_tout, & 
+                       time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        zt%num_output_fields, zt%file )
 
     else ! Open NetCDF file
@@ -785,7 +785,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & 
                          1, lh_zt%kk, nlat, nlon, lh_zt%z, & 
                          day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
+                         time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          lh_zt%num_output_fields, lh_zt%file )
 
       else ! Open NetCDF file
@@ -846,7 +846,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & 
                          1, lh_sfc%kk, nlat, nlon, lh_sfc%z, & 
                          day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
+                         time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          lh_sfc%num_output_fields, lh_sfc%file )
 
       else ! Open NetCDF file
@@ -948,7 +948,7 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  & 
                        1, zm%kk, nlat, nlon, zm%z, & 
                        day, month, year, rlat, rlon, & 
-                       time_current+stats_tout, stats_tout, & 
+                       time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        zm%num_output_fields, zm%file )
 
     else ! Open NetCDF file
@@ -1012,7 +1012,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & 
                          1, rad_zt%kk, nlat, nlon, rad_zt%z, & 
                          day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
+                         time_current+real(stats_tout, kind=time_precision), stats_tout, & 
                          rad_zt%num_output_fields, rad_zt%file )
 
       else ! Open NetCDF file
@@ -1075,7 +1075,7 @@ module stats_clubb_utilities
         call open_grads( iunit, fdir, fname,  & 
                          1, rad_zm%kk, nlat, nlon, rad_zm%z, & 
                          day, month, year, rlat, rlon, & 
-                         time_current+stats_tout, stats_tout, & 
+                         time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                          rad_zm%num_output_fields, rad_zm%file )
 
       else ! Open NetCDF file
@@ -1139,7 +1139,7 @@ module stats_clubb_utilities
       call open_grads( iunit, fdir, fname,  & 
                        1, sfc%kk, nlat, nlon, sfc%z, & 
                        day, month, year, rlat, rlon, & 
-                       time_current+stats_tout, stats_tout, & 
+                       time_current+real(stats_tout,kind=time_precision), stats_tout, & 
                        sfc%num_output_fields, sfc%file )
 
     else ! Open NetCDF files
@@ -1256,7 +1256,7 @@ module stats_clubb_utilities
   end subroutine stats_avg
 
   !-----------------------------------------------------------------------
-  subroutine stats_begin_timestep( time_elapsed )
+  subroutine stats_begin_timestep( itime, stats_nsamp, stats_nout)
 
     !     Description:
     !       Given the elapsed time, set flags determining specifics such as
@@ -1267,12 +1267,8 @@ module stats_clubb_utilities
     use stats_variables, only: & 
         l_stats,  & ! Variable(s)
         l_stats_samp, & 
-        l_stats_last, & 
-        stats_tsamp, & 
-        stats_tout
+        l_stats_last 
 
-    use clubb_precision, only: & 
-        time_precision ! Variable(s)
 
     implicit none
 
@@ -1280,26 +1276,28 @@ module stats_clubb_utilities
     intrinsic :: mod
 
     ! Input Variable(s)
-    real(kind=time_precision), intent(in) ::  & 
-      time_elapsed ! Elapsed model time       [s]
+    integer, intent(in) ::  & 
+      itime, &       ! Elapsed model time       [timestep]
+      stats_nsamp, & ! Stats sampling interval  [timestep]
+      stats_nout     ! Stats output interval    [timestep]
 
     if ( .not. l_stats ) return
 
     ! Only sample time steps that are multiples of "stats_tsamp"
     ! in a case's "model.in" file to shorten length of run
-    if ( mod( time_elapsed, stats_tsamp ) < 1.e-8_time_precision ) then
+    if ( mod( itime, stats_nsamp ) == 0 ) then
       l_stats_samp = .true.
     else
       l_stats_samp = .false.
     end if
 
     ! Indicates the end of the sampling time period. Signals to start writing to the file
-    if ( mod( time_elapsed, stats_tout ) < 1.e-8_time_precision ) then
+    if ( mod( itime, stats_nout ) == 0 ) then
       l_stats_last = .true.
     else
       l_stats_last = .false.
     end if
-
+   
     return
 
   end subroutine stats_begin_timestep

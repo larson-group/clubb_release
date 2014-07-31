@@ -2024,7 +2024,7 @@ module inputfields
       SAM_variables(k)%clubb_name = "radht"
       SAM_variables(k)%input_name = "RADQR"
       SAM_variables(k)%clubb_var => radht
-      SAM_variables(k)%adjustment = 1.0_core_rknd/real(sec_per_day, kind=core_rknd)
+      SAM_variables(k)%adjustment = 1.0_core_rknd/sec_per_day
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
@@ -2265,7 +2265,7 @@ module inputfields
 
     logical, intent(in) :: l_restart     ! Whether this is a restart run
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = time_precision ), intent(in) ::  & 
       time ! Time near which we want to find GrADS output,
     ! e.g. time_restart     [s]
 
@@ -2277,7 +2277,7 @@ module inputfields
     ! Local Variables
     type (stat_file) :: fread_var
 
-    real(kind=time_precision) :: delta_time   ! In seconds
+    real( kind = core_rknd ) :: delta_time   ! In seconds
 
     logical :: l_grads_file, l_error
 
@@ -2314,10 +2314,11 @@ module inputfields
 
     if (l_grads_file) then
       ! (restart time) - (initial time)
-      delta_time = time - (fread_var%time - fread_var%dtwrite)
+      delta_time = real(time - (fread_var%time - &
+                   real(fread_var%dtwrite, kind=time_precision)), kind=core_rknd)
     else
       !  Eric   Raut     June  2013
-      delta_time = time - fread_var%time
+      delta_time = real(time - fread_var%time, kind=core_rknd)
     !    Joshua Fasching March 2008
 !     .        time - fread_var%time
     end if
@@ -2334,8 +2335,8 @@ module inputfields
       print *, "GrADS file output time interval [s]: ",  & 
                fread_var%dtwrite
 
-      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8_time_precision ) .or.  & 
-           ( mod( delta_time, fread_var%dtwrite ) < -1e-8_time_precision ) ) then
+      if ( ( mod( delta_time , fread_var%dtwrite )  > 1e-8_core_rknd) .or.  & 
+           ( mod( delta_time, fread_var%dtwrite ) < -1e-8_core_rknd) ) then
         write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of the reference GrADS output time interval."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
@@ -2343,8 +2344,8 @@ module inputfields
         stop
       end if
 
-      if ( mod( delta_time , sec_per_min ) > 1e-8_time_precision & 
-            .or. mod( delta_time, sec_per_min ) < -1e-8_time_precision ) then
+      if ( mod( delta_time , sec_per_min ) > 1e-8_core_rknd& 
+            .or. mod( delta_time, sec_per_min ) < -1e-8_core_rknd) then
         write(fstderr,*) "Error: Elapsed time is not a multiple ", & 
                 "of one minute."
         write(fstderr,*) "Elapsed time [s] = ", delta_time
@@ -2366,7 +2367,7 @@ module inputfields
       ! Print the actual record being recalled.
       ! Joshua Fasching March 2008
       print *, "Nearest GrADS output time iteration [ ]: ", & 
-               nint( real( nearest_timestep, kind=time_precision ) /  & 
+               nint( real( nearest_timestep, kind=core_rknd) /  & 
                      fread_var%dtwrite/sec_per_min ) - 1
     end if ! l_restart
 

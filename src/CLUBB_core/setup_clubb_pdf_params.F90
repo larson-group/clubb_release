@@ -110,7 +110,6 @@ module setup_clubb_pdf_params
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
-        time_precision, &
         dp
 
     use matrix_operations, only: &
@@ -158,7 +157,7 @@ module setup_clubb_pdf_params
       nz,          & ! Number of model vertical grid levels
       d_variables    ! Number of variables in the correlation array
 
-    real( kind = time_precision ), intent(in) ::  &
+    real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &

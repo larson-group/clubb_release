@@ -76,10 +76,10 @@ module output_netcdf
     real( kind = core_rknd ), dimension(nlon), intent(in) ::  & 
       rlon ! Longitudes  [degrees_N]
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dtwrite ! Time between write intervals   [s]
 
-    real(kind=time_precision), intent(in) ::  & 
+    real( kind = time_precision ), intent(in) ::  & 
      time   ! Current time                    [s]
 
     real( kind = core_rknd ), dimension(:), intent(in) ::  & 
@@ -222,10 +222,12 @@ module output_netcdf
 
     allocate( stat( ncf%nvar ) )
     if ( l_grads_netcdf_boost_ts ) then
-      time = real( nint( real( ncf%ntimes, kind=time_precision ) &
-                       * ncf%dtwrite / sec_per_min ), kind=time_precision ) !  minutes(rounded)
+      time = real( nint( real(ncf%ntimes, kind=time_precision) &
+                            * real(ncf%dtwrite / sec_per_min, time_precision) ), &
+                              kind=time_precision ) ! minutes(rounded)
     else
-      time = real( ncf%ntimes, kind=time_precision ) * ncf%dtwrite ! seconds
+      time = real( ncf%ntimes, kind=time_precision ) &
+           * real( ncf%dtwrite, kind=time_precision )  ! seconds
     end if
 
     stat(1) = nf90_put_var( ncid=ncf%iounit, varid=ncf%TimeVarId,  & 

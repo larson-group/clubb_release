@@ -92,8 +92,9 @@ module output_grads
     real( kind = core_rknd ), dimension(nlon), intent(in) :: &
       rlon ! Longitude [Degrees N]
 
-    real(kind=time_precision), intent(in) ::  & 
-      time,     & ! Time since Model start          [s]
+    real( kind = time_precision ), intent(in) ::  & 
+      time        ! Time since Model start          [s]
+    real( kind = core_rknd ), intent(in) :: &
       dtwrite     ! Time interval for output        [s]
 
     ! Number of GrADS variables to store            [#]
@@ -256,10 +257,10 @@ module output_grads
     character(len=*), intent(in) :: & 
       fdir, fname ! File directory and name
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = time_precision ), intent(in) :: & 
       time    ! Current model time        [s]
 
-    real(kind=time_precision), intent(in) :: & 
+    real( kind = core_rknd ), intent(in) :: & 
       dtwrite ! Time interval between writes to the file    [s]
 
     ! Output Variables
@@ -282,7 +283,7 @@ module output_grads
       ia_in, iz_in, ntimes_in, nvar_in, & 
       day_in, month_in, year_in
 
-    real(kind=time_precision) :: dtwrite_in
+    real( kind = core_rknd ) :: dtwrite_in
 
     real( kind = core_rknd ), dimension(:), allocatable :: z_in
 
@@ -340,8 +341,8 @@ module output_grads
         read(unit=line,fmt=*) tmp, ntimes_in, tmp, date, dt
         read(unit=date(1:2),fmt=*) ihour
         read(unit=date(4:5),fmt=*) imin
-        time_grads = real( ihour, kind=time_precision ) * sec_per_hr &
-                   + real( imin, kind=time_precision ) * sec_per_min
+        time_grads = real( ihour, kind=time_precision) * real(sec_per_hr,kind=time_precision) &
+                   + real( imin, kind=time_precision ) * real(sec_per_min,kind=time_precision)
         read(unit=date(7:8),fmt=*) day_in
         read(unit=date(12:15),fmt=*) year_in
 
@@ -492,6 +493,9 @@ module output_grads
 
     use stat_file_module, only: & 
       stat_file ! Type
+
+    use clubb_precision, only:  & 
+      time_precision    ! Variable(s)
 
 !   use stat_file_module, only: &
 !     clubb_i, clubb_j ! Variable(s)
@@ -715,7 +719,7 @@ module output_grads
     write(unit=date(7:8),fmt='(i2.2)') iday
     write(unit=date(9:11),fmt='(a3)') month_names(imonth)
     write(unit=date(12:15),fmt='(i4.4)') iyear
-    write(unit=date(1:2),fmt='(i2.2)') floor( time/sec_per_hr )
+    write(unit=date(1:2),fmt='(i2.2)') floor(time/real(sec_per_hr,kind=time_precision ))
     write(unit=date(4:5),fmt='(i2.2)')  & 
       int( mod( nint( time ), nint(sec_per_hr) ) / nint(min_per_hr) )
 
@@ -736,8 +740,6 @@ module output_grads
       sec_per_hr, &
       sec_per_min
 
-    use clubb_precision, only:  & 
-      time_precision ! Variable(s)
 
     implicit none
 
@@ -745,7 +747,7 @@ module output_grads
     intrinsic :: max, floor
 
     ! Input Variables
-    real(kind=time_precision), intent(in) :: &
+    real(kind=core_rknd), intent(in) :: &
       dtwrite_sec ! Time increment in GrADS [s]
 
     ! Output Variables
@@ -755,7 +757,7 @@ module output_grads
     character(len=2), intent(out) :: units ! Units on dtwrite_ctl
 
     ! Local variables
-    real(kind=time_precision) :: &
+    real(kind=core_rknd) :: &
       dtwrite_min, & ! Time increment [minutes]
       dtwrite_hrs, & ! Time increment [hours]
       dtwrite_days   ! Time increment [days]
@@ -764,20 +766,20 @@ module output_grads
 
     ! Since GrADs can't handle a time increment of less than a minute we assume
     ! 1 minute output for an output frequency of less than a minute.
-    dtwrite_min = real( floor( dtwrite_sec/sec_per_min ), kind=time_precision )
-    dtwrite_min = max( 1._time_precision, dtwrite_min )
+    dtwrite_min = real( floor( dtwrite_sec/sec_per_min ), kind=core_rknd )
+    dtwrite_min = max( 1._core_rknd, dtwrite_min )
 
-    if ( dtwrite_min <= 99._time_precision ) then
+    if ( dtwrite_min <= 99._core_rknd ) then
       dtwrite_ctl = int( dtwrite_min )
       units = 'mn'
     else
       dtwrite_hrs = dtwrite_sec / sec_per_hr
-      if ( dtwrite_hrs <= 99._time_precision ) then
+      if ( dtwrite_hrs <= 99._core_rknd ) then
         dtwrite_ctl = int( dtwrite_hrs )
         units = 'hr'
       else
         dtwrite_days = dtwrite_sec / sec_per_day
-        if ( dtwrite_days <= 99._time_precision ) then
+        if ( dtwrite_days <= 99._core_rknd ) then
           dtwrite_ctl = int( dtwrite_days )
           units = 'dy'
         else
