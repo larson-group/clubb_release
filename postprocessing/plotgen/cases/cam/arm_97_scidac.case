@@ -139,17 +139,6 @@
           {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NC .* (100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNC./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
-<<<<<<< .mine
-       
-       {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QCL / 1000', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDLIQ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-      
-
-=======
->>>>>>> .r7133
 #
 # Rain
 #
