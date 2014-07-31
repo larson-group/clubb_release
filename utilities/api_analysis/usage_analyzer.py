@@ -1,6 +1,9 @@
 import re, sys, os
 from time import strftime
 
+fontSize = 12
+fontSizeReduced = 7
+
 # Represents a module in FORTRAN and contains sets of elements which represent the various
 # subroutines, functions, variables, and derived types which are in that module
 class Module:
@@ -57,9 +60,11 @@ class Element:
 class Use:
     name = ""
     elements = set() # Strings
-    def __init__(self, name, elements):
+    parentElement = ""
+    def __init__(self, name, elements, parentElement):
         self.name = name
         self.elements = elements
+        self.parentElement = parentElement
     def __eq__(self, other):
         if isinstance(other, Use):
             return self.name == other.name
@@ -69,6 +74,10 @@ class Use:
         return not self.__eq__(other)
     def __hash__(self):
         return hash(self.name)
+    def __str__(self):
+        return self.name
+    def __repr_(self):
+        return self.name
 
 
 # Given a filename string, returns an array of populated Modules
@@ -108,11 +117,11 @@ def parseModulesInFile(filename):
         
         if re.match(r"^\s*use", lines[n], re.IGNORECASE): # Use statement
             if (functionStart != -1 and functionEnd == -1): # Used in a function
-                functionUses.add(parseUse(n, lines))
+                functionUses.add(parseUse(n, lines, functionName))
             elif (subroutineStart != -1 and subroutineEnd == -1): # Used in a subroutine
-                subroutineUses.add(parseUse(n, lines))
+                subroutineUses.add(parseUse(n, lines, subroutineName))
             else: # Used in a module
-                moduleUses.add(parseUse(n, lines))
+                moduleUses.add(parseUse(n, lines, moduleName))
                 
         if re.match(r"^\s*((integer)|(character)|(logical)|(real)|(type(?=(\(|\s*\())))(?!\sfunction)", lines[n], re.IGNORECASE): # Variable
             if not lines[n-1].split("!")[0].strip().endswith("&"): # If the line before doesn't end with a &
@@ -132,7 +141,7 @@ def parseModulesInFile(filename):
         
         if re.match(r"^\s*((?!end)\b.*)function\s", lines[n], re.IGNORECASE): # Function Start
             functionStart = n
-            functionName = lines[n].partition("function")[-1].split("(")[0].strip()
+            functionName = lines[n].partition("function")[-1].split("(")[0].split("&")[0].strip()
             
         if re.match(r"^\s*end\sfunction\s", lines[n], re.IGNORECASE): # Function End
             functionEnd = n
@@ -144,7 +153,7 @@ def parseModulesInFile(filename):
         
         if re.match(r"^\s*subroutine\s", lines[n], re.IGNORECASE): # Subroutine Start
             subroutineStart = n
-            subroutineName = lines[n].partition("subroutine")[-1].split("(")[0].strip()
+            subroutineName = lines[n].partition("subroutine")[-1].split("(")[0].split("&")[0].strip()
             
         if re.match(r"^\s*end\ssubroutine\s", lines[n], re.IGNORECASE): # Subroutine End
             subroutineEnd = n
@@ -174,15 +183,32 @@ def parseModulesInFile(filename):
             
     return retModules
 
+# Parses an API (reads the public vars and subroutines)
+def parseApiModule(filename):
+    # Take in the entire file at once (small enough text files to not matter)
+    lines = [line.strip().lower() for line in open(filename)]
+    
+    moduleName = filename.split("/")[-1].replace(".F90", "").strip()
+    modulePublics = set()
+    
+    for n in range(0,len(lines)):
+        if re.match(r"^\s*public", lines[n], re.IGNORECASE):
+            currentLine = getContinuousLine(n, lines)
+            currentLine = currentLine.replace("public", "").replace(" ", "").strip()
+            for subroutine in currentLine.split(","):
+                modulePublics.add(Element(subroutine, None, n, n))
+    
+    return Module(moduleName, modulePublics, None, None, None, None, 1, 100000)
+
 # Returns the use case on the indicated line
-def parseUse(n, lines):
+def parseUse(n, lines, parentElement):
     moduleName = ""
     uses = set()
     lines[n] = getContinuousLine(n, lines).replace(" ", "")
     moduleName = lines[n].split(",only:")[0][3:]
     for use in lines[n].split(",only:")[-1].split(","):
         uses.add(use)
-    return Use(moduleName, uses)
+    return Use(moduleName, uses, parentElement)
 
 # Returns a set of every use in a module and its children elements    
 def getTotalUsesInModule(module):
@@ -196,7 +222,9 @@ def getTotalUsesInModule(module):
 
 # Reformats lines split using ampersands to one line
 def getContinuousLine(n, lines):
-    if re.match(r"^\s*!", lines[n], re.IGNORECASE) or lines[n].startswith("#"): #ignore comments and #
+    if re.match(r"^\s*!", lines[n], re.IGNORECASE) or \
+        lines[n].startswith("#") or \
+        lines[n].strip() == "":              #ignore comments, empty lines, and #
         lines[n]="&"
     lines[n] = lines[n].split("!")[0].strip() # Split off any comments
     if lines[n].endswith("&"):
@@ -219,49 +247,60 @@ def findFiles(dir):
 
 # Formats all this fancy data into an HTML table
 def makeTable(apiModule, samModules, wrfModules, camModules):
-    table =  '<!DOCTYPE html><html><script src="sorttable.js">'                    # Setup page 
-    table += '<style>table,td, th{border:1px solid black;border-collapse: '        # Table CSS
-    table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'    # "       "
-    table += 'Usage Breakdown: ' + strftime("%Y-%m-%d %H:%M:%S")                   # Page Title
-    table += '</title></head><body><p>hello world</p><table class="sortable">'                       # Setup Table
-    table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'   # Add the Header
+    table =  '<!DOCTYPE html><html><script src="sorttable.js"></script>'            # Setup page 
+    table += '<style>table,td, th{border:1px solid black;border-collapse: '         # Table CSS
+    table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'     # "       "
+    table += 'Usage Breakdown: ' + strftime("%Y-%m-%d %H:%M:%S")                    # Page Title
+    table += '</title></head><body><table class="sortable">'                        # Setup Table
+    table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'    # Add the Header
     
     # Every element (and use!) in API
     apiElements = set()
-    apiElements.update(getTotalUsesInModule(apiModule))
     apiElements.update(apiModule.subroutines)
-    apiElements.update(apiModule.functions)
-    apiElements.update(apiModule.variables)
-    apiElements.update(apiModule.derivedTypes)
     
-    # Go through every element in every use in every module in every element in the api...
+    # add host models to set
+    hostModels = list()
+    hostModels.append(samModules)
+    hostModels.append(wrfModules)
+    hostModels.append(camModules)
+    
+    # Go through every element in every use in every module in each host model in every element in the api...
     for apiElement in apiElements:
-        table += "<tr><td>" + apiElement.name + "<td>"
-        samElementsFound = set()
-        wrfElementsFound = set()
-        camElementsFound = set()
-        for samModule in samModules:
-            samUses = getTotalUsesInModule(samModule)
-            for samUse in samUses:
-                if (samUse.name == apiModule.name):
-                    for samElement in samUse.elements:
-                        if (samElement == apiElement):
-                            samElementsFound.add(samElement)
-        if (len(samElementsFound) == 0):
-            table += "<td></td>"
+        if not isinstance(apiElement, str):
+            table += "<tr><td>" + apiElement.name + "</td>"
         else:
-            table += "td"
-            table += ", ".join(samElementsFound)
-            table += "</td>"
-        if (len(wrfElementsFound) == 0):
-            table += "<td></td>"
-        if (len(camElementsFound) == 0):
-            table += "<td></td>"
-        table += "</tr>"
+            table += "<tr><td>" + apiElement + "</td>"
+        elementsFound = set()
+       
+        for hostModel in hostModels:
+            elementsFound = set()
+            for module in hostModel: 
+                for use in module.uses:
+                    if apiElement in use.elements and use.name == apiModule.name:
+                        elementsFound.add(use.parentElement)
+                for function in module.functions:
+                    for use in function.uses:
+                        if apiElement in use.elements and use.name == apiModule.name:
+                            elementsFound.add(use.parentElement + \
+                                "<span style='font-size:"+str(fontSizeReduced)+"pt'> in " + \
+                                module.name+"<span style='font-size:"+str(fontSize)+"pt'>")
+                for subroutine in module.subroutines:
+                    for use in subroutine.uses:
+                        if apiElement in use.elements and use.name == apiModule.name:
+                            elementsFound.add(use.parentElement + \
+                                "<span style='font-size:"+str(fontSizeReduced)+"pt'> in " + \
+                                module.name+"<span style='font-size:"+str(fontSize)+"pt'>")
+            if (len(elementsFound) == 0):
+                table += "<td></td>"
+            else:
+                table += "<td><p style='font-size:"+str(fontSize)+"pt'>"
+                table += ", <br>".join(elementsFound)
+                table += "</p></td>"
+            
     table += "</table></body></html>"
     return table
 
-if __name__ == "__main__":
+def main():
     if (len(sys.argv) == 2):
         baseModule = parseModulesInFile(sys.argv[1]).pop()
         print baseModule.name
@@ -269,12 +308,16 @@ if __name__ == "__main__":
         print "functions: ", ([str(function.name) for function in baseModule.functions])
         print "variables: ", ([str(variable.name) for variable in baseModule.variables])
         print "derivedTypes: ", ([str(derivedType.name) for derivedType in baseModule.derivedTypes])
-        print "uses: ", ([str(use.name) for use in getTotalUsesInModule(baseModule)])
+        print "uses:"
+        for use in baseModule.uses:
+            print use, "only: ", ", ".join(use.elements)
     if (len(sys.argv) == 5):
         samModules = set()
         wrfModules = set()
         camModules = set()
-        apiModule = parseModulesInFile(sys.argv[1]).pop()
+        apiModule = parseApiModule(sys.argv[1])
+        #for subroutine in apiModule.subroutines:
+        #    print subroutine.name
         for file in findFiles(sys.argv[2]):
             samModules.update(parseModulesInFile(file))
         for file in findFiles(sys.argv[3]):
@@ -282,3 +325,6 @@ if __name__ == "__main__":
         for file in findFiles(sys.argv[4]):
             camModules.update(parseModulesInFile(file))
         print makeTable(apiModule, samModules, wrfModules, camModules)
+
+if __name__ == "__main__":
+    main()
