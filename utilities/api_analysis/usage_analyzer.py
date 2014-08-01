@@ -4,15 +4,15 @@ from time import strftime
 fontSize = 12
 fontSizeReduced = 7
 
-# Represents a module in FORTRAN and contains sets of elements which represent the various
+# Represents a module in FORTRAN and contains lists of elements which represent the various
 # subroutines, functions, variables, and derived types which are in that module
 class Module:
     name = ""
-    subroutines = set() # Element set
-    functions = set()
-    variables = set()
-    derivedTypes = set()
-    uses = set() # Use set
+    subroutines = list() # Element list
+    functions = list()
+    variables = list()
+    derivedTypes = list()
+    uses = list() # Use list
     
     startLine = -1
     endLine = -1
@@ -35,7 +35,7 @@ class Module:
 # Represents a variable, function, subroutine, or derived type in FORTRAN
 class Element:
     name = "" # Both element and use must have a "name" attribute for comparisons
-    uses = set()
+    uses = list()
     startLine = -1
     endLine = -1
     def __init__(self, name, uses, startLine, endLine):
@@ -59,7 +59,7 @@ class Element:
         
 class Use:
     name = ""
-    elements = set() # Strings
+    elements = list() # Strings
     parentElement = ""
     def __init__(self, name, elements, parentElement):
         self.name = name
@@ -67,7 +67,7 @@ class Use:
         self.parentElement = parentElement
     def __eq__(self, other):
         if isinstance(other, Use):
-            return self.name == other.name
+            return self.name == other.name #and (self.elements.difference_update(other.elements) == None)
         else:
             return self.name == other
     def __ne__(self, other):
@@ -86,25 +86,25 @@ def parseModulesInFile(filename):
     # Take in the entire file at once (small enough text files to not matter)
     lines = [line.strip().lower() for line in open(filename)]
     
-    retModules = set() # The modules found in the current file
+    retModules = list() # The modules found in the current file
     
     # Each data type that is currently being parsed is stored temporarily
     moduleName = ""
     moduleStart = -1
     moduleEnd = -1
-    moduleSubroutines = set()
-    moduleFunctions = set()
-    moduleVariables = set()
-    moduleUses = set()
-    moduleDerivedTypes = set()
+    moduleSubroutines = list()
+    moduleFunctions = list()
+    moduleVariables = list()
+    moduleUses = list()
+    moduleDerivedTypes = list()
     
     subroutineName = ""
-    subroutineUses = set()
+    subroutineUses = list()
     subroutineStart = -1
     subroutineEnd = -1
     
     functionName = ""
-    functionUses = set()
+    functionUses = list()
     functionStart = -1
     functionEnd = -1
     
@@ -117,16 +117,16 @@ def parseModulesInFile(filename):
         
         if re.match(r"^\s*use", lines[n], re.IGNORECASE): # Use statement
             if (functionStart != -1 and functionEnd == -1): # Used in a function
-                functionUses.add(parseUse(n, lines, functionName))
+                functionUses.append(parseUse(n, lines, functionName))
             elif (subroutineStart != -1 and subroutineEnd == -1): # Used in a subroutine
-                subroutineUses.add(parseUse(n, lines, subroutineName))
+                subroutineUses.append(parseUse(n, lines, subroutineName))
             else: # Used in a module
-                moduleUses.add(parseUse(n, lines, moduleName))
+                moduleUses.append(parseUse(n, lines, moduleName))
                 
         if re.match(r"^\s*((integer)|(character)|(logical)|(real)|(type(?=(\(|\s*\())))(?!\sfunction)", lines[n], re.IGNORECASE): # Variable
             if not lines[n-1].split("!")[0].strip().endswith("&"): # If the line before doesn't end with a &
                 for variable in getContinuousLine(n, lines).split("::")[-1].split(","): # merge the &'s and split on ","
-                    moduleVariables.add(Element(variable.split("=")[0].strip(), None, n, n)) # Take left of "=" and add
+                    moduleVariables.append(Element(variable.split("=")[0].strip(), None, n, n)) # Take left of "=" and add
         
         if re.match(r"^\s*type(?!(\(|\s*\())", lines[n], re.IGNORECASE): # Derived Type Start
             derivedTypeStart = n
@@ -134,7 +134,7 @@ def parseModulesInFile(filename):
             
         if re.match(r"^\s*end\stype\s",lines[n], re.IGNORECASE): # Derived Type End
             derivedTypeEnd = n
-            moduleDerivedTypes.add(Element(derivedTypeName, None, derivedTypeStart, derivedTypeEnd))
+            moduleDerivedTypes.append(Element(derivedTypeName, None, derivedTypeStart, derivedTypeEnd))
             derivedTypeName = ""
             derivedTypeStart = -1
             derivedTypeEnd = -1
@@ -145,9 +145,9 @@ def parseModulesInFile(filename):
             
         if re.match(r"^\s*end\sfunction\s", lines[n], re.IGNORECASE): # Function End
             functionEnd = n
-            moduleFunctions.add(Element(functionName, functionUses, functionStart, functionEnd))
+            moduleFunctions.append(Element(functionName, functionUses, functionStart, functionEnd))
             functionName = ""
-            functionUses = set()
+            functionUses = list()
             functionStart = -1
             functionEnd = -1
         
@@ -157,9 +157,9 @@ def parseModulesInFile(filename):
             
         if re.match(r"^\s*end\ssubroutine\s", lines[n], re.IGNORECASE): # Subroutine End
             subroutineEnd = n
-            moduleSubroutines.add(Element(subroutineName, subroutineUses, subroutineStart, subroutineEnd))
+            moduleSubroutines.append(Element(subroutineName, subroutineUses, subroutineStart, subroutineEnd))
             subroutineName = ""
-            subroutineUses = set()
+            subroutineUses = list()
             subroutineStart = -1
             subroutineEnd = -1
         
@@ -170,16 +170,16 @@ def parseModulesInFile(filename):
             
         if re.match(r"^\s*end\smodule\s", lines[n], re.IGNORECASE): # Module End
             moduleEnd = n
-            retModules.add(Module(moduleName, moduleSubroutines, moduleFunctions, \
+            retModules.append(Module(moduleName, moduleSubroutines, moduleFunctions, \
                 moduleVariables, moduleDerivedTypes, moduleUses, moduleStart, moduleEnd))
             moduleName = ""
             moduleStart = -1
             moduleEnd = -1
-            moduleSubroutines = set()
-            moduleFunctions = set()
-            moduleVariables = set()
-            moduleUses = set()
-            moduleDerivedTypes = set()
+            moduleSubroutines = list()
+            moduleFunctions = list()
+            moduleVariables = list()
+            moduleUses = list()
+            moduleDerivedTypes = list()
             
     return retModules
 
@@ -189,35 +189,35 @@ def parseApiModule(filename):
     lines = [line.strip().lower() for line in open(filename)]
     
     moduleName = filename.split("/")[-1].replace(".F90", "").strip()
-    modulePublics = set()
+    modulePublics = list()
     
     for n in range(0,len(lines)):
         if re.match(r"^\s*public", lines[n], re.IGNORECASE):
             currentLine = getContinuousLine(n, lines)
             currentLine = currentLine.replace("public", "").replace(" ", "").strip()
             for subroutine in currentLine.split(","):
-                modulePublics.add(Element(subroutine, None, n, n))
+                modulePublics.append(Element(subroutine, None, n, n))
     
     return Module(moduleName, modulePublics, None, None, None, None, 1, 100000)
 
 # Returns the use case on the indicated line
 def parseUse(n, lines, parentElement):
     moduleName = ""
-    uses = set()
+    uses = list()
     lines[n] = getContinuousLine(n, lines).replace(" ", "")
     moduleName = lines[n].split(",only:")[0][3:]
     for use in lines[n].split(",only:")[-1].split(","):
-        uses.add(use)
+        uses.append(use.split("=>")[-1])
     return Use(moduleName, uses, parentElement)
 
-# Returns a set of every use in a module and its children elements    
+# Returns a list of every use in a module and its children elements    
 def getTotalUsesInModule(module):
-    retUses = set()
-    retUses.update(module.uses)
+    retUses = list()
+    retUses.extend(module.uses)
     for subroutine in module.subroutines:
-        retUses.update(subroutine.uses)
+        retUses.extend(subroutine.uses)
     for function in module.functions:
-        retUses.update(function.uses)
+        retUses.extend(function.uses)
     return retUses
 
 # Reformats lines split using ampersands to one line
@@ -255,11 +255,14 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
     table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'    # Add the Header
     
     # Every element (and use!) in API
-    apiElements = set()
-    apiElements.update(apiModule.subroutines)
+    apiElements = list()
+    apiElements.extend(apiModule.subroutines)
     
-    # add host models to set
+    # add host models to list
     hostModels = list()
+    #samModules = cleanupUsesInModules(samModules)
+    #wrfModules = cleanupUsesInModules(wrfModules)
+    #camModules = cleanupUsesInModules(camModules)
     hostModels.append(samModules)
     hostModels.append(wrfModules)
     hostModels.append(camModules)
@@ -270,7 +273,6 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
             table += "<tr><td>" + apiElement.name + "</td>"
         else:
             table += "<tr><td>" + apiElement + "</td>"
-        elementsFound = set()
        
         for hostModel in hostModels:
             elementsFound = set()
@@ -300,31 +302,55 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
     table += "</table></body></html>"
     return table
 
+# Prints the -h menu
+def printHelpMenu():
+    print ""
+    print "Cross references how one module (like an API) is used by three other groups of modules (Like SAM, WRF, and CAM)."
+    print "Example Usage: python thisProgram.py path/to/api.F90 path/to/host1 path/to/host2 path/to/host3 > output.html"
+    print ""
+    print "This program can also display information about a file."
+    print "Example Usage: python thisProgram.py path/to/file.F90"
+    print ""
+
 def main():
     if (len(sys.argv) == 2):
         baseModule = parseModulesInFile(sys.argv[1]).pop()
         print baseModule.name
-        print "subroutines: ", ([str(subroutine.name) for subroutine in baseModule.subroutines])
-        print "functions: ", ([str(function.name) for function in baseModule.functions])
+        print "subroutines: "
+        for subroutine in baseModule.subroutines:
+            print subroutine, subroutine.startLine, subroutine.endLine
+            for use in subroutine.uses:
+                print "    ", use, "only: ", ", ".join(use.elements)
+        print "functions: "
+        for function in baseModule.functions:
+            print function
+            for use in function.uses:
+                print "    ", use, "only: ", ", ".join(use.elements)
         print "variables: ", ([str(variable.name) for variable in baseModule.variables])
         print "derivedTypes: ", ([str(derivedType.name) for derivedType in baseModule.derivedTypes])
         print "uses:"
         for use in baseModule.uses:
             print use, "only: ", ", ".join(use.elements)
-    if (len(sys.argv) == 5):
-        samModules = set()
-        wrfModules = set()
-        camModules = set()
+    elif (len(sys.argv) == 5):
+        samModules = list()
+        wrfModules = list()
+        camModules = list()
         apiModule = parseApiModule(sys.argv[1])
-        #for subroutine in apiModule.subroutines:
-        #    print subroutine.name
         for file in findFiles(sys.argv[2]):
-            samModules.update(parseModulesInFile(file))
+            samModules.extend(parseModulesInFile(file))
         for file in findFiles(sys.argv[3]):
-            wrfModules.update(parseModulesInFile(file))
+            wrfModules.extend(parseModulesInFile(file))
         for file in findFiles(sys.argv[4]):
-            camModules.update(parseModulesInFile(file))
+            camModules.extend(parseModulesInFile(file))
         print makeTable(apiModule, samModules, wrfModules, camModules)
+    else:
+        raise IOError("An error occurred processing the given arguments.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        if (sys.argv[1] == "-h"):
+            printHelpMenu()
+        else:
+            main()
+    except IOError:
+        print "An error occurred processing the given arguments."
