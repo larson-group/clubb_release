@@ -1515,7 +1515,7 @@ module latin_hypercube_driver_module
   subroutine stats_accumulate_lh &
              ( nz, num_samples, d_variables, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
-               lh_thl, lh_rt, Nc_in_cloud )
+               lh_thl, lh_rt )
 
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -1619,10 +1619,6 @@ module latin_hypercube_driver_module
       lh_thl, & ! Sample of liquid potential temperature [K]
       lh_rt     ! Sample of total water mixing ratio     [kg/kg]
 
-    real( kind = core_rknd), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud
-
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       rc_all_points,  & ! Cloud water mixing ratio for all levels        [kg/kg]
@@ -1659,7 +1655,7 @@ module latin_hypercube_driver_module
 
     real(kind=core_rknd) :: xtmp
 
-    integer :: sample, ivar, k
+    integer :: sample, ivar
 
     ! ---- Begin Code ----
 

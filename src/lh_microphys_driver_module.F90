@@ -18,7 +18,7 @@ contains
                X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
                pdf_params, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
-               hydromet, X_mixt_comp_all_levs, Nc_in_cloud, &
+               hydromet, X_mixt_comp_all_levs,  &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -102,9 +102,6 @@ contains
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
 
-    real( kind = core_rknd), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -142,7 +139,7 @@ contains
            lh_rt, lh_thl, &                                          ! Intent(in)
            X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in) 
            p_in_Pa, exner, rho, &                                    ! Intent(in)
-           delta_zt, hydromet, rcm, Nc_in_cloud, &                   ! Intent(in)
+           delta_zt, hydromet, rcm,  &                   ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                   ! Intent(out)

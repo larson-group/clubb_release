@@ -17,7 +17,7 @@ module estimate_scm_microphys_module
                lh_rt, lh_thl, &
                X_nl_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
-               dzq, hydromet, rcm, Nc_in_cloud,  &
+               dzq, hydromet, rcm,  &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -117,9 +117,6 @@ module estimate_scm_microphys_module
       dzq,        & ! Difference in height per gridbox   [m]
       rcm           ! Mean liquid water mixing ratio     [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      ! Constant value of N_c within cloud, to be used with l_const_Nc_in_cloud
-      Nc_in_cloud 
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]

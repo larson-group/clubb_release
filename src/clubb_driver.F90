@@ -1352,7 +1352,7 @@ module clubb_driver
         call stats_accumulate_lh &
              ( gr%nz, lh_microphys_calls, d_variables, rho_ds_zt, & ! In
                lh_sample_point_weights,  X_nl_all_levs, & ! In
-               lh_thl, lh_rt, Nc_in_cloud ) ! In
+               lh_thl, lh_rt ) ! In
       end if ! lh_microphys_enabled
 
 #else

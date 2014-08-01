@@ -451,7 +451,7 @@ module microphys_driver
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, delta_zt, cloud_frac, & ! In
-                 hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
+                 hydromet, X_mixt_comp_all_levs,  & !In 
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
                  rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -556,7 +556,7 @@ module microphys_driver
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, delta_zt, cloud_frac, & ! In
-                 hydromet, X_mixt_comp_all_levs, Nc_in_cloud, & !In 
+                 hydromet, X_mixt_comp_all_levs,  & !In 
                  hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                  rcm_mc, rvm_mc, thlm_mc,  & ! Out
                  rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
