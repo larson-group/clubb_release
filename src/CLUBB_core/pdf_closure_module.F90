@@ -724,12 +724,12 @@ module pdf_closure_module
                           zero_threshold )  )
 
     ! We need to introduce a threshold value for the variance of chi
-    if ( stdev_chi_1 < chi_tol ) then
+    if ( stdev_chi_1 <= chi_tol ) then
       ! Treat chi as a delta function in this component.
       stdev_chi_1 = zero
     end if
 
-    if ( stdev_chi_2 < chi_tol ) then
+    if ( stdev_chi_2 <= chi_tol ) then
       ! Treat chi as a delta function in this component.
       stdev_chi_2 = zero
     end if
