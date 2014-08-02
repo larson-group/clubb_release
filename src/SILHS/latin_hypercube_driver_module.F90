@@ -684,16 +684,16 @@ module latin_hypercube_driver_module
     ! We need to handle the special cases where cloud_frac_i is either very large or very small.
     if ( cloud_frac_i < cloud_frac_min ) then
       ! Special case #1
-      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - (cloud_frac_min + &
-              epsilon( cloud_frac_min ) ) ), kind=core_rknd )
+      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - (cloud_frac_min + &
+              epsilon( cloud_frac_min ) ), kind=dp ) ), kind=core_rknd )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
       if ( cloud_boundary > zero ) then
         l_error = .true.
       end if
     else if ( cloud_frac_i > ( 1._core_rknd - cloud_frac_min ) ) then
       ! Special case #2
-      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - (1._core_rknd - &
-               ( cloud_frac_min + epsilon( cloud_frac_min ) )) ), kind=core_rknd )
+      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - (1._core_rknd - &
+               ( cloud_frac_min + epsilon( cloud_frac_min ) )), kind=dp ) ), kind=core_rknd )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
       if ( cloud_boundary < zero ) then
         l_error = .true.
@@ -702,7 +702,8 @@ module latin_hypercube_driver_module
     else if ( cloud_frac_i >= cloud_frac_min .and. &
               cloud_frac_i <= ( 1._core_rknd - cloud_frac_min ) ) then
       ! Most likely case (hopefully)
-      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - cloud_frac_i ), kind=core_rknd )
+      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - cloud_frac_i, kind=dp ), &
+             kind=core_rknd )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
 
       if ( abs( cloud_boundary ) > boundary_tol ) then
