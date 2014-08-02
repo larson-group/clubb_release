@@ -526,6 +526,10 @@ module latin_hypercube_driver_module
 
       end if ! l_lh_cloud_weighted_sampling
 
+      do k=1, nz
+        call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
+        l_error = l_error .or. l_error_in_sub
+      end do
     end if ! clubb_at_least_debug_level( 2 )
 
     ! Verify total water isn't negative
@@ -546,6 +550,180 @@ module latin_hypercube_driver_module
 
     return
   end subroutine lh_subcolumn_generator
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine assert_consistent_cloud_frac( pdf_params, l_error )
+
+  ! Description:
+  !   Performs an assertion check that cloud_frac_i is consistent with chi_i and
+  !   stdev_chi_i in pdf_params for each PDF component.
+
+  ! References:
+  !   Eric Raut
+  !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+      fstderr          ! Constant
+
+    use pdf_parameter_module, only: &
+      pdf_parameter    ! Type
+
+    implicit none
+
+    ! Input Variables
+    type(pdf_parameter), intent(in) :: &
+      pdf_params       ! PDF parameters, containing distribution of chi     [units vary]
+                       ! and cloud fraction
+
+    ! Output Variables
+    logical, intent(out) :: &
+      l_error          ! True if the assertion check fails
+
+    ! Local Variables
+    logical :: &
+      l_error_in_sub
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    l_error = .false.
+
+    ! Perform assertion check for PDF component 1
+    call assert_consistent_cf_component &
+         ( pdf_params%chi_1, pdf_params%stdev_chi_1, pdf_params%cloud_frac1, & ! Intent(in)
+           l_error_in_sub )                                                    ! Intent(out)
+
+    l_error = l_error .or. l_error_in_sub
+    if ( l_error_in_sub ) then
+      write(fstderr,*) "Cloud fraction is inconsistent in PDF component 1"
+    end if
+
+    ! Perform assertion check for PDF component 2
+    call assert_consistent_cf_component &
+         ( pdf_params%chi_2, pdf_params%stdev_chi_2, pdf_params%cloud_frac2, & ! Intent(in)
+           l_error_in_sub )                                                    ! Intent(out)
+
+    l_error = l_error .or. l_error_in_sub
+    if ( l_error_in_sub ) then
+      write(fstderr,*) "Cloud fraction is inconsistent in PDF component 2"
+    end if
+
+    return
+  end subroutine assert_consistent_cloud_frac
+!-------------------------------------------------------------------------------
+
+
+!-------------------------------------------------------------------------------
+  subroutine assert_consistent_cf_component( mu_chi_i, sigma_chi_i, cloud_frac_i, &
+                                             l_error )
+
+  ! Description:
+  !   Performs an assertion check that cloud_frac_i is consistent with chi_i and
+  !   stdev_chi_i for a PDF component.
+  !
+  !   The SILHS sample generation process relies on precisely a cloud_frac
+  !   amount of mass in the cloudy portion of the PDF of chi, that is, where
+  !   chi > 0. In other words, the probability that chi > 0 should be exactly
+  !   cloud_frac.
+  !
+  !   Stated even more mathematically, CDF_chi(0) = 1 - cloud_frac, where
+  !   CDF_chi is the cumulative distribution function of chi. This can be
+  !   expressed as invCDF_chi(1 - cloud_frac) = zero.
+  !
+  !   This subroutine uses ltqnorm, which is apparently a fancy name for the
+  !   inverse cumulative distribution function of the standard normal
+  !   distribution.
+
+  ! References:
+  !   Eric Raut
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd, &     ! Constant(s)
+      dp
+
+    use constants_clubb, only: &
+      fstderr, &       ! Constant(s)
+      zero
+
+    use pdf_parameter_module, only: &
+      pdf_parameter    ! Type
+
+    use generate_lh_sample_module, only: &
+      ltqnorm          ! Procedure
+
+    implicit none
+
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_min = 1.0e-5_core_rknd
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_chi_i,      & ! Mean of chi in a PDF component
+      sigma_chi_i,   & ! Standard deviation of chi in a PDF component
+      cloud_frac_i     ! Cloud fraction in a PDF component
+
+    ! Output Variables
+    logical, intent(out) :: &
+      l_error          ! True if the assertion check fails
+
+    ! Local Variables
+    real( kind = core_rknd ) :: cloud_boundary, cloud_boundary_std_normal, boundary_tol
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    l_error = .false.
+
+    ! This value of boundary_tol seems to work.
+    boundary_tol = 0.1_core_rknd * sigma_chi_i
+
+    ! We need to handle the special cases where cloud_frac_i is either very large or very small.
+    if ( cloud_frac_i < cloud_frac_min ) then
+      ! Special case #1
+      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - (cloud_frac_min + &
+              epsilon( cloud_frac_min ) ) ), kind=core_rknd )
+      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
+      if ( cloud_boundary > zero ) then
+        l_error = .true.
+      end if
+    else if ( cloud_frac_i > ( 1._core_rknd - cloud_frac_min ) ) then
+      ! Special case #2
+      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - (1._core_rknd - &
+               ( cloud_frac_min + epsilon( cloud_frac_min ) )) ), kind=core_rknd )
+      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
+      if ( cloud_boundary < zero ) then
+        l_error = .true.
+      end if
+
+    else if ( cloud_frac_i >= cloud_frac_min .and. &
+              cloud_frac_i <= ( 1._core_rknd - cloud_frac_min ) ) then
+      ! Most likely case (hopefully)
+      cloud_boundary_std_normal = real( ltqnorm( 1._core_rknd - cloud_frac_i ), kind=core_rknd )
+      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
+
+      if ( abs( cloud_boundary ) > boundary_tol ) then
+        l_error = .true.
+      end if
+    else
+      stop "Should not be here in assert_consistent_cf_component"
+    end if  ! cloud_frac_i < cloud_frac_min
+
+    if ( l_error ) then
+      write(fstderr,*) "In assert_consistent_cf_component, cloud_frac_i is inconsistent with &
+                       &mu_chi_i and stdev_chi_i."
+      write(fstderr,*) "mu_chi_i = ", mu_chi_i
+      write(fstderr,*) "sigma_chi_i = ", sigma_chi_i
+      write(fstderr,*) "cloud_frac_i = ", cloud_frac_i
+      write(fstderr,*) "cloud_boundary = ", cloud_boundary
+    end if
+
+    return
+  end subroutine assert_consistent_cf_component
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
   subroutine assert_half_cloudy_normal( nz, num_samples, k_lh_start, chi_all_points, &
@@ -565,7 +743,7 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      zero_dp, &      ! Constant
+      zero_dp, &      ! Constant(s)
       fstderr
 
     implicit none
