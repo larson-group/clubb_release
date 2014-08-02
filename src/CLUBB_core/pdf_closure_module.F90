@@ -73,7 +73,8 @@ module pdf_closure_module
       thl_tol,       & ! Tolerance for th_l                  [K]
       T_freeze_K,    & ! Freezing point of water             [K]
       fstderr,       &
-      zero_threshold
+      zero_threshold,&
+      chi_tol
 
     use parameters_model, only: &
       sclr_tol,          & ! Array of passive scalar tolerances  [units vary]
@@ -722,6 +723,17 @@ module pdf_closure_module
                           + cthl2**2 * varnce_thl2,  &
                           zero_threshold )  )
 
+    ! We need to introduce a threshold value for the variance of chi
+    if ( stdev_chi_1 < chi_tol ) then
+      ! Treat chi as a delta function in this component.
+      stdev_chi_1 = zero
+    end if
+
+    if ( stdev_chi_2 < chi_tol ) then
+      ! Treat chi as a delta function in this component.
+      stdev_chi_2 = zero
+    end if
+
     ! Standard deviation of eta for each component.
     stdev_eta_1 = sqrt( max( crt1**2 * varnce_rt1  &
                           + two * rrtthl * crt1 * cthl1  &
@@ -765,8 +777,6 @@ module pdf_closure_module
 #else
     l_calc_ice_supersat_frac = .true.
 #endif
-
-    ! We need to introduce a threshold value for the variance of chi
 
     ! Calculate cloud_frac1 and rc1
     call calc_cloud_frac_component(chi_1, stdev_chi_1, chi_at_liq_sat, cloud_frac1, rc1)
