@@ -702,7 +702,7 @@ module latin_hypercube_driver_module
     else if ( cloud_frac_i >= cloud_frac_min .and. &
               cloud_frac_i <= ( 1._core_rknd - cloud_frac_min ) ) then
       ! Most likely case (hopefully)
-      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - cloud_frac_i, kind=dp ), &
+      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - cloud_frac_i, kind=dp ) ), &
              kind=core_rknd )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
 
