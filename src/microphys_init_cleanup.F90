@@ -39,22 +39,20 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
         l_cloud_sed,                  & ! Cloud water sedimentation (K&K or no microphysics)
-        l_ice_microphys,                  & ! Compute ice (COAMPS / Morrison)
+        l_ice_microphys,              & ! Compute ice (COAMPS / Morrison)
         l_graupel,                    & ! Compute graupel (Morrison)
         l_hail,                       & ! See module_mp_graupel for a description
         l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
-        l_predict_Nc,                  & ! Predict cloud droplet number conc
+        l_predict_Nc,                 & ! Predict cloud droplet number conc
         specify_aerosol,              & ! Specify aerosol (Morrison)
         l_subgrid_w,                  & ! Use subgrid w  (Morrison)
         l_arctic_nucl,                & ! Use MPACE observations (Morrison)
         l_cloud_edge_activation,      & ! Activate on cloud edges (Morrison)
         l_fix_pgam,                   & ! Fix pgam (Morrison)
-        lh_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
-        lh_seed,                      & ! Integer seed for the Mersenne twister
         l_local_kk,                   & ! Use local formula for K&K
         l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
-        microphys_scheme,                 & ! The microphysical scheme in use
+        microphys_scheme,             & ! The microphysical scheme in use
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
         l_gfdl_activation,            & ! Flag to use GFDL activation scheme
         microphys_start_time,         & ! When to start the microphysics [s]
@@ -63,15 +61,16 @@ module microphys_init_cleanup
 
     use parameters_silhs, only: &
         l_lh_vert_overlap,            & ! Assume maximum overlap for chi(s_mellor) (SILHS)
-        l_lh_cloud_weighted_sampling    ! Sample preferentially within cloud (SILHS)
-
-    use parameters_microphys, only: &
-        lh_microphys_calls              ! SILHS sample points
-
-    use parameters_microphys, only: &
+        l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
+        lh_microphys_calls,           & ! SILHS sample points
+        lh_sequence_length,           & ! Number of timesteps before the SILHS seq. repeats
+        lh_seed,                      & ! Integer seed for the Mersenne twister
         lh_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
         lh_microphys_non_interactive, & ! Feed the subcolumns into microphysics with no feedback
         lh_microphys_disabled           ! Disable latin hypercube entirely
+
+    use parameters_silhs, only: &
+        lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
     use parameters_microphys, only: &
         l_silhs_KK_convergence_adj_mean ! Clip source adjustment terms on mean instead of individual
@@ -82,11 +81,9 @@ module microphys_init_cleanup
         morrison_lognormal
 
     use parameters_KK, only: &
-        C_evap,                    &
+        C_evap,              &
         r_0
 
-    use parameters_microphys, only: &
-        lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
     use array_index, only: &
         hydromet_list,                & ! Names of the hydrometeor species

@@ -68,7 +68,7 @@ module estimate_scm_microphys_module
     use math_utilities, only: &
       compute_sample_mean             ! Procedure
 
-    use parameters_microphys, only: &
+    use parameters_silhs, only: &
       lh_microphys_type,            &           ! Variable
       lh_microphys_non_interactive              ! Constant
 

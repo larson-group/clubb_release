@@ -114,13 +114,18 @@ module microphys_driver
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
         l_predict_Nc,         & ! Predict cloud droplet number conc (Morrison)
-        lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
         microphys_scheme,     & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
         microphys_start_time, & ! When to start the microphysics [s]
         sigma_g,              & ! Parameter used in the cloud droplet sedimentation code
         l_silhs_KK_convergence_adj_mean ! Flag used to adjust a run of KK upscaled or SILHS
+
+     use parameters_silhs, only: &
+        lh_microphys_calls,       & ! # of SILHS samples for which call the microphysics
+        lh_microphys_type,        & ! Determines how the LH samples are used
+        lh_microphys_interactive, & ! Feed the subcols into microphys and allow feedback
+        lh_microphys_disabled       ! Disable latin hypercube entirely
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! Type
@@ -173,11 +178,6 @@ module microphys_driver
 
     use shr_kind_mod, only: &
         shr_kind_r8  ! Variable(s)
-
-    use parameters_microphys, only: &
-        lh_microphys_type,        & ! Determines how the LH samples are used
-        lh_microphys_interactive, & ! Feed the subcols into microphys and allow feedback
-        lh_microphys_disabled       ! Disable latin hypercube entirely
 
     use clubb_precision, only: &
         time_precision, & ! Variable(s)
