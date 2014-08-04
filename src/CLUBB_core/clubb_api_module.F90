@@ -211,7 +211,7 @@ module clubb_api_module
     stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate_hydromet_api, stats_finalize_api, &
     stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
-    thlm2T_in_K_api, calculate_spurious_source_api, genrand_init_api
+    thlm2T_in_K_api, T_in_K2thlm_api, calculate_spurious_source_api, genrand_init_api
 
 
   ! Making the variables public
@@ -1830,6 +1830,32 @@ contains
       thlm, exner, rcm )
 
   end function thlm2T_in_K_api
+
+  !================================================================================================
+  ! T_in_K2thlm - Calculates liquid water potential temperature from absolute temperature
+  !================================================================================================
+
+  elemental function T_in_K2thlm_api( &
+    T_in_K, exner, rcm )  &
+    result( thlm )
+
+    use T_in_K_module, only : T_in_K2thlm
+
+    implicit none
+
+    ! Input
+    real( kind = core_rknd ), intent(in) :: &
+      T_in_K, &! Result temperature [K]
+      exner,  & ! Exner function                [-]
+      rcm       ! Liquid water mixing ratio     [kg/kg]
+
+    real( kind = core_rknd ) :: &
+      thlm    ! Liquid potential temperature  [K]
+
+    thlm = T_in_K2thlm( &
+      T_in_K, exner, rcm )
+
+  end function T_in_K2thlm_api
 
   !================================================================================================
   ! calculate_spurious_source - Checks whether there is conservation within the column.

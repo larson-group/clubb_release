@@ -34,7 +34,8 @@ module silhs_api_module
     stats_accumulate_lh_api, &
     est_kessler_microphys_api, &
     l_lh_vert_overlap, &
-    l_lh_cloud_weighted_sampling
+    l_lh_cloud_weighted_sampling, &
+    Ncn_to_Nc_api
 
 contains
 
@@ -232,6 +233,38 @@ contains
       AKm_rcm, AKm_rcc, lh_rcm_avg )
 
   end subroutine est_kessler_microphys_api
+
+  !================================================================================================
+  ! Ncn_to_Nc - Converts a sample of Ncn to a sample of Nc.
+  !================================================================================================
+
+  elemental function Ncn_to_Nc_api( &
+    Ncn, chi ) result ( Nc )
+
+    use latin_hypercube_driver_module, only : Ncn_to_Nc
+
+    use clubb_precision, only: &
+      core_rknd    ! Our awesome generalized precision (constant)
+
+    use constants_clubb, only: &
+      zero         ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      Ncn,  &  ! Simplified cloud nuclei concentration N_cn  [num/kg]
+      chi      ! Extended cloud water mixing ratio           [kg/kg]
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      Nc       ! Cloud droplet concentration                 [num/kg]
+
+    Nc = Ncn_to_Nc( &
+      Ncn, chi )
+
+  end function Ncn_to_Nc_api
+
 #endif
 
 end module silhs_api_module
