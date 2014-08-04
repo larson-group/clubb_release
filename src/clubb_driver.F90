@@ -188,7 +188,7 @@ module clubb_driver
       lh_microphys_type,     & ! Variable(s)
       lh_microphys_disabled, &
       lh_seed,               &
-      microphys_scheme,          &
+      microphys_scheme,      &
       lh_microphys_calls,    &
       lh_sequence_length
 

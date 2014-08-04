@@ -39,11 +39,11 @@ module microphys_init_cleanup
     use parameters_microphys, only: &
         l_in_cloud_Nc_diff,           & ! Use in cloud values of Nc for diffusion
         l_cloud_sed,                  & ! Cloud water sedimentation (K&K or no microphysics)
-        l_ice_microphys,                  & ! Compute ice (COAMPS / Morrison)
+        l_ice_microphys,              & ! Compute ice (COAMPS / Morrison)
         l_graupel,                    & ! Compute graupel (Morrison)
         l_hail,                       & ! See module_mp_graupel for a description
         l_seifert_beheng,             & ! Use Seifert and Beheng (2001) warm drizzle (Morrison)
-        l_predict_Nc,                  & ! Predict cloud droplet number conc
+        l_predict_Nc,                 & ! Predict cloud droplet number conc
         specify_aerosol,              & ! Specify aerosol (Morrison)
         l_subgrid_w,                  & ! Use subgrid w  (Morrison)
         l_arctic_nucl,                & ! Use MPACE observations (Morrison)
@@ -54,7 +54,7 @@ module microphys_init_cleanup
         l_local_kk,                   & ! Use local formula for K&K
         l_upwind_diff_sed,            & ! Use the upwind differencing approx. for sedimentation
         l_var_covar_src,              & ! Flag for using variance and covariance src terms
-        microphys_scheme,                 & ! The microphysical scheme in use
+        microphys_scheme,             & ! The microphysical scheme in use
         l_hydromet_sed,               & ! Flag to sediment a hydrometeor
         l_gfdl_activation,            & ! Flag to use GFDL activation scheme
         microphys_start_time,         & ! When to start the microphysics [s]
@@ -82,7 +82,7 @@ module microphys_init_cleanup
         morrison_lognormal
 
     use parameters_KK, only: &
-        C_evap,                    &
+        C_evap,              &
         r_0
 
     use parameters_microphys, only: &
