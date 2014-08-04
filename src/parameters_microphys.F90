@@ -24,6 +24,12 @@ module parameters_microphys
 
   implicit none
 
+  ! Constant Parameters
+  integer, parameter, public :: &
+    lh_microphys_interactive     = 1, & ! Feed the samples into the microphysics and allow feedback
+    lh_microphys_non_interactive = 2, & ! Feed the samples into the microphysics with no feedback
+    lh_microphys_disabled        = 3    ! Disable Latin hypercube entirely
+
   ! Morrison aerosol parameters
   integer, parameter, public :: &
     morrison_no_aerosol = 0, &
@@ -71,6 +77,21 @@ module parameters_microphys
 
   character(len=30), public :: &
     specify_aerosol = "morrison_lognormal"  ! Specify aerosol (Morrison)
+
+  integer, public :: &
+    lh_microphys_calls = 2, & ! Number of latin hypercube samples to call the microphysics with
+    lh_sequence_length = 1    ! Number of timesteps before the latin hypercube seq. repeats
+
+  integer(kind=genrand_intg), public :: &
+    lh_seed = 5489_genrand_intg ! Seed for the Mersenne
+
+!$omp threadprivate( lh_microphys_calls, lh_sequence_length, lh_seed )
+
+  ! Determines how the latin hypercube samples should be used with the microphysics
+  integer, public :: &
+    lh_microphys_type = 3
+
+!$omp threadprivate( lh_microphys_type )
 
   character(len=50), public :: &
     microphys_scheme = "none" ! khairoutdinv_kogan, simplified_ice, coamps, etc.
