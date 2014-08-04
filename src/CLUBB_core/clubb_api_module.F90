@@ -220,11 +220,11 @@ module clubb_api_module
   ! Making the variables public
   public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
     iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl, iisclr_CO2, iisclr_rt, iisclr_thl, &
-    time_precision, core_rknd, stat_nknd, stat_rknd, dp, &
+    time_precision, core_rknd, stat_nknd, stat_rknd, dp, cloud_frac_min, &
     cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, Lf, pi, pi_dp, radians_per_deg_dp,&
     Rd, Rv, sec_per_day, sec_per_hr, sec_per_min, T_freeze_K, var_length, zero, zero_threshold, &
     Nc_tol, Ng_tol, Ni_tol, Nr_tol, Ns_tol, rg_tol, rho_lw, &
-    ri_tol, rr_tol, rs_tol, rt_tol, thl_tol, w_tol_sqd, &
+    ri_tol, rr_tol, rs_tol, rt_tol, rc_tol, thl_tol, w_tol_sqd, &
     corr_array_cloud, corr_array_below, d_variables, &
     iiPDF_chi, iiPDF_rr, iiPDF_w, iiPDF_Nr, iiPDF_ri, iiPDF_Ni, iiPDF_Ncn, iiPDF_rs, &
     iiPDF_Ns, iiPDF_rg, iiPDF_Ng, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
