@@ -114,7 +114,7 @@ module microphys_driver
     use parameters_microphys, only: &
         l_cloud_sed,          & ! Cloud water sedimentation (K&K or no microphysics)
         l_predict_Nc,         & ! Predict cloud droplet number conc (Morrison)
-        lh_microphys_calls,   & ! # of SILHS samples for which call the microphysics
+        lh_num_samples,   & ! # of SILHS samples for which call the microphysics
         l_local_kk,           & ! Use local formula for K&K
         microphys_scheme,     & ! The microphysical scheme in use
         l_gfdl_activation,    & ! Flag to use GFDL activation scheme
@@ -233,18 +233,18 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = dp ), dimension(gr%nz,lh_microphys_calls,d_variables), &
+    real( kind = dp ), dimension(gr%nz,lh_num_samples,d_variables), &
     intent(in) :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
-    integer, dimension(gr%nz,lh_microphys_calls), intent(in) :: &
+    integer, dimension(gr%nz,lh_num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_microphys_calls), &
+    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples), &
     intent(in) :: &
       lh_rt, lh_thl ! Samples of rt, thl        [kg/kg,K]
 
-    real( kind = core_rknd ), dimension(lh_microphys_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
@@ -447,7 +447,7 @@ module microphys_driver
        if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
           call lh_microphys_driver &
-               ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
+               ( dt, gr%nz, lh_num_samples, d_variables, & ! In
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, delta_zt, cloud_frac, & ! In
@@ -552,7 +552,7 @@ module microphys_driver
 
 #ifdef SILHS
           call lh_microphys_driver &
-               ( dt, gr%nz, lh_microphys_calls, d_variables, & ! In
+               ( dt, gr%nz, lh_num_samples, d_variables, & ! In
                  X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
                  pdf_params, p_in_Pa, exner, rho, & ! In
                  rcm, delta_zt, cloud_frac, & ! In

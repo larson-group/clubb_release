@@ -79,13 +79,13 @@ module parameters_microphys
     specify_aerosol = "morrison_lognormal"  ! Specify aerosol (Morrison)
 
   integer, public :: &
-    lh_microphys_calls = 2, & ! Number of latin hypercube samples to call the microphysics with
+    lh_num_samples = 2, & ! Number of latin hypercube samples to call the microphysics with
     lh_sequence_length = 1    ! Number of timesteps before the latin hypercube seq. repeats
 
   integer(kind=genrand_intg), public :: &
     lh_seed = 5489_genrand_intg ! Seed for the Mersenne
 
-!$omp threadprivate( lh_microphys_calls, lh_sequence_length, lh_seed )
+!$omp threadprivate( lh_num_samples, lh_sequence_length, lh_seed )
 
   ! Determines how the latin hypercube samples should be used with the microphysics
   integer, public :: &

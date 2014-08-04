@@ -189,7 +189,7 @@ module clubb_driver
       lh_microphys_disabled, &
       lh_seed,               &
       microphys_scheme,      &
-      lh_microphys_calls,    &
+      lh_num_samples,    &
       lh_sequence_length
 
     use parameters_silhs, only: &
@@ -979,9 +979,9 @@ module clubb_driver
 
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
 
-    allocate( X_nl_all_levs(gr%nz,lh_microphys_calls,d_variables), &
-              X_mixt_comp_all_levs(gr%nz,lh_microphys_calls), lh_rt(gr%nz,lh_microphys_calls), &
-              lh_thl(gr%nz,lh_microphys_calls), lh_sample_point_weights(lh_microphys_calls), &
+    allocate( X_nl_all_levs(gr%nz,lh_num_samples,d_variables), &
+              X_mixt_comp_all_levs(gr%nz,lh_num_samples), lh_rt(gr%nz,lh_num_samples), &
+              lh_thl(gr%nz,lh_num_samples), lh_sample_point_weights(lh_num_samples), &
               Lscale_vert_avg(gr%nz), Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then
@@ -1121,7 +1121,7 @@ module clubb_driver
       ! Setup 2D output of all subcolumns (if enabled)
       call latin_hypercube_2D_output &
            ( fname_prefix, fdir, stats_tout, gr%nz, &
-             gr%zt, time_initial, lh_microphys_calls )
+             gr%zt, time_initial, lh_num_samples )
 
     end if
 #endif /* SILHS */
@@ -1340,7 +1340,7 @@ module clubb_driver
         end if
 
        call lh_subcolumn_generator &
-            ( itime, d_variables, lh_microphys_calls, lh_sequence_length, gr%nz, & ! In
+            ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
               pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
               real( corr_cholesky_mtx_1, kind = dp ), & ! In
@@ -1350,7 +1350,7 @@ module clubb_driver
               lh_sample_point_weights ) ! Out
 
         call stats_accumulate_lh &
-             ( gr%nz, lh_microphys_calls, d_variables, rho_ds_zt, & ! In
+             ( gr%nz, lh_num_samples, d_variables, rho_ds_zt, & ! In
                lh_sample_point_weights,  X_nl_all_levs, & ! In
                lh_thl, lh_rt ) ! In
       end if ! lh_microphys_enabled
@@ -1420,7 +1420,7 @@ module clubb_driver
         if ( l_silhs_rad ) then
 
           call silhs_radiation_driver &
-               ( gr%nz, lh_microphys_calls, d_variables, hydromet_dim, & !In
+               ( gr%nz, lh_num_samples, d_variables, hydromet_dim, & !In
                  time_current, rho, rho_zm, & !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
                  lh_rt, lh_thl, lh_sample_point_weights, hydromet, & !In
@@ -4327,7 +4327,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine silhs_radiation_driver &
-             ( nz, lh_microphys_calls, d_variables, hydromet_dim, time_current, rho, rho_zm, &
+             ( nz, lh_num_samples, d_variables, hydromet_dim, time_current, rho, rho_zm, &
                p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_rt, lh_thl, lh_sample_point_weights, hydromet, &
                err_code, &
@@ -4364,7 +4364,7 @@ module clubb_driver
     ! Input Variables
     integer, intent(in) :: &
       nz, &                 ! Number of vertical levels
-      lh_microphys_calls, & ! Number of SILHS sample points
+      lh_num_samples, & ! Number of SILHS sample points
       d_variables, &        ! Number of lognormal variates
       hydromet_dim          ! Number of hydrometeor species
 
@@ -4379,14 +4379,14 @@ module clubb_driver
       cloud_frac,        & ! Cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac    ! Ice cloud fraction (thermodynamic levels) [-]
 
-    real( kind = dp ), dimension(nz,lh_microphys_calls,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nz,lh_num_samples,d_variables), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
-    real( kind = core_rknd ), dimension(nz,lh_microphys_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples), intent(in) :: &
       lh_rt, &             ! SILHS sample of rt                        [kg/kg]
       lh_thl               ! SILHS sample of thl                       [K]
 
-    real( kind = core_rknd ), dimension(lh_microphys_calls), intent(in) :: &
+    real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point      [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
@@ -4406,17 +4406,17 @@ module clubb_driver
       Frad_LW_down    ! Long-wave downwelling radiative flux           [W/m^2]
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,lh_microphys_calls,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples,hydromet_dim) :: &
       hydromet_all_pts ! SILHS sample of hydrometeors for each column  [units vary]
 
-    real( kind = core_rknd ), dimension(nz,lh_microphys_calls) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
       Ncn_all_points   ! SILHS sample of Ncn for each column           [#/kg]
                        ! (not used)
 
-    real( kind = core_rknd ), dimension(nz,lh_microphys_calls) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
       lh_rc            ! SILHS sample of rc                            [kg/kg]
 
-    real( kind = core_rknd ), dimension(nz,lh_microphys_calls) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
       radht_samples,        &    ! radht evaluated at each sample point
       Frad_samples,         &    ! Frad evaluated at each sample point
       Frad_SW_up_samples,   &    ! Frad_SW_up evaluated at each sample point
@@ -4426,7 +4426,7 @@ module clubb_driver
 
     integer :: isample, k ! Looping variates
 
-    integer, dimension(lh_microphys_calls) :: &
+    integer, dimension(lh_num_samples) :: &
       err_code_samp
   !-----------------------------------------------------------------------
 
@@ -4435,17 +4435,17 @@ module clubb_driver
     err_code_samp(:) = clubb_no_error
 
     call copy_X_nl_into_hydromet_all_pts &
-         ( nz, d_variables, lh_microphys_calls, &         ! Intent(in)
+         ( nz, d_variables, lh_num_samples, &         ! Intent(in)
            X_nl_all_levs, &                               ! Intent(in)
            hydromet, &                                    ! Intent(in)
            hydromet_all_pts, &                            ! Intent(out)
            Ncn_all_points )                               ! Intent(out)
 
     call copy_X_nl_into_rc_all_pts &
-         ( nz, d_variables, lh_microphys_calls, X_nl_all_levs, & ! Intent(in)
+         ( nz, d_variables, lh_num_samples, X_nl_all_levs, & ! Intent(in)
            lh_rc )                                               ! Intent(out)
 
-    do isample=1, lh_microphys_calls
+    do isample=1, lh_num_samples
       ! Call a radiation scheme
       call advance_clubb_radiation &
            ( time_current, rho, rho_zm, p_in_Pa, &                                 ! Intent(in)
@@ -4461,22 +4461,22 @@ module clubb_driver
     forall ( k = 1:nz )
 
       radht(k) = sum( radht_samples(k,:) * lh_sample_point_weights(:) ) / &
-                  real( lh_microphys_calls, kind=core_rknd )
+                  real( lh_num_samples, kind=core_rknd )
       Frad(k)  = sum( Frad_samples(k,:) * lh_sample_point_weights(:) ) / &
-                  real( lh_microphys_calls, kind=core_rknd )
+                  real( lh_num_samples, kind=core_rknd )
       Frad_SW_up(k) = sum( Frad_SW_up_samples(k,:) * lh_sample_point_weights(:) ) / &
-                       real( lh_microphys_calls, kind=core_rknd )
+                       real( lh_num_samples, kind=core_rknd )
       Frad_LW_up(k) = sum( Frad_LW_up_samples(k,:) * lh_sample_point_weights(:) ) / &
-                       real( lh_microphys_calls, kind=core_rknd )
+                       real( lh_num_samples, kind=core_rknd )
       Frad_SW_down(k)  = sum( Frad_SW_down_samples(k,:) * lh_sample_point_weights(:) ) / &
-                          real( lh_microphys_calls, kind=core_rknd )
+                          real( lh_num_samples, kind=core_rknd )
       Frad_LW_down(k)  = sum( Frad_LW_down_samples(k,:) * lh_sample_point_weights(:) ) / &
-                          real( lh_microphys_calls, kind=core_rknd )
+                          real( lh_num_samples, kind=core_rknd )
 
     end forall
 
     ! Check for errors
-    do isample=1, lh_microphys_calls
+    do isample=1, lh_num_samples
       if ( fatal_error( err_code_samp(isample) ) ) then
 
         if ( clubb_at_least_debug_level( 1 ) ) then
@@ -4489,7 +4489,7 @@ module clubb_driver
         err_code = err_code_samp(isample)
 
       end if ! fatal_error( err_code_samp(isample)
-    end do ! isample=1, lh_microphys_calls
+    end do ! isample=1, lh_num_samples
 
     return
   end subroutine silhs_radiation_driver

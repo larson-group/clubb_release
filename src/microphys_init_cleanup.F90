@@ -66,7 +66,7 @@ module microphys_init_cleanup
         l_lh_cloud_weighted_sampling    ! Sample preferentially within cloud (SILHS)
 
     use parameters_microphys, only: &
-        lh_microphys_calls              ! SILHS sample points
+        lh_num_samples              ! SILHS sample points
 
     use parameters_microphys, only: &
         lh_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
@@ -233,7 +233,7 @@ module microphys_init_cleanup
       l_ice_microphys, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
       l_seifert_beheng, l_predict_Nc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
-      l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_microphys_calls, &
+      l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
       l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
       sigma2_on_mu2_ratios, &
@@ -338,7 +338,7 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "lh_microphys_type = " // &
                          trim( lh_microphys_type ), l_write_to_file, iunit )
-       call write_text ( "lh_microphys_calls = ", lh_microphys_calls, &
+       call write_text ( "lh_num_samples = ", lh_num_samples, &
                          l_write_to_file, iunit )
        call write_text ( "lh_sequence_length = ", lh_sequence_length, &
                          l_write_to_file, iunit )
