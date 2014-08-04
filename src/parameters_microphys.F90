@@ -79,7 +79,8 @@ module parameters_microphys
     specify_aerosol = "morrison_lognormal"  ! Specify aerosol (Morrison)
 
   integer, public :: &
-    lh_num_samples = 2, & ! Number of latin hypercube samples to call the microphysics with
+    lh_num_samples = 2, &     ! Number of latin hypercube samples to call the microphysics (or
+                              ! radiation) scheme with
     lh_sequence_length = 1    ! Number of timesteps before the latin hypercube seq. repeats
 
   integer(kind=genrand_intg), public :: &
