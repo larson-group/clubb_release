@@ -3,7 +3,7 @@
 # 
 # The Usage Analyzer compares how three groups of FORTRAN modules use one FORTRAN module
 # and outputs a html table to standard out. In general, one would want to save the resultant HTML to a file.
-# The is a passive parser. The code should not be compiled prior to using this tool.
+# This is a passive parser. The code should not be compiled prior to using this tool.
 #
 # Usage: python usage_analyzer.py path/to/single/module.F90 path/to/group/one/ path/to/group/two/ path/to/group/three/
 # Example: python usage_analyzer.py ../../src/CLUBB_core/clubb_api_module.F90 ../../../SAM_CLUBB/SRC ../../../WRF_CLUBB/WRF/phys ../../../CAM_CLUBB/models/atm/cam/src > output.html
@@ -66,7 +66,6 @@ class Module:
 class Element:
     name = ""           # The name of the element (subroutine [name])
     uses = list()       # The use statments found between the startLine and endLine of the element 
-                        # (A (usually proper) subset of the parent module's use list)
     startLine = -1      # The line number where the element begins in the FORTRAN code
     endLine = -1        # The line number where the element ends
                         # (For variables, startLine == endLine, regardless of & continuations)
@@ -94,7 +93,7 @@ class Element:
     def __repr_(self):
         return self.name
 
-# Represents a use statement in FORTRAN (use [name], only : elements)
+# Represents a use statement in FORTRAN (use [name], only : [elements])
 class Use:
     name = ""               # The name of the use statment (use [name], only : [elements])
     elements = list()       # The "used" elements. It is worthwhile to mention here that this is a list of
@@ -111,7 +110,7 @@ class Use:
     # Comperator function overridden for custom object
     def __eq__(self, other):
         if isinstance(other, Use):
-            return self.name == other.name #and (self.elements.difference_update(other.elements) == None)
+            return self.name == other.name
         else:
             return self.name == other
     # Negative comperator function overridden for custom object
@@ -131,7 +130,7 @@ class Use:
 # out of the last three arguments. (Not the first, api, argument).
 #
 # When the program is ran, although all of the information is retreived from each file in every
-# folder given, only the use statements are used when all is said and done. However, it is
+# folder given, only the use statements are compared when all is said and done. However, it is
 # important to parse every element and module in every file so that each Use knows where
 # it came from.
 def parseModulesInFile(filename):
@@ -189,7 +188,7 @@ def parseModulesInFile(filename):
                 moduleUses.append(parseUse(n, lines, moduleName))           # Add it the current module's use list
                 
         # Parsing Variables
-        # This regex is "match any number of spaces at the start of the line that come before a variable type, a space, ad not preceding 'function'."
+        # This regex is "match any number of spaces at the start of the line that come before a variable type, a space, and not preceding 'function'."
         if re.match(r"^\s*((integer)|(character)|(logical)|(real)|(type(?=(\(|\s*\())))(?!\sfunction)", lines[n], re.IGNORECASE): # Found a Variable!
             if not lines[n-1].split("!")[0].strip().endswith("&"):                      # If the line before doesn't end with a &
                 for variable in getContinuousLine(n, lines).split("::")[-1].split(","):     # merge the &'s and split on ","
@@ -258,12 +257,12 @@ def parseModulesInFile(filename):
 def parseApiModule(filename):
     # Take in the entire file at once (small enough text files to not matter)
     lines = [line.strip().lower() for line in open(filename)]
-    # Here the module name is the filename striped of location and extension
+    # Here the module name is the filename stripped of location and extension
     moduleName = filename.split("/")[-1].replace(".F90", "").strip()
     # Some temp data
     modulePublics = list()
     for n in range(0,len(lines)):                                                       # Go through every line
-        if re.match(r"^\s*public", lines[n], re.IGNORECASE):                            # until a public decleration is found
+        if re.match(r"^\s*public", lines[n], re.IGNORECASE):                            # until a public declaration is found
             currentLine = getContinuousLine(n, lines)                                   # Fold away any &'d lines to one long line
             currentLine = currentLine.replace("public", "").replace(" ", "").strip()    # Remove public and external spaces from the line
             for subroutine in currentLine.split(","):                                   # Make an array around the commas
@@ -315,7 +314,7 @@ def getTotalUsesInModule(module):
 def getContinuousLine(n, lines):
     if re.match(r"^\s*!", lines[n], re.IGNORECASE) or \
         lines[n].startswith("#") or \
-        lines[n].strip() == "":                 #ignore comments, empty lines, and #
+        lines[n].strip() == "":                 # ignore comments, empty lines, and #
         lines[n]="&"
     lines[n] = lines[n].split("!")[0].strip()   # Split off any comments
     if lines[n].endswith("&"):                  # If the line ends with a &
@@ -336,16 +335,16 @@ def findFiles(dir):
                 foundFiles.append(subdir + "/" + file)  # Add its location and the filename to the returned files list
     return foundFiles                       # Return the found files
 
-# Formats all this fancy data into an HTML table
+# Formats all this fancy data into a HTML table
 def makeTable(apiModule, samModules, wrfModules, camModules):
     table =  '<!DOCTYPE html><html><script src="sorttable.js"></script>'            # Setup page 
     table += '<style>table,td, th{border:1px solid black;border-collapse: '         # Table CSS
-    table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'     # "       "
+    table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'     # 
     table += 'Usage Breakdown: ' + strftime("%Y-%m-%d %H:%M:%S")                    # Page Title
     table += '</title></head><body><table class="sortable">'                        # Setup Table
     table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'    # Add the Header
     
-    # Every element (and use!) in API
+    # Every element (and use!) in the API
     apiElements = list()
     apiElements.extend(apiModule.subroutines)
     
@@ -382,9 +381,9 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
                                 "<span style='font-size:"+str(fontSizeReduced)+"pt'> in " + \
                                 module.name+"<span style='font-size:"+str(fontSize)+"pt'>")
             if (len(elementsFound) == 0):                                   # If no elements have been found
-                table += "<td></td>"                                            # make an empty table cell
+                table += "<td></td>"                                            # add an empty table cell
             else:                                                           # otherwise
-                table += "<td><p style='font-size:"+str(fontSize)+"pt'>"        # make all the matched up elements
+                table += "<td><p style='font-size:"+str(fontSize)+"pt'>"        # add all the matched up elements
                 table += ", <br>".join(elementsFound)
                 table += "</p></td>"
             
