@@ -58,6 +58,7 @@ module clubb_api_module
     dp  ! Double Precision
 
   use constants_clubb, only : &
+    cloud_frac_min, & ! Threshold for cloud fractions
     cm3_per_m3, & ! Cubic centimeters per cubic meter
     Cp, & ! Dry air specific heat at constant p [J/kg/K]
     em_min, & ! Minimum value for em (turbulence kinetic energy)
@@ -92,6 +93,7 @@ module clubb_api_module
     rr_tol, & ! Tolerance value for r_r [kg/kg]
     rs_tol, & ! Tolerance value for r_s [kg/kg]
     rt_tol, & ! [kg/kg]
+    rc_tol, & ! Tolerance value for r_c  [kg/kg]
     thl_tol, & ! [K]
     w_tol_sqd ! [m^2/s^2]
 
@@ -138,6 +140,7 @@ module clubb_api_module
 
   use parameters_tunable, only : &
     l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    C6rt, & ! Low Skewness in C6rt Skw. Function  [-]
     C7, & ! Low Skewness in C7 Skw. Function    [-]
     C8, & ! Coef. #1 in C8 Skewness Equation    [-]
     C11, & ! Low Skewness in C11 Skw. Function   [-]
@@ -231,7 +234,7 @@ module clubb_api_module
     l_fix_chi_eta_correlations, &
     l_const_Nc_in_cloud, &
     hydromet_dim, Lscale_max, &
-    l_prescribed_avg_deltaz, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
+    l_prescribed_avg_deltaz, C6rt, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
     hydromet_list, hydromet_tol, &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
