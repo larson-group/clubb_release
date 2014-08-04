@@ -3,7 +3,7 @@ $Id$
 
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2013
+*                       This code is (C) 2006-2014
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -65,6 +65,7 @@ these variables; and the parameters to tune (C1, beta, etc.).
 ***********************************************************************
 CLUBB is a single-column atmospheric model written in ISO Fortran 95, and
 executed using scripts written in the GNU Bash scripting language.
+Some utilities for CLUBB have implemented in MATLAB, Python, or Perl.
 
 This quick start guide has instructions for checking CLUBB out from the UWM
 repositories, compiling CLUBB using the gfortran compiler, running one of the
@@ -106,7 +107,8 @@ your password will be entered.
 -------------------------------------------------------
 Before CLUBB can be run, the source code must first be compiled. CLUBB is known
 to compile properly with various Fortran 95 compilers, including g95 and
-gfortran, which are both free.
+gfortran, which are both free.  The CLUBB code relies on a script called mkmf 
+which requires your system to have Perl installed.
 
 To compile, change directories to the CLUBB source directory (e.g. "clubb"),
 and then to the compile directory within the CLUBB source directory.
@@ -268,9 +270,9 @@ manage to compile CLUBB on a new configuration and would like to share it with
 other users feel free to send us an email with your configuration attached.
 
 We mainly use the GNU Fortran compiler on Intel and AMD x64 processors running 
-Redhat Enterprise 5.  GNU Fortran <http://gcc.gnu.org/fortran/> has been tested 
-on x64 & x86 GNU/Linux and MacOS X. Other configurations that have been used to
-compile CLUBB can be found in the compile/ config directory.
+CentOS 6.5.  GNU Fortran <http://gcc.gnu.org/fortran/> has been tested 
+on x64 & x86 GNU/Linux and MacOS X systems. Other configurations that have been 
+used to compile CLUBB can be found in the compile/ config directory.
 
 Older versions of the GNU Fortran compiler (GCC) may not work.  The default 
 version on Redhat Enterprise 5 does not. Install and use gfortran44 instead.
@@ -284,7 +286,7 @@ each compiler and use -M or -I flags to specify their location.
 
 In order to get similar results on differing architectures, platforms, and
 compilers, initially try a conservative optimization and enable 
-IEEE-754 standard style floating point math.  On x86 compatible computers 
+IEEE-754 standard style floating-point math.  On x86 compatible computers 
 enabling SSE or SSE2 with a compiler flag is usually the best way to do this.
 
 Requirements for compiling and running CLUBB:
@@ -308,7 +310,7 @@ G. netCDF >= v3.5.1;  We have not tested our code with anything older.
    If you do not use netCDF, you must remove -DNETCDF from the preprocessor
    flags, found in the compile/config/<PLATFORM>.bash file, and
    remove -lnetcdf from the LDFLAGS.
-H. MATLAB, Octave or NCAR graphics for viewing the netCDF output data.
+H. MATLAB, GNU Octave or NCAR graphics for viewing the netCDF output data.
 
 To compile the code, perform the following three steps:
 1. $ cd <CLUBB BASE DIRECTORY>/compile
@@ -476,10 +478,10 @@ by CLUBB in a host model.  These include:
   using AMD processors and the Intel MKL using Intel processors.
   The ATLAS version of BLAS has been carefully configured to work well with 
   both after being tuned at compile time to your specific setup.
-  It is probably best to avoid the current Sun Performance Library for 
+  It is probably best to avoid the current Oracle Performance Library for 
   production simulations, since it appears to have a high OpenMP overhead 
   when solving the matrices in CLUBB.
-  On IBM AIX the includedlibrary ESSL lacks the band diagonal solvers that 
+  On IBM AIX the included library ESSL lacks the band diagonal solvers that 
   CLUBB uses, so regular LAPACK must be used.
 
 3. If the host model's timestep is less than a minute, then a time-saving option
@@ -572,7 +574,7 @@ also do make distclean without the need to change directories.
    Edit tunable_parameters.in if you are an expert and wish to try to optimize 
    the solution accuracy.  The file tunable_parameters.in contains values of the
    physical parameters that are embedded in parameterized terms in CLUBB's
-   equation set.  They are not constants of nature, nor are they configuration
+   equation set.  They are neither constants of nature, nor are they configuration
    specifications such as paths to input files.  They are specified constants
    found in the model equation set (for example, C5, C8, etc.; see the CLUBB
    model equation set in ./doc/CLUBBeqns.pdf for more detail).  The default
@@ -670,7 +672,7 @@ The sounding files:
   All cases need a _surface.in file. _sclr_sounding.in, _edsclr_sounding.in,
   and _ozone_sounding.in files are optional.
 
-Current cases:
+Some of best tested cases:
   arm
   atex
   bomex
@@ -825,7 +827,7 @@ E.g. If desired, the horizontal winds (variables um and vm in the code)
 could be fixed to the COAMPS-LES value at each timestep, while the other
 fields will evolve as in the standard single-column run.
 
-Currently, we have only tested the code with GrADS data from COAMPS-LES.  Data 
+Currently, we have only tested the code with data from COAMPS and SAM-LES.  Data 
 from CLUBB also works, but should result in similar results to not 
 using input_fields and so is less useful.
 
@@ -1039,7 +1041,7 @@ the scalar variable must be added.  See input/case_setups/cobra_sclr_sounding.in
 for an example.
 
 Finally, if you wish to see the results of your calculations, you will need to
-append the names of variabless to the vars_zt and var_zm portion of the 
+append the names of variables to the vars_zt and var_zm portion of the 
 &stats namelist.  The file scalars_stats.in has this done already.
 The variables follow the convention of having the index number appended after 
 the sclr portion of their name.  For example, the first scalar mean is 'sclr1m',
@@ -1062,7 +1064,7 @@ an example of how to do this.
   This is an optional interactive radiation scheme, developed separately from
   CLUBB by Stephens, et al. The code used in CLUBB was obtained from Norm Wood 
   on 2004/07/10.
-  When enabled, the radiation will be calculated using this interative scheme rather
+  When enabled, the radiation will be calculated using this interactive scheme rather
   than an analytic computation or prescribed radiation scheme (to prevent double counting).
   BUGSrad is enabled in the input/case_setups/<CASE NAME>_model.in file by setting the
   variable rad_scheme = "bugsrad" in namelist &radiation_setting.
@@ -1141,7 +1143,7 @@ Morrison microphysics code:
 -----------------------------|--------------------------------------------------
 Logical flag                 |  If true then:
 
-  l_ice_microphys      = .true.   Allow ice and snow to form.
+  l_ice_microphys  = .true.   Allow ice and snow to form.
 
   l_graupel        = .true.   Allow graupel to form.
 
@@ -1197,8 +1199,9 @@ the Morrison microphysics are as follows:
   code handles its own sedimentation.  Therefore, xm_mc includes xm_sd in 
   addition to local processes and clipping.
 
-  The Morrison microphysics is also configured to allow for Latin Hypercube
-  sampling for UW Milwaukee users.  See the input/case_setups/README.
+  The Morrison and Khairoutdinov Kogan microphysics is also configured to allow
+  for Subgrid Importance Latin Hypercube sampling.  See the file 
+  input/case_setups/README for more information on this.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -1273,7 +1276,8 @@ up2        = <u'^2>      = Variance of u                                [m^2/s^2
 vp2        = <v'^2>      = Variance of v                                [m^2/s^2]
 rrainm     = <r_r>       = Mean rain water mixing ratio, r_r            [kg/kg]
 
-Information on and a description of CLUBB's vertical grid can be found at ../src/CLUBB_core/grid_class.F90.
+Information on and a description of CLUBB's vertical grid can be found in the 
+source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
 
 -------------------------------------------------------------------------                            
 - (7.3) Variable locations in CLUBB:
@@ -1364,3 +1368,8 @@ go to <CLUBB BASE DIRECTORY>/compile and type
 
 $ ./clean_all.bash
 
+2. Several vendors provide command-line and graphical debuggers that work with 
+CLUBB.  The script run_scm_debug.bash is configured to use the PGI debugger
+by default, but it could be modified to use any number of free or commercial 
+debuggers.  When doing so ensure the debugging flags for your compiler have
+been enabled in your config file.
