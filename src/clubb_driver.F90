@@ -33,7 +33,8 @@ module clubb_driver
              ( params, runfile, l_stdout, &
                err_code, model_flags_array )
     ! Description:
-    !   Subprogram to integrate the pde equations for pdf closure.
+    !   Subprogram to integrate the partial differential equations for pdf
+    !   closure.
 
     ! References:
     !   None
@@ -284,7 +285,8 @@ module clubb_driver
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
     ! when doing a tuning run. -dschanen 31 Jan 2007
-    integer :: omp_get_thread_num ! Function
+    use omp_lib, only: &
+      omp_get_thread_num ! Function
 #endif
     ! External
     intrinsic :: mod, real, int, trim, floor, max, sqrt

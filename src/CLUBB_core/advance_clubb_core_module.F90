@@ -2976,7 +2976,7 @@ module advance_clubb_core_module
 
       ! Local variables
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        s_mean,                & ! Mean extended cloud water mixing ratio of the 
+        chi_mean,                & ! Mean extended cloud water mixing ratio of the 
     !                            two Gaussian distributions
         vert_cloud_frac_upper, & ! Fraction of cloud in top half of grid box
         vert_cloud_frac_lower, & ! Fraction of cloud in bottom half of grid box
@@ -2988,7 +2988,7 @@ module advance_clubb_core_module
 
       do k = 1, gr%nz
 
-        s_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%chi_1 + &
+        chi_mean(k) =      pdf_params(k)%mixt_frac  * pdf_params(k)%chi_1 + &
                     (1.0_core_rknd-pdf_params(k)%mixt_frac) * pdf_params(k)%chi_2
 
       end do
@@ -3020,7 +3020,7 @@ module advance_clubb_core_module
 
             vert_cloud_frac_upper(k) = &
                      ( ( 0.5_core_rknd / gr%invrs_dzm(k) ) / ( gr%zm(k) - gr%zt(k) ) ) &
-                     * ( rcm(k) / ( rcm(k) + abs( s_mean(k+1) ) ) )
+                     * ( rcm(k) / ( rcm(k) + abs( chi_mean(k+1) ) ) )
 
             vert_cloud_frac_upper(k) = min( 0.5_core_rknd, vert_cloud_frac_upper(k) )
 
@@ -3039,7 +3039,7 @@ module advance_clubb_core_module
 
             vert_cloud_frac_lower(k) = &
                      ( ( 0.5_core_rknd / gr%invrs_dzm(k-1) ) / ( gr%zt(k) - gr%zm(k-1) ) ) &
-                     * ( rcm(k) / ( rcm(k) + abs( s_mean(k-1) ) ) )
+                     * ( rcm(k) / ( rcm(k) + abs( chi_mean(k-1) ) ) )
 
             vert_cloud_frac_lower(k) = min( 0.5_core_rknd, vert_cloud_frac_lower(k) )
 
