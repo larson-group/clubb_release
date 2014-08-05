@@ -18,7 +18,9 @@ fontSize = 12       # Controls the general font of the output table
 fontSizeReduced = 7 # Controls the font of the parent modules in the table
 
 # Represents a module in FORTRAN and contains lists of objects which represent the various
-# subroutines, functions, variables, and derived types which are in that module
+# subroutines, functions, variables, and derived types which are in that module.
+# For now, programs are treated as Modules. In the future this could be split up or
+# this class could be renamed to Container - or something similar.
 class Module:
     name = ""               # The name of the module (module [name])
     subroutines = list()    # Every subroutine definition found in the module
@@ -173,6 +175,7 @@ def parseModulesInFile(filename):
     
     # Go through every line in the current file
     for n in range(0,len(lines)):
+    
         lines[n] = lines[n].split("!")[0] # remove any comments
         
         # Parsing Use Statements
@@ -211,7 +214,7 @@ def parseModulesInFile(filename):
             functionStart = n                                                                       # Get the line number
             functionName = lines[n].partition("function")[-1].split("(")[0].split("&")[0].strip()   # the name is everything after "function" and before "("
             
-        if re.match(r"^\s*end\sfunction\s", lines[n], re.IGNORECASE): # End Function
+        if re.match(r"^\s*end\sfunction", lines[n], re.IGNORECASE): # End Function
             functionEnd = n                                                                         # Get the line number
             moduleFunctions.append(Element(functionName, functionUses, functionStart, functionEnd)) # Add the function to the module's function list
             functionName = ""       # Reset the derived type temp vars
@@ -224,7 +227,7 @@ def parseModulesInFile(filename):
             subroutineStart = n
             subroutineName = lines[n].partition("subroutine")[-1].split("(")[0].split("&")[0].strip()
             
-        if re.match(r"^\s*end\ssubroutine\s", lines[n], re.IGNORECASE): # Subroutine End
+        if re.match(r"^\s*end\ssubroutine", lines[n], re.IGNORECASE): # Subroutine End
             subroutineEnd = n
             moduleSubroutines.append(Element(subroutineName, subroutineUses, subroutineStart, subroutineEnd))
             subroutineName = ""
@@ -233,11 +236,11 @@ def parseModulesInFile(filename):
             subroutineEnd = -1
         
         # Parsing Modules
-        if re.match(r"^\s*module\s", lines[n], re.IGNORECASE): # Module Start
+        if re.match(r"^\s*(module|program)\s", lines[n], re.IGNORECASE): # Module Start
             moduleStart = n                                         # Get the line number
-            moduleName = lines[n].partition("module")[2].strip()    # The name is what follows "module"
+            moduleName = re.split("module|program", lines[n])[-1].strip()    # The name is what follows "module"
             
-        if re.match(r"^\s*end\smodule\s", lines[n], re.IGNORECASE): # Module End
+        if re.match(r"^\s*end\s(module|program)\s", lines[n], re.IGNORECASE): # Module End
             moduleEnd = n                                                                   # Get the line number
             retModules.append(Module(moduleName, moduleSubroutines, moduleFunctions, \
                 moduleVariables, moduleDerivedTypes, moduleUses, moduleStart, moduleEnd))   # Add the module to the list of modules being returned
@@ -249,7 +252,7 @@ def parseModulesInFile(filename):
             moduleVariables = list()    #
             moduleUses = list()         #
             moduleDerivedTypes = list() #
-            
+        
     return retModules
 
 # Parses an API (reads the public vars and subroutines)
@@ -405,22 +408,22 @@ def main():
     # If only one file is given as an arg, print out what is found in it (debugging purposes)
     if (len(sys.argv) == 2): 
         baseModule = parseModulesInFile(sys.argv[1]).pop()
-        print baseModule.name
+        print baseModule.name, baseModule.startLine, baseModule.endLine
         print "subroutines: "
         for subroutine in baseModule.subroutines:
-            print subroutine, subroutine.startLine, subroutine.endLine
+            print subroutine.name, subroutine.startLine, subroutine.endLine
             for use in subroutine.uses:
-                print "    ", use, "only: ", ", ".join(use.elements)
+                print "    ", use.name, "only: ", ", ".join(use.elements)
         print "functions: "
         for function in baseModule.functions:
-            print function
+            print function.name
             for use in function.uses:
-                print "    ", use, "only: ", ", ".join(use.elements)
+                print "    ", use.name, "only: ", ", ".join(use.elements)
         print "variables: ", ([str(variable.name) for variable in baseModule.variables])
         print "derivedTypes: ", ([str(derivedType.name) for derivedType in baseModule.derivedTypes])
         print "uses:"
         for use in baseModule.uses:
-            print use, "only: ", ", ".join(use.elements)
+            print use.name, "only: ", ", ".join(use.elements)
     # If the expected arguments are given
     elif (len(sys.argv) == 5):
         samModules = list()
