@@ -55,7 +55,7 @@ module output_netcdf
       sec_per_min
 
     use stats_variables, only: &
-        l_allow_small_stats_tout
+      l_allow_small_stats_tout
 
     implicit none
 
@@ -359,7 +359,7 @@ module output_netcdf
     stat = nf90_def_var( ncid, "latitude", NF90_FLOAT, & 
                          (/LatDimId/), LatVarId )
 
-    ! Altitude = meters above the surfac3 = Z
+    ! Altitude = meters above the surface = Z
     stat = nf90_def_var( ncid, "altitude", NF90_FLOAT, & 
                         (/AltDimId/), AltVarId )
 
@@ -464,7 +464,7 @@ module output_netcdf
     if ( stat /= NF90_NOERR ) then
       write(fstderr,*) "Error closing file "//  & 
         trim( ncf%fname )//": ", trim( nf90_strerror( stat ) )
-      stop
+      stop "Fatal error"
     end if
 
     return
@@ -525,7 +525,17 @@ module output_netcdf
 
     implicit none
 
-    intrinsic :: date_and_time
+    ! External
+    intrinsic :: date_and_time, huge, selected_real_kind, size, any, trim
+
+    ! Enabling l_output_file_run_date allows the date and time that the netCDF
+    ! output file is created to be included in the netCDF output file.
+    ! Disabling l_output_file_run_date means that this information will not be
+    ! included in the netCDF output file.  The advantage of disabling this
+    ! output is that it allows for a check for binary differences between two
+    ! netCDF output files.
+    logical, parameter :: &
+      l_output_file_run_date = .false.
 
     ! Input/Output Variables
     type (stat_file), intent(inout) :: ncf
@@ -548,14 +558,6 @@ module output_netcdf
     ! Dimensions for variables
     integer, dimension(4) :: var_dim
 
-    ! Enabling l_output_file_run_date allows the date and time that the netCDF
-    ! output file is created to be included in the netCDF output file.
-    ! Disabling l_output_file_run_date means that this information will not be
-    ! included in the netCDF output file.  The advantage of disabling this
-    ! output is that it allows for a check for binary differences between two
-    ! netCDF output files.
-    logical, parameter :: &
-      l_output_file_run_date = .false.
 
 !-------------------------------------------------------------------------------
 !      Typical valid ranges (IEEE 754)
@@ -566,6 +568,9 @@ module output_netcdf
 
 !      We use a 4 byte data model for NetCDF and GrADS to save disk space
 !-------------------------------------------------------------------------------
+
+    ! ---- Begin Code ----
+
     var_range(1) = -huge( var_range(1) )
     var_range(2) =  huge( var_range(2) )
 
@@ -633,15 +638,15 @@ module output_netcdf
       end if
     end do
 
-    if ( l_error ) stop "Error in definition"
+    if ( l_error ) stop "Error in netCDF file definition."
 
     deallocate( stat )
 
     if ( l_output_file_run_date ) then
-       allocate( stat(3) )
+      allocate( stat(3) )
     else
-       allocate( stat(2) )
-    endif
+      allocate( stat(2) )
+    end if
 
     ! Define global attributes of the file, for reproducing the results and
     ! determining how a run was configured
@@ -650,22 +655,22 @@ module output_netcdf
 
     if ( l_output_file_run_date ) then
 
-       ! Enabling l_output_file_run_date allows the date and time that the
-       ! netCDF output file is created to be included in the netCDF output file.
-       ! Disabling l_output_file_run_date means that this information will not
-       ! be included in the netCDF output file.  The advantage of disabling this
-       ! output is that it allows for a check for binary differences between two
-       ! netCDF output files.
+      ! Enabling l_output_file_run_date allows the date and time that the
+      ! netCDF output file is created to be included in the netCDF output file.
+      ! Disabling l_output_file_run_date means that this information will not
+      ! be included in the netCDF output file.  The advantage of disabling this
+      ! output is that it allows for a check for binary differences between two
+      ! netCDF output files.
 
-       ! Figure out when the model is producing this file
-       call date_and_time( current_date, current_time )
+      ! Figure out when the model is producing this file
+      call date_and_time( current_date, current_time )
 
-       stat(3) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
-                              current_date(1:4)//'-'//current_date(5:6)//'-'// &
-                              current_date(7:8)//' '// &
-                              current_time(1:2)//':'//current_time(3:4) )
+      stat(3) = nf90_put_att(ncf%iounit, NF90_GLOBAL, "created_on", &
+                             current_date(1:4)//'-'//current_date(5:6)//'-'// &
+                             current_date(7:8)//' '// &
+                             current_time(1:2)//':'//current_time(3:4) )
 
-    endif ! l_output_file_run_date
+    end if ! l_output_file_run_date
 
     if ( any( stat /= NF90_NOERR ) ) then
       write(fstderr,*) "Error writing model information"
@@ -853,7 +858,7 @@ module output_netcdf
 !===============================================================================
   character function lchar( l_input )
 ! Description:
-!   Cast a logical to a character data type
+!   Cast a logical to a character data type.
 !
 ! References:
 !   None
@@ -861,6 +866,7 @@ module output_netcdf
 
     implicit none
 
+    ! Input Variable
     logical, intent(in) :: l_input
 
     ! ---- Begin Code ----
