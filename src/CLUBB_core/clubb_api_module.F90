@@ -210,6 +210,9 @@ module clubb_api_module
   use stats_zt, only : &
     nvarmax_zt ! Maximum variables allowed
 
+  use stats_sfc, only : &
+    nvarmax_sfc
+
   use variables_diagnostic_module, only : &
     Lscale, & ! Mixing lengths
     wp2_zt, & ! w'^2 on thermo. grid     [m^2/s^2]
@@ -236,6 +239,7 @@ module clubb_api_module
     stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
     stats_accumulate_hydromet_api, stats_finalize_api, &
     stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
+    stats_init_sfc_api, &
     thlm2T_in_K_api, T_in_K2thlm_api, calculate_spurious_source_api, genrand_init_api
 
 
@@ -261,7 +265,7 @@ module clubb_api_module
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 #endif
-    pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, &
+    pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, nvarmax_sfc, &
     zt, zm, rad_zt, rad_zm, sfc, l_stats_last, stats_tsamp, stats_tout, &
     l_output_rad_files, l_stats, l_stats_samp, l_grads, fname_rad_zt, fname_rad_zm, fname_sfc, &
     ztscr01, ztscr02, ztscr03, ztscr04, ztscr05, ztscr06, ztscr07, ztscr08, ztscr09, &
@@ -1833,6 +1837,28 @@ contains
       vars_zt, l_error )
 
   end subroutine stats_init_zt_api
+
+  !================================================================================================
+  ! stats_init_sfc - Initializes array indices for sfc.
+  !================================================================================================
+
+  subroutine stats_init_sfc_api( &
+    vars_sfc, l_error )
+
+    use stats_sfc, only : stats_init_sfc, nvarmax_sfc
+
+    implicit none
+
+    ! Input Variable
+    character(len= * ), dimension(nvarmax_sfc), intent(in) :: vars_sfc
+
+    ! Input / Output Variable
+    logical, intent(inout) :: l_error
+
+    call stats_init_sfc( &
+      vars_sfc, l_error )
+
+  end subroutine stats_init_sfc_api
 
   !================================================================================================
   ! thlm2T_in_K - Calculates absolute temperature from liquid water potential temperature.
