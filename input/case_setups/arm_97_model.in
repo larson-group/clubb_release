@@ -145,7 +145,7 @@ l_var_covar_src = .true.
 lh_microphys_type = "interactive",
 l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
-lh_microphys_calls = 8,
+lh_num_samples = 8,
 lh_sequence_length = 1,
 l_fix_chi_eta_correlations = .true.,
 

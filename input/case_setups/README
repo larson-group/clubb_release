@@ -259,10 +259,10 @@ l_lh_vert_overlap | logical
 
 l_lh_cloud_weighted_sampling | logical
   Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
-  lh_microphys_calls must be an even number, and sequence length must be 1 in
+  lh_num_samples must be an even number, and sequence length must be 1 in
   order to enable this.
 
-lh_microphys_calls | integer
+lh_num_samples | integer
   Number of latin hypercube samples to call the microphysics with (K&K).
 
 lh_sequence_length | integer
