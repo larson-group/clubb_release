@@ -279,8 +279,6 @@ module clubb_driver
     use fill_holes, only: &
         vertical_avg  ! Procedure(s)
 
-    implicit none
-
 #ifdef _OPENMP
     ! Because Fortran I/O is not thread safe, we use this here to
     ! ensure that no model uses the same file number simultaneously
@@ -288,6 +286,9 @@ module clubb_driver
     use omp_lib, only: &
       omp_get_thread_num ! Function
 #endif
+
+    implicit none
+
     ! External
     intrinsic :: mod, real, int, trim, floor, max, sqrt
 
