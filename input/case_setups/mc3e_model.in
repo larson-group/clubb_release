@@ -25,7 +25,7 @@ grid_type = 2     ! Select grid type:
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 150.0   ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 27625.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top = 28625.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../run_scripts/) and filename of data file that contains
@@ -53,7 +53,7 @@ time_initial = 0.0     ! Model start time [seconds since midnight on start date]
 time_final = 3963600.0 ! Model end   time [seconds since midnight on start date]
 
 dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 600.0   ! Radiation timestep [s]
+dt_rad = 1800.0   ! Radiation timestep [s]
 
 p_sfc = 969.0e2  ! Pressure at model base              [Pa]
 
@@ -139,19 +139,38 @@ l_prescribed_avg_deltaz = .false.
 microphys_scheme = "morrison"
 l_ice_microphys = .true.
 l_graupel = .true.
+l_const_Nc_in_cloud = .true.
+l_var_covar_src = .true.
 
-! Addition for using latin hypercube sampling
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 0.766
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 0.429
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud = 0.766
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud = 0.429
+lh_microphys_type = "interactive",
+l_lh_vert_overlap = .true.,
+l_lh_cloud_weighted_sampling = .true.,
+lh_microphys_calls = 8,
+lh_sequence_length = 1,
+l_fix_chi_eta_correlations = .true.,
 
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 0.897
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below = 0.766
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below = 0.429
+sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 4.0
+sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 2.0
 
-sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2            = 0.003
+sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud = 1.0
+sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud = 0.5
+sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud = 1.0
+sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud = 0.5
+sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud = 1.0
+sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud = 0.5
+
+sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 4.0
+sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 2.0
+
+sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below = 1.0
+sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below = 0.5
+sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below = 1.0
+sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below = 0.5
+sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below = 1.0
+sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below = 0.5
+
+sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2 = 0.003
+
 
 /
 
