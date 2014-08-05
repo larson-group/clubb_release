@@ -26,6 +26,7 @@ OUTPUT_DIR="/usr/nightly_tests/nightly_tests/output"
 NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 CUSTOM_OUTPUT_DIR=""
+NETCDF=false
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
@@ -73,7 +74,7 @@ run_case()
 # Note that we use `"$@"' to let each command-line parameter expand to a 
 # separate word. The quotes around `$@' are essential!
 # We need TEMP as the `eval set --' would nuke the return value of getopt.
-TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,help \
+TEMP=`getopt -o z:m:l:t:s:p:o:nhe --long zt_grid:,zm_grid:,levels:,timestep_test:,stats:,parameter_file:,output_directory:,performance_test,nightly,netcdf,help \
      -n 'run_scm.bash' -- "$@"`
 
 if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
@@ -176,6 +177,9 @@ while true ; do
 				fi
 			fi
 			shift 2 ;;
+                --netcdf)
+                        NETCDF=true
+                        shift;;
 		-h|--help) # Print the help message
 			echo -e "Usage: run_scm.bash [OPTION]... case_name"
 			echo -e "\t-z, --zt_grid=FILE\t\tThe path to the zt grid file"
@@ -187,6 +191,7 @@ while true ; do
 			echo -e "\t-r, --performance_test\t\tDisable statistics output and set debug"
 			echo -e "\t\t\t\t\tlevel to 0 for performance testing"
 			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
+                        echo -e "\t--netcdf\t\tEnable NetCDF output"
 			echo -e "\t-h, --help\t\t\tPrints this help message"
 
 			exit 1 ;;
@@ -220,6 +225,12 @@ if [ ! -e "$model_file" ];
 then
 	echo "$model_file does not exist"
 	exit 1
+fi
+
+# If NetCDF output is enabled, modify model file
+if [ $NETCDF == true ]
+then
+        sed -i 's/= "grads"/= "netcdf"/g' $model_file
 fi
 
 # Set defaults if they were not passed in
@@ -415,6 +426,13 @@ then
 		mv ../output/* $CUSTOM_OUTPUT_DIR
 	fi
 fi
+
+# Revert model file
+if [ $NETCDF == true ]
+then
+        sed -i 's/= "netcdf"/= "grads"/g' $model_file
+fi
+
 
 cd $restoreDir
 
