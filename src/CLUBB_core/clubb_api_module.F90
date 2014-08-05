@@ -184,7 +184,25 @@ module clubb_api_module
     l_output_rad_files, & ! Flag to turn off radiation statistics output
     l_stats, & ! Main flag to turn statistics on/off
     l_stats_samp, & ! Sample flag for current time step
-    l_grads ! Output to GrADS format
+    l_grads, & ! Output to GrADS format
+    fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
+    fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
+    fname_sfc, & ! Name of the stats file for surface only fields
+    l_netcdf, & ! Output to NetCDF format
+    ! These are used in CAM only
+    ztscr01, ztscr02, ztscr03, &
+    ztscr04, ztscr05, ztscr06, &
+    ztscr07, ztscr08, ztscr09, &
+    ztscr10, ztscr11, ztscr12, &
+    ztscr13, ztscr14, ztscr15, &
+    ztscr16, ztscr17, ztscr18, &
+    ztscr19, ztscr20, ztscr21, &
+    zmscr01, zmscr02, zmscr03, &
+    zmscr04, zmscr05, zmscr06, &
+    zmscr07, zmscr08, zmscr09, &
+    zmscr10, zmscr11, zmscr12, &
+    zmscr13, zmscr14, zmscr15, &
+    zmscr16, zmscr17
 
   use stats_zm, only : &
     nvarmax_zm ! Maximum variables allowed
@@ -245,8 +263,12 @@ module clubb_api_module
 #endif
     pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, &
     zt, zm, rad_zt, rad_zm, sfc, l_stats_last, stats_tsamp, stats_tout, &
-    l_output_rad_files, l_stats, l_stats_samp, l_grads, &
-    nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp, &
+    l_output_rad_files, l_stats, l_stats_samp, l_grads, fname_rad_zt, fname_rad_zm, fname_sfc, &
+    ztscr01, ztscr02, ztscr03, ztscr04, ztscr05, ztscr06, ztscr07, ztscr08, ztscr09, &
+    ztscr10, ztscr11, ztscr12, ztscr13, ztscr14, ztscr15, ztscr16, ztscr17, ztscr18, &
+    ztscr19, ztscr20, ztscr21, zmscr01, zmscr02, zmscr03, zmscr04, zmscr05, zmscr06, &
+    zmscr07, zmscr08, zmscr09, zmscr10, zmscr11, zmscr12, zmscr13, zmscr14, zmscr15, &
+    zmscr16, zmscr17, l_netcdf, nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp, &
     assignment( = ), genrand_state, genrand_srepr, genrand_intg
 
 contains
