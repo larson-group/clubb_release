@@ -150,7 +150,11 @@ module clubb_api_module
     mult_coef ! Coef. applied to log(avg dz/thresh)[-]
 
   use parameter_indices, only:  &
-    nparams ! Variable(s)
+    nparams, & ! Variable(s)
+    iSkw_denom_coef, & ! Index of iSkw_denom_coef
+    ibeta, & ! index of beta
+    iC11, &  ! Index of C11
+    iC11b ! Index of C11b
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -235,7 +239,7 @@ module clubb_api_module
     l_const_Nc_in_cloud, &
     hydromet_dim, Lscale_max, &
     l_prescribed_avg_deltaz, C6rt, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
-    hydromet_list, hydromet_tol, &
+    iSkw_denom_coef, ibeta, iC11, iC11b, hydromet_list, hydromet_tol, &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 #endif
