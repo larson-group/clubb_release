@@ -915,7 +915,9 @@ module clubb_driver
     allocate( hydromet_pdf_params(gr%nz) )
 
     ! Initialize to 0.
-    call init_hydromet_pdf_params( hydromet_pdf_params )
+    do k=1,gr%nz
+      call init_hydromet_pdf_params( hydromet_pdf_params(k) )
+    end do
 
     ! Allocate the correlation arrays
     allocate(corr_array_1(d_variables, d_variables, gr%nz))

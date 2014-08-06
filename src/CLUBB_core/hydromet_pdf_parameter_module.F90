@@ -57,43 +57,32 @@ contains
     ! References:
     !-----------------------------------------------------------------------
 
-    use grid_class, only: &
-        gr  ! Variable(s)
-
     use constants_clubb, only: &
         zero  ! Constant(s)
 
     implicit none
 
     ! Output Variable
-    type(hydromet_pdf_parameter), dimension(gr%nz), intent(out) :: &
+    type(hydromet_pdf_parameter), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 
-    ! Local Variable
-    integer :: k  ! Loop index
-
-
     ! Initialize hydromet_pdf_params.
-    do k = 1, gr%nz, 1
 
-       hydromet_pdf_params(k)%hm1 = zero
-       hydromet_pdf_params(k)%hm2 = zero
-       hydromet_pdf_params(k)%mu_hm_1 = zero
-       hydromet_pdf_params(k)%mu_hm_2 = zero
-       hydromet_pdf_params(k)%sigma_hm_1 = zero
-       hydromet_pdf_params(k)%sigma_hm_2 = zero
+    hydromet_pdf_params%hm1 = zero
+    hydromet_pdf_params%hm2 = zero
+    hydromet_pdf_params%mu_hm_1 = zero
+    hydromet_pdf_params%mu_hm_2 = zero
+    hydromet_pdf_params%sigma_hm_1 = zero
+    hydromet_pdf_params%sigma_hm_2 = zero
 
-       hydromet_pdf_params(k)%mu_Ncn_1 = zero
-       hydromet_pdf_params(k)%mu_Ncn_2 = zero
-       hydromet_pdf_params(k)%sigma_Ncn_1 = zero
-       hydromet_pdf_params(k)%sigma_Ncn_2 = zero
+    hydromet_pdf_params%mu_Ncn_1 = zero
+    hydromet_pdf_params%mu_Ncn_2 = zero
+    hydromet_pdf_params%sigma_Ncn_1 = zero
+    hydromet_pdf_params%sigma_Ncn_2 = zero
 
-       hydromet_pdf_params(k)%precip_frac = zero
-       hydromet_pdf_params(k)%precip_frac_1 = zero
-       hydromet_pdf_params(k)%precip_frac_2 = zero
-
-    enddo ! k = 1, gr%nz, 1
-
+    hydromet_pdf_params%precip_frac = zero
+    hydromet_pdf_params%precip_frac_1 = zero
+    hydromet_pdf_params%precip_frac_2 = zero
 
     return
 
