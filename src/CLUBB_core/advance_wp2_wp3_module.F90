@@ -385,7 +385,6 @@ module advance_wp2_wp3_module
         iwp2_dp2, & 
         iwp2_pr1, & 
         iwp2_pr2, &
-        iwp2_4hd, &
         iwp3_ta, & 
         iwp3_ma, & 
         iwp3_tp, & 
@@ -393,7 +392,6 @@ module advance_wp2_wp3_module
         iwp3_dp1, & 
         iwp3_pr1, &
         iwp3_pr2, &
-        iwp3_4hd, &
         iwp23_matrix_condt_num
 
     use stats_variables, only:  & 
@@ -1032,8 +1030,7 @@ module advance_wp2_wp3_module
         C8b, & 
         C12, & 
         nu1_vert_res_dep, & 
-        nu8_vert_res_dep, &
-        nu_hd_vert_res_dep
+        nu8_vert_res_dep
 
     use constants_clubb, only:  & 
         three_halves, &
@@ -1104,15 +1101,13 @@ module advance_wp2_wp3_module
         iwp2_ac, & 
         iwp2_pr2, & 
         iwp2_pr1, &
-        iwp2_4hd, &
         iwp3_ta, & 
         iwp3_tp, & 
         iwp3_ma, & 
         iwp3_ac, & 
         iwp3_pr2, & 
         iwp3_pr1, & 
-        iwp3_dp1, &
-        iwp3_4hd
+        iwp3_dp1
 
     use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
 
@@ -1644,8 +1639,7 @@ module advance_wp2_wp3_module
         C8b, & 
         C12, & 
         nu1_vert_res_dep, & 
-        nu8_vert_res_dep, &
-        nu_hd_vert_res_dep
+        nu8_vert_res_dep
 
     use constants_clubb, only:  & 
         eps,          & ! Variable(s)
@@ -1717,15 +1711,13 @@ module advance_wp2_wp3_module
         iwp2_ac, & 
         iwp2_pr2, & 
         iwp2_pr1, &
-        iwp2_4hd, &
         iwp3_ta, & 
         iwp3_tp, & 
         iwp3_ma, & 
         iwp3_ac, & 
         iwp3_pr2, & 
         iwp3_pr1, & 
-        iwp3_dp1, &
-        iwp3_4hd
+        iwp3_dp1
 
     use csr_matrix_module, only: &
         intlc_5d_5d_ja_size ! Variable

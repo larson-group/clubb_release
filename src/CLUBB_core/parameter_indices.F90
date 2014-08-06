@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 65 ! Total tunable parameters
+    nparams = 64 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -88,26 +88,25 @@ module parameter_indices
     inu9              = 45, & 
     inu10             = 46, &
     ic_K_hm           = 47, & 
-    inu_hm            = 48, & 
-    inu_hd            = 49
+    inu_hm            = 48 
 
   integer, parameter, public :: & 
-    igamma_coef       = 50, & 
-    igamma_coefb      = 51, & 
-    igamma_coefc      = 52, & 
-    imu               = 53, & 
-    ibeta             = 54, & 
-    ilmin_coef        = 55, & 
-    imult_coef        = 56, &
-    itaumin           = 57, & 
-    itaumax           = 58, &
-    iLscale_mu_coef   = 59, &
-    iLscale_pert_coef = 60, &
-    ialpha_corr       = 61, &
-    iSkw_denom_coef   = 62, &
-    ic_K10            = 63, &
-    ithlp2_rad_coef   = 64, &
-    ithlp2_rad_cloud_frac_thresh=65
+    igamma_coef       = 49, & 
+    igamma_coefb      = 50, & 
+    igamma_coefc      = 51, & 
+    imu               = 52, & 
+    ibeta             = 53, & 
+    ilmin_coef        = 54, & 
+    imult_coef        = 55, &
+    itaumin           = 56, & 
+    itaumax           = 57, &
+    iLscale_mu_coef   = 58, &
+    iLscale_pert_coef = 59, &
+    ialpha_corr       = 60, &
+    iSkw_denom_coef   = 61, &
+    ic_K10            = 62, &
+    ithlp2_rad_coef   = 63, &
+    ithlp2_rad_cloud_frac_thresh=64
 
 end module parameter_indices
 !-----------------------------------------------------------------------

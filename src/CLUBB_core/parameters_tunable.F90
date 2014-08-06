@@ -129,9 +129,8 @@ module parameters_tunable
     nu8   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: wp3        [m^2/s]
     nu9   = 20.00000_core_rknd, & ! Bg. Coef. Eddy Diffusion: up2/vp2    [m^2/s]
     nu10  = 0.000000_core_rknd, & ! Bg. Coef. Eddy Diffusion: edsclrm    [m^2/s]
-    nu_hm = 1.500000_core_rknd, & ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
-    nu_hd = 20000.00_core_rknd    ! Coef. for 4th-order hyper-diffusion  [m^4/s]
-!$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_hm, nu_hd)
+    nu_hm = 1.500000_core_rknd    ! Bg. Coef. Eddy Diffusion: hmm        [m^2/s]
+!$omp threadprivate(nu1, nu2, nu6, nu8, nu9, nu10, nu_hm)
 
 
   real( kind = core_rknd ), public, allocatable, dimension(:) :: & 
@@ -143,12 +142,8 @@ module parameters_tunable
     nu10_vert_res_dep,  & ! Background Coef. of Eddy Diffusion: edsclrm  [m^2/s]
     nu_hm_vert_res_dep    ! Background Coef. of Eddy Diffusion: hydromet [m^2/s]
 
-  real( kind = core_rknd ), public :: &
-    nu_hd_vert_res_dep   ! Constant coef. for 4th-order hyper-diffusion  [m^4/s]
-
 !$omp threadprivate(nu1_vert_res_dep, nu2_vert_res_dep, nu6_vert_res_dep, &
-!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_hm_vert_res_dep,  &
-!$omp   nu_hd_vert_res_dep )
+!$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_hm_vert_res_dep)
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
   ! beta should vary between 0 and 3, with 1.5 the standard value
@@ -214,7 +209,7 @@ module parameters_tunable
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-    nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
+    beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
     alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
@@ -242,11 +237,10 @@ module parameters_tunable
        "nu1             ", "c_K2            ", "nu2             ", "c_K6            ", &
        "nu6             ", "c_K8            ", "nu8             ", "c_K9            ", &
        "nu9             ", "nu10            ", "c_K_hm          ", "nu_hm           ", &
-       "nu_hd           ", "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", &
-       "mu              ", "beta            ", "lmin_coef       ", "mult_coef       ", &
-       "taumin          ", "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", &
-       "alpha_corr      ", "Skw_denom_coef  ", "c_K10           ", "thlp2_rad_coef  ", &
-       "thlp2_rad_cloud_" /)
+       "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", "mu              ", &
+       "beta            ", "lmin_coef       ", "mult_coef       ", "taumin          ", &
+       "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", "alpha_corr      ", &
+       "Skw_denom_coef  ", "c_K10           ", "thlp2_rad_coef  ", "thlp2_rad_cloud_" /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -331,7 +325,7 @@ module parameters_tunable
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                             c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-                            nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+                            gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                             Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                             thlp2_rad_cloud_frac_thresh )
@@ -590,16 +584,6 @@ module parameters_tunable
       nu10_vert_res_dep  =  nu10 * mult_factor_zt !We're unsure of the grid
       nu_hm_vert_res_dep =  nu_hm * mult_factor_zt
 
-      ! The value of nu_hd is based on an average grid box spacing of
-      ! 40 m.  The value of nu_hd should be adjusted proportionally to
-      ! the average grid box size, whether the average grid box size is
-      ! less than 40 m. or greater than 40 m.
-      ! Since nu_hd should be very large for large grid boxes, but
-      ! substantially smaller for small grid boxes, the grid spacing
-      ! adjuster is squared.
-
-      nu_hd_vert_res_dep = nu_hd * ( avg_deltaz / grid_spacing_thresh )**2
-
     else ! nu values are not adjusted
 
       nu1_vert_res_dep   =  nu1
@@ -609,7 +593,6 @@ module parameters_tunable
       nu9_vert_res_dep   =  nu9
       nu10_vert_res_dep  = nu10
       nu_hm_vert_res_dep = nu_hm
-      nu_hd_vert_res_dep = nu_hd
 
     end if  ! l_adj_low_res_nu
 
@@ -665,7 +648,7 @@ module parameters_tunable
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-                          nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+                          gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
@@ -735,7 +718,7 @@ module parameters_tunable
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-      nu_hd, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+      beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
       thlp2_rad_cloud_frac_thresh
@@ -758,7 +741,7 @@ module parameters_tunable
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-                          nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+                          gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, param_spread )
@@ -802,7 +785,7 @@ module parameters_tunable
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, &
-               nu_hd, gamma_coef, gamma_coefb, gamma_coefc, &
+               gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, params )
@@ -869,7 +852,6 @@ module parameters_tunable
       inu10, &
       ic_K_hm, & 
       inu_hm, & 
-      inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
       igamma_coefc, & 
@@ -898,7 +880,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, nu10, c_K_hm, nu_hm, nu_hd, gamma_coef, &
+      c_K9, nu9, nu10, c_K_hm, nu_hm, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
       taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
       Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -956,7 +938,6 @@ module parameters_tunable
     params(inu10)      = nu10
     params(ic_K_hm)    = c_K_hm
     params(inu_hm)     = nu_hm
-    params(inu_hd)     = nu_hd
 
     params(igamma_coef)  = gamma_coef
     params(igamma_coefb) = gamma_coefb
@@ -993,7 +974,7 @@ module parameters_tunable
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-               nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+               gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh )
@@ -1060,7 +1041,6 @@ module parameters_tunable
       inu10, &
       ic_K_hm, & 
       inu_hm, & 
-      inu_hd, & 
       igamma_coef, & 
       igamma_coefb, & 
       igamma_coefc, & 
@@ -1093,7 +1073,7 @@ module parameters_tunable
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-      nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+      gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
       thlp2_rad_cloud_frac_thresh
@@ -1148,7 +1128,6 @@ module parameters_tunable
     nu10      = params(inu10)
     c_K_hm    = params(ic_K_hm)
     nu_hm     = params(inu_hm)
-    nu_hd     = params(inu_hd)
 
     gamma_coef  = params(igamma_coef)
     gamma_coefb = params(igamma_coefb)
@@ -1198,7 +1177,7 @@ module parameters_tunable
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, nu_hm, & 
-                          nu_hd, gamma_coef, gamma_coefb, gamma_coefc, & 
+                          gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
@@ -1269,7 +1248,6 @@ module parameters_tunable
     nu10               = init_value
     c_K_hm             = init_value
     nu_hm              = init_value
-    nu_hd              = init_value
     beta               = init_value
     gamma_coef         = init_value
     gamma_coefb        = init_value
@@ -1282,7 +1260,6 @@ module parameters_tunable
     Lscale_mu_coef     = init_value
     Lscale_pert_coef   = init_value
     alpha_corr         = init_value
-    nu_hd_vert_res_dep = init_value
     Skw_denom_coef     = init_value
     c_K10              = init_value
     thlp2_rad_coef     = init_value

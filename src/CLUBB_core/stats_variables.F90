@@ -370,11 +370,10 @@ module stats_variables
      iwp3_pr1 = 0, & 
      iwp3_pr2 = 0, & 
      iwp3_dp1 = 0, &
-     iwp3_4hd = 0, & 
      iwp3_cl  = 0
 
 !$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac, iwp3_bp1)
-!$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_4hd, iwp3_cl)
+!$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_cl)
 
   ! Rain mixing ratio budgets
   integer, public :: & 
@@ -962,14 +961,13 @@ module stats_variables
      iwp2_pr3 = 0, & 
      iwp2_dp1 = 0, & 
      iwp2_dp2 = 0, &
-     iwp2_4hd = 0, &
      iwp2_pd = 0, & 
      iwp2_cl = 0, &
      iwp2_sf = 0
 
 !$omp   threadprivate(iwp2_bt, iwp2_ma, iwp2_ta, iwp2_ac, iwp2_bp)
 !$omp   threadprivate(iwp2_pr1, iwp2_pr2, iwp2_pr3)
-!$omp   threadprivate(iwp2_dp1, iwp2_dp2, iwp2_4hd)
+!$omp   threadprivate(iwp2_dp1, iwp2_dp2)
 !$omp   threadprivate(iwp2_pd, iwp2_cl, iwp2_sf)
 
   integer, public :: & 

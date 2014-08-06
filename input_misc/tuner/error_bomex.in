@@ -82,7 +82,6 @@ nu10        = 0.
 c_K_hm   = 0.
 nu_hm        = 0.
 beta        = 0.
-nu_hd       = 0.
 gamma_coef  = 0.
 gamma_coefb = 0.
 gamma_coefc = 0.

@@ -136,7 +136,6 @@ module stats_zm
         iwp2_pr3, & 
         iwp2_dp1, & 
         iwp2_dp2, &
-        iwp2_4hd, & 
         iwp2_cl, & 
         iwp2_pd, &
         iwp2_sf
@@ -825,14 +824,6 @@ module stats_zm
         call stat_assign( var_index=iwp2_dp2, var_name="wp2_dp2", &
              var_description="wp2 budget: wp2 dissipation term 2 [m^2/s^3]", var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=zm )
-
-        k = k + 1
-
-      case ('wp2_4hd')
-        iwp2_4hd = k
-        call stat_assign( var_index=iwp2_4hd, var_name="wp2_4hd", &
-             var_description="wp2 budget: wp2 4th-order hyper-diffusion [m^2/s^3]", &
-             var_units="m^2/s^3", l_silhs=.false., grid_kind=zm )
 
         k = k + 1
 
