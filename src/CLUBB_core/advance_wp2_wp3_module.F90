@@ -89,9 +89,6 @@ module advance_wp2_wp3_module
     use constants_clubb, only:  & 
         fstderr    ! Variable(s)
 
-    use model_flags, only: &
-        l_hyper_dfsn ! Variable(s)
-
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
@@ -260,18 +257,11 @@ module advance_wp2_wp3_module
 
     enddo
 
-    ! Declare the number of subdiagonals and superdiagonals in the LHS matrix.
-    if ( l_hyper_dfsn ) then
-       ! There are nine overall diagonals (including four subdiagonals
-       ! and four superdiagonals).
-       nsub = 4
-       nsup = 4
-    else
-       ! There are five overall diagonals (including two subdiagonals
-       ! and two superdiagonals).
-       nsub = 2
-       nsup = 2
-    endif
+    ! There are five overall diagonals (including two subdiagonals
+    ! and two superdiagonals).
+    nsub = 2
+    nsup = 2
+
 
     ! Solve semi-implicitly
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! Intent(in)
@@ -359,7 +349,6 @@ module advance_wp2_wp3_module
 
     use model_flags, only:  & 
         l_tke_aniso,  & ! Variable(s)
-        l_hyper_dfsn, &
         l_hole_fill,  &
         l_gmres
 
@@ -678,15 +667,6 @@ module advance_wp2_wp3_module
         call stat_end_update_pt( iwp2_pr2, k, & 
            zmscr11(k) * wp2(k), zm )
 
-        ! w'^2 term 4hd is completely implicit; call stat_update_var_pt.
-        if ( l_hyper_dfsn ) then
-           call stat_update_var_pt( iwp2_4hd, k, &
-              zmscr13(k) * wp2(km2) &
-            + zmscr14(k) * wp2(km1) &
-            + zmscr15(k) * wp2(k) &
-            + zmscr16(k) * wp2(kp1) &
-            + zmscr17(k) * wp2(kp2), zm )
-        endif
       enddo
 
       ! Finalize implicit contributions for wp3
@@ -749,15 +729,6 @@ module advance_wp2_wp3_module
         call stat_end_update_pt( iwp3_pr2, k, & 
            ztscr16(k) * wp3(k), zt )
 
-        ! w'^3 term 4hd is completely implicit; call stat_update_var_pt.
-        if ( l_hyper_dfsn ) then
-           call stat_update_var_pt( iwp3_4hd, k, &
-              ztscr17(k) * wp3(km2) &
-            + ztscr18(k) * wp3(km1) &
-            + ztscr19(k) * wp3(k) &
-            + ztscr20(k) * wp3(kp1) &
-            + ztscr21(k) * wp3(kp2), zt )
-        endif
       enddo
 
     endif ! l_stats_samp
@@ -929,11 +900,6 @@ module advance_wp2_wp3_module
 
     ! Begin code
 
-    if (nsup > 2) then
-      write (fstderr, *) "WARNING: CSR-format solvers currently do not", &
-                         "support solving with hyper diffusion", &
-                         "at this time. l_hyper_dfsn ignored."
-    end if
     call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
@@ -1074,8 +1040,7 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only: & 
-        l_tke_aniso, & ! Variable(s)
-        l_hyper_dfsn
+        l_tke_aniso   ! Variable(s)
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -1084,10 +1049,6 @@ module advance_wp2_wp3_module
     use mean_adv, only: & 
         term_ma_zm_lhs,  & ! Procedures
         term_ma_zt_lhs
-
-    use hyper_diffusion_4th_ord, only:  &
-        hyper_dfsn_4th_ord_zm_lhs,  &
-        hyper_dfsn_4th_ord_zt_lhs
 
     use clubb_precision, only: &
         core_rknd
@@ -1215,7 +1176,6 @@ module advance_wp2_wp3_module
     integer, intent(in) :: &
       nsub,   & ! Number of subdiagonals in the LHS matrix.
       nsup      ! Number of superdiagonals in the LHS matrix.
-
     ! Output Variable
     real( kind = core_rknd ), dimension(5-nsup:5+nsub,2*gr%nz), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
@@ -1267,7 +1227,6 @@ module advance_wp2_wp3_module
       !         [ x wp3(k+2,<t+1>) ]
       ! Momentum super-super diagonal (lhs index: m_kp2_mdiag)
       !         [ x wp2(k+2,<t+1>) ]
-
       ! LHS time tendency.
       lhs(m_k_mdiag,k_wp2) & 
       = + 1.0_core_rknd / dt
@@ -1327,19 +1286,6 @@ module advance_wp2_wp3_module
         = lhs(m_k_mdiag,k_wp2)  &
         + gamma_over_implicit_ts  & 
         * wp2_term_pr1_lhs( C4, tau1m(k) )
-      endif
-
-      ! LHS 4th-order hyper-diffusion (4hd).
-      if ( l_hyper_dfsn ) then
-         ! Note:  w'^2 uses fixed-point boundary conditions.
-         lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
-              k_wp2 )  &
-         = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
-                k_wp2 )  &
-         + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
-                                      gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
-                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
-                                      gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
       endif
 
       if ( l_stats_samp ) then
@@ -1417,19 +1363,6 @@ module advance_wp2_wp3_module
           zmscr12(k)  &
           = - gamma_over_implicit_ts  &
             * wp2_term_pr1_lhs( C4, tau1m(k) )
-        endif
-
-        if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
-          tmp(1:5) = &
-          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
-                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
-                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
-                                     gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
-          zmscr13(k) = -tmp(5)
-          zmscr14(k) = -tmp(4)
-          zmscr15(k) = -tmp(3)
-          zmscr16(k) = -tmp(2)
-          zmscr17(k) = -tmp(1)
         endif
 
       endif
@@ -1525,19 +1458,6 @@ module advance_wp2_wp3_module
         * diffusion_zt_lhs( Kw8(k), Kw8(km1), nu8_vert_res_dep, & 
                             gr%invrs_dzm(km1), gr%invrs_dzm(k), &
                             gr%invrs_dzt(k), k )
-      endif
-
-      ! LHS 4th-order hyper-diffusion (4hd).
-      if ( l_hyper_dfsn ) then
-         ! Note:  w'^3 uses fixed-point boundary conditions.
-         lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
-              k_wp3 )  &
-         = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
-                k_wp3 )  &
-         + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
-                                      gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
-                                      gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
-                                      gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
       endif
 
       if ( l_stats_samp ) then
@@ -1650,19 +1570,6 @@ module advance_wp2_wp3_module
 
         endif
 
-        if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
-          tmp(1:5) = &
-          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
-                                     gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
-                                     gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
-                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
-          ztscr17(k) = -tmp(5)
-          ztscr18(k) = -tmp(4)
-          ztscr19(k) = -tmp(3)
-          ztscr20(k) = -tmp(2)
-          ztscr21(k) = -tmp(1)
-        endif
-
       endif
 
     enddo ! k = 2, gr%nz-1, 1
@@ -1746,8 +1653,7 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only: & 
-        l_tke_aniso, & ! Variable(s)
-        l_hyper_dfsn
+        l_tke_aniso    ! Variable(s)
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -1756,10 +1662,6 @@ module advance_wp2_wp3_module
     use mean_adv, only: & 
         term_ma_zm_lhs,  & ! Procedures
         term_ma_zt_lhs
-
-    use hyper_diffusion_4th_ord, only:  &
-        hyper_dfsn_4th_ord_zm_lhs,  &
-        hyper_dfsn_4th_ord_zt_lhs
 
     use clubb_precision, only: &
         core_rknd
@@ -2037,21 +1939,6 @@ module advance_wp2_wp3_module
         * wp2_term_pr1_lhs( C4, tau1m(k) )
       endif
 
-      ! LHS 4th-order hyper-diffusion (4hd).
-      ! NOTE: 4th-order hyper-diffusion is not yet supported in CSR-format.
-      ! As such, this needs to remain commented out.
-      !if ( l_hyper_dfsn ) then
-      !   ! Note:  w'^2 uses fixed-point boundary conditions.
-      !   lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
-      !        k_wp2) &
-      !   = lhs( (/m_kp2_mdiag,m_kp1_mdiag,m_k_mdiag,m_km1_mdiag,m_km2_mdiag/), &
-      !          k_wp2) &
-      !   + hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
-      !                                gr%invrs_dzt(kp1), gr%invrs_dzt(k),     &
-      !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km1),   &
-      !                                gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
-      !endif
-
       if ( l_stats_samp ) then
 
         ! Statistics: implicit contributions for wp2.
@@ -2127,19 +2014,6 @@ module advance_wp2_wp3_module
           zmscr12(k)  &
           = - gamma_over_implicit_ts  &
             * wp2_term_pr1_lhs( C4, tau1m(k) )
-        endif
-
-        if ( iwp2_4hd > 0 .and. l_hyper_dfsn ) then
-          tmp(1:5) = &
-          hyper_dfsn_4th_ord_zm_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzm(k),  &
-                                     gr%invrs_dzt(kp1), gr%invrs_dzt(k), &
-                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km1), &
-                                     gr%invrs_dzt(kp2), gr%invrs_dzt(km1), k )
-          zmscr13(k) = -tmp(5)
-          zmscr14(k) = -tmp(4)
-          zmscr15(k) = -tmp(3)
-          zmscr16(k) = -tmp(2)
-          zmscr17(k) = -tmp(1)
         endif
 
       endif
@@ -2268,20 +2142,6 @@ module advance_wp2_wp3_module
                             gr%invrs_dzt(k), k )
       endif
 
-      ! LHS 4th-order hyper-diffusion (4hd).
-      ! NOTE: 4th-order hyper-diffusion is not yet supported in CSR-format.
-      ! As such, this needs to remain commented out.
-      !if ( l_hyper_dfsn ) then
-      !   ! Note:  w'^3 uses fixed-point boundary conditions.
-      !   lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
-      !        k_wp3) &
-      !   = lhs( (/t_kp2_tdiag,t_kp1_tdiag,t_k_tdiag,t_km1_tdiag,t_km2_tdiag/), &
-      !          k_wp3) &
-      !   + hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
-      !                                gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
-      !                                gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
-      !                                gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
-      !endif
 
       if (l_stats_samp) then
 
@@ -2391,19 +2251,6 @@ module advance_wp2_wp3_module
           ztscr03(k) = -tmp(2)
           ztscr04(k) = -tmp(1)
 
-        endif
-
-        if ( iwp3_4hd > 0 .and. l_hyper_dfsn ) then
-          tmp(1:5) = &
-          hyper_dfsn_4th_ord_zt_lhs( 'fixed-point', nu_hd_vert_res_dep, gr%invrs_dzt(k),  &
-                                     gr%invrs_dzm(k), gr%invrs_dzm(km1),     &
-                                     gr%invrs_dzt(kp1), gr%invrs_dzt(km1),   &
-                                     gr%invrs_dzm(kp1), gr%invrs_dzm(km2), k )
-          ztscr17(k) = -tmp(5)
-          ztscr18(k) = -tmp(4)
-          ztscr19(k) = -tmp(3)
-          ztscr20(k) = -tmp(2)
-          ztscr21(k) = -tmp(1)
         endif
 
       endif

@@ -18,7 +18,6 @@ module model_flags
   private ! Default Scope
 
   logical, parameter, public ::  & 
-    l_hyper_dfsn         = .false., & ! 4th-order hyper-diffusion
     l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
     l_hole_fill          = .true.,  & ! Hole filling positive definite scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
