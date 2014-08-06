@@ -24,7 +24,7 @@ module clubb_api_module
   use mt95, only : &
     assignment( = ), &
     genrand_state, & ! Internal representation of the RNG state.
-    genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state.
+    genrand_srepr, & ! Public representation of the RNG state. Should be used to save the RNG state
     genrand_intg, &
     genrand_init_api => genrand_init
 
@@ -93,7 +93,6 @@ module clubb_api_module
     rr_tol, & ! Tolerance value for r_r [kg/kg]
     rs_tol, & ! Tolerance value for r_s [kg/kg]
     rt_tol, & ! [kg/kg]
-    rc_tol, & ! Tolerance value for r_c  [kg/kg]
     thl_tol, & ! [K]
     w_tol_sqd ! [m^2/s^2]
 
@@ -111,9 +110,7 @@ module clubb_api_module
     iiPDF_rs, &
     iiPDF_Ns, &
     iiPDF_rg, &
-    iiPDF_Ng, &
-    sigma2_on_mu2_ip_array_cloud, &
-    sigma2_on_mu2_ip_array_below
+    iiPDF_Ng
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -139,15 +136,7 @@ module clubb_api_module
     Lscale_max ! Maximum allowable value for Lscale [m].
 
   use parameters_tunable, only : &
-    l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
-    C6rt, & ! Low Skewness in C6rt Skw. Function  [-]
-    C7, & ! Low Skewness in C7 Skw. Function    [-]
-    C8, & ! Coef. #1 in C8 Skewness Equation    [-]
-    C11, & ! Low Skewness in C11 Skw. Function   [-]
-    C11b, & ! High Skewness in C11 Skw. Function  [-]
-    gamma_coef, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
-    mu, & ! Fract entrain rate per unit alt  [1/m]
-    mult_coef ! Coef. applied to log(avg dz/thresh)[-]
+    l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
@@ -223,57 +212,194 @@ module clubb_api_module
   private
 
   ! Making the functions and subroutines public
-  public advance_clubb_core_api, setup_clubb_core_api, cleanup_clubb_core_api, &
-    set_Lscale_max_api, gregorian2julian_day_api, compute_current_date_api, leap_year_api, &
-    setup_corr_varnce_array_api, setup_pdf_indices_api, &
-    reportError_api, fatal_error_api, set_clubb_debug_level_api, clubb_at_least_debug_level_api, &
-    vertical_avg_api, fill_holes_driver_api, fill_holes_vertical_api, vertical_integral_api, &
-    zt2zm_api, zm2zt_api, setup_grid_api, setup_grid_heights_api, cleanup_grid_api, &
-    lin_int_api, linear_interpolation_api, &
-    read_parameters_api, setup_parameters_api, adj_low_res_nu_api, &
+  public &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
-    pack_pdf_params_api, unpack_pdf_params_api, &
+    pack_pdf_params_api, &
+    unpack_pdf_params_api, &
 #endif
-    sat_mixrat_liq_api, &
+    adj_low_res_nu_api, &
+    advance_clubb_core_api, &
+    calculate_spurious_source_api, &
+    cleanup_clubb_core_api, &
+    cleanup_grid_api, &
+    clubb_at_least_debug_level_api, &
+    compute_current_date_api, &
+    fatal_error_api, &
+    fill_holes_driver_api, &
+    fill_holes_vertical_api, &
+    genrand_init_api, &
+    gregorian2julian_day_api, &
+    leap_year_api, &
+    lin_int_api, &
+    linear_interpolation_api, &
+    read_parameters_api, &
+    reportError_api
+  public &
+    set_clubb_debug_level_api, &
+    set_Lscale_max_api, &
+    setup_clubb_core_api,&
+    setup_corr_varnce_array_api, &
+    setup_grid_api, &
+    setup_grid_heights_api, &
+    setup_parameters_api, &
+    setup_pdf_indices_api, &
     setup_pdf_parameters_api, &
-    stats_init_api, stats_begin_timestep_api, stats_end_timestep_api, &
-    stats_accumulate_hydromet_api, stats_finalize_api, &
-    stats_init_rad_zm_api, stats_init_rad_zt_api, stats_init_zm_api, stats_init_zt_api, &
+    stats_accumulate_hydromet_api, &
+    stats_begin_timestep_api, &
+    stats_end_timestep_api, &
+    stats_finalize_api, &
+    stats_init_api, &
+    stats_init_rad_zm_api, &
+    stats_init_rad_zt_api, &
     stats_init_sfc_api, &
-    thlm2T_in_K_api, T_in_K2thlm_api, calculate_spurious_source_api, genrand_init_api
+    stats_init_zm_api, &
+    stats_init_zt_api, &
+    T_in_K2thlm_api, &
+    thlm2T_in_K_api, &
+    vertical_avg_api, &
+    vertical_integral_api, &
+    zt2zm_api, zm2zt_api
 
 
   ! Making the variables public
-  public iiNgm, iiNim, iiNrm, iiNsm, iirgm, iirim, iirrm, iirsm, l_frozen_hm, l_mix_rat_hm, &
-    iiedsclr_CO2, iiedsclr_rt, iiedsclr_thl, iisclr_CO2, iisclr_rt, iisclr_thl, &
-    time_precision, core_rknd, stat_nknd, stat_rknd, dp, cloud_frac_min, &
-    cm3_per_m3, Cp, em_min, ep, fstderr, fstdout, grav, Ls, Lv, Lf, pi, pi_dp, radians_per_deg_dp,&
-    Rd, Rv, sec_per_day, sec_per_hr, sec_per_min, T_freeze_K, var_length, zero, zero_threshold, &
-    Nc_tol, Ng_tol, Ni_tol, Nr_tol, Ns_tol, rg_tol, rho_lw, &
-    ri_tol, rr_tol, rs_tol, rt_tol, rc_tol, thl_tol, w_tol_sqd, &
-    corr_array_cloud, corr_array_below, d_variables, &
-    iiPDF_chi, iiPDF_rr, iiPDF_w, iiPDF_Nr, iiPDF_ri, iiPDF_Ni, iiPDF_Ncn, iiPDF_rs, &
-    iiPDF_Ns, iiPDF_rg, iiPDF_Ng, sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
-    clubb_no_error, gr, hydromet_pdf_parameter, &
-    l_use_boussinesq, l_diagnose_correlations, l_calc_w_corr, &
-    l_use_cloud_cover, l_use_precip_frac, l_tke_aniso, &
-    l_fix_chi_eta_correlations, &
-    l_const_Nc_in_cloud, &
-    hydromet_dim, Lscale_max, &
-    l_prescribed_avg_deltaz, C6rt, C7, C8, C11, C11b, gamma_coef, mu, mult_coef, nparams, &
-    iSkw_denom_coef, ibeta, iC11, iC11b, hydromet_list, hydromet_tol, &
+  public &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
 #endif
-    pdf_parameter, clubb_i, clubb_j, nvarmax_rad_zm, nvarmax_rad_zt, nvarmax_sfc, &
-    zt, zm, rad_zt, rad_zm, sfc, l_stats_last, stats_tsamp, stats_tout, &
-    l_output_rad_files, l_stats, l_stats_samp, l_grads, fname_rad_zt, fname_rad_zm, fname_sfc, &
-    ztscr01, ztscr02, ztscr03, ztscr04, ztscr05, ztscr06, ztscr07, ztscr08, ztscr09, &
-    ztscr10, ztscr11, ztscr12, ztscr13, ztscr14, ztscr15, ztscr16, ztscr17, ztscr18, &
-    ztscr19, ztscr20, ztscr21, zmscr01, zmscr02, zmscr03, zmscr04, zmscr05, zmscr06, &
-    zmscr07, zmscr08, zmscr09, zmscr10, zmscr11, zmscr12, zmscr13, zmscr14, zmscr15, &
-    zmscr16, zmscr17, l_netcdf, nvarmax_zm, nvarmax_zt, Lscale, wp2_zt, wphydrometp, &
-    assignment( = ), genrand_state, genrand_srepr, genrand_intg
+    assignment( = ), &
+    cloud_frac_min, &
+    clubb_i, &
+    clubb_j, &
+    clubb_no_error, &
+    cm3_per_m3, &
+    core_rknd, &
+    corr_array_below, &
+    corr_array_cloud, &
+    Cp, &
+    d_variables, &
+    dp, &
+    em_min, &
+    ep, &
+    fname_rad_zm, &
+    fname_rad_zt, &
+    fname_sfc, &
+    fstderr, &
+    fstdout, &
+    genrand_intg, &
+    genrand_srepr, &
+    genrand_state, &
+    gr, &
+    grav, &
+    hydromet_dim, &
+    hydromet_list, &
+    hydromet_pdf_parameter, &
+    hydromet_tol
+  public &
+    ibeta, &
+    iC11, &
+    iC11b, &
+    iiedsclr_CO2, &
+    iiedsclr_rt, &
+    iiedsclr_thl, &
+    iiNgm, &
+    iiNim, &
+    iiNrm, &
+    iiNsm, &
+    iiPDF_chi, &
+    iiPDF_Ncn, &
+    iiPDF_Ng, &
+    iiPDF_Ni, &
+    iiPDF_Nr, &
+    iiPDF_Ns, &
+    iiPDF_rg, &
+    iiPDF_ri, &
+    iiPDF_rr, &
+    iiPDF_rs, &
+    iiPDF_w, &
+    iirgm, &
+    iirim, &
+    iirrm, &
+    iirsm, &
+    iisclr_CO2, &
+    iisclr_rt, &
+    iisclr_thl, &
+    iSkw_denom_coef
+  public &
+    l_calc_w_corr, &
+    l_const_Nc_in_cloud, &
+    l_diagnose_correlations, &
+    l_fix_chi_eta_correlations, &
+    l_frozen_hm, &
+    l_grads, &
+    l_mix_rat_hm, &
+    l_netcdf, &
+    l_output_rad_files, &
+    l_prescribed_avg_deltaz, &
+    l_stats_last, &
+    l_stats_samp, &
+    l_stats, &
+    l_tke_aniso, &
+    l_use_boussinesq, &
+    l_use_cloud_cover, &
+    l_use_precip_frac, &
+    Lf, &
+    Ls, &
+    Lscale, &
+    Lscale_max, &
+    Lv
+  public &
+    Nc_tol, &
+    Ng_tol, &
+    Ni_tol, &
+    nparams, &
+    Nr_tol, &
+    Ns_tol, &
+    nvarmax_rad_zm, &
+    nvarmax_rad_zt, &
+    nvarmax_sfc, &
+    nvarmax_zm, &
+    nvarmax_zt, &
+    pdf_parameter, &
+    pi_dp, &
+    pi, &
+    rad_zm, &
+    rad_zt, &
+    radians_per_deg_dp, &
+    Rd, &
+    rg_tol, &
+    rho_lw, &
+    ri_tol, &
+    rr_tol, &
+    rs_tol, &
+    rt_tol, &
+    Rv
+  public &
+    sec_per_day, &
+    sec_per_hr, &
+    sec_per_min, &
+    sfc, &
+    stat_nknd, &
+    stat_rknd, &
+    stats_tout, &
+    stats_tsamp, &
+    T_freeze_K, &
+    thl_tol, &
+    time_precision, &
+    var_length, &
+    w_tol_sqd, &
+    wp2_zt, &
+    wphydrometp
+  public &
+    zero, &
+    zero_threshold, &
+    zm, &
+    zmscr01, zmscr02, zmscr03, zmscr04, zmscr05, zmscr06, &
+    zmscr07, zmscr08, zmscr09, zmscr10, zmscr11, zmscr12, &
+    zmscr13, zmscr14, zmscr15, zmscr16, zmscr17, &
+    zt, &
+    ztscr01, ztscr02, ztscr03, ztscr04, ztscr05, ztscr06, ztscr07, &
+    ztscr08, ztscr09, ztscr10, ztscr11, ztscr12, ztscr13, ztscr14, &
+    ztscr15, ztscr16, ztscr17, ztscr18, ztscr19, ztscr20, ztscr21
 
 contains
 
@@ -1461,26 +1587,6 @@ contains
 #endif
 
   !================================================================================================
-  ! sat_mixrat_liq - Computes the saturation mixing ratio of liquid water.
-  !================================================================================================
-
-  elemental real( kind = core_rknd ) function  sat_mixrat_liq_api( &
-    p_in_Pa, T_in_K )
-
-    use saturation, only : sat_mixrat_liq
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  &
-      p_in_Pa,  & ! Pressure    [Pa]
-      T_in_K      ! Temperature [K]
-
-    sat_mixrat_liq_api =  sat_mixrat_liq( &
-      p_in_Pa, T_in_K )
-  end function sat_mixrat_liq_api
-
-  !================================================================================================
   ! setup_pdf_parameters
   !================================================================================================
 
@@ -1500,7 +1606,6 @@ contains
 
     use constants_clubb, only: &
       one,            & ! Constant(s)
-      rc_tol,         &
       Ncn_tol,        &
       cloud_frac_min
 
