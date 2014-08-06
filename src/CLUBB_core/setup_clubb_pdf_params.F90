@@ -73,7 +73,8 @@ module setup_clubb_pdf_params
         pdf_parameter  ! Variable(s)
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter  ! Variable(s)
+        hydromet_pdf_parameter, &  ! Type
+        init_hydromet_pdf_params   ! Procedure
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -434,11 +435,6 @@ module setup_clubb_pdf_params
 
     endif ! l_calc_w_corr
 
-    ! Initialize the correlation Cholesky matrices
-    corr_cholesky_mtx_1 = zero
-    corr_cholesky_mtx_2 = zero
-
-
     ! Statistics
     if ( l_stats_samp ) then
 
@@ -482,7 +478,8 @@ module setup_clubb_pdf_params
     !!! Setup PDF parameters loop.
     ! Loop over all model thermodynamic level above the model lower boundary.
     ! Now also including "model lower boundary" -- Eric Raut Aug 2013
-    do k = 1, nz, 1
+    ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
+    do k = 2, nz, 1
 
        if ( rc1(k) > rc_tol ) then
           sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_cloud
@@ -670,12 +667,23 @@ module setup_clubb_pdf_params
        hydrometp2(nz,i) = zero
     enddo
 
-    do k = 1, nz
-      if (clubb_at_least_debug_level( 2 )) then
+    ! Boundary conditions for the output variables at k=1.
+    mu_x_1_n(:,1) = zero
+    mu_x_2_n(:,1) = zero
+    sigma_x_1_n(:,1) = zero
+    sigma_x_2_n(:,1) = zero
+    corr_array_1_n(:,:,1) = zero
+    corr_array_2_n(:,:,1) = zero
+    corr_cholesky_mtx_1(:,:,1) = zero
+    corr_cholesky_mtx_2(:,:,1) = zero
+    call init_hydromet_pdf_params( hydromet_pdf_params(1) )
+
+    if (clubb_at_least_debug_level( 2 )) then
+      do k = 2, nz
         call assert_corr_symmetric( corr_array_1_n(:,:,k), d_variables )
         call assert_corr_symmetric( corr_array_2_n(:,:,k), d_variables )
-      end if
-    end do
+      end do
+    end if
 
     return
 
