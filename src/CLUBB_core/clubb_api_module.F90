@@ -110,7 +110,8 @@ module clubb_api_module
     iiPDF_rs, &
     iiPDF_Ns, &
     iiPDF_rg, &
-    iiPDF_Ng
+    iiPDF_Ng, &
+    sigma2_on_mu2_ratios_type
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -378,6 +379,7 @@ module clubb_api_module
     sec_per_hr, &
     sec_per_min, &
     sfc, &
+    sigma2_on_mu2_ratios_type, &
     stat_nknd, &
     stat_rknd, &
     stats_tout, &
