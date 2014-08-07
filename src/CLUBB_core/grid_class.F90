@@ -457,7 +457,7 @@ module grid_class
 
       endif ! grid_type
 
-    endif ! l_implemented
+    endif ! .not. l_implemented
 
     !---------------------------------------------------
 
