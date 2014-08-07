@@ -1117,28 +1117,24 @@ module advance_wp2_wp3_module
     ! Left-hand side matrix diagonal identifiers for
     ! momentum-level variable, w'^2.
     integer, parameter ::  &
-      m_kp2_mdiag = 1, & ! Momentum super-super diagonal index for w'^2.
      !m_kp2_tdiag = 2, & ! Thermodynamic super-super diagonal index for w'^2.
       m_kp1_mdiag = 3, & ! Momentum super diagonal index for w'^2.
       m_kp1_tdiag = 4, & ! Thermodynamic super diagonal index for w'^2.
       m_k_mdiag   = 5, & ! Momentum main diagonal index for w'^2.
       m_k_tdiag   = 6, & ! Thermodynamic sub diagonal index for w'^2.
-      m_km1_mdiag = 7, & ! Momentum sub diagonal index for w'^2.
+      m_km1_mdiag = 7    ! Momentum sub diagonal index for w'^2.
      !m_km1_tdiag = 8, & ! Thermodynamic sub-sub diagonal index for w'^2.
-      m_km2_mdiag = 9    ! Momentum sub-sub diagonal index for w'^2.
 
     ! Left-hand side matrix diagonal identifiers for
     ! thermodynamic-level variable, w'^3.
     integer, parameter ::  &
-      t_kp2_tdiag = 1, & ! Thermodynamic super-super diagonal index for w'^3.
      !t_kp1_mdiag = 2, & ! Momentum super-super diagonal index for w'^3.
       t_kp1_tdiag = 3, & ! Thermodynamic super diagonal index for w'^3.
      !t_k_mdiag   = 4, & ! Momentum super diagonal index for w'^3.
       t_k_tdiag   = 5, & ! Thermodynamic main diagonal index for w'^3.
      !t_km1_mdiag = 6, & ! Momentum sub diagonal index for w'^3.
-      t_km1_tdiag = 7, & ! Thermodynamic sub diagonal index for w'^3.
+      t_km1_tdiag = 7    ! Thermodynamic sub diagonal index for w'^3.
      !t_km2_mdiag = 8, & ! Momentum sub-sub diagonal index for w'^3.
-      t_km2_tdiag = 9    ! Thermodynamic sub-sub diagonal index for w'^3.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
