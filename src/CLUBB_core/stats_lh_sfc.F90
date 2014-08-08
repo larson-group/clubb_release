@@ -34,7 +34,8 @@ module stats_lh_sfc
     use stats_variables, only: & 
       ilh_morr_snow_rate, & ! Variable(s)
       ilh_vwp, &
-      ilh_lwp
+      ilh_lwp, &
+      ik_lh_start
       
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
@@ -83,6 +84,14 @@ module stats_lh_sfc
         ilh_lwp = k
         call stat_assign( var_index=ilh_lwp, var_name="lh_lwp", &
              var_description="Liquid water path [kg/m^2]", var_units="kg/m^2", l_silhs=.true., &
+             grid_kind=lh_sfc )
+        k = k + 1
+
+      case ( 'k_lh_start' )
+        ik_lh_start = k
+        call stat_assign( var_index=ik_lh_start, var_name="k_lh_start", &
+             var_description="Index of height level for SILHS sampling preferentially within &
+                             &cloud [integer]", var_units="integer", l_silhs=.true., &
              grid_kind=lh_sfc )
         k = k + 1
 

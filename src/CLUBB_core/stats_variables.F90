@@ -260,9 +260,10 @@ module stats_variables
 !$omp threadprivate(icloud_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
 
   integer, public :: &
-    ilh_rcm_avg = 0
+    ilh_rcm_avg = 0, &
+    ik_lh_start = 0
 
-!$omp threadprivate(ilh_rcm_avg)
+!$omp threadprivate(ilh_rcm_avg, ik_lh_start)
 
   integer, public :: & 
      iNrm = 0,       & ! Rain droplet number concentration

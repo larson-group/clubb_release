@@ -462,7 +462,7 @@ module latin_hypercube_driver_module
     end do ! k = 1 .. nz
 
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
-                                      lh_sample_point_weights)
+                                      lh_sample_point_weights, k_lh_start )
 
     ! Sample loop
     do k = 1, nz
@@ -2062,7 +2062,7 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
   subroutine stats_accumulate_uniform_lh( nz, num_samples, l_in_precip_all_levs, &
                                           X_mixt_comp_all_levs, &
-                                          lh_sample_point_weights )
+                                          lh_sample_point_weights, k_lh_start )
 
   ! Description:
   !   Samples statistics that cannot be deduced from the normal-lognormal
@@ -2073,19 +2073,22 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd
+      core_rknd            ! Constant
 
     use stats_type_utilities, only: &
-      stat_update_var
+      stat_update_var,   & ! Procedure(s)
+      stat_update_var_pt
 
     use stats_variables, only: &
-      l_stats_samp, &
+      l_stats_samp, &      ! Variable(s)
       ilh_precip_frac, &
       ilh_mixt_frac, &
-      lh_zt
+      ik_lh_start, &
+      lh_zt, &
+      lh_sfc
 
     use math_utilities, only: &
-      compute_sample_mean
+      compute_sample_mean ! Procedure
       
 
     implicit none
@@ -2105,6 +2108,10 @@ module latin_hypercube_driver_module
     
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! The weight of each sample
+
+    integer, intent(in) :: &
+      k_lh_start           ! Vertical level for sampling preferentially within       [-]
+                           ! cloud
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
@@ -2138,6 +2145,11 @@ module latin_hypercube_driver_module
       lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                              int_mixt_comp )
       call stat_update_var( ilh_mixt_frac, lh_mixt_frac, lh_zt )
+
+      ! k_lh_start is an integer, so it would be more appropriate to sample it
+      ! as an integer, but as far as I can tell our current sampling
+      ! infrastructure mainly supports sampling real numbers.
+      call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start, kind=core_rknd ), lh_sfc )
 
     end if ! l_stats_samp
 
