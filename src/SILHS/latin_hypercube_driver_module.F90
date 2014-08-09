@@ -1725,6 +1725,7 @@ module latin_hypercube_driver_module
       ilh_rvm, &
       ilh_wm, &
       ilh_cloud_frac, &
+      ilh_cloud_frac_unweighted, &
       ilh_chi, &
       ilh_chip2, &
       ilh_eta
@@ -1938,6 +1939,19 @@ module latin_hypercube_driver_module
         call stat_update_var( ilh_cloud_frac, lh_cloud_frac, lh_zt )
       end if
 
+      ! Sample of lh_cloud_frac that is not weighted
+      if ( ilh_cloud_frac_unweighted > 0 ) then
+        lh_cloud_frac(:) = 0._core_rknd
+        do sample = 1, num_samples
+          where ( X_nl_all_levs(:,sample,iiPDF_chi) > 0._dp )
+            lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0_core_rknd
+          end where
+        end do
+        lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
+
+        call stat_update_var( ilh_cloud_frac_unweighted, lh_cloud_frac, lh_zt )
+      end if
+
       ! Latin hypercube estimate of chi
       if ( ilh_chi > 0 ) then
         lh_chi(1:nz) &
@@ -2083,13 +2097,17 @@ module latin_hypercube_driver_module
       l_stats_samp, &      ! Variable(s)
       ilh_precip_frac, &
       ilh_mixt_frac, &
+      ilh_precip_frac_unweighted, &
+      ilh_mixt_frac_unweighted, &
       ik_lh_start, &
       lh_zt, &
       lh_sfc
 
     use math_utilities, only: &
       compute_sample_mean ! Procedure
-      
+
+    use constants_clubb, only: &
+      one                 ! Constant
 
     implicit none
 
@@ -2122,29 +2140,62 @@ module latin_hypercube_driver_module
       int_in_precip, & ! '1' for samples in precipitation, '0' otherwise
       int_mixt_comp    ! '1' for samples in the first PDF component, '0' otherwise
 
+    real( kind = core_rknd ), dimension(num_samples) :: &
+      one_weights
+
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
     if ( l_stats_samp ) then
       ! Estimate of lh_precip_frac
-      where ( l_in_precip_all_levs )
-        int_in_precip = 1.0_core_rknd
-      else where
-        int_in_precip = 0.0_core_rknd
-      end where
-      lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                               int_in_precip )
-      call stat_update_var( ilh_precip_frac, lh_precip_frac, lh_zt )
+      if ( ilh_precip_frac > 0 ) then
+        where ( l_in_precip_all_levs )
+          int_in_precip = 1.0_core_rknd
+        else where
+          int_in_precip = 0.0_core_rknd
+        end where
+        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                                                 int_in_precip )
+        call stat_update_var( ilh_precip_frac, lh_precip_frac, lh_zt )
+      end if
+
+      ! Unweighted estimate of lh_precip_frac
+      if ( ilh_precip_frac_unweighted > 0 ) then
+        where ( l_in_precip_all_levs )
+          int_in_precip = 1.0_core_rknd
+        else where
+          int_in_precip = 0.0_core_rknd
+        end where
+        one_weights = one
+        lh_precip_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                                 int_in_precip )
+        call stat_update_var( ilh_precip_frac_unweighted, lh_precip_frac, lh_zt )
+      end if
 
       ! Estimate of lh_mixt_frac
-      where ( X_mixt_comp_all_levs == 1 )
-        int_mixt_comp = 1.0_core_rknd
-      else where
-        int_mixt_comp = 0.0_core_rknd
-      end where
-      lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                             int_mixt_comp )
-      call stat_update_var( ilh_mixt_frac, lh_mixt_frac, lh_zt )
+      if ( ilh_mixt_frac > 0 ) then
+        where ( X_mixt_comp_all_levs == 1 )
+          int_mixt_comp = 1.0_core_rknd
+        else where
+          int_mixt_comp = 0.0_core_rknd
+        end where
+        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
+                                               int_mixt_comp )
+        call stat_update_var( ilh_mixt_frac, lh_mixt_frac, lh_zt )
+      end if
+
+      ! Unweighted estimate of lh_mixt_frac
+      if ( ilh_mixt_frac_unweighted > 0 ) then
+        where ( X_mixt_comp_all_levs == 1 )
+          int_mixt_comp = 1.0_core_rknd
+        else where
+          int_mixt_comp = 0.0_core_rknd
+        end where
+        one_weights = one
+        lh_mixt_frac(:) = compute_sample_mean( nz, num_samples, one_weights, &
+                                               int_mixt_comp )
+        call stat_update_var( ilh_mixt_frac_unweighted, lh_mixt_frac, lh_zt )
+      end if
 
       ! k_lh_start is an integer, so it would be more appropriate to sample it
       ! as an integer, but as far as I can tell our current sampling

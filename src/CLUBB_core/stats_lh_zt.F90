@@ -92,6 +92,11 @@ module stats_lh_zt
       ilh_Nrm_cond
 
     use stats_variables, only: &
+      ilh_cloud_frac_unweighted, &
+      ilh_precip_frac_unweighted,&
+      ilh_mixt_frac_unweighted
+
+    use stats_variables, only: &
       ilh_rrm_src_adj,  & ! Variable(s)
       ilh_rrm_cond_adj, &
       ilh_Nrm_src_adj,     &
@@ -421,6 +426,15 @@ module stats_lh_zt
              var_units="count", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
+      case ( 'lh_cloud_frac_unweighted' )
+        ilh_cloud_frac_unweighted = k
+
+        call stat_assign( var_index=ilh_cloud_frac_unweighted, &
+             var_name="lh_cloud_frac_unweighted", var_description="Unweighted fraction of &
+            &silhs sample points that are in cloud [-]", var_units="-", l_silhs=.false., &
+             grid_kind=lh_zt )
+        k = k + 1
+
       case ( 'lh_chi' )
         ilh_chi = k
         call stat_assign( var_index=ilh_chi, var_name="lh_chi", &
@@ -570,11 +584,26 @@ module stats_lh_zt
              var_units="-", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 
+      case ( 'lh_precip_frac_unweighted' )
+        ilh_precip_frac_unweighted = k
+        call stat_assign( var_index=ilh_precip_frac_unweighted, &
+             var_name="lh_precip_frac_unweighted", &
+             var_description="Unweighted fraction of sample points in precipitation [-]", &
+             var_units="-", l_silhs=.true., grid_kind=lh_zt )
+        k = k + 1
+
       case ( 'lh_mixt_frac' )
         ilh_mixt_frac = k
         call stat_assign( var_index=ilh_mixt_frac, var_name="lh_mixt_frac", &
              var_description="Latin hypercube estimate of mixture fraction (weight of 1st PDF &
              &component [-]", &
+             var_units="-", l_silhs=.true., grid_kind=lh_zt )
+        k = k + 1
+
+      case ( 'lh_mixt_frac_unweighted' )
+        ilh_mixt_frac_unweighted = k
+        call stat_assign( var_index=ilh_mixt_frac_unweighted, var_name="lh_mixt_frac_unweighted", &
+             var_description="Unweighted fraction of sample points in first PDF component [-]", &
              var_units="-", l_silhs=.true., grid_kind=lh_zt )
         k = k + 1
 

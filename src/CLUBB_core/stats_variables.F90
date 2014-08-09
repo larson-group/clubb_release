@@ -717,6 +717,14 @@ module stats_variables
 !$omp   ilh_chi, ilh_eta, ilh_precip_frac, ilh_mixt_frac )
 
   integer, public :: &
+    ilh_cloud_frac_unweighted  = 0,  &
+    ilh_precip_frac_unweighted = 0,  &
+    ilh_mixt_frac_unweighted   = 0
+
+!$omp threadprivate( ilh_cloud_frac_unweighted, ilh_precip_frac_unweighted, &
+!$omp                ilh_mixt_frac_unweighted )
+
+  integer, public :: &
     ilh_wp2_zt = 0, &
     ilh_Nrp2_zt = 0, &
     ilh_Ncnp2_zt = 0, &
