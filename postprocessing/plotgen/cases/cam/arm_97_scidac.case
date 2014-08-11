@@ -14,115 +14,115 @@
     [
        {'plotTitle' => 'Absolute Temperature', 'axisLabel' => 'T [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TABS', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TABS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'T', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #Need CAM's value of specific heat, cp
        ]},
 
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(QT-QI) / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(TLFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 1004)', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(TLFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHLP_CLUBB ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ).* 1004)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} #UseFirstArgIfExist( RHO, RHO_CLUBB ) changed to 1
        ]},
 
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '((QTFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 2.5104e+6))', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '((QTFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 2.5104e+6))', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WPRTP_CLUBB ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 2.5104e+6)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # 2.5104e+6 = L_{v} 
        ]},
       
        {'plotTitle' => 'Cloud Fraction (liquid + ice)', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'CLD * 100', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLOUD * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},       
        
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QCL / 1000', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDLIQ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'W2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'W2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'W3', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'W3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'WP3_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TL2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TL2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'THLP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QT2 / 1000000', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QT2 / 1000000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTP2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TQ', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'TQ', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'RTPTHLP_CLUBB./1000.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'WOBS', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'WOBS', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => '-OMEGA ./(9.81.*UseFirstArgIfExist( RHO, RHO_CLUBB ))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # UseFirstArgIfExist( RHO, RHO_CLUBB ) changed to 1
        ]},
 
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'U', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'U', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'U', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'V', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'V', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'V', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'UW', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'UW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'UPWP_CLUBB ./ 1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # UseFirstArgIfExist( RHO, RHO_CLUBB ) changed to 1
        ]},
 
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'VW', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'VW', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'VPWP_CLUBB ./ 1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} # UseFirstArgIfExist( RHO, RHO_CLUBB ) changed to 1
        ]},
        
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'U2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'U2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'V2', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'V2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(TVFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 1004)', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => '(TVFLUX) ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHVP_CLUBB ./ (UseFirstArgIfExist( RHO, RHO_CLUBB ) * 1004.)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        
@@ -136,7 +136,7 @@
 
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NC .* (100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NC .* (100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNC./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
 #
@@ -144,19 +144,19 @@
 #
       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QR./1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QR./1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AQRAIN', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
 
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NR.*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NR.*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'ANRAIN./1','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Rain fraction', 'axisLabel' => '[%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'rain_frac_em4*100.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'rain_frac_em4*100.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'FREQR','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
       
@@ -165,11 +165,11 @@
 #
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QG/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QG/1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
        ]},
        {'plotTitle' => 'Graupel Number Concentration', 'axisLabel' => 'Ng [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NG .*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NG .*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNG./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
 
@@ -178,19 +178,19 @@
 #
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QI/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QI/1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'CLDICE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NI .*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NI .*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'AWNI./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
        
        {'plotTitle' => 'Cloud Ice Fraction', 'axisLabel' => '[%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'cloudice_frac_em4*100.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'cloudice_frac_em4*100.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'FREQI','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
@@ -199,19 +199,19 @@
 #
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QS/1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'QS/1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'AQSNOW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NS.*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'NS.*(100^3)./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ANSNOW./UseFirstArgIfExist( RHO, RHO_CLUBB )', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'} 
        ]},
 
        {'plotTitle' => 'Snow Fraction', 'axisLabel' => '[%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'snow_frac_em4*100.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'snow_frac_em4*100.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => '{0}', 'expression' => 'FREQS','lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
@@ -221,19 +221,19 @@
 #----------------------------
        {'plotTitle' => 'Cloud Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'endTime' =>'41720', 'lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'CWP./1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'CWP./1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TGCLDLWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        
        {'plotTitle' => 'Cloud Ice Water Path', 'axisLabel' => 'iwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'endTime' =>'41720','lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'IWP./1000.', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'IWP./1000.', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TGCLDIWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc[mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'endTime' =>'41720','lines' =>
        [
-          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'PRECIP', 'lineWidth' => '2', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/pub/cam/SciDAC_Inter/SAM_OUTPUT/ARM9707_Scidac_r1436_128kmx128kmx64_2km_Morrison_nograupel/arm9707_sam.nc', 'type' => 'les', 'name' => 'CRM', 'expression' => 'PRECIP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'arm97_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRECT.*1000.*86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
     ],
