@@ -231,7 +231,7 @@ module clubb_api_module
     genrand_init_api, &
     gregorian2julian_day_api, &
     leap_year_api, &
-    lin_int_api, &
+    lin_interpolate_two_points_api, &
     linear_interpolation_api, &
     read_parameters_api, &
     report_error_api
@@ -1336,14 +1336,14 @@ contains
   end subroutine cleanup_grid_api
 
   !================================================================================================
-  ! lin_int - Computes a linear interpolation of the value of a variable.
+  ! lin_interpolate_two_points - Computes a linear interpolation of the value of a variable.
   !================================================================================================
 
-  function lin_int_api( &
+  function lin_interpolate_two_points_api( &
     height_int, height_high, height_low, &
     var_high, var_low )
 
-    use interpolation, only : lin_int
+    use interpolation, only : lin_interpolate_two_points
 
     implicit none
 
@@ -1355,13 +1355,13 @@ contains
       var_low        ! Variable below the interpolation [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ) :: lin_int_api
+    real( kind = core_rknd ) :: lin_interpolate_two_points_api
 
-    lin_int_api = lin_int( &
+    lin_interpolate_two_points_api = lin_interpolate_two_points( &
       height_int, height_high, height_low, &
       var_high, var_low )
 
-  end function lin_int_api
+  end function lin_interpolate_two_points_api
 
   !================================================================================================
   ! linear_interpolation - Linear interpolation for 25 June 1996 altocumulus case.

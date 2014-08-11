@@ -2666,7 +2666,7 @@ module inputfields
   !----------------------------------------------------------------------------------------
     
     use interpolation, only: &
-      lin_int ! Procedure(s)
+      lin_interpolate_two_points ! Procedure(s)
 
     use stat_file_utils, only: & 
       LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -2749,7 +2749,7 @@ module inputfields
       if( l_lin_int(k) ) then
         ! CLUBB level k is found at an altitude that is between two
         ! LES levels.  Linear interpolation is required.
-         clubb_var(k) = lin_int( grid(k), &
+         clubb_var(k) = lin_interpolate_two_points( grid(k), &
                           fread_var%z(upper_lev_idx(k)), &
                           fread_var%z(lower_lev_idx(k)), &
                           LES_tmp(upper_lev_idx(k)), &

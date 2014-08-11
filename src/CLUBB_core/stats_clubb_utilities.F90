@@ -1749,7 +1749,7 @@ module stats_clubb_utilities
         vertical_integral
 
     use interpolation, only: & 
-        lin_int             ! Procedure
+        lin_interpolate_two_points             ! Procedure
 
     use saturation, only: &
       sat_mixrat_ice ! Procedure
@@ -2066,7 +2066,7 @@ module stats_clubb_utilities
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
-          call stat_update_var_pt( iz_cloud_base, 1, lin_int( rc_tol, rcm(k),  &
+          call stat_update_var_pt( iz_cloud_base, 1, lin_interpolate_two_points( rc_tol, rcm(k),  &
                                    rcm(k-1), gr%zt(k), gr%zt(k-1) ), sfc )
 
         else

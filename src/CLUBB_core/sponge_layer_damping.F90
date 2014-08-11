@@ -141,7 +141,7 @@ module sponge_layer_damping
 
     use grid_class, only: gr ! Variable(s)
 
-    use interpolation, only: lin_int ! function
+    use interpolation, only: lin_interpolate_two_points ! function
 
     implicit none
 
@@ -178,7 +178,7 @@ module sponge_layer_damping
 !        ( ( gr%zt(gr%nz)-gr%zt(k) ) / &
 !          (gr%zt(gr%nz) - gr%zt( gr%nz-damping_profile%n_sponge_damp ) ) )
       damping_profile%tau_sponge_damp(k) =                                     &
-        lin_int( gr%zt(k), gr%zt(gr%nz),                                     &
+        lin_interpolate_two_points( gr%zt(k), gr%zt(gr%nz),                                     &
           gr%zt(gr%nz) - gr%zt( gr%nz-damping_profile%n_sponge_damp ) ,    &
           settings%tau_sponge_damp_min, settings%tau_sponge_damp_max )         
 ! End Vince Larson's change

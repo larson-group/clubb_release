@@ -46,7 +46,7 @@ module sounding
         edsclr_dim
 
     use interpolation, only:  & 
-        lin_int, & ! Procedure(s)
+        lin_interpolate_two_points, & ! Procedure(s)
         binary_search
 
     use array_index, only: & 
@@ -315,24 +315,24 @@ module sounding
         ! Regular situation w/ linear int.
         IF ( trim( runtype ) /= "dycoms2_rf02" ) THEN
 
-          um(i)   = lin_int( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
-          vm(i)   = lin_int( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
-          ugm(i)  = lin_int( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
-          vgm(i)  = lin_int( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
-          thlm(i) = lin_int( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
-          rtm(i)  = lin_int( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
-          press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
-          wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+          um(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), u(k), u(k-1) )
+          vm(i)   = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), v(k), v(k-1) )
+          ugm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), ug(k), ug(k-1) )
+          vgm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), vg(k), vg(k-1) )
+          thlm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), theta(k), theta(k-1) )
+          rtm(i)  = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), rt(k), rt(k-1) )
+          press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
+          wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
 
           if ( sclr_dim > 0 ) then
             do j = 1, sclr_dim
-              sclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
+              sclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
                                     sclr(k,j), sclr(k-1,j) )
             end do
           end if
           if ( edsclr_dim > 0 ) then
             do j = 1, edsclr_dim
-              edsclrm(i,j) = lin_int( gr%zt(i), z(k), z(k-1),  & 
+              edsclrm(i,j) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1),  & 
                                       edsclr(k,j), edsclr(k-1,j) )
             end do
           end if
@@ -359,8 +359,9 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+                                                   p_in_Pa(k), p_in_Pa(k-1) )
+            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           ELSE
             ! (Wyant, et al. 2007, eq 1--4)
             um(i)   =  3.0_core_rknd + (4.3_core_rknd*gr%zt(i))/ &
@@ -384,8 +385,9 @@ module sounding
               sclrm(i, iisclr_rt)    = rtm(i)
               edsclrm(i, iisclr_rt)  = rtm(i)
             end if
-            press(i) = lin_int( gr%zt(i), z(k), z(k-1), p_in_Pa(k), p_in_Pa(k-1) )
-            wm(i) = lin_int( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
+            press(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), &
+                                                   p_in_Pa(k), p_in_Pa(k-1) )
+            wm(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), subs(k), subs(k-1) )
           END IF
 
         END IF ! runtype
@@ -421,12 +423,12 @@ module sounding
 
        ! The surface is found between sounding levels idx and idx-1.  Find the
        ! value of rtm_sfc.
-       rtm_sfc = lin_int( gr%zm(1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
+       rtm_sfc = lin_interpolate_two_points( gr%zm(1), z(idx), z(idx-1), rt(idx), rt(idx-1) )
 
        ! The surface is found between sounding levels idx and idx-1.  Find the
        ! value of thlm_sfc.
        thlm_sfc &
-          = lin_int( gr%zm(1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
+          = lin_interpolate_two_points( gr%zm(1), z(idx), z(idx-1), theta(idx), theta(idx-1) )
 
     end if
 
@@ -709,7 +711,7 @@ module sounding
         gr ! Variable(s)
 
     use interpolation, only:  & 
-        lin_int ! Procedure
+        lin_interpolate_two_points ! Procedure
 
     use constants_clubb, only:  &
         fstderr ! Constant
@@ -789,7 +791,7 @@ module sounding
           write(*,*) ' Filename: ', fname
           stop 'STOP in read_profile (sounding.F90)'
         endif
-        x(i) = lin_int( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
+        x(i) = lin_interpolate_two_points( gr%zt(i), z(k), z(k-1), var(k), var(k-1) )
       enddo ! while
     enddo ! i=2, gr%nzzp
 

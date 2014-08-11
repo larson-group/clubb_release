@@ -10,13 +10,13 @@ module interpolation
 
   private ! Default Scope
 
-  public :: lin_int, binary_search, zlinterp_fnc, & 
+  public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, & 
     linear_interpolation, linear_interp_factor, mono_cubic_interp, plinterp_fnc
 
   contains
 
 !-------------------------------------------------------------------------------
-  pure function lin_int( height_int, height_high, height_low, &
+  pure function lin_interpolate_two_points( height_int, height_high, height_low, &
     var_high, var_low )
 
 ! Description:
@@ -68,15 +68,15 @@ module interpolation
       var_low        ! Variable below the interpolation [units vary]
 
     ! Output Variables
-    real( kind = core_rknd ) :: lin_int
+    real( kind = core_rknd ) :: lin_interpolate_two_points
 
     ! Compute linear interpolation
 
-    lin_int = ( ( height_int - height_low )/( height_high - height_low ) ) &
+    lin_interpolate_two_points = ( ( height_int - height_low )/( height_high - height_low ) ) &
       * ( var_high - var_low ) + var_low
 
     return
-  end function lin_int
+  end function lin_interpolate_two_points
 
   !-------------------------------------------------------------------------------------------------
   elemental real( kind = core_rknd ) function linear_interp_factor( factor, var_high, var_low )
@@ -235,7 +235,7 @@ module interpolation
 
         ! Prevent an underflow by using a linear interpolation
         if ( abs( beta ) < eps ) then 
-          f_out = lin_int( z00, zp1, zm1, &
+          f_out = lin_interpolate_two_points( z00, zp1, zm1, &
                            fp1, fm1 )
 
         else
@@ -483,7 +483,7 @@ module interpolation
       !kp1 = min( k+1, dim_src )
 
       ! Interpolate
-      var_out(kint) = lin_int( grid_out(kint), grid_src(k),  & 
+      var_out(kint) = lin_interpolate_two_points( grid_out(kint), grid_src(k),  & 
         grid_src(km1), var_src(k), var_src(km1) )
 
 !          ( var_src(k) - var_src(km1) ) / &
@@ -612,7 +612,7 @@ module interpolation
     end if
 
     tvalue =  & 
-    lin_int( xvalue, xlist(topbound), xlist(bottombound),  & 
+    lin_interpolate_two_points( xvalue, xlist(topbound), xlist(bottombound),  & 
             tlist(topbound), tlist(bottombound) )
 
     return

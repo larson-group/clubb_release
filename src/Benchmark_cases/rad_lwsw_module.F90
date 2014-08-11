@@ -60,7 +60,7 @@ module rad_lwsw_module
 
     use constants_clubb, only: Cp ! Variable(s)
 
-    use interpolation, only: lin_int ! Procedure(s)
+    use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
     use clubb_precision, only: core_rknd ! Variable(s)
 
@@ -253,7 +253,7 @@ module rad_lwsw_module
       ! Interpolate liquid water path (lwp) from COAMPS thermodynamic
       ! (or mass) levels to COAMPS momentum (or w) levels.
       do k = 2, kk+1, 1
-        lwp_coamps_zm(k) = lin_int( coamps_zm(k), coamps_zt(k-1),  & 
+        lwp_coamps_zm(k) = lin_interpolate_two_points( coamps_zm(k), coamps_zt(k-1),  & 
                                     coamps_zt(k), lwp(k-1), lwp(k) )
       enddo
       ! The value of liquid water path (lwp) at momentum (or w)
@@ -385,7 +385,7 @@ module rad_lwsw_module
       rho_lw, & ! Constant(s)
       three_halves
 
-    use interpolation, only: lin_int ! Procedure(s)
+    use interpolation, only: lin_interpolate_two_points ! Procedure(s)
     use clubb_precision, only: core_rknd ! Variable(s)
 
     implicit none
@@ -659,7 +659,7 @@ module rad_lwsw_module
 
       if ( l_center ) then
         taupath = taupath  & 
-                + lin_int( coamps_zm(k), coamps_zt(k-1),  & 
+                + lin_interpolate_two_points( coamps_zm(k), coamps_zt(k-1),  & 
                            coamps_zt(k), taude(k-1), taude(k) )
       else
         taupath = taupath + taude(k)

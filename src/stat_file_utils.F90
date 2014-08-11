@@ -42,7 +42,7 @@ module stat_file_utils
 !     lin_ext_zt_bottom
 
     use interpolation, only: &
-      lin_int
+      lin_interpolate_two_points
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -209,7 +209,7 @@ module stat_file_utils
 
         do k = k_lowest_input, k_highest_input, 1
           if ( l_lin_int(k) ) then
-            interp_variable(k) = lin_int( out_heights(k), &
+            interp_variable(k) = lin_interpolate_two_points( out_heights(k), &
               faverage%z(upper_lev_idx(k)), faverage%z(lower_lev_idx(k)), &
               file_variable(upper_lev_idx(k)), file_variable(lower_lev_idx(k)) )
           else

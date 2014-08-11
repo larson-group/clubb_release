@@ -198,7 +198,7 @@ module simple_rad_module
     use stats_variables, only:  & 
         iz_inversion, sfc, l_stats_samp ! Variable(s)
 
-    use interpolation, only: lin_int ! Procedure(s)
+    use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
     use parameters_radiation, only: &
       F0,  & ! Variable(s)
@@ -278,7 +278,7 @@ module simple_rad_module
         return
       end if
 
-      z_i = lin_int( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
+      z_i = lin_interpolate_two_points( 8.0e-3_core_rknd, rtm(k), rtm(k-1), gr%zt(k), gr%zt(k-1) )
 
       ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nz, 1

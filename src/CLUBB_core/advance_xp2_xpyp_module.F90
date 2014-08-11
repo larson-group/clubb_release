@@ -3117,7 +3117,7 @@ module advance_xp2_xpyp_module
         two  ! Constant(s)
 
     use interpolation, only : &
-        binary_search, lin_int  ! Function(s)
+        binary_search, lin_interpolate_two_points  ! Function(s)
 
     use grid_class, only: &
         gr ! Variable(s)
@@ -3182,9 +3182,9 @@ module advance_xp2_xpyp_module
       vm_high = vm(k_high)
     else ! Do an interpolation to find um & vm at current altitude + depth.
       zt_high = gr%zt(k)+depth
-      um_high = lin_int( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
+      um_high = lin_interpolate_two_points( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
                          um(k_high), um(k_high-1) )
-      vm_high = lin_int( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
+      vm_high = lin_interpolate_two_points( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
                          vm(k_high), vm(k_high-1) )
     end if ! k_high ...
 
@@ -3210,9 +3210,9 @@ module advance_xp2_xpyp_module
       vm_low = vm(k_low)
     else ! Do an interpolation to find um at current altitude - depth.
       zt_low = gr%zt(k)-depth
-      um_low = lin_int( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
+      um_low = lin_interpolate_two_points( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
                         um(k_low), um(k_low-1) )
-      vm_low = lin_int( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
+      vm_low = lin_interpolate_two_points( zt_low, gr%zt(k_low), gr%zt(k_low-1), &
                         vm(k_low), vm(k_low-1) )
     end if ! k_low ...
 
