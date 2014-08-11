@@ -11,7 +11,7 @@ module interpolation
   private ! Default Scope
 
   public :: lin_interpolate_two_points, binary_search, zlinterp_fnc, & 
-    linear_interpolation, linear_interp_factor, mono_cubic_interp, plinterp_fnc
+    lin_interpolate_on_grid, linear_interp_factor, mono_cubic_interp, plinterp_fnc
 
   contains
 
@@ -502,7 +502,7 @@ module interpolation
   end function zlinterp_fnc
 
 !-------------------------------------------------------------------------------
-  subroutine linear_interpolation & 
+  subroutine lin_interpolate_on_grid & 
              ( nparam, xlist, tlist, xvalue, tvalue )
 
 ! Description:
@@ -516,7 +516,9 @@ module interpolation
 ! Author: Michael Falk for COAMPS.
 !-------------------------------------------------------------------------------
 
-    use error_code, only: clubb_debug ! Procedure
+    use error_code, only: & 
+      clubb_debug, & ! Procedure(s)
+      clubb_at_least_debug_level
 
     use constants_clubb, only: fstderr ! Constant
 
@@ -541,42 +543,27 @@ module interpolation
 
     ! Local variables
     integer ::  & 
-      i,  & ! Loop control variable for bubble sort- number of the 
-            ! lowest yet-unsorted data point.
-      j  ! Loop control variable for bubble sort- index of value
-    ! currently being tested
+      i     ! Loop control variable
+ 
     integer ::  & 
       bottombound, & ! Index of the smaller value in the linear interpolation
-      topbound,    & ! Index of the larger value in the linear interpolation
-      smallest       ! Index of the present smallest value, for bubble sort
-
-    real( kind = core_rknd ) :: temp ! A temporary variable used for the bubble sort swap
+      topbound       ! Index of the larger value in the linear interpolation
 
 !-------------------------------------------------------------------------------
 !
-! Bubble Sort algorithm, assuring that the elements are in order so
-! that the interpolation is between the two closest points to the
-! point in question.
+! Assure that the elements are in order so that the interpolation is between 
+! the two closest points to the point in question.
 !
 !-------------------------------------------------------------------------------
 
-    do i=1,nparam
-      smallest = i
-      do j=i,nparam
-        if ( xlist(j) < xlist(smallest) ) then
-          smallest = j
-        end if
-      end do
-
-      temp = xlist(i)
-      xlist(i) = xlist(smallest)
-      xlist(smallest) = temp
-
-      temp = tlist(i)
-      tlist(i) = tlist(smallest)
-      tlist(smallest) = temp
-    end do
-
+     if ( clubb_at_least_debug_level( 2 ) ) then
+       do i=2,nparam
+         if ( xlist(i) < xlist(i-1) ) then
+           write(fstderr,*) "xlist must be sorted for linear interpolation."
+           stop
+         end if
+       end do
+     end if
 !-------------------------------------------------------------------------------
 !
 ! If the point in question is larger than the largest x-value or
@@ -585,7 +572,7 @@ module interpolation
 !-------------------------------------------------------------------------------
 
     if ( (xvalue < xlist(1)) .or. (xvalue > xlist(nparam)) ) then
-      write(fstderr,*) "linear_interpolation: Value out of range"
+      write(fstderr,*) "lin_interpolate_on_grid: Value out of range"
       stop
     end if
 
@@ -608,7 +595,7 @@ module interpolation
 
     if ( topbound == -1 .or. bottombound == -1 ) then
       call clubb_debug( 1, "Sanity check failed! xlist is not properly sorted" )
-      call clubb_debug( 1, "in linear_interpolation.")
+      call clubb_debug( 1, "in lin_interpolate_on_grid.")
     end if
 
     tvalue =  & 
@@ -616,6 +603,6 @@ module interpolation
             tlist(topbound), tlist(bottombound) )
 
     return
-  end subroutine linear_interpolation
+  end subroutine lin_interpolate_on_grid
 
 end module interpolation

@@ -232,7 +232,7 @@ module clubb_api_module
     gregorian2julian_day_api, &
     leap_year_api, &
     lin_interpolate_two_points_api, &
-    linear_interpolation_api, &
+    lin_interpolate_on_grid_api, &
     read_parameters_api, &
     report_error_api
   public &
@@ -1364,13 +1364,13 @@ contains
   end function lin_interpolate_two_points_api
 
   !================================================================================================
-  ! linear_interpolation - Linear interpolation for 25 June 1996 altocumulus case.
+  ! lin_interpolate_on_grid - Linear interpolation for 25 June 1996 altocumulus case.
   !================================================================================================
 
-  subroutine linear_interpolation_api( &
+  subroutine lin_interpolate_on_grid_api( &
     nparam, xlist, tlist, xvalue, tvalue )
 
-    use interpolation, only : linear_interpolation
+    use interpolation, only : lin_interpolate_on_grid
 
     implicit none
 
@@ -1388,10 +1388,10 @@ contains
     real( kind = core_rknd ), intent(inout) ::  &
       tvalue  ! t-value solved by interpolation
 
-    call linear_interpolation( &
+    call lin_interpolate_on_grid( &
       nparam, xlist, tlist, xvalue, tvalue )
 
-  end subroutine linear_interpolation_api
+  end subroutine lin_interpolate_on_grid_api
 
   !================================================================================================
   ! read_parameters - Read a namelist containing the model parameters.

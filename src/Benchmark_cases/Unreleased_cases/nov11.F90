@@ -127,7 +127,7 @@ module nov11
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use interpolation, only: linear_interpolation ! Procedure(s)
+    use interpolation, only: lin_interpolate_on_grid ! Procedure(s)
 
     use error_code, only: clubb_at_least_debug_level ! Procedure(s)
 
@@ -190,7 +190,7 @@ module nov11
 
     integer :: k
 
-    integer :: nparam ! input for linear_interpolation subroutine
+    integer :: nparam ! input for lin_interpolate_on_grid subroutine
 
     ! ---- Begin Code ----
 !
@@ -318,7 +318,7 @@ module nov11
       if ( (time >= time_initial + 3600.0_time_precision ) .and. l_subs_on ) then
         if ( gr%zt(k) <= zsubs(7) ) then
           nparam = 7
-          call linear_interpolation( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )
+          call lin_interpolate_on_grid( nparam, zsubs, wt1, gr%zt(k), wm_zt(k) )
         else
           wm_zt(k) = 0.0_core_rknd
           if ( clubb_at_least_debug_level( 1 ) ) then

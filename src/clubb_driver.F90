@@ -3891,7 +3891,7 @@ module clubb_driver
 
     use grid_class, only: zt2zm ! Procedure
 
-    use interpolation, only: binary_search, linear_interpolation ! Procdure(s)
+    use interpolation, only: binary_search, lin_interpolate_on_grid ! Procdure(s)
 
 #ifdef radoffline
     use bugsrad_driver, only: compute_bugsrad_radiation ! Procedure(s)
@@ -4127,7 +4127,7 @@ module clubb_driver
       if ( l_sw_radiation .and. amu0 > 0._dp ) then
         amu0_core_rknd = real( amu0, kind = core_rknd )
         if ( nparam > 1 ) then
-          call linear_interpolation( nparam, cos_solar_zen_values(1:nparam), &
+          call lin_interpolate_on_grid( nparam, cos_solar_zen_values(1:nparam), &
                                     Fs_values(1:nparam), amu0_core_rknd, Fs0 )
         else
           Fs0 = Fs_values(1)
