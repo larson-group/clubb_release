@@ -234,7 +234,7 @@ module clubb_api_module
     lin_int_api, &
     linear_interpolation_api, &
     read_parameters_api, &
-    reportError_api
+    report_error_api
   public &
     set_clubb_debug_level_api, &
     set_Lscale_max_api, &
@@ -966,22 +966,22 @@ contains
   end subroutine setup_pdf_indices_api
 
   !================================================================================================
-  ! reportError - Reports the meaning of an error code to the console.
+  ! report_error - Reports the meaning of an error code to the console.
   !================================================================================================
 
-  subroutine reportError_api( &
+  subroutine report_error_api( &
     err_code)
 
-    use error_code, only : reportError
+    use error_code, only : report_error
 
     implicit none
 
     ! Input Variable
     integer, intent(in) :: err_code ! Error Code being examined
 
-    call reportError( &
+    call report_error( &
       err_code)
-  end subroutine reportError_api
+  end subroutine report_error_api
 
   !================================================================================================
   ! fatal_error - Checks to see if an error code is usually one which causes an exit elsewhere.

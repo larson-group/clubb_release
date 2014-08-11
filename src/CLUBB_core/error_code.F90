@@ -26,7 +26,7 @@ module error_code
   private ! Default Scope
 
   public :: & 
-    reportError,  & 
+    report_error,  & 
     fatal_error, & 
     lapack_error,     & 
     clubb_at_least_debug_level,  & 
@@ -54,7 +54,7 @@ module error_code
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine reportError( err_code )
+  subroutine report_error( err_code )
 !
 ! Description: 
 !   Reports meaning of error code to console.
@@ -103,7 +103,7 @@ module error_code
     end select
 
     return
-  end subroutine reportError
+  end subroutine report_error
 !-------------------------------------------------------------------------------
   elemental function lapack_error( err_code )
 !

@@ -263,7 +263,7 @@ module advance_clubb_core_module
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
-      reportError, &
+      report_error, &
       fatal_error
 
     use Skw_module, only:  & 
@@ -1627,7 +1627,7 @@ module advance_clubb_core_module
                              sclrpthlp(1,1:sclr_dim) )                         ! intent(out)
 
         if ( fatal_error( err_code_surface ) ) then
-          call reportError( err_code_surface ) ! intent(in)
+          call report_error( err_code_surface ) ! intent(in)
           err_code = err_code_surface
         end if
 

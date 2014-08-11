@@ -104,7 +104,7 @@ module clubb_driver
       fatal_error,  & ! Procedure(s)
       clubb_at_least_debug_level, &
       set_clubb_debug_level, &
-      reportError
+      report_error
 
     use clubb_precision, only: time_precision, core_rknd, dp ! Constants
 
@@ -1216,7 +1216,7 @@ module clubb_driver
       if ( fatal_error( err_code_forcings ) ) then
         if ( clubb_at_least_debug_level( 1 ) ) then
           write(fstderr,*) "Fatal error in prescribe_forcings:"
-          call reportError( err_code_forcings )
+          call report_error( err_code_forcings )
         end if
         err_code = err_code_forcings
       end if
@@ -1406,7 +1406,7 @@ module clubb_driver
       if ( fatal_error( err_code_microphys ) ) then
          if ( clubb_at_least_debug_level( 1 ) ) then
              write(fstderr,*) "Fatal error in advance_microphys:"
-             call reportError( err_code_microphys )
+             call report_error( err_code_microphys )
          endif
          err_code = err_code_microphys
       endif
@@ -3899,7 +3899,7 @@ module clubb_driver
 
     use error_code, only: clubb_no_error, clubb_var_equals_NaN
 
-    use error_code, only: reportError, fatal_error
+    use error_code, only: report_error, fatal_error
 
     use variables_radiation_module, only: &
       radht_LW, radht_SW, Frad_SW, Frad_LW
@@ -4172,7 +4172,7 @@ module clubb_driver
     if ( fatal_error( err_code_radiation ) ) then
       if ( clubb_at_least_debug_level( 1 ) ) then
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
-        call reportError( err_code_radiation )
+        call report_error( err_code_radiation )
       end if
 
       err_code = err_code_radiation ! Overwrite with new fatal error
@@ -4355,7 +4355,7 @@ module clubb_driver
       clubb_no_error, & ! Constant
       fatal_error, &    ! Function(s)
       clubb_at_least_debug_level, &
-      reportError ! Subroutine
+      report_error ! Subroutine
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &   ! Procedure(s)
@@ -4487,7 +4487,7 @@ module clubb_driver
         if ( clubb_at_least_debug_level( 1 ) ) then
 
           write(fstderr,*) "Fatal error in silhs_radiation_driver:"
-          call reportError( err_code_samp(isample) )
+          call report_error( err_code_samp(isample) )
 
         end if ! clubb_at_least_debug_level( 1 )
 
