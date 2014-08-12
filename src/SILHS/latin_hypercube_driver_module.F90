@@ -22,7 +22,7 @@ module latin_hypercube_driver_module
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc
 
-  private :: stats_accumulate_uniform_lh
+  private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
 
   contains
 
@@ -96,10 +96,6 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), parameter :: &
       cloud_frac_thresh = 0.001_core_rknd ! Threshold for sampling preferentially within cloud
 
-    ! Find in and out of cloud points using the rejection method rather than scaling
-    logical, parameter :: &
-      l_use_rejection_method = .false.
-
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
                             ! the lognormal sample. Currently:
@@ -161,9 +157,6 @@ module latin_hypercube_driver_module
 
     real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
 
-    real(kind=dp), dimension(num_samples) :: &
-      X_u_dp1_k_lh_start, X_u_chi_k_lh_start
-
     real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
@@ -183,8 +176,6 @@ module latin_hypercube_driver_module
       cloud_frac_max_weighted_smpl = 0.5_core_rknd ! Use cloud weighted sampling only if cloud
                                                        ! fraction is less than
                                                        ! cloud_frac_max_weighted_smpl
-
-    logical :: l_cloudy_sample ! Whether a sample point is cloudy or clear air
 
     logical :: &
       l_small_nonzero_cloud_frac ! True if cloud fraction is greater than cloud_frac_thresh
@@ -271,25 +262,6 @@ module latin_hypercube_driver_module
       k_lh_start = nz / 2
     end if
 
-    if ( l_lh_cloud_weighted_sampling ) then
-
-      ! Determine cloud fraction at k_lh_start
-      lh_start_cloud_frac = &
-      pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac1 &
-        + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
-
-      ! Determine p_matrix at k_lh_start
-      p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-        height_time_matrix(k_lh_start, &
-        (num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
-        1:(d_variables+d_uniform_extra))
-    else
-      lh_start_cloud_frac = -9999.0_core_rknd
-         ! This assignment eliminates a g95 compiler warning for an uninitialized variable.
-         !-meyern
-
-    end if ! l_lh_cloud_weighted_sampling
-
     if ( l_lh_vert_overlap ) then
 
       ! Choose which rows of LH sample to feed into closure at the k_lh_start level
@@ -303,61 +275,34 @@ module latin_hypercube_driver_module
                                     p_matrix, & ! In
                                     X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-      do sample = 1, num_samples
+      if ( l_lh_cloud_weighted_sampling ) then
 
-        ! Get the uniform sample of d+1 (telling us if we're in component 1 or
-        ! component 2), and the uniform sample for chi
-        X_u_dp1_k_lh_start(sample)      = X_u_all_levs(k_lh_start,sample,d_variables+1)
-        X_u_chi_k_lh_start(sample) = X_u_all_levs(k_lh_start,sample,iiPDF_chi)
+        ! Determine cloud fraction at k_lh_start
+        lh_start_cloud_frac = &
+        pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac1 &
+          + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
 
-        if ( l_lh_cloud_weighted_sampling ) then
+        ! Save the cloud fraction as a weight for averaging preferentially
+        ! within cloud
+        l_small_nonzero_cloud_frac = (lh_start_cloud_frac < cloud_frac_max_weighted_smpl &
+                                .and. lh_start_cloud_frac > cloud_frac_thresh)
+        if ( .not. l_small_nonzero_cloud_frac ) then
 
-          ! Save the cloud fraction as a weight for averaging preferentially
-          ! within cloud
-          l_small_nonzero_cloud_frac = (lh_start_cloud_frac < cloud_frac_max_weighted_smpl &
-                                  .and. lh_start_cloud_frac > cloud_frac_thresh)
-          if ( .not. l_small_nonzero_cloud_frac ) then
-            lh_sample_point_weights(sample)  = 1.0_core_rknd
-            ! There's no cloud or cloud fraction is >= cloud_frac_max_weighted_smpl,
-            ! so we do nothing
+          ! There's no cloud or cloud fraction is >= cloud_frac_max_weighted_smpl,
+          ! so we do nothing
+          lh_sample_point_weights(:)  = 1.0_core_rknd
 
-          else ! If we're in a partly cloud gridbox then we continue to the code below
+        else ! If we're in a partly cloud gridbox then we continue to the code below
 
-            ! Detect which half of the sample points are in clear air and which half are in
-            ! the cloudy air
-            if ( p_matrix(sample,iiPDF_chi) < ( num_samples / 2 ) ) then
+          call cloud_weighted_sampling_driver &
+               ( num_samples, p_matrix(:,iiPDF_chi), pdf_params(k_lh_start)%cloud_frac1, & ! In
+                 pdf_params(k_lh_start)%cloud_frac2, & ! In
+                 lh_start_cloud_frac, pdf_params(k_lh_start)%mixt_frac, & ! In
+                 lh_sample_point_weights, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! Out
+                 X_u_all_levs(k_lh_start,:,d_variables+1) )
 
-              l_cloudy_sample = .false.
-              lh_sample_point_weights(sample) = 2._core_rknd* &
-                ( 1.0_core_rknd - lh_start_cloud_frac )
-            else
-              l_cloudy_sample = .true.
-              lh_sample_point_weights(sample) = 2._core_rknd* lh_start_cloud_frac
-            end if
-
-            if ( l_use_rejection_method ) then
-              ! Use the rejection method to select points that are in or out of cloud
-              call choose_X_u_reject &
-                   ( l_cloudy_sample, pdf_params(k_lh_start)%cloud_frac1, & ! In
-                     pdf_params(k_lh_start)%cloud_frac2, pdf_params(k_lh_start)%mixt_frac, & !In
-                     cloud_frac_thresh, & ! In
-                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! Out
-
-            else ! Transpose and scale the points to be in or out of cloud
-              call choose_X_u_scaled &
-                   ( l_cloudy_sample, & ! In
-                     p_matrix(sample,iiPDF_chi), num_samples, & ! In
-                     pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
-                     pdf_params(k_lh_start)%mixt_frac, & !In
-                     X_u_dp1_k_lh_start(sample), X_u_chi_k_lh_start(sample) ) ! Out
-
-            end if
-
-          end if ! Cloud fraction is between cloud_frac_thresh and 50%
-
-        end if ! l_lh_cloud_weighted_sampling
-
-      end do ! 1..num_samples
+        end if ! .not. l_small_nonzero_cloud_frac
+      end if ! l_lh_cloud_weighted_sampling
 
       ! Use a fixed number for the vertical correlation.
 !     X_vert_corr(1:nz) = 0.95_dp
@@ -380,15 +325,17 @@ module latin_hypercube_driver_module
 
       do sample = 1, num_samples
         ! Correlate chi vertically
+        X_u_temp = X_u_all_levs(k_lh_start,sample,iiPDF_chi)
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_chi_k_lh_start(sample), X_vert_corr, & ! In
+               X_u_temp, X_vert_corr, & ! In
                X_u_all_levs(:,sample,iiPDF_chi) ) ! Out
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
+        X_u_temp = X_u_all_levs(k_lh_start,sample,d_variables+1)
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_dp1_k_lh_start(sample), X_vert_corr, & ! In
+               X_u_temp, X_vert_corr, & ! In
                X_u_all_levs(:,sample,d_variables+1) ) ! Out
 
         ! Correlate the d+2 variate vertically (used to determine precipitation
@@ -550,6 +497,97 @@ module latin_hypercube_driver_module
 
     return
   end subroutine lh_subcolumn_generator
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine cloud_weighted_sampling_driver &
+             ( num_samples, p_matrix_chi, cloud_frac1, cloud_frac2, cloud_frac, mixt_frac, &
+               lh_sample_point_weights, X_u_chi, X_u_dp1 )
+
+  ! Description:
+  !   Performs importance sampling such that half of sample points are in cloud
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd, &          ! Precision(s)
+      dp
+
+    implicit none
+
+    ! Parameter Constants
+    logical, parameter :: &
+      l_use_rejection_method = .false.    ! Find in and out of cloud points using the rejection
+                                          ! method rather than scaling
+
+    ! Input Variables
+    integer :: &
+      num_samples                         ! Number of SILHS sample points
+
+    integer, dimension(num_samples), intent(in) :: &
+      p_matrix_chi                        ! Permutation of the integers 0..num_samples from p_matrix
+
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac1, &                      ! Cloud fraction in PDF component 1
+      cloud_frac2, &                      ! Cloud fraction in PDF component 2
+      cloud_frac,  &                      ! Cloud fraction in overall grid box
+      mixt_frac                           ! Weight of first gaussian component
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+      lh_sample_point_weights             ! Weight of SILHS sample points (these must be applied
+                                          ! when averaging results from, e.g., calling microphysics
+
+    real( kind = dp ), dimension(num_samples), intent(out) :: &
+      X_u_chi, &                          ! Samples of chi in uniform space
+      X_u_dp1                             ! Samples of the dp1 variate for determining mixture
+                                          ! component
+
+    ! Local Variables
+    integer :: sample
+    logical :: l_cloudy_sample
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do sample=1, num_samples
+
+      ! Detect which half of the sample points are in clear air and which half are in
+      ! the cloudy air
+      if ( p_matrix_chi(sample) < ( num_samples / 2 ) ) then
+
+        l_cloudy_sample = .false.
+        lh_sample_point_weights(sample) = 2._core_rknd * ( 1.0_core_rknd - cloud_frac )
+
+      else
+
+        l_cloudy_sample = .true.
+        lh_sample_point_weights(sample) = 2._core_rknd * cloud_frac
+
+      end if
+
+      if ( l_use_rejection_method ) then
+        ! Use the rejection method to select points that are in or out of cloud
+        call choose_X_u_reject &
+             ( l_cloudy_sample, cloud_frac1, & ! In
+               cloud_frac2, mixt_frac, & !In
+               X_u_dp1(sample), X_u_chi(sample) ) ! Out
+
+      else ! Transpose and scale the points to be in or out of cloud
+        call choose_X_u_scaled &
+             ( l_cloudy_sample, & ! In
+               p_matrix_chi(sample), num_samples, & ! In
+               cloud_frac1, cloud_frac2, & ! In
+               mixt_frac, & !In
+               X_u_dp1(sample), X_u_chi(sample) ) ! Out
+      end if
+
+    end do ! sample=1, num_samples
+    return
+  end subroutine cloud_weighted_sampling_driver
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -1151,7 +1189,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine choose_X_u_reject &
              ( l_cloudy_sample, cloud_frac1, &
-              cloud_frac2, mixt_frac, cloud_frac_thresh, &
+              cloud_frac2, mixt_frac, &
               X_u_dp1_element, X_u_chi_element )
 
 ! Description:
@@ -1178,7 +1216,8 @@ module latin_hypercube_driver_module
 
     ! Constant parameters
     real( kind = core_rknd), parameter :: &
-      max_iter_numerator = 100._core_rknd
+      max_iter_numerator = 100._core_rknd, &
+      cloud_frac_thresh  = 0.001_core_rknd
 
     ! Input Variables
     logical, intent(in) :: &
@@ -1187,8 +1226,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(in) :: &
       cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
       cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
-      mixt_frac, &      ! Mixture fraction                                       [-]
-      cloud_frac_thresh ! Minimum threshold for cloud fraction                   [-]
+      mixt_frac         ! Mixture fraction                                       [-]
 
     ! Output Variables
     real(kind=dp), intent(out) :: &
