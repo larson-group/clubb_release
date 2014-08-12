@@ -212,196 +212,219 @@ module clubb_api_module
 
   private
 
-  ! Making the functions and subroutines public
   public &
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
-    pack_pdf_params_api, &
-    unpack_pdf_params_api, &
-#endif
-    adj_low_res_nu_api, &
-    advance_clubb_core_api, &
-    calculate_spurious_source_api, &
-    cleanup_clubb_core_api, &
-    cleanup_grid_api, &
-    clubb_at_least_debug_level_api, &
-    compute_current_date_api, &
-    fatal_error_api, &
-    fill_holes_driver_api, &
-    fill_holes_vertical_api, &
-    genrand_init_api, &
-    gregorian2julian_day_api, &
-    leap_year_api, &
-    lin_interpolate_two_points_api, &
-    lin_interpolate_on_grid_api, &
+    ! To Implement CLUBB:
     read_parameters_api, &
-    report_error_api
+    setup_clubb_core_api, &
+        ! CLUBB can be set more specifically using these flags:
+        l_use_boussinesq, &
+        l_diagnose_correlations, &
+        l_calc_w_corr, &
+        l_use_cloud_cover, &
+        l_use_precip_frac, &
+        l_tke_aniso, &
+        l_fix_chi_eta_correlations, &
+        l_const_Nc_in_cloud, &
+        ! The parameters of CLUBB can be retrieved and tuned using these indices:
+        iSkw_denom_coef, &
+        ibeta, &
+        iC11, &
+        iC11b, &
+    advance_clubb_core_api, &
+        pdf_parameter, &
+        ! A hydromet array is required, and these variables are required for a hydromet array:
+        hydromet_list, &
+        hydromet_tol, &
+        hydromet_dim, &
+        iiNgm, &
+        iiNim, &
+        iiNrm, &
+        iiNsm, &
+        iirgm, &
+        iirim, &
+        iirrm, &
+        iirsm, &
+        l_frozen_hm, &
+        l_mix_rat_hm, &
+    cleanup_clubb_core_api
+
   public &
-    set_clubb_debug_level_api, &
-    set_Lscale_max_api, &
-    setup_clubb_core_api,&
-    setup_corr_varnce_array_api, &
-    setup_grid_api, &
-    setup_grid_heights_api, &
-    setup_parameters_api, &
+    ! To Implement SILHS:
     setup_pdf_indices_api, &
+    setup_corr_varnce_array_api, &
     setup_pdf_parameters_api, &
-    stats_accumulate_hydromet_api, &
+    hydromet_pdf_parameter, &
+    ! lh_subcolumn_generator - SILHS API
+    genrand_init_api, & ! if you are doing restarts)
+    genrand_state, &
+    genrand_srepr, &
+    genrand_intg, &
+    ! To use the results, you will need these variables:
+    corr_array_cloud, &
+    corr_array_below, &
+    d_variables, &
+    iiPDF_chi, &
+    iiPDF_rr, &
+    iiPDF_w, &
+    iiPDF_Nr, &
+    iiPDF_ri, &
+    iiPDF_Ni, &
+    iiPDF_Ncn, &
+    iiPDF_rs, &
+    iiPDF_Ns, &
+    iiPDF_rg, &
+    iiPDF_Ng
+
+  public &
+    ! To Interact With CLUBB's Grid:
+    gr, &
+    ! For Varying Grids
+    setup_grid_api, & ! OR
+    setup_grid_heights_api, & ! if heights vary with time
+    cleanup_grid_api
+
+  public &
+    ! To Obtain More Output from CLUBB for Diagnostics:
     stats_begin_timestep_api, &
     stats_end_timestep_api, &
     stats_finalize_api, &
     stats_init_api, &
-    stats_init_rad_zm_api, &
-    stats_init_rad_zt_api, &
-    stats_init_sfc_api, &
-    stats_init_zm_api, &
-    stats_init_zt_api, &
+    l_stats, &
+    l_stats_last, &
+    l_stats_samp, &
+    stats_tsamp, &
+    stats_tout
+
+  public &
+    ! To Convert Between Common CLUBB-related quantities:
+    lin_interpolate_two_points_api, & ! OR
+    lin_interpolate_on_grid_api, &
     T_in_K2thlm_api, &
     thlm2T_in_K_api, &
-    vertical_avg_api, &
-    vertical_integral_api, &
-    zt2zm_api, zm2zt_api
+    zt2zm_api, &
+    zm2zt_api
 
-
-  ! Making the variables public
   public &
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
-    num_pdf_params, &
-#endif
-    assignment( = ), &
-    cloud_frac_min, &
-    clubb_i, &
-    clubb_j, &
+    ! To Check For and Handle CLUBB's Errors:
+    calculate_spurious_source_api, &
+    clubb_at_least_debug_level_api, &
     clubb_no_error, &
+    fatal_error_api, &
+    fill_holes_driver_api, & ! OR
+    fill_holes_vertical_api, &
+    report_error_api, &
+    set_clubb_debug_level_api, &
+    vertical_integral_api
+
+  public &
+    ! Constants That May be Helpful:
+    cloud_frac_min, &
     cm3_per_m3, &
     core_rknd, &
-    corr_array_below, &
-    corr_array_cloud, &
     Cp, &
-    d_variables, &
     dp, &
     em_min, &
     ep, &
-    fname_rad_zm, &
-    fname_rad_zt, &
-    fname_sfc, &
     fstderr, &
     fstdout, &
-    genrand_intg, &
-    genrand_srepr, &
-    genrand_state, &
-    gr, &
     grav, &
-    hydromet_dim, &
-    hydromet_list, &
-    hydromet_pdf_parameter, &
-    hydromet_tol
-  public &
-    ibeta, &
-    iC11, &
-    iC11b, &
-    iiedsclr_CO2, &
-    iiedsclr_rt, &
-    iiedsclr_thl, &
-    iiNgm, &
-    iiNim, &
-    iiNrm, &
-    iiNsm, &
-    iiPDF_chi, &
-    iiPDF_Ncn, &
-    iiPDF_Ng, &
-    iiPDF_Ni, &
-    iiPDF_Nr, &
-    iiPDF_Ns, &
-    iiPDF_rg, &
-    iiPDF_ri, &
-    iiPDF_rr, &
-    iiPDF_rs, &
-    iiPDF_w, &
-    iirgm, &
-    iirim, &
-    iirrm, &
-    iirsm, &
-    iisclr_CO2, &
-    iisclr_rt, &
-    iisclr_thl, &
-    iSkw_denom_coef
-  public &
-    l_calc_w_corr, &
-    l_const_Nc_in_cloud, &
-    l_diagnose_correlations, &
-    l_fix_chi_eta_correlations, &
-    l_frozen_hm, &
-    l_grads, &
-    l_mix_rat_hm, &
-    l_netcdf, &
-    l_output_rad_files, &
-    l_prescribed_avg_deltaz, &
-    l_stats_last, &
-    l_stats_samp, &
-    l_stats, &
-    l_tke_aniso, &
-    l_use_boussinesq, &
-    l_use_cloud_cover, &
-    l_use_precip_frac, &
     Lf, &
     Ls, &
-    Lscale, &
-    Lscale_max, &
-    Lv
-  public &
+    Lv, &
+    pi_dp, &
+    pi, &
+    radians_per_deg_dp, &
+    Rd, &
+    Rv, &
+    sec_per_day, &
+    sec_per_hr, &
+    sec_per_min, &
+    T_freeze_K, &
+    time_precision, &
+    var_length, &
+    zero_threshold, &
+    zero, &
+    ! Tolerances
     Nc_tol, &
     Ng_tol, &
     Ni_tol, &
-    nparams, &
     Nr_tol, &
     Ns_tol, &
-    nvarmax_rad_zm, &
-    nvarmax_rad_zt, &
-    nvarmax_sfc, &
-    nvarmax_zm, &
-    nvarmax_zt, &
-    pdf_parameter, &
-    pi_dp, &
-    pi, &
-    rad_zm, &
-    rad_zt, &
-    radians_per_deg_dp, &
-    Rd, &
     rg_tol, &
     rho_lw, &
     ri_tol, &
     rr_tol, &
     rs_tol, &
     rt_tol, &
-    Rv
+    thl_tol, &
+    w_tol_sqd
+
   public &
-    sec_per_day, &
-    sec_per_hr, &
-    sec_per_min, &
+    ! Attempt to Not Use the Following:
+#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+    pack_pdf_params_api, &
+    unpack_pdf_params_api, &
+    num_pdf_params, &
+#endif
+    adj_low_res_nu_api, &
+    clubb_i, &
+    clubb_j, &
+    compute_current_date_api, &
+    fname_rad_zm, &
+    fname_rad_zt, &
+    fname_sfc, &
+    gregorian2julian_day_api, &
+    iiedsclr_CO2, &
+    iiedsclr_rt, &
+    iiedsclr_thl, &
+    iisclr_CO2, &
+    iisclr_rt, &
+    iisclr_thl, &
+    l_grads, &
+    l_netcdf, &
+    l_output_rad_files, &
+    l_prescribed_avg_deltaz, &
+    leap_year_api, &
+    Lscale_max, &
+    Lscale, &
+    nvarmax_rad_zm, &
+    nvarmax_rad_zt, &
+    nvarmax_sfc, &
+    nvarmax_zm, &
+    nvarmax_zt, &
+    rad_zm, &
+    rad_zt
+    public &
+    set_Lscale_max_api, &
+    setup_parameters_api, &
     sfc, &
-    sigma2_on_mu2_ratios_type, &
     stat_nknd, &
     stat_rknd, &
-    stats_tout, &
-    stats_tsamp, &
-    T_freeze_K, &
-    thl_tol, &
-    time_precision, &
-    var_length, &
-    w_tol_sqd, &
+    stats_accumulate_hydromet_api, &
+    stats_init_rad_zm_api, &
+    stats_init_rad_zt_api, &
+    stats_init_sfc_api, &
+    stats_init_zm_api, &
+    stats_init_zt_api, &
+    vertical_avg_api, &
     wp2_zt, &
-    wphydrometp
-  public &
-    zero, &
-    zero_threshold, &
+    wphydrometp, &
     zm, &
-    zmscr01, zmscr02, zmscr03, zmscr04, zmscr05, zmscr06, &
-    zmscr07, zmscr08, zmscr09, zmscr10, zmscr11, zmscr12, &
-    zmscr13, zmscr14, zmscr15, zmscr16, zmscr17, &
+    zmscr01, zmscr02, zmscr03, &
+    zmscr04, zmscr05, zmscr06, &
+    zmscr07, zmscr08, zmscr09, &
+    zmscr10, zmscr11, zmscr12, &
+    zmscr13, zmscr14, zmscr15, &
+    zmscr16, zmscr17, &
     zt, &
-    ztscr01, ztscr02, ztscr03, ztscr04, ztscr05, ztscr06, ztscr07, &
-    ztscr08, ztscr09, ztscr10, ztscr11, ztscr12, ztscr13, ztscr14, &
-    ztscr15, ztscr16, ztscr17, ztscr18, ztscr19, ztscr20, ztscr21
+    ztscr01, ztscr02, ztscr03, &
+    ztscr04, ztscr05, ztscr06, &
+    ztscr07, ztscr08, ztscr09, &
+    ztscr10, ztscr11, ztscr12, &
+    ztscr13, ztscr14, ztscr15, &
+    ztscr16, ztscr17, ztscr18, &
+    ztscr19, ztscr20, ztscr21
+
 
 contains
 
@@ -971,8 +994,6 @@ contains
 
   subroutine report_error_api( &
     err_code)
-
-    use error_code, only : report_error
 
     implicit none
 
