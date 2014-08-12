@@ -1486,7 +1486,7 @@ module latin_hypercube_driver_module
           X_u_dp1_element = real(mixt_frac, kind = dp) * real(rand2, kind = dp)
         else
           X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
-                              cloud_weighted_mixt_frac
+                              clear_weighted_mixt_frac
         end if
       else
         ! Component 2
