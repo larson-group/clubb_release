@@ -1,15 +1,15 @@
-# RICO BUDGETS SAM_CLUBB Case File
+# DYCOMS II RF02 DS BUDGETS SAM_CLUBB Case File
 
 %CASE = 
 (
-    'name' => 'RICO_BUDGETS',
+    'name' => 'DYCOMS_RF02_DS_BUDGETS',
     'enabled' => 'true',
     'type' => 'budget',
-    'headerText' => 'RICO Budgets Minutes 4201-4320',
-    'startTime' => 4201.0,  # [minutes]
-    'endTime' => 4320.0,    # [minutes]
+    'headerText' => 'DYCOMS II RF02 BUDGETS Hour 6',
+    'startTime' => 300.0,  # [minutes]
+    'endTime' => 360.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
-    'endHeight' => 4000.0, # [m]
+    'endHeight' => 1200.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
