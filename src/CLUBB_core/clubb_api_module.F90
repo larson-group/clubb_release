@@ -279,9 +279,7 @@ module clubb_api_module
     ! To Interact With CLUBB's Grid:
     gr, &
     ! For Varying Grids
-    setup_grid_api, & ! OR
-    setup_grid_heights_api, & ! if heights vary with time
-    cleanup_grid_api
+    setup_grid_heights_api    ! if heights vary with time
 
   public &
     ! To Obtain More Output from CLUBB for Diagnostics:
@@ -1226,73 +1224,6 @@ contains
   end function vertical_integral_api
 
   !================================================================================================
-  ! setup_grid - Sets up the CLUBB vertical grid.
-  !================================================================================================
-
-  subroutine setup_grid_api( &
-    nzmax, sfc_elevation, l_implemented,      &
-    grid_type, deltaz, zm_init, zm_top,      &
-    momentum_heights, thermodynamic_heights, &
-    begin_height, end_height )
-
-    use grid_class, only : setup_grid
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) ::  &
-      nzmax  ! Number of vertical levels in grid      [#]
-
-    real( kind = core_rknd ), intent(in) ::  &
-      sfc_elevation  ! Elevation of ground level    [m AMSL]
-
-    ! Flag to see if CLUBB is running on it's own,
-    ! or if it's implemented as part of a host model.
-    logical, intent(in) :: l_implemented
-
-    ! If CLUBB is running on it's own, this option determines if it is using:
-    ! 1) an evenly-spaced grid;
-    ! 2) a stretched (unevenly-spaced) grid entered on the thermodynamic grid
-    !    levels (with momentum levels set halfway between thermodynamic levels);
-    !    or
-    ! 3) a stretched (unevenly-spaced) grid entered on the momentum grid levels
-    !    (with thermodynamic levels set halfway between momentum levels).
-    integer, intent(in) :: grid_type
-
-    ! If the CLUBB model is running by itself, and is using an evenly-spaced
-    ! grid (grid_type = 1), it needs the vertical grid spacing and
-    ! momentum-level starting altitude as input.
-    real( kind = core_rknd ), intent(in) ::  &
-      deltaz,   & ! Vertical grid spacing                  [m]
-      zm_init,  & ! Initial grid altitude (momentum level) [m]
-      zm_top      ! Maximum grid altitude (momentum level) [m]
-
-    ! If the CLUBB parameterization is implemented in a host model, it needs to
-    ! use the host model's momentum level altitudes and thermodynamic level
-    ! altitudes.
-    ! If the CLUBB model is running by itself, but is using a stretched grid
-    ! entered on thermodynamic levels (grid_type = 2), it needs to use the
-    ! thermodynamic level altitudes as input.
-    ! If the CLUBB model is running by itself, but is using a stretched grid
-    ! entered on momentum levels (grid_type = 3), it needs to use the momentum
-    ! level altitudes as input.
-    real( kind = core_rknd ), intent(in), dimension(nzmax) ::  &
-      momentum_heights,   & ! Momentum level altitudes (input)      [m]
-      thermodynamic_heights ! Thermodynamic level altitudes (input) [m]
-
-    integer, intent(out) :: &
-      begin_height, &  ! Lower bound for *_heights arrays [-]
-      end_height       ! Upper bound for *_heights arrays [-]
-
-    call setup_grid( &
-      nzmax, sfc_elevation, l_implemented,      &
-      grid_type, deltaz, zm_init, zm_top,      &
-      momentum_heights, thermodynamic_heights, &
-      begin_height, end_height )
-
-  end subroutine setup_grid_api
-
-  !================================================================================================
   ! setup_grid_heights - Sets the heights and interpolation weights of the column.
   !================================================================================================
 
@@ -1348,19 +1279,6 @@ contains
 
   end subroutine setup_grid_heights_api
 
-  !================================================================================================
-  ! cleanup_grid - De-allocates the memory for the grid.
-  !================================================================================================
-
-  subroutine cleanup_grid_api
-
-    use grid_class, only : cleanup_grid
-
-    implicit none
-
-    call cleanup_grid
-
-  end subroutine cleanup_grid_api
 
   !================================================================================================
   ! lin_interpolate_two_points - Computes a linear interpolation of the value of a variable.
