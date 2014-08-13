@@ -396,6 +396,7 @@ module clubb_api_module
     rad_zt
     public &
     set_Lscale_max_api, &
+    nparams, &
     setup_parameters_api, &
     sfc, &
     stat_nknd, &
