@@ -116,7 +116,7 @@ module pdf_parameter_module
 
   end subroutine unpack_pdf_params
 
-  real function get_param_at_ind(pp_struct, ind)
+  real( kind = core_rknd ) function get_param_at_ind(pp_struct, ind)
     implicit none
     type (pdf_parameter), intent(in) :: pp_struct
     integer, intent(in) :: ind
