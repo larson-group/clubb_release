@@ -451,7 +451,7 @@ module latin_hypercube_driver_module
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
       if ( any( X_u_all_levs < 0._core_rknd .or. X_u_all_levs > 1._core_rknd ) ) then
-        write(0,*) 'A uniform variate was not in the correct range.'
+        write(fstderr,*) "A uniform variate was not in the correct range."
         l_error = .true.
       end if
 
