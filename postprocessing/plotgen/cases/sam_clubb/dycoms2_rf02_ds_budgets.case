@@ -5,7 +5,7 @@
     'name' => 'DYCOMS_RF02_DS_BUDGETS',
     'enabled' => 'true',
     'type' => 'budget',
-    'headerText' => 'DYCOMS II RF02 BUDGETS Hour 6',
+    'headerText' => 'DYCOMS II RF02 DS BUDGETS Hour 6',
     'startTime' => 300.0,  # [minutes]
     'endTime' => 360.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
