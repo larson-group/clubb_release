@@ -996,6 +996,9 @@ contains
   subroutine report_error_api( &
     err_code)
 
+    use error_code, only: &
+      report_error  ! Procedure
+
     implicit none
 
     ! Input Variable
