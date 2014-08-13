@@ -10,7 +10,7 @@ module latin_hypercube_driver_module
     l_diagnostic_iter_check      = .true.,  & ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
     l_output_2D_uniform_dist     = .false., & ! Output a 2D netCDF file of the uniform distribution
-    l_stratify_dp1               = .false.    ! Employ stratification on the dp1 element used to
+    l_stratify_dp1               = .true.     ! Employ stratification on the dp1 element used to
                                               ! determine mixture component when doing cloud
                                               ! weighted sampling
 
@@ -447,6 +447,13 @@ module latin_hypercube_driver_module
 
     ! Various nefarious assertion checks
     if ( clubb_at_least_debug_level( 2 ) ) then
+
+      ! Simple assertion check to ensure uniform variates are in the appropriate
+      ! range
+      if ( any( X_u_all_levs < 0._core_rknd .or. X_u_all_levs > 1._core_rknd ) ) then
+        write(0,*) 'A uniform variate was not in the correct range.'
+        l_error = .true.
+      end if
 
       ! Assertion check for whether half of sample points are cloudy.
       if ( l_lh_cloud_weighted_sampling .and. l_small_nonzero_cloud_frac ) then
