@@ -1,3 +1,4 @@
+#!/bin/bash
 # Runs the API Commitment Tests and Returns 0 if all host models only use the CLUBB API
 # Author: Orion Schemenauer
 
