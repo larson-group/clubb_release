@@ -16,7 +16,7 @@ module interpolation
   contains
 
 !-------------------------------------------------------------------------------
-  pure function lin_interpolate_two_points( height_int, height_high, height_low, &
+  function lin_interpolate_two_points( height_int, height_high, height_low, &
     var_high, var_low )
 
 ! Description:
@@ -56,6 +56,8 @@ module interpolation
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use constants_clubb, only: fstderr ! Constant
+
     implicit none
 
     ! Input Variables
@@ -69,6 +71,12 @@ module interpolation
 
     ! Output Variables
     real( kind = core_rknd ) :: lin_interpolate_two_points
+    
+    ! Check for valid input
+    if ( abs(height_low - height_high) < 1.0e-12_core_rknd ) then
+      write(fstderr,*) "lin_interpolate_two_points: height_high and height_low cannot be equal."
+      stop
+    end if
 
     ! Compute linear interpolation
 
@@ -102,7 +110,7 @@ module interpolation
     return
   end function linear_interp_factor
   !-------------------------------------------------------------------------------------------------
-  pure function mono_cubic_interp &
+  function mono_cubic_interp &
     ( z_in, km1, k00, kp1, kp2, zm1, z00, zp1, zp2, fm1, f00, fp1, fp2 ) result ( f_out )
 
   ! Description:
@@ -558,8 +566,8 @@ module interpolation
 
      if ( clubb_at_least_debug_level( 2 ) ) then
        do i=2,nparam
-         if ( xlist(i) < xlist(i-1) ) then
-           write(fstderr,*) "xlist must be sorted for linear interpolation."
+         if ( xlist(i) <= xlist(i-1) ) then
+           write(fstderr,*) "xlist must be sorted for lin_interpolate_on_grid."
            stop
          end if
        end do

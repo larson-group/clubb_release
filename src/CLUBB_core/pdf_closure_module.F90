@@ -1257,7 +1257,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  pure subroutine calc_vert_avg_cf_component &
+  subroutine calc_vert_avg_cf_component &
                   ( nz, k, z_vals, chi, stdev_chi, chi_at_sat, &
                     cloud_frac_i, rc_i )
   ! Description:
@@ -1325,7 +1325,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  pure function interp_var_array( n_points, nz, k, z_vals, var )
+  function interp_var_array( n_points, nz, k, z_vals, var )
 
   ! Description:
   !   Interpolates a variable to an array of values about a given level
@@ -1406,7 +1406,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  pure function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )
+  function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )
 
   ! Description
   !   Returns the value of a variable at an integer height between 0 and
@@ -1477,7 +1477,7 @@ module pdf_closure_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  pure function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )
+  function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )
 
   ! Description
   !   Interpolates (or extrapolates) a variable to a value between grid

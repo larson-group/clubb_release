@@ -2902,7 +2902,7 @@ module advance_xp2_xpyp_module
   end function term_pr1
 
   !=============================================================================
-  pure function term_pr2( C5, thv_ds_zm, wpthvp, upwp, vpwp, &
+  function term_pr2( C5, thv_ds_zm, wpthvp, upwp, vpwp, &
                           um, vm, invrs_dzm, kp1, k, & 
                           Lscalep1, Lscale, wp2_ztp1, wp2_zt ) &
   result( rhs )
@@ -3098,7 +3098,7 @@ module advance_xp2_xpyp_module
   end function term_pr2
 
   !=============================================================================
-  pure subroutine find_endpts_for_vert_avg_winds &
+  subroutine find_endpts_for_vert_avg_winds &
                   ( vert_avg_depth, k, um, vm, & ! intent(in)
                     zt_high, um_high, vm_high, & ! intent(out)
                     zt_low, um_low, vm_low )     ! intent(out)

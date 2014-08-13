@@ -1368,7 +1368,7 @@ module grid_class
   end function linear_interpolated_azmk
 
   !=============================================================================
-  pure function cubic_interpolated_azm( azt )
+  function cubic_interpolated_azm( azt )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
@@ -1398,9 +1398,9 @@ module grid_class
 
     ! ---- Begin Code ----
 
-    forall( k = 1 : gr%nz )
+    do k = 1, gr%nz 
       tmp(k) = cubic_interpolated_azmk( azt, k )
-    end forall
+    end do
 
     cubic_interpolated_azm = tmp
 
@@ -1409,7 +1409,7 @@ module grid_class
   end function cubic_interpolated_azm
 
   !=============================================================================
-  pure function cubic_interpolated_azmk( azt, k )
+  function cubic_interpolated_azmk( azt, k )
 
     ! Description:
     ! Function to interpolate a variable located on the thermodynamic grid
@@ -1801,7 +1801,7 @@ module grid_class
   end function linear_interpolated_aztk
 
   !=============================================================================
-  pure function cubic_interpolated_azt( azm )
+  function cubic_interpolated_azt( azm )
 
     ! Description:
     !   Function to interpolate a variable located on the momentum grid
@@ -1834,9 +1834,9 @@ module grid_class
 
     ! ---- Begin Code ----
 
-    forall ( k = 1 : gr%nz )
+    do k = 1, gr%nz 
       tmp(k) = cubic_interpolated_aztk( azm, k )
-    end forall
+    end do
 
     cubic_interpolated_azt = tmp
 
@@ -1846,7 +1846,7 @@ module grid_class
 
 
   !=============================================================================
-  pure function cubic_interpolated_aztk( azm, k )
+  function cubic_interpolated_aztk( azm, k )
 
     ! Description:
     !   Function to interpolate a variable located on the momentum grid
