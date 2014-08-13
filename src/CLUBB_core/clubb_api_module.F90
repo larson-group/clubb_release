@@ -367,6 +367,7 @@ module clubb_api_module
     num_pdf_params, &
 #endif
     adj_low_res_nu_api, &
+    assignment( = ), &
     clubb_i, &
     clubb_j, &
     compute_current_date_api, &
@@ -396,6 +397,7 @@ module clubb_api_module
     rad_zt
     public &
     set_Lscale_max_api, &
+    sigma2_on_mu2_ratios_type, &
     nparams, &
     setup_parameters_api, &
     sfc, &
