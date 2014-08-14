@@ -1422,6 +1422,9 @@ module latin_hypercube_driver_module
       call genrand_real3( rand1 )
 
       call genrand_real3( rand2 ) ! Determine a 2nd rand for the if ... then
+    else
+      rand1 = 0._genrand_real
+      rand2 = 0._genrand_real
     end if
 
     if ( l_cloudy_sample ) then
