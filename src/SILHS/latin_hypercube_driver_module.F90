@@ -163,8 +163,6 @@ module latin_hypercube_driver_module
     real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
-    real(kind=dp) :: X_u_temp
-
     ! Number of random samples before sequence of repeats (normally=10)
     integer :: nt_repeat
 
@@ -328,36 +326,32 @@ module latin_hypercube_driver_module
 
       do sample = 1, num_samples
         ! Correlate chi vertically
-        X_u_temp = X_u_all_levs(k_lh_start,sample,iiPDF_chi)
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_temp, X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiPDF_chi) ) ! Out
+               X_vert_corr, & ! In
+               X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
         ! Correlate the d+1 variate vertically (used to compute the mixture
         ! component later)
-        X_u_temp = X_u_all_levs(k_lh_start,sample,d_variables+1)
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_temp, X_vert_corr, & ! In
-               X_u_all_levs(:,sample,d_variables+1) ) ! Out
+               X_vert_corr, & ! In
+               X_u_all_levs(:,sample,d_variables+1) ) ! Inout
 
         ! Correlate the d+2 variate vertically (used to determine precipitation
         ! later)
-        X_u_temp = X_u_all_levs(k_lh_start,sample,d_variables+2)
         call compute_arb_overlap &
              ( nz, k_lh_start, &  ! In
-               X_u_temp, X_vert_corr, & ! In
-               X_u_all_levs(:,sample,d_variables+2) )
+               X_vert_corr, & ! In
+               X_u_all_levs(:,sample,d_variables+2) ) ! Inout
 
         ! Use these lines to make all variates vertically correlated, using the
         ! same correlation we used above for chi and the d+1 variate
         do ivar = 1, d_variables
           if ( ivar /= iiPDF_chi ) then
-            X_u_temp = X_u_all_levs(k_lh_start,sample,ivar)
             call compute_arb_overlap &
                  ( nz, k_lh_start, &  ! In
-                   X_u_temp, X_vert_corr, & ! In
-                   X_u_all_levs(:,sample,ivar) ) ! Out
+                   X_vert_corr, & ! In
+                   X_u_all_levs(:,sample,ivar) ) ! Inout
           end if
         end do ! 1..d_variables
       end do ! 1..num_samples
@@ -1600,7 +1594,7 @@ module latin_hypercube_driver_module
   end function in_precipitation
 !-------------------------------------------------------------------------------
   subroutine compute_arb_overlap( nz, k_lh_start, &
-                                  X_u_one_var_k_lh_start, vert_corr, &
+                                  vert_corr, &
                                   X_u_one_var_all_levs )
 ! Description:
 !   Re-computes X_u (uniform sample) for a single variate (e.g. chi) using
@@ -1630,15 +1624,14 @@ module latin_hypercube_driver_module
       nz,      & ! Number of vertical levels [-]
       k_lh_start   ! Starting k level          [-]
 
-    real(kind=dp), intent(in) :: &
-      X_u_one_var_k_lh_start  ! Uniform distribution of 1 variate (e.g. chi) at k_lh_start [-]
-
     real(kind=dp), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
 
     ! Output Variables
-    real(kind=dp), dimension(nz), intent(out) :: &
+    real(kind=dp), dimension(nz), intent(inout) :: &
       X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
+                           ! The value of this variate at k_lh_start should already be populated
+                           ! in this array and will be used to fill in the other levels.
 
     ! Local Variables
     real(kind=genrand_real) :: rand ! random number in the range (0,1)
@@ -1648,9 +1641,6 @@ module latin_hypercube_driver_module
     integer :: k, kp1, km1 ! Loop iterators
 
     ! ---- Begin Code ----
-
-    ! Set the value at k_lh_start using a special value we've selected
-    X_u_one_var_all_levs(k_lh_start) = X_u_one_var_k_lh_start
 
     ! Upwards loop
     do k = k_lh_start, nz-1
