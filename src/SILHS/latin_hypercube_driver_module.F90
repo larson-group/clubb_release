@@ -9,10 +9,7 @@ module latin_hypercube_driver_module
   logical, parameter, private :: &
     l_diagnostic_iter_check      = .true.,  & ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
-    l_output_2D_uniform_dist     = .false., & ! Output a 2D netCDF file of the uniform distribution
-    l_stratify_dp1               = .true.     ! Employ stratification on the dp1 element used to
-                                              ! determine mixture component when doing cloud
-                                              ! weighted sampling
+    l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
@@ -576,27 +573,25 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
 
-    if ( l_stratify_dp1 ) then
-      n_cloudy_samples = 0
-      n_clear_samples  = 0
-      ! Pick two stratified random numbers for determining a mixture fraction.
-      do sample=1, num_samples
-        ! We arbitrarily choose that p_matrix elements less than num_samples/2
-        ! will be used for mixt_rand_cloud
-        if ( p_matrix_dp1(sample) < ( num_samples / 2 ) ) then
-          n_cloudy_samples = n_cloudy_samples + 1
-          mixt_permuted_cloud(n_cloudy_samples,1) = p_matrix_dp1(sample)
-        else if ( p_matrix_dp1(sample) >= ( num_samples / 2 ) ) then
-          n_clear_samples = n_clear_samples + 1
-          mixt_permuted_clear(n_clear_samples,1) = p_matrix_dp1(sample) - (num_samples / 2)
-        end if ! p_matrix_dp1(sample) < ( num_samples / 2 )
-      end do
-      ! Generate the stratified uniform numbers!
-      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_cloud, & !In
-                                    mixt_rand_cloud ) !Out
-      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_clear, & !In
-                                    mixt_rand_clear ) !Out
-    end if ! l_stratify_dp1
+    n_cloudy_samples = 0
+    n_clear_samples  = 0
+    ! Pick two stratified random numbers for determining a mixture fraction.
+    do sample=1, num_samples
+      ! We arbitrarily choose that p_matrix elements less than num_samples/2
+      ! will be used for mixt_rand_cloud
+      if ( p_matrix_dp1(sample) < ( num_samples / 2 ) ) then
+        n_cloudy_samples = n_cloudy_samples + 1
+        mixt_permuted_cloud(n_cloudy_samples,1) = p_matrix_dp1(sample)
+      else if ( p_matrix_dp1(sample) >= ( num_samples / 2 ) ) then
+        n_clear_samples = n_clear_samples + 1
+        mixt_permuted_clear(n_clear_samples,1) = p_matrix_dp1(sample) - (num_samples / 2)
+      end if ! p_matrix_dp1(sample) < ( num_samples / 2 )
+    end do
+    ! Generate the stratified uniform numbers!
+    call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_cloud, & !In
+                                  mixt_rand_cloud ) !Out
+    call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_clear, & !In
+                                  mixt_rand_clear ) !Out
 
     n_cloudy_samples = 0
     n_clear_samples  = 0
@@ -609,18 +604,14 @@ module latin_hypercube_driver_module
 
         l_cloudy_sample = .false.
         lh_sample_point_weights(sample) = 2._core_rknd * ( 1.0_core_rknd - cloud_frac )
-        if ( l_stratify_dp1 ) then
-          n_clear_samples = n_clear_samples + 1
-          mixt_rand_element = mixt_rand_clear(n_clear_samples,1)
-        end if
+        n_clear_samples = n_clear_samples + 1
+        mixt_rand_element = mixt_rand_clear(n_clear_samples,1)
       else
 
         l_cloudy_sample = .true.
         lh_sample_point_weights(sample) = 2._core_rknd * cloud_frac
-        if ( l_stratify_dp1 ) then
-          n_cloudy_samples = n_cloudy_samples + 1
-          mixt_rand_element = mixt_rand_cloud(n_cloudy_samples,1)
-        end if
+        n_cloudy_samples = n_cloudy_samples + 1
+        mixt_rand_element = mixt_rand_cloud(n_cloudy_samples,1)
       end if
 
       if ( l_use_rejection_method ) then
@@ -1405,56 +1396,28 @@ module latin_hypercube_driver_module
     ! Local Variables
     real(kind=dp) :: cloud_frac_i, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
 
-    real(kind=genrand_real) :: rand, rand1, rand2 ! Random numbers
+    real(kind=genrand_real) :: rand ! Random number
 
 !   integer :: X_mixt_comp_one_lev
 
     ! ---- Begin code ----
 
-    if ( .not. l_stratify_dp1 ) then
-      ! Pick a new mixture component value between (0,1)
-      call genrand_real3( rand1 )
-
-      call genrand_real3( rand2 ) ! Determine a 2nd rand for the if ... then
-    else
-      rand1 = 0._genrand_real
-      rand2 = 0._genrand_real
-    end if
-
     if ( l_cloudy_sample ) then
       cloud_weighted_mixt_frac = real(mixt_frac*cloud_frac1, kind = dp) / &
                    real(mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2, kind = dp)
 
-      if ( &
-          ! Old criterion
-          ( .not. l_stratify_dp1 .and. &
-          in_mixt_comp_1( real( rand1, kind=dp ), cloud_weighted_mixt_frac ) ) .or. &
-          ! New criterion
-          ( l_stratify_dp1 .and. &
-          in_mixt_comp_1( mixt_rand_element, cloud_weighted_mixt_frac ) ) &
-         ) then
+      if ( in_mixt_comp_1( mixt_rand_element, cloud_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_i = real( cloud_frac1, kind=dp )
-!       X_mixt_comp_one_lev = 1
-        if ( .not. l_stratify_dp1 ) then
-          X_u_dp1_element = real( mixt_frac, kind=dp ) * rand2
-        else
-          X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
-                              cloud_weighted_mixt_frac
-        end if
+        X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
+                            cloud_weighted_mixt_frac
       else
         ! Component 2
         cloud_frac_i = real( cloud_frac2, kind=dp )
-!       X_mixt_comp_one_lev = 2
-        if ( .not. l_stratify_dp1 ) then
-          X_u_dp1_element = real( mixt_frac, kind=dp ) &
-                          + real(1._core_rknd-mixt_frac, kind=dp) * real(rand2, kind = dp)
-        else
-          X_u_dp1_element = real( mixt_frac, kind=dp ) &
-                          + ( mixt_rand_element - cloud_weighted_mixt_frac ) * &
-                            real(1._core_rknd-mixt_frac, kind=dp) / &
-                            ( 1._dp-cloud_weighted_mixt_frac )
-        end if
+        X_u_dp1_element = real( mixt_frac, kind=dp ) &
+                        + ( mixt_rand_element - cloud_weighted_mixt_frac ) * &
+                          real(1._core_rknd-mixt_frac, kind=dp) / &
+                          ( 1._dp-cloud_weighted_mixt_frac )
       end if
 
       call genrand_real3( rand ) ! Rand between (0,1)
@@ -1477,33 +1440,17 @@ module latin_hypercube_driver_module
         * real(mixt_frac, kind = dp) + ( 1._dp-real(cloud_frac2, kind = dp) )&
         *( 1._dp-real(mixt_frac, kind = dp) ) )
 
-      if ( &
-          ( .not. l_stratify_dp1 .and. &
-          in_mixt_comp_1( real( rand1, kind=dp ), clear_weighted_mixt_frac ) ) .or. &
-          ( l_stratify_dp1 .and. &
-          in_mixt_comp_1( mixt_rand_element, clear_weighted_mixt_frac ) ) &
-         ) then
+      if ( in_mixt_comp_1( mixt_rand_element, clear_weighted_mixt_frac ) ) then
         ! Component 1
         cloud_frac_i = real(cloud_frac1, kind = dp)
-!       X_mixt_comp_one_lev = 1
-        if ( .not. l_stratify_dp1 ) then
-          X_u_dp1_element = real(mixt_frac, kind = dp) * real(rand2, kind = dp)
-        else
-          X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
-                              clear_weighted_mixt_frac
-        end if
+        X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
+                            clear_weighted_mixt_frac
       else
         ! Component 2
         cloud_frac_i = real(cloud_frac2, kind = dp)
-!       X_mixt_comp_one_lev = 2
-        if ( .not. l_stratify_dp1 ) then
-          X_u_dp1_element = real(mixt_frac, kind = dp) &
-          + (1._dp-real(mixt_frac, kind = dp)) * real(rand2, kind = dp)
-        else
-          X_u_dp1_element = real(mixt_frac, kind = dp) &
-          + (mixt_rand_element-clear_weighted_mixt_frac)*real(1._core_rknd-mixt_frac,kind=dp) &
-               / (1._dp-clear_weighted_mixt_frac)
-        end if
+        X_u_dp1_element = real(mixt_frac, kind = dp) &
+        + (mixt_rand_element-clear_weighted_mixt_frac)*real(1._core_rknd-mixt_frac,kind=dp) &
+             / (1._dp-clear_weighted_mixt_frac)
       end if
 
       call genrand_real3( rand ) ! Rand between (0,1)
