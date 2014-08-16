@@ -562,6 +562,10 @@ module latin_hypercube_driver_module
     real( kind = dp ) :: &
       mixt_rand_element
 
+    real( kind = core_rknd ) :: &
+      lh_sample_cloud_weight,     &       ! Weight of a cloudy sample point
+      lh_sample_clear_weight              ! Weight of a clear  sample point
+
     integer, dimension(num_samples/2,1) :: &
       mixt_permuted_cloud, &              ! Permuted random numbers for mixt_rand_cloud
       mixt_permuted_clear                 ! Permuted random numbers for mixt_rand_clear
@@ -596,6 +600,10 @@ module latin_hypercube_driver_module
     n_cloudy_samples = 0
     n_clear_samples  = 0
 
+    ! Compute weights for each type of point
+    lh_sample_cloud_weight = 2._core_rknd * cloud_frac
+    lh_sample_clear_weight = 2._core_rknd - lh_sample_cloud_weight
+
     do sample=1, num_samples
 
       ! Detect which half of the sample points are in clear air and which half are in
@@ -603,13 +611,13 @@ module latin_hypercube_driver_module
       if ( p_matrix_chi(sample) < ( num_samples / 2 ) ) then
 
         l_cloudy_sample = .false.
-        lh_sample_point_weights(sample) = 2._core_rknd * ( 1.0_core_rknd - cloud_frac )
+        lh_sample_point_weights(sample) = lh_sample_clear_weight
         n_clear_samples = n_clear_samples + 1
         mixt_rand_element = mixt_rand_clear(n_clear_samples,1)
       else
 
         l_cloudy_sample = .true.
-        lh_sample_point_weights(sample) = 2._core_rknd * cloud_frac
+        lh_sample_point_weights(sample) = lh_sample_cloud_weight
         n_cloudy_samples = n_cloudy_samples + 1
         mixt_rand_element = mixt_rand_cloud(n_cloudy_samples,1)
       end if
