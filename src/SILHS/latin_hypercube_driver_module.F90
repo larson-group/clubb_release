@@ -1367,19 +1367,15 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use mt95, only: genrand_real3 ! Procedure
 
-    use mt95, only: genrand_real ! Constant
+    use generate_lh_sample_module, only: &
+      choose_permuted_random    ! Procedure
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
       dp
 
     implicit none
-
-    ! Parameter Constants
-    logical, parameter :: &
-      l_use_p_matrix = .true.
 
     ! Input Variables
     logical, intent(in) :: &
@@ -1402,80 +1398,108 @@ module latin_hypercube_driver_module
       X_u_dp1_element, X_u_chi_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real(kind=dp) :: cloud_frac_i, cloud_weighted_mixt_frac, clear_weighted_mixt_frac
+    real(kind=dp) :: cloud_frac_i, conditional_mixt_frac
 
-    real(kind=genrand_real) :: rand ! Random number
+    real( kind = dp ) :: &
+      cld_comp1_frac,    &          ! Fraction of points in component 1 and cloud
+      cld_comp2_frac,    &          ! Fraction of points in component 2 and cloud
+      nocld_comp1_frac,  &          ! Fraction of points in component 1 and clear air
+      nocld_comp2_frac              ! Fraction of points in component 2 and clear air
 
-!   integer :: X_mixt_comp_one_lev
+    integer :: X_mixt_comp_one_lev, p_matrix_element_ranged
+
+    real( kind = dp ) :: mixt_rand_element_scaled, mixt_frac_dp, chi_rand_element
 
     ! ---- Begin code ----
 
+    mixt_frac_dp = real( mixt_frac, kind=dp )
+
+    cld_comp1_frac = real( mixt_frac*cloud_frac1, kind=dp )
+    cld_comp2_frac = real( (1._core_rknd-mixt_frac)*cloud_frac2, kind=dp )
+
+    !---------------------------------------------------------------------
+    ! Determine the conditional mixture fraction, given whether we are in
+    ! cloud
+    !---------------------------------------------------------------------
     if ( l_cloudy_sample ) then
-      cloud_weighted_mixt_frac = real(mixt_frac*cloud_frac1, kind = dp) / &
-                   real(mixt_frac*cloud_frac1 + (1._core_rknd-mixt_frac)*cloud_frac2, kind = dp)
 
-      if ( in_mixt_comp_1( mixt_rand_element, cloud_weighted_mixt_frac ) ) then
-        ! Component 1
-        cloud_frac_i = real( cloud_frac1, kind=dp )
-        X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
-                            cloud_weighted_mixt_frac
-      else
-        ! Component 2
-        cloud_frac_i = real( cloud_frac2, kind=dp )
-        X_u_dp1_element = real( mixt_frac, kind=dp ) &
-                        + ( mixt_rand_element - cloud_weighted_mixt_frac ) * &
-                          real(1._core_rknd-mixt_frac, kind=dp) / &
-                          ( 1._dp-cloud_weighted_mixt_frac )
-      end if
+      conditional_mixt_frac = cld_comp1_frac / ( cld_comp1_frac + cld_comp2_frac )
 
-      call genrand_real3( rand ) ! Rand between (0,1)
+    else ! .not. l_cloudy_sample
 
-      ! Scale and translate sample point to reside in cloud
-      if ( l_use_p_matrix ) then
-        ! New formula based on p_matrix
-        X_u_chi_element = 1._dp + 2._dp &
-          * (real(p_matrix_element, kind = dp)/real(num_samples, kind = dp) &
-          - 1._dp) * cloud_frac_i &
-          + real(rand, kind = dp) * ( 2._dp/real( num_samples, kind=dp ) ) * cloud_frac_i
-      else
-        X_u_chi_element = cloud_frac_i * real(rand, kind = dp) &
-          + (1._dp-cloud_frac_i)
-      end if
+      nocld_comp1_frac = mixt_frac_dp - cld_comp1_frac
+      nocld_comp2_frac = (1._dp - mixt_frac_dp) - cld_comp2_frac
 
-    else ! Clear air sample
-      clear_weighted_mixt_frac = ( ( 1._dp - real(cloud_frac1, kind = dp) ) &
-        * real(mixt_frac, kind = dp) ) / ( ( 1._dp-real(cloud_frac1, kind = dp) ) &
-        * real(mixt_frac, kind = dp) + ( 1._dp-real(cloud_frac2, kind = dp) )&
-        *( 1._dp-real(mixt_frac, kind = dp) ) )
+      conditional_mixt_frac = nocld_comp1_frac / (nocld_comp1_frac + nocld_comp2_frac)
 
-      if ( in_mixt_comp_1( mixt_rand_element, clear_weighted_mixt_frac ) ) then
-        ! Component 1
-        cloud_frac_i = real(cloud_frac1, kind = dp)
-        X_u_dp1_element = mixt_rand_element * real( mixt_frac, kind=dp ) / &
-                            clear_weighted_mixt_frac
-      else
-        ! Component 2
-        cloud_frac_i = real(cloud_frac2, kind = dp)
-        X_u_dp1_element = real(mixt_frac, kind = dp) &
-        + (mixt_rand_element-clear_weighted_mixt_frac)*real(1._core_rknd-mixt_frac,kind=dp) &
-             / (1._dp-clear_weighted_mixt_frac)
-      end if
+    end if ! l_cloudy_sample
 
-      call genrand_real3( rand ) ! Rand between (0,1)
-
-      ! Scale and translate sample point to reside in clear air (no cloud)
-      if ( l_use_p_matrix ) then
-        ! New formula based on p_matrix
-        X_u_chi_element = real( p_matrix_element, kind=dp ) &
-          * (2._dp/real(num_samples, kind = dp) ) * (1._dp-cloud_frac_i) &
-          + (2._dp/real(num_samples, kind = dp) * (1._dp-cloud_frac_i) &
-          * real(rand, kind = dp))
-      else
-        X_u_chi_element = (1._dp-cloud_frac_i) &
-          * real(rand, kind = dp)
-      end if
-
+    !---------------------------------------------------------------------
+    ! Determine mixture component given the conditional mixture fraction
+    !---------------------------------------------------------------------
+    if ( in_mixt_comp_1( mixt_rand_element, conditional_mixt_frac ) ) then
+      X_mixt_comp_one_lev = 1
+    else
+      X_mixt_comp_one_lev = 2
     end if
+
+    !---------------------------------------------------------------------
+    ! Determine dp1 element given mixture component
+    !---------------------------------------------------------------------
+    if ( X_mixt_comp_one_lev == 1 ) then
+      ! mixt_rand_element is scaled to give real number stratified in (0,1)
+      mixt_rand_element_scaled = mixt_rand_element / conditional_mixt_frac
+      X_u_dp1_element = mixt_rand_element_scaled * mixt_frac_dp
+
+    else if ( X_mixt_comp_one_lev == 2 ) then
+      ! mixt_rand_element is scaled to give real number stratified in (0,1)
+      mixt_rand_element_scaled = (mixt_rand_element - conditional_mixt_frac) / &
+                                   (1._dp - conditional_mixt_frac) 
+      X_u_dp1_element = mixt_rand_element_scaled * (1._dp - mixt_frac_dp) + mixt_frac_dp
+
+    else
+      stop "Should not be here"
+    end if ! X_mixt_comp_one_lev == 1
+
+    !---------------------------------------------------------------------
+    ! Determine chi element given mixture component and l_cloudy_sample
+    !---------------------------------------------------------------------
+    ! Get p_matrix_element in the proper range
+    if ( p_matrix_element >= ( num_samples / 2 ) ) then
+      p_matrix_element_ranged = p_matrix_element - ( num_samples / 2 )
+    else
+      p_matrix_element_ranged = p_matrix_element
+    end if
+    
+    ! Get a stratified number in (0,1) using the element of p_matrix!
+    chi_rand_element = real( choose_permuted_random( num_samples/2, p_matrix_element_ranged ), &
+                              kind=dp )
+
+    ! Determine cloud fraction
+    if ( X_mixt_comp_one_lev == 1 ) then
+      cloud_frac_i = real( cloud_frac1, kind=dp )
+    else
+      cloud_frac_i = real( cloud_frac2, kind=dp )
+    end if
+
+    if ( l_cloudy_sample ) then
+      ! Scale and translate sample point to reside in cloud
+      X_u_chi_element = cloud_frac_i * chi_rand_element + &
+                          (1._dp - cloud_frac_i )
+    else
+      ! Scale and translate sample point to reside in clear air (no cloud)
+      X_u_chi_element = (1._dp-cloud_frac_i) * chi_rand_element
+    end if ! l_cloudy_sample
+
+    write(0,*) 'l_cloudy_sample = ', l_cloudy_sample
+    write(0,*) 'p_matrix_element = ', p_matrix_element
+    write(0,*) 'num_samples = ', num_samples
+    write(0,*) 'cloud_frac1 = ', cloud_frac1
+    write(0,*) 'cloud_frac2 = ', cloud_frac2
+    write(0,*) 'mixt_frac = ', mixt_frac
+    write(0,*) 'mixt_rand_element = ', mixt_rand_element
+    write(0,*) 'X_u_dp1_element = ', X_u_dp1_element
+    write(0,*) 'X_u_chi_element = ', X_u_chi_element
 
     return
   end subroutine choose_X_u_scaled
