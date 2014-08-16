@@ -1491,16 +1491,6 @@ module latin_hypercube_driver_module
       X_u_chi_element = (1._dp-cloud_frac_i) * chi_rand_element
     end if ! l_cloudy_sample
 
-    write(0,*) 'l_cloudy_sample = ', l_cloudy_sample
-    write(0,*) 'p_matrix_element = ', p_matrix_element
-    write(0,*) 'num_samples = ', num_samples
-    write(0,*) 'cloud_frac1 = ', cloud_frac1
-    write(0,*) 'cloud_frac2 = ', cloud_frac2
-    write(0,*) 'mixt_frac = ', mixt_frac
-    write(0,*) 'mixt_rand_element = ', mixt_rand_element
-    write(0,*) 'X_u_dp1_element = ', X_u_dp1_element
-    write(0,*) 'X_u_chi_element = ', X_u_chi_element
-
     return
   end subroutine choose_X_u_scaled
 
