@@ -29,11 +29,10 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine lh_subcolumn_generator &
              ( iter, d_variables, num_samples, sequence_length, nz, & ! In
-               pdf_params, delta_zm, rcm, & ! In
+               pdf_params, delta_zm, rcm, Lscale, & ! In
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
                hydromet_pdf_params, & ! In
-               Lscale_vert_avg, & ! Inout
                X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
                lh_sample_point_weights ) ! Out
 
@@ -91,8 +90,6 @@ module latin_hypercube_driver_module
 
     use fill_holes, only: vertical_avg ! Procedure
 
-    use variables_diagnostic_module, only : Lscale ! Mixing lengths
-
     use grid_class, only : gr
 
     implicit none
@@ -126,15 +123,13 @@ module latin_hypercube_driver_module
       delta_zm, &  ! Difference in moment. altitudes    [m]
       rcm          ! Liquid water mixing ratio          [kg/kg]
 
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Lscale       ! Turbulent mixing length            [m]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
-    ! Inout Variables
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
-
-
+    
     ! Output Variables
     real( kind = dp ), intent(out), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -163,6 +158,8 @@ module latin_hypercube_driver_module
       hydromet_pdf_params
 
     ! Local variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
     real( kind = dp ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
@@ -207,8 +204,8 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    if ( l_Lscale_vert_avg ) then
-      if ( l_lh_vert_overlap ) then
+    if ( l_lh_vert_overlap ) then
+      if ( l_Lscale_vert_avg ) then
         ! Determine 3pt vertically averaged Lscale
         do k = 1, nz, 1
           kp1 = min( k+1, nz )
@@ -218,9 +215,11 @@ module latin_hypercube_driver_module
                                  Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
         end do
       else
-        ! If vertical overlap is disabled, this calculation won't be needed
-        Lscale_vert_avg = -999._core_rknd
-      end if 
+        Lscale_vert_avg = Lscale 
+      end if
+    else
+      ! If vertical overlap is disabled, this calculation won't be needed
+      Lscale_vert_avg = -999._core_rknd
     end if
 
     l_error = .false.

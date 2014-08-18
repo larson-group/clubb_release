@@ -470,7 +470,6 @@ module clubb_driver
       lh_rt, lh_thl ! Samples of rt, thl          [kg/kg, K]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
-      Lscale_vert_avg, & ! 3pt vertically averaged Lscale               [m]
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
@@ -987,7 +986,7 @@ module clubb_driver
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,d_variables), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), lh_rt(gr%nz,lh_num_samples), &
               lh_thl(gr%nz,lh_num_samples), lh_sample_point_weights(lh_num_samples), &
-              Lscale_vert_avg(gr%nz), Nc_in_cloud(gr%nz) )
+              Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then
 
@@ -1333,12 +1332,11 @@ module clubb_driver
 
        call lh_subcolumn_generator &
             ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
-              pdf_params, gr%dzt, rcm, & ! In
+              pdf_params, gr%dzt, rcm, Lscale, & ! In
               rho_ds_zt, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
               real( corr_cholesky_mtx_1, kind = dp ), & ! In
               real( corr_cholesky_mtx_2, kind = dp ), & ! In
               hydromet_pdf_params, & ! In
-              Lscale_vert_avg, & ! Inout
               X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
               lh_sample_point_weights ) ! Out
 
@@ -1509,7 +1507,7 @@ module clubb_driver
                 hydrometp2 )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
-                lh_sample_point_weights, Lscale_vert_avg, Nc_in_cloud )
+                lh_sample_point_weights, Nc_in_cloud )
 
     return
   end subroutine run_clubb

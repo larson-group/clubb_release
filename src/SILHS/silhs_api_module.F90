@@ -47,11 +47,10 @@ contains
 
   subroutine lh_subcolumn_generator_api( &
     iter, d_variables, num_samples, sequence_length, nz, & ! In
-    pdf_params, delta_zm, rcm, & ! In
+    pdf_params, delta_zm, rcm, Lscale, & ! In
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, & ! In
-    Lscale_vert_avg, & !Inout
     X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -87,9 +86,8 @@ contains
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
-    ! Inout Variable
-    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
-      Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Lscale       ! Turbulent Mixing Length  [m]
 
     ! Output Variables
     real( kind = dp ), intent(out), dimension(nz,num_samples,d_variables) :: &
@@ -120,11 +118,10 @@ contains
 
     call lh_subcolumn_generator( &
       iter, d_variables, num_samples, sequence_length, nz, & ! In
-      pdf_params, delta_zm, rcm, & ! In
+      pdf_params, delta_zm, rcm, Lscale, & ! In
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       hydromet_pdf_params, & ! In
-      Lscale_vert_avg, & ! Inout
       X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
       lh_sample_point_weights ) ! Out
 
