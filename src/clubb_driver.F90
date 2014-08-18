@@ -428,7 +428,7 @@ module clubb_driver
 
     logical :: l_restart_input
 
-    integer :: k, kp1, km1 ! Loop iterator(s)
+    integer :: k ! Loop iterator(s)
 
     real( kind = core_rknd ), intent(in), dimension(nparams) ::  & 
       params  ! Model parameters, C1, nu2, etc.
@@ -1330,27 +1330,15 @@ module clubb_driver
       !----------------------------------------------------------------
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
-        if ( l_lh_vert_overlap ) then
-          ! Determine 3pt vertically averaged Lscale
-          do k = 1, gr%nz
-            kp1 = min( k+1, gr%nz )
-            km1 = max( k-1, 1 )
-            Lscale_vert_avg(k) = vertical_avg &
-                               ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                                 Lscale(km1:kp1), gr%invrs_dzt(km1:kp1))
-          end do
-        else
-          ! If vertical overlap is disabled, this calculation won't be needed
-          Lscale_vert_avg = -999._core_rknd
-        end if
 
        call lh_subcolumn_generator &
             ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
-              pdf_params, gr%dzt, rcm, Lscale_vert_avg, & ! In
-              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+              pdf_params, gr%dzt, rcm, & ! In
+              rho_ds_zt, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
               real( corr_cholesky_mtx_1, kind = dp ), & ! In
               real( corr_cholesky_mtx_2, kind = dp ), & ! In
               hydromet_pdf_params, & ! In
+              Lscale_vert_avg, & ! Inout
               X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
               lh_sample_point_weights ) ! Out
 

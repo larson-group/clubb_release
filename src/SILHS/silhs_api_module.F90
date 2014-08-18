@@ -20,7 +20,8 @@ module silhs_api_module
 #ifdef SILHS
   use parameters_silhs, only: &
     l_lh_vert_overlap, &          ! Variable(s)
-    l_lh_cloud_weighted_sampling
+    l_lh_cloud_weighted_sampling, &
+    l_Lscale_vert_avg
 #endif
 
   implicit none
@@ -35,6 +36,7 @@ module silhs_api_module
     est_kessler_microphys_api, &
     l_lh_vert_overlap, &
     l_lh_cloud_weighted_sampling, &
+    l_Lscale_vert_avg, &
     Ncn_to_Nc_api
 
 contains
@@ -45,10 +47,11 @@ contains
 
   subroutine lh_subcolumn_generator_api( &
     iter, d_variables, num_samples, sequence_length, nz, & ! In
-    pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
-    mu1, mu2, sigma1, sigma2, & ! In
+    pdf_params, delta_zm, rcm, & ! In
+    rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, & ! In
+    Lscale_vert_avg, & !Inout
     X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
     lh_sample_point_weights ) ! Out
 
@@ -82,6 +85,10 @@ contains
       rcm          ! Liquid water mixing ratio          [kg/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
+
+    ! Inout Variable
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
 
     ! Output Variables
@@ -113,10 +120,11 @@ contains
 
     call lh_subcolumn_generator( &
       iter, d_variables, num_samples, sequence_length, nz, & ! In
-      pdf_params, delta_zm, rcm, Lscale_vert_avg, & ! In
-      mu1, mu2, sigma1, sigma2, & ! In
+      pdf_params, delta_zm, rcm, & ! In
+      rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       hydromet_pdf_params, & ! In
+      Lscale_vert_avg, & ! Inout
       X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
       lh_sample_point_weights ) ! Out
 
