@@ -55,7 +55,6 @@ navigationPage = "navigation.html"
 indexPage = "index.html"
 plotcount = 0
 consoleOutput = dirPrefix + "/console_output.py"
-##permissions on file copies needs TODO (possibly?)
 casesExecuted = []
 
 ###############################################################################
@@ -63,7 +62,41 @@ casesExecuted = []
 ###############################################################################
 def main():
 ##TODO do stuff
-    exit(0)
+    sys.exit(0)
+
+
+
+###############################################################################
+#  Runs through all cases in case folder.  TODO finish this after outputwriter is done
+###############################################################################
+def runCases():
+    imgNumber = 0
+    casePath = getCasePath()
+    #This portion will check if we are in nightly mode.  If not, we'll ignore
+    #any case files with _nightly.
+    if nightly:
+        cases = [f for f in os.listdir(casePath) if ".cas" in f]
+    else:
+        cases = [f for f in os.listdir(casePath) 
+                 if ".cas" in f and "_nightly" not in f]
+    for file in cases:
+        runCase = true
+        ##TODO if error reading in case file, runCase = false
+        if case['name'] in casesExecuted: runCase = false
+
+        if runCase and dataExists() and case['enabled'] != false:
+            casesExecuted.append(CASE['name'])
+            if (case['type'] == "standard") or
+               (case['type'] == "budget" and plotBudgets) or
+               (case['type'] == "morrbudget" and plotMorrBudgets):
+                ###TODO print case['headerText'] to navbar and case title html
+                if nightly:
+                    ##TODO output CASE['nightlyOutput']['subText'] and ['subHtml']
+                else:
+                    ##print normal subtext/subhtml ['additionalOutput']
+                    if case[type] == "morrbudget":
+                        ##TODO writeMorrBudgetSubHeader
+                
 
 ###############################################################################
 # Executes the PlotCreator.
@@ -73,7 +106,7 @@ def main():
 ###############################################################################
 def executePlot():
 #TODO maybe objectify this?  Each plot perhaps will be its own object
-    exit(1)
+    sys.exit(1)
 
 ###############################################################################
 # Changes to the next line style, width, and color.
@@ -81,9 +114,16 @@ def executePlot():
 #   None.
 ###############################################################################
 def incrementLineTypes():
-#TODO find where to change put this, since it seems like really slow code as is
-# Also, change it over to 
-    exit(1)
+    lineColorCounter = (lineColorCounter % len(lineColors)) + 1
+    lineStyleCounter = (lineStyleCounter % len(lineStyles)) + 1
+    lineWidthCounter = (lineWidthCounter % len(lineWidths)) + 1
+### This should work fine, if not, below will work when testing.
+#    if lineColorCounter >= len(lineColors): lineColorCounter = 0
+#    else: lineColorCounter=lineColorCounter+1
+#    if lineStyleCounter >= len(lineStyles): lineStyleCounter = 0
+#    else: lineStyleCounter=lineStyleCounter+1
+#    if lineWidthCounter >= len(lineWidths): lineWidthCounter = 0
+#    else: lineWidthCounter=lineWidthCounter+1
 
 ###############################################################################
 # Does necessary cleanup code.
@@ -92,7 +132,7 @@ def incrementLineTypes():
 ###############################################################################
 def cleanup():
 # TODO clean up all temp files and other cruft.
-    exit(1)
+    sys.exit(1)
 
 ###############################################################################
 # Checks all input directories to see if one of them contains the current case.
@@ -106,7 +146,8 @@ def dataExists():
 # check input folders for data files and if the right data file is there for the case
 # If so, return 1 (which then runs the case plots elsewhere) else return 0.
 # there may be a quicker way for this to work, eventually.
-    exit(1)
+# To do this, I'll need to translate the case files over.
+    return 0
 
 ###############################################################################
 #  Casefile path generator function
@@ -126,6 +167,9 @@ def getCasePath():
     else: sys.exit("Plotgen run mode unknown, please use plotgen.py -h for help")
 # This error should not be possible unless code was changed.
 
+###############################################################################
+#  User is confused.  Possibly drunk.  Print a help message.
+###############################################################################
 def HELP_MESSAGE():
     print("Usage: plotgen [OPTION]... INPUT... OUTPUT\n")
     print("  -c\tPlot CLUBB cases [DEFAULT] (equiv to plotgen)\n")
@@ -152,8 +196,7 @@ def HELP_MESSAGE():
     print("  -bu\tUsed to plot standard budget plots\n")
     print("  -bumorr\tUsed to plot Morrison budget plots\n")
     print("  -h\tPrints this help message.\n")
-    print("Each option must be seperate, eg -r -a not -ra\n")
-    exit(0)
+    sys.exit(0)
 
 ###############################################################################
 #  Parse arguments
@@ -165,52 +208,52 @@ def parseArgs(argList):
     for arg in argList:
         if arg[0] == "-":
             numArgs += 1
-            arg = arg[1:]  ##TODO consider allowing -rbd as well as -r -b -d(add for loop, here, and change all the if arg to if arg[0])
-            if arg == 'm':
-                if keepEps:
-                    sys.exit("Argument conflict: Please do not simultaneously" + 
-                             "choose to save .eps files (-e) and create a .maff" +
-                             "file (-m)\n")
-                outputAsMaff = True
-            elif arg == 'a':
-                plotLes = True
-                plotBest = True
-                plotDec = True
-            elif arg == 'r': overwrite = True
-            elif arg == 'b': plotBest = True
-            elif arg == 'd': plotDec = True
-            elif arg == 'l': plotLes = True
-            elif arg == 'n': nightly = True
-            elif arg == 'q': highQuality = True
-            elif arg == 'e': keepEps = True
-            elif arg == 'g': dataFileType = "grads"
-            elif arg == 't': dataFileType = "netcdf"
-            elif arg == 'thin': thinLines = True
-            elif arg == 'dfrnce': diffRun = True
-            elif arg == 'ensemble': ensembleTuner = True
-            elif arg == 'nolegend': displayLegend = False
-            elif arg == 's': plotgenMode = "splotgen"
-            elif arg == 'c': plotgenMode = "plotgen"
-            elif arg == 'w': plotgenMode = "wrfgen"
-            elif arg == 'cam': plotgenMode = "camgen"
-            elif arg == 'gfdl': plotgenMode = "gfdlgen"
-            elif arg == 'bu': plotBudgets = True
-            elif arg == 'bumorr': plotMorrBudgets = True
-            elif arg == 'h': HELP_MESSAGE()
-            else: HELP_MESSAGE()
+            arg = arg[1:]  
+            for curarg in arg:
+                if   curarg == 'm': outputAsMaff = True
+                elif curarg == 'e': keepEps = True
+                elif curarg == 'a':
+                    plotLes = True
+                    plotBest = True
+                    plotDec = True
+                elif curarg == 'r': overwrite = True
+                elif curarg == 'b': plotBest = True
+                elif curarg == 'd': plotDec = True
+                elif curarg == 'l': plotLes = True
+                elif curarg == 'n': nightly = True
+                elif curarg == 'q': highQuality = True
+                elif curarg == 'g': dataFileType = "grads"
+                elif curarg == 't': dataFileType = "netcdf"
+                elif curarg == 'thin': thinLines = True
+                elif curarg == 'dfrnce': diffRun = True
+                elif curarg == 'ensemble': ensembleTuner = True
+                elif curarg == 'nolegend': displayLegend = False
+                elif curarg == 's': plotgenMode = "splotgen"
+                elif curarg == 'c': plotgenMode = "plotgen"
+                elif curarg == 'w': plotgenMode = "wrfgen"
+                elif curarg == 'cam': plotgenMode = "camgen"
+                elif curarg == 'gfdl': plotgenMode = "gfdlgen"
+                elif curarg == 'bu': plotBudgets = True
+                elif curarg == 'bumorr': plotMorrBudgets = True
+                elif curarg == 'h': HELP_MESSAGE()
+                else: HELP_MESSAGE()
 
-    #TODO make sure all exception handling is good, might need to make folders into absolute paths with os.path.join
+    if keepEps and outputAsMaff:
+        sys.exit("Argument conflict: Please do not simultaneously" + 
+                 "choose to save .eps files (-e) and create a .maff" +
+                 "file (-m)\n")
     if len(argList)-numArgs < 2:
         HELP_MESSAGE()
     inputDirs = []
     for dir in argList[numArgs:len(argList)-1]:
         if os.path.isdir(dir):
-            inputDirs.append(dir) 
+            inputDirs.append(os.path.join(dir)) 
         else:
             print("Input folder " + dir + " does not exist.")
             sys.exit(1)
     outputDir = argList[len(argList)-1]
     if os.path.isdir(outputDir):
+        outputDir = os.path.join(outputDir)
         if overwrite:
             try:
                 import shutil
@@ -218,7 +261,7 @@ def parseArgs(argList):
                 os.mkdir(outputDir)
             except Exception, e:
                 print(e)
-                exit(1)
+                sys.exit(1)
         else:
             print("Output folder alread exists.  Please use -r to allow overwrite")
             sys.exit(1)
@@ -227,7 +270,7 @@ def parseArgs(argList):
             os.mkdir(outputDir)
         except Exception, e:
             print e
-            exit(1)
+            sys.exit(1)
 
 ###############################################################################
 #  Print the version number of Plotgen
@@ -237,7 +280,3 @@ def VERSION_MESSAGE():
 
 parseArgs(sys.argv[1:])
 main()
-
-
-
-
