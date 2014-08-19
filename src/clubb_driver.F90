@@ -841,9 +841,10 @@ module clubb_driver
                             momentum_heights, &                 ! Intent(out)
                             thermodynamic_heights )             ! Intent(out)
 
-    ! Dummy horizontal grid spacing variables.
-    dummy_dx = 0.0_core_rknd
-    dummy_dy = 0.0_core_rknd
+    ! These numbers represent host model horizontal grid spacing
+    ! which for a single column simulation is effectively infinite
+    dummy_dx = 1.0e6_core_rknd ! known magic number
+    dummy_dy = 1.0e6_core_rknd ! known magic number
 
     ! Setup microphysical fields
     call init_microphys( iunit, trim( runtype ), runfile, case_info_file, & ! Intent(in)
