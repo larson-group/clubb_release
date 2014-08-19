@@ -764,7 +764,7 @@ then CLUBB will fail to compile when CLUBB's precision is changed, i.e. CLUBB\_R
 Also, when assigning values to these variables, you must specify the precision of the value using \_core\_rknd (E.g. 1.23\_core\_rknd). Here is an example of declaring a variable as core\_rknd and assigning a value to it:
 
 \begin{verbatim}
-use clubb_precision, only &
+use clubb_api_module, only &
   core_rknd ! generalized precision
 
 real( kind = core_rknd ) :: &
