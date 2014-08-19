@@ -62,6 +62,7 @@ module advance_clubb_core_module
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
                rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, & ! intent(in)
+               host_dx, host_dy, &                                  ! intent(in) 
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
                wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! intent(inout)
@@ -452,6 +453,11 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), intent(in) :: & 
+      host_dx,  & ! East-West horizontal grid spacing     [m]
+      host_dy     ! North-South horizontal grid spacing   [m]
+
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
@@ -705,8 +711,14 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rrm                 ! Rain water mixing ratio
+    
+    real( kind = core_rknd ) :: Lscale_max
 
     !----- Begin Code -----
+
+    ! Determine the maximum allowable value for Lscale (in meters).
+    call set_Lscale_max( l_implemented, host_dx, host_dy, & ! intent(in)
+                         Lscale_max )                       ! intent(out)
 
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
@@ -1424,12 +1436,12 @@ module advance_clubb_core_module
           mu_pert_2  = mu * Lscale_mu_coef
         end if
 
-        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em,                   & ! intent(in)
+        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
                              p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
                              err_code,                                            & ! intent(inout)
                              Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
 
-        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em,                   & ! intent(in)
+        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
                              p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
                              err_code,                                            & ! intent(inout)
                              Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
@@ -1490,13 +1502,13 @@ module advance_clubb_core_module
         mu_pert_neg_rt  = mu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em,            & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & ! intent(in)
+        call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down )                 ! intent(out)
 
-        call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em,            & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & ! intent(in)
+        call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em, Lscale_max, &!intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down )                 ! intent(out)
       else
@@ -1516,7 +1528,7 @@ module advance_clubb_core_module
       ! This call to compute_length must be last.  Otherwise, the values of
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
-      call compute_length( thvm, thlm, rtm, em,                          & ! intent(in)
+      call compute_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
                            err_code,                                     & ! intent(inout)
                            Lscale, Lscale_up, Lscale_down )                ! intent(out)
@@ -2003,7 +2015,7 @@ module advance_clubb_core_module
 #endif
       l_implemented, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
       momentum_heights, thermodynamic_heights,           & ! intent(in)
-      host_dx, host_dy, sfc_elevation,                   & ! intent(in)
+      sfc_elevation,                                     & ! intent(in)
 #ifdef GFDL
       cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -2110,11 +2122,6 @@ module advance_clubb_core_module
         momentum_heights,      & ! Momentum level altitudes (input)      [m]
         thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
-      ! Host model horizontal grid spacing, if part of host model.
-      real( kind = core_rknd ), intent(in) :: & 
-        host_dx,  & ! East-West horizontal grid spacing     [m]
-        host_dy     ! North-South horizontal grid spacing   [m]
-
       ! Model parameters
       real( kind = core_rknd ), intent(in) ::  & 
         T0_in, ts_nudge_in
@@ -2151,7 +2158,6 @@ module advance_clubb_core_module
         err_code   ! Diagnostic for a problem with the setup
 
       ! Local variables
-      real( kind = core_rknd ) :: Lscale_max
       integer :: begin_height, end_height
 
       !----- Begin Code -----
@@ -2195,21 +2201,17 @@ module advance_clubb_core_module
              l_uv_nudge, saturation_formula )  ! intent(in)
 #endif
 
-      ! Determine the maximum allowable value for Lscale (in meters).
-      call set_Lscale_max( l_implemented, host_dx, host_dy, & ! intent(in)
-                           Lscale_max )                       ! Intent(out)
 
       ! Define model constant parameters
 #ifdef GFDL
       call setup_parameters_model( T0_in, ts_nudge_in,                         & ! intent(in)
-                                   hydromet_dim_in,                            &  ! intent(in)
-                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in,    &! intent(in)
-                                   Lscale_max,  cloud_frac_min )       ! intent(in)  h1g, 2010-06-16
+                                   hydromet_dim_in,                            & ! intent(in)
+                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in,    & ! intent(in)
+                                   cloud_frac_min )                 ! intent(in)  h1g, 2010-06-16
 #else
-      call setup_parameters_model( T0_in, ts_nudge_in,                      &! intent(in)
-                                   hydromet_dim_in,                         &! intent(in)
-                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in, &! intent(in)
-                                   Lscale_max )                              ! intent(in)
+      call setup_parameters_model( T0_in, ts_nudge_in,                       & ! intent(in)
+                                   hydromet_dim_in,                          & ! intent(in)
+                                   sclr_dim_in, sclr_tol_in, edsclr_dim_in )   ! intent(in)
 #endif
 
       ! Define tunable constant parameters

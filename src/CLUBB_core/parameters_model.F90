@@ -18,13 +18,6 @@ module parameters_model
 
   private ! Default scope
 
-  ! Maximum allowable value for Lscale [m].
-  ! Value depends on whether the model is run by itself or as part of a
-  ! host model.
-  real( kind = core_rknd ), public :: Lscale_max
-
-!$omp threadprivate(Lscale_max)
-
   ! Maximum magnitude of PDF parameter 'mixt_frac'. 
   real( kind = core_rknd ), public :: mixt_frac_max_mag
 
@@ -71,9 +64,7 @@ module parameters_model
   subroutine setup_parameters_model &
              ( T0_in, ts_nudge_in, &
                hydromet_dim_in, & 
-               sclr_dim_in, sclr_tol_in, edsclr_dim_in, &
-               Lscale_max_in &
-
+               sclr_dim_in, sclr_tol_in, edsclr_dim_in &
 #ifdef GFDL
               , cloud_frac_min_in &    ! hlg, 2010-6-15
 #endif
@@ -102,8 +93,7 @@ module parameters_model
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
       T0_in,        & ! Ref. temperature             [K]
-      ts_nudge_in,  & ! Timescale for u/v nudging    [s]
-      Lscale_max_in   ! Largest value for Lscale     [m]
+      ts_nudge_in     ! Timescale for u/v nudging    [s]
 
 #ifdef GFDL
     real( kind = core_rknd ), intent(in) ::  cloud_frac_min_in  ! h1g, 2010-06-15
@@ -127,8 +117,6 @@ module parameters_model
       - ( 0.5_core_rknd * ( 1.0_core_rknd - Skw_max_mag / &
       sqrt( 4.0_core_rknd * ( 1.0_core_rknd - 0.4_core_rknd )**3 &
       + Skw_max_mag_sqd ) ) ) ! Known magic number
-
-    Lscale_max = Lscale_max_in
 
     T0       = T0_in
     ts_nudge = ts_nudge_in

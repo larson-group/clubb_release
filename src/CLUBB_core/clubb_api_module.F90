@@ -125,8 +125,7 @@ module clubb_api_module
     l_const_Nc_in_cloud   ! Use a constant cloud droplet conc. within cloud (K&K)
 
   use parameters_model, only : &
-    hydromet_dim, & ! Number of hydrometeor species
-    Lscale_max ! Maximum allowable value for Lscale [m].
+    hydromet_dim    ! Number of hydrometeor species
 
   use parameters_tunable, only : &
     l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
@@ -370,7 +369,6 @@ module clubb_api_module
     l_output_rad_files, &
     l_prescribed_avg_deltaz, &
     leap_year_api, &
-    Lscale_max, &
     Lscale, &
     nvarmax_rad_zm, &
     nvarmax_rad_zt, &
@@ -380,7 +378,6 @@ module clubb_api_module
     rad_zm, &
     rad_zt
     public &
-    set_Lscale_max_api, &
     sigma2_on_mu2_ratios_type, &
     nparams, &
     setup_parameters_api, &
@@ -431,6 +428,7 @@ contains
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
     rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
+    host_dx, host_dy, &                                     ! intent(in)
     um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
     wp2, wp3, rtp2, thlp2, rtpthlp, &                       ! intent(inout)
@@ -532,6 +530,12 @@ contains
     real( kind = core_rknd ), intent(in),  dimension(edsclr_dim) ::  &
       wpedsclrp_sfc    ! Eddy-Scalar flux at surface    [{units vary} m/s]
 
+    ! Host model horizontal grid spacing, if part of host model.
+    real( kind = core_rknd ), intent(in) :: &
+      host_dx,  & ! East-West horizontal grid spacing     [m]
+      host_dy     ! North-South horizontal grid spacing   [m]
+
+
     !!! Input/Output Variables
     ! These are prognostic or are planned to be in the future
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
@@ -613,6 +617,7 @@ contains
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
       rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
+      host_dx, host_dy, &                                     ! intent(in)
       um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
       wp2, wp3, rtp2, thlp2, rtpthlp, &                       ! intent(inout)
@@ -652,7 +657,7 @@ contains
 #endif
     l_implemented, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
     momentum_heights, thermodynamic_heights,           & ! intent(in)
-    host_dx, host_dy, sfc_elevation,                   & ! intent(in)
+    sfc_elevation,                                     & ! intent(in)
 #ifdef GFDL
       cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -717,11 +722,6 @@ contains
       momentum_heights,      & ! Momentum level altitudes (input)      [m]
       thermodynamic_heights    ! Thermodynamic level altitudes (input) [m]
 
-    ! Host model horizontal grid spacing, if part of host model.
-    real( kind = core_rknd ), intent(in) :: &
-      host_dx,  & ! East-West horizontal grid spacing     [m]
-      host_dy     ! North-South horizontal grid spacing   [m]
-
     ! Model parameters
     real( kind = core_rknd ), intent(in) ::  &
       T0_in, ts_nudge_in
@@ -768,7 +768,7 @@ contains
 #endif
       l_implemented, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
       momentum_heights, thermodynamic_heights,           & ! intent(in)
-      host_dx, host_dy, sfc_elevation,                   & ! intent(in)
+      sfc_elevation,                                     & ! intent(in)
 #ifdef GFDL
       cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -794,36 +794,6 @@ contains
     call cleanup_clubb_core( &
     l_implemented )
   end subroutine cleanup_clubb_core_api
-
-  !================================================================================================
-  ! set_Lscale_max - Sets the maximum allowable value of Lscale.
-  !================================================================================================
-
-  subroutine set_Lscale_max_api( &
-    l_implemented, host_dx, host_dy, &
-    Lscale_max )
-
-    use advance_clubb_core_module, only : set_Lscale_max
-
-    implicit none
-
-    ! Input Variables
-    logical, intent(in) :: &
-      l_implemented    ! Flag to see if CLUBB is running on it's own,
-    !                    or if it's implemented as part of a host model.
-
-    real( kind = core_rknd ), intent(in) :: &
-      host_dx, & ! Host model's east-west horizontal grid spacing     [m]
-      host_dy    ! Host model's north-south horizontal grid spacing   [m]
-
-    ! Output Variable
-    real( kind = core_rknd ), intent(out) :: &
-      Lscale_max    ! Maximum allowable value for Lscale   [m]
-
-    call set_Lscale_max( &
-      l_implemented, host_dx, host_dy, &
-      Lscale_max )
-  end subroutine set_Lscale_max_api
 
   !================================================================================================
   ! gregorian2julian_day - Computes the number of days since 1 January 4713 BC.

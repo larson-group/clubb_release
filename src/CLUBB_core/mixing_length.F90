@@ -12,7 +12,7 @@ module mixing_length
   contains
 
   !=============================================================================
-  subroutine compute_length( thvm, thlm, rtm, em, &
+  subroutine compute_length( thvm, thlm, rtm, em, Lscale_max, &
                              p_in_Pa, exner, thv_ds, mu, l_implemented, &
                              err_code, &
                              Lscale, Lscale_up, Lscale_down )
@@ -44,9 +44,6 @@ module mixing_length
 
     use parameters_tunable, only:  &  ! Variable(s)
         lmin    ! Minimum value for Lscale                         [m]
-
-    use parameters_model, only:  & 
-        Lscale_max    ! Maximum value for Lscale                   [m]
 
     use grid_class, only:  & 
         gr,  & ! Variable(s)
@@ -92,6 +89,9 @@ module mixing_length
       p_in_Pa, & ! Pressure on thermodynamic level                [Pa]
       thv_ds     ! Dry, base-state theta_v on thermodynamic level [K]
     ! Note:  thv_ds used as a reference theta_l here
+
+    real( kind = core_rknd ), intent(in) :: &
+      Lscale_max ! Maximum allowable value for Lscale             [m]
 
     real( kind = core_rknd ), intent(in) :: &
       mu  ! mu Fractional extrainment rate per unit altitude      [1/m]

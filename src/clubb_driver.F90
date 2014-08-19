@@ -868,7 +868,7 @@ module clubb_driver
            l_uv_nudge, saturation_formula,                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
-           dummy_dx, dummy_dy, sfc_elevation,                 & ! Intent(in)
+           sfc_elevation,                                     & ! Intent(in)
            err_code )                                           ! Intent(out)
     ! Allocate a correctly-sized array for radf and zero it
     allocate( radf(gr%nz) )
@@ -1283,6 +1283,7 @@ module clubb_driver
              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! Intent(in)
              invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! Intent(in)
              rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, & ! Intent(in)
+             dummy_dx, dummy_dy, &                                ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
              wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
