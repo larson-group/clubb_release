@@ -40,15 +40,7 @@ module clubb_api_module
     iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
     iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
     l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
-    l_mix_rat_hm, & ! if true, then the quantity is a hydrometeor mixing ratio
-    ! Scalars
-    iiedsclr_CO2, &
-    iiedsclr_rt, &
-    iiedsclr_thl, &
-    iisclr_CO2, &
-    iisclr_rt, &
-    iisclr_thl
-
+    l_mix_rat_hm ! if true, then the quantity is a hydrometeor mixing ratio
 
   use clubb_precision, only : &
     time_precision, &
@@ -373,12 +365,6 @@ module clubb_api_module
     fname_rad_zt, &
     fname_sfc, &
     gregorian2julian_day_api, &
-    iiedsclr_CO2, &
-    iiedsclr_rt, &
-    iiedsclr_thl, &
-    iisclr_CO2, &
-    iisclr_rt, &
-    iisclr_thl, &
     l_grads, &
     l_netcdf, &
     l_output_rad_files, &
