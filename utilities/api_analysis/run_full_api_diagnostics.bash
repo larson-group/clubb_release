@@ -1,18 +1,21 @@
 #!/bin/bash
 
-###############################################################################
+####################################################################################
 # run_full_api_diagnostics v1.0
 #
 # Run every api/* test.
 #
 # File History:
+#  v1.1: Merged the bitten and nightly version of this script
 #  v1.0: Initial Release
 #
 # Required Arguments
 #  -None
 # Optional Arguments
-#  -None
-###############################################################################
+#  -nightly
+#       With this argument, the tables are produced using the nightly paths.
+#       Without this argument, no tables are produced (bitten requires no tables).
+####################################################################################
 
 #This variable allows the script to reurn to where it was run from.
 restoreLoc=`pwd`
@@ -24,7 +27,7 @@ run_dir=`dirname $0`
 cd $run_dir
 
 # Checkout CLUBB and the Host Models
-if [ $1 == "-nightly" ]
+if [ "$1" == "-nightly" ]
 then
     # Setup the checkout scripts
     . ../nightly_config.sh
@@ -48,7 +51,7 @@ else
 fi
 
 # Setup the paths to the host models
-if [ $1 == "-nightly" ]
+if [ "$1" == "-nightly" ]
 then
     clubbDir="../../../clubb"
     samDir="../../../SAM_CLUBB"
@@ -71,7 +74,7 @@ find $samDir -type d -name .svn -exec rm -rf {} \;
 find $wrfDir -type d -name .svn -exec rm -rf {} \;
 find $camDir -type d -name .svn -exec rm -rf {} \;
 
-if [ $1 == "-nightly" ]
+if [ "$1" == "-nightly" ]
 then
     echo "Running the Usage Analyzer"
     python usage_analyzer.py CLUBB_core/clubb_api_module.F90 $samDir $wrfDir $camDir > ../text_output/usageAnalyzerTable.html
@@ -105,7 +108,7 @@ python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="clubb","sil
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","silhs" > wrf_modules.txt
 
-if [ $1 == "-nightly" ]
+if [ "$1" == "-nightly" ]
 then
     python create_module_table.py CLUBB_core> ../text_output/apiCommitmentTable.html
 else
@@ -123,10 +126,10 @@ else
     if [ -s "$sam_modules" ] || [ -s "$wrf_modules" ] || [ -s "$cam_modules" ] ; then
         echo "ERROR: A host model is circumventing the API." 
         echo "Please inspect the nightly test API Commitment Table."
-        exitCode = 1
+        exitCode=1
     else 
         echo "All host models passed."
-        exitCode = 0
+        exitCode=0
     fi
 fi
 
