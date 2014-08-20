@@ -260,8 +260,6 @@ def parseModulesInFile(filename):
 def parseApiModule(filename):
     # Take in the entire file at once (small enough text files to not matter)
     lines = [line.strip().lower() for line in open(filename)]
-    # Here the module name is the filename stripped of location and extension
-    moduleName = filename.split("/")[-1].replace(".F90", "").strip()
     # Some temp data
     modulePublics = list()
     for n in range(0,len(lines)):                                                       # Go through every line
@@ -272,7 +270,7 @@ def parseApiModule(filename):
                 modulePublics.append(Element(subroutine, None, n, n))                   # Add each resultant element to the moudule's subroutine list
     # Here, the only thing in the API module is some "subroutines" which are really
     # every variable, function, subroutine, and derived type in the module
-    return Module(moduleName, modulePublics, None, None, None, None, 1, 100000)
+    return Module(None, modulePublics, None, None, None, None, 1, 100000)
 
 # Returns the use statement on the indicated line
 # for example, the code
@@ -372,17 +370,17 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
             elementsFound = set()                       # Hold all of the elements found
             for module in hostModel:                    # Go through each module
                 for use in module.uses:                                         # Go through each use in each module's top level uses (module.uses)
-                    if apiElement in use.elements and use.name == apiModule.name:   # If there's a match
+                    if apiElement in use.elements and (use.name == "clubb_api_module" or use.name == "silhs_api_module"):   # If there's a match
                         elementsFound.add(use.parentElement)                            # Add the element to the list of found elements
                 for function in module.functions:                             # Go through each function in the module
                     for use in function.uses:                                       # Go though each use in the function
-                        if apiElement in use.elements and use.name == apiModule.name:   # If there's a match
+                        if apiElement in use.elements and (use.name == "clubb_api_module" or use.name == "silhs_api_module"):   # If there's a match
                             elementsFound.add(use.parentElement + \
                                 "<span style='font-size:"+str(fontSizeReduced)+"pt'> in " + \
                                 module.name+"<span style='font-size:"+str(fontSize)+"pt'>") # Add the element to the list of found elements
                 for subroutine in module.subroutines:                           # Same as functions
                     for use in subroutine.uses:
-                        if apiElement in use.elements and use.name == apiModule.name:
+                        if apiElement in use.elements and (use.name == "clubb_api_module" or use.name == "silhs_api_module"):
                             elementsFound.add(use.parentElement + \
                                 "<span style='font-size:"+str(fontSizeReduced)+"pt'> in " + \
                                 module.name+"<span style='font-size:"+str(fontSize)+"pt'>")
