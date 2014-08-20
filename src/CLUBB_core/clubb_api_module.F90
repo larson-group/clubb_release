@@ -390,7 +390,6 @@ module clubb_api_module
     stats_init_sfc_api, &
     stats_init_zm_api, &
     stats_init_zt_api, &
-    vertical_avg_api, &
     wp2_zt, &
     wphydrometp, &
     zm, &
@@ -1020,40 +1019,6 @@ contains
     clubb_at_least_debug_level_api = clubb_at_least_debug_level( &
       level )
   end function clubb_at_least_debug_level_api
-
-  !================================================================================================
-  ! vertical_avg - Computes the density-weighted vertical average of a field.
-  !================================================================================================
-
-  function vertical_avg_api( &
-    total_idx, rho_ds, &
-    field, invrs_dz )
-
-    use fill_holes, only : vertical_avg
-
-    implicit none
-
-    ! Input variables
-    integer, intent(in) :: &
-      total_idx ! The total numer of indices within the range of averaging
-
-    real( kind = core_rknd ), dimension(total_idx), intent(in) ::  &
-      rho_ds, & ! Dry, static density on either thermodynamic or momentum levels    [kg/m^3]
-      field,  & ! The field (e.g. wp2) to be vertically averaged                    [Units vary]
-      invrs_dz  ! Reciprocal of thermodynamic or momentum level thickness           [1/m]
-                ! depending on whether we're on zt or zm grid.
-    ! Note:  The rho_ds and field points need to be arranged from
-    !        lowest to highest in altitude, with rho_ds(1) and
-    !        field(1) actually their respective values at level k = 1.
-
-    ! Output variable
-    real( kind = core_rknd ) :: &
-      vertical_avg_api  ! Vertical average of field    [Units of field]
-
-    vertical_avg_api = vertical_avg( &
-      total_idx, rho_ds, &
-      field, invrs_dz )
-  end function vertical_avg_api
 
   !================================================================================================
   ! fill_holes_driver - Fills holes between same-phase hydrometeors(i.e. for frozen hydrometeors).
