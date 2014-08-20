@@ -24,7 +24,8 @@ run_dir=`dirname $0`
 cd $run_dir
 
 # Checkout CLUBB and the Host Models
-if [ $1 == "-nightly" ] then
+if [ $1 == "-nightly" ]
+then
     # Setup the checkout scripts
     . ../nightly_config.sh
     echo "Checking out CLUBB"
@@ -47,16 +48,17 @@ else
 fi
 
 # Setup the paths to the host models
-if [ $1 == "-nightly" ] then
-    clubbDir = "../../../clubb"
-    samDir = "../../../SAM_CLUBB"
-    wrfDir = "../../../WRF_CLUBB"
-    camDir = "../../../CAM"
+if [ $1 == "-nightly" ]
+then
+    clubbDir="../../../clubb"
+    samDir="../../../SAM_CLUBB"
+    wrfDir="../../../WRF_CLUBB"
+    camDir="../../../CAM"
 else
-    clubbDir = "CLUBB"
-    samDir = "SAM"
-    wrfDir = "WRF"
-    camDir = "CAM"
+    clubbDir="CLUBB"
+    samDir="SAM"
+    wrfDir="WRF"
+    camDir="CAM"
 fi
 
 echo "Moving CLUBB_core"
@@ -69,7 +71,8 @@ find $samDir -type d -name .svn -exec rm -rf {} \;
 find $wrfDir -type d -name .svn -exec rm -rf {} \;
 find $camDir -type d -name .svn -exec rm -rf {} \;
 
-if [ $1 == "-nightly" ] then
+if [ $1 == "-nightly" ]
+then
     echo "Running the Usage Analyzer"
     python usage_analyzer.py CLUBB_core/clubb_api_module.F90 $samDir $wrfDir $camDir > ../text_output/usageAnalyzerTable.html
 fi
@@ -102,7 +105,8 @@ python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="clubb","sil
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","silhs" > wrf_modules.txt
 
-if [ $1 == "-nightly" ] then
+if [ $1 == "-nightly" ]
+then
     python create_module_table.py CLUBB_core> ../text_output/apiCommitmentTable.html
 else
     echo "Removing Checkouts"
