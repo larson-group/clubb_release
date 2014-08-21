@@ -343,8 +343,8 @@ def makeTable(apiModule, samModules, wrfModules, camModules):
     table += 'collapse;}th {background-color: lightgrey;}</style><head><title>'     # 
     table += 'Usage Breakdown: ' + strftime("%Y-%m-%d %H:%M:%S")                    # Page Title
     table += '</title></head><body>'                                                # Add some descriptive text
-    table += '<p>This table shows how each subroutine, function, and variable in clubb_api_module is used by the host models, SAM, WRF, and CAM. The table highlights areas where the three host models use CLUBB differently.</p>'
-    table += '<p>The leftmost column is every subroutine, function, and variable in the public lists in the clubb_api_module. The rightmost columns are the subroutines, functions, and modules which use the corresponding element in the leftmost column. Subroutines and functions in the rightmost columns are followed by (in smaller text) the module that they are in. Like the API Commitment Table, the table can be sorted by clicking on the headers.</p>'
+    table += '<p>This table shows how each subroutine, function, and variable in clubb_api_module and silhs_api_module is used by the host models, SAM, WRF, and CAM. The table highlights areas where the three host models use CLUBB and SILHS differently.</p>'
+    table += '<p>The leftmost column is every subroutine, function, and variable in the public lists in the clubb_api_module and silhs_api_module. The rightmost columns are the subroutines, functions, and modules which use the corresponding element in the leftmost column. Subroutines and functions in the rightmost columns are followed by (in smaller text) the module that they are in. Like the API Commitment Table, the table can be sorted by clicking on the headers.</p>'
     table += '<table class="sortable">'                                             # Setup Table
     table += '<tr><th>API Element</th><th>SAM</th><th>WRF</th><th>CAM</th></tr>'    # Add the Header
     
