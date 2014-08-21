@@ -77,7 +77,8 @@ find $camDir -type d -name .svn -exec rm -rf {} \;
 if [ "$1" == "-nightly" ]
 then
     echo "Copying the SILHS API into the CLUBB API"
-    cat $clubbDir/src/SILHS/silhs_api_module.F90 >> CLUBB_core/clubb_api_module.F90
+    cat $clubbDir/src/SILHS/silhs_api_module.F90 CLUBB_core/clubb_api_module.F90 > tempApiFile
+    mv tempApiFile CLUBB_core/clubb_api_module.F90
 
     echo "Running the Usage Analyzer"
     python usage_analyzer.py CLUBB_core/clubb_api_module.F90 $samDir $wrfDir $camDir > ../text_output/usageAnalyzerTable.html
