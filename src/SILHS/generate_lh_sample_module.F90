@@ -650,19 +650,28 @@ module generate_lh_sample_module
 !   URL:         http://home.online.no/~pjacklam
 !-----------------------------------------------------------------------
 
-    ! This is commented out because it is used by old versions of this code that
-    ! have been commented out, but not by the new code.
-
-    ! use constants_clubb, only: Pi_DP ! Variable(s)
-
     use clubb_precision, only: &
       dp ! double precision
+
+    use constants_clubb, only: &
+      pi_dp,       &     ! Constant(s)
+      sqrt_2,      &
+      sqrt_2pi,    &
+      two_dp,      &
+      one_dp,      &
+      one_half_dp
 
     implicit none
 
     ! External
 
-    intrinsic :: log, sqrt
+    intrinsic :: log, sqrt, erfc, exp
+
+    ! Constant Parameter
+
+    ! Apply Halley's method to answer to achieve more accurate result
+    logical, parameter :: &
+      l_apply_halley_method = .false.
 
     ! Input Variable(s)
 
@@ -680,10 +689,7 @@ module generate_lh_sample_module
 
     real( kind = dp ) q, r, z, z1, plow, phigh
 
-!       double preciseion e, erf_dp, u
-
-!       Occurs in constants.F now.  Isn't actually used currently.
-!        double precision, parameter :: pi=3.1415926_dp
+    real( kind = dp ) ::  e, u
 
 ! Coefficients in rational approximations.
 ! equivalent: a(1)=a1, a(2)=a2, and etc, when a(1) is in Matlab.
@@ -767,12 +773,16 @@ module generate_lh_sample_module
 !   The value is close to MATLAB's
 !   if I omit the following if-end if loop.
 ! End V. Larson comment
-!!   k = 0 < p & p < 1;
-!       if (p.gt.0 .and. p.lt.1)then
-!         e = 0.5_core_rknd*(1.0_core_rknd - erf_dp(-z/sqrt(2._core_rknd)) - p          ! error
-!         u = e * sqrt(2*pi_dp) * exp(z**2/2)       ! f(z)/df(z)
-!         z = z - u/( 1 + z*u/2 )               ! Halley's method
-!       end if
+
+    ! Halley's rational method is applied to achieve a more accurate result if
+    ! the flag below is true. In tests, this did increase the runtime of SILHS
+    ! slightly but did improve results.
+    ! Eric Raut 23Aug14
+    if ( l_apply_halley_method ) then
+      e = one_half_dp * erfc(-z/sqrt_2) - p
+      u = e * sqrt_2pi * exp( (z**2) / two_dp )
+      z = z - u / ( one_dp + z*u/two_dp )
+    end if
 
 ! return z as double precision:
     ltqnorm = z
