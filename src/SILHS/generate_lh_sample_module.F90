@@ -661,11 +661,14 @@ module generate_lh_sample_module
       one_dp,      &
       one_half_dp
 
+    use anl_erf, only: &
+      erfc               ! Procedure
+
     implicit none
 
     ! External
 
-    intrinsic :: log, sqrt, erfc, exp
+    intrinsic :: log, sqrt, exp
 
     ! Constant Parameter
 
