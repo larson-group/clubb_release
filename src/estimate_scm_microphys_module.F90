@@ -280,8 +280,8 @@ module estimate_scm_microphys_module
                 rc_column(k)
             end if
           end do
+          write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
         end if ! clubb_at_least_debug_level( 1 )
-        write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
         where ( rv_column < 0._core_rknd) rv_column = zero_threshold
       end if ! Some rv_column element < 0
 
