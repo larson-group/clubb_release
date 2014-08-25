@@ -345,19 +345,19 @@ module microphys_driver
     ! Initialize predicitive hydrometeor tendencies and sedimentation
     ! velocities.
     if ( hydromet_dim > 0 ) then
-       hydromet_mc = zero
-       hydromet_vel_zt = zero
+      hydromet_mc = zero
+      hydromet_vel_zt = zero
     endif
     ! Initialize predicitive Ncm tendency.
     Ncm_mc = zero
 
-    ! Initialize the values of the implicit and explicit components used to 
+    ! Initialize the values of the implicit and explicit components used to
     ! calculate the covariances of hydrometeor sedimentation velocities and
     ! their associated hydrometeors (for example, <V_rr'r_r'> and <V_Nr'N_r'>)
     ! to 0.
     if ( hydromet_dim > 0 ) then
-       hydromet_vel_covar_zt_impc = zero
-       hydromet_vel_covar_zt_expc = zero
+      hydromet_vel_covar_zt_impc = zero
+      hydromet_vel_covar_zt_expc = zero
     endif
 
     ! Return if there is delay between the model start time and start of the
@@ -366,7 +366,7 @@ module microphys_driver
 
     ! Make some compiler warnings go away for external users
     if ( runtype == "" ) then
-       stop "Runtype is null, which should not happen."
+      stop "Runtype is null, which should not happen."
     endif
 
     ! Calculate the updated value of mean cloud droplet concentration, based on
@@ -402,326 +402,326 @@ module microphys_driver
     case ( "coamps" )
 
 #ifdef COAMPS_MICRO
-       call coamps_microphys_driver & 
-            ( runtype, time_current, dt, & ! In
-              rtm, wm_zm, p_in_Pa, exner, rho, & ! In
-              thlm, hydromet(:,iirim), hydromet(:,iirrm),  &  ! In
-              hydromet(:,iirgm), hydromet(:,iirsm), & ! In
-              rcm, Ncm_microphys, hydromet(:,iiNrm), hydromet(:,iiNim), & !In
-              Nccnm, cond, & ! Inout
-              hydromet_vel_zt(:,iirsm), hydromet_vel_zt(:,iirim), & ! Out
-              hydromet_vel_zt(:,iirrm), hydromet_vel_zt(:,iiNrm),  &  ! Out
-              hydromet_vel_zt(:,iirgm), &  ! Out
-              hydromet_mc(:,iirim), hydromet_mc(:,iirrm), & ! Out
-              hydromet_mc(:,iirgm), hydromet_mc(:,iirsm), & ! Out
-              hydromet_mc(:,iiNrm), & ! Out
-              Ncm_mc, hydromet_mc(:,iiNim), & ! Out
-              rvm_mc, rcm_mc, thlm_mc )
+      call coamps_microphys_driver & 
+           ( runtype, time_current, dt, & ! In
+             rtm, wm_zm, p_in_Pa, exner, rho, & ! In
+             thlm, hydromet(:,iirim), hydromet(:,iirrm),  &  ! In
+             hydromet(:,iirgm), hydromet(:,iirsm), & ! In
+             rcm, Ncm_microphys, hydromet(:,iiNrm), hydromet(:,iiNim), & !In
+             Nccnm, cond, & ! Inout
+             hydromet_vel_zt(:,iirsm), hydromet_vel_zt(:,iirim), & ! Out
+             hydromet_vel_zt(:,iirrm), hydromet_vel_zt(:,iiNrm),  &  ! Out
+             hydromet_vel_zt(:,iirgm), &  ! Out
+             hydromet_mc(:,iirim), hydromet_mc(:,iirrm), & ! Out
+             hydromet_mc(:,iirgm), hydromet_mc(:,iirsm), & ! Out
+             hydromet_mc(:,iiNrm), & ! Out
+             Ncm_mc, hydromet_mc(:,iiNim), & ! Out
+             rvm_mc, rcm_mc, thlm_mc )
 #else
-       stop "Not compiled with COAMPS microphysics"
-       cond = -999._core_rknd
-       if ( cond(1,1,1) /= cond(1,1,1) ) stop
+      stop "Not compiled with COAMPS microphysics"
+      cond = -999._core_rknd
+      if ( cond(1,1,1) /= cond(1,1,1) ) stop
 #endif
 
-       if ( l_stats_samp ) then
+      if ( l_stats_samp ) then
 
-          ! Sedimentation velocity for rrm
-          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
+        ! Sedimentation velocity for rrm
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
 
-          ! Sedimentation velocity for Nrm
-          call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
+        ! Sedimentation velocity for Nrm
+        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
 
-          ! Sedimentation velocity for snow
-          call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirsm) ), zm )
+        ! Sedimentation velocity for snow
+        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirsm) ), zm )
 
-          ! Sedimentation velocity for pristine ice
-          call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iirim) ), zm )
+        ! Sedimentation velocity for pristine ice
+        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iirim) ), zm )
 
-          ! Sedimentation velocity for graupel
-          call stat_update_var( iVrg, &
-                              zt2zm( hydromet_vel_zt(:,iirgm) ), zm )
-       endif ! l_stats_samp
+        ! Sedimentation velocity for graupel
+        call stat_update_var( iVrg, &
+                            zt2zm( hydromet_vel_zt(:,iirgm) ), zm )
+      endif ! l_stats_samp
 
     case ( "morrison" )
 
-       if ( lh_microphys_type /= lh_microphys_disabled ) then
+      if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
-          call lh_microphys_driver &
-               ( dt, gr%nz, lh_num_samples, d_variables, & ! In
-                 X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
-                 pdf_params, p_in_Pa, exner, rho, & ! In
-                 rcm, delta_zt, cloud_frac, & ! In
-                 hydromet, X_mixt_comp_all_levs,  & !In 
-                 hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
-                 rcm_mc, rvm_mc, thlm_mc,  & ! Out
-                 rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
-                 wpthlp_mc, rtpthlp_mc, & ! Out
-                 morrison_microphys_driver )  ! Procedure
+        call lh_microphys_driver &
+             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+               pdf_params, p_in_Pa, exner, rho, & ! In
+               rcm, delta_zt, cloud_frac, & ! In
+               hydromet, X_mixt_comp_all_levs,  & !In 
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
+               rcm_mc, rvm_mc, thlm_mc,  & ! Out
+               rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
+               wpthlp_mc, rtpthlp_mc, & ! Out
+               morrison_microphys_driver )  ! Procedure
 #else
-          stop "Latin hypercube was not enabled at compile time"
-          ! Get rid of compiler warnings
-          if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
-             rcm_mc(1) = + lh_rt(1,1) + lh_thl(1,1) &
-               + lh_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
-          endif
+        stop "Latin hypercube was not enabled at compile time"
+        ! Get rid of compiler warnings
+        if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
+          rcm_mc(1) = + lh_rt(1,1) + lh_thl(1,1) &
+            + lh_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
+        endif
 #endif /* SILHS */
-          call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
-                                       thlm_mc, rvm_mc, rcm_mc )
+        call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+                                     thlm_mc, rvm_mc, rcm_mc )
 
-       endif ! LH isn't disabled
+      endif ! LH isn't disabled
 
-       ! Call the microphysics if we don't want to have feedback effects from the
-       ! latin hypercube result (above)
-       if ( lh_microphys_type /= lh_microphys_interactive ) then
-          l_latin_hypercube_input = .false.
-        
-          if ( l_morr_xp2_mc ) then
-             !Use the moister rt1/rt2 rather than rtm in morrison microphys
-             !Also use the colder of thl1/thl2
-             where ( pdf_params%rt1 > pdf_params%rt2 )
-                rvm = pdf_params%rt1 - pdf_params%rc1
-             else where
-                rvm = pdf_params%rt2 - pdf_params%rc2
-             end where
+      ! Call the microphysics if we don't want to have feedback effects from the
+      ! latin hypercube result (above)
+      if ( lh_microphys_type /= lh_microphys_interactive ) then
+        l_latin_hypercube_input = .false.
 
-             where ( pdf_params%thl1 < pdf_params%thl2 )
-                thlm_morr = pdf_params%thl1
-             else where
-                thlm_morr = pdf_params%thl2
-             end where
-          else
-             rvm = rtm - rcm
-             thlm_morr = thlm
-          endif
+        if ( l_morr_xp2_mc ) then
+          !Use the moister rt1/rt2 rather than rtm in morrison microphys
+          !Also use the colder of thl1/thl2
+          where ( pdf_params%rt1 > pdf_params%rt2 )
+            rvm = pdf_params%rt1 - pdf_params%rc1
+          else where
+            rvm = pdf_params%rt2 - pdf_params%rc2
+          end where
 
-          call morrison_microphys_driver &
-               ( dt, gr%nz, &
-                 l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
-                 exner, rho, cloud_frac, wtmp, &
-                 delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
-                 hydromet_mc, hydromet_vel_zt, Ncm_mc, &
-                 rcm_mc, rvm_mc, thlm_mc, &
-                 microphys_stats_zt, microphys_stats_sfc )
+          where ( pdf_params%thl1 < pdf_params%thl2 )
+            thlm_morr = pdf_params%thl1
+          else where
+            thlm_morr = pdf_params%thl2
+          end where
+        else
+          rvm = rtm - rcm
+          thlm_morr = thlm
+        endif
 
-          if ( l_morr_xp2_mc) then
+        call morrison_microphys_driver &
+             ( dt, gr%nz, &
+               l_latin_hypercube_input, thlm_morr, wm_zt, p_in_Pa, &
+               exner, rho, cloud_frac, wtmp, &
+               delta_zt, rcm, Ncm_microphys, chi, rvm, hydromet, &
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, &
+               rcm_mc, rvm_mc, thlm_mc, &
+               microphys_stats_zt, microphys_stats_sfc )
 
-            rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
+        if ( l_morr_xp2_mc) then
 
-            call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
-                                wm_zt, exner, rrm_evap, pdf_params,      & ! Intent(in)
-                                rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
-                                rtpthlp_mc )                                  ! Intent(out)
+          rrm_evap = microphys_get_var( irrm_cond, microphys_stats_zt )
 
-          else
+          call update_xp2_mc( gr%nz, dt, cloud_frac, rcm, rvm, thlm_morr, & ! Intent(in)  
+                              wm_zt, exner, rrm_evap, pdf_params,      & ! Intent(in)
+                              rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,     & ! Intent(out)
+                              rtpthlp_mc )                                  ! Intent(out)
 
-             ! Set microphysics tendencies for model variances to 0.
-             rtp2_mc  = zero
-             thlp2_mc = zero
-             wprtp_mc = zero
-             wpthlp_mc = zero
-             rtpthlp_mc = zero
+        else
 
-           endif
+          ! Set microphysics tendencies for model variances to 0.
+          rtp2_mc  = zero
+          thlp2_mc = zero
+          wprtp_mc = zero
+          wpthlp_mc = zero
+          rtpthlp_mc = zero
+
+        endif
 
 
-          ! Output rain sedimentation velocity
-          if ( l_stats_samp ) then
-             call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
-          endif
+        ! Output rain sedimentation velocity
+        if ( l_stats_samp ) then
+          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
+        endif
 
-       endif ! lh_microphys_type /= interactive
+      endif ! lh_microphys_type /= interactive
 
     case ( "morrison_gettelman" )
 
-       ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
-       ! Placed here because parameters cannot be changed on mg_microphys_driver with
-       ! the way LH is currently set up.
-       call pbuf_add( 'WP2', 1, gr%nz, 1 )
-       call pbuf_allocate()
-       call pbuf_setval( 'WP2', real( wp2_zt, kind=shr_kind_r8 ) )
+      ! Place wp2 into the dummy phys_buffer module to import it into microp_aero_ts.
+      ! Placed here because parameters cannot be changed on mg_microphys_driver with
+      ! the way LH is currently set up.
+      call pbuf_add( 'WP2', 1, gr%nz, 1 )
+      call pbuf_allocate()
+      call pbuf_setval( 'WP2', real( wp2_zt, kind=shr_kind_r8 ) )
 
-       rvm = rtm - rcm
-       call mg_microphys_driver &
-            ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
-              rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
-              hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
+      rvm = rtm - rcm
+      call mg_microphys_driver &
+           ( dt, gr%nz, l_stats_samp, gr%invrs_dzt, thlm, p_in_Pa, exner, &
+             rho, cloud_frac, rcm, Ncm_microphys, rvm, Nccnm, pdf_params, hydromet, &
+             hydromet_mc, hydromet_vel_zt, rcm_mc, rvm_mc, thlm_mc )
 
     case ( "khairoutdinov_kogan" )
 
-       if ( lh_microphys_type /= lh_microphys_disabled ) then
+      if ( lh_microphys_type /= lh_microphys_disabled ) then
 
 #ifdef SILHS
-          call lh_microphys_driver &
-               ( dt, gr%nz, lh_num_samples, d_variables, & ! In
-                 X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
-                 pdf_params, p_in_Pa, exner, rho, & ! In
-                 rcm, delta_zt, cloud_frac, & ! In
-                 hydromet, X_mixt_comp_all_levs,  & !In 
-                 hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
-                 rcm_mc, rvm_mc, thlm_mc,  & ! Out
-                 rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
-                 wpthlp_mc, rtpthlp_mc, & ! Out               
-                 KK_local_microphys ) ! Procedure
+        call lh_microphys_driver &
+             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+               pdf_params, p_in_Pa, exner, rho, & ! In
+               rcm, delta_zt, cloud_frac, & ! In
+               hydromet, X_mixt_comp_all_levs,  & !In 
+               hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
+               rcm_mc, rvm_mc, thlm_mc,  & ! Out
+               rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
+               wpthlp_mc, rtpthlp_mc, & ! Out               
+               KK_local_microphys ) ! Procedure
 #else
-          stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
+        stop "Subgrid Importance Latin Hypercube was not enabled at compile time"
 #endif /* SILHS */
 
-          call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
-                                         thlm_mc, rvm_mc, rcm_mc )
+        call stats_accumulate_lh_tend( hydromet_mc, Ncm_mc, &
+                                       thlm_mc, rvm_mc, rcm_mc )
 
-          if ( l_stats_samp ) then
-             ! Latin hypercube estimate for sedimentation velocities
-             call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrm), lh_zt )
+        if ( l_stats_samp ) then
+          ! Latin hypercube estimate for sedimentation velocities
+          call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrm), lh_zt )
 
-             call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), lh_zt )
+          call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), lh_zt )
 
-          endif
+        endif
 
-       endif ! LH isn't disabled
+      endif ! LH isn't disabled
 
-       ! Call the microphysics if we don't want to have feedback effects from the
-       ! latin hypercube result (above)
-       if ( lh_microphys_type /= lh_microphys_interactive ) then
+      ! Call the microphysics if we don't want to have feedback effects from the
+      ! latin hypercube result (above)
+      if ( lh_microphys_type /= lh_microphys_interactive ) then
 
-          l_latin_hypercube_input = .false.
-          rvm = rtm - rcm
+        l_latin_hypercube_input = .false.
+        rvm = rtm - rcm
 
-          if ( l_local_kk ) then
+        if ( l_local_kk ) then
 
-             call KK_local_microphys( dt, gr%nz, l_latin_hypercube_input,     & ! In
-                                      thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
-                                      cloud_frac, wtmp, delta_zt, rcm,        & ! In
-                                      Ncm_microphys, chi, rvm, hydromet, & ! In
-                                      hydromet_mc, hydromet_vel_zt,           & ! Out
-                                      Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
-                                      microphys_stats_zt,                     & ! Out
-                                      microphys_stats_sfc                     ) ! Out
+          call KK_local_microphys( dt, gr%nz, l_latin_hypercube_input,     & ! In
+                                   thlm, wm_zt, p_in_Pa, exner, rho,       & ! In
+                                   cloud_frac, wtmp, delta_zt, rcm,        & ! In
+                                   Ncm_microphys, chi, rvm, hydromet, & ! In
+                                   hydromet_mc, hydromet_vel_zt,           & ! Out
+                                   Ncm_mc, rcm_mc, rvm_mc, thlm_mc,        & ! Out
+                                   microphys_stats_zt,                     & ! Out
+                                   microphys_stats_sfc                     ) ! Out
 
-          else
+        else
 
-             call KK_upscaled_microphys( dt, gr%nz, n_variables, l_stats_samp, & ! In
-                                         wm_zt, rtm, thlm, p_in_Pa,            & ! In
-                                         exner, rho, rcm, Nc_in_cloud,         & ! In
-                                         pdf_params, hydromet_pdf_params,      & ! In
-                                         hydromet,                             & ! In
-                                         mu_x_1, mu_x_2,                       & ! In
-                                         sigma_x_1, sigma_x_2,                 & ! In
-                                         corr_array_1, corr_array_2,           & ! In
-                                         hydromet_mc, hydromet_vel_zt,         & ! Out
-                                         rcm_mc, rvm_mc, thlm_mc,              & ! Out
-                                         hydromet_vel_covar_zt_impc,           & ! Out
-                                         hydromet_vel_covar_zt_expc,           & ! Out
-                                         wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
-                                         thlp2_mc, rtpthlp_mc                  ) ! Out
+          call KK_upscaled_microphys( dt, gr%nz, n_variables, l_stats_samp, & ! In
+                                      wm_zt, rtm, thlm, p_in_Pa,            & ! In
+                                      exner, rho, rcm, Nc_in_cloud,         & ! In
+                                      pdf_params, hydromet_pdf_params,      & ! In
+                                      hydromet,                             & ! In
+                                      mu_x_1, mu_x_2,                       & ! In
+                                      sigma_x_1, sigma_x_2,                 & ! In
+                                      corr_array_1, corr_array_2,           & ! In
+                                      hydromet_mc, hydromet_vel_zt,         & ! Out
+                                      rcm_mc, rvm_mc, thlm_mc,              & ! Out
+                                      hydromet_vel_covar_zt_impc,           & ! Out
+                                      hydromet_vel_covar_zt_expc,           & ! Out
+                                      wprtp_mc, wpthlp_mc, rtp2_mc,         & ! Out
+                                      thlp2_mc, rtpthlp_mc                  ) ! Out
 
-             if ( l_silhs_KK_convergence_adj_mean ) then
-               ! SILHS cannot currently predict the turbulent sedimentation
-               ! terms, so zero them out for a convergence test.
-               hydromet_vel_covar_zt_impc = zero
-               hydromet_vel_covar_zt_expc = zero
-             end if
+          if ( l_silhs_KK_convergence_adj_mean ) then
+            ! SILHS cannot currently predict the turbulent sedimentation
+            ! terms, so zero them out for a convergence test.
+            hydromet_vel_covar_zt_impc = zero
+            hydromet_vel_covar_zt_expc = zero
+          end if
 
-          endif
+        endif
 
-       endif ! lh_microphys_type /= interactive
+      endif ! lh_microphys_type /= interactive
 
-       if ( l_stats_samp ) then
+      if ( l_stats_samp ) then
 
-          ! Sedimentation velocity for rrm
-          call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm )
+        ! Sedimentation velocity for rrm
+        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm )
 
-          ! Sedimentation velocity for Nrm
-          call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
+        ! Sedimentation velocity for Nrm
+        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
 
-       endif ! l_stats_samp
+      endif ! l_stats_samp
 
     case ( "simplified_ice" )
 
-       ! Call the simplified ice diffusion scheme
-       call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
+      ! Call the simplified ice diffusion scheme
+      call ice_dfsn( dt, thlm, rcm, exner, p_in_Pa, rho, rcm_mc, thlm_mc )
 
     case default
       ! Do nothing
     end select ! microphys_scheme
 
     if ( l_stats_samp ) then
-       call stat_update_var( iNccnm, Nccnm, zt )
+      call stat_update_var( iNccnm, Nccnm, zt )
     endif ! l_stats_samp
 
     ! Call GFDL activation code
     if ( l_gfdl_activation ) then
-       ! Ensure a microphysics that has Ncm is being used
-       if ( l_predict_Nc ) then
+      ! Ensure a microphysics that has Ncm is being used
+      if ( l_predict_Nc ) then
 
-          ! Save the initial Ncm mc value for the Ncm_act term
-          if ( l_stats_samp ) then
-             call stat_begin_update( iNcm_act, Ncm_mc, zt )
-          endif
+        ! Save the initial Ncm mc value for the Ncm_act term
+        if ( l_stats_samp ) then
+          call stat_begin_update( iNcm_act, Ncm_mc, zt )
+        endif
 
-          call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
+        call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
 
-          ! Convert to #/kg
-          Ndrop_max = Ndrop_max * cm3_per_m3 / rho
+        ! Convert to #/kg
+        Ndrop_max = Ndrop_max * cm3_per_m3 / rho
 
-          if( l_stats_samp ) then
-             call stat_update_var( iNc_activated, Ndrop_max, zt)
-          endif
+        if( l_stats_samp ) then
+          call stat_update_var( iNc_activated, Ndrop_max, zt)
+        endif
 
-          ! Clip Ncm values that are outside of cloud by CLUBB standards
-          do k = 1, gr%nz
+        ! Clip Ncm values that are outside of cloud by CLUBB standards
+        do k = 1, gr%nz
 
 ! ---> h1g, 2011-04-20,   no liquid drop nucleation if T < -40 C
-             if ( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
-                zero  ! if T<-40C, no liquid drop nucleation
+          if ( T_in_K(k) <= 233.15_core_rknd )  Ndrop_max(k) = &
+             zero  ! if T<-40C, no liquid drop nucleation
 ! <--- h1g, 2011-04-20
 
-             ! Apply "clipped" Ncm to the Ncm tendency, Ncm_mc.
-             if( cloud_frac(k) > cloud_frac_min ) then
-                Ncm_mc(k) &
-                = Ncm_mc(k) &
-                  + ( ( max( Ndrop_max(k), Ncm_microphys(k) ) &
-                        - Ncm_microphys(k) ) &
-                      / dt )
-             else
-                Ncm_mc(k) &
-                = Ncm_mc(k) &
-                  - ( Ncm_microphys(k) / dt )
-             endif
-
-          enddo
-
-          ! Update the Ncm_act term
-          if( l_stats_samp ) then
-             call stat_end_update( iNcm_act, Ncm_mc, zt )
+          ! Apply "clipped" Ncm to the Ncm tendency, Ncm_mc.
+          if( cloud_frac(k) > cloud_frac_min ) then
+            Ncm_mc(k) &
+            = Ncm_mc(k) &
+              + ( ( max( Ndrop_max(k), Ncm_microphys(k) ) &
+                    - Ncm_microphys(k) ) &
+                  / dt )
+          else
+            Ncm_mc(k) &
+            = Ncm_mc(k) &
+              - ( Ncm_microphys(k) / dt )
           endif
 
-       else
+        enddo
 
-          stop "Unsupported microphysics scheme for GFDL activation."
+        ! Update the Ncm_act term
+        if( l_stats_samp ) then
+          call stat_end_update( iNcm_act, Ncm_mc, zt )
+        endif
 
-       endif  ! l_predict_Nc
+      else
+
+        stop "Unsupported microphysics scheme for GFDL activation."
+
+      endif  ! l_predict_Nc
     endif ! l_gfdl_activation
 
     ! Cloud water sedimentation.
     if ( l_cloud_sed ) then
 
-       ! Note:  it would be very easy to upscale the cloud water sedimentation
-       !        flux, so we should look into adding an upscaled option.
+      ! Note:  it would be very easy to upscale the cloud water sedimentation
+      !        flux, so we should look into adding an upscaled option.
 
-       call cloud_drop_sed( rcm, Ncm_microphys,          & ! Intent(in)
-                            rho_zm, rho, exner, sigma_g, & ! Intent(in)
-                            rcm_mc, thlm_mc )              ! Intent(inout)
+      call cloud_drop_sed( rcm, Ncm_microphys,          & ! Intent(in)
+                           rho_zm, rho, exner, sigma_g, & ! Intent(in)
+                           rcm_mc, thlm_mc )              ! Intent(inout)
 
     endif ! l_cloud_sed
 
     ! Sample microphysics variables if necessary
     if ( microphys_stats_zt%l_allocated ) then
-       call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
-       call microphys_stats_cleanup( microphys_stats_zt )
+      call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
+      call microphys_stats_cleanup( microphys_stats_zt )
     endif
     if ( microphys_stats_sfc%l_allocated ) then
-       call microphys_stats_accumulate( microphys_stats_sfc, l_stats_samp, sfc )
-       call microphys_stats_cleanup( microphys_stats_sfc )
+      call microphys_stats_accumulate( microphys_stats_sfc, l_stats_samp, sfc )
+      call microphys_stats_cleanup( microphys_stats_sfc )
     endif
 
 
