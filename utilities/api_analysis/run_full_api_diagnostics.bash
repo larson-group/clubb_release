@@ -32,13 +32,13 @@ then
     # Setup the checkout scripts
     . ../nightly_config.sh
     echo "Checking out CLUBB"
-    ./checkout_clubb_fresh.bash
+    ../checkout_clubb_fresh.bash
     echo "Checking out SAM"
-    ./checkout_sam_fresh.bash
+    ../checkout_sam_fresh.bash
     echo "Checking out WRF"
-    ./checkout_wrf_fresh.bash
+    ../checkout_wrf_fresh.bash
     echo "Checking out CAM"
-    ./checkout_cam_fresh.bash
+    ../checkout_cam_fresh.bash
 else
     echo "Checking out CLUBB"
     svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk CLUBB
