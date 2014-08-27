@@ -5,26 +5,69 @@ module anl_erf
 
   implicit none
 
-  public :: erf,  &
+  public :: dp_erf, &
+            dp_erfc, &
+            erf, &
             erfc
 
+  private :: cr_erf, &
+             cr_erfc
+
+  ! The interfaces allow us to avoid a compiler warning about
+  ! shadowing the intrinsic functions
   interface erf
-    module procedure dp_erf
+    module procedure cr_erf
   end interface
 
   interface erfc
-    module procedure dp_erfc
+    module procedure cr_erfc
   end interface
-
-  private :: dp_erf,  &
-             dp_erfc
 
   private ! Default Scope
 
   contains
 
   !=============================================================================
-  pure function dp_erf( x ) result( erfx_core_rknd )
+  pure function cr_erf( x ) result( erfx_core_rknd )
+    ! Description:
+    !   Calls dp_erf after casting x to double precision.
+    !   This allows CLUBB to run erf even when core_rknd is in single precision.
+    !
+    !  Arguments:
+    !    Input, real ( kind = dp ) x, the argument of ERF.
+    !    Output, real ( kind = core_rknd ) erfx_core_rknd, the value of ERF(X).
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        dp, & ! Constants
+        core_rknd
+
+    implicit none
+
+    ! Input Variables(s)
+    real( kind = core_rknd), intent(in) :: x
+
+    ! Return type
+    real( kind = core_rknd ) :: erfx_core_rknd
+
+    ! Local Variables
+    real( kind = dp) :: x_dp, erfx_dp
+
+    ! Cast the input to dp
+    x_dp = real( x, kind = dp )
+
+    ! Call the function with the correct argument
+    erfx_dp = dp_erf( x_dp )
+
+    ! Get the output in core_rknd
+    erfx_core_rknd = real( erfx_dp, kind = core_rknd )
+
+    return
+
+  end function cr_erf
+
+  !=============================================================================
+  pure function dp_erf( x ) result( erfx )
 
     ! Description:
     !   DP_ERF evaluates the error function DP_ERF(X).
@@ -56,7 +99,7 @@ module anl_erf
     implicit none
 
     ! Input Variables(s)
-    real( kind = core_rknd), intent(in) :: x
+    real( kind = dp ), intent(in) :: x
 
     ! External
     intrinsic :: epsilon, exp, aint
@@ -113,13 +156,12 @@ module anl_erf
     XBIG   = 26.543E+00_dp
 
     ! Return type
-    real( kind = core_rknd ) :: erfx_core_rknd
+    real( kind = dp ) :: erfx
 
     ! Local variables
     real( kind = dp ) ::  & 
-    erfx,&
     del, & 
-    xabs, & 
+    xabs, &
     xden, & 
     xnum, & 
     xsq
@@ -127,8 +169,8 @@ module anl_erf
     integer :: i ! Index
 
     !-----------------------------------------------------------------------
-    ! Cast the input (x) to be CLUBB's double precision weberjk 20130709
-    xabs = abs( real(x, kind = dp) )
+    ! Get the abs value of xabs - schemena 20140827
+    xabs = abs( x )
 
     !
     !  Evaluate ERF(X) for |X| <= 0.46875.
@@ -148,7 +190,7 @@ module anl_erf
         xden = ( xden + b(i) ) * xsq
       end do
 
-      erfx = real(x, kind=dp) * ( xnum + a(4) ) / ( xden + b(4) )
+      erfx = x * ( xnum + a(4) ) / ( xden + b(4) )
       !
       !  Evaluate ERFC(X) for 0.46875 <= |X| <= 4.0.
       !
@@ -171,7 +213,7 @@ module anl_erf
 
       erfx = ( 0.5E+00_dp - erfx ) + 0.5E+00_dp
 
-      if ( real(x, kind=dp) < 0.0E+00_dp ) then
+      if ( x < 0.0E+00_dp ) then
         erfx = - erfx
       end if
       !
@@ -205,7 +247,7 @@ module anl_erf
         erfx = exp( - xsq * xsq ) * exp( - del ) * erfx
 
         erfx = ( 0.5E+00_dp - erfx ) + 0.5E+00_dp
-        if ( real(x, kind=dp) < 0.0E+00_dp ) then
+        if ( x < 0.0E+00_dp ) then
           erfx = - erfx
         end if
 
@@ -213,13 +255,48 @@ module anl_erf
 
     end if
 
-    ! Return erfx, but as core_rknd weberjk 20130708
-    erfx_core_rknd = real( erfx, kind = core_rknd )
-
-
     return
 
   end function dp_erf
+
+  !=============================================================================
+  pure function cr_erfc( x ) result( erfcx_core_rknd )
+    ! Description:
+    !   Calls dp_erfc after casting x to double precision.
+    !   This allows CLUBB to run erfc even when core_rknd is in single precision.
+    !
+    !  Arguments:
+    !    Input, real ( kind = core_rknd ) x, the argument of ERFC.
+    !    Output, real ( kind = core_rknd ) erfcx_core_rknd, the value of ERFC(X).
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        dp, & ! Constants
+        core_rknd
+
+    implicit none
+
+    ! Input Variables(s)
+    real( kind = core_rknd), intent(in) :: x
+
+    ! Return type
+    real( kind = core_rknd ) :: erfcx_core_rknd
+
+    ! Local Variables
+    real( kind = dp) :: x_dp, erfcx_dp
+
+    ! Cast the input to dp
+    x_dp = real( x, kind = dp )
+
+    ! Call the function with the correct argument
+    erfcx_dp = dp_erfc( x_dp )
+
+    ! Get the output in core_rknd
+    erfcx_core_rknd = real( erfcx_dp, kind = core_rknd )
+
+    return
+
+  end function cr_erfc
 
   !=============================================================================
   pure function dp_erfc( x ) result( erfcx )
@@ -244,15 +321,16 @@ module anl_erf
         one  ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd  ! Variable(s)
+        dp, & ! Variable(s)
+        core_rknd
 
     implicit none
 
     ! Input Variable
-    real( kind = core_rknd), intent(in) :: x
+    real( kind = dp ), intent(in) :: x
 
     ! Return Variable
-    real( kind = core_rknd) :: erfcx
+    real( kind = core_rknd ) :: erfcx
 
 
     erfcx = one - dp_erf( x )
