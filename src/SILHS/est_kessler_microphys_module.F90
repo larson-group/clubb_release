@@ -97,7 +97,7 @@ module est_kessler_microphys_module
 !   real( kind = core_rknd ) :: rt1,rt2
 !   real( kind = core_rknd ) :: srt1, srt2
     real( kind = core_rknd ) :: stdev_chi_1, stdev_chi_2, chi_1, chi_2
-    real( kind = core_rknd ) :: cloud_frac1, cloud_frac2
+    real( kind = core_rknd ) :: cloud_frac_1, cloud_frac_2
 !   real( kind = core_rknd ) :: rc1, rc2
 
     ! Cloud fraction 0<cloud_frac<1, mean liquid water mix ratio [kg/kg]
@@ -113,7 +113,7 @@ module est_kessler_microphys_module
 
     ! Variables needed for exact Kessler autoconversion, AKm
     real( kind = core_rknd ) :: r_crit, K_one
-    real( kind = core_rknd ) :: chi_n_1_crit, cloud_frac1_crit, chi_n_2_crit, cloud_frac2_crit
+    real( kind = core_rknd ) :: chi_n_1_crit, cloud_frac_1_crit, chi_n_2_crit, cloud_frac_2_crit
     real( kind = core_rknd ) :: AK1, AK2
 
     ! Variables needed for exact std of Kessler autoconversion, AKstd
@@ -152,10 +152,10 @@ module est_kessler_microphys_module
       mixt_frac   = pdf_params(level)%mixt_frac
 !     rc1         = pdf_params(level)%rc1
 !     rc2         = pdf_params(level)%rc2
-!     cloud_frac1 = pdf_params(level)%cloud_frac1
-!     cloud_frac2 = pdf_params(level)%cloud_frac2
-      cloud_frac1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
-      cloud_frac2 = 1.0_core_rknd !     "    "
+!     cloud_frac_1 = pdf_params(level)%cloud_frac_1
+!     cloud_frac_2 = pdf_params(level)%cloud_frac_2
+      cloud_frac_1 = 1.0_core_rknd ! For in and out of cloud sampling -dschanen 30 Jul 09
+      cloud_frac_2 = 1.0_core_rknd !     "    "
       chi_1          = pdf_params(level)%chi_1
       chi_2          = pdf_params(level)%chi_2
       stdev_chi_1    = pdf_params(level)%stdev_chi_1
@@ -163,7 +163,7 @@ module est_kessler_microphys_module
 
       ! Compute mean cloud fraction and cloud water
 
-!     cloud_frac = mixt_frac * cloud_frac1 + (1-mixt_frac) * cloud_frac2
+!     cloud_frac = mixt_frac * cloud_frac_1 + (1-mixt_frac) * cloud_frac_2
 !     rcm        = mixt_frac * rc1 + (1-mixt_frac) * rc2
 
       !------------------------------------------------------------------------
@@ -183,7 +183,7 @@ module est_kessler_microphys_module
       ! A_K = (1e-3/s)*(rc-0.5kg/kg)*H(rc-0.5kg/kg)
       call autoconv_estimate &
            ( num_samples, real(mixt_frac, kind = dp), &
-             real(cloud_frac1, kind = dp), real(cloud_frac2, kind = dp), &
+             real(cloud_frac_1, kind = dp), real(cloud_frac_2, kind = dp), &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_mixt_comp_all_levs(level,:), lh_sample_point_weights, lh_AKm_dp )
@@ -193,8 +193,8 @@ module est_kessler_microphys_module
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &
-           ( num_samples, real(mixt_frac, kind = dp), real(cloud_frac1, kind = dp), &
-             real(cloud_frac2, kind = dp), rcm_sample, &
+           ( num_samples, real(mixt_frac, kind = dp), real(cloud_frac_1, kind = dp), &
+             real(cloud_frac_2, kind = dp), rcm_sample, &
              ! X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
              X_mixt_comp_all_levs(level,: ), lh_rcm_avg_dp )
 
@@ -213,22 +213,22 @@ module est_kessler_microphys_module
       r_crit            = 0.2e-3_core_rknd
       K_one             = 1.e-3_core_rknd
       chi_n_1_crit          = (chi_1-r_crit)/max( stdev_chi_1, chi_tol )
-      cloud_frac1_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_1_crit/sqrt(2.0_core_rknd)))
-      AK1               = K_one * ( (chi_1-r_crit)*cloud_frac1_crit  & 
+      cloud_frac_1_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_1_crit/sqrt(2.0_core_rknd)))
+      AK1               = K_one * ( (chi_1-r_crit)*cloud_frac_1_crit  & 
                          + stdev_chi_1*exp(-0.5_core_rknd*chi_n_1_crit**2)/(sqrt(2._core_rknd*pi)) )
       chi_n_2_crit          = (chi_2-r_crit)/max( stdev_chi_2, chi_tol )
-      cloud_frac2_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_2_crit/sqrt(2.0_core_rknd)))
-      AK2               = K_one * ( (chi_2-r_crit)*cloud_frac2_crit  & 
+      cloud_frac_2_crit  = 0.5_core_rknd*(1._core_rknd+erf(chi_n_2_crit/sqrt(2.0_core_rknd)))
+      AK2               = K_one * ( (chi_2-r_crit)*cloud_frac_2_crit  & 
                          + stdev_chi_2*exp(-0.5_core_rknd*chi_n_2_crit**2)/(sqrt(2._core_rknd*pi)) )
       AKm(level)        = mixt_frac * AK1 + (1._core_rknd-mixt_frac) * AK2
 
       ! Exact Kessler standard deviation in units of (kg/kg)/s
       ! For some reason, sometimes AK1var, AK2var are negative
       AK1var   = max( zero_threshold, K_one * (chi_1-r_crit) * AK1  & 
-               + K_one * K_one * (stdev_chi_1**2) * cloud_frac1_crit  & 
+               + K_one * K_one * (stdev_chi_1**2) * cloud_frac_1_crit  & 
                - AK1**2  )
       AK2var   = max( zero_threshold, K_one * (chi_2-r_crit) * AK2  & 
-               + K_one * K_one * (stdev_chi_2**2) * cloud_frac2_crit  & 
+               + K_one * K_one * (stdev_chi_2**2) * cloud_frac_2_crit  & 
                - AK2**2  )
       ! This formula is for a grid box average:
       AKstd(level)  = sqrt( mixt_frac * ( (AK1-AKm(level))**2 + AK1var ) & 
@@ -266,7 +266,7 @@ module est_kessler_microphys_module
   end subroutine est_kessler_microphys
 !-----------------------------------------------------------------------
   subroutine autoconv_estimate( num_samples, mixt_frac, &
-                              cloud_frac1, cloud_frac2, rc, &
+                              cloud_frac_1, cloud_frac_2, rc, &
                              !w, Nc, rr, &
                               X_mixt_comp_one_lev, lh_sample_point_weights, ac_m )
 ! Description:
@@ -310,7 +310,7 @@ module est_kessler_microphys_module
 
     real( kind = dp ), intent(in) :: &
       mixt_frac,               & ! Mixture fraction of Gaussians
-      cloud_frac1, cloud_frac2   ! Cloud fraction associated w/ 1st, 2nd mixture component
+      cloud_frac_1, cloud_frac_2   ! Cloud fraction associated w/ 1st, 2nd mixture component
 
     real( kind = dp ), dimension(num_samples), intent(in) :: &
       rc !, & ! n in-cloud values of spec liq water content (when positive) [kg/kg].
@@ -343,30 +343,30 @@ module est_kessler_microphys_module
 
     ! ---- Begin Code ----
 
-    ! Handle some possible errors re: proper ranges of mixt_frac, cloud_frac1, cloud_frac2.
+    ! Handle some possible errors re: proper ranges of mixt_frac, cloud_frac_1, cloud_frac_2.
     if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       write(fstderr,*) 'mixt_frac = ', mixt_frac
       stop
     end if
-    if ( cloud_frac1 > 1.0_dp .or. cloud_frac1 < 0.0_dp ) then
+    if ( cloud_frac_1 > 1.0_dp .or. cloud_frac_1 < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
-                       'cloud fraction 1, cloud_frac1, does not lie in [0,1].'
-      write(fstderr,*) 'cloud_frac1 = ', cloud_frac1
+                       'cloud fraction 1, cloud_frac_1, does not lie in [0,1].'
+      write(fstderr,*) 'cloud_frac_1 = ', cloud_frac_1
       stop
     end if
-    if ( cloud_frac2 > 1.0_dp .or. cloud_frac2 < 0.0_dp ) then
+    if ( cloud_frac_2 > 1.0_dp .or. cloud_frac_2 < 0.0_dp ) then
       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
-                       'cloud fraction 2, cloud_frac2, does not lie in [0,1].'
-      write(fstderr,*) 'cloud_frac2 = ', cloud_frac2
+                       'cloud fraction 2, cloud_frac_2, does not lie in [0,1].'
+      write(fstderr,*) 'cloud_frac_2 = ', cloud_frac_2
       stop
     end if
 
     ! Make sure there is some cloud.
     ! Disable this for now, so we can loop over the whole domain.
     ! -dschanen 3 June 2009
-!   if ( mixt_frac*cloud_frac1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac2 < 0.001_dp ) then
+!   if ( mixt_frac*cloud_frac_1 < 0.001_dp .and. (1-mixt_frac)*cloud_frac_2 < 0.001_dp ) then
 !     if ( clubb_at_least_debug_level( 1 ) ) then
 !       write(fstderr,*) 'Error in autoconv_estimate:  ',  &
 !                        'there is no cloud or almost no cloud!'
@@ -393,8 +393,8 @@ module est_kessler_microphys_module
       ! Choose which mixture fraction we are in.
       ! Account for cloud fraction.
       ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1 = mixt_frac*cloud_frac1 / &
-!                    max( mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2, epsilon( mixt_frac ) )
+!     fraction_1 = mixt_frac*cloud_frac_1 / &
+!                    max( mixt_frac*cloud_frac_1+(1-mixt_frac)*cloud_frac_2, epsilon( mixt_frac ) )
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
@@ -476,7 +476,7 @@ module est_kessler_microphys_module
       end if
 
       ! Grid box average.
-      ac_m = mixt_frac*cloud_frac1*ac_m1 + (1._dp-mixt_frac)*cloud_frac2*ac_m2
+      ac_m = mixt_frac*cloud_frac_1*ac_m1 + (1._dp-mixt_frac)*cloud_frac_2*ac_m2
 
     else
       ac_m = ( ac_m1 + ac_m2 ) / real( num_samples, kind=dp )

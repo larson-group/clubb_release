@@ -41,7 +41,7 @@ vars_zt =
 'w_KK_accr_covar_zt', 'rt_KK_accr_covar_zt', 'thl_KK_accr_covar_zt',
 'rr_KK_mvr_covar_zt', 'Nr_KK_mvr_covar_zt', 'KK_mvr_variance_zt',
 'mixt_frac', 'w1', 'w2', 'varnce_w1', 'varnce_w2', 'thl1', 'thl2', 'varnce_thl1', 'varnce_thl2',
-'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsatl1', 'rsatl2', 'cloud_frac1', 'cloud_frac2',
+'rt1', 'rt2', 'varnce_rt1', 'varnce_rt2', 'rc1', 'rc2', 'rsatl1', 'rsatl2', 'cloud_frac_1', 'cloud_frac_2',
 'chi_1', 'chi_2', 'stdev_chi_1', 'stdev_chi_2', 'stdev_eta_1', 'stdev_eta_2',
 'covar_chi_eta_1', 'covar_chi_eta_2', 'corr_chi_eta_1', 'corr_chi_eta_2',
 'rrtthl', 'crt1', 'crt2', 'cthl1', 'cthl2',

@@ -414,8 +414,8 @@ module variables_diagnostic_module
     pdf_params_zm(:)%rsatl2             = zero
     pdf_params_zm(:)%rc1              = zero
     pdf_params_zm(:)%rc2              = zero
-    pdf_params_zm(:)%cloud_frac1      = zero
-    pdf_params_zm(:)%cloud_frac2      = zero
+    pdf_params_zm(:)%cloud_frac_1      = zero
+    pdf_params_zm(:)%cloud_frac_2      = zero
     pdf_params_zm(:)%mixt_frac        = zero
 
     pdf_params_zm_frz(:)%w1               = zero
@@ -451,8 +451,8 @@ module variables_diagnostic_module
     pdf_params_zm_frz(:)%rsatl2             = zero
     pdf_params_zm_frz(:)%rc1              = zero
     pdf_params_zm_frz(:)%rc2              = zero
-    pdf_params_zm_frz(:)%cloud_frac1      = zero
-    pdf_params_zm_frz(:)%cloud_frac2      = zero
+    pdf_params_zm_frz(:)%cloud_frac_1      = zero
+    pdf_params_zm_frz(:)%cloud_frac_2      = zero
     pdf_params_zm_frz(:)%mixt_frac        = zero
 
     ! Second order moments

@@ -325,8 +325,8 @@ module stats_zt
         irc2, & 
         irsatl1, & 
         irsatl2, & 
-        icloud_frac1, & 
-        icloud_frac2
+        icloud_frac_1, & 
+        icloud_frac_2
 
     use stats_variables, only: &
         ichi_1, & 
@@ -3460,18 +3460,18 @@ module stats_zt
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('cloud_frac1')
-        icloud_frac1 = k
-        call stat_assign( var_index=icloud_frac1, var_name="cloud_frac1", &
-             var_description="pdf parameter cloud_frac1 [count]", var_units="count", &
+      case ('cloud_frac_1')
+        icloud_frac_1 = k
+        call stat_assign( var_index=icloud_frac_1, var_name="cloud_frac_1", &
+             var_description="pdf parameter cloud_frac_1 [count]", var_units="count", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('cloud_frac2')
-        icloud_frac2 = k
+      case ('cloud_frac_2')
+        icloud_frac_2 = k
 
-        call stat_assign( var_index=icloud_frac2, var_name="cloud_frac2", &
-             var_description="pdf parameter cloud_frac2 [count]", var_units="count", &
+        call stat_assign( var_index=icloud_frac_2, var_name="cloud_frac_2", &
+             var_description="pdf parameter cloud_frac_2 [count]", var_units="count", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 

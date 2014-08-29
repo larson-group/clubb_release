@@ -248,8 +248,8 @@ module pdf_closure_module
       rsatl2,            & ! Mean of r_sl (2nd PDF component)              [kg/kg]
       rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
-      cloud_frac1,     & ! Cloud fraction (1st PDF component)                [-]
-      cloud_frac2,     & ! Cloud fraction (2nd PDF component)                [-]
+      cloud_frac_1,     & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac_2,     & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
     ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
@@ -778,11 +778,11 @@ module pdf_closure_module
     l_calc_ice_supersat_frac = .true.
 #endif
 
-    ! Calculate cloud_frac1 and rc1
-    call calc_cloud_frac_component(chi_1, stdev_chi_1, chi_at_liq_sat, cloud_frac1, rc1)
+    ! Calculate cloud_frac_1 and rc1
+    call calc_cloud_frac_component(chi_1, stdev_chi_1, chi_at_liq_sat, cloud_frac_1, rc1)
 
-    ! Calculate cloud_frac2 and rc2
-    call calc_cloud_frac_component(chi_2, stdev_chi_2, chi_at_liq_sat, cloud_frac2, rc2)
+    ! Calculate cloud_frac_2 and rc2
+    call calc_cloud_frac_component(chi_2, stdev_chi_2, chi_at_liq_sat, cloud_frac_2, rc2)
 
     if ( l_calc_ice_supersat_frac ) then
       ! We must compute chi_at_ice_sat1 and chi_at_ice_sat2
@@ -841,17 +841,17 @@ module pdf_closure_module
     wpthvp = wpthlp + ep1*thv_ds*wprtp + rc_coef*wprcp
 
     ! Account for subplume correlation in qt-thl
-    thlprcp  = mixt_frac * ( (thl1-thlm)*rc1 - (cthl1*varnce_thl1)*cloud_frac1 ) & 
-             + (1._core_rknd-mixt_frac) * ( (thl2-thlm)*rc2 - (cthl2*varnce_thl2)*cloud_frac2 ) & 
-             + mixt_frac*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
-             + (1._core_rknd-mixt_frac)*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
+    thlprcp  = mixt_frac * ( (thl1-thlm)*rc1 - (cthl1*varnce_thl1)*cloud_frac_1 ) & 
+             + (1._core_rknd-mixt_frac) * ( (thl2-thlm)*rc2 - (cthl2*varnce_thl2)*cloud_frac_2 ) & 
+             + mixt_frac*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac_1 & 
+             + (1._core_rknd-mixt_frac)*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac_2
     thlpthvp = thlp2 + ep1*thv_ds*rtpthlp + rc_coef*thlprcp
 
     ! Account for subplume correlation in qt-thl
-    rtprcp = mixt_frac * ( (rt1-rtm)*rc1 + (crt1*varnce_rt1)*cloud_frac1 ) & 
-           + (1._core_rknd-mixt_frac) * ( (rt2-rtm)*rc2 + (crt2*varnce_rt2)*cloud_frac2 ) & 
-           - mixt_frac*rrtthl*cthl1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac1 & 
-           - (1._core_rknd-mixt_frac)*rrtthl*cthl2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac2
+    rtprcp = mixt_frac * ( (rt1-rtm)*rc1 + (crt1*varnce_rt1)*cloud_frac_1 ) & 
+           + (1._core_rknd-mixt_frac) * ( (rt2-rtm)*rc2 + (crt2*varnce_rt2)*cloud_frac_2 ) & 
+           - mixt_frac*rrtthl*cthl1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac_1 & 
+           - (1._core_rknd-mixt_frac)*rrtthl*cthl2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac_2
 
     rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp
 
@@ -864,20 +864,20 @@ module pdf_closure_module
         = mixt_frac * ( ( sclr1(i)-sclrm(i) ) * rc1 ) &
           + (1._core_rknd-mixt_frac) * ( ( sclr2(i)-sclrm(i) ) * rc2 ) & 
           + mixt_frac*rsclrrt(i) * crt1 &
-            * sqrt( varnce_sclr1(i) * varnce_rt1 ) * cloud_frac1 & 
+            * sqrt( varnce_sclr1(i) * varnce_rt1 ) * cloud_frac_1 & 
           + (1._core_rknd-mixt_frac) * rsclrrt(i) * crt2 &
-            * sqrt( varnce_sclr2(i) * varnce_rt2 ) * cloud_frac2 & 
+            * sqrt( varnce_sclr2(i) * varnce_rt2 ) * cloud_frac_2 & 
           - mixt_frac * rsclrthl(i) * cthl1 &
-            * sqrt( varnce_sclr1(i) * varnce_thl1 ) * cloud_frac1 & 
+            * sqrt( varnce_sclr1(i) * varnce_thl1 ) * cloud_frac_1 & 
           - (1._core_rknd-mixt_frac) * rsclrthl(i) * cthl2 &
-            * sqrt( varnce_sclr2(i) * varnce_thl2 ) * cloud_frac2
+            * sqrt( varnce_sclr2(i) * varnce_thl2 ) * cloud_frac_2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*thv_ds*sclrprtp(i) + rc_coef*sclrprcp(i)
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
 
     ! Compute mean cloud fraction and cloud water
-    cloud_frac = calc_cloud_frac(cloud_frac1, cloud_frac2, mixt_frac)
+    cloud_frac = calc_cloud_frac(cloud_frac_1, cloud_frac_2, mixt_frac)
     rcm        = mixt_frac * rc1         + (1._core_rknd-mixt_frac) * rc2
     
     rcm = max( zero_threshold, rcm )
@@ -901,8 +901,8 @@ module pdf_closure_module
     if ( ircp2 > 0 ) then
 #endif
 
-      rcp2 = mixt_frac * ( chi_1*rc1 + cloud_frac1*stdev_chi_1**2 ) &
-             + ( 1._core_rknd-mixt_frac ) * ( chi_2*rc2 + cloud_frac2*stdev_chi_2**2 ) - rcm**2
+      rcp2 = mixt_frac * ( chi_1*rc1 + cloud_frac_1*stdev_chi_1**2 ) &
+             + ( 1._core_rknd-mixt_frac ) * ( chi_2*rc2 + cloud_frac_2*stdev_chi_2**2 ) - rcm**2
       rcp2 = max( zero_threshold, rcp2 )
 
 #ifndef CLUBB_CAM
@@ -945,8 +945,8 @@ module pdf_closure_module
     pdf_params%rsatl2             = rsatl2
     pdf_params%rc1              = rc1
     pdf_params%rc2              = rc2
-    pdf_params%cloud_frac1      = cloud_frac1
-    pdf_params%cloud_frac2      = cloud_frac2
+    pdf_params%cloud_frac_1      = cloud_frac_1
+    pdf_params%cloud_frac_2      = cloud_frac_2
     pdf_params%mixt_frac        = mixt_frac
 
 
@@ -1048,8 +1048,8 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%rsatl2 = ", pdf_params%rsatl2
         write(fstderr,*) "pdf_params%rc1 = ", pdf_params%rc1
         write(fstderr,*) "pdf_params%rc2 = ", pdf_params%rc2
-        write(fstderr,*) "pdf_params%cloud_frac1 = ", pdf_params%cloud_frac1
-        write(fstderr,*) "pdf_params%cloud_frac2 = ", pdf_params%cloud_frac2
+        write(fstderr,*) "pdf_params%cloud_frac_1 = ", pdf_params%cloud_frac_1
+        write(fstderr,*) "pdf_params%cloud_frac_2 = ", pdf_params%cloud_frac_2
         write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
 
         if ( sclr_dim > 0 )then
@@ -1190,7 +1190,7 @@ module pdf_closure_module
   end subroutine calc_cloud_frac_component
 
   !=============================================================================
-  function calc_cloud_frac( cloud_frac1, cloud_frac2, mixt_frac )
+  function calc_cloud_frac( cloud_frac_1, cloud_frac_2, mixt_frac )
 
   ! Description:
   !   Given the the two pdf components of a cloud fraction, and the weight
@@ -1216,8 +1216,8 @@ module pdf_closure_module
     
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac1,  & ! First PDF component of cloud_frac
-      cloud_frac2,  & ! Second PDF component of cloud_frac
+      cloud_frac_1,  & ! First PDF component of cloud_frac
+      cloud_frac_2,  & ! Second PDF component of cloud_frac
       mixt_frac       ! Weight of 1st PDF component (Sk_w dependent)
     
     ! Output Variables
@@ -1231,7 +1231,7 @@ module pdf_closure_module
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-    cloud_frac = mixt_frac * cloud_frac1 + (1.0_core_rknd-mixt_frac) * cloud_frac2
+    cloud_frac = mixt_frac * cloud_frac_1 + (1.0_core_rknd-mixt_frac) * cloud_frac_2
     
     ! Note: Brian added the following lines to ensure that there
     ! are never any negative liquid water values (or any negative

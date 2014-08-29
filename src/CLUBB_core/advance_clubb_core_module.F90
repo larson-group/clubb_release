@@ -702,8 +702,8 @@ module advance_clubb_core_module
       wp2sclrp_zm_frz
 
     real( kind = core_rknd ) :: &
-      cloud_frac1_refined, & ! cloud_frac1 computed on refined grid
-      cloud_frac2_refined, & ! cloud_frac2 computed on refined grid
+      cloud_frac_1_refined, & ! cloud_frac_1 computed on refined grid
+      cloud_frac_2_refined, & ! cloud_frac_2 computed on refined grid
       rc1_refined, &         ! rc1 computed on refined grid
       rc2_refined, &         ! rc2 computed on refined grid
       cloud_frac_refined, &  ! cloud_frac gridbox mean on refined grid
@@ -997,15 +997,15 @@ module advance_clubb_core_module
           call calc_vert_avg_cf_component &
                ( gr%nz, k, gr%zt, pdf_params%chi_1, &                    ! Intent(in)
                  pdf_params%stdev_chi_1, (/(chi_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
-                 cloud_frac1_refined, rc1_refined )                   ! Intent(out)
+                 cloud_frac_1_refined, rc1_refined )                   ! Intent(out)
 
           call calc_vert_avg_cf_component & 
                ( gr%nz, k, gr%zt, pdf_params%chi_2, &                     ! Intent(in)
                  pdf_params%stdev_chi_2, (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
-                 cloud_frac2_refined, rc2_refined )                    ! Intent(out)
+                 cloud_frac_2_refined, rc2_refined )                    ! Intent(out)
 
           cloud_frac_refined = compute_weighted_average &
-                               ( cloud_frac1_refined, cloud_frac2_refined, &
+                               ( cloud_frac_1_refined, cloud_frac_2_refined, &
                                  pdf_params(k)%mixt_frac )
 
           rcm_refined = compute_weighted_average &
@@ -1020,8 +1020,8 @@ module advance_clubb_core_module
             ! pdf_params(k)%rc2 = rc2_refined
             rcm(k) = rcm_refined
 
-            ! pdf_params(k)%cloud_frac1 = cloud_frac1_refined
-            ! pdf_params(k)%cloud_frac2 = cloud_frac2_refined
+            ! pdf_params(k)%cloud_frac_1 = cloud_frac_1_refined
+            ! pdf_params(k)%cloud_frac_2 = cloud_frac_2_refined
             cloud_frac(k) = cloud_frac_refined
           end if
 
@@ -2486,10 +2486,10 @@ module advance_clubb_core_module
         rsatl1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
         rsatl2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
         rsatl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-        cloud_frac1_zm, & ! Cloud fraction for 1st normal distribution              [-]
-        cloud_frac1_zt, & ! Cloud fraction for 1st normal distribution              [-]
-        cloud_frac2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
-        cloud_frac2_zt, & ! Cloud fraction for 2nd normal distribution              [-]
+        cloud_frac_1_zm, & ! Cloud fraction for 1st normal distribution              [-]
+        cloud_frac_1_zt, & ! Cloud fraction for 1st normal distribution              [-]
+        cloud_frac_2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
+        cloud_frac_2_zt, & ! Cloud fraction for 2nd normal distribution              [-]
         chi_1_zm,          & ! Mean of chi(s) for 1st normal distribution               [kg/kg]
         chi_1_zt,          & ! Mean of chi(s) for 1st normal distribution               [kg/kg]
         chi_2_zm,          & ! Mean of chi(s) for 2nd normal distribution               [kg/kg]
@@ -2546,8 +2546,8 @@ module advance_clubb_core_module
         rc2_zt         = pdf_params%rc2
         rsatl1_zt        = pdf_params%rsatl1
         rsatl2_zt        = pdf_params%rsatl2
-        cloud_frac1_zt = pdf_params%cloud_frac1
-        cloud_frac2_zt = pdf_params%cloud_frac2
+        cloud_frac_1_zt = pdf_params%cloud_frac_1
+        cloud_frac_2_zt = pdf_params%cloud_frac_2
         chi_1_zt          = pdf_params%chi_1
         chi_2_zt          = pdf_params%chi_2
         stdev_chi_1_zt    = pdf_params%stdev_chi_1
@@ -2588,8 +2588,8 @@ module advance_clubb_core_module
           rc2_zm         = pdf_params_zm%rc2
           rsatl1_zm        = pdf_params_zm%rsatl1
           rsatl2_zm        = pdf_params_zm%rsatl2
-          cloud_frac1_zm = pdf_params_zm%cloud_frac1
-          cloud_frac2_zm = pdf_params_zm%cloud_frac2
+          cloud_frac_1_zm = pdf_params_zm%cloud_frac_1
+          cloud_frac_2_zm = pdf_params_zm%cloud_frac_2
           chi_1_zm          = pdf_params_zm%chi_1
           chi_2_zm          = pdf_params_zm%chi_2
           stdev_chi_1_zm    = pdf_params_zm%stdev_chi_1
@@ -2673,10 +2673,10 @@ module advance_clubb_core_module
           rsatl1_zm(gr%nz)        = 0.0_core_rknd
           rsatl2_zm               = zt2zm( pdf_params%rsatl2 )
           rsatl2_zm(gr%nz)        = 0.0_core_rknd
-          cloud_frac1_zm        = zt2zm( pdf_params%cloud_frac1 )
-          cloud_frac1_zm(gr%nz) = 0.0_core_rknd
-          cloud_frac2_zm        = zt2zm( pdf_params%cloud_frac2 )
-          cloud_frac2_zm(gr%nz) = 0.0_core_rknd
+          cloud_frac_1_zm        = zt2zm( pdf_params%cloud_frac_1 )
+          cloud_frac_1_zm(gr%nz) = 0.0_core_rknd
+          cloud_frac_2_zm        = zt2zm( pdf_params%cloud_frac_2 )
+          cloud_frac_2_zm(gr%nz) = 0.0_core_rknd
           chi_1_zm                 = zt2zm( pdf_params%chi_1 )
           chi_1_zm(gr%nz)          = 0.0_core_rknd
           chi_2_zm                 = zt2zm( pdf_params%chi_2 )
@@ -2734,9 +2734,9 @@ module advance_clubb_core_module
         !       cloud fractions inconsistent with the PDF.  Other parts of
         !       CLUBB require PDF component cloud fractions to remain
         !       consistent with the PDF.  This code needs to be refactored
-        !       so that cloud_frac1 and cloud_frac2 are preserved.
+        !       so that cloud_frac_1 and cloud_frac_2 are preserved.
         write(fstderr,*) "The code in l_apply_rule_to_pdf_params does not " &
-                         // "preserve cloud_frac1 and cloud_frac2 in a " &
+                         // "preserve cloud_frac_1 and cloud_frac_2 in a " &
                          // "manner consistent with the PDF as required " &
                          // "by other parts of CLUBB."
         stop "Please refactor before continuing."
@@ -2761,8 +2761,8 @@ module advance_clubb_core_module
         pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
         pdf_params%rsatl1        = trapezoid_zt( rsatl1_zt, rsatl1_zm )
         pdf_params%rsatl2        = trapezoid_zt( rsatl2_zt, rsatl2_zm )
-        pdf_params%cloud_frac1 = trapezoid_zt( cloud_frac1_zt, cloud_frac1_zm )
-        pdf_params%cloud_frac2 = trapezoid_zt( cloud_frac2_zt, cloud_frac2_zm )
+        pdf_params%cloud_frac_1 = trapezoid_zt( cloud_frac_1_zt, cloud_frac_1_zm )
+        pdf_params%cloud_frac_2 = trapezoid_zt( cloud_frac_2_zt, cloud_frac_2_zm )
         pdf_params%chi_1          = trapezoid_zt( chi_1_zt, chi_1_zm )
         pdf_params%chi_2          = trapezoid_zt( chi_2_zt, chi_2_zm )
         pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )

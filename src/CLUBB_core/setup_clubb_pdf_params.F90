@@ -225,8 +225,8 @@ module setup_clubb_pdf_params
       sigma_chi_2, & ! Standard deviation of chi (2nd PDF component)     [kg/kg]
       rc1,         & ! Mean of r_c (1st PDF component)                   [kg/kg]
       rc2,         & ! Mean of r_c (2nd PDF component)                   [kg/kg]
-      cloud_frac1, & ! Cloud fraction (1st PDF component)                [-]
-      cloud_frac2, & ! Cloud fraction (2nd PDF component)                [-]
+      cloud_frac_1, & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac_2, & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac      ! Mixture fraction                                  [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
@@ -347,8 +347,8 @@ module setup_clubb_pdf_params
     sigma_chi_2   = pdf_params%stdev_chi_2
     rc1         = pdf_params%rc1
     rc2         = pdf_params%rc2
-    cloud_frac1 = pdf_params%cloud_frac1
-    cloud_frac2 = pdf_params%cloud_frac2
+    cloud_frac_1 = pdf_params%cloud_frac_1
+    cloud_frac_2 = pdf_params%cloud_frac_2
     mixt_frac   = pdf_params%mixt_frac
 
     ! Component mean values for r_r and N_r, and precipitation fraction.
@@ -359,7 +359,7 @@ module setup_clubb_pdf_params
                                       hm1, hm2 )
 
        call precip_fraction( nz, hydromet, hm1, hm2, &
-                             cloud_frac, cloud_frac1, mixt_frac, &
+                             cloud_frac, cloud_frac_1, mixt_frac, &
                              ice_supersat_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -392,7 +392,7 @@ module setup_clubb_pdf_params
        Ncnm(k) &
        = Nc_in_cloud_to_Ncnm( mu_chi_1(k), mu_chi_2(k), sigma_chi_1(k), &
                               sigma_chi_2(k), mixt_frac(k), Nc_in_cloud(k), &
-                              cloud_frac1(k), cloud_frac2(k), &
+                              cloud_frac_1(k), cloud_frac_2(k), &
                               const_Ncnp2_on_Ncnm2, const_corr_chi_Ncn )
 
     enddo ! k = 2, nz
@@ -497,7 +497,7 @@ module setup_clubb_pdf_params
        !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
        !!! -- for each PDF component.
        call compute_mean_stdev( Ncnm(k), rc1(k), rc2(k), &            ! Intent(in)
-                                cloud_frac1(k), cloud_frac2(k), &     ! Intent(in)
+                                cloud_frac_1(k), cloud_frac_2(k), &     ! Intent(in)
                                 hm1(k,:), hm2(k,:), &                 ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
                                 sigma2_on_mu2_ip_array_cloud, &       ! Intent(in)
@@ -582,8 +582,8 @@ module setup_clubb_pdf_params
 
        else ! if .not. l_diagnose_correlations
 
-          call compute_corr( wm_zt(k), rc1(k), rc2(k), cloud_frac1(k), &
-                             cloud_frac2(k), wpchip_zt(k), wpNcnp_zt(k), &
+          call compute_corr( wm_zt(k), rc1(k), rc2(k), cloud_frac_1(k), &
+                             cloud_frac_2(k), wpchip_zt(k), wpNcnp_zt(k), &
                              sqrt(wp2_zt(k)), mixt_frac(k), precip_frac_1(k), &
                              precip_frac_2(k), wphydrometp_zt(k,:), &
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
@@ -1049,7 +1049,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine precip_fraction( nz, hydromet, hm1, hm2, &
-                              cloud_frac, cloud_frac1, mixt_frac, &
+                              cloud_frac, cloud_frac_1, mixt_frac, &
                               ice_supersat_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
@@ -1089,7 +1089,7 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac,  &     ! Cloud fraction (overall)                     [-] 
-      cloud_frac1, &     ! Cloud fraction (1st PDF component)           [-]
+      cloud_frac_1, &     ! Cloud fraction (1st PDF component)           [-]
       mixt_frac, &       ! Mixture fraction                             [-]
       ice_supersat_frac  ! Ice cloud fraction                           [-]
 
@@ -1192,9 +1192,9 @@ module setup_clubb_pdf_params
           ! (PDF component 1) at or above a vertical level.
           if ( k < nz ) then
              weighted_pfrac1(k) = max( weighted_pfrac1(k+1), &
-                                       mixt_frac(k) * cloud_frac1(k) )
+                                       mixt_frac(k) * cloud_frac_1(k) )
           else  ! k = nz
-             weighted_pfrac1(k) = mixt_frac(k) * cloud_frac1(k)
+             weighted_pfrac1(k) = mixt_frac(k) * cloud_frac_1(k)
           endif
 
           precip_frac_1(k) = weighted_pfrac1(k) / mixt_frac(k)
@@ -1204,9 +1204,9 @@ module setup_clubb_pdf_params
 
              ! Using the above method, it is possible for precip_frac_1 to be
              ! greater than 1.  For example, the mixture fraction at level k+1
-             ! is 0.10 and the cloud_frac1 at level k+1 is 1, resulting in a
+             ! is 0.10 and the cloud_frac_1 at level k+1 is 1, resulting in a
              ! weighted_pfrac1 of 0.10.  This product is greater than the
-             ! product of mixt_frac and cloud_frac1 at level k.  The mixture
+             ! product of mixt_frac and cloud_frac_1 at level k.  The mixture
              ! fraction at level k is 0.05, resulting in a precip_frac_1 of 2.
              ! The value of precip_frac_1 is limited at 1.  The leftover
              ! precipitation fraction (a result of the decreasing weight of PDF
@@ -1259,9 +1259,9 @@ module setup_clubb_pdf_params
 
              ! Again, it is possible for precip_frac_2 to be greater than 1.
              ! For example, the mixture fraction at level k+1 is 0.10 and the
-             ! cloud_frac1 at level k+1 is 1, resulting in a weighted_pfrac1 of
+             ! cloud_frac_1 at level k+1 is 1, resulting in a weighted_pfrac1 of
              ! 0.10.  This product is greater than the product of mixt_frac and
-             ! cloud_frac1 at level k.  Additionally, precip_frac (overall) is 1
+             ! cloud_frac_1 at level k.  Additionally, precip_frac (overall) is 1
              ! for level k.  The mixture fraction at level k is 0.5, resulting
              ! in a precip_frac_1 of 0.2.  Using the above equation,
              ! precip_frac_2 is calculated to be 1.8.  The value of
@@ -1594,7 +1594,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine compute_mean_stdev( Ncnm, rc1, rc2, &                      ! Intent(in)
-                                 cloud_frac1, cloud_frac2, &            ! Intent(in)
+                                 cloud_frac_1, cloud_frac_2, &            ! Intent(in)
                                  hm1, hm2, &                            ! Intent(in)
                                  precip_frac_1, precip_frac_2, &        ! Intent(in)
                                  sigma2_on_mu2_ip_array_cloud, &        ! Intent(in)
@@ -1647,8 +1647,8 @@ module setup_clubb_pdf_params
       Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
       rc1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
       rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
-      cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
-      cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
+      cloud_frac_1,   & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac_2,   & ! Cloud fraction (2nd PDF component)                  [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
 
@@ -1803,14 +1803,14 @@ module setup_clubb_pdf_params
        ! Standard deviation of hydrometeor, hm, in PDF component 1.
        sigma_x_1(ivar) &
        =  component_stdev_hm_ip( mu_x_1(ivar), &
-                                 rc1, cloud_frac1, &
+                                 rc1, cloud_frac_1, &
                                  sigma2_on_mu2_ip_array_cloud(ivar), &
                                  sigma2_on_mu2_ip_array_below(ivar) )
 
        ! Standard deviation of hydrometeor, hm, in PDF component 2.
        sigma_x_2(ivar) &
        =  component_stdev_hm_ip( mu_x_2(ivar), &
-                                 rc2, cloud_frac2, &
+                                 rc2, cloud_frac_2, &
                                  sigma2_on_mu2_ip_array_cloud(ivar), &
                                  sigma2_on_mu2_ip_array_below(ivar) )
 
@@ -1822,8 +1822,8 @@ module setup_clubb_pdf_params
   end subroutine compute_mean_stdev
 
   !=============================================================================
-  subroutine compute_corr( wm_zt, rc1, rc2, cloud_frac1, &
-                           cloud_frac2, wpchip, wpNcnp, &
+  subroutine compute_corr( wm_zt, rc1, rc2, cloud_frac_1, &
+                           cloud_frac_2, wpchip, wpNcnp, &
                            stdev_w, mixt_frac, precip_frac_1, &
                            precip_frac_2, wphydrometp_zt, &
                            mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
@@ -1877,8 +1877,8 @@ module setup_clubb_pdf_params
       wm_zt,         & ! Mean vertical velocity, <w>, on thermo. levels    [m/s]
       rc1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
       rc2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
-      cloud_frac1,   & ! Cloud fraction (1st PDF component)                  [-]
-      cloud_frac2,   & ! Cloud fraction (2nd PDF component)                  [-]
+      cloud_frac_1,   & ! Cloud fraction (1st PDF component)                  [-]
+      cloud_frac_2,   & ! Cloud fraction (2nd PDF component)                  [-]
       wpchip,        & ! Covariance of w and chi (old s)            [(m/s)kg/kg]
       wpNcnp,        & ! Covariance of w and N_cn (overall)       [(m/s) num/kg]
       stdev_w,       & ! Standard deviation of w                           [m/s]
@@ -1999,25 +1999,25 @@ module setup_clubb_pdf_params
 
     ! Correlation of chi (old s) and eta (old t)
     corr_array_1(iiPDF_eta, iiPDF_chi) &
-    = component_corr_chi_eta( pdf_params%corr_chi_eta_1, rc1, cloud_frac1, &
+    = component_corr_chi_eta( pdf_params%corr_chi_eta_1, rc1, cloud_frac_1, &
                               corr_array_cloud(iiPDF_eta, iiPDF_chi), &
                               corr_array_below(iiPDF_eta, iiPDF_chi), &
                               l_limit_corr_chi_eta )
 
     corr_array_2(iiPDF_eta, iiPDF_chi) &
-    = component_corr_chi_eta( pdf_params%corr_chi_eta_2, rc2, cloud_frac2, &
+    = component_corr_chi_eta( pdf_params%corr_chi_eta_2, rc2, cloud_frac_2, &
                               corr_array_cloud(iiPDF_eta, iiPDF_chi), &
                               corr_array_below(iiPDF_eta, iiPDF_chi), &
                               l_limit_corr_chi_eta )
 
     ! Correlation of chi (old s) and w
     corr_array_1(iiPDF_w, iiPDF_chi) &
-    = component_corr_w_x( corr_w_chi, rc1, cloud_frac1, &
+    = component_corr_w_x( corr_w_chi, rc1, cloud_frac_1, &
                           corr_array_cloud(iiPDF_w, iiPDF_chi), &
                           corr_array_below(iiPDF_w, iiPDF_chi) )
 
     corr_array_2(iiPDF_w, iiPDF_chi) &
-    = component_corr_w_x( corr_w_chi, rc2, cloud_frac2, &
+    = component_corr_w_x( corr_w_chi, rc2, cloud_frac_2, &
                           corr_array_cloud(iiPDF_w, iiPDF_chi), &
                           corr_array_below(iiPDF_w, iiPDF_chi) )
 
@@ -2037,12 +2037,12 @@ module setup_clubb_pdf_params
     ivar = iiPDF_chi
     do jvar = iiPDF_Ncn+1, d_variables
        corr_array_1(jvar, ivar) &
-       = component_corr_x_hm_ip( rc1, cloud_frac1,&
+       = component_corr_x_hm_ip( rc1, cloud_frac_1,&
                                  corr_array_cloud(jvar, ivar), &
                                  corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_x_hm_ip( rc2, cloud_frac2,&
+       = component_corr_x_hm_ip( rc2, cloud_frac_2,&
                                  corr_array_cloud(jvar, ivar), &
                                  corr_array_below(jvar, ivar) )
     enddo
@@ -2091,12 +2091,12 @@ module setup_clubb_pdf_params
     do jvar = iiPDF_Ncn+1, d_variables
 
        corr_array_1(jvar, ivar) &
-       = component_corr_w_hm_ip( corr_w_hm_1(jvar), rc1, cloud_frac1, &
+       = component_corr_w_hm_ip( corr_w_hm_1(jvar), rc1, cloud_frac_1, &
                                  corr_array_cloud(jvar, ivar), &
                                  corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_w_hm_ip( corr_w_hm_2(jvar), rc2, cloud_frac2, &
+       = component_corr_w_hm_ip( corr_w_hm_2(jvar), rc2, cloud_frac_2, &
                                  corr_array_cloud(jvar, ivar), &
                                  corr_array_below(jvar, ivar) )
 
@@ -2106,12 +2106,12 @@ module setup_clubb_pdf_params
     ivar = iiPDF_Ncn
     do jvar = iiPDF_Ncn+1, d_variables
        corr_array_1(jvar, ivar) &
-       = component_corr_hmx_hmy_ip( rc1, cloud_frac1, &
+       = component_corr_hmx_hmy_ip( rc1, cloud_frac_1, &
                                     corr_array_cloud(jvar, ivar), &
                                     corr_array_below(jvar, ivar) )
 
        corr_array_2(jvar, ivar) &
-       = component_corr_hmx_hmy_ip( rc2, cloud_frac2, &
+       = component_corr_hmx_hmy_ip( rc2, cloud_frac_2, &
                                     corr_array_cloud(jvar, ivar), &
                                     corr_array_below(jvar, ivar) )
     enddo
@@ -2121,12 +2121,12 @@ module setup_clubb_pdf_params
        do jvar = ivar+1, d_variables
 
           corr_array_1(jvar, ivar) &
-          = component_corr_hmx_hmy_ip( rc1, cloud_frac1, &
+          = component_corr_hmx_hmy_ip( rc1, cloud_frac_1, &
                                        corr_array_cloud(jvar, ivar), &
                                        corr_array_below(jvar, ivar) )
 
           corr_array_2(jvar, ivar) &
-          = component_corr_hmx_hmy_ip( rc2, cloud_frac2, &
+          = component_corr_hmx_hmy_ip( rc2, cloud_frac_2, &
                                        corr_array_cloud(jvar, ivar), &
                                        corr_array_below(jvar, ivar) )
 

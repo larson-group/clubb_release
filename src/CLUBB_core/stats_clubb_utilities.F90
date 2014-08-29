@@ -1551,8 +1551,8 @@ module stats_clubb_utilities
         irc2, & 
         irsatl1, & 
         irsatl2, & 
-        icloud_frac1, & 
-        icloud_frac2
+        icloud_frac_1, & 
+        icloud_frac_2
 
     use stats_variables, only: & 
         ichi_1, & ! Variable(s)
@@ -1908,8 +1908,8 @@ module stats_clubb_utilities
       call stat_update_var( irc2, pdf_params%rc2, zt )
       call stat_update_var( irsatl1, pdf_params%rsatl1, zt )
       call stat_update_var( irsatl2, pdf_params%rsatl2, zt )
-      call stat_update_var( icloud_frac1, pdf_params%cloud_frac1, zt )
-      call stat_update_var( icloud_frac2, pdf_params%cloud_frac2, zt )
+      call stat_update_var( icloud_frac_1, pdf_params%cloud_frac_1, zt )
+      call stat_update_var( icloud_frac_2, pdf_params%cloud_frac_2, zt )
       call stat_update_var( ichi_1, pdf_params%chi_1, zt )
       call stat_update_var( ichi_2, pdf_params%chi_2, zt )
       call stat_update_var( istdev_chi_1, pdf_params%stdev_chi_1, zt )

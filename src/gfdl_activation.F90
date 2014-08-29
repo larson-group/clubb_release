@@ -101,9 +101,9 @@ module gfdl_activation
             * erff( pdf_params(iz_clubb)%w1 &
             / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w1) )
         P1_updraft = P1_updraft * pdf_params(iz_clubb)%mixt_frac &
-            * pdf_params(iz_clubb)%cloud_frac1
+            * pdf_params(iz_clubb)%cloud_frac_1
       else if( pdf_params( iz_clubb)%w1 > 0.0_core_rknd) then
-          P1_updraft = pdf_params( iz_clubb)%mixt_frac * pdf_params( iz_clubb)%cloud_frac1
+          P1_updraft = pdf_params( iz_clubb)%mixt_frac * pdf_params( iz_clubb)%cloud_frac_1
       else
         ! Eric Raut added to remove compiler warning
           P1_updraft = 0.0_core_rknd
@@ -115,10 +115,10 @@ module gfdl_activation
                       0.5_core_rknd*erff( pdf_params(iz_clubb)%w2 &
                       / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w2) )
         P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
-                      * pdf_params( iz_clubb)%cloud_frac2
+                      * pdf_params( iz_clubb)%cloud_frac_2
       else if( pdf_params( iz_clubb)%w2 > 0.0_core_rknd) then
            P2_updraft = ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
-                          * pdf_params( iz_clubb)%cloud_frac2
+                          * pdf_params( iz_clubb)%cloud_frac_2
       else
         ! Eric Raut added to remove compiler warning
         P2_updraft = 0.0_core_rknd
@@ -159,9 +159,9 @@ module gfdl_activation
 
       ! get the layer-averaged activated droplet concentration (/cm3)
       Ndrop_max(iz_clubb) = Ndrop_max(iz_clubb) *  &
-                 (  pdf_params(iz_clubb)%mixt_frac  * pdf_params(iz_clubb)%cloud_frac1 + &
+                 (  pdf_params(iz_clubb)%mixt_frac  * pdf_params(iz_clubb)%cloud_frac_1 + &
                    (1._core_rknd- pdf_params(iz_clubb)%mixt_frac) * &
-                   pdf_params(iz_clubb)%cloud_frac2 )
+                   pdf_params(iz_clubb)%cloud_frac_2 )
 
   end do
 return

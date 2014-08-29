@@ -344,7 +344,7 @@ module generate_lh_sample_module
 !   samples points.
 !     call sptp_2_rtpthlp &
 !          ( 1, d_variables, mixt_frac, crt1, cthl1, crt2, cthl2, &
-!            cloud_frac1, cloud_frac2, X_nl_one_lev(1), &
+!            cloud_frac_1, cloud_frac_2, X_nl_one_lev(1), &
 !            X_nl_one_lev(2), &
 !            X_u_one_lev, rtp, thlp )
     call chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
@@ -940,8 +940,8 @@ module generate_lh_sample_module
     ! Choose which mixture fraction we are in.
     ! Account for cloud fraction.
     ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1     = mixt_frac*cloud_frac1 / &
-!                      (mixt_frac*cloud_frac1+(1-mixt_frac)*cloud_frac2)
+!     fraction_1     = mixt_frac*cloud_frac_1 / &
+!                      (mixt_frac*cloud_frac_1+(1-mixt_frac)*cloud_frac_2)
 
     if ( X_mixt_comp_one_lev == 1 ) then
       lh_rt  = real( rt1 + (0.5_dp/crt1)*(chi-mu_chi_1) +  & 

@@ -52,8 +52,8 @@ module pdf_parameter_module
       rsatl2,            & ! Saturation mixing ratio r_sat(mu_Tl_2,p)      [kg/kg]
       rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
       rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
-      cloud_frac1,     & ! Cloud fraction (1st PDF component)                [-]
-      cloud_frac2,     & ! Cloud fraction (2nd PDF component)                [-]
+      cloud_frac_1,     & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac_2,     & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
   end type pdf_parameter
 
@@ -189,9 +189,9 @@ module pdf_parameter_module
       CASE (33)
       	   get_param_at_ind = pp_struct%rc2
       CASE (34)
-      	   get_param_at_ind = pp_struct%cloud_frac1
+      	   get_param_at_ind = pp_struct%cloud_frac_1
       CASE (35)
-      	   get_param_at_ind = pp_struct%cloud_frac2
+      	   get_param_at_ind = pp_struct%cloud_frac_2
       CASE (36)
       	   get_param_at_ind = pp_struct%mixt_frac
       CASE DEFAULT
@@ -275,9 +275,9 @@ module pdf_parameter_module
       CASE (33)
       	   pp_struct%rc2 = val
       CASE (34)
-      	   pp_struct%cloud_frac1 = val
+      	   pp_struct%cloud_frac_1 = val
       CASE (35)
-      	   pp_struct%cloud_frac2 = val
+      	   pp_struct%cloud_frac_2 = val
       CASE (36)
       	   pp_struct%mixt_frac = val
       CASE DEFAULT

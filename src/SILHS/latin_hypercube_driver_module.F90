@@ -308,8 +308,8 @@ module latin_hypercube_driver_module
 
         ! Determine cloud fraction at k_lh_start
         lh_start_cloud_frac = &
-        pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac1 &
-          + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac2
+        pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac_1 &
+          + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac_2
 
         ! Save the cloud fraction as a weight for averaging preferentially
         ! within cloud
@@ -325,7 +325,7 @@ module latin_hypercube_driver_module
 
           call cloud_weighted_sampling_driver &
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
-                 pdf_params(k_lh_start)%cloud_frac1, pdf_params(k_lh_start)%cloud_frac2, & ! In
+                 pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
                  lh_start_cloud_frac, pdf_params(k_lh_start)%mixt_frac, & ! In
                  lh_sample_point_weights, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! Out
                  X_u_all_levs(k_lh_start,:,d_variables+1) )
@@ -482,8 +482,8 @@ module latin_hypercube_driver_module
 
         ! Check for half cloudy points in uniform space
         call assert_half_cloudy_uniform &
-             ( num_samples, pdf_params(k_lh_start)%cloud_frac1, &
-               pdf_params(k_lh_start)%cloud_frac2, X_mixt_comp_all_levs(k_lh_start,:), &
+             ( num_samples, pdf_params(k_lh_start)%cloud_frac_1, &
+               pdf_params(k_lh_start)%cloud_frac_2, X_mixt_comp_all_levs(k_lh_start,:), &
                X_u_all_levs(k_lh_start,:,iiPDF_chi), l_error_in_sub )
 
         l_error = l_error .or. l_error_in_sub
@@ -534,7 +534,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine cloud_weighted_sampling_driver &
              ( num_samples, p_matrix_chi, p_matrix_dp1, &
-               cloud_frac1, cloud_frac2, cloud_frac, mixt_frac, &
+               cloud_frac_1, cloud_frac_2, cloud_frac, mixt_frac, &
                lh_sample_point_weights, X_u_chi, X_u_dp1 )
 
   ! Description:
@@ -568,8 +568,8 @@ module latin_hypercube_driver_module
       p_matrix_dp1                        ! Elements from p_matrix for dp1 element
 
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac1, &                      ! Cloud fraction in PDF component 1
-      cloud_frac2, &                      ! Cloud fraction in PDF component 2
+      cloud_frac_1, &                      ! Cloud fraction in PDF component 1
+      cloud_frac_2, &                      ! Cloud fraction in PDF component 2
       cloud_frac,  &                      ! Cloud fraction in overall grid box
       mixt_frac                           ! Weight of first gaussian component
 
@@ -656,15 +656,15 @@ module latin_hypercube_driver_module
       if ( l_use_rejection_method ) then
         ! Use the rejection method to select points that are in or out of cloud
         call choose_X_u_reject &
-             ( l_cloudy_sample, cloud_frac1, & ! In
-               cloud_frac2, mixt_frac, & !In
+             ( l_cloudy_sample, cloud_frac_1, & ! In
+               cloud_frac_2, mixt_frac, & !In
                X_u_dp1(sample), X_u_chi(sample) ) ! Out
 
       else ! Transpose and scale the points to be in or out of cloud
         call choose_X_u_scaled &
              ( l_cloudy_sample, & ! In
                p_matrix_chi(sample), num_samples, & ! In
-               cloud_frac1, cloud_frac2, & ! In
+               cloud_frac_1, cloud_frac_2, & ! In
                mixt_frac, mixt_rand_element, & !In
                X_u_dp1(sample), X_u_chi(sample) ) ! Out
       end if
@@ -713,7 +713,7 @@ module latin_hypercube_driver_module
 
     ! Perform assertion check for PDF component 1
     call assert_consistent_cf_component &
-         ( pdf_params%chi_1, pdf_params%stdev_chi_1, pdf_params%cloud_frac1, & ! Intent(in)
+         ( pdf_params%chi_1, pdf_params%stdev_chi_1, pdf_params%cloud_frac_1, & ! Intent(in)
            l_error_in_sub )                                                    ! Intent(out)
 
     l_error = l_error .or. l_error_in_sub
@@ -723,7 +723,7 @@ module latin_hypercube_driver_module
 
     ! Perform assertion check for PDF component 2
     call assert_consistent_cf_component &
-         ( pdf_params%chi_2, pdf_params%stdev_chi_2, pdf_params%cloud_frac2, & ! Intent(in)
+         ( pdf_params%chi_2, pdf_params%stdev_chi_2, pdf_params%cloud_frac_2, & ! Intent(in)
            l_error_in_sub )                                                    ! Intent(out)
 
     l_error = l_error .or. l_error_in_sub
@@ -1272,8 +1272,8 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine choose_X_u_reject &
-             ( l_cloudy_sample, cloud_frac1, &
-              cloud_frac2, mixt_frac, &
+             ( l_cloudy_sample, cloud_frac_1, &
+              cloud_frac_2, mixt_frac, &
               X_u_dp1_element, X_u_chi_element )
 
 ! Description:
@@ -1308,8 +1308,8 @@ module latin_hypercube_driver_module
       l_cloudy_sample ! Whether his is a cloudy or clear air sample point
 
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
-      cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
+      cloud_frac_1, &    ! Cloud fraction associated with mixture component 1     [-]
+      cloud_frac_2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac         ! Mixture fraction                                       [-]
 
     ! Output Variables
@@ -1346,11 +1346,11 @@ module latin_hypercube_driver_module
 
       if ( in_mixt_comp_1( X_u_dp1_element, real(mixt_frac, kind = dp) ) ) then
         ! Component 1
-        cloud_frac_i = cloud_frac1
+        cloud_frac_i = cloud_frac_1
 !       X_mixt_comp_one_lev = 1
       else
         ! Component 2
-        cloud_frac_i = cloud_frac2
+        cloud_frac_i = cloud_frac_2
 !       X_mixt_comp_one_lev = 2
       end if
 
@@ -1388,7 +1388,7 @@ module latin_hypercube_driver_module
   subroutine choose_X_u_scaled &
              ( l_cloudy_sample, &
                p_matrix_element, num_samples, &
-               cloud_frac1, cloud_frac2, &
+               cloud_frac_1, cloud_frac_2, &
                mixt_frac, mixt_rand_element, &
                X_u_dp1_element, X_u_chi_element )
 
@@ -1417,8 +1417,8 @@ module latin_hypercube_driver_module
       num_samples       ! Total number of calls to the microphysics
 
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac1, &    ! Cloud fraction associated with mixture component 1     [-]
-      cloud_frac2, &    ! Cloud fraction associated with mixture component 2     [-]
+      cloud_frac_1, &    ! Cloud fraction associated with mixture component 1     [-]
+      cloud_frac_2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac         ! Mixture fraction                                       [-]
 
     real( kind = dp ), intent(in) :: &
@@ -1445,8 +1445,8 @@ module latin_hypercube_driver_module
 
     mixt_frac_dp = real( mixt_frac, kind=dp )
 
-    cld_comp1_frac = real( mixt_frac*cloud_frac1, kind=dp )
-    cld_comp2_frac = real( (1._core_rknd-mixt_frac)*cloud_frac2, kind=dp )
+    cld_comp1_frac = real( mixt_frac*cloud_frac_1, kind=dp )
+    cld_comp2_frac = real( (1._core_rknd-mixt_frac)*cloud_frac_2, kind=dp )
 
     !---------------------------------------------------------------------
     ! Determine the conditional mixture fraction, given whether we are in
@@ -1508,9 +1508,9 @@ module latin_hypercube_driver_module
 
     ! Determine cloud fraction
     if ( X_mixt_comp_one_lev == 1 ) then
-      cloud_frac_i = real( cloud_frac1, kind=dp )
+      cloud_frac_i = real( cloud_frac_1, kind=dp )
     else
-      cloud_frac_i = real( cloud_frac2, kind=dp )
+      cloud_frac_i = real( cloud_frac_2, kind=dp )
     end if
 
     if ( l_cloudy_sample ) then
@@ -1705,8 +1705,8 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine assert_half_cloudy_uniform &
-             ( num_samples, cloud_frac1, &
-               cloud_frac2, X_mixt_comp_k_lh_start, &
+             ( num_samples, cloud_frac_1, &
+               cloud_frac_2, X_mixt_comp_k_lh_start, &
                X_u_chi_k_lh_start, l_error )
 ! Description:
 !   Verify that half the points are in cloud if cloud weighted sampling is
@@ -1730,7 +1730,7 @@ module latin_hypercube_driver_module
       num_samples ! Total calls to the microphysics
 
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac1, cloud_frac2 ! Cloud fraction associatated with component 1 & 2 [-]
+      cloud_frac_1, cloud_frac_2 ! Cloud fraction associatated with component 1 & 2 [-]
 
     integer, dimension(num_samples), intent(in) :: &
       X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
@@ -1756,9 +1756,9 @@ module latin_hypercube_driver_module
 
     do sample = 1, num_samples
       if ( X_mixt_comp_k_lh_start(sample) == 1 ) then
-        cloud_frac_i = cloud_frac1
+        cloud_frac_i = cloud_frac_1
       else
-        cloud_frac_i = cloud_frac2
+        cloud_frac_i = cloud_frac_2
       end if
       if ( X_u_chi_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_i, kind = dp) ) then
         number_cloudy_samples = number_cloudy_samples + 1
@@ -1771,8 +1771,8 @@ module latin_hypercube_driver_module
       write(fstderr,*) "X_u chi random = ", &
         X_u_chi_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
         "cloudy samples =", number_cloudy_samples
-      write(fstderr,*) "cloud_frac1 = ", cloud_frac1
-      write(fstderr,*) "cloud_frac2 = ", cloud_frac2
+      write(fstderr,*) "cloud_frac_1 = ", cloud_frac_1
+      write(fstderr,*) "cloud_frac_2 = ", cloud_frac_2
       l_error = .true.
     end if
 

@@ -575,11 +575,11 @@ module stats_variables
      irc2 = 0, & 
      irsatl1 = 0, & 
      irsatl2 = 0, & 
-     icloud_frac1 = 0, & 
-     icloud_frac2 = 0
+     icloud_frac_1 = 0, & 
+     icloud_frac_2 = 0
 !$omp  threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
 !$omp    ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
-!$omp    irsatl1, irsatl2, icloud_frac1, icloud_frac2 )
+!$omp    irsatl1, irsatl2, icloud_frac_1, icloud_frac_2 )
 
   integer, public :: & 
      ichi_1 = 0, &
