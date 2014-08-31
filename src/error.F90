@@ -535,7 +535,7 @@ module error
 
       do i = 1, ndim, 1
         j = params_index(i)
-        write(unit=*,fmt='(A18,F27.20)') params_list(j)//" = ", & 
+        write(unit=*,fmt='(A30,F27.20)') params_list(j)//" = ", & 
           param_vals_vector(i)
       end do
 
@@ -550,7 +550,7 @@ module error
 
       do i = 1, ndim, 1
         j = params_index(i)
-        write(unit=file_unit,fmt='(A18,F27.20)') params_list(j)//" = ", & 
+        write(unit=file_unit,fmt='(A30,F27.20)') params_list(j)//" = ", & 
           param_vals_vector(i)
       end do      
 
@@ -831,7 +831,7 @@ module error
         "Parameter", "Initial", "Optimal"
 
     do i = 1, ndim, 1
-      write(unit=iunit,fmt='(A18,2F27.20)')  & 
+      write(unit=iunit,fmt='(A30,2F27.20)')  & 
         params_list(params_index(i))//" = ",  & 
         params(params_index(i)), param_vals_matrix(1,i)
     end do
@@ -967,7 +967,7 @@ module error
 
     ! Output optimal values and all possible CLUBB parameters
     do i=1, nparams, 1
-      write(unit=iunit,fmt='(A18,F27.20)') & 
+      write(unit=iunit,fmt='(A30,F27.20)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
     write(unit=iunit,fmt=*) "/"
@@ -990,7 +990,7 @@ module error
 
     ! Output the amount each variable was changed for the simplex
     do i=1, nparams, 1
-      write(unit=iunit,fmt='(a18,f12.5)') & 
+      write(unit=iunit,fmt='(a30,f12.5)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
     write(unit=iunit,fmt=*) "/"
@@ -1067,7 +1067,7 @@ module error
 
     ! Output optimal values and all possible CLUBB parameters
     do i=1, nparams, 1
-      write(unit=iunit,fmt='(A18,F27.20)') & 
+      write(unit=iunit,fmt='(A30,F27.20)') & 
         trim( params_list(i) )//" = ", params_local(i)
     end do
     write(unit=iunit,fmt=*) "/"

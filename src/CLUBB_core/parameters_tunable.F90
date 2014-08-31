@@ -223,24 +223,40 @@ module parameters_tunable
   ! tuner will break!
   !                    ***** IMPORTANT *****
   !***************************************************************
-  character(len=16), dimension(nparams), parameter, public ::  & 
+  character(len=27), dimension(nparams), parameter, public ::  & 
   params_list = & 
-     (/"C1              ", "C1b             ", "C1c             ", "C2              ", & 
-       "C2b             ", "C2c             ", "C2rt            ", "C2thl           ", & 
-       "C2rtthl         ", "C4              ", "C5              ", "C6rt            ", & 
-       "C6rtb           ", "C6rtc           ", "C6thl           ", "C6thlb          ", & 
-       "C6thlc          ", "C7              ", "C7b             ", "C7c             ", & 
-       "C8              ", "C8b             ", "C10             ", "C11             ", & 
-       "C11b            ", "C11c            ", "C12             ", "C13             ", & 
-       "C14             ", "C15             ", "C6rt_Lscale0    ", "C6thl_Lscale0   ", &
-       "C7_Lscale0      ", "wpxp_L_thresh   ", "c_K             ", "c_K1            ", &
-       "nu1             ", "c_K2            ", "nu2             ", "c_K6            ", &
-       "nu6             ", "c_K8            ", "nu8             ", "c_K9            ", &
-       "nu9             ", "nu10            ", "c_K_hm          ", "nu_hm           ", &
-       "gamma_coef      ", "gamma_coefb     ", "gamma_coefc     ", "mu              ", &
-       "beta            ", "lmin_coef       ", "mult_coef       ", "taumin          ", &
-       "taumax          ", "Lscale_mu_coef  ", "Lscale_pert_coef", "alpha_corr      ", &
-       "Skw_denom_coef  ", "c_K10           ", "thlp2_rad_coef  ", "thlp2_rad_cloud_" /)
+     (/"C1                         ", "C1b                        ", &
+       "C1c                        ", "C2                         ", &
+       "C2b                        ", "C2c                        ", &
+       "C2rt                       ", "C2thl                      ", &
+       "C2rtthl                    ", "C4                         ", &
+       "C5                         ", "C6rt                       ", &
+       "C6rtb                      ", "C6rtc                      ", &
+       "C6thl                      ", "C6thlb                     ", &
+       "C6thlc                     ", "C7                         ", &
+       "C7b                        ", "C7c                        ", &
+       "C8                         ", "C8b                        ", &
+       "C10                        ", "C11                        ", &
+       "C11b                       ", "C11c                       ", &
+       "C12                        ", "C13                        ", &
+       "C14                        ", "C15                        ", &
+       "C6rt_Lscale0               ", "C6thl_Lscale0              ", &
+       "C7_Lscale0                 ", "wpxp_L_thresh              ", &
+       "c_K                        ", "c_K1                       ", &
+       "nu1                        ", "c_K2                       ", &
+       "nu2                        ", "c_K6                       ", &
+       "nu6                        ", "c_K8                       ", &
+       "nu8                        ", "c_K9                       ", &
+       "nu9                        ", "nu10                       ", &
+       "c_K_hm                     ", "nu_hm                      ", &
+       "gamma_coef                 ", "gamma_coefb                ", &
+       "gamma_coefc                ", "mu                         ", &
+       "beta                       ", "lmin_coef                  ", &
+       "mult_coef                  ", "taumin                     ", &
+       "taumax                     ", "Lscale_mu_coef             ", &
+       "Lscale_pert_coef           ", "alpha_corr                 ", &
+       "Skw_denom_coef             ", "c_K10                      ", &
+       "thlp2_rad_coef             ", "thlp2_rad_cloud_frac_thresh" /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
