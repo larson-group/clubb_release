@@ -9,7 +9,7 @@
     'startTime' => 4201.0,  # [minutes]
     'endTime' => 4320.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
-    'endHeight' => 4500.0, # [m]
+    'endHeight' => 4000.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
