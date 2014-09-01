@@ -129,7 +129,9 @@ module setup_clubb_pdf_params
         iprecip_frac_2, &
         iNcnm,          &
         ihmp2_zt,       &
-        zt
+        irtp2_from_chi, &
+        zt,             &
+        zm
 
     use model_flags, only: &
         l_diagnose_correlations ! Variable(s)
@@ -143,7 +145,8 @@ module setup_clubb_pdf_params
         sigma2_on_mu2_ip_array_cloud, & ! Variable(s)
         sigma2_on_mu2_ip_array_below, &
         iiPDF_Ncn,                    &
-        iiPDF_chi
+        iiPDF_chi,                    &
+        iiPDF_eta
 
     use index_mapping, only: &
         hydromet2pdf_idx    ! Procedure(s)
@@ -277,6 +280,9 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(nz) :: &
       wm_zt              ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+
+    real( kind = core_rknd ), dimension(nz) :: &
+      rtp2_zt_from_chi
 
     logical :: l_corr_array_scaling
 
@@ -666,6 +672,16 @@ module setup_clubb_pdf_params
        hydrometp2(:,i)  = zt2zm( hydrometp2_zt(:,i) )
        hydrometp2(nz,i) = zero
     enddo
+
+    if ( l_stats_samp ) then
+      if ( irtp2_from_chi > 0 ) then
+        rtp2_zt_from_chi = compute_rtp2_from_chi( pdf_params(:), &
+                                                  corr_array_1_n(iiPDF_chi,iiPDF_eta,:), &
+                                                  corr_array_2_n(iiPDF_chi,iiPDF_eta,:) )
+        call stat_update_var( irtp2_from_chi, zt2zm( rtp2_zt_from_chi ), zm )
+      end if
+    end if
+
 
     ! Boundary conditions for the output variables at k=1.
     mu_x_1_n(:,1) = zero
@@ -4011,6 +4027,100 @@ module setup_clubb_pdf_params
     return
 
   end subroutine pack_pdf_params
+
+!=============================================================================
+  elemental function compute_rtp2_from_chi( pdf_params, corr_chi_eta_1, corr_chi_eta_2 ) &
+
+  result( rtp2_zt_from_chi )
+
+  ! Description:
+  !   Compute the variance of rt from the distribution of chi and eta. The
+  !   resulting variance will be consistent with CLUBB's extended PDF
+  !   involving chi and eta, including if l_fix_chi_eta_correlations = .true. .
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd                 ! Constant
+
+    use pdf_utilities, only: &
+      compute_variance_binormal ! Procedure
+
+    use constants_clubb, only: &
+      one_half, &               ! Constant(s)
+      one,      &
+      two
+
+    use pdf_parameter_module, only: &
+      pdf_parameter             ! Type
+
+    implicit none
+
+    ! Input Variables
+    type(pdf_parameter), intent(in) :: &
+      pdf_params
+
+    real( kind = core_rknd ), intent(in) :: &
+      corr_chi_eta_1, &         ! Correlation of chi and eta in 1st PDF component [-]
+      corr_chi_eta_2            ! Correlation of chi and eta in 2nd PDF component [-]
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      rtp2_zt_from_chi          ! Grid-box variance of rtp2 on thermo. levels     [kg/kg]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      varnce_rt1_zt_from_chi, varnce_rt2_zt_from_chi
+
+    real( kind = core_rknd ) :: &
+      sigma_chi_1,    &         ! Standard deviation of chi in 1st PDF component  [kg/kg]
+      sigma_chi_2,    &         ! Standard deviation of chi in 2nd PDF component  [kg/kg]
+      sigma_eta_1,    &         ! Standard deviation of eta in 1st PDF component  [kg/kg]
+      sigma_eta_2,    &         ! Standard deviation of eta in 2nd PDF component  [kg/kg]
+      crt1,           &         ! Coefficient of r_t in chi/eta eqns. (1st comp.) [-]
+      crt2,           &         ! Coefficient of r_t in chi/eta eqns. (2nd comp.) [-]
+      rt1,            &         ! Mean of rt in 1st PDF component                 [kg/kg]
+      rt2,            &         ! Mean of rt in 2nd PDF component                 [kg/kg]
+      rtm,            &         ! Mean of rt (overall)                            [kg/kg]
+      sigma_rt1_from_chi, &     ! Standard deviation of rt in 1st PDF component   [kg/kg]
+      sigma_rt2_from_chi, &     ! Standard deviation of rt in 2nd PDF component   [kg/kg]
+      mixt_frac                 ! Weight of 1st gaussian PDF component            [kg/kg]
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Enter some PDF parameters
+    sigma_chi_1 = pdf_params%stdev_chi_1
+    sigma_chi_2 = pdf_params%stdev_chi_2
+    sigma_eta_1 = pdf_params%stdev_eta_1
+    sigma_eta_2 = pdf_params%stdev_eta_2
+    rt1         = pdf_params%rt1
+    rt2         = pdf_params%rt2
+    crt1        = pdf_params%crt1
+    crt2        = pdf_params%crt2
+    mixt_frac   = pdf_params%mixt_frac
+
+    varnce_rt1_zt_from_chi = ( corr_chi_eta_1 * sigma_chi_1 * sigma_eta_1 + &
+                               one_half * sigma_chi_1**2 + one_half * sigma_eta_1**2 ) &
+                              / ( two * crt1**2 )
+
+    varnce_rt2_zt_from_chi = ( corr_chi_eta_2 * sigma_chi_2 * sigma_eta_2 + &
+                               one_half * sigma_chi_2**2 + one_half * sigma_eta_2**2 ) &
+                              / ( two * crt2**2 )
+
+    rtm = mixt_frac*rt1 + (one-mixt_frac)*rt2
+
+    sigma_rt1_from_chi = sqrt( varnce_rt1_zt_from_chi )
+    sigma_rt2_from_chi = sqrt( varnce_rt2_zt_from_chi )
+
+    rtp2_zt_from_chi = compute_variance_binormal( rtm, rt1, rt2, sigma_rt1_from_chi, &
+                                                  sigma_rt2_from_chi, mixt_frac )
+
+    return
+  end function compute_rtp2_from_chi
 
 !===============================================================================
 

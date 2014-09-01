@@ -256,6 +256,9 @@ module stats_zm
         irtphmp, &
         ithlphmp
 
+    use stats_variables, only: &
+        irtp2_from_chi
+
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
@@ -1658,6 +1661,12 @@ module stats_zm
              var_description="Skewness of w on momentum levels [-]", var_units="-", &
              l_silhs=.false., grid_kind=zm )
         k = k + 1
+
+      case ( 'rtp2_from_chi' )
+        irtp2_from_chi = k
+        call stat_assign( var_index=irtp2_from_chi, var_name="rtp2_from_chi", &
+             var_description="Variance of rt, computed from the chi/eta distribution [(kg/kg)^2]", &
+             var_units="(kg/kg)^2", l_silhs=.false., grid_kind=zm )
 
       case default
         l_found = .false.
