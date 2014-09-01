@@ -15,6 +15,7 @@ module pdf_utilities
             corr_NL2NN_dp,   &
             corr_LL2NN,      &
             corr_LL2NN_dp,   &
+            compute_variance_binormal,&
             calc_corr_chi_x, &
             calc_xp2
 
@@ -385,6 +386,51 @@ module pdf_utilities
     return
 
   end function corr_LL2NN_dp
+
+  !=============================================================================
+  elemental function compute_variance_binormal( mu_x, mu_x_1, mu_x_2, stdev_x_1, &
+                                                stdev_x_2, mixt_frac ) &
+
+  result( xp2 )
+
+    ! Description:
+    !   Computes the overall grid-box variance of a binormal gaussian distribution from the
+    !   variance of each component
+
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Constant
+
+    use constants_clubb, only: &
+      one ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_x,      & ! Overall mean of 'x'                                   [?]
+      mu_x_1,    & ! First PDF component of 'x'                            [?]
+      mu_x_2,    & ! Second PDF component of 'x'                           [?]
+      stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
+      stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
+      mixt_frac    ! Weight of the first PDF component                     [-]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: &
+      xp2          ! Variance of 'x' (overall average)                     [?^2]
+
+  !-----------------------------------------------------------------------------
+
+    !----- Begin Code -----
+    xp2 = mixt_frac * ( (mu_x_1 - mu_x)**2 + stdev_x_1**2 ) &
+            + (one - mixt_frac) * ( (mu_x_2 - mu_x)**2 + stdev_x_2**2 )
+
+    return
+
+  end function compute_variance_binormal
 
   !=============================================================================
   pure function calc_corr_chi_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &

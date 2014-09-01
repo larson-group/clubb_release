@@ -1486,6 +1486,10 @@ module stats_clubb_utilities
     use constants_clubb, only: &
         cloud_frac_min  ! Constant
 
+
+    use pdf_utilities, only: &
+        compute_variance_binormal    ! Procedure
+
     use stats_variables, only: & 
         zt, & ! Variables
         zm, & 
@@ -2437,47 +2441,6 @@ module stats_clubb_utilities
 
     return
   end subroutine stats_accumulate_lh_tend
-
-  !-----------------------------------------------------------------------------
-  elemental function compute_variance_binormal( x_mean, x1, x2, stdev_x_1, stdev_x_2, mixt_frac ) &
-        result( xp2 )
-
-  ! Description:
-  !   Computes the variance of a variable from a double gaussian distribution.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Constant
-
-    use constants_clubb, only: &
-      one ! Constant
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      x_mean,    & ! Overall mean of 'x'                                   [?]
-      x1,        & ! First PDF component of 'x'                            [?]
-      x2,        & ! Second PDF component of 'x'                           [?]
-      stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
-      stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
-      mixt_frac    ! Weight of the first PDF component                     [-]
-
-    ! Output Variables
-    real( kind = core_rknd ) :: &
-      xp2          ! Variance of 'x' (overall average)                     [?^2]
-
-  !-----------------------------------------------------------------------------
-
-    !----- Begin Code -----
-    xp2 = mixt_frac * ( (x1 - x_mean)**2 + stdev_x_1**2 ) &
-            + (one - mixt_frac) * ( (x2 - x_mean)**2 + stdev_x_2**2 )
-
-    return
-  end function compute_variance_binormal
     
   !-----------------------------------------------------------------------
   subroutine stats_finalize( )
