@@ -3,6 +3,9 @@
 !===============================================================================
 module latin_hypercube_driver_module
 
+  use clubb_precision, only: &
+    core_rknd   ! Constant
+
   implicit none
 
   ! Constant Parameters
@@ -15,6 +18,10 @@ module latin_hypercube_driver_module
     prior_iter ! Prior iteration number (for diagnostic purposes)
 !$omp threadprivate( prior_iter )
 
+  integer, parameter, private :: &
+    num_importance_categories = 8 ! Number of importance sampling categories
+                                  ! ( e.g., (cloud,precip,comp1) )
+
   private ! Default scope
 
 #ifdef SILHS
@@ -23,6 +30,15 @@ module latin_hypercube_driver_module
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
+
+  type importance_category_type
+
+    logical :: &
+      l_in_cloud,  &
+      l_in_precip, &
+      l_in_comp_1
+
+  end type importance_category_type
 
   contains
 
@@ -531,6 +547,289 @@ module latin_hypercube_driver_module
   end subroutine lh_subcolumn_generator
 !-------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
+  function importance_define_categories( ) &
+
+  result( importance_categories )
+
+  ! Description:
+  !   Computes the real PDF weight associated with each importance sampling
+  !   category
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Output Variable
+    type(importance_category_type), dimension(num_importance_categories) :: &
+      importance_categories ! A vector containing the different importance categories
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    importance_categories(1)%l_in_cloud  = .true.
+    importance_categories(1)%l_in_precip = .true.
+    importance_categories(1)%l_in_comp_1 = .true.
+
+    importance_categories(2)%l_in_cloud  = .true.
+    importance_categories(2)%l_in_precip = .true.
+    importance_categories(2)%l_in_comp_1 = .false.
+
+    importance_categories(3)%l_in_cloud  = .true.
+    importance_categories(3)%l_in_precip = .false.
+    importance_categories(3)%l_in_comp_1 = .true.
+
+    importance_categories(4)%l_in_cloud  = .true.
+    importance_categories(4)%l_in_precip = .false.
+    importance_categories(4)%l_in_comp_1 = .false.
+
+    importance_categories(5)%l_in_cloud  = .false.
+    importance_categories(5)%l_in_precip = .true.
+    importance_categories(5)%l_in_comp_1 = .true.
+
+    importance_categories(6)%l_in_cloud  = .false.
+    importance_categories(6)%l_in_precip = .true.
+    importance_categories(6)%l_in_comp_1 = .false.
+
+    importance_categories(7)%l_in_cloud  = .false.
+    importance_categories(7)%l_in_precip = .false.
+    importance_categories(7)%l_in_comp_1 = .true.
+
+    importance_categories(8)%l_in_cloud  = .false.
+    importance_categories(8)%l_in_precip = .false.
+    importance_categories(8)%l_in_comp_1 = .false.
+
+    return
+  end function importance_define_categories
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function importance_compute_real_probs( importance_categories, pdf_params, &
+                                          hydromet_pdf_params ) &
+
+  result( category_real_probs )
+
+  ! Description:
+  !   Computes the real PDF probability associated with each importance sampling
+  !   category
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd
+
+    use constants_clubb, only: &
+      one    ! Constant
+
+    use pdf_parameter_module, only: &
+      pdf_parameter           ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter  ! Type
+
+    implicit none
+
+    ! Input Variables
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories  ! A list of importance categories
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params             ! The PDF parameters!
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params    ! The hydrometeor PDF parameters
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_real_probs ! The real PDF probabilities for each category
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      mixt_frac,           &
+      cloud_frac_1,        &
+      cloud_frac_2,        &
+      cloud_frac_i,        &
+      precip_frac_1,       &
+      precip_frac_2,       &
+      precip_frac_i,       &
+      cloud_factor,        &
+      precip_factor,       &
+      component_factor
+
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Enter PDF parameters
+    mixt_frac = pdf_params%mixt_frac
+    cloud_frac_1 = pdf_params%cloud_frac_1
+    cloud_frac_2 = pdf_params%cloud_frac_2
+    precip_frac_1 = hydromet_pdf_params%precip_frac_1
+    precip_frac_2 = hydromet_pdf_params%precip_frac_2
+
+    do icategory = 1, num_importance_categories
+
+      ! Determine component of category
+      if ( importance_categories(icategory)%l_in_comp_1 ) then
+        cloud_frac_i     = cloud_frac_1
+        precip_frac_i    = precip_frac_1
+        component_factor = mixt_frac
+      else
+        cloud_frac_i     = cloud_frac_2
+        precip_frac_i    = precip_frac_2
+        component_factor = (one-mixt_frac)
+      end if ! importance_categories(icategory)%l_in_comp_1
+
+      ! Determine cloud factor
+      if ( importance_categories(icategory)%l_in_cloud ) then
+        cloud_factor = cloud_frac_i
+      else
+        cloud_factor = (one-cloud_frac_i)
+      end if
+
+      ! Determine precip factor
+      if ( importance_categories(icategory)%l_in_precip ) then
+        precip_factor = precip_frac_i
+      else
+        precip_factor = (one-precip_frac_i)
+      end if
+
+      ! Compute the category probability
+      category_real_probs(icategory) = component_factor * cloud_factor * precip_factor
+
+    end do ! icategory = 1, num_importance_categories
+
+    return
+  end function importance_compute_real_probs
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function importance_compute_weights( category_real_probs, category_prescribed_probs ) &
+
+  result( category_sample_weights )
+
+  ! Description:
+  !   Compute the sample point weights for a sample point in each category based
+  !   on the PDF probability and the modified probability from importance
+  !   sampling
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd     ! Constant
+
+    use constants_clubb, only: &
+      zero, &       ! Constant
+      unused_var
+
+    implicit none
+
+    ! Input Variables
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs,  &   ! The actual PDF probability of each category
+      category_prescribed_probs ! The modified probability of each category due to
+                                ! importance sampling
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_sample_weights   ! Sample weight for each category
+
+    ! Local Variable
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do icategory=1, num_importance_categories
+
+      if ( category_prescribed_probs(icategory) == zero ) then
+        ! If a category has no probability of being sampled, then its weight is irrevelant.
+        category_sample_weights(icategory) = unused_var
+      else
+        category_sample_weights(icategory) = &
+          category_real_probs(icategory) / category_prescribed_probs(icategory)
+      end if
+
+    end do
+
+    return
+  end function importance_compute_weights
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function cloud_importance_sampling( importance_categories, category_real_probs, &
+                                      cloud_frac ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Applies cloud weighted sampling such that approximately half of all
+  !   sample points land in cloud and half land out of cloud!
+
+  ! References:
+  !   None :(
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd
+
+    use constants_clubb, only: &
+      one, &    ! Constant
+      two
+
+    implicit none
+
+    ! Input Variables
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories   ! A list of importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs     ! The actual PDF probability for each category
+
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac              ! Cloud fraction at k_lh_start
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs ! Probability of each category, scaled such that approximately half
+                                ! of all sample points will appear in cloud
+
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! In-cloud categories ought to be divided by 2*cloud_frac
+    ! Out-of-cloud categories should be divided by 2*(1-cloud_frac)
+
+    do icategory=1, num_importance_categories
+      if ( importance_categories(icategory)%l_in_cloud ) then
+        category_prescribed_probs(icategory) = &
+          category_real_probs(icategory) / (two*cloud_frac)
+      else
+        category_prescribed_probs(icategory) = &
+          category_real_probs(icategory) / (two*(one-cloud_frac))
+      end if ! importance_categories(icategory)%l_in_cloud
+    end do
+
+    return
+  end function cloud_importance_sampling
+!-----------------------------------------------------------------------
+
 !-------------------------------------------------------------------------------
   subroutine cloud_weighted_sampling_driver &
              ( num_samples, p_matrix_chi, p_matrix_dp1, &
@@ -568,8 +867,8 @@ module latin_hypercube_driver_module
       p_matrix_dp1                        ! Elements from p_matrix for dp1 element
 
     real( kind = core_rknd ), intent(in) :: &
-      cloud_frac_1, &                      ! Cloud fraction in PDF component 1
-      cloud_frac_2, &                      ! Cloud fraction in PDF component 2
+      cloud_frac_1, &                     ! Cloud fraction in PDF component 1
+      cloud_frac_2, &                     ! Cloud fraction in PDF component 2
       cloud_frac,  &                      ! Cloud fraction in overall grid box
       mixt_frac                           ! Weight of first gaussian component
 
