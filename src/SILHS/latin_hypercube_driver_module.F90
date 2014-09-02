@@ -3,9 +3,6 @@
 !===============================================================================
 module latin_hypercube_driver_module
 
-  use clubb_precision, only: &
-    core_rknd   ! Constant
-
   implicit none
 
   ! Constant Parameters
