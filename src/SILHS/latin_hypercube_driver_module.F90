@@ -33,7 +33,7 @@ module latin_hypercube_driver_module
     logical :: &
       l_in_cloud,  &
       l_in_precip, &
-      l_in_comp_1
+      l_in_component_1
 
   end type importance_category_type
 
@@ -105,14 +105,15 @@ module latin_hypercube_driver_module
 
     use grid_class, only : gr
 
+    use pdf_utilities, only: &
+      compute_mean_binormal
+
     implicit none
 
     ! External
     intrinsic :: allocated, mod, maxloc, epsilon, transpose
 
     ! Parameter Constants
-    real( kind = core_rknd ), parameter :: &
-      cloud_frac_thresh = 0.001_core_rknd ! Threshold for sampling preferentially within cloud
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -179,8 +180,6 @@ module latin_hypercube_driver_module
 
     integer :: p_matrix(num_samples,d_variables+d_uniform_extra)
 
-    real(kind=core_rknd) :: lh_start_cloud_frac ! Cloud fraction at k_lh_start [-]
-
     real(kind=dp), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
@@ -196,14 +195,8 @@ module latin_hypercube_driver_module
 
     integer :: kp1, km1 
 
-    real( kind = core_rknd ), parameter :: &
-      cloud_frac_max_weighted_smpl = 0.5_core_rknd ! Use cloud weighted sampling only if cloud
-                                                       ! fraction is less than
-                                                       ! cloud_frac_max_weighted_smpl
-
     logical :: &
-      l_small_nonzero_cloud_frac ! True if cloud fraction is greater than cloud_frac_thresh
-                                 ! and less than cloud_frac_max_weighted_smpl
+      l_half_in_cloud                 ! True if half of all samples should land up in cloud
 
     integer, dimension(1) :: tmp_loc
 
@@ -236,8 +229,6 @@ module latin_hypercube_driver_module
     end if
 
     l_error = .false.
-    ! Get rid of compiler warning
-    l_small_nonzero_cloud_frac = .false.
 
     nt_repeat = num_samples * sequence_length
 
@@ -273,9 +264,6 @@ module latin_hypercube_driver_module
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
       stop "Fatal error."
     end if
-
-    ! Initialize the sample point weights to 1.0
-    lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
 
     ! Latin hypercube sample generation
     ! Generate height_time_matrix, an nz x nt_repeat x d_variables array of random integers
@@ -319,31 +307,21 @@ module latin_hypercube_driver_module
 
       if ( l_lh_cloud_weighted_sampling ) then
 
-        ! Determine cloud fraction at k_lh_start
-        lh_start_cloud_frac = &
-        pdf_params(k_lh_start)%mixt_frac * pdf_params(k_lh_start)%cloud_frac_1 &
-          + (1.0_core_rknd-pdf_params(k_lh_start)%mixt_frac) * pdf_params(k_lh_start)%cloud_frac_2
-
-        ! Save the cloud fraction as a weight for averaging preferentially
-        ! within cloud
-        l_small_nonzero_cloud_frac = (lh_start_cloud_frac < cloud_frac_max_weighted_smpl &
-                                .and. lh_start_cloud_frac > cloud_frac_thresh)
-        if ( .not. l_small_nonzero_cloud_frac ) then
-
-          ! There's no cloud or cloud fraction is >= cloud_frac_max_weighted_smpl,
-          ! so we do nothing
-          lh_sample_point_weights(:)  = 1.0_core_rknd
-
-        else ! If we're in a partly cloud gridbox then we continue to the code below
-
           call cloud_weighted_sampling_driver &
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
                  pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
-                 lh_start_cloud_frac, pdf_params(k_lh_start)%mixt_frac, & ! In
+                 pdf_params(k_lh_start)%mixt_frac, & ! In
                  lh_sample_point_weights, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1) )
+                 X_u_all_levs(k_lh_start,:,d_variables+1), l_half_in_cloud ) ! Out
 
-        end if ! .not. l_small_nonzero_cloud_frac
+      else
+
+          ! If we are not doing cloud weighted sampling, we can't expect half of the sample
+          ! points to be in cloud
+          l_half_in_cloud = .false.
+          ! All sample points will have the same weight
+          lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+
       end if ! l_lh_cloud_weighted_sampling
 
       ! Use a fixed number for the vertical correlation.
@@ -491,7 +469,7 @@ module latin_hypercube_driver_module
       end if
 
       ! Assertion check for whether half of sample points are cloudy.
-      if ( l_lh_cloud_weighted_sampling .and. l_small_nonzero_cloud_frac ) then
+      if ( l_half_in_cloud ) then
 
         ! Check for half cloudy points in uniform space
         call assert_half_cloudy_uniform &
@@ -508,15 +486,11 @@ module latin_hypercube_driver_module
 
         l_error = l_error .or. l_error_in_sub
 
-      end if ! l_lh_cloud_weighted_sampling .and. l_small_nonzero_cloud_frac
-      
-      if ( l_lh_cloud_weighted_sampling ) then
-
         call assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
                                           l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
 
-      end if ! l_lh_cloud_weighted_sampling
+      end if ! l_half_in_cloud
 
       do k=1, nz
         call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
@@ -545,13 +519,13 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function importance_define_categories( ) &
+  function define_importance_categories( ) &
 
   result( importance_categories )
 
   ! Description:
-  !   Computes the real PDF weight associated with each importance sampling
-  !   category
+  !   Creates a vector of size num_importance_categories that defines the eight
+  !   importance sampling categories.
 
   ! References:
   !   None
@@ -567,51 +541,56 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
 
-    importance_categories(1)%l_in_cloud  = .true.
-    importance_categories(1)%l_in_precip = .true.
-    importance_categories(1)%l_in_comp_1 = .true.
+    importance_categories(1)%l_in_cloud       = .true.
+    importance_categories(1)%l_in_precip      = .true.
+    importance_categories(1)%l_in_component_1 = .true.
 
-    importance_categories(2)%l_in_cloud  = .true.
-    importance_categories(2)%l_in_precip = .true.
-    importance_categories(2)%l_in_comp_1 = .false.
+    importance_categories(2)%l_in_cloud       = .true.
+    importance_categories(2)%l_in_precip      = .true.
+    importance_categories(2)%l_in_component_1 = .false.
 
-    importance_categories(3)%l_in_cloud  = .true.
-    importance_categories(3)%l_in_precip = .false.
-    importance_categories(3)%l_in_comp_1 = .true.
+    importance_categories(3)%l_in_cloud       = .true.
+    importance_categories(3)%l_in_precip      = .false.
+    importance_categories(3)%l_in_component_1 = .true.
 
-    importance_categories(4)%l_in_cloud  = .true.
-    importance_categories(4)%l_in_precip = .false.
-    importance_categories(4)%l_in_comp_1 = .false.
+    importance_categories(4)%l_in_cloud       = .true.
+    importance_categories(4)%l_in_precip      = .false.
+    importance_categories(4)%l_in_component_1 = .false.
 
-    importance_categories(5)%l_in_cloud  = .false.
-    importance_categories(5)%l_in_precip = .true.
-    importance_categories(5)%l_in_comp_1 = .true.
+    importance_categories(5)%l_in_cloud       = .false.
+    importance_categories(5)%l_in_precip      = .true.
+    importance_categories(5)%l_in_component_1 = .true.
 
-    importance_categories(6)%l_in_cloud  = .false.
-    importance_categories(6)%l_in_precip = .true.
-    importance_categories(6)%l_in_comp_1 = .false.
+    importance_categories(6)%l_in_cloud       = .false.
+    importance_categories(6)%l_in_precip      = .true.
+    importance_categories(6)%l_in_component_1 = .false.
 
-    importance_categories(7)%l_in_cloud  = .false.
-    importance_categories(7)%l_in_precip = .false.
-    importance_categories(7)%l_in_comp_1 = .true.
+    importance_categories(7)%l_in_cloud       = .false.
+    importance_categories(7)%l_in_precip      = .false.
+    importance_categories(7)%l_in_component_1 = .true.
 
-    importance_categories(8)%l_in_cloud  = .false.
-    importance_categories(8)%l_in_precip = .false.
-    importance_categories(8)%l_in_comp_1 = .false.
+    importance_categories(8)%l_in_cloud       = .false.
+    importance_categories(8)%l_in_precip      = .false.
+    importance_categories(8)%l_in_component_1 = .false.
 
     return
-  end function importance_define_categories
+  end function define_importance_categories
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function importance_compute_real_probs( importance_categories, pdf_params, &
-                                          hydromet_pdf_params ) &
+  function compute_category_real_probs( importance_categories, pdf_params, &
+                                        hydromet_pdf_params ) &
 
   result( category_real_probs )
 
   ! Description:
   !   Computes the real PDF probability associated with each importance sampling
-  !   category
+  !   category.
+  !
+  !   For example, if a category is in cloud, out of precipitation, and in mixture
+  !   component two, then without importance sampling, the probability that a
+  !   point will appear in that category is:
+  !   P(cloud,noprecip,comp2) = cloud_frac_2 * (1-precip_frac_2) * (1-mixt_frac)
 
   ! References:
   !   None
@@ -640,7 +619,7 @@ module latin_hypercube_driver_module
       pdf_params             ! The PDF parameters!
 
     type(hydromet_pdf_parameter), intent(in) :: &
-      hydromet_pdf_params    ! The hydrometeor PDF parameters
+      hydromet_pdf_params    ! The hydrometeor PDF parameters!
 
     ! Output Variable
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
@@ -648,12 +627,7 @@ module latin_hypercube_driver_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      mixt_frac,           &
-      cloud_frac_1,        &
-      cloud_frac_2,        &
       cloud_frac_i,        &
-      precip_frac_1,       &
-      precip_frac_2,       &
       precip_frac_i,       &
       cloud_factor,        &
       precip_factor,       &
@@ -665,25 +639,18 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
 
-    ! Enter PDF parameters
-    mixt_frac = pdf_params%mixt_frac
-    cloud_frac_1 = pdf_params%cloud_frac_1
-    cloud_frac_2 = pdf_params%cloud_frac_2
-    precip_frac_1 = hydromet_pdf_params%precip_frac_1
-    precip_frac_2 = hydromet_pdf_params%precip_frac_2
-
     do icategory = 1, num_importance_categories
 
       ! Determine component of category
-      if ( importance_categories(icategory)%l_in_comp_1 ) then
-        cloud_frac_i     = cloud_frac_1
-        precip_frac_i    = precip_frac_1
-        component_factor = mixt_frac
+      if ( importance_categories(icategory)%l_in_component_1 ) then
+        cloud_frac_i     = pdf_params%cloud_frac_1
+        precip_frac_i    = hydromet_pdf_params%precip_frac_1
+        component_factor = pdf_params%mixt_frac
       else
-        cloud_frac_i     = cloud_frac_2
-        precip_frac_i    = precip_frac_2
-        component_factor = (one-mixt_frac)
-      end if ! importance_categories(icategory)%l_in_comp_1
+        cloud_frac_i     = pdf_params%cloud_frac_2
+        precip_frac_i    = hydromet_pdf_params%precip_frac_2
+        component_factor = (one-pdf_params%mixt_frac)
+      end if
 
       ! Determine cloud factor
       if ( importance_categories(icategory)%l_in_cloud ) then
@@ -705,11 +672,11 @@ module latin_hypercube_driver_module
     end do ! icategory = 1, num_importance_categories
 
     return
-  end function importance_compute_real_probs
+  end function compute_category_real_probs
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function importance_compute_weights( category_real_probs, category_prescribed_probs ) &
+  function compute_category_sample_weights( category_real_probs, category_prescribed_probs ) &
 
   result( category_sample_weights )
 
@@ -762,7 +729,7 @@ module latin_hypercube_driver_module
     end do
 
     return
-  end function importance_compute_weights
+  end function compute_category_sample_weights
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -784,10 +751,22 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      one, &    ! Constant
-      two
+      one,  &    ! Constant(s)
+      two,  &
+      zero, &
+      fstderr
+
+    use error_code, only: &
+      clubb_at_least_debug_level   ! Function
 
     implicit none
+
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_min_samp = 0.001_core_rknd, &  ! Minimum cloud fraction for sampling
+                                                ! preferentially within cloud
+      cloud_frac_max_samp = 0.5_core_rknd       ! Maximum cloud fraction (exclusive) for
+                                                ! sampling preferentiallywithin cloud
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -810,18 +789,27 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
 
-    ! In-cloud categories ought to be divided by 2*cloud_frac
-    ! Out-of-cloud categories should be divided by 2*(1-cloud_frac)
+    if ( cloud_frac >= cloud_frac_min_samp .and. cloud_frac < cloud_frac_max_samp ) then
 
-    do icategory=1, num_importance_categories
-      if ( importance_categories(icategory)%l_in_cloud ) then
-        category_prescribed_probs(icategory) = &
-          category_real_probs(icategory) / (two*cloud_frac)
-      else
-        category_prescribed_probs(icategory) = &
-          category_real_probs(icategory) / (two*(one-cloud_frac))
-      end if ! importance_categories(icategory)%l_in_cloud
-    end do
+      ! In-cloud categories ought to be divided by 2*cloud_frac
+      ! Out-of-cloud categories should be divided by 2*(1-cloud_frac)
+
+      do icategory=1, num_importance_categories
+        if ( importance_categories(icategory)%l_in_cloud ) then
+          category_prescribed_probs(icategory) = &
+            category_real_probs(icategory) / (two*cloud_frac)
+        else
+          category_prescribed_probs(icategory) = &
+            category_real_probs(icategory) / (two*(one-cloud_frac))
+        end if ! importance_categories(icategory)%l_in_cloud
+      end do
+
+    else ! cloud_frac < cloud_frac_min_samp .or. cloud_frac >= cloud_frac_max_samp
+
+      ! Do not perform cloud weighted sampling. Let the probabilities remain unmodified.
+      category_prescribed_probs = category_real_probs
+
+    end if ! cloud_frac < cloud_frac_min_samp .or. cloud_frac >= cloud_frac_max_samp
 
     return
   end function cloud_importance_sampling
@@ -830,8 +818,8 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine cloud_weighted_sampling_driver &
              ( num_samples, p_matrix_chi, p_matrix_dp1, &
-               cloud_frac_1, cloud_frac_2, cloud_frac, mixt_frac, &
-               lh_sample_point_weights, X_u_chi, X_u_dp1 )
+               cloud_frac_1, cloud_frac_2, mixt_frac, &
+               lh_sample_point_weights, X_u_chi, X_u_dp1, l_half_in_cloud )
 
   ! Description:
   !   Performs importance sampling such that half of sample points are in cloud
@@ -847,12 +835,24 @@ module latin_hypercube_driver_module
     use generate_lh_sample_module, only: &
       generate_uniform_sample ! Procedure
 
+    use pdf_utilities, only: &
+      compute_mean_binormal
+
+    use constants_clubb, only: &
+      one
+
     implicit none
 
     ! Parameter Constants
     logical, parameter :: &
       l_use_rejection_method = .false.    ! Find in and out of cloud points using the rejection
                                           ! method rather than scaling
+
+    real( kind = core_rknd ), parameter :: &
+      cloud_frac_min_samp = 0.001_core_rknd, &  ! Minimum cloud fraction for sampling
+                                                ! preferentially within cloud
+      cloud_frac_max_samp = 0.5_core_rknd       ! Maximum cloud fraction (exclusive) for
+                                                ! sampling preferentiallywithin cloud
 
     ! Input Variables
     integer :: &
@@ -866,7 +866,6 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(in) :: &
       cloud_frac_1, &                     ! Cloud fraction in PDF component 1
       cloud_frac_2, &                     ! Cloud fraction in PDF component 2
-      cloud_frac,  &                      ! Cloud fraction in overall grid box
       mixt_frac                           ! Weight of first gaussian component
 
     ! Output Variables
@@ -879,7 +878,14 @@ module latin_hypercube_driver_module
       X_u_dp1                             ! Samples of the dp1 variate for determining mixture
                                           ! component
 
+    logical, intent(out) :: &
+      l_half_in_cloud                     ! True if half of sample points are in cloud. Used
+                                          ! for assertion checks later in the code
+
     ! Local Variables
+    real( kind = core_rknd ) :: &
+      cloud_frac                          ! Cloud fraction at k_lh_start
+
     real( kind = dp ), dimension(num_samples/2,1) :: &
       mixt_rand_cloud, &                  ! Stratified random variable for determining mixture
                                           ! component in cloud
@@ -904,68 +910,83 @@ module latin_hypercube_driver_module
 
     !----- Begin Code -----
 
-    n_cloudy_samples = 0
-    n_clear_samples  = 0
-    ! Pick two stratified random numbers for determining a mixture fraction.
-    do sample=1, num_samples
-      ! We arbitrarily choose that p_matrix elements less than num_samples/2
-      ! will be used for mixt_rand_cloud
-      if ( p_matrix_dp1(sample) < ( num_samples / 2 ) ) then
-        n_cloudy_samples = n_cloudy_samples + 1
-        mixt_permuted_cloud(n_cloudy_samples,1) = p_matrix_dp1(sample)
-      else if ( p_matrix_dp1(sample) >= ( num_samples / 2 ) ) then
-        n_clear_samples = n_clear_samples + 1
-        mixt_permuted_clear(n_clear_samples,1) = p_matrix_dp1(sample) - (num_samples / 2)
-      end if ! p_matrix_dp1(sample) < ( num_samples / 2 )
-    end do
-    ! Generate the stratified uniform numbers!
-    call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_cloud, & !In
-                                  mixt_rand_cloud ) !Out
-    call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_clear, & !In
-                                  mixt_rand_clear ) !Out
+    cloud_frac = compute_mean_binormal( cloud_frac_1, cloud_frac_2, mixt_frac )
 
-    n_cloudy_samples = 0
-    n_clear_samples  = 0
+    if ( cloud_frac >= cloud_frac_min_samp .and. cloud_frac < cloud_frac_max_samp ) then
 
-    ! Compute weights for each type of point
-    lh_sample_cloud_weight = 2._core_rknd * cloud_frac
-    lh_sample_clear_weight = 2._core_rknd - lh_sample_cloud_weight
+      n_cloudy_samples = 0
+      n_clear_samples  = 0
+      ! Pick two stratified random numbers for determining a mixture fraction.
+      do sample=1, num_samples
+        ! We arbitrarily choose that p_matrix elements less than num_samples/2
+        ! will be used for mixt_rand_cloud
+        if ( p_matrix_dp1(sample) < ( num_samples / 2 ) ) then
+          n_cloudy_samples = n_cloudy_samples + 1
+          mixt_permuted_cloud(n_cloudy_samples,1) = p_matrix_dp1(sample)
+        else if ( p_matrix_dp1(sample) >= ( num_samples / 2 ) ) then
+          n_clear_samples = n_clear_samples + 1
+          mixt_permuted_clear(n_clear_samples,1) = p_matrix_dp1(sample) - (num_samples / 2)
+        end if ! p_matrix_dp1(sample) < ( num_samples / 2 )
+      end do
+      ! Generate the stratified uniform numbers!
+      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_cloud, & !In
+                                    mixt_rand_cloud ) !Out
+      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_clear, & !In
+                                    mixt_rand_clear ) !Out
 
-    do sample=1, num_samples
+      n_cloudy_samples = 0
+      n_clear_samples  = 0
 
-      ! Detect which half of the sample points are in clear air and which half are in
-      ! the cloudy air
-      if ( p_matrix_chi(sample) < ( num_samples / 2 ) ) then
+      ! Compute weights for each type of point
+      lh_sample_cloud_weight = 2._core_rknd * cloud_frac
+      lh_sample_clear_weight = 2._core_rknd - lh_sample_cloud_weight
 
-        l_cloudy_sample = .false.
-        lh_sample_point_weights(sample) = lh_sample_clear_weight
-        n_clear_samples = n_clear_samples + 1
-        mixt_rand_element = mixt_rand_clear(n_clear_samples,1)
-      else
+      do sample=1, num_samples
 
-        l_cloudy_sample = .true.
-        lh_sample_point_weights(sample) = lh_sample_cloud_weight
-        n_cloudy_samples = n_cloudy_samples + 1
-        mixt_rand_element = mixt_rand_cloud(n_cloudy_samples,1)
-      end if
+        ! Detect which half of the sample points are in clear air and which half are in
+        ! the cloudy air
+        if ( p_matrix_chi(sample) < ( num_samples / 2 ) ) then
 
-      if ( l_use_rejection_method ) then
-        ! Use the rejection method to select points that are in or out of cloud
-        call choose_X_u_reject &
-             ( l_cloudy_sample, cloud_frac_1, & ! In
-               cloud_frac_2, mixt_frac, & !In
-               X_u_dp1(sample), X_u_chi(sample) ) ! Out
+          l_cloudy_sample = .false.
+          lh_sample_point_weights(sample) = lh_sample_clear_weight
+          n_clear_samples = n_clear_samples + 1
+          mixt_rand_element = mixt_rand_clear(n_clear_samples,1)
+        else
 
-      else ! Transpose and scale the points to be in or out of cloud
-        call choose_X_u_scaled &
-             ( l_cloudy_sample, & ! In
-               p_matrix_chi(sample), num_samples, & ! In
-               cloud_frac_1, cloud_frac_2, & ! In
-               mixt_frac, mixt_rand_element, & !In
-               X_u_dp1(sample), X_u_chi(sample) ) ! Out
-      end if
+          l_cloudy_sample = .true.
+          lh_sample_point_weights(sample) = lh_sample_cloud_weight
+          n_cloudy_samples = n_cloudy_samples + 1
+          mixt_rand_element = mixt_rand_cloud(n_cloudy_samples,1)
+        end if
 
-    end do ! sample=1, num_samples
+        if ( l_use_rejection_method ) then
+          ! Use the rejection method to select points that are in or out of cloud
+          call choose_X_u_reject &
+               ( l_cloudy_sample, cloud_frac_1, & ! In
+                 cloud_frac_2, mixt_frac, & !In
+                 X_u_dp1(sample), X_u_chi(sample) ) ! Out
+
+        else ! Transpose and scale the points to be in or out of cloud
+          call choose_X_u_scaled &
+               ( l_cloudy_sample, & ! In
+                 p_matrix_chi(sample), num_samples, & ! In
+                 cloud_frac_1, cloud_frac_2, & ! In
+                 mixt_frac, mixt_rand_element, & !In
+                 X_u_dp1(sample), X_u_chi(sample) ) ! Out
+        end if
+
+      end do ! sample=1, num_samples
+
+      l_half_in_cloud = .true.
+
+    else ! cloud_frac < cloud_frac_min_samp .or. cloud_frac >= cloud_frac_max_samp
+
+      ! Do not perform cloud weighted sampling.
+      l_half_in_cloud = .false.
+      lh_sample_point_weights(:) = one
+
+    end if ! cloud_frac >= cloud_frac_min_samp .and. cloud_frac < cloud_frac_max_samp
+
     return
   end subroutine cloud_weighted_sampling_driver
 !-------------------------------------------------------------------------------
