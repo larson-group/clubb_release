@@ -351,6 +351,9 @@ module advance_clubb_core_module
     use array_index, only: &
       iirrm            ! Variable
 
+    use pdf_utilities, only: &
+      compute_mean_binormal
+
     implicit none
 
     !!! External
@@ -1004,11 +1007,11 @@ module advance_clubb_core_module
                  pdf_params%stdev_chi_2, (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
                  cloud_frac_2_refined, rc2_refined )                    ! Intent(out)
 
-          cloud_frac_refined = compute_weighted_average &
+          cloud_frac_refined = compute_mean_binormal &
                                ( cloud_frac_1_refined, cloud_frac_2_refined, &
                                  pdf_params(k)%mixt_frac )
 
-          rcm_refined = compute_weighted_average &
+          rcm_refined = compute_mean_binormal &
                         ( rc1_refined, rc2_refined, pdf_params(k)%mixt_frac )
 
           if ( l_interactive_refined ) then
@@ -3278,41 +3281,5 @@ module advance_clubb_core_module
     return
   end subroutine calculate_thlp2_rad
 !===============================================================================
-
-  !-----------------------------------------------------------------------
-  elemental function compute_weighted_average( x1, x2, mixt_frac ) result( xm )
-
-  ! Description:
-  !   Computes the weighted sum from two PDF components
-
-  ! References
-  !   none
-
-    use clubb_precision, only: &
-      core_rknd    ! Constant
-
-    use constants_clubb, only: &
-      one          ! 1
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      x1,           & ! Value of x in first PDF component        [units vary]
-      x2,           & ! Value of x in second PDF component       [units vary]
-      mixt_frac       ! Weight of first component                [-]
-
-    ! Output Variables
-    real( kind = core_rknd ) :: &
-      xm              ! Overall mean of x                        [units vary]
-
-  !-----------------------------------------------------------------------
-    !----- Begin Code -----
-
-    xm = ( x1 * mixt_frac ) + ( ( one - mixt_frac ) * x2 )
-
-    return
-  end function compute_weighted_average
-  !-----------------------------------------------------------------------
 
 end module advance_clubb_core_module
