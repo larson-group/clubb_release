@@ -7,118 +7,11 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: corrcoef, std, covar, compute_sample_mean, & 
-            compute_sample_variance, compute_sample_covariance
+  public :: compute_sample_mean, compute_sample_variance, compute_sample_covariance
 
   private
 
   contains
-
-!-----------------------------------------------------------------------
-  function corrcoef( vect1, vect2, n )
-
-! Description:
-!   Correlation coefficient of two vectors
-
-! References:
-!   None
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    ! External
-    intrinsic :: sqrt
-
-    ! Input
-    integer, intent(in) :: n
-
-    real( kind = core_rknd ), dimension(n), intent(in) :: &
-      vect1, vect2
-
-    ! Return type
-    real(kind=core_rknd) :: corrcoef
-
-    corrcoef = covar( vect1, vect2, n ) / & 
-           sqrt( covar( vect1, vect1, n ) * covar( vect2, vect2, n ) )
-
-    return
-  end function corrcoef
-
-!-----------------------------------------------------------------------
-  function std( vector, n )
-! Description:
-!   Compute standard deviation of vector
-! References:
-!   None
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    ! External
-    intrinsic :: sqrt
-
-    ! Input Variables
-    integer, intent(in) :: n
-
-    real( kind = core_rknd ), dimension(n), intent(in) :: &
-      vector
-
-    ! Return type
-    real(kind=core_rknd) :: std
-
-    std = sqrt( covar( vector, vector, n )*real( n/(n-1), kind=core_rknd ) )
-
-    return
-  end function std
-
-
-!-----------------------------------------------------------------------
-  function covar( vect1, vect2, n )
-
-! Description:
-!   Covariance of two vectors
-! References:
-!   None
-!-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: n
-
-    real( kind = core_rknd ), dimension(n), intent(in) :: &
-      vect1, vect2
-
-    ! Return type
-    real(kind=core_rknd) :: covar
-
-    ! Local variables
-    real(kind=core_rknd) :: total, avg1, avg2
-    integer :: j
-
-    ! ---- Begin Code ----
-
-    avg1 = sum( vect1 ) / real( n, kind = core_rknd ) 
-    avg2 = sum( vect2 ) / real( n, kind = core_rknd ) 
-
-    total = 0._core_rknd
-    do j = 1, n
-      total = total + (vect1(j) - avg1) * (vect2(j) - avg2)
-    enddo
-
-    covar = total / real( n, kind = core_rknd )
-
-    return
-  end function covar
 
 !-----------------------------------------------------------------------
   pure function compute_sample_mean( n_levels, n_samples, weight, x_sample ) &
