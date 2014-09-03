@@ -15,7 +15,8 @@ module pdf_utilities
             corr_NL2NN_dp,   &
             corr_LL2NN,      &
             corr_LL2NN_dp,   &
-            compute_variance_binormal,&
+            compute_mean_binormal,     &
+            compute_variance_binormal, &
             calc_corr_chi_x, &
             calc_xp2
 
@@ -386,6 +387,46 @@ module pdf_utilities
     return
 
   end function corr_LL2NN_dp
+
+  !=============================================================================
+  elemental function compute_mean_binormal( mu_x_1, mu_x_2, mixt_frac ) &
+
+  result( mu_x )
+
+    ! Description:
+    !   Computes the overall grid-box mean of a binormal gaussian distribution
+    !   from the mean of each component
+
+    ! References:
+    !   None
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Constant
+
+    use constants_clubb, only: &
+      one ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_x_1,    & ! First PDF component of 'x'                            [?]
+      mu_x_2,    & ! Second PDF component of 'x'                           [?]
+      mixt_frac    ! Weight of the first PDF component                     [-]
+
+    ! Output Variables
+    real( kind = core_rknd ) :: &
+      mu_x         ! Variance of 'x' (overall average)                     [?]
+
+  !-----------------------------------------------------------------------------
+
+    !----- Begin Code -----
+    mu_x = mixt_frac*mu_x_1 + (one-mixt_frac)*mu_x_2
+
+    return
+
+  end function compute_mean_binormal
 
   !=============================================================================
   elemental function compute_variance_binormal( mu_x, mu_x_1, mu_x_2, stdev_x_1, &
