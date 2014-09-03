@@ -105,9 +105,6 @@ module latin_hypercube_driver_module
 
     use grid_class, only : gr
 
-    use pdf_utilities, only: &
-      compute_mean_binormal
-
     implicit none
 
     ! External
@@ -519,6 +516,101 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
+  subroutine importance_sampling_driver &
+             ( num_samples, pdf_params, hydromet_pdf_params,        &
+               X_u_chi_one_lev, X_u_dp1_one_lev, X_u_dp2_one_lev,   &
+               lh_sample_point_weights )
+
+  ! Description:
+  !   Applies importance sampling to a single vertical level !
+
+  ! References:
+  !   clubb:ticket:736 !
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd, &      ! Constant
+      dp
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      num_samples       ! Number of SILHS sample points
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params
+
+    ! Input/Output Variables
+    real( kind = dp ), dimension(num_samples), intent(inout) :: &
+      X_u_chi_one_lev,  & ! These uniform variates are scaled by the importance
+      X_u_dp1_one_lev,  & ! sampling process.
+      X_u_dp2_one_lev
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+      lh_sample_point_weights
+
+    ! Local Variables
+    type(importance_category_type), dimension(num_importance_categories) :: &
+      importance_categories ! A vector containing the different importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_real_probs,       & ! The real PDF probabilities for each category
+      category_prescribed_probs, & ! Prescribed probability for each category
+      category_sample_weights      ! Sample weight for each category
+
+    integer, dimension(num_samples) :: &
+      int_sample_category  ! An integer for each sample corresponding to the
+                           ! category picked for the sample
+
+    integer :: sample
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    importance_categories = define_importance_categories( )
+
+    category_real_probs = compute_category_real_probs &
+                          ( importance_categories, pdf_params, hydromet_pdf_params )
+
+    ! Importance sampling strategy that places half of all sample points in cloud!
+    category_prescribed_probs = cloud_importance_sampling &
+                                ( importance_categories, category_real_probs, &
+                                  pdf_params )
+
+    ! Compute weight of each sample category
+    category_sample_weights = compute_category_sample_weights &
+                              ( category_real_probs, category_prescribed_probs )
+
+    ! Pick the sample points!
+    ! TODO
+!   int_sample_category = pick_sample_categories( num_samples, category_prescribed_probs, &
+!                                                 rand_vect )
+
+    ! Scale and translate points to reside in their respective categories
+    do sample=1, num_samples
+      call scale_sample_to_category &
+           ( importance_categories(int_sample_category(sample)), &
+             pdf_params, hydromet_pdf_params, &
+             X_u_chi_one_lev(sample), X_u_dp1_one_lev(sample), X_u_dp2_one_lev(sample) )
+    end do ! sample=1, num_samples
+    return
+  end subroutine importance_sampling_driver
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
   function define_importance_categories( ) &
 
   result( importance_categories )
@@ -733,8 +825,219 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
+  function pick_sample_categories( num_samples, category_prescribed_probs, rand_vect ) &
+
+  result( int_sample_category )
+
+  ! Description:
+  !   Picks a category for each sample point, based on the given probabilities,
+  !   such that the distribution of categories of the sample points
+  !   approximates the probabilities that are given.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      dp,           &    ! Konstant(s)
+      core_rknd
+
+    use constants_clubb, only: &
+      fstderr
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      num_samples          ! Number of sample points to be picked
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_prescribed_probs ! Prescribed probability for each category
+
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+      rand_vect            ! A sample of num_samples values from the uniform distribution
+                           ! in the range (0,1). This will be used to pick the
+                           ! categories.
+
+    ! Output Variable
+    integer, dimension(num_samples) :: &
+      int_sample_category  ! An integer for each sample corresponding to the
+                           ! category picked for the sample
+
+    ! Local Variables
+    integer :: sample,category      ! Looping variable(s)
+
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_cumulative_probs
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    !--------------------------------------------------------------------------
+    ! In order to facilitate picking categories for the sample points, a new
+    ! array, category_cumulative_probs, is created.
+    !
+    ! Each element of category_cumulative_probs is simply the category
+    ! probability plus the sum of the probabilities of all the previous
+    ! categories. For example,
+    !
+    ! category_cumulative_probs(1) = category_prescribed_probs(1)
+    ! category_cumulative_probs(2) = category_prescribed_probs(1) + category_prescribed_probs(2)
+    ! ...
+    ! category_cumulative_probs(num_importance_categories) = 1.0 (since the probabilities should sum
+    !                                                             to 1.0 )
+    !--------------------------------------------------------------------------
+    category_cumulative_probs(1) = category_prescribed_probs(1)
+    do category=2, num_importance_categories
+      category_cumulative_probs(category) = category_cumulative_probs(category-1) + &
+                                            category_prescribed_probs(category)
+    end do
+
+    !--------------------------------------------------------------------------
+    ! Pick categories based on the values of rand_vect.
+    !--------------------------------------------------------------------------
+    do sample=1, num_samples
+      ! Initialize int_sample_category(sample) for error checking purposes.
+      int_sample_category(sample) = 0
+      do category=1, num_importance_categories-1
+
+        if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
+             rand_vect(sample) <  category_cumulative_probs(category+1) ) then
+
+          int_sample_category(sample) = category
+          exit   ! Break out of the loop over categories, since we have found the category
+
+        end if
+
+      end do ! category=1, num_importance_categories-1
+
+      ! We should have picked a category by now.
+      if ( int_sample_category(sample) == 0 ) then
+        write(fstderr,*) "Invalid rand_vect number in pick_sample_categories"
+        stop "Fatal error"
+      end if
+
+    end do ! sample=1, num_samples
+
+    return
+  end function pick_sample_categories
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  subroutine scale_sample_to_category( category, pdf_params, hydromet_pdf_params, &
+                                       X_u_chi, X_u_dp1, X_u_dp2 )
+
+  ! Description:
+  !   Scale and transpose a sample point to reside in the specified category
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      dp,           &    ! Konstant(s)
+      core_rknd
+
+    use constants_clubb, only: &
+      one_dp             ! Constant
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
+    implicit none
+
+    ! Input Variables
+    type(importance_category_type), intent(in) :: &
+      category             ! Scale the sample point to reside in this category
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params
+
+    ! Input/Output Variable
+    ! These uniform samples, upon input, are uniformly distributed in the
+    ! range (0,1).
+    real( kind = dp ), intent(inout) :: &
+      X_u_chi, & ! Uniform samples of extend cloud water mixing ratio
+      X_u_dp1, & ! Uniform samples of the d+1 variate
+      X_u_dp2    ! Uniform samples of the d+2 variate
+
+    ! Local Variables
+    real( kind = dp ) :: &
+      cloud_frac_i, & 
+      precip_frac_i, &
+      mixt_frac
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    mixt_frac = real( pdf_params%mixt_frac, kind=dp )
+
+    !--------------------------------------------------------
+    ! Scale dp1 variate to be in component 1 or 2
+    !--------------------------------------------------------
+    if ( category%l_in_component_1 ) then
+
+      ! Samples in component 1 have a dp1 variate that satisfies
+      ! 0 < X_u_dp1 < mixt_frac.
+      ! Scale X_u_dp1 to lie in (0,mixt_frac)
+      X_u_dp1 = X_u_dp1 * mixt_frac
+
+      cloud_frac_i  = real( pdf_params%cloud_frac_1, kind=dp )
+      precip_frac_i = real( hydromet_pdf_params%precip_frac_1, kind=dp )
+
+    else  ! in component 2
+
+      ! Scale and translate X_u_dp1 to lie in (mixt_frac, 1)
+      X_u_dp1 = X_u_dp1 * (one_dp - mixt_frac) + mixt_frac
+
+      cloud_frac_i  = real( pdf_params%cloud_frac_2, kind=dp )
+      precip_frac_i = real( hydromet_pdf_params%precip_frac_2, kind=dp )
+
+    end if ! category%l_in_component_1
+
+    !--------------------------------------------------------
+    ! Scale dp2 variate to be in or out of precipitation
+    !--------------------------------------------------------
+    if ( category%l_in_precip ) then
+      ! Samples in precipitation have a dp2 variate that satisfies
+      ! 0 < X_u_dp2 < precip_frac_i
+      ! Scale X_u_dp2 to lie in (0,precip_frac_i)
+      X_u_dp2 = X_u_dp2 * precip_frac_i
+    else
+      ! Scale and translate X_u_dp2 to lie in (precip_frac_i,1)
+      X_u_dp2 = X_u_dp2 * (one_dp - precip_frac_i) + precip_frac_i
+    end if
+
+    !--------------------------------------------------------
+    ! Scale chi variate to be in or out of cloud
+    !--------------------------------------------------------
+    if ( category%l_in_cloud ) then
+      ! Samples in cloud have a chi variate that satisfies
+      ! (1.0 - cloud_frac_i) < X_u_chi < 1
+      ! Scale and translate X_u_chi to lie in ( (1 - cloud_frac_i) , 1 )
+      X_u_chi = X_u_chi * cloud_frac_i + (one_dp - cloud_frac_i)
+    else
+      ! Scale X_u_chi to lie in ( 0, (1 - cloud_frac_i) )
+      X_u_chi = X_u_chi * (one_dp - cloud_frac_i)
+    end if
+
+    return
+  end subroutine scale_sample_to_category
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
   function cloud_importance_sampling( importance_categories, category_real_probs, &
-                                      cloud_frac ) &
+                                      pdf_params ) &
 
   result( category_prescribed_probs )
 
@@ -750,14 +1053,17 @@ module latin_hypercube_driver_module
     use clubb_precision, only: &
       core_rknd
 
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
     use constants_clubb, only: &
       one,  &    ! Constant(s)
       two,  &
       zero, &
       fstderr
 
-    use error_code, only: &
-      clubb_at_least_debug_level   ! Function
+    use pdf_utilities, only: &
+      compute_mean_binormal
 
     implicit none
 
@@ -766,7 +1072,7 @@ module latin_hypercube_driver_module
       cloud_frac_min_samp = 0.001_core_rknd, &  ! Minimum cloud fraction for sampling
                                                 ! preferentially within cloud
       cloud_frac_max_samp = 0.5_core_rknd       ! Maximum cloud fraction (exclusive) for
-                                                ! sampling preferentiallywithin cloud
+                                                ! sampling preferentially within cloud
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -775,19 +1081,25 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
       category_real_probs     ! The actual PDF probability for each category
 
-    real( kind = core_rknd ), intent(in) :: &
-      cloud_frac              ! Cloud fraction at k_lh_start
+    type(pdf_parameter), intent(in) :: &
+      pdf_params
 
     ! Output Variable
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
       category_prescribed_probs ! Probability of each category, scaled such that approximately half
                                 ! of all sample points will appear in cloud
 
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      cloud_frac
     integer :: icategory
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
+
+    cloud_frac = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+                                        pdf_params%mixt_frac )
 
     if ( cloud_frac >= cloud_frac_min_samp .and. cloud_frac < cloud_frac_max_samp ) then
 
