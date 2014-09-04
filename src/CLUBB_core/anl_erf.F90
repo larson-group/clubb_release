@@ -318,11 +318,10 @@ module anl_erf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one  ! Constant(s)
+        one_dp  ! Constant(s)
 
     use clubb_precision, only: &
-        dp, & ! Variable(s)
-        core_rknd
+        dp    ! Variable(s)
 
     implicit none
 
@@ -330,10 +329,10 @@ module anl_erf
     real( kind = dp ), intent(in) :: x
 
     ! Return Variable
-    real( kind = core_rknd ) :: erfcx
+    real( kind = dp ) :: erfcx
 
 
-    erfcx = one - dp_erf( x )
+    erfcx = one_dp - dp_erf( x )
 
 
     return

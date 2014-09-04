@@ -461,7 +461,7 @@ module latin_hypercube_driver_module
 
       ! Simple assertion check to ensure uniform variates are in the appropriate
       ! range
-      if ( any( X_u_all_levs < 0._core_rknd .or. X_u_all_levs > 1._core_rknd ) ) then
+      if ( any( X_u_all_levs < 0._dp .or. X_u_all_levs > 1._dp ) ) then
         write(fstderr,*) "A uniform variate was not in the correct range."
         l_error = .true.
       end if
@@ -571,6 +571,9 @@ module latin_hypercube_driver_module
       category_prescribed_probs, & ! Prescribed probability for each category
       category_sample_weights      ! Sample weight for each category
 
+    real( kind = core_rknd ), dimension(num_samples) :: &
+      rand_vect
+
     integer, dimension(num_samples) :: &
       int_sample_category  ! An integer for each sample corresponding to the
                            ! category picked for the sample
@@ -595,18 +598,28 @@ module latin_hypercube_driver_module
     category_sample_weights = compute_category_sample_weights &
                               ( category_real_probs, category_prescribed_probs )
 
+    ! Generate a stratified sample to be used to pick categories for the samples
+    rand_vect = generate_strat_uniform_variate( num_samples )
+
     ! Pick the sample points!
-    ! TODO
-!   int_sample_category = pick_sample_categories( num_samples, category_prescribed_probs, &
-!                                                 rand_vect )
+    int_sample_category = pick_sample_categories( num_samples, category_prescribed_probs, &
+                                                  rand_vect )
 
     ! Scale and translate points to reside in their respective categories
     do sample=1, num_samples
+
+      ! Scale and translate point to reside in its respective cateogry
       call scale_sample_to_category &
            ( importance_categories(int_sample_category(sample)), &
              pdf_params, hydromet_pdf_params, &
              X_u_chi_one_lev(sample), X_u_dp1_one_lev(sample), X_u_dp2_one_lev(sample) )
+
+      ! Pick a weight for the sample point
+      lh_sample_point_weights(sample) = &
+        category_sample_weights(int_sample_category(sample))
+
     end do ! sample=1, num_samples
+
     return
   end subroutine importance_sampling_driver
 !-----------------------------------------------------------------------
@@ -1306,6 +1319,62 @@ module latin_hypercube_driver_module
   end subroutine cloud_weighted_sampling_driver
 !-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+  function generate_strat_uniform_variate( num_samples ) &
+
+  result( stratified_variate )
+
+  ! Description:
+  !   Generates a stratified uniform sample for a single variable
+
+  ! References:
+  !   None
+  !-----------------------------------
+
+    use clubb_precision, only: &
+      core_rknd    ! Constant
+
+    use permute_height_time_module, only: &
+      rand_permute ! Procedure
+
+    use generate_lh_sample_module, only: &
+      choose_permuted_random
+
+    implicit none
+
+    ! Input Variable
+    integer, intent(in) :: &
+      num_samples ! Number of SILHS sample points
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_samples) :: &
+      stratified_variate      ! Uniform samples stratified in (0,1)
+
+    ! Local Variables
+
+    ! Vector of the integers 0,1,2,...,num_samples in random order
+    integer, dimension(num_samples) :: pvect
+
+    integer :: sample
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    !-------------------------------------------------------------------
+    ! Draw the integers 0,1,2,...,num_samples in random order
+    !-------------------------------------------------------------------
+    call rand_permute( num_samples, pvect )
+
+    !----------------------------------------------------------------------
+    ! For each permuted integer (each box), determine a random real number
+    !----------------------------------------------------------------------
+    do sample=1, num_samples
+      stratified_variate = real( choose_permuted_random( num_samples, pvect(sample) ), &
+                                kind = core_rknd )
+    end do
+
+    return
+  end function generate_strat_uniform_variate
 !-------------------------------------------------------------------------------
   subroutine assert_consistent_cloud_frac( pdf_params, l_error )
 

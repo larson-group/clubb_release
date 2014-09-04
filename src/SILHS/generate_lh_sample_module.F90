@@ -342,11 +342,6 @@ module generate_lh_sample_module
 ! Transform chi(s) (column 1) and eta(t) (column 2) back to rt and thl
 !   This is only needed if you need total water mixing ratio and liquid potential
 !   samples points.
-!     call sptp_2_rtpthlp &
-!          ( 1, d_variables, mixt_frac, crt1, cthl1, crt2, cthl2, &
-!            cloud_frac_1, cloud_frac_2, X_nl_one_lev(1), &
-!            X_nl_one_lev(2), &
-!            X_u_one_lev, rtp, thlp )
     call chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
                      crt1, cthl1, crt2, cthl2, & ! intent(in)
                      real(mu1(iiPDF_chi), kind = dp), & ! intent(in)
@@ -364,81 +359,6 @@ module generate_lh_sample_module
     return
   end subroutine sample_points
 
-!-------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-  subroutine rtpthlp_2_chip_etap( stdev_chi, varnce_rt, varnce_thl, &
-                             rrtthl_covar, crt, cthl, &
-                             chip2, etap2, chip_etap ) ! Out
-
-! Description:
-!   Transform covariance matrix from rt', theta_l' coordinates
-!   to s', t' coordinates.
-!   Use linear approximation for s', t'.
-!
-! References:
-!   ``Supplying Local Microphysics Parameterizations with Information about
-!     Subgrid Variability: Latin Hypercube Sampling'', V.E. Larson et al.,
-!     JAS 62 pp. 4015
-!
-! Notes:
-!   We no longer use this subroutine since the code in pdf_closure will compute
-!   the value of the variance of eta(t), chi(s), and the covariance of the two directly.
-!-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-      max_mag_correlation ! Constant
-
-    implicit none
-
-    ! External
-    intrinsic :: min, max, sqrt
-
-    ! Input Variables
-
-    real( kind = dp ), intent(in) :: &
-      stdev_chi, & ! Standard deviation of chi [(kg/kg)^2]
-      varnce_rt,      & ! Variance of rt1/rt2
-      varnce_thl,     & ! Variance of thl1/thl2
-      rrtthl_covar,   & ! Covariance of rt, thl
-      crt, cthl         ! Coefficients that define s', t'
-
-    ! Output Variables
-
-    real( kind = dp ), intent(out) :: &
-      etap2, chip2,  &    ! Variance of chi(s), eta(t)         [(kg/kg)^2]
-      chip_etap            ! Covariance of chi(s) and eta(t)   [kg/kg]
-
-    ! Local Variables
-
-    real( kind = dp ) :: crt_sqd, cthl_sqd
-
-    real( kind = dp ) :: &
-      sqrt_chip2_etap2, & ! sqrt of the product of the variances of chi(s) and eta(t) [kg/kg]
-      max_mag_corr_dp
-
-    ! ---- Begin Code ----
-
-    ! Simplified formula. Here we compute the variance eta and covariance
-    ! of chi and eta using formula's derived from the matrix
-    ! multiplication on Larson, et al. See figure 14.
-    crt_sqd = crt**2
-    cthl_sqd = cthl**2
-    chip_etap = crt_sqd * varnce_rt - cthl_sqd * varnce_thl
-    etap2 = crt_sqd * varnce_rt + 2._dp * crt * cthl * rrtthl_covar &
-        + cthl_sqd * varnce_thl
-    chip2 = stdev_chi**2
-
-    ! Reduce the correlation of chi(s) and eta(t) Mellor if it's greater than 0.99
-    sqrt_chip2_etap2 = sqrt( chip2 * etap2 )
-    max_mag_corr_dp = real( max_mag_correlation, kind=dp )
-    chip_etap = min( max( -max_mag_corr_dp * sqrt_chip2_etap2, chip_etap ), &
-                max_mag_corr_dp * sqrt_chip2_etap2 )
-
-!   sptp = 0.3 * sqrt( sp2 ) * sqrt( tp2 )
-
-    return
-  end subroutine rtpthlp_2_chip_etap
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

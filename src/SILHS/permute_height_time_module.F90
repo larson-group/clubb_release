@@ -5,9 +5,7 @@ module permute_height_time_module
 
   implicit none
 
-  public :: permute_height_time
-
-  private :: rand_permute
+  public :: permute_height_time, rand_permute
 
   private ! Default Scope
 
