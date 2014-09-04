@@ -1183,7 +1183,7 @@ module latin_hypercube_driver_module
       mixt_frac                           ! Weight of first gaussian component
 
     ! Input/Output Variables
-    real( kind = dp ), dimension(num_samples), intent(out) :: &
+    real( kind = dp ), dimension(num_samples), intent(inout) :: &
       X_u_chi, &                          ! Samples of chi in uniform space
       X_u_dp1                             ! Samples of the dp1 variate for determining mixture
                                           ! component
