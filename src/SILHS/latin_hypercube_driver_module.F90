@@ -112,6 +112,9 @@ module latin_hypercube_driver_module
 
     ! Parameter Constants
 
+    logical, parameter :: &
+      l_lh_importance_sampling = .false.
+
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
                             ! the lognormal sample. Currently:
@@ -311,6 +314,19 @@ module latin_hypercube_driver_module
                  X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
                  X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
                  lh_sample_point_weights, l_half_in_cloud ) ! Out
+
+      else if ( l_lh_importance_sampling ) then
+
+          call importance_sampling_driver &
+               ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
+                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
+                 lh_sample_point_weights ) ! Out
+
+          ! In general, this code no longer guarantees that half of all sample points will reside
+          ! in cloud.
+          l_half_in_cloud = .false.
 
       else
 
