@@ -308,8 +308,9 @@ module latin_hypercube_driver_module
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
                  pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
                  pdf_params(k_lh_start)%mixt_frac, & ! In
-                 lh_sample_point_weights, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), l_half_in_cloud ) ! Out
+                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+                 lh_sample_point_weights, l_half_in_cloud ) ! Out
 
       else
 
@@ -1131,7 +1132,8 @@ module latin_hypercube_driver_module
   subroutine cloud_weighted_sampling_driver &
              ( num_samples, p_matrix_chi, p_matrix_dp1, &
                cloud_frac_1, cloud_frac_2, mixt_frac, &
-               lh_sample_point_weights, X_u_chi, X_u_dp1, l_half_in_cloud )
+               X_u_chi, X_u_dp1, &
+               lh_sample_point_weights, l_half_in_cloud )
 
   ! Description:
   !   Performs importance sampling such that half of sample points are in cloud
@@ -1180,15 +1182,16 @@ module latin_hypercube_driver_module
       cloud_frac_2, &                     ! Cloud fraction in PDF component 2
       mixt_frac                           ! Weight of first gaussian component
 
-    ! Output Variables
-    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
-      lh_sample_point_weights             ! Weight of SILHS sample points (these must be applied
-                                          ! when averaging results from, e.g., calling microphysics
-
+    ! Input/Output Variables
     real( kind = dp ), dimension(num_samples), intent(out) :: &
       X_u_chi, &                          ! Samples of chi in uniform space
       X_u_dp1                             ! Samples of the dp1 variate for determining mixture
                                           ! component
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+      lh_sample_point_weights             ! Weight of SILHS sample points (these must be applied
+                                          ! when averaging results from, e.g., calling microphysics
 
     logical, intent(out) :: &
       l_half_in_cloud                     ! True if half of sample points are in cloud. Used
