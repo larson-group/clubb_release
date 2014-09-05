@@ -1388,12 +1388,26 @@ module setup_clubb_pdf_params
              precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
              precip_frac_2(k) = zero
 
+             ! Using the above method, it is possible for precip_frac_1 to be
+             ! greater than 1. The value of precip_frac_1 is limited at 1.
+             if ( precip_frac_1(k) > one ) then
+               precip_frac_1(k) = one
+               precip_frac(k) = mixt_frac(k)
+             end if
+
           elseif ( any( hm2(k,:) > hydromet_tol(:) ) &
                    .and. all( hm1(k,:) <= hydromet_tol(:) ) ) then
 
              ! All the hydrometeors are found within the 2nd PDF component.
              precip_frac_1(k) = zero
              precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
+
+             ! Using the above method, it is possible for precip_frac_2 to be
+             ! greater than 1. The value of precip_frac_2 is limited at 1.
+             if ( precip_frac_2(k) > one ) then
+               precip_frac_2(k) = one
+               precip_frac(k) = one - mixt_frac(k)
+             end if
 
           else
 
