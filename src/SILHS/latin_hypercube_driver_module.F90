@@ -874,7 +874,9 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      fstderr
+      fstderr, &
+      one, &
+      zero
 
     implicit none
 
@@ -909,20 +911,21 @@ module latin_hypercube_driver_module
     ! In order to facilitate picking categories for the sample points, a new
     ! array, category_cumulative_probs, is created.
     !
-    ! Each element of category_cumulative_probs is simply the category
-    ! probability plus the sum of the probabilities of all the previous
-    ! categories. For example,
+    ! Each element of category_cumulative_probs is simply the sum of the
+    ! probabilities of all the previous categories. For example,
     !
-    ! category_cumulative_probs(1) = category_prescribed_probs(1)
-    ! category_cumulative_probs(2) = category_prescribed_probs(1) + category_prescribed_probs(2)
+    ! category_cumulative_probs(1) = 0
+    ! category_cumulative_probs(2) = category_prescribed_probs(1)
+    ! category_cumulative_probs(3) = category_prescribed_probs(1) + category_prescribed_probs(2)
     ! ...
-    ! category_cumulative_probs(num_importance_categories) = 1.0 (since the probabilities should sum
-    !                                                             to 1.0 )
+    ! category_cumulative_probs(num_importance_categories) =
+    !             category_prescribed_probs(1) + category_prescribed_probs(2) + ... +
+    !             category_prescribed_probs(num_importance_categories-1)
     !--------------------------------------------------------------------------
-    category_cumulative_probs(1) = category_prescribed_probs(1)
+    category_cumulative_probs(1) = zero
     do category=2, num_importance_categories
       category_cumulative_probs(category) = category_cumulative_probs(category-1) + &
-                                            category_prescribed_probs(category)
+                                            category_prescribed_probs(category-1)
     end do
 
     !--------------------------------------------------------------------------
@@ -931,21 +934,35 @@ module latin_hypercube_driver_module
     do sample=1, num_samples
       ! Initialize int_sample_category(sample) for error checking purposes.
       int_sample_category(sample) = 0
-      do category=1, num_importance_categories-1
+      do category=1, num_importance_categories
 
-        if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
-             rand_vect(sample) <  category_cumulative_probs(category+1) ) then
+        if ( category < num_importance_categories ) then
 
-          int_sample_category(sample) = category
-          exit   ! Break out of the loop over categories, since we have found the category
+          if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
+               rand_vect(sample) <  category_cumulative_probs(category+1) ) then
 
-        end if
+            int_sample_category(sample) = category
+            exit   ! Break out of the loop over categories, since we have found the category
+
+          end if
+
+        else if ( category == num_importance_categories ) then
+
+          ! If the random number is greater than category_cumulative_probs(num_imp_categories-1)
+          ! and less than 1, then it belongs in the last category
+          if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
+               rand_vect(sample) < one ) then
+            int_sample_category(sample) = category
+          end if
+
+        end if ! category < num_importance_categories
 
       end do ! category=1, num_importance_categories-1
 
       ! We should have picked a category by now.
       if ( int_sample_category(sample) == 0 ) then
         write(fstderr,*) "Invalid rand_vect number in pick_sample_categories"
+        write(fstderr,*) "rand_vect(sample) = ", rand_vect(sample)
         stop "Fatal error"
       end if
 
