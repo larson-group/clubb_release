@@ -493,13 +493,6 @@ module latin_hypercube_driver_module
 
         l_error = l_error .or. l_error_in_sub
 
-        ! Check for half cloudy points in normal/lognormal space
-        call assert_half_cloudy_normal &
-             ( nz, num_samples, k_lh_start, X_nl_all_levs(:,:,iiPDF_chi), &
-               lh_sample_point_weights, l_error_in_sub )
-
-        l_error = l_error .or. l_error_in_sub
-
         call assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
                                           l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
@@ -510,6 +503,17 @@ module latin_hypercube_driver_module
         call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
       end do
+
+      ! Check for correct transformation in normal space
+      call assert_correct_cloud_normal( num_samples, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In
+                                        X_nl_all_levs(k_lh_start,:,iiPDF_chi), & ! In
+                                        X_mixt_comp_all_levs(k_lh_start,:), & ! In
+                                        pdf_params(k_lh_start)%cloud_frac_1, & ! In
+                                        pdf_params(k_lh_start)%cloud_frac_2, & ! In
+                                        l_error_in_sub ) ! Out
+
+      l_error = l_error .or. l_error_in_sub
+
     end if ! clubb_at_least_debug_level( 2 )
 
     ! Verify total water isn't negative
@@ -1583,12 +1587,14 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine assert_half_cloudy_normal( nz, num_samples, k_lh_start, chi_all_points, &
-                                        lh_sample_point_weights, l_error )
+  subroutine assert_correct_cloud_normal( num_samples, X_u_chi, X_nl_chi, X_mixt_comp, &
+                                          cloud_frac_1, cloud_frac_2, &
+                                          l_error )
 
   ! Description:
-  !   Performs an assertion check that half of the SILHS samples are in cloud after
-  !   transformation to normal/lognormal space
+  !   Asserts that all SILHS sample points that are in cloud in uniform space
+  !   are in cloud in normal space, and that all SILHS sample points that are
+  !   in clear air in uniform space are in clear air in normal space.
   
   ! References:
   !   None
@@ -1596,10 +1602,11 @@ module latin_hypercube_driver_module
   
     ! Included Modules
     use clubb_precision, only: &
-      dp,           & ! Constant(s)
+      dp, &           ! Constant(s)
       core_rknd
 
     use constants_clubb, only: &
+      one,     &
       zero_dp, &      ! Constant(s)
       fstderr
 
@@ -1607,24 +1614,26 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      nz,            & ! Number of vertical levels
-      num_samples,   & ! Number of SILHS sample points
-      k_lh_start       ! Vertical level for preferentially sampling within cloud
+      num_samples            ! Number of SILHS sample points
 
-    real( kind = dp ), dimension(nz,num_samples), intent(in) :: &
-      chi_all_points   ! Sample values of extended liquid water mixing ratio, chi
+    real( kind = dp ), dimension(num_samples), intent(in) :: &
+      X_u_chi,  &            ! Samples of chi in uniform space
+      X_nl_chi               ! Samples of chi in normal space
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-      lh_sample_point_weights ! Weight of each SILHS sample
+    integer, dimension(num_samples), intent(in) :: &
+      X_mixt_comp            ! PDF component of each sample
+
+    real( kind = core_rknd ), intent(in) :: &
+      cloud_frac_1,   &      ! Cloud fraction in PDF component 1
+      cloud_frac_2           ! Cloud fraction in PDF component 2
 
     ! Output Variables
     logical, intent(out) :: &
-      l_error          ! True if the assertion check fails
+      l_error                ! True if the assertion check fails
 
     ! Local Variables
-    integer :: &
-      in_cloud_points, &        ! Number of sample points in cloud
-      out_of_cloud_points       ! Number of sample points out of cloud
+    real( kind = dp ) :: &
+      cloud_frac_i
 
     integer :: sample
 
@@ -1633,34 +1642,50 @@ module latin_hypercube_driver_module
     !----- Begin Code -----
     l_error = .false.
 
-    ! Verify every other sample point is out of cloud if we're doing
-    ! cloud weighted sampling
-    in_cloud_points     = 0
-    out_of_cloud_points = 0
     do sample = 1, num_samples, 1
-      if ( chi_all_points(k_lh_start,sample) > 0._dp ) then
-        in_cloud_points = in_cloud_points + 1
-      else if ( chi_all_points(k_lh_start,sample) <= 0._dp ) then
-        out_of_cloud_points = out_of_cloud_points + 1
+
+      ! Determine the appropriate cloud fraction
+      if ( X_mixt_comp(sample) == 1 ) then
+        cloud_frac_i = real( cloud_frac_1, kind=dp )
+      else if ( X_mixt_comp(sample) == 2 ) then
+        cloud_frac_i = real( cloud_frac_2, kind=dp )
       end if
+
+      if ( X_u_chi(sample) < (one - cloud_frac_i) ) then
+
+        ! The uniform sample is in clear air
+        if ( X_nl_chi(sample) > zero_dp ) then
+          l_error = .true.
+        end if
+
+      else if ( X_u_chi(sample) >= (one - cloud_frac_i) .and. &
+                X_u_chi(sample) < one ) then
+
+        ! The uniform sample is in cloud
+        if ( X_nl_chi(sample) <= zero_dp ) then
+          l_error = .true.
+        end if
+
+      else
+        stop "X_u_chi not in correct range in assert_correct_cloud_normal"
+      end if
+
     end do ! 1..num_samples
-    if ( in_cloud_points /= out_of_cloud_points ) then
-      write(fstderr,*) "In est_single_column_tndcy:"
-      write(fstderr,*) "The cloudy sample points do not equal the out of cloud points"
-      write(fstderr,*) "in_cloud_points =", in_cloud_points
-      write(fstderr,*) "out_of_cloud_points =", out_of_cloud_points
-      write(fstderr,*) "k_lh_start = ", k_lh_start, "nz = ", nz
-      write(fstderr,'(4X,A,A)')  "chi_all_points  ", "weight   "
+
+    if ( l_error ) then
+      write(fstderr,*) "In assert_correct_cloud_normal:"
+      write(fstderr,*) "The 'cloudiness' of points in uniform and normal space is not consistent"
+      write(fstderr,'(4X,A,A)')  "X_u_chi         ", "X_nl_chi "
       do sample = 1, num_samples, 1
         write(fstderr,'(I4,2G20.4)') &
-          sample, chi_all_points(k_lh_start,sample), lh_sample_point_weights(sample)
+          sample, X_u_chi(sample), X_nl_chi(sample)
       end do
       ! This will hopefully stop the run at some unknown point in the future
       l_error = .true.
     end if  ! in_cloud_points /= out_of_cloud_points
 
     return
-  end subroutine assert_half_cloudy_normal
+  end subroutine assert_correct_cloud_normal
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
