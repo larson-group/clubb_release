@@ -1402,8 +1402,8 @@ module latin_hypercube_driver_module
     ! For each permuted integer (each box), determine a random real number
     !----------------------------------------------------------------------
     do sample=1, num_samples
-      stratified_variate = real( choose_permuted_random( num_samples, pvect(sample) ), &
-                                kind = core_rknd )
+      stratified_variate(sample) = &
+        real( choose_permuted_random( num_samples, pvect(sample) ), kind = core_rknd )
     end do
 
     return
