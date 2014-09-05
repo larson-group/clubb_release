@@ -19,7 +19,7 @@ def writeNavPageStart(FILE):
 ###############################################################################
 # Writes a case to the navigation page
 ###############################################################################
-def writeNavPageCase(FILE, case):
+def writeNavPageCase(FILE, case, link):
     with open(FILE, "a") as myfile:
         myfile.write("""       <a href="plots.html#""" + link + """" target="plots">""" + case + """</a><br/>
 """)
@@ -38,8 +38,7 @@ def writeNavPageClose(FILE):
 ###############################################################################
 def writeIndex(FILE):
     with open(FILE, "a") as myfile:
-        myfile.write("""	<a name="$CASE"></a>
-    <html>
+        myfile.write("""    <html>
         <title>Plotgen</title>
         <frameset cols="180,*">
             <frame src="navigation.html" frameborder="0" name="nav">
@@ -103,7 +102,7 @@ def writeHeader(FILE, mode):
 ###############################################################################
 def writeSamSubHeader(FILE):
     OutputWriter.writeSubHeader(FILE, "2D SAM_CLUBB runs use a 64-km horizontal domain and a 10-s timestep, with CLUBB called every SAM timestep. 3D SAM_CLUBB runs use 4x4 columns with a 16-km horizontal grid spacing and a 10-s timestep with CLUBB called every SAM timestep. All SAM_CLUBB runs except LBA use Morrison microphysics. CLUBB standalone runs use a 10-s timestep and the Morrison microphysics.")
-    OutputWriter->writeSubHeader(FILE, "When two variables are listed, the first variable is the SAM-CLUBB variable and the second is the SAM-Standalone variable.")
+    OutputWriter.writeSubHeader(FILE, "When two variables are listed, the first variable is the SAM-CLUBB variable and the second is the SAM-Standalone variable.")
     text = """    <br />
     <DIV ALIGN="CENTER"><TABLE CELLPADDING=3 BORDER="1">
     <TR>

@@ -3,33 +3,59 @@
 # Plotgen v4.0a
 #
 # Plotgen4 is written to be identical from a user standpoint to plotgen3, 
-# elif arg == not requiring the use of Matlab.
+# except not requiring the use of Matlab.
 # Documentation for plotgen3 is available here until plotgen4 docs are complete:
 # http://larson-group.com/twiki/bin/view.pl/Documentation/CarsonDoc/Plotgen3
 ###########################################################################
 #TODO add imports
-import sys, os
+import sys, os, OutputWriter, importlib
 
 #TODO document these default variables even though they're kinda self-explanatory.
-dirPrefix = "/path/to/script/" # TODO
+
+# Location of Script
+dirPrefix = os.path.dirname(os.path.realpath(__file__))
+
+# Plotgen Version
 VERSION	= 4.0
-DPI = 300
-QUALITY = 100
-caseCount = 0
+
+# Run in Nightly mode: 		Default False
 nightly = False
+
+# Difference run: 		Default False
 diffRun = False
+
+# Plotgen mode dictates where to find .case files.
+#   plotgen (Default)
+#   splotgen
+#   wrfgen
+#   camgen
+#   gfdlgen
 plotgenMode = "plotgen"
+
+# Data file type:  grads or netcdf
 dataFileType = "grads"
+
+# Budget plotting mode:		Default false
 plotBudgets = False
+
+# Morrison budget plot mode:	Default false
 plotMorrBudgets = False
-inputDirs = []
-output = ""
-outputTemp = ""
+
+# Output as .maff file:		Default false
 outputAsMaff = False
-displayLegend = 1
-thinLines = False
+
+# Display legend on plots:	Default true
+displayLegend = True
+
+# Allow output folder to exist: Default false
+overwrite = False
+
+# Ensemble run flag:		Default false
 ensembleTuner = False
-linestyles = ["--", "-", "-.", "-"]
+thinLines = False
+
+# Line style, etc, arrays
+lineStyles = ["--", "-", "-.", "-"]
 lineColors = [
     "[ 1.000, 0.498, 0.000 ]",    # orange
     "[ 0.216, 0.494, 0.722 ]",    # blue
@@ -42,20 +68,34 @@ lineColors = [
     "[ 1.000, 1.000, 0.200 ]"     # yellow
 ]
 lineWidths = [4.5, 3, 2.5, 1.5]
-lineWidthsBudget = 3
 lineStyleCounter = 0
 lineColorCounter = 0
 lineWidthCounter = 0
+
+# Set width for budget cases.
+lineWidthsBudget = 3
+
 outputIndex = ""
+
+# Plot benchmark lines:		Default False
 plotAll = False
 plotLes = False
 plotBest = False
 plotDec = False
+
+# HTML page names
 navigationPage = "navigation.html"
 indexPage = "index.html"
+
 plotcount = 0
 consoleOutput = dirPrefix + "/console_output.py"
+inputDirs = []
+output = ""
+outputTemp = ""
 casesExecuted = []
+DPI = 300
+QUALITY = 100
+caseCount = 0
 
 ###############################################################################
 #  Main function
@@ -64,10 +104,10 @@ def main():
 ##TODO do stuff
     sys.exit(0)
 
-
+#CASE.CASE
 
 ###############################################################################
-#  Runs through all cases in case folder.  TODO finish this after outputwriter is done
+#  Runs through all cases in case folder.
 ###############################################################################
 def runCases():
     imgNumber = 0
@@ -75,27 +115,39 @@ def runCases():
     #This portion will check if we are in nightly mode.  If not, we'll ignore
     #any case files with _nightly.
     if nightly:
-        cases = [f for f in os.listdir(casePath) if ".cas" in f]
+        cases = [f for f in os.listdir(casePath) if f.endswith(".case")]
     else:
         cases = [f for f in os.listdir(casePath) 
-                 if ".cas" in f and "_nightly" not in f]
-    for file in cases:
+                 if f.endswith(".case") and "_nightly" not in f]
+    for filename in cases:
         runCase = true
-        ##TODO if error reading in case file, runCase = false
-        if case['name'] in casesExecuted: runCase = false
+        CASE = imp.load_source('CASE',casePath + filename)  ## Python doesn't like import filename
+        if CASE.CASE['name'] in casesExecuted: runCase = false
 
-        if runCase and dataExists() and case['enabled'] != false:
-            casesExecuted.append(CASE['name'])
-            if (case['type'] == "standard") or
-               (case['type'] == "budget" and plotBudgets) or
-               (case['type'] == "morrbudget" and plotMorrBudgets):
-                ###TODO print case['headerText'] to navbar and case title html
+        if runCase and dataExists() and CASE.CASE['enabled'] != false:
+            casesExecuted.append(CASE.CASE['name'])
+            if (CASE.CASE['type'] == "standard") or
+               (CASE.CASE['type'] == "budget" and plotBudgets) or
+               (CASE.CASE['type'] == "morrbudget" and plotMorrBudgets):
+                OutputWriter.writeCaseTitle(outputIndex,case['headerText'])
+                OutputWriter.writeNavePageCase(navigationPage, 
+                                               CASE.CASE['name'], CASE.CASE['headerText'])
+                # Output additional text from casefile
                 if nightly:
-                    ##TODO output CASE['nightlyOutput']['subText'] and ['subHtml']
+                    if CASE.CASE['nightlyOutput']['subText']: 
+                        OutputWriter.writeSubHeader(outputIndex, CASE.CASE['nightlyOutput']['subText'])
+                    if CASE.CASE['nightlyOutput']['subHtml']:
+                        OutputWriter.writeSubHtml(outputIndex, CASE.CASE['nightlyOutput']['subHtml'])
                 else:
-                    ##print normal subtext/subhtml ['additionalOutput']
-                    if case[type] == "morrbudget":
-                        ##TODO writeMorrBudgetSubHeader
+                    if CASE.CASE['type'] == "morrbudget":  ##This was in the original code
+                        OutputWriter.writeMorrBudgetSubHeader(
+                            outputIndex, CASE.CASE['additionalOutput']['subText'])
+                    if CASE.CASE['additionalOutput']['subText']: 
+                        OutputWriter.writeSubHeader(outputIndex, CASE.CASE['additionalOutput']['subText'])
+                    if CASE.CASE['additionalOutput']['subHtml']:
+                        OutputWriter.writeSubHtml(outputIndex, CASE.CASE['additionalOutput']['subHtml'])
+            
+
                 
 
 ###############################################################################
@@ -114,9 +166,9 @@ def executePlot():
 #   None.
 ###############################################################################
 def incrementLineTypes():
-    lineColorCounter = (lineColorCounter % len(lineColors)) + 1
-    lineStyleCounter = (lineStyleCounter % len(lineStyles)) + 1
-    lineWidthCounter = (lineWidthCounter % len(lineWidths)) + 1
+    lineColorCounter = ((lineColorCounter + 1) % len(lineColors))
+    lineStyleCounter = ((lineStyleCounter + 1) % len(lineStyles))
+    lineWidthCounter = ((lineWidthCounter + 1) % len(lineWidths))
 ### This should work fine, if not, below will work when testing.
 #    if lineColorCounter >= len(lineColors): lineColorCounter = 0
 #    else: lineColorCounter=lineColorCounter+1
