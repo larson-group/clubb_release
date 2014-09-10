@@ -500,19 +500,20 @@ module latin_hypercube_driver_module
       end if ! l_half_in_cloud
 
       do k=1, nz
+
         call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
-      end do
 
-      ! Check for correct transformation in normal space
-      call assert_correct_cloud_normal( num_samples, X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In
-                                        X_nl_all_levs(k_lh_start,:,iiPDF_chi), & ! In
-                                        X_mixt_comp_all_levs(k_lh_start,:), & ! In
-                                        pdf_params(k_lh_start)%cloud_frac_1, & ! In
-                                        pdf_params(k_lh_start)%cloud_frac_2, & ! In
-                                        l_error_in_sub ) ! Out
+        ! Check for correct transformation in normal space
+        call assert_correct_cloud_normal( num_samples, X_u_all_levs(k,:,iiPDF_chi), & ! In
+                                          X_nl_all_levs(k,:,iiPDF_chi), & ! In
+                                          X_mixt_comp_all_levs(k,:), & ! In
+                                          pdf_params(k)%cloud_frac_1, & ! In
+                                          pdf_params(k)%cloud_frac_2, & ! In
+                                          l_error_in_sub ) ! Out
+        l_error = l_error .or. l_error_in_sub
 
-      l_error = l_error .or. l_error_in_sub
+      end do ! k=1, nz
 
     end if ! clubb_at_least_debug_level( 2 )
 
