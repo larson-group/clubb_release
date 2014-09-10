@@ -567,6 +567,10 @@ module latin_hypercube_driver_module
 
     implicit none
 
+    ! Local Parameters
+    logical, parameter :: &
+      l_use_prescribed_probs = .false.   ! Use prescribed probability importance sampling
+
     ! Input Variables
     integer, intent(in) :: &
       num_samples       ! Number of SILHS sample points
@@ -616,10 +620,19 @@ module latin_hypercube_driver_module
     category_real_probs = compute_category_real_probs &
                           ( importance_categories, pdf_params, hydromet_pdf_params )
 
-    ! Importance sampling strategy that places half of all sample points in cloud!
-    category_prescribed_probs = cloud_importance_sampling &
-                                ( importance_categories, category_real_probs, &
-                                  pdf_params )
+    if ( l_use_prescribed_probs ) then
+
+      ! Prescribe the probabilities
+      category_prescribed_probs = prescribe_importance_probs( importance_categories )
+
+    else
+
+      ! Importance sampling strategy that places half of all sample points in cloud!
+      category_prescribed_probs = cloud_importance_sampling &
+                                  ( importance_categories, category_real_probs, &
+                                    pdf_params )
+
+    end if ! l_use_prescribed_probs
 
     ! Compute weight of each sample category
     category_sample_weights = compute_category_sample_weights &
@@ -1106,6 +1119,82 @@ module latin_hypercube_driver_module
 
     return
   end subroutine scale_sample_to_category
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function prescribe_importance_probs( importance_categories ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Outputs a prescribed value for the probability of each importance category
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd
+
+    implicit none
+
+    ! Input Variables
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories   ! A list of importance categories
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs ! Probability of each category, scaled such that approximately half
+                                ! of all sample points will appear in cloud
+
+    ! Local Variables
+    integer :: icategory
+
+    logical :: l_in_cloud, l_in_component_1, l_in_precip
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    do icategory=1, num_importance_categories
+
+      l_in_cloud       = importance_categories(icategory)%l_in_cloud
+      l_in_component_1 = importance_categories(icategory)%l_in_component_1
+      l_in_precip      = importance_categories(icategory)%l_in_precip
+
+      if ( l_in_cloud .and. l_in_precip .and. l_in_component_1 ) then
+        category_prescribed_probs(icategory) = 0.25_core_rknd
+
+      else if ( l_in_cloud .and. l_in_precip .and. (.not. l_in_component_1) ) then
+        category_prescribed_probs(icategory) = 0.25_core_rknd
+
+      else if ( l_in_cloud .and. (.not. l_in_precip) .and. l_in_component_1 ) then
+        category_prescribed_probs(icategory) = 0.0625_core_rknd
+
+      else if ( l_in_cloud .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
+        category_prescribed_probs(icategory) = 0.0625_core_rknd
+
+      else if ( (.not. l_in_cloud) .and. l_in_precip .and. l_in_component_1 ) then
+        category_prescribed_probs(icategory) = 0.125_core_rknd
+
+      else if ( (.not. l_in_cloud) .and. l_in_precip .and. (.not. l_in_component_1) ) then
+        category_prescribed_probs(icategory) = 0.125_core_rknd
+
+      else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. l_in_component_1 ) then
+        category_prescribed_probs(icategory) = 0.0625_core_rknd
+
+      else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
+        category_prescribed_probs(icategory) = 0.0625_core_rknd
+
+      else
+        stop "Invalid category in prescribe_importance_probs"
+      end if
+
+    end do ! icategory=1, num_importance_categories
+
+    return
+  end function prescribe_importance_probs
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
