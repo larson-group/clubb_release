@@ -623,7 +623,8 @@ module latin_hypercube_driver_module
     if ( l_use_prescribed_probs ) then
 
       ! Prescribe the probabilities
-      category_prescribed_probs = prescribe_importance_probs( importance_categories )
+      category_prescribed_probs = prescribe_importance_probs &
+                                  ( importance_categories, category_real_probs )
 
     else
 
@@ -1122,7 +1123,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function prescribe_importance_probs( importance_categories ) &
+  function prescribe_importance_probs( importance_categories, category_real_probs ) &
 
   result( category_prescribed_probs )
 
@@ -1139,9 +1140,16 @@ module latin_hypercube_driver_module
 
     implicit none
 
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      prob_thresh = 1.0e-8_core_rknd
+
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
       importance_categories   ! A list of importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs     ! The real probability for each category
 
     ! Output Variable
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
@@ -1189,6 +1197,27 @@ module latin_hypercube_driver_module
 
       else
         stop "Invalid category in prescribe_importance_probs"
+      end if
+
+    end do ! icategory=1, num_importance_categories
+
+    ! The following loop ensures that we do not sample from categories that have
+    ! no PDF weight
+    do icategory=1, num_importance_categories
+
+      if ( category_real_probs(icategory) < prob_thresh .and. &
+           category_prescribed_probs(icategory) > category_real_probs(icategory) ) then
+        ! Do not perform importance_sampling on this category
+        ! Transfer all prescribed mass of this category to the next one.
+        if ( icategory == num_importance_categories ) then
+          category_prescribed_probs(1) = category_prescribed_probs(1) + &
+                         ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
+        else
+          category_prescribed_probs(icategory+1) = category_prescribed_probs(icategory+1) + &
+                         ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
+        end if
+        category_prescribed_probs(icategory) = category_real_probs(icategory)
+
       end if
 
     end do ! icategory=1, num_importance_categories
