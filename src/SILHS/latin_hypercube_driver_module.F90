@@ -305,7 +305,7 @@ module latin_hypercube_driver_module
                                     p_matrix, & ! In
                                     X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-      if ( l_lh_cloud_weighted_sampling ) then
+      if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_importance_sampling ) then
 
           call cloud_weighted_sampling_driver &
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
@@ -354,6 +354,7 @@ module latin_hypercube_driver_module
           do k = 1, nz
             write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
           end do
+          l_error = .true.
         end if ! Some correlation isn't between [0,1]
       end if ! clubb_at_least_debug_level 1
 
@@ -561,6 +562,9 @@ module latin_hypercube_driver_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter
 
+    use error_code, only: &
+      clubb_at_least_debug_level  ! Procedure
+
     implicit none
 
     ! Input Variables
@@ -600,10 +604,12 @@ module latin_hypercube_driver_module
                            ! category picked for the sample
 
     integer :: sample
+    logical :: l_error
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
+    l_error = .false.
 
     importance_categories = define_importance_categories( )
 
@@ -631,15 +637,30 @@ module latin_hypercube_driver_module
 
       ! Scale and translate point to reside in its respective cateogry
       call scale_sample_to_category &
-           ( importance_categories(int_sample_category(sample)), &
-             pdf_params, hydromet_pdf_params, &
-             X_u_chi_one_lev(sample), X_u_dp1_one_lev(sample), X_u_dp2_one_lev(sample) )
+           ( importance_categories(int_sample_category(sample)), & ! In
+             pdf_params, hydromet_pdf_params, & ! In
+             X_u_chi_one_lev(sample), X_u_dp1_one_lev(sample), X_u_dp2_one_lev(sample) ) ! In/Out
 
       ! Pick a weight for the sample point
       lh_sample_point_weights(sample) = &
         category_sample_weights(int_sample_category(sample))
 
     end do ! sample=1, num_samples
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      call importance_sampling_assertions &
+           ( num_samples, importance_categories, category_real_probs, & ! In
+             category_prescribed_probs, category_sample_weights, X_u_chi_one_lev, & ! In
+             X_u_dp1_one_lev, X_u_dp2_one_lev, int_sample_category, & ! In
+             pdf_params, hydromet_pdf_params, & ! In
+             l_error ) ! Out
+
+      if ( l_error ) then
+        stop "Fatal error in importance_sampling_driver"
+      end if ! l_error
+
+    end if
 
     return
   end subroutine importance_sampling_driver
@@ -1178,6 +1199,163 @@ module latin_hypercube_driver_module
     return
   end function cloud_importance_sampling
 !-----------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine importance_sampling_assertions &
+             ( num_samples, importance_categories, category_real_probs, &
+               category_prescribed_probs, category_sample_weights, X_u_chi_one_lev, &
+               X_u_dp1_one_lev, X_u_dp2_one_lev, int_sample_category, &
+               pdf_params, hydromet_pdf_params, &
+               l_error )
+
+  ! Description:
+  !   Various assertion checks for importance sampling are performed here.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd, &          ! Precision(s)
+      dp
+
+    use constants_clubb, only: &
+      zero, &               ! Constant(s)
+      one, &
+      fstderr
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
+    implicit none
+
+    ! Input Variables
+    integer :: &
+      num_samples                         ! Number of SILHS sample points
+
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories               ! The defined importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs,        &       ! The real PDF probabilities for each category
+      category_prescribed_probs,  &       ! Prescribed probability for each category
+      category_sample_weights             ! Sample weight for each category
+
+    real( kind = dp ), dimension(num_samples), intent(in) :: &
+      X_u_chi_one_lev, &                  ! Samples of chi in uniform space
+      X_u_dp1_one_lev, &                  ! Samples of the dp1 variate
+      X_u_dp2_one_lev                     ! Samples of the dp2 variate
+
+    integer, dimension(num_samples), intent(in) :: &
+      int_sample_category                 ! An integer for each sample corresponding to the
+                                          ! category picked for the sample
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params
+
+    ! Output Variables
+    logical, intent(out) :: &
+      l_error                             ! True if the assertion check fails.
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      category_sum, tolerance
+
+    real( kind = dp ) :: &
+      cloud_frac_i, precip_frac_i
+
+    integer :: isample
+
+    type(importance_category_type) :: category
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    l_error = .false.
+
+    !----------------------------------------------------------
+    ! Assert that each of the probability groups sum to 1.0
+    !----------------------------------------------------------
+    tolerance = real( num_importance_categories, kind=core_rknd ) * epsilon( category_sum )
+
+    category_sum = sum( category_real_probs )
+    if ( abs( category_sum - one ) > tolerance ) then
+      write(fstderr,*) "The real category probabilities do not sum to one."
+      write(fstderr,*) "sum( category_real_probs ) = ", category_sum
+      l_error = .true.
+    end if
+
+    category_sum = sum( category_prescribed_probs )
+    if ( abs( category_sum - one ) > tolerance ) then
+      write(fstderr,*) "The prescribed category probabilities do not sum to one."
+      write(fstderr,*) "sum( category_prescribed_probs ) = ", category_sum
+      l_error = .true.
+    end if
+
+    category_sum = sum( category_sample_weights * category_prescribed_probs )
+    if ( abs( category_sum - one ) > tolerance ) then
+      write(fstderr,*) "The weighted prescribed category probabilities do not sum to one."
+      write(fstderr,*) "sum( category_sample_weights * category_prescribed_probs ) = ", category_sum
+      l_error = .true.
+    end if
+
+    !---------------------------------------------------------------------
+    ! Verify that samples have been correctly scaled to reside in the
+    ! appropriate category
+    !---------------------------------------------------------------------
+    do isample = 1, num_samples
+
+      category = importance_categories(int_sample_category(isample))
+
+      ! Verification of component
+      if ( category%l_in_component_1 ) then
+        if ( X_u_dp1_one_lev(isample) > real( pdf_params%mixt_frac, kind=dp ) ) then
+          l_error = .true.
+        end if
+        cloud_frac_i = real( pdf_params%cloud_frac_1, kind=dp )
+        precip_frac_i = real( hydromet_pdf_params%precip_frac_1, kind=dp )
+      else ! .not. category%l_in_component_1
+        if ( X_u_dp1_one_lev(isample) < real( pdf_params%mixt_frac, kind=dp ) ) then
+          l_error = .true.
+        end if
+        cloud_frac_i = real( pdf_params%cloud_frac_2, kind=dp )
+        precip_frac_i = real( hydromet_pdf_params%precip_frac_2, kind=dp )
+      end if ! category%l_in_component_1
+
+      ! Verification of cloud
+      if ( category%l_in_cloud ) then
+        if ( X_u_chi_one_lev(isample) < (one - cloud_frac_i) ) then
+          l_error = .true.
+        end if
+      else
+        if ( X_u_chi_one_lev(isample) > (one - cloud_frac_i) ) then
+          l_error = .true.
+        end if
+      end if
+
+      ! Verification of precipitation
+      if ( category%l_in_precip ) then
+        if ( X_u_dp2_one_lev(isample) > precip_frac_i ) then
+          l_error = .true.
+        end if
+      else
+        if ( X_u_dp2_one_lev(isample) < precip_frac_i ) then
+          l_error = .true.
+        end if
+      end if
+
+    end do ! isample = 1, num_samples
+
+    return
+  end subroutine importance_sampling_assertions
+!-------------------------------------------------------------------------------
+
 
 !-------------------------------------------------------------------------------
   subroutine cloud_weighted_sampling_driver &
