@@ -1316,12 +1316,14 @@ module latin_hypercube_driver_module
       ! Verification of component
       if ( category%l_in_component_1 ) then
         if ( X_u_dp1_one_lev(isample) > real( pdf_params%mixt_frac, kind=dp ) ) then
+          write(fstderr,*) "The component of a sample is incorrect."
           l_error = .true.
         end if
         cloud_frac_i = real( pdf_params%cloud_frac_1, kind=dp )
         precip_frac_i = real( hydromet_pdf_params%precip_frac_1, kind=dp )
       else ! .not. category%l_in_component_1
         if ( X_u_dp1_one_lev(isample) < real( pdf_params%mixt_frac, kind=dp ) ) then
+          write(fstderr,*) "The component of a sample is incorrect."
           l_error = .true.
         end if
         cloud_frac_i = real( pdf_params%cloud_frac_2, kind=dp )
@@ -1331,10 +1333,12 @@ module latin_hypercube_driver_module
       ! Verification of cloud
       if ( category%l_in_cloud ) then
         if ( X_u_chi_one_lev(isample) < (one - cloud_frac_i) ) then
+          write(fstderr,*) "The chi element of a sample is incorrect."
           l_error = .true.
         end if
       else
         if ( X_u_chi_one_lev(isample) > (one - cloud_frac_i) ) then
+          write(fstderr,*) "The chi element of a sample is incorrect."
           l_error = .true.
         end if
       end if
@@ -1342,10 +1346,12 @@ module latin_hypercube_driver_module
       ! Verification of precipitation
       if ( category%l_in_precip ) then
         if ( X_u_dp2_one_lev(isample) > precip_frac_i ) then
+          write(fstderr,*) "The in-precipitation status of a sample is incorrect."
           l_error = .true.
         end if
       else
         if ( X_u_dp2_one_lev(isample) < precip_frac_i ) then
+          write(fstderr,*) "The in-precipitation status of a sample is incorrect."
           l_error = .true.
         end if
       end if
