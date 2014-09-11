@@ -512,12 +512,9 @@ module latin_hypercube_driver_module
                                           pdf_params(k)%cloud_frac_1, & ! In
                                           pdf_params(k)%cloud_frac_2, & ! In
                                           l_error_in_sub ) ! Out
-        if ( l_error_in_sub ) then
-          write(0,*) 'k = ', k
-        end if
         l_error = l_error .or. l_error_in_sub
 
-      end do ! k=1, nz
+      end do ! k=2, nz
 
     end if ! clubb_at_least_debug_level( 2 )
 
