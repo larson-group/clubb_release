@@ -7,17 +7,19 @@ module pdf_utilities
 
   private ! Set default scope to private
 
-  public :: mean_L2N,        &
-            mean_L2N_dp,     &
-            stdev_L2N,       &
-            stdev_L2N_dp,    &
-            corr_NL2NN,      &
-            corr_NL2NN_dp,   &
-            corr_LL2NN,      &
-            corr_LL2NN_dp,   &
+  public :: mean_L2N,                  &
+            mean_L2N_dp,               &
+            stdev_L2N,                 &
+            stdev_L2N_dp,              &
+            corr_NL2NN,                &
+            corr_NL2NN_dp,             &
+            corr_LL2NN,                &
+            corr_LL2NN_dp,             &
             compute_mean_binormal,     &
             compute_variance_binormal, &
-            calc_corr_chi_x, &
+            calc_corr_chi_x,           &
+            calc_corr_rt_x,            &
+            calc_corr_thl_x,           &
             calc_xp2
 
   contains
@@ -390,84 +392,85 @@ module pdf_utilities
 
   !=============================================================================
   elemental function compute_mean_binormal( mu_x_1, mu_x_2, mixt_frac ) &
-
-  result( mu_x )
+  result( xm )
 
     ! Description:
-    !   Computes the overall grid-box mean of a binormal gaussian distribution
-    !   from the mean of each component
+    ! Computes the overall grid-box mean of a binormal distribution from the
+    ! mean of each component
 
     ! References:
     !   None
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Constant
+        core_rknd ! Constant
 
     use constants_clubb, only: &
-      one ! Constant
+        one ! Constant
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_x_1,    & ! First PDF component of 'x'                            [?]
-      mu_x_2,    & ! Second PDF component of 'x'                           [?]
+      mu_x_1,    & ! First PDF component mean of 'x'                       [?]
+      mu_x_2,    & ! Second PDF component mean of 'x'                      [?]
       mixt_frac    ! Weight of the first PDF component                     [-]
 
     ! Output Variables
     real( kind = core_rknd ) :: &
-      mu_x         ! Variance of 'x' (overall average)                     [?]
+      xm           ! Mean of 'x' (overall)                                 [?]
 
-  !-----------------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    mu_x = mixt_frac*mu_x_1 + (one-mixt_frac)*mu_x_2
+    xm = mixt_frac * mu_x_1 + ( one - mixt_frac ) * mu_x_2
+
 
     return
 
   end function compute_mean_binormal
 
   !=============================================================================
-  elemental function compute_variance_binormal( mu_x, mu_x_1, mu_x_2, stdev_x_1, &
-                                                stdev_x_2, mixt_frac ) &
-
+  elemental function compute_variance_binormal( xm, mu_x_1, mu_x_2, &
+                                                stdev_x_1, stdev_x_2, &
+                                                mixt_frac ) &
   result( xp2 )
 
     ! Description:
-    !   Computes the overall grid-box variance of a binormal gaussian distribution from the
-    !   variance of each component
+    ! Computes the overall grid-box variance of a binormal distribution from the
+    ! variance of each component.
 
     ! References:
     !   None
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Constant
+        core_rknd ! Constant
 
     use constants_clubb, only: &
-      one ! Constant
+        one ! Constant
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      mu_x,      & ! Overall mean of 'x'                                   [?]
-      mu_x_1,    & ! First PDF component of 'x'                            [?]
-      mu_x_2,    & ! Second PDF component of 'x'                           [?]
+      xm,        & ! Overall mean of 'x'                                   [?]
+      mu_x_1,    & ! First PDF component mean of 'x'                       [?]
+      mu_x_2,    & ! Second PDF component mean of 'x'                      [?]
       stdev_x_1, & ! Standard deviation of 'x' in the first PDF component  [?]
       stdev_x_2, & ! Standard deviation of 'x' in the second PDF component [?]
       mixt_frac    ! Weight of the first PDF component                     [-]
 
     ! Output Variables
     real( kind = core_rknd ) :: &
-      xp2          ! Variance of 'x' (overall average)                     [?^2]
+      xp2          ! Variance of 'x' (overall)                             [?^2]
 
-  !-----------------------------------------------------------------------------
+    !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    xp2 = mixt_frac * ( (mu_x_1 - mu_x)**2 + stdev_x_1**2 ) &
-            + (one - mixt_frac) * ( (mu_x_2 - mu_x)**2 + stdev_x_2**2 )
+    xp2 = mixt_frac * ( ( mu_x_1 - xm )**2 + stdev_x_1**2 ) &
+          + ( one - mixt_frac ) * ( ( mu_x_2 - xm )**2 + stdev_x_2**2 )
+
 
     return
 
@@ -525,7 +528,8 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero  ! Constant(s)
+        zero,    & ! Constant(s)
+        chi_tol
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -548,17 +552,18 @@ module pdf_utilities
 
 
     ! Calculate the correlation of chi and x in the ith PDF component.
-    if ( sigma_chi_i > zero ) then
+    if ( sigma_chi_i > chi_tol ) then
 
        corr_chi_x_i = crt_i * ( sigma_rt_i / sigma_chi_i ) * corr_rt_x_i  &
                       - cthl_i * ( sigma_thl_i / sigma_chi_i ) * corr_thl_x_i
 
     else  ! sigma_chi_i = 0
 
-       ! The variance of chi_(i) is 0.  This means that chi is constant within
-       ! the ith PDF component and covariance <chi'x'_(i)> is also 0.  The
-       ! correlation of chi and x is undefined in the ith PDF component, so a
-       ! value of 0 will be used.
+       ! The standard deviation of chi in the ith PDF component is 0.  This
+       ! means that chi is constant within the ith PDF component, and the ith
+       ! PDF component covariance of chi and x is also 0.  The correlation of
+       ! chi and x is undefined in the ith PDF component, so a value of 0 will
+       ! be used.
        corr_chi_x_i = zero
 
     endif
@@ -567,6 +572,123 @@ module pdf_utilities
     return
 
   end function calc_corr_chi_x
+
+  !=============================================================================
+  pure function calc_corr_rt_x( crt_i, sigma_rt_i, sigma_chi_i, &
+                                sigma_eta_i, corr_chi_x_i, corr_eta_x_i )  &
+  result( corr_rt_x_i )
+
+    ! Description:
+    ! This function calculates the correlation of rt and x based on the
+    ! correlation of chi and x and the correlation of eta and x.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        two,    & ! Constant(s)
+        zero,   &
+        rt_tol
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      crt_i,        & ! Coef. of r_t in chi/eta eqns. (ith PDF component)    [-]
+      sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+      sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+      sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+      corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
+      corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_rt_x_i   ! Correlation of rt and x (ith PDF component)            [-]
+
+
+    ! Calculate the correlation of rt and x in the ith PDF component.
+    if ( sigma_rt_i > rt_tol ) then
+
+       corr_rt_x_i = ( sigma_eta_i * corr_eta_x_i &
+                       + sigma_chi_i * corr_chi_x_i ) &
+                     / ( two * crt_i * sigma_rt_i )
+
+    else  ! sigma_rt_i = 0
+
+       ! The standard deviation of rt in the ith PDF component is 0.  This means
+       ! that rt is constant within the ith PDF component, and the ith PDF
+       ! component covariance of rt and x is also 0.  The correlation of rt and
+       ! x is undefined in the ith PDF component, so a value of 0 will be used.
+       corr_rt_x_i = zero
+
+    endif
+
+
+    return
+
+  end function calc_corr_rt_x
+
+  !=============================================================================
+  pure function calc_corr_thl_x( cthl_i, sigma_thl_i, sigma_chi_i, &
+                                 sigma_eta_i, corr_chi_x_i, corr_eta_x_i )  &
+  result( corr_thl_x_i )
+
+    ! Description:
+    ! This function calculates the correlation of thl and x based on the
+    ! correlation of chi and x and the correlation of eta and x.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        two,     & ! Constant(s)
+        zero,    &
+        thl_tol
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      cthl_i,       & ! Coef. of thl:  chi/eta eqns. (ith PDF comp.) [(kg/kg)/K]
+      sigma_thl_i,  & ! Standard deviation of thl (ith PDF component)        [K]
+      sigma_chi_i,  & ! Standard deviation of chi (ith PDF component)    [kg/kg]
+      sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+      corr_chi_x_i, & ! Correlation of chi and x (ith PDF component)         [-]
+      corr_eta_x_i    ! Correlation of eta and x (ith PDF component)         [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_thl_x_i    ! Correlation of thl and x (ith PDF component)         [-]
+
+
+    ! Calculate the correlation of thl and x in the ith PDF component.
+    if ( sigma_thl_i > thl_tol ) then
+
+       corr_thl_x_i = ( sigma_eta_i * corr_eta_x_i &
+                        - sigma_chi_i * corr_chi_x_i ) &
+                      / ( two * cthl_i * sigma_thl_i )
+
+    else  ! sigma_thl_i = 0
+
+       ! The standard deviation of thl in the ith PDF component is 0.  This
+       ! means that thl is constant within the ith PDF component, and the ith
+       ! PDF component covariance of thl and x is also 0.  The correlation of
+       ! thl and x is undefined in the ith PDF component, so a value of 0 will
+       ! be used.
+       corr_thl_x_i = zero
+
+    endif
+
+
+    return
+
+  end function calc_corr_thl_x
 
   !=============================================================================
   pure function calc_xp2( mu_x_1, mu_x_2, &
