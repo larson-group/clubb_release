@@ -15,7 +15,7 @@
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'thlm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'thlm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           #{'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(temp - (2.5e6./1004.67).*(liq_wat./(1-liq_wat)))./((pf_forc/100000).^(287.04/1004.67))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}, pf_forc 
@@ -23,7 +23,7 @@
        {'plotTitle' => 'Total Water Mixing Ratio, r_t', 'axisLabel' => 'rtm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'sphum./(1.0-sphum) + liq_wat + ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -31,7 +31,7 @@
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpthlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wpthlp', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthlp_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -39,7 +39,7 @@
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpqtp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wprtp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wprtp', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wprtp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprtp_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -47,7 +47,7 @@
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'cf* 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'cf* 100', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'cf* 100', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'cf* 100', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cld_amt * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -55,7 +55,7 @@
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qcm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rcm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rcm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rcm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(liq_wat./(1-liq_wat))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -63,7 +63,7 @@
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wp2', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -71,7 +71,7 @@
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wp3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wp3', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wp3', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wp3', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wp3_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -79,7 +79,7 @@
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 [K^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'thlp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'thlp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'thlp2', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'thlp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -87,7 +87,7 @@
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtp2', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -95,7 +95,7 @@
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qtpthlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtpthlp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rtpthlp', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rtpthlp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -103,7 +103,7 @@
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wlsm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'wm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'wm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           #{'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '-omega ./ (pf_forc ./(287.04 .* temp .* (1 + 0.608 * sphum - liq_wat-ice_wat))) / 9.81', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}, no pf_forc
@@ -111,7 +111,7 @@
        {'plotTitle' => 'Zonal Wind Component, u', 'axisLabel' => 'um [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'um', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'um', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'um', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'um', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'um', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ucomp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -119,7 +119,7 @@
        {'plotTitle' => 'Meridional Wind Component, v', 'axisLabel' => 'vm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'vm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vcomp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -127,7 +127,7 @@
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpup + wpup_sgs', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'upwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'upwp', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'upwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'upwp_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -135,7 +135,7 @@
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sw.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'wpvp + wpvp_sgs', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vpwp', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vpwp', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vpwp', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vpwp_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -143,7 +143,7 @@
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 [m^s/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'up2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'up2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'up2', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'up2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'up2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -151,7 +151,7 @@
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vp2', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zm.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'vp2', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/mpace_b_zm.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'vp2', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_ph_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'vp2_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -159,7 +159,7 @@
        {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qrout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -167,14 +167,14 @@
        {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/m^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'nrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/m^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'ncm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Ncm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Ncm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Ncm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Ncm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'liq_drp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -182,14 +182,14 @@
        {'plotTitle' => 'Graupel Mixing Ratio', 'axisLabel' => 'rgm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qgm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rgm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rgm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rgm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rgm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Cloud Ice Mixing Ratio', 'axisLabel' => 'rim [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qim', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rim', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_wat', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -197,7 +197,7 @@
        {'plotTitle' => 'Cloud Ice Concentration', 'axisLabel' => 'Nim [num/m^3]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'nim', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nim', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nim', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nim', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nim', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
 #          {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'ice_num ./(pf_forc ./(287.04 .* temp .* (1 + 0.608 * sphum - liq_wat-ice_wat)))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
@@ -205,7 +205,7 @@
        {'plotTitle' => 'Snow Mixing Ratio', 'axisLabel' => 'rsm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qsm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rsm', 'lineWidth' => '6', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rsm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => '/home/matlabuserChris_Golaz_best_ever/mpace_b_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'mpace_b_zt.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'mpace_b_pf_gfdl.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'qsout', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
