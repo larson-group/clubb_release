@@ -500,7 +500,7 @@ module latin_hypercube_driver_module
 
       end if ! l_half_in_cloud
 
-      do k=1, nz
+      do k=2, nz
 
         call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
         l_error = l_error .or. l_error_in_sub
@@ -512,6 +512,9 @@ module latin_hypercube_driver_module
                                           pdf_params(k)%cloud_frac_1, & ! In
                                           pdf_params(k)%cloud_frac_2, & ! In
                                           l_error_in_sub ) ! Out
+        if ( l_error_in_sub ) then
+          write(0,*) 'k = ', k
+        end if
         l_error = l_error .or. l_error_in_sub
 
       end do ! k=1, nz
