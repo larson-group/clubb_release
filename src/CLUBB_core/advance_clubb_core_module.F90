@@ -61,7 +61,8 @@ module advance_clubb_core_module
                p_in_Pa, rho_zm, rho, exner, &                       ! intent(in)
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
-               rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, & ! intent(in)
+               rfrzm, radf, wphydrometp, &                          ! intent(in)
+               wp2hmp, rtphmp_zt, thlphmp_zt, &                     ! intent(in)
                host_dx, host_dy, &                                  ! intent(in) 
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
@@ -431,10 +432,10 @@ module advance_clubb_core_module
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
-      wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
-      wp2hmp,      & ! Third moment: <w'^2> * <hydro.'>    [(m/s)^2 <hm units>]
-      rtphmp,      & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp        ! Covariance of thl and a hydrometeor [K <hm units>]
+      wphydrometp, & ! Covariance of w and a hydrometeor      [(m/s) <hm units>]
+      wp2hmp,      & ! Third-order moment:  < w'^2 hm' >    [(m/s)^2 <hm units>]
+      rtphmp_zt,   & ! Covariance of rt and hm (on t-levs.) [(kg/kg) <hm units>]
+      thlphmp_zt     ! Covariance of thl and hm (on t-levs.)      [K <hm units>]
 
     real( kind = core_rknd ), intent(in) ::  &
       wpthlp_sfc,   & ! w' theta_l' at surface   [(m K)/s]
@@ -575,6 +576,12 @@ module advance_clubb_core_module
       varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
       varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
+      wphydrometp_zt, & ! Covariance of w and hm (on t-levs.) [(m/s) <hm units>]
+      wp2hmp_zm,      & ! Moment <w'^2 hm'> (on m-levs.)    [(m/s)^2 <hm units>]
+      rtphmp,         & ! Covariance of rt and hm           [(kg/kg) <hm units>]
+      thlphmp           ! Covariance of thl and hm                [K <hm units>]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -944,6 +951,11 @@ module advance_clubb_core_module
       sclrpthlp_zt(:,i) = zm2zt( sclrpthlp(:,i) )
     end do ! i = 1, sclr_dim, 1
 
+    ! Interpolate hydrometeor mixed moments to momentum levels.
+    do i = 1, hydromet_dim, 1
+       wphydrometp_zt(:,i) = zm2zt( wphydrometp(:,i) )
+    enddo ! i = 1, hydromet_dim, 1
+
 
     do k = 1, gr%nz, 1
 
@@ -958,9 +970,8 @@ module advance_clubb_core_module
 #ifdef GFDL
           RH_crit(k, : , :),   do_liquid_only_in_clubb,               & ! intent(in)
 #endif
-          ! wphydrometp, rtphmp, and thlphmp need to be interpolated to
-          ! thermodynamic levels before the call to pdf_closure.
-          wphydrometp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),   & ! intent(in)
+          wphydrometp_zt(k,:), wp2hmp(k,:),                           & ! intent(in)
+          rtphmp_zt(k,:), thlphmp_zt(k,:),                            & ! intent(in)
           wp4_zt(k), wprtp2(k), wp2rtp(k),                            & ! intent(out)
           wpthlp2(k), wp2thlp(k), wprtpthlp(k),                       & ! intent(out)
           cloud_frac(k), ice_supersat_frac(k),                        & ! intent(out)
@@ -1086,6 +1097,13 @@ module advance_clubb_core_module
       ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
       thlm_zm(gr%nz) = max( thlm_zm(gr%nz), thl_tol )
 
+      ! Interpolate hydrometeor mixed moments to momentum levels.
+      do i = 1, hydromet_dim, 1
+         rtphmp(:,i)    = zt2zm( rtphmp_zt(:,i) )
+         thlphmp(:,i)   = zt2zm( thlphmp_zt(:,i) )
+         wp2hmp_zm(:,i) = zt2zm( wp2hmp(:,i) )
+      enddo ! i = 1, hydromet_dim, 1
+
       ! Call pdf_closure to output the variables which belong on the momentum grid.
       do k = 1, gr%nz, 1
 
@@ -1100,9 +1118,8 @@ module advance_clubb_core_module
 #ifdef GFDL
             RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
 #endif
-            ! wp2hmp needs to be interpolated to momentum levels before the call
-            ! to pdf_closure.
-            wphydrometp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),         & ! intent(in)
+            wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
+            rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
             wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                               & ! intent(out)
             wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),                    & ! intent(out)
             cloud_frac_zm(k), ice_supersat_frac_zm(k),                        & ! intent(out) 
@@ -1263,9 +1280,8 @@ module advance_clubb_core_module
 #ifdef GFDL
             RH_crit(k, : , :),   do_liquid_only_in_clubb,                         & ! intent(in)
 #endif
-            ! wphydrometp, rtphmp, and thlphmp need to be interpolated to
-            ! thermodynamic levels before the call to pdf_closure.
-            wphydrometp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),             & ! intent(in)
+            wphydrometp_zt(k,:), wp2hmp(k,:),                                     & ! intent(in)
+            rtphmp_zt(k,:), thlphmp_zt(k,:),                                      & ! intent(in)
             wp4_zt_frz(k), wprtp2_frz(k), wp2rtp_frz(k),                          & ! intent(out)
             wpthlp2_frz(k), wp2thlp_frz(k), wprtpthlp_frz(k),                     & ! intent(out)
             cloud_frac_frz(k), ice_supersat_frac_frz(k),                          & ! intent(out)
@@ -1320,9 +1336,8 @@ module advance_clubb_core_module
 #ifdef GFDL
               RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
 #endif
-              ! wp2hmp needs to be interpolated to momentum levels before the
-              ! call to pdf_closure.
-              wphydrometp(k,:), wp2hmp(k,:), rtphmp(k,:), thlphmp(k,:),         & ! intent(in)
+              wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
+              rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
               wp4_frz(k), wprtp2_zm_frz(k), wp2rtp_zm_frz(k),                   & ! intent(out)
               wpthlp2_zm_frz(k), wp2thlp_zm_frz(k), wprtpthlp_zm_frz(k),        & ! intent(out)
               cloud_frac_zm_frz(k), ice_supersat_frac_zm_frz(k),                & ! intent(out) 
