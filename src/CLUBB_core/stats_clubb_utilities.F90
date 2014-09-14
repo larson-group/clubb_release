@@ -632,8 +632,16 @@ module stats_clubb_utilities
     endif
 
     if ( any( vars_zt == "hmp2_zt" ) ) then
-       ! Correct for number of variables found under "hmp2".
-       ! Subtract "hmp2" from the number of zt statistical variables.
+       ! Correct for number of variables found under "hmp2_zt".
+       ! Subtract "hmp2_zt" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zt statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
+
+    if ( any( vars_zt == "wp2hmp" ) ) then
+       ! Correct for number of variables found under "wp2hmp".
+       ! Subtract "wp2hmp" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 1 for each hydrometeor to the number of zt statistical variables.
        ntot = ntot + hydromet_dim
@@ -874,6 +882,23 @@ module stats_clubb_utilities
       ivar = ivar + 1
     end do
     ntot = ivar - 1
+
+    if ( any( vars_zm == "rtphmp" ) ) then
+       ! Correct for number of variables found under "rtphmp".
+       ! Subtract "rtphmp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zm statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
+
+    if ( any( vars_zm == "thlphmp" ) ) then
+       ! Correct for number of variables found under "thlphmp".
+       ! Subtract "thlphmp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zm statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
+
     if ( ntot == nvarmax_zm ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zm than allowed for by nvarmax_zm."
@@ -2553,7 +2578,10 @@ module stats_clubb_utilities
         icorr_Ncn_hm_2_n, &
         icorr_hmx_hmy_1_n, &
         icorr_hmx_hmy_2_n, &
-        ihmp2_zt
+        ihmp2_zt, &
+        iwp2hmp, &
+        irtphmp, &
+        ithlphmp
 
 #ifdef NETCDF
     use output_netcdf, only:  & 
@@ -2759,6 +2787,9 @@ module stats_clubb_utilities
       deallocate( icorr_hmx_hmy_1_n )
       deallocate( icorr_hmx_hmy_2_n )
       deallocate( ihmp2_zt )
+      deallocate( iwp2hmp )
+      deallocate( irtphmp )
+      deallocate( ithlphmp )
     end if ! l_stats
 
 

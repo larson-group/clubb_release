@@ -33,6 +33,9 @@ module mixed_moment_PDF_integrals
     ! References:
     !-----------------------------------------------------------------------
 
+    use grid_class, only: &
+        zt2zm    ! Procedure(s)
+
     use constants_clubb, only: &
         one,     & ! Constant(s)
         zero,    &
@@ -64,6 +67,17 @@ module mixed_moment_PDF_integrals
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w
+
+    use stats_type_utilities, only: &
+        stat_update_var    ! Procedure(s)
+
+    use stats_variables, only: &
+        iwp2hmp,      & ! Variable(s)
+        irtphmp,      &
+        ithlphmp,     &
+        zt,           &
+        zm,           &
+        l_stats_samp
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -319,6 +333,30 @@ module mixed_moment_PDF_integrals
     rtphmp_zt(1,:)  = zero
     thlphmp_zt(1,:) = zero
     wp2hmp(1,:)     = zero
+
+
+    ! Statistics
+    if ( l_stats_samp ) then
+
+       do hm_idx = 1, hydromet_dim, 1
+
+          if ( iwp2hmp(hm_idx) > 0 ) then
+             call stat_update_var( iwp2hmp(hm_idx), wp2hmp(:,hm_idx), zt )
+          endif ! iwp2hmp(hm_idx) > 0
+
+          if ( irtphmp(hm_idx) > 0 ) then
+             call stat_update_var( irtphmp(hm_idx), &
+                                   zt2zm( rtphmp_zt(:,hm_idx) ), zm )
+          endif ! irtphmp(hm_idx) > 0
+
+          if ( ithlphmp(hm_idx) > 0 ) then
+             call stat_update_var( ithlphmp(hm_idx), &
+                                   zt2zm( thlphmp_zt(:,hm_idx) ), zm )
+          endif ! ithlphmp(hm_idx) > 0
+
+       enddo ! hm_idx = 1, hydromet_dim, 1
+
+    endif ! l_stats_samp
 
 
     return

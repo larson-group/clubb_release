@@ -252,7 +252,7 @@ module stats_zm
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
-        iwphmp, &
+        iwphydrometp, &
         irtphmp, &
         ithlphmp
 
@@ -263,8 +263,13 @@ module stats_zm
         stat_assign ! Procedure
 
     use parameters_model, only: &
-        sclr_dim, &
+        hydromet_dim, & ! Variable(s)
+        sclr_dim,     &
         edsclr_dim
+
+    use array_index, only: &
+        hydromet_list, & ! Variable(s)
+        l_mix_rat_hm
 
     implicit none
 
@@ -278,6 +283,12 @@ module stats_zm
     logical, intent(inout) :: l_error
 
     ! Local Varables
+    integer :: tot_zm_loops
+
+    integer :: hm_idx
+
+    character(len=10) :: hm_type
+
     integer :: i, j, k
 
     logical :: l_found
@@ -286,6 +297,12 @@ module stats_zm
 
     ! The default initialization for array indices for zm is zero (see module
     ! stats_variables)
+
+    allocate( irtphmp(1:hydromet_dim) )
+    allocate( ithlphmp(1:hydromet_dim) )
+
+    irtphmp(:) = 0
+    ithlphmp(:) = 0
 
     ! Allocate and then zero out passive scalar arrays on the zm grid (fluxes,
     ! variances and other high-order moments)
@@ -317,9 +334,27 @@ module stats_zm
 
     ! Assign pointers for statistics variables zm using stat_assign
 
+    tot_zm_loops = zm%num_output_fields
+
+    if ( any( vars_zm == "rtphmp" ) ) then
+       ! Correct for number of variables found under "rtphmp".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zm_loops = tot_zm_loops - hydromet_dim
+       ! Add 1 for "rtphmp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "thlphmp" ) ) then
+       ! Correct for number of variables found under "thlphmp".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zm_loops = tot_zm_loops - hydromet_dim
+       ! Add 1 for "thlphmp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
     k = 1
 
-    do i = 1, zm%num_output_fields
+    do i = 1, tot_zm_loops
 
       select case ( trim( vars_zm(i) ) )
 
@@ -647,6 +682,74 @@ module stats_zm
              var_description="Covariance of w and cloud droplet concentration [(m/s)(num/kg)]", &
              var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
         k = k + 1
+
+      case ('rtphmp')
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            irtphmp(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=irtphmp(hm_idx), &
+                                 var_name="rtp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance < r_t'" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [kg^2/kg^2]", &
+                                 var_units="kg^2/kg^2", &
+                                 l_silhs=.false., grid_kind=zm )
+
+            else ! Concentration
+
+               call stat_assign( var_index=irtphmp(hm_idx), &
+                                 var_name="rtp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance < r_t'" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [(kg/kg) num/kg]", &
+                                 var_units="(kg/kg) num/kg", &
+                                 l_silhs=.false., grid_kind=zm )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! hm_idx = 1, hydromet_dim, 1
+
+      case ('thlphmp')
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            ithlphmp(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=ithlphmp(hm_idx), &
+                                 var_name="thlp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance < th_l'" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [K kg/kg]", &
+                                 var_units="K kg/kg", &
+                                 l_silhs=.false., grid_kind=zm )
+
+            else ! Concentration
+
+               call stat_assign( var_index=ithlphmp(hm_idx), &
+                                 var_name="thlp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance < th_l'" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [K num/kg]", &
+                                 var_units="K num/kg", &
+                                 l_silhs=.false., grid_kind=zm )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ('VNr')
         iVNr = k
@@ -1537,25 +1640,11 @@ module stats_zm
              var_units="(m kg)/(s kg)", l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('wphmp')
-        iwphmp = k
-        call stat_assign( var_index=iwphmp, var_name="wphmp", &
+      case ('wphydrometp')
+        iwphydrometp = k
+        call stat_assign( var_index=iwphydrometp, var_name="wphydrometp", &
              var_description="Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]", &
              var_units="(m/s) <hydrometeor units>", l_silhs=.false., grid_kind=zm)
-        k = k + 1
-
-      case ('rtphmp')
-        irtphmp = k
-        call stat_assign( var_index=irtphmp, var_name="rtphmp", &
-             var_description="Covariance of rt and a hydrometeor [(kg/kg) <hydrometeor units>]", &
-             var_units="(kg/kg) <hydrometeor units>", l_silhs=.false., grid_kind=zm)
-        k = k + 1
-
-      case ('thlphmp')
-        ithlphmp = k
-        call stat_assign( var_index=ithlphmp, var_name="thlphmp", &
-             var_description="Covariance of thlp and a hydrometeor [K <hydrometeor units>]", &
-             var_units="K <hydrometeor units>", l_silhs=.false., grid_kind=zm)
         k = k + 1
 
       case ('wm_zm')

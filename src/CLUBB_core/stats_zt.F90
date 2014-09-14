@@ -609,6 +609,8 @@ module stats_zt
 
     allocate( ihmp2_zt(1:hydromet_dim) )
 
+    allocate( iwp2hmp(1:hydromet_dim) )
+
     ihm1(:) = 0
     ihm2(:) = 0
     imu_hm_1(:) = 0
@@ -643,6 +645,8 @@ module stats_zt
     icorr_hmx_hmy_2_n(:,:) = 0
 
     ihmp2_zt(:) = 0
+
+    iwp2hmp(:) = 0
 
     ! Allocate and then zero out passive scalar arrays
     allocate( isclrm(1:sclr_dim) )
@@ -862,6 +866,14 @@ module stats_zt
        ! Subtract 1 from the loop size for each hydrometeor.
        tot_zt_loops = tot_zt_loops - hydromet_dim
        ! Add 1 for "hmp2_zt" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
+    if ( any( vars_zt == "wp2hmp" ) ) then
+       ! Correct for number of variables found under "wp2hmp".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - hydromet_dim
+       ! Add 1 for "wp2hmp" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -4808,12 +4820,40 @@ module stats_zt
 
          enddo ! hmx_idx = 1, hydromet_dim, 1
 
+      ! Third-order mixed moment < w'^2 hm' >, where hm is a hydrometeor.
       case ('wp2hmp')
-        iwp2hmp = k
-        call stat_assign( var_index=iwp2hmp, var_name="wp2hmp", &
-             var_description="Third moment: <w'^2> * <hydro.'> [(m/s)^2 <hydrometeor units>]", &
-             var_units="(m/s)^2 <hydrometeor units>", l_silhs=.false., grid_kind=zt )
-        k = k + 1
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            iwp2hmp(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=iwp2hmp(hm_idx), &
+                                 var_name="wp2"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Third-order moment < w'^2 " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [(m/s)^2 kg/kg]", &
+                                 var_units="(m/s)^2 kg/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            else ! Concentration
+
+               call stat_assign( var_index=iwp2hmp(hm_idx), &
+                                 var_name="wp2"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Third-order moment < w'^2 " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "' > [(m/s)^2 num/kg]", &
+                                 var_units="(m/s)^2 num/kg", &
+                                 l_silhs=.false., grid_kind=zt )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ('cloud_frac_refined')
         icloud_frac_refined = k

@@ -13,11 +13,12 @@
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'rvm', 'um', 'vm', 'um_ref','vm_ref','wm_zt', 'ug', 'vg',
-'cloud_frac', 'ice_supersat_frac', 'cloud_cover', 'rcm_in_layer', 'p_in_Pa', 'exner', 'rho_ds_zt', 'thv_ds_zt',
-'Lscale', 'T_in_K', 'rel_humidity', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 'Skw_zt',
-'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
-'Lscale_pert_1', 'Lscale_pert_2',
+'thlm', 'thvm', 'rtm', 'rcm', 'rvm', 'um', 'vm', 'um_ref','vm_ref','wm_zt',
+'ug', 'vg', 'cloud_frac', 'ice_supersat_frac', 'cloud_cover', 'rcm_in_layer',
+'p_in_Pa', 'exner', 'rho_ds_zt', 'thv_ds_zt', 'Lscale', 'T_in_K',
+'rel_humidity', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 'Skw_zt',
+'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wp2hmp',
+'wprtpthlp', 'Lscale_pert_1', 'Lscale_pert_2',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Nc_in_cloud', 'Nc_activated', 'Nccnm', 'Nim', 'snowslope', 'Nsm', 'Ngm', 
 'sed_rcm', 'rsat', 'rsati', 'rfrzm',
@@ -122,6 +123,7 @@ vars_zm =
 'Frad', 'Frad_LW', 'Frad_SW', 'Frad_LW_up', 'Frad_SW_up', 'Frad_LW_down', 'Frad_SW_down',
 'Fprec', 'Fcsed',
 'wprrp', 'wprip', 'wprsp', 'wprgp', 'wpNrp', 'wpNip', 'wpNsp', 'wpNgp', 'wpNcp',
+'rtphmp', 'thlphmp',
 'Vri', 'VNi', 'Vrc', 'VNc', 'Vrr', 'VNr', 'Vrs', 'VNs', 'Vrg',
 'Vrrprrp', 'VNrpNrp', 'Vrrprrp_expcalc', 'VNrpNrp_expcalc',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 'wp2_pr2',

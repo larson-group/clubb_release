@@ -3,10 +3,10 @@
 &statsnl
 
 vars_zt = 
-'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
-'cloud_frac', 'ice_supersat_frac', 'p_in_Pa', 'exner', 'rho_ds_zt', 'thv_ds_zt', 'Lscale',
-'T_in_K', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp',
-'Lscale_up', 'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
+'thlm', 'thvm', 'rtm', 'rcm', 'um', 'vm', 'wm_zt', 'ug', 'vg', 'cloud_frac',
+'ice_supersat_frac', 'p_in_Pa', 'exner', 'rho_ds_zt', 'thv_ds_zt', 'Lscale',
+'T_in_K', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2', 'wp2rtp', 'Lscale_up',
+'Lscale_down', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wp2hmp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'radht_LW', 'radht_SW',
 'Ncm', 'Nccnm', 'Nim', 'snowslope', 'Nsm', 'sed_rcm', 'rsat',
 'rrm', 'Nrm', 'm_vol_rad_rain', 'm_vol_rad_cloud',
@@ -63,6 +63,7 @@ vars_zm =
 'rho_ds_zm', 'thv_ds_zm', 'em', 'mean_w_up', 'mean_w_down', 'shear', 'Frad',
 'Frad_LW', 'Frad_SW', 'Fprec', 'Fcsed',
 'wprrp', 'wprip', 'wprsp', 'wprgp', 'wpNrp', 'wpNip', 'wpNsp', 'wpNgp', 'wpNcp',
+'rtphmp', 'thlphmp',
 'Vrr', 'VNr', 'Vrs', 'Vrg', 'Vri',
 'Vrrprrp', 'VNrpNrp', 'Vrrprrp_expcalc', 'VNrpNrp_expcalc',
 'wp2_bt', 'wp2_ma', 'wp2_ta', 'wp2_ac', 'wp2_bp', 'wp2_pr1', 'wp2_pr2',
