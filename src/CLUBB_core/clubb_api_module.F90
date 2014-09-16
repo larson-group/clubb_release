@@ -39,6 +39,12 @@ module clubb_api_module
     iirim, & ! Hydrometeor array index for ice mixing ratio, ri
     iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
     iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
+    iisclr_rt, &
+    iisclr_thl, &
+    iisclr_CO2, &
+    iiedsclr_rt, &
+    iiedsclr_thl, &
+    iiedsclr_CO2, &
     l_frozen_hm, & ! if true, then the hydrometeor is frozen; otherwise liquid
     l_mix_rat_hm ! if true, then the quantity is a hydrometeor mixing ratio
 
@@ -235,6 +241,12 @@ module clubb_api_module
         iirim, &
         iirrm, &
         iirsm, &
+        iisclr_rt, &
+        iisclr_thl, &
+        iisclr_CO2, &
+        iiedsclr_rt, &
+        iiedsclr_thl, &
+        iiedsclr_CO2, &
         l_frozen_hm, &
         l_mix_rat_hm, &
     cleanup_clubb_core_api
