@@ -898,7 +898,7 @@ module fill_holes
       max_velocity    ! Maximum sedimentation velocity                     [m/s]
 
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-               ixrm_bt, ixrm_mc, iwpxrp
+               ixrm_bt, ixrm_mc
 
     logical :: l_hole_fill = .true.
 
@@ -915,7 +915,7 @@ module fill_holes
           ! Set up the stats indices for hydrometeor at index i
           call setup_stats_indices( i,                           & ! Intent(in)
                                     ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                    ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                    ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                     max_velocity )                 ! Intent(inout)
 
           call stat_begin_update( ixrm_hf, hydromet(:,i) &
@@ -944,7 +944,7 @@ module fill_holes
       ! Set up the stats indices for hydrometeor at index i
       call setup_stats_indices( i,                           & ! Intent(in)
                                 ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                 max_velocity )                 ! Intent(inout)
 
       ! Print warning message if any hydrometeor species has a value < 0.
@@ -1097,7 +1097,7 @@ module fill_holes
          ! Set up the stats indices for hydrometeor at index i
          call setup_stats_indices( i,                           & ! Intent(in)
                                    ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                   ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                   ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                    max_velocity )                 ! Intent(inout)
 
          ! Store the previous value of the hydrometeor for the effect of
@@ -1177,11 +1177,9 @@ module fill_holes
   end subroutine fill_holes_driver
 
   !-----------------------------------------------------------------------
-
-
   subroutine setup_stats_indices( ihm,                         & ! Intent(in)
                                   ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                  ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                  ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                   max_velocity )                 ! Intent(inout)
 
   ! Description:
@@ -1201,46 +1199,42 @@ module fill_holes
         hydromet_list  ! Names of the hydrometeor species
 
     use stats_variables, only: &
-        iwphydrometp, &
-        iwpNcp
-
-    use stats_variables, only: &
-        irrm_bt,       & ! Variable(s)
-        irrm_mc,       &
-        irrm_hf,       &
-        irrm_wvhf,     &
-        irrm_cl,       &
-        irim_bt,        &
-        irim_mc,        &
-        irim_hf,        &
-        irim_wvhf,      &
-        irim_cl,        &
-        irgm_bt,    &
-        irgm_mc,    &
-        irgm_hf,    &
-        irgm_wvhf,  &
-        irgm_cl,    &
-        irsm_bt,       &
-        irsm_mc,       &
-        irsm_hf,       &
-        irsm_wvhf,     &
+        irrm_bt,   & ! Variable(s)
+        irrm_mc,   &
+        irrm_hf,   &
+        irrm_wvhf, &
+        irrm_cl,   &
+        irim_bt,   &
+        irim_mc,   &
+        irim_hf,   &
+        irim_wvhf, &
+        irim_cl,   &
+        irgm_bt,   &
+        irgm_mc,   &
+        irgm_hf,   &
+        irgm_wvhf, &
+        irgm_cl,   &
+        irsm_bt,   &
+        irsm_mc,   &
+        irsm_hf,   &
+        irsm_wvhf, &
         irsm_cl
 
     use stats_variables, only: &
-        iNrm_bt,       & ! Variable(s)
-        iNrm_mc,       &
-        iNrm_cl,       &
-        iNim_bt,       &
-        iNim_cl,       &
-        iNim_mc,       &
-        iNsm_bt,    &
-        iNsm_cl,    &
-        iNsm_mc,    &
+        iNrm_bt, & ! Variable(s)
+        iNrm_mc, &
+        iNrm_cl, &
+        iNim_bt, &
+        iNim_cl, &
+        iNim_mc, &
+        iNsm_bt, &
+        iNsm_cl, &
+        iNsm_mc, &
         iNgm_bt, &
         iNgm_cl, &
         iNgm_mc, &
-        iNcm_bt,       &
-        iNcm_cl,       &
+        iNcm_bt, &
+        iNcm_cl, &
         iNcm_mc
 
     use clubb_precision, only: &
@@ -1259,13 +1253,11 @@ module fill_holes
       max_velocity ! Maximum sedimentation velocity [m/s]
 
     integer, intent(inout) :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-                              ixrm_bt, ixrm_mc, iwpxrp
+                              ixrm_bt, ixrm_mc
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    iwpxrp = iwphydrometp(ihm)
 
     ! Initializing max_velocity in order to avoid a compiler warning.
     ! Regardless of the case, it will be reset in the 'select case'
@@ -1362,8 +1354,6 @@ module fill_holes
         ixrm_cl   = iNcm_cl
         ixrm_mc   = iNcm_mc
 
-        iwpxrp    = iwpNcp
-
         ! Use the rain water limit, since Morrison has no explicit limit on
         ! cloud water.  Presumably these numbers are never large.
         ! -dschanen 28 Sept 2009
@@ -1375,8 +1365,6 @@ module fill_holes
         ixrm_wvhf = 0
         ixrm_cl   = 0
         ixrm_mc   = 0
-
-        iwpxrp    = 0
 
         max_velocity = -9.1_core_rknd ! m/s
 

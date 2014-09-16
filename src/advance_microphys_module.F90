@@ -545,15 +545,15 @@ module advance_microphys_module
         zm,           & 
         l_stats_samp
 
-    ! Stats for <V_rr'rr"> and <V_Nr'Nr'>
     use array_index, only:  & 
-        hydromet_list,     & ! Variable(s)
-        iirrm, &! Variable(s)
+        hydromet_list, & ! Variable(s)
+        iirrm,         &
         iiNrm
 
     use stats_variables, only: & 
-        iVrrprrp, & ! Variable(s)
-        iVNrpNrp
+        iVrrprrp,     & ! Variable(s)
+        iVNrpNrp,     &
+        iwphydrometp
 
     implicit none
 
@@ -620,7 +620,7 @@ module advance_microphys_module
 
     ! Stat indices
     integer :: ixrm_hf, ixrm_wvhf, ixrm_cl, &
-               ixrm_bt, ixrm_mc, iwpxrp
+               ixrm_bt, ixrm_mc
 
 
     ! Initialize error code
@@ -633,7 +633,7 @@ module advance_microphys_module
        ! Set up the stats indices for hydrometeor index i
        call setup_stats_indices( i,                           & ! Intent(in)
                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                 ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                 ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                  max_velocity )                 ! Intent(inout)
 
        if ( l_stats_samp ) then
@@ -735,7 +735,7 @@ module advance_microphys_module
        ! Set up the stats indices for hydrometeor at index i
        call setup_stats_indices( i,                           & ! Intent(in)
                                  ixrm_bt, ixrm_hf, ixrm_wvhf, & ! Intent(inout)
-                                 ixrm_cl, ixrm_mc, iwpxrp,    & ! Intent(inout)
+                                 ixrm_cl, ixrm_mc,            & ! Intent(inout)
                                  max_velocity )                 ! Intent(inout)
 
        ! Print warning message if any hydrometeor species has a value < 0.
@@ -800,10 +800,10 @@ module advance_microphys_module
        ! <V_rr'r_r'>, and <V_Nr'N_r'>.
        if ( l_stats_samp ) then
 
-          if ( iwpxrp > 0 ) then
+          if ( iwphydrometp(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( iwpxrp, wphydrometp(:,i), zm )
+             call stat_update_var( iwphydrometp(i), wphydrometp(:,i), zm )
 
           endif
 
