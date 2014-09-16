@@ -115,6 +115,7 @@ python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","sil
 if [ "$1" == "-nightly" ]
 then
     python create_module_table.py CLUBB_core> ../text_output/apiCommitmentTable.html
+    rm -rf CLUBB_core
 else
     echo "Removing Checkouts"
     rm -rf $clubbDir
