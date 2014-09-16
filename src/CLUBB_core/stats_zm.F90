@@ -100,14 +100,6 @@ module stats_zm
         ivp2_sf
 
     use stats_variables, only: & 
-        iwprrp, &
-        iwprip, &
-        iwprsp, &
-        iwprgp, &
-        iwpNrp, &
-        iwpNip, &
-        iwpNsp, &
-        iwpNgp, &
         iwpNcp
 
     use stats_variables, only: & 
@@ -298,9 +290,11 @@ module stats_zm
     ! The default initialization for array indices for zm is zero (see module
     ! stats_variables)
 
+    allocate( iwphydrometp(1:hydromet_dim) )
     allocate( irtphmp(1:hydromet_dim) )
     allocate( ithlphmp(1:hydromet_dim) )
 
+    iwphydrometp(:) = 0
     irtphmp(:) = 0
     ithlphmp(:) = 0
 
@@ -335,6 +329,14 @@ module stats_zm
     ! Assign pointers for statistics variables zm using stat_assign
 
     tot_zm_loops = zm%num_output_fields
+
+    if ( any( vars_zm == "wphydrometp" ) ) then
+       ! Correct for number of variables found under "wphydrometp".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zm_loops = tot_zm_loops - hydromet_dim
+       ! Add 1 for "wphydrometp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
 
     if ( any( vars_zm == "rtphmp" ) ) then
        ! Correct for number of variables found under "rtphmp".
@@ -611,76 +613,48 @@ module stats_zm
              var_units="kg/(s*m^2)", l_silhs=.false., grid_kind=zm )
         k = k + 1
 
-      case ('wprrp')
-        iwprrp = k
+      case ('wphydrometp')
 
-        call stat_assign( var_index=iwprrp, var_name="wprrp", &
-             var_description="Covariance of w and rain water mixing ratio [(m/s)(kg/kg)]", &
-             var_units="(m/s)(kg/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+         do hm_idx = 1, hydromet_dim, 1
 
-      case ('wprip')
-        iwprip = k
+            hm_type = hydromet_list(hm_idx)
 
-        call stat_assign( var_index=iwprip, var_name="wprip", &
-             var_description="Covariance of w and ice mixing ratio [(m/s)(kg/kg)]", &
-             var_units="(m/s)(kg/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+            iwphydrometp(hm_idx) = k
 
-      case ('wprsp')
-        iwprsp = k
+            if ( l_mix_rat_hm(hm_idx) ) then
 
-        call stat_assign( var_index=iwprsp, var_name="wprsp", &
-             var_description="Covariance of w and snow mixing ratio [(m/s)(kg/kg)]", &
-             var_units="(m/s)(kg/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+               call stat_assign( var_index=iwphydrometp(hm_idx), &
+                                 var_name="wp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance of w and " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " [(m/s) kg/kg]", &
+                                 var_units="(m/s) kg/kg", &
+                                 l_silhs=.false., grid_kind=zm )
 
-      case ('wprgp')
-        iwprgp = k
+            else ! Concentration
 
-        call stat_assign( var_index=iwprgp, var_name="wprgp", &
-             var_description="Covariance of w and graupel mixing ratio [(m/s)(kg/kg)]", &
-             var_units="(m/s)(kg/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+               call stat_assign( var_index=iwphydrometp(hm_idx), &
+                                 var_name="wp"//trim( hm_type(1:2) )//"p", &
+                                 var_description="Covariance of w and " &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // " [(m/s) num/kg]", &
+                                 var_units="(m/s) num/kg", &
+                                 l_silhs=.false., grid_kind=zm )
 
-      case ('wpNrp')
-        iwpNrp = k
+            endif ! l_mix_rat_hm(hm_idx)
 
-        call stat_assign( var_index=iwpNrp, var_name="wpNrp", &
-             var_description="Covariance of w and rain drop concentration [(m/s)(num/kg)]", &
-             var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+            k = k + 1
 
-      case ('wpNip')
-        iwpNip = k
-
-        call stat_assign( var_index=iwpNip, var_name="wpNip", &
-             var_description="Covariance of w and ice concentration [(m/s)(num/kg)]", &
-             var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
-
-      case ('wpNsp')
-        iwpNsp = k
-
-        call stat_assign( var_index=iwpNsp, var_name="wpNsp", &
-             var_description="Covariance of w and snow concentration [(m/s)(num/kg)]", &
-             var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
-
-      case ('wpNgp')
-        iwpNgp = k
-
-        call stat_assign( var_index=iwpNgp, var_name="wpNgp", &
-             var_description="Covariance of w and graupel concentration [(m/s)(num/kg)]", &
-             var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ('wpNcp')
         iwpNcp = k
 
         call stat_assign( var_index=iwpNcp, var_name="wpNcp", &
-             var_description="Covariance of w and cloud droplet concentration [(m/s)(num/kg)]", &
-             var_units="(m/s)(num/kg)", l_silhs=.false., grid_kind=zm )
+                          var_description="Covariance of w and " &
+                                          // "N_c [(m/s) num/kg]", &
+                          var_units="(m/s) num/kg", &
+                          l_silhs=.false., grid_kind=zm )
         k = k + 1
 
       case ('rtphmp')
@@ -695,9 +669,9 @@ module stats_zm
 
                call stat_assign( var_index=irtphmp(hm_idx), &
                                  var_name="rtp"//trim( hm_type(1:2) )//"p", &
-                                 var_description="Covariance < r_t'" &
+                                 var_description="Covariance of r_t and " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "' > [kg^2/kg^2]", &
+                                 // " [kg^2/kg^2]", &
                                  var_units="kg^2/kg^2", &
                                  l_silhs=.false., grid_kind=zm )
 
@@ -705,9 +679,9 @@ module stats_zm
 
                call stat_assign( var_index=irtphmp(hm_idx), &
                                  var_name="rtp"//trim( hm_type(1:2) )//"p", &
-                                 var_description="Covariance < r_t'" &
+                                 var_description="Covariance of r_t and " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "' > [(kg/kg) num/kg]", &
+                                 // " [(kg/kg) num/kg]", &
                                  var_units="(kg/kg) num/kg", &
                                  l_silhs=.false., grid_kind=zm )
 
@@ -729,9 +703,9 @@ module stats_zm
 
                call stat_assign( var_index=ithlphmp(hm_idx), &
                                  var_name="thlp"//trim( hm_type(1:2) )//"p", &
-                                 var_description="Covariance < th_l'" &
+                                 var_description="Covariance of th_l and " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "' > [K kg/kg]", &
+                                 // " [K kg/kg]", &
                                  var_units="K kg/kg", &
                                  l_silhs=.false., grid_kind=zm )
 
@@ -739,9 +713,9 @@ module stats_zm
 
                call stat_assign( var_index=ithlphmp(hm_idx), &
                                  var_name="thlp"//trim( hm_type(1:2) )//"p", &
-                                 var_description="Covariance < th_l'" &
+                                 var_description="Covariance of th_l and " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "' > [K num/kg]", &
+                                 // " [K num/kg]", &
                                  var_units="K num/kg", &
                                  l_silhs=.false., grid_kind=zm )
 
@@ -1638,13 +1612,6 @@ module stats_zm
         call stat_assign( var_index=iwprtp_exit_mfl, var_name="wprtp_exit_mfl", &
              var_description="Wprtp exiting flux limiter [(m kg)/(s kg)]", &
              var_units="(m kg)/(s kg)", l_silhs=.false., grid_kind=zm )
-        k = k + 1
-
-      case ('wphydrometp')
-        iwphydrometp = k
-        call stat_assign( var_index=iwphydrometp, var_name="wphydrometp", &
-             var_description="Covariance of w and a hydrometeor [(m/s) <hydrometeor units>]", &
-             var_units="(m/s) <hydrometeor units>", l_silhs=.false., grid_kind=zm)
         k = k + 1
 
       case ('wm_zm')

@@ -1201,14 +1201,7 @@ module fill_holes
         hydromet_list  ! Names of the hydrometeor species
 
     use stats_variables, only: &
-        iwprrp, &
-        iwprip, &
-        iwprsp, &
-        iwprgp, &
-        iwpNrp, &
-        iwpNip, &
-        iwpNsp, &
-        iwpNgp, &
+        iwphydrometp, &
         iwpNcp
 
     use stats_variables, only: &
@@ -1272,20 +1265,20 @@ module fill_holes
 
     !----- Begin Code -----
 
-    ! Initializing max_velocity in order to avoid a compiler warning.
-      ! Regardless of the case, it will be reset in the 'select case'
-      ! statement immediately below.
-      max_velocity = zero
+    iwpxrp = iwphydrometp(ihm)
 
-      select case ( trim( hydromet_list(ihm) ) )
+    ! Initializing max_velocity in order to avoid a compiler warning.
+    ! Regardless of the case, it will be reset in the 'select case'
+    ! statement immediately below.
+    max_velocity = zero
+
+    select case ( trim( hydromet_list(ihm) ) )
       case ( "rrm" )
         ixrm_bt   = irrm_bt
         ixrm_hf   = irrm_hf
         ixrm_wvhf = irrm_wvhf
         ixrm_cl   = irrm_cl
         ixrm_mc   = irrm_mc
-
-        iwpxrp    = iwprrp
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1296,8 +1289,6 @@ module fill_holes
         ixrm_cl   = irim_cl
         ixrm_mc   = irim_mc
 
-        iwpxrp    = iwprip
-
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "rsm" )
@@ -1306,8 +1297,6 @@ module fill_holes
         ixrm_wvhf = irsm_wvhf
         ixrm_cl   = irsm_cl
         ixrm_mc   = irsm_mc
-
-        iwpxrp    = iwprsp
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1323,8 +1312,6 @@ module fill_holes
         ixrm_cl   = irgm_cl
         ixrm_mc   = irgm_mc
 
-        iwpxrp    = iwprgp
-
         max_velocity = -20._core_rknd ! m/s
 
       case ( "Nrm" )
@@ -1333,8 +1320,6 @@ module fill_holes
         ixrm_wvhf = 0
         ixrm_cl   = iNrm_cl
         ixrm_mc   = iNrm_mc
-
-        iwpxrp    = iwpNrp
 
         max_velocity = -9.1_core_rknd ! m/s
 
@@ -1345,8 +1330,6 @@ module fill_holes
         ixrm_cl   = iNim_cl
         ixrm_mc   = iNim_mc
 
-        iwpxrp    = iwpNip
-
         max_velocity = -1.2_core_rknd ! m/s
 
       case ( "Nsm" )
@@ -1355,8 +1338,6 @@ module fill_holes
         ixrm_wvhf = 0
         ixrm_cl   = iNsm_cl
         ixrm_mc   = iNsm_mc
-
-        iwpxrp    = iwpNsp
 
         ! Morrison limit
 !         max_velocity = -1.2_core_rknd ! m/s
@@ -1371,8 +1352,6 @@ module fill_holes
         ixrm_wvhf = 0
         ixrm_cl   = iNgm_cl
         ixrm_mc   = iNgm_mc
-
-        iwpxrp    = iwpNgp
 
         max_velocity = -20._core_rknd ! m/s
 
@@ -1401,9 +1380,11 @@ module fill_holes
 
         max_velocity = -9.1_core_rknd ! m/s
 
-      end select
+    end select
+
 
     return
+
   end subroutine setup_stats_indices
   !-----------------------------------------------------------------------
 

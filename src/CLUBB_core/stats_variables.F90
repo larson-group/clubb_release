@@ -621,17 +621,14 @@ module stats_variables
   integer, dimension(:), allocatable, public :: &
     iwp2hmp
 
-!$omp threadprivate( iwp2hmp )
+!$omp   threadprivate( iwp2hmp )
 
   integer, dimension(:), allocatable, public :: &
-!    iwphydrometp, &
+    iwphydrometp, &
     irtphmp,      &
     ithlphmp
 
-  integer, public :: &
-    iwphydrometp = 0
-
-!$omp threadprivate( iwphydrometp, irtphmp, ithlphmp )
+!$omp   threadprivate( iwphydrometp, irtphmp, ithlphmp )
 
   integer, dimension(:), allocatable, public :: &
     ihmp2_zt
@@ -930,20 +927,11 @@ module stats_variables
 !$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
 !$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)
 
-  ! Covariances of w and hydrometeors, < w'h_m' >
+  ! Covariance of w and cloud droplet concentration, < w'N_c' >
   integer, public :: &
-    iwprrp = 0, &
-    iwprip = 0, &
-    iwprsp = 0, &
-    iwprgp = 0, &
-    iwpNrp = 0, &
-    iwpNip = 0, &
-    iwpNsp = 0, &
-    iwpNgp = 0, &
     iwpNcp = 0
 
-!$omp   threadprivate(iwprrp, iwprip, iwprsp, iwprgp)
-!$omp   threadprivate(iwpNrp, iwpNip, iwpNsp, iwpNgp, iwpNcp)
+!$omp   threadprivate( iwpNcp )
 
   ! Sedimentation velocities
   integer, public :: & 

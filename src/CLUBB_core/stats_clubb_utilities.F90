@@ -883,6 +883,14 @@ module stats_clubb_utilities
     end do
     ntot = ivar - 1
 
+    if ( any( vars_zm == "wphydrometp" ) ) then
+       ! Correct for number of variables found under "wphydrometp".
+       ! Subtract "wphydrometp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zm statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
+
     if ( any( vars_zm == "rtphmp" ) ) then
        ! Correct for number of variables found under "rtphmp".
        ! Subtract "rtphmp" from the number of zm statistical variables.
@@ -2580,6 +2588,7 @@ module stats_clubb_utilities
         icorr_hmx_hmy_2_n, &
         ihmp2_zt, &
         iwp2hmp, &
+        iwphydrometp, &
         irtphmp, &
         ithlphmp
 
@@ -2788,6 +2797,7 @@ module stats_clubb_utilities
       deallocate( icorr_hmx_hmy_2_n )
       deallocate( ihmp2_zt )
       deallocate( iwp2hmp )
+      deallocate( iwphydrometp )
       deallocate( irtphmp )
       deallocate( ithlphmp )
     end if ! l_stats
