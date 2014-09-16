@@ -586,9 +586,10 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        two,    & ! Constant(s)
-        zero,   &
-        rt_tol
+        two,                 & ! Constant(s)
+        zero,                &
+        rt_tol,              &
+        max_mag_correlation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -626,6 +627,15 @@ module pdf_utilities
 
     endif
 
+    ! Clip the magnitude of the correlation of rt and x in the ith PDF
+    ! component, just in case the specified correlations used in calculating it
+    ! are out of whack.
+    if ( corr_rt_x_i > max_mag_correlation ) then
+       corr_rt_x_i = max_mag_correlation
+    elseif ( corr_rt_x_i < -max_mag_correlation ) then
+       corr_rt_x_i = -max_mag_correlation
+    endif
+
 
     return
 
@@ -644,9 +654,10 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        two,     & ! Constant(s)
-        zero,    &
-        thl_tol
+        two,                 & ! Constant(s)
+        zero,                &
+        thl_tol,             &
+        max_mag_correlation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -683,6 +694,15 @@ module pdf_utilities
        ! be used.
        corr_thl_x_i = zero
 
+    endif
+
+    ! Clip the magnitude of the correlation of thl and x in the ith PDF
+    ! component, just in case the specified correlations used in calculating it
+    ! are out of whack.
+    if ( corr_thl_x_i > max_mag_correlation ) then
+       corr_thl_x_i = max_mag_correlation
+    elseif ( corr_thl_x_i < -max_mag_correlation ) then
+       corr_thl_x_i = -max_mag_correlation
     endif
 
 
