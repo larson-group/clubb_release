@@ -225,7 +225,7 @@ module stats_variables
      iradht_LW = 0,        & !   "           "   Long-wave component
      iradht_SW = 0,        & !   "           "   Short-wave component
      irel_humidity = 0
-!$omp  threadprivate( iNcm, iNccnm, iNc_activated, isnowslope, &
+!$omp  threadprivate( iNcm, iNccnm, iNc_in_cloud, iNc_activated, isnowslope, &
 !$omp    ised_rcm, irsat, irsati, irrm, &
 !$omp    im_vol_rad_rain, im_vol_rad_cloud, &
 !$omp    iprecip_rate_zt, iAKm, ilh_AKm, &
