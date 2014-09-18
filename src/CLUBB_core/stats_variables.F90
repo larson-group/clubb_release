@@ -1107,7 +1107,7 @@ module stats_variables
     ivp2_sf = 0
 
 !$omp   threadprivate(iup2_bt, iup2_ta, iup2_tp, iup2_ma, iup2_dp1)
-!$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl)
+!$omp   threadprivate(iup2_dp2, iup2_pr1, iup2_pr2, iup2_cl, iup2_sf)
 !$omp   threadprivate(ivp2_bt, ivp2_ta, ivp2_tp, ivp2_ma, ivp2_dp1)
 !$omp   threadprivate(ivp2_dp2, ivp2_pr1, ivp2_pr2, ivp2_cl)
 !$omp   threadprivate(iup2_pd, ivp2_pd, ivp2_sf)
