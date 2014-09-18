@@ -2,7 +2,7 @@
 ! $Id$
 !===============================================================================
 
-module stats_lh_sfc
+module stats_lh_sfc_module
 
 
   implicit none
@@ -107,5 +107,5 @@ module stats_lh_sfc
     return
   end subroutine stats_init_lh_sfc
 
-end module stats_lh_sfc
+end module stats_lh_sfc_module
 

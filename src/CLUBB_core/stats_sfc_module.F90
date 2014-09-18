@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module stats_sfc
+module stats_sfc_module
 
 
   implicit none
@@ -456,5 +456,5 @@ module stats_sfc
   end subroutine stats_init_sfc
 
 
-end module stats_sfc
+end module stats_sfc_module
 

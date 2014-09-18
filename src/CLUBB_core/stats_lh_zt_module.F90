@@ -1,7 +1,7 @@
 !-----------------------------------------------------------------------
 ! $Id$
 !===============================================================================
-module stats_lh_zt
+module stats_lh_zt_module
 
   implicit none
 
@@ -627,4 +627,4 @@ module stats_lh_zt
     return
   end subroutine stats_init_lh_zt
 
-end module stats_lh_zt
+end module stats_lh_zt_module

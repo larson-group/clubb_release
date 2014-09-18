@@ -2,7 +2,7 @@
 ! $Id$
 !===============================================================================
 
-module stats_rad_zm
+module stats_rad_zm_module
 
   implicit none
 
@@ -165,4 +165,4 @@ module stats_rad_zm
     return
   end subroutine stats_init_rad_zm
 
-end module stats_rad_zm
+end module stats_rad_zm_module

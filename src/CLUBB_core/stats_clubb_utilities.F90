@@ -110,31 +110,31 @@ module stats_clubb_utilities
       open_netcdf     ! Procedure
 #endif
 
-    use stats_zm, only: &
+    use stats_zm_module, only: &
       nvarmax_zm, & ! Constant(s)
       stats_init_zm ! Procedure(s)
 
-    use stats_zt, only: & 
+    use stats_zt_module, only: &
       nvarmax_zt, & ! Constant(s)
       stats_init_zt ! Procedure(s)
 
-    use stats_lh_zt, only: & 
+    use stats_lh_zt_module, only: &
       nvarmax_lh_zt, & ! Constant(s)
       stats_init_lh_zt ! Procedure(s)
 
-    use stats_lh_sfc, only: & 
+    use stats_lh_sfc_module, only: &
       nvarmax_lh_sfc, & ! Constant(s)
       stats_init_lh_sfc ! Procedure(s)
 
-    use stats_rad_zt, only: & 
+    use stats_rad_zt_module, only: &
       nvarmax_rad_zt, & ! Constant(s)
       stats_init_rad_zt ! Procedure(s)
 
-    use stats_rad_zm, only: & 
+    use stats_rad_zm_module, only: &
       nvarmax_rad_zm, & ! Constant(s)
       stats_init_rad_zm ! Procedure(s)
 
-    use stats_sfc, only: &
+    use stats_sfc_module, only: &
       nvarmax_sfc, & ! Constant(s)
       stats_init_sfc ! Procedure(s)
 

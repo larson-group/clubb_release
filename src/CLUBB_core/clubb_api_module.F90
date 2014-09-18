@@ -153,10 +153,10 @@ module clubb_api_module
     clubb_i, &    ! Used to output multiple columns
     clubb_j       ! The indices must not exceed nlon (for i) or nlat (for j).
 
-  use stats_rad_zm, only : &
+  use stats_rad_zm_module, only : &
     nvarmax_rad_zm ! Maximum variables allowed
 
-  use stats_rad_zt, only : &
+  use stats_rad_zt_module, only : &
     nvarmax_rad_zt  ! Maximum variables allowed
 
   use stats_variables, only : &
@@ -191,13 +191,13 @@ module clubb_api_module
     zmscr13, zmscr14, zmscr15, &
     zmscr16, zmscr17
 
-  use stats_zm, only : &
+  use stats_zm_module, only : &
     nvarmax_zm ! Maximum variables allowed
 
-  use stats_zt, only : &
+  use stats_zt_module, only : &
     nvarmax_zt ! Maximum variables allowed
 
-  use stats_sfc, only : &
+  use stats_sfc_module, only : &
     nvarmax_sfc
 
   use variables_diagnostic_module, only : &
@@ -1744,7 +1744,7 @@ contains
   subroutine stats_init_rad_zm_api( &
     vars_rad_zm, l_error )
 
-    use stats_rad_zm, only : stats_init_rad_zm, nvarmax_rad_zm
+    use stats_rad_zm_module, only : stats_init_rad_zm, nvarmax_rad_zm
 
     implicit none
 
@@ -1765,7 +1765,7 @@ contains
   subroutine stats_init_rad_zt_api( &
     vars_rad_zt, l_error )
 
-    use stats_rad_zt, only : stats_init_rad_zt, nvarmax_rad_zt
+    use stats_rad_zt_module, only : stats_init_rad_zt, nvarmax_rad_zt
 
     implicit none
 
@@ -1786,7 +1786,7 @@ contains
   subroutine stats_init_zm_api( &
     vars_zm, l_error )
 
-    use stats_zm, only : stats_init_zm, nvarmax_zm
+    use stats_zm_module, only : stats_init_zm, nvarmax_zm
 
     implicit none
 
@@ -1808,7 +1808,7 @@ contains
   subroutine stats_init_zt_api( &
     vars_zt, l_error )
 
-    use stats_zt, only : stats_init_zt, nvarmax_zt
+    use stats_zt_module, only : stats_init_zt, nvarmax_zt
 
     implicit none
 
@@ -1830,7 +1830,7 @@ contains
   subroutine stats_init_sfc_api( &
     vars_sfc, l_error )
 
-    use stats_sfc, only : stats_init_sfc, nvarmax_sfc
+    use stats_sfc_module, only : stats_init_sfc, nvarmax_sfc
 
     implicit none
 
