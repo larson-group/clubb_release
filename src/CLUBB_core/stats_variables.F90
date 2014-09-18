@@ -1266,6 +1266,8 @@ module stats_variables
   integer, public :: &
     irtp2_from_chi = 0
 
+!$omp threadprivate( irtp2_from_chi )
+
   ! Variables that contains all the statistics
 
   type (stats), target, public :: zt,   &    ! zt grid
