@@ -257,7 +257,7 @@ module stats_variables
     irtm_zm = 0, &
     ithlm_zm = 0
 
-!$omp threadprivate(icloud_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
+!$omp threadprivate(icloud_frac_zm, iice_supersat_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
 
   integer, public :: &
     ilh_rcm_avg = 0, &
@@ -913,6 +913,7 @@ module stats_variables
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, irc_coef, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, irho_ds_zm, ithv_ds_zm, iem, ishear)
+!$omp   threadprivate(imean_w_up, imean_w_down)
 !$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
 
