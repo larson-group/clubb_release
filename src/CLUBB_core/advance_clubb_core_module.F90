@@ -1746,7 +1746,7 @@ module advance_clubb_core_module
       end if
 
       call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
-                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, & ! intent(in)
+                            Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_zm, Skw_zm, rtpthvp, rtm_forcing,     & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
                             thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)

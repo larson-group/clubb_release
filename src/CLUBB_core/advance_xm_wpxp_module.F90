@@ -41,7 +41,7 @@ module advance_xm_wpxp_module
 
   !=============================================================================
   subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
-                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, &
+                              Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               tau_zm, Skw_zm, rtpthvp, rtm_forcing, &
                               wprtp_forcing, rtm_ref, thlpthvp, &
                               thlm_forcing, wpthlp_forcing, thlm_ref, &
@@ -170,6 +170,7 @@ module advance_xm_wpxp_module
       wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
+      Kh_zm,           & ! Eddy diffusivity on momentum levels
       tau_zm,          & ! Time-scale tau on momentum levels        [s]
       Skw_zm,          & ! Skewness of w on momentum levels         [-]
       rtpthvp,         & ! r_t'th_v' (momentum levels)              [(kg/kg) K]
@@ -374,7 +375,7 @@ module advance_xm_wpxp_module
 
       ! Compute the implicit portion of the r_t and w'r_t' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( l_iter, dt, wprtp, a1, a1_zt, wm_zm, wm_zt,  &  ! Intent(in)
+      call xm_wpxp_lhs( l_iter, dt, Kh_zm, wprtp, a1, a1_zt, wm_zm, wm_zt,  &  ! Intent(in)
                         wp2, wp3_on_wp2, wp3_on_wp2_zt, & ! Intent(in)
                         Kw6, tau_zm, C7_Skw_fnc,  & ! Intent(in)
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
@@ -447,7 +448,7 @@ module advance_xm_wpxp_module
 
       ! Compute the implicit portion of the th_l and w'th_l' equations.
       ! Build the left-hand side matrix.
-      call xm_wpxp_lhs( l_iter, dt, wpthlp, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
+      call xm_wpxp_lhs( l_iter, dt, Kh_zm, wpthlp, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
                         wp2, wp3_on_wp2, wp3_on_wp2_zt, & !  Intent(in)
                         Kw6, tau_zm, C7_Skw_fnc, & ! Intent(in)
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
@@ -531,7 +532,7 @@ module advance_xm_wpxp_module
 
         ! Compute the implicit portion of the sclr and w'sclr' equations.
         ! Build the left-hand side matrix.
-        call xm_wpxp_lhs( l_iter, dt, wpsclrp(:,i), a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
+        call xm_wpxp_lhs( l_iter, dt, Kh_zm, wpsclrp(:,i), a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
                           wp2, wp3_on_wp2, wp3_on_wp2_zt, & !  Intent(in)
                           Kw6, tau_zm, C7_Skw_fnc, &  ! Intent(in)
                           C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  &  ! Intent(in)
@@ -592,7 +593,7 @@ module advance_xm_wpxp_module
     else ! Simple case, where l_clip_semi_implicit is false
 
       ! Create the lhs once
-      call xm_wpxp_lhs( l_iter, dt, dummy_1d, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
+      call xm_wpxp_lhs( l_iter, dt, Kh_zm, dummy_1d, a1, a1_zt, wm_zm, wm_zt, & ! Intent(in)
                         wp2, wp3_on_wp2, wp3_on_wp2_zt, & ! Intent(in)
                         Kw6, tau_zm, C7_Skw_fnc, & ! Intent(in)
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  & ! Intent(in)
@@ -831,7 +832,7 @@ module advance_xm_wpxp_module
   end subroutine advance_xm_wpxp
 
   !=============================================================================
-  subroutine xm_wpxp_lhs( l_iter, dt, wpxp, a1, a1_zt, wm_zm, wm_zt,  &
+  subroutine xm_wpxp_lhs( l_iter, dt, Kh_zm, wpxp, a1, a1_zt, wm_zm, wm_zt,  &
                           wp2, wp3_on_wp2, wp3_on_wp2_zt, &
                           Kw6, tau_zm, C7_Skw_fnc, &
                           C6x_Skw_fnc, rho_ds_zm, rho_ds_zt,  &
@@ -862,13 +863,15 @@ module advance_xm_wpxp_module
 
     use model_flags, only: &
         l_clip_semi_implicit, & ! Variable(s)
-        l_upwind_wpxp_ta
+        l_upwind_wpxp_ta, &
+        l_diffuse_rtm_and_thlm
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
 
     use diffusion, only:  & 
-        diffusion_zm_lhs ! Procedure(s)
+        diffusion_zt_lhs, &! Procedure(s)
+        diffusion_zm_lhs
 
     use mean_adv, only: & 
         term_ma_zt_lhs,  & ! Procedure(s)
@@ -957,6 +960,7 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       wpxp,            & ! w'x' (momentum levels) at timestep (t)    [{xm units} m/s]
+      Kh_zm,           & ! Eddy diffusivity on momentum levels       [m^2/s]
       a1,              & ! a_1 (momentum levels)                     [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
@@ -993,6 +997,17 @@ module advance_xm_wpxp_module
 
     logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
 
+    ! The variables below are used to change the amount
+    ! of diffusion applied towards rtm and thlm. They are only used when
+    ! l_diffuse_rtm_and_thlm = .true.
+    real (kind = core_rknd), dimension(gr%nz) :: zero_nu
+    real (kind = core_rknd) :: constant_nu
+    real (kind = core_rknd) :: k_modifier
+
+    zero_nu = 0.0_core_rknd
+    constant_nu = 0.0_core_rknd
+    k_modifier = 0.05_core_rknd
+
 
     ! Initialize the left-hand side matrix to 0.
     lhs = zero
@@ -1009,7 +1024,15 @@ module advance_xm_wpxp_module
 
       k_xm = 2*k - 1
       ! k_wpxp is 2*k
-
+      
+      if ( l_diffuse_rtm_and_thlm ) then
+        lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+        = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+        + invrs_rho_ds_zt(k)  &
+        * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
+            rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+            gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+      end if
 
       !!!!!***** xm *****!!!!!
 
@@ -1316,10 +1339,43 @@ module advance_xm_wpxp_module
     k_xm   = 2*k - 1
     k_wpxp_low = 2*k
 
+    if ( l_diffuse_rtm_and_thlm ) then
+      ! xm
+      lhs(:,k_xm)           = 0.0_core_rknd
+      lhs(t_k_tdiag,k_xm)   = 1.0_core_rknd
+      ! w'x'
+      lhs(:,k_wpxp)         = 0.0_core_rknd
+      lhs(m_k_mdiag,k_wpxp) = 1.0_core_rknd
+
+      km1 = max( k-1, 1 )
+
+      lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+      = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+      + invrs_rho_ds_zt(k)  &
+      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
+          rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+  end if
+
     ! Upper boundary
     k      = gr%nz
     !k_xm is 2*k - 1
     k_wpxp_high = 2*k
+
+    if ( l_diffuse_rtm_and_thlm ) then
+      ! w'x'
+      lhs(:,k_wpxp)         = 0.0_core_rknd
+      lhs(m_k_mdiag,k_wpxp) = 1.0_core_rknd
+
+      km1 = max( k-1, 1 )
+
+      lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+      = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
+      + invrs_rho_ds_zt(k)  &
+      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
+          rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+          gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
+  end if
 
     call set_boundary_conditions_lhs( m_k_mdiag, k_wpxp_low, k_wpxp_high, lhs, &
                                   t_k_tdiag, k_xm)
