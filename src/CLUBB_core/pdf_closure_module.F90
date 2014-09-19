@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------------
 ! $Id$
 !===============================================================================
 module pdf_closure_module
@@ -43,24 +43,23 @@ module pdf_closure_module
                           rc_coef                                   )
 
 
-! Description:
-!   Subroutine that computes pdf parameters analytically.
+    ! Description:
+    ! Subroutine that computes pdf parameters analytically.
+    !
+    ! Based of the original formulation, but with some tweaks
+    ! to remove some of the less realistic assumptions and
+    ! improve transport terms.
 
-!   Based of the original formulation, but with some tweaks
-!   to remove some of the less realistic assumptions and
-!   improve transport terms.
+    !   Corrected version that should remove inconsistency
 
-!   Corrected version that should remove inconsistency
+    ! References:
+    !   Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
+    !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
+    !   Method and Model Description'' Golaz, et al. (2002)
+    !   JAS, Vol. 59, pp. 3540--3551.
+    !----------------------------------------------------------------------
 
-! References:
-!   Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
-!   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
-!   Method and Model Description'' Golaz, et al. (2002)
-!   JAS, Vol. 59, pp. 3540--3551.
-!------------------------------------------------------------------------
-
-    use constants_clubb, only: & 
-        ! Constants
+    use constants_clubb, only: &  ! Constants
         two,            & ! 2
         one,            & ! 1
         one_half,       & ! 1/2
@@ -90,6 +89,9 @@ module pdf_closure_module
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
+
+    use array_index, only: &
+        l_mix_rat_hm  ! Variable(s)
 
     use anl_erf, only:  & 
         erf ! Procedure(s)
@@ -283,6 +285,12 @@ module pdf_closure_module
 
     real( kind = core_rknd ), intent(out) :: rc_coef
 
+    real( kind = core_rknd ) :: &
+      wp2rxp,  & ! Sum total < w'^2 r_x' > for all hm species x [(m/s)^2(kg/kg)]
+      wprxp,   & ! Sum total < w'r_x' > for all hm species x      [(m/s)(kg/kg)]
+      thlprxp, & ! Sum total < th_l'r_x' > for all hm species x       [K(kg/kg)]
+      rtprxp     ! Sum total < r_t'r_x' > for all hm species x       [(kg/kg)^2]
+
     ! variables for a generalization of Chris Golaz' closure
     ! varies width of plumes in theta_l, rt
     real( kind = core_rknd ) :: width_factor_1, width_factor_2
@@ -293,12 +301,14 @@ module pdf_closure_module
       ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
       rt_at_ice_sat1, rt_at_ice_sat2, &
       chi_at_ice_sat1, chi_at_ice_sat2, rc1_ice, rc2_ice
-      
     
     real( kind = core_rknd ), parameter :: &
       chi_at_liq_sat  = 0.0_core_rknd    ! Always zero
 
-    integer :: i   ! Index
+    logical, parameter :: &
+      l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
+
+    integer :: i, hm_idx   ! Indices
 
 #ifdef GFDL
     real ( kind = core_rknd ), parameter :: t1_combined = 273.16, &
@@ -833,22 +843,37 @@ module pdf_closure_module
 
     rc_coef = Lv / (exner*Cp) - ep2 * thv_ds
 
+    wp2rxp  = zero
+    wprxp   = zero
+    thlprxp = zero
+    rtprxp  = zero
+    if ( l_liq_ice_loading_test ) then
+       do hm_idx = 1, hydromet_dim, 1
+          if ( l_mix_rat_hm(hm_idx) ) then
+             wp2rxp  = wp2rxp + wp2hmp(hm_idx)
+             wprxp   = wprxp + wphydrometp(hm_idx)
+             thlprxp = thlprxp + thlphmp(hm_idx)
+             rtprxp  = rtprxp + rtphmp(hm_idx)
+          endif
+       enddo ! hm_idx = 1, hydromet_dim, 1
+    endif ! l_liq_ice_loading_test
+
     wp2rcp = mixt_frac * ((w1-wm)**2 + varnce_w1)*rc1 &
                + (one-mixt_frac) * ((w2-wm)**2 + varnce_w2)*rc2 & 
              - wp2 * (mixt_frac*rc1+(one-mixt_frac)*rc2)
 
-    wp2thvp = wp2thlp + ep1*thv_ds*wp2rtp + rc_coef*wp2rcp
+    wp2thvp = wp2thlp + ep1*thv_ds*wp2rtp + rc_coef*wp2rcp - thv_ds * wp2rxp
 
     wprcp = mixt_frac * (w1-wm)*rc1 + (one-mixt_frac) * (w2-wm)*rc2
 
-    wpthvp = wpthlp + ep1*thv_ds*wprtp + rc_coef*wprcp
+    wpthvp = wpthlp + ep1*thv_ds*wprtp + rc_coef*wprcp - thv_ds * wprxp
 
     ! Account for subplume correlation in qt-thl
     thlprcp  = mixt_frac * ( (thl1-thlm)*rc1 - (cthl1*varnce_thl1)*cloud_frac_1 ) & 
              + (one-mixt_frac) * ( (thl2-thlm)*rc2 - (cthl2*varnce_thl2)*cloud_frac_2 ) & 
              + mixt_frac*rrtthl*crt1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac_1 & 
              + (one-mixt_frac)*rrtthl*crt2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac_2
-    thlpthvp = thlp2 + ep1*thv_ds*rtpthlp + rc_coef*thlprcp
+    thlpthvp = thlp2 + ep1*thv_ds*rtpthlp + rc_coef*thlprcp - thv_ds * thlprxp
 
     ! Account for subplume correlation in qt-thl
     rtprcp = mixt_frac * ( (rt1-rtm)*rc1 + (crt1*varnce_rt1)*cloud_frac_1 ) & 
@@ -856,7 +881,7 @@ module pdf_closure_module
            - mixt_frac*rrtthl*cthl1*sqrt( varnce_rt1*varnce_thl1 )*cloud_frac_1 & 
            - (one-mixt_frac)*rrtthl*cthl2*sqrt( varnce_rt2*varnce_thl2 )*cloud_frac_2
 
-    rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp
+    rtpthvp  = rtpthlp + ep1*thv_ds*rtp2 + rc_coef*rtprcp - thv_ds * rtprxp
 
     ! Account for subplume correlation of scalar, theta_v.
     ! See Eqs. A13, A8 from Larson et al. (2002) ``Small-scale...''
