@@ -318,11 +318,6 @@ module pdf_closure_module
 
 !------------------------ Code Begins ----------------------------------
 
-    ! Temporarily get rid of annoying compiler warnings
-    if ( .false. ) then
-      print *, wphydrometp(1), wp2hmp(1), rtphmp(1), thlphmp(1)
-    end if
-
     ! Check whether the passive scalars are present.
 
     if ( sclr_dim > 0 ) then
