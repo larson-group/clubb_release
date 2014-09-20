@@ -33,10 +33,10 @@ module inputfields
     l_input_Kh_zt = .false., l_input_Kh_zm = .false., &
     l_input_tau_zm = .false., l_input_tau_zt = .false., & 
     l_input_wpthvp = .false., l_input_radht = .false., &
-    l_input_thl1 = .false., l_input_thl2 = .false., l_input_mixt_frac = .false., &
+    l_input_thl_1 = .false., l_input_thl_2 = .false., l_input_mixt_frac = .false., &
     l_input_chi_1 = .false., l_input_chi_2 = .false., &
     l_input_stdev_chi_1 = .false., l_input_stdev_chi_2 = .false., &
-    l_input_rc1 = .false., l_input_rc2 = .false., &
+    l_input_rc_1 = .false., l_input_rc_2 = .false., &
     l_input_thvm = .false., l_input_rrm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
     l_input_rsm = .false., l_input_rim = .false., &
@@ -551,14 +551,14 @@ module inputfields
 
       ! PDF Parameters (needed for K&K microphysics)
       call get_clubb_variable_interpolated &
-           ( l_input_thl1, stat_files(clubb_zt), "thl1", gr%nz, timestep, &
-             gr%zt, pdf_params%thl1, l_read_error )
+           ( l_input_thl_1, stat_files(clubb_zt), "thl_1", gr%nz, timestep, &
+             gr%zt, pdf_params%thl_1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_thl2, stat_files(clubb_zt), "thl2", gr%nz, timestep, &
-             gr%zt, pdf_params%thl2, l_read_error )
+           ( l_input_thl_2, stat_files(clubb_zt), "thl_2", gr%nz, timestep, &
+             gr%zt, pdf_params%thl_2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -593,14 +593,14 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rc1, stat_files(clubb_zt), "rc1", gr%nz, timestep, &
-             gr%zt, pdf_params%rc1, l_read_error )
+           ( l_input_rc_1, stat_files(clubb_zt), "rc_1", gr%nz, timestep, &
+             gr%zt, pdf_params%rc_1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rc2, stat_files(clubb_zt), "rc2", gr%nz, timestep, &
-             gr%zt, pdf_params%rc2, l_read_error )
+           ( l_input_rc_2, stat_files(clubb_zt), "rc_2", gr%nz, timestep, &
+             gr%zt, pdf_params%rc_2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -986,15 +986,15 @@ module inputfields
 
       k = k + 1
 
-      coamps_variables(k)%l_input_var = l_input_thl1
+      coamps_variables(k)%l_input_var = l_input_thl_1
       coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "thl1"
+      coamps_variables(k)%clubb_name = "thl_1"
 
       k = k + 1
 
-      coamps_variables(k)%l_input_var = l_input_thl2
+      coamps_variables(k)%l_input_var = l_input_thl_2
       coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "thl2"
+      coamps_variables(k)%clubb_name = "thl_2"
 
       k = k + 1
 
@@ -1028,15 +1028,15 @@ module inputfields
 
       k = k + 1
 
-      coamps_variables(k)%l_input_var = l_input_rc1
+      coamps_variables(k)%l_input_var = l_input_rc_1
       coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "rc1"
+      coamps_variables(k)%clubb_name = "rc_1"
 
       k = k + 1
 
-      coamps_variables(k)%l_input_var = l_input_rc2
+      coamps_variables(k)%l_input_var = l_input_rc_2
       coamps_variables(k)%input_name = "none"
-      coamps_variables(k)%clubb_name = "rc2"
+      coamps_variables(k)%clubb_name = "rc_2"
 
       k = k + 1
 
@@ -1797,13 +1797,13 @@ module inputfields
 
       k = k + 1
 
-      SAM_variables(k)%l_input_var = l_input_thl1
-      SAM_variables(k)%clubb_name = "thl1"
+      SAM_variables(k)%l_input_var = l_input_thl_1
+      SAM_variables(k)%clubb_name = "thl_1"
       SAM_variables(k)%input_name = "none"
 
       k = k + 1
-      SAM_variables(k)%l_input_var = l_input_thl2
-      SAM_variables(k)%clubb_name = "thl2"
+      SAM_variables(k)%l_input_var = l_input_thl_2
+      SAM_variables(k)%clubb_name = "thl_2"
       SAM_variables(k)%input_name = "none"
 
       k = k + 1
@@ -1838,14 +1838,14 @@ module inputfields
 
       k = k + 1
 
-      SAM_variables(k)%l_input_var = l_input_rc1
-      SAM_variables(k)%clubb_name = "rc1"
+      SAM_variables(k)%l_input_var = l_input_rc_1
+      SAM_variables(k)%clubb_name = "rc_1"
       SAM_variables(k)%input_name = "none"
 
       k = k + 1
 
-      SAM_variables(k)%l_input_var = l_input_rc2
-      SAM_variables(k)%clubb_name = "rc2"
+      SAM_variables(k)%l_input_var = l_input_rc_2
+      SAM_variables(k)%clubb_name = "rc_2"
       SAM_variables(k)%input_name = "none"
 
       k = k + 1
@@ -2796,8 +2796,8 @@ module inputfields
       l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
       l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
       l_input_wpthvp, l_input_radht, &
-      l_input_thl1, l_input_thl2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
-      l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc1, l_input_rc2, &
+      l_input_thl_1, l_input_thl_2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
+      l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc_1, l_input_rc_2, &
       l_input_thvm, l_input_rrm,l_input_Nrm,  & 
       l_input_rsm, l_input_rim, l_input_rgm,  & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
@@ -2841,15 +2841,15 @@ module inputfields
     l_input_tau_zm = .false.
     l_input_tau_zt = .false.
     l_input_wpthvp = .false.
-    l_input_thl1 = .false.
-    l_input_thl2 = .false.
+    l_input_thl_1 = .false.
+    l_input_thl_2 = .false.
     l_input_mixt_frac = .false.
     l_input_chi_1 = .false.
     l_input_chi_2 = .false.
     l_input_stdev_chi_1 = .false.
     l_input_stdev_chi_2 = .false.
-    l_input_rc1 = .false.
-    l_input_rc2 = .false.
+    l_input_rc_1 = .false.
+    l_input_rc_2 = .false.
     l_input_thvm = .false.
     l_input_rrm = .false.
     l_input_Nrm = .false.

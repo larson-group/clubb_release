@@ -1572,22 +1572,22 @@ module stats_clubb_utilities
 
     use stats_variables, only: & 
         imixt_frac, &  ! Variable(s)
-        iw1, & 
-        iw2, & 
-        ivarnce_w1, & 
-        ivarnce_w2, & 
-        ithl1, & 
-        ithl2, & 
-        ivarnce_thl1, & 
-        ivarnce_thl2, & 
-        irt1, & 
-        irt2, & 
-        ivarnce_rt1, & 
-        ivarnce_rt2, & 
-        irc1, & 
-        irc2, & 
-        irsatl1, & 
-        irsatl2, & 
+        iw_1, & 
+        iw_2, & 
+        ivarnce_w_1, & 
+        ivarnce_w_2, & 
+        ithl_1, & 
+        ithl_2, & 
+        ivarnce_thl_1, & 
+        ivarnce_thl_2, & 
+        irt_1, & 
+        irt_2, & 
+        ivarnce_rt_1, & 
+        ivarnce_rt_2, & 
+        irc_1, & 
+        irc_2, & 
+        irsatl_1, & 
+        irsatl_2, & 
         icloud_frac_1, & 
         icloud_frac_2
 
@@ -1603,10 +1603,10 @@ module stats_clubb_utilities
         icovar_chi_eta_2, &
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
-        icrt1, &
-        icrt2, &
-        icthl1, &
-        icthl2, &
+        icrt_1, &
+        icrt_2, &
+        icthl_1, &
+        icthl_2, &
         irrtthl, &
         ichi
 
@@ -1929,22 +1929,22 @@ module stats_clubb_utilities
       end if
 
       call stat_update_var( imixt_frac, pdf_params%mixt_frac, zt )
-      call stat_update_var( iw1, pdf_params%w1, zt )
-      call stat_update_var( iw2, pdf_params%w2, zt )
-      call stat_update_var( ivarnce_w1, pdf_params%varnce_w1, zt )
-      call stat_update_var( ivarnce_w2, pdf_params%varnce_w2, zt )
-      call stat_update_var( ithl1, pdf_params%thl1, zt )
-      call stat_update_var( ithl2, pdf_params%thl2, zt )
-      call stat_update_var( ivarnce_thl1, pdf_params%varnce_thl1, zt )
-      call stat_update_var( ivarnce_thl2, pdf_params%varnce_thl2, zt )
-      call stat_update_var( irt1, pdf_params%rt1, zt )
-      call stat_update_var( irt2, pdf_params%rt2, zt )
-      call stat_update_var( ivarnce_rt1, pdf_params%varnce_rt1, zt )
-      call stat_update_var( ivarnce_rt2, pdf_params%varnce_rt2, zt )
-      call stat_update_var( irc1, pdf_params%rc1, zt )
-      call stat_update_var( irc2, pdf_params%rc2, zt )
-      call stat_update_var( irsatl1, pdf_params%rsatl1, zt )
-      call stat_update_var( irsatl2, pdf_params%rsatl2, zt )
+      call stat_update_var( iw_1, pdf_params%w_1, zt )
+      call stat_update_var( iw_2, pdf_params%w_2, zt )
+      call stat_update_var( ivarnce_w_1, pdf_params%varnce_w_1, zt )
+      call stat_update_var( ivarnce_w_2, pdf_params%varnce_w_2, zt )
+      call stat_update_var( ithl_1, pdf_params%thl_1, zt )
+      call stat_update_var( ithl_2, pdf_params%thl_2, zt )
+      call stat_update_var( ivarnce_thl_1, pdf_params%varnce_thl_1, zt )
+      call stat_update_var( ivarnce_thl_2, pdf_params%varnce_thl_2, zt )
+      call stat_update_var( irt_1, pdf_params%rt_1, zt )
+      call stat_update_var( irt_2, pdf_params%rt_2, zt )
+      call stat_update_var( ivarnce_rt_1, pdf_params%varnce_rt_1, zt )
+      call stat_update_var( ivarnce_rt_2, pdf_params%varnce_rt_2, zt )
+      call stat_update_var( irc_1, pdf_params%rc_1, zt )
+      call stat_update_var( irc_2, pdf_params%rc_2, zt )
+      call stat_update_var( irsatl_1, pdf_params%rsatl_1, zt )
+      call stat_update_var( irsatl_2, pdf_params%rsatl_2, zt )
       call stat_update_var( icloud_frac_1, pdf_params%cloud_frac_1, zt )
       call stat_update_var( icloud_frac_2, pdf_params%cloud_frac_2, zt )
       call stat_update_var( ichi_1, pdf_params%chi_1, zt )
@@ -1958,10 +1958,10 @@ module stats_clubb_utilities
       call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, zt )
       call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, zt )
       call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
-      call stat_update_var( icrt1, pdf_params%crt1, zt )
-      call stat_update_var( icrt2, pdf_params%crt2, zt )
-      call stat_update_var( icthl1, pdf_params%cthl1, zt )
-      call stat_update_var( icthl2, pdf_params%cthl2, zt )
+      call stat_update_var( icrt_1, pdf_params%crt_1, zt )
+      call stat_update_var( icrt_2, pdf_params%crt_2, zt )
+      call stat_update_var( icthl_1, pdf_params%cthl_1, zt )
+      call stat_update_var( icthl_2, pdf_params%cthl_2, zt )
       call stat_update_var( iwp2_zt, wp2_zt, zt )
       call stat_update_var( ithlp2_zt, thlp2_zt, zt )
       call stat_update_var( iwpthlp_zt, wpthlp_zt, zt )

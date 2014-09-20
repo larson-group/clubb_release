@@ -559,27 +559,27 @@ module stats_variables
   ! PDF parameters
   integer, public :: & 
      imixt_frac = 0, & 
-     iw1 = 0, & 
-     iw2 = 0, & 
-     ivarnce_w1 = 0, & 
-     ivarnce_w2 = 0, & 
-     ithl1 = 0, & 
-     ithl2 = 0, & 
-     ivarnce_thl1 = 0, & 
-     ivarnce_thl2 = 0, & 
-     irt1 = 0, & 
-     irt2 = 0, & 
-     ivarnce_rt1 = 0, & 
-     ivarnce_rt2 = 0, & 
-     irc1 = 0, & 
-     irc2 = 0, & 
-     irsatl1 = 0, & 
-     irsatl2 = 0, & 
+     iw_1 = 0, & 
+     iw_2 = 0, & 
+     ivarnce_w_1 = 0, & 
+     ivarnce_w_2 = 0, & 
+     ithl_1 = 0, & 
+     ithl_2 = 0, & 
+     ivarnce_thl_1 = 0, & 
+     ivarnce_thl_2 = 0, & 
+     irt_1 = 0, & 
+     irt_2 = 0, & 
+     ivarnce_rt_1 = 0, & 
+     ivarnce_rt_2 = 0, & 
+     irc_1 = 0, & 
+     irc_2 = 0, & 
+     irsatl_1 = 0, & 
+     irsatl_2 = 0, & 
      icloud_frac_1 = 0, & 
      icloud_frac_2 = 0
-!$omp  threadprivate(imixt_frac, iw1, iw2, ivarnce_w1, ivarnce_w2, ithl1, ithl2, ivarnce_thl1, &
-!$omp    ivarnce_thl2, irt1, irt2, ivarnce_rt1, ivarnce_rt2, irc1, irc2, &
-!$omp    irsatl1, irsatl2, icloud_frac_1, icloud_frac_2 )
+!$omp  threadprivate(imixt_frac, iw_1, iw_2, ivarnce_w_1, ivarnce_w_2, ithl_1, ithl_2, &
+!$omp  ivarnce_thl_1, ivarnce_thl_2, irt_1, irt_2, ivarnce_rt_1, ivarnce_rt_2, irc_1, irc_2, &
+!$omp  irsatl_1, irsatl_2, icloud_frac_1, icloud_frac_2 )
 
   integer, public :: & 
      ichi_1 = 0, &
@@ -594,14 +594,14 @@ module stats_variables
      icorr_chi_eta_1 = 0, &
      icorr_chi_eta_2 = 0, &
      irrtthl = 0, &
-     icrt1 = 0, &
-     icrt2 = 0, &
-     icthl1 = 0, &
-     icthl2 = 0
+     icrt_1 = 0, &
+     icrt_2 = 0, &
+     icthl_1 = 0, &
+     icthl_2 = 0
 !$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, ichip2, &
 !$omp    istdev_eta_1, istdev_eta_2, icovar_chi_eta_1, icovar_chi_eta_2, &
-!$omp    icorr_chi_eta_1, icorr_chi_eta_2, irrtthl, icrt1, icrt2, icthl1, &
-!$omp    icthl2 )
+!$omp    icorr_chi_eta_1, icorr_chi_eta_2, irrtthl, icrt_1, icrt_2, icthl_1, &
+!$omp    icthl_2 )
 
   integer, public :: & 
     iwp2_zt = 0, & 

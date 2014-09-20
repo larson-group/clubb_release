@@ -183,18 +183,18 @@ module mixed_moment_PDF_integrals
        ! Unpack the means of w, rt, and thl in each PDF component.
        mu_w_1   = mu_x_1_n(iiPDF_w,k)
        mu_w_2   = mu_x_2_n(iiPDF_w,k)
-       mu_rt_1  = pdf_params(k)%rt1
-       mu_rt_2  = pdf_params(k)%rt2
-       mu_thl_1 = pdf_params(k)%thl1
-       mu_thl_2 = pdf_params(k)%thl2
+       mu_rt_1  = pdf_params(k)%rt_1
+       mu_rt_2  = pdf_params(k)%rt_2
+       mu_thl_1 = pdf_params(k)%thl_1
+       mu_thl_2 = pdf_params(k)%thl_2
 
        ! Unpack the standard deviations of w, rt, and thl in each PDF component.
        sigma_w_1   = sigma_x_1_n(iiPDF_w,k)
        sigma_w_2   = sigma_x_2_n(iiPDF_w,k)
-       sigma_rt_1  = sqrt( pdf_params(k)%varnce_rt1 )
-       sigma_rt_2  = sqrt( pdf_params(k)%varnce_rt2 )
-       sigma_thl_1 = sqrt( pdf_params(k)%varnce_thl1 )
-       sigma_thl_2 = sqrt( pdf_params(k)%varnce_thl2 )
+       sigma_rt_1  = sqrt( pdf_params(k)%varnce_rt_1 )
+       sigma_rt_2  = sqrt( pdf_params(k)%varnce_rt_2 )
+       sigma_thl_1 = sqrt( pdf_params(k)%varnce_thl_1 )
+       sigma_thl_2 = sqrt( pdf_params(k)%varnce_thl_2 )
 
        ! Unpack the standard deviations of chi and eta in each PDF component.
        sigma_chi_1 = sigma_x_1_n(iiPDF_chi,k)
@@ -211,10 +211,10 @@ module mixed_moment_PDF_integrals
 
        ! Unpack the coefficients of rt and thl in the chi/eta PDF transformation
        ! equations for each PDF component.
-       crt_1  = pdf_params(k)%crt1
-       crt_2  = pdf_params(k)%crt2
-       cthl_1 = pdf_params(k)%cthl1
-       cthl_2 = pdf_params(k)%cthl2
+       crt_1  = pdf_params(k)%crt_1
+       crt_2  = pdf_params(k)%crt_2
+       cthl_1 = pdf_params(k)%cthl_1
+       cthl_2 = pdf_params(k)%cthl_2
 
        ! Re-calculate rtm, thlm, and wm from PDF parameters.
        ! This needs to be done because rtm and thlm have been advanced since

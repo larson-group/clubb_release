@@ -309,22 +309,22 @@ module stats_zt_module
 
     use stats_variables, only: & 
         imixt_frac, & ! Variable(s) 
-        iw1, & 
-        iw2, & 
-        ivarnce_w1, & 
-        ivarnce_w2, & 
-        ithl1, & 
-        ithl2, & 
-        ivarnce_thl1, & 
-        ivarnce_thl2, & 
-        irt1, & 
-        irt2, & 
-        ivarnce_rt1, & 
-        ivarnce_rt2, & 
-        irc1, & 
-        irc2, & 
-        irsatl1, & 
-        irsatl2, & 
+        iw_1, & 
+        iw_2, & 
+        ivarnce_w_1, & 
+        ivarnce_w_2, & 
+        ithl_1, & 
+        ithl_2, & 
+        ivarnce_thl_1, & 
+        ivarnce_thl_2, & 
+        irt_1, & 
+        irt_2, & 
+        ivarnce_rt_1, & 
+        ivarnce_rt_2, & 
+        irc_1, & 
+        irc_2, & 
+        irsatl_1, & 
+        irsatl_2, & 
         icloud_frac_1, & 
         icloud_frac_2
 
@@ -341,10 +341,10 @@ module stats_zt_module
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
         irrtthl, &
-        icrt1, &
-        icrt2, &
-        icthl1, &
-        icthl2
+        icrt_1, &
+        icrt_2, &
+        icthl_1, &
+        icthl_2
 
     use stats_variables, only: & 
         iwp2_zt, & 
@@ -3343,131 +3343,131 @@ module stats_zt_module
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('w1')
-        iw1 = k
-        call stat_assign( var_index=iw1, var_name="w1", &
+      case ('w_1')
+        iw_1 = k
+        call stat_assign( var_index=iw_1, var_name="w_1", &
              var_description="pdf parameter: mean w of component 1 [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('w2')
-        iw2 = k
+      case ('w_2')
+        iw_2 = k
 
-        call stat_assign( var_index=iw2, var_name="w2", &
+        call stat_assign( var_index=iw_2, var_name="w_2", &
              var_description="pdf paramete: mean w of component 2 [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('varnce_w1')
-        ivarnce_w1 = k
-        call stat_assign( var_index=ivarnce_w1, var_name="varnce_w1", &
+      case ('varnce_w_1')
+        ivarnce_w_1 = k
+        call stat_assign( var_index=ivarnce_w_1, var_name="varnce_w_1", &
              var_description="pdf parameter: w variance of component 1 [m^2/s^2]", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('varnce_w2')
-        ivarnce_w2 = k
+      case ('varnce_w_2')
+        ivarnce_w_2 = k
 
-        call stat_assign( var_index=ivarnce_w2, var_name="varnce_w2", &
+        call stat_assign( var_index=ivarnce_w_2, var_name="varnce_w_2", &
              var_description="pdf parameter: w variance of component 2 [m^2/s^2]", &
              var_units="m^2/s^2", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('thl1')
-        ithl1 = k
+      case ('thl_1')
+        ithl_1 = k
 
-        call stat_assign( var_index=ithl1, var_name="thl1", &
+        call stat_assign( var_index=ithl_1, var_name="thl_1", &
              var_description="pdf parameter: mean thl of component 1 [K]", var_units="K", &
              l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('thl2')
-        ithl2 = k
+      case ('thl_2')
+        ithl_2 = k
 
-        call stat_assign( var_index=ithl2, var_name="thl2", &
+        call stat_assign( var_index=ithl_2, var_name="thl_2", &
              var_description="pdf parameter: mean thl of component 2 [K]", var_units="K", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('varnce_thl1')
-        ivarnce_thl1 = k
+      case ('varnce_thl_1')
+        ivarnce_thl_1 = k
 
-        call stat_assign( var_index=ivarnce_thl1, var_name="varnce_thl1", &
+        call stat_assign( var_index=ivarnce_thl_1, var_name="varnce_thl_1", &
              var_description="pdf parameter: thl variance of component 1 [K^2]", var_units="K^2", &
              l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('varnce_thl2')
-        ivarnce_thl2 = k
-        call stat_assign( var_index=ivarnce_thl2, var_name="varnce_thl2", &
+      case ('varnce_thl_2')
+        ivarnce_thl_2 = k
+        call stat_assign( var_index=ivarnce_thl_2, var_name="varnce_thl_2", &
              var_description="pdf parameter: thl variance of component 2 [K^2]", var_units="K^2", &
              l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('rt1')
-        irt1 = k
-        call stat_assign( var_index=irt1, var_name="rt1", &
+      case ('rt_1')
+        irt_1 = k
+        call stat_assign( var_index=irt_1, var_name="rt_1", &
              var_description="pdf parameter: mean rt of component 1 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
 
         k = k + 1
 
-      case ('rt2')
-        irt2 = k
+      case ('rt_2')
+        irt_2 = k
 
-        call stat_assign( var_index=irt2, var_name="rt2", &
+        call stat_assign( var_index=irt_2, var_name="rt_2", &
              var_description="pdf parameter: mean rt of component 2 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('varnce_rt1')
-        ivarnce_rt1 = k
-        call stat_assign( var_index=ivarnce_rt1, var_name="varnce_rt1", &
+      case ('varnce_rt_1')
+        ivarnce_rt_1 = k
+        call stat_assign( var_index=ivarnce_rt_1, var_name="varnce_rt_1", &
              var_description="pdf parameter: rt variance of component 1 [(kg^2)/(kg^2)]", &
              var_units="(kg^2)/(kg^2)", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('varnce_rt2')
-        ivarnce_rt2 = k
+      case ('varnce_rt_2')
+        ivarnce_rt_2 = k
 
-        call stat_assign( var_index=ivarnce_rt2, var_name="varnce_rt2", &
+        call stat_assign( var_index=ivarnce_rt_2, var_name="varnce_rt_2", &
              var_description="pdf parameter: rt variance of component 2 [(kg^2)/(kg^2)]", &
              var_units="(kg^2)/(kg^2)", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rc1')
-        irc1 = k
+      case ('rc_1')
+        irc_1 = k
 
-        call stat_assign( var_index=irc1, var_name="rc1", &
+        call stat_assign( var_index=irc_1, var_name="rc_1", &
              var_description="pdf parameter: mean rc of component 1 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rc2')
-        irc2 = k
+      case ('rc_2')
+        irc_2 = k
 
-        call stat_assign( var_index=irc2, var_name="rc2", &
+        call stat_assign( var_index=irc_2, var_name="rc_2", &
              var_description="pdf parameter: mean rc of component 2 [kg/kg]", var_units="kg/kg", &
              l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rsatl1')
-        irsatl1 = k
+      case ('rsatl_1')
+        irsatl_1 = k
 
-        call stat_assign( var_index=irsatl1, var_name="rsatl1", &
+        call stat_assign( var_index=irsatl_1, var_name="rsatl_1", &
              var_description="pdf parameter: sat mix rat based on tl1 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('rsatl2')
-        irsatl2 = k
+      case ('rsatl_2')
+        irsatl_2 = k
 
-        call stat_assign( var_index=irsatl2, var_name="rsatl2", &
+        call stat_assign( var_index=irsatl_2, var_name="rsatl_2", &
              var_description="pdf parameter: sat mix rat based on tl2 [kg/kg]", &
              var_units="kg/kg", l_silhs=.false., grid_kind=zt )
         k = k + 1
@@ -3589,37 +3589,37 @@ module stats_zt_module
                           l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('crt1')
-        icrt1 = k
+      case ('crt_1')
+        icrt_1 = k
 
-        call stat_assign( var_index=icrt1, var_name="crt1", &
+        call stat_assign( var_index=icrt_1, var_name="crt_1", &
                           var_description="Coefficient on rt in chi/eta" &
                           // " equations (1st PDF comp.)  [-]", &
                           var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('crt2')
-        icrt2 = k
+      case ('crt_2')
+        icrt_2 = k
 
-        call stat_assign( var_index=icrt2, var_name="crt2", &
+        call stat_assign( var_index=icrt_2, var_name="crt_2", &
                           var_description="Coefficient on rt in chi/eta" &
                           // " equations (2nd PDF comp.)  [-]", &
                           var_units="-", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('cthl1')
-        icthl1 = k
+      case ('cthl_1')
+        icthl_1 = k
 
-        call stat_assign( var_index=icthl1, var_name="cthl1", &
+        call stat_assign( var_index=icthl_1, var_name="cthl_1", &
                           var_description="Coefficient on theta-l in chi/eta" &
                           // " equations (1st PDF comp.)  [kg/kg/K]", &
                           var_units="kg/kg/K", l_silhs=.false., grid_kind=zt )
         k = k + 1
 
-      case ('cthl2')
-        icthl2 = k
+      case ('cthl_2')
+        icthl_2 = k
 
-        call stat_assign( var_index=icthl2, var_name="cthl2", &
+        call stat_assign( var_index=icthl_2, var_name="cthl_2", &
                           var_description="Coefficient on theta-l in chi/eta" &
                           // " equations (2nd PDF comp.)  [kg/kg/K]", &
                           var_units="kg/kg/K", l_silhs=.false., grid_kind=zt )

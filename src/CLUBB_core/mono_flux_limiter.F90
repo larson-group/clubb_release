@@ -1109,7 +1109,7 @@ module mono_flux_limiter
   end subroutine mfl_xm_solve
 
   !=============================================================================
-  subroutine calc_turb_adv_range( dt, w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, &
+  subroutine calc_turb_adv_range( dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                   mixt_frac_zm, &
                                   low_lev_effect, high_lev_effect )
 
@@ -1162,10 +1162,10 @@ module mono_flux_limiter
       dt ! Model timestep length                       [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
-      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
-      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
-      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
-      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     ! Output Variables
@@ -1285,7 +1285,7 @@ module mono_flux_limiter
        ! vertical velocity.
        ! Note:  A level that has all vertical wind moving downwards will have a
        !        vert_vel_up value that is 0, and vice versa.
-       call mean_vert_vel_up_down( w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & !  In
+       call mean_vert_vel_up_down( w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & !  In
                                    mixt_frac_zm, 0.0_core_rknd,  & ! In
                                    vert_vel_down, vert_vel_up )
 
@@ -1462,7 +1462,7 @@ module mono_flux_limiter
   end subroutine calc_turb_adv_range
 
   !=============================================================================
-  subroutine mean_vert_vel_up_down( w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, &
+  subroutine mean_vert_vel_up_down( w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                                     mixt_frac_zm, w_ref, &
                                     mean_w_down, mean_w_up )
 
@@ -1497,28 +1497,28 @@ module mono_flux_limiter
     ! at any vertical level, are considered to approximately follow a
     ! distribution that is a mixture of two normal (or Gaussian) distributions.
     ! The values of w that are a part of the 1st normal distribution are
-    ! referred to as w1, and the values of w that are part of the 2nd normal
-    ! distribution are referred to as w2.  Note that these distributions
-    ! overlap, and there are many values of w that are found in both w1 and w2.
+    ! referred to as w_1, and the values of w that are part of the 2nd normal
+    ! distribution are referred to as w_2.  Note that these distributions
+    ! overlap, and there are many values of w that are found in both w_1 and w_2.
     !
     ! The probability density function (PDF) for w, P(w), is:
     !
-    ! P(w) = mixt_frac*P(w1) + (1-mixt_frac)*P(w2);
+    ! P(w) = mixt_frac*P(w_1) + (1-mixt_frac)*P(w_2);
     !
-    ! where "mixt_frac" is the weight of the 1st normal distribution, and P(w1) and
-    ! P(w2) are the equations for the 1st and 2nd normal distributions,
+    ! where "mixt_frac" is the weight of the 1st normal distribution, and P(w_1) and
+    ! P(w_2) are the equations for the 1st and 2nd normal distributions,
     ! respectively:
     !
-    ! P(w1) = 1 / ( sigma_w1 * sqrt(2*PI) ) 
-    !         * EXP[ -(w1-mu_w1)^2 / (2*sigma_w1^2) ]; and
+    ! P(w_1) = 1 / ( sigma_w_1 * sqrt(2*PI) ) 
+    !         * EXP[ -(w_1-mu_w_1)^2 / (2*sigma_w_1^2) ]; and
     !
-    ! P(w2) = 1 / ( sigma_w2 * sqrt(2*PI) ) 
-    !         * EXP[ -(w2-mu_w2)^2 / (2*sigma_w2^2) ].
+    ! P(w_2) = 1 / ( sigma_w_2 * sqrt(2*PI) ) 
+    !         * EXP[ -(w_2-mu_w_2)^2 / (2*sigma_w_2^2) ].
     !
-    ! The mean of the 1st normal distribution is mu_w1, and the standard
-    ! deviation of the 1st normal distribution is sigma_w1.  The mean of the
-    ! 2nd normal distribution is mu_w2, and the standard deviation of the 2nd
-    ! normal distribution is sigma_w2.
+    ! The mean of the 1st normal distribution is mu_w_1, and the standard
+    ! deviation of the 1st normal distribution is sigma_w_1.  The mean of the
+    ! 2nd normal distribution is mu_w_2, and the standard deviation of the 2nd
+    ! normal distribution is sigma_w_2.
     !
     ! The average value of w, distributed according to the probability
     ! distribution, between limits alpha and beta, is:
@@ -1537,8 +1537,8 @@ module mono_flux_limiter
     ! -inf <= w <= w|_ref, such that:
     !
     ! <w|_(-inf:w|_ref)> = INT(-inf:w|_ref) w P(w) dw.
-    !                    = mixt_frac * INT(-inf:w|_ref) w1 P(w1) dw1
-    !                      + (1-mixt_frac) * INT(-inf:w|_ref) w2 P(w2) dw2.
+    !                    = mixt_frac * INT(-inf:w|_ref) w_1 P(w_1) dw_1
+    !                      + (1-mixt_frac) * INT(-inf:w|_ref) w_2 P(w_2) dw_2.
     !
     ! For each normal distribution in the mixture of normal distribution, i
     ! (where "i" can be 1 or 2):
@@ -1554,14 +1554,14 @@ module mono_flux_limiter
     ! The mean of all values of w <= w|_ref is:
     !
     ! <w|_(-inf:w|_ref)> =
-    ! mixt_frac * { - ( sigma_w1 / sqrt(2*PI) ) 
-    !                 * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
-    !               + mu_w1 * (1/2)
-    !                 *[1 + erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
-    ! + (1-mixt_frac) * { - ( sigma_w2 / sqrt(2*PI) ) 
-    !                       * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
-    !                     + mu_w2 * (1/2)
-    !                       *[1 + erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
+    ! mixt_frac * { - ( sigma_w_1 / sqrt(2*PI) ) 
+    !                 * EXP[ -(w|_ref-mu_w_1)^2 / (2*sigma_w_1^2) ]
+    !               + mu_w_1 * (1/2)
+    !                 *[1 + erf( (w|_ref-mu_w_1) / (sqrt(2)*sigma_w_1) )] }
+    ! + (1-mixt_frac) * { - ( sigma_w_2 / sqrt(2*PI) ) 
+    !                       * EXP[ -(w|_ref-mu_w_2)^2 / (2*sigma_w_2^2) ]
+    !                     + mu_w_2 * (1/2)
+    !                       *[1 + erf( (w|_ref-mu_w_2) / (sqrt(2)*sigma_w_2) )] }.
     !
     ! Average Positive Vertical Velocity
     ! ----------------------------------
@@ -1571,8 +1571,8 @@ module mono_flux_limiter
     ! w|_ref <= w <= inf, such that:
     !
     ! <w|_(w|_ref:inf)> = INT(w|_ref:inf) w P(w) dw.
-    !                   = mixt_frac * INT(w|_ref:inf) w1 P(w1) dw1
-    !                     + (1-mixt_frac) * INT(w|_ref:inf) w2 P(w2) dw2.
+    !                   = mixt_frac * INT(w|_ref:inf) w_1 P(w_1) dw_1
+    !                     + (1-mixt_frac) * INT(w|_ref:inf) w_2 P(w_2) dw_2.
     !
     ! For each normal distribution in the mixture of normal distribution, i
     ! (where "i" can be 1 or 2):
@@ -1588,14 +1588,14 @@ module mono_flux_limiter
     ! The mean of all values of w >= w|_ref is:
     !
     ! <w|_(w|_ref:inf)> =
-    ! mixt_frac * {   ( sigma_w1 / sqrt(2*PI) ) 
-    !                * EXP[ -(w|_ref-mu_w1)^2 / (2*sigma_w1^2) ]
-    !               + mu_w1 * (1/2)
-    !                 *[1 - erf( (w|_ref-mu_w1) / (sqrt(2)*sigma_w1) )] }
-    ! + (1-mixt_frac) * {   ( sigma_w2 / sqrt(2*PI) ) 
-    !                      * EXP[ -(w|_ref-mu_w2)^2 / (2*sigma_w2^2) ]
-    !                     + mu_w2 * (1/2)
-    !                       *[1 - erf( (w|_ref-mu_w2) / (sqrt(2)*sigma_w2) )] }.
+    ! mixt_frac * {   ( sigma_w_1 / sqrt(2*PI) ) 
+    !                * EXP[ -(w|_ref-mu_w_1)^2 / (2*sigma_w_1^2) ]
+    !               + mu_w_1 * (1/2)
+    !                 *[1 - erf( (w|_ref-mu_w_1) / (sqrt(2)*sigma_w_1) )] }
+    ! + (1-mixt_frac) * {   ( sigma_w_2 / sqrt(2*PI) ) 
+    !                      * EXP[ -(w|_ref-mu_w_2)^2 / (2*sigma_w_2^2) ]
+    !                     + mu_w_2 * (1/2)
+    !                       *[1 - erf( (w|_ref-mu_w_2) / (sqrt(2)*sigma_w_2) )] }.
     !
     ! Special Limitations:
     ! --------------------
@@ -1672,10 +1672,10 @@ module mono_flux_limiter
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
-      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
-      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
-      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
-      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     real( kind = core_rknd ), intent(in) ::  &
@@ -1689,8 +1689,8 @@ module mono_flux_limiter
     ! Local Variables
 
     real( kind = core_rknd ) :: &
-      sigma_w1, & ! Standard deviation of w for 1st normal distribution    [m/s]
-      sigma_w2, & ! Standard deviation of w for 2nd normal distribution    [m/s]
+      sigma_w_1, & ! Standard deviation of w for 1st normal distribution    [m/s]
+      sigma_w_2, & ! Standard deviation of w for 2nd normal distribution    [m/s]
       mean_w_down_1st, & ! Mean w (<= w|_ref) from 1st normal distribution [m/s]
       mean_w_down_2nd, & ! Mean w (<= w|_ref) from 2nd normal distribution [m/s]
       mean_w_up_1st, &   ! Mean w (>= w|_ref) from 1st normal distribution [m/s]
@@ -1707,53 +1707,53 @@ module mono_flux_limiter
     do k = 2, gr%nz-1, 1
 
        ! Standard deviation of w for the 1st normal distribution.
-       sigma_w1 = sqrt( varnce_w1_zm(k) )
+       sigma_w_1 = sqrt( varnce_w_1_zm(k) )
 
        ! Standard deviation of w for the 2nd normal distribution.
-       sigma_w2 = sqrt( varnce_w2_zm(k) )
+       sigma_w_2 = sqrt( varnce_w_2_zm(k) )
 
 
        ! Contributions from the 1st normal distribution.
-       if ( w1_zm(k) + 3._core_rknd*sigma_w1 <= w_ref ) then
+       if ( w_1_zm(k) + 3._core_rknd*sigma_w_1 <= w_ref ) then
 
           ! The entire 1st normal is on the negative side of w|_ref.
-          mean_w_down_1st = w1_zm(k)
+          mean_w_down_1st = w_1_zm(k)
           mean_w_up_1st   = 0.0_core_rknd
 
-       elseif ( w1_zm(k) - 3._core_rknd*sigma_w1 >= w_ref ) then
+       elseif ( w_1_zm(k) - 3._core_rknd*sigma_w_1 >= w_ref ) then
 
           ! The entire 1st normal is on the positive side of w|_ref.
           mean_w_down_1st = 0.0_core_rknd
-          mean_w_up_1st   = w1_zm(k)
+          mean_w_up_1st   = w_1_zm(k)
 
        else
 
           ! The exponential calculation is pulled out as it is reused in both
           ! equations. This should save one calculation of the
-          ! exp( -(w_ref-w1_zm(k))**2 ... etc. part of the formula.
+          ! exp( -(w_ref-w_1_zm(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w1_zm(k))**2 / (2.0_core_rknd*sigma_w1**2) ) 
+          exp_cache = exp( -(w_ref-w_1_zm(k))**2 / (2.0_core_rknd*sigma_w_1**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
           ! of the formula.
           ! ~~EIHoppe//20090623
-          erf_cache = erf( (w_ref-w1_zm(k)) / (sqrt_2*sigma_w1) )
+          erf_cache = erf( (w_ref-w_1_zm(k)) / (sqrt_2*sigma_w_1) )
 
           ! The 1st normal has values on both sides of w_ref.
           mean_w_down_1st =  &
-             - (sigma_w1/sqrt_2pi)  &
-!             * exp( -(w_ref-w1_zm(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
+             - (sigma_w_1/sqrt_2pi)  &
+!             * exp( -(w_ref-w_1_zm(k))**2 / (2.0_core_rknd*sigma_w_1**2) )  &
              * exp_cache  &
-!             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
+!          + w_1(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w_1(k)) / (sqrt_2*sigma_w_1) ) )
+             + w_1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_1st =  &
-             + (sigma_w1/sqrt_2pi)  &
-!             * exp( -(w_ref-w1(k))**2 / (2.0_core_rknd*sigma_w1**2) )  &
+             + (sigma_w_1/sqrt_2pi)  &
+!             * exp( -(w_ref-w_1(k))**2 / (2.0_core_rknd*sigma_w_1**2) )  &
              * exp_cache  &
-!             + w1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w1(k)) / (sqrt_2*sigma_w1) ) )
-             + w1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
+!          + w_1(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w_1(k)) / (sqrt_2*sigma_w_1) ) )
+             + w_1_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 
@@ -1761,46 +1761,46 @@ module mono_flux_limiter
 
 
        ! Contributions from the 2nd normal distribution.
-       if ( w2_zm(k) + 3._core_rknd*sigma_w2 <= w_ref ) then
+       if ( w_2_zm(k) + 3._core_rknd*sigma_w_2 <= w_ref ) then
 
           ! The entire 2nd normal is on the negative side of w|_ref.
-          mean_w_down_2nd = w2_zm(k)
+          mean_w_down_2nd = w_2_zm(k)
           mean_w_up_2nd   = 0.0_core_rknd
 
-       elseif ( w2_zm(k) - 3._core_rknd*sigma_w2 >= w_ref ) then
+       elseif ( w_2_zm(k) - 3._core_rknd*sigma_w_2 >= w_ref ) then
 
           ! The entire 2nd normal is on the positive side of w|_ref.
           mean_w_down_2nd = 0.0_core_rknd
-          mean_w_up_2nd   = w2_zm(k)
+          mean_w_up_2nd   = w_2_zm(k)
 
        else
 
           ! The exponential calculation is pulled out as it is reused in both
           ! equations. This should save one calculation of the
-          ! exp( -(w_ref-w1(k))**2 ... etc. part of the formula.
+          ! exp( -(w_ref-w_1(k))**2 ... etc. part of the formula.
           ! ~~EIHoppe//20090618
-          exp_cache = exp( -(w_ref-w2_zm(k))**2 / (2.0_core_rknd*sigma_w2**2) ) 
+          exp_cache = exp( -(w_ref-w_2_zm(k))**2 / (2.0_core_rknd*sigma_w_2**2) ) 
 
           ! Added cache of the error function calculations.
           ! This should save one calculation of the erf(...) part
           ! of the formula.
           ! ~~EIHoppe//20090623
-          erf_cache = erf( (w_ref-w2_zm(k)) / (sqrt_2*sigma_w2) )
+          erf_cache = erf( (w_ref-w_2_zm(k)) / (sqrt_2*sigma_w_2) )
 
           ! The 2nd normal has values on both sides of w_ref.
           mean_w_down_2nd =  &
-             - (sigma_w2/sqrt_2pi)  &
-!            * exp( -(w_ref-w2_zm(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
+             - (sigma_w_2/sqrt_2pi)  &
+!            * exp( -(w_ref-w_2_zm(k))**2 / (2.0_core_rknd*sigma_w_2**2) )  &
              * exp_cache  &
-!            + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
+!       + w_2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf( (w_ref-w_2(k)) / (sqrt_2*sigma_w_2) ) )
+             + w_2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd + erf_cache)
 
           mean_w_up_2nd =  &
-             + (sigma_w2/sqrt_2pi)  &
-!            * exp( -(w_ref-w2(k))**2 / (2.0_core_rknd*sigma_w2**2) )  &
+             + (sigma_w_2/sqrt_2pi)  &
+!            * exp( -(w_ref-w_2(k))**2 / (2.0_core_rknd*sigma_w_2**2) )  &
              * exp_cache  &
-!            + w2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w2(k)) / (sqrt_2*sigma_w2) ) )
-             + w2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
+!          + w_2(k) * 0.5_core_rknd*( 1.0_core_rknd - erf( (w_ref-w_2(k)) / (sqrt_2*sigma_w_2) ) )
+             + w_2_zm(k) * 0.5_core_rknd*( 1.0_core_rknd - erf_cache)
 
           ! /EIHoppe changes
 

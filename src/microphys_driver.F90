@@ -476,18 +476,18 @@ module microphys_driver
         l_latin_hypercube_input = .false.
 
         if ( l_morr_xp2_mc ) then
-          !Use the moister rt1/rt2 rather than rtm in morrison microphys
-          !Also use the colder of thl1/thl2
-          where ( pdf_params%rt1 > pdf_params%rt2 )
-            rvm = pdf_params%rt1 - pdf_params%rc1
+          !Use the moister rt_1/rt_2 rather than rtm in morrison microphys
+          !Also use the colder of thl_1/thl_2
+          where ( pdf_params%rt_1 > pdf_params%rt_2 )
+            rvm = pdf_params%rt_1 - pdf_params%rc_1
           else where
-            rvm = pdf_params%rt2 - pdf_params%rc2
+            rvm = pdf_params%rt_2 - pdf_params%rc_2
           end where
 
-          where ( pdf_params%thl1 < pdf_params%thl2 )
-            thlm_morr = pdf_params%thl1
+          where ( pdf_params%thl_1 < pdf_params%thl_2 )
+            thlm_morr = pdf_params%thl_1
           else where
-            thlm_morr = pdf_params%thl2
+            thlm_morr = pdf_params%thl_2
           end where
         else
           rvm = rtm - rcm

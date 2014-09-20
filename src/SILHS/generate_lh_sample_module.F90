@@ -21,8 +21,8 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
-               thl1, thl2, rt1, rt2, & ! In
-               crt1, crt2, cthl1, cthl2, & ! In
+               thl_1, thl_2, rt_1, rt_2, & ! In
+               crt_1, crt_2, cthl_1, cthl_2, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_Cholesky_mtx_1, & ! In
                corr_Cholesky_mtx_2, & ! In
@@ -65,14 +65,14 @@ module generate_lh_sample_module
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
     real( kind = core_rknd ), intent(in) :: &
-      rt1,         & ! Mean of r_t for 1st normal distribution   [kg/kg]
-      rt2,         & ! Mean of r_t for 2nd normal distribution   [kg/kg]
-      thl1,        & ! Mean of th_l for 1st normal distribution  [K]
-      thl2,        & ! Mean of th_l for 2nd normal distribution  [K]
-      crt1,        & ! Coefficient for s'                        [-]
-      crt2,        & ! Coefficient for s'                        [-]
-      cthl1,       & ! Coefficient for s'                        [1/K]
-      cthl2          ! Coefficient for s'                        [1/K]
+      rt_1,         & ! Mean of r_t for 1st normal distribution   [kg/kg]
+      rt_2,         & ! Mean of r_t for 2nd normal distribution   [kg/kg]
+      thl_1,        & ! Mean of th_l for 1st normal distribution  [K]
+      thl_2,        & ! Mean of th_l for 2nd normal distribution  [K]
+      crt_1,        & ! Coefficient for s'                        [-]
+      crt_2,        & ! Coefficient for s'                        [-]
+      cthl_1,       & ! Coefficient for s'                        [1/K]
+      cthl_2          ! Coefficient for s'                        [1/K]
 
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
       corr_Cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
@@ -176,10 +176,10 @@ module generate_lh_sample_module
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
     call sample_points( d_variables, d_uniform_extra, &  ! intent(in)
-                        real(rt1, kind = dp), real(thl1, kind = dp), &  ! intent(in)
-                        real(rt2, kind = dp), real(thl2, kind = dp), &  ! intent(in)
-                        real(crt1, kind = dp), real(cthl1, kind = dp), &  ! intent(in)
-                        real(crt2, kind = dp), real(cthl2, kind = dp), &  ! intent(in)
+                        real(rt_1, kind = dp), real(thl_1, kind = dp), &  ! intent(in)
+                        real(rt_2, kind = dp), real(thl_2, kind = dp), &  ! intent(in)
+                        real(crt_1, kind = dp), real(cthl_1, kind = dp), &  ! intent(in)
+                        real(crt_2, kind = dp), real(cthl_2, kind = dp), &  ! intent(in)
                         mu1, mu2, &  ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
@@ -244,8 +244,8 @@ module generate_lh_sample_module
 
 !---------------------------------------------------------------------------------------------------
   subroutine sample_points( d_variables, d_uniform_extra, &
-                            rt1, thl1, rt2, thl2, &
-                            crt1, cthl1, crt2, cthl2, &
+                            rt_1, thl_1, rt_2, thl_2, &
+                            crt_1, cthl_1, crt_2, cthl_2, &
                             mu1, mu2,  &
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
@@ -283,16 +283,16 @@ module generate_lh_sample_module
       d_variables, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only  
 
-    !rt1, thl1 = mean of rt, thl for Gaus comp 1
-    !rt2, thl2 = mean of rt, thl for Gaus comp 2
-    real( kind = dp ), intent(in) :: rt1, thl1, rt2, thl2
+    !rt_1, thl_1 = mean of rt, thl for Gaus comp 1
+    !rt_2, thl_2 = mean of rt, thl for Gaus comp 2
+    real( kind = dp ), intent(in) :: rt_1, thl_1, rt_2, thl_2
 
     ! Thermodynamic constants for plumes 1 and 2, units of kg/kg
     real( kind = dp ), intent(in) :: &
-      crt1,  & ! coefficient relating rt, chi(s) and eta(t) for Gaus comp 1
-      cthl1, & ! coeff relating thl, chi(s) and eta(t) for component 1
-      crt2,  & ! coefficient relating rt, chi(s) and eta(t) for component 2
-      cthl2    ! coefficient relating thl, chi(s) and eta(t) for comp. 2
+      crt_1,  & ! coefficient relating rt, chi(s) and eta(t) for Gaus comp 1
+      cthl_1, & ! coeff relating thl, chi(s) and eta(t) for component 1
+      crt_2,  & ! coefficient relating rt, chi(s) and eta(t) for component 2
+      cthl_2    ! coefficient relating thl, chi(s) and eta(t) for comp. 2
 
     ! Latin hypercube variables, i.e. chi, eta, w, etc.
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
@@ -342,8 +342,8 @@ module generate_lh_sample_module
 ! Transform chi(s) (column 1) and eta(t) (column 2) back to rt and thl
 !   This is only needed if you need total water mixing ratio and liquid potential
 !   samples points.
-    call chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & ! intent(in)
-                     crt1, cthl1, crt2, cthl2, & ! intent(in)
+    call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, & ! intent(in)
+                     crt_1, cthl_1, crt_2, cthl_2, & ! intent(in)
                      real(mu1(iiPDF_chi), kind = dp), & ! intent(in)
                      real(mu2(iiPDF_chi), kind = dp), & ! intent(in)
                      X_nl_one_lev(iiPDF_chi), & ! intent(in)
@@ -788,14 +788,14 @@ module generate_lh_sample_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine chi_eta_2_rtthl( rt1, thl1, rt2, thl2, & 
-                         crt1, cthl1, crt2, cthl2, & 
+  subroutine chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, & 
+                         crt_1, cthl_1, crt_2, cthl_2, & 
                          mu_chi_1, mu_chi_2, &
                          chi, eta, X_mixt_comp_one_lev, &
                          lh_rt, lh_thl )
 ! Description:
 !   Converts from chi(s), eta(t) variables to rt, thl.  Also sets a limit on the value
-!   of cthl1 and cthl2 to prevent extreme values of temperature.
+!   of cthl_1 and cthl_2 to prevent extreme values of temperature.
 !
 ! References:
 !   None
@@ -815,7 +815,7 @@ module generate_lh_sample_module
     ! Reduce the below value if model seems to crashing due excessive
     ! lh_thlp2_zt and it will limit the extremes of the samples.
 !   real(kind = dp), parameter :: &
-!     cthl_thresh = 1e-5_dp ! Threshold on cthl1 and cthl2 [kg/kg/K]
+!     cthl_thresh = 1e-5_dp ! Threshold on cthl_1 and cthl_2 [kg/kg/K]
 
     real(kind = dp), parameter :: &
       thl_dev_lim = 5.0_dp ! Max deviation from mean thetal [K]
@@ -823,10 +823,10 @@ module generate_lh_sample_module
     ! Input Variables
 
     real( kind = dp ), intent(in) :: &
-      rt1, rt2,    & ! n dimensional column vector of rt         [kg/kg]
-      thl1, thl2,  & ! n dimensional column vector of thetal     [K]
-      crt1, crt2,  & ! Constants from plumes 1 & 2 of rt
-      cthl1, cthl2   ! Constants from plumes 1 & 2 of thetal
+      rt_1, rt_2,    & ! n dimensional column vector of rt         [kg/kg]
+      thl_1, thl_2,  & ! n dimensional column vector of thetal     [K]
+      crt_1, crt_2,  & ! Constants from plumes 1 & 2 of rt
+      cthl_1, cthl_2   ! Constants from plumes 1 & 2 of thetal
 
     real( kind = dp ), intent(in) :: &
       mu_chi_1, mu_chi_2 ! Mean for chi_1 and chi_2         [kg/kg]
@@ -846,16 +846,16 @@ module generate_lh_sample_module
 
     ! Local Variables
 
-!   real( kind= dp ) :: cthl1_clip, cthl2_clip, & ! Clipped values of cthl1,2 [kg/kg/K]
+!   real( kind= dp ) :: cthl_1_clip, cthl_2_clip, & ! Clipped values of cthl_1,2 [kg/kg/K]
     real( kind= dp ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
 
     ! ---- Begin Code ----
 
-    ! Clip the value of cthl1,2.  This prevents large values of theta_l when the
+    ! Clip the value of cthl_1,2.  This prevents large values of theta_l when the
     ! saturation point is low and limits the chance of instability.
     ! See ticket #527 on the CLUBB TRAC
-!   cthl1_clip = max( cthl1, cthl_thresh )
-!   cthl2_clip = max( cthl2, cthl_thresh )
+!   cthl_1_clip = max( cthl_1, cthl_thresh )
+!   cthl_2_clip = max( cthl_2, cthl_thresh )
 
     ! Choose which mixture fraction we are in.
     ! Account for cloud fraction.
@@ -864,37 +864,37 @@ module generate_lh_sample_module
 !                      (mixt_frac*cloud_frac_1+(1-mixt_frac)*cloud_frac_2)
 
     if ( X_mixt_comp_one_lev == 1 ) then
-      lh_rt  = real( rt1 + (0.5_dp/crt1)*(chi-mu_chi_1) +  & 
-                             (0.5_dp/crt1)*eta, kind=core_rknd )
+      lh_rt  = real( rt_1 + (0.5_dp/crt_1)*(chi-mu_chi_1) +  & 
+                             (0.5_dp/crt_1)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl1)*(chi-mu_chi_1) & 
-                     + (0.5_dp/cthl1)*eta
+      lh_dev_thl_lim = (-0.5_dp/cthl_1)*(chi-mu_chi_1) & 
+                     + (0.5_dp/cthl_1)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      lh_thl = real( thl1 + lh_dev_thl_lim, kind=core_rknd )
+      lh_thl = real( thl_1 + lh_dev_thl_lim, kind=core_rknd )
 
         ! Old code
-!       lh_thl = real( thl1 + (-0.5_dp/cthl1_clip)*(chi-mu_chi_1) +  & 
-!                              (0.5_dp/cthl1_clip)*eta, kind=core_rknd )
+!       lh_thl = real( thl_1 + (-0.5_dp/cthl_1_clip)*(chi-mu_chi_1) +  & 
+!                              (0.5_dp/cthl_1_clip)*eta, kind=core_rknd )
 
     else if ( X_mixt_comp_one_lev == 2 ) then
         ! mixture fraction 2
-      lh_rt = real( rt2 + (0.5_dp/crt2)*(chi-mu_chi_2) +  & 
-                             (0.5_dp/crt2)*eta, kind=core_rknd )
+      lh_rt = real( rt_2 + (0.5_dp/crt_2)*(chi-mu_chi_2) +  & 
+                             (0.5_dp/crt_2)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl2)*(chi-mu_chi_2) & 
-                     + (0.5_dp/cthl2)*eta
+      lh_dev_thl_lim = (-0.5_dp/cthl_2)*(chi-mu_chi_2) & 
+                     + (0.5_dp/cthl_2)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
-      lh_thl = real( thl2 + lh_dev_thl_lim, kind=core_rknd )
+      lh_thl = real( thl_2 + lh_dev_thl_lim, kind=core_rknd )
 
       ! Old code
-!     lh_thl = real( thl2 + (-0.5_dp/cthl2_clip)*(chi-mu_chi_2) +  & 
-!                           (0.5_dp/cthl2_clip)*eta, kind=core_rknd )
+!     lh_thl = real( thl_2 + (-0.5_dp/cthl_2_clip)*(chi-mu_chi_2) +  & 
+!                           (0.5_dp/cthl_2_clip)*eta, kind=core_rknd )
     else
       stop "Error determining mixture fraction in chi_eta_2_rtthl"
 

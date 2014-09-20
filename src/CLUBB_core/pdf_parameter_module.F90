@@ -19,25 +19,25 @@ module pdf_parameter_module
 
   type pdf_parameter
     real( kind = core_rknd ) :: &
-      w1,              & ! Mean of w (1st PDF component)                   [m/s]
-      w2,              & ! Mean of w (2nd PDF component)                   [m/s]
-      varnce_w1,       & ! Variance of w (1st PDF component)           [m^2/s^2]
-      varnce_w2,       & ! Variance of w (2nd PDF component)           [m^2/s^2]
-      rt1,             & ! Mean of r_t (1st PDF component)               [kg/kg]
-      rt2,             & ! Mean of r_t (2nd PDF component)               [kg/kg]
-      varnce_rt1,      & ! Variance of r_t (1st PDF component)       [kg^2/kg^2]
-      varnce_rt2,      & ! Variance of r_t (2nd PDF component)       [kg^2/kg^2]
-      thl1,            & ! Mean of th_l (1st PDF component)                  [K]
-      thl2,            & ! Mean of th_l (2nd PDF component)                  [K]
-      varnce_thl1,     & ! Variance of th_l (1st PDF component)            [K^2]
-      varnce_thl2,     & ! Variance of th_l (2nd PDF component)            [K^2]
+      w_1,             & ! Mean of w (1st PDF component)                   [m/s]
+      w_2,             & ! Mean of w (2nd PDF component)                   [m/s]
+      varnce_w_1,      & ! Variance of w (1st PDF component)           [m^2/s^2]
+      varnce_w_2,      & ! Variance of w (2nd PDF component)           [m^2/s^2]
+      rt_1,            & ! Mean of r_t (1st PDF component)               [kg/kg]
+      rt_2,            & ! Mean of r_t (2nd PDF component)               [kg/kg]
+      varnce_rt_1,     & ! Variance of r_t (1st PDF component)       [kg^2/kg^2]
+      varnce_rt_2,     & ! Variance of r_t (2nd PDF component)       [kg^2/kg^2]
+      thl_1,           & ! Mean of th_l (1st PDF component)                  [K]
+      thl_2,           & ! Mean of th_l (2nd PDF component)                  [K]
+      varnce_thl_1,    & ! Variance of th_l (1st PDF component)            [K^2]
+      varnce_thl_2,    & ! Variance of th_l (2nd PDF component)            [K^2]
       rrtthl,          & ! Correlation of r_t and th_l (both components)     [-]
       alpha_thl,       & ! Factor relating to normalized variance for th_l   [-]
       alpha_rt,        & ! Factor relating to normalized variance for r_t    [-]
-      crt1,            & ! r_t coef. in chi/eta eqns. (1st PDF comp.)        [-]
-      crt2,            & ! r_t coef. in chi/eta eqns. (2nd PDF comp.)        [-]
-      cthl1,           & ! th_l coef.: chi/eta eqns. (1st PDF comp.) [(kg/kg)/K]
-      cthl2,           & ! th_l coef.: chi/eta eqns. (2nd PDF comp.) [(kg/kg)/K]
+      crt_1,           & ! r_t coef. in chi/eta eqns. (1st PDF comp.)        [-]
+      crt_2,           & ! r_t coef. in chi/eta eqns. (2nd PDF comp.)        [-]
+      cthl_1,          & ! th_l coef.: chi/eta eqns. (1st PDF comp.) [(kg/kg)/K]
+      cthl_2,          & ! th_l coef.: chi/eta eqns. (2nd PDF comp.) [(kg/kg)/K]
       chi_1,           & ! Mean of chi (old s) (1st PDF component)       [kg/kg]
       chi_2,           & ! Mean of chi (old s) (2nd PDF component)       [kg/kg]
       stdev_chi_1,     & ! Standard deviation of chi (1st PDF component) [kg/kg]
@@ -48,12 +48,12 @@ module pdf_parameter_module
       covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
-      rsatl1,            & ! Saturation mixing ratio r_sat(mu_Tl_1,p)      [kg/kg]
-      rsatl2,            & ! Saturation mixing ratio r_sat(mu_Tl_2,p)      [kg/kg]
-      rc1,             & ! Mean of r_c (1st PDF component)               [kg/kg]
-      rc2,             & ! Mean of r_c (2nd PDF component)               [kg/kg]
-      cloud_frac_1,     & ! Cloud fraction (1st PDF component)                [-]
-      cloud_frac_2,     & ! Cloud fraction (2nd PDF component)                [-]
+      rsatl_1,         & ! Saturation mixing ratio r_sat(mu_Tl_1,p)      [kg/kg]
+      rsatl_2,         & ! Saturation mixing ratio r_sat(mu_Tl_2,p)      [kg/kg]
+      rc_1,            & ! Mean of r_c (1st PDF component)               [kg/kg]
+      rc_2,            & ! Mean of r_c (2nd PDF component)               [kg/kg]
+      cloud_frac_1,    & ! Cloud fraction (1st PDF component)                [-]
+      cloud_frac_2,    & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
   end type pdf_parameter
 
@@ -123,29 +123,29 @@ module pdf_parameter_module
 
     SELECT CASE (ind)
       CASE (1)
-      	   get_param_at_ind = pp_struct%w1
+      	   get_param_at_ind = pp_struct%w_1
       CASE (2)
-      	   get_param_at_ind = pp_struct%w2
+      	   get_param_at_ind = pp_struct%w_2
       CASE (3)
-      	   get_param_at_ind = pp_struct%varnce_w1
+      	   get_param_at_ind = pp_struct%varnce_w_1
       CASE (4)
-      	   get_param_at_ind = pp_struct%varnce_w2
+      	   get_param_at_ind = pp_struct%varnce_w_2
       CASE (5)
-      	   get_param_at_ind = pp_struct%rt1
+      	   get_param_at_ind = pp_struct%rt_1
       CASE (6)
-      	   get_param_at_ind = pp_struct%rt2
+      	   get_param_at_ind = pp_struct%rt_2
       CASE (7)
-      	   get_param_at_ind = pp_struct%varnce_rt1
+      	   get_param_at_ind = pp_struct%varnce_rt_1
       CASE (8)
-      	   get_param_at_ind = pp_struct%varnce_rt2
+      	   get_param_at_ind = pp_struct%varnce_rt_2
       CASE (9)
-      	   get_param_at_ind = pp_struct%thl1
+      	   get_param_at_ind = pp_struct%thl_1
       CASE (10)
-      	   get_param_at_ind = pp_struct%thl2
+      	   get_param_at_ind = pp_struct%thl_2
       CASE (11)
-      	   get_param_at_ind = pp_struct%varnce_thl1
+      	   get_param_at_ind = pp_struct%varnce_thl_1
       CASE (12)
-      	   get_param_at_ind = pp_struct%varnce_thl2
+      	   get_param_at_ind = pp_struct%varnce_thl_2
       CASE (13)
       	   get_param_at_ind = pp_struct%rrtthl
       CASE (14)
@@ -153,13 +153,13 @@ module pdf_parameter_module
       CASE (15)
       	   get_param_at_ind = pp_struct%alpha_rt
       CASE (16)
-      	   get_param_at_ind = pp_struct%crt1
+      	   get_param_at_ind = pp_struct%crt_1
       CASE (17)
-      	   get_param_at_ind = pp_struct%crt2
+      	   get_param_at_ind = pp_struct%crt_2
       CASE (18)
-      	   get_param_at_ind = pp_struct%cthl1
+      	   get_param_at_ind = pp_struct%cthl_1
       CASE (19)
-      	   get_param_at_ind = pp_struct%cthl2
+      	   get_param_at_ind = pp_struct%cthl_2
       CASE (20)
       	   get_param_at_ind = pp_struct%chi_1
       CASE (21)
@@ -181,13 +181,13 @@ module pdf_parameter_module
       CASE (29)
       	   get_param_at_ind = pp_struct%corr_chi_eta_2
       CASE (30)
-      	   get_param_at_ind = pp_struct%rsatl1
+      	   get_param_at_ind = pp_struct%rsatl_1
       CASE (31)
-      	   get_param_at_ind = pp_struct%rsatl2
+      	   get_param_at_ind = pp_struct%rsatl_2
       CASE (32)
-      	   get_param_at_ind = pp_struct%rc1
+      	   get_param_at_ind = pp_struct%rc_1
       CASE (33)
-      	   get_param_at_ind = pp_struct%rc2
+      	   get_param_at_ind = pp_struct%rc_2
       CASE (34)
       	   get_param_at_ind = pp_struct%cloud_frac_1
       CASE (35)
@@ -209,29 +209,29 @@ module pdf_parameter_module
 
     SELECT CASE (ind)
       CASE (1)
-      	   pp_struct%w1 = val
+      	   pp_struct%w_1 = val
       CASE (2)
-      	   pp_struct%w2 = val
+      	   pp_struct%w_2 = val
       CASE (3)
-      	   pp_struct%varnce_w1 = val
+      	   pp_struct%varnce_w_1 = val
       CASE (4)
-      	   pp_struct%varnce_w2 = val
+      	   pp_struct%varnce_w_2 = val
       CASE (5)
-      	   pp_struct%rt1 = val
+      	   pp_struct%rt_1 = val
       CASE (6)
-      	   pp_struct%rt2 = val
+      	   pp_struct%rt_2 = val
       CASE (7)
-      	   pp_struct%varnce_rt1 = val
+      	   pp_struct%varnce_rt_1 = val
       CASE (8)
-      	   pp_struct%varnce_rt2 = val
+      	   pp_struct%varnce_rt_2 = val
       CASE (9)
-      	   pp_struct%thl1 = val
+      	   pp_struct%thl_1 = val
       CASE (10)
-      	   pp_struct%thl2 = val
+      	   pp_struct%thl_2 = val
       CASE (11)
-      	   pp_struct%varnce_thl1 = val
+      	   pp_struct%varnce_thl_1 = val
       CASE (12)
-      	   pp_struct%varnce_thl2 = val
+      	   pp_struct%varnce_thl_2 = val
       CASE (13)
       	   pp_struct%rrtthl = val
       CASE (14)
@@ -239,13 +239,13 @@ module pdf_parameter_module
       CASE (15)
       	   pp_struct%alpha_rt = val
       CASE (16)
-      	   pp_struct%crt1 = val
+      	   pp_struct%crt_1 = val
       CASE (17)
-      	   pp_struct%crt2 = val
+      	   pp_struct%crt_2 = val
       CASE (18)
-      	   pp_struct%cthl1 = val
+      	   pp_struct%cthl_1 = val
       CASE (19)
-      	   pp_struct%cthl2 = val
+      	   pp_struct%cthl_2 = val
       CASE (20)
       	   pp_struct%chi_1 = val
       CASE (21)
@@ -267,13 +267,13 @@ module pdf_parameter_module
       CASE (29)
       	   pp_struct%corr_chi_eta_2 = val
       CASE (30)
-      	   pp_struct%rsatl1 = val
+      	   pp_struct%rsatl_1 = val
       CASE (31)
-      	   pp_struct%rsatl2 = val
+      	   pp_struct%rsatl_2 = val
       CASE (32)
-      	   pp_struct%rc1 = val
+      	   pp_struct%rc_1 = val
       CASE (33)
-      	   pp_struct%rc2 = val
+      	   pp_struct%rc_2 = val
       CASE (34)
       	   pp_struct%cloud_frac_1 = val
       CASE (35)

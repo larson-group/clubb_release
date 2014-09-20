@@ -388,7 +388,7 @@ module diagnose_correlations_module
       wpchip_zm(k) = pdf_params(k)%mixt_frac &
                    * ( one - pdf_params(k)%mixt_frac ) &
                    * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
-                   * ( pdf_params(k)%w1 - pdf_params(k)%w2 )
+                   * ( pdf_params(k)%w_1 - pdf_params(k)%w_2 )
     enddo
 
 ! same for wpNrp

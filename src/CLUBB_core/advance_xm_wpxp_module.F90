@@ -47,7 +47,7 @@ module advance_xm_wpxp_module
                               thlm_forcing, wpthlp_forcing, thlm_ref, &
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
-                              w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, &
+                              w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, &
                               sclrpthvp, sclrm_forcing, sclrp2, &
                               rtm, wprtp, thlm, wpthlp, &
@@ -190,10 +190,10 @@ module advance_xm_wpxp_module
       rtp2,            & ! r_t'^2 (momentum levels)                 [(kg/kg)^2]
       thlp2,           & ! th_l'^2 (momentum levels)                [K^2]
       ! End of Vince Larson's addition.
-      w1_zm,           & ! Mean w (1st PDF component)                   [m/s]
-      w2_zm,           & ! Mean w (2nd PDF component)                   [m/s]
-      varnce_w1_zm,    & ! Variance of w (1st PDF component)            [m^2/s^2]
-      varnce_w2_zm,    & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      w_1_zm,           & ! Mean w (1st PDF component)                   [m/s]
+      w_2_zm,           & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w_1_zm,    & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w_2_zm,    & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm       ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     logical, intent(in) ::  & 
@@ -346,7 +346,7 @@ module advance_xm_wpxp_module
     ! have an effect on the central thermodynamic level during the course of
     ! one time step due to turbulent advection.  This is used as part of the
     ! monotonic turbulent advection scheme.
-    call calc_turb_adv_range( dt, w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! In
+    call calc_turb_adv_range( dt, w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! In
                               mixt_frac_zm, &  ! In
                               low_lev_effect, high_lev_effect ) ! Out
 
@@ -777,10 +777,10 @@ module advance_xm_wpxp_module
       write(fstderr,*) "thv_ds_zm = ", thv_ds_zm
       write(fstderr,*) "rtp2 = ", rtp2
       write(fstderr,*) "thlp2 = ", thlp2
-      write(fstderr,*) "w1_zm = ", w1_zm
-      write(fstderr,*) "w2_zm = ", w2_zm
-      write(fstderr,*) "varnce_w1_zm = ", varnce_w1_zm
-      write(fstderr,*) "varnce_w2_zm = ", varnce_w2_zm
+      write(fstderr,*) "w_1_zm = ", w_1_zm
+      write(fstderr,*) "w_2_zm = ", w_2_zm
+      write(fstderr,*) "varnce_w_1_zm = ", varnce_w_1_zm
+      write(fstderr,*) "varnce_w_2_zm = ", varnce_w_2_zm
       write(fstderr,*) "mixt_frac_zm = ", mixt_frac_zm
       write(fstderr,*) "l_implemented = ", l_implemented
  

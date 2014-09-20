@@ -231,14 +231,14 @@ module KK_upscaled_covariances
 
 
     ! Enter the PDF parameters.
-    mu_rt_1  = pdf_params%rt1
-    mu_rt_2  = pdf_params%rt2
-    mu_thl_1 = pdf_params%thl1
-    mu_thl_2 = pdf_params%thl2
-    crt1     = pdf_params%crt1
-    crt2     = pdf_params%crt2
-    cthl1    = pdf_params%cthl1
-    cthl2    = pdf_params%cthl2
+    mu_rt_1  = pdf_params%rt_1
+    mu_rt_2  = pdf_params%rt_2
+    mu_thl_1 = pdf_params%thl_1
+    mu_thl_2 = pdf_params%thl_2
+    crt1     = pdf_params%crt_1
+    crt2     = pdf_params%crt_2
+    cthl1    = pdf_params%cthl_1
+    cthl2    = pdf_params%cthl_2
 
     
     ! Calculate the covariance of vertical velocity and KK evaporation tendency.

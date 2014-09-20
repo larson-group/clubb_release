@@ -50,8 +50,8 @@ module model_flags
 
   logical, parameter, public :: &
     l_morr_xp2_mc = .false. !Flag to include the effects of rain evaporation
-                                  !on rtp2 and thlp2.  The moister (rt1 or rt2)
-                                  !and colder (thl1 or thl2) will be fed into
+                                  !on rtp2 and thlp2.  The moister (rt_1 or rt_2)
+                                  !and colder (thl_1 or thl_2) will be fed into
                                   !the morrison microphys, and rain evaporation will
                                   !be allowed to increase variances
 

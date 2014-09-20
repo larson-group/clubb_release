@@ -448,10 +448,10 @@ module latin_hypercube_driver_module
       do sample = 1, num_samples, 1
         call generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
-               pdf_params(k)%thl1, pdf_params(k)%thl2, & ! In
-               pdf_params(k)%rt1, pdf_params(k)%rt2, & ! In
-               pdf_params(k)%crt1, pdf_params(k)%crt2, & ! In
-               pdf_params(k)%cthl1, pdf_params(k)%cthl2, & ! In
+               pdf_params(k)%thl_1, pdf_params(k)%thl_2, & ! In
+               pdf_params(k)%rt_1, pdf_params(k)%rt_2, & ! In
+               pdf_params(k)%crt_1, pdf_params(k)%crt_2, & ! In
+               pdf_params(k)%cthl_1, pdf_params(k)%cthl_2, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
                corr_cholesky_mtx_1(:,:,k), & ! In
                corr_cholesky_mtx_2(:,:,k), & ! In

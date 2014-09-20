@@ -96,13 +96,13 @@ module gfdl_activation
 
     do iz_clubb = 2, gr%nz
 
-      if( pdf_params( iz_clubb)%varnce_w1 > wp2_eps) then
+      if( pdf_params( iz_clubb)%varnce_w_1 > wp2_eps) then
         P1_updraft = 0.5_core_rknd + 0.5_core_rknd &
-            * erff( pdf_params(iz_clubb)%w1 &
-            / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w1) )
+            * erff( pdf_params(iz_clubb)%w_1 &
+            / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w_1) )
         P1_updraft = P1_updraft * pdf_params(iz_clubb)%mixt_frac &
             * pdf_params(iz_clubb)%cloud_frac_1
-      else if( pdf_params( iz_clubb)%w1 > 0.0_core_rknd) then
+      else if( pdf_params( iz_clubb)%w_1 > 0.0_core_rknd) then
           P1_updraft = pdf_params( iz_clubb)%mixt_frac * pdf_params( iz_clubb)%cloud_frac_1
       else
         ! Eric Raut added to remove compiler warning
@@ -110,13 +110,13 @@ module gfdl_activation
       end if
 
 
-      if( pdf_params( iz_clubb)%varnce_w2 > wp2_eps) then
+      if( pdf_params( iz_clubb)%varnce_w_2 > wp2_eps) then
         P2_updraft = 0.5_core_rknd + &
-                      0.5_core_rknd*erff( pdf_params(iz_clubb)%w2 &
-                      / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w2) )
+                      0.5_core_rknd*erff( pdf_params(iz_clubb)%w_2 &
+                      / sqrt( 2.0_core_rknd*pdf_params(iz_clubb)%varnce_w_2) )
         P2_updraft = P2_updraft * ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
                       * pdf_params( iz_clubb)%cloud_frac_2
-      else if( pdf_params( iz_clubb)%w2 > 0.0_core_rknd) then
+      else if( pdf_params( iz_clubb)%w_2 > 0.0_core_rknd) then
            P2_updraft = ( 1.0_core_rknd-pdf_params( iz_clubb )%mixt_frac ) &
                           * pdf_params( iz_clubb)%cloud_frac_2
       else
@@ -138,16 +138,16 @@ module gfdl_activation
       drop_r4 = real(drop)
 
       call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                              real(pdf_params(iz_clubb)%w1),                      &! intent(in)
-                              real(pdf_params(iz_clubb)%varnce_w1),               &! intent(in)
+                              real(pdf_params(iz_clubb)%w_1),                      &! intent(in)
+                              real(pdf_params(iz_clubb)%varnce_w_1),               &! intent(in)
                               aeromass_clubb_r4, Tym,             &! intent(in)
                               drop_r4,   ier,   ermesg )                        ! intent(out)
     
       Ndrop_max(iz_clubb) = drop * P1_updraft
 
       call aer_ccn_act_wpdf_k( real(temp_clubb_act(iz_clubb)), real(p_in_Pa(iz_clubb)),&!intent(in)
-                             real(pdf_params(iz_clubb)%w2),                        &! intent(in)
-                             real(pdf_params(iz_clubb)%varnce_w2),                 &! intent(in)
+                             real(pdf_params(iz_clubb)%w_2),                        &! intent(in)
+                             real(pdf_params(iz_clubb)%varnce_w_2),                 &! intent(in)
                              aeromass_clubb_r4, Tym,               &! intent(in)
                              drop_r4,   ier,   ermesg )                         ! intent(out)
 

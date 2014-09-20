@@ -571,10 +571,10 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       p_in_Pa_zm,   & ! Pressure interpolated to momentum levels  [Pa]
       exner_zm,     & ! Exner interpolated to momentum levels     [-]
-      w1_zm,        & ! Mean w (1st PDF component)                   [m/s]
-      w2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
-      varnce_w1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
-      varnce_w2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
+      w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
+      w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
+      varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
+      varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
@@ -714,8 +714,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: &
       cloud_frac_1_refined, & ! cloud_frac_1 computed on refined grid
       cloud_frac_2_refined, & ! cloud_frac_2 computed on refined grid
-      rc1_refined, &         ! rc1 computed on refined grid
-      rc2_refined, &         ! rc2 computed on refined grid
+      rc_1_refined, &         ! rc_1 computed on refined grid
+      rc_2_refined, &         ! rc_2 computed on refined grid
       cloud_frac_refined, &  ! cloud_frac gridbox mean on refined grid
       rcm_refined            ! rcm gridbox mean on refined grid
 
@@ -1011,27 +1011,27 @@ module advance_clubb_core_module
           call calc_vert_avg_cf_component &
                ( gr%nz, k, gr%zt, pdf_params%chi_1, &                    ! Intent(in)
                  pdf_params%stdev_chi_1, (/(chi_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
-                 cloud_frac_1_refined, rc1_refined )                   ! Intent(out)
+                 cloud_frac_1_refined, rc_1_refined )                   ! Intent(out)
 
           call calc_vert_avg_cf_component & 
                ( gr%nz, k, gr%zt, pdf_params%chi_2, &                     ! Intent(in)
                  pdf_params%stdev_chi_2, (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
-                 cloud_frac_2_refined, rc2_refined )                    ! Intent(out)
+                 cloud_frac_2_refined, rc_2_refined )                    ! Intent(out)
 
           cloud_frac_refined = compute_mean_binormal &
                                ( cloud_frac_1_refined, cloud_frac_2_refined, &
                                  pdf_params(k)%mixt_frac )
 
           rcm_refined = compute_mean_binormal &
-                        ( rc1_refined, rc2_refined, pdf_params(k)%mixt_frac )
+                        ( rc_1_refined, rc_2_refined, pdf_params(k)%mixt_frac )
 
           if ( l_interactive_refined ) then
             ! I commented out the lines that modify the values in pdf_params, as it seems that
             ! these values need to remain consistent with the rest of the PDF.
             ! Eric Raut Jun 2014
             ! Replace pdf_closure estimates with refined estimates
-            ! pdf_params(k)%rc1 = rc1_refined
-            ! pdf_params(k)%rc2 = rc2_refined
+            ! pdf_params(k)%rc_1 = rc_1_refined
+            ! pdf_params(k)%rc_2 = rc_2_refined
             rcm(k) = rcm_refined
 
             ! pdf_params(k)%cloud_frac_1 = cloud_frac_1_refined
@@ -1472,47 +1472,47 @@ module advance_clubb_core_module
         end do
 
         if ( l_use_ice_latent ) then
-          where ( pdf_params_frz%rt1 > pdf_params_frz%rt2 )
-            rtm_pert_pos_rt = pdf_params_frz%rt1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt2 & 
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt2, rt_tol**2 ) )
+          where ( pdf_params_frz%rt_1 > pdf_params_frz%rt_2 )
+            rtm_pert_pos_rt = pdf_params_frz%rt_1 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params_frz%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params_frz%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params_frz%rt_2 & 
+                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
             !Lscale_weight = pdf_params%mixt_frac
           else where
-            rtm_pert_pos_rt = pdf_params_frz%rt2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params_frz%thl2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params_frz%thl1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params_frz%varnce_thl1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params_frz%rt1 & 
-                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt1, rt_tol**2 ) )
+            rtm_pert_pos_rt = pdf_params_frz%rt_2 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_2, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params_frz%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_2, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params_frz%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params_frz%varnce_thl_1, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params_frz%rt_1 & 
+                       - Lscale_pert_coef * sqrt( max( pdf_params_frz%varnce_rt_1, rt_tol**2 ) )
             !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
           end where
         else
-          where ( pdf_params%rt1 > pdf_params%rt2 )
-            rtm_pert_pos_rt = pdf_params%rt1 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl1 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl2 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt2 & 
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
+          where ( pdf_params%rt_1 > pdf_params%rt_2 )
+            rtm_pert_pos_rt = pdf_params%rt_1 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params%thl_1 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params%thl_2 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params%rt_2 & 
+                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
             !Lscale_weight = pdf_params%mixt_frac
           else where
-            rtm_pert_pos_rt = pdf_params%rt2 &
-                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt2, rt_tol**2 ) )
-            thlm_pert_pos_rt = pdf_params%thl2 + ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl2, thl_tol**2 ) ) )
-            thlm_pert_neg_rt = pdf_params%thl1 - ( sign_rtpthlp * Lscale_pert_coef &
-                       * sqrt( max( pdf_params%varnce_thl1, thl_tol**2 ) ) )
-            rtm_pert_neg_rt = pdf_params%rt1 & 
-                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt1, rt_tol**2 ) )
+            rtm_pert_pos_rt = pdf_params%rt_2 &
+                       + Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_2, rt_tol**2 ) )
+            thlm_pert_pos_rt = pdf_params%thl_2 + ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_2, thl_tol**2 ) ) )
+            thlm_pert_neg_rt = pdf_params%thl_1 - ( sign_rtpthlp * Lscale_pert_coef &
+                       * sqrt( max( pdf_params%varnce_thl_1, thl_tol**2 ) ) )
+            rtm_pert_neg_rt = pdf_params%rt_1 & 
+                       - Lscale_pert_coef * sqrt( max( pdf_params%varnce_rt_1, rt_tol**2 ) )
             !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
           end where
         end if
@@ -1732,16 +1732,16 @@ module advance_clubb_core_module
       ! Advance rtm/wprtp and thlm/wpthlp one time step
       !----------------------------------------------------------------
       if ( l_call_pdf_closure_twice ) then
-        w1_zm        = pdf_params_zm%w1
-        w2_zm        = pdf_params_zm%w2
-        varnce_w1_zm = pdf_params_zm%varnce_w1
-        varnce_w2_zm = pdf_params_zm%varnce_w2
+        w_1_zm        = pdf_params_zm%w_1
+        w_2_zm        = pdf_params_zm%w_2
+        varnce_w_1_zm = pdf_params_zm%varnce_w_1
+        varnce_w_2_zm = pdf_params_zm%varnce_w_2
         mixt_frac_zm = pdf_params_zm%mixt_frac
       else
-        w1_zm        = zt2zm( pdf_params%w1 )
-        w2_zm        = zt2zm( pdf_params%w2 )
-        varnce_w1_zm = zt2zm( pdf_params%varnce_w1 )
-        varnce_w2_zm = zt2zm( pdf_params%varnce_w2 )
+        w_1_zm        = zt2zm( pdf_params%w_1 )
+        w_2_zm        = zt2zm( pdf_params%w_2 )
+        varnce_w_1_zm = zt2zm( pdf_params%varnce_w_1 )
+        varnce_w_2_zm = zt2zm( pdf_params%varnce_w_2 )
         mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
       end if
 
@@ -1752,7 +1752,7 @@ module advance_clubb_core_module
                             thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
-                            w1_zm, w2_zm, varnce_w1_zm, varnce_w2_zm, & ! intent(in)
+                            w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                             mixt_frac_zm, l_implemented,              & ! intent(in)
                             sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
@@ -2458,52 +2458,52 @@ module advance_clubb_core_module
 
       ! Components of PDF_parameters on the momentum grid (_zm) and on the thermo. grid (_zt)
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        w1_zt,          & ! Mean of w for 1st normal distribution                 [m/s]
-        w1_zm,          & ! Mean of w for 1st normal distribution                 [m/s]
-        w2_zm,          & ! Mean of w for 2nd normal distribution                 [m/s]
-        w2_zt,          & ! Mean of w for 2nd normal distribution                 [m/s]
-        varnce_w1_zm,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
-        varnce_w1_zt,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
-        varnce_w2_zm,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-        varnce_w2_zt,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
-        rt1_zm,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
-        rt1_zt,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
-        rt2_zm,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-        rt2_zt,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
-        varnce_rt1_zm,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-        varnce_rt1_zt,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
-        varnce_rt2_zm,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-        varnce_rt2_zt,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
-        crt1_zm,        & ! Coefficient for s'                                      [-]
-        crt1_zt,        & ! Coefficient for s'                                      [-]
-        crt2_zm           ! Coefficient for s'                                      [-]
+        w_1_zt,          & ! Mean of w for 1st normal distribution                 [m/s]
+        w_1_zm,          & ! Mean of w for 1st normal distribution                 [m/s]
+        w_2_zm,          & ! Mean of w for 2nd normal distribution                 [m/s]
+        w_2_zt,          & ! Mean of w for 2nd normal distribution                 [m/s]
+        varnce_w_1_zm,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+        varnce_w_1_zt,   & ! Variance of w for 1st normal distribution         [m^2/s^2]
+        varnce_w_2_zm,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+        varnce_w_2_zt,   & ! Variance of w for 2nd normal distribution         [m^2/s^2]
+        rt_1_zm,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+        rt_1_zt,         & ! Mean of r_t for 1st normal distribution             [kg/kg]
+        rt_2_zm,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+        rt_2_zt,         & ! Mean of r_t for 2nd normal distribution             [kg/kg]
+        varnce_rt_1_zm,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+        varnce_rt_1_zt,  & ! Variance of r_t for 1st normal distribution     [kg^2/kg^2]
+        varnce_rt_2_zm,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+        varnce_rt_2_zt,  & ! Variance of r_t for 2nd normal distribution     [kg^2/kg^2]
+        crt_1_zm,        & ! Coefficient for s'                                      [-]
+        crt_1_zt,        & ! Coefficient for s'                                      [-]
+        crt_2_zm           ! Coefficient for s'                                      [-]
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        crt2_zt,        & ! Coefficient for s'                                      [-]
-        cthl1_zm,       & ! Coefficient for s'                                    [1/K]
-        cthl1_zt,       & ! Coefficient for s'                                    [1/K]
-        cthl2_zm,       & ! Coefficient for s'                                    [1/K]
-        cthl2_zt,       & ! Coefficient for s'                                    [1/K]
-        thl1_zm,        & ! Mean of th_l for 1st normal distribution                [K]
-        thl1_zt,        & ! Mean of th_l for 1st normal distribution                [K]
-        thl2_zm,        & ! Mean of th_l for 2nd normal distribution                [K]
-        thl2_zt,        & ! Mean of th_l for 2nd normal distribution
-        varnce_thl1_zm, & ! Variance of th_l for 1st normal distribution          [K^2]
-        varnce_thl1_zt, & ! Variance of th_l for 1st normal distribution          [K^2]
-        varnce_thl2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
-        varnce_thl2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
+        crt_2_zt,        & ! Coefficient for s'                                      [-]
+        cthl_1_zm,       & ! Coefficient for s'                                    [1/K]
+        cthl_1_zt,       & ! Coefficient for s'                                    [1/K]
+        cthl_2_zm,       & ! Coefficient for s'                                    [1/K]
+        cthl_2_zt,       & ! Coefficient for s'                                    [1/K]
+        thl_1_zm,        & ! Mean of th_l for 1st normal distribution                [K]
+        thl_1_zt,        & ! Mean of th_l for 1st normal distribution                [K]
+        thl_2_zm,        & ! Mean of th_l for 2nd normal distribution                [K]
+        thl_2_zt,        & ! Mean of th_l for 2nd normal distribution
+        varnce_thl_1_zm, & ! Variance of th_l for 1st normal distribution          [K^2]
+        varnce_thl_1_zt, & ! Variance of th_l for 1st normal distribution          [K^2]
+        varnce_thl_2_zm, & ! Variance of th_l for 2nd normal distribution          [K^2]
+        varnce_thl_2_zt    ! Variance of th_l for 2nd normal distribution          [K^2]
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
         mixt_frac_zm,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
         mixt_frac_zt,   & ! Weight of 1st normal distribution (Sk_w dependent)      [-]
-        rc1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
-        rc1_zt,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
-        rc2_zm,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-        rc2_zt,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
-        rsatl1_zm,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-        rsatl1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
-        rsatl2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
-        rsatl2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+        rc_1_zm,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
+        rc_1_zt,         & ! Mean of r_c for 1st normal distribution             [kg/kg]
+        rc_2_zm,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+        rc_2_zt,         & ! Mean of r_c for 2nd normal distribution             [kg/kg]
+        rsatl_1_zm,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+        rsatl_1_zt,        & ! Mean of r_sl for 1st normal distribution            [kg/kg]
+        rsatl_2_zm,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
+        rsatl_2_zt,        & ! Mean of r_sl for 2nd normal distribution            [kg/kg]
         cloud_frac_1_zm, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac_1_zt, & ! Cloud fraction for 1st normal distribution              [-]
         cloud_frac_2_zm, & ! Cloud fraction for 2nd normal distribution              [-]
@@ -2543,27 +2543,27 @@ module advance_clubb_core_module
       ! preferentially in cloud. -dschanen 13 Feb 2012
 
       if ( l_apply_rule_to_pdf_params ) then
-        w1_zt          = pdf_params%w1
-        w2_zt          = pdf_params%w2
-        varnce_w1_zt   = pdf_params%varnce_w1
-        varnce_w2_zt   = pdf_params%varnce_w2
-        rt1_zt         = pdf_params%rt1
-        rt2_zt         = pdf_params%rt2
-        varnce_rt1_zt  = pdf_params%varnce_rt1
-        varnce_rt2_zt  = pdf_params%varnce_rt2
-        crt1_zt        = pdf_params%crt1
-        crt2_zt        = pdf_params%crt2
-        cthl1_zt       = pdf_params%cthl1
-        cthl2_zt       = pdf_params%cthl2
-        thl1_zt        = pdf_params%thl1
-        thl2_zt        = pdf_params%thl2
-        varnce_thl1_zt = pdf_params%varnce_thl1
-        varnce_thl2_zt = pdf_params%varnce_thl2
+        w_1_zt          = pdf_params%w_1
+        w_2_zt          = pdf_params%w_2
+        varnce_w_1_zt   = pdf_params%varnce_w_1
+        varnce_w_2_zt   = pdf_params%varnce_w_2
+        rt_1_zt         = pdf_params%rt_1
+        rt_2_zt         = pdf_params%rt_2
+        varnce_rt_1_zt  = pdf_params%varnce_rt_1
+        varnce_rt_2_zt  = pdf_params%varnce_rt_2
+        crt_1_zt        = pdf_params%crt_1
+        crt_2_zt        = pdf_params%crt_2
+        cthl_1_zt       = pdf_params%cthl_1
+        cthl_2_zt       = pdf_params%cthl_2
+        thl_1_zt        = pdf_params%thl_1
+        thl_2_zt        = pdf_params%thl_2
+        varnce_thl_1_zt = pdf_params%varnce_thl_1
+        varnce_thl_2_zt = pdf_params%varnce_thl_2
         mixt_frac_zt   = pdf_params%mixt_frac
-        rc1_zt         = pdf_params%rc1
-        rc2_zt         = pdf_params%rc2
-        rsatl1_zt        = pdf_params%rsatl1
-        rsatl2_zt        = pdf_params%rsatl2
+        rc_1_zt         = pdf_params%rc_1
+        rc_2_zt         = pdf_params%rc_2
+        rsatl_1_zt        = pdf_params%rsatl_1
+        rsatl_2_zt        = pdf_params%rsatl_2
         cloud_frac_1_zt = pdf_params%cloud_frac_1
         cloud_frac_2_zt = pdf_params%cloud_frac_2
         chi_1_zt          = pdf_params%chi_1
@@ -2585,27 +2585,27 @@ module advance_clubb_core_module
         ! Store, in locally declared variables, the pdf_params output
         ! from the second call to pdf_closure
         if ( l_apply_rule_to_pdf_params ) then
-          w1_zm          = pdf_params_zm%w1
-          w2_zm          = pdf_params_zm%w2
-          varnce_w1_zm   = pdf_params_zm%varnce_w1
-          varnce_w2_zm   = pdf_params_zm%varnce_w2
-          rt1_zm         = pdf_params_zm%rt1
-          rt2_zm         = pdf_params_zm%rt2
-          varnce_rt1_zm  = pdf_params_zm%varnce_rt1
-          varnce_rt2_zm  = pdf_params_zm%varnce_rt2
-          crt1_zm        = pdf_params_zm%crt1
-          crt2_zm        = pdf_params_zm%crt2
-          cthl1_zm       = pdf_params_zm%cthl1
-          cthl2_zm       = pdf_params_zm%cthl2
-          thl1_zm        = pdf_params_zm%thl1
-          thl2_zm        = pdf_params_zm%thl2
-          varnce_thl1_zm = pdf_params_zm%varnce_thl1
-          varnce_thl2_zm = pdf_params_zm%varnce_thl2
+          w_1_zm          = pdf_params_zm%w_1
+          w_2_zm          = pdf_params_zm%w_2
+          varnce_w_1_zm   = pdf_params_zm%varnce_w_1
+          varnce_w_2_zm   = pdf_params_zm%varnce_w_2
+          rt_1_zm         = pdf_params_zm%rt_1
+          rt_2_zm         = pdf_params_zm%rt_2
+          varnce_rt_1_zm  = pdf_params_zm%varnce_rt_1
+          varnce_rt_2_zm  = pdf_params_zm%varnce_rt_2
+          crt_1_zm        = pdf_params_zm%crt_1
+          crt_2_zm        = pdf_params_zm%crt_2
+          cthl_1_zm       = pdf_params_zm%cthl_1
+          cthl_2_zm       = pdf_params_zm%cthl_2
+          thl_1_zm        = pdf_params_zm%thl_1
+          thl_2_zm        = pdf_params_zm%thl_2
+          varnce_thl_1_zm = pdf_params_zm%varnce_thl_1
+          varnce_thl_2_zm = pdf_params_zm%varnce_thl_2
           mixt_frac_zm   = pdf_params_zm%mixt_frac
-          rc1_zm         = pdf_params_zm%rc1
-          rc2_zm         = pdf_params_zm%rc2
-          rsatl1_zm        = pdf_params_zm%rsatl1
-          rsatl2_zm        = pdf_params_zm%rsatl2
+          rc_1_zm         = pdf_params_zm%rc_1
+          rc_2_zm         = pdf_params_zm%rc_2
+          rsatl_1_zm        = pdf_params_zm%rsatl_1
+          rsatl_2_zm        = pdf_params_zm%rsatl_2
           cloud_frac_1_zm = pdf_params_zm%cloud_frac_1
           cloud_frac_2_zm = pdf_params_zm%cloud_frac_2
           chi_1_zm          = pdf_params_zm%chi_1
@@ -2649,48 +2649,48 @@ module advance_clubb_core_module
         end do ! i = 1, sclr_dim
 
         if ( l_apply_rule_to_pdf_params ) then
-          w1_zm                 = zt2zm( pdf_params%w1 )
-          w1_zm(gr%nz)          = 0.0_core_rknd
-          w2_zm                 = zt2zm( pdf_params%w2 )
-          w2_zm(gr%nz)          = 0.0_core_rknd
-          varnce_w1_zm          = zt2zm( pdf_params%varnce_w1 )
-          varnce_w1_zm(gr%nz)   = 0.0_core_rknd
-          varnce_w2_zm          = zt2zm( pdf_params%varnce_w2 )
-          varnce_w2_zm(gr%nz)   = 0.0_core_rknd
-          rt1_zm                = zt2zm( pdf_params%rt1 )
-          rt1_zm(gr%nz)         = 0.0_core_rknd
-          rt2_zm                = zt2zm( pdf_params%rt2 )
-          rt2_zm(gr%nz)         = 0.0_core_rknd
-          varnce_rt1_zm         = zt2zm( pdf_params%varnce_rt1 )
-          varnce_rt1_zm(gr%nz)  = 0.0_core_rknd
-          varnce_rt2_zm         = zt2zm( pdf_params%varnce_rt2 )
-          varnce_rt2_zm(gr%nz)  = 0.0_core_rknd
-          crt1_zm               = zt2zm( pdf_params%crt1 )
-          crt1_zm(gr%nz)        = 0.0_core_rknd
-          crt2_zm               = zt2zm( pdf_params%crt2 )
-          crt2_zm(gr%nz)        = 0.0_core_rknd
-          cthl1_zm              = zt2zm( pdf_params%cthl1 )
-          cthl1_zm(gr%nz)       = 0.0_core_rknd
-          cthl2_zm              = zt2zm( pdf_params%cthl2 )
-          cthl2_zm(gr%nz)       = 0.0_core_rknd
-          thl1_zm               = zt2zm( pdf_params%thl1 )
-          thl1_zm(gr%nz)        = 0.0_core_rknd
-          thl2_zm               = zt2zm( pdf_params%thl2 )
-          thl2_zm(gr%nz)        = 0.0_core_rknd
-          varnce_thl1_zm        = zt2zm( pdf_params%varnce_thl1 )
-          varnce_thl1_zm(gr%nz) = 0.0_core_rknd
-          varnce_thl2_zm        = zt2zm( pdf_params%varnce_thl2 )
-          varnce_thl2_zm(gr%nz) = 0.0_core_rknd
+          w_1_zm                 = zt2zm( pdf_params%w_1 )
+          w_1_zm(gr%nz)          = 0.0_core_rknd
+          w_2_zm                 = zt2zm( pdf_params%w_2 )
+          w_2_zm(gr%nz)          = 0.0_core_rknd
+          varnce_w_1_zm          = zt2zm( pdf_params%varnce_w_1 )
+          varnce_w_1_zm(gr%nz)   = 0.0_core_rknd
+          varnce_w_2_zm          = zt2zm( pdf_params%varnce_w_2 )
+          varnce_w_2_zm(gr%nz)   = 0.0_core_rknd
+          rt_1_zm                = zt2zm( pdf_params%rt_1 )
+          rt_1_zm(gr%nz)         = 0.0_core_rknd
+          rt_2_zm                = zt2zm( pdf_params%rt_2 )
+          rt_2_zm(gr%nz)         = 0.0_core_rknd
+          varnce_rt_1_zm         = zt2zm( pdf_params%varnce_rt_1 )
+          varnce_rt_1_zm(gr%nz)  = 0.0_core_rknd
+          varnce_rt_2_zm         = zt2zm( pdf_params%varnce_rt_2 )
+          varnce_rt_2_zm(gr%nz)  = 0.0_core_rknd
+          crt_1_zm               = zt2zm( pdf_params%crt_1 )
+          crt_1_zm(gr%nz)        = 0.0_core_rknd
+          crt_2_zm               = zt2zm( pdf_params%crt_2 )
+          crt_2_zm(gr%nz)        = 0.0_core_rknd
+          cthl_1_zm              = zt2zm( pdf_params%cthl_1 )
+          cthl_1_zm(gr%nz)       = 0.0_core_rknd
+          cthl_2_zm              = zt2zm( pdf_params%cthl_2 )
+          cthl_2_zm(gr%nz)       = 0.0_core_rknd
+          thl_1_zm               = zt2zm( pdf_params%thl_1 )
+          thl_1_zm(gr%nz)        = 0.0_core_rknd
+          thl_2_zm               = zt2zm( pdf_params%thl_2 )
+          thl_2_zm(gr%nz)        = 0.0_core_rknd
+          varnce_thl_1_zm        = zt2zm( pdf_params%varnce_thl_1 )
+          varnce_thl_1_zm(gr%nz) = 0.0_core_rknd
+          varnce_thl_2_zm        = zt2zm( pdf_params%varnce_thl_2 )
+          varnce_thl_2_zm(gr%nz) = 0.0_core_rknd
           mixt_frac_zm          = zt2zm( pdf_params%mixt_frac )
           mixt_frac_zm(gr%nz)   = 0.0_core_rknd
-          rc1_zm                = zt2zm( pdf_params%rc1 )
-          rc1_zm(gr%nz)         = 0.0_core_rknd
-          rc2_zm                = zt2zm( pdf_params%rc2 )
-          rc2_zm(gr%nz)         = 0.0_core_rknd
-          rsatl1_zm               = zt2zm( pdf_params%rsatl1 )
-          rsatl1_zm(gr%nz)        = 0.0_core_rknd
-          rsatl2_zm               = zt2zm( pdf_params%rsatl2 )
-          rsatl2_zm(gr%nz)        = 0.0_core_rknd
+          rc_1_zm                = zt2zm( pdf_params%rc_1 )
+          rc_1_zm(gr%nz)         = 0.0_core_rknd
+          rc_2_zm                = zt2zm( pdf_params%rc_2 )
+          rc_2_zm(gr%nz)         = 0.0_core_rknd
+          rsatl_1_zm               = zt2zm( pdf_params%rsatl_1 )
+          rsatl_1_zm(gr%nz)        = 0.0_core_rknd
+          rsatl_2_zm               = zt2zm( pdf_params%rsatl_2 )
+          rsatl_2_zm(gr%nz)        = 0.0_core_rknd
           cloud_frac_1_zm        = zt2zm( pdf_params%cloud_frac_1 )
           cloud_frac_1_zm(gr%nz) = 0.0_core_rknd
           cloud_frac_2_zm        = zt2zm( pdf_params%cloud_frac_2 )
@@ -2758,27 +2758,27 @@ module advance_clubb_core_module
                          // "manner consistent with the PDF as required " &
                          // "by other parts of CLUBB."
         stop "Please refactor before continuing."
-        pdf_params%w1          = trapezoid_zt( w1_zt, w1_zm )
-        pdf_params%w2          = trapezoid_zt( w2_zt, w2_zm )
-        pdf_params%varnce_w1   = trapezoid_zt( varnce_w1_zt, varnce_w1_zm )
-        pdf_params%varnce_w2   = trapezoid_zt( varnce_w2_zt, varnce_w2_zm )
-        pdf_params%rt1         = trapezoid_zt( rt1_zt, rt1_zm )
-        pdf_params%rt2         = trapezoid_zt( rt2_zt, rt2_zm )
-        pdf_params%varnce_rt1  = trapezoid_zt( varnce_rt1_zt, varnce_rt1_zm )
-        pdf_params%varnce_rt2  = trapezoid_zt( varnce_rt2_zt, varnce_rt2_zm )
-        pdf_params%crt1        = trapezoid_zt( crt1_zt, crt1_zm )
-        pdf_params%crt2        = trapezoid_zt( crt2_zt, crt2_zm )
-        pdf_params%cthl1       = trapezoid_zt( cthl1_zt, cthl1_zm )
-        pdf_params%cthl2       = trapezoid_zt( cthl2_zt, cthl2_zm )
-        pdf_params%thl1        = trapezoid_zt( thl1_zt, thl1_zm )
-        pdf_params%thl2        = trapezoid_zt( thl2_zt, thl2_zm )
-        pdf_params%varnce_thl1 = trapezoid_zt( varnce_thl1_zt, varnce_thl1_zm )
-        pdf_params%varnce_thl2 = trapezoid_zt( varnce_thl2_zt, varnce_thl2_zm )
+        pdf_params%w_1          = trapezoid_zt( w_1_zt, w_1_zm )
+        pdf_params%w_2          = trapezoid_zt( w_2_zt, w_2_zm )
+        pdf_params%varnce_w_1   = trapezoid_zt( varnce_w_1_zt, varnce_w_1_zm )
+        pdf_params%varnce_w_2   = trapezoid_zt( varnce_w_2_zt, varnce_w_2_zm )
+        pdf_params%rt_1         = trapezoid_zt( rt_1_zt, rt_1_zm )
+        pdf_params%rt_2         = trapezoid_zt( rt_2_zt, rt_2_zm )
+        pdf_params%varnce_rt_1  = trapezoid_zt( varnce_rt_1_zt, varnce_rt_1_zm )
+        pdf_params%varnce_rt_2  = trapezoid_zt( varnce_rt_2_zt, varnce_rt_2_zm )
+        pdf_params%crt_1        = trapezoid_zt( crt_1_zt, crt_1_zm )
+        pdf_params%crt_2        = trapezoid_zt( crt_2_zt, crt_2_zm )
+        pdf_params%cthl_1       = trapezoid_zt( cthl_1_zt, cthl_1_zm )
+        pdf_params%cthl_2       = trapezoid_zt( cthl_2_zt, cthl_2_zm )
+        pdf_params%thl_1        = trapezoid_zt( thl_1_zt, thl_1_zm )
+        pdf_params%thl_2        = trapezoid_zt( thl_2_zt, thl_2_zm )
+        pdf_params%varnce_thl_1 = trapezoid_zt( varnce_thl_1_zt, varnce_thl_1_zm )
+        pdf_params%varnce_thl_2 = trapezoid_zt( varnce_thl_2_zt, varnce_thl_2_zm )
         pdf_params%mixt_frac   = trapezoid_zt( mixt_frac_zt, mixt_frac_zm )
-        pdf_params%rc1         = trapezoid_zt( rc1_zt, rc1_zm )
-        pdf_params%rc2         = trapezoid_zt( rc2_zt, rc2_zm )
-        pdf_params%rsatl1        = trapezoid_zt( rsatl1_zt, rsatl1_zm )
-        pdf_params%rsatl2        = trapezoid_zt( rsatl2_zt, rsatl2_zm )
+        pdf_params%rc_1         = trapezoid_zt( rc_1_zt, rc_1_zm )
+        pdf_params%rc_2         = trapezoid_zt( rc_2_zt, rc_2_zm )
+        pdf_params%rsatl_1        = trapezoid_zt( rsatl_1_zt, rsatl_1_zm )
+        pdf_params%rsatl_2        = trapezoid_zt( rsatl_2_zt, rsatl_2_zm )
         pdf_params%cloud_frac_1 = trapezoid_zt( cloud_frac_1_zt, cloud_frac_1_zm )
         pdf_params%cloud_frac_2 = trapezoid_zt( cloud_frac_2_zt, cloud_frac_2_zm )
         pdf_params%chi_1          = trapezoid_zt( chi_1_zt, chi_1_zm )
