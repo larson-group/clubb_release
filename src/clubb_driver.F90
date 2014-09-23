@@ -1317,7 +1317,7 @@ module clubb_driver
 
          !!! Setup the PDF parameters.
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &          ! Intent(in)
-                                    wp2_zt, Nc_in_cloud, rcm, cloud_frac, &      ! Intent(in)
+                                    Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
                                     corr_array_cloud, corr_array_below, &        ! Intent(in)
                                     pdf_params, l_stats_samp, &                  ! Intent(in)

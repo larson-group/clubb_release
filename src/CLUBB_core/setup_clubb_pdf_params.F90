@@ -41,7 +41,7 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine setup_pdf_parameters( nz, d_variables, dt, rho, &                 ! Intent(in)
-                                   wp2_zt, Nc_in_cloud, rcm, cloud_frac, &     ! Intent(in)
+                                   Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
@@ -103,7 +103,9 @@ module setup_clubb_pdf_params
         c_K_hm
 
     use pdf_utilities, only: &
-        calc_xp2  ! Procedure(s)
+        calc_xp2,                  &  ! Procedure(s)
+        compute_mean_binormal,     &
+        compute_variance_binormal
 
     use clip_explicit, only: &
         clip_covar_level, & ! Procedure(s)
@@ -166,7 +168,6 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho,         & ! Density                                         [kg/m^3]
-      wp2_zt,      & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -222,12 +223,16 @@ module setup_clubb_pdf_params
       corr_mtx_approx_2    ! Approximated corr. matrix (C = LL'), 2nd comp. [-]
 
     real( kind = core_rknd ), dimension(nz) :: &
+      mu_w_1,       & ! Mean of w (1st PDF component)                    [m/s]
+      mu_w_2,       & ! Mean of w (2nd PDF component)                    [m/s]
       mu_chi_1,     & ! Mean of chi (old s) (1st PDF component)          [kg/kg]
       mu_chi_2,     & ! Mean of chi (old s) (2nd PDF component)          [kg/kg]
+      sigma_w_1,    & ! Standard deviation of w (1st PDF component)      [m/s]
+      sigma_w_2,    & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
       sigma_chi_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
-      rc_1,          & ! Mean of r_c (1st PDF component)                  [kg/kg]
-      rc_2,          & ! Mean of r_c (2nd PDF component)                  [kg/kg]
+      rc_1,         & ! Mean of r_c (1st PDF component)                  [kg/kg]
+      rc_2,         & ! Mean of r_c (2nd PDF component)                  [kg/kg]
       cloud_frac_1, & ! Cloud fraction (1st PDF component)               [-]
       cloud_frac_2, & ! Cloud fraction (2nd PDF component)               [-]
       mixt_frac       ! Mixture fraction                                 [-]
@@ -250,7 +255,7 @@ module setup_clubb_pdf_params
       wphydrometp_zt    ! Covariance of w and hm interp. to t-levs. [(m/s)units]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      Precip_frac,   & ! Precipitation fraction (overall)           [-]
+      precip_frac,   & ! Precipitation fraction (overall)           [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component) [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component) [-]
 
@@ -279,7 +284,8 @@ module setup_clubb_pdf_params
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      wm_zt              ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+      wm_zt,  & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+      wp2_zt    ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
 
     real( kind = core_rknd ), dimension(nz) :: &
       rtp2_zt_from_chi
@@ -325,9 +331,6 @@ module setup_clubb_pdf_params
 
     endif !clubb_at_least_debug_level( 2 )
 
-    wm_zt = pdf_params%mixt_frac * pdf_params%w_1 + &
-                (one - pdf_params%mixt_frac) * pdf_params%w_2
-
     ! Interpolate the covariances of w and precipitating hydrometeors to
     ! thermodynamic grid levels.
     do i = 1, hydromet_dim, 1
@@ -348,15 +351,40 @@ module setup_clubb_pdf_params
     enddo ! i = 1, hydromet_dim, 1
 
     ! Setup some of the PDF parameters
+    mu_w_1       = pdf_params%w_1
+    mu_w_2       = pdf_params%w_2
     mu_chi_1     = pdf_params%chi_1
     mu_chi_2     = pdf_params%chi_2
+    sigma_w_1    = sqrt( pdf_params%varnce_w_1 )
+    sigma_w_2    = sqrt( pdf_params%varnce_w_2 )
     sigma_chi_1  = pdf_params%stdev_chi_1
     sigma_chi_2  = pdf_params%stdev_chi_2
-    rc_1          = pdf_params%rc_1
-    rc_2          = pdf_params%rc_2
+    rc_1         = pdf_params%rc_1
+    rc_2         = pdf_params%rc_2
     cloud_frac_1 = pdf_params%cloud_frac_1
     cloud_frac_2 = pdf_params%cloud_frac_2
     mixt_frac    = pdf_params%mixt_frac
+
+    ! Recalculate wm_zt and wp2_zt.  Mean vertical velocity may not be easy to
+    ! pass into this subroutine from a host model, and wp2_zt needs to have a
+    ! value consistent with the value it had when the PDF parameters involving w
+    ! were originally set in subroutine pdf_closure.  The variable wp2 has since
+    ! been advanced, resulting a new wp2_zt.  However, the value of wp2 here
+    ! needs to be consistent with wp2 at the time the PDF parameters were
+    ! calculated.
+    do k = 1, nz, 1
+
+       ! Calculate the overall mean of vertical velocity, w, on thermodynamic
+       ! levels.
+       wm_zt(k) = compute_mean_binormal( mu_w_1(k), mu_w_2(k), mixt_frac(k) )
+
+       ! Calculate the overall variance of vertical velocity on thermodynamic
+       ! levels.
+       wp2_zt(k) = compute_variance_binormal( wm_zt(k), mu_w_1(k), mu_w_2(k), &
+                                              sigma_w_1(k), sigma_w_2(k), &
+                                              mixt_frac(k) )
+
+    enddo
 
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
@@ -875,8 +903,8 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho,       & ! Air density                                        [kg/m^3]
-      rc_1,       & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
-      rc_2,       & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
+      rc_1,      & ! Mean cloud water mixing ratio (1st PDF component)  [kg/kg]
+      rc_2,      & ! Mean cloud water mixing ratio (2nd PDF component)  [kg/kg]
       mixt_frac    ! Mixture fraction                                   [-]
 
     logical, intent(in) :: &
@@ -1678,8 +1706,8 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnm,          & ! Mean cloud nuclei concentration                [num/kg]
-      rc_1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
-      rc_2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      rc_1,          & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc_2,          & ! Mean of r_c (2nd PDF component)                 [kg/kg]
       cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
       cloud_frac_2,  & ! Cloud fraction (2nd PDF component)                  [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
@@ -1911,8 +1939,8 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), intent(in) :: &
       wm_zt,         & ! Mean vertical velocity, <w>, on thermo. levels    [m/s]
-      rc_1,           & ! Mean of r_c (1st PDF component)                 [kg/kg]
-      rc_2,           & ! Mean of r_c (2nd PDF component)                 [kg/kg]
+      rc_1,          & ! Mean of r_c (1st PDF component)                 [kg/kg]
+      rc_2,          & ! Mean of r_c (2nd PDF component)                 [kg/kg]
       cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
       cloud_frac_2,  & ! Cloud fraction (2nd PDF component)                  [-]
       wpchip,        & ! Covariance of w and chi (old s)            [(m/s)kg/kg]

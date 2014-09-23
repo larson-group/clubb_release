@@ -1472,7 +1472,7 @@ contains
 
   subroutine setup_pdf_parameters_api( &
     nz, d_variables, dt, rho, &                  ! Intent(in)
-    wp2_zt, Nc_in_cloud, rcm, cloud_frac, &      ! Intent(in)
+    Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
     corr_array_cloud, corr_array_below, &        ! Intent(in)
     pdf_params, l_stats_samp, &                  ! Intent(in)
@@ -1526,7 +1526,6 @@ contains
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho,         & ! Density                                         [kg/m^3]
-      wp2_zt,      & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
       Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -1574,7 +1573,7 @@ contains
 
     call setup_pdf_parameters( &
       nz, d_variables, dt, rho, &                  ! Intent(in)
-      wp2_zt, Nc_in_cloud, rcm, cloud_frac, &      ! Intent(in)
+      Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
       corr_array_cloud, corr_array_below, &        ! Intent(in)
       pdf_params, l_stats_samp, &                  ! Intent(in)
