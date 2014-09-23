@@ -21,7 +21,7 @@ module fill_holes
   contains
 
   !=============================================================================
-  subroutine fill_holes_vertical( num_pts, threshold, field_grid, &
+  subroutine fill_holes_vertical( num_draw_pts, threshold, field_grid, &
                                   rho_ds, rho_ds_zm, &
                                   field )
 
@@ -51,7 +51,7 @@ module fill_holes
 
     ! Input variables
     integer, intent(in) :: & 
-      num_pts  ! The number of points on either side of the hole;
+      num_draw_pts  ! The number of points on either side of the hole;
                ! Mass is drawn from these points to fill the hole.  []
 
     real( kind = core_rknd ), intent(in) :: & 
@@ -105,10 +105,10 @@ module fill_holes
       ! variables).  For momentum level variables only, the hole-filling scheme
       ! should not alter the set value of 'field' at the upper boundary
       ! level (k=gr%nz).
-      do k = 2+num_pts, upper_hf_level-num_pts, 1
+      do k = 2+num_draw_pts, upper_hf_level-num_draw_pts, 1
 
-        begin_idx = k - num_pts
-        end_idx   = k + num_pts
+        begin_idx = k - num_draw_pts
+        end_idx   = k + num_draw_pts
 
         if ( any( field( begin_idx:end_idx ) < threshold ) ) then
 
@@ -758,7 +758,7 @@ module fill_holes
     ! Local Variables
     integer :: k ! Loop iterator
 
-    real( kind = core_rknd ) :: temp
+    real( kind = core_rknd ) :: rvm_clip_tndcy
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
@@ -767,20 +767,20 @@ module fill_holes
 
        if ( hydromet(k) < zero_threshold ) then
 
-          ! Set temp to the time tendency applied to vapor and removed
+          ! Set rvm_clip_tndcy to the time tendency applied to vapor and removed
           ! from the hydrometeor.
-          temp = hydromet(k) / dt
+          rvm_clip_tndcy = hydromet(k) / dt
 
           ! Adjust the tendency rvm_mc accordingly
-          rvm_mc(k) = rvm_mc(k) + temp
+          rvm_mc(k) = rvm_mc(k) + rvm_clip_tndcy
 
           ! Adjust the tendency of thlm_mc according to whether the
           ! effect is an evaporation or sublimation tendency.
           select case ( trim( hydromet_name ) )
           case( "rrm" )
-             thlm_mc(k) = thlm_mc(k) - temp * ( Lv / ( Cp*exner(k) ) )
+             thlm_mc(k) = thlm_mc(k) - rvm_clip_tndcy * ( Lv / ( Cp*exner(k) ) )
           case( "rim", "rsm", "rgm" )
-             thlm_mc(k) = thlm_mc(k) - temp * ( Ls / ( Cp*exner(k) ) )
+             thlm_mc(k) = thlm_mc(k) - rvm_clip_tndcy * ( Ls / ( Cp*exner(k) ) )
           case default
              stop "Fatal error in microphys_driver"
           end select
