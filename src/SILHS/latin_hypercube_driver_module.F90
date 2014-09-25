@@ -553,14 +553,14 @@ module latin_hypercube_driver_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd, &      ! Constant
+      core_rknd, &      ! Constant(s)
       dp
 
     use pdf_parameter_module, only: &
-      pdf_parameter
+      pdf_parameter     ! Type
 
     use hydromet_pdf_parameter_module, only: &
-      hydromet_pdf_parameter
+      hydromet_pdf_parameter ! Type
 
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
