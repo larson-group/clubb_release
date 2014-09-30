@@ -117,8 +117,8 @@ contains
     use stats_variables, only: & 
         ised_rcm,     & ! Variable(s)
         iFcsed,       &
-        zt,           &
-        zm,           &
+        stats_zt,           &
+        stats_zm,           &
         l_stats_samp
 
     use clubb_precision, only: &
@@ -186,9 +186,9 @@ contains
 
     if ( l_stats_samp ) then
  
-       call stat_update_var( ised_rcm, sed_rcm, zt )
+       call stat_update_var( ised_rcm, sed_rcm, stats_zt )
 
-       call stat_update_var( iFcsed, Fcsed, zm )
+       call stat_update_var( iFcsed, Fcsed, stats_zm )
 
     endif
 

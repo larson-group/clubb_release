@@ -130,8 +130,8 @@ module advance_xm_wpxp_module
         stat_update_var
 
     use stats_variables, only: & 
-        zt, &
-        zm, &
+        stats_zt, &
+        stats_zm, &
         irtm_matrix_condt_num, &  ! Variables
         ithlm_matrix_condt_num, &
         irtm_sdmp, ithlm_sdmp, & 
@@ -320,9 +320,9 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( iC7_Skw_fnc, C7_Skw_fnc, zm )
-      call stat_update_var( iC6rt_Skw_fnc, C6rt_Skw_fnc, zm )
-      call stat_update_var( iC6thl_Skw_fnc, C6thl_Skw_fnc, zm )
+      call stat_update_var( iC7_Skw_fnc, C7_Skw_fnc, stats_zm )
+      call stat_update_var( iC6rt_Skw_fnc, C6rt_Skw_fnc, stats_zm )
+      call stat_update_var( iC6thl_Skw_fnc, C6thl_Skw_fnc, stats_zm )
 
     end if
 
@@ -806,24 +806,24 @@ module advance_xm_wpxp_module
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( irtm_sdmp, rtm / dt, zt )
+        call stat_begin_update( irtm_sdmp, rtm / dt, stats_zt )
       end if
       rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
                                        rtm_sponge_damp_profile )
 
       if( l_stats_samp ) then
-        call stat_end_update( irtm_sdmp, rtm / dt, zt )
+        call stat_end_update( irtm_sdmp, rtm / dt, stats_zt )
       end if
     endif
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
       if( l_stats_samp ) then
-        call stat_begin_update( ithlm_sdmp, thlm / dt, zt )
+        call stat_begin_update( ithlm_sdmp, thlm / dt, stats_zt )
       end if
       thlm(1:gr%nz) = sponge_damp_xm( dt, thlm_ref(1:gr%nz), thlm(1:gr%nz), &
                                         thlm_sponge_damp_profile )
       if( l_stats_samp ) then
-        call stat_end_update( ithlm_sdmp, thlm / dt, zt )
+        call stat_end_update( ithlm_sdmp, thlm / dt, stats_zt )
       end if
     endif
 
@@ -1424,8 +1424,8 @@ module advance_xm_wpxp_module
         stat_begin_update_pt
 
     use stats_variables, only: & 
-        zt, & ! Variable(s)
-        zm, & 
+        stats_zt, & ! Variable(s)
+        stats_zm, & 
         irtm_forcing, & 
         ithlm_forcing, & 
         iwprtp_bp, & 
@@ -1569,7 +1569,7 @@ module advance_xm_wpxp_module
         !             (including microphysics/radiation).
 
         ! xm forcings term is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixm_f, k, xm_forcing(k), zt )
+        call stat_update_var_pt( ixm_f, k, xm_forcing(k), stats_zt )
 
       endif ! l_stats_samp
 
@@ -1681,7 +1681,7 @@ module advance_xm_wpxp_module
         ! Note:  To find the contribution of w'x' term bp, substitute 0 for the
         !        C_7 skewness function input to function wpxp_terms_bp_pr3_rhs.
         call stat_update_var_pt( iwpxp_bp, k, & 
-            wpxp_terms_bp_pr3_rhs( zero, thv_ds_zm(k), xpthvp(k) ), zm )
+            wpxp_terms_bp_pr3_rhs( zero, thv_ds_zm(k), xpthvp(k) ), stats_zm )
 
         ! w'x' term pr3 is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'x' term pr3, add 1 to the
@@ -1689,10 +1689,10 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( iwpxp_pr3, k, & 
             wpxp_terms_bp_pr3_rhs( (one+C7_Skw_fnc(k)), thv_ds_zm(k), &
                                    xpthvp(k) ), &
-                                 zm )
+                                 stats_zm )
 
         ! w'x' forcing term is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( iwpxp_f, k, wpxp_forcing(k), zm )
+        call stat_update_var_pt( iwpxp_f, k, wpxp_forcing(k), stats_zm )
 
         ! w'x' term sicl has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -1703,7 +1703,7 @@ module advance_xm_wpxp_module
           call stat_begin_update_pt( iwpxp_sicl, k, & 
              -clip_semi_imp_rhs( dt, wpxp(k), & 
                                  l_upper_thresh, wpxp_upper_lim(k), & 
-                                 l_lower_thresh, wpxp_lower_lim(k) ), zm )
+                                 l_lower_thresh, wpxp_lower_lim(k) ), stats_zm )
         endif
 
         if ( l_upwind_wpxp_ta ) then ! Use upwind differencing
@@ -1736,7 +1736,7 @@ module advance_xm_wpxp_module
               - ( one - gamma_over_implicit_ts )  &
               * ( - lhs_fnc_output(1) * wpxp(kp1)  &
                   - lhs_fnc_output(2) * wpxp(k)  &
-                  - lhs_fnc_output(3) * wpxp(km1) ), zm )
+                  - lhs_fnc_output(3) * wpxp(km1) ), stats_zm )
 
         ! w'x' term pr1 is normally completely implicit.  However, there is a
         ! RHS contribution from the "over-implicit" weighted time step.  A
@@ -1751,7 +1751,7 @@ module advance_xm_wpxp_module
         = wpxp_term_pr1_lhs( C6x_Skw_fnc(k), tau_zm(k) )
         call stat_begin_update_pt( iwpxp_pr1, k, &
               - ( one - gamma_over_implicit_ts )  &
-              * ( - lhs_fnc_output(1) * wpxp(k) ), zm )
+              * ( - lhs_fnc_output(1) * wpxp(k) ), stats_zm )
 
 
       endif ! l_stats_samp
@@ -1927,9 +1927,9 @@ module advance_xm_wpxp_module
         stat_modify
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        zm, & 
-        sfc, & 
+        stats_zt,  & ! Variable(s)
+        stats_zm, & 
+        stats_sfc, & 
         irtm_ta, & 
         irtm_ma, & 
         irtm_matrix_condt_num, & 
@@ -2161,7 +2161,7 @@ module advance_xm_wpxp_module
 
       if ( ixm_matrix_condt_num > 0 ) then
         ! Est. of the condition number of the mean/flux LHS matrix
-        call stat_update_var_pt( ixm_matrix_condt_num, 1, one / rcond, sfc )
+        call stat_update_var_pt( ixm_matrix_condt_num, 1, one / rcond, stats_sfc )
       end if
 
 
@@ -2181,12 +2181,12 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( ixm_ma, k, & 
             ztscr01(k) * xm(km1) & 
           + ztscr02(k) * xm(k) & 
-          + ztscr03(k) * xm(kp1), zt )
+          + ztscr03(k) * xm(kp1), stats_zt )
 
         ! xm term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( ixm_ta, k, & 
             ztscr04(k) * wpxp(km1) & 
-          + ztscr05(k) * wpxp(k), zt )
+          + ztscr05(k) * wpxp(k), stats_zt )
 
       enddo ! xm loop: 2..gr%nz
 
@@ -2207,7 +2207,7 @@ module advance_xm_wpxp_module
         call stat_update_var_pt( iwpxp_ma, k, & 
             zmscr01(k) * wpxp(km1) & 
           + zmscr02(k) * wpxp(k) & 
-          + zmscr03(k) * wpxp(kp1), zm )
+          + zmscr03(k) * wpxp(kp1), stats_zm )
 
 !       if( .not. l_upwind_wpxp_ta ) then
           ! w'x' term ta is normally completely implicit.  However, due to the
@@ -2217,40 +2217,40 @@ module advance_xm_wpxp_module
           call stat_end_update_pt( iwpxp_ta, k, & 
               zmscr04(k) * wpxp(km1) & 
             + zmscr05(k) * wpxp(k) & 
-            + zmscr06(k) * wpxp(kp1), zm )
+            + zmscr06(k) * wpxp(kp1), stats_zm )
 !       endif
 
         ! w'x' term tp is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_tp, k, & 
             zmscr07(k) * xm(k) & 
-          + zmscr08(k) * xm(kp1), zm )
+          + zmscr08(k) * xm(kp1), stats_zm )
 
         ! w'x' term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_ac, k, & 
-            zmscr09(k) * wpxp(k), zm )
+            zmscr09(k) * wpxp(k), stats_zm )
 
         ! w'x' term pr1 is normally completely implicit.  However, due to the
         ! RHS contribution from the "over-implicit" weighted time step,
         ! w'x' term pr1 has both implicit and explicit components;
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwpxp_pr1, k, & 
-            zmscr10(k) * wpxp(k), zm )
+            zmscr10(k) * wpxp(k), stats_zm )
 
         ! w'x' term pr2 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_pr2, k, & 
-            zmscr11(k) * wpxp(k), zm )
+            zmscr11(k) * wpxp(k), stats_zm )
 
         ! w'x' term dp1 is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwpxp_dp1, k, & 
             zmscr12(k) * wpxp(km1) & 
           + zmscr13(k) * wpxp(k) & 
-          + zmscr14(k) * wpxp(kp1), zm )
+          + zmscr14(k) * wpxp(kp1), stats_zm )
 
         ! w'x' term sicl has both implicit and explicit components;
         ! call stat_end_update_pt.
         if ( l_clip_semi_implicit ) then
           call stat_end_update_pt( iwpxp_sicl, k, & 
-              zmscr15(k) * wpxp(k), zm )
+              zmscr15(k) * wpxp(k), stats_zm )
         endif
 
       enddo ! wpxp loop: 2..gr%nz-1
@@ -2286,16 +2286,16 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nz), zm )
+      call stat_update_var( iwpxp_pd, wpxp_pd(1:gr%nz), stats_zm )
 
-      call stat_update_var( ixm_pd, xm_pd(1:gr%nz), zt )
+      call stat_update_var( ixm_pd, xm_pd(1:gr%nz), stats_zt )
 
     end if
 
     ! Computed value before clipping
     if ( l_stats_samp ) then
       call stat_begin_update( ixm_cl, xm / dt, & ! Intent(in)
-                              zt )                       ! Intent(inout)
+                              stats_zt )                       ! Intent(inout)
     end if
 
     if ( any( xm < xm_threshold ) .and. l_hole_fill ) then
@@ -2326,7 +2326,7 @@ module advance_xm_wpxp_module
 
     if ( l_stats_samp ) then
       call stat_end_update( ixm_cl, xm / dt, & ! Intent(in) 
-                            zt )                       ! Intent(inout)
+                            stats_zt )                       ! Intent(inout)
     end if
 
     ! Use solve_type to find solve_type_cl, which is used
@@ -2385,7 +2385,7 @@ module advance_xm_wpxp_module
     if ( l_stats_samp ) then
 
       ! wpxp time tendency
-      call stat_modify( iwpxp_bt, wpxp / dt, zm )
+      call stat_modify( iwpxp_bt, wpxp / dt, stats_zm )
       ! Brian Griffin; July 5, 2008.
 
     endif
@@ -3151,7 +3151,7 @@ module advance_xm_wpxp_module
 
     use stats_variables, only: &
         l_stats_samp, & ! Variable(s)
-        zt, &
+        stats_zt, &
         ithlm_tacl, &
         irtm_tacl
 
@@ -3201,7 +3201,7 @@ module advance_xm_wpxp_module
     if ( l_stats_samp ) then
       ! The adjustment to xm due to turbulent advection term clipping
       ! (xm term tacl) is completely explicit; call stat_update_var.
-      call stat_update_var( ixm_tacl, xm_tndcy_wpxp_cl, zt )
+      call stat_update_var( ixm_tacl, xm_tndcy_wpxp_cl, stats_zt )
     endif
 
 

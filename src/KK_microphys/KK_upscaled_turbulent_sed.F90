@@ -75,7 +75,7 @@ module KK_upscaled_turbulent_sed
     use stats_variables, only: & 
         irr_KK_mvr_covar_zt, & ! Variable(s)
         iNr_KK_mvr_covar_zt, &
-        zt
+        stats_zt
 
     implicit none
 
@@ -244,7 +244,7 @@ module KK_upscaled_turbulent_sed
           = rr_KK_mvr_covar_coefA * rrm + rr_KK_mvr_covar_termB
 
           call stat_update_var_pt( irr_KK_mvr_covar_zt, level, &
-                                   rr_KK_mvr_covar, zt )
+                                   rr_KK_mvr_covar, stats_zt )
 
        endif
 
@@ -255,7 +255,7 @@ module KK_upscaled_turbulent_sed
           = Nr_KK_mvr_covar_coefA * Nrm + Nr_KK_mvr_covar_termB
 
           call stat_update_var_pt( iNr_KK_mvr_covar_zt, level, &
-                                   Nr_KK_mvr_covar, zt )
+                                   Nr_KK_mvr_covar, stats_zt )
 
        endif
 

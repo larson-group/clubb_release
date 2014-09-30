@@ -98,7 +98,7 @@ module KK_upscaled_covariances
         iw_KK_accr_covar_zt,   &
         irt_KK_accr_covar_zt,  &
         ithl_KK_accr_covar_zt, &
-        zt
+        stats_zt
 
     implicit none
 
@@ -422,55 +422,55 @@ module KK_upscaled_covariances
        ! Covariance of w and KK evaporation tendency.
        if ( iw_KK_evap_covar_zt > 0 ) then
           call stat_update_var_pt( iw_KK_evap_covar_zt, level, &
-                                   w_KK_evap_covar, zt )
+                                   w_KK_evap_covar, stats_zt )
        endif
 
        ! Covariance of r_t and KK evaporation tendency.
        if ( irt_KK_evap_covar_zt > 0 ) then
           call stat_update_var_pt( irt_KK_evap_covar_zt, level, &
-                                   rt_KK_evap_covar, zt )
+                                   rt_KK_evap_covar, stats_zt )
        endif
 
        ! Covariance of theta_l and KK evaporation tendency.
        if ( ithl_KK_evap_covar_zt > 0 ) then
           call stat_update_var_pt( ithl_KK_evap_covar_zt, level, &
-                                   thl_KK_evap_covar, zt )
+                                   thl_KK_evap_covar, stats_zt )
        endif
 
        ! Covariance of w and KK autoconversion tendency.
        if ( iw_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( iw_KK_auto_covar_zt, level, &
-                                   w_KK_auto_covar, zt )
+                                   w_KK_auto_covar, stats_zt )
        endif
 
        ! Covariance of r_t and KK autoconversion tendency.
        if ( irt_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( irt_KK_auto_covar_zt, level, &
-                                   rt_KK_auto_covar, zt )
+                                   rt_KK_auto_covar, stats_zt )
        endif
 
        ! Covariance of theta_l and KK autoconversion tendency.
        if ( ithl_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( ithl_KK_auto_covar_zt, level, &
-                                   thl_KK_auto_covar, zt )
+                                   thl_KK_auto_covar, stats_zt )
        endif
 
        ! Covariance of w and KK accretion tendency.
        if ( iw_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( iw_KK_accr_covar_zt, level, &
-                                   w_KK_accr_covar, zt )
+                                   w_KK_accr_covar, stats_zt )
        endif
 
        ! Covariance of r_t and KK accretion tendency.
        if ( irt_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( irt_KK_accr_covar_zt, level, &
-                                   rt_KK_accr_covar, zt )
+                                   rt_KK_accr_covar, stats_zt )
        endif
 
        ! Covariance of theta_l and KK accretion tendency.
        if ( ithl_KK_auto_covar_zt > 0 ) then
           call stat_update_var_pt( ithl_KK_accr_covar_zt, level, &
-                                   thl_KK_accr_covar, zt )
+                                   thl_KK_accr_covar, stats_zt )
        endif
 
     endif ! l_stats_samp

@@ -133,8 +133,8 @@ module clubb_driver
       l_output_rad_files
 
     use stats_variables, only: &
-        zt, & ! Type
-        zm
+        stats_zt, & ! Type
+        stats_zm
 
     use stats_variables, only: &
         irtm_mc,     & ! Variables
@@ -1226,15 +1226,15 @@ module clubb_driver
 
       if ( l_stats_samp ) then
         ! Total microphysical tendency of vapor and cloud water mixing ratios
-        call stat_update_var( irvm_mc, rvm_mc, zt ) ! kg/kg/s
-        call stat_update_var( ircm_mc, rcm_mc, zt ) ! kg/kg/s
-        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, zt ) ! kg/kg/s
-        call stat_update_var( ithlm_mc, thlm_mc, zt ) ! K/s
-        call stat_update_var( iwprtp_mc, wprtp_mc, zm ) ! m*(kg/kg)/s^2
-        call stat_update_var( iwpthlp_mc, wpthlp_mc, zm ) ! K*m/s^2
-        call stat_update_var( irtp2_mc, rtp2_mc, zm ) ! (kg/kg)^2/s
-        call stat_update_var( ithlp2_mc, thlp2_mc, zm ) ! K^2/s
-        call stat_update_var( irtpthlp_mc, rtpthlp_mc, zm ) ! K*(kg/kg)/s
+        call stat_update_var( irvm_mc, rvm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( ircm_mc, rcm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( ithlm_mc, thlm_mc, stats_zt ) ! K/s
+        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm ) ! m*(kg/kg)/s^2
+        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm ) ! K*m/s^2
+        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm ) ! (kg/kg)^2/s
+        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm ) ! K^2/s
+        call stat_update_var( irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
       endif
 
       ! Add microphysical tendencies to rtm_forcing
@@ -3286,7 +3286,7 @@ module clubb_driver
       iustar, &
       isoil_heat_flux, &
       l_stats_samp, &
-      sfc, &
+      stats_sfc, &
       iT_sfc
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
@@ -3817,30 +3817,30 @@ module clubb_driver
     if ( l_stats_samp ) then
 
       call stat_update_var_pt( ish, 1, wpthlp_sfc*rho_zm(1)*Cp,& ! intent(in)
-                               sfc )                             ! intent(inout)
+                               stats_sfc )                             ! intent(inout)
 
       call stat_update_var_pt( ilh, 1, wprtp_sfc*rho_zm(1)*Lv, & ! intent(in)
-                               sfc )                             ! intent(inout)
+                               stats_sfc )                             ! intent(inout)
 
       call stat_update_var_pt( iwpthlp_sfc, 1, wpthlp_sfc, & ! intent(in)
-                               sfc )                         ! intent(inout)
+                               stats_sfc )                         ! intent(inout)
 
       call stat_update_var_pt( iwprtp_sfc, 1, wprtp_sfc, & ! intent(in)
-                               sfc )                       ! intent(inout)
+                               stats_sfc )                       ! intent(inout)
 
       call stat_update_var_pt( iupwp_sfc, 1, upwp_sfc, & ! intent(in)
-                               sfc )                     ! intent(inout)
+                               stats_sfc )                     ! intent(inout)
 
       call stat_update_var_pt( ivpwp_sfc, 1, vpwp_sfc, & ! intent(in)
-                               sfc )                     ! intent(inout)
+                               stats_sfc )                     ! intent(inout)
 
       call stat_update_var_pt( iustar, 1, ustar,  & ! intent(in)
-                               sfc )                ! intent(inout)
+                               stats_sfc )                ! intent(inout)
 
       call stat_update_var_pt( isoil_heat_flux, 1, soil_heat_flux, & ! intent(in)
-                               sfc )           ! intent(inout)
+                               stats_sfc )           ! intent(inout)
       call stat_update_var_pt( iT_sfc, 1, T_sfc, & ! intent(in)
-                               sfc )           ! intent(inout)
+                               stats_sfc )           ! intent(inout)
 
     endif
 
@@ -4213,7 +4213,7 @@ module clubb_driver
     use grid_class, only: &
       flip ! Prodecure(s)
 
-    use stats_variables, only: zt, zm, rad_zt, rad_zm ! Type
+    use stats_variables, only: stats_zt, stats_zm, stats_rad_zt, stats_rad_zm ! Type
 
     use stats_variables, only: l_stats_samp, l_output_rad_files ! Variable(s)
 
@@ -4241,23 +4241,23 @@ module clubb_driver
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( iradht, radht, zt )
+      call stat_update_var( iradht, radht, stats_zt )
 
-      call stat_update_var( iradht_LW, radht_LW, zt )
+      call stat_update_var( iradht_LW, radht_LW, stats_zt )
 
-      call stat_update_var( iradht_SW, radht_SW, zt )
+      call stat_update_var( iradht_SW, radht_SW, stats_zt )
 
-      call stat_update_var( iFrad_SW, Frad_SW, zm )
+      call stat_update_var( iFrad_SW, Frad_SW, stats_zm )
 
-      call stat_update_var( iFrad_LW, Frad_LW, zm )
+      call stat_update_var( iFrad_LW, Frad_LW, stats_zm )
 
-      call stat_update_var( iFrad_SW_up, Frad_SW_up, zm )
+      call stat_update_var( iFrad_SW_up, Frad_SW_up, stats_zm )
 
-      call stat_update_var( iFrad_LW_up, Frad_LW_up, zm )
+      call stat_update_var( iFrad_LW_up, Frad_LW_up, stats_zm )
 
-      call stat_update_var( iFrad_SW_down, Frad_SW_down, zm )
+      call stat_update_var( iFrad_SW_down, Frad_SW_down, stats_zm )
 
-      call stat_update_var( iFrad_LW_down, Frad_LW_down, zm )
+      call stat_update_var( iFrad_LW_down, Frad_LW_down, stats_zm )
 
       if ( l_output_rad_files ) then
 
@@ -4265,64 +4265,64 @@ module clubb_driver
         rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
 
         call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
-                 kind = core_rknd ), rad_zt )
+                 kind = core_rknd ), stats_rad_zt )
 
         call stat_update_var( ircil_rad, real( flip(rcil(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), rad_zt )
+                 kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( io3l_rad, real( flip(o3l(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), rad_zt )
+                 kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( irsm_rad, real( flip(rsm_2d(1,:), rad_zt_dim), &
-                 kind = core_rknd  ), rad_zt )
+                 kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( ircm_in_cloud_rad, &
-          real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+          real( flip(rcm_in_cloud_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( icloud_frac_rad, &
-          real( flip(cloud_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+          real( flip(cloud_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
         
         call stat_update_var( iice_supersat_frac_rad, &
-          real( flip(ice_supersat_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+          real( flip(ice_supersat_frac_2d(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( iradht_rad, real(flip((radht_SW_2d(1,:) + &
-               radht_LW_2d(1,:)), rad_zt_dim), kind = core_rknd  ), rad_zt )
+               radht_LW_2d(1,:)), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( iradht_LW_rad, &
-          real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),rad_zt )
+          real( flip(radht_LW_2d(1,:), rad_zt_dim), kind = core_rknd  ),stats_rad_zt )
 
         call stat_update_var( ip_in_mb_rad, &
-          real( flip(p_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+          real( flip(p_in_mb(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( isp_humidity_rad, &
-          real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), rad_zt )
+          real( flip(sp_humidity(1,:), rad_zt_dim), kind = core_rknd  ), stats_rad_zt )
 
         call stat_update_var( iFrad_SW_rad, real( flip((Frad_uSW(1,:) - &
-             Frad_dSW(1,:)), rad_zm_dim), kind = core_rknd  ), rad_zm )
+             Frad_dSW(1,:)), rad_zm_dim), kind = core_rknd  ), stats_rad_zm )
 
         call stat_update_var( iFrad_LW_rad, real( flip((Frad_uLW(1,:) - &
-             Frad_dLW(1,:)), rad_zm_dim), kind = core_rknd ), rad_zm )
+             Frad_dLW(1,:)), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
         call stat_update_var( iFrad_SW_up_rad, &
-             real( flip(Frad_uSW(1,:), rad_zm_dim), kind = core_rknd ), rad_zm )
+             real( flip(Frad_uSW(1,:), rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
         call stat_update_var( iFrad_LW_up_rad, real( flip(Frad_uLW(1,:), &
-             rad_zm_dim), kind = core_rknd ), rad_zm )
+             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
         call stat_update_var( iFrad_SW_down_rad, real( flip(Frad_dSW(1,:), &
-             rad_zm_dim), kind = core_rknd ), rad_zm )
+             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
         call stat_update_var( iFrad_LW_down_rad, real( flip(Frad_dLW(1,:), &
-             rad_zm_dim), kind = core_rknd ), rad_zm )
+             rad_zm_dim), kind = core_rknd ), stats_rad_zm )
 
         call stat_update_var( ifdswcl, real( flip(fdswcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), rad_zm )
+             kind = core_rknd ), stats_rad_zm )
         call stat_update_var( ifuswcl, real( flip(fuswcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), rad_zm )
+             kind = core_rknd ), stats_rad_zm )
         call stat_update_var( ifdlwcl, real( flip(fdlwcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), rad_zm )
+             kind = core_rknd ), stats_rad_zm )
         call stat_update_var( ifulwcl, real( flip(fulwcl(1,:), rad_zm_dim), &
-             kind = core_rknd ), rad_zm )
+             kind = core_rknd ), stats_rad_zm )
 
       end if ! l_output_rad_files
 

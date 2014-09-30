@@ -56,7 +56,7 @@ module coamps_microphys_driver_module
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
-    use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
+    use stats_variables, only: stats_zt, l_stats_samp,  & ! Variable(s)
         im_vol_rad_rain, & 
         im_vol_rad_cloud, & 
 ! Addition by Adam Smith, 24 April 2008
@@ -914,22 +914,23 @@ module coamps_microphys_driver_module
         ! Mean volume radius of rain and cloud droplets
         do k=2,kk+1
           call stat_update_var_pt( im_vol_rad_rain, k, &
-               real(rvr(1,1,k-1) / 100.0, kind = core_rknd), zt )
+               real(rvr(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
           call stat_update_var_pt( im_vol_rad_cloud, k, &
-               real(rvc(1,1,k-1) / 100.0, kind = core_rknd), zt )
+               real(rvc(1,1,k-1) / 100.0, kind = core_rknd), stats_zt )
         end do
 
 
 ! Addition by Adam Smith, 24 April 2008
 ! Adding calculation for snow particle number concentration
         do k = 2,kk,1
-          call stat_update_var_pt( isnowslope, k, real(snowslope(1,1,k), kind = core_rknd), zt)
+          call stat_update_var_pt( isnowslope, k, real(snowslope(1,1,k), &
+            kind = core_rknd), stats_zt)
         end do
 
 ! Addition by Adam Smith, 25 April 2008
 ! Adding calculation for snow particle number concentration
         do k=2, kk+1
-          call stat_update_var_pt( iNsm, k, real(Nsm(k), kind = core_rknd) ,zt )
+          call stat_update_var_pt( iNsm, k, real(Nsm(k), kind = core_rknd) ,stats_zt )
         end do
 
       end if

@@ -78,7 +78,7 @@ module soil_vegetation
 
     use clubb_precision, only: core_rknd ! Constant
 
-    use stats_variables, only: l_stats_samp, sfc, &
+    use stats_variables, only: l_stats_samp, stats_sfc, &
                                 iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K ! Variables
 
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
@@ -140,9 +140,9 @@ module soil_vegetation
                      365.e0_core_rknd )) ! Known magic number
 
     if ( l_stats_samp ) then
-      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, sfc )
-      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K, sfc )
-      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K, sfc )
+      call stat_update_var_pt( iveg_T_in_K, 1, veg_T_in_K, stats_sfc )
+      call stat_update_var_pt( isfc_soil_T_in_K, 1, sfc_soil_T_in_K, stats_sfc )
+      call stat_update_var_pt( ideep_soil_T_in_K, 1, deep_soil_T_in_K, stats_sfc )
     end if
 
     Frad_LW_up_sfc = stefan_boltzmann * (veg_T_in_K**4)

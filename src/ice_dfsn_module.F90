@@ -79,7 +79,7 @@ module ice_dfsn_module
     use stats_type_utilities, only: & 
         stat_update_var
 
-    use stats_variables, only: zt, l_stats_samp,  & ! Variable(s)
+    use stats_variables, only: stats_zt, l_stats_samp,  & ! Variable(s)
         ircm_icedfs, idiam, imass_ice_cryst, iu_T_cm
 
     implicit none
@@ -289,13 +289,13 @@ module ice_dfsn_module
 !       m(:)    ! Icedfs mass; Michael Falk, 1 Nov 2006
 !       dqc_dt_icedfs(:) ! Icedfs change in liquid; Michael Falk, 1 Nov 2006
 !       u_T_cm(:)        ! Icedfs fallspeed (cm/s); Michael Falk, 1 Nov 2006
-      call stat_update_var( ircm_icedfs, rcm_icedfsn, zt )
+      call stat_update_var( ircm_icedfs, rcm_icedfsn, stats_zt )
 
-      call stat_update_var( idiam, diam, zt )
+      call stat_update_var( idiam, diam, stats_zt )
 
-      call stat_update_var( imass_ice_cryst, mass_ice_cryst, zt )
+      call stat_update_var( imass_ice_cryst, mass_ice_cryst, stats_zt )
 
-      call stat_update_var( iu_T_cm, u_T_cm, zt )
+      call stat_update_var( iu_T_cm, u_T_cm, stats_zt )
 
     end if
 

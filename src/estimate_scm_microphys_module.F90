@@ -56,8 +56,8 @@ module estimate_scm_microphys_module
       core_rknd
 
     use stats_variables, only: &
-      zt,           &
-      sfc,          &
+      stats_zt,           &
+      stats_sfc,          &
       l_stats_samp ! Variable(s)
 
     use microphys_stats_vars_module, only: &
@@ -358,8 +358,8 @@ module estimate_scm_microphys_module
                                                          lh_sample_point_weights )
 
     if ( lh_microphys_type /= lh_microphys_non_interactive ) then
-      call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, zt )
-      call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, sfc )
+      call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, stats_zt )
+      call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, stats_sfc )
     end if
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
@@ -496,8 +496,8 @@ module estimate_scm_microphys_module
       stat_update_var ! Procedure
 
     use stats_variables, only: &
-      zt,        &
-      lh_zt,     &
+      stats_zt,        &
+      stats_lh_zt,     &
       irrm_auto, &
       irrm_accr, &
       irrm_cond, &
@@ -644,49 +644,49 @@ module estimate_scm_microphys_module
     if ( l_stats_samp ) then
 
       if ( ilh_rrm_src_adj > 0 ) then
-        call stat_update_var( ilh_rrm_src_adj, adj_terms%rrm_src_adj, lh_zt )
+        call stat_update_var( ilh_rrm_src_adj, adj_terms%rrm_src_adj, stats_lh_zt )
       end if
 
       if ( ilh_Nrm_src_adj > 0 ) then
-        call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, lh_zt )
+        call stat_update_var( ilh_Nrm_src_adj, adj_terms%Nrm_src_adj, stats_lh_zt )
       end if
 
       if ( ilh_rrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, lh_zt )
+        call stat_update_var( ilh_rrm_cond_adj, adj_terms%rrm_cond_adj, stats_lh_zt )
       end if
 
       if ( ilh_Nrm_cond_adj > 0 ) then
-        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, lh_zt )
+        call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, stats_lh_zt )
       end if
 
       if ( ilh_m_vol_rad_rain > 0 ) then
         call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
-             im_vol_rad_rain, microphys_stats_zt ), lh_zt )
+             im_vol_rad_rain, microphys_stats_zt ), stats_lh_zt )
       end if
 
       if ( ilh_rrm_auto > 0 ) then
         call stat_update_var( ilh_rrm_auto, microphys_get_var( &
-             irrm_auto, microphys_stats_zt ), lh_zt )
+             irrm_auto, microphys_stats_zt ), stats_lh_zt )
       end if
 
       if ( ilh_rrm_accr > 0 ) then
         call stat_update_var( ilh_rrm_accr, microphys_get_var( &
-             irrm_accr, microphys_stats_zt ), lh_zt )
+             irrm_accr, microphys_stats_zt ), stats_lh_zt )
       end if
 
       if ( ilh_rrm_auto > 0 ) then
         call stat_update_var( ilh_rrm_evap, microphys_get_var( &
-             irrm_cond, microphys_stats_zt ), lh_zt )
+             irrm_cond, microphys_stats_zt ), stats_lh_zt )
       end if
 
       if ( ilh_Nrm_auto > 0 ) then
         call stat_update_var( ilh_Nrm_auto, microphys_get_var( &
-             iNrm_auto, microphys_stats_zt ), lh_zt )
+             iNrm_auto, microphys_stats_zt ), stats_lh_zt )
       end if
 
       if ( ilh_Nrm_cond > 0 ) then
         call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
-             iNrm_cond, microphys_stats_zt ), lh_zt )
+             iNrm_cond, microphys_stats_zt ), stats_lh_zt )
       end if
 
     end if ! l_stats_samp

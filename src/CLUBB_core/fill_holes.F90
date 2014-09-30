@@ -855,7 +855,7 @@ module fill_holes
         stat_end_update
 
     use stats_variables, only: &
-        zt, &  ! Variables
+        stats_zt, &  ! Variables
         l_stats_samp
 
     implicit none
@@ -919,7 +919,7 @@ module fill_holes
                                     max_velocity )                 ! Intent(inout)
 
           call stat_begin_update( ixrm_hf, hydromet(:,i) &
-                                           / dt, zt )
+                                           / dt, stats_zt )
 
        enddo ! i = 1, hydromet_dim
 
@@ -968,7 +968,7 @@ module fill_holes
       ! hole-filling scheme.
 !      if ( l_stats_samp ) then
 !         call stat_begin_update( ixrm_hf, hydromet(:,i) &
-!                                          / dt, zt )
+!                                          / dt, stats_zt )
 !      endif
 
       ! If we're dealing with a mixing ratio and hole filling is enabled,
@@ -990,14 +990,14 @@ module fill_holes
       ! hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_end_update( ixrm_hf, hydromet(:,i) &
-                                        / dt, zt )
+                                        / dt, stats_zt )
       endif
 
       ! Store the previous value of the hydrometeor for the effect of the water
       ! vapor hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_begin_update( ixrm_wvhf, hydromet(:,i) &
-                                            / dt, zt )
+                                            / dt, stats_zt )
       endif
 
       if ( any( hydromet(:,i) < zero_threshold ) ) then
@@ -1019,7 +1019,7 @@ module fill_holes
       ! hole-filling scheme.
       if ( l_stats_samp ) then
          call stat_end_update( ixrm_wvhf, hydromet(:,i) &
-                                          / dt, zt )
+                                          / dt, stats_zt )
       endif
 
       ! Clipping for hydrometeor mixing ratios.
@@ -1031,7 +1031,7 @@ module fill_holes
             call stat_begin_update( ixrm_cl, &
                                     hydromet(:,i) &
                                     / dt, &
-                                    zt )
+                                    stats_zt )
          endif
 
          if ( any( hydromet(:,i) < zero_threshold ) ) then
@@ -1082,7 +1082,7 @@ module fill_holes
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then
             call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                           / dt, zt )
+                                           / dt, stats_zt )
          endif
 
       endif ! l_mix_rat_hm(i)
@@ -1106,7 +1106,7 @@ module fill_holes
             call stat_begin_update( ixrm_cl, &
                                     hydromet(:,i) &
                                     / dt, &
-                                    zt )
+                                    stats_zt )
          endif
 
          if ( .not. l_frozen_hm(i) ) then
@@ -1164,7 +1164,7 @@ module fill_holes
          ! Enter the new value of the hydrometeor for the effect of clipping.
          if ( l_stats_samp ) then
             call stat_end_update( ixrm_cl, hydromet(:,i) &
-                                           / dt, zt )
+                                           / dt, stats_zt )
          endif
 
       endif ! .not. l_mix_rat_hm(i)

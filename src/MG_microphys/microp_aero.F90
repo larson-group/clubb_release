@@ -754,7 +754,7 @@ subroutine ini_microp_aero
       enddo
 
       call dropmixnuc(lchnk, ncol, ncloc, nctend_mixnuc, t, omega,  &
-                    p, pint, pdel, rpdel, zm, kkvh, wsub, lcldn, lcldo,     &
+                    p, pint, pdel, rpdel, stats_zm, kkvh, wsub, lcldn, lcldo,     &
                     qaer, cflx, qaertend, deltat)
 
       npccn(:ncol,:)= nctend_mixnuc(:ncol,:)

@@ -19,7 +19,7 @@ module stats_rad_zt_module
   subroutine stats_init_rad_zt( vars_rad_zt, l_error )
 
 ! Description:
-!   Initializes array indices for zt
+!   Initializes array indices for stats_zt
 !
 ! References:
 !   None
@@ -29,7 +29,7 @@ module stats_rad_zt_module
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-        rad_zt, &
+        stats_rad_zt, &
         iT_in_K_rad, & ! Variable(s)
         ircil_rad, &
         io3l_rad, &
@@ -59,7 +59,7 @@ module stats_rad_zt_module
 
     ! ---- Begin Code ----
 
-    ! Default initialization for array indices for rad_zt
+    ! Default initialization for array indices for stats_rad_zt
 
     iT_in_K_rad = 0
     ircil_rad = 0
@@ -75,10 +75,10 @@ module stats_rad_zt_module
     isp_humidity_rad = 0
 
 
-    ! Assign pointers for statistics variables rad_zt
+    ! Assign pointers for statistics variables stats_rad_zt
 
     k = 1
-    do i=1,rad_zt%num_output_fields
+    do i=1,stats_rad_zt%num_output_fields
 
       select case ( trim(vars_rad_zt(i)) )
 
@@ -86,7 +86,8 @@ module stats_rad_zt_module
         iT_in_K_rad = k
 
         call stat_assign( var_index=iT_in_K_rad, var_name="T_in_K_rad", &
-             var_description="Temperature [K]", var_units="K", l_silhs=.false., grid_kind=rad_zt )
+             var_description="Temperature [K]", var_units="K", l_silhs=.false., &
+                grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('rcil_rad')
@@ -94,7 +95,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=ircil_rad, var_name="rcil_rad", &
              var_description="Ice mixing ratio [kg/kg]", var_units="kg/kg", l_silhs=.false., &
-             grid_kind=rad_zt )
+             grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('o3l_rad')
@@ -102,7 +103,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=io3l_rad, var_name="o3l_rad", &
              var_description="Ozone mixing ratio [kg/kg]", var_units="kg/kg", l_silhs=.false., &
-             grid_kind=rad_zt )
+             grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('rsm_rad')
@@ -110,7 +111,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=irsm_rad, var_name="rsm_rad", &
              var_description="Snow water mixing ratio [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('rcm_in_cloud_rad')
@@ -118,7 +119,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=ircm_in_cloud_rad, var_name="rcm_in_cloud_rad", &
              var_description="rcm in cloud layer [kg/kg]", var_units="kg/kg", l_silhs=.false., &
-             grid_kind=rad_zt )
+             grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('cloud_frac_rad')
@@ -126,7 +127,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=icloud_frac_rad, var_name="cloud_frac_rad", &
              var_description="Cloud fraction (between 0 and 1) [-]", var_units="count", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
       
       case ('ice_supersat_frac_rad')
@@ -134,7 +135,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=iice_supersat_frac_rad, var_name="ice_supersat_frac_rad", &
              var_description="Ice cloud fraction (between 0 and 1) [-]", var_units="count", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('radht_rad')
@@ -142,7 +143,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=iradht_rad, var_name="radht_rad", &
              var_description="Total radiative heating rate [K/s]", var_units="K/s", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('radht_LW_rad')
@@ -150,7 +151,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=iradht_LW_rad, var_name="radht_LW_rad", &
              var_description="Long-wave radiative heating rate [K/s]", var_units="K/s", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('radht_SW_rad')
@@ -158,7 +159,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=iradht_SW_rad, var_name="radht_SW_rad", &
              var_description="Short-wave radiative heating rate [K/s]", var_units="K/s", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('p_in_mb_rad')
@@ -166,7 +167,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=ip_in_mb_rad, var_name="p_in_mb_rad", &
              var_description="Pressure [hPa]", var_units="hPa", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case ('sp_humidity_rad')
@@ -174,7 +175,7 @@ module stats_rad_zt_module
 
         call stat_assign( var_index=isp_humidity_rad, var_name="sp_humidity_rad", &
              var_description="Specific humidity [kg/kg]", var_units="kg/kg", &
-             l_silhs=.false., grid_kind=rad_zt )
+             l_silhs=.false., grid_kind=stats_rad_zt )
         k = k + 1
 
       case default

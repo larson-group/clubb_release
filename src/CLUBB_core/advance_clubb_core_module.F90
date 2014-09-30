@@ -326,9 +326,9 @@ module advance_clubb_core_module
       iwp2_sf,       &
       l_stats_samp,  &
       l_stats,       &
-      zt,            &
-      zm,            &
-      sfc,           &
+      stats_zt,            &
+      stats_zm,            &
+      stats_sfc,           &
       irtm_spur_src, &
       ithlm_spur_src
 
@@ -770,39 +770,39 @@ module advance_clubb_core_module
 
     if ( l_stats_samp ) then
       call stat_update_var( irfrzm, rfrzm, & ! intent(in)
-                            zt ) ! intent(inout)
+                            stats_zt ) ! intent(inout)
     end if
 
     ! Set up budget stats variables.
     if ( l_stats_samp ) then
 
       call stat_begin_update( iwp2_bt, wp2 / dt, &                  ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( ivp2_bt, vp2 / dt, &                  ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( iup2_bt, up2 / dt,  &                 ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( iwprtp_bt, wprtp / dt, &              ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( iwpthlp_bt, wpthlp / dt,  &           ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( irtp2_bt, rtp2 / dt, &                ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( ithlp2_bt, thlp2 / dt, &              ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
       call stat_begin_update( irtpthlp_bt, rtpthlp / dt, &          ! intent(in)
-                              zm )                                  ! intent(inout)
+                              stats_zm )                                  ! intent(inout)
 
       call stat_begin_update( irtm_bt, rtm / dt, &                  ! intent(in)
-                              zt )                                  ! intent(inout)
+                              stats_zt )                                  ! intent(inout)
       call stat_begin_update( ithlm_bt, thlm / dt, &                ! intent(in)
-                              zt )                                  ! intent(inout)
+                              stats_zt )                                  ! intent(inout)
       call stat_begin_update( ium_bt, um / dt, &                    ! intent(in)
-                              zt )                                  ! intent(inout)
+                              stats_zt )                                  ! intent(inout)
       call stat_begin_update( ivm_bt, vm / dt, &                    ! intent(in)
-                              zt )                                  ! intent(inout)
+                              stats_zt )                                  ! intent(inout)
       call stat_begin_update( iwp3_bt, wp3 / dt, &                  ! intent(in)
-                              zt )                                  ! intent(inout)
+                              stats_zt )                                  ! intent(inout)
 
     end if
 
@@ -856,8 +856,8 @@ module advance_clubb_core_module
     Skw_zm(1:gr%nz) = Skw_func( wp2(1:gr%nz), wp3_zm(1:gr%nz) )
 
     if (l_stats_samp) then
-      call stat_update_var(iSkw_zt, Skw_zt, zt)
-      call stat_update_var(iSkw_zm, Skw_zm, zm)
+      call stat_update_var(iSkw_zt, Skw_zt, stats_zt)
+      call stat_update_var(iSkw_zm, Skw_zm, stats_zm)
     end if
 
     ! The right hand side of this conjunction is only for reducing cpu time,
@@ -881,13 +881,13 @@ module advance_clubb_core_module
 
     if ( l_stats_samp ) then
       call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
-                            zm )                             ! intent(inout)
+                            stats_zm )                             ! intent(inout)
     endif
 
     ! Smooth in the vertical
     sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
 
-    ! Interpolate the the zt grid
+    ! Interpolate the the stats_zt grid
     sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
@@ -909,7 +909,7 @@ module advance_clubb_core_module
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
     !---------------------------------------------------------------------------
 
-    ! Iterpolate variances to the zt grid (statistics and closure)
+    ! Iterpolate variances to the stats_zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
@@ -1048,8 +1048,8 @@ module advance_clubb_core_module
 
         ! Stats output
         if ( l_stats_samp ) then
-          call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, zt )
-          call stat_update_var_pt( ircm_refined, k, rcm_refined, zt )
+          call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, stats_zt )
+          call stat_update_var_pt( ircm_refined, k, rcm_refined, stats_zt )
         end if
 
       end do ! k=1, gr%nz
@@ -1537,9 +1537,9 @@ module advance_clubb_core_module
 
       if ( l_stats_samp ) then
         call stat_update_var( iLscale_pert_1, Lscale_pert_1, & ! intent(in)
-                              zt )                             ! intent(inout)
+                              stats_zt )                             ! intent(inout)
         call stat_update_var( iLscale_pert_2, Lscale_pert_2, & ! intent(in)
-                              zt )                             ! intent(inout)
+                              stats_zt )                             ! intent(inout)
       end if ! l_stats_samp
 
       ! ********** NOTE: **********
@@ -1630,22 +1630,22 @@ module advance_clubb_core_module
         if ( l_stats_samp ) then
           call stat_begin_update_pt( ithlp2_sf, 1,      &      ! intent(in)
            thlp2(1) / dt,    &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
           call stat_begin_update_pt( irtp2_sf, 1,       &      ! intent(in)
             rtp2(1) / dt,    &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
           call stat_begin_update_pt( irtpthlp_sf, 1,    &      ! intent(in)
             rtpthlp(1) / dt, &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
           call stat_begin_update_pt( iup2_sf, 1,        &      ! intent(in)
             up2(1) / dt,     &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
           call stat_begin_update_pt( ivp2_sf, 1,        &      ! intent(in)
             vp2(1) / dt,     &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
           call stat_begin_update_pt( iwp2_sf, 1,        &      ! intent(in)
             wp2(1) / dt,     &                                 ! intent(in)
-                                     zm )                      ! intent(inout)
+                                     stats_zm )                      ! intent(inout)
         end if
 
         call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
@@ -1665,22 +1665,22 @@ module advance_clubb_core_module
         if ( l_stats_samp ) then
           call stat_end_update_pt( ithlp2_sf, 1, &                ! intent(in)
             thlp2(1) / dt, &                                      ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
           call stat_end_update_pt( irtp2_sf, 1, &                 ! intent(in)
             rtp2(1) / dt, &                                       ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
           call stat_end_update_pt( irtpthlp_sf, 1, &              ! intent(in)
             rtpthlp(1) / dt, &                                    ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
           call stat_end_update_pt( iup2_sf, 1, &                  ! intent(in)
             up2(1) / dt, &                                        ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
           call stat_end_update_pt( ivp2_sf, 1, &                  ! intent(in)
             vp2(1) / dt, &                                        ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
           call stat_end_update_pt( iwp2_sf, 1, &                  ! intent(in)
             wp2(1) / dt, &                                        ! intent(in)
-                                   zm )                           ! intent(inout)
+                                   stats_zm )                           ! intent(inout)
         end if
 
       else
@@ -1716,7 +1716,7 @@ module advance_clubb_core_module
 
       if ( l_stats_samp ) then
         call stat_update_var( irvm, rtm - rcm, & !intent(in)
-                              zt )               !intent(inout)
+                              stats_zt )               !intent(inout)
 
         ! Output relative humidity (q/q∗ where q∗ is the saturation mixing ratio over liquid)
         ! Added an extra check for irel_humidity > 0; otherwise, if both irsat = 0 and
@@ -1724,7 +1724,7 @@ module advance_clubb_core_module
         ! when stat_update_var is called for rel_humidity.  ldgrant
         if ( irel_humidity > 0 ) then
           call stat_update_var( irel_humidity, (rtm - rcm) / rsat, & !intent(in)
-                                zt)                                  !intent(inout)
+                                stats_zt)                                  !intent(inout)
         end if ! irel_humidity > 0
       end if ! l_stats_samp
 
@@ -1869,32 +1869,32 @@ module advance_clubb_core_module
       if ( l_stats_samp ) then
 
         call stat_end_update( iwp2_bt, wp2 / dt, &                ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( ivp2_bt, vp2 / dt,&                 ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( iup2_bt, up2 / dt, &                ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( iwprtp_bt, wprtp / dt, &            ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( iwpthlp_bt, wpthlp / dt, &          ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( irtp2_bt, rtp2 / dt, &              ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( ithlp2_bt, thlp2 / dt, &            ! intent(in) 
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
         call stat_end_update( irtpthlp_bt, rtpthlp / dt, &        ! intent(in)
-                              zm )                                ! intent(inout)
+                              stats_zm )                                ! intent(inout)
 
         call stat_end_update( irtm_bt, rtm / dt, &                ! intent(in)
-                              zt )                                ! intent(inout)
+                              stats_zt )                                ! intent(inout)
         call stat_end_update( ithlm_bt, thlm / dt, &              ! intent(in)
-                              zt )                                ! intent(inout)
+                              stats_zt )                                ! intent(inout)
         call stat_end_update( ium_bt, um / dt, &                  ! intent(in)
-                              zt )                                ! intent(inout)
+                              stats_zt )                                ! intent(inout)
         call stat_end_update( ivm_bt, vm / dt, &                  ! intent(in)
-                              zt )                                ! intent(inout)
+                              stats_zt )                                ! intent(inout)
         call stat_end_update( iwp3_bt, wp3 / dt, &                ! intent(in)
-                              zt )                                ! intent(inout)
+                              stats_zt )                                ! intent(inout)
 
       end if ! l_stats_samp
 
@@ -2013,9 +2013,9 @@ module advance_clubb_core_module
 
         ! Write the var to stats
         call stat_update_var_pt( irtm_spur_src, 1, rtm_spur_src,   & ! intent(in)
-                                 sfc )                               ! intent(inout)
+                                 stats_sfc )                               ! intent(inout)
         call stat_update_var_pt( ithlm_spur_src, 1, thlm_spur_src, & ! intent(in)
-                                 sfc )                               ! intent(inout)
+                                 stats_sfc )                               ! intent(inout)
       end if
 
       return
@@ -2717,7 +2717,7 @@ module advance_clubb_core_module
       end if ! l_call_pdf_closure_twice
 
       if ( l_stats ) then
-        ! Use the trapezoidal rule to recompute the variables on the zt level
+        ! Use the trapezoidal rule to recompute the variables on the stats_zt level
         if ( iwprtp2 > 0 ) then
           wprtp2     = trapezoid_zt( wprtp2, wprtp2_zm )
         end if

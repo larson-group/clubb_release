@@ -30,7 +30,7 @@ module stats_clubb_utilities
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-      zt,      & ! Variables
+      stats_zt,      & ! Variables
       ztscr01, & 
       ztscr02, & 
       ztscr03, & 
@@ -55,11 +55,11 @@ module stats_clubb_utilities
 
     use stats_variables, only: &
       l_silhs_out, & ! Variable(s)
-      lh_zt, &
-      lh_sfc
+      stats_lh_zt, &
+      stats_lh_sfc
 
     use stats_variables, only: &
-      zm,      & ! Variables
+      stats_zm,      & ! Variables
       zmscr01, &
       zmscr02, &
       zmscr03, &
@@ -77,11 +77,11 @@ module stats_clubb_utilities
       zmscr15, &
       zmscr16, &
       zmscr17, &
-      rad_zt
+      stats_rad_zt
 
     use stats_variables, only: &
-      rad_zm,  &
-      sfc,     &
+      stats_rad_zm,  &
+      stats_sfc,     &
       l_stats, &
       l_output_rad_files, &
       stats_tsamp,   &
@@ -200,7 +200,7 @@ module stats_clubb_utilities
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
     logical, intent(in) :: &
-      l_silhs_out_in  ! Whether to output SILHS files (lh_zt, lh_sfc)  [boolean]
+      l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt, stats_lh_sfc)  [boolean]
 
     ! Local Variables
     logical :: l_error
@@ -656,46 +656,49 @@ module stats_clubb_utilities
       stop "stats_init:  number of zt statistical variables exceeds limit"
     end if
 
-    zt%num_output_fields = ntot
-    zt%kk = nzmax
-    zt%ii = nlon
-    zt%jj = nlat
+    stats_zt%num_output_fields = ntot
+    stats_zt%kk = nzmax
+    stats_zt%ii = nlon
+    stats_zt%jj = nlat
 
-    allocate( zt%z( zt%kk ) )
-    zt%z = gzt
+    allocate( stats_zt%z( stats_zt%kk ) )
+    stats_zt%z = gzt
 
-    allocate( zt%accum_field_values( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
-    allocate( zt %accum_num_samples( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
-    allocate( zt%l_in_update( zt%ii, zt%jj, zt%kk, zt%num_output_fields ) )
-    call stats_zero( zt%ii, zt%jj, zt%kk, zt%num_output_fields, zt%accum_field_values, &
-      zt%accum_num_samples, zt%l_in_update )
+    allocate( stats_zt%accum_field_values( stats_zt%ii, stats_zt%jj, &
+      stats_zt%kk, stats_zt%num_output_fields ) )
+    allocate( stats_zt %accum_num_samples( stats_zt%ii, stats_zt%jj, &
+      stats_zt%kk, stats_zt%num_output_fields ) )
+    allocate( stats_zt%l_in_update( stats_zt%ii, stats_zt%jj, stats_zt%kk, &
+      stats_zt%num_output_fields ) )
+    call stats_zero( stats_zt%ii, stats_zt%jj, stats_zt%kk, stats_zt%num_output_fields, &
+      stats_zt%accum_field_values, stats_zt%accum_num_samples, stats_zt%l_in_update )
 
-    allocate( zt%file%var( zt%num_output_fields ) )
-    allocate( zt%file%z( zt%kk ) )
+    allocate( stats_zt%file%var( stats_zt%num_output_fields ) )
+    allocate( stats_zt%file%z( stats_zt%kk ) )
 
     ! Allocate scratch space
 
-    allocate( ztscr01(zt%kk) )
-    allocate( ztscr02(zt%kk) )
-    allocate( ztscr03(zt%kk) )
-    allocate( ztscr04(zt%kk) )
-    allocate( ztscr05(zt%kk) )
-    allocate( ztscr06(zt%kk) )
-    allocate( ztscr07(zt%kk) )
-    allocate( ztscr08(zt%kk) )
-    allocate( ztscr09(zt%kk) )
-    allocate( ztscr10(zt%kk) )
-    allocate( ztscr11(zt%kk) )
-    allocate( ztscr12(zt%kk) )
-    allocate( ztscr13(zt%kk) )
-    allocate( ztscr14(zt%kk) )
-    allocate( ztscr15(zt%kk) )
-    allocate( ztscr16(zt%kk) )
-    allocate( ztscr17(zt%kk) )
-    allocate( ztscr18(zt%kk) )
-    allocate( ztscr19(zt%kk) )
-    allocate( ztscr20(zt%kk) )
-    allocate( ztscr21(zt%kk) )
+    allocate( ztscr01(stats_zt%kk) )
+    allocate( ztscr02(stats_zt%kk) )
+    allocate( ztscr03(stats_zt%kk) )
+    allocate( ztscr04(stats_zt%kk) )
+    allocate( ztscr05(stats_zt%kk) )
+    allocate( ztscr06(stats_zt%kk) )
+    allocate( ztscr07(stats_zt%kk) )
+    allocate( ztscr08(stats_zt%kk) )
+    allocate( ztscr09(stats_zt%kk) )
+    allocate( ztscr10(stats_zt%kk) )
+    allocate( ztscr11(stats_zt%kk) )
+    allocate( ztscr12(stats_zt%kk) )
+    allocate( ztscr13(stats_zt%kk) )
+    allocate( ztscr14(stats_zt%kk) )
+    allocate( ztscr15(stats_zt%kk) )
+    allocate( ztscr16(stats_zt%kk) )
+    allocate( ztscr17(stats_zt%kk) )
+    allocate( ztscr18(stats_zt%kk) )
+    allocate( ztscr19(stats_zt%kk) )
+    allocate( ztscr20(stats_zt%kk) )
+    allocate( ztscr21(stats_zt%kk) )
 
     ztscr01 = 0.0_core_rknd
     ztscr02 = 0.0_core_rknd
@@ -725,17 +728,17 @@ module stats_clubb_utilities
 
       ! Open GrADS file
       call open_grads( iunit, fdir, fname,  & 
-                       1, zt%kk, nlat, nlon, zt%z, & 
+                       1, stats_zt%kk, nlat, nlon, stats_zt%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                       zt%num_output_fields, zt%file )
+                       stats_zt%num_output_fields, stats_zt%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, zt%kk, zt%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current, stats_tout, zt%num_output_fields, &  ! In
-                        zt%file ) ! InOut
+                        time_current, stats_tout, stats_zt%num_output_fields, &  ! In
+                        stats_zt%file ) ! InOut
 #else
       stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -747,7 +750,7 @@ module stats_clubb_utilities
     call stats_init_zt( vars_zt, l_error )
 
 
-    ! Setup output file for lh_zt (Latin Hypercube stats)
+    ! Setup output file for stats_lh_zt (Latin Hypercube stats)
 
     if ( l_silhs_out ) then
 
@@ -767,22 +770,26 @@ module stats_clubb_utilities
         stop "stats_init:  number of lh_zt statistical variables exceeds limit"
       end if
 
-      lh_zt%num_output_fields = ntot
-      lh_zt%kk = nzmax
-      lh_zt%ii = nlon
-      lh_zt%jj = nlat
+      stats_lh_zt%num_output_fields = ntot
+      stats_lh_zt%kk = nzmax
+      stats_lh_zt%ii = nlon
+      stats_lh_zt%jj = nlat
 
-      allocate( lh_zt%z( lh_zt%kk ) )
-      lh_zt%z = gzt
+      allocate( stats_lh_zt%z( stats_lh_zt%kk ) )
+      stats_lh_zt%z = gzt
 
-      allocate( lh_zt%accum_field_values( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
-      allocate( lh_zt%accum_num_samples( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
-      allocate( lh_zt%l_in_update( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields ) )
-      call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
-        lh_zt%accum_field_values, lh_zt %accum_num_samples, lh_zt%l_in_update )
+      allocate( stats_lh_zt%accum_field_values( stats_lh_zt%ii, stats_lh_zt%jj, &
+        stats_lh_zt%kk, stats_lh_zt%num_output_fields ) )
+      allocate( stats_lh_zt%accum_num_samples( stats_lh_zt%ii, stats_lh_zt%jj, &
+        stats_lh_zt%kk, stats_lh_zt%num_output_fields ) )
+      allocate( stats_lh_zt%l_in_update( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
+        stats_lh_zt%num_output_fields ) )
+      call stats_zero( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
+        stats_lh_zt%num_output_fields, &
+        stats_lh_zt%accum_field_values, stats_lh_zt %accum_num_samples, stats_lh_zt%l_in_update )
 
-      allocate( lh_zt%file%var( lh_zt%num_output_fields ) )
-      allocate( lh_zt%file%z( lh_zt%kk ) )
+      allocate( stats_lh_zt%file%var( stats_lh_zt%num_output_fields ) )
+      allocate( stats_lh_zt%file%z( stats_lh_zt%kk ) )
 
 
       fname = trim( fname_lh_zt )
@@ -791,17 +798,17 @@ module stats_clubb_utilities
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, lh_zt%kk, nlat, nlon, lh_zt%z, & 
+                         1, stats_lh_zt%kk, nlat, nlon, stats_lh_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                         lh_zt%num_output_fields, lh_zt%file )
+                         stats_lh_zt%num_output_fields, stats_lh_zt%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, lh_zt%kk, lh_zt%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, stats_lh_zt%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current, stats_tout, lh_zt%num_output_fields, &  ! In
-                          lh_zt%file ) ! InOut
+                          time_current, stats_tout, stats_lh_zt%num_output_fields, &  ! In
+                          stats_lh_zt%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -826,25 +833,27 @@ module stats_clubb_utilities
         stop "stats_init:  number of lh_sfc statistical variables exceeds limit"
       end if
 
-      lh_sfc%num_output_fields = ntot
-      lh_sfc%kk = 1
-      lh_sfc%ii = nlon
-      lh_sfc%jj = nlat
+      stats_lh_sfc%num_output_fields = ntot
+      stats_lh_sfc%kk = 1
+      stats_lh_sfc%ii = nlon
+      stats_lh_sfc%jj = nlat
 
-      allocate( lh_sfc%z( lh_sfc%kk ) )
-      lh_sfc%z = gzm(1)
+      allocate( stats_lh_sfc%z( stats_lh_sfc%kk ) )
+      stats_lh_sfc%z = gzm(1)
 
-      allocate( lh_sfc%accum_field_values( lh_sfc%ii, lh_sfc%jj, &
-        lh_sfc%kk, lh_sfc%num_output_fields ) )
-      allocate( lh_sfc %accum_num_samples( lh_sfc%ii, lh_sfc%jj, &
-        lh_sfc%kk, lh_sfc%num_output_fields ) )
-      allocate( lh_sfc%l_in_update( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields ) )
+      allocate( stats_lh_sfc%accum_field_values( stats_lh_sfc%ii, stats_lh_sfc%jj, &
+        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
+      allocate( stats_lh_sfc %accum_num_samples( stats_lh_sfc%ii, stats_lh_sfc%jj, &
+        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
+      allocate( stats_lh_sfc%l_in_update( stats_lh_sfc%ii, stats_lh_sfc%jj, &
+        stats_lh_sfc%kk, stats_lh_sfc%num_output_fields ) )
 
-      call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
-                       lh_sfc%accum_field_values, lh_sfc %accum_num_samples, lh_sfc%l_in_update )
+      call stats_zero( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, &
+          stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_field_values, &
+          stats_lh_sfc %accum_num_samples, stats_lh_sfc%l_in_update )
 
-      allocate( lh_sfc%file%var( lh_sfc%num_output_fields ) )
-      allocate( lh_sfc%file%z( lh_sfc%kk ) )
+      allocate( stats_lh_sfc%file%var( stats_lh_sfc%num_output_fields ) )
+      allocate( stats_lh_sfc%file%z( stats_lh_sfc%kk ) )
 
       fname = trim( fname_lh_sfc )
 
@@ -852,17 +861,17 @@ module stats_clubb_utilities
 
         ! Open GrADS file
         call open_grads( iunit, fdir, fname,  & 
-                         1, lh_sfc%kk, nlat, nlon, lh_sfc%z, & 
+                         1, stats_lh_sfc%kk, nlat, nlon, stats_lh_sfc%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                         lh_sfc%num_output_fields, lh_sfc%file )
+                         stats_lh_sfc%num_output_fields, stats_lh_sfc%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, lh_sfc%kk, lh_sfc%z, &  ! In
+        call open_netcdf( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, stats_lh_sfc%z, &  ! In
                           day, month, year, rlat, rlon, &  ! In
-                          time_current, stats_tout, lh_sfc%num_output_fields, &  ! In
-                          lh_sfc%file ) ! InOut
+                          time_current, stats_tout, stats_lh_sfc%num_output_fields, &  ! In
+                          stats_lh_sfc%file ) ! InOut
 #else
         stop "This CLUBB program was not compiled with netCDF support."
 #endif
@@ -873,7 +882,7 @@ module stats_clubb_utilities
 
     end if ! l_silhs_out
 
-    ! Initialize zm (momentum points)
+    ! Initialize stats_zm (momentum points)
 
     ivar = 1
     do while ( ichar(vars_zm(ivar)(1:1)) /= 0  & 
@@ -916,43 +925,46 @@ module stats_clubb_utilities
       stop "stats_init:  number of zm statistical variables exceeds limit"
     end if
 
-    zm%num_output_fields = ntot
-    zm%kk = nzmax
-    zm%ii = nlon
-    zm%jj = nlat
+    stats_zm%num_output_fields = ntot
+    stats_zm%kk = nzmax
+    stats_zm%ii = nlon
+    stats_zm%jj = nlat
 
-    allocate( zm%z( zm%kk ) )
-    zm%z = gzm
+    allocate( stats_zm%z( stats_zm%kk ) )
+    stats_zm%z = gzm
 
-    allocate( zm%accum_field_values( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
-    allocate( zm %accum_num_samples( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
-    allocate( zm%l_in_update( zm%ii, zm%jj, zm%kk, zm%num_output_fields ) )
+    allocate( stats_zm%accum_field_values( stats_zm%ii, stats_zm%jj, &
+      stats_zm%kk, stats_zm%num_output_fields ) )
+    allocate( stats_zm %accum_num_samples( stats_zm%ii, stats_zm%jj, &
+      stats_zm%kk, stats_zm%num_output_fields ) )
+    allocate( stats_zm%l_in_update( stats_zm%ii, stats_zm%jj, stats_zm%kk, &
+      stats_zm%num_output_fields ) )
 
-    call stats_zero( zm%ii, zm%jj, zm%kk, zm%num_output_fields, zm%accum_field_values, &
-      zm %accum_num_samples, zm%l_in_update )
+    call stats_zero( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, &
+      stats_zm%accum_field_values, stats_zm %accum_num_samples, stats_zm%l_in_update )
 
-    allocate( zm%file%var( zm%num_output_fields ) )
-    allocate( zm%file%z( zm%kk ) )
+    allocate( stats_zm%file%var( stats_zm%num_output_fields ) )
+    allocate( stats_zm%file%z( stats_zm%kk ) )
 
     ! Allocate scratch space
 
-    allocate( zmscr01(zm%kk) )
-    allocate( zmscr02(zm%kk) )
-    allocate( zmscr03(zm%kk) )
-    allocate( zmscr04(zm%kk) )
-    allocate( zmscr05(zm%kk) )
-    allocate( zmscr06(zm%kk) )
-    allocate( zmscr07(zm%kk) )
-    allocate( zmscr08(zm%kk) )
-    allocate( zmscr09(zm%kk) )
-    allocate( zmscr10(zm%kk) )
-    allocate( zmscr11(zm%kk) )
-    allocate( zmscr12(zm%kk) )
-    allocate( zmscr13(zm%kk) )
-    allocate( zmscr14(zm%kk) )
-    allocate( zmscr15(zm%kk) )
-    allocate( zmscr16(zm%kk) )
-    allocate( zmscr17(zm%kk) )
+    allocate( zmscr01(stats_zm%kk) )
+    allocate( zmscr02(stats_zm%kk) )
+    allocate( zmscr03(stats_zm%kk) )
+    allocate( zmscr04(stats_zm%kk) )
+    allocate( zmscr05(stats_zm%kk) )
+    allocate( zmscr06(stats_zm%kk) )
+    allocate( zmscr07(stats_zm%kk) )
+    allocate( zmscr08(stats_zm%kk) )
+    allocate( zmscr09(stats_zm%kk) )
+    allocate( zmscr10(stats_zm%kk) )
+    allocate( zmscr11(stats_zm%kk) )
+    allocate( zmscr12(stats_zm%kk) )
+    allocate( zmscr13(stats_zm%kk) )
+    allocate( zmscr14(stats_zm%kk) )
+    allocate( zmscr15(stats_zm%kk) )
+    allocate( zmscr16(stats_zm%kk) )
+    allocate( zmscr17(stats_zm%kk) )
 
     ! Initialize to 0
     zmscr01 = 0.0_core_rknd
@@ -979,17 +991,17 @@ module stats_clubb_utilities
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
-                       1, zm%kk, nlat, nlon, zm%z, & 
+                       1, stats_zm%kk, nlat, nlon, stats_zm%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                       zm%num_output_fields, zm%file )
+                       stats_zm%num_output_fields, stats_zm%file )
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, zm%kk, zm%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current, stats_tout, zm%num_output_fields, &  ! In
-                        zm%file ) ! InOut
+                        time_current, stats_tout, stats_zm%num_output_fields, &  ! In
+                        stats_zm%file ) ! InOut
 
 #else
       stop "This CLUBB program was not compiled with netCDF support."
@@ -998,7 +1010,7 @@ module stats_clubb_utilities
 
     call stats_init_zm( vars_zm, l_error )
 
-    ! Initialize rad_zt (radiation points)
+    ! Initialize stats_rad_zt (radiation points)
 
     if (l_output_rad_files) then
 
@@ -1018,43 +1030,44 @@ module stats_clubb_utilities
         stop "stats_init:  number of rad_zt statistical variables exceeds limit"
       end if
 
-      rad_zt%num_output_fields = ntot
-      rad_zt%kk = nnrad_zt
-      rad_zt%ii = nlon
-      rad_zt%jj = nlat
-      allocate( rad_zt%z( rad_zt%kk ) )
-      rad_zt%z = grad_zt
+      stats_rad_zt%num_output_fields = ntot
+      stats_rad_zt%kk = nnrad_zt
+      stats_rad_zt%ii = nlon
+      stats_rad_zt%jj = nlat
+      allocate( stats_rad_zt%z( stats_rad_zt%kk ) )
+      stats_rad_zt%z = grad_zt
 
-      allocate( rad_zt%accum_field_values( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
-        rad_zt%num_output_fields ) )
-      allocate( rad_zt%accum_num_samples( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
-        rad_zt%num_output_fields ) )
-      allocate( rad_zt%l_in_update( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields ) )
+      allocate( stats_rad_zt%accum_field_values( stats_rad_zt%ii, stats_rad_zt%jj, &
+        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
+      allocate( stats_rad_zt%accum_num_samples( stats_rad_zt%ii, stats_rad_zt%jj, &
+        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
+      allocate( stats_rad_zt%l_in_update( stats_rad_zt%ii, stats_rad_zt%jj, &
+        stats_rad_zt%kk, stats_rad_zt%num_output_fields ) )
 
-      call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, &
-        rad_zt%num_output_fields, rad_zt%accum_field_values, &
-                       rad_zt%accum_num_samples, rad_zt%l_in_update )
+      call stats_zero( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zt%kk, &
+        stats_rad_zt%num_output_fields, stats_rad_zt%accum_field_values, &
+                       stats_rad_zt%accum_num_samples, stats_rad_zt%l_in_update )
 
-      allocate( rad_zt%file%var( rad_zt%num_output_fields ) )
-      allocate( rad_zt%file%z( rad_zt%kk ) )
+      allocate( stats_rad_zt%file%var( stats_rad_zt%num_output_fields ) )
+      allocate( stats_rad_zt%file%z( stats_rad_zt%kk ) )
 
       fname = trim( fname_rad_zt )
       if ( l_grads ) then
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
-                         1, rad_zt%kk, nlat, nlon, rad_zt%z, & 
+                         1, stats_rad_zt%kk, nlat, nlon, stats_rad_zt%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+real(stats_tout, kind=time_precision), stats_tout, & 
-                         rad_zt%num_output_fields, rad_zt%file )
+                         stats_rad_zt%num_output_fields, stats_rad_zt%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname,  & 
-                          1, rad_zt%kk, rad_zt%z, & 
+                          1, stats_rad_zt%kk, stats_rad_zt%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current, stats_tout, & 
-                          rad_zt%num_output_fields, rad_zt%file )
+                          stats_rad_zt%num_output_fields, stats_rad_zt%file )
 
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -1063,7 +1076,7 @@ module stats_clubb_utilities
 
       call stats_init_rad_zt( vars_rad_zt, l_error )
 
-      ! Initialize rad_zm (radiation points)
+      ! Initialize stats_rad_zm (radiation points)
 
       ivar = 1
       do while ( ichar(vars_rad_zm(ivar)(1:1)) /= 0  & 
@@ -1081,43 +1094,45 @@ module stats_clubb_utilities
         stop "stats_init:  number of rad_zm statistical variables exceeds limit"
       end if
 
-      rad_zm%num_output_fields = ntot
-      rad_zm%kk = nnrad_zm
-      rad_zm%ii = nlon
-      rad_zm%jj = nlat
+      stats_rad_zm%num_output_fields = ntot
+      stats_rad_zm%kk = nnrad_zm
+      stats_rad_zm%ii = nlon
+      stats_rad_zm%jj = nlat
 
-      allocate( rad_zm%z( rad_zm%kk ) )
-      rad_zm%z = grad_zm
+      allocate( stats_rad_zm%z( stats_rad_zm%kk ) )
+      stats_rad_zm%z = grad_zm
 
-      allocate( rad_zm%accum_field_values( rad_zm%ii, rad_zm%jj, &
-        rad_zm%kk, rad_zm%num_output_fields ) )
-      allocate( rad_zm%accum_num_samples( rad_zm%ii, rad_zm%jj, &
-        rad_zm%kk, rad_zm%num_output_fields ) )
-      allocate( rad_zm%l_in_update( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields ) )
+      allocate( stats_rad_zm%accum_field_values( stats_rad_zm%ii, stats_rad_zm%jj, &
+        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
+      allocate( stats_rad_zm%accum_num_samples( stats_rad_zm%ii, stats_rad_zm%jj, &
+        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
+      allocate( stats_rad_zm%l_in_update( stats_rad_zm%ii, stats_rad_zm%jj, &
+        stats_rad_zm%kk, stats_rad_zm%num_output_fields ) )
 
-      call stats_zero( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields, &
-                       rad_zm%accum_field_values, rad_zm%accum_num_samples, rad_zm%l_in_update )
+      call stats_zero( stats_rad_zm%ii, stats_rad_zm%jj, stats_rad_zm%kk, &
+        stats_rad_zm%num_output_fields, stats_rad_zm%accum_field_values, &
+        stats_rad_zm%accum_num_samples, stats_rad_zm%l_in_update )
 
-      allocate( rad_zm%file%var( rad_zm%num_output_fields ) )
-      allocate( rad_zm%file%z( rad_zm%kk ) )
+      allocate( stats_rad_zm%file%var( stats_rad_zm%num_output_fields ) )
+      allocate( stats_rad_zm%file%z( stats_rad_zm%kk ) )
 
       fname = trim( fname_rad_zm )
       if ( l_grads ) then
 
         ! Open GrADS files
         call open_grads( iunit, fdir, fname,  & 
-                         1, rad_zm%kk, nlat, nlon, rad_zm%z, & 
+                         1, stats_rad_zm%kk, nlat, nlon, stats_rad_zm%z, & 
                          day, month, year, rlat, rlon, & 
                          time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                         rad_zm%num_output_fields, rad_zm%file )
+                         stats_rad_zm%num_output_fields, stats_rad_zm%file )
 
       else ! Open NetCDF file
 #ifdef NETCDF
         call open_netcdf( nlat, nlon, fdir, fname,  & 
-                          1, rad_zm%kk, rad_zm%z, & 
+                          1, stats_rad_zm%kk, stats_rad_zm%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current, stats_tout, & 
-                          rad_zm%num_output_fields, rad_zm%file )
+                          stats_rad_zm%num_output_fields, stats_rad_zm%file )
 
 #else
         stop "This CLUBB program was not compiled with netCDF support."
@@ -1128,7 +1143,7 @@ module stats_clubb_utilities
     end if ! l_output_rad_files
 
 
-    ! Initialize sfc (surface point)
+    ! Initialize stats_sfc (surface point)
 
     ivar = 1
     do while ( ichar(vars_sfc(ivar)(1:1)) /= 0  & 
@@ -1146,23 +1161,26 @@ module stats_clubb_utilities
       stop "stats_init:  number of sfc statistical variables exceeds limit"
     end if
 
-    sfc%num_output_fields = ntot
-    sfc%kk = 1
-    sfc%ii = nlon
-    sfc%jj = nlat
+    stats_sfc%num_output_fields = ntot
+    stats_sfc%kk = 1
+    stats_sfc%ii = nlon
+    stats_sfc%jj = nlat
 
-    allocate( sfc%z( sfc%kk ) )
-    sfc%z = gzm(1)
+    allocate( stats_sfc%z( stats_sfc%kk ) )
+    stats_sfc%z = gzm(1)
 
-    allocate( sfc%accum_field_values( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
-    allocate( sfc%accum_num_samples( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
-    allocate( sfc%l_in_update( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields ) )
+    allocate( stats_sfc%accum_field_values( stats_sfc%ii, stats_sfc%jj, &
+      stats_sfc%kk, stats_sfc%num_output_fields ) )
+    allocate( stats_sfc%accum_num_samples( stats_sfc%ii, stats_sfc%jj, &
+      stats_sfc%kk, stats_sfc%num_output_fields ) )
+    allocate( stats_sfc%l_in_update( stats_sfc%ii, stats_sfc%jj, &
+      stats_sfc%kk, stats_sfc%num_output_fields ) )
 
-    call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, &
-      sfc%accum_field_values, sfc%accum_num_samples, sfc%l_in_update )
+    call stats_zero( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, &
+      stats_sfc%accum_field_values, stats_sfc%accum_num_samples, stats_sfc%l_in_update )
 
-    allocate( sfc%file%var( sfc%num_output_fields ) )
-    allocate( sfc%file%z( sfc%kk ) )
+    allocate( stats_sfc%file%var( stats_sfc%num_output_fields ) )
+    allocate( stats_sfc%file%z( stats_sfc%kk ) )
 
     fname = trim( fname_sfc )
 
@@ -1170,17 +1188,17 @@ module stats_clubb_utilities
 
       ! Open GrADS files
       call open_grads( iunit, fdir, fname,  & 
-                       1, sfc%kk, nlat, nlon, sfc%z, & 
+                       1, stats_sfc%kk, nlat, nlon, stats_sfc%z, & 
                        day, month, year, rlat, rlon, & 
                        time_current+real(stats_tout,kind=time_precision), stats_tout, & 
-                       sfc%num_output_fields, sfc%file )
+                       stats_sfc%num_output_fields, stats_sfc%file )
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, sfc%kk, sfc%z, &  ! In
+      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
-                        time_current, stats_tout, sfc%num_output_fields, &  ! In
-                        sfc%file ) ! InOut
+                        time_current, stats_tout, stats_sfc%num_output_fields, &  ! In
+                        stats_sfc%file ) ! InOut
 
 #else
       stop "This CLUBB program was not compiled with netCDF support."
@@ -1351,13 +1369,13 @@ module stats_clubb_utilities
         fstderr ! Constant(s)
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        lh_zt, &
-        lh_sfc, &
-        zm, & 
-        rad_zt, &
-        rad_zm, &
-        sfc, &
+        stats_zt,  & ! Variable(s)
+        stats_lh_zt, &
+        stats_lh_sfc, &
+        stats_zm, & 
+        stats_rad_zt, &
+        stats_rad_zm, &
+        stats_sfc, &
         l_stats_last, &
         l_output_rad_files, & 
         l_grads, &
@@ -1393,16 +1411,16 @@ module stats_clubb_utilities
     ! Initialize
     l_error = .false.
 
-    call stats_check_num_samples( zt, l_error )
-    call stats_check_num_samples( zm, l_error )
-    call stats_check_num_samples( sfc, l_error )
+    call stats_check_num_samples( stats_zt, l_error )
+    call stats_check_num_samples( stats_zm, l_error )
+    call stats_check_num_samples( stats_sfc, l_error )
     if ( l_silhs_out ) then
-      call stats_check_num_samples( lh_zt, l_error )
-      call stats_check_num_samples( lh_sfc, l_error )
+      call stats_check_num_samples( stats_lh_zt, l_error )
+      call stats_check_num_samples( stats_lh_sfc, l_error )
     end if
     if ( l_output_rad_files ) then
-      call stats_check_num_samples( rad_zt, l_error )
-      call stats_check_num_samples( rad_zm, l_error )
+      call stats_check_num_samples( stats_rad_zt, l_error )
+      call stats_check_num_samples( stats_rad_zm, l_error )
     end if
 
     ! Stop the run if errors are found.
@@ -1414,80 +1432,89 @@ module stats_clubb_utilities
     end if ! l_error
 
     ! Compute averages
-    call stats_avg( zt%ii, zt%jj, zt%kk, zt%num_output_fields, &
-      zt%accum_field_values, zt%accum_num_samples )
-    call stats_avg( zm%ii, zm%jj, zm%kk, zm%num_output_fields, &
-      zm%accum_field_values, zm%accum_num_samples )
+    call stats_avg( stats_zt%ii, stats_zt%jj, stats_zt%kk, stats_zt%num_output_fields, &
+      stats_zt%accum_field_values, stats_zt%accum_num_samples )
+    call stats_avg( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, &
+      stats_zm%accum_field_values, stats_zm%accum_num_samples )
     if ( l_silhs_out ) then
-      call stats_avg( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
-        lh_zt%accum_field_values, lh_zt%accum_num_samples )
-      call stats_avg( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
-        lh_sfc%accum_field_values, lh_sfc%accum_num_samples )
+      call stats_avg( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
+        stats_lh_zt%num_output_fields, stats_lh_zt%accum_field_values, &
+        stats_lh_zt%accum_num_samples )
+      call stats_avg( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, &
+        stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_field_values, &
+        stats_lh_sfc%accum_num_samples )
     end if
     if ( l_output_rad_files ) then
-      call stats_avg( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields, &
-        rad_zt%accum_field_values, rad_zt%accum_num_samples )
-      call stats_avg( rad_zm%ii, rad_zm%jj, rad_zm%kk, rad_zm%num_output_fields, &
-        rad_zm%accum_field_values, rad_zm%accum_num_samples )
+      call stats_avg( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zt%kk, &
+        stats_rad_zt%num_output_fields, &
+        stats_rad_zt%accum_field_values, stats_rad_zt%accum_num_samples )
+      call stats_avg( stats_rad_zm%ii, stats_rad_zm%jj, stats_rad_zm%kk, &
+        stats_rad_zm%num_output_fields, &
+        stats_rad_zm%accum_field_values, stats_rad_zm%accum_num_samples )
     end if
-    call stats_avg( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, &
-      sfc%accum_field_values, sfc%accum_num_samples )
+    call stats_avg( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, &
+      stats_sfc%accum_field_values, stats_sfc%accum_num_samples )
 
     ! Only write to the file and zero out the stats fields if we've reach the horizontal
     ! limits of the domain (this is always true in the single-column case because it's 1x1).
-    if ( clubb_i == zt%ii .and. clubb_j == zt%jj ) then
+    if ( clubb_i == stats_zt%ii .and. clubb_j == stats_zt%jj ) then
       ! Write to file
       if ( l_grads ) then
-        call write_grads( zt%file  )
-        call write_grads( zm%file  )
+        call write_grads( stats_zt%file  )
+        call write_grads( stats_zm%file  )
         if ( l_silhs_out ) then
-          call write_grads( lh_zt%file  )
-          call write_grads( lh_sfc%file  )
+          call write_grads( stats_lh_zt%file  )
+          call write_grads( stats_lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_grads( rad_zt%file  )
-          call write_grads( rad_zm%file  )
+          call write_grads( stats_rad_zt%file  )
+          call write_grads( stats_rad_zm%file  )
         end if
-        call write_grads( sfc%file  )
+        call write_grads( stats_sfc%file  )
       else ! l_netcdf
 #ifdef NETCDF
-        call write_netcdf( zt%file  )
-        call write_netcdf( zm%file  )
+        call write_netcdf( stats_zt%file  )
+        call write_netcdf( stats_zm%file  )
         if ( l_silhs_out ) then
-          call write_netcdf( lh_zt%file  )
-          call write_netcdf( lh_sfc%file  )
+          call write_netcdf( stats_lh_zt%file  )
+          call write_netcdf( stats_lh_sfc%file  )
         end if
         if ( l_output_rad_files ) then
-          call write_netcdf( rad_zt%file  )
-          call write_netcdf( rad_zm%file  )
+          call write_netcdf( stats_rad_zt%file  )
+          call write_netcdf( stats_rad_zm%file  )
         end if
-        call write_netcdf( sfc%file  )
+        call write_netcdf( stats_sfc%file  )
 #else
         stop "This program was not compiled with netCDF support"
 #endif /* NETCDF */
       end if ! l_grads
 
       ! Reset sample fields
-      call stats_zero( zt%ii, zt%jj, zt%kk, zt%num_output_fields, zt%accum_field_values, &
-        zt%accum_num_samples, zt%l_in_update )
-      call stats_zero( zm%ii, zm%jj, zm%kk, zm%num_output_fields, zm%accum_field_values, &
-        zm%accum_num_samples, zm%l_in_update )
+      call stats_zero( stats_zt%ii, stats_zt%jj, stats_zt%kk, stats_zt%num_output_fields, &
+      stats_zt%accum_field_values, stats_zt%accum_num_samples, stats_zt%l_in_update )
+      call stats_zero( stats_zm%ii, stats_zm%jj, stats_zm%kk, stats_zm%num_output_fields, &
+        stats_zm%accum_field_values, stats_zm%accum_num_samples, stats_zm%l_in_update )
       if ( l_silhs_out ) then
-        call stats_zero( lh_zt%ii, lh_zt%jj, lh_zt%kk, lh_zt%num_output_fields, &
-                         lh_zt%accum_field_values, lh_zt%accum_num_samples, lh_zt%l_in_update )
-        call stats_zero( lh_sfc%ii, lh_sfc%jj, lh_sfc%kk, lh_sfc%num_output_fields, &
-                         lh_sfc%accum_field_values, lh_sfc%accum_num_samples, lh_sfc%l_in_update )
+        call stats_zero( stats_lh_zt%ii, stats_lh_zt%jj, stats_lh_zt%kk, &
+          stats_lh_zt%num_output_fields, stats_lh_zt%accum_field_values, &
+          stats_lh_zt%accum_num_samples, stats_lh_zt%l_in_update )
+        call stats_zero( stats_lh_sfc%ii, stats_lh_sfc%jj, stats_lh_sfc%kk, &
+          stats_lh_sfc%num_output_fields, stats_lh_sfc%accum_field_values, &
+          stats_lh_sfc%accum_num_samples, stats_lh_sfc%l_in_update )
       end if
       if ( l_output_rad_files ) then
-        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zt%kk, rad_zt%num_output_fields, &
-                         rad_zt%accum_field_values, rad_zt%accum_num_samples, rad_zt%l_in_update )
-        call stats_zero( rad_zt%ii, rad_zt%jj, rad_zm%kk, rad_zm%num_output_fields, &
-                         rad_zm%accum_field_values, rad_zm%accum_num_samples, rad_zm%l_in_update )
+        call stats_zero( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zt%kk, &
+          stats_rad_zt%num_output_fields, stats_rad_zt%accum_field_values, &
+          stats_rad_zt%accum_num_samples, stats_rad_zt%l_in_update )
+        call stats_zero( stats_rad_zt%ii, stats_rad_zt%jj, stats_rad_zm%kk, &
+          stats_rad_zm%num_output_fields, stats_rad_zm%accum_field_values, &
+          stats_rad_zm%accum_num_samples, stats_rad_zm%l_in_update )
       end if
-      call stats_zero( sfc%ii, sfc%jj, sfc%kk, sfc%num_output_fields, sfc%accum_field_values, &
-        sfc%accum_num_samples, sfc%l_in_update )
+      call stats_zero( stats_sfc%ii, stats_sfc%jj, stats_sfc%kk, stats_sfc%num_output_fields, &
+        stats_sfc%accum_field_values, &
+        stats_sfc%accum_num_samples, stats_sfc%l_in_update )
 
-    end if ! clubb_i = zt%ii .and. clubb_j == zt%jj
+    end if ! clubb_i = stats_zt%ii .and. clubb_j == stats_zt%jj
 
 
     return
@@ -1524,9 +1551,9 @@ module stats_clubb_utilities
         compute_variance_binormal    ! Procedure
 
     use stats_variables, only: & 
-        zt, & ! Variables
-        zm, & 
-        sfc, & 
+        stats_zt, & ! Variables
+        stats_zm, & 
+        stats_sfc, & 
         l_stats_samp, & 
         ithlm, & 
         iT_in_K, & 
@@ -1878,7 +1905,7 @@ module stats_clubb_utilities
 
     if ( l_stats_samp ) then
 
-      ! zt variables
+      ! stats_zt variables
 
 
       if ( iT_in_K > 0 .or. irsati > 0 ) then
@@ -1887,99 +1914,99 @@ module stats_clubb_utilities
         T_in_K = -999._core_rknd
       end if
 
-      call stat_update_var( iT_in_K, T_in_K, zt )
+      call stat_update_var( iT_in_K, T_in_K, stats_zt )
 
-      call stat_update_var( ithlm, thlm, zt )
-      call stat_update_var( ithvm, thvm, zt )
-      call stat_update_var( irtm, rtm, zt )
-      call stat_update_var( ircm, rcm, zt )
-      call stat_update_var( ium, um, zt )
-      call stat_update_var( ivm, vm, zt )
-      call stat_update_var( iwm_zt, wm_zt, zt )
-      call stat_update_var( iwm_zm, wm_zm, zm )
-      call stat_update_var( iug, ug, zt )
-      call stat_update_var( ivg, vg, zt )
-      call stat_update_var( icloud_frac, cloud_frac, zt )
-      call stat_update_var( iice_supersat_frac, ice_supersat_frac, zt)
-      call stat_update_var( ircm_in_layer, rcm_in_layer, zt )
-      call stat_update_var( icloud_cover, cloud_cover, zt )
-      call stat_update_var( ip_in_Pa, p_in_Pa, zt )
-      call stat_update_var( iexner, exner, zt )
-      call stat_update_var( irho_ds_zt, rho_ds_zt, zt )
-      call stat_update_var( ithv_ds_zt, thv_ds_zt, zt )
-      call stat_update_var( iLscale, Lscale, zt )
-      call stat_update_var( iwp3, wp3, zt )
-      call stat_update_var( iwpthlp2, wpthlp2, zt )
-      call stat_update_var( iwp2thlp, wp2thlp, zt )
-      call stat_update_var( iwprtp2, wprtp2, zt )
-      call stat_update_var( iwp2rtp, wp2rtp, zt )
-      call stat_update_var( iLscale_up, Lscale_up, zt )
-      call stat_update_var( iLscale_down, Lscale_down, zt )
-      call stat_update_var( itau_zt, tau_zt, zt )
-      call stat_update_var( iKh_zt, Kh_zt, zt )
-      call stat_update_var( iwp2thvp, wp2thvp, zt )
-      call stat_update_var( iwp2rcp, wp2rcp, zt )
-      call stat_update_var( iwprtpthlp, wprtpthlp, zt )
-      call stat_update_var( isigma_sqd_w_zt, sigma_sqd_w_zt, zt )
-      call stat_update_var( irho, rho, zt )
-      call stat_update_var( irsat, rsat, zt )
+      call stat_update_var( ithlm, thlm, stats_zt )
+      call stat_update_var( ithvm, thvm, stats_zt )
+      call stat_update_var( irtm, rtm, stats_zt )
+      call stat_update_var( ircm, rcm, stats_zt )
+      call stat_update_var( ium, um, stats_zt )
+      call stat_update_var( ivm, vm, stats_zt )
+      call stat_update_var( iwm_zt, wm_zt, stats_zt )
+      call stat_update_var( iwm_zm, wm_zm, stats_zm )
+      call stat_update_var( iug, ug, stats_zt )
+      call stat_update_var( ivg, vg, stats_zt )
+      call stat_update_var( icloud_frac, cloud_frac, stats_zt )
+      call stat_update_var( iice_supersat_frac, ice_supersat_frac, stats_zt)
+      call stat_update_var( ircm_in_layer, rcm_in_layer, stats_zt )
+      call stat_update_var( icloud_cover, cloud_cover, stats_zt )
+      call stat_update_var( ip_in_Pa, p_in_Pa, stats_zt )
+      call stat_update_var( iexner, exner, stats_zt )
+      call stat_update_var( irho_ds_zt, rho_ds_zt, stats_zt )
+      call stat_update_var( ithv_ds_zt, thv_ds_zt, stats_zt )
+      call stat_update_var( iLscale, Lscale, stats_zt )
+      call stat_update_var( iwp3, wp3, stats_zt )
+      call stat_update_var( iwpthlp2, wpthlp2, stats_zt )
+      call stat_update_var( iwp2thlp, wp2thlp, stats_zt )
+      call stat_update_var( iwprtp2, wprtp2, stats_zt )
+      call stat_update_var( iwp2rtp, wp2rtp, stats_zt )
+      call stat_update_var( iLscale_up, Lscale_up, stats_zt )
+      call stat_update_var( iLscale_down, Lscale_down, stats_zt )
+      call stat_update_var( itau_zt, tau_zt, stats_zt )
+      call stat_update_var( iKh_zt, Kh_zt, stats_zt )
+      call stat_update_var( iwp2thvp, wp2thvp, stats_zt )
+      call stat_update_var( iwp2rcp, wp2rcp, stats_zt )
+      call stat_update_var( iwprtpthlp, wprtpthlp, stats_zt )
+      call stat_update_var( isigma_sqd_w_zt, sigma_sqd_w_zt, stats_zt )
+      call stat_update_var( irho, rho, stats_zt )
+      call stat_update_var( irsat, rsat, stats_zt )
       if ( irsati > 0 ) then
         rsati = sat_mixrat_ice( p_in_Pa, T_in_K )
-        call stat_update_var( irsati, rsati, zt )
+        call stat_update_var( irsati, rsati, stats_zt )
       end if
 
-      call stat_update_var( imixt_frac, pdf_params%mixt_frac, zt )
-      call stat_update_var( iw_1, pdf_params%w_1, zt )
-      call stat_update_var( iw_2, pdf_params%w_2, zt )
-      call stat_update_var( ivarnce_w_1, pdf_params%varnce_w_1, zt )
-      call stat_update_var( ivarnce_w_2, pdf_params%varnce_w_2, zt )
-      call stat_update_var( ithl_1, pdf_params%thl_1, zt )
-      call stat_update_var( ithl_2, pdf_params%thl_2, zt )
-      call stat_update_var( ivarnce_thl_1, pdf_params%varnce_thl_1, zt )
-      call stat_update_var( ivarnce_thl_2, pdf_params%varnce_thl_2, zt )
-      call stat_update_var( irt_1, pdf_params%rt_1, zt )
-      call stat_update_var( irt_2, pdf_params%rt_2, zt )
-      call stat_update_var( ivarnce_rt_1, pdf_params%varnce_rt_1, zt )
-      call stat_update_var( ivarnce_rt_2, pdf_params%varnce_rt_2, zt )
-      call stat_update_var( irc_1, pdf_params%rc_1, zt )
-      call stat_update_var( irc_2, pdf_params%rc_2, zt )
-      call stat_update_var( irsatl_1, pdf_params%rsatl_1, zt )
-      call stat_update_var( irsatl_2, pdf_params%rsatl_2, zt )
-      call stat_update_var( icloud_frac_1, pdf_params%cloud_frac_1, zt )
-      call stat_update_var( icloud_frac_2, pdf_params%cloud_frac_2, zt )
-      call stat_update_var( ichi_1, pdf_params%chi_1, zt )
-      call stat_update_var( ichi_2, pdf_params%chi_2, zt )
-      call stat_update_var( istdev_chi_1, pdf_params%stdev_chi_1, zt )
-      call stat_update_var( istdev_chi_2, pdf_params%stdev_chi_2, zt )
-      call stat_update_var( istdev_eta_1, pdf_params%stdev_eta_1, zt )
-      call stat_update_var( istdev_eta_2, pdf_params%stdev_eta_2, zt )
-      call stat_update_var( icovar_chi_eta_1, pdf_params%covar_chi_eta_1, zt )
-      call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, zt )
-      call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, zt )
-      call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, zt )
-      call stat_update_var( irrtthl, pdf_params%rrtthl, zt )
-      call stat_update_var( icrt_1, pdf_params%crt_1, zt )
-      call stat_update_var( icrt_2, pdf_params%crt_2, zt )
-      call stat_update_var( icthl_1, pdf_params%cthl_1, zt )
-      call stat_update_var( icthl_2, pdf_params%cthl_2, zt )
-      call stat_update_var( iwp2_zt, wp2_zt, zt )
-      call stat_update_var( ithlp2_zt, thlp2_zt, zt )
-      call stat_update_var( iwpthlp_zt, wpthlp_zt, zt )
-      call stat_update_var( iwprtp_zt, wprtp_zt, zt )
-      call stat_update_var( irtp2_zt, rtp2_zt, zt )
-      call stat_update_var( irtpthlp_zt, rtpthlp_zt, zt )
-      call stat_update_var( iup2_zt, up2_zt, zt )
-      call stat_update_var( ivp2_zt, vp2_zt, zt )
-      call stat_update_var( iupwp_zt, upwp_zt, zt )
-      call stat_update_var( ivpwp_zt, vpwp_zt, zt )
-      call stat_update_var( ia3_coef_zt, a3_coef_zt, zt )
-      call stat_update_var( iwp3_on_wp2_zt, wp3_on_wp2_zt, zt )
+      call stat_update_var( imixt_frac, pdf_params%mixt_frac, stats_zt )
+      call stat_update_var( iw_1, pdf_params%w_1, stats_zt )
+      call stat_update_var( iw_2, pdf_params%w_2, stats_zt )
+      call stat_update_var( ivarnce_w_1, pdf_params%varnce_w_1, stats_zt )
+      call stat_update_var( ivarnce_w_2, pdf_params%varnce_w_2, stats_zt )
+      call stat_update_var( ithl_1, pdf_params%thl_1, stats_zt )
+      call stat_update_var( ithl_2, pdf_params%thl_2, stats_zt )
+      call stat_update_var( ivarnce_thl_1, pdf_params%varnce_thl_1, stats_zt )
+      call stat_update_var( ivarnce_thl_2, pdf_params%varnce_thl_2, stats_zt )
+      call stat_update_var( irt_1, pdf_params%rt_1, stats_zt )
+      call stat_update_var( irt_2, pdf_params%rt_2, stats_zt )
+      call stat_update_var( ivarnce_rt_1, pdf_params%varnce_rt_1, stats_zt )
+      call stat_update_var( ivarnce_rt_2, pdf_params%varnce_rt_2, stats_zt )
+      call stat_update_var( irc_1, pdf_params%rc_1, stats_zt )
+      call stat_update_var( irc_2, pdf_params%rc_2, stats_zt )
+      call stat_update_var( irsatl_1, pdf_params%rsatl_1, stats_zt )
+      call stat_update_var( irsatl_2, pdf_params%rsatl_2, stats_zt )
+      call stat_update_var( icloud_frac_1, pdf_params%cloud_frac_1, stats_zt )
+      call stat_update_var( icloud_frac_2, pdf_params%cloud_frac_2, stats_zt )
+      call stat_update_var( ichi_1, pdf_params%chi_1, stats_zt )
+      call stat_update_var( ichi_2, pdf_params%chi_2, stats_zt )
+      call stat_update_var( istdev_chi_1, pdf_params%stdev_chi_1, stats_zt )
+      call stat_update_var( istdev_chi_2, pdf_params%stdev_chi_2, stats_zt )
+      call stat_update_var( istdev_eta_1, pdf_params%stdev_eta_1, stats_zt )
+      call stat_update_var( istdev_eta_2, pdf_params%stdev_eta_2, stats_zt )
+      call stat_update_var( icovar_chi_eta_1, pdf_params%covar_chi_eta_1, stats_zt )
+      call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, stats_zt )
+      call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, stats_zt )
+      call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, stats_zt )
+      call stat_update_var( irrtthl, pdf_params%rrtthl, stats_zt )
+      call stat_update_var( icrt_1, pdf_params%crt_1, stats_zt )
+      call stat_update_var( icrt_2, pdf_params%crt_2, stats_zt )
+      call stat_update_var( icthl_1, pdf_params%cthl_1, stats_zt )
+      call stat_update_var( icthl_2, pdf_params%cthl_2, stats_zt )
+      call stat_update_var( iwp2_zt, wp2_zt, stats_zt )
+      call stat_update_var( ithlp2_zt, thlp2_zt, stats_zt )
+      call stat_update_var( iwpthlp_zt, wpthlp_zt, stats_zt )
+      call stat_update_var( iwprtp_zt, wprtp_zt, stats_zt )
+      call stat_update_var( irtp2_zt, rtp2_zt, stats_zt )
+      call stat_update_var( irtpthlp_zt, rtpthlp_zt, stats_zt )
+      call stat_update_var( iup2_zt, up2_zt, stats_zt )
+      call stat_update_var( ivp2_zt, vp2_zt, stats_zt )
+      call stat_update_var( iupwp_zt, upwp_zt, stats_zt )
+      call stat_update_var( ivpwp_zt, vpwp_zt, stats_zt )
+      call stat_update_var( ia3_coef_zt, a3_coef_zt, stats_zt )
+      call stat_update_var( iwp3_on_wp2_zt, wp3_on_wp2_zt, stats_zt )
 
       if ( ichi > 0 ) then
         ! Determine 's' from Mellor (1977) (extended liquid water)
         chi(:) = pdf_params%mixt_frac * pdf_params%chi_1 &
                     + (1.0_core_rknd-pdf_params%mixt_frac) * pdf_params%chi_2
-        call stat_update_var( ichi, chi, zt )
+        call stat_update_var( ichi, chi, stats_zt )
       end if
 
       ! Calculate variance of chi
@@ -1987,20 +2014,20 @@ module stats_clubb_utilities
         chip2 = compute_variance_binormal( chi, pdf_params%chi_1, pdf_params%chi_2, &
                                          pdf_params%stdev_chi_1, pdf_params%stdev_chi_2, &
                                          pdf_params%mixt_frac )
-        call stat_update_var( ichip2, chip2, zt )
+        call stat_update_var( ichip2, chip2, stats_zt )
       end if
 
       if ( sclr_dim > 0 ) then
         do isclr=1, sclr_dim
-          call stat_update_var( isclrm(isclr), sclrm(:,isclr), zt )
-          call stat_update_var( isclrm_f(isclr), sclrm_forcing(:,isclr),  zt )
+          call stat_update_var( isclrm(isclr), sclrm(:,isclr), stats_zt )
+          call stat_update_var( isclrm_f(isclr), sclrm_forcing(:,isclr),  stats_zt )
         end do
       end if
 
       if ( edsclr_dim > 0 ) then
         do isclr = 1, edsclr_dim
-          call stat_update_var( iedsclrm(isclr), edsclrm(:,isclr), zt )
-          call stat_update_var( iedsclrm_f(isclr), edsclrm_forcing(:,isclr), zt )
+          call stat_update_var( iedsclrm(isclr), edsclrm(:,isclr), stats_zt )
+          call stat_update_var( iedsclrm_f(isclr), edsclrm_forcing(:,isclr), stats_zt )
         end do
       end if
 
@@ -2012,67 +2039,67 @@ module stats_clubb_utilities
             rcm_in_cloud(:) = rcm
         end where
 
-        call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
+        call stat_update_var( ircm_in_cloud, rcm_in_cloud, stats_zt )
       end if
 
-      ! zm variables
+      ! stats_zm variables
 
-      call stat_update_var( iwp2, wp2, zm )
-      call stat_update_var( iwp3_zm, wp3_zm, zm )
-      call stat_update_var( irtp2, rtp2, zm )
-      call stat_update_var( ithlp2, thlp2, zm )
-      call stat_update_var( irtpthlp, rtpthlp, zm )
-      call stat_update_var( iwprtp, wprtp, zm )
-      call stat_update_var( iwpthlp, wpthlp, zm )
-      call stat_update_var( iwp4, wp4, zm )
-      call stat_update_var( iwpthvp, wpthvp, zm )
-      call stat_update_var( irtpthvp, rtpthvp, zm )
-      call stat_update_var( ithlpthvp, thlpthvp, zm )
-      call stat_update_var( itau_zm, tau_zm, zm )
-      call stat_update_var( iKh_zm, Kh_zm, zm )
-      call stat_update_var( iwprcp, wprcp, zm )
-      call stat_update_var( irc_coef, rc_coef, zm )
-      call stat_update_var( ithlprcp, thlprcp, zm )
-      call stat_update_var( irtprcp, rtprcp, zm )
-      call stat_update_var( ircp2, rcp2, zm )
-      call stat_update_var( iupwp, upwp, zm )
-      call stat_update_var( ivpwp, vpwp, zm )
-      call stat_update_var( ivp2, vp2, zm )
-      call stat_update_var( iup2, up2, zm )
-      call stat_update_var( irho_zm, rho_zm, zm )
-      call stat_update_var( isigma_sqd_w, sigma_sqd_w, zm )
-      call stat_update_var( irho_ds_zm, rho_ds_zm, zm )
-      call stat_update_var( ithv_ds_zm, thv_ds_zm, zm )
-      call stat_update_var( iem, em, zm )
-      call stat_update_var( iFrad, Frad, zm )
+      call stat_update_var( iwp2, wp2, stats_zm )
+      call stat_update_var( iwp3_zm, wp3_zm, stats_zm )
+      call stat_update_var( irtp2, rtp2, stats_zm )
+      call stat_update_var( ithlp2, thlp2, stats_zm )
+      call stat_update_var( irtpthlp, rtpthlp, stats_zm )
+      call stat_update_var( iwprtp, wprtp, stats_zm )
+      call stat_update_var( iwpthlp, wpthlp, stats_zm )
+      call stat_update_var( iwp4, wp4, stats_zm )
+      call stat_update_var( iwpthvp, wpthvp, stats_zm )
+      call stat_update_var( irtpthvp, rtpthvp, stats_zm )
+      call stat_update_var( ithlpthvp, thlpthvp, stats_zm )
+      call stat_update_var( itau_zm, tau_zm, stats_zm )
+      call stat_update_var( iKh_zm, Kh_zm, stats_zm )
+      call stat_update_var( iwprcp, wprcp, stats_zm )
+      call stat_update_var( irc_coef, rc_coef, stats_zm )
+      call stat_update_var( ithlprcp, thlprcp, stats_zm )
+      call stat_update_var( irtprcp, rtprcp, stats_zm )
+      call stat_update_var( ircp2, rcp2, stats_zm )
+      call stat_update_var( iupwp, upwp, stats_zm )
+      call stat_update_var( ivpwp, vpwp, stats_zm )
+      call stat_update_var( ivp2, vp2, stats_zm )
+      call stat_update_var( iup2, up2, stats_zm )
+      call stat_update_var( irho_zm, rho_zm, stats_zm )
+      call stat_update_var( isigma_sqd_w, sigma_sqd_w, stats_zm )
+      call stat_update_var( irho_ds_zm, rho_ds_zm, stats_zm )
+      call stat_update_var( ithv_ds_zm, thv_ds_zm, stats_zm )
+      call stat_update_var( iem, em, stats_zm )
+      call stat_update_var( iFrad, Frad, stats_zm )
 
-      call stat_update_var( iSkw_velocity, Skw_velocity, zm )
-      call stat_update_var( ia3_coef, a3_coef, zm )
-      call stat_update_var( iwp3_on_wp2, wp3_on_wp2, zm )
+      call stat_update_var( iSkw_velocity, Skw_velocity, stats_zm )
+      call stat_update_var( ia3_coef, a3_coef, stats_zm )
+      call stat_update_var( iwp3_on_wp2, wp3_on_wp2, stats_zm )
 
-      call stat_update_var( icloud_frac_zm, cloud_frac_zm, zm )
-      call stat_update_var( iice_supersat_frac_zm, ice_supersat_frac_zm, zm )
-      call stat_update_var( ircm_zm, rcm_zm, zm )
-      call stat_update_var( irtm_zm, rtm_zm, zm )
-      call stat_update_var( ithlm_zm, thlm_zm, zm )
+      call stat_update_var( icloud_frac_zm, cloud_frac_zm, stats_zm )
+      call stat_update_var( iice_supersat_frac_zm, ice_supersat_frac_zm, stats_zm )
+      call stat_update_var( ircm_zm, rcm_zm, stats_zm )
+      call stat_update_var( irtm_zm, rtm_zm, stats_zm )
+      call stat_update_var( ithlm_zm, thlm_zm, stats_zm )
 
       if ( sclr_dim > 0 ) then
         do isclr=1, sclr_dim
-          call stat_update_var( isclrp2(isclr), sclrp2(:,isclr), zm )
-          call stat_update_var( isclrprtp(isclr), sclrprtp(:,isclr), zm )
-          call stat_update_var( isclrpthvp(isclr), sclrpthvp(:,isclr), zm )
-          call stat_update_var( isclrpthlp(isclr), sclrpthlp(:,isclr), zm )
-          call stat_update_var( isclrprcp(isclr), sclrprcp(:,isclr), zm )
-          call stat_update_var( iwpsclrp(isclr), wpsclrp(:,isclr), zm )
-          call stat_update_var( iwp2sclrp(isclr), wp2sclrp(:,isclr), zm )
-          call stat_update_var( iwpsclrp2(isclr), wpsclrp2(:,isclr), zm )
-          call stat_update_var( iwpsclrprtp(isclr), wpsclrprtp(:,isclr), zm )
-          call stat_update_var( iwpsclrpthlp(isclr), wpsclrpthlp(:,isclr), zm )
+          call stat_update_var( isclrp2(isclr), sclrp2(:,isclr), stats_zm )
+          call stat_update_var( isclrprtp(isclr), sclrprtp(:,isclr), stats_zm )
+          call stat_update_var( isclrpthvp(isclr), sclrpthvp(:,isclr), stats_zm )
+          call stat_update_var( isclrpthlp(isclr), sclrpthlp(:,isclr), stats_zm )
+          call stat_update_var( isclrprcp(isclr), sclrprcp(:,isclr), stats_zm )
+          call stat_update_var( iwpsclrp(isclr), wpsclrp(:,isclr), stats_zm )
+          call stat_update_var( iwp2sclrp(isclr), wp2sclrp(:,isclr), stats_zm )
+          call stat_update_var( iwpsclrp2(isclr), wpsclrp2(:,isclr), stats_zm )
+          call stat_update_var( iwpsclrprtp(isclr), wpsclrprtp(:,isclr), stats_zm )
+          call stat_update_var( iwpsclrpthlp(isclr), wpsclrpthlp(:,isclr), stats_zm )
         end do
       end if
       if ( edsclr_dim > 0 ) then
         do isclr = 1, edsclr_dim
-          call stat_update_var( iwpedsclrp(isclr), wpedsclrp(:,isclr), zm )
+          call stat_update_var( iwpedsclrp(isclr), wpedsclrp(:,isclr), stats_zm )
         end do
       end if
 
@@ -2084,12 +2111,12 @@ module stats_clubb_utilities
         enddo
         shear(gr%nz) = 0.0_core_rknd
       end if
-      call stat_update_var( ishear, shear, zm )
+      call stat_update_var( ishear, shear, stats_zm )
 
-      ! sfc variables
+      ! stats_sfc variables
 
       ! Cloud cover
-      call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nz) ), sfc )
+      call stat_update_var_pt( icc, 1, maxval( cloud_frac(1:gr%nz) ), stats_sfc )
 
       ! Cloud base
       if ( iz_cloud_base > 0 ) then
@@ -2103,13 +2130,14 @@ module stats_clubb_utilities
 
           ! Use linear interpolation to find the exact height of the
           ! rc_tol kg/kg level.  Brian.
-          call stat_update_var_pt( iz_cloud_base, 1, lin_interpolate_two_points( rc_tol, rcm(k),  &
-                                   rcm(k-1), gr%zt(k), gr%zt(k-1) ), sfc )
+          call stat_update_var_pt( iz_cloud_base, 1, lin_interpolate_two_points( rc_tol, rcm(k), &
+                                   rcm(k-1), gr%zt(k), gr%zt(k-1) ), stats_sfc )
 
         else
 
           ! Set the cloud base output to -10m, if it's clear. 
-          call stat_update_var_pt( iz_cloud_base, 1, -10.0_core_rknd , sfc ) ! Known magic number
+          ! Known magic number
+          call stat_update_var_pt( iz_cloud_base, 1, -10.0_core_rknd , stats_sfc )
  
         end if ! k > 1 and k < gr%nz
 
@@ -2123,7 +2151,7 @@ module stats_clubb_utilities
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
                  rcm(2:gr%nz), gr%invrs_dzt(2:gr%nz) )
 
-        call stat_update_var_pt( ilwp, 1, xtmp, sfc )
+        call stat_update_var_pt( ilwp, 1, xtmp, stats_sfc )
 
       end if
 
@@ -2135,7 +2163,7 @@ module stats_clubb_utilities
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
                  ( rtm(2:gr%nz) - rcm(2:gr%nz) ), gr%invrs_dzt(2:gr%nz) )
 
-        call stat_update_var_pt( ivwp, 1, xtmp, sfc )
+        call stat_update_var_pt( ivwp, 1, xtmp, stats_sfc )
 
       end if
 
@@ -2151,25 +2179,25 @@ module stats_clubb_utilities
       call stat_update_var_pt( ithlm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
                          thlm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of rtm.
       call stat_update_var_pt( irtm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
                          rtm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of um.
       call stat_update_var_pt( ium_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
                          um(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of vm.
       call stat_update_var_pt( ivm_vert_avg, 1,  &
            vertical_avg( (gr%nz-2+1), rho_ds_zt(2:gr%nz), &
                          vm(2:gr%nz), gr%invrs_dzt(2:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of momentum level variables.
 
@@ -2181,31 +2209,31 @@ module stats_clubb_utilities
       call stat_update_var_pt( iwp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
                          wp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of up2.
       call stat_update_var_pt( iup2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
                          up2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of vp2.
       call stat_update_var_pt( ivp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
                          vp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of rtp2.
       call stat_update_var_pt( irtp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
                          rtp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
       ! Vertical average of thlp2.
       call stat_update_var_pt( ithlp2_vert_avg, 1,  &
            vertical_avg( (gr%nz-1+1), rho_ds_zm(1:gr%nz), &
                          thlp2(1:gr%nz), gr%invrs_dzm(1:gr%nz) ), &
-                               sfc )
+                               stats_sfc )
 
 
     end if ! l_stats_samp
@@ -2232,7 +2260,7 @@ module stats_clubb_utilities
       iiNrm, iiNsm, iiNim, iiNgm
 
     use stats_variables, only: &
-      sfc, & ! Variable(s)
+      stats_sfc, & ! Variable(s)
       irrm, & 
       irsm, & 
       irim, & 
@@ -2253,7 +2281,7 @@ module stats_clubb_utilities
       stat_update_var_pt
 
     use stats_variables, only: &
-      zt, & ! Variables
+      stats_zt, & ! Variables
       l_stats_samp
 
     use clubb_precision, only: &
@@ -2276,36 +2304,36 @@ module stats_clubb_utilities
     if ( l_stats_samp ) then
 
       if ( iirrm > 0 ) then
-        call stat_update_var( irrm, hydromet(:,iirrm), zt )
+        call stat_update_var( irrm, hydromet(:,iirrm), stats_zt )
       end if
 
       if ( iirsm > 0 ) then
-        call stat_update_var( irsm, hydromet(:,iirsm), zt )
+        call stat_update_var( irsm, hydromet(:,iirsm), stats_zt )
       end if
 
       if ( iirim > 0 ) then
-        call stat_update_var( irim, hydromet(:,iirim), zt )
+        call stat_update_var( irim, hydromet(:,iirim), stats_zt )
       end if
 
       if ( iirgm > 0 ) then
         call stat_update_var( irgm,  & 
-                              hydromet(:,iirgm), zt )
+                              hydromet(:,iirgm), stats_zt )
       end if
 
       if ( iiNim > 0 ) then
-        call stat_update_var( iNim, hydromet(:,iiNim), zt )
+        call stat_update_var( iNim, hydromet(:,iiNim), stats_zt )
       end if
 
       if ( iiNrm > 0 ) then
-        call stat_update_var( iNrm, hydromet(:,iiNrm), zt )
+        call stat_update_var( iNrm, hydromet(:,iiNrm), stats_zt )
       end if
 
       if ( iiNsm > 0 ) then
-        call stat_update_var( iNsm, hydromet(:,iiNsm), zt )
+        call stat_update_var( iNsm, hydromet(:,iiNsm), stats_zt )
       end if
 
       if ( iiNgm > 0 ) then
-        call stat_update_var( iNgm, hydromet(:,iiNgm), zt )
+        call stat_update_var( iNgm, hydromet(:,iiNgm), stats_zt )
       end if
 
       ! Snow Water Path
@@ -2317,7 +2345,7 @@ module stats_clubb_utilities
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
                  hydromet(2:gr%nz,iirsm), gr%invrs_dzt(2:gr%nz) )
 
-        call stat_update_var_pt( iswp, 1, xtmp, sfc )
+        call stat_update_var_pt( iswp, 1, xtmp, stats_sfc )
 
       end if ! iswp > 0 .and. iirsm > 0
 
@@ -2329,7 +2357,7 @@ module stats_clubb_utilities
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
                  hydromet(2:gr%nz,iirim), gr%invrs_dzt(2:gr%nz) )
 
-        call stat_update_var_pt( iiwp, 1, xtmp, sfc )
+        call stat_update_var_pt( iiwp, 1, xtmp, stats_sfc )
 
       end if
 
@@ -2341,7 +2369,7 @@ module stats_clubb_utilities
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
                  hydromet(2:gr%nz,iirrm), gr%invrs_dzt(2:gr%nz) )
 
-        call stat_update_var_pt( irwp, 1, xtmp, sfc )
+        call stat_update_var_pt( irwp, 1, xtmp, stats_sfc )
 
       end if ! irwp > 0 .and. irrm > 0
     end if ! l_stats_samp
@@ -2403,7 +2431,7 @@ module stats_clubb_utilities
         stat_update_var ! Procedure(s)
 
     use stats_variables, only: &
-      lh_zt, & ! Variables
+      stats_lh_zt, & ! Variables
       l_stats_samp
 
     use clubb_precision, only: &
@@ -2423,52 +2451,52 @@ module stats_clubb_utilities
 
     if ( l_stats_samp ) then
 
-      call stat_update_var( ilh_thlm_mc, lh_thlm_mc, lh_zt )
-      call stat_update_var( ilh_rcm_mc, lh_rcm_mc, lh_zt )
-      call stat_update_var( ilh_rvm_mc, lh_rvm_mc, lh_zt )
+      call stat_update_var( ilh_thlm_mc, lh_thlm_mc, stats_lh_zt )
+      call stat_update_var( ilh_rcm_mc, lh_rcm_mc, stats_lh_zt )
+      call stat_update_var( ilh_rvm_mc, lh_rvm_mc, stats_lh_zt )
 
-      call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, lh_zt )
+      call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, stats_lh_zt )
 
       if ( iirrm > 0 ) then
-        call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirrm), lh_zt )
+        call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirrm), stats_lh_zt )
       end if
 
       if ( iirsm > 0 ) then
-        call stat_update_var( ilh_rsm_mc, lh_hydromet_mc(:,iirsm), lh_zt )
+        call stat_update_var( ilh_rsm_mc, lh_hydromet_mc(:,iirsm), stats_lh_zt )
       end if
 
       if ( iirim > 0 ) then
-        call stat_update_var( ilh_rim_mc, lh_hydromet_mc(:,iirim), lh_zt )
+        call stat_update_var( ilh_rim_mc, lh_hydromet_mc(:,iirim), stats_lh_zt )
       end if
 
       if ( iirgm > 0 ) then
-        call stat_update_var( ilh_rgm_mc, lh_hydromet_mc(:,iirgm), lh_zt )
+        call stat_update_var( ilh_rgm_mc, lh_hydromet_mc(:,iirgm), stats_lh_zt )
       end if
 
       if ( iiNim > 0 ) then
-        call stat_update_var( ilh_Nim_mc, lh_hydromet_mc(:,iiNim), lh_zt )
+        call stat_update_var( ilh_Nim_mc, lh_hydromet_mc(:,iiNim), stats_lh_zt )
       end if
 
       if ( iiNrm > 0 ) then
-        call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNrm), lh_zt )
+        call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNrm), stats_lh_zt )
       end if
 
       if ( iiNsm > 0 ) then
-        call stat_update_var( ilh_Nsm_mc, lh_hydromet_mc(:,iiNsm), lh_zt )
+        call stat_update_var( ilh_Nsm_mc, lh_hydromet_mc(:,iiNsm), stats_lh_zt )
       end if
 
       if ( iiNgm > 0 ) then
-        call stat_update_var( ilh_Ngm_mc, lh_hydromet_mc(:,iiNgm), lh_zt )
+        call stat_update_var( ilh_Ngm_mc, lh_hydromet_mc(:,iiNgm), stats_lh_zt )
       end if
 
-      call stat_update_var( iAKm, AKm, lh_zt )
-      call stat_update_var( ilh_AKm, lh_AKm, lh_zt)
-      call stat_update_var( ilh_rcm_avg, lh_rcm_avg, lh_zt )
-      call stat_update_var( iAKstd, AKstd, lh_zt )
-      call stat_update_var( iAKstd_cld, AKstd_cld, lh_zt )
+      call stat_update_var( iAKm, AKm, stats_lh_zt )
+      call stat_update_var( ilh_AKm, lh_AKm, stats_lh_zt)
+      call stat_update_var( ilh_rcm_avg, lh_rcm_avg, stats_lh_zt )
+      call stat_update_var( iAKstd, AKstd, stats_lh_zt )
+      call stat_update_var( iAKstd_cld, AKstd_cld, stats_lh_zt )
 
-      call stat_update_var( iAKm_rcm, AKm_rcm, lh_zt)
-      call stat_update_var( iAKm_rcc, AKm_rcc, lh_zt )
+      call stat_update_var( iAKm_rcm, AKm_rcm, stats_lh_zt)
+      call stat_update_var( iAKm_rcc, AKm_rcc, stats_lh_zt )
 
     end if ! l_stats_samp
 
@@ -2484,13 +2512,13 @@ module stats_clubb_utilities
     !-----------------------------------------------------------------------
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        lh_zt, &
-        lh_sfc, &
-        zm, &
-        rad_zt, &
-        rad_zm, & 
-        sfc, & 
+        stats_zt,  & ! Variable(s)
+        stats_lh_zt, &
+        stats_lh_sfc, &
+        stats_zm, &
+        stats_rad_zt, &
+        stats_rad_zm, & 
+        stats_sfc, & 
         l_netcdf, & 
         l_stats, &
         l_output_rad_files, &
@@ -2601,32 +2629,32 @@ module stats_clubb_utilities
 
     if ( l_stats .and. l_netcdf ) then
 #ifdef NETCDF
-      call close_netcdf( zt%file )
-      call close_netcdf( lh_zt%file )
-      call close_netcdf( lh_sfc%file )
-      call close_netcdf( zm%file )
-      call close_netcdf( rad_zt%file )
-      call close_netcdf( rad_zm%file )
-      call close_netcdf( sfc%file )
+      call close_netcdf( stats_zt%file )
+      call close_netcdf( stats_lh_zt%file )
+      call close_netcdf( stats_lh_sfc%file )
+      call close_netcdf( stats_zm%file )
+      call close_netcdf( stats_rad_zt%file )
+      call close_netcdf( stats_rad_zm%file )
+      call close_netcdf( stats_sfc%file )
 #else
       stop "This program was not compiled with netCDF support"
 #endif
     end if
 
     if ( l_stats ) then
-      ! De-allocate all zt variables
-      deallocate( zt%z )
+      ! De-allocate all stats_zt variables
+      deallocate( stats_zt%z )
 
-      deallocate( zt%accum_field_values )
+      deallocate( stats_zt%accum_field_values )
 
-      deallocate( zt%accum_num_samples )
-      deallocate( zt%l_in_update )
+      deallocate( stats_zt%accum_num_samples )
+      deallocate( stats_zt%l_in_update )
 
 
-      deallocate( zt%file%var )
-      deallocate( zt%file%z )
-      deallocate( zt%file%rlat )
-      deallocate( zt%file%rlon )
+      deallocate( stats_zt%file%var )
+      deallocate( stats_zt%file%z )
+      deallocate( stats_zt%file%rlat )
+      deallocate( stats_zt%file%rlon )
 
       deallocate ( ztscr01 )
       deallocate ( ztscr02 )
@@ -2651,46 +2679,46 @@ module stats_clubb_utilities
       deallocate ( ztscr21 )
 
       if ( l_silhs_out ) then
-        ! De-allocate all lh_zt variables
-        deallocate( lh_zt%z )
+        ! De-allocate all stats_lh_zt variables
+        deallocate( stats_lh_zt%z )
 
-        deallocate( lh_zt%accum_field_values )
+        deallocate( stats_lh_zt%accum_field_values )
 
-        deallocate( lh_zt%accum_num_samples )
-        deallocate( lh_zt%l_in_update )
-
-
-        deallocate( lh_zt%file%var )
-        deallocate( lh_zt%file%z )
-        deallocate( lh_zt%file%rlat )
-        deallocate( lh_zt%file%rlon )
-
-        ! De-allocate all lh_sfc variables
-        deallocate( lh_sfc%z )
-
-        deallocate( lh_sfc%accum_field_values )
-
-        deallocate( lh_sfc%accum_num_samples )
-        deallocate( lh_sfc%l_in_update )
+        deallocate( stats_lh_zt%accum_num_samples )
+        deallocate( stats_lh_zt%l_in_update )
 
 
-        deallocate( lh_sfc%file%var )
-        deallocate( lh_sfc%file%z )
-        deallocate( lh_sfc%file%rlat )
-        deallocate( lh_sfc%file%rlon )
+        deallocate( stats_lh_zt%file%var )
+        deallocate( stats_lh_zt%file%z )
+        deallocate( stats_lh_zt%file%rlat )
+        deallocate( stats_lh_zt%file%rlon )
+
+        ! De-allocate all stats_lh_sfc variables
+        deallocate( stats_lh_sfc%z )
+
+        deallocate( stats_lh_sfc%accum_field_values )
+
+        deallocate( stats_lh_sfc%accum_num_samples )
+        deallocate( stats_lh_sfc%l_in_update )
+
+
+        deallocate( stats_lh_sfc%file%var )
+        deallocate( stats_lh_sfc%file%z )
+        deallocate( stats_lh_sfc%file%rlat )
+        deallocate( stats_lh_sfc%file%rlon )
       end if ! l_silhs_out
 
-      ! De-allocate all zm variables
-      deallocate( zm%z )
+      ! De-allocate all stats_zm variables
+      deallocate( stats_zm%z )
 
-      deallocate( zm%accum_field_values )
-      deallocate( zm%accum_num_samples )
+      deallocate( stats_zm%accum_field_values )
+      deallocate( stats_zm%accum_num_samples )
 
-      deallocate( zm%file%var )
-      deallocate( zm%file%z )
-      deallocate( zm%file%rlat )
-      deallocate( zm%file%rlon )
-      deallocate( zm%l_in_update )
+      deallocate( stats_zm%file%var )
+      deallocate( stats_zm%file%z )
+      deallocate( stats_zm%file%rlat )
+      deallocate( stats_zm%file%rlon )
+      deallocate( stats_zm%l_in_update )
 
       deallocate ( zmscr01 )
       deallocate ( zmscr02 )
@@ -2711,41 +2739,41 @@ module stats_clubb_utilities
       deallocate ( zmscr17 )
 
       if ( l_output_rad_files ) then
-        ! De-allocate all rad_zt variables
-        deallocate( rad_zt%z )
+        ! De-allocate all stats_rad_zt variables
+        deallocate( stats_rad_zt%z )
 
-        deallocate( rad_zt%accum_field_values )
-        deallocate( rad_zt%accum_num_samples )
+        deallocate( stats_rad_zt%accum_field_values )
+        deallocate( stats_rad_zt%accum_num_samples )
 
-        deallocate( rad_zt%file%var )
-        deallocate( rad_zt%file%z )
-        deallocate( rad_zt%file%rlat )
-        deallocate( rad_zt%file%rlon )
-        deallocate( rad_zt%l_in_update )
+        deallocate( stats_rad_zt%file%var )
+        deallocate( stats_rad_zt%file%z )
+        deallocate( stats_rad_zt%file%rlat )
+        deallocate( stats_rad_zt%file%rlon )
+        deallocate( stats_rad_zt%l_in_update )
 
-        ! De-allocate all rad_zm variables
-        deallocate( rad_zm%z )
+        ! De-allocate all stats_rad_zm variables
+        deallocate( stats_rad_zm%z )
 
-        deallocate( rad_zm%accum_field_values )
-        deallocate( rad_zm%accum_num_samples )
+        deallocate( stats_rad_zm%accum_field_values )
+        deallocate( stats_rad_zm%accum_num_samples )
 
-        deallocate( rad_zm%file%var )
-        deallocate( rad_zm%file%z )
-        deallocate( rad_zm%l_in_update )
+        deallocate( stats_rad_zm%file%var )
+        deallocate( stats_rad_zm%file%z )
+        deallocate( stats_rad_zm%l_in_update )
 
       end if ! l_output_rad_files
 
-      ! De-allocate all sfc variables
-      deallocate( sfc%z )
+      ! De-allocate all stats_sfc variables
+      deallocate( stats_sfc%z )
 
-      deallocate( sfc%accum_field_values )
-      deallocate( sfc %accum_num_samples )
-      deallocate( sfc%l_in_update )
+      deallocate( stats_sfc%accum_field_values )
+      deallocate( stats_sfc %accum_num_samples )
+      deallocate( stats_sfc%l_in_update )
 
-      deallocate( sfc%file%var )
-      deallocate( sfc%file%z )
-      deallocate( sfc%file%rlat )
-      deallocate( sfc%file%rlon )
+      deallocate( stats_sfc%file%var )
+      deallocate( stats_sfc%file%z )
+      deallocate( stats_sfc%file%rlat )
+      deallocate( stats_sfc%file%rlon )
 
       ! De-allocate scalar indices
       deallocate( isclrm )

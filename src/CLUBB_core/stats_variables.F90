@@ -31,7 +31,7 @@ module stats_variables
     l_output_rad_files = .false., & ! Flag to turn off radiation statistics output
     l_netcdf           = .false., & ! Output to NetCDF format
     l_grads            = .false., & ! Output to GrADS format
-    l_silhs_out        = .false., & ! Output SILHS files (lh_zt and lh_sfc)
+    l_silhs_out        = .false., & ! Output SILHS files (stats_lh_zt and stats_lh_sfc)
     l_allow_small_stats_tout = .false. ! Do not stop if output timestep is too low for
                       ! requested format, e.g. l_grads = .true. and
                       ! stats_tout < 60.0
@@ -47,17 +47,17 @@ module stats_variables
 
   character(len=200), public ::  & 
     fname_zt     = '', & ! Name of the stats file for thermodynamic grid fields
-    fname_lh_zt  = '', & ! Name of the stats file for LH variables on the zt grid
-    fname_lh_sfc = '', & ! Name of the stats file for LH variables on the zt grid
+    fname_lh_zt  = '', & ! Name of the stats file for LH variables on the stats_zt grid
+    fname_lh_sfc = '', & ! Name of the stats file for LH variables on the stats_zt grid
     fname_zm     = '', & ! Name of the stats file for momentum grid fields
-    fname_rad_zt = '', & ! Name of the stats file for the zt radiation grid fields
-    fname_rad_zm = '', & ! Name of the stats file for the zm radiation grid fields
+    fname_rad_zt = '', & ! Name of the stats file for the stats_zt radiation grid fields
+    fname_rad_zm = '', & ! Name of the stats file for the stats_zm radiation grid fields
     fname_sfc    = ''    ! Name of the stats file for surface only fields
 
 !$omp   threadprivate(fname_zt, fname_lh_zt, fname_lh_sfc, fname_zm, fname_rad_zt, &
 !$omp     fname_rad_zm, fname_sfc)
 
-!       Indices for statistics in zt file
+!       Indices for statistics in stats_zt file
 
   integer, public :: & 
      ithlm = 0, & 
@@ -244,7 +244,7 @@ module stats_variables
    irfrzm = 0
 !$omp threadprivate(irfrzm)
 
-  ! Skewness functions on zt grid
+  ! Skewness functions on stats_zt grid
   integer, public :: &
     iC11_Skw_fnc = 0
 
@@ -867,7 +867,7 @@ module stats_variables
 !$omp   iQI_INST, iQS_INST, iQG_INST, iNC_INST, iNR_INST, iNI_INST, iNS_INST, &
 !$omp   iNG_INST, iT_in_K_mc, ihl_on_Cp_residual, iqto_residual  )
 
-  ! Indices for statistics in zm file
+  ! Indices for statistics in stats_zm file
   integer, public :: & 
      iwp2 = 0, & 
      irtp2 = 0, & 
@@ -917,7 +917,7 @@ module stats_variables
 !$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
 
-  ! Skewness Functions on zm grid
+  ! Skewness Functions on stats_zm grid
   integer, public :: &
     igamma_Skw_fnc = 0,  &
     iC6rt_Skw_fnc = 0,   &
@@ -1136,7 +1136,7 @@ module stats_variables
 
 !$omp threadprivate(iwpedsclrp)
 
-  ! Indices for statistics in rad_zt file
+  ! Indices for statistics in stats_rad_zt file
   integer, public :: &
     iT_in_K_rad = 0, &
     ircil_rad = 0, &
@@ -1156,7 +1156,7 @@ module stats_variables
 !$omp   iradht_rad, iradht_LW_rad, iradht_SW_rad, &
 !$omp   ip_in_mb_rad, isp_humidity_rad )
 
-  ! Indices for statistics in rad_zm file
+  ! Indices for statistics in stats_rad_zm file
   integer, public :: &
     iFrad_LW_rad = 0, &
     iFrad_SW_rad = 0, &
@@ -1168,7 +1168,7 @@ module stats_variables
 !$omp threadprivate(iFrad_LW_rad, iFrad_SW_rad, iFrad_SW_up_rad)
 !$omp threadprivate(iFrad_LW_up_rad, iFrad_SW_down_rad, iFrad_LW_down_rad)
 
-  ! Indices for statistics in sfc file
+  ! Indices for statistics in stats_sfc file
 
   integer, public :: & 
     iustar = 0, &
@@ -1271,15 +1271,16 @@ module stats_variables
 
   ! Variables that contains all the statistics
 
-  type (stats), target, public :: zt,   &    ! zt grid
-                                  zm,   &    ! zm grid
-                                  lh_zt,  &  ! lh_zt grid
-                                  lh_sfc,  & ! lh_sfc grid
-                                  rad_zt,  & ! rad_zt grid
-                                  rad_zm,  & ! rad_zm grid
-                                  sfc        ! sfc
+  type (stats), target, public :: stats_zt,   &    ! stats_zt grid
+                                  stats_zm,   &    ! stats_zm grid
+                                  stats_lh_zt,  &  ! stats_lh_zt grid
+                                  stats_lh_sfc,  & ! stats_lh_sfc grid
+                                  stats_rad_zt,  & ! stats_rad_zt grid
+                                  stats_rad_zm,  & ! stats_rad_zm grid
+                                  stats_sfc        ! stats_sfc
 
-!$omp threadprivate(zt, zm, lh_zt, lh_sfc, rad_zt, rad_zm, sfc)
+!$omp threadprivate(stats_zt, stats_zm, stats_lh_zt, stats_lh_sfc)
+!$omp threadprivate(stats_rad_zt, stats_rad_zm, stats_sfc)
 
   ! Scratch space
 

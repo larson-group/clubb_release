@@ -75,8 +75,8 @@ module mixed_moment_PDF_integrals
         iwp2hmp,      & ! Variable(s)
         irtphmp,      &
         ithlphmp,     &
-        zt,           &
-        zm,           &
+        stats_zt,           &
+        stats_zm,           &
         l_stats_samp
 
     use clubb_precision, only: &
@@ -341,17 +341,17 @@ module mixed_moment_PDF_integrals
        do hm_idx = 1, hydromet_dim, 1
 
           if ( iwp2hmp(hm_idx) > 0 ) then
-             call stat_update_var( iwp2hmp(hm_idx), wp2hmp(:,hm_idx), zt )
+             call stat_update_var( iwp2hmp(hm_idx), wp2hmp(:,hm_idx), stats_zt )
           endif ! iwp2hmp(hm_idx) > 0
 
           if ( irtphmp(hm_idx) > 0 ) then
              call stat_update_var( irtphmp(hm_idx), &
-                                   zt2zm( rtphmp_zt(:,hm_idx) ), zm )
+                                   zt2zm( rtphmp_zt(:,hm_idx) ), stats_zm )
           endif ! irtphmp(hm_idx) > 0
 
           if ( ithlphmp(hm_idx) > 0 ) then
              call stat_update_var( ithlphmp(hm_idx), &
-                                   zt2zm( thlphmp_zt(:,hm_idx) ), zm )
+                                   zt2zm( thlphmp_zt(:,hm_idx) ), stats_zm )
           endif ! ithlphmp(hm_idx) > 0
 
        enddo ! hm_idx = 1, hydromet_dim, 1

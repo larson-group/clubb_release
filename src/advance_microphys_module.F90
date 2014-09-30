@@ -89,9 +89,9 @@ module advance_microphys_module
         iirrm            ! Variable(s)
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        zm,  & 
-        sfc, & 
+        stats_zt,  & ! Variable(s)
+        stats_zm,  &
+        stats_sfc, &
         l_stats_samp
 
     !use stats_variables, only: & 
@@ -315,8 +315,8 @@ module advance_microphys_module
     endif ! l_predict_Nc
 
     if ( l_stats_samp ) then
-      call stat_update_var( iNcm, Ncm, zt )
-      call stat_update_var( iNc_in_cloud, Nc_in_cloud, zt )
+      call stat_update_var( iNcm, Ncm, stats_zt )
+      call stat_update_var( iNc_in_cloud, Nc_in_cloud, stats_zt )
     endif ! l_stats_samp
 
     if ( l_stats_samp .and. iirrm > 0 ) then
@@ -341,7 +341,7 @@ module advance_microphys_module
                                  zero ) &
                             * ( rho / rho_lw ) & 
                             * sec_per_day &
-                            * mm_per_m, zt )
+                            * mm_per_m, stats_zt )
 
       ! Precipitation Flux (W/m^2) is defined on momentum levels.  The
       ! precipitation flux is given by the equation:
@@ -358,7 +358,7 @@ module advance_microphys_module
                                      * hydromet_vel(:,iirrm) &
                                      + hydromet_vel_covar(:,iirrm) ), &
                                  zero ) &
-                            * rho_zm * Lv, zm )
+                            * rho_zm * Lv, stats_zm )
 
       ! Store values of surface fluxes for statistics
       ! See notes above.
@@ -371,7 +371,7 @@ module advance_microphys_module
                                       zero ) &
                                   * ( rho(2) / rho_lw ) & 
                                   * sec_per_day &
-                                  * mm_per_m, sfc )
+                                  * mm_per_m, stats_sfc )
       endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
@@ -379,11 +379,11 @@ module advance_microphys_module
                                         * hydromet_vel(1,iirrm) &
                                         + hydromet_vel_covar(1,iirrm) ), &
                                     zero ) &
-                               * rho_zm(1) * Lv, sfc )
+                               * rho_zm(1) * Lv, stats_sfc )
 
       ! Also store the value of surface rain water mixing ratio.
       call stat_update_var_pt( irrm_sfc, 1,  & 
-                               ( zt2zm( hydromet(:,iirrm), 1 ) ), sfc )
+                               ( zt2zm( hydromet(:,iirrm), 1 ) ), stats_sfc )
 
     endif ! l_stats_samp and iirrm > 0
 
@@ -541,8 +541,8 @@ module advance_microphys_module
         stat_end_update_pt
 
     use stats_variables, only: & 
-        zt,           &  ! Variable(s)
-        zm,           & 
+        stats_zt,           &  ! Variable(s)
+        stats_zm,           &
         l_stats_samp
 
     use array_index, only:  & 
@@ -639,14 +639,14 @@ module advance_microphys_module
        if ( l_stats_samp ) then
 
           ! Update explicit contributions to the hydrometeor species
-          call stat_update_var( ixrm_mc, hydromet_mc(:,i), zt )
+          call stat_update_var( ixrm_mc, hydromet_mc(:,i), stats_zt )
 
           ! Save prior value of the hydrometeors for determining total time
           ! tendency.
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
              call stat_begin_update( ixrm_bt, &
                                      hydromet(:,i) &
-                                     / dt, zt )
+                                     / dt, stats_zt )
           else
              ! The mean hydrometeor field at thermodynamic level k = 1 is simply
              ! set to the value of the mean hydrometeor field at k = 2.
@@ -654,7 +654,7 @@ module advance_microphys_module
              do k = 2, gr%nz, 1
                 call stat_begin_update_pt( ixrm_bt, k, &
                                            hydromet(k,i) &
-                                           / dt, zt )
+                                           / dt, stats_zt )
              enddo
           endif
 
@@ -803,7 +803,7 @@ module advance_microphys_module
           if ( iwphydrometp(i) > 0 ) then
 
              ! Covariance of vertical velocity and the hydrometeor.
-             call stat_update_var( iwphydrometp(i), wphydrometp(:,i), zm )
+             call stat_update_var( iwphydrometp(i), wphydrometp(:,i), stats_zm )
 
           endif
 
@@ -811,12 +811,12 @@ module advance_microphys_module
 
              ! Covariance of sedimentation velocity of r_r and r_r.
              call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrm), &
-                                   zm )
+                                   stats_zm )
 
           elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
 
              ! Covariance of sedimentation velocity of N_r and N_r.
-             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), zm )
+             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), stats_zm )
 
           endif
 
@@ -828,7 +828,7 @@ module advance_microphys_module
           if ( l_hydromet_sed(i) .and. l_upwind_diff_sed ) then
              call stat_end_update( ixrm_bt, &
                                    hydromet(:,i) &
-                                   / dt, zt )
+                                   / dt, stats_zt )
           else
              ! The mean hydrometeor field at thermodynamic level k = 1 is simply
              ! set to the value of the mean hydrometeor field at k = 2.  Don't
@@ -836,7 +836,7 @@ module advance_microphys_module
              do k = 2, gr%nz, 1
                 call stat_end_update_pt( ixrm_bt, k, &
                                          hydromet(k,i) &
-                                         / dt, zt )
+                                         / dt, stats_zt )
              enddo
           endif
 
@@ -901,8 +901,8 @@ module advance_microphys_module
         stat_end_update_pt
 
     use stats_variables, only: & 
-        zt,           & ! Variable(s)
-        zm,           & 
+        stats_zt,           & ! Variable(s)
+        stats_zm,           &
         l_stats_samp, &
         iNcm_bt,      &
         iNcm_mc,      &
@@ -985,7 +985,7 @@ module advance_microphys_module
     if ( l_stats_samp ) then
 
        ! Update explicit contributions to cloud droplet concentration.
-       call stat_update_var( iNcm_mc, Ncm_mc, zt )
+       call stat_update_var( iNcm_mc, Ncm_mc, stats_zt )
 
        ! Save prior value of Ncm for determining total time tendency.
        ! The value of Ncm at thermodynamic level k = 1 is simply set to the
@@ -995,11 +995,11 @@ module advance_microphys_module
              call stat_begin_update_pt( iNcm_bt, k, &
                                         ( Nc_in_cloud(k) &
                                          * max(cloud_frac(k),cloud_frac_min) ) &
-                                        / dt, zt )
+                                        / dt, stats_zt )
           else
              call stat_begin_update_pt( iNcm_bt, k, &
                                         Ncm(k) / dt, &
-                                        zt )
+                                        stats_zt )
           endif
        enddo
 
@@ -1105,7 +1105,7 @@ module advance_microphys_module
     ! Store the previous value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
        call stat_begin_update( iNcm_cl, &
-                               Ncm / dt, zt )
+                               Ncm / dt, stats_zt )
     endif
 
     if ( any( Ncm < Ncm_min ) ) then
@@ -1121,7 +1121,7 @@ module advance_microphys_module
     ! Enter the new value of Ncm for the effect of clipping.
     if ( l_stats_samp ) then
        call stat_end_update( iNcm_cl, &
-                             Ncm / dt, zt )
+                             Ncm / dt, stats_zt )
     endif
 
     ! Calculate the minimum threshold value for in-cloud mean cloud droplet
@@ -1156,7 +1156,7 @@ module advance_microphys_module
        if ( iwpNcp > 0 ) then
 
           ! Covariance of vertical velocity and N_c.
-          call stat_update_var( iwpNcp, wpNcp, zm )
+          call stat_update_var( iwpNcp, wpNcp, stats_zm )
 
        endif
 
@@ -1169,7 +1169,7 @@ module advance_microphys_module
        ! value of Ncm at k = 2.  Don't include budget stats for level k = 1.
        do k = 2, gr%nz, 1
           call stat_end_update_pt( iNcm_bt, k, &
-                                   Ncm(k) / dt, zt )
+                                   Ncm(k) / dt, stats_zt )
        enddo ! k = 2, gr%nz, 1
 
     endif ! l_stats_samp
@@ -1210,7 +1210,7 @@ module advance_microphys_module
         l_in_cloud_Nc_diff  ! Use in cloud values of Nc for diffusion
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
+        stats_zt,  & ! Variable(s)
         irrm_ma, & 
         irrm_sd, & 
         irrm_ts, & 
@@ -1384,14 +1384,14 @@ module advance_microphys_module
                ztscr01(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
                + ztscr02(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
                + ztscr03(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
-                                      zt )
+                                      stats_zt )
 
           else
 
              call stat_update_var_pt( ihmm_ma, k, & 
                                       ztscr01(k) * hmm(km1) & 
                                       + ztscr02(k) * hmm(k) & 
-                                      + ztscr03(k) * hmm(kp1), zt)
+                                      + ztscr03(k) * hmm(kp1), stats_zt)
 
           endif
 
@@ -1400,7 +1400,7 @@ module advance_microphys_module
              call stat_update_var_pt( ihmm_sd, k, & 
                                       ztscr04(k) * hmm(km1) & 
                                       + ztscr05(k) * hmm(k) & 
-                                      + ztscr06(k) * hmm(kp1), zt )
+                                      + ztscr06(k) * hmm(kp1), stats_zt )
           endif
 
           ! hmm term ts has both implicit and explicit components; call
@@ -1409,7 +1409,7 @@ module advance_microphys_module
              call stat_end_update_pt( ihmm_ts, k, & 
                                       ztscr07(k) * hmm(km1) & 
                                       + ztscr08(k) * hmm(k) & 
-                                      + ztscr09(k) * hmm(kp1), zt )
+                                      + ztscr09(k) * hmm(kp1), stats_zt )
           endif
 
           ! hmm term ta has both implicit and explicit components; call
@@ -1425,14 +1425,14 @@ module advance_microphys_module
                ztscr10(k) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
                + ztscr11(k) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
                + ztscr12(k) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
-                                         zt )
+                                         stats_zt )
 
              else
 
                 call stat_end_update_pt( ihmm_ta, k, & 
                                          ztscr10(k) * hmm(km1) & 
                                          + ztscr11(k) * hmm(k) & 
-                                         + ztscr12(k) * hmm(kp1), zt )
+                                         + ztscr12(k) * hmm(kp1), stats_zt )
 
              endif
 
@@ -1866,7 +1866,7 @@ module advance_microphys_module
         irrm_ts, &
         iNrm_ta, &
         iNrm_ts, &
-        zt, &
+        stats_zt, &
         l_stats_samp
 
     use stats_variables, only: &
@@ -2048,14 +2048,14 @@ module advance_microphys_module
               rhs_diff(3) * hmm(km1) * max( cloud_frac(k), cloud_frac_min ) & 
               + rhs_diff(2) * hmm(k) * max( cloud_frac(k), cloud_frac_min ) & 
               + rhs_diff(1) * hmm(kp1) * max( cloud_frac(k), cloud_frac_min ), &
-                                           zt )
+                                           stats_zt )
 
              else
 
                 call stat_begin_update_pt( ihmm_ta, k, & 
                                            rhs_diff(3) * hmm(km1) &
                                            + rhs_diff(2) * hmm(k)   &
-                                           + rhs_diff(1) * hmm(kp1), zt )
+                                           + rhs_diff(1) * hmm(kp1), stats_zt )
 
              endif
 
@@ -2072,7 +2072,7 @@ module advance_microphys_module
                                      rho_ds_zt(kp1), rho_ds_zt(k), &
                                      gr%invrs_dzt(k), gr%invrs_dzm(k), &
                                      invrs_rho_ds_zt(k), k ), &
-                                        zt )
+                                        stats_zt )
           endif ! ihmm_ts > 0 and l_sed
 
        endif ! l_stats_samp

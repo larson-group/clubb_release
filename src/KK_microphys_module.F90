@@ -449,8 +449,8 @@ module KK_microphys_module
     use stats_variables, only: &
         iVrrprrp_expcalc, &
         iVNrpNrp_expcalc, &
-        zm, &
-        zt, &
+        stats_zm, &
+        stats_zt, &
         irrm_src_adj, &
         iNrm_src_adj, &
         irrm_cond_adj, &
@@ -986,7 +986,7 @@ module KK_microphys_module
           ! calculated semi-implicitly.
           call stat_update_var( iVrrprrp_expcalc, &
                                 zt2zm( Vrrprrp_zt_impc * rrm &
-                                       + Vrrprrp_zt_expc ), zm )
+                                       + Vrrprrp_zt_expc ), stats_zm )
 
        endif
 
@@ -998,25 +998,25 @@ module KK_microphys_module
           ! calculated semi-implicitly.
           call stat_update_var( iVNrpNrp_expcalc, &
                                 zt2zm( VNrpNrp_zt_impc * Nrm &
-                                       + VNrpNrp_zt_expc ), zm )
+                                       + VNrpNrp_zt_expc ), stats_zm )
 
        endif
 
        ! Stats output for microphysics adjustment terms
        if ( irrm_src_adj > 0 ) then
-         call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, zt )
+         call stat_update_var( irrm_src_adj, adj_terms%rrm_src_adj, stats_zt )
        end if
 
        if ( iNrm_src_adj > 0 ) then
-         call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, zt )
+         call stat_update_var( iNrm_src_adj, adj_terms%Nrm_src_adj, stats_zt )
        end if
 
        if ( irrm_cond_adj > 0 ) then
-         call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, zt )
+         call stat_update_var( irrm_cond_adj, adj_terms%rrm_cond_adj, stats_zt )
        end if
 
        if ( iNrm_cond_adj > 0 ) then
-         call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, zt )
+         call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, stats_zt )
        end if
 
     endif ! l_stats_samp
@@ -1419,7 +1419,7 @@ module KK_microphys_module
 
     use stats_variables, only : &
         iKK_mvr_variance_zt, &
-        zt
+        stats_zt
 
     implicit none
 
@@ -1482,7 +1482,7 @@ module KK_microphys_module
                              precip_frac_1, precip_frac_2 )
 
           call stat_update_var_pt( iKK_mvr_variance_zt, level, &
-                                   KK_mvr_variance, zt )
+                                   KK_mvr_variance, stats_zt )
 
        endif ! iKK_mvr_variance_zt > 0
 
@@ -1508,7 +1508,7 @@ module KK_microphys_module
         core_rknd  ! Variable(s)
 
     use stats_variables, only: &
-        zt,              & ! Variable(s)
+        stats_zt,              & ! Variable(s)
         im_vol_rad_rain, &
         irrm_cond,       &
         irrm_auto,       &
@@ -1542,29 +1542,29 @@ module KK_microphys_module
 
        ! Mean rain water mixing ratio microphysics tendencies.
        if ( irrm_cond > 0 ) then
-          call stat_update_var_pt( irrm_cond, level, KK_evap_tndcy, zt )
+          call stat_update_var_pt( irrm_cond, level, KK_evap_tndcy, stats_zt )
        endif
 
        if ( irrm_auto > 0 ) then
-          call stat_update_var_pt( irrm_auto, level, KK_auto_tndcy, zt )
+          call stat_update_var_pt( irrm_auto, level, KK_auto_tndcy, stats_zt )
        endif
 
        if ( irrm_accr > 0 ) then
-          call stat_update_var_pt( irrm_accr, level, KK_accr_tndcy, zt )
+          call stat_update_var_pt( irrm_accr, level, KK_accr_tndcy, stats_zt )
        endif
 
        ! Rain drop mean volume radius.
        if ( im_vol_rad_rain > 0 ) then
-          call stat_update_var_pt( im_vol_rad_rain, level, KK_mean_vol_rad, zt )
+          call stat_update_var_pt( im_vol_rad_rain, level, KK_mean_vol_rad, stats_zt )
        endif
 
        ! Mean rain drop concentration microphysics tendencies.
        if ( iNrm_cond > 0 ) then
-          call stat_update_var_pt( iNrm_cond, level, KK_Nrm_evap_tndcy, zt )
+          call stat_update_var_pt( iNrm_cond, level, KK_Nrm_evap_tndcy, stats_zt )
        endif
 
        if ( iNrm_auto > 0 ) then
-          call stat_update_var_pt( iNrm_auto, level, KK_Nrm_auto_tndcy, zt )
+          call stat_update_var_pt( iNrm_auto, level, KK_Nrm_auto_tndcy, stats_zt )
        endif
 
     endif ! l_stats_samp

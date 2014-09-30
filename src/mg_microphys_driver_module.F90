@@ -34,9 +34,9 @@ module mg_microphys_driver_module
       Cp
       
     use stats_variables, only: & 
-      zt,            &  ! Variables
-      zm,            &
-      sfc,           &
+      stats_zt,            &  ! Variables
+      stats_zm,            &
+      stats_sfc,           &
       irsm,       &
       irrm,       &
       iswp,          &
@@ -564,94 +564,94 @@ module mg_microphys_driver_module
     if ( l_stats_samp ) then
 
       ! Update rain and snow water mixing ratio (computed diagnostically)
-      call stat_update_var( irsm, rsm(:), zt)
-      call stat_update_var( irrm, rrm(:), zt)
+      call stat_update_var( irsm, rsm(:), stats_zt)
+      call stat_update_var( irrm, rrm(:), stats_zt)
       
       ! Effective radii of hydrometeor species
-      call stat_update_var( ieff_rad_cloud, effc(:), zt )
-      call stat_update_var( ieff_rad_ice, effi(:), zt )
-      call stat_update_var( ieff_rad_rain, reff_rain(:), zt)
-      call stat_update_var( ieff_rad_snow, reff_snow(:), zt)
+      call stat_update_var( ieff_rad_cloud, effc(:), stats_zt )
+      call stat_update_var( ieff_rad_ice, effi(:), stats_zt )
+      call stat_update_var( ieff_rad_rain, reff_rain(:), stats_zt)
+      call stat_update_var( ieff_rad_snow, reff_snow(:), stats_zt)
 
       ! Rain rates at the bottom of the domain, in mm/day
       call stat_update_var_pt( iprecip_rate_sfc, 1, &
                                real( prect(icol), kind = core_rknd ) * mm_per_m * &
-                               sec_per_day, sfc )
+                               sec_per_day, stats_sfc )
 
      ! Snow water path is updated in stats_subs.F90
      ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsm) / max( 0.0001, cldfsnow ) * &
-     !                          pdel_flip(nz-1) / gravit ), sfc )
+     !                          pdel_flip(nz-1) / gravit ), stats_sfc )
 
       ! Compute autoconversion
       rrm_auto(2:nz) = real( flip( real( prco_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
                                 kind = core_rknd )
       rrm_auto(1) = 0.0_core_rknd
-      call stat_update_var( irrm_auto, rrm_auto, zt )
+      call stat_update_var( irrm_auto, rrm_auto, stats_zt )
 
       ! Compute accretion
       rrm_accr(2:nz) = real( flip( real( prao_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
                                 kind = core_rknd )
       rrm_accr(1) = 0.0_core_rknd
-      call stat_update_var( irrm_accr, rrm_accr, zt )
+      call stat_update_var( irrm_accr, rrm_accr, stats_zt )
 
       ! Compute cloud water mixing ratio in cloud (based on a threshold in the
       ! MG microphysics)
       rcm_in_cloud(2:nz) = real( flip( real( qcic_flip(icol,1:nz-1),kind=dp ), nz-1 ), &
                                  kind = core_rknd )
       rcm_in_cloud(1) = 0.0_core_rknd
-      call stat_update_var( ircm_in_cloud, rcm_in_cloud, zt )
+      call stat_update_var( ircm_in_cloud, rcm_in_cloud, stats_zt )
 
       ! Compute in-precipitation snow number concentration
       Nsm(2:nz) = real( flip( real( nsic_flip(icol, 1:nz-1),kind=dp ), nz-1 ), &
                            kind = core_rknd ) * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nsm(1) = 0.0_core_rknd
-      call stat_update_var( iNsm, Nsm, zt )
+      call stat_update_var( iNsm, Nsm, stats_zt )
 
       ! Compute in precipitation rain number concentration
       Nrm(2:nz) = real( flip( real( nric_flip(icol, 1:nz-1),kind=dp ), nz-1 ), kind = core_rknd ) &
                   * real( cldmax(icol, 1:nz-1), kind = core_rknd )
       Nrm(1) = 0.0_core_rknd
-      call stat_update_var( iNrm, Nrm, zt )
+      call stat_update_var( iNrm, Nrm, stats_zt )
 
       ! Compute snow sedimentation velocity
       ! Using number concentration
       VNs(2:nz) = real( flip( real( uns_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       VNs(1) = 0.0_core_rknd
-      call stat_update_var( iVNs, VNs, zm )
+      call stat_update_var( iVNs, VNs, stats_zm )
       ! Using mixing ratio
       Vrs(2:nz) = real( flip( real( ums_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       Vrs(1) = 0.0_core_rknd
-      call stat_update_var( iVrs, Vrs, zm )
+      call stat_update_var( iVrs, Vrs, stats_zm )
 
       ! Compute rain sedimentation velocity
       ! Using number concentration
       VNr(2:nz) = real( flip( real( unr_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       VNr(1) = 0.0_core_rknd
-      call stat_update_var( iVNr, VNr, zm )
+      call stat_update_var( iVNr, VNr, stats_zm )
       ! Using mixing ratio
       Vrr(2:nz) = real( flip( real( umr_flip(1:nz-1),kind=dp ), nz-1 ), kind = core_rknd )
       Vrr(1) = 0.0_core_rknd
-      call stat_update_var( iVrr, Vrr, zm )
+      call stat_update_var( iVrr, Vrr, stats_zm )
 
       ! Compute ice sedimentation velocity
       ! Using number concentration
       VNi(:) = real( uni, kind = core_rknd )
-      call stat_update_var( iVNi, VNi, zm )
+      call stat_update_var( iVNi, VNi, stats_zm )
       ! Using mixing ratio
       Vri(:) = real( umi, kind = core_rknd )
-      call stat_update_var( iVri, Vri, zm )
+      call stat_update_var( iVri, Vri, stats_zm )
 
       ! Compute cloud droplet sedimentation
       ! Using number concentration
       VNc(:) = real( unc, kind = core_rknd )
-      call stat_update_var( iVNc, VNc, zm )
+      call stat_update_var( iVNc, VNc, stats_zm )
       ! Using mixing ratio
       Vrc(:) = real( umc, kind = core_rknd )
-      call stat_update_var( iVrc, Vrc, zm )
+      call stat_update_var( iVrc, Vrc, stats_zm )
 
       ! Output sedimentation tendencies
-      call stat_update_var( ircm_sd_mg_morr, rcm_sten, zt )
-      call stat_update_var( irim_sd_mg_morr, rim_sten, zt ) 
+      call stat_update_var( ircm_sd_mg_morr, rcm_sten, stats_zt )
+      call stat_update_var( irim_sd_mg_morr, rim_sten, stats_zt ) 
 
       ! Sedimentation is handled within the MG microphysics
       hydromet_vel(:,:) = 0.0_core_rknd
@@ -663,7 +663,7 @@ module mg_microphys_driver_module
                ( (nz - 2 + 1), rho(2:nz), &
                  rrm(2:nz), invrs_dzt(2:nz) )
 
-        call stat_update_var_pt( irwp, 1, xtmp, sfc )
+        call stat_update_var_pt( irwp, 1, xtmp, stats_sfc )
 
       end if
 
@@ -674,7 +674,7 @@ module mg_microphys_driver_module
                ( (nz - 2 + 1), rho(2:nz), &
                  rsm(2:nz), invrs_dzt(2:nz) )
 
-        call stat_update_var_pt( iswp, 1, xtmp, sfc )
+        call stat_update_var_pt( iswp, 1, xtmp, stats_sfc )
 
       end if
 

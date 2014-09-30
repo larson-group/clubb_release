@@ -82,8 +82,8 @@ module advance_wp2_wp3_module
     use stats_variables, only: &
         iC1_Skw_fnc, &
         iC11_Skw_fnc, &
-        zm, &
-        zt, &
+        stats_zm, &
+        stats_zt, &
         l_stats_samp
 
     use constants_clubb, only:  & 
@@ -237,8 +237,8 @@ module advance_wp2_wp3_module
     end if
 
     if ( l_stats_samp ) then
-      call stat_update_var( iC11_Skw_fnc, C11_Skw_fnc, zt )
-      call stat_update_var( iC1_Skw_fnc, C1_Skw_fnc, zm )
+      call stat_update_var( iC11_Skw_fnc, C11_Skw_fnc, stats_zt )
+      call stat_update_var( iC1_Skw_fnc, C1_Skw_fnc, stats_zm )
     endif
 
     ! Define the Coefficent of Eddy Diffusivity for the wp2 and wp3.
@@ -373,9 +373,9 @@ module advance_wp2_wp3_module
         stat_end_update_pt
 
     use stats_variables, only:  & 
-        zm,         & ! Variable(s)
-        zt, & 
-        sfc, & 
+        stats_zm,         & ! Variable(s)
+        stats_zt, & 
+        stats_sfc, & 
         l_stats_samp, & 
         iwp2_ta, & 
         iwp2_ma, & 
@@ -579,7 +579,7 @@ module advance_wp2_wp3_module
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
-        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, sfc )
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, stats_sfc )
 
       else
         ! Perform LU decomp and solve system (LAPACK)
@@ -620,7 +620,7 @@ module advance_wp2_wp3_module
         ! w'^2 term dp1 has both implicit and explicit components;
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwp2_dp1, k, & 
-           zmscr01(k) * wp2(k), zm )
+           zmscr01(k) * wp2(k), stats_zm )
 
         ! w'^2 term dp2 has both implicit and explicit components (if the
         ! Crank-Nicholson scheme is selected); call stat_end_update_pt.  
@@ -630,40 +630,40 @@ module advance_wp2_wp3_module
            call stat_end_update_pt( iwp2_dp2, k, &
               zmscr02(k) * wp2(km1) & 
             + zmscr03(k) * wp2(k) & 
-            + zmscr04(k) * wp2(kp1), zm )
+            + zmscr04(k) * wp2(kp1), stats_zm )
         else
            call stat_update_var_pt( iwp2_dp2, k, &
               zmscr02(k) * wp2(km1) & 
             + zmscr03(k) * wp2(k) & 
-            + zmscr04(k) * wp2(kp1), zm )
+            + zmscr04(k) * wp2(kp1), stats_zm )
         endif
 
         ! w'^2 term ta is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ta, k, & 
            zmscr05(k) * wp3(k) & 
-         + zmscr06(k) * wp3(kp1), zm )
+         + zmscr06(k) * wp3(kp1), stats_zm )
 
         ! w'^2 term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ma, k, & 
            zmscr07(k) * wp2(km1) & 
          + zmscr08(k) * wp2(k) & 
-         + zmscr09(k) * wp2(kp1), zm )
+         + zmscr09(k) * wp2(kp1), stats_zm )
 
         ! w'^2 term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_ac, k,  & 
-           zmscr10(k) * wp2(k), zm )
+           zmscr10(k) * wp2(k), stats_zm )
 
         ! w'^2 term pr1 has both implicit and explicit components;
         ! call stat_end_update_pt.
         if ( l_tke_aniso ) then
           call stat_end_update_pt( iwp2_pr1, k, & 
-             zmscr12(k) * wp2(k), zm )
+             zmscr12(k) * wp2(k), stats_zm )
         endif
 
         ! w'^2 term pr2 has both implicit and explicit components;
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwp2_pr2, k, & 
-           zmscr11(k) * wp2(k), zm )
+           zmscr11(k) * wp2(k), stats_zm )
 
       enddo
 
@@ -679,7 +679,7 @@ module advance_wp2_wp3_module
         ! w'^3 term pr1 has both implicit and explicit components; 
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_pr1, k, & 
-           ztscr01(k) * wp3(k), zt )
+           ztscr01(k) * wp3(k), stats_zt )
 
         ! w'^3 term dp1 has both implicit and explicit components (if the
         ! Crank-Nicholson scheme is selected); call stat_end_update_pt.  
@@ -689,12 +689,12 @@ module advance_wp2_wp3_module
            call stat_end_update_pt( iwp3_dp1, k, & 
               ztscr02(k) * wp3(km1) & 
             + ztscr03(k) * wp3(k) & 
-            + ztscr04(k) * wp3(kp1), zt )
+            + ztscr04(k) * wp3(kp1), stats_zt )
         else
            call stat_update_var_pt( iwp3_dp1, k, & 
               ztscr02(k) * wp3(km1) & 
             + ztscr03(k) * wp3(k) & 
-            + ztscr04(k) * wp3(kp1), zt )
+            + ztscr04(k) * wp3(kp1), stats_zt )
         endif
 
         ! w'^3 term ta has both implicit and explicit components; 
@@ -704,28 +704,28 @@ module advance_wp2_wp3_module
          + ztscr06(k) * wp2(km1) & 
          + ztscr07(k) * wp3(k) & 
          + ztscr08(k) * wp2(k) & 
-         + ztscr09(k) * wp3(kp1), zt )
+         + ztscr09(k) * wp3(kp1), stats_zt )
 
         ! w'^3 term tp has both implicit and explicit components; 
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_tp, k,  & 
            ztscr10(k) * wp2(km1) & 
-         + ztscr11(k) * wp2(k), zt )
+         + ztscr11(k) * wp2(k), stats_zt )
 
         ! w'^3 term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp3_ma, k, & 
            ztscr12(k) * wp3(km1) & 
          + ztscr13(k) * wp3(k) & 
-         + ztscr14(k) * wp3(kp1), zt )
+         + ztscr14(k) * wp3(kp1), stats_zt )
 
         ! w'^3 term ac is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp3_ac, k, & 
-           ztscr15(k) * wp3(k), zt )
+           ztscr15(k) * wp3(k), stats_zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; 
         ! call stat_end_update_pt.
         call stat_end_update_pt( iwp3_pr2, k, & 
-           ztscr16(k) * wp3(k), zt )
+           ztscr16(k) * wp3(k), stats_zt )
 
       enddo
 
@@ -734,7 +734,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
-      call stat_begin_update( iwp2_pd, wp2 / dt, zm )
+      call stat_begin_update( iwp2_pd, wp2 / dt, stats_zm )
     endif
 
     if ( l_hole_fill .and. any( wp2 < w_tol_sqd ) ) then
@@ -754,7 +754,7 @@ module advance_wp2_wp3_module
 
     if ( l_stats_samp ) then
       ! Store updated value for effect of the positive definite scheme
-      call stat_end_update( iwp2_pd, wp2 / dt, zm )
+      call stat_end_update( iwp2_pd, wp2 / dt, stats_zm )
     endif
 
 
@@ -803,7 +803,7 @@ module advance_wp2_wp3_module
     use stats_variables, only:  & 
         iwp23_matrix_condt_num, & ! Variable(s)
         l_stats_samp, & 
-        sfc
+        stats_sfc
 
     use constants_clubb, only: & 
         fstderr         ! Variable(s)
@@ -956,7 +956,7 @@ module advance_wp2_wp3_module
                           lhs, rhs, solut, rcond, err_code )
 
         ! Est. of the condition number of the w'^2/w^3 LHS matrix
-        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, sfc )
+        call stat_update_var_pt( iwp23_matrix_condt_num, 1, 1.0_core_rknd / rcond, stats_sfc )
 
       else
         ! Perform LU decomp and solve system (LAPACK)
@@ -2360,8 +2360,8 @@ module advance_wp2_wp3_module
         core_rknd ! Variable
 
     use stats_variables, only:  & 
-        l_stats_samp, iwp2_dp1, iwp2_dp2, zm, iwp2_bp,   & ! Variable(s)
-        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, zt, & 
+        l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
+        iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, stats_zt, & 
         iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2
 
     use stats_type_utilities, only:  &
@@ -2559,21 +2559,21 @@ module advance_wp2_wp3_module
           call stat_begin_update_pt( iwp2_dp2, k, & 
             rhs_diff(3) * wp2(km1) & 
           + rhs_diff(2) * wp2(k) & 
-          + rhs_diff(1) * wp2(kp1), zm )
+          + rhs_diff(1) * wp2(kp1), stats_zm )
         endif
 
         ! w'^2 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^2 term bp, substitute 0 for the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_update_var_pt( iwp2_bp, k, & 
-          wp2_terms_bp_pr2_rhs( 0.0_core_rknd, thv_ds_zm(k), wpthvp(k) ), zm )
+          wp2_terms_bp_pr2_rhs( 0.0_core_rknd, thv_ds_zm(k), wpthvp(k) ), stats_zm )
 
         ! w'^2 term pr1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_pr1_rhs.
         if ( l_tke_aniso ) then
           call stat_begin_update_pt( iwp2_pr1, k, & 
-            -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), zm )
+            -wp2_term_pr1_rhs( C4, up2(k), vp2(k), tau1m(k) ), stats_zm )
 
           ! Note:  An "over-implicit" weighted time step is applied to this
           !        term.  A weighting factor of greater than 1 may be used to
@@ -2584,7 +2584,7 @@ module advance_wp2_wp3_module
           = wp2_term_pr1_lhs( C4, tau1m(k) )
           call stat_modify_pt( iwp2_pr1, k, &
                                + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
-                               * ( - lhs_fnc_output(1) * wp2(k) ), zm )
+                               * ( - lhs_fnc_output(1) * wp2(k) ), stats_zm )
         endif
 
         ! w'^2 term pr2 has both implicit and explicit components; call
@@ -2593,13 +2593,13 @@ module advance_wp2_wp3_module
         ! Note:  To find the contribution of w'^2 term pr2, add 1 to the
         !        C_5 input to function wp2_terms_bp_pr2_rhs.
         call stat_begin_update_pt( iwp2_pr2, k, & 
-          -wp2_terms_bp_pr2_rhs( (1.0_core_rknd+C5), thv_ds_zm(k), wpthvp(k) ), zm )
+          -wp2_terms_bp_pr2_rhs( (1.0_core_rknd+C5), thv_ds_zm(k), wpthvp(k) ), stats_zm )
 
         ! w'^2 term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
-          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd ), zm )
+          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd ), stats_zm )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2609,13 +2609,13 @@ module advance_wp2_wp3_module
         = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
         call stat_modify_pt( iwp2_dp1, k, &
                              + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
-                             * ( - lhs_fnc_output(1) * wp2(k) ), zm )
+                             * ( - lhs_fnc_output(1) * wp2(k) ), stats_zm )
 
         ! w'^2 term pr3 is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp2_pr3, k, & 
           wp2_term_pr3_rhs( C5, thv_ds_zm(k), wpthvp(k), upwp(k), um(kp1), &
                             um(k), vpwp(k), vm(kp1), vm(k), gr%invrs_dzm(k) ), &
-                                 zm )
+                                 stats_zm )
 
       endif
 
@@ -2741,8 +2741,8 @@ module advance_wp2_wp3_module
 !                               invrs_rho_ds_zt(k),  &
 !                               0.0_core_rknd,  &
 !                               gr%invrs_dzt(k) ),  &
-!                                  zt )
-        call stat_begin_update_pt( iwp3_ta, k, 0.0_core_rknd, zt )
+!                                  stats_zt )
+        call stat_begin_update_pt( iwp3_ta, k, 0.0_core_rknd, stats_zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2764,7 +2764,7 @@ module advance_wp2_wp3_module
                                  - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(3) * wp3(k)  &
                                  - lhs_fnc_output(4) * wp2(km1)  &
-                                 - lhs_fnc_output(5) * wp3(km1) ), zt )
+                                 - lhs_fnc_output(5) * wp3(km1) ), stats_zt )
 
         ! w'^3 term tp has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
@@ -2783,8 +2783,8 @@ module advance_wp2_wp3_module
 !                               invrs_rho_ds_zt(k),  &
 !                               three_halves,  &
 !                               gr%invrs_dzt(k) ),  &
-!                                  zt )
-        call stat_begin_update_pt( iwp3_tp, k,  0.0_core_rknd, zt )
+!                                  stats_zt )
+        call stat_begin_update_pt( iwp3_tp, k,  0.0_core_rknd, stats_zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2803,13 +2803,13 @@ module advance_wp2_wp3_module
         call stat_modify_pt( iwp3_tp, k,  &
                              + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(2) * wp2(k)  &
-                                 - lhs_fnc_output(4) * wp2(km1) ), zt )
+                                 - lhs_fnc_output(4) * wp2(km1) ), stats_zt )
 
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the
         !        C_11 skewness function input to function wp3_terms_bp1_pr2_rhs.
         call stat_update_var_pt( iwp3_bp1, k, & 
-          wp3_terms_bp1_pr2_rhs( 0.0_core_rknd, thv_ds_zt(k), wp2thvp(k) ), zt )
+          wp3_terms_bp1_pr2_rhs( 0.0_core_rknd, thv_ds_zt(k), wp2thvp(k) ), stats_zt )
 
         ! w'^3 term pr2 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
@@ -2819,14 +2819,14 @@ module advance_wp2_wp3_module
         call stat_begin_update_pt( iwp3_pr2, k, & 
           -wp3_terms_bp1_pr2_rhs( (1.0_core_rknd+C11_Skw_fnc(k)), thv_ds_zt(k), &
                                  wp2thvp(k) ), & 
-                                   zt )
+                                   stats_zt )
 
         ! w'^3 term pr1 has both implicit and explicit components; call 
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically 
         ! subtracts the value sent in, reverse the sign on wp3_term_pr1_rhs.
         call stat_begin_update_pt( iwp3_pr1, k, & 
           -wp3_term_pr1_rhs( C8, C8b, tauw3t(k), Skw_zt(k), wp3(k) ), & 
-                                   zt )
+                                   stats_zt )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2836,7 +2836,7 @@ module advance_wp2_wp3_module
         = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
         call stat_modify_pt( iwp3_pr1, k,  &
                              + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
-                             * ( - lhs_fnc_output(1) * wp3(k) ), zt )
+                             * ( - lhs_fnc_output(1) * wp3(k) ), stats_zt )
 
         ! w'^3 term dp1 has both implicit and explicit components (if the
         ! Crank-Nicholson scheme is selected); call stat_begin_update_pt.  
@@ -2848,7 +2848,7 @@ module advance_wp2_wp3_module
           call stat_begin_update_pt( iwp3_dp1, k, & 
               rhs_diff(3) * wp3(km1) & 
             + rhs_diff(2) * wp3(k) & 
-            + rhs_diff(1) * wp3(kp1), zt )
+            + rhs_diff(1) * wp3(kp1), stats_zt )
         endif
                   
         if ( l_wp3_2nd_buoyancy_term ) then
@@ -2856,7 +2856,7 @@ module advance_wp2_wp3_module
                                    dum_dz(k), dum_dz(km1), dvm_dz(k), dvm_dz(km1), &
                                    upwp(k), upwp(km1), vpwp(k), vpwp(km1), &
                                    thv_ds_zt(k), gr%invrs_dzt(k) )
-          call stat_update_var_pt( iwp3_bp2, k, temp, zt )
+          call stat_update_var_pt( iwp3_bp2, k, temp, stats_zt )
         end if
 
       endif ! l_stats_samp

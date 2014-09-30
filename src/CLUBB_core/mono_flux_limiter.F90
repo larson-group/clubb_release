@@ -304,8 +304,8 @@ module mono_flux_limiter
         stat_update_var
 
     use stats_variables, only:  &
-        zm,  & ! Variable(s)
-        zt,  &
+        stats_zm,  & ! Variable(s)
+        stats_zt,  &
         iwprtp_mfl,  &
         irtm_mfl,  &
         iwpthlp_mfl,  &
@@ -448,17 +448,17 @@ module mono_flux_limiter
 
 
     if ( l_stats_samp ) then
-       call stat_begin_update( iwpxp_mfl, wpxp / dt, zm )
-       call stat_begin_update( ixm_mfl, xm / dt, zt )
+       call stat_begin_update( iwpxp_mfl, wpxp / dt, stats_zm )
+       call stat_begin_update( ixm_mfl, xm / dt, stats_zt )
     endif
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
-       call stat_update_var( ithlm_enter_mfl, xm, zt )
-       call stat_update_var( ithlm_old, xm_old, zt )
-       call stat_update_var( iwpthlp_entermfl, xm, zm )
+       call stat_update_var( ithlm_enter_mfl, xm, stats_zt )
+       call stat_update_var( ithlm_old, xm_old, stats_zt )
+       call stat_update_var( iwpthlp_entermfl, xm, stats_zm )
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
-       call stat_update_var( irtm_enter_mfl, xm, zt )
-       call stat_update_var( irtm_old, xm_old, zt )
-       call stat_update_var( iwprtp_enter_mfl, xm, zm )
+       call stat_update_var( irtm_enter_mfl, xm, stats_zt )
+       call stat_update_var( irtm_old, xm_old, stats_zt )
+       call stat_update_var( iwprtp_enter_mfl, xm, stats_zm )
     endif
 
     ! Initialize arrays.
@@ -677,17 +677,17 @@ module mono_flux_limiter
     wpxp_mfl_max(gr%nz) = 0._core_rknd
 
     if ( l_stats_samp .and. solve_type == mono_flux_thlm ) then
-       call stat_update_var( ithlm_without_ta, xm_without_ta, zt )
-       call stat_update_var( ithlm_mfl_min, min_x_allowable, zt )
-       call stat_update_var( ithlm_mfl_max, max_x_allowable, zt )
-       call stat_update_var( iwpthlp_mfl_min, wpxp_mfl_min, zm )
-       call stat_update_var( iwpthlp_mfl_max, wpxp_mfl_max, zm )
+       call stat_update_var( ithlm_without_ta, xm_without_ta, stats_zt )
+       call stat_update_var( ithlm_mfl_min, min_x_allowable, stats_zt )
+       call stat_update_var( ithlm_mfl_max, max_x_allowable, stats_zt )
+       call stat_update_var( iwpthlp_mfl_min, wpxp_mfl_min, stats_zm )
+       call stat_update_var( iwpthlp_mfl_max, wpxp_mfl_max, stats_zm )
     elseif ( l_stats_samp .and. solve_type == mono_flux_rtm ) then
-       call stat_update_var( irtm_without_ta, xm_without_ta, zt )
-       call stat_update_var( irtm_mfl_min, min_x_allowable, zt )
-       call stat_update_var( irtm_mfl_max, max_x_allowable, zt )
-       call stat_update_var( iwprtp_mfl_min, wpxp_mfl_min, zm )
-       call stat_update_var( iwprtp_mfl_max, wpxp_mfl_max, zm )
+       call stat_update_var( irtm_without_ta, xm_without_ta, stats_zt )
+       call stat_update_var( irtm_mfl_min, min_x_allowable, stats_zt )
+       call stat_update_var( irtm_mfl_max, max_x_allowable, stats_zt )
+       call stat_update_var( iwprtp_mfl_min, wpxp_mfl_min, stats_zm )
+       call stat_update_var( iwprtp_mfl_max, wpxp_mfl_max, stats_zm )
     endif
 
 
@@ -813,16 +813,16 @@ module mono_flux_limiter
 
     if ( l_stats_samp ) then
 
-       call stat_end_update( iwpxp_mfl, wpxp / dt, zm )
+       call stat_end_update( iwpxp_mfl, wpxp / dt, stats_zm )
 
-       call stat_end_update( ixm_mfl, xm / dt, zt )
+       call stat_end_update( ixm_mfl, xm / dt, stats_zt )
 
        if ( solve_type == mono_flux_thlm ) then
-          call stat_update_var( ithlm_exit_mfl, xm, zt )
-          call stat_update_var( iwpthlp_exit_mfl, xm, zm )
+          call stat_update_var( ithlm_exit_mfl, xm, stats_zt )
+          call stat_update_var( iwpthlp_exit_mfl, xm, stats_zm )
        elseif ( solve_type == mono_flux_rtm ) then
-          call stat_update_var( irtm_exit_mfl, xm, zt )
-          call stat_update_var( iwprtp_exit_mfl, xm, zm )
+          call stat_update_var( irtm_exit_mfl, xm, stats_zt )
+          call stat_update_var( iwprtp_exit_mfl, xm, stats_zm )
        endif
 
     endif
@@ -1660,7 +1660,7 @@ module mono_flux_limiter
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only:  &
-        zm,  & ! Variable(s)
+        stats_zm,  & ! Variable(s)
         imean_w_up, &
         imean_w_down, &
         l_stats_samp
@@ -1816,9 +1816,9 @@ module mono_flux_limiter
 
        if ( l_stats_samp ) then
 
-          call stat_update_var_pt( imean_w_up, k, mean_w_up(k), zm )
+          call stat_update_var_pt( imean_w_up, k, mean_w_up(k), stats_zm )
 
-          call stat_update_var_pt( imean_w_down, k, mean_w_down(k), zm )
+          call stat_update_var_pt( imean_w_down, k, mean_w_down(k), stats_zm )
 
        endif ! l_stats_samp
 

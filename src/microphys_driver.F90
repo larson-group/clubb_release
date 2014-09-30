@@ -142,10 +142,10 @@ module microphys_driver
         iiNim
 
     use stats_variables, only: & 
-        zt,  & ! Variable(s)
-        zm,  & 
-        sfc, & 
-        lh_zt, &
+        stats_zt,  & ! Variable(s)
+        stats_zm,  & 
+        stats_sfc, & 
+        stats_lh_zt, &
         l_stats_samp
 
     use stats_variables, only: & 
@@ -426,20 +426,20 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
+        call stat_update_var(iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), stats_zm )
 
         ! Sedimentation velocity for snow
-        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirsm) ), zm )
+        call stat_update_var(iVrs, zt2zm( hydromet_vel_zt(:,iirsm) ), stats_zm )
 
         ! Sedimentation velocity for pristine ice
-        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iirim) ), zm )
+        call stat_update_var( iVri, zt2zm( hydromet_vel_zt(:,iirim) ), stats_zm )
 
         ! Sedimentation velocity for graupel
         call stat_update_var( iVrg, &
-                            zt2zm( hydromet_vel_zt(:,iirgm) ), zm )
+                            zt2zm( hydromet_vel_zt(:,iirgm) ), stats_zm )
       endif ! l_stats_samp
 
     case ( "morrison" )
@@ -526,7 +526,7 @@ module microphys_driver
 
         ! Output rain sedimentation velocity
         if ( l_stats_samp ) then
-          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm)
+          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
         endif
 
       endif ! lh_microphys_type /= interactive
@@ -571,9 +571,9 @@ module microphys_driver
 
         if ( l_stats_samp ) then
           ! Latin hypercube estimate for sedimentation velocities
-          call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrm), lh_zt )
+          call stat_update_var( ilh_Vrr, hydromet_vel_zt(:,iirrm), stats_lh_zt )
 
-          call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), lh_zt )
+          call stat_update_var( ilh_VNr, hydromet_vel_zt(:,iiNrm), stats_lh_zt )
 
         endif
 
@@ -628,10 +628,10 @@ module microphys_driver
       if ( l_stats_samp ) then
 
         ! Sedimentation velocity for rrm
-        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), zm )
+        call stat_update_var( iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm )
 
         ! Sedimentation velocity for Nrm
-        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), zm )
+        call stat_update_var( iVNr, zt2zm( hydromet_vel_zt(:,iiNrm) ), stats_zm )
 
       endif ! l_stats_samp
 
@@ -645,7 +645,7 @@ module microphys_driver
     end select ! microphys_scheme
 
     if ( l_stats_samp ) then
-      call stat_update_var( iNccnm, Nccnm, zt )
+      call stat_update_var( iNccnm, Nccnm, stats_zt )
     endif ! l_stats_samp
 
     ! Call GFDL activation code
@@ -655,7 +655,7 @@ module microphys_driver
 
         ! Save the initial Ncm mc value for the Ncm_act term
         if ( l_stats_samp ) then
-          call stat_begin_update( iNcm_act, Ncm_mc, zt )
+          call stat_begin_update( iNcm_act, Ncm_mc, stats_zt )
         endif
 
         call aer_act_clubb_quadrature_Gauss( aeromass, T_in_K, Ndrop_max )
@@ -664,7 +664,7 @@ module microphys_driver
         Ndrop_max = Ndrop_max * cm3_per_m3 / rho
 
         if( l_stats_samp ) then
-          call stat_update_var( iNc_activated, Ndrop_max, zt)
+          call stat_update_var( iNc_activated, Ndrop_max, stats_zt)
         endif
 
         ! Clip Ncm values that are outside of cloud by CLUBB standards
@@ -692,7 +692,7 @@ module microphys_driver
 
         ! Update the Ncm_act term
         if( l_stats_samp ) then
-          call stat_end_update( iNcm_act, Ncm_mc, zt )
+          call stat_end_update( iNcm_act, Ncm_mc, stats_zt )
         endif
 
       else
@@ -716,11 +716,11 @@ module microphys_driver
 
     ! Sample microphysics variables if necessary
     if ( microphys_stats_zt%l_allocated ) then
-      call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, zt )
+      call microphys_stats_accumulate( microphys_stats_zt, l_stats_samp, stats_zt )
       call microphys_stats_cleanup( microphys_stats_zt )
     endif
     if ( microphys_stats_sfc%l_allocated ) then
-      call microphys_stats_accumulate( microphys_stats_sfc, l_stats_samp, sfc )
+      call microphys_stats_accumulate( microphys_stats_sfc, l_stats_samp, stats_sfc )
       call microphys_stats_cleanup( microphys_stats_sfc )
     endif
 

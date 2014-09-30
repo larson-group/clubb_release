@@ -135,7 +135,7 @@ module advance_xp2_xpyp_module
       clubb_at_least_debug_level
 
     use stats_variables, only: & 
-      zm, &
+      stats_zm, &
       irtp2_cl, & 
       l_stats_samp
 
@@ -513,7 +513,7 @@ module advance_xp2_xpyp_module
     
       ! This overwrites stats clipping data from clip_variance
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, -rtp2 / dt, zm )
+        call stat_modify( irtp2_cl, -rtp2 / dt, stats_zm )
       endif
       
       do k = 1, gr%nz
@@ -524,7 +524,7 @@ module advance_xp2_xpyp_module
       end do ! k = 1..gr%nz
       
       if ( l_stats_samp ) then
-        call stat_modify( irtp2_cl, rtp2 / dt, zm )
+        call stat_modify( irtp2_cl, rtp2 / dt, stats_zm )
       endif
       
     end if ! l_clip_large_rtp2
@@ -1108,7 +1108,7 @@ module advance_xp2_xpyp_module
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only: & 
-        sfc, &  ! Derived type
+        stats_sfc, &  ! Derived type
         irtp2_matrix_condt_num, & ! Stat index Variables
         ithlp2_matrix_condt_num, & 
         irtpthlp_matrix_condt_num, & 
@@ -1194,7 +1194,7 @@ module advance_xp2_xpyp_module
 
       ! Est. of the condition number of the variance LHS matrix
       call stat_update_var_pt( ixapxbp_matrix_condt_num, 1, one / rcond, &  ! Intent(in)
-                               sfc )                          ! Intent(inout)
+                               stats_sfc )                          ! Intent(inout)
 
     else
       call tridag_solve & 
@@ -1225,7 +1225,7 @@ module advance_xp2_xpyp_module
       stat_update_var_pt
 
     use stats_variables, only: &
-      zm,  & ! Variable(s) 
+      stats_zm,  & ! Variable(s) 
       irtp2_dp1, &
       irtp2_dp2, &
       irtp2_ta, &
@@ -1344,14 +1344,14 @@ module advance_xp2_xpyp_module
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_dp1, k, &            ! Intent(in)
                                zmscr01(k) * xapxbp(k), &  ! Intent(in)
-                               zm )                         ! Intent(inout)
+                               stats_zm )                         ! Intent(inout)
 
       ! x'y' term dp2 is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_dp2, k, &            ! Intent(in)
                                  zmscr02(k) * xapxbp(km1) & ! Intent(in)
                                + zmscr03(k) * xapxbp(k) & 
                                + zmscr04(k) * xapxbp(kp1), &
-                               zm )                         ! Intent(inout)
+                               stats_zm )                         ! Intent(inout)
 
       ! x'y' term ta has both implicit and explicit components;
       ! call stat_end_update_pt.
@@ -1359,20 +1359,20 @@ module advance_xp2_xpyp_module
                                  zmscr05(k) * xapxbp(km1) &  ! Intent(in)
                                + zmscr06(k) * xapxbp(k) &  
                                + zmscr07(k) * xapxbp(kp1), &
-                               zm )                          ! Intent(inout)
+                               stats_zm )                          ! Intent(inout)
 
       ! x'y' term ma is completely implicit; call stat_update_var_pt.
       call stat_update_var_pt( ixapxbp_ma, k, &              ! Intent(in)
                                  zmscr08(k) * xapxbp(km1) &  ! Intent(in)
                                + zmscr09(k) * xapxbp(k) & 
                                + zmscr10(k) * xapxbp(kp1), &
-                               zm )                          ! Intent(inout)
+                               stats_zm )                          ! Intent(inout)
 
       ! x'y' term pr1 has both implicit and explicit components;
       ! call stat_end_update_pt.
       call stat_end_update_pt( ixapxbp_pr1, k, &            ! Intent(in)
                                zmscr11(k) * xapxbp(k), &  ! Intent(in)
-                               zm )                         ! Intent(inout)
+                               stats_zm )                         ! Intent(inout)
 
     end do ! k=2..gr%nz-1
 
@@ -1426,7 +1426,7 @@ module advance_xp2_xpyp_module
         iup2_dp1, & 
         iup2_pr1, & 
         iup2_pr2, & 
-        zm, & 
+        stats_zm, & 
         zmscr01, & 
         zmscr11, & 
         l_stats_samp
@@ -1625,7 +1625,7 @@ module advance_xp2_xpyp_module
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta ), &
-                                   zm )                             ! Intent(inout)
+                                   stats_zm )                             ! Intent(inout)
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -1650,7 +1650,7 @@ module advance_xp2_xpyp_module
               * ( - lhs_fnc_output(1) * xap2(kp1)  &
                   - lhs_fnc_output(2) * xap2(k)  &
                   - lhs_fnc_output(3) * xap2(km1) ),  &
-                             zm )                       ! Intent(inout)
+                             stats_zm )                       ! Intent(inout)
 
         if ( ixapxbp_dp1 > 0 ) then
           ! Note:  The function term_pr1 is the explicit component of a
@@ -1677,7 +1677,7 @@ module advance_xp2_xpyp_module
           !        the C_14 input to function term_pr1.
           call stat_begin_update_pt( ixapxbp_dp1, k, &              ! Intent(in)
                -term_pr1( C4, zero, xbp2(k), wp2(k), tau_zm(k) ), &  ! Intent(in)
-                                     zm )                           ! Intent(inout)
+                                     stats_zm )                           ! Intent(inout)
 
           ! Note:  An "over-implicit" weighted time step is applied to this
           !        term.  A weighting factor of greater than 1 may be used to
@@ -1688,7 +1688,7 @@ module advance_xp2_xpyp_module
           call stat_modify_pt( ixapxbp_dp1, k, &        ! Intent(in)
                 + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                 * ( - lhs_fnc_output(1) * xap2(k) ),  & ! Intent(in)
-                                     zm )               ! Intent(inout)
+                                     stats_zm )               ! Intent(inout)
 
         endif
 
@@ -1716,7 +1716,7 @@ module advance_xp2_xpyp_module
           !        the C_4 input to function term_pr1.
           call stat_begin_update_pt( ixapxbp_pr1, k, &                 ! Intent(in)  
                -term_pr1( zero, C14, xbp2(k), wp2(k), tau_zm(k) ), &    ! Intent(in)
-                                     zm )                              ! Intent(inout)
+                                     stats_zm )                              ! Intent(inout)
 
           ! Note:  An "over-implicit" weighted time step is applied to this
           !        term.  A weighting factor of greater than 1 may be used to
@@ -1727,7 +1727,7 @@ module advance_xp2_xpyp_module
           call stat_modify_pt( ixapxbp_pr1, k, &        ! Intent(in)
                 + ( one - gamma_over_implicit_ts )  &   ! Intent(in)
                 * ( - lhs_fnc_output(1) * xap2(k) ),  & ! Intent(in)
-                                     zm )               ! Intent(inout)
+                                     stats_zm )               ! Intent(inout)
 
         endif
 
@@ -1736,14 +1736,14 @@ module advance_xp2_xpyp_module
                term_pr2( C5, thv_ds_zm(k), wpthvp(k), wpxap(k), wpxbp(k), &   ! Intent(in)
                          xam, xbm, gr%invrs_dzm(k), kp1, k, &  
                          Lscale(kp1), Lscale(k), wp2_zt(kp1), wp2_zt(k) ), &
-               zm )                                                           ! Intent(inout)
+               stats_zm )                                                           ! Intent(inout)
 
         ! x'y' term tp is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixapxbp_tp, k, &                  ! Intent(in) 
               ( one - C5 ) &                                       ! Intent(in)
                * term_tp( xam(kp1), xam(k), xam(kp1), xam(k), &
                           wpxap(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                 zm )                              ! Intent(inout)
+                                 stats_zm )                              ! Intent(inout)
 
       endif ! l_stats_samp
 
@@ -1811,7 +1811,7 @@ module advance_xp2_xpyp_module
         irtpthlp_tp2,     &
         irtpthlp_dp1,     &
         irtpthlp_forcing, & 
-        zm, & 
+        stats_zm, & 
         l_stats_samp
   
     use advance_helper_module, only: set_boundary_conditions_rhs
@@ -2010,7 +2010,7 @@ module advance_xp2_xpyp_module
                       rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
                       a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), wpxbp_zt(k), &
                       wpxap_zt(kp1), wpxap_zt(k), gr%invrs_dzm(k), beta ), &
-                                   zm )                            ! Intent(inout)
+                                   stats_zm )                            ! Intent(inout)
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2034,14 +2034,14 @@ module advance_xp2_xpyp_module
               * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
                   - lhs_fnc_output(2) * xapxbp(k)  &
                   - lhs_fnc_output(3) * xapxbp(km1) ),  &
-                             zm )                         ! Intent(inout)
+                             stats_zm )                         ! Intent(inout)
 
         ! x'y' term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on term_dp1_rhs.
         call stat_begin_update_pt( ixapxbp_dp1, k, &           ! Intent(in)
              -term_dp1_rhs( Cn(k), tau_zm(k), threshold ), &   ! Intent(in)
-                                   zm )                        ! Intent(inout)
+                                   stats_zm )                        ! Intent(inout)
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -2052,14 +2052,14 @@ module advance_xp2_xpyp_module
         call stat_modify_pt( ixapxbp_dp1, k,  &         ! Intent(in)
               + ( one - gamma_over_implicit_ts )  &     ! Intent(in)
               * ( - lhs_fnc_output(1) * xapxbp(k) ),  & ! Intent(in)
-                                   zm )                 ! Intent(inout)
+                                   stats_zm )                 ! Intent(inout)
 
         ! rtp2/thlp2 case (1 turbulent production term)
         ! x'y' term tp is completely explicit; call stat_update_var_pt.
         call stat_update_var_pt( ixapxbp_tp, k, &             ! Intent(in)
               term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), &  ! Intent(in)
                        wpxbp(k), wpxap(k), gr%invrs_dzm(k) ), & 
-                                 zm )                         ! Intent(inout)
+                                 stats_zm )                         ! Intent(inout)
 
         ! rtpthlp case (2 turbulent production terms)
         ! x'y' term tp1 is completely explicit; call stat_update_var_pt.
@@ -2068,7 +2068,7 @@ module advance_xp2_xpyp_module
         call stat_update_var_pt( ixapxbp_tp1, k, &    ! Intent(in)
               term_tp( zero, zero, xbm(kp1), xbm(k), &  ! Intent(in)
                        zero, wpxap(k), gr%invrs_dzm(k) ), &
-                                 zm )                 ! Intent(inout)
+                                 stats_zm )                 ! Intent(inout)
 
         ! x'y' term tp2 is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of x'y' term tp2, substitute 0 for all
@@ -2076,10 +2076,10 @@ module advance_xp2_xpyp_module
         call stat_update_var_pt( ixapxbp_tp2, k, &    ! Intent(in)
               term_tp( xam(kp1), xam(k), zero, zero, &  ! Intent(in)
                        wpxbp(k), zero, gr%invrs_dzm(k) ), &
-                                 zm )                 ! Intent(inout)
+                                 stats_zm )                 ! Intent(inout)
 
         ! x'y' forcing term is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing(k), zm )
+        call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing(k), stats_zm )
 
       endif ! l_stats_samp
 
@@ -3233,7 +3233,7 @@ module advance_xp2_xpyp_module
     use clubb_precision, only: core_rknd
 
     use stats_variables, only:  & 
-        zm, l_stats_samp, & 
+        stats_zm, l_stats_samp, & 
         irtp2_pd, ithlp2_pd, iup2_pd, ivp2_pd ! variables
     use stats_type_utilities, only:  & 
         stat_begin_update, stat_end_update ! subroutines
@@ -3282,7 +3282,7 @@ module advance_xp2_xpyp_module
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
       call stat_begin_update( ixp2_pd, xp2_np1 / dt, &   ! Intent(in)
-                              zm )                               ! Intent(inout)
+                              stats_zm )                               ! Intent(inout)
     endif
 
 
@@ -3300,7 +3300,7 @@ module advance_xp2_xpyp_module
     if ( l_stats_samp ) then
       ! Store previous value for effect of the positive definite scheme
       call stat_end_update( ixp2_pd, xp2_np1 / dt, & ! Intent(in)
-                            zm )                             ! Intent(inout)
+                            stats_zm )                             ! Intent(inout)
     endif
 
 

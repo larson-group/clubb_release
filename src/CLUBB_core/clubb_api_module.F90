@@ -160,11 +160,11 @@ module clubb_api_module
     nvarmax_rad_zt  ! Maximum variables allowed
 
   use stats_variables, only : &
-    zt, & ! zt grid
-    zm, & ! zm grid
-    rad_zt, & ! rad_zt grid
-    rad_zm, & ! rad_zm grid
-    sfc, &
+    stats_zt, & ! zt grid
+    stats_zm, & ! zm grid
+    stats_rad_zt, & ! rad_zt grid
+    stats_rad_zm, & ! rad_zm grid
+    stats_sfc, &
     l_stats_last, & ! Last time step of output period
     stats_tsamp, & ! Sampling interval   [s]
     stats_tout, & ! Output interval     [s]
@@ -172,8 +172,8 @@ module clubb_api_module
     l_stats, & ! Main flag to turn statistics on/off
     l_stats_samp, & ! Sample flag for current time step
     l_grads, & ! Output to GrADS format
-    fname_rad_zt, & ! Name of the stats file for the zt radiation grid fields
-    fname_rad_zm, & ! Name of the stats file for the zm radiation grid fields
+    fname_rad_zt, & ! Name of the stats file for the stats_zt radiation grid fields
+    fname_rad_zm, & ! Name of the stats file for the stats_zm radiation grid fields
     fname_sfc, & ! Name of the stats file for surface only fields
     l_netcdf, & ! Output to NetCDF format
     ! These are used in CAM only
@@ -387,13 +387,13 @@ module clubb_api_module
     nvarmax_sfc, &
     nvarmax_zm, &
     nvarmax_zt, &
-    rad_zm, &
-    rad_zt
+    stats_rad_zm, &
+    stats_rad_zt
     public &
     sigma2_on_mu2_ratios_type, &
     nparams, &
     setup_parameters_api, &
-    sfc, &
+    stats_sfc, &
     stat_nknd, &
     stat_rknd, &
     stats_accumulate_hydromet_api, &
@@ -404,14 +404,14 @@ module clubb_api_module
     stats_init_zt_api, &
     wp2_zt, &
     wphydrometp, &
-    zm, &
+    stats_zm, &
     zmscr01, zmscr02, zmscr03, &
     zmscr04, zmscr05, zmscr06, &
     zmscr07, zmscr08, zmscr09, &
     zmscr10, zmscr11, zmscr12, &
     zmscr13, zmscr14, zmscr15, &
     zmscr16, zmscr17, &
-    zt, &
+    stats_zt, &
     ztscr01, ztscr02, ztscr03, &
     ztscr04, ztscr05, ztscr06, &
     ztscr07, ztscr08, ztscr09, &
@@ -1108,7 +1108,7 @@ contains
                  ! fall                           [Units vary; same as field]
 
     character(len=2), intent(in) :: &
-      field_grid ! The grid of the field, either zt or zm
+      field_grid ! The grid of the field, either stats_zt or stats_zm
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  &
       rho_ds,    & ! Dry, static density on thermodynamic levels    [kg/m^3]
@@ -1509,7 +1509,7 @@ contains
       iprecip_frac_2, &
       iNcnm,          &
       ihmp2_zt,       &
-      zt
+      stats_zt
 
     use model_flags, only: &
       l_diagnose_correlations ! Variable(s)
@@ -1651,7 +1651,7 @@ contains
       delt         ! Timestep (dt_main in CLUBB)         [s]
 
     logical, intent(in) :: &
-      l_silhs_out_in  ! Whether to output SILHS files (lh_zt,lh_sfc) [dimensionless]
+      l_silhs_out_in  ! Whether to output SILHS files (stats_lh_zt,stats_lh_sfc) [dimensionless]
 
     call stats_init( &
       iunit, fname_prefix, fdir, l_stats_in, &

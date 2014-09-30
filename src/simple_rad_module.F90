@@ -196,7 +196,7 @@ module simple_rad_module
     use stats_type_utilities, only: stat_update_var_pt ! Procedure(s)
 
     use stats_variables, only:  & 
-        iz_inversion, sfc, l_stats_samp ! Variable(s)
+        iz_inversion, stats_sfc, l_stats_samp ! Variable(s)
 
     use interpolation, only: lin_interpolate_two_points ! Procedure(s)
 
@@ -303,7 +303,7 @@ module simple_rad_module
       ! Update surface statistics
       if ( l_stats_samp ) then
 
-        call stat_update_var_pt( iz_inversion, 1, z_i, sfc )
+        call stat_update_var_pt( iz_inversion, 1, z_i, stats_sfc )
 
       end if
 
