@@ -243,7 +243,8 @@ module advance_microphys_module
 
              if ( abs( gr%invrs_dzm(k) &
                        * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
-
+                ! Ensure the abs( correlation ) between w and hydromet does not have
+                ! a value greater than one.
                 K_hm(k,i) &
                 = min( K_hm(k,i), &
                        ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
