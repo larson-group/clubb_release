@@ -161,8 +161,9 @@ real, allocatable, dimension(:,:,:) :: mSIZEFIX_NR_3D, mNEGFIX_NR_3D, mNSUBR_3D,
 ! weberjk(UWM), Ancilliary micro variables
 real, allocatable, dimension(:,:,:) :: rain_vel_3D, EFFR_3D
 
-! weberjk(UWM), liquid water potential temperature and chi(s_mellor)
-real, allocatable, dimension(:,:,:) :: theta_l, chi
+! weberjk(UWM), liquid water potential temperature, chi (s_mellor),
+! and eta (t_mellor)
+real, allocatable, dimension(:,:,:) :: theta_l, chi, eta
 
 #endif /*UWM_STATS*/
 
@@ -433,8 +434,9 @@ indx_qg = iqg  ! Index for graupel mixing ratio (theta-l/qtog adv. budgets)
 ! weberjk(UWM), 3D NR budget
       allocate(rain_vel_3D(nx,ny,nzm), EFFR_3D(nx,ny,nzm), STAT=ierr)
 
-! weberjk(UWM), liquid water potential temperature and chi(s_mellor)
-      allocate(theta_l(nx,ny,nzm), chi(nx,ny,nzm), STAT=ierr)
+! weberjk(UWM), liquid water potential temperature, chi (s_mellor),
+! and eta (t_mellor).
+      allocate(theta_l(nx,ny,nzm), chi(nx,ny,nzm), eta(nx,ny,nzm), STAT=ierr)
 
 ! weberjk(UWM), store fraction names and units to create them within SAM. Create
 ! 5 elements for the (possibly) 5 prognostic variables (cloud, rain, ice, snow,
@@ -801,9 +803,8 @@ use vars, only: t,  gamaz, precsfc, precflux, qpfall, tlat, prec_xy, &
 !effect of precipitation (microphysics)    
 use vars, only: t2leprec, q2leprec, qwleprec, twleprec, prespot, qsatw
 use grid, only: nsave3D, nsave3dstart, nsave3dend
-use params, only: Rd_Rv
-use module_mp_GRAUPEL, only: Nc0, polysvp
-use compute_chi_module, only: compute_chi
+use module_mp_GRAUPEL, only: Nc0
+use compute_chi_module, only: compute_chi_eta
 use calc_vars_util, only: t2thetal
 #endif /*UWM_STATS*/
 
@@ -898,8 +899,6 @@ real t_before(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
 real qt_before(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) 
 real t_avg(nzm), t_before_avg(nzm) 
 real qt_avg(nzm), qt_avg_before(nzm)
-
-real, dimension(nzm) :: rsvp, rsmr ! Liquid vapor pressure, saturation mixing ratio
 #endif /*UWM_STATS*/
 
 #ifdef PNNL_STATS
@@ -1709,21 +1708,6 @@ endif
    ! Additional micro. variables
    rain_vel_3D(i,j,:)=rain_vel_3D(i,j,:) + rain_vel
    EFFR_3D(i,j,:)=EFFR_3D(i,j,:) + effr1d
-
-   ! Compute liquid water potential temperature
-   theta_l(i,j,:)=t2thetal( t(i,j,:), gamaz(:), tmpqr(:), &
-   ! pass in zero for the ice species ==>     tmpqci(:), tmpqs(:) + tmpqg(:), prespot(:) )
-                                              0.,        0.,                  prespot(:) ) 
-   
-   ! Compute saturation vapor pressure of water
-   do k=1,nzm
-     rsvp(k) = polysvp( theta_l(i,j,k)/prespot(k), 0)
-     rsmr(k) = Rd_Rv * rsvp(k) / ( tmppres(k) - rsvp(k) )
-   end do
-   
-   ! Compute extended liquid water mixing ratio
-   chi(i,j,:)=compute_chi( theta_l(i,j,:), (tmpqv(:)+tmpqcl(:)), rsmr(:), prespot(:) )
-   
 #endif /*UWM_STATS*/
     
 endif !do statis
@@ -1746,7 +1730,27 @@ endif !do statis
 
    end do ! i = 1,nx
 end do ! j = 1,ny
-   
+
+#ifdef UWM_STATS      
+do j = 1,ny
+   do i = 1,nx
+      if (doprecip) then
+         tmpqr(:) = micro_field(i,j,:,iqr)
+      else
+         tmpqr(:) = 0.0
+      endif
+      ! Compute liquid water potential temperature
+      theta_l(i,j,:) = t2thetal( t(i,j,:), gamaz(:), tmpqr(:), &
+      ! pass in zero for the ice species ==> tmpqci(:), tmpqs(:) + tmpqg(:), prespot(:) )
+                                 0.0,        0.0,                  prespot(:) )
+   enddo ! i = 1, nx
+enddo ! j = 1, ny
+
+! Compute extended liquid water mixing ratio
+call compute_chi_eta( theta_l, micro_field(:,:,:,iqv), pres, prespot, &
+                      chi, eta )
+
+#endif /*UWM_STATS*/
 if(mod(nstep,nsave3D).eq.0.and.nstep.ge.nsave3Dstart.and.nstep.le.nsave3Dend) then
   call write_3d_micro_fields()
 endif
