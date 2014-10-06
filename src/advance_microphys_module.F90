@@ -233,13 +233,13 @@ module advance_microphys_module
        do i = 1, hydromet_dim, 1
           do k = 1, gr%nz, 1
 
+             kp1 = min( k+1, gr%nz )
+
              K_hm(k,i) &
              = c_K_hm * Kh_zm(k) &
                * ( sqrt( hydrometp2(k,i) ) &
                    / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
                * ( one + abs( Skw_zm(k) ) )
-
-             kp1 = min( k, gr%nz )
 
              if ( abs( gr%invrs_dzm(k) &
                        * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
