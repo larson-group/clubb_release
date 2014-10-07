@@ -1747,7 +1747,7 @@ do j = 1,ny
 enddo ! j = 1, ny
 
 ! Compute extended liquid water mixing ratio
-call compute_chi_eta( theta_l, micro_field(:,:,:,iqv), pres, prespot, &
+call compute_chi_eta( theta_l, micro_field(1:nx,1:ny,1:nzm,iqv), pres, prespot,&
                       chi, eta )
 
 #endif /*UWM_STATS*/
