@@ -10,8 +10,8 @@ idx_count = 0;
 idx_count = idx_count + 1;
 global idx_3D_rr
 idx_3D_rr = idx_count;
-units_corrector_type(idx_3D_rr) = 3;
-varname_sam(idx_3D_rr,1:2) = 'QP';
+units_corrector_type(idx_3D_rr) = 0;
+varname_sam(idx_3D_rr,1:2) = 'RR';
 
 % w (m/s).
 idx_count = idx_count + 1;
