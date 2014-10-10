@@ -146,7 +146,7 @@ module parameters_tunable
 !$omp   nu8_vert_res_dep, nu9_vert_res_dep, nu10_vert_res_dep, nu_hm_vert_res_dep)
 
   ! Vince Larson added a constant to set plume widths for theta_l and rt
-  ! beta should vary between 0 and 3, with 1.5 the standard value
+  ! beta should vary between 0 and 3.
 
 #if defined(CLUBB_CAM) && !defined(CLUBBND_CAM)
   real( kind = core_rknd ), public :: &
