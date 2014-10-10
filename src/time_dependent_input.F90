@@ -757,7 +757,8 @@ module time_dependent_input
       ! If time is less than the lowest value in time_array, an invalid
       ! time has been provided. Stop execution.
       write(fstderr,*) "In subroutine time_select:"
-      write(fstderr,*) "Time is before the first time in the list. Stopping"
+      write(fstderr,*) "Selected time is before the first (begin) time"
+      write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
 
     else if ( real( time, kind = core_rknd ) == time_array(1) ) then
@@ -770,7 +771,8 @@ module time_dependent_input
       ! If time is greater than the highest value in time_array, an invalid
       ! time has been provided. Stop execution.
       write(fstderr,*) "In subroutine time_select:"
-      write(fstderr,*) "Time is after the last time in the list. Stopping"
+      write(fstderr,*) "Selected time is after the last (end) time"
+      write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
       
     else if ( real( time, kind = core_rknd ) == time_array(nvar) ) then
