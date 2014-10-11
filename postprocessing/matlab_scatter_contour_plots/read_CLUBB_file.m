@@ -30,6 +30,8 @@ global idx_time
 varid_clubb = zeros(1,num_tot_var_clubb);
 for i = 1:1:num_tot_var_clubb
    [ varid_clubb(i) ] = nc_variable_id( ncid_clubb, varname_clubb(i,:) );
+   % Here, I will place some code that will print a message when a
+   % requested variable is not found in the output file.
 end
 
 % Read CLUBB variables.

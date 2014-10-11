@@ -31,6 +31,8 @@ global idx_3D_time
 varid_sam = zeros(1,num_tot_var_sam);
 for i = 1:1:num_tot_var_sam
    [ varid_sam(i) ] = nc_variable_id( ncid_sam, varname_sam(i,:) );
+   % Here, I will place a message that will print when a variable
+   % is not found in the output file.
 end
 
 % Read SAM variables.
