@@ -917,6 +917,10 @@ module stats_variables
 !$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
 !$omp   threadprivate(iFrad_LW_up, iFrad_LW_down, iFprec, iFcsed)
 
+  integer, dimension(:), allocatable, public :: &
+    iK_hm
+!$omp   threadprivate(iK_hm)
+
   ! Skewness Functions on stats_zm grid
   integer, public :: &
     igamma_Skw_fnc = 0,  &

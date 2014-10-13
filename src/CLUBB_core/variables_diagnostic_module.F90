@@ -109,6 +109,11 @@ module variables_diagnostic_module
 
 !$omp threadprivate(Kh_zt, Kh_zm)
 
+  real( kind = core_rknd ), allocatable, dimension(:,:), public :: &
+    K_hm     ! Eddy diffusivity coefficient for hydrometeors on momentum levels [m^2 s^-1]
+
+!$omp threadprivate(K_hm)
+
 ! Mixing lengths
   real( kind = core_rknd ), target, allocatable, dimension(:), public :: & 
     Lscale, Lscale_up, Lscale_down ! [m]
@@ -295,6 +300,7 @@ module variables_diagnostic_module
 
     allocate( Kh_zt(1:nz) )  ! Eddy diffusivity coefficient: thermo. levels
     allocate( Kh_zm(1:nz) )  ! Eddy diffusivity coefficient: momentum levels
+    allocate( K_hm(1:nz,1:hydromet_dim) ) ! Eddy diff. coef. for hydromets.: mom. levs.
 
     allocate( em(1:nz) )
     allocate( Lscale(1:nz) )
@@ -483,6 +489,10 @@ module variables_diagnostic_module
     Kh_zt = 0.0_core_rknd  ! Eddy diffusivity coefficient: thermo. levels
     Kh_zm = 0.0_core_rknd  ! Eddy diffusivity coefficient: momentum levels
 
+    do i = 1, hydromet_dim, 1
+      K_hm(1:nz,i)    = 0.0_core_rknd ! Eddy diff. coef. for hydromets.: mom. levs.
+    end do
+
     ! TKE
     em       = em_min
 
@@ -611,6 +621,7 @@ module variables_diagnostic_module
 
     deallocate( Kh_zt )  ! Eddy diffusivity coefficient: thermo. levels
     deallocate( Kh_zm )  ! Eddy diffusivity coefficient: momentum levels
+    deallocate( K_hm )   ! Eddy diff. coef. for hydromets.: mom. levs.
 
     deallocate( em )
     deallocate( Lscale )

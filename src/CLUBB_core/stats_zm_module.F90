@@ -45,6 +45,7 @@ module stats_zm_module
         ithlpthvp, & 
         itau_zm, & 
         iKh_zm, & 
+        iK_hm, & 
         iwprcp, & 
         irc_coef, &
         ithlprcp, & 
@@ -293,10 +294,12 @@ module stats_zm_module
     allocate( iwphydrometp(1:hydromet_dim) )
     allocate( irtphmp(1:hydromet_dim) )
     allocate( ithlphmp(1:hydromet_dim) )
+    allocate( iK_hm(1:hydromet_dim) )
 
     iwphydrometp(:) = 0
     irtphmp(:) = 0
     ithlphmp(:) = 0
+    iK_hm(:) = 0
 
     ! Allocate and then zero out passive scalar arrays on the stats_zm grid (fluxes,
     ! variances and other high-order moments)
@@ -348,6 +351,14 @@ module stats_zm_module
 
     if ( any( vars_zm == "thlphmp" ) ) then
        ! Correct for number of variables found under "thlphmp".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zm_loops = tot_zm_loops - hydromet_dim
+       ! Add 1 for "thlphmp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "K_hm" ) ) then
+       ! Correct for number of variables found under "K_hm".
        ! Subtract 1 from the loop size for each hydrometeor.
        tot_zm_loops = tot_zm_loops - hydromet_dim
        ! Add 1 for "thlphmp" to the loop size.
@@ -452,6 +463,28 @@ module stats_zm_module
              var_description="Eddy diffusivity on momentum levels [m^2/s]", var_units="m^2/s", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
+
+      case ('K_hm')
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            iK_hm(hm_idx) = k
+
+
+            call stat_assign( var_index=iK_hm(hm_idx), &
+                                 var_name="K_hm_"//trim( hm_type(1:2) ), &
+                                 var_description="Eddy. diff. coef. of "  &
+                                 // trim(hm_type(1:2)) &
+                                 // " [m^2/s]", &
+                                 var_units="[m^2/s]", &
+                                 l_silhs=.false., grid_kind=stats_zm )
+
+            k = k + 1
+
+          end do
+
 
       case ('wprcp')
         iwprcp = k

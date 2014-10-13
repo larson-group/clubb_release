@@ -33,11 +33,12 @@ module advance_microphys_module
   !=============================================================================
   subroutine advance_microphys( dt, time_current, wm_zt, wp2, &          ! In
                                 exner, rho, rho_zm, rcm, &               ! In
-                                cloud_frac, Kh_zm, Skw_zm, &             ! In
+                                cloud_frac, Kh_zm, K_hm, Skw_zm, &       ! In
                                 rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
                                 hydromet_mc, Ncm_mc, hydrometp2, &       ! In
                                 hydromet_vel_covar_zt_impc, &            ! In
                                 hydromet_vel_covar_zt_expc, &            ! In
+                                Lscale, &                                ! In
                                 hydromet, hydromet_vel_zt, &             ! Inout
                                 Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
                                 wphydrometp, wpNcp, err_code )           ! Out
@@ -54,7 +55,8 @@ module advance_microphys_module
         zt2zm    ! Procedure(s)
 
     use parameters_tunable, only: & 
-        c_K_hm    ! Variable(s) 
+        c_K_hm, & ! Variable(s) 
+        c_K_hmb   ! Variable(s) 
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -107,6 +109,7 @@ module advance_microphys_module
 
     use stats_variables, only: & 
         iNcm,         & ! Variable(s)
+        iK_hm,        & 
         iNc_in_cloud
 
     use stats_type_utilities, only: & 
@@ -154,8 +157,12 @@ module advance_microphys_module
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Lscale    ! Length-scale [m]
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
+      K_hm,      &      ! hm eddy diffusivity on momentum grid          [m^2/s]
       hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)      [units]
       hydromet_vel_zt    ! Mean hydrometeor sed. vel. on thermo. levs.   [m/s]
 
@@ -191,11 +198,14 @@ module advance_microphys_module
     ! <w'Nc'> = - K_Nc & d<Nc>/dz;
     ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
     ! on multiple factors.
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
-      K_hm    ! Coefficient of diffusion (turb. adv.) for hydrometeors [m^2/s]
+    real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
+      K_gamma ! Non-local factor of diffusion (turb. adv.) for hydrometeors [m^2/s]
+
+    real( kind = core_rknd ) :: &
+      K_hm_min_coef 
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc           [m^2/s]
+      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc                [m^2/s]
 
     integer :: k, kp1, i    ! Loop indices
 
@@ -205,7 +215,7 @@ module advance_microphys_module
     integer :: &
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
-
+    K_hm_min_coef = .1
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
     if ( hydromet_dim > 0 ) then
@@ -239,7 +249,14 @@ module advance_microphys_module
              = c_K_hm * Kh_zm(k) &
                * ( sqrt( hydrometp2(k,i) ) &
                    / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
-               * ( one + abs( Skw_zm(k) ) )
+               * ( one + abs( Skw_zm(k) ) ) 
+
+             K_gamma(k,i) &
+             = one -  c_K_hmb * ( ( zt2zm( Lscale(:) , k ) &
+               / max( zt2zm( hydromet(:,i), k ),hydromet_tol(i) ) )  &
+               * ( gr%invrs_dzm(k) * ( hydromet(kp1,i)  - hydromet(k,i) ) ) ) 
+
+             K_hm(k,i) = K_hm(k,i) * max(K_gamma(k,i), K_hm_min_coef)
 
              if ( abs( gr%invrs_dzm(k) &
                        * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
@@ -257,6 +274,15 @@ module advance_microphys_module
        enddo ! i = hydromet_dim, 1
 
     endif ! hydromet_dim > 0
+
+    if ( l_stats_samp ) then
+      do i = 1, hydromet_dim, 1
+        do k = 1, gr%nz, 1
+          call stat_update_var_pt( iK_hm(i), k, K_hm(k,i), stats_zm )
+        end do
+      end do ! i = hydromet_dim, 1
+    end if 
+
 
     if ( l_predict_Nc ) then
 
