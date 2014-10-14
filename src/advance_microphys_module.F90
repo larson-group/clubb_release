@@ -215,7 +215,7 @@ module advance_microphys_module
     integer :: &
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
-    K_hm_min_coef = .1
+    K_hm_min_coef = .1_core_rknd
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
     if ( hydromet_dim > 0 ) then

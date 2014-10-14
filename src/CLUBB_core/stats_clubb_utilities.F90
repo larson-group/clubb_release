@@ -916,6 +916,14 @@ module stats_clubb_utilities
        ntot = ntot + hydromet_dim
     endif
 
+    if ( any( vars_zm == "K_hm" ) ) then
+       ! Correct for number of variables found under "K_hm".
+       ! Subtract "thlphmp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each hydrometeor to the number of zm statistical variables.
+       ntot = ntot + hydromet_dim
+    endif
+
     if ( ntot == nvarmax_zm ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zm than allowed for by nvarmax_zm."
@@ -1662,6 +1670,7 @@ module stats_clubb_utilities
         ithlpthvp, & ! Variable(s)
         itau_zm, &
         iKh_zm, &
+        iK_hm, &
         iwprcp, &
         irc_coef, &
         ithlprcp, &
@@ -1770,6 +1779,7 @@ module stats_clubb_utilities
         wpthvp, &
         tau_zm, &
         Kh_zm, & 
+        K_hm,&
         thlprcp, & 
         rtprcp, & 
         rcp2, & 
@@ -2617,6 +2627,7 @@ module stats_clubb_utilities
         ihmp2_zt, &
         iwp2hmp, &
         iwphydrometp, &
+        iK_hm, &
         irtphmp, &
         ithlphmp
 
@@ -2828,6 +2839,7 @@ module stats_clubb_utilities
       deallocate( iwphydrometp )
       deallocate( irtphmp )
       deallocate( ithlphmp )
+      deallocate( iK_hm )
     end if ! l_stats
 
 
