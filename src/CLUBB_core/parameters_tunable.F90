@@ -97,6 +97,7 @@ module parameters_tunable
     c_K9        = 0.250000_core_rknd, & ! Coef. of Eddy Diff.: up2/vp2   [m^2/s]
     c_K_hm      = 0.750000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
     c_K_hmb     = 0.10000_core_rknd,  & ! Coef. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
+    K_hm_min_coef = 0.10000_core_rknd,& ! Min. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
     gamma_coef  = 0.320000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
     gamma_coefb = 0.320000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd, & ! Deg. Slope: gamma coef. Skw. Fnct. [-]
@@ -110,7 +111,7 @@ module parameters_tunable
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
     lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
 !$omp threadprivate(c_K, c_K1, c_K2, c_K6, &
-!$omp   c_K8, c_K9, c_K_hm, c_K_hmb, gamma_coef, gamma_coefb, gamma_coefc, &
+!$omp   c_K8, c_K9, c_K_hm, c_K_hmb, K_hm_min_coef, gamma_coef, gamma_coefb, gamma_coefc, &
 !$omp   mu, mult_coef, taumin, taumax, lmin)
 
   real( kind = core_rknd ), public :: &
@@ -209,7 +210,7 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
     beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
     mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
     alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -250,15 +251,15 @@ module parameters_tunable
        "nu8                        ", "c_K9                       ", &
        "nu9                        ", "nu10                       ", &
        "c_K_hm                     ", "c_K_hmb                    ", &
-       "nu_hm                      ", "gamma_coef                 ", &
-       "gamma_coefb                ", "gamma_coefc                ", &
-       "mu                         ", "beta                       ", &
-       "lmin_coef                  ", "mult_coef                  ", &
-       "taumin                     ", "taumax                     ", &
-       "Lscale_mu_coef             ", "Lscale_pert_coef           ", &
-       "alpha_corr                 ", "Skw_denom_coef             ", &
-       "c_K10                      ", "thlp2_rad_coef             ", &
-       "thlp2_rad_cloud_frac_thresh" /)
+       "K_hm_min_coef              ", "nu_hm                      ", &
+       "gamma_coef                 ", "gamma_coefb                ", &
+       "gamma_coefc                ", "mu                         ", &
+       "beta                       ", "lmin_coef                  ", &
+       "mult_coef                  ", "taumin                     ", &
+       "taumax                     ", "Lscale_mu_coef             ", &
+       "Lscale_pert_coef           ", "alpha_corr                 ", &
+       "Skw_denom_coef             ", "c_K10                      ", &
+       "thlp2_rad_coef             ", "thlp2_rad_cloud_frac_thresh" /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -342,7 +343,7 @@ module parameters_tunable
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+                            c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
                             gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                             Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -665,7 +666,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
                           gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -735,7 +736,7 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb,nu_hm, & 
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
       beta, gamma_coef, gamma_coefb, gamma_coefc, & 
       lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -758,7 +759,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
                           gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -802,7 +803,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, &
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
                gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -870,6 +871,7 @@ module parameters_tunable
       inu10, &
       ic_K_hm, & 
       ic_K_hmb, & 
+      iK_hm_min_coef, &
       inu_hm, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -899,7 +901,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
-      c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, gamma_coef, &
+      c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
       taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
       Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -957,6 +959,7 @@ module parameters_tunable
     params(inu10)      = nu10
     params(ic_K_hm)    = c_K_hm
     params(ic_K_hmb)   = c_K_hmb
+    params(iK_hm_min_coef)   = K_hm_min_coef
     params(inu_hm)     = nu_hm
 
     params(igamma_coef)  = gamma_coef
@@ -993,7 +996,7 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
                gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1061,6 +1064,7 @@ module parameters_tunable
       inu10, &
       ic_K_hm, & 
       ic_K_hmb, & 
+      iK_hm_min_coef, & 
       inu_hm, & 
       igamma_coef, & 
       igamma_coefb, & 
@@ -1093,7 +1097,7 @@ module parameters_tunable
       C11, C11b, C11c, C12, C13, C14, C15, & 
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-      c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+      c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
       gamma_coef, gamma_coefb, gamma_coefc, & 
       mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1149,6 +1153,7 @@ module parameters_tunable
     nu10      = params(inu10)
     c_K_hm    = params(ic_K_hm)
     c_K_hmb   = params(ic_K_hmb)
+    K_hm_min_coef   = params(iK_hm_min_coef)
     nu_hm     = params(inu_hm)
 
     gamma_coef  = params(igamma_coef)
@@ -1198,7 +1203,7 @@ module parameters_tunable
                           C11, C11b, C11c, C12, C13, C14, C15, & 
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, nu_hm, & 
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
                           gamma_coef, gamma_coefb, gamma_coefc, & 
                           mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
                           Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
@@ -1270,6 +1275,7 @@ module parameters_tunable
     nu10               = init_value
     c_K_hm             = init_value
     c_K_hmb            = init_value
+    K_hm_min_coef      = init_value
     nu_hm              = init_value
     beta               = init_value
     gamma_coef         = init_value

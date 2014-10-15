@@ -55,8 +55,9 @@ module advance_microphys_module
         zt2zm    ! Procedure(s)
 
     use parameters_tunable, only: & 
-        c_K_hm, & ! Variable(s) 
-        c_K_hmb   ! Variable(s) 
+        c_K_hm,  & ! Variable(s) 
+        c_K_hmb, &  
+        K_hm_min_coef    
 
     use parameters_model, only: & 
         hydromet_dim   ! Integer
@@ -201,9 +202,6 @@ module advance_microphys_module
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
       K_gamma ! Non-local factor of diffusion (turb. adv.) for hydrometeors [m^2/s]
 
-    real( kind = core_rknd ) :: &
-      K_hm_min_coef 
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
       K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc                [m^2/s]
 
@@ -215,7 +213,6 @@ module advance_microphys_module
     integer :: &
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
-    K_hm_min_coef = .1_core_rknd
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
     if ( hydromet_dim > 0 ) then
