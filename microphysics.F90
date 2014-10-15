@@ -6166,6 +6166,7 @@ if ( masterproc ) then
 endif
 
 
+call t_stopf('3D_OUT')
 
 end subroutine write_3d_micro_fields
 #endif /*UWM_STATS*/
