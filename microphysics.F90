@@ -5434,7 +5434,51 @@ subroutine write_3d_micro_fields()
 !   This is largely 'write_3D_fields.F90', but reused here. 
 !--------------------------------------------------------------------------------------------------
 
-use vars
+use vars, only: &
+    lenstr,  & ! Variable(s)
+    t,       &
+    qv,      &
+    qcl,     &
+    w,       &
+    qpl,     &
+    gamaz,   &
+    prespot
+
+use domain, only: &
+    nsubdomains_x, & ! Variable(s)
+    nsubdomains_y
+
+use grid, only:  &
+    masterproc,  & ! Variable(s)
+    output_sep,  &
+    rank,        &
+    nsubdomains, &
+    nstep,       &
+    RUN3D,       &
+    save3Dbin,   &
+    case,        &
+    caseid,      &
+    save3Dsep,   &
+    nrestart,    &
+    notopened3D, &
+    nx,          &
+    ny,          &
+    nzm,         &
+    z,           &
+    pres,        &
+    dx,          &
+    dy,          &
+    nstep,       &
+    dt,          &
+    day0,        &
+    dompi,       &
+    dogzip3D
+
+use calc_vars_util, only: &
+    t2thetal  ! Procedure(s)
+
+use compute_chi_module, only: &
+    compute_chi_eta  ! Procedure(s)
 
 implicit none
 character *120 filename
@@ -5449,7 +5493,15 @@ character *12 c_z(nzm),c_p(nzm),c_dx, c_dy, c_time
 integer i,j,k,n,nfields,nfields1
 real tmp(nx,ny,nzm)
 
-nfields=29 ! number of 3D fields to save
+real, dimension(nx,ny,nzm) :: &
+  thl, & ! Liquid water potential temperature                 [K]
+  rt,  & ! Total water mixing ratio                           [kg/kg]
+  chi, & ! Extended liquid water mixing ratio                 [kg/kg]
+  eta    ! Coordinate orthogonal to chi in PDF transformation [kg/kg]
+
+call t_startf('3D_out')
+
+nfields=37 ! number of 3D fields to save
 nfields1=0 ! assertion check
 
 if(masterproc.or.output_sep) then
@@ -5549,9 +5601,150 @@ if(masterproc.or.output_sep) then
   end if ! masterproc
 end if ! masterproc.or.output_sep
 
+
 !--------------------------------------
-! QR Budget Terms
+! Micro fields
 !--------------------------------------
+
+do i = 1, nx, 1
+   do j = 1, ny, 1
+      do k = 1, nzm, 1
+
+         ! Calculate rt
+         rt(i,j,k) = qv(i,j,k) + qcl(i,j,k)
+
+         ! Calculate thetal
+         thl(i,j,k) = t2thetal( t(i,j,k), gamaz(k), qpl(i,j,k), &
+                                0.0, 0.0, prespot(k) )
+
+      enddo ! k = 1, nzm, 1
+   enddo ! j = 1, ny, 1
+enddo ! i = 1, nx, 1
+
+! Calculate the values of chi and eta.
+call compute_chi_eta( thl, rt, pres, prespot, &
+                      chi, eta )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = 0.5 * ( w(i,j,k) + w(i,j,k+1) )
+      enddo
+   enddo
+enddo
+name = 'W'
+long_name = 'Vertical Velocity'
+units = 'm/s'
+call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = rt(i,j,k)
+      enddo
+   enddo
+enddo
+name = 'RT'
+long_name = 'Total water mixing ratio (vapor+cloud)'
+units = 'kg/kg'
+call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = thl(i,j,k)
+      enddo
+   enddo
+enddo
+name = 'THL'
+long_name = 'Liquid water potential temperature'
+units = 'K'
+call compress3D( tmp, nx, ny, nzm, name, long_name,units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = chi(i,j,k)
+      enddo
+   enddo
+enddo
+name = 'CHI'
+long_name = 'Extended liquid water mixing ratio, chi'
+units = 'kg/kg'
+call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = eta(i,j,k)
+      enddo
+   enddo
+enddo
+name = 'ETA'
+long_name = 'Eta (orthogonal to chi in PDF trans.)'
+units = 'kg/kg'
+call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+nfields1=nfields1+1
+do k = 1, nzm
+   do j = 1, ny
+      do i = 1, nx
+         tmp(i,j,k) = qcl(i,j,k)
+      enddo
+   enddo
+enddo
+name = 'RC'
+long_name = 'Cloud water mixing ratio'
+units = 'kg/kg'
+call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+
+
+if (doprecip) then
+
+  nfields1=nfields1+1
+  do k = 1, nzm
+     do j = 1, ny
+        do i = 1, nx
+           tmp(i,j,k) = qpl(i,j,k)
+        enddo
+     enddo
+  enddo
+  name = 'RR'
+  long_name = 'Rain water mixing ratio'
+  units = 'kg/kg'
+  call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+
+  nfields1=nfields1+1
+  do k = 1, nzm
+     do j = 1, ny
+        do i = 1, nx
+           tmp(i,j,k) = micro_field(i,j,k,inr)
+        enddo
+     enddo
+  enddo
+  name = 'NR'
+  long_name = 'Rain drop concentration'
+  units = 'num/kg'
+  call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                 save3Dbin, dompi, rank, nsubdomains )
+endif ! doprecip
+
+  !--------------------------------------
+  ! RR Budget Terms
+  !--------------------------------------
 nfields1=nfields1+1
   do k=1,nzm
    do j=1,ny
@@ -5956,17 +6149,19 @@ nfields1=nfields1+1
   call compress3D(tmp,nx,ny,nzm,name,long_name,units, &
                                  save3Dbin,dompi,rank,nsubdomains)
 
+call task_barrier()
 
 if(nfields.ne.nfields1) then
-  print*,'write_fields3D error: nfields=',nfields,'nfields1=',nfields1
+  if( masterproc ) print*,'write_fields3D error: nfields=',nfields,'nfields1=',nfields1
   call task_abort()
-else
-close (46)
-if(RUN3D.or.save3Dsep) then
-  if(dogzip3D) call systemf('gzip -f '//filename)
-    print*, 'Writting 3D data. file:'//filename
-  else
-    print*, 'Appending 3D data. file:'//filename
+endif
+if ( masterproc ) then
+   close (46)
+   if(RUN3D .or. save3Dsep) then
+     if(dogzip3D) call systemf('gzip -f '//filename)
+     print*, 'Writting 3D data. file:'//filename
+   else
+     print*, 'Appending 3D data. file:'//filename
   end if
 endif
 
