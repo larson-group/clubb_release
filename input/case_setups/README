@@ -467,20 +467,10 @@ stats_fmt | character
   Either "grads" or "netcdf".  Note that the GrADS viewer has trouble
   comparing a netCDF file to a grads file.
 
-Other files in the case_setups directory:
-====================================
-
-<Case Name>_sounding.in
-  Sounding information for initial CLUBB fields.
-
-<Case Name>_sclr_sounding.in
-  Sounding information for passive scalars.
-
-<Case Name>_forcings.in
-  Forcing information.
-
-<Case Name>_surface.in
-  Surface flux information.
+stats_file | character
+  Name of the file listing all variables to output to disk.
+  e.g. "../input/stats/standard_stats.in", "../input/stats/all_stats.in", 
+       "../input/stats/nobudgets_nomicro_stats.in", etc.
 
 --------------------------------------------------------------------------------
 5. &setfields
@@ -567,6 +557,9 @@ In addition, the directory contains the following files for running simulations:
 
 <Case Name>_sounding.in
 Contains columns for the initial values of temperature, moisture, and wind.
+
+<Case Name>_sclr_sounding.in
+Sounding information for passive scalars.
 
 <Case Name>_ozone_sounding.in
 This is an optional file that is only used with BUGSrad radiation scheme to 
