@@ -1,6 +1,9 @@
 % $Id$
-function plot_CLUBB_PDF_LES_pts_NN( var_x_LES, var_y_LES, nx_LES_grid, ...
-                                    ny_LES_grid, num_x_pts, num_y_pts, ...
+function plot_CLUBB_PDF_LES_pts_NN( var_x_LES, ...
+                                    var_y_LES, ...
+                                    nx_LES_grid, ny_LES_grid, ...
+                                    num_x_pts, num_y_pts, num_contours, ...
+                                    num_std_devs_min_contour, ...
                                     mu_x_1, mu_x_2, mu_y_1, mu_y_2, ...
                                     sigma_x_1, sigma_x_2, sigma_y_1, ...
                                     sigma_y_2, corr_x_y_1, ...
@@ -128,9 +131,10 @@ end
 % Find the minimum contour to plot for CLUBB results.
 % Sample a value that is a set number of standard deviations away from the
 % bivariate mean for each variable for each component.
-num_std_devs = 2.0;
+num_std_devs = num_std_devs_min_contour / sqrt(2.0);
 % For the 1st PDF component, sample P_xy at sqrt(2)*num_std_devs, which is
-% num_std_devs away from the 1st PDF component bivariate mean in both x and y.
+% num_std_devs away from the 1st PDF component bivariate mean in both x
+% and y.
 if ( sigma_x_1 > 0.0 && sigma_y_1 > 0.0 )
    if ( mu_x_1 >= mu_x_2 )
       x_1_test = min( mu_x_1 + num_std_devs * sigma_x_1, max_x );
@@ -153,7 +157,8 @@ else
    P_low_1 = -1.0;
 end
 % For the 2nd PDF component, sample P_xy at sqrt(2)*num_std_devs, which is
-% num_std_devs away from the 2nd PDF component bivariate mean in both x and y.
+% num_std_devs away from the 2nd PDF component bivariate mean in both x
+% and y.
 if ( sigma_x_2 > 0.0 && sigma_y_2 > 0.0 )
    if ( mu_x_1 >= mu_x_2 )
       x_2_test = max( mu_x_2 - num_std_devs * sigma_x_2, min_x );
@@ -185,11 +190,10 @@ elseif ( P_low_2 > 0.0 ) % P_low_1 <= 0.0
 else % P_low_1 <= 0.0 && P_low_2 <= 0.0
    contour_low = 0.0;
 end
-% In a scenario where contour_low is so far out that it doesn't plot well, use
-% an alternative.  Sort all the values of P_xy and plot the lowest contour at
-% the 10th percentile of P_xy.
+% In a scenario where contour_low is so far out that it doesn't plot well,
+% use an alternative.  Sort all the values of P_xy and plot the lowest
+% contour at the 10th percentile of P_xy.
 P_xy_vals = zeros( num_x_pts*num_y_pts, 1 );
-P_xy_sort = zeros( num_x_pts*num_y_pts, 1 );
 idx = 0;
 for i = 1:1:num_x_pts
    for j = 1:1:num_y_pts
@@ -205,8 +209,6 @@ end
 % Find the maximum contour to plot for CLUBB results.
 P_xy_high = max( max( P_xy ) );
 contour_high = P_xy_high;
-% Set the number of contours.
-num_contours = 100;
 % Set the contour vector.
 delta_contour = ( contour_high - contour_low ) / ( num_contours - 1 );
 for ci = 1:1:num_contours
