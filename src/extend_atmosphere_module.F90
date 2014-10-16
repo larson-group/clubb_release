@@ -2,22 +2,63 @@
 ! $Id$
 module extend_atmosphere_module
 
-! Grid Layout:
+! Sometimes we wish to compute the radiative processes (eg ozone absorption) at high altitudes
+! without undertaking the computational expense of computing CLUBB's equations there.
+! To do so, we feed a grid that includes extra levels at high altitudes into the radiation code
+! while computing CLUBB's moment equations on the standard grid.
 !
-! /////////////// Layers from U.S. Standard Atmosphere or sounding   ///////////////
-! ///////////////       Dimension: extend_atmos_range_size           ///////////////
-!                                  .
-!                                  .
-! ---------------         Interpolated Layers                        ---------------
-! ---------------         Dimension: lin_int_buffer_size             ---------------
-!                                  .
-!                                  .
-! ///////////////          Top of CLUBB Grid                         ///////////////
-! ///////////////          Dimension: grid_size                      ///////////////
+! Altitude increases with increasing grid index.
+!
+! Grid Layout
+!---------------------------------------------------------------------------------------
+!  Computational  |     Buffer    |    Extended   | Complete                           |
+!                 |               |               |                                    |
+!                 |               | The           |                                    |
+!                 |               | Extended      | The Complete Grid glues together   |
+!                 |               | Grid is a     | parts of the Computational         |
+!                 | The Buffer    | sounding      | Buffer, and Extended Grids         |
+!                 | Grid          | which         | in the following way:              |
+!                 | interpolates  | includes      |                                    |
+!                 | between the   | grid          |   Extended Grid                    |
+!                 | top of the    | heights       |                                    |
+!                 | Computational | from the      |        +                           |
+!   The           | Grid and      | ground to     |                                    |
+!   Computational | the bottom    | above the     |   Buffer Grid                      |
+!   Grid is where | of the        | Radiation     |                                    |
+!   CLUBB's       | Radiation     | grid. It      |        +                           |
+!   dynamical     | Grid          | includes      |                                    |
+!   computations  |               | profiles of   |   Computational Grid               |
+!   take place    |               | absorbers     |                                    |
+!                 |               | (eg ozone)    |                                    |
+!                 |               |               |                                    |
+! ///////Ground/////////////////////////////////////////////////////////////////////////
+!---------------------------------------------------------------------------------------
+! Grid Positions and Variables Explained Graphically
+!-------------------------------------------------------------------
+!  Computational  |     Buffer           |   Extended              |
+!                 | (not a separate      | -                       |
+!                 |  array)              | extend_atmos_range_size |
+!                 |                      | |                       |
+!                 |                      | |                       |
+!                 |                      | |                       |
+!                 |                      | j                       |
+!                 | -                    | -                       |
+!                 | lin_int_buffer_size  |                         |
+!                 | |                    |                         |
+!                 | 1                    |                         |
+! -               | -                    |                         |
+! grid_size       |                      |                         |
+! |               |                      |                         |
+! |               |                      |                         |
+! |               |                      |                         |
+! |               |                      |                         |
+! 1               |                      |                         |
+! -/////Ground//////////////////////////////////////////////////////
 !
 ! References:
 !   McClatchey, et al., (1972) _Environmental Research Papers_, No. 411, p.94
-!-------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------------
+
   use clubb_precision, only: &
     dp, & ! double precision
     core_rknd
@@ -32,44 +73,24 @@ module extend_atmosphere_module
     determine_extend_atmos_bounds,&
     finalize_extend_atm
 
-  ! Size of Extended Atmosphere
-  integer, public :: extend_atmos_dim
-!$omp threadprivate(extend_atmos_dim)
+  integer, public :: &
+    extend_atmos_dim, & ! Size of Extended Atmosphere
+    total_atmos_dim     ! Total Atmosphere Size (grid + buffer + extended atmosphere)
+!$omp threadprivate(extend_atmos_dim, total_atmos_dim)
 
-  ! Total Atmosphere Size (grid + buffer + extended atmosphere)
-  integer, public :: total_atmos_dim
-!$omp threadprivate(total_atmos_dim)
-
-  ! Altitude of complete atmosphere in meters
-  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_alt
-!$omp threadprivate(complete_alt)
-
-  ! Altitude of complete momentum grid in meters
-  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: complete_momentum
-!$omp threadprivate(complete_momentum)
+  real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
+    complete_alt, &     ! Altitude of complete atmosphere in meters
+    complete_momentum   ! Altitude of complete momentum grid in meters
+!$omp threadprivate(complete_alt, complete_momentum)
 
   ! Extended Atmosphere variables
-
-  ! Altitude in meters
-  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_alt
-!$omp threadprivate(extend_alt)
-
-  ! Temperature in degrees Kelvin
-  real( kind = dp ), public, target, allocatable,dimension(:) :: extend_T_in_K
-!$omp threadprivate(extend_T_in_K)
-
-  ! Specific Humidity ( Water Vapor / Density )
-  real( kind = dp ), public, target, allocatable, dimension(:) ::  extend_sp_hmdty
-!$omp threadprivate(extend_sp_hmdty)
-
-  ! Pressure in millibars
-  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_p_in_mb
-!$omp threadprivate(extend_p_in_mb)
-
-
-  ! Ozone ( O_3 / Density )
-  real( kind = dp ), public, target, allocatable, dimension(:) :: extend_o3l
-!$omp threadprivate(extend_o3l)
+  real( kind = dp ), public, target, allocatable, dimension(:) :: &
+    extend_alt, &         ! Altitude, increases with array index    [m]
+    extend_T_in_K, &      ! Temperature in degrees Kelvin
+    extend_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )
+    extend_p_in_mb, &     ! Pressure in millibars
+    extend_o3l            ! Ozone ( O_3 / Density )
+!$omp threadprivate(extend_alt, extend_T_in_K, extend_sp_hmdty, extend_p_in_mb, extend_o3l)
 
   contains
 
@@ -94,7 +115,11 @@ module extend_atmosphere_module
 
     use input_interpret, only: read_theta_profile, read_z_profile ! Procedure(s)
 
-    use constants_clubb, only: kappa, p0, fstderr ! Constant(s)
+    use constants_clubb, only: &
+      kappa, & ! Constant(s)
+      p0, &
+      fstderr, &
+      pascal_per_mb
 
     use input_names, only: z_name, temperature_name, ozone_name, rt_name ! Variable(s)
 
@@ -170,7 +195,7 @@ module extend_atmosphere_module
       stop "Feature not implemented"
     end if
 
-    extend_p_in_mb = real(p_in_Pa/ 100._core_rknd, kind=dp)
+    extend_p_in_mb = real(p_in_Pa/ pascal_per_mb, kind=dp)
 
     ! Convert to temperature from thlm or theta
 
@@ -235,8 +260,8 @@ module extend_atmosphere_module
     !
     ! References:
     !   None
+    !
     !----------------------------------------------------------------------------------------------
-
 
     use constants_clubb, only: &
       fstderr, & ! Variable(s)
@@ -275,15 +300,31 @@ module extend_atmosphere_module
       dz10, dz_model, dz_extension, dz, &
       zm_grid_top, extend_bottom, buffer_size
 
-    integer :: i, j, k ! Loop indices
+    integer :: &
+      i, & ! Loop index
+      j, & ! Array index in extend_alt which is one above the computational domain  []
+      k    ! Array index of altitude one less than the top of the radiative domain  []
 
     ! ---- Begin Code ----
+
+    if ( radiation_top < real( zm_grid(grid_size), kind=dp ) ) then
+      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+      stop "top of the radiation grid is below the top of the computational grid"
+    end if
 
     ! Determine the bounds to use for the extended atmosphere
 
     j=1
+
+    ! This code ensures that altitudes monotonically increases with increasing grid level
     do while ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) .and. j < extend_atmos_dim )
-      j= j+1
+      j = j + 1
+    end do
+
+    ! This code ensures that pressure monotonically decreases with increasing grid level
+    do while (real(p_in_Pa_zm(grid_size),kind=dp) < &
+            extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) )
+      j = j + 1
     end do
 
     if ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) ) then
@@ -296,6 +337,12 @@ module extend_atmosphere_module
       write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
                          "not reach radiation_top"
       stop
+    end if
+
+    if ( real(p_in_Pa_zm(grid_size),kind=dp) < &
+         extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) ) then
+      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+      stop "pressure at top of computational grid less than pressure at base of radiative grid"
     end if
 
     k=1
@@ -314,13 +361,6 @@ module extend_atmosphere_module
 
     else
       k = j
-    end if
-
-    ! Sanity check and kludge to prevent presure from increasing with height
-    ! -dschanen June 4 2014
-    if ( real(p_in_Pa_zm(j-1),kind=dp) > extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) ) then
-!     extend_p_in_mb(j) = p_in_Pa_zm(j-1) * 0.95
-      j = j + 1
     end if
 
     extend_atmos_bottom_level = j
