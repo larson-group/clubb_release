@@ -125,12 +125,99 @@ for i = 1:1:num_x_pts
                                sigma_x_2, sigma_y_2, corr_x_y_2 );
    end
 end
+% Find the minimum contour to plot for CLUBB results.
+% Sample a value that is a set number of standard deviations away from the
+% bivariate mean for each variable for each component.
+num_std_devs = 2.0;
+% For the 1st PDF component, sample P_xy at sqrt(2)*num_std_devs, which is
+% num_std_devs away from the 1st PDF component bivariate mean in both x and y.
+if ( sigma_x_1 > 0.0 && sigma_y_1 > 0.0 )
+   if ( mu_x_1 >= mu_x_2 )
+      x_1_test = min( mu_x_1 + num_std_devs * sigma_x_1, max_x );
+   else % mu_x_1 < mu_x_2
+      x_1_test = max( mu_x_1 - num_std_devs * sigma_x_1, min_x );
+   end
+   if ( mu_y_1 >= mu_y_2 )
+      y_1_test = min( mu_y_1 + num_std_devs * sigma_y_1, max_y );
+   else % mu_y_1 < mu_y_2
+      y_1_test = max( mu_y_1 - num_std_devs * sigma_y_1, min_y );
+   end
+   P_low_1 ...
+   = mixt_frac ...
+     * PDF_comp_bivar_NN( x_1_test, y_1_test, mu_x_1, mu_y_1, ...
+                          sigma_x_1, sigma_y_1, corr_x_y_1 ) ...
+     + ( 1.0 - mixt_frac ) ...
+       * PDF_comp_bivar_NN( x_1_test, y_1_test, mu_x_2, mu_y_2, ...
+                            sigma_x_2, sigma_y_2, corr_x_y_2 );
+else
+   P_low_1 = -1.0;
+end
+% For the 2nd PDF component, sample P_xy at sqrt(2)*num_std_devs, which is
+% num_std_devs away from the 2nd PDF component bivariate mean in both x and y.
+if ( sigma_x_2 > 0.0 && sigma_y_2 > 0.0 )
+   if ( mu_x_1 >= mu_x_2 )
+      x_2_test = max( mu_x_2 - num_std_devs * sigma_x_2, min_x );
+   else % mu_x_1 < mu_x_2
+      x_2_test = min( mu_x_2 + num_std_devs * sigma_x_2, max_x );
+   end
+   if ( mu_y_1 >= mu_y_2 )
+      y_2_test = max( mu_y_2 - num_std_devs * sigma_y_2, min_y );
+   else % mu_y_1 < mu_y_2
+      y_2_test = min( mu_y_2 + num_std_devs * sigma_y_2, max_y );
+   end
+   P_low_2 ...
+   = mixt_frac ...
+     * PDF_comp_bivar_NN( x_2_test, y_2_test, mu_x_1, mu_y_1, ...
+                          sigma_x_1, sigma_y_1, corr_x_y_1 ) ...
+     + ( 1.0 - mixt_frac ) ...
+       * PDF_comp_bivar_NN( x_2_test, y_2_test, mu_x_2, mu_y_2, ...
+                            sigma_x_2, sigma_y_2, corr_x_y_2 );
+else
+   P_low_2 = -1.0;
+end
+% The smallest contour is the smaller of P_low_1 and P_low_2.
+if ( P_low_1 > 0.0 && P_low_2 > 0.0 )
+   contour_low = min( P_low_1, P_low_2 );
+elseif ( P_low_1 > 0.0 ) % P_low_2 <= 0.0
+   contour_low = P_low_1;
+elseif ( P_low_2 > 0.0 ) % P_low_1 <= 0.0
+   contour_low = P_low_2;
+else % P_low_1 <= 0.0 && P_low_2 <= 0.0
+   contour_low = 0.0;
+end
+% In a scenario where contour_low is so far out that it doesn't plot well, use
+% an alternative.  Sort all the values of P_xy and plot the lowest contour at
+% the 10th percentile of P_xy.
+P_xy_vals = zeros( num_x_pts*num_y_pts, 1 );
+P_xy_sort = zeros( num_x_pts*num_y_pts, 1 );
+idx = 0;
+for i = 1:1:num_x_pts
+   for j = 1:1:num_y_pts
+      idx = idx + 1;
+      P_xy_vals(idx) = P_xy(j,i);
+   end
+end
+P_xy_sort = sort( P_xy_vals );
+P_xy_low = P_xy_sort( floor( 0.10*num_x_pts*num_y_pts ) );
+if ( contour_low < P_xy_low )
+   contour_low = P_xy_low;
+end
+% Find the maximum contour to plot for CLUBB results.
+P_xy_high = max( max( P_xy ) );
+contour_high = P_xy_high;
+% Set the number of contours.
+num_contours = 100;
+% Set the contour vector.
+delta_contour = ( contour_high - contour_low ) / ( num_contours - 1 );
+for ci = 1:1:num_contours
+   contours(ci) = contour_low + delta_contour * ( ci - 1 );
+end
 % Scatterplot of LES results for x and y.
 scatter( var_x_LES, var_y_LES, ...
          'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r' )
 hold on
 % Contour plot of the PDF of x and y for CLUBB.
-contour( x, y, P_xy, 2500, 'Linewidth', 1.5 )
+contour( x, y, P_xy, contours, 'Linewidth', 1.5 )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' )
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
