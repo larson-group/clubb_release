@@ -1,5 +1,5 @@
 % $Id$
-function [ varid ] = nc_variable_id( ncid, varname )
+function [ varid, status ] = nc_variable_id( ncid, varname )
 
 % Paths to MEXNC and NetCDF Toolbox utilities.
 addpath ( '/usr/share/mexcdf/mexnc' )

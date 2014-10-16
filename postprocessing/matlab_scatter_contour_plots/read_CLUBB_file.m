@@ -29,9 +29,17 @@ global idx_time
 % Get the variable IDs for the variable in question.
 varid_clubb = zeros(1,num_tot_var_clubb);
 for i = 1:1:num_tot_var_clubb
-   [ varid_clubb(i) ] = nc_variable_id( ncid_clubb, varname_clubb(i,:) );
-   % Here, I will place some code that will print a message when a
-   % requested variable is not found in the output file.
+   [ varid_clubb(i), status ] ...
+   = nc_variable_id( ncid_clubb, varname_clubb(i,:) );
+   % Print a warning message when the status of the variable id function
+   % is not equal to 0, meaning that there is a problem.
+   % This is most likely due to a requested variable missing from the
+   % CLUBB statistical file.
+   if ( status ~= 0 )
+      fprintf( 'Error:  variable %s is not found in %s\n', ...
+               strtrim( varname_clubb(i,:) ), filename_clubb );
+      fprintf( '\n' );
+   end
 end
 
 % Read CLUBB variables.
