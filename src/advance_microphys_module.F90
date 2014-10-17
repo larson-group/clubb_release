@@ -213,6 +213,10 @@ module advance_microphys_module
     integer :: &
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
+    logical, parameter :: &
+      l_use_non_local_diff_fac = .false. ! Use a non-local factor for eddy-diffusivity 
+                                         ! applied to hydrometeors 
+
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
     if ( hydromet_dim > 0 ) then
@@ -248,12 +252,14 @@ module advance_microphys_module
                    / max( zt2zm( hydromet(:,i), k ), hydromet_tol(i) ) ) &
                * ( one + abs( Skw_zm(k) ) ) 
 
-             K_gamma(k,i) &
-             = one -  c_K_hmb * ( ( zt2zm( Lscale(:) , k ) &
-               / max( zt2zm( hydromet(:,i), k ),hydromet_tol(i) ) )  &
-               * ( gr%invrs_dzm(k) * ( hydromet(kp1,i)  - hydromet(k,i) ) ) ) 
+             if ( l_use_non_local_diff_fac ) then
+               K_gamma(k,i) &
+               = one -  c_K_hmb * ( ( zt2zm( Lscale(:) , k ) &
+                 / max( zt2zm( hydromet(:,i), k ),hydromet_tol(i) ) )  &
+                 * ( gr%invrs_dzm(k) * ( hydromet(kp1,i)  - hydromet(k,i) ) ) ) 
 
-             K_hm(k,i) = K_hm(k,i) * max(K_gamma(k,i), K_hm_min_coef)
+               K_hm(k,i) = K_hm(k,i) * max(K_gamma(k,i), K_hm_min_coef)
+             endif
 
              if ( abs( gr%invrs_dzm(k) &
                        * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
