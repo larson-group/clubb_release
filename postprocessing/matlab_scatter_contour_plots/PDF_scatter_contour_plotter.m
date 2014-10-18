@@ -256,6 +256,8 @@ end % z_clubb(clubb_height_idx)
 %==========================================================================
 
 % Unpack CLUBB variables (PDF parameters).
+
+% PDF component means.
 mu_w_1 = var_clubb( idx_w_1, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_w_2 = var_clubb( idx_w_2, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_chi_1 = var_clubb( idx_chi_1, 1, 1, clubb_height_idx, clubb_time_idx );
@@ -270,6 +272,8 @@ mu_Nr_1_n = var_clubb( idx_mu_Nr_1_n, 1, 1, ...
                        clubb_height_idx, clubb_time_idx );
 mu_Nr_2_n = var_clubb( idx_mu_Nr_2_n, 1, 1, ...
                        clubb_height_idx, clubb_time_idx );
+
+% PDF component standard deviations.
 sigma_w_1 = sqrt( var_clubb( idx_varnce_w_1, 1, 1, ...
                              clubb_height_idx, clubb_time_idx ) );
 sigma_w_2 = sqrt( var_clubb( idx_varnce_w_2, 1, 1, ...
@@ -290,6 +294,8 @@ sigma_Nr_1_n = var_clubb( idx_sigma_Nr_1_n, 1, 1, ...
                           clubb_height_idx, clubb_time_idx );
 sigma_Nr_2_n = var_clubb( idx_sigma_Nr_2_n, 1, 1, ...
                           clubb_height_idx, clubb_time_idx );
+
+% PDF component correlations.
 corr_chi_eta_1 = var_clubb( idx_corr_chi_eta_1_ca, 1, 1, ...
                             clubb_height_idx, clubb_time_idx );
 corr_chi_eta_2 = var_clubb( idx_corr_chi_eta_2_ca, 1, 1, ...
@@ -322,6 +328,8 @@ corr_rr_Nr_1_n = var_clubb( idx_corr_rr_Nr_1_n, 1, 1, ...
                             clubb_height_idx, clubb_time_idx );
 corr_rr_Nr_2_n = var_clubb( idx_corr_rr_Nr_2_n, 1, 1, ...
                             clubb_height_idx, clubb_time_idx );
+
+% Other variables involved in the PDF.
 mixt_frac = var_clubb( idx_mixt_frac, 1, 1, ...
                        clubb_height_idx, clubb_time_idx );
 precip_frac_1 = var_clubb( idx_precip_frac_1, 1, 1, ...
@@ -335,11 +343,37 @@ precip_frac_2 = var_clubb( idx_precip_frac_2, 1, 1, ...
 print_alt = int2str( round( z_clubb(clubb_height_idx) ) );
 print_time = int2str( round( time_clubb(clubb_time_idx) / 60.0 ) );
 
-% Here, I will place some code that will set the flags for plots involving
-% a hydrometeor to false when that hydrometeor has a value of 0 over the
-% entire level for the LES data.
+% When the SAM LES data for rr is 0 everywhere at the level, the plots
+% involving rr will fail, causing an exit with an error.  Since these
+% plots aren't interesting anyway when there's no rr, simply turn them
+% of to avoid the error.
+if ( all( sam_var_lev(idx_3D_rr,:) == 0.0 ) )
 
-% Additionally, I need some code that will control the contours better.
+   fprintf( [ 'The SAM LES values of rr are 0 everywhere at this ', ...
+              'level.  Turn off any plots involving rr.' ] )
+
+   plot_w_rr   = false;
+   plot_chi_rr = false;
+   plot_eta_rr = false;
+   plot_rr_Nr  = false;
+
+end
+
+% When the SAM LES data for Nr is 0 everywhere at the level, the plots
+% involving Nr will fail, causing an exit with an error.  Since these
+% plots aren't interesting anyway when there's no Nr, simply turn them
+% of to avoid the error.
+if ( all( sam_var_lev(idx_3D_Nr,:) == 0.0 ) )
+
+   fprintf( [ 'The SAM LES values of Nr are 0 everywhere at this ', ...
+              'level.  Turn off any plots involving Nr.' ] )
+
+   plot_w_Nr   = false;
+   plot_chi_Nr = false;
+   plot_eta_Nr = false;
+   plot_rr_Nr  = false;
+
+end
  
 % Plot the CLUBB PDF and LES points for chi and eta.
 if ( plot_chi_eta )
