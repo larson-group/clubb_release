@@ -241,7 +241,13 @@ fi
 
 if [ -z $stats_file ];
 then
-	stats_file="../input/stats/standard_stats.in"
+        outputgrep=$(sed   's/!.*//' $model_file |grep "stats_file"  | grep -oP '"\K[^"\047]+(?=["\047])')
+        if [ -z "$outputgrep"] 
+        then
+          stats_file="../input/stats/standard_stats.in"
+        else
+	 stats_file=$outputgrep
+        fi
 fi
 
 if [ $NIGHTLY == true ]; 

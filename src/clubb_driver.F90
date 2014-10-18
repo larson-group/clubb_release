@@ -359,7 +359,8 @@ module clubb_driver
 
     character(len=100) :: & 
       fname_prefix, &! Prefix of stats filenames, to be followed by, for example "_zt"
-      fdir           ! Output directory
+      fdir,         &! Output directory
+      stats_file     ! Filepath of stats file
 
     real( kind = core_rknd ) :: & 
       stats_tsamp,   & ! Stats sampling interval [s]
@@ -507,7 +508,7 @@ module clubb_driver
 
     namelist /stats_setting/ &
       l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
-         l_allow_small_stats_tout
+         stats_file, l_allow_small_stats_tout
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -576,6 +577,7 @@ module clubb_driver
     ! module stats_variables
     fname_prefix = ''
     stats_fmt    = ''
+    stats_file   = ''
 
     ! Default values for the soil scheme
     call initialize_soil_veg()
