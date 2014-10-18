@@ -350,7 +350,7 @@ print_time = int2str( round( time_clubb(clubb_time_idx) / 60.0 ) );
 if ( all( sam_var_lev(idx_3D_rr,:) == 0.0 ) )
 
    fprintf( [ 'The SAM LES values of rr are 0 everywhere at this ', ...
-              'level.  Turn off any plots involving rr.\n' ] )
+              'level.  Any plots involving rr will be disabled.\n' ] )
 
    plot_w_rr   = false;
    plot_chi_rr = false;
@@ -366,7 +366,7 @@ end
 if ( all( sam_var_lev(idx_3D_Nr,:) == 0.0 ) )
 
    fprintf( [ 'The SAM LES values of Nr are 0 everywhere at this ', ...
-              'level.  Turn off any plots involving Nr.\n' ] )
+              'level.  Any plots involving Nr will be disabled.\n' ] )
 
    plot_w_Nr   = false;
    plot_chi_Nr = false;
