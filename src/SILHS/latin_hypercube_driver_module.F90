@@ -467,10 +467,10 @@ module latin_hypercube_driver_module
                                           lh_rt, lh_thl )
     end if
     if ( l_output_2D_uniform_dist ) then
-      call output_2D_uniform_dist_file( nz, num_samples, d_variables+1, &
-                                        real(X_u_all_levs(:,:,1:d_variables+1), &
-                                         kind = genrand_real), &
-                                        X_mixt_comp_all_levs, p_matrix )
+      call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
+                                        real(X_u_all_levs, kind = genrand_real), &
+                                        X_mixt_comp_all_levs, p_matrix, &
+                                        lh_sample_point_weights )
     end if
 
     ! Various nefarious assertion checks
@@ -2211,8 +2211,8 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_uniform_dist ) then
 
-      allocate( variable_names(d_variables+3), variable_descriptions(d_variables+3), &
-                variable_units(d_variables+3) )
+      allocate( variable_names(d_variables+5), variable_descriptions(d_variables+5), &
+                variable_units(d_variables+5) )
 
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
@@ -2279,12 +2279,20 @@ module latin_hypercube_driver_module
       variable_descriptions(i) = "Uniform distribution for the mixture component"
 
       i = d_variables + 2
+      variable_names(i) = "dp2"
+      variable_descriptions(i) = "Uniform variate used to determine precipitation!"
+
+      i = d_variables + 3
       variable_names(i) = "X_mixt_comp"
       variable_descriptions(i) = "Mixture component (should be 1 or 2)"
 
-      i = d_variables + 3
+      i = d_variables + 4
       variable_names(i) = "p_matrix"
       variable_descriptions(i) = "P matrix elements at k_lh_start"
+
+      i = d_variables + 5
+      variable_names(i) = "lh_sample_point_weights"
+      variable_descriptions(i) = "Weight of each sample point"
 
       ! Set all the units
       variable_units(:) = "count" ! Unidata units format for a dimensionless quantity

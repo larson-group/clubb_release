@@ -187,8 +187,8 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
-             ( nz, num_samples, dp1, X_u_all_levs, X_mixt_comp_all_levs, &
-               p_matrix_chi_element )
+             ( nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
+               p_matrix_chi_element, lh_sample_point_weights )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -201,7 +201,8 @@ module output_2D_samples_module
     use mt95, only: genrand_real ! Constant(s)
 
     use clubb_precision, only: &
-      dp ! Constant(s)
+      dp, &      ! Constant(s)
+      core_rknd
 
     implicit none
 
@@ -209,9 +210,9 @@ module output_2D_samples_module
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
-      dp1            ! Number of variates being sampled + 1
+      dp2            ! Number of variates being sampled + 2
 
-    real(kind=genrand_real), intent(in), dimension(nz,num_samples,dp1) :: &
+    real(kind=genrand_real), intent(in), dimension(nz,num_samples,dp2) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
     integer, intent(in), dimension(nz,num_samples) :: &
@@ -220,23 +221,27 @@ module output_2D_samples_module
     integer, intent(in), dimension(num_samples) :: &
       p_matrix_chi_element ! P matrix at the chi(s_mellor) column
 
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+      lh_sample_point_weights ! Weight of each sample
+
     integer :: sample, j, k
 
     ! ---- Begin Code ----
 
-    do j = 1, dp1+2
+    do j = 1, dp2+3
       allocate( uniform_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
     do sample = 1, num_samples
-      do j = 1, dp1
+      do j = 1, dp2
         uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
       end do
-      uniform_sample_file%var(dp1+1)%ptr(sample,1,1:nz) = &
+      uniform_sample_file%var(dp2+1)%ptr(sample,1,1:nz) = &
         real( X_mixt_comp_all_levs(1:nz,sample), kind=dp )
       do k = 1, nz 
-        uniform_sample_file%var(dp1+2)%ptr(sample,1,k) = &
+        uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
           real( p_matrix_chi_element(sample), kind=dp )
+        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = lh_sample_point_weights(sample)
       end do
     end do
 
@@ -246,7 +251,7 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, dp1+2
+    do j = 1, dp2+3
       deallocate( uniform_sample_file%var(j)%ptr )
     end do
 
