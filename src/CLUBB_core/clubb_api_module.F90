@@ -679,8 +679,10 @@ contains
     use parameter_indices, only:  &
       nparams ! Variable(s)
 
-    use model_flags, only: &
-      setup_model_flags    ! Subroutine
+! TODO: This should be called from the api, but all the host models appear to call
+!       it directly or not at all.
+!   use model_flags, only: &
+!     setup_model_flags    ! Subroutine
 
 #ifdef MKL
       use csr_matrix_class, only: &

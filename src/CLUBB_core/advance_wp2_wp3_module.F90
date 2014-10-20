@@ -510,7 +510,7 @@ module advance_wp2_wp3_module
       rcond  ! Est. of the reciprocal of the condition #
 
     ! Array indices
-    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3
+    integer :: k, km1, kp1, k_wp2, k_wp3
 
     ! Set logical to true for Crank-Nicholson diffusion scheme
     ! or to false for completely implicit diffusion scheme.
@@ -603,9 +603,7 @@ module advance_wp2_wp3_module
       do k = 2, gr%nz-1
 
         km1 = max( k-1, 1 )
-!       km2 = max( k-2, 1 )
         kp1 = min( k+1, gr%nz )
-!       kp2 = min( k+2, gr%nz )
 
         ! w'^2 term dp1 has both implicit and explicit components;
         ! call stat_end_update_pt.
@@ -662,9 +660,7 @@ module advance_wp2_wp3_module
       do k = 2, gr%nz-1, 1
 
         km1 = max( k-1, 1 )
-!       km2 = max( k-2, 1 )
         kp1 = min( k+1, gr%nz )
-!       kp2 = min( k+2, gr%nz )
 
         ! w'^3 term pr1 has both implicit and explicit components; 
         ! call stat_end_update_pt.
@@ -1154,7 +1150,7 @@ module advance_wp2_wp3_module
     ! Local Variables
 
     ! Array indices
-    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
+    integer :: k, km1, kp1, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
                k_wp3_low, k_wp3_high
 
     real( kind = core_rknd ), dimension(5) :: tmp
@@ -1168,9 +1164,7 @@ module advance_wp2_wp3_module
       ! Define indices
 
       km1 = max( k-1, 1 )
-!     km2 = max( k-2, 1 )
       kp1 = min( k+1, gr%nz )
-!     kp2 = min( k+2, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
@@ -1759,7 +1753,7 @@ module advance_wp2_wp3_module
     ! Local Variables
 
     ! Array indices
-    integer :: k, km1, km2, kp1, kp2, k_wp2, k_wp3, wp2_cur_row, wp3_cur_row
+    integer :: k, km1, kp1, k_wp2, k_wp3, wp2_cur_row, wp3_cur_row
 
     real( kind = core_rknd ), dimension(5) :: tmp
 
@@ -1772,9 +1766,7 @@ module advance_wp2_wp3_module
       ! Define indices
 
       km1 = max( k-1, 1 )
-!     km2 = max( k-2, 1 )
       kp1 = min( k+1, gr%nz )
-!     kp2 = min( k+2, gr%nz )
 
       k_wp3 = 2*k - 1
       k_wp2 = 2*k
