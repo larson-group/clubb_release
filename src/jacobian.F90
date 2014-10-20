@@ -23,7 +23,7 @@ program jacobian
       read_parameters ! Procedure(s)
 
   use constants_clubb, only:  & 
-      fstdout,  & ! Variable(s) 
+      fstdout,  & ! Constant(s) 
       fstderr
 
   use stat_file_utils, only:  & 
@@ -54,7 +54,7 @@ program jacobian
 
     integer :: entries ! Total tunable parameters
 
-    character(len=16), pointer :: name(:)
+    character(len=27), pointer :: name(:)
 
     real( kind = core_rknd ), pointer :: value(:)
 
@@ -163,11 +163,11 @@ program jacobian
 
   clubb_params%name(1:nparams) = params_list(1:nparams)
 
-  write(unit=fstdout,fmt='(a16,2a12)')  & 
-    "Parameter   ", "Initial     ", "Varied      "
+  write(unit=fstdout,fmt='(a27,2a12)')  & 
+    "Parameter", "Initial", "Varied"
 
   do i = 1, clubb_params%entries, 1
-    write(unit=*,fmt='(a16,2f12.5)') clubb_params%name(i),  & 
+    write(unit=*,fmt='(a27,2f12.5)') trim( clubb_params%name(i) ),  & 
       clubb_params%value(i), clubb_params%value(i) * delta_factor
   end do
 

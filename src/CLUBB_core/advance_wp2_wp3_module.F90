@@ -407,11 +407,6 @@ module advance_wp2_wp3_module
         zmscr10, &
         zmscr11, &
         zmscr12, &
-        zmscr13, &
-        zmscr14, &
-        zmscr15, &
-        zmscr16, &
-        zmscr17, &
         ztscr01, &
         ztscr02
 
@@ -429,12 +424,7 @@ module advance_wp2_wp3_module
         ztscr13, &
         ztscr14, &
         ztscr15, &
-        ztscr16, &
-        ztscr17, &
-        ztscr18, &
-        ztscr19, &
-        ztscr20, &
-        ztscr21
+        ztscr16
 
     implicit none
 
@@ -1063,11 +1053,6 @@ module advance_wp2_wp3_module
         zmscr11,    & 
         zmscr10,    & 
         zmscr12,    &
-        zmscr13,    &
-        zmscr14,    &
-        zmscr15,    &
-        zmscr16,    &
-        zmscr17,    &
         ztscr01,    &
         ztscr02
 
@@ -1085,12 +1070,7 @@ module advance_wp2_wp3_module
         ztscr13,    &
         ztscr14,    &
         ztscr15,    &
-        ztscr16,    &
-        ztscr17,    &
-        ztscr18,    &
-        ztscr19,    &
-        ztscr20,    &
-        ztscr21
+        ztscr16
 
     use stats_variables, only: & 
         l_stats_samp, & 
@@ -1669,11 +1649,6 @@ module advance_wp2_wp3_module
         zmscr11,    & 
         zmscr10,    & 
         zmscr12,    &
-        zmscr13,    &
-        zmscr14,    &
-        zmscr15,    &
-        zmscr16,    &
-        zmscr17,    &
         ztscr01,    &
         ztscr02
 
@@ -1691,12 +1666,7 @@ module advance_wp2_wp3_module
         ztscr13,    &
         ztscr14,    &
         ztscr15,    &
-        ztscr16,    &
-        ztscr17,    &
-        ztscr18,    &
-        ztscr19,    &
-        ztscr20,    &
-        ztscr21
+        ztscr16
 
     use stats_variables, only: & 
         l_stats_samp, & 
