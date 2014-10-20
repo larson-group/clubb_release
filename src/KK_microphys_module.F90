@@ -198,6 +198,14 @@ module KK_microphys_module
 
     !----- Begin Code -----
 
+    ! Eliminate some compiler warnings
+    if ( .false. ) then
+      KK_mean_vol_rad = dzq
+      KK_mean_vol_rad = rvm
+      KK_mean_vol_rad = w_std_dev
+      KK_mean_vol_rad = wm_zt
+      KK_mean_vol_rad = cloud_frac
+    end if
     ! Initialize microphys_stats_vars for statistics sampling
     call microphys_stats_alloc( nz, num_stats_zt, microphys_stats_zt )
     call microphys_stats_alloc( 1, num_stats_sfc, microphys_stats_sfc )

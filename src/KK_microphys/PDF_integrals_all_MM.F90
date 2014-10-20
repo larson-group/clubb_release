@@ -51,6 +51,9 @@ module PDF_integrals_all_mixed_moments
 
     implicit none
 
+    ! External
+    intrinsic :: real, exp, sqrt
+
     ! Input Variables
     real( kind = dp ), intent(in) :: &
       mu_x1,      & ! Mean of x1 (ith PDF component)                        [-]
@@ -93,7 +96,11 @@ module PDF_integrals_all_mixed_moments
 
     real( kind = dp ) ::  &
       sigma_sum, & !
-      s_cc         !
+      s_cc,      & !
+      q_dp,      & ! integer q converted to a real
+      r_dp         ! integer r converted to a real
+
+    ! ---- Begin Code ----
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
@@ -101,10 +108,11 @@ module PDF_integrals_all_mixed_moments
     do p = 0, a_exp/2, 1
        do r = 0, (a_exp-2*p), 1
           do q = 0, b_exp, 1
-
+             q_dp = real( q, kind=dp )
+             r_dp = real( r, kind=dp )
              s_cc = ( mu_x2 / sigma_x2 )  &
-                    + rho_x2x3_n * sigma_x3_n * beta_exp * q  &
-                    + rho_x2x4_n * sigma_x4_n * beta_exp * q
+                    + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp  &
+                    + rho_x2x4_n * sigma_x4_n * beta_exp * q_dp
 
              sigma_sum  &
              = sigma_sum  &
@@ -116,28 +124,28 @@ module PDF_integrals_all_mixed_moments
                * factorial( b_exp )  &
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
                * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
-               * ( - sigma_x2 )**(alpha_exp*q)  &
+               * ( - sigma_x2 )**(alpha_exp*q_dp)  &
                * ( one_half_dp * ( one_dp - rho_x1x2**2 ) * sigma_x1**2 )**p  &
                * ( - rho_x1x2 * sigma_x1 )**r  &
                * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                    + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
-                     * sigma_x1 * sigma_x3_n * beta_exp * q  &
+                     * sigma_x1 * sigma_x3_n * beta_exp * q_dp  &
                    + ( rho_x1x4_n - rho_x1x2 * rho_x2x4_n )  &
-                     * sigma_x1 * sigma_x4_n * gamma_exp * q )**(a_exp-2*p-r)  &
-               * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
+                     * sigma_x1 * sigma_x4_n * gamma_exp * q_dp )**(a_exp-2*p-r)  &
+               * exp( mu_x3_n * beta_exp * q_dp + mu_x4_n * gamma_exp * q_dp  &
                       + one_half_dp * ( one_dp - rho_x2x3_n**2 )  &
-                                    * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                                    * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                       + one_half_dp * ( one_dp - rho_x2x4_n**2 )  &
-                                    * sigma_x4_n**2 * gamma_exp**2 * q**2  &
+                                    * sigma_x4_n**2 * gamma_exp**2 * q_dp**2  &
                       + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
                                     * sigma_x3_n * beta_exp  &
-                                    * sigma_x4_n * gamma_exp * q**2  &
+                                    * sigma_x4_n * gamma_exp * q_dp**2  &
                     )  &
                * exp( one_fourth_dp * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
                       + one_half_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
-               * gamma( alpha_exp*q + r + 1 )  &
-               * Dv_fnc( -(alpha_exp*q + r + 1), s_cc )
+               * gamma( alpha_exp*q_dp + r_dp + 1._dp )  &
+               * Dv_fnc( -(alpha_exp*q_dp + r_dp + 1._dp), s_cc )
 
           enddo
        enddo
@@ -220,16 +228,17 @@ module PDF_integrals_all_mixed_moments
 
     real( kind = dp ) ::  &
       sigma_sum, & !
-      s_cc         !
+      s_cc,      & !
+      q_dp         ! integer q converted to a real
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
-
+       q_dp = real( q, kind=dp )
        s_cc = ( mu_x2 / sigma_x2 )  &
-              + rho_x2x3_n * sigma_x3_n * beta_exp * q  &
-              + rho_x2x4_n * sigma_x4_n * gamma_exp * q
+              + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp  &
+              + rho_x2x4_n * sigma_x4_n * gamma_exp * q_dp
 
        sigma_sum  &
        = sigma_sum  &
@@ -238,20 +247,20 @@ module PDF_integrals_all_mixed_moments
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
          * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
-         * ( - sigma_x2 )**(alpha_exp*q)  &
-         * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
+         * ( - sigma_x2 )**(alpha_exp*q_dp)  &
+         * exp( mu_x3_n * beta_exp * q_dp + mu_x4_n * gamma_exp * q_dp  &
                 + one_half_dp * ( one_dp - rho_x2x3_n**2 )  &
-                              * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                              * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                 + one_half_dp * ( one_dp - rho_x2x4_n**2 )  &
-                              * sigma_x4_n**2 * gamma_exp**2 * q**2  &
+                              * sigma_x4_n**2 * gamma_exp**2 * q_dp**2  &
                 + ( rho_x3x4_n - rho_x2x3_n * rho_x2x4_n )  &
                               * sigma_x3_n * beta_exp  &
-                              * sigma_x4_n * gamma_exp * q**2  &
+                              * sigma_x4_n * gamma_exp * q_dp**2  &
               )  &
          * exp( one_fourth_dp * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
                 + one_half_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
-         * gamma( alpha_exp*q + 1 )  &
-         * Dv_fnc( -(alpha_exp*q + 1), s_cc )
+         * gamma( alpha_exp*q_dp + 1._dp )  &
+         * Dv_fnc( -(alpha_exp*q_dp + 1._dp), s_cc )
 
     enddo
 
@@ -324,14 +333,15 @@ module PDF_integrals_all_mixed_moments
       q    !
 
     real( kind = dp ) ::  &
-      sigma_sum    !
+      sigma_sum,  & !
+      q_dp
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do p = 0, a_exp/2, 1
        do q = 0, b_exp, 1
-
+          q_dp = real( q, kind=dp )
           sigma_sum  &
           = sigma_sum  &
           +   factorial( a_exp )  &
@@ -339,18 +349,18 @@ module PDF_integrals_all_mixed_moments
             * factorial( b_exp )  &
               / ( factorial( b_exp - q ) * factorial( q ) )  &
             * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
-            * mu_x2**(alpha_exp*q)  &
+            * mu_x2**(alpha_exp*q_dp)  &
             * ( one_half_dp * sigma_x1**2 )**p  &
             * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
-                  * sigma_x3_n * beta_exp * q  &
+                  * sigma_x3_n * beta_exp * q_dp  &
                 + rho_x1x4_n * sigma_x1  &
-                  * sigma_x4_n * gamma_exp * q )**(a_exp-2*p)  &
-            * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                   + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2  &
-                   + one_half_dp * sigma_x4_n**2 * gamma_exp**2 * q**2  &
+                  * sigma_x4_n * gamma_exp * q_dp )**(a_exp-2*p)  &
+            * exp( mu_x3_n * beta_exp * q_dp + mu_x4_n * gamma_exp * q_dp  &
+                   + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
+                   + one_half_dp * sigma_x4_n**2 * gamma_exp**2 * q_dp**2  &
                    + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                                * sigma_x4_n * gamma_exp * q**2  &
+                                * sigma_x4_n * gamma_exp * q_dp**2  &
                  )
 
        enddo
@@ -420,25 +430,28 @@ module PDF_integrals_all_mixed_moments
       q    !
 
     real( kind = dp ) ::  &
-      sigma_sum    !
+      sigma_sum, &   !
+      q_dp
+
+    ! ---- Begin Code ----
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
-
+       q_dp = real( q, kind=dp )
        sigma_sum  &
        = sigma_sum  &
        + ( mu_x1 - x1_mean )**a_exp  &
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
          * ( - x2_alpha_x3_beta_x4_gamma_mean )**(b_exp-q)  &
-         * mu_x2**(alpha_exp*q)  &
-         * exp( mu_x3_n * beta_exp * q + mu_x4_n * gamma_exp * q  &
-                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2  &
-                + one_half_dp * sigma_x4_n**2 * gamma_exp**2 * q**2  &
+         * mu_x2**(alpha_exp*q_dp)  &
+         * exp( mu_x3_n * beta_exp * q_dp + mu_x4_n * gamma_exp * q_dp  &
+                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
+                + one_half_dp * sigma_x4_n**2 * gamma_exp**2 * q_dp**2  &
                 + rho_x3x4_n * sigma_x3_n * beta_exp  &
-                             * sigma_x4_n * gamma_exp * q**2  &
+                             * sigma_x4_n * gamma_exp * q_dp**2  &
               )
 
     enddo
@@ -518,7 +531,8 @@ module PDF_integrals_all_mixed_moments
 
     real( kind = dp ) ::  &
       sigma_sum, & !
-      s_c          !
+      s_c,       & !
+      q_dp
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
@@ -526,9 +540,9 @@ module PDF_integrals_all_mixed_moments
     do p = 0, a_exp/2, 1
        do r = 0, (a_exp-2*p), 1
           do q = 0, b_exp, 1
-
+             q_dp = real( q, kind=dp )
              s_c = ( mu_x2 / sigma_x2 )  &
-                   + rho_x2x3_n * sigma_x3_n * beta_exp * q
+                   + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp
 
              sigma_sum  &
              = sigma_sum  &
@@ -540,18 +554,18 @@ module PDF_integrals_all_mixed_moments
                * factorial( b_exp )  &
                  / ( factorial( b_exp - q ) * factorial( q ) )  &
                * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
-               * sigma_x2**(alpha_exp*q)  &
+               * sigma_x2**(alpha_exp*q_dp)  &
                * ( one_half_dp * ( one_dp - rho_x1x2**2 ) * sigma_x1**2 )**p  &
                * ( rho_x1x2 * sigma_x1 )**r  &
                * ( mu_x1 - x1_mean  &
                    - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1  &
                    + ( rho_x1x3_n - rho_x1x2 * rho_x2x3_n )  &
-                     * sigma_x1 * sigma_x3_n * beta_exp * q )**(a_exp-2*p-r)  &
-               * exp( mu_x3_n * beta_exp * q  &
-                      + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2  &
+                     * sigma_x1 * sigma_x3_n * beta_exp * q_dp )**(a_exp-2*p-r)  &
+               * exp( mu_x3_n * beta_exp * q_dp  &
+                      + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                       - one_fourth_dp * s_c**2 )  &
-               * gamma( alpha_exp*q + r + 1 )  &
-               * Dv_fnc( -( alpha_exp*q + r + 1 ), -s_c )
+               * gamma( alpha_exp*q_dp + real( r + 1, kind=dp ) )  &
+               * Dv_fnc( -( alpha_exp*q_dp + real( r + 1, kind=dp ) ), -s_c )
 
           enddo
        enddo
@@ -626,15 +640,19 @@ module PDF_integrals_all_mixed_moments
 
     real( kind = dp ) ::  &
       sigma_sum, & !
-      s_c          !
+      s_c,       & !
+      q_dp
+
+    ! ---- Begin Code ----
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
+       q_dp = real( q, kind=dp )
 
        s_c = ( mu_x2 / sigma_x2 )  &
-             + rho_x2x3_n * sigma_x3_n * beta_exp * q
+             + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp
 
        sigma_sum  &
        = sigma_sum  &
@@ -643,12 +661,12 @@ module PDF_integrals_all_mixed_moments
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
          * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
-         * sigma_x2**(alpha_exp*q)  &
-         * exp( mu_x3_n * beta_exp * q  &
-                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2  &
+         * sigma_x2**(alpha_exp*q_dp)  &
+         * exp( mu_x3_n * beta_exp * q_dp  &
+                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                 - one_fourth_dp * s_c**2 )  &
-         * gamma( alpha_exp*q + 1 )  &
-         * Dv_fnc( -(alpha_exp*q + 1), -s_c )
+         * gamma( alpha_exp*q_dp + 1._dp )  &
+         * Dv_fnc( -(alpha_exp*q_dp + 1._dp), -s_c )
 
     enddo
 
@@ -713,13 +731,18 @@ module PDF_integrals_all_mixed_moments
       q    !
 
     real( kind = dp ) ::  &
-      sigma_sum    !
+      sigma_sum,  & !
+      q_dp
+
+    ! ---- Begin Code ----
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do p = 0, a_exp/2, 1
        do q = 0, b_exp, 1
+
+          q_dp = real( q, kind=dp )
 
           sigma_sum  &
           = sigma_sum  &
@@ -728,13 +751,13 @@ module PDF_integrals_all_mixed_moments
             * factorial( b_exp )  &
               / ( factorial( b_exp - q ) * factorial( q ) )  &
             * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
-            * mu_x2**(alpha_exp*q)  &
+            * mu_x2**(alpha_exp*q_dp)  &
             * ( one_half_dp * sigma_x1**2 )**p  &
             * ( mu_x1 - x1_mean  &
                 + rho_x1x3_n * sigma_x1  &
-                  * sigma_x3_n * beta_exp * q )**(a_exp-2*p)  &
-            * exp( mu_x3_n * beta_exp * q  &
-                   + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2 )
+                  * sigma_x3_n * beta_exp * q_dp )**(a_exp-2*p)  &
+            * exp( mu_x3_n * beta_exp * q_dp  &
+                   + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2 )
 
        enddo
     enddo 
@@ -796,12 +819,15 @@ module PDF_integrals_all_mixed_moments
       q    !
 
     real( kind = dp ) ::  &
-      sigma_sum    !
+      sigma_sum,  & !
+      q_dp
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
+
+       q_dp = real( q, kind=dp )
 
        sigma_sum  &
        = sigma_sum  &
@@ -809,9 +835,9 @@ module PDF_integrals_all_mixed_moments
          * factorial( b_exp )  &
            / ( factorial( b_exp - q ) * factorial( q ) )  &
          * ( - x2_alpha_x3_beta_mean )**(b_exp-q)  &
-         * mu_x2**(alpha_exp*q)  &
-         * exp( mu_x3_n * beta_exp * q  &
-                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q**2 )
+         * mu_x2**(alpha_exp*q_dp)  &
+         * exp( mu_x3_n * beta_exp * q_dp  &
+                + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2 )
 
     enddo
 
