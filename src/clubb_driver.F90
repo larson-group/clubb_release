@@ -174,11 +174,11 @@ module clubb_driver
       uv_sponge_damp_profile, &
       finalize_tau_sponge_damp
 
-    use extend_atmosphere_module, only: &
+    use extended_atmosphere_module, only: &
       total_atmos_dim, & ! Variable(s)
       complete_alt, &
       complete_momentum, &
-      finalize_extend_atm
+      finalize_extended_atm
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
 
@@ -226,7 +226,7 @@ module clubb_driver
       time_current, &
       nzmax, &
       grid_type, &
-      extend_atmos_range_size, &
+      extended_atmos_range_size, &
       lin_int_buffer, &
       zt_grid_fname, &
       zm_grid_fname, &
@@ -1080,7 +1080,7 @@ module clubb_driver
     end if ! ~l_restart
 
     call setup_radiation_variables( gr%nz, lin_int_buffer, &
-                                    extend_atmos_range_size )
+                                    extended_atmos_range_size )
 
 #ifdef _OPENMP
     iunit = omp_get_thread_num( ) + 50 ! Known magic number
@@ -1495,7 +1495,7 @@ module clubb_driver
       call finalize_t_dependent_input()
     end if
 
-    call finalize_extend_atm( )
+    call finalize_extended_atm( )
 
     call cleanup_clubb_core( l_implemented )
 
@@ -1581,8 +1581,8 @@ module clubb_driver
       initialize_t_dependent_input, & ! Procedure(s)
       l_t_dependent ! Variable(s)
 
-    use extend_atmosphere_module, only: &
-      determine_extend_atmos_bounds ! Procedure(s)
+    use extended_atmosphere_module, only: &
+      determine_extended_atmos_bounds ! Procedure(s)
 
     use mpace_a, only: mpace_a_init ! Procedure(s)
 
@@ -1610,9 +1610,9 @@ module clubb_driver
       omega_name
 
     use clubb_model_settings, only: &
-      extend_atmos_bottom_level, &
-      extend_atmos_top_level, &
-      extend_atmos_range_size, &
+      extended_atmos_bottom_level, &
+      extended_atmos_top_level, &
+      extended_atmos_range_size, &
       lin_int_buffer, &
       runtype, &
       dt_main
@@ -1720,12 +1720,12 @@ module clubb_driver
                                      thv_ds_zt, sclrm, edsclrm )     ! Intent(out)
 
     if ( trim( rad_scheme ) == "bugsrad" ) then
-      call determine_extend_atmos_bounds( gr%nz, gr%zt,              & ! Intent(in)
+      call determine_extended_atmos_bounds( gr%nz, gr%zt,              & ! Intent(in)
                                           gr%zm, gr%dzt, p_in_Pa_zm, & ! Intent(in)
                                           radiation_top,             & ! Intent(in)
-                                          extend_atmos_bottom_level, & ! Intent(out)
-                                          extend_atmos_top_level,    & ! Intent(out)
-                                          extend_atmos_range_size,   & ! Intent(out)
+                                          extended_atmos_bottom_level, & ! Intent(out)
+                                          extended_atmos_top_level,    & ! Intent(out)
+                                          extended_atmos_range_size,   & ! Intent(out)
                                           lin_int_buffer )             ! Intent(out)
 
     else
@@ -2332,13 +2332,13 @@ module clubb_driver
     ! ---- Begin Code ----
 
     ! The value of rtm at the surface is output from the sounding, as long as
-    ! the initial sounding extends to the model surface (at gr%zm(1)).
+    ! the initial sounding extendeds to the model surface (at gr%zm(1)).
     if ( rtm_sfc < 0.0_core_rknd ) then
-      ! The sounding doesn't extend to the surface, so rtm_sfc is set to a
+      ! The sounding doesn't extended to the surface, so rtm_sfc is set to a
       ! negative number.  Use rtm(1) as rv_sfc.
       rv_sfc = rtm(1)
     else ! rtm_sfc >= 0.0_core_rknd
-      ! The sounding does extend to the surface, so rtm_sfc is the initial value
+      ! The sounding does extended to the surface, so rtm_sfc is the initial value
       ! of total water mixing ratio at the surface.
       rv_sfc = rtm_sfc
     end if
@@ -3914,9 +3914,9 @@ module clubb_driver
 
     use clubb_model_settings, only: &
       day, month, year, & ! Variable(s)
-      extend_atmos_bottom_level, &
-      extend_atmos_top_level, &
-      extend_atmos_range_size, &
+      extended_atmos_bottom_level, &
+      extended_atmos_top_level, &
+      extended_atmos_range_size, &
       lin_int_buffer, &
       rlat, &
       rlon
@@ -4089,9 +4089,9 @@ module clubb_driver
 
       call compute_bugsrad_radiation &
            ( gr%zm, gr%nz, lin_int_buffer,            & ! Intent(in)
-             extend_atmos_range_size,                 & ! Intent(in)
-             extend_atmos_bottom_level,               & ! Intent(in)
-             extend_atmos_top_level,                  & ! Intent(in)
+             extended_atmos_range_size,                 & ! Intent(in)
+             extended_atmos_bottom_level,               & ! Intent(in)
+             extended_atmos_top_level,                  & ! Intent(in)
              amu0,                                    & ! Intent(in)
              thlm, rcm, rtm, rsm, rim,           & ! Intent(in)
              cloud_frac, ice_supersat_frac,           & ! Intent(in)
@@ -4224,7 +4224,7 @@ module clubb_driver
       stat_update_var ! Procedure
 
     use clubb_model_settings, only: &
-      extend_atmos_range_size, &
+      extended_atmos_range_size, &
       lin_int_buffer
 
     use clubb_precision, only: &
@@ -4264,8 +4264,8 @@ module clubb_driver
 
       if ( l_output_rad_files ) then
 
-        rad_zt_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size
-        rad_zm_dim = (nz-1)+lin_int_buffer+extend_atmos_range_size+1
+        rad_zt_dim = (nz-1)+lin_int_buffer+extended_atmos_range_size
+        rad_zm_dim = (nz-1)+lin_int_buffer+extended_atmos_range_size+1
 
         call stat_update_var( iT_in_K_rad, real( flip(T_in_K(1,:), rad_zt_dim),&
                  kind = core_rknd ), stats_rad_zt )

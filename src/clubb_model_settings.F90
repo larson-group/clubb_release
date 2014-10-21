@@ -29,12 +29,12 @@ module clubb_model_settings
 
   ! Radiation variables
   integer, public :: &
-    extend_atmos_bottom_level, & ! Bottom level of the extended atmosphere
-    extend_atmos_top_level,    & ! Top level of the extended atmosphere
-    extend_atmos_range_size      ! The number of levels in the extended atmosphere
+    extended_atmos_bottom_level, & ! Bottom level of the extended atmosphere
+    extended_atmos_top_level,    & ! Top level of the extended atmosphere
+    extended_atmos_range_size      ! The number of levels in the extended atmosphere
 
-!$omp threadprivate(extend_atmos_bottom_level, extend_atmos_top_level, &
-!$omp               extend_atmos_range_size)
+!$omp threadprivate(extended_atmos_bottom_level, extended_atmos_top_level, &
+!$omp               extended_atmos_range_size)
 
   ! The number of interpolated levels between the computational grid
   ! and the extended atmosphere
@@ -115,9 +115,9 @@ module clubb_model_settings
     nzmax     = 75
     grid_type = 1
 
-    extend_atmos_bottom_level = 0
-    extend_atmos_top_level    = 0
-    extend_atmos_range_size   = 0
+    extended_atmos_bottom_level = 0
+    extended_atmos_top_level    = 0
+    extended_atmos_range_size   = 0
 
     lin_int_buffer = 0
 

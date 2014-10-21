@@ -81,7 +81,7 @@ module variables_radiation_module
 
   !---------------------------------------------------------------------
   subroutine setup_radiation_variables( nzmax, lin_int_buffer, &
-                                        extend_atmos_range_size )
+                                        extended_atmos_range_size )
   ! Description:
   !   Allocates and initializes prognostic scalar and array variables
   !   for the CLUBB model code.
@@ -97,7 +97,7 @@ module variables_radiation_module
       nzmax, & ! Number of grid levels [-]
       lin_int_buffer,& ! Number of interpolated levels between the computational
                        ! grid and the extended atmosphere [-]
-      extend_atmos_range_size ! The number of levels in the extended atmosphere [-]
+      extended_atmos_range_size ! The number of levels in the extended atmosphere [-]
 
     ! Local Variables
 
@@ -105,8 +105,8 @@ module variables_radiation_module
 
     !----------------------------BEGIN CODE-------------------------------
 
-    rad_zt_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size
-    rad_zm_dim = (nzmax-1)+lin_int_buffer+extend_atmos_range_size+1
+    rad_zt_dim = (nzmax-1)+lin_int_buffer+extended_atmos_range_size
+    rad_zm_dim = (nzmax-1)+lin_int_buffer+extended_atmos_range_size+1
 
 
     ! --- Allocation ---

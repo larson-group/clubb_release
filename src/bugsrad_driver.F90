@@ -12,9 +12,9 @@ module bugsrad_driver
 
   subroutine compute_bugsrad_radiation &
              ( alt, nz, lin_int_buffer,             &
-               extend_atmos_range_size,             &
-               extend_atmos_bottom_level,           &
-               extend_atmos_top_level,              &
+               extended_atmos_range_size,             &
+               extended_atmos_bottom_level,           &
+               extended_atmos_top_level,              &
                amu0, &
                thlm, rcm, rtm, rsm, rim,& 
                cloud_frac, ice_supersat_frac,       &
@@ -49,9 +49,9 @@ module bugsrad_driver
 
     use grid_class, only: flip  ! Procedure(s)
 
-    use extend_atmosphere_module, only: &
-      extend_atmos_dim, extend_alt, extend_p_in_mb, & ! Variable(s)
-      extend_T_in_K, extend_sp_hmdty, extend_o3l
+    use extended_atmosphere_module, only: &
+      extended_atmos_dim, extended_alt, extended_p_in_mb, & ! Variable(s)
+      extended_T_in_K, extended_sp_hmdty, extended_o3l
 
     use parameters_radiation, only: &
       sol_const, & ! Variable(s)
@@ -84,9 +84,9 @@ module bugsrad_driver
     integer, intent(in) :: &
       nz ! Vertical extent;  i.e. nz in the grid class
 
-    ! Number of levels to interpolate from the bottom of extend_atmos to the top
+    ! Number of levels to interpolate from the bottom of extended_atmos to the top
     ! of the CLUBB profile, hopefully enough to eliminate cooling spikes, etc.
-    integer, intent(in) :: lin_int_buffer, extend_atmos_range_size
+    integer, intent(in) :: lin_int_buffer, extended_atmos_range_size
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       alt,              & ! Altitudes of the model              [m]
@@ -104,8 +104,8 @@ module bugsrad_driver
 
 
     integer,intent(in) ::&
-      extend_atmos_bottom_level, &
-      extend_atmos_top_level
+      extended_atmos_bottom_level, &
+      extended_atmos_top_level
 
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(nz) :: &
@@ -121,15 +121,15 @@ module bugsrad_driver
     real( kind = core_rknd ), dimension(nz) :: &
       rcm_in_cloud  ! Liquid water mixing ratio in cloud  [kg/kg]
 
-!   real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
+!   real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extended_atmos_range_size) :: &
 !     sp_humidity, & ! Specific humidity      [kg/kg]
 !     p_in_mb          ! Pressure in millibars  [hPa]
 
     ! Pressure in millibars for layers (calculated as an average of p_in_mb)
-    real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size+1) :: &
+    real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extended_atmos_range_size+1) :: &
       playerinmb ! [hPa]
 
-    real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extend_atmos_range_size) :: &
+    real( kind = dp ), dimension(nlen,(nz-1)+lin_int_buffer+extended_atmos_range_size) :: &
       diff_pres_lvls  ! Difference in pressure levels       [hPa]
 
     real( kind = dp ), dimension(nlen) :: &
@@ -145,7 +145,7 @@ module bugsrad_driver
 
     !-------------------------------------------------------------------------------
 
-    buffer = lin_int_buffer + extend_atmos_range_size
+    buffer = lin_int_buffer + extended_atmos_range_size
 
     ! Convert to millibars
     p_in_mb(1,1:(nz-1))  = real( p_in_Pa(2:nz) / pascal_per_mb, kind=dp ) ! t grid in CLUBB
@@ -203,14 +203,14 @@ module bugsrad_driver
     cloud_frac_2d(1,1:buffer)         = 0.0_dp
     ice_supersat_frac_2d(1,1:buffer)  = 0.0_dp
 
-    if ( real( alt(nz), kind=dp ) > extend_alt(extend_atmos_dim) ) then
+    if ( real( alt(nz), kind=dp ) > extended_alt(extended_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
                        "profile."
       write(fstderr,*) "Top of CLUBB model zm grid =", alt(nz), "m."
       write(fstderr,*) "Top of extended atmosphere profile =",  &
-                       extend_alt(extend_atmos_dim), "m."
+                       extended_alt(extended_atmos_dim), "m."
       write(fstderr,*) "Reduce the vertical extent of the CLUBB model grid."
       ! CLUBB zm grid exceeds a 50 km altitude
       stop "compute_bugsrad_radiation: cannot handle this altitude"
@@ -220,28 +220,28 @@ module bugsrad_driver
     end if
 
     ! Add the extended atmospheric profile above the linear interpolation
-    T_in_K(1,1:extend_atmos_range_size) = &
-               flip( extend_T_in_K( extend_atmos_bottom_level:extend_atmos_top_level), &
-                     extend_atmos_range_size )
+    T_in_K(1,1:extended_atmos_range_size) = &
+               flip( extended_T_in_K( extended_atmos_bottom_level:extended_atmos_top_level), &
+                     extended_atmos_range_size )
 
-    sp_humidity(1,1:extend_atmos_range_size) = &
-               flip( extend_sp_hmdty( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                                      extend_atmos_range_size )
+    sp_humidity(1,1:extended_atmos_range_size) = &
+               flip( extended_sp_hmdty( extended_atmos_bottom_level:extended_atmos_top_level ), &
+                                      extended_atmos_range_size )
 
-    o3l(1,1:extend_atmos_range_size) = &
-               flip( extend_o3l( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                                 extend_atmos_range_size )
+    o3l(1,1:extended_atmos_range_size) = &
+               flip( extended_o3l( extended_atmos_bottom_level:extended_atmos_top_level ), &
+                                 extended_atmos_range_size )
 
-    p_in_mb(1,1:extend_atmos_range_size) = &
-               flip( extend_p_in_mb( extend_atmos_bottom_level:extend_atmos_top_level ), &
-                   extend_atmos_range_size )
+    p_in_mb(1,1:extended_atmos_range_size) = &
+               flip( extended_p_in_mb( extended_atmos_bottom_level:extended_atmos_top_level ), &
+                   extended_atmos_range_size )
 
     ! Do a linear interpolation to produce the levels between the extended
     ! atmospheric levels and the CLUBB levels;
     ! These levels should number the lin_int_buffer parameter
     z1 = buffer + 1
-    z2 = extend_atmos_range_size
-    do z = buffer, extend_atmos_range_size+1, -1
+    z2 = extended_atmos_range_size
+    do z = buffer, extended_atmos_range_size+1, -1
       z1_fact = real( z2 - z, kind=dp ) / real( z2 - z1,kind=dp )
       z2_fact = real( z - z1,kind=dp ) / real( z2 - z1, kind=dp )
 

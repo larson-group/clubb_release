@@ -1,6 +1,6 @@
 !-------------------------------------------------------------------------------
 ! $Id$
-module extend_atmosphere_module
+module extended_atmosphere_module
 
 ! Sometimes we wish to compute the radiative processes (eg ozone absorption) at high altitudes
 ! without undertaking the computational expense of computing CLUBB's equations there.
@@ -37,7 +37,7 @@ module extend_atmosphere_module
 !-------------------------------------------------------------------
 !  Computational  |     Buffer           |   Extended              |
 !                 | (not a separate      | -                       |
-!                 |  array)              | extend_atmos_range_size |
+!                 |  array)              | extended_atmos_range_size |
 !                 |                      | |                       |
 !                 |                      | |                       |
 !                 |                      | |                       |
@@ -68,15 +68,15 @@ module extend_atmosphere_module
   private ! Default Scope
 
   public :: &
-    load_extend_std_atm, & 
-    convert_snd2extend_atm, &
-    determine_extend_atmos_bounds,&
-    finalize_extend_atm
+    load_extended_std_atm, &
+    convert_snd2extended_atm, &
+    determine_extended_atmos_bounds,&
+    finalize_extended_atm
 
   integer, public :: &
-    extend_atmos_dim, & ! Size of Extended Atmosphere
+    extended_atmos_dim, & ! Size of Extended Atmosphere
     total_atmos_dim     ! Total Atmosphere Size (grid + buffer + extended atmosphere)
-!$omp threadprivate(extend_atmos_dim, total_atmos_dim)
+!$omp threadprivate(extended_atmos_dim, total_atmos_dim)
 
   real( kind = core_rknd ), public, target, allocatable, dimension(:) :: &
     complete_alt, &     ! Altitude of complete atmosphere in meters
@@ -85,17 +85,18 @@ module extend_atmosphere_module
 
   ! Extended Atmosphere variables
   real( kind = dp ), public, target, allocatable, dimension(:) :: &
-    extend_alt, &         ! Altitude, increases with array index    [m]
-    extend_T_in_K, &      ! Temperature in degrees Kelvin
-    extend_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )
-    extend_p_in_mb, &     ! Pressure in millibars
-    extend_o3l            ! Ozone ( O_3 / Density )
-!$omp threadprivate(extend_alt, extend_T_in_K, extend_sp_hmdty, extend_p_in_mb, extend_o3l)
+    extended_alt, &         ! Altitude, increases with array index    [m]
+    extended_T_in_K, &      ! Temperature in degrees Kelvin
+    extended_sp_hmdty, &    ! Specific Humidity ( Water Vapor / Density )
+    extended_p_in_mb, &     ! Pressure in millibars
+    extended_o3l            ! Ozone ( O_3 / Density )
+!$omp threadprivate(extended_alt, extended_T_in_K, extended_sp_hmdty)
+!$omp threadprivate(extended_p_in_mb, extended_o3l)
 
   contains
 
   !-------------------------------------------------------------------------------------------------
-  subroutine convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &
+  subroutine convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, &
                                      sounding_profiles )
     !
     !  Description: This subroutine converts information retrieved from the
@@ -165,56 +166,56 @@ module extend_atmosphere_module
     ! -- Begin Code --
 
     ! Determine the size of the extended atmosphere buffer
-    extend_atmos_dim = size( sounding_profiles(1)%values )
+    extended_atmos_dim = size( sounding_profiles(1)%values )
    
     ! Allocate variables
-    allocate( extend_alt(extend_atmos_dim) )
-    allocate( extend_T_in_K(extend_atmos_dim) )
-    allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_p_in_mb(extend_atmos_dim) )
-    allocate( extend_o3l(extend_atmos_dim) )
+    allocate( extended_alt(extended_atmos_dim) )
+    allocate( extended_T_in_K(extended_atmos_dim) )
+    allocate( extended_sp_hmdty(extended_atmos_dim) )
+    allocate( extended_p_in_mb(extended_atmos_dim) )
+    allocate( extended_o3l(extended_atmos_dim) )
 
-    allocate( alt(extend_atmos_dim) )
-    allocate( theta(extend_atmos_dim)  )
-    allocate( p_in_Pa(extend_atmos_dim) )
-    allocate( exner(extend_atmos_dim) )
+    allocate( alt(extended_atmos_dim) )
+    allocate( theta(extended_atmos_dim)  )
+    allocate( p_in_Pa(extended_atmos_dim) )
+    allocate( exner(extended_atmos_dim) )
 
     do ivar = 1, n_rad_scalars
-      allocate( rad_scalars_sounding_profile(ivar)%values(extend_atmos_dim) )
+      allocate( rad_scalars_sounding_profile(ivar)%values(extended_atmos_dim) )
     end do
 
     ! Either convert to pressure or from pressure
 
-    call read_z_profile( n_snd_var, extend_atmos_dim, sounding_profiles, p_sfc, zm_init, &
+    call read_z_profile( n_snd_var, extended_atmos_dim, sounding_profiles, p_sfc, zm_init, &
                          alt , p_in_Pa, alt_type )
 
-    extend_alt = real(alt, kind=dp)
+    extended_alt = real(alt, kind=dp)
 
     if ( alt_type == z_name ) then
-      write(fstderr,*) "Fatal error in convert_snd2extend_atm."
+      write(fstderr,*) "Fatal error in convert_snd2extended_atm."
       stop "Feature not implemented"
     end if
 
-    extend_p_in_mb = real(p_in_Pa/ pascal_per_mb, kind=dp)
+    extended_p_in_mb = real(p_in_Pa/ pascal_per_mb, kind=dp)
 
     ! Convert to temperature from thlm or theta
 
-    call read_theta_profile( n_snd_var, extend_atmos_dim, sounding_profiles, theta_type, theta  )
-    extend_T_in_K = real(theta, kind=dp)
+    call read_theta_profile( n_snd_var, extended_atmos_dim, sounding_profiles, theta_type, theta  )
+    extended_T_in_K = real(theta, kind=dp)
 
     if( theta_type /= temperature_name ) then
       exner(1) = ( p_sfc/p0 ) ** kappa
-      do i = 2, extend_atmos_dim
+      do i = 2, extended_atmos_dim
         exner(i) = (p_in_Pa(i)/p0) ** kappa
       end do
-      extend_T_in_K = extend_T_in_K * real(exner, kind=dp)
+      extended_T_in_K = extended_T_in_K * real(exner, kind=dp)
     end if
 
     ! Convert rtm to specific humidity
 
-    extend_sp_hmdty = real(read_x_profile( n_snd_var, extend_atmos_dim, rt_name, &
+    extended_sp_hmdty = real(read_x_profile( n_snd_var, extended_atmos_dim, rt_name, &
                                             sounding_profiles ), kind=dp)
-    extend_sp_hmdty = extend_sp_hmdty / ( extend_sp_hmdty +1._dp )
+    extended_sp_hmdty = extended_sp_hmdty / ( extended_sp_hmdty +1._dp )
 
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
@@ -222,7 +223,7 @@ module extend_atmosphere_module
       rad_scalars_sounding_profile ) ! Out
 
     ! Set the array holding the values of o3l (ozone)
-    extend_o3l = real(read_x_profile( 1, extend_atmos_dim, ozone_name, &
+    extended_o3l = real(read_x_profile( 1, extended_atmos_dim, ozone_name, &
                                        rad_scalars_sounding_profile ), kind=dp)
     ! We would add the setting of new radiation scalar arrays like O3 right
     ! after this. New variable names would have to be added to input_names.
@@ -238,15 +239,15 @@ module extend_atmosphere_module
     end do
 
     return
-  end subroutine convert_snd2extend_atm
+  end subroutine convert_snd2extended_atm
 
   !------------------------------------------------------------------------------------------------
-  subroutine determine_extend_atmos_bounds( grid_size, zt_grid, &
+  subroutine determine_extended_atmos_bounds( grid_size, zt_grid, &
                                             zm_grid, zm_grid_spacing, p_in_Pa_zm, & 
                                             radiation_top, &
-                                            extend_atmos_bottom_level, &
-                                            extend_atmos_top_level, &
-                                            extend_atmos_range_size, &
+                                            extended_atmos_bottom_level, &
+                                            extended_atmos_top_level, &
+                                            extended_atmos_range_size, &
                                             lin_int_buffer_size )
     ! Description: 
     !   This subroutine determines the bottom and top levels of the
@@ -285,30 +286,30 @@ module extend_atmosphere_module
       zm_grid_spacing, & ! Change per zm grid levels [m]
       p_in_Pa_zm         ! Pressure                  [Pa]
 
-    real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extend to [m]
+    real( kind = core_rknd ), intent(in) :: radiation_top ! Maximum height to extended to [m]
 
     ! Output Variable(s)
     integer, intent(out) :: &
-      extend_atmos_bottom_level, & ! Index of lowest point to use for atmosphere extension [-]
-      extend_atmos_top_level, &    ! Index of highest point to use for atmosphere extension [-]
-      extend_atmos_range_size, &   ! Size of the range between the 
+      extended_atmos_bottom_level, & ! Index of lowest point to use for atmosphere extension [-]
+      extended_atmos_top_level, &    ! Index of highest point to use for atmosphere extension [-]
+      extended_atmos_range_size, &   ! Size of the range between the
       !                              two points bounds for atmosphere extension[-]
       lin_int_buffer_size          ! Size of linear interpolation buffer [-]
 
     ! Local Variable(s)
     real(kind=dp) :: &
       dz10, dz_model, dz_extension, dz, &
-      zm_grid_top, extend_bottom, buffer_size
+      zm_grid_top, extended_bottom, buffer_size
 
     integer :: &
       i, & ! Loop index
-      j, & ! Array index in extend_alt which is one above the computational domain  []
+      j, & ! Array index in extended_alt which is one above the computational domain  []
       k    ! Array index of altitude one less than the top of the radiative domain  []
 
     ! ---- Begin Code ----
 
     if ( radiation_top < real( zm_grid(grid_size), kind=dp ) ) then
-      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+      write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       stop "top of the radiation grid is below the top of the computational grid"
     end if
 
@@ -317,45 +318,45 @@ module extend_atmosphere_module
     j=1
 
     ! This code ensures that altitudes monotonically increases with increasing grid level
-    do while ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) .and. j < extend_atmos_dim )
+    do while ( extended_alt(j) < real( zm_grid(grid_size), kind=dp ) .and. j < extended_atmos_dim )
       j = j + 1
     end do
 
     ! This code ensures that pressure monotonically decreases with increasing grid level
     do while (real(p_in_Pa_zm(grid_size),kind=dp) < &
-            extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) )
+            extended_p_in_mb(j) * real(pascal_per_mb, kind=dp) )
       j = j + 1
     end do
 
-    if ( extend_alt(j) < real( zm_grid(grid_size), kind=dp ) ) then
-      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+    if ( extended_alt(j) < real( zm_grid(grid_size), kind=dp ) ) then
+      write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       stop "Extended atmosphere is below the top of the computational grid"
     end if
 
-    if ( extend_alt(extend_atmos_dim) < real( radiation_top, kind=dp ) ) then
-      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+    if ( extended_alt(extended_atmos_dim) < real( radiation_top, kind=dp ) ) then
+      write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       write(fstderr,*) "Atmosphere cannot be extended because extension data does ", &
                          "not reach radiation_top"
       stop
     end if
 
     if ( real(p_in_Pa_zm(grid_size),kind=dp) < &
-         extend_p_in_mb(j) * real(pascal_per_mb, kind=dp) ) then
-      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+         extended_p_in_mb(j) * real(pascal_per_mb, kind=dp) ) then
+      write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       stop "pressure at top of computational grid less than pressure at base of radiative grid"
     end if
 
     k=1
 
-    if ( j <= extend_atmos_dim ) then
+    if ( j <= extended_atmos_dim ) then
 
-      do while( extend_alt(k) < real( radiation_top, kind=dp ) .and. k < extend_atmos_dim )
+      do while( extended_alt(k) < real( radiation_top, kind=dp ) .and. k < extended_atmos_dim )
         k= k+1
       end do
 
       ! It is possible we could be above the specified radiation top, check
       ! and roll back if neccessary
-      if( extend_alt(k) > real( radiation_top, kind=dp ) ) then
+      if( extended_alt(k) > real( radiation_top, kind=dp ) ) then
         k = k-1
       end if
 
@@ -363,32 +364,32 @@ module extend_atmosphere_module
       k = j
     end if
 
-    extend_atmos_bottom_level = j
-    extend_atmos_top_level = k
-    extend_atmos_range_size = k - j + 1
+    extended_atmos_bottom_level = j
+    extended_atmos_top_level = k
+    extended_atmos_range_size = k - j + 1
 
-    if ( extend_atmos_range_size < 1 ) then
-      write(fstderr,*) "In subroutine determine_extend_atmos_bounds"
+    if ( extended_atmos_range_size < 1 ) then
+      write(fstderr,*) "In subroutine determine_extended_atmos_bounds"
       stop "radiation top below computational grid"
     end if
 
     ! Get the altitudes for a couple of key points so we can calculate a buffer
     ! size
     zm_grid_top =  real( zm_grid(grid_size), kind=dp ) !Altitude at top of normal grid
-    extend_bottom = extend_alt(extend_atmos_bottom_level) !Altitude at bottom of
+    extended_bottom = extended_alt(extended_atmos_bottom_level) !Altitude at bottom of
                                                           !extended atmos
     
     ! Determine the spacing of the lin_int_buffer, it should have no more than
     ! 10 levels.
-    dz10 = (extend_bottom - zm_grid_top) / 10._dp
+    dz10 = (extended_bottom - zm_grid_top) / 10._dp
     dz_model = real( zm_grid_spacing(grid_size), kind=dp )
     dz = max( dz10, dz_model )
     ! Calculate the size of the lin_int_buffer
-    buffer_size = (extend_bottom - zm_grid_top) / dz
+    buffer_size = (extended_bottom - zm_grid_top) / dz
     lin_int_buffer_size = int( buffer_size )
 
     ! Calculate the dimension of the entire atmosphere
-    total_atmos_dim = grid_size + lin_int_buffer_size + extend_atmos_range_size
+    total_atmos_dim = grid_size + lin_int_buffer_size + extended_atmos_range_size
 
     ! Build the complete momentum grid
     ! The extended momentum grid contains one level above the
@@ -411,10 +412,10 @@ module extend_atmosphere_module
     i = 0 ! Tracks the number of extension levels used
     do j = grid_size + lin_int_buffer_size + 1, total_atmos_dim
       ! Take values from the extended atmosphere    
-      complete_momentum(j) = real( extend_alt(extend_atmos_bottom_level + i), kind = core_rknd )
+      complete_momentum(j) = real( extended_alt(extended_atmos_bottom_level + i), kind = core_rknd )
       ! Keep track of where we are in the extended atmosphere
       i = i + 1
-      if ( (i-1)+extend_atmos_bottom_level == extend_atmos_dim ) then
+      if ( (i-1)+extended_atmos_bottom_level == extended_atmos_dim ) then
         exit
       else
         cycle ! Loop to next point
@@ -440,10 +441,10 @@ module extend_atmosphere_module
     end forall
 
     return
-  end subroutine determine_extend_atmos_bounds
+  end subroutine determine_extended_atmos_bounds
 
   !-------------------------------------------------------------------------------------------------
-  subroutine load_extend_std_atm ( iunit )
+  subroutine load_extended_std_atm ( iunit )
     !
     !  Description:
     !    Loads in the U.S. Standard atmosphere data from a file.
@@ -490,43 +491,43 @@ module extend_atmosphere_module
 
     ! -- Begin Code --
 
-    extend_atmos_dim = std_atmos_dim
+    extended_atmos_dim = std_atmos_dim
 
     call read_one_dim_file( iunit, nCol, atm_input_file, retVars )
 
     ! Allocate and initialize variables for standard atmosphere
 
-    allocate( extend_alt(extend_atmos_dim) )
-    allocate( extend_T_in_K(extend_atmos_dim) )
-    allocate( extend_sp_hmdty(extend_atmos_dim) )
-    allocate( extend_p_in_mb(extend_atmos_dim) )
-    allocate( extend_o3l(extend_atmos_dim) )
+    allocate( extended_alt(extended_atmos_dim) )
+    allocate( extended_T_in_K(extended_atmos_dim) )
+    allocate( extended_sp_hmdty(extended_atmos_dim) )
+    allocate( extended_p_in_mb(extended_atmos_dim) )
+    allocate( extended_o3l(extended_atmos_dim) )
 
-    extend_alt = real( read_x_profile( nCol, extend_atmos_dim, z_name, retVars, &
+    extended_alt = real( read_x_profile( nCol, extended_atmos_dim, z_name, retVars, &
                                  atm_input_file ), kind=dp )
 
-    extend_T_in_K = real( read_x_profile( nCol, extend_atmos_dim, temperature_name, retVars, &
+    extended_T_in_K = real( read_x_profile( nCol, extended_atmos_dim, temperature_name, retVars, &
                                     atm_input_file ), kind=dp )
 
-    extend_sp_hmdty = real( read_x_profile( nCol, extend_atmos_dim, sp_humidity_name, retVars, &
+    extended_sp_hmdty = real( read_x_profile( nCol, extended_atmos_dim, sp_humidity_name, retVars, &
                                       atm_input_file ), kind=dp )
 
-    extend_p_in_mb = real( read_x_profile( nCol, extend_atmos_dim, press_mb_name, retVars, &
+    extended_p_in_mb = real( read_x_profile( nCol, extended_atmos_dim, press_mb_name, retVars, &
                                    atm_input_file ), kind=dp )
 
-    extend_o3l = real( read_x_profile( nCol, extend_atmos_dim, ozone_name, retVars, &
+    extended_o3l = real( read_x_profile( nCol, extended_atmos_dim, ozone_name, retVars, &
                                  atm_input_file ), kind=dp )
 
     ! Deallocate memory
     call deallocate_one_dim_vars( nCol, retVars )
 
     return
-  end subroutine load_extend_std_atm
+  end subroutine load_extended_std_atm
   !-------------------------------------------------------------------------------------------------
-  subroutine finalize_extend_atm( )
+  subroutine finalize_extended_atm( )
     !
     !  Description:
-    !    Frees memory used by the extend_atmosphere module.
+    !    Frees memory used by the extended_atmosphere module.
     !
     !  References:
     !    none
@@ -540,24 +541,24 @@ module extend_atmosphere_module
 
     ! ---- Begin Code ----
 
-    if ( allocated( extend_alt ) ) then
-      deallocate( extend_alt )
+    if ( allocated( extended_alt ) ) then
+      deallocate( extended_alt )
     end if
 
-    if ( allocated( extend_T_in_K ) ) then
-      deallocate( extend_T_in_K )
+    if ( allocated( extended_T_in_K ) ) then
+      deallocate( extended_T_in_K )
     end if
 
-    if ( allocated( extend_sp_hmdty ) ) then
-      deallocate( extend_sp_hmdty )
+    if ( allocated( extended_sp_hmdty ) ) then
+      deallocate( extended_sp_hmdty )
     end if
 
-    if ( allocated( extend_p_in_mb ) ) then
-      deallocate( extend_p_in_mb )
+    if ( allocated( extended_p_in_mb ) ) then
+      deallocate( extended_p_in_mb )
     end if
 
-    if ( allocated( extend_o3l ) ) then
-      deallocate( extend_o3l )
+    if ( allocated( extended_o3l ) ) then
+      deallocate( extended_o3l )
     end if
 
     if ( allocated( complete_alt ) ) then
@@ -569,6 +570,6 @@ module extend_atmosphere_module
     end if
 
     return
-  end subroutine finalize_extend_atm
+  end subroutine finalize_extended_atm
 
-end module extend_atmosphere_module
+end module extended_atmosphere_module

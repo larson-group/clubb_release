@@ -71,9 +71,9 @@ module sounding
     use input_reader, only: &
       deallocate_one_dim_vars ! Procedure(s)
 
-    use extend_atmosphere_module, only: &
-      convert_snd2extend_atm, & ! Procedure(s)
-      load_extend_std_atm
+    use extended_atmosphere_module, only: &
+      convert_snd2extended_atm, & ! Procedure(s)
+      load_extended_std_atm
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
@@ -436,11 +436,11 @@ module sounding
       ! Prepare extended sounding for radiation
       if ( l_use_default_std_atmosphere ) then
 
-        call load_extend_std_atm( iunit ) ! Intent(in)
+        call load_extended_std_atm( iunit ) ! Intent(in)
 
       else
 
-        call convert_snd2extend_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
+        call convert_snd2extended_atm( iunit, runtype, n_snd_var, p_sfc, zm_init, & ! Intent(in)
                                    sounding_retVars )   ! Intent(in)
       end if
     end if ! rad_scheme == "bugsrad"
