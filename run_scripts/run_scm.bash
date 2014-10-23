@@ -220,6 +220,8 @@ fi
 model_file='../input/case_setups/'${!#}'_model.in'
 run_case=${!#}
 
+cp $model_file "$model_file.backup"
+
 # Check to see if the model file exists
 if [ ! -e "$model_file" ];
 then
@@ -272,6 +274,13 @@ then
 		#stats_file='../stats/nobudgets_stats.in' 
 	fi
 fi
+
+sed -i 's/!.*//' $model_file
+sed -i '/stats_file/d' $model_file
+sed -i '/parameter_file/d' $model_file
+sed -i '/output_directory/d' $model_file
+
+
 
 if [ $NIGHTLY == true ]; 
 then
@@ -429,6 +438,8 @@ else
 	# And away we go...
 	run_case
 fi
+
+mv "$model_file.backup" $model_file
 
 outputgrep=$(sed   's/!.*//' $model_file |grep "output_directory"  | grep -oP '"\K[^"\047]+(?=["\047])')
 if [ -n "$outputgrep" ]
