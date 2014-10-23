@@ -430,6 +430,24 @@ else
 	run_case
 fi
 
+outputgrep=$(sed   's/!.*//' $model_file |grep "output_directory"  | grep -oP '"\K[^"\047]+(?=["\047])')
+if [ -n "$outputgrep" ]
+then
+	OUTPUT_SPECIFIED=true
+	CUSTOM_OUTPUT_DIR=$outputgrep
+	if [ ! -d $CUSTOM_OUTPUT_DIR ] && [ -n $CUSTOM_OUTPUT_DIR ] ;
+	then
+		if [ ${CUSTOM_OUTPUT_DIR:0:1} = "-" ];
+		then
+			echo "Invalid output directory specified"
+			exit 1;
+		else
+			mkdir $CUSTOM_OUTPUT_DIR
+		fi
+	fi
+fi
+
+
 if [ $OUTPUT_SPECIFIED == true ];
 then
 	# Move files from default output directory to the specified directory

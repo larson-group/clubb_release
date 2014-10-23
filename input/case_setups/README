@@ -200,6 +200,9 @@ parameter_file | character
   Name of file containing tunable parameters.
   e.g., "../input/tunable_parameters/tunable_parameters.in"
 
+output_directory | character
+  Filepath where output will be saved.
+
 --------------------------------------------------------------------------------
 2. &microphys_setting:
 --------------------------------------------------------------------------------
