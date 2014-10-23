@@ -236,13 +236,19 @@ fi
 # Set defaults if they were not passed in
 if [ -z $parameter_file ];
 then
-	parameter_file="../input/tunable_parameters/tunable_parameters.in"
+	outputgrep=$(sed   's/!.*//' $model_file |grep "parameter_file"  | grep -oP '"\K[^"\047]+(?=["\047])')	
+	if [ -z "$outputgrep" ]
+	then
+	  parameter_file="../input/tunable_parameters/tunable_parameters.in"
+        else
+	  parameter_file=$outputgrep
+	fi
 fi
 
 if [ -z $stats_file ];
 then
         outputgrep=$(sed   's/!.*//' $model_file |grep "stats_file"  | grep -oP '"\K[^"\047]+(?=["\047])')
-        if [ -z "$outputgrep"] 
+        if [ -z "$outputgrep" ] 
         then
           stats_file="../input/stats/standard_stats.in"
         else

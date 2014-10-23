@@ -360,7 +360,8 @@ module clubb_driver
     character(len=100) :: & 
       fname_prefix, &! Prefix of stats filenames, to be followed by, for example "_zt"
       fdir,         &! Output directory
-      stats_file     ! Filepath of stats file
+      stats_file,   &! Filepath of stats file
+      parameter_file ! Filepath of parameter file
 
     real( kind = core_rknd ) :: & 
       stats_tsamp,   & ! Stats sampling interval [s]
@@ -503,7 +504,8 @@ module clubb_driver
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
       edsclr_dim, iiedsclr_thl, iiedsclr_rt, iiedsclr_CO2, &
       l_prescribed_avg_deltaz, l_rtm_nudge, rtm_min, rtm_nudge_max_altitude, &
-      l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad
+      l_diagnose_correlations, l_calc_w_corr, l_calc_thlp2_rad, &
+      parameter_file
 
 
     namelist /stats_setting/ &
@@ -575,9 +577,10 @@ module clubb_driver
 
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
-    fname_prefix = ''
-    stats_fmt    = ''
-    stats_file   = ''
+    fname_prefix   = ''
+    stats_fmt      = ''
+    stats_file     = ''
+    parameter_file = ''
 
     ! Default values for the soil scheme
     call initialize_soil_veg()
