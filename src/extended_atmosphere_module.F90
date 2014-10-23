@@ -152,10 +152,12 @@ module extended_atmosphere_module
 
     ! Local Variables
 
-    real( kind = core_rknd ),  dimension(:), allocatable :: alt, theta, p_in_Pa, exner
+    real( kind = core_rknd ),  dimension(:), allocatable :: &
+      extended_p_in_Pa, &
+      extended_exner
 
     type(one_dim_read_var), dimension(n_rad_scalars) :: &
-      rad_scalars_sounding_profile ! Ozone Sounding profile
+      extended_rad_scalars ! Ozone Sounding profile
 
     integer :: i, ivar
 
@@ -172,41 +174,36 @@ module extended_atmosphere_module
     allocate( extended_sp_hmdty(extended_atmos_dim) )
     allocate( extended_p_in_mb(extended_atmos_dim) )
     allocate( extended_o3l(extended_atmos_dim) )
-
-    allocate( alt(extended_atmos_dim) )
-    allocate( theta(extended_atmos_dim)  )
-    allocate( p_in_Pa(extended_atmos_dim) )
-    allocate( exner(extended_atmos_dim) )
+    allocate( extended_p_in_Pa(extended_atmos_dim) )
+    allocate( extended_exner(extended_atmos_dim) )
 
     do ivar = 1, n_rad_scalars
-      allocate( rad_scalars_sounding_profile(ivar)%values(extended_atmos_dim) )
+      allocate( extended_rad_scalars(ivar)%values(extended_atmos_dim) )
     end do
 
     ! Either convert to pressure or from pressure
 
     call read_z_profile( n_snd_var, extended_atmos_dim, sounding_profiles, p_sfc, zm_init, &
-                         alt , p_in_Pa, alt_type )
-
-    extended_alt = alt
+                         extended_alt , extended_p_in_Pa, alt_type )
 
     if ( alt_type == z_name ) then
       write(fstderr,*) "Fatal error in convert_snd2extended_atm."
       stop "Feature not implemented"
     end if
 
-    extended_p_in_mb = p_in_Pa/ pascal_per_mb
+    extended_p_in_mb = extended_p_in_Pa / pascal_per_mb
 
     ! Convert to temperature from thlm or theta
 
-    call read_theta_profile( n_snd_var, extended_atmos_dim, sounding_profiles, theta_type, theta  )
-    extended_T_in_K = theta
+    call read_theta_profile( n_snd_var, extended_atmos_dim, sounding_profiles, &
+      theta_type, extended_T_in_K )
 
     if( theta_type /= temperature_name ) then
-      exner(1) = ( p_sfc/p0 ) ** kappa
+      extended_exner(1) = ( p_sfc/p0 ) ** kappa
       do i = 2, extended_atmos_dim
-        exner(i) = (p_in_Pa(i)/p0) ** kappa
+        extended_exner(i) = (extended_p_in_Pa(i)/p0) ** kappa
       end do
-      extended_T_in_K = extended_T_in_K * exner
+      extended_T_in_K = extended_T_in_K * extended_exner
     end if
 
     ! Convert rtm to specific humidity
@@ -218,22 +215,20 @@ module extended_atmosphere_module
     ! Read in radiation scalars sounding (currently it only holds O3)
     call read_one_dim_file( iunit, n_rad_scalars, & ! In
       '../input/case_setups/'//trim( runtype )//'_ozone_sounding.in', & ! In
-      rad_scalars_sounding_profile ) ! Out
+      extended_rad_scalars ) ! Out
 
     ! Set the array holding the values of o3l (ozone)
     extended_o3l = read_x_profile( 1, extended_atmos_dim, ozone_name, &
-                                       rad_scalars_sounding_profile )
+                                       extended_rad_scalars )
     ! We would add the setting of new radiation scalar arrays like O3 right
     ! after this. New variable names would have to be added to input_names.
 
     ! Free Memory
-    deallocate( alt )
-    deallocate( theta )
-    deallocate( p_in_Pa )
-    deallocate( exner )
+    deallocate( extended_p_in_Pa )
+    deallocate( extended_exner )
 
     do ivar = 1, n_rad_scalars
-      deallocate( rad_scalars_sounding_profile(ivar)%values )
+      deallocate( extended_rad_scalars(ivar)%values )
     end do
 
     return
