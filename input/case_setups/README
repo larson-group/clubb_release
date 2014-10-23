@@ -196,6 +196,10 @@ iiedsclr_CO2 | integer
   Location in the edsclr arrays to place a scalar for CO2.  See the cobra case
   for an example of this.
 
+parameter_file | character
+  Name of file containing tunable parameters.
+  e.g., "../input/tunable_parameters/tunable_parameters.in"
+
 --------------------------------------------------------------------------------
 2. &microphys_setting:
 --------------------------------------------------------------------------------
