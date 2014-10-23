@@ -203,7 +203,7 @@ module bugsrad_driver
     cloud_frac_2d(1,1:buffer)         = 0.0_dp
     ice_supersat_frac_2d(1,1:buffer)  = 0.0_dp
 
-    if ( real( alt(nz), kind=dp ) > extended_alt(extended_atmos_dim) ) then
+    if ( alt(nz) > extended_alt(extended_atmos_dim) ) then
 
       write(fstderr,*) "The CLUBB model grid (for zm levels) contains an ",  &
                        "altitude above the top of the extended atmosphere ",  &
@@ -221,20 +221,20 @@ module bugsrad_driver
 
     ! Add the extended atmospheric profile above the linear interpolation
     T_in_K(1,1:extended_atmos_range_size) = &
-               flip( extended_T_in_K( extended_atmos_bottom_level:extended_atmos_top_level), &
-                     extended_atmos_range_size )
+               flip( real( extended_T_in_K( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
 
     sp_humidity(1,1:extended_atmos_range_size) = &
-               flip( extended_sp_hmdty( extended_atmos_bottom_level:extended_atmos_top_level ), &
-                                      extended_atmos_range_size )
+               flip( real( extended_sp_hmdty( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
 
     o3l(1,1:extended_atmos_range_size) = &
-               flip( extended_o3l( extended_atmos_bottom_level:extended_atmos_top_level ), &
-                                 extended_atmos_range_size )
+               flip( real( extended_o3l( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
 
     p_in_mb(1,1:extended_atmos_range_size) = &
-               flip( extended_p_in_mb( extended_atmos_bottom_level:extended_atmos_top_level ), &
-                   extended_atmos_range_size )
+               flip( real( extended_p_in_mb( extended_atmos_bottom_level: &
+                      extended_atmos_top_level ), kind = dp), extended_atmos_range_size )
 
     ! Do a linear interpolation to produce the levels between the extended
     ! atmospheric levels and the CLUBB levels;
