@@ -711,20 +711,20 @@ module latin_hypercube_driver_module
     importance_categories(2)%l_in_precip      = .true.
     importance_categories(2)%l_in_component_1 = .false.
 
-    importance_categories(3)%l_in_cloud       = .true.
-    importance_categories(3)%l_in_precip      = .false.
+    importance_categories(3)%l_in_cloud       = .false.
+    importance_categories(3)%l_in_precip      = .true.
     importance_categories(3)%l_in_component_1 = .true.
 
-    importance_categories(4)%l_in_cloud       = .true.
-    importance_categories(4)%l_in_precip      = .false.
+    importance_categories(4)%l_in_cloud       = .false.
+    importance_categories(4)%l_in_precip      = .true.
     importance_categories(4)%l_in_component_1 = .false.
 
-    importance_categories(5)%l_in_cloud       = .false.
-    importance_categories(5)%l_in_precip      = .true.
+    importance_categories(5)%l_in_cloud       = .true.
+    importance_categories(5)%l_in_precip      = .false.
     importance_categories(5)%l_in_component_1 = .true.
 
-    importance_categories(6)%l_in_cloud       = .false.
-    importance_categories(6)%l_in_precip      = .true.
+    importance_categories(6)%l_in_cloud       = .true.
+    importance_categories(6)%l_in_precip      = .false.
     importance_categories(6)%l_in_component_1 = .false.
 
     importance_categories(7)%l_in_cloud       = .false.
