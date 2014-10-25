@@ -1157,7 +1157,7 @@ module latin_hypercube_driver_module
                                 ! of all sample points will appear in cloud
 
     ! Local Variables
-    integer :: icategory
+    integer :: icategory, jcategory
 
     logical :: l_in_cloud, l_in_component_1, l_in_precip
 
@@ -1208,14 +1208,17 @@ module latin_hypercube_driver_module
       if ( category_real_probs(icategory) < prob_thresh .and. &
            category_prescribed_probs(icategory) > category_real_probs(icategory) ) then
         ! Do not perform importance_sampling on this category
-        ! Transfer all prescribed mass of this category to the next one.
-        if ( icategory == num_importance_categories ) then
-          category_prescribed_probs(1) = category_prescribed_probs(1) + &
+        ! Transfer all prescribed mass of this category the most important one available.
+        do jcategory=1, num_importance_categories
+
+          if ( category_real_probs(jcategory) >= prob_thresh ) then
+            category_prescribed_probs(jcategory) = category_prescribed_probs(jcategory) + &
                          ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
-        else
-          category_prescribed_probs(icategory+1) = category_prescribed_probs(icategory+1) + &
-                         ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
-        end if
+            exit
+          end if
+
+        end do
+
         category_prescribed_probs(icategory) = category_real_probs(icategory)
 
       end if
