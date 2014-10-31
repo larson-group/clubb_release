@@ -6,4 +6,5 @@ l_corr_cholesky_mtx_tests = .true. ! Flag for corr_cholesky_mtx_tests
 l_hole_filling_tests = .true.      ! Flag for hole filling tests
 l_Nc_Ncn_test = .true.             ! Flag for Nc-Ncn Equations tests
 l_read_corr_mtx_test = .true.      ! Flag for correlation matrix test
+l_silhs_category_test = .true.     ! Flag for SILHS category test
 /

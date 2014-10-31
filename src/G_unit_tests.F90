@@ -108,7 +108,7 @@ program G_unit_tests
   !  just singing,
   !  singing (and also parameterizing) in the rain.
   !
-  !  Dancing in the rain (because my co-workers tired of my singing and kicked me out of W404)
+  !  Dancing in the rain (because my co-workers were tired of my singing and kicked me out of W404)
   !  Dee-ah dee-ah dee-ah
   !  Dee-ah dee-ah dee-ah
   !  I'm happy again (as long as the 2 lines above weren't a new and unfamiliar compiler warning)!
@@ -133,6 +133,9 @@ program G_unit_tests
   use read_corr_mtx_test, only: &
       read_corr_mtx_unit_test ! Procedure(s)
 
+  use silhs_category_test, only: &
+      silhs_category_test_driver ! Procedure
+
   implicit none
 
   ! Local Constants
@@ -148,13 +151,14 @@ program G_unit_tests
     l_hole_filling_tests = .true.,      & ! Flag for hole filling tests
     l_Nc_Ncn_test = .true.,             & ! Flag for Nc-Ncn Equations tests
     l_read_corr_mtx_test = .true.,      & ! Flag for corr matrix read test
-      show_read_test_arrays = .true.      ! If true, the arrays used in
+    l_silhs_category_test = .true.,     & ! Flag for silhs category test
+    show_read_test_arrays = .true.        ! If true, the arrays used in
                                           !   read_corr_mtx_test will be shown
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
-    l_Nc_Ncn_test, l_read_corr_mtx_test
+    l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test
 
 
   ! Read namelist file
@@ -197,6 +201,12 @@ program G_unit_tests
      end if
   end if
 
+  if ( l_silhs_category_test ) then
+     if (silhs_category_test_driver() /= 0) then
+       exit_code = 1
+     end if
+  end if
+
   ! Stop with exit code if error found
   if (exit_code /= 0) then
     call exit(1)
@@ -205,4 +215,3 @@ program G_unit_tests
 !===============================================================================
 
 end program G_unit_tests
-
