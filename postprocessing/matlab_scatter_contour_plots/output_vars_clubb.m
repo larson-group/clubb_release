@@ -20,6 +20,34 @@ idx_w_2 = idx_count;
 units_corrector_type(idx_w_2) = 0;
 varname_clubb(idx_w_2,1:3) = 'w_2';
 
+% rt_1 (kg/kg).
+idx_count = idx_count + 1;
+global idx_rt_1
+idx_rt_1 = idx_count;
+units_corrector_type(idx_rt_1) = 0;
+varname_clubb(idx_rt_1,1:4) = 'rt_1';
+
+% rt_2 (kg/kg).
+idx_count = idx_count + 1;
+global idx_rt_2
+idx_rt_2 = idx_count;
+units_corrector_type(idx_rt_2) = 0;
+varname_clubb(idx_rt_2,1:4) = 'rt_2';
+
+% thl_1 (K).
+idx_count = idx_count + 1;
+global idx_thl_1
+idx_thl_1 = idx_count;
+units_corrector_type(idx_thl_1) = 0;
+varname_clubb(idx_thl_1,1:5) = 'thl_1';
+
+% thl_2 (K).
+idx_count = idx_count + 1;
+global idx_thl_2
+idx_thl_2 = idx_count;
+units_corrector_type(idx_thl_2) = 0;
+varname_clubb(idx_thl_2,1:5) = 'thl_2';
+
 % chi_1 (kg/kg).
 idx_count = idx_count + 1;
 global idx_chi_1
@@ -76,6 +104,34 @@ idx_varnce_w_2 = idx_count;
 units_corrector_type(idx_varnce_w_2) = 0;
 varname_clubb(idx_varnce_w_2,1:10) = 'varnce_w_2';
 
+% varnce_rt_1 (kg^2/kg^2).
+idx_count = idx_count + 1;
+global idx_varnce_rt_1
+idx_varnce_rt_1 = idx_count;
+units_corrector_type(idx_varnce_rt_1) = 0;
+varname_clubb(idx_varnce_rt_1,1:11) = 'varnce_rt_1';
+
+% varnce_rt_2 (kg^2/kg^2).
+idx_count = idx_count + 1;
+global idx_varnce_rt_2
+idx_varnce_rt_2 = idx_count;
+units_corrector_type(idx_varnce_rt_2) = 0;
+varname_clubb(idx_varnce_rt_2,1:11) = 'varnce_rt_2';
+
+% varnce_thl_1 (K^2).
+idx_count = idx_count + 1;
+global idx_varnce_thl_1
+idx_varnce_thl_1 = idx_count;
+units_corrector_type(idx_varnce_thl_1) = 0;
+varname_clubb(idx_varnce_thl_1,1:12) = 'varnce_thl_1';
+
+% varnce_thl_2 (K^2).
+idx_count = idx_count + 1;
+global idx_varnce_thl_2
+idx_varnce_thl_2 = idx_count;
+units_corrector_type(idx_varnce_thl_2) = 0;
+varname_clubb(idx_varnce_thl_2,1:12) = 'varnce_thl_2';
+
 % stdev_chi_1 (kg/kg).
 idx_count = idx_count + 1;
 global idx_stdev_chi_1
@@ -131,6 +187,13 @@ global idx_sigma_Nr_2_n
 idx_sigma_Nr_2_n = idx_count;
 units_corrector_type(idx_sigma_Nr_2_n) = 0;
 varname_clubb(idx_sigma_Nr_2_n,1:12) = 'sigma_Nr_2_n';
+
+% Correlation (within-component) of rt and thl (both PDF comps.), rrtthl (-).
+idx_count = idx_count + 1;
+global idx_corr_rt_thl
+idx_corr_rt_thl = idx_count;
+units_corrector_type(idx_corr_rt_thl) = 0;
+varname_clubb(idx_corr_rt_thl,1:6) = 'rrtthl';
 
 % corr_chi_eta_1_ca (-).
 idx_count = idx_count + 1;

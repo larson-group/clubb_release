@@ -13,6 +13,20 @@ idx_3D_w = idx_count;
 units_corrector_type(idx_3D_w) = 0;
 varname_sam(idx_3D_w,1:1) = 'W';
 
+% rt (kg/kg).
+idx_count = idx_count + 1;
+global idx_3D_rt
+idx_3D_rt = idx_count;
+units_corrector_type(idx_3D_rt) = 0;
+varname_sam(idx_3D_rt,1:2) = 'RT';
+
+% theta_l (K).
+idx_count = idx_count + 1;
+global idx_3D_thl
+idx_3D_thl = idx_count;
+units_corrector_type(idx_3D_thl) = 0;
+varname_sam(idx_3D_thl,1:3) = 'THL';
+
 % chi (kg/kg).
 idx_count = idx_count + 1;
 global idx_3D_chi

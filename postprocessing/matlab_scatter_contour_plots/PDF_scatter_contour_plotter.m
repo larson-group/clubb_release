@@ -26,6 +26,7 @@ casename = 'RICO';
 print_note = 'Input fields (predictive fields)';
 
 % Select the plots that will be plotted.
+plot_rt_thl  = true;
 plot_chi_eta = true;
 plot_w_rr    = true;
 plot_w_Nr    = true;
@@ -39,6 +40,8 @@ plot_rr_Nr   = true;
 
 % SAM LES 3D file variables
 global idx_3D_w
+global idx_3D_rt
+global idx_3D_thl
 global idx_3D_chi
 global idx_3D_eta
 global idx_3D_rr
@@ -46,6 +49,10 @@ global idx_3D_Nr
 % CLUBB variables
 global idx_w_1
 global idx_w_2
+global idx_rt_1
+global idx_rt_2
+global idx_thl_1
+global idx_thl_2
 global idx_chi_1
 global idx_chi_2
 global idx_mu_rr_1_n
@@ -54,6 +61,10 @@ global idx_mu_Nr_1_n
 global idx_mu_Nr_2_n
 global idx_varnce_w_1
 global idx_varnce_w_2
+global idx_varnce_rt_1
+global idx_varnce_rt_2
+global idx_varnce_thl_1
+global idx_varnce_thl_2
 global idx_stdev_chi_1
 global idx_stdev_chi_2
 global idx_stdev_eta_1
@@ -62,6 +73,7 @@ global idx_sigma_rr_1_n
 global idx_sigma_rr_2_n
 global idx_sigma_Nr_1_n
 global idx_sigma_Nr_2_n
+global idx_corr_rt_thl
 global idx_corr_chi_eta_1_ca
 global idx_corr_chi_eta_2_ca
 global idx_corr_w_rr_1_n
@@ -260,6 +272,10 @@ end % z_clubb(clubb_height_idx)
 % PDF component means.
 mu_w_1 = var_clubb( idx_w_1, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_w_2 = var_clubb( idx_w_2, 1, 1, clubb_height_idx, clubb_time_idx );
+mu_rt_1 = var_clubb( idx_rt_1, 1, 1, clubb_height_idx, clubb_time_idx );
+mu_rt_2 = var_clubb( idx_rt_2, 1, 1, clubb_height_idx, clubb_time_idx );
+mu_thl_1 = var_clubb( idx_thl_1, 1, 1, clubb_height_idx, clubb_time_idx );
+mu_thl_2 = var_clubb( idx_thl_2, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_chi_1 = var_clubb( idx_chi_1, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_chi_2 = var_clubb( idx_chi_2, 1, 1, clubb_height_idx, clubb_time_idx );
 mu_eta_1 = 0.0; % The component mean of eta is always defined as 0.
@@ -278,6 +294,14 @@ sigma_w_1 = sqrt( var_clubb( idx_varnce_w_1, 1, 1, ...
                              clubb_height_idx, clubb_time_idx ) );
 sigma_w_2 = sqrt( var_clubb( idx_varnce_w_2, 1, 1, ...
                              clubb_height_idx, clubb_time_idx ) );
+sigma_rt_1 = sqrt( var_clubb( idx_varnce_rt_1, 1, 1, ...
+                              clubb_height_idx, clubb_time_idx ) );
+sigma_rt_2 = sqrt( var_clubb( idx_varnce_rt_2, 1, 1, ...
+                              clubb_height_idx, clubb_time_idx ) );
+sigma_thl_1 = sqrt( var_clubb( idx_varnce_thl_1, 1, 1, ...
+                               clubb_height_idx, clubb_time_idx ) );
+sigma_thl_2 = sqrt( var_clubb( idx_varnce_thl_2, 1, 1, ...
+                               clubb_height_idx, clubb_time_idx ) );
 sigma_chi_1 = var_clubb( idx_stdev_chi_1, 1, 1, ...
                          clubb_height_idx, clubb_time_idx );
 sigma_chi_2 = var_clubb( idx_stdev_chi_2, 1, 1, ...
@@ -296,6 +320,9 @@ sigma_Nr_2_n = var_clubb( idx_sigma_Nr_2_n, 1, 1, ...
                           clubb_height_idx, clubb_time_idx );
 
 % PDF component correlations.
+corr_rt_thl_1 = var_clubb( idx_corr_rt_thl, 1, 1, ...
+                           clubb_height_idx, clubb_time_idx );
+corr_rt_thl_2 = corr_rt_thl_1; % CLUBB sets corr_rt_thl_1 = corr_rt_thl_2.
 corr_chi_eta_1 = var_clubb( idx_corr_chi_eta_1_ca, 1, 1, ...
                             clubb_height_idx, clubb_time_idx );
 corr_chi_eta_2 = var_clubb( idx_corr_chi_eta_2_ca, 1, 1, ...
@@ -375,15 +402,55 @@ if ( all( sam_var_lev(idx_3D_Nr,:) == 0.0 ) )
 
 end
  
+% Plot the CLUBB PDF and LES points for rt and thl.
+if ( plot_rt_thl )
+
+   fprintf( 'Plotting scatter/contour plot for rt and thl\n' );
+
+   % The number of rt bins/points to plot.
+   num_rt_pts = 100;
+
+   % The number of thl bins/points to plot.
+   num_thl_pts = 100;
+
+   % The number of contours on the scatter/contour plot.
+   num_contours = 100;
+
+   % The number of standard deviations used to help find a minimum contour
+   % for the scatter/contour plot.
+   num_std_devs_min_contour = 2.0;
+
+   plot_CLUBB_PDF_LES_pts_NN( sam_var_lev(idx_3D_rt,:), ...
+                              sam_var_lev(idx_3D_thl,:), ...
+                              nx_sam, ny_sam, ...
+                              num_rt_pts, num_thl_pts, num_contours, ...
+                              num_std_devs_min_contour, ...
+                              mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, ...
+                              sigma_rt_1, sigma_rt_2, sigma_thl_1, ...
+                              sigma_thl_2, corr_rt_thl_1, ...
+                              corr_rt_thl_2, mixt_frac, ...
+                              'r_{t}    [kg/kg]', '\theta_{l}    [K]', ...
+                              [ '\bf ', casename ], 'r_{t} vs. \theta_{l}', ...
+                              [ 'Time = ', print_time, ' minutes' ], ...
+                              [ 'Altitude = ', print_alt, ' meters' ], ...
+                              print_note )
+
+   output_filename = [ 'output/', casename, '_rt_thl_z', ...
+                       print_alt, '_t', print_time ];
+
+   print( '-dpng', output_filename );
+
+end % plot_rt_thl
+
 % Plot the CLUBB PDF and LES points for chi and eta.
 if ( plot_chi_eta )
 
    fprintf( 'Plotting scatter/contour plot for chi and eta\n' );
 
-   % The number of w bins/points to plot.
+   % The number of chi bins/points to plot.
    num_chi_pts = 100;
 
-   % The number of rr bins/points to plot.
+   % The number of eta bins/points to plot.
    num_eta_pts = 100;
 
    % The number of contours on the scatter/contour plot.
@@ -666,10 +733,10 @@ if ( plot_rr_Nr )
 
    fprintf( 'Plotting scatter/contour plot for rr and Nr\n' );
 
-   % The number of w bins/points to plot.
+   % The number of rr bins/points to plot.
    num_rr_pts = 100;
 
-   % The number of rr bins/points to plot.
+   % The number of Nr bins/points to plot.
    num_Nr_pts = 100;
 
    % The number of contours on the scatter/contour plot.
