@@ -169,8 +169,7 @@ stats_tout   = 60.             ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"         ! Type of statistical output file ("grads" or "netcdf").
 
 /
-! Inputfields Settings
-! You will not need to modify these if l_input_fields is false.
+
 &setfields
 datafile      = "../les_data/dycoms2_rf01"
 input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
@@ -187,49 +186,9 @@ l_input_thlp2 = .true.
 l_input_rtpthlp = .true.
 l_input_upwp = .true.
 l_input_vpwp = .true.
-l_input_ug = .false.
-l_input_vg = .false.
 l_input_rcm = .true.
-l_input_wm_zt = .false.
-l_input_exner = .true.
 l_input_em = .true.
 l_input_p = .true.
-l_input_rho = .true.
-l_input_rho_zm = .true.
-l_input_Lscale = .false.
-l_input_Lscale_up = .false.
-l_input_Lscale_down = .false.
-l_input_Kh_zt = .true.
-l_input_Kh_zm = .false.
-l_input_tau_zm = .false.
-l_input_tau_zt = .false.
-l_input_wpthvp = .true.
-l_input_thl_1 = .false.
-l_input_thl_2 = .false.
-l_input_mixt_frac = .false.
-l_input_s1 = .false.
-l_input_s2 = .false.
-l_input_stdev_s1 = .false.
-l_input_stdev_s2 = .false.
-l_input_rc_1 = .false.
-l_input_rc_2 = .false.
-l_input_thvm = .true.
-l_input_rrm = .false.
-l_input_Nrm = .false.
-l_input_Ncm = .false.
-l_input_rsm = .false.
-l_input_rim = .false.
-l_input_rgm = .false.
-l_input_Ncnm = .false.
-l_input_Nim = .false.
-l_input_thlm_forcing = .false.
-l_input_rtm_forcing = .false.
 l_input_up2 = .true.
 l_input_vp2 = .true.
-l_input_sigma_sqd_w = .false.
-l_input_cloud_frac = .false.
-l_input_sigma_sqd_w_zt = .false.
-l_input_veg_T_in_K = .false.
-l_input_deep_soil_T_in_K = .false.
-l_input_sfc_soil_T_in_K = .false.
 /

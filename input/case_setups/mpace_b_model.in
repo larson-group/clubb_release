@@ -135,6 +135,7 @@ iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 l_prescribed_avg_deltaz = .false.
 
+l_input_fields = .false.,
 /
 
 &gfdl_activation_setting
@@ -186,4 +187,27 @@ stats_tout   = 60.        ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"    ! Type of statistical output file ("grads" or "netcdf").
 /
 
-
+! Inputfields Settings
+! You will not need to modify these if l_input_fields is false.
+&setfields
+datafile      = "../les_data/mpace_b"
+input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
+l_input_um = .true. 
+l_input_vm = .true.
+l_input_rtm = .true. 
+l_input_thlm = .true.
+l_input_wp2 = .true.
+l_input_wprtp = .true.
+l_input_wpthlp = .true.
+l_input_wp3 = .true.
+l_input_rtp2 = .true.
+l_input_thlp2 = .true.
+l_input_rtpthlp = .true.
+l_input_upwp = .true.
+l_input_vpwp = .true.
+l_input_rcm = .true.
+l_input_em = .true.
+l_input_p = .true.
+l_input_up2 = .true.
+l_input_vp2 = .true.
+/
