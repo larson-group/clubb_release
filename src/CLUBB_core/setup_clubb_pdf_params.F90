@@ -13,18 +13,19 @@ module setup_clubb_pdf_params
             compute_corr,         &
             normalize_corr
 
-  private :: component_means_hydromet,  &
-             precip_fraction,           &
-             component_mean_hm_ip,      &
-             component_stdev_hm_ip,     &
-             component_corr_w_x,        &
-             component_corr_chi_eta,    &
-             component_corr_w_hm_ip,    &
-             component_corr_x_hm_ip,    &
-             component_corr_hmx_hmy_ip, &
-             calc_corr_w_hm,            &
-             pdf_param_hm_stats,        &
-             pdf_param_ln_hm_stats,     &
+  private :: component_means_hydromet_orig, &
+             component_means_hydromet_corr, &
+             precip_fraction,               &
+             component_mean_hm_ip,          &
+             component_stdev_hm_ip,         &
+             component_corr_w_x,            &
+             component_corr_chi_eta,        &
+             component_corr_w_hm_ip,        &
+             component_corr_x_hm_ip,        &
+             component_corr_hmx_hmy_ip,     &
+             calc_corr_w_hm,                &
+             pdf_param_hm_stats,            &
+             pdf_param_ln_hm_stats,         &
              pack_pdf_params
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
@@ -45,11 +46,12 @@ module setup_clubb_pdf_params
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
+                                   hydrometp2, &                               ! Intent(inout)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
                                    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
-                                   hydromet_pdf_params, hydrometp2 )           ! Intent(out)
+                                   hydromet_pdf_params )                       ! Intent(out)
 
     ! Description:
 
@@ -190,6 +192,10 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
     intent(out) :: &
@@ -209,9 +215,6 @@ module setup_clubb_pdf_params
     intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
-
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Local Variables
     real( kind = dp ), dimension(d_variables,d_variables,nz) :: &
@@ -300,6 +303,9 @@ module setup_clubb_pdf_params
     character(len=10) :: &
       hydromet_name    ! Name of a hydrometeor
 
+    integer, parameter :: &
+      comp_means_hm_type = 1  ! Option used to calculated hm1 and hm2.
+
     integer :: pdf_idx  ! Index of precipitating hydrometeor in PDF array.
 
     integer :: k, i  ! Loop indices
@@ -331,19 +337,22 @@ module setup_clubb_pdf_params
 
     endif !clubb_at_least_debug_level( 2 )
 
-    ! Interpolate the covariances of w and precipitating hydrometeors to
-    ! thermodynamic grid levels.
+    ! Interpolate the variances (overall) of precipitating hydrometeors and the
+    ! covariances (overall) of w and precipitating hydrometeors to thermodynamic
+    ! grid levels.
     do i = 1, hydromet_dim, 1
 
+       hydrometp2_zt(:,i)  = zm2zt( hydrometp2(:,i) )
        wphydrometp_zt(:,i) = zm2zt( wphydrometp(:,i) )
 
        ! When the mean value of a precipitating hydrometeor is below tolerance
        ! value, it is considered to have a value of 0, and the precipitating
-       ! hydrometeor does not vary over the grid level.  Any covariance
-       ! involving that precipitating hydrometeor also has a value of 0 at that
-       ! grid level. 
+       ! hydrometeor does not vary over the grid level.  The variance of that
+       ! precipitating hydrometeor and any covariance involving that
+       ! precipitating hydrometeor also have values of 0 at that grid level.
        do k = 1, nz, 1
           if ( hydromet(k,i) <= hydromet_tol(i) ) then
+             hydrometp2_zt(k,i)  = zero
              wphydrometp_zt(k,i) = zero
           endif
        enddo ! k = 1, nz, 1
@@ -389,9 +398,28 @@ module setup_clubb_pdf_params
     ! Component mean values for r_r and N_r, and precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       call component_means_hydromet( nz, hydromet, rho, rc_1, rc_2, &
-                                      mixt_frac, l_stats_samp, &
-                                      hm1, hm2 )
+       if ( comp_means_hm_type == 1 ) then
+
+          ! Original formulation to calculate hm1 and hm2 based on
+          ! liquid water path at or above a given grid level.
+          call component_means_hydromet_orig( nz, hydromet, rho, rc_1, rc_2, &
+                                              mixt_frac, l_stats_samp, &
+                                              hm1, hm2 )
+
+       elseif ( comp_means_hm_type == 2 ) then
+
+          ! New formulations to calculate hm1 and hm2 based on the overall
+          ! correlation between w and the hydrometeor species.
+          call component_means_hydromet_corr( nz, hydromet, wphydrometp_zt, &
+                                              hydrometp2_zt, wp2_zt, mixt_frac, &
+                                              hm1, hm2 )
+
+       else
+
+          write(fstderr,*) "Invalid option to calculate hm1 and hm2."
+          stop
+
+       endif ! comp_means_hm_type
 
        call precip_fraction( nz, hydromet, hm1, hm2, &
                              cloud_frac, cloud_frac_1, mixt_frac, &
@@ -531,7 +559,7 @@ module setup_clubb_pdf_params
        !!! Calculate the means and standard deviations involving PDF variables
        !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
        !!! -- for each PDF component.
-       call compute_mean_stdev( Ncnm(k), rc_1(k), rc_2(k), &            ! Intent(in)
+       call compute_mean_stdev( Ncnm(k), rc_1(k), rc_2(k), &          ! Intent(in)
                                 cloud_frac_1(k), cloud_frac_2(k), &   ! Intent(in)
                                 hm1(k,:), hm2(k,:), &                 ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
@@ -738,9 +766,9 @@ module setup_clubb_pdf_params
   end subroutine setup_pdf_parameters
 
   !=============================================================================
-  subroutine component_means_hydromet( nz, hydromet, rho, rc_1, rc_2, &
-                                       mixt_frac, l_stats_samp, &
-                                       hm1, hm2 )
+  subroutine component_means_hydromet_orig( nz, hydromet, rho, rc_1, rc_2, &
+                                            mixt_frac, l_stats_samp, &
+                                            hm1, hm2 )
 
     ! Description:
     ! The values of grid-level mean hydrometeor fields, <hm>, (for example,
@@ -1093,7 +1121,322 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine component_means_hydromet
+  end subroutine component_means_hydromet_orig
+
+  !=============================================================================
+  subroutine component_means_hydromet_corr( nz, hydromet, wphydrometp_zt, &
+                                            hydrometp2_zt, wp2_zt, mixt_frac, &
+                                            hm_1, hm_2 )
+
+    ! Description:
+    ! The values of grid-level mean hydrometeor fields, <hm>, (for example,
+    ! grid-level mean rain water mixing ratio, <r_r>, and grid-level mean rain
+    ! drop concentration, <N_r>) are solved as part of the predictive equation
+    ! set, based on the microphysics scheme.  However, CLUBB has a two component
+    ! PDF.  The grid-level means of all hydrometeors must be subdivided into
+    ! component means for each PDF component.  The equation relating the overall
+    ! mean to the component means (for any hydrometeor, hm) is:
+    !
+    ! <hm> = a * hm_1 + (1-a) * hm_2;
+    !
+    ! where "a" is the mixture fraction (weight of the 1st PDF component), hm_1
+    ! is the mean of the hydrometeor in PDF component 1, and hm_2 is the mean of
+    ! the hydrometeor in PDF component 2.  Both of these component means include
+    ! any precipitationless regions in each PDF component (when component
+    ! precipitation fraction < 1).
+    !
+    ! The challenge is to divide <hm> into hm_1 and hm_2.  One way to do this is
+    ! to base this on the overall correlation of vertical velocity, w, and the
+    ! hydrometeor, hm.  When the overall correlation of w and hm is positive,
+    ! hm_1 > hm_2.  Likewise, when the overall correlation of w and hm is
+    ! negative, hm_1 < hm_2.  When the overall correlation of w and hm is 0,
+    ! hm_1 = hm_2.  This method has the following advantages.
+    !
+    ! 1) The main advantage is that this method aids the realizability of the
+    !    multivariate PDF in each PDF component, when the PDF is considered in
+    !    conjunction with the value of <w'hm'> produced by the microphysics.
+    !    The ith PDF component, within-precip. correlation of w and hm
+    !    (corr_w_hm_i) can be calculated based on the overall covariance of w
+    !    and hm (<w'hm'>) and the other PDF parameters involving w and hm.  The
+    !    value of <w'hm'> is produced when <hm> is advanced one model timestep
+    !    in CLUBB's microphysics.  In the past, the calculated value of
+    !    corr_w_hm_i has been unrealizable at some grid levels.  This was
+    !    primarily due to the following issue.  The code that calculated hm_1
+    !    and hm_2 based on integrated rc in each component always placed a great
+    !    majority or all of the hydrometeor in PDF component 1 in cumulus cases,
+    !    regardless of grid level.  Even in stratocumulus cases, hm_1 > hm_2.
+    !    In CLUBB, the 1st PDF component mean of w (w_1) is defined around the
+    !    updraft, while the 2nd PDF component mean of w (w_2) is defined around
+    !    the downdraft, which means that w_1 is always greater than or equal to
+    !    w_2.  Since hm_1 > hm_2 and w_1 > w_2, the means of the components are
+    !    naturally associated with a positive value of covariance <w'hm'>.  In
+    !    the scenario where <w'hm'> is negative at a grid level, the
+    !    within-component correlation corr_w_hm_i needed to be so negative to
+    !    produce <w'hm'>, because of the hm_1/hm_2 and w1/w2 values, that it had
+    !    to be less than -1, which produces an unrealizable PDF.
+    !
+    !    In this method, when microphysics produces a positive value of <w'hm'>,
+    !    hm_1 > hm_2, and when microphysics produces a negtive value of <w'hm'>,
+    !    hm_1 < hm_2.  When microphysics produces a <w'hm'> of 0, hm_1 = hm_2.
+    !    This will help keep the calculated values of corr_w_hm_i at realizable
+    !    values.
+    !
+    ! 2) I have proposed a method to determine hm_1 amd hm_2 based on wind shear
+    !    (the change in speed and/or direction of horizontal winds with
+    !    altitude), which causes separation of updrafts and downdrafts in
+    !    nature.  I am convinced that the profiles of hm_1 and hm_2 produced by
+    !    this overall-correlation-based method would be roughly similar to those
+    !    produced by a wind-shear-based method.
+    !
+    ! 3) This method involves minimal calculations and is conceptually simple.
+    !    Any shear-based method would be conceptually complicated, and most
+    !    likely involve more calculation.  This method is also a bit less
+    !    numerically expensive than the integrated rc method, which involved
+    !    extra vertical looping.
+    !
+    ! The value of hm_1 and hm_2 will be calculated by the following method.
+    !
+    ! When the overall correlation of w and hm (based on <w'hm'> provided by the
+    ! microphysics) is exactly 1, all the hydrometeor will be found in the 1st
+    ! PDF component.  In this scenario, hm_1 = <hm>/a and hm_2 = 0.  Likewise,
+    ! when the overall correlation of w and hm is exactly -1, all the
+    ! hydrometeor will be found in the 2nd PDF component.  In this scenario,
+    ! hm_1 = 0 and hm_2 = <hm>/(1-a).  When the overall correlation of w and hm
+    ! is exactly 0, hm_1 = hm_2 = <hm>.
+    !
+    ! What happens when the overall correlation of w and hm is at some
+    ! intermediate value?  A quadratic polynomial can connect the three points
+    ! listed above.  The equation for hm_1 is given by:
+    !
+    ! hm_1 = A * corr_w_hm_overall^2 + B * corr_w_hm_overall + C.
+    !
+    ! The three points listed above result in:
+    !
+    ! <hm>/a = A * (1)^2  + B * (1)  + C;
+    ! <hm>   = A * (0)^2  + B * (0)  + C;
+    ! 0      = A * (-1)^2 + B * (-1) + C;
+    !
+    ! which simplifies to:
+    !
+    ! <hm>/a = A + B + C;
+    ! <hm>   = C;
+    ! 0      = A - B + C;
+    !
+    ! which further simplifies to (since C = <hm>):
+    !
+    ! <hm>/a = A + B + <hm>;
+    ! 0      = A - B + <hm>.
+    !
+    ! The result from solving this system of equations is:
+    !
+    ! A = <hm>/(2a) - <hm> = <hm> * ( 1/(2a) - 1 );
+    ! B = <hm>/(2a); and
+    ! C = <hm>.
+    !
+    ! The equation for hm_1 becomes:
+    !
+    ! hm_1 = <hm> * ( 1/(2a) - 1 ) * corr_w_hm_overall^2
+    !        + <hm>/(2a) * corr_w_hm_overall + <hm>.
+    !
+    ! However, there have been issues in the past (in both the accuracy of the
+    ! PDF shape and in problems resulting from extreme SILHS sample points) when
+    ! all the hydrometeor is found in one PDF component.  In this method, that
+    ! will occur when w and hm are perfectly correlated or perfectly
+    ! anti-correlated.  In order to allow for a limit to be placed on the hm_1
+    ! and hm_2 distribution, a new tunable parameter is introduced.  The method
+    ! becomes the following.
+    !
+    ! First, calculate the overall correlation of w and hm:
+    !
+    ! corr_w_hm_overall = <w'hm'> / ( sqrt( <w'^2> ) * sqrt( <hm'^2> ) ).
+    !
+    ! Then, find the adjusted overall correlation of w and hm:
+    !
+    ! corr_w_hm_overall_adj = coef_hm_1_hm_2_corr_adj * corr_w_hm_overall;
+    !
+    ! where 0 <= coef_hm_1_hm_2_corr_adj <= 1.  Here, coef_hm_1_hm_2_corr_adj
+    ! is a tunable parameter.  When it is equal to 1, the adjusted overall
+    ! correlation is equal to the overall correlation.  When it is equal to 0,
+    ! the adjusted correlation is always 0, resulting in hm_1 = hm_2.
+    !
+    ! Next, calculated hm_1 based on the adjusted overall correlation:
+    !
+    ! hm_1 = <hm> * ( 1/(2a) - 1 ) * corr_w_hm_overall_adj^2
+    !        + <hm>/(2a) * corr_w_hm_overall_adj + <hm>.
+    !
+    ! In order to avoid repeat calculation, the ratio hm_1/<hm> is calculated:
+    !
+    ! hm_1/<hm> = ( 1/(2a) - 1 ) * corr_w_hm_overall_adj^2
+    !             + ( 1/(2a) ) * corr_w_hm_overall_adj + 1; when <hm> > 0;
+    !
+    ! and then hm_1 is calculated by:
+    !
+    ! hm_1 = | (hm_1/<hm>) * <hm>; when <hm> > 0;
+    !        | 0; when <hm> = 0.
+    !
+    ! Once hm_1 has been solved for, hm_2 can be solved by:
+    !
+    ! hm_2 = ( <hm> - a * hm_1 ) / (1-a).
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        two,   & ! Constant(s)
+        one,   &
+        zero,  &
+        w_tol
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use array_index, only: &
+        hydromet_tol  ! Variable(s)
+
+    use parameters_tunable, only: &
+        coef_hm_1_hm_2_corr_adj  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz    ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet,       & ! Mean of hydrometeor, hm (overall) (t-levs.)    [units]
+      wphydrometp_zt, & ! Covariance of w and hm interp. to t-levs. [(m/s)units]
+      hydrometp2_zt     ! Variance of hm (overall) interp. to t-levs.  [units^2]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      wp2_zt,    & ! Variance of w, <w'^2> (interp. to t-levs.)  [m^2/s^2]
+      mixt_frac    ! Mixture fraction                            [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
+      hm_1, & ! Mean of hydrometeor (1st PDF component)          [units vary]
+      hm_2    ! Mean of hydrometeor (2nd PDF component)          [units vary]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      coef_A,            & ! Coef. on corr(w,hm)_ov_adj^2 in hm_1/<hm> eqn. [-]
+      coef_B,            & ! Coef. on corr(w,hm)_ov_adj in hm_1/<hm> eqn.   [-]
+      coef_C,            & ! Constant coefficient in hm_1/<hm> eqn.         [-]
+      corr_w_hm_overall, & ! Overall correlation of w and hm                [-]
+      hm_1_on_hmm          ! hm_1 / <hm>; when <hm> > 0                     [-]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+      corr_w_hm_overall_adj    ! Adjusted overall correlation of w and hm   [-]
+
+    integer :: k, i  ! Loop indices
+
+
+    !!! Find hm_1 and hm_2 based on the overall correlation of w and the
+    !!! hydrometeor, corr_w_hm_overall.
+    do k = 1, nz, 1
+
+       ! Calculate the value of the A, B, and C coefficients at the grid level.
+       ! These are the same regardless of the hydrometeor type.
+       coef_A = ( one / ( two * mixt_frac(k) ) ) - one
+       coef_B = one / ( two * mixt_frac(k) )
+       coef_C = one
+
+       do i = 1, hydromet_dim, 1
+
+          !!! Calculate the component means for the hydrometeor.
+          if ( hydromet(k,i) > hydromet_tol(i) ) then
+
+             ! Calculate the overall calculation of w and hm.
+             if ( sqrt( wp2_zt(k) ) > w_tol .and. &
+                  sqrt( hydrometp2_zt(k,i) ) > zero ) then
+
+                ! Both w and the hydrometeor vary at this grid level.  The
+                ! overall correlation between them is defined.
+                ! Calculate the overall correlation of w and hm.
+                corr_w_hm_overall &
+                = wphydrometp_zt(k,i) &
+                  / ( sqrt( wp2_zt(k) ) * sqrt( hydrometp2_zt(k,i) ) )
+
+                ! Keep values realizable.
+                if ( corr_w_hm_overall > one ) then
+                   corr_w_hm_overall = one
+                elseif ( corr_w_hm_overall < -one ) then
+                   corr_w_hm_overall = -one
+                endif
+
+             else  ! sqrt(wp2_zt(k)) <= w_tol .or. sqrt(hydrometp2_zt(k,i)) = 0
+
+                ! Either w or the hydrometeor is constant at this grid level.
+                ! This means that <w'hm'> must also have a value of 0, making
+                ! the correlation undefined.  In the scenario that <hm'^2> = 0,
+                ! the hydrometeor is constant at this grid level, which means
+                ! that hm_1 = hm_2 = <hm>.  This is also the result when the
+                ! correlation has a value of 0.  So, set the correlation to 0 in
+                ! order to achieve the result hm_1 = hm_2 = <hm>.  In the
+                ! scenario that <w'^2> = 0, w is constant at is grid level.
+                ! To simplify matters, the undefined correlation will be set to
+                ! 0 in order to produce hm_1 = hm_2 = <hm>.
+                corr_w_hm_overall = zero
+
+             endif ! sqrt(wp2_zt(k)) > w_tol .and. sqrt(hydrometp2_zt(k,i)) > 0
+
+             ! Calculate the adjusted overall correlation of w and hm.
+             corr_w_hm_overall_adj(k,i) &
+             = coef_hm_1_hm_2_corr_adj * corr_w_hm_overall
+
+             ! Calculate the value of the ratio hm_1/<hm> (since <hm> > 0 here).
+             hm_1_on_hmm = coef_A * corr_w_hm_overall_adj(k,i)**2 &
+                           + coef_B * corr_w_hm_overall_adj(k,i) + coef_C
+
+             ! Calculate the mean of the hydrometeor in the 1st PDF component.
+             hm_1(k,i) = hm_1_on_hmm * hydromet(k,i)
+
+             ! Calculate the mean of the hydrometeor in the 2nd PDF component.
+             hm_2(k,i) &
+             = ( hydromet(k,i) - mixt_frac(k) * hm_1(k,i) ) &
+               / ( one - mixt_frac(k) )
+
+             if ( hm_1(k,i) <= hydromet_tol(i) ) then
+
+                ! The mean value of the hydrometeor within the 1st PDF component
+                ! is below the tolerance value for the hydrometeor.  It is
+                ! considered to have a value of 0.  All the the hydrometeor is
+                ! found within the 2nd PDF component.
+                hm_1(k,i) = zero
+                hm_2(k,i) = hydromet(k,i) / ( one - mixt_frac(k) )
+
+             elseif ( hm_2(k,i) <= hydromet_tol(i) ) then
+
+                ! The mean value of the hydrometeor within the 2nd PDF component
+                ! is below the tolerance value for the hydrometeor.  It is
+                ! considered to have a value of 0.  All the the hydrometeor is
+                ! found within the 1st PDF component.
+                hm_1(k,i) = hydromet(k,i) / mixt_frac(k)
+                hm_2(k,i) = zero
+
+             endif
+
+
+          else ! hydromet(k,i) <= hydromet_tol(i)
+
+             ! The overall hydrometeor is either 0 or below tolerance value (any
+             ! postive value is considered to be a numerical artifact).  Simply
+             ! set each pdf component mean equal to 0.
+             hm_1(k,i) = zero
+             hm_2(k,i) = zero
+
+          endif  ! hydromet(k,i) > hydromet_tol(i)
+
+       enddo ! i = 1, hydromet_dim, 1
+
+    enddo ! k = 1, nz, 1
+
+
+    return
+
+  end subroutine component_means_hydromet_corr
 
   !=============================================================================
   subroutine precip_fraction( nz, hydromet, hm1, hm2, &

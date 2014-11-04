@@ -165,6 +165,12 @@ module parameters_tunable
 
 !$omp threadprivate(lmin_coef)
 
+  ! Coefficient for adjusted overall correlation in hm_1/hm_2 calculation [-]
+  real( kind = core_rknd ), public :: &
+    coef_hm_1_hm_2_corr_adj = 1.0_core_rknd
+
+!$omp threadprivate( coef_hm_1_hm_2_corr_adj )
+
   ! Factor to decrease sensitivity in the denominator of Skw calculation
   real( kind = core_rknd ), public :: &
 #ifdef CLUBB_CAM
@@ -210,10 +216,11 @@ module parameters_tunable
     C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
     C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
-    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-    beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
-    mult_coef, taumin, taumax, mu, Lscale_mu_coef, Lscale_pert_coef, &
-    alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
+    c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+    nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
+    coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
+    Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+    thlp2_rad_cloud_frac_thresh
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -255,11 +262,12 @@ module parameters_tunable
        "gamma_coef                 ", "gamma_coefb                ", &
        "gamma_coefc                ", "mu                         ", &
        "beta                       ", "lmin_coef                  ", &
-       "mult_coef                  ", "taumin                     ", &
-       "taumax                     ", "Lscale_mu_coef             ", &
-       "Lscale_pert_coef           ", "alpha_corr                 ", &
-       "Skw_denom_coef             ", "c_K10                      ", &
-       "thlp2_rad_coef             ", "thlp2_rad_cloud_frac_thresh" /)
+       "coef_hm_1_hm_2_corr_adj    ", "mult_coef                  ", &
+       "taumin                     ", "taumax                     ", &
+       "Lscale_mu_coef             ", "Lscale_pert_coef           ", &
+       "alpha_corr                 ", "Skw_denom_coef             ", &
+       "c_K10                      ", "thlp2_rad_coef             ", &
+       "thlp2_rad_cloud_frac_thresh"                                /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -342,11 +350,12 @@ module parameters_tunable
                             C7, C7b, C7c, C8, C8b, C10, & 
                             C11, C11b, C11c, C12, C13, C14, C15, & 
                             C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                            c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                            c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-                            gamma_coef, gamma_coefb, gamma_coefc, & 
-                            mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                            Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                            c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
+                            c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+                            nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
+                            mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, &
+                            taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                            Skw_denom_coef, c_K10, thlp2_rad_coef, &
                             thlp2_rad_cloud_frac_thresh )
 
 
@@ -362,32 +371,46 @@ module parameters_tunable
              momentum_heights, thermodynamic_heights )   ! Intent(in)
 
     ! Sanity check
+    ! Initialize err_code to clubb_no_error.  Only overwrite it if a variable
+    ! out-of-bounds error is found.
+    err_code = clubb_no_error
+
     if ( beta < 0.0_core_rknd .or. beta > 3.0_core_rknd ) then
 
-      ! Constraints on beta
-      write(fstderr,*) "beta = ", beta
-      write(fstderr,*) "beta cannot be < 0 or > 3"
-      err_code = clubb_var_out_of_bounds
+       ! Constraints on beta
+       write(fstderr,*) "beta = ", beta
+       write(fstderr,*) "beta cannot be < 0 or > 3"
+       err_code = clubb_var_out_of_bounds
 
-    else if ( mu < 0.0_core_rknd ) then
+    endif ! beta < 0 or beta > 3
 
-      ! Constraints on entrainment rate, mu.
-      write(fstderr,*) "mu = ", mu
-      write(fstderr,*) "mu cannot be < 0"
-      err_code = clubb_var_out_of_bounds
+    if ( coef_hm_1_hm_2_corr_adj < 0.0_core_rknd &
+         .or. coef_hm_1_hm_2_corr_adj > 1.0_core_rknd ) then
 
-    else if ( lmin < 4.0_core_rknd ) then
+       ! Constraints on coef_hm_1_hm_2_corr_adj
+       write(fstderr,*) "coef_hm_1_hm_2_corr_adj = ", coef_hm_1_hm_2_corr_adj
+       write(fstderr,*) "coef_hm_1_hm_2_corr_adj cannot be < 0 or > 1"
+       err_code = clubb_var_out_of_bounds
 
-      ! Constraints on mixing length
-      write(fstderr,*) "lmin = ", lmin
-      write(fstderr,*) "lmin is < 4.0_core_rknd"
-      err_code = clubb_var_out_of_bounds
+    endif ! beta < 0 or beta > 3
 
-    else
+    if ( mu < 0.0_core_rknd ) then
 
-      err_code = clubb_no_error
+       ! Constraints on entrainment rate, mu.
+       write(fstderr,*) "mu = ", mu
+       write(fstderr,*) "mu cannot be < 0"
+       err_code = clubb_var_out_of_bounds
 
-    end if ! A parameter is outside the acceptable range
+    endif ! mu < 0.0
+
+    if ( lmin < 4.0_core_rknd ) then
+
+       ! Constraints on mixing length
+       write(fstderr,*) "lmin = ", lmin
+       write(fstderr,*) "lmin is < 4.0_core_rknd"
+       err_code = clubb_var_out_of_bounds
+
+    endif ! lmin < 4.0
 
 !    write(*,nml=initvars) ! %% debug
 
@@ -662,14 +685,15 @@ module parameters_tunable
     ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
-                          C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C7, C7b, C7c, C8, C8b, C10, &
+                          C11, C11b, C11c, C12, C13, C14, C15, &
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-                          gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+                          nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
+                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
+                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
 
     l_error = .false.
@@ -736,11 +760,11 @@ module parameters_tunable
       C7, C7b, C7c, C8, C8b, C10, C11, C11b, C11c, & 
       C12, C13, C14, C15, C6rt_Lscale0, C6thl_Lscale0, &
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
-      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-      beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
-      thlp2_rad_cloud_frac_thresh
+      c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+      nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
+      lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, mu, &
+      Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -755,14 +779,15 @@ module parameters_tunable
     ! Put the variables in the output array
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
-                          C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C7, C7b, C7c, C8, C8b, C10, &
+                          C11, C11b, C11c, C12, C13, C14, C15, &
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-                          gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+                          nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
+                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
+                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, param_spread )
 
     l_error = .false.
@@ -803,10 +828,11 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, &
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
-               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, &
-               gamma_coef, gamma_coefb, gamma_coefc, &
-               mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+               nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
+               mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
+               taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+               Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, params )
 
     ! Description:
@@ -878,7 +904,8 @@ module parameters_tunable
       igamma_coefc, & 
       imu, & 
       ibeta, & 
-      ilmin_coef, & 
+      ilmin_coef, &
+      icoef_hm_1_hm_2_corr_adj, & 
       imult_coef, &
       itaumin, & 
       itaumax, & 
@@ -902,9 +929,10 @@ module parameters_tunable
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, gamma_coef, &
-      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, mult_coef, &
-      taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-      Skw_denom_coef, c_K10, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
+      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, &
+      mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+      alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+      thlp2_rad_cloud_frac_thresh
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -971,6 +999,9 @@ module parameters_tunable
     params(ibeta) = beta
 
     params(ilmin_coef) = lmin_coef
+
+    params(icoef_hm_1_hm_2_corr_adj) = coef_hm_1_hm_2_corr_adj
+
     params(imult_coef) = mult_coef
 
     params(itaumin) = taumin
@@ -996,10 +1027,11 @@ module parameters_tunable
                C11, C11b, C11c, C12, C13, C14, C15, & 
                C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
-               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-               gamma_coef, gamma_coefb, gamma_coefc, & 
-               mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-               Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+               nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
+               mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, &
+               taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+               Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh )
 
     ! Description:
@@ -1071,7 +1103,8 @@ module parameters_tunable
       igamma_coefc, & 
       imu, & 
       ibeta, & 
-      ilmin_coef, & 
+      ilmin_coef, &
+      icoef_hm_1_hm_2_corr_adj, & 
       imult_coef, &
       itaumin, & 
       itaumax, & 
@@ -1099,9 +1132,9 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
       gamma_coef, gamma_coefb, gamma_coefc, & 
-      mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
-      thlp2_rad_cloud_frac_thresh
+      mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, &
+      Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1165,6 +1198,9 @@ module parameters_tunable
     beta = params(ibeta)
 
     lmin_coef = params(ilmin_coef)
+
+    coef_hm_1_hm_2_corr_adj = params(icoef_hm_1_hm_2_corr_adj)
+
     mult_coef = params(imult_coef)
 
     taumin = params(itaumin)
@@ -1199,14 +1235,15 @@ module parameters_tunable
 
     call pack_parameters( C1, C1b, C1c, C2, C2b, C2c, C2rt, C2thl, C2rtthl, &
                           C4, C5, C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, &
-                          C7, C7b, C7c, C8, C8b, C10, & 
-                          C11, C11b, C11c, C12, C13, C14, C15, & 
+                          C7, C7b, C7c, C8, C8b, C10, &
+                          C11, C11b, C11c, C12, C13, C14, C15, &
                           C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
-                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  & 
-                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
-                          gamma_coef, gamma_coefb, gamma_coefc, & 
-                          mu, beta, lmin_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
-                          Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
+                          c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
+                          nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
+                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
+                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
+                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
 
     return
@@ -1227,74 +1264,76 @@ module parameters_tunable
 
     ! --- Begin Code ---
 
-    C1                 = init_value
-    C1b                = init_value
-    C1c                = init_value
-    C2rt               = init_value
-    C2thl              = init_value
-    C2rtthl            = init_value
-    C2                 = init_value
-    C2b                = init_value
-    C2c                = init_value
-    C4                 = init_value
-    C5                 = init_value
-    C6rt               = init_value
-    C6rtb              = init_value
-    C6rtc              = init_value
-    C6thl              = init_value
-    C6thlb             = init_value
-    C6thlc             = init_value
-    C7                 = init_value
-    C7b                = init_value
-    C7c                = init_value
-    C8                 = init_value
-    C8b                = init_value
-    C10                = init_value
-    C11                = init_value
-    C11b               = init_value
-    C11c               = init_value
-    C12                = init_value
-    C13                = init_value
-    C14                = init_value
-    C15                = init_value
-    C6rt_Lscale0       = init_value
-    C6thl_Lscale0      = init_value
-    C7_Lscale0         = init_value
-    wpxp_L_thresh      = init_value
-    c_K                = init_value
-    c_K1               = init_value
-    nu1                = init_value
-    c_K2               = init_value
-    nu2                = init_value
-    c_K6               = init_value
-    nu6                = init_value
-    c_K8               = init_value
-    nu8                = init_value
-    c_K9               = init_value
-    nu9                = init_value
-    nu10               = init_value
-    c_K_hm             = init_value
-    c_K_hmb            = init_value
-    K_hm_min_coef      = init_value
-    nu_hm              = init_value
-    beta               = init_value
-    gamma_coef         = init_value
-    gamma_coefb        = init_value
-    gamma_coefc        = init_value
-    mult_coef          = init_value
-    taumin             = init_value
-    taumax             = init_value
-    lmin_coef          = init_value
-    mu                 = init_value
-    Lscale_mu_coef     = init_value
-    Lscale_pert_coef   = init_value
-    alpha_corr         = init_value
-    Skw_denom_coef     = init_value
-    c_K10              = init_value
-    thlp2_rad_coef     = init_value
-    thlp2_rad_cloud_frac_thresh=init_value
+    C1                          = init_value
+    C1b                         = init_value
+    C1c                         = init_value
+    C2rt                        = init_value
+    C2thl                       = init_value
+    C2rtthl                     = init_value
+    C2                          = init_value
+    C2b                         = init_value
+    C2c                         = init_value
+    C4                          = init_value
+    C5                          = init_value
+    C6rt                        = init_value
+    C6rtb                       = init_value
+    C6rtc                       = init_value
+    C6thl                       = init_value
+    C6thlb                      = init_value
+    C6thlc                      = init_value
+    C7                          = init_value
+    C7b                         = init_value
+    C7c                         = init_value
+    C8                          = init_value
+    C8b                         = init_value
+    C10                         = init_value
+    C11                         = init_value
+    C11b                        = init_value
+    C11c                        = init_value
+    C12                         = init_value
+    C13                         = init_value
+    C14                         = init_value
+    C15                         = init_value
+    C6rt_Lscale0                = init_value
+    C6thl_Lscale0               = init_value
+    C7_Lscale0                  = init_value
+    wpxp_L_thresh               = init_value
+    c_K                         = init_value
+    c_K1                        = init_value
+    nu1                         = init_value
+    c_K2                        = init_value
+    nu2                         = init_value
+    c_K6                        = init_value
+    nu6                         = init_value
+    c_K8                        = init_value
+    nu8                         = init_value
+    c_K9                        = init_value
+    nu9                         = init_value
+    nu10                        = init_value
+    c_K_hm                      = init_value
+    c_K_hmb                     = init_value
+    K_hm_min_coef               = init_value
+    nu_hm                       = init_value
+    beta                        = init_value
+    gamma_coef                  = init_value
+    gamma_coefb                 = init_value
+    gamma_coefc                 = init_value
+    mult_coef                   = init_value
+    taumin                      = init_value
+    taumax                      = init_value
+    lmin_coef                   = init_value
+    coef_hm_1_hm_2_corr_adj     = init_value
+    mu                          = init_value
+    Lscale_mu_coef              = init_value
+    Lscale_pert_coef            = init_value
+    alpha_corr                  = init_value
+    Skw_denom_coef              = init_value
+    c_K10                       = init_value
+    thlp2_rad_coef              = init_value
+    thlp2_rad_cloud_frac_thresh = init_value
 
     return
+
   end subroutine init_parameters_999
 
   !=============================================================================

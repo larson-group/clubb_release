@@ -31,17 +31,16 @@ module advance_microphys_module
   contains
 
   !=============================================================================
-  subroutine advance_microphys( dt, time_current, wm_zt, wp2, &          ! In
-                                exner, rho, rho_zm, rcm, &               ! In
-                                cloud_frac, Kh_zm, K_hm, Skw_zm, &       ! In
-                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
-                                hydromet_mc, Ncm_mc, hydrometp2, &       ! In
-                                hydromet_vel_covar_zt_impc, &            ! In
-                                hydromet_vel_covar_zt_expc, &            ! In
-                                Lscale, &                                ! In
-                                hydromet, hydromet_vel_zt, &             ! Inout
-                                Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
-                                wphydrometp, wpNcp, err_code )           ! Out
+  subroutine advance_microphys( dt, time_current, wm_zt, wp2, &            ! In
+                                exner, rho, rho_zm, rcm, &                 ! In
+                                cloud_frac, Kh_zm, Skw_zm, &               ! In
+                                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &   ! In
+                                hydromet_mc, Ncm_mc, Lscale, &             ! In
+                                hydromet_vel_covar_zt_impc, &              ! In
+                                hydromet_vel_covar_zt_expc, &              ! In
+                                hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
+                                K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
+                                wphydrometp, wpNcp, err_code )             ! Out
 
     ! Description:
     ! Advance mean precipitating hydrometeors and mean cloud droplet
@@ -88,7 +87,7 @@ module advance_microphys_module
 
     use array_index, only:  & 
         hydromet_list, & ! Names of the hydrometeor species
-        hydromet_tol,         & ! Tolerance values for hydrometeor species
+        hydromet_tol,  & ! Tolerance values for hydrometeor species
         iirrm            ! Variable(s)
 
     use stats_variables, only: & 
@@ -149,23 +148,19 @@ module advance_microphys_module
       hydromet_mc    ! Microphysics tendency for mean hydrometeors  [units/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      Ncm_mc    ! Microphysics tendency for Ncm                     [num/kg/s]
-
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+      Ncm_mc, & ! Microphysics tendency for Ncm                     [num/kg/s]
+      Lscale    ! Length-scale                                      [m]
 
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(in) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_hm'h_m'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_hm'h_m'> t-levs [units(m/s)]
 
-    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      Lscale    ! Length-scale [m]
-
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
-      K_hm,      &      ! hm eddy diffusivity on momentum grid          [m^2/s]
-      hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)      [units]
-      hydromet_vel_zt    ! Mean hydrometeor sed. vel. on thermo. levs.   [m/s]
+      hydromet,        & ! Hydrometeor mean, <h_m> (thermo. levels)    [units]
+      hydromet_vel_zt, & ! Mean hydrometeor sed. vel. on thermo. levs. [m/s]
+      hydrometp2,      & ! Variance of hydrometeor (overall) (m-levs.) [units^2]
+      K_hm               ! hm eddy diffusivity on momentum grid        [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       Ncm,         & ! Mean cloud droplet conc., <N_c> (thermo. levs.)  [num/kg]
@@ -311,7 +306,7 @@ module advance_microphys_module
                                  hydromet_mc, hydromet_vel_covar_zt_impc, &
                                  hydromet_vel_covar_zt_expc, &
                                  hydromet, hydromet_vel_zt, &
-                                 rvm_mc, thlm_mc, &
+                                 hydrometp2, rvm_mc, thlm_mc, &
                                  wphydrometp, hydromet_vel, &
                                  hydromet_vel_covar, hydromet_vel_covar_zt, &
                                  err_code_hydromet )
@@ -517,7 +512,7 @@ module advance_microphys_module
                                   hydromet_mc, hydromet_vel_covar_zt_impc, &
                                   hydromet_vel_covar_zt_expc, &
                                   hydromet, hydromet_vel_zt, &
-                                  rvm_mc, thlm_mc, &
+                                  hydrometp2, rvm_mc, thlm_mc, &
                                   wphydrometp, hydromet_vel, &
                                   hydromet_vel_covar, hydromet_vel_covar_zt, &
                                   err_code_hydromet )
@@ -577,6 +572,7 @@ module advance_microphys_module
 
     use array_index, only:  & 
         hydromet_list, & ! Variable(s)
+        hydromet_tol,  &
         iirrm,         &
         iiNrm
 
@@ -613,8 +609,9 @@ module advance_microphys_module
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim), intent(inout) :: &
-      hydromet,       & ! Hydrometeor mean, <h_m> (thermodynamic levels) [units]
-      hydromet_vel_zt   ! Mean hydrometeor sed. velocity on thermo. levs.  [m/s]
+      hydromet,        & ! Hydrometeor mean, <h_m> (thermodynamic levs.) [units]
+      hydromet_vel_zt, & ! Mean hydrometeor sed. velocity on thermo. levs. [m/s]
+      hydrometp2         ! Variance of hydrometeor (overall) (m-levs.) [units^2]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) :: &
       rvm_mc,  & ! Microphysics contributions to vapor water          [kg/kg/s]
@@ -642,7 +639,13 @@ module advance_microphys_module
     character(len=10) :: hydromet_name
 
     real( kind = core_rknd ) :: &
-      max_velocity    ! Maximum sedimentation velocity [m/s]
+      max_velocity    ! Maximum sedimentation velocity         [m/s]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      hydromet_zm     ! Mean of hydrometeor interp. to m-levs. [units vary]
+
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      ratio_hmp2_on_hmm2    ! Value of <hm'^2> / <hm>^2    [-]
 
     logical :: l_fill_holes_hm = .true.
 
@@ -712,6 +715,31 @@ module advance_microphys_module
        ! approximation of the sedimenation term.
        hydromet_vel(:,i) = zt2zm( hydromet_vel_zt(:,i) )
        hydromet_vel(gr%nz,i) = zero ! Upper boundary condition
+
+       ! Calculate the value of <hm'^2> / <hm>^2.  This will be used to update
+       ! <hm'^2> after <hm> has been advanced one model timestep.  This method
+       ! is being used because CLUBB does not currently have a predictive
+       ! equation for <hm'^2> (hydrometp2).
+       hydromet_zm = zt2zm( hydromet(:,i) )
+
+       do k = 1, gr%nz, 1
+
+          if ( hydromet_zm(k) > hydromet_tol(i) ) then
+
+             ! Calculate the ratio of the overall variance of the hydrometeor
+             ! to the overall mean of the hydrometeor squared.
+             ratio_hmp2_on_hmm2(k,i) = hydrometp2(k,i) / hydromet_zm(k)**2
+
+          else  ! hydromet_zm(k) <= hydromet_tol(i)
+
+             ! The overall mean of the hydrometeor is 0 or is treated as 0.  The
+             ! overall variance of the hydrometeor is also 0 in this scenario.
+             ! The ratio is undefined, but will be assigned a value of 0.
+             ratio_hmp2_on_hmm2(k,i) = zero
+
+          endif ! hydromet_zm(k) > hydromet_tol(i)
+
+       enddo ! k = 1, gr%nz, 1
 
        ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.
@@ -791,6 +819,16 @@ module advance_microphys_module
        if ( hydromet(1,i) < zero_threshold ) then
           hydromet(1,i) = zero_threshold
        endif
+
+       ! Calculate the value of <hm'^2> (hydrometp2).  This is based on the
+       ! ratio of <hm'^2> / <hm>^2 (ratio_hmp2_on_hmm2) that was saved before
+       ! hydrometeors were updated.  This method is being used because CLUBB
+       ! does not currently have a predictive equation for <hm'^2>.
+       hydromet_zm = zt2zm( hydromet(:,i) )
+
+       do k = 1, gr%nz, 1
+          hydrometp2(k,i) = ratio_hmp2_on_hmm2(k,i) * hydromet_zm(k)**2
+       enddo ! k = 1, gr%nz, 1
 
        ! Solve for < w'h_m' > at all intermediate (momentum) grid levels, using
        ! a down-gradient approximation:  < w'h_m' > = - K * d< h_m >/dz.

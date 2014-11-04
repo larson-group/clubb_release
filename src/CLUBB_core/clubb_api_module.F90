@@ -1473,16 +1473,17 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_parameters_api( &
-    nz, d_variables, dt, rho, &                  ! Intent(in)
-    Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
-    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
-    corr_array_cloud, corr_array_below, &        ! Intent(in)
-    pdf_params, l_stats_samp, &                  ! Intent(in)
-    mu_x_1_n, mu_x_2_n, &                        ! Intent(out)
-    sigma_x_1_n, sigma_x_2_n, &                  ! Intent(out)
-    corr_array_1_n, corr_array_2_n, &            ! Intent(out)
-    corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-    hydromet_pdf_params, hydrometp2 )            ! Intent(out)
+    nz, d_variables, dt, rho, &                 ! Intent(in)
+    Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
+    corr_array_cloud, corr_array_below, &       ! Intent(in)
+    pdf_params, l_stats_samp, &                 ! Intent(in)
+    hydrometp2, &                               ! Intent(inout)
+    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
+    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
+    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
+    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+    hydromet_pdf_params )                       ! Intent(out)
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
@@ -1550,6 +1551,10 @@ contains
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
+
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
       intent(out) :: &
@@ -1570,20 +1575,18 @@ contains
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
-
     call setup_pdf_parameters( &
-      nz, d_variables, dt, rho, &                  ! Intent(in)
-      Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
-      ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
-      corr_array_cloud, corr_array_below, &        ! Intent(in)
-      pdf_params, l_stats_samp, &                  ! Intent(in)
-      mu_x_1_n, mu_x_2_n, &                        ! Intent(out)
-      sigma_x_1_n, sigma_x_2_n, &                  ! Intent(out)
-      corr_array_1_n, corr_array_2_n, &            ! Intent(out)
-      corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-      hydromet_pdf_params, hydrometp2 )            ! Intent(out)
+      nz, d_variables, dt, rho, &                 ! Intent(in)
+      Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+      ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
+      corr_array_cloud, corr_array_below, &       ! Intent(in)
+      pdf_params, l_stats_samp, &                 ! Intent(in)
+      hydrometp2, &                               ! Intent(inout)
+      mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
+      sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
+      corr_array_1_n, corr_array_2_n, &           ! Intent(out)
+      corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+      hydromet_pdf_params )                       ! Intent(out)
 
   end subroutine setup_pdf_parameters_api
 

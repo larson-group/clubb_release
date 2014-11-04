@@ -1316,16 +1316,17 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &          ! Intent(in)
-                                    Nc_in_cloud, rcm, cloud_frac, &              ! Intent(in)
-                                    ice_supersat_frac, hydromet, wphydrometp, &  ! Intent(in)
-                                    corr_array_cloud, corr_array_below, &        ! Intent(in)
-                                    pdf_params, l_stats_samp, &                  ! Intent(in)
-                                    mu_x_1, mu_x_2, &                            ! Intent(out)
-                                    sigma_x_1, sigma_x_2, &                      ! Intent(out)
-                                    corr_array_1, corr_array_2, &                ! Intent(out)
-                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, &  ! Intent(out)
-                                    hydromet_pdf_params, hydrometp2 )            ! Intent(out)
+         call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &         ! Intent(in)
+                                    Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
+                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
+                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                    pdf_params, l_stats_samp, &                 ! Intent(in)
+                                    hydrometp2, &                               ! Intent(inout)
+                                    mu_x_1, mu_x_2, &                           ! Intent(out)
+                                    sigma_x_1, sigma_x_2, &                     ! Intent(out)
+                                    corr_array_1, corr_array_2, &               ! Intent(out)
+                                    corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
+                                    hydromet_pdf_params )                       ! Intent(out)
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
          call hydrometeor_mixed_moments( gr%nz, d_variables, hydromet, &
@@ -1392,17 +1393,16 @@ module clubb_driver
                               thlp2_mc, rtpthlp_mc )                         ! Out
 
       ! Advance predictive microphysics fields one model timestep.
-      call advance_microphys( dt_main, time_current, wm_zt, wp2, &     ! In
-                              exner, rho, rho_zm, rcm, &               ! In
-                              cloud_frac, Kh_zm, K_hm, Skw_zm, &       ! In
-                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, & ! In
-                              hydromet_mc, Ncm_mc, hydrometp2, &       ! In
-                              hydromet_vel_covar_zt_impc, &            ! In
-                              hydromet_vel_covar_zt_expc, &            ! In
-                              Lscale,&                                 ! In
-                              hydromet, hydromet_vel_zt, &             ! Inout
-                              Ncm, Nc_in_cloud, rvm_mc, thlm_mc, &     ! Inout
-                              wphydrometp, wpNcp, err_code_microphys ) ! Out
+      call advance_microphys( dt_main, time_current, wm_zt, wp2, &       ! In
+                              exner, rho, rho_zm, rcm, &                 ! In
+                              cloud_frac, Kh_zm, Skw_zm, &               ! In
+                              rho_ds_zm, rho_ds_zt, invrs_rho_ds_zt, &   ! In
+                              hydromet_mc, Ncm_mc, Lscale, &             ! In
+                              hydromet_vel_covar_zt_impc, &              ! In
+                              hydromet_vel_covar_zt_expc, &              ! In
+                              hydromet, hydromet_vel_zt, hydrometp2, &   ! Inout
+                              K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
+                              wphydrometp, wpNcp, err_code_microphys )   ! Out
 
       if ( fatal_error( err_code_microphys ) ) then
          if ( clubb_at_least_debug_level( 1 ) ) then
