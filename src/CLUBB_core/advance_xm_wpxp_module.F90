@@ -48,7 +48,7 @@ module advance_xm_wpxp_module
                               rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
-                              mixt_frac_zm, l_implemented, &
+                              mixt_frac_zm, l_implemented, em, &
                               sclrpthvp, sclrm_forcing, sclrp2, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
@@ -167,6 +167,7 @@ module advance_xm_wpxp_module
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
       Lscale,          & ! Turbulent mixing length                  [m]
+      em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
       wp3_on_wp2,      & ! Smoothed wp3 / wp2 on momentum levels    [m/s]
       wp3_on_wp2_zt,   & ! Smoothed wp3 / wp2 on thermo. levels     [m/s]
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels [m^2/s]
@@ -381,6 +382,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
+                        em, Lscale, thlm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -454,6 +456,7 @@ module advance_xm_wpxp_module
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
+                        em, Lscale, thlm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -538,6 +541,7 @@ module advance_xm_wpxp_module
                           C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  &  ! Intent(in)
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &  ! Intent(in)
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
+                          em, Lscale, thlm, & ! Intent(in)
                           lhs ) ! Intent(out)
 
         ! Compute the explicit portion of the sclrm and w'sclr' equations.
@@ -599,6 +603,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         dummy_1d, dummy_1d, l_implemented,  & ! Intent(in)
+                        em, Lscale, thlm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -838,6 +843,7 @@ module advance_xm_wpxp_module
                           C6x_Skw_fnc, rho_ds_zm, rho_ds_zt,  &
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented,  &
+                          em, Lscale, thlm, &
                           lhs )
 
     ! Description:
@@ -854,7 +860,8 @@ module advance_xm_wpxp_module
 
     use grid_class, only:  & 
         gr,  & ! Variable(s)
-        zm2zt ! Procedure(s)
+        zm2zt, & ! Procedure(s)
+        ddzt
 
     use constants_clubb, only: &
         gamma_over_implicit_ts, & ! Constant(s)
@@ -864,7 +871,8 @@ module advance_xm_wpxp_module
     use model_flags, only: &
         l_clip_semi_implicit, & ! Variable(s)
         l_upwind_wpxp_ta, &
-        l_diffuse_rtm_and_thlm
+        l_diffuse_rtm_and_thlm, &
+        l_stability_correct_Kh_N2_zm
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -925,8 +933,9 @@ module advance_xm_wpxp_module
         iwprtp_dp1, & 
         iwprtp_sicl
 
-    use advance_helper_module, only: set_boundary_conditions_lhs ! Procedure(s)
-
+    use advance_helper_module, only: &
+      set_boundary_conditions_lhs, & ! Procedure(s)
+      calc_stability_correction
 
     implicit none
 
@@ -963,6 +972,9 @@ module advance_xm_wpxp_module
       Kh_zm,           & ! Eddy diffusivity on momentum levels       [m^2/s]
       a1,              & ! a_1 (momentum levels)                     [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels  [-]
+      Lscale,          & ! Turbulent mixing length                   [m]
+      em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+      thlm,            & ! th_l (thermo. levels)                     [K]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
@@ -997,17 +1009,25 @@ module advance_xm_wpxp_module
 
     logical :: l_upper_thresh, l_lower_thresh ! flags for clip_semi_imp_lhs
 
-    ! The variables below are used to change the amount
+    ! These variables are used to change the amount
     ! of diffusion applied towards rtm and thlm. They are only used when
     ! l_diffuse_rtm_and_thlm = .true.
-    real (kind = core_rknd), dimension(gr%nz) :: zero_nu
-    real (kind = core_rknd) :: constant_nu
-    real (kind = core_rknd) :: k_modifier
+    real (kind = core_rknd), dimension(gr%nz) :: &
+      zero_nu, &
+      Kh_N2_zm
 
+    real (kind = core_rknd) :: &
+      constant_nu ! controls the magnitude of diffusion
+
+    ! Setting up variables used for diffusion
     zero_nu = 0.0_core_rknd
-    constant_nu = 0.0_core_rknd
-    k_modifier = 0.05_core_rknd
+    constant_nu = 0.1_core_rknd
 
+    if ( l_stability_correct_Kh_N2_zm ) then
+      Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em)
+    else
+      Kh_N2_zm = Kh_zm
+    end if
 
     ! Initialize the left-hand side matrix to 0.
     lhs = zero
@@ -1029,8 +1049,8 @@ module advance_xm_wpxp_module
         lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
         = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
         + invrs_rho_ds_zt(k)  &
-        * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
-            rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+        * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_N2_zm(k)  +  constant_nu ),  &
+            rho_ds_zm(km1) * ( Kh_N2_zm(km1)  +  constant_nu ), zero_nu,  &
             gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
       end if
 
@@ -1352,8 +1372,8 @@ module advance_xm_wpxp_module
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
       = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
       + invrs_rho_ds_zt(k)  &
-      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
-          rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_N2_zm(k) + constant_nu ),  &
+          rho_ds_zm(km1) * ( Kh_N2_zm(km1) + constant_nu ), zero_nu,  &
           gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
   end if
 
@@ -1372,8 +1392,8 @@ module advance_xm_wpxp_module
       lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
       = lhs((/t_kp1_tdiag,t_k_tdiag,t_km1_tdiag/),k)  &
       + invrs_rho_ds_zt(k)  &
-      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_zm(k) * k_modifier  +  constant_nu ),  &
-          rho_ds_zm(km1) * ( Kh_zm(km1) * k_modifier  +  constant_nu ), zero_nu,  &
+      * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_N2_zm(k) +  constant_nu ),  &
+          rho_ds_zm(km1) * ( Kh_N2_zm(km1) +  constant_nu ), zero_nu,  &
           gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
   end if
 

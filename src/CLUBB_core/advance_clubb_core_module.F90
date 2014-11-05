@@ -1753,7 +1753,7 @@ module advance_clubb_core_module
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
-                            mixt_frac_zm, l_implemented,              & ! intent(in)
+                            mixt_frac_zm, l_implemented, em,          & ! intent(in)
                             sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
@@ -3295,6 +3295,8 @@ module advance_clubb_core_module
 
     return
   end subroutine calculate_thlp2_rad
-!===============================================================================
+
+
+    !-----------------------------------------------------------------------
 
 end module advance_clubb_core_module

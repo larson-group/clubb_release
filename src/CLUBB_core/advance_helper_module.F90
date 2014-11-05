@@ -9,7 +9,10 @@ module advance_helper_module
 
   implicit none
 
-  public :: set_boundary_conditions_lhs, set_boundary_conditions_rhs
+  public :: &
+    set_boundary_conditions_lhs, &
+    set_boundary_conditions_rhs, &
+    calc_stability_correction
 
   private ! Set Default Scope
 
@@ -151,5 +154,60 @@ module advance_helper_module
 
     return
   end subroutine set_boundary_conditions_rhs
+
+  !===============================================================================
+  function calc_stability_correction( thlm, Lscale, em ) &
+    result ( stability_correction )
+      !
+      ! Description:
+      !   Stability Factor
+      !
+      !--------------------------------------------------------------------
+
+      use parameters_model, only: &
+        T0 ! Variables(s)
+
+      use constants_clubb, only: &
+        zero, & ! Constant(s)
+        grav
+
+      use grid_class, only:  &
+        gr, & ! Variable(s)
+        zt2zm, & ! Procedure(s)
+        ddzt
+
+      use clubb_precision, only:  &
+        core_rknd ! Variable(s)
+
+      implicit none
+
+      ! Input Variables
+      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+        Lscale,          & ! Turbulent mixing length                   [m]
+        em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+        thlm               ! th_l (thermo. levels)                     [K]
+
+      ! Result
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        stability_correction
+
+      ! Local Variables
+      real( kind = core_rknd ) :: &
+        lambda0_stability_coef
+
+      real( kind = core_rknd ), dimension(gr%nz) :: &
+        brunt_vaisala_freq, &
+        lambda0_stability
+
+      !------------ Begin Code --------------
+      lambda0_stability_coef = 0.04_core_rknd
+      brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
+      lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
+
+      stability_correction = 1.0_core_rknd &
+        + lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em
+
+      return
+    end function calc_stability_correction
 
 end module advance_helper_module
