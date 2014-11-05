@@ -540,6 +540,148 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
+  subroutine clip_transform_silhs_output &
+             ( nz, num_samples, d_variables, X_mixt_comp, X_nl_all_levs, pdf_params, &
+               lh_rt, lh_thl, lh_rc, lh_rv, lh_Nc )
+
+  ! Description:
+  !   Derives from the SILHS sampling structure X_nl_all_levs the variables
+  !   rt, thl, rc, rv, and Nc, for all sample points and height levels.
+
+  ! References:
+  !   ticket:751
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      dp, & ! Constant(s)
+      core_rknd
+
+    use constants_clubb, only: &
+      zero  ! Constant
+
+    use pdf_parameter_module, only: &
+      pdf_parameter ! Type
+
+    use corr_varnce_module, only: &
+      iiPDF_chi, &  ! Variable(s)
+      iiPDF_eta, &
+      iiPDF_Ncn
+
+    use generate_lh_sample_module, only: &
+      chi_eta_2_rtthl ! Awesome procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,          &         ! Number of vertical levels
+      num_samples, &         ! Number of SILHS sample points
+      d_variables, &         ! Number of variates in X_nl_one_lev
+      X_mixt_comp            ! Which component this sample is in (1 or 2)
+
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
+      X_nl_all_levs          ! A SILHS sample
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params             ! **The** PDF parameters
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+      lh_rt,   &             ! Total water mixing ratio            [kg/kg]
+      lh_thl,  &             ! Liquid potential temperature        [K]
+      lh_rc,   &             ! Cloud water mixing ratio            [kg/kg]
+      lh_rv,   &             ! Vapor water mixing ratio            [kg/kg]
+      lh_Nc                  ! Cloud droplet number concentration  [#/kg]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      rt_1,    &
+      rt_2,    &
+      thl_1,   &
+      thl_2,   &
+      crt_1,   &
+      crt_2,   &
+      cthl_1,  &
+      cthl_2,  &
+      chi_1,   &
+      chi_2,   &
+      lh_chi,  &
+      lh_eta
+
+    integer :: &
+      isample, k
+
+    logical :: &
+      l_rt_clipped, &
+      l_rv_clipped
+
+  !-----------------------------------------------------------------------
+
+    l_rt_clipped = .false.
+    l_rv_clipped = .false.
+
+    !----- Begin Code -----
+
+    ! Loop over all thermodynamic levels above the model lower boundary.
+    do k=2, nz
+
+      ! Enter the PDF parameters!!
+      rt_1   = pdf_params(k)%rt_1
+      rt_2   = pdf_params(k)%rt_2
+      thl_1  = pdf_params(k)%thl_1
+      thl_2  = pdf_params(k)%thl_2
+      crt_1  = pdf_params(k)%crt_1
+      crt_2  = pdf_params(k)%crt_2
+      cthl_1 = pdf_params(k)%cthl_1
+      cthl_2 = pdf_params(k)%cthl_2
+      chi_1  = pdf_params(k)%chi_1
+      chi_2  = pdf_params(k)%chi_2
+
+      do isample=1, num_samples
+
+        lh_chi = real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd )
+        lh_eta = real( X_nl_all_levs(k,isample,iiPDF_eta), kind=core_rknd )
+
+        ! Compute lh_rt and lh_thl
+        call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2,           & ! intent(in)
+                              crt_1, cthl_1, crt_2, cthl_2,       & ! intent(in)
+                              chi_1, chi_2,                       & ! intent(in)
+                              lh_chi, lh_eta,                     & ! intent(in)
+                              X_mixt_comp,                        & ! intent(in)
+                              lh_rt(k,isample), lh_thl(k,isample) ) ! intent(out)
+
+        ! If necessary, clip rt
+        if ( lh_rt(k,isample) < zero ) then
+          lh_rt(k,isample) = zero
+          l_rt_clipped = .true.
+        end if
+
+        ! Compute lh_rc and lh_rv
+        lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
+        lh_rv(k,:) = lh_rt(k,:) - lh_rc(k,:)
+
+        ! If necessary, clip rv
+        if ( lh_rv(k,isample) < zero ) then
+          lh_rv(k,isample) = zero
+          l_rv_clipped = .true.
+        end if
+
+        ! Compute lh_Nc
+        lh_Nc(k,isample) = Ncn_to_Nc( X_nl_all_levs(k,isample,iiPDF_Ncn), &
+                                      X_nl_all_levs(k,isample,iiPDF_chi) )
+
+      end do ! isample=1, num_samples
+
+    end do ! k=2, nz
+
+    return
+  end subroutine clip_transform_silhs_output
+
+
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
   subroutine importance_sampling_driver &
              ( num_samples, pdf_params, hydromet_pdf_params,        &
                X_u_chi_one_lev, X_u_dp1_one_lev, X_u_dp2_one_lev,   &
@@ -3625,6 +3767,50 @@ module latin_hypercube_driver_module
     return
   end function Ncn_to_Nc
   !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  elemental function chi_to_rc( chi ) result ( rc )
+
+  ! Description:
+  !   Converts a sample of chi to a sample of rc, where
+  !   rc = chi * H(chi)
+  !   and H(x) is the Heaviside step function.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd    ! Our awesome generalized precision (constant)
+
+    use constants_clubb, only: &
+      zero         ! Constant
+
+    implicit none
+
+    ! Input Variable
+    real( kind = core_rknd ), intent(in) :: &
+      chi      ! Extended cloud water mixing ratio           [kg/kg]
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      rc       ! Cloud water mixing ratio                    [kg/kg]
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    if ( chi > zero ) then
+      rc = chi
+    else
+      rc = zero
+    end if
+
+    return
+  end function chi_to_rc
+  !-----------------------------------------------------------------------
+
 
 #endif /* SILHS */
 

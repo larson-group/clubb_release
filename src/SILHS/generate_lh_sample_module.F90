@@ -9,10 +9,10 @@ module generate_lh_sample_module
   implicit none
 
   public :: generate_uniform_sample, &
-     ltqnorm, multiply_Cholesky, generate_lh_sample, choose_permuted_random
+     ltqnorm, multiply_Cholesky, generate_lh_sample, choose_permuted_random, &
+     chi_eta_2_rtthl
 
-  private :: sample_points, gaus_mixt_points, & 
-    chi_eta_2_rtthl
+  private :: sample_points, gaus_mixt_points
 
   private ! Default scope
 
