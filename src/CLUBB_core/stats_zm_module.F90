@@ -72,7 +72,8 @@ module stats_zm_module
         iFrad_LW_down, & 
         iFrad_SW_down, & 
         iFprec, & 
-        iFcsed
+        iFcsed, &
+        istability_correction
 
     use stats_variables, only: & 
         iup2, & 
@@ -1748,6 +1749,13 @@ module stats_zm_module
         iSkw_zm = k
         call stat_assign( var_index=iSkw_zm, var_name="Skw_zm", &
              var_description="Skewness of w on momentum levels [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'stability_correction' )
+        istability_correction = k
+        call stat_assign( var_index=istability_correction, var_name="stability_correction", &
+             var_description="Stability applied to diffusion of rtm and thlm [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

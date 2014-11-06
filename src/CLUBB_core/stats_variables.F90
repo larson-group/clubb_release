@@ -909,6 +909,10 @@ module stats_variables
      iFprec = 0,          & ! Brian
      iFcsed = 0             ! Brian
 
+   ! Stability correction applied to Kh_N2_zm (diffusion on rtm and thlm)
+   integer, public :: &
+     istability_correction = 0 ! schemena
+
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, irc_coef, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)

@@ -22,7 +22,7 @@ module model_flags
     l_hole_fill                   = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit          = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
     l_clip_turb_adv               = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
-    l_diffuse_rtm_and_thlm        = .false.,  & ! Diffuses rtm and thlm
+    l_diffuse_rtm_and_thlm        = .false., & ! Diffuses rtm and thlm
     l_stability_correct_Kh_N2_zm  = .false., & ! Divides Kh_N2_zm by a stability factor
     l_gmres                       = .false., & ! Use GMRES iterative solver rather than LAPACK
     l_sat_mixrat_lookup           = .false.    ! Use a lookup table for mixing length
