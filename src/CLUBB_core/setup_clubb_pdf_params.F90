@@ -342,7 +342,7 @@ module setup_clubb_pdf_params
     ! grid levels.
     do i = 1, hydromet_dim, 1
 
-       hydrometp2_zt(:,i)  = zm2zt( hydrometp2(:,i) )
+       hydrometp2_zt(:,i)  = max( zm2zt( hydrometp2(:,i) ), zero_threshold )
        wphydrometp_zt(:,i) = zm2zt( wphydrometp(:,i) )
 
        ! When the mean value of a precipitating hydrometeor is below tolerance
@@ -1398,21 +1398,21 @@ module setup_clubb_pdf_params
              = ( hydromet(k,i) - mixt_frac(k) * hm_1(k,i) ) &
                / ( one - mixt_frac(k) )
 
-             if ( hm_1(k,i) <= hydromet_tol(i) ) then
+             if ( hm_1(k,i) < zero ) then
 
                 ! The mean value of the hydrometeor within the 1st PDF component
-                ! is below the tolerance value for the hydrometeor.  It is
-                ! considered to have a value of 0.  All the the hydrometeor is
-                ! found within the 2nd PDF component.
+                ! is below 0 due to numerical roundoff error.  Reset its value
+                ! to 0.  All the the hydrometeor is found within the 2nd PDF
+                ! component.
                 hm_1(k,i) = zero
                 hm_2(k,i) = hydromet(k,i) / ( one - mixt_frac(k) )
 
-             elseif ( hm_2(k,i) <= hydromet_tol(i) ) then
+             elseif ( hm_2(k,i) < zero ) then
 
                 ! The mean value of the hydrometeor within the 2nd PDF component
-                ! is below the tolerance value for the hydrometeor.  It is
-                ! considered to have a value of 0.  All the the hydrometeor is
-                ! found within the 1st PDF component.
+                ! is below 0 due to numerical roundoff error.  Reset its value
+                ! to 0.  All the the hydrometeor is found within the 1st PDF
+                ! component.
                 hm_1(k,i) = hydromet(k,i) / mixt_frac(k)
                 hm_2(k,i) = zero
 
@@ -1423,9 +1423,10 @@ module setup_clubb_pdf_params
 
              ! The overall hydrometeor is either 0 or below tolerance value (any
              ! postive value is considered to be a numerical artifact).  Simply
-             ! set each pdf component mean equal to 0.
-             hm_1(k,i) = zero
-             hm_2(k,i) = zero
+             ! set each pdf component mean equal to hydromet.  These values
+             ! will not play into any further calculations.
+             hm_1(k,i) = hydromet(k,i)
+             hm_2(k,i) = hydromet(k,i)
 
           endif  ! hydromet(k,i) > hydromet_tol(i)
 
