@@ -48,6 +48,13 @@ run_case()
 	# a namelist by using the sed command to remove them.
 	# Since -i is a GNU sed extension the command might be 'gsed' on some systems.
 	sed -i -e 's/\!.*//' $NAMELISTS
+        
+        # Remove the variables stats_file, parameter_file, and output_directory
+        # because they are only used in this script, and not in CLUBB.
+        sed -i '/stats_file/d' $NAMELISTS
+        sed -i '/parameter_file/d' $NAMELISTS
+        sed -i '/output_directory/d' $NAMELISTS
+
 
 	# Echo the case name
 	echo "Running $run_case"
@@ -220,7 +227,6 @@ fi
 model_file='../input/case_setups/'${!#}'_model.in'
 run_case=${!#}
 
-cp $model_file "$model_file.backup"
 
 # Check to see if the model file exists
 if [ ! -e "$model_file" ];
@@ -274,11 +280,6 @@ then
 		#stats_file='../stats/nobudgets_stats.in' 
 	fi
 fi
-
-sed -i 's/!.*//' $model_file
-sed -i '/stats_file/d' $model_file
-sed -i '/parameter_file/d' $model_file
-sed -i '/output_directory/d' $model_file
 
 
 
@@ -439,7 +440,6 @@ else
 	run_case
 fi
 
-mv "$model_file.backup" $model_file
 
 outputgrep=$(sed   's/!.*//' $model_file |grep "output_directory"  | grep -oP '"\K[^"\047]+(?=["\047])')
 if [ -n "$outputgrep" ]
