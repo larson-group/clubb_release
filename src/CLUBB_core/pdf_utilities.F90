@@ -212,6 +212,9 @@ module pdf_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        max_mag_correlation  ! Constant(s)
+
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
@@ -230,6 +233,16 @@ module pdf_utilities
 
     ! Find the correlation of x and ln y for the ith component of the PDF.
     corr_x_y_n = corr_x_y * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
+
+    ! Clip the magnitude of the correlation of x and ln y in the ith PDF
+    ! component, just in case the correlation (ith PDF component) of x and y and
+    ! the standard deviation (ith PDF component) of ln y are inconsistent,
+    ! resulting in an unrealizable value for corr_x_y_n.
+    if ( corr_x_y_n > max_mag_correlation ) then
+       corr_x_y_n = max_mag_correlation
+    elseif ( corr_x_y_n < -max_mag_correlation ) then
+       corr_x_y_n = -max_mag_correlation
+    endif
 
 
     return
@@ -255,6 +268,9 @@ module pdf_utilities
     !  -- Eq. B-1.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        max_mag_correlation  ! Constant(s)
+
     use clubb_precision, only: &
         dp ! double precision
 
@@ -273,6 +289,16 @@ module pdf_utilities
 
     ! Find the correlation of x and ln y for the ith component of the PDF.
     corr_x_y_n = corr_x_y * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
+
+    ! Clip the magnitude of the correlation of x and ln y in the ith PDF
+    ! component, just in case the correlation (ith PDF component) of x and y and
+    ! the standard deviation (ith PDF component) of ln y are inconsistent,
+    ! resulting in an unrealizable value for corr_x_y_n.
+    if ( corr_x_y_n > real( max_mag_correlation, kind = dp ) ) then
+       corr_x_y_n = real( max_mag_correlation, kind = dp )
+    elseif ( corr_x_y_n < -real( max_mag_correlation, kind = dp ) ) then
+       corr_x_y_n = -real( max_mag_correlation, kind = dp )
+    endif
 
 
     return
@@ -299,7 +325,8 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one        ! Constant(s)
+        one,                 & ! Constant(s)
+        max_mag_correlation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -332,6 +359,17 @@ module pdf_utilities
 
      corr_x_y_n = log( log_arg ) / ( sigma_x_n * sigma_y_n )
 
+    ! Clip the magnitude of the correlation of ln x and ln y in the ith PDF
+    ! component, just in case the correlation (ith PDF component) of x and y,
+    ! the standard deviation (ith PDF component) of ln x, and the standard
+    ! deviation (ith PDF component) of ln y are inconsistent, resulting in an
+    ! unrealizable value for corr_x_y_n.
+    if ( corr_x_y_n > max_mag_correlation ) then
+       corr_x_y_n = max_mag_correlation
+    elseif ( corr_x_y_n < -max_mag_correlation ) then
+       corr_x_y_n = -max_mag_correlation
+    endif
+
 
     return
 
@@ -358,7 +396,8 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one_dp  ! Constant(s)
+        one_dp,              & ! Constant(s)
+        max_mag_correlation
 
     use clubb_precision, only: &
         dp ! double precision
@@ -384,6 +423,17 @@ module pdf_utilities
     corr_x_y_n &
     = log( one_dp + corr_x_y * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 ) ) &
       / ( sigma_x_n * sigma_y_n )
+
+    ! Clip the magnitude of the correlation of ln x and ln y in the ith PDF
+    ! component, just in case the correlation (ith PDF component) of x and y,
+    ! the standard deviation (ith PDF component) of ln x, and the standard
+    ! deviation (ith PDF component) of ln y are inconsistent, resulting in an
+    ! unrealizable value for corr_x_y_n.
+    if ( corr_x_y_n > real( max_mag_correlation, kind = dp ) ) then
+       corr_x_y_n = real( max_mag_correlation, kind = dp )
+    elseif ( corr_x_y_n < -real( max_mag_correlation, kind = dp ) ) then
+       corr_x_y_n = -real( max_mag_correlation, kind = dp )
+    endif
 
 
     return
@@ -528,8 +578,9 @@ module pdf_utilities
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero,    & ! Constant(s)
-        chi_tol
+        zero,                & ! Constant(s)
+        chi_tol,             &
+        max_mag_correlation
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -566,6 +617,16 @@ module pdf_utilities
        ! be used.
        corr_chi_x_i = zero
 
+    endif
+
+    ! Clip the magnitude of the correlation of chi and x in the ith PDF
+    ! component, just in case the correlations and standard deviations used in
+    ! calculating it are inconsistent, resulting in an unrealizable value for
+    ! corr_chi_x_i.
+    if ( corr_chi_x_i > max_mag_correlation ) then
+       corr_chi_x_i = max_mag_correlation
+    elseif ( corr_chi_x_i < -max_mag_correlation ) then
+       corr_chi_x_i = -max_mag_correlation
     endif
 
 
@@ -628,8 +689,9 @@ module pdf_utilities
     endif
 
     ! Clip the magnitude of the correlation of rt and x in the ith PDF
-    ! component, just in case the specified correlations used in calculating it
-    ! are out of whack.
+    ! component, just in case the correlations and standard deviations used in
+    ! calculating it are inconsistent, resulting in an unrealizable value for
+    ! corr_rt_x_i.
     if ( corr_rt_x_i > max_mag_correlation ) then
        corr_rt_x_i = max_mag_correlation
     elseif ( corr_rt_x_i < -max_mag_correlation ) then
@@ -697,8 +759,9 @@ module pdf_utilities
     endif
 
     ! Clip the magnitude of the correlation of thl and x in the ith PDF
-    ! component, just in case the specified correlations used in calculating it
-    ! are out of whack.
+    ! component, just in case the correlations and standard deviations used in
+    ! calculating it are inconsistent, resulting in an unrealizable value for
+    ! corr_thl_x_i.
     if ( corr_thl_x_i > max_mag_correlation ) then
        corr_thl_x_i = max_mag_correlation
     elseif ( corr_thl_x_i < -max_mag_correlation ) then
