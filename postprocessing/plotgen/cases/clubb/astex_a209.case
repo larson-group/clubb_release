@@ -158,12 +158,10 @@
        ]},
        {'plotTitle' => 'Covariance of w & r_r', 'axisLabel' => 'wprrp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          #{'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'astex_a209_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of w & N_r', 'axisLabel' => 'wpNrp [(num/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          #{'filename' => '/home/matlabuser/plotgen/LES_files/dycoms2_rf02_ds_coamps_sm.ctl', 'type' => 'les', 'name' => 'LES', 'expression' => 'qrm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'astex_a209_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpNrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Correlation of w and \chi', 'axisLabel' => 'corr\_w\_chi\_i [-]', 'type' => 'profile', 'lines' =>
