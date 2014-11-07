@@ -225,7 +225,7 @@ module Nc_Ncn_test
 
           mu_Ncn_1 = 5.0e+7_core_rknd
 
-          sigma_Ncn_1 = 1.0e+8_core_rknd
+          sigma_Ncn_1 = 7.5e+7_core_rknd
 
           const_corr_chi_Ncn = 0.7_core_rknd
 
@@ -241,7 +241,7 @@ module Nc_Ncn_test
 
           mu_Ncn_1 = 5.0e+7_core_rknd
 
-          sigma_Ncn_1 = 1.0e+8_core_rknd
+          sigma_Ncn_1 = 7.5e+7_core_rknd
 
           const_corr_chi_Ncn = 0.7_core_rknd
 
@@ -257,7 +257,7 @@ module Nc_Ncn_test
 
           mu_Ncn_1 = 5.0e+7_core_rknd
 
-          sigma_Ncn_1 = 1.0e+8_core_rknd
+          sigma_Ncn_1 = 7.5e+7_core_rknd
 
           const_corr_chi_Ncn = 0.7_core_rknd
 
