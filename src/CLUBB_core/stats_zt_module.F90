@@ -73,7 +73,8 @@ module stats_zt_module
         iSkw_zt
 
     use stats_variables, only: & 
-        ihm1, & ! Variable(s)
+        icorr_w_hm_ov_adj, & ! Variable(s)
+        ihm1, &
         ihm2, &
         iLWP1, &
         iLWP2, &
@@ -574,6 +575,7 @@ module stats_zt_module
     ! stats_variables)
 
     ! Allocate and initialize hydrometeor statistical variables.
+    allocate( icorr_w_hm_ov_adj(1:hydromet_dim) )
     allocate( ihm1(1:hydromet_dim) )
     allocate( ihm2(1:hydromet_dim) )
     allocate( imu_hm_1(1:hydromet_dim) )
@@ -611,6 +613,7 @@ module stats_zt_module
 
     allocate( iwp2hmp(1:hydromet_dim) )
 
+    icorr_w_hm_ov_adj(:) = 0
     ihm1(:) = 0
     ihm2(:) = 0
     imu_hm_1(:) = 0
@@ -665,6 +668,13 @@ module stats_zt_module
 
     tot_zt_loops = stats_zt%num_output_fields
 
+    if ( any( vars_zt == "corr_w_hm_ov_adj" ) ) then
+       ! Correct for number of variables found under "corr_w_hm_ov_adj".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zt_loops = tot_zt_loops - hydromet_dim
+       ! Add 1 for "corr_w_hm_ov_adj" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
     if ( any( vars_zt == "hmi" ) ) then
        ! Correct for number of variables found under "hmi".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
@@ -790,7 +800,7 @@ module stats_zt_module
     if ( any( vars_zt == "corr_hmx_hmy_i" ) ) then
        ! Correct for number of variables found under "corr_hmxhmy_i".
        ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of correlations between two hydrometeors, which is found by:
+       ! number of correlations of two hydrometeors, which is found by:
        ! (1/2) * hydromet_dim * ( hydromet_dim - 1 ); from the loop size.
        tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
        ! Add 1 for "corr_hmxhmy_i" to the loop size.
@@ -853,8 +863,8 @@ module stats_zt_module
     if ( any( vars_zt == "corr_hmx_hmy_i_n" ) ) then
        ! Correct for number of variables found under "corr_hmxhmy_i_n".
        ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations between two hydrometeors, which is
-       ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! number of normalized correlations of two hydrometeors, which is found
+       ! by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! from the loop size.
        tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
        ! Add 1 for "corr_hmxhmy_i_n" to the loop size.
@@ -3563,7 +3573,7 @@ module stats_zt_module
 
         call stat_assign( var_index=icorr_chi_eta_1, &
                           var_name="corr_chi_eta_1", &
-                          var_description="Correlation between chi (s) and" &
+                          var_description="Correlation of chi (s) and" &
                           // " eta (t) (1st PDF component) [-]", &
                           var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -3574,7 +3584,7 @@ module stats_zt_module
 
         call stat_assign( var_index=icorr_chi_eta_2, &
                           var_name="corr_chi_eta_2", &
-                          var_description="Correlation between chi (s) and" &
+                          var_description="Correlation of chi (s) and" &
                           // " eta (t) (2nd PDF component) [-]", &
                           var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -3584,7 +3594,7 @@ module stats_zt_module
         irrtthl = k
 
         call stat_assign( var_index=irrtthl, var_name="rrtthl", &
-                          var_description="Correlation between rt and thl" &
+                          var_description="Correlation of rt and thl" &
                           // " (both PDF components) [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
@@ -3775,6 +3785,33 @@ module stats_zt_module
              var_description="Smoothed version of wp3 / wp2 [m/s]", var_units="m/s", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
+
+      ! Adjusted overall correlation of w and a hydrometeor for each hydrometeor
+      ! type.  The adjusted overall correlation is the overall correlation of w
+      ! and a hydrometeor multiplied by a constant tunable parameter that has a
+      ! value between 0 and 1, inclusive.
+      case ( 'corr_w_hm_ov_adj' )
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            ! The adjusted overall correlation of w and the hydrometeor.
+            icorr_w_hm_ov_adj(hm_idx) = k
+
+            call stat_assign( var_index=icorr_w_hm_ov_adj(hm_idx), &
+                              var_name="corr_w_"//trim( hm_type(1:2) ) &
+                                       //"_ov_adj", &
+                              var_description="Adjusted overall correlation " &
+                              // "of w and " &
+                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                              // " [-]", &
+                              var_units="-", l_silhs=.false., &
+                              grid_kind=stats_zt )
+
+            k = k + 1
+
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       ! Hydrometeor component mean values for each PDF component and hydrometeor
       ! type.
@@ -4220,7 +4257,7 @@ module stats_zt_module
         icorr_w_chi_1 = k
 
         call stat_assign( var_index=icorr_w_chi_1, var_name="corr_w_chi_1", &
-                          var_description="Correlation between w and chi" &
+                          var_description="Correlation of w and chi" &
                           // " (1st PDF component) -- should be 0 by" &
                           // " CLUBB standards [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -4230,7 +4267,7 @@ module stats_zt_module
         icorr_w_chi_2 = k
 
         call stat_assign( var_index=icorr_w_chi_2, var_name="corr_w_chi_2", &
-                          var_description="Correlation between w and chi" &
+                          var_description="Correlation of w and chi" &
                           // " (2nd PDF component) -- should be 0 by" &
                           // " CLUBB standards [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -4240,7 +4277,7 @@ module stats_zt_module
         icorr_w_eta_1 = k
 
         call stat_assign( var_index=icorr_w_eta_1, var_name="corr_w_eta_1", &
-                          var_description="Correlation between w and eta" &
+                          var_description="Correlation of w and eta" &
                           // " (1st PDF component) -- should be 0 by" &
                           // " CLUBB standards [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -4250,13 +4287,13 @@ module stats_zt_module
         icorr_w_eta_2 = k
 
         call stat_assign( var_index=icorr_w_eta_2, var_name="corr_w_eta_2", &
-                          var_description="Correlation between w and eta" &
+                          var_description="Correlation of w and eta" &
                           // " (2nd PDF component) -- should be 0 by" &
                           // " CLUBB standards [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      ! Correlation between w and a hydrometeor (in-precip) for each PDF
+      ! Correlation of w and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
       case ( 'corr_w_hm_i' )
 
@@ -4264,28 +4301,28 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between w and the hydrometeor in the
+            ! The in-precip correlation of w and the hydrometeor in the
             ! 1st PDF component.
             icorr_w_hm_1(hm_idx) = k
 
             call stat_assign( var_index=icorr_w_hm_1(hm_idx), &
                               var_name="corr_w_"//trim( hm_type(1:2) )//"_1", &
                               var_description="Correlation (in-precip) " &
-                              // "between w and " &
+                              // "of w and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between w and the hydrometeor in the
+            ! The in-precip correlation of w and the hydrometeor in the
             ! 2nd PDF component.
             icorr_w_hm_2(hm_idx) = k
 
             call stat_assign( var_index=icorr_w_hm_2(hm_idx), &
                               var_name="corr_w_"//trim( hm_type(1:2) )//"_2", &
                               var_description="Correlation (in-precip) " &
-                              // "between w and " &
+                              // "of w and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4300,7 +4337,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_w_Ncn_1, &
                            var_name="corr_w_Ncn_1", &
-                           var_description="Correlation between w and N_cn " &
+                           var_description="Correlation of w and N_cn " &
                            // "(1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4310,7 +4347,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_w_Ncn_2, &
                            var_name="corr_w_Ncn_2", &
-                           var_description="Correlation between w and N_cn " &
+                           var_description="Correlation of w and N_cn " &
                            // "(2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4321,7 +4358,7 @@ module stats_zt_module
 
         call stat_assign( var_index=icorr_chi_eta_1_ca, &
                           var_name="corr_chi_eta_1_ca", &
-                          var_description="Correlation between chi (s) and" &
+                          var_description="Correlation of chi (s) and" &
                           // " eta (t) (1st PDF component) found in the" &
                           // " correlation array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
@@ -4332,13 +4369,13 @@ module stats_zt_module
 
         call stat_assign( var_index=icorr_chi_eta_2_ca, &
                           var_name="corr_chi_eta_2_ca", &
-                          var_description="Correlation between chi (s) and" &
+                          var_description="Correlation of chi (s) and" &
                           // " eta (t) (2nd PDF component) found in the" &
                           // " correlation array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      ! Correlation between chi(s) and a hydrometeor (in-precip) for each PDF
+      ! Correlation of chi(s) and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
       case ( 'corr_chi_hm_i' )
 
@@ -4346,28 +4383,28 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between chi and the hydrometeor in the
+            ! The in-precip correlation of chi and the hydrometeor in the
             ! 1st PDF component.
             icorr_chi_hm_1(hm_idx) = k
 
             call stat_assign( var_index=icorr_chi_hm_1(hm_idx), &
                               var_name="corr_chi_"//trim(hm_type(1:2))//"_1", &
                               var_description="Correlation (in-precip) " &
-                              // "between chi (s) and " &
+                              // "of chi (s) and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between chi and the hydrometeor in the
+            ! The in-precip correlation of chi and the hydrometeor in the
             ! 2nd PDF component.
             icorr_chi_hm_2(hm_idx) = k
 
             call stat_assign( var_index=icorr_chi_hm_2(hm_idx), &
                               var_name="corr_chi_"//trim(hm_type(1:2))//"_2", &
                               var_description="Correlation (in-precip) " &
-                              // "between chi (s) and " &
+                              // "of chi (s) and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4382,7 +4419,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_chi_Ncn_1, &
                            var_name="corr_chi_Ncn_1", &
-                           var_description="Correlation between chi and N_cn " &
+                           var_description="Correlation of chi and N_cn " &
                            // "(1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4392,13 +4429,13 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_chi_Ncn_2, &
                            var_name="corr_chi_Ncn_2", &
-                           var_description="Correlation between chi and N_cn " &
+                           var_description="Correlation of chi and N_cn " &
                            // "(2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
 
-      ! Correlation between eta(t) and a hydrometeor (in-precip) for each PDF
+      ! Correlation of eta(t) and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
       case ( 'corr_eta_hm_i' )
 
@@ -4406,28 +4443,28 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between eta and the hydrometeor in the
+            ! The in-precip correlation of eta and the hydrometeor in the
             ! 1st PDF component.
             icorr_eta_hm_1(hm_idx) = k
 
             call stat_assign( var_index=icorr_eta_hm_1(hm_idx), &
                               var_name="corr_eta_"//trim(hm_type(1:2))//"_1", &
                               var_description="Correlation (in-precip) " &
-                              // "between eta (t) and " &
+                              // "of eta (t) and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between eta and the hydrometeor in the
+            ! The in-precip correlation of eta and the hydrometeor in the
             ! 2nd PDF component.
             icorr_eta_hm_2(hm_idx) = k
 
             call stat_assign( var_index=icorr_eta_hm_2(hm_idx), &
                               var_name="corr_eta_"//trim(hm_type(1:2))//"_2", &
                               var_description="Correlation (in-precip) " &
-                              // "between eta (t) and " &
+                              // "of eta (t) and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4442,7 +4479,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_eta_Ncn_1, &
                            var_name="corr_eta_Ncn_1", &
-                           var_description="Correlation between eta and N_cn " &
+                           var_description="Correlation of eta and N_cn " &
                            // "(1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4452,13 +4489,13 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_eta_Ncn_2, &
                            var_name="corr_eta_Ncn_2", &
-                           var_description="Correlation between eta and N_cn " &
+                           var_description="Correlation of eta and N_cn " &
                            // "(2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
 
-      ! Correlation between Ncn and a hydrometeor (in-precip) for each PDF
+      ! Correlation of Ncn and a hydrometeor (in-precip) for each PDF
       ! component and hydrometeor type.
       case ( 'corr_Ncn_hm_i' )
 
@@ -4466,28 +4503,28 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between Ncn and the hydrometeor in the
+            ! The in-precip correlation of Ncn and the hydrometeor in the
             ! 1st PDF component.
             icorr_Ncn_hm_1(hm_idx) = k
 
             call stat_assign( var_index=icorr_Ncn_hm_1(hm_idx), &
                               var_name="corr_Ncn_"//trim(hm_type(1:2))//"_1", &
                               var_description="Correlation (in-precip) " &
-                              // "between N_cn and " &
+                              // "of N_cn and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between Ncn and the hydrometeor in the
+            ! The in-precip correlation of Ncn and the hydrometeor in the
             ! 2nd PDF component.
             icorr_Ncn_hm_2(hm_idx) = k
 
             call stat_assign( var_index=icorr_Ncn_hm_2(hm_idx), &
                               var_name="corr_Ncn_"//trim(hm_type(1:2))//"_2", &
                               var_description="Correlation (in-precip) " &
-                              // "between N_cn and " &
+                              // "of N_cn and " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4496,7 +4533,7 @@ module stats_zt_module
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      ! Correlation (in-precip) between two different hydrometeors (hmx and hmy)
+      ! Correlation (in-precip) of two different hydrometeors (hmx and hmy)
       ! for each PDF component and hydrometeor type.
       case ( 'corr_hmx_hmy_i' )
 
@@ -4508,7 +4545,7 @@ module stats_zt_module
 
                hmy_type = hydromet_list(hmy_idx)
 
-               ! The in-precip correlation between hmx and hmy in the 1st PDF
+               ! The in-precip correlation of hmx and hmy in the 1st PDF
                ! component.
                icorr_hmx_hmy_1(hmy_idx,hmx_idx) = k
 
@@ -4516,7 +4553,7 @@ module stats_zt_module
                                  var_name="corr_"//trim( hmx_type(1:2) )//"_" &
                                  // trim( hmy_type(1:2) )//"_1", &
                                  var_description="Correlation (in-precip) " &
-                                 // "between " &
+                                 // "of " &
                                  // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
                                  // " and " &
                                  // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
@@ -4525,7 +4562,7 @@ module stats_zt_module
 
                k = k + 1
 
-               ! The in-precip correlation between hmx and hmy in the 2nd PDF
+               ! The in-precip correlation of hmx and hmy in the 2nd PDF
                ! component.
                icorr_hmx_hmy_2(hmy_idx,hmx_idx) = k
 
@@ -4533,7 +4570,7 @@ module stats_zt_module
                                  var_name="corr_"//trim( hmx_type(1:2) )//"_" &
                                  // trim( hmy_type(1:2) )//"_2", &
                                  var_description="Correlation (in-precip) " &
-                                 // "between " &
+                                 // "of " &
                                  // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
                                  // " and " &
                                  // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
@@ -4546,7 +4583,7 @@ module stats_zt_module
 
          enddo ! hmx_idx = 1, hydromet_dim, 1
 
-      ! Correlation (in-precip) between w and ln hm for each PDF component and
+      ! Correlation (in-precip) of w and ln hm for each PDF component and
       ! hydrometeor type.
       case ( 'corr_w_hm_i_n' )
 
@@ -4554,28 +4591,28 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between w and ln hm in the 1st PDF
+            ! The in-precip correlation of w and ln hm in the 1st PDF
             ! component.
             icorr_w_hm_1_n(hm_idx) = k
 
             call stat_assign( var_index=icorr_w_hm_1_n(hm_idx), &
                               var_name="corr_w_"//trim(hm_type(1:2))//"_1_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between w and ln " &
+                              // "of w and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between w and ln hm in the 2nd PDF
+            ! The in-precip correlation of w and ln hm in the 2nd PDF
             ! component.
             icorr_w_hm_2_n(hm_idx) = k
 
             call stat_assign( var_index=icorr_w_hm_2_n(hm_idx), &
                               var_name="corr_w_"//trim(hm_type(1:2))//"_2_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between w and ln " &
+                              // "of w and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4590,7 +4627,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_w_Ncn_1_n, &
                            var_name="corr_w_Ncn_1_n", &
-                           var_description="Correlation between w and " &
+                           var_description="Correlation of w and " &
                            // "ln N_cn (1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4600,13 +4637,13 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_w_Ncn_2_n, &
                            var_name="corr_w_Ncn_2_n", &
-                           var_description="Correlation between w and " &
+                           var_description="Correlation of w and " &
                            // "ln N_cn (2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
 
-      ! Correlation (in-precip) between chi and ln hm for each PDF component and
+      ! Correlation (in-precip) of chi and ln hm for each PDF component and
       ! hydrometeor type.
       case ( 'corr_chi_hm_i_n' )
 
@@ -4614,7 +4651,7 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between chi and ln hm in the 1st PDF
+            ! The in-precip correlation of chi and ln hm in the 1st PDF
             ! component.
             icorr_chi_hm_1_n(hm_idx) = k
 
@@ -4622,14 +4659,14 @@ module stats_zt_module
                               var_name="corr_chi_"//trim(hm_type(1:2)) &
                               // "_1_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between chi (s) and ln " &
+                              // "of chi (s) and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between chi(s) and ln hm in the 2nd PDF
+            ! The in-precip correlation of chi(s) and ln hm in the 2nd PDF
             ! component.
             icorr_chi_hm_2_n(hm_idx) = k
 
@@ -4637,7 +4674,7 @@ module stats_zt_module
                               var_name="corr_chi_"//trim(hm_type(1:2)) &
                               // "_2_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between chi (s) and ln " &
+                              // "of chi (s) and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4652,7 +4689,7 @@ module stats_zt_module
  
         call stat_assign( var_index=icorr_chi_Ncn_1_n, &
                            var_name="corr_chi_Ncn_1_n", &
-                           var_description="Correlation between chi (s) and " &
+                           var_description="Correlation of chi (s) and " &
                            // "ln N_cn (1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4662,13 +4699,13 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_chi_Ncn_2_n, &
                            var_name="corr_chi_Ncn_2_n", &
-                           var_description="Correlation between chi (s) and " &
+                           var_description="Correlation of chi (s) and " &
                            // "ln N_cn (2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
 
-      ! Correlation (in-precip) between eta and ln hm for each PDF component and
+      ! Correlation (in-precip) of eta and ln hm for each PDF component and
       ! hydrometeor type.
       case ( 'corr_eta_hm_i_n' )
 
@@ -4676,7 +4713,7 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between eta and ln hm in the 1st PDF
+            ! The in-precip correlation of eta and ln hm in the 1st PDF
             ! component.
             icorr_eta_hm_1_n(hm_idx) = k
 
@@ -4684,14 +4721,14 @@ module stats_zt_module
                               var_name="corr_eta_"//trim( hm_type(1:2) ) &
                               // "_1_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between eta (t) and ln " &
+                              // "of eta (t) and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between eta and ln hm in the 2nd PDF
+            ! The in-precip correlation of eta and ln hm in the 2nd PDF
             ! component.
             icorr_eta_hm_2_n(hm_idx) = k
 
@@ -4699,7 +4736,7 @@ module stats_zt_module
                               var_name="corr_eta_"//trim( hm_type(1:2) ) &
                               // "_2_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between eta(t) and ln " &
+                              // "of eta(t) and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4714,7 +4751,7 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_eta_Ncn_1_n, &
                            var_name="corr_eta_Ncn_1_n", &
-                           var_description="Correlation between eta (t) and " &
+                           var_description="Correlation of eta (t) and " &
                            // "ln N_cn (1st PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
@@ -4724,13 +4761,13 @@ module stats_zt_module
 
          call stat_assign( var_index=icorr_eta_Ncn_2_n, &
                            var_name="corr_eta_Ncn_2_n", &
-                           var_description="Correlation between eta (t) and " &
+                           var_description="Correlation of eta (t) and " &
                            // "ln N_cn (2nd PDF component) [-]", &
                            var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
          k = k + 1
 
-      ! Correlation (in-precip) between ln Ncn and ln hm for each PDF component
+      ! Correlation (in-precip) of ln Ncn and ln hm for each PDF component
       ! and hydrometeor type.
       case ( 'corr_Ncn_hm_i_n' )
 
@@ -4738,7 +4775,7 @@ module stats_zt_module
 
             hm_type = hydromet_list(hm_idx)
 
-            ! The in-precip correlation between ln Ncn and ln hm in the 1st PDF
+            ! The in-precip correlation of ln Ncn and ln hm in the 1st PDF
             ! component.
             icorr_Ncn_hm_1_n(hm_idx) = k
 
@@ -4746,14 +4783,14 @@ module stats_zt_module
                               var_name="corr_Ncn_"//trim(hm_type(1:2)) &
                               // "_1_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between ln N_cn and ln " &
+                              // "of ln N_cn and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (1st PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
 
             k = k + 1
 
-            ! The in-precip correlation between ln Ncn and ln hm in the 2nd PDF
+            ! The in-precip correlation of ln Ncn and ln hm in the 2nd PDF
             ! component.
             icorr_Ncn_hm_2_n(hm_idx) = k
 
@@ -4761,7 +4798,7 @@ module stats_zt_module
                               var_name="corr_Ncn_"//trim(hm_type(1:2)) &
                               // "_2_n", &
                               var_description="Correlation (in-precip) " &
-                              // "between ln N_cn and ln " &
+                              // "of ln N_cn and ln " &
                               // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                               // " (2nd PDF component) [-]", &
                               var_units="-", l_silhs=.false., grid_kind=stats_zt )
@@ -4770,7 +4807,7 @@ module stats_zt_module
 
          enddo ! hm_idx = 1, hydromet_dim, 1
 
-      ! Correlation (in-precip) between ln hmx and ln hmy (hmx and hmy are two
+      ! Correlation (in-precip) of ln hmx and ln hmy (hmx and hmy are two
       ! different hydrometeors) for each PDF component and hydrometeor type.
       case ( 'corr_hmx_hmy_i_n' )
 
@@ -4782,7 +4819,7 @@ module stats_zt_module
 
                hmy_type = hydromet_list(hmy_idx)
 
-               ! The in-precip correlation between ln hmx and ln hmy in the 1st
+               ! The in-precip correlation of ln hmx and ln hmy in the 1st
                ! PDF component.
                icorr_hmx_hmy_1_n(hmy_idx,hmx_idx) = k
 
@@ -4790,7 +4827,7 @@ module stats_zt_module
                                  var_name="corr_"//trim( hmx_type(1:2) )//"_" &
                                  // trim( hmy_type(1:2) )//"_1_n", &
                                  var_description="Correlation (in-precip) " &
-                                 // "between ln " &
+                                 // "of ln " &
                                  // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
                                  // " and ln " &
                                  // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &
@@ -4799,7 +4836,7 @@ module stats_zt_module
 
                k = k + 1
 
-               ! The in-precip correlation between ln hmx and ln hmy in the 2nd
+               ! The in-precip correlation of ln hmx and ln hmy in the 2nd
                ! PDF component.
                icorr_hmx_hmy_2_n(hmy_idx,hmx_idx) = k
 
@@ -4807,7 +4844,7 @@ module stats_zt_module
                                  var_name="corr_"//trim( hmx_type(1:2) )//"_" &
                                  // trim( hmy_type(1:2) )//"_2_n", &
                                  var_description="Correlation (in-precip) " &
-                                 // "between ln " &
+                                 // "of ln " &
                                  // hmx_type(1:1)//"_"//trim( hmx_type(2:2) ) &
                                  // " and ln " &
                                  // hmy_type(1:1)//"_"//trim( hmy_type(2:2) ) &

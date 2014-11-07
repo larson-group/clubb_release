@@ -411,7 +411,8 @@ module setup_clubb_pdf_params
           ! New formulations to calculate hm1 and hm2 based on the overall
           ! correlation between w and the hydrometeor species.
           call component_means_hydromet_corr( nz, hydromet, wphydrometp_zt, &
-                                              hydrometp2_zt, wp2_zt, mixt_frac, &
+                                              hydrometp2_zt, wp2_zt, &
+                                              mixt_frac, l_stats_samp, &
                                               hm1, hm2 )
 
        else
@@ -1125,7 +1126,8 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine component_means_hydromet_corr( nz, hydromet, wphydrometp_zt, &
-                                            hydrometp2_zt, wp2_zt, mixt_frac, &
+                                            hydrometp2_zt, wp2_zt, &
+                                            mixt_frac, l_stats_samp, &
                                             hm_1, hm_2 )
 
     ! Description:
@@ -1296,6 +1298,13 @@ module setup_clubb_pdf_params
     use parameters_tunable, only: &
         coef_hm_1_hm_2_corr_adj  ! Variable(s)
 
+    use stats_type_utilities, only: &
+        stat_update_var_pt  ! Procedure(s)
+
+    use stats_variables, only: &
+        icorr_w_hm_ov_adj, & ! Variable(s)
+        stats_zt
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -1313,6 +1322,9 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       wp2_zt,    & ! Variance of w, <w'^2> (interp. to t-levs.)  [m^2/s^2]
       mixt_frac    ! Mixture fraction                            [-]
+
+    logical, intent(in) :: &
+      l_stats_samp     ! Flag to record statistical output.
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -1332,6 +1344,9 @@ module setup_clubb_pdf_params
 
     integer :: k, i  ! Loop indices
 
+
+    ! Initialize the adjusted overall correlation of w and the hydrometeor to 0.
+    corr_w_hm_overall_adj = zero
 
     !!! Find hm_1 and hm_2 based on the overall correlation of w and the
     !!! hydrometeor, corr_w_hm_overall.
@@ -1429,6 +1444,17 @@ module setup_clubb_pdf_params
              hm_2(k,i) = hydromet(k,i)
 
           endif  ! hydromet(k,i) > hydromet_tol(i)
+
+          ! Statistics
+          if ( l_stats_samp ) then
+
+             if ( icorr_w_hm_ov_adj(i) > 0 ) then
+                ! Adjusted overall correlation of w and hm.
+                call stat_update_var_pt( icorr_w_hm_ov_adj(i), k, &
+                                         corr_w_hm_overall_adj(k,i), stats_zt )
+             endif
+       
+          endif ! l_stats_samp
 
        enddo ! i = 1, hydromet_dim, 1
 
