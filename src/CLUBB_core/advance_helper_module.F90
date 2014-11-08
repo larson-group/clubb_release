@@ -162,6 +162,8 @@ module advance_helper_module
       ! Description:
       !   Stability Factor
       !
+      ! References:
+      !
       !--------------------------------------------------------------------
 
       use parameters_model, only: &
@@ -179,14 +181,6 @@ module advance_helper_module
       use clubb_precision, only:  &
         core_rknd ! Variable(s)
 
-      use stats_type_utilities, only: &
-        stat_update_var ! Procedure(s)
-
-      use stats_variables, only : &
-        l_stats_samp, &  ! Variable(s)
-        istability_correction, &
-        stats_zm
-
       implicit none
 
       ! Input Variables
@@ -201,10 +195,10 @@ module advance_helper_module
 
       ! Local Variables
       real( kind = core_rknd ) :: &
-        lambda0_stability_coef
+        lambda0_stability_coef ! []
 
       real( kind = core_rknd ), dimension(gr%nz) :: &
-        brunt_vaisala_freq, &
+        brunt_vaisala_freq, & !  []
         lambda0_stability
 
       !------------ Begin Code --------------
@@ -214,10 +208,6 @@ module advance_helper_module
 
       stability_correction = 1.0_core_rknd &
         + lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em
-
-      if ( l_stats_samp ) then
-        call stat_update_var( istability_correction, stability_correction, stats_zm )
-      end if
 
       return
     end function calc_stability_correction

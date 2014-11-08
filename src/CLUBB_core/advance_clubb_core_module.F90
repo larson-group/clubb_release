@@ -15,7 +15,7 @@ module advance_clubb_core_module
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2013
+!   This code and the source code it references are (C) 2006-2014
 !   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin,
 !   David P. Schanen, Adam J. Smith, and Michael J. Falk.
 !
@@ -113,7 +113,8 @@ module advance_clubb_core_module
       fstderr, &
       zero_threshold, &
       three_halves, &
-      zero
+      zero, &
+      unused_var
 
     use parameters_tunable, only: & 
       gamma_coefc,  & ! Variable(s)
@@ -189,7 +190,6 @@ module advance_clubb_core_module
       ug, &
       um_ref, &
       vm_ref
-
     use variables_diagnostic_module, only: &
       wp2_zt, & 
       thlp2_zt, & 
@@ -335,6 +335,7 @@ module advance_clubb_core_module
     use stats_variables, only: &
       irfrzm, & ! Variable(s)
       icloud_frac_refined, &
+      istability_correction, &
       ircm_refined
 
     use stats_variables, only: &
@@ -354,6 +355,9 @@ module advance_clubb_core_module
 
     use pdf_utilities, only: &
       compute_mean_binormal
+
+    use advance_helper_module, only: &
+      calc_stability_correction ! Procedure(s)
 
     implicit none
 
@@ -385,6 +389,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), parameter :: &
       chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with respect to ice
                                    ! (zero for liquid)
+    logical, parameter :: &
+      l_stability_correct_tau_zm = .false. ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -722,6 +728,11 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rrm                 ! Rain water mixing ratio
     
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+       stability_correction, & ! Stability correction factor
+       tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
+       tau_C6_zm               ! Tau values used for the C6 (pr1) term in wpxp [s]
+
     real( kind = core_rknd ) :: Lscale_max
 
     !----- Begin Code -----
@@ -855,9 +866,11 @@ module advance_clubb_core_module
     Skw_zt(1:gr%nz) = Skw_func( wp2_zt(1:gr%nz), wp3(1:gr%nz) )
     Skw_zm(1:gr%nz) = Skw_func( wp2(1:gr%nz), wp3_zm(1:gr%nz) )
 
-    if (l_stats_samp) then
-      call stat_update_var(iSkw_zt, Skw_zt, stats_zt)
-      call stat_update_var(iSkw_zm, Skw_zm, stats_zm)
+    if ( l_stats_samp ) then
+      call stat_update_var( iSkw_zt, Skw_zt, & ! In
+                            stats_zt ) ! In/Out
+      call stat_update_var( iSkw_zm, Skw_zm, &
+                            stats_zm ) ! In/Out
     end if
 
     ! The right hand side of this conjunction is only for reducing cpu time,
@@ -881,10 +894,10 @@ module advance_clubb_core_module
 
     if ( l_stats_samp ) then
       call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
-                            stats_zm )                             ! intent(inout)
+                            stats_zm )                       ! intent(inout)
     endif
 
-    ! Smooth in the vertical
+    ! Smooth in the vertical using interpolation
     sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
 
     ! Interpolate the the stats_zt grid
@@ -909,7 +922,7 @@ module advance_clubb_core_module
     ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
     !---------------------------------------------------------------------------
 
-    ! Iterpolate variances to the stats_zt grid (statistics and closure)
+    ! Interpolate variances to the stats_zt grid (statistics and closure)
     thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
@@ -1530,8 +1543,8 @@ module advance_clubb_core_module
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down )                 ! intent(out)
       else
-        Lscale_pert_1 = -999._core_rknd
-        Lscale_pert_2 = -999._core_rknd
+        Lscale_pert_1 = unused_var ! Undefined
+        Lscale_pert_2 = unused_var ! Undefined
 
       end if ! l_avg_Lscale
 
@@ -1585,6 +1598,11 @@ module advance_clubb_core_module
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
+
+      ! Determine the static stability corrected version of tau_zm
+      ! Create a damping time scale that is more strongly damped at the
+      ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
+      tau_N2_zm = tau_zm / calc_stability_correction( thlm, Lscale, em )
 
       ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
@@ -1742,12 +1760,32 @@ module advance_clubb_core_module
         w_2_zm        = zt2zm( pdf_params%w_2 )
         varnce_w_1_zm = zt2zm( pdf_params%varnce_w_1 )
         varnce_w_2_zm = zt2zm( pdf_params%varnce_w_2 )
-        mixt_frac_zm = zt2zm( pdf_params%mixt_frac )
+        mixt_frac_zm  = zt2zm( pdf_params%mixt_frac )
       end if
+
+      ! Determine stability correction factor
+      stability_correction = calc_stability_correction( thlm, Lscale, em ) ! In
+      if ( l_stats_samp ) then
+        call stat_update_var( istability_correction, stability_correction, & ! In
+                              stats_zm ) ! In/Out
+      end if
+
+      ! Here we determine if we're using tau_zm or tau_N2_zm, which is tau
+      ! that has been stability corrected for stably stratified regions.
+      ! -dschanen 7 Nov 2014
+      if ( l_stability_correct_tau_zm ) then
+        tau_N2_zm = tau_zm / stability_correction
+        tau_C6_zm = tau_N2_zm
+
+      else
+        tau_N2_zm = unused_var 
+        tau_C6_zm = tau_zm
+
+      end if ! l_stability_correction
 
       call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
-                            tau_zm, Skw_zm, rtpthvp, rtm_forcing,     & ! intent(in)
+                            tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing,  & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
                             thlm_forcing, wpthlp_forcing, thlm_ref,   & ! intent(in)
                             rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm,    & ! intent(in)
