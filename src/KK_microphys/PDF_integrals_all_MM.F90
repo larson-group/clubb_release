@@ -97,8 +97,8 @@ module PDF_integrals_all_mixed_moments
     real( kind = dp ) ::  &
       sigma_sum, & !
       s_cc,      & !
-      q_dp,      & ! integer q converted to a real
-      r_dp         ! integer r converted to a real
+      q_dp,      & ! integer q converted to a double-precision real
+      r_dp         ! integer r converted to a double-precision real
 
     ! ---- Begin Code ----
 
@@ -229,7 +229,7 @@ module PDF_integrals_all_mixed_moments
     real( kind = dp ) ::  &
       sigma_sum, & !
       s_cc,      & !
-      q_dp         ! integer q converted to a real
+      q_dp         ! integer q converted to a double-precision real
 
     ! Initialize sigma_sum
     sigma_sum = zero_dp
