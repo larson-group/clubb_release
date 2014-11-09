@@ -130,8 +130,9 @@ module variables_diagnostic_module
 ! hydrometeors variable arrays
   real( kind = core_rknd ), allocatable, dimension(:,:), public :: &
     hydromet,    & ! Mean hydrometeor (thermodynamic levels)           [units]
+    hydrometp2,  & ! Variance of a hydrometeor (overall) (m-levs.)     [units^2]
     wphydrometp    ! Covariance of w and hydrometeor (momentum levels) [(m/s)un]
-!$omp threadprivate(hydromet,wphydrometp)
+!$omp threadprivate( hydromet, hydrometp2, wphydrometp )
 
 ! Cloud droplet concentration arrays
   real( kind = core_rknd ), allocatable, dimension(:), public :: &
@@ -327,6 +328,7 @@ module variables_diagnostic_module
     ! Microphysics Variables
     allocate( Nccnm(1:nz) )
     allocate( hydromet(1:nz,1:hydromet_dim) )    ! All hydrometeor mean fields
+    allocate( hydrometp2(1:nz,1:hydromet_dim) )  ! All < h_m'^2 > fields
     allocate( wphydrometp(1:nz,1:hydromet_dim) ) ! All < w'h_m' > fields
     allocate( Ncm(1:nz) )   ! Mean cloud droplet concentration, < N_c >
     allocate( wpNcp(1:nz) ) ! < w'N_c' >
@@ -509,9 +511,10 @@ module variables_diagnostic_module
     Nccnm(1:nz) = 0.0_core_rknd ! CCN concentration (COAMPS/MG)
 
     do i = 1, hydromet_dim, 1
-      hydromet(1:nz,i)    = 0.0_core_rknd
-      wphydrometp(1:nz,i) = 0.0_core_rknd
-    end do
+       hydromet(1:nz,i)    = 0.0_core_rknd
+       hydrometp2(1:nz,i)  = 0.0_core_rknd
+       wphydrometp(1:nz,i) = 0.0_core_rknd
+    enddo
 
     ! Cloud droplet concentration
     Ncm(1:nz)   = 0.0_core_rknd
@@ -635,6 +638,7 @@ module variables_diagnostic_module
     deallocate( Nccnm )
 
     deallocate( hydromet )     ! Hydrometeor mean fields
+    deallocate( hydrometp2 )   ! < h_m'^2 > fields
     deallocate( wphydrometp )  ! < w'h_m' > fields
     deallocate( Ncm )          ! Mean cloud droplet concentration, < N_c >
     deallocate( wpNcp )        ! < w'N_c' >

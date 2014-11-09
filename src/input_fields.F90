@@ -40,7 +40,9 @@ module inputfields
     l_input_thvm = .false., l_input_rrm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
     l_input_rsm = .false., l_input_rim = .false., &
-    l_input_rgm = .false., l_input_Nccnm = .false., l_input_Nim = .false., & 
+    l_input_rgm = .false., l_input_Nccnm = .false., l_input_Nim = .false., &
+    l_input_rrp2 = .false., l_input_Nrp2 = .false., &
+    l_input_wprrp = .false., l_input_wpNrp = .false., &
     l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
@@ -64,7 +66,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 63, & ! The number of input fields for SAM
+    num_sam_inputfields = 66, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -228,6 +230,8 @@ module inputfields
 
     use variables_diagnostic_module, only: & 
         hydromet, & ! Variable(s)
+        hydrometp2, &
+        wphydrometp, &
         Ncm, &
         tau_zm, &
         tau_zt, & 
@@ -268,12 +272,12 @@ module inputfields
         iirrm, iiNrm, iirsm, iirim, iirgm, iiNim
 
     use stat_file_utils, only: & 
-      LES_grid_to_CLUBB_grid, & ! Procedure(s)
-      CLUBB_levels_within_LES_domain
+        LES_grid_to_CLUBB_grid, & ! Procedure(s)
+        CLUBB_levels_within_LES_domain
 
     use extrapolation, only: &
-      lin_ext_zt_bottom, &
-      lin_ext_zm_bottom
+        lin_ext_zt_bottom, &
+        lin_ext_zm_bottom
 
     use parameters_microphys, only: &
         microphys_scheme, & ! Variable(s)
@@ -282,7 +286,7 @@ module inputfields
     use soil_vegetation, only: deep_soil_T_in_K, sfc_soil_T_in_K, veg_T_in_K
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -308,7 +312,7 @@ module inputfields
     real( kind = core_rknd), dimension(gr%nz), target :: &
       temp_Nrm, temp_Ncm, temp_rgm, temp_rim, &
       temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
-      temp_Nim ! temporary variable
+      temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp ! temp. variables
 
     type (input_field), dimension(:), allocatable :: &
       SAM_variables, & ! A list of SAM variables to read in.
@@ -1947,6 +1951,50 @@ module inputfields
 
       k = k + 1
 
+      temp_rrp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_rrp2
+      SAM_variables(k)%input_name = "RRP2"
+      SAM_variables(k)%clubb_var => temp_rrp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_Nrp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_Nrp2
+      SAM_variables(k)%input_name = "NRP2"
+      SAM_variables(k)%clubb_var => temp_Nrp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_wprrp = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_wprrp
+      SAM_variables(k)%input_name = "WPRRP"
+      SAM_variables(k)%clubb_var => temp_wprrp
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_wpNrp = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_wpNrp
+      SAM_variables(k)%input_name = "WPNRP"
+      SAM_variables(k)%clubb_var => temp_wpNrp
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
       SAM_variables(k)%l_input_var = l_input_thlm_forcing
       SAM_variables(k)%clubb_name = "thlm_forcing"
       SAM_variables(k)%input_name = "none"
@@ -2103,7 +2151,7 @@ module inputfields
         end if
       end do
        
-      ! Add hydromet variables.
+      ! Add hydrometeor variables.
       if( l_input_Nrm .and. iiNrm > 0) then
         hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm) = &
                    temp_Nrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
@@ -2138,6 +2186,26 @@ module inputfields
         hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirsm) = &
                    temp_rsm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
+
+      if ( l_input_rrp2 .and. iirrm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrm) &
+         = temp_rrp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_Nrp2 .and. iiNrm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm) &
+         = temp_Nrp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_wprrp .and. iirrm > 0 ) then
+         wphydrometp(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrm) &
+         = temp_wprrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_wpNrp .and. iiNrm > 0 ) then
+         wphydrometp(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm) &
+         = temp_wpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
 
       if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
 
@@ -2799,7 +2867,8 @@ module inputfields
       l_input_thl_1, l_input_thl_2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
       l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc_1, l_input_rc_2, &
       l_input_thvm, l_input_rrm,l_input_Nrm,  & 
-      l_input_rsm, l_input_rim, l_input_rgm,  & 
+      l_input_rsm, l_input_rim, l_input_rgm,  &
+      l_input_rrp2, l_input_Nrp2, l_input_wprrp, l_input_wpNrp, & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
       l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
@@ -2856,6 +2925,10 @@ module inputfields
     l_input_rsm = .false.
     l_input_rim = .false.
     l_input_rgm = .false.
+    l_input_rrp2 = .false.
+    l_input_Nrp2 = .false.
+    l_input_wprrp = .false.
+    l_input_wpNrp = .false.
     l_input_thlm_forcing = .false.
     l_input_rtm_forcing = .false.
     l_input_up2 = .false.

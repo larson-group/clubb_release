@@ -49,7 +49,7 @@ module clubb_driver
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       thvm, Lscale, Skw_zm, Kh_zm, K_hm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
-      hydromet, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
+      hydromet, hydrometp2, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
 
@@ -418,9 +418,6 @@ module clubb_driver
     real( kind = core_rknd ), allocatable, dimension(:,:) :: &
       hydromet_vel_covar_zt_impc, & ! Imp. comp. <V_xx'x_x'> t-levs [m/s]
       hydromet_vel_covar_zt_expc    ! Exp. comp. <V_xx'x_x'> t-levs [units(m/s)]
-
-    real( kind = core_rknd ), allocatable, dimension(:,:) :: &
-      hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     real( kind = core_rknd ), allocatable, dimension(:) :: &
       rfrzm    ! Total ice-phase water mixing ratio        [kg/kg]
@@ -968,9 +965,6 @@ module clubb_driver
     allocate( hydromet_vel_covar_zt_impc(gr%nz,hydromet_dim) )
     allocate( hydromet_vel_covar_zt_expc(gr%nz,hydromet_dim) )
 
-    ! Allocate the overall variance of a hydrometeor, <hm'^2>.
-    allocate( hydrometp2(gr%nz,hydromet_dim) )
-
     ! Initialize to 0.
     hydromet_mc = zero
     Ncm_mc      = zero
@@ -979,8 +973,6 @@ module clubb_driver
 
     hydromet_vel_covar_zt_impc = zero
     hydromet_vel_covar_zt_expc = zero
-
-    hydrometp2 = zero
 
     allocate( rfrzm(gr%nz) )
     rfrzm = zero
@@ -1518,8 +1510,7 @@ module clubb_driver
 
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
-                hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc, &
-                hydrometp2 )
+                hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
                 lh_sample_point_weights, Nc_in_cloud )
