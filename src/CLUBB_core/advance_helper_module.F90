@@ -202,12 +202,12 @@ module advance_helper_module
         lambda0_stability
 
       !------------ Begin Code --------------
-      lambda0_stability_coef = 0.04_core_rknd
+      lambda0_stability_coef = 0.03_core_rknd
       brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
       lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
 
       stability_correction = 1.0_core_rknd &
-        + lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em
+        + min( lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
 
       return
     end function calc_stability_correction
