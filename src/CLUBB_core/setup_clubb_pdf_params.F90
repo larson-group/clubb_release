@@ -1207,38 +1207,59 @@ module setup_clubb_pdf_params
     ! is exactly 0, hm_1 = hm_2 = <hm>.
     !
     ! What happens when the overall correlation of w and hm is at some
-    ! intermediate value?  A quadratic polynomial can connect the three points
-    ! listed above.  The equation for hm_1 is given by:
+    ! intermediate value?  A function, based on the value of corr_w_hm_overall,
+    ! is used to connect the three points listed above.  The function, when
+    ! written to calculate hm_1, must be MONOTONICALLY INCREASING over the
+    ! domain -1 <= corr_w_hm_overall <= 1.  A quadratic polynomial used to
+    ! connect the three points for hm_1 (those points are (-1,0), (0,<hm>), and
+    ! (1,<hm>/a)) is only monotonically increasing over the domain when
+    ! 0.25 <= a <= 0.75.  Since "a" is often outside that range in highly skewed
+    ! cases, a quadratic polynomial cannot be used.  Other options include a
+    ! power-law fit and a piecewise linear fit.  I have opted for the power-law
+    ! fit.
     !
-    ! hm_1 = A * corr_w_hm_overall^2 + B * corr_w_hm_overall + C.
+    ! A power law is given by the equation:
+    !
+    ! hm_1 = A * x^kappa.
+    !
+    ! Since hm_1 is based on corr_w_hm_overall, and hm_1 must be positive and
+    ! monotonically increasing over the domain -1 <= corr_w_hm_overall <= 1,
+    ! the coefficient A, the value of x, and the exponent kappa must be
+    ! positive.  The equation for hm_1 is given by:
+    !
+    ! hm_1 = A * ( 1 + corr_w_hm_overall )^kappa.
     !
     ! The three points listed above result in:
     !
-    ! <hm>/a = A * (1)^2  + B * (1)  + C;
-    ! <hm>   = A * (0)^2  + B * (0)  + C;
-    ! 0      = A * (-1)^2 + B * (-1) + C;
+    ! <hm>/a = A * ( 1 + 1 )^kappa;
+    ! <hm>   = A * ( 1 + 0 )^kappa;
+    ! 0      = A * ( 1 + -1 )^kappa;
     !
-    ! which simplifies to:
+    ! and since 1^kappa = 1:
     !
-    ! <hm>/a = A + B + C;
-    ! <hm>   = C;
-    ! 0      = A - B + C;
+    ! <hm>/a = A * 2^kappa;
+    ! <hm>   = A;
+    ! 0      = A * 0^kappa;
     !
-    ! which further simplifies to (since C = <hm>):
+    ! which further simplifies to (since A = <hm>):
     !
-    ! <hm>/a = A + B + <hm>;
-    ! 0      = A - B + <hm>.
+    ! <hm>/a = <hm> * 2^kappa;
+    ! 0      = <hm> * 0^kappa.
     !
-    ! The result from solving this system of equations is:
+    ! As long as kappa > 0, the equation will work out for 0 = <hm> * 0^kappa.
+    ! This leaves solving for kappa to <hm>/a = <hm> * 2^kappa.  Dividing both
+    ! sides by <hm>, the equation reduces to:
     !
-    ! A = <hm>/(2a) - <hm> = <hm> * ( 1/(2a) - 1 );
-    ! B = <hm>/(2a); and
-    ! C = <hm>.
+    ! 1/a = 2^kappa;
+    ! ln( 1/a ) = ln( 2^kappa );
+    ! ln( 1/a ) = kappa * ln( 2 ); and
+    ! kappa = ln( 1/a ) / ln( 2 ).
     !
     ! The equation for hm_1 becomes:
     !
-    ! hm_1 = <hm> * ( 1/(2a) - 1 ) * corr_w_hm_overall^2
-    !        + <hm>/(2a) * corr_w_hm_overall + <hm>.
+    ! hm_1 = <hm> * ( 1 + corr_w_hm_overall )^( ln( 1/a ) / ln( 2 ) ).
+    !
+    ! Since 1/a > 1, ln( 1/a ) > 0, and the exponent is always positive.
     !
     ! However, there have been issues in the past (in both the accuracy of the
     ! PDF shape and in problems resulting from extreme SILHS sample points) when
@@ -1263,18 +1284,7 @@ module setup_clubb_pdf_params
     !
     ! Next, calculated hm_1 based on the adjusted overall correlation:
     !
-    ! hm_1 = <hm> * ( 1/(2a) - 1 ) * corr_w_hm_overall_adj^2
-    !        + <hm>/(2a) * corr_w_hm_overall_adj + <hm>.
-    !
-    ! In order to avoid repeat calculation, the ratio hm_1/<hm> is calculated:
-    !
-    ! hm_1/<hm> = ( 1/(2a) - 1 ) * corr_w_hm_overall_adj^2
-    !             + ( 1/(2a) ) * corr_w_hm_overall_adj + 1; when <hm> > 0;
-    !
-    ! and then hm_1 is calculated by:
-    !
-    ! hm_1 = | (hm_1/<hm>) * <hm>; when <hm> > 0;
-    !        | 0; when <hm> = 0.
+    ! hm_1 = <hm> * ( 1 + corr_w_hm_overall_adj )^( ln( 1/a ) / ln( 2 ) ).
     !
     ! Once hm_1 has been solved for, hm_2 can be solved by:
     !
@@ -1333,14 +1343,14 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      coef_A,            & ! Coef. on corr(w,hm)_ov_adj^2 in hm_1/<hm> eqn. [-]
-      coef_B,            & ! Coef. on corr(w,hm)_ov_adj in hm_1/<hm> eqn.   [-]
-      coef_C,            & ! Constant coefficient in hm_1/<hm> eqn.         [-]
       corr_w_hm_overall, & ! Overall correlation of w and hm                [-]
-      hm_1_on_hmm          ! hm_1 / <hm>; when <hm> > 0                     [-]
+      kappa_exp            ! Exponent kappa = ln( 1/mixt_frac ) / ln( 2 )   [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       corr_w_hm_overall_adj    ! Adjusted overall correlation of w and hm   [-]
+
+    real( kind = core_rknd ) :: &
+      ln_2    ! Natural logarithm of 2                                      [-]
 
     integer :: k, i  ! Loop indices
 
@@ -1348,15 +1358,17 @@ module setup_clubb_pdf_params
     ! Initialize the adjusted overall correlation of w and the hydrometeor to 0.
     corr_w_hm_overall_adj = zero
 
+    ! Calculate the Natural logarithm of 2.
+    ln_2 = log( two )
+
     !!! Find hm_1 and hm_2 based on the overall correlation of w and the
     !!! hydrometeor, corr_w_hm_overall.
     do k = 1, nz, 1
 
-       ! Calculate the value of the A, B, and C coefficients at the grid level.
-       ! These are the same regardless of the hydrometeor type.
-       coef_A = ( one / ( two * mixt_frac(k) ) ) - one
-       coef_B = one / ( two * mixt_frac(k) )
-       coef_C = one
+       ! Calculate the value of the exponent kappa, where
+       ! kappa = ln( 1/mixt_frac ) / ln( 2 ).
+       ! This exponent is the same regardless of the hydrometeor type.
+       kappa_exp = log( one / mixt_frac(k) ) / ln_2
 
        do i = 1, hydromet_dim, 1
 
@@ -1365,7 +1377,7 @@ module setup_clubb_pdf_params
 
              ! Calculate the overall calculation of w and hm.
              if ( sqrt( wp2_zt(k) ) > w_tol .and. &
-                  sqrt( hydrometp2_zt(k,i) ) > zero ) then
+                  sqrt( hydrometp2_zt(k,i) ) > hydromet_tol(i) ) then
 
                 ! Both w and the hydrometeor vary at this grid level.  The
                 ! overall correlation between them is defined.
@@ -1381,7 +1393,7 @@ module setup_clubb_pdf_params
                    corr_w_hm_overall = -one
                 endif
 
-             else  ! sqrt(wp2_zt(k)) <= w_tol .or. sqrt(hydrometp2_zt(k,i)) = 0
+             else ! sqrt(wp2_zt) <= w_tol or sqrt(hydrometp2_zt) <= hydromet_tol
 
                 ! Either w or the hydrometeor is constant at this grid level.
                 ! This means that <w'hm'> must also have a value of 0, making
@@ -1395,18 +1407,15 @@ module setup_clubb_pdf_params
                 ! 0 in order to produce hm_1 = hm_2 = <hm>.
                 corr_w_hm_overall = zero
 
-             endif ! sqrt(wp2_zt(k)) > w_tol .and. sqrt(hydrometp2_zt(k,i)) > 0
+             endif ! sqrt(wp2_zt) > w_tol and sqrt(hydrometp2_zt) > hydromet_tol
 
              ! Calculate the adjusted overall correlation of w and hm.
              corr_w_hm_overall_adj(k,i) &
              = coef_hm_1_hm_2_corr_adj * corr_w_hm_overall
 
-             ! Calculate the value of the ratio hm_1/<hm> (since <hm> > 0 here).
-             hm_1_on_hmm = coef_A * corr_w_hm_overall_adj(k,i)**2 &
-                           + coef_B * corr_w_hm_overall_adj(k,i) + coef_C
-
              ! Calculate the mean of the hydrometeor in the 1st PDF component.
-             hm_1(k,i) = hm_1_on_hmm * hydromet(k,i)
+             hm_1(k,i) &
+             = hydromet(k,i) * ( one + corr_w_hm_overall_adj(k,i) )**kappa_exp
 
              ! Calculate the mean of the hydrometeor in the 2nd PDF component.
              hm_2(k,i) &
@@ -1438,10 +1447,10 @@ module setup_clubb_pdf_params
 
              ! The overall hydrometeor is either 0 or below tolerance value (any
              ! postive value is considered to be a numerical artifact).  Simply
-             ! set each pdf component mean equal to hydromet.  These values
-             ! will not play into any further calculations.
-             hm_1(k,i) = hydromet(k,i)
-             hm_2(k,i) = hydromet(k,i)
+             ! set each PDF component mean equal to 0.  These values will not
+             ! play into any further calculations.
+             hm_1(k,i) = zero
+             hm_2(k,i) = zero
 
           endif  ! hydromet(k,i) > hydromet_tol(i)
 
