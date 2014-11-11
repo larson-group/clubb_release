@@ -246,6 +246,7 @@ module stats_zm_module
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
+        ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
         ithlphmp
@@ -292,11 +293,13 @@ module stats_zm_module
     ! The default initialization for array indices for stats_zm is zero (see module
     ! stats_variables)
 
+    allocate( ihydrometp2(1:hydromet_dim) )
     allocate( iwphydrometp(1:hydromet_dim) )
     allocate( irtphmp(1:hydromet_dim) )
     allocate( ithlphmp(1:hydromet_dim) )
     allocate( iK_hm(1:hydromet_dim) )
 
+    ihydrometp2(:) = 0
     iwphydrometp(:) = 0
     irtphmp(:) = 0
     ithlphmp(:) = 0
@@ -333,6 +336,14 @@ module stats_zm_module
     ! Assign pointers for statistics variables stats_zm using stat_assign
 
     tot_zm_loops = stats_zm%num_output_fields
+
+    if ( any( vars_zm == "hydrometp2" ) ) then
+       ! Correct for number of variables found under "hydrometp2".
+       ! Subtract 1 from the loop size for each hydrometeor.
+       tot_zm_loops = tot_zm_loops - hydromet_dim
+       ! Add 1 for "hydrometp2" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
 
     if ( any( vars_zm == "wphydrometp" ) ) then
        ! Correct for number of variables found under "wphydrometp".
@@ -646,6 +657,41 @@ module stats_zm_module
              var_description="cloud water sedimentation flux [kg/(s*m^2)]", &
              var_units="kg/(s*m^2)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
+
+      case('hydrometp2')
+
+         do hm_idx = 1, hydromet_dim, 1
+
+            hm_type = hydromet_list(hm_idx)
+
+            ! The overall variance of the hydrometeor.
+            ihydrometp2(hm_idx) = k
+
+            if ( l_mix_rat_hm(hm_idx) ) then
+
+               call stat_assign( var_index=ihydrometp2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"p2", &
+                                 var_description="<" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "'^2> [(kg/kg)^2]", &
+                                 var_units="(kg/kg)^2", &
+                                 l_silhs=.false., grid_kind=stats_zm )
+
+            else ! Concentration
+
+               call stat_assign( var_index=ihydrometp2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"p2", &
+                                 var_description="<" &
+                                 // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
+                                 // "'^2> [(num/kg)^2]", &
+                                 var_units="(num/kg)^2", &
+                                 l_silhs=.false., grid_kind=stats_zm )
+
+            endif ! l_mix_rat_hm(hm_idx)
+
+            k = k + 1
+
+         enddo ! hm_idx = 1, hydromet_dim, 1
 
       case ('wphydrometp')
 

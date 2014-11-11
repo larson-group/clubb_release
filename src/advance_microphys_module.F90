@@ -579,6 +579,7 @@ module advance_microphys_module
     use stats_variables, only: & 
         iVrrprrp,     & ! Variable(s)
         iVNrpNrp,     &
+        ihydrometp2,  &
         iwphydrometp
 
     implicit none
@@ -867,6 +868,13 @@ module advance_microphys_module
        ! Statistics for all covariances involving hydrometeors:  < w'h_m' >,
        ! <V_rr'r_r'>, and <V_Nr'N_r'>.
        if ( l_stats_samp ) then
+
+          if ( ihydrometp2(i) > 0 ) then
+
+             ! Covariance of vertical velocity and the hydrometeor.
+             call stat_update_var( ihydrometp2(i), hydrometp2(:,i), stats_zm )
+
+          endif
 
           if ( iwphydrometp(i) > 0 ) then
 

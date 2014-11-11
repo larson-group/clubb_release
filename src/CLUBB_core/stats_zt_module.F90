@@ -3735,7 +3735,8 @@ module stats_zt_module
                                  var_name=trim( hm_type(1:2) )//"p2_zt", &
                                  var_description="<" &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "'^2> on thermodyamic levels [(kg/kg)^2]", &
+                                 // "'^2> on thermodyamic levels (from " &
+                                 // "integration over PDF) [(kg/kg)^2]", &
                                  var_units="(kg/kg)^2", &
                                  l_silhs=.false., grid_kind=stats_zt )
 
@@ -3745,8 +3746,8 @@ module stats_zt_module
                                  var_name=trim( hm_type(1:2) )//"p2_zt", &
                                  var_description="<" &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                                 // "'^2> on thermodyamic levels " &
-                                 // "[(num/kg)^2]", &
+                                 // "'^2> on thermodyamic levels (from " &
+                                 // "integration over PDF) [(num/kg)^2]", &
                                  var_units="(num/kg)^2", &
                                  l_silhs=.false., grid_kind=stats_zt )
 
