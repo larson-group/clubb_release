@@ -1491,7 +1491,8 @@ module setup_clubb_pdf_params
     use constants_clubb, only: &
         one,            & ! Constant(s)
         zero,           &
-        cloud_frac_min
+        cloud_frac_min, &
+        fstderr
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -1542,6 +1543,9 @@ module setup_clubb_pdf_params
     ! "Maximum allowable" hydrometeor mixing ratio in-precip component mean.
     real( kind = core_rknd ), parameter :: &
       max_hm_ip_comp_mean = 0.0025_core_rknd  ! [kg/kg]
+
+    integer, parameter :: &
+      precip_frac_calc_type = 2  ! Option used to calc. component precip_frac
 
     integer :: &
       k, i   ! Loop indices
@@ -1604,7 +1608,9 @@ module setup_clubb_pdf_params
     ! fraction is found according the method above, and mixture fraction is
     ! already determined, leaving f_p(1) and f_p(2) to be solved for.  The
     ! values for f_p(1) and f_p(2) must satisfy the above equation.
-    if ( .false. ) then
+    if ( precip_frac_calc_type == 1 ) then
+
+       ! This method needs some improvements -- Brian; 11/10/2014.
 
        !!! Find precipitation fraction within PDF component 1.
        ! The method used to find overall precipitation fraction will also be to
@@ -1737,7 +1743,11 @@ module setup_clubb_pdf_params
        enddo ! Precipitation fraction (2nd PDF component) loop: k = 1, nz, 1.
 
 
-    else  ! .true.
+    elseif ( precip_frac_calc_type == 2 ) then
+
+       ! This method needs to be eliminated.  I will keep it in the code as a
+       ! temporary stopgap, since it is currently enabled by default.
+       ! Brian; 11/10/2014.
 
        ! Precipitation fraction in each PDF component is based on the mean total
        ! hydrometeor mixing ratio in each PDF component, where total hydrometeor
@@ -1949,7 +1959,22 @@ module setup_clubb_pdf_params
        enddo ! Component precipitation fraction loop: k = 1, nz, 1.
 
 
-    endif ! Select component precipitation fraction method.
+    elseif ( precip_frac_calc_type == 3 ) then
+
+      ! Temporary third option to test setting precip_frac_1 = precip_frac_2
+      ! ( = precip_frac ).  Brian; 11/10/2014.
+      precip_frac_1 = precip_frac
+      precip_frac_2 = precip_frac
+
+
+    else ! Invalid option selected.
+
+       write(fstderr,*) "Invalid option to calculate precip_frac_1 " &
+                        // "and precip_frac_2."
+       stop
+
+
+    endif ! precip_frac_calc_type
 
 
     ! Increase Precipiation Fraction under special conditions.
