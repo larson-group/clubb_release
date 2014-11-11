@@ -41,7 +41,7 @@ module advance_wp2_wp3_module
   subroutine advance_wp2_wp3( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
                               a3, a3_zt, wp3_on_wp2, &
                               wpthvp, wp2thvp, um, vm, upwp, vpwp, &
-                              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, &
+                              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
                               invrs_rho_ds_zm, invrs_rho_ds_zt, radf, &
                               thv_ds_zm, thv_ds_zt, mixt_frac, &
@@ -129,6 +129,7 @@ module advance_wp2_wp3_module
       Kh_zt,           & ! Eddy diffusivity on thermodynamic levels  [m^2/s]
       tau_zm,          & ! Time-scale tau on momentum levels         [s]
       tau_zt,          & ! Time-scale tau on thermodynamic levels    [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       Skw_zm,          & ! Skewness of w on momentum levels          [-]
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
@@ -267,7 +268,7 @@ module advance_wp2_wp3_module
     call wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! Intent(in)
                      a3, a3_zt, wp3_on_wp2, &  ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
-                     up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau_zm, tauw3t,    & ! Intent(in)
+                     up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau_zm, tauw3t, tau_C1_zm,   & ! Intent(in)
                      C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm,   & ! Intent(in)
                      thv_ds_zt, nsub, nsup,                         & ! Intent(in)
@@ -322,7 +323,7 @@ module advance_wp2_wp3_module
   subroutine wp23_solve( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, &
                          a3, a3_zt, wp3_on_wp2, &
                          wpthvp, wp2thvp, um, vm, upwp, vpwp, &
-                         up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau1m, tauw3t, &
+                         up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau1m, tauw3t, tau_C1_zm, &
                          C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
                          invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, &
                          thv_ds_zt, nsub, nsup, &
@@ -463,6 +464,7 @@ module advance_wp2_wp3_module
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       tau1m,           & ! Time-scale tau on momentum levels         [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
@@ -537,7 +539,7 @@ module advance_wp2_wp3_module
     call wp23_rhs( dt, wp2, wp3, a1, a1_zt, &
                    a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                    upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  & 
-                   Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                   Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                    C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                    thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
                    rhs )
@@ -545,7 +547,7 @@ module advance_wp2_wp3_module
     if (l_gmres) then
       call wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
                        wp3_on_wp2, &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                        rhs, &
@@ -555,7 +557,7 @@ module advance_wp2_wp3_module
       ! Build the left-hand side matrix.
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
-                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
@@ -763,7 +765,7 @@ module advance_wp2_wp3_module
 
   subroutine wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
                          wp3_on_wp2, &
-                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                         Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                          C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                          invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                          rhs, &
@@ -841,6 +843,7 @@ module advance_wp2_wp3_module
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       tau1m,           & ! Time-scale tau on momentum levels         [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
@@ -886,7 +889,7 @@ module advance_wp2_wp3_module
 
     call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, & 
                        lhs_a_csr )
@@ -894,7 +897,7 @@ module advance_wp2_wp3_module
     if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
-                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
@@ -926,7 +929,7 @@ module advance_wp2_wp3_module
       ! Generate the LHS in LAPACK format
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
-                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                     Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
@@ -973,6 +976,7 @@ module advance_wp2_wp3_module
     solut(1:gr%nz) = Skw_zt
     solut(1:gr%nz) = tau1m
     solut(1:gr%nz) = tauw3t
+    solut(1:gr%nz) = tau_C1_zm
     solut(1:gr%nz) = wm_zt
     solut(1:gr%nz) = wm_zm
     solut(1:gr%nz) = wp2
@@ -989,7 +993,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
-                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                        lhs )
@@ -1130,6 +1134,7 @@ module advance_wp2_wp3_module
       Skw_zt,          & ! Skewness of w on thermodynamic levels      [-]
       tau1m,           & ! Time-scale tau on momentum levels          [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels     [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied            [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied           [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
@@ -1220,7 +1225,7 @@ module advance_wp2_wp3_module
       lhs(m_k_mdiag,k_wp2)  & 
       = lhs(m_k_mdiag,k_wp2)  &
       + gamma_over_implicit_ts  & 
-      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
 
       ! LHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
@@ -1264,7 +1269,7 @@ module advance_wp2_wp3_module
         if ( iwp2_dp1 > 0 ) then
           zmscr01(k)  &
           = - gamma_over_implicit_ts  &
-            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
         endif
 
         if ( iwp2_dp2 > 0 ) then
@@ -1580,7 +1585,7 @@ module advance_wp2_wp3_module
   !=============================================================================
   subroutine wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                            wp3_on_wp2, &
-                           Kw1, Kw8, Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                           Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                            C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                            invrs_rho_ds_zt, l_crank_nich_diff, & 
                            lhs_a_csr )
@@ -1732,6 +1737,7 @@ module advance_wp2_wp3_module
       Skw_zt,          & ! Skewness of w on thermodynamic levels      [-]
       tau1m,           & ! Time-scale tau on momentum levels          [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels     [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied            [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied           [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
@@ -1856,7 +1862,7 @@ module advance_wp2_wp3_module
       lhs_a_csr(m_k_mdiag)  & 
       = lhs_a_csr(m_k_mdiag)  &
       + gamma_over_implicit_ts  & 
-      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+      * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
 
       ! LHS eddy diffusion term: dissipation term 2 (dp2).
       if ( l_crank_nich_diff ) then
@@ -1900,7 +1906,7 @@ module advance_wp2_wp3_module
         if ( iwp2_dp1 > 0 ) then
           zmscr01(k)  &
           = - gamma_over_implicit_ts  &
-            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+            * wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
         endif
 
         if ( iwp2_dp2 > 0 ) then
@@ -2277,7 +2283,7 @@ module advance_wp2_wp3_module
   subroutine wp23_rhs( dt, wp2, wp3, a1, a1_zt, &
                        a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
-                       Skw_zt, tau1m, tauw3t, C1_Skw_fnc, &
+                       Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                        thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
                        rhs )
@@ -2366,6 +2372,7 @@ module advance_wp2_wp3_module
       Skw_zt,          & ! Skewness of w on thermodynamic levels     [-]
       tau1m,           & ! Time-scale tau on momentum levels         [s]
       tauw3t,          & ! Time-scale tau on thermodynamic levels    [s]
+      tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
@@ -2453,7 +2460,7 @@ module advance_wp2_wp3_module
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
       = rhs(k_wp2) &
-      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd )
+      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS dissipation term 1 (dp1).
@@ -2463,7 +2470,7 @@ module advance_wp2_wp3_module
       !        more numerically stable (see note below for w'^3 RHS turbulent
       !        advection (ta) and turbulent production (tp) terms).
       lhs_fnc_output(1)  &
-      = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+      = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
       rhs(k_wp2)  &
       = rhs(k_wp2)  &
       + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
@@ -2561,14 +2568,14 @@ module advance_wp2_wp3_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
-          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau1m(k), w_tol_sqd ), stats_zm )
+          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd ), stats_zm )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
         !        turbulent advection (ta) and turbulent production (tp) terms).
         lhs_fnc_output(1)  &
-        = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau1m(k) )
+        = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
         call stat_modify_pt( iwp2_dp1, k, &
                              + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(1) * wp2(k) ), stats_zm )

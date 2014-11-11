@@ -731,7 +731,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction, & ! Stability correction factor
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
-       tau_C6_zm               ! Tau values used for the C6 (pr1) term in wpxp [s]
+       tau_C6_zm,            & ! Tau values used for the C6 (pr1) term in wpxp [s]
+       tau_C1_zm               ! Tau values used for the C1 (dp1) term in wp2 [s]
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -1776,10 +1777,12 @@ module advance_clubb_core_module
       if ( l_stability_correct_tau_zm ) then
         tau_N2_zm = tau_zm / stability_correction
         tau_C6_zm = tau_N2_zm
+        tau_C1_zm = tau_N2_zm
 
       else
         tau_N2_zm = unused_var 
         tau_C6_zm = tau_zm
+        tau_C1_zm = tau_zm
 
       end if ! l_stability_correction
 
@@ -1858,14 +1861,14 @@ module advance_clubb_core_module
       !----------------------------------------------------------------
 
       call advance_wp2_wp3 &
-           ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt, & ! intent(in)
-             a3_coef, a3_coef_zt, wp3_on_wp2,              & ! intent(in)
-             wpthvp, wp2thvp, um, vm, upwp, vpwp,          & ! intent(in)
-             up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt,       & ! intent(in)
-             Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,         & ! intent(in)
-             invrs_rho_ds_zm, invrs_rho_ds_zt, radf,       & ! intent(in)
-             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,   & ! intent(in)
-             wp2, wp3, wp3_zm, wp2_zt, err_code           )  ! intent(inout)
+           ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,      & ! intent(in)
+             a3_coef, a3_coef_zt, wp3_on_wp2,                   & ! intent(in)
+             wpthvp, wp2thvp, um, vm, upwp, vpwp,               & ! intent(in)
+             up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, & ! intent(in)
+             Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,              & ! intent(in)
+             invrs_rho_ds_zm, invrs_rho_ds_zt, radf,            & ! intent(in)
+             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,        & ! intent(in)
+             wp2, wp3, wp3_zm, wp2_zt, err_code               )  ! intent(inout)
 
       !----------------------------------------------------------------
       ! Covariance clipping for wprtp, wpthlp, wpsclrp, upwp, and vpwp
