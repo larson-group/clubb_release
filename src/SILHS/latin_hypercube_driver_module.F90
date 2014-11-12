@@ -644,10 +644,18 @@ module latin_hypercube_driver_module
         lh_eta = real( X_nl_all_levs(k,isample,iiPDF_eta), kind=core_rknd )
 
         ! Compute lh_rt and lh_thl
-        call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2,           & ! intent(in)
-                              crt_1, cthl_1, crt_2, cthl_2,       & ! intent(in)
-                              chi_1, chi_2,                       & ! intent(in)
-                              lh_chi, lh_eta,                     & ! intent(in)
+        call chi_eta_2_rtthl( real( rt_1, kind=dp ), &    ! In
+                              real( thl_1, kind=dp ), &   ! In
+                              real( rt_2, kind=dp ), &    ! In
+                              real( thl_2, kind=dp), &    ! In
+                              real( crt_1, kind=dp ), &   ! In
+                              real( cthl_1, kind=dp ), &  ! In
+                              real( crt_2, kind=dp ), &   ! In
+                              real( cthl_2, kind=dp ), &  ! In
+                              real( chi_1, kind=dp ), &   ! In
+                              real( chi_2, kind=dp ), &   ! In
+                              real( lh_chi, kind=dp), &   ! In
+                              real( lh_eta, kind=dp), &   ! In
                               X_mixt_comp,                        & ! intent(in)
                               lh_rt(k,isample), lh_thl(k,isample) ) ! intent(out)
 
