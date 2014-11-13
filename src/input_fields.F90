@@ -14,7 +14,7 @@ module inputfields
   implicit none
 
   ! Run information
-  character(len=100), dimension(:), allocatable, public :: & 
+  character(len=120), dimension(:), allocatable, public :: & 
     stat_files ! a list of all files used for input
 
   character(len=10), public :: input_type
