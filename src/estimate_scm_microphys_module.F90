@@ -74,6 +74,7 @@ module estimate_scm_microphys_module
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
+      clip_transform_silhs_output,     &
       Ncn_to_Nc, &
       chi_to_rc
 
@@ -236,6 +237,10 @@ module estimate_scm_microphys_module
            Ncn_all_points )                ! Intent(out)
 
     Nc_all_points = Ncn_to_Nc( Ncn_all_points, chi_all_points )
+
+    call clip_transform_silhs_output &
+         ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
+           rt_all_points, thl_all_points, rc_all_points, rv_all_points, Nc_all_points )
 
     if ( l_var_covar_src ) then
       call lh_moments ( num_samples, lh_sample_point_weights, nz, &              ! Intent (in)

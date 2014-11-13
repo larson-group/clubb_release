@@ -25,7 +25,8 @@ module latin_hypercube_driver_module
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc, &
-    generate_strat_uniform_variate, pick_sample_categories, chi_to_rc
+    generate_strat_uniform_variate, pick_sample_categories, chi_to_rc,     &
+    clip_transform_silhs_output
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
 
