@@ -2850,7 +2850,7 @@ module inputfields
     integer, intent(in) :: iunit
 
     ! Local variables
-    character(len=98) :: datafile
+    character(len=120) :: datafile
 
     ! Namelist definitions
     namelist /setfields/ datafile, input_type, & 
