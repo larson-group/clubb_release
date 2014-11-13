@@ -541,7 +541,7 @@ module latin_hypercube_driver_module
 
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output &
-             ( nz, num_samples, d_variables, X_mixt_comp, X_nl_all_levs, pdf_params, &
+             ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
                lh_rt, lh_thl, lh_rc, lh_rv, lh_Nc )
 
   ! Description:
@@ -577,14 +577,16 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
-      d_variables, &         ! Number of variates in X_nl_one_lev
-      X_mixt_comp            ! Which component this sample is in (1 or 2)
+      d_variables            ! Number of variates in X_nl_one_lev
+
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
     real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params             ! **The** PDF parameters
+      pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
@@ -656,8 +658,8 @@ module latin_hypercube_driver_module
                               real( chi_2, kind=dp ), &   ! In
                               real( lh_chi, kind=dp), &   ! In
                               real( lh_eta, kind=dp), &   ! In
-                              X_mixt_comp,                        & ! intent(in)
-                              lh_rt(k,isample), lh_thl(k,isample) ) ! intent(out)
+                              X_mixt_comp_all_levs(k,isample), &    ! Intent(in)
+                              lh_rt(k,isample), lh_thl(k,isample) ) ! Intent(out)
 
         ! If necessary, clip rt
         if ( lh_rt(k,isample) < zero ) then
