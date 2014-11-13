@@ -143,7 +143,7 @@ module estimate_scm_microphys_module
 
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim,num_samples) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
       lh_hydromet_mc_all, & ! LH est of hydrometeor time tendency          [(units vary)/s]
       lh_hydromet_vel_all   ! LH est of hydrometeor sedimentation velocity [m/s]
 
@@ -305,7 +305,7 @@ module estimate_scm_microphys_module
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
              dzq, rc_column, Nc, chi_column, rv_column, & ! In
              hydromet_all_points, & ! In
-             lh_hydromet_mc_all(:,:,sample), lh_hydromet_vel_all(:,:,sample), & ! Out
+             lh_hydromet_mc_all(:,sample,:), lh_hydromet_vel_all(:,sample,:), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
              microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
@@ -338,11 +338,11 @@ module estimate_scm_microphys_module
 
       lh_hydromet_vel(:,ivar) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               lh_hydromet_vel_all(:,ivar,:) )
+                               lh_hydromet_vel_all(:,:,ivar) )
 
       lh_hydromet_mc(:,ivar) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               lh_hydromet_mc_all(:,ivar,:) )
+                               lh_hydromet_mc_all(:,:,ivar) )
 
     end forall
 
