@@ -32,7 +32,7 @@ module estimate_scm_microphys_module
 
     use constants_clubb, only:  &
       fstderr, &  ! Constant(s)
-      zero_threshold, &
+      zero, &
       unused_var
 
     use parameters_model, only: &
@@ -74,7 +74,8 @@ module estimate_scm_microphys_module
 
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
-      Ncn_to_Nc
+      Ncn_to_Nc, &
+      chi_to_rc
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -107,7 +108,7 @@ module estimate_scm_microphys_module
       lh_rt, & ! num_samples values of total water mixing ratio     [kg/kg]
       lh_thl   ! num_samples values of liquid potential temperature [K]
 
-    real( kind = dp ), target, dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -153,21 +154,18 @@ module estimate_scm_microphys_module
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
 
-    real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      Ncn_all_points    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      chi_column    ! 's' (Mellor 1977)                    [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      rv_column,  & ! Vapor water                               [kg/kg]
-      thl_column, & ! Liquid potential temperature              [K]
-      rc_column,  & ! Liquid water                              [kg/kg]
-      w_column,   & ! Vertical velocity                         [m/s]
-      Nc            ! Cloud droplet concentration               [#/kg]
+    real( kind = core_rknd ), dimension(nz,num_samples) :: &
+      Ncn_all_points, &    ! Cloud Nuclei conc. (simplified); Nc=Ncn*H(chi) [#/kg]
+      rt_all_points,  &    ! Total water mixing ratio                       [kg/kg]
+      thl_all_points, &    ! Liquid potential temperature                   [K]
+      chi_all_points, &    ! 's' (Mellor 1977)                              [kg/kg]
+      rv_all_points,  &    ! Vapor water                                    [kg/kg]
+      rc_all_points,  &    ! Liquid water                                   [kg/kg]
+      w_all_points,   &    ! Vertical velocity                              [m/s]
+      Nc_all_points        ! Cloud droplet concentration                    [#/kg]
 
     real( kind = core_rknd ), dimension(nz) :: &
       lh_rtp2_before_microphys,    & ! <rt'^2> before microphys_sub    [(kg/kg)^2]
@@ -180,15 +178,6 @@ module estimate_scm_microphys_module
       lh_wpthlp_after_microphys,   & ! <w'thl'> after microphys_sub    [m*K/s]
       lh_rtpthlp_before_microphys, & ! <rt'thl'> before microphys_sub  [K*(kg/kg)/s]
       lh_rtpthlp_after_microphys     ! <rt'thl'> after microphys_sub   [K*(kg/kg)/s]
-
-    real( kind = core_rknd ), dimension(nz,num_samples) :: &
-      rt_all_samples,  & ! Columns used to calculate covariances [kg/kg]
-      thl_all_samples, & ! Columns used to calculate covariances [K]
-      w_all_samples      ! Columns used to calculate covariances [m/s] 
-
-    real( kind = dp ), pointer, dimension(:,:) :: &
-      chi_all_points,  & ! num_samples values of 's' (Mellor 1977)      [kg/kg]
-      w_all_points       ! num_samples values of vertical velocity      [m/s]
 
     ! These parameters are not used by the microphysics scheme when SILHS is
     ! turned on.
@@ -204,27 +193,18 @@ module estimate_scm_microphys_module
       microphys_stats_zt_avg, &   ! Average of zt statistics over all sample points
       microphys_stats_sfc_avg     ! Average of sfc statistics over all sample points
 
-    integer :: ivar, k, sample
+    integer :: ivar, sample
 
     ! ---- Begin Code ----
 
-    ! Mellor's 's' is hardwired elsewhere to be the first column
-    chi_all_points => X_nl_all_levs(:,:,iiPDF_chi)
-    w_all_points        => X_nl_all_levs(:,:,iiPDF_w)
-
+    ! Initialization code
     lh_hydromet_vel(:,:) = 0._core_rknd
-
-    ! Initialize microphysical tendencies for each mixture component
     lh_hydromet_mc_all(:,:,:) = 0._core_rknd
-
     lh_hydromet_vel_all(:,:,:) = 0._core_rknd
 
     lh_Ncm_mc_all(:,:) = 0._core_rknd
-
     lh_rcm_mc_all(:,:) = 0._core_rknd
-
     lh_rvm_mc_all(:,:) = 0._core_rknd
-
     lh_thlm_mc_all(:,:) = 0._core_rknd
 
     lh_rtp2_mc(:) = 0.0_core_rknd
@@ -233,97 +213,61 @@ module estimate_scm_microphys_module
     lh_wpthlp_mc(:) = 0.0_core_rknd
     lh_rtpthlp_mc(:) = 0.0_core_rknd
 
-    lh_rtp2_before_microphys(:) = 0.0_core_rknd
-    lh_thlp2_before_microphys(:) = 0.0_core_rknd
-    lh_wprtp_before_microphys(:) = 0.0_core_rknd
-    lh_wpthlp_before_microphys(:) = 0.0_core_rknd
-    lh_rtpthlp_before_microphys(:) = 0.0_core_rknd
-    lh_rtp2_after_microphys(:) = 0.0_core_rknd
-    lh_thlp2_after_microphys(:) = 0.0_core_rknd
-    lh_wprtp_after_microphys(:) = 0.0_core_rknd
-    lh_wpthlp_after_microphys(:) = 0.0_core_rknd
-    lh_rtpthlp_after_microphys(:) = 0.0_core_rknd
+    rt_all_points  = lh_rt
+    thl_all_points = lh_thl
+    w_all_points   = real( X_nl_all_levs(:,:,iiPDF_w), kind=core_rknd )
+    chi_all_points = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
+    rc_all_points  = chi_to_rc( chi_all_points )
+    rv_all_points  = max( zero, rt_all_points - rc_all_points )
 
+    call copy_X_nl_into_hydromet_all_pts &
+         ( nz, d_variables, num_samples, & ! Intent(in)
+           X_nl_all_levs,                & ! Intent(in)
+           hydromet,                     & ! Intent(in)
+           hydromet_all_points,          & ! Intent(out)
+           Ncn_all_points )                ! Intent(out)
+
+    Nc_all_points = Ncn_to_Nc( Ncn_all_points, chi_all_points )
 
     if ( l_var_covar_src ) then
-      rt_all_samples = lh_rt
-      thl_all_samples = lh_thl
-      w_all_samples = real(w_all_points, kind=core_rknd)
-
-      call lh_moments ( num_samples, lh_sample_point_weights, nz, &           ! Intent (in)
-                       rt_all_samples, thl_all_samples, w_all_samples, &        ! Intent (in)
-                       lh_rtp2_before_microphys, lh_thlp2_before_microphys, &   ! Intent (out)
-                       lh_wprtp_before_microphys, lh_wpthlp_before_microphys, & ! Intent (out)
-                       lh_rtpthlp_before_microphys )                            ! Intent (out)
+      call lh_moments ( num_samples, lh_sample_point_weights, nz, &              ! Intent (in)
+                        rt_all_points, thl_all_points, w_all_points, &           ! Intent (in)
+                        lh_rtp2_before_microphys, lh_thlp2_before_microphys, &   ! Intent (out)
+                        lh_wprtp_before_microphys, lh_wpthlp_before_microphys, & ! Intent (out)
+                        lh_rtpthlp_before_microphys )                            ! Intent (out)
     end if
 
     do sample = 1, num_samples
-
-      chi_column = real( chi_all_points(:,sample), kind = core_rknd )
-
-      where ( chi_all_points(:,sample) > 0.0_dp )
-        rc_column = real( chi_all_points(:,sample), kind = core_rknd )
-      else where
-        rc_column = 0.0_core_rknd
-      end where
-
-      w_column   = real( w_all_points(:,sample), kind = core_rknd )
-      rv_column  = real( lh_rt(:,sample), kind = core_rknd ) - rc_column
-      ! Verify total water isn't negative
-      if ( any( rv_column < 0._core_rknd) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "rv negative, LH sample number = ", sample
-          write(fstderr,'(a3,3a20)') "k", "rt", "rv", "rc"
-          do k = 1, nz
-            if ( rv_column(k) < 0._core_rknd) then
-              write(6,'(i3,3g20.7)')  k, lh_rt(k,sample), rv_column(k), &
-                rc_column(k)
-            end if
-          end do
-          write(fstderr,*) "Applying non-conservative hard clipping to rv sample."
-        end if ! clubb_at_least_debug_level( 1 )
-        where ( rv_column < 0._core_rknd) rv_column = zero_threshold
-      end if ! Some rv_column element < 0
-
-      thl_column = real( lh_thl(:,sample), kind = core_rknd )
-
-      call copy_X_nl_into_hydromet_all_pts( nz, d_variables, 1, & ! In
-                                    X_nl_all_levs(:,sample,:), & ! In
-                                    hydromet, & ! In
-                                    hydromet_all_points, &  ! Out
-                                    Ncn_all_points ) ! Out
-
-      ! Set Nc = Ncn * H(chi).
-      Nc = Ncn_to_Nc( Ncn_all_points, chi_column )
 
       cloud_frac_unused = unused_var
       w_std_dev_unused  = unused_var
       ! Call the microphysics scheme to obtain a sample point
       call microphys_sub &
            ( dt, nz, & ! In
-             l_latin_hypercube, thl_column, w_column, p_in_Pa, & ! In
+             l_latin_hypercube, thl_all_points(:,sample), w_all_points(:,sample), p_in_Pa, & ! In
              exner, rho, cloud_frac_unused, w_std_dev_unused, & ! In
-             dzq, rc_column, Nc, chi_column, rv_column, & ! In
-             hydromet_all_points, & ! In
+             dzq, rc_all_points(:,sample), Nc_all_points(:,sample), & ! In
+             chi_all_points(:,sample), rv_all_points(:,sample), & ! In
+             hydromet_all_points(:,sample,:), & ! In
              lh_hydromet_mc_all(:,sample,:), lh_hydromet_vel_all(:,sample,:), & ! Out
              lh_Ncm_mc_all(:,sample), & ! Out
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
              microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
 
-      rt_all_samples(:,sample) = rc_column + rv_column + &
+      rt_all_points(:,sample) = rc_all_points(:,sample) + rv_all_points(:,sample) + &
         dt* ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
 
-      thl_all_samples(:,sample) = thl_column + dt * lh_thlm_mc_all(:,sample)
+      thl_all_points(:,sample) = thl_all_points(:,sample) + dt * lh_thlm_mc_all(:,sample)
 
       ! Loop to get new sample
     end do ! sample = 1, num_samples
 
     if ( l_var_covar_src ) then
-      call lh_moments ( num_samples, lh_sample_point_weights, nz, &           ! Intent (in)
-                         rt_all_samples, thl_all_samples, w_all_samples, &      ! Intent (in)
-                         lh_rtp2_after_microphys, lh_thlp2_after_microphys, &   ! Intent (out)
-                         lh_wprtp_after_microphys, lh_wpthlp_after_microphys, & ! Intent (out)
-                         lh_rtpthlp_after_microphys )                           ! Intent (out)
+      call lh_moments( num_samples, lh_sample_point_weights, nz, &            ! Intent (in)
+                       rt_all_points, thl_all_points, w_all_points, &         ! Intent (in)
+                       lh_rtp2_after_microphys, lh_thlp2_after_microphys, &   ! Intent (out)
+                       lh_wprtp_after_microphys, lh_wpthlp_after_microphys, & ! Intent (out)
+                       lh_rtpthlp_after_microphys )                           ! Intent (out)
 
       lh_wpthlp_mc = ( lh_wpthlp_after_microphys - lh_wpthlp_before_microphys ) / dt
       lh_wprtp_mc = ( lh_wprtp_after_microphys - lh_wprtp_before_microphys ) / dt
