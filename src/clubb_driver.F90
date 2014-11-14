@@ -1373,7 +1373,7 @@ module clubb_driver
                               hydromet, Nc_in_cloud, &                       ! In
                               pdf_params, hydromet_pdf_params, &             ! In
                               X_nl_all_levs, X_mixt_comp_all_levs, &         ! In
-                              lh_rt, lh_thl, lh_sample_point_weights, &      ! In
+                              lh_sample_point_weights, &                     ! In
                               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &        ! In
                               corr_array_1, corr_array_2, &                  ! In
                               Nccnm, &                                       ! Inout

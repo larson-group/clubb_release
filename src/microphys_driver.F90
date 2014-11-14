@@ -34,7 +34,7 @@ module microphys_driver
                                 hydromet, Nc_in_cloud, &                  ! In
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
-                                lh_rt, lh_thl, lh_sample_point_weights, & ! In
+                                lh_sample_point_weights, &                ! In
                                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
                                 corr_array_1, corr_array_2, &             ! In
                                 Nccnm, &                                  ! Inout
@@ -240,10 +240,6 @@ module microphys_driver
     integer, dimension(gr%nz,lh_num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples), &
-    intent(in) :: &
-      lh_rt, lh_thl ! Samples of rt, thl        [kg/kg,K]
-
     real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
@@ -448,7 +444,7 @@ module microphys_driver
 #ifdef SILHS
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, d_variables, & ! In
-               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+               X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In 
@@ -461,7 +457,7 @@ module microphys_driver
         stop "Latin hypercube was not enabled at compile time"
         ! Get rid of compiler warnings
         if ( .false. .and. size( X_nl_all_levs ) < 1 ) then
-          rcm_mc(1) = + lh_rt(1,1) + lh_thl(1,1) &
+          rcm_mc(1) = &
             + lh_sample_point_weights(1) + real( X_mixt_comp_all_levs(1,1) )
         endif
 #endif /* SILHS */
@@ -553,7 +549,7 @@ module microphys_driver
 #ifdef SILHS
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, d_variables, & ! In
-               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, & ! In
+               X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In 

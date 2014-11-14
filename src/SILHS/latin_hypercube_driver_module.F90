@@ -686,6 +686,13 @@ module latin_hypercube_driver_module
 
     end do ! k=2, nz
 
+    ! These parameters are not computed at the model lower level.
+    lh_rt(1,:) = zero
+    lh_thl(1,:) = zero
+    lh_rc(1,:) = zero
+    lh_rv(1,:) = zero
+    lh_Nc(1,:) = zero
+
     return
   end subroutine clip_transform_silhs_output
 

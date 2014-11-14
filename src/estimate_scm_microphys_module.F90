@@ -14,7 +14,6 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               lh_rt, lh_thl, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, pdf_params, &
@@ -107,10 +106,6 @@ module estimate_scm_microphys_module
       nz,            & ! Number of vertical levels
       num_samples,   & ! Number of calls to microphysics
       d_variables      ! Number of variates
-
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
-      lh_rt, & ! num_samples values of total water mixing ratio     [kg/kg]
-      lh_thl   ! num_samples values of liquid potential temperature [K]
 
     real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
@@ -206,28 +201,8 @@ module estimate_scm_microphys_module
 
     ! ---- Begin Code ----
 
-    ! Initialization code
-    lh_hydromet_vel(:,:) = 0._core_rknd
-    lh_hydromet_mc_all(:,:,:) = 0._core_rknd
-    lh_hydromet_vel_all(:,:,:) = 0._core_rknd
-
-    lh_Ncm_mc_all(:,:) = 0._core_rknd
-    lh_rcm_mc_all(:,:) = 0._core_rknd
-    lh_rvm_mc_all(:,:) = 0._core_rknd
-    lh_thlm_mc_all(:,:) = 0._core_rknd
-
-    lh_rtp2_mc(:) = 0.0_core_rknd
-    lh_thlp2_mc(:) = 0.0_core_rknd
-    lh_wprtp_mc(:) = 0.0_core_rknd
-    lh_wpthlp_mc(:) = 0.0_core_rknd
-    lh_rtpthlp_mc(:) = 0.0_core_rknd
-
-    rt_all_points  = lh_rt
-    thl_all_points = lh_thl
     w_all_points   = real( X_nl_all_levs(:,:,iiPDF_w), kind=core_rknd )
     chi_all_points = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
-    rc_all_points  = chi_to_rc( chi_all_points )
-    rv_all_points  = max( zero, rt_all_points - rc_all_points )
 
     call copy_X_nl_into_hydromet_all_pts &
          ( nz, d_variables, num_samples, & ! Intent(in)
@@ -236,11 +211,9 @@ module estimate_scm_microphys_module
            hydromet_all_points,          & ! Intent(out)
            Ncn_all_points )                ! Intent(out)
 
-    Nc_all_points = Ncn_to_Nc( Ncn_all_points, chi_all_points )
-
     call clip_transform_silhs_output &
-         ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-           rt_all_points, thl_all_points, rc_all_points, rv_all_points, Nc_all_points )
+         ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, & ! In
+           rt_all_points, thl_all_points, rc_all_points, rv_all_points, Nc_all_points ) ! Out
 
     if ( l_var_covar_src ) then
       call lh_moments ( num_samples, lh_sample_point_weights, nz, &              ! Intent (in)
@@ -287,6 +260,14 @@ module estimate_scm_microphys_module
       lh_rtp2_mc = ( lh_rtp2_after_microphys - lh_rtp2_before_microphys ) / dt 
       lh_thlp2_mc = ( lh_thlp2_after_microphys - lh_thlp2_before_microphys) / dt
       lh_rtpthlp_mc = ( lh_rtpthlp_after_microphys - lh_rtpthlp_before_microphys) / dt
+
+    else ! .not. l_var_covar_src
+
+      lh_rtp2_mc     = zero
+      lh_thlp2_mc    = zero
+      lh_wprtp_mc    = zero
+      lh_wpthlp_mc   = zero
+      lh_rtpthlp_mc  = zero
 
     end if
 

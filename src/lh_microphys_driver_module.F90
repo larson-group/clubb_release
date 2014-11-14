@@ -15,7 +15,7 @@ contains
   !=============================================================================
   subroutine lh_microphys_driver &
              ( dt, nz, num_samples, d_variables, &
-               X_nl_all_levs, lh_rt, lh_thl, lh_sample_point_weights, &
+               X_nl_all_levs, lh_sample_point_weights, &
                pdf_params, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
@@ -82,9 +82,6 @@ contains
     integer, intent(in), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights ! Weight given the individual sample points
 
@@ -136,7 +133,6 @@ contains
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
          ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
-           lh_rt, lh_thl, &                                          ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, & ! Intent(in) 
            p_in_Pa, exner, rho, &                                    ! Intent(in)
            delta_zt, hydromet, rcm, pdf_params, &        ! Intent(in)
