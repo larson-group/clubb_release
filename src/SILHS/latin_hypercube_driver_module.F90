@@ -583,7 +583,7 @@ module latin_hypercube_driver_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
+    real( kind = dp ), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -669,7 +669,7 @@ module latin_hypercube_driver_module
         end if
 
         ! Compute lh_rc and lh_rv
-        lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
+        lh_rc(k,isample) = chi_to_rc( real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
         lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
 
         ! If necessary, clip rv
@@ -679,8 +679,8 @@ module latin_hypercube_driver_module
         end if
 
         ! Compute lh_Nc
-        lh_Nc(k,isample) = Ncn_to_Nc( X_nl_all_levs(k,isample,iiPDF_Ncn), &
-                                      X_nl_all_levs(k,isample,iiPDF_chi) )
+        lh_Nc(k,isample) = Ncn_to_Nc( real( X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd ), &
+                                      real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
 
       end do ! isample=1, num_samples
 
