@@ -670,7 +670,7 @@ module latin_hypercube_driver_module
 
         ! Compute lh_rc and lh_rv
         lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
-        lh_rv(k,:) = lh_rt(k,:) - lh_rc(k,:)
+        lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
 
         ! If necessary, clip rv
         if ( lh_rv(k,isample) < zero ) then
