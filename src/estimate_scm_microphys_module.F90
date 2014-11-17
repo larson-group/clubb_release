@@ -75,7 +75,10 @@ module estimate_scm_microphys_module
       copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
       clip_transform_silhs_output,     &
       Ncn_to_Nc, &
-      chi_to_rc
+      chi_to_rc, &
+      lh_clipped_variables_type             ! Type
+
+
 
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
@@ -158,6 +161,9 @@ module estimate_scm_microphys_module
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
 
+    type(lh_clipped_variables_type), dimension(nz,num_samples) :: &
+      lh_clipped_vars
+
     real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
 
@@ -213,7 +219,14 @@ module estimate_scm_microphys_module
 
     call clip_transform_silhs_output &
          ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, & ! In
-           rt_all_points, thl_all_points, rc_all_points, rv_all_points, Nc_all_points ) ! Out
+           lh_clipped_vars ) ! Out
+
+    ! Unpack the lh_clipped_vars structure
+    rt_all_points  = lh_clipped_vars%rt
+    thl_all_points = lh_clipped_vars%thl
+    rc_all_points  = lh_clipped_vars%rc
+    rv_all_points  = lh_clipped_vars%rv
+    Nc_all_points  = lh_clipped_vars%Nc
 
     if ( l_var_covar_src ) then
       call lh_moments ( num_samples, lh_sample_point_weights, nz, &              ! Intent (in)

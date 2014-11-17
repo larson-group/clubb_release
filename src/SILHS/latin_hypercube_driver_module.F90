@@ -3,6 +3,9 @@
 !===============================================================================
 module latin_hypercube_driver_module
 
+  use clubb_precision, only: &
+    core_rknd           ! Constant
+
   implicit none
 
   ! Constant Parameters
@@ -26,9 +29,11 @@ module latin_hypercube_driver_module
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc, &
     generate_strat_uniform_variate, pick_sample_categories, chi_to_rc,     &
-    clip_transform_silhs_output
+    clip_transform_silhs_output, lh_clipped_variables_type
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
+
+  ! Type definitions
 
   type importance_category_type
 
@@ -38,6 +43,17 @@ module latin_hypercube_driver_module
       l_in_component_1
 
   end type importance_category_type
+
+  type lh_clipped_variables_type
+
+    real( kind = core_rknd ) :: &
+      rt,      & ! Total water mixing ratio            [kg/kg]
+      thl,     & ! Liquid potential temperature        [K]
+      rc,      & ! Cloud water mixing ratio            [kg/kg]
+      rv,      & ! Vapor water mixing ratio            [kg/kg]
+      Nc         ! Cloud droplet number concentration  [#/kg]
+    
+  end type lh_clipped_variables_type
 
   contains
 
@@ -543,7 +559,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output &
              ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-               lh_rt, lh_thl, lh_rc, lh_rv, lh_Nc )
+               lh_clipped_vars )
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -590,14 +606,17 @@ module latin_hypercube_driver_module
       pdf_params             ! **The** PDF parameters!
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
+    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
+      lh_clipped_vars        ! SILHS clipped and transformed variables
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
       lh_thl,  &             ! Liquid potential temperature        [K]
       lh_rc,   &             ! Cloud water mixing ratio            [kg/kg]
       lh_rv,   &             ! Vapor water mixing ratio            [kg/kg]
       lh_Nc                  ! Cloud droplet number concentration  [#/kg]
 
-    ! Local Variables
     real( kind = core_rknd ) :: &
       rt_1,    &
       rt_2,    &
@@ -692,6 +711,13 @@ module latin_hypercube_driver_module
     lh_rc(1,:) = zero
     lh_rv(1,:) = zero
     lh_Nc(1,:) = zero
+
+    ! Pack into output structure
+    lh_clipped_vars(:,:)%rt  = lh_rt(:,:)
+    lh_clipped_vars(:,:)%thl = lh_thl(:,:)
+    lh_clipped_vars(:,:)%rc  = lh_rc(:,:)
+    lh_clipped_vars(:,:)%rv  = lh_rv(:,:)
+    lh_clipped_vars(:,:)%Nc  = lh_Nc(:,:)
 
     return
   end subroutine clip_transform_silhs_output
