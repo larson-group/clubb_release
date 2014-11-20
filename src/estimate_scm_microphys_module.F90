@@ -14,9 +14,9 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
+               X_nl_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
-               dzq, hydromet, rcm, pdf_params, &
+               dzq, hydromet, rcm, &
                lh_clipped_vars, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
@@ -88,9 +88,6 @@ module estimate_scm_microphys_module
       iiNrm, & ! Variable(s)
       iirrm
 
-    use pdf_parameter_module, only: &
-      pdf_parameter
-
     implicit none
 
     ! External
@@ -114,9 +111,6 @@ module estimate_scm_microphys_module
     real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    integer, dimension(nz,num_samples), intent(in) :: &
-      X_mixt_comp_all_levs ! Mixture component of each sample       [1 or 2]
-
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
@@ -129,9 +123,6 @@ module estimate_scm_microphys_module
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
-
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params
 
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
       lh_clipped_vars   ! Variables from SILHS sample
