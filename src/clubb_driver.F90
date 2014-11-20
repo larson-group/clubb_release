@@ -200,7 +200,9 @@ module clubb_driver
       lh_subcolumn_generator, & ! Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
-      latin_hypercube_2D_close
+      latin_hypercube_2D_close, &
+      clip_transform_silhs_output, &
+      lh_clipped_variables_type ! Type
 
     use latin_hypercube_arrays, only: &
       cleanup_latin_hypercube_arrays ! Procedure(s)
@@ -468,6 +470,9 @@ module clubb_driver
 
     real( kind = core_rknd ), dimension(:,:), allocatable :: &
       lh_rt, lh_thl ! Samples of rt, thl          [kg/kg, K]
+
+    type(lh_clipped_variables_type), dimension(:,:), allocatable :: &
+      lh_clipped_vars ! Samples of rt, thl, rc, rv, and Nc
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
@@ -981,7 +986,8 @@ module clubb_driver
 
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,d_variables), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), lh_rt(gr%nz,lh_num_samples), &
-              lh_thl(gr%nz,lh_num_samples), lh_sample_point_weights(lh_num_samples), &
+              lh_thl(gr%nz,lh_num_samples), lh_clipped_vars(gr%nz,lh_num_samples), &
+              lh_sample_point_weights(lh_num_samples), &
               Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then
@@ -1337,26 +1343,34 @@ module clubb_driver
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
 
-       call lh_subcolumn_generator &
-            ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
-              pdf_params, gr%dzt, rcm, Lscale, & ! In
-              rho_ds_zt, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
-              real( corr_cholesky_mtx_1, kind = dp ), & ! In
-              real( corr_cholesky_mtx_2, kind = dp ), & ! In
-              hydromet_pdf_params, & ! In
-              X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
-              lh_sample_point_weights ) ! Out
+        call lh_subcolumn_generator &
+             ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
+               pdf_params, gr%dzt, rcm, Lscale, & ! In
+               rho_ds_zt, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+               real( corr_cholesky_mtx_1, kind = dp ), & ! In
+               real( corr_cholesky_mtx_2, kind = dp ), & ! In
+               hydromet_pdf_params, & ! In
+               X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+               lh_sample_point_weights ) ! Out
 
         call stats_accumulate_lh &
              ( gr%nz, lh_num_samples, d_variables, rho_ds_zt, & ! In
                lh_sample_point_weights,  X_nl_all_levs, & ! In
                lh_thl, lh_rt ) ! In
+
+        call clip_transform_silhs_output &
+             ( gr%nz, lh_num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
+               pdf_params, & ! In
+               lh_clipped_vars ) ! Out
+
       end if ! lh_microphys_enabled
 
 #else
+      ! Alleviate compiler warnings
       X_nl_all_levs = -999._core_rknd
       lh_rt = -999._core_rknd
       lh_thl = -999._core_rknd
+      lh_clipped_vars%rt = -999._core_rknd
       X_mixt_comp_all_levs = -999
       lh_sample_point_weights = -999._core_rknd
       if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
@@ -1376,6 +1390,7 @@ module clubb_driver
                               lh_sample_point_weights, &                     ! In
                               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &        ! In
                               corr_array_1, corr_array_2, &                  ! In
+                              lh_clipped_vars, &                             ! In
                               Nccnm, &                                       ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &         ! Out
                               thlm_mc, hydromet_vel_zt, &                    ! Out

@@ -19,6 +19,7 @@ contains
                pdf_params, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
+               lh_clipped_vars, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rcm_mc, lh_rvm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -54,12 +55,14 @@ contains
       dp, & ! double precision
       core_rknd
       
-
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
     use estimate_scm_microphys_module, only: &
       est_single_column_tndcy
+
+    use latin_hypercube_driver_module, only: &
+      lh_clipped_variables_type
 
     implicit none
 
@@ -99,6 +102,8 @@ contains
       exner,       & ! Exner function               [-]
       rho            ! Density on thermo. grid      [kg/m^3]
 
+    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
+      lh_clipped_vars
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -135,7 +140,8 @@ contains
          ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
            X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, & ! Intent(in) 
            p_in_Pa, exner, rho, &                                    ! Intent(in)
-           delta_zt, hydromet, rcm, pdf_params, &        ! Intent(in)
+           delta_zt, hydromet, rcm, pdf_params, &                    ! Intent(in)
+           lh_clipped_vars, &                                        ! Intent(in)
            lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
            lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
            lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                   ! Intent(out)

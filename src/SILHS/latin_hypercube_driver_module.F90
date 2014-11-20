@@ -24,16 +24,27 @@ module latin_hypercube_driver_module
 
   private ! Default scope
 
+  type lh_clipped_variables_type
+
+    real( kind = core_rknd ) :: &
+      rt,      & ! Total water mixing ratio            [kg/kg]
+      thl,     & ! Liquid potential temperature        [K]
+      rc,      & ! Cloud water mixing ratio            [kg/kg]
+      rv,      & ! Vapor water mixing ratio            [kg/kg]
+      Nc         ! Cloud droplet number concentration  [#/kg]
+
+  end type lh_clipped_variables_type
+
+  public :: lh_clipped_variables_type
+
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc, &
     generate_strat_uniform_variate, pick_sample_categories, chi_to_rc,     &
-    clip_transform_silhs_output, lh_clipped_variables_type
+    clip_transform_silhs_output
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
-
-  ! Type definitions
 
   type importance_category_type
 
@@ -43,17 +54,6 @@ module latin_hypercube_driver_module
       l_in_component_1
 
   end type importance_category_type
-
-  type lh_clipped_variables_type
-
-    real( kind = core_rknd ) :: &
-      rt,      & ! Total water mixing ratio            [kg/kg]
-      thl,     & ! Liquid potential temperature        [K]
-      rc,      & ! Cloud water mixing ratio            [kg/kg]
-      rv,      & ! Vapor water mixing ratio            [kg/kg]
-      Nc         ! Cloud droplet number concentration  [#/kg]
-    
-  end type lh_clipped_variables_type
 
   contains
 

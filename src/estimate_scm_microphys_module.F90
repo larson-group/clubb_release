@@ -17,6 +17,7 @@ module estimate_scm_microphys_module
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, pdf_params, &
+               lh_clipped_vars, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
                lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &
                lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
@@ -132,6 +133,9 @@ module estimate_scm_microphys_module
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params
 
+    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
+      lh_clipped_vars   ! Variables from SILHS sample
+
     ! Output Variables
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -160,9 +164,6 @@ module estimate_scm_microphys_module
       lh_rcm_mc_all,       & ! LH est of time tendency of liquid water mixing ratio    [kg/kg/s]
       lh_rvm_mc_all,       & ! LH est of time tendency of vapor water mixing ratio     [kg/kg/s]
       lh_thlm_mc_all         ! LH est of time tendency of liquid potential temperature     [K/s]
-
-    type(lh_clipped_variables_type), dimension(nz,num_samples) :: &
-      lh_clipped_vars
 
     real( kind = core_rknd ), dimension(nz,num_samples,hydromet_dim) :: &
       hydromet_all_points ! Hydrometeor species                    [units vary]
@@ -216,10 +217,6 @@ module estimate_scm_microphys_module
            hydromet,                     & ! Intent(in)
            hydromet_all_points,          & ! Intent(out)
            Ncn_all_points )                ! Intent(out)
-
-    call clip_transform_silhs_output &
-         ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, & ! In
-           lh_clipped_vars ) ! Out
 
     ! Unpack the lh_clipped_vars structure
     rt_all_points  = lh_clipped_vars%rt

@@ -37,6 +37,7 @@ module microphys_driver
                                 lh_sample_point_weights, &                ! In
                                 mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
                                 corr_array_1, corr_array_2, &             ! In
+                                lh_clipped_vars, &                        ! In
                                 Nccnm, &                                  ! Inout
                                 hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
                                 thlm_mc, hydromet_vel_zt, &               ! Out
@@ -81,6 +82,9 @@ module microphys_driver
 
     use mg_microphys_driver_module, only: &
         mg_microphys_driver  ! Procedure(s)
+
+    use latin_hypercube_driver_module, only: &
+        lh_clipped_variables_type  ! Type
 
 #ifdef COAMPS_MICRO
     use coamps_microphys_driver_module, only:  & 
@@ -235,7 +239,7 @@ module microphys_driver
 
     real( kind = dp ), dimension(gr%nz,lh_num_samples,d_variables), &
     intent(in) :: &
-      X_nl_all_levs ! Lognormally distributed hydrometeors
+      X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
     integer, dimension(gr%nz,lh_num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Which mixture component the sample is in
@@ -253,6 +257,9 @@ module microphys_driver
     intent(in) :: &
       corr_array_1, & ! Corr. array (normalized) of PDF vars. (comp. 1)    [-]
       corr_array_2    ! Corr. array (normalized) of PDF vars. (comp. 2)    [-]
+
+    type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples) :: &
+      lh_clipped_vars ! SILHS sample variables
 
     ! Input/Output Variables
     ! Note:
@@ -447,7 +454,8 @@ module microphys_driver
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
-               hydromet, X_mixt_comp_all_levs,  & !In 
+               hydromet, X_mixt_comp_all_levs,  & !In
+               lh_clipped_vars, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
@@ -552,7 +560,8 @@ module microphys_driver
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
-               hydromet, X_mixt_comp_all_levs,  & !In 
+               hydromet, X_mixt_comp_all_levs,  & !In
+               lh_clipped_vars, & ! In
                hydromet_mc, hydromet_vel_zt, Ncm_mc, & ! Out
                rcm_mc, rvm_mc, thlm_mc,  & ! Out
                rtp2_mc, thlp2_mc, wprtp_mc, & ! Out
