@@ -3085,7 +3085,7 @@ module latin_hypercube_driver_module
   subroutine stats_accumulate_lh &
              ( nz, num_samples, d_variables, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
-               lh_thl, lh_rt )
+               lh_clipped_vars )
 
 ! Description:
 !   Clip subcolumns from latin hypercube and create stats for diagnostic
@@ -3186,9 +3186,8 @@ module latin_hypercube_driver_module
     real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_thl, & ! Sample of liquid potential temperature [K]
-      lh_rt     ! Sample of total water mixing ratio     [kg/kg]
+    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
+      lh_clipped_vars   ! SILHS variables
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
@@ -3230,8 +3229,7 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    ! Clip 's' from Mellor to obtain cloud-water mixing ratio
-    rc_all_points = max( zero_threshold, real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd ) )
+    rc_all_points = lh_clipped_vars%rc
 
     if ( l_stats_samp ) then
 
@@ -3255,12 +3253,12 @@ module latin_hypercube_driver_module
 
       if ( ilh_thlm + ilh_thlp2_zt > 0 ) then
         lh_thlm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                                       real( lh_thl, kind = core_rknd ) )
+                                       real( lh_clipped_vars%thl, kind = core_rknd ) )
         call stat_update_var( ilh_thlm, lh_thlm, stats_lh_zt )
       end if
 
       if ( ilh_rvm + ilh_rtp2_zt > 0 ) then
-        rv_all_points = lh_rt - rc_all_points
+        rv_all_points = lh_clipped_vars(:,:)%rv
         lh_rvm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                       rv_all_points )
         call stat_update_var( ilh_rvm, lh_rvm, stats_lh_zt )
@@ -3290,9 +3288,7 @@ module latin_hypercube_driver_module
                                       hydromet_all_points, &  ! Out
                                       Ncn_all_points ) ! Out
 
-        ! Convert from Ncn to Nc ( Nc = Ncn * H(chi) )
-        Nc_all_points = Ncn_to_Nc &
-        ( Ncn_all_points, real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd ) )
+        Nc_all_points = lh_clipped_vars%Nc
 
         ! Get rid of an annoying compiler warning.
         ivar = 1
@@ -3390,14 +3386,16 @@ module latin_hypercube_driver_module
         ! Compute the variance of total water
         lh_rtp2_zt = compute_sample_variance &
                      ( nz, num_samples, &
-                       real( lh_rt, kind = core_rknd ), lh_sample_point_weights, lh_rvm+lh_rcm )
+                       real( lh_clipped_vars%rt, kind = core_rknd ), lh_sample_point_weights, &
+                       lh_rvm+lh_rcm )
         call stat_update_var( ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
       end if
 
       if ( ilh_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         lh_thlp2_zt = compute_sample_variance( nz, num_samples, &
-                        real( lh_thl, kind = core_rknd ), lh_sample_point_weights, lh_thlm )
+                        real( lh_clipped_vars%thl, kind = core_rknd ), lh_sample_point_weights, &
+                        lh_thlm )
         call stat_update_var( ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
       end if
 

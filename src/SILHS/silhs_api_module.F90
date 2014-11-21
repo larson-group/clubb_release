@@ -134,9 +134,9 @@ contains
   subroutine stats_accumulate_lh_api( &
     nz, num_samples, d_variables, rho_ds_zt, &
     lh_sample_point_weights, X_nl_all_levs, &
-    lh_thl, lh_rt )
+    lh_clipped_vars )
 
-    use latin_hypercube_driver_module, only : stats_accumulate_lh
+    use latin_hypercube_driver_module, only : stats_accumulate_lh, lh_clipped_variables_type
 
     use clubb_precision, only: &
       core_rknd, & ! Variable(s)
@@ -159,15 +159,13 @@ contains
     real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_thl, & ! Sample of liquid potential temperature [K]
-      lh_rt     ! Sample of total water mixing ratio     [kg/kg]
-
+    type(lh_clipped_variables_type), intent(in), dimension(nz,num_samples) :: &
+      lh_clipped_vars
 
     call stats_accumulate_lh( &
       nz, num_samples, d_variables, rho_ds_zt, &
       lh_sample_point_weights, X_nl_all_levs, &
-      lh_thl, lh_rt )
+      lh_clipped_vars )
 
   end subroutine stats_accumulate_lh_api
 

@@ -1353,15 +1353,15 @@ module clubb_driver
                X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
                lh_sample_point_weights ) ! Out
 
-        call stats_accumulate_lh &
-             ( gr%nz, lh_num_samples, d_variables, rho_ds_zt, & ! In
-               lh_sample_point_weights,  X_nl_all_levs, & ! In
-               lh_thl, lh_rt ) ! In
-
         call clip_transform_silhs_output &
              ( gr%nz, lh_num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
                pdf_params, & ! In
                lh_clipped_vars ) ! Out
+
+        call stats_accumulate_lh &
+             ( gr%nz, lh_num_samples, d_variables, rho_ds_zt, & ! In
+               lh_sample_point_weights,  X_nl_all_levs, & ! In
+               lh_clipped_vars ) ! In
 
       end if ! lh_microphys_enabled
 
@@ -1436,7 +1436,7 @@ module clubb_driver
                ( gr%nz, lh_num_samples, d_variables, hydromet_dim, & !In
                  time_current, rho, rho_zm, & !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
-                 lh_rt, lh_thl, lh_sample_point_weights, hydromet, & !In
+                 lh_clipped_vars, lh_sample_point_weights, hydromet, & !In
                  err_code, & !inout
                  radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down ) !out
 
@@ -4341,7 +4341,7 @@ module clubb_driver
   subroutine silhs_radiation_driver &
              ( nz, lh_num_samples, d_variables, hydromet_dim, time_current, rho, rho_zm, &
                p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
-               lh_rt, lh_thl, lh_sample_point_weights, hydromet, &
+               lh_clipped_vars, lh_sample_point_weights, hydromet, &
                err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
 
@@ -4365,8 +4365,8 @@ module clubb_driver
       report_error ! Subroutine
 
     use latin_hypercube_driver_module, only: &
-      copy_X_nl_into_hydromet_all_pts, &   ! Procedure(s)
-      copy_X_nl_into_rc_all_pts
+      copy_X_nl_into_hydromet_all_pts, &   ! Procedure
+      lh_clipped_variables_type            ! Type
 
     use constants_clubb, only: &
       fstderr        ! Constant
@@ -4394,9 +4394,8 @@ module clubb_driver
     real( kind = dp ), dimension(nz,lh_num_samples,d_variables), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples), intent(in) :: &
-      lh_rt, &             ! SILHS sample of rt                        [kg/kg]
-      lh_thl               ! SILHS sample of thl                       [K]
+    type(lh_clipped_variables_type), dimension(nz,lh_num_samples), intent(in) :: &
+      lh_clipped_vars
 
     real( kind = core_rknd ), dimension(lh_num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each SILHS sample point      [-]
@@ -4426,9 +4425,6 @@ module clubb_driver
                        ! (not used)
 
     real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
-      lh_rc            ! SILHS sample of rc                            [kg/kg]
-
-    real( kind = core_rknd ), dimension(nz,lh_num_samples) :: &
       radht_samples,        &    ! radht evaluated at each sample point
       Frad_samples,         &    ! Frad evaluated at each sample point
       Frad_SW_up_samples,   &    ! Frad_SW_up evaluated at each sample point
@@ -4453,20 +4449,17 @@ module clubb_driver
            hydromet_all_pts, &                            ! Intent(out)
            Ncn_all_points )                               ! Intent(out)
 
-    call copy_X_nl_into_rc_all_pts &
-         ( nz, d_variables, lh_num_samples, X_nl_all_levs, & ! Intent(in)
-           lh_rc )                                               ! Intent(out)
-
     do isample=1, lh_num_samples
       ! Call a radiation scheme
       call advance_clubb_radiation &
-           ( time_current, rho, rho_zm, p_in_Pa, &                                 ! Intent(in)
-             exner, cloud_frac, ice_supersat_frac, lh_thl(:,isample), &            ! Intent(in)
-             lh_rt(:,isample), lh_rc(:,isample), hydromet_all_pts(:,isample,:), &  ! Intent(in)
-             err_code_samp(isample), &                                             ! Intent(inout)
-             radht_samples(:,isample), Frad_samples(:,isample), &                  ! Intent(out)
-             Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &       ! Intent(out)
-             Frad_SW_down_samples(:,isample), Frad_LW_down_samples(:,isample) )    ! Intent(out)
+           ( time_current, rho, rho_zm, p_in_Pa, &                                   ! Intent(in)
+             exner, cloud_frac, ice_supersat_frac, lh_clipped_vars(:,isample)%thl, & ! Intent(in)
+             lh_clipped_vars(:,isample)%rt, lh_clipped_vars(:,isample)%rc, &         ! Intent(in)
+             hydromet_all_pts(:,isample,:), &                                        ! Intent(in)
+             err_code_samp(isample), &                                               ! Intent(inout)
+             radht_samples(:,isample), Frad_samples(:,isample), &                    ! Intent(out)
+             Frad_SW_up_samples(:,isample), Frad_LW_up_samples(:,isample), &         ! Intent(out)
+             Frad_SW_down_samples(:,isample), Frad_LW_down_samples(:,isample) )      ! Intent(out)
     end do
 
     ! Average results
