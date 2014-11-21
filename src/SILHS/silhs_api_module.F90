@@ -37,7 +37,8 @@ module silhs_api_module
     l_lh_vert_overlap, &
     l_lh_cloud_weighted_sampling, &
     l_Lscale_vert_avg, &
-    Ncn_to_Nc_api
+    Ncn_to_Nc_api, &
+    clip_transform_silhs_output_api
 
 contains
 
