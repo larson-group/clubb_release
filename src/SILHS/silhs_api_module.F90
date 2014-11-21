@@ -22,6 +22,10 @@ module silhs_api_module
     l_lh_vert_overlap, &          ! Variable(s)
     l_lh_cloud_weighted_sampling, &
     l_Lscale_vert_avg
+
+  use latin_hypercube_driver_module, only: &
+    lh_clipped_variables_type
+
 #endif
 
   implicit none
