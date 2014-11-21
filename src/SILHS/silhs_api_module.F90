@@ -249,9 +249,6 @@ contains
     use clubb_precision, only: &
       core_rknd    ! Our awesome generalized precision (constant)
 
-    use constants_clubb, only: &
-      zero         ! Constant
-
     implicit none
 
     ! Input Variables
@@ -267,6 +264,50 @@ contains
       Ncn, chi )
 
   end function Ncn_to_Nc_api
+
+  !================================================================================================
+  ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
+  !================================================================================================
+
+  subroutine clip_transform_silhs_output_api( &
+    nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
+    lh_clipped_vars )
+
+    use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
+
+    use clubb_precision, only: &
+      core_rknd, &    ! Our awesome generalized precision (constant)
+      dp
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,          &         ! Number of vertical levels
+      num_samples, &         ! Number of SILHS sample points
+      d_variables            ! Number of variates in X_nl_one_lev
+
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
+
+    real( kind = dp ), dimension(nz,num_samples,d_variables) :: &
+      X_nl_all_levs          ! A SILHS sample
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params             ! **The** PDF parameters!
+
+    ! Output Variables
+    type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
+      lh_clipped_vars        ! SILHS clipped and transformed variables
+
+    call clip_transform_silhs_output( &
+      nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
+      lh_clipped_vars )
+
+  end subroutine clip_transform_silhs_output_api
 
 #endif
 
