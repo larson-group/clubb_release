@@ -24,7 +24,7 @@ module silhs_api_module
     l_Lscale_vert_avg
 
   use latin_hypercube_driver_module, only: &
-    lh_clipped_variables_type
+    lh_clipped_variables_type ! Type
 
 #endif
 
@@ -42,7 +42,8 @@ module silhs_api_module
     l_lh_cloud_weighted_sampling, &
     l_Lscale_vert_avg, &
     Ncn_to_Nc_api, &
-    clip_transform_silhs_output_api
+    clip_transform_silhs_output_api, &
+    lh_clipped_variables_type
 
 contains
 
