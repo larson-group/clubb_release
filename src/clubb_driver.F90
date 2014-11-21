@@ -1528,7 +1528,7 @@ module clubb_driver
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
-                lh_sample_point_weights, Nc_in_cloud )
+                lh_sample_point_weights, Nc_in_cloud, lh_clipped_vars )
 
     return
   end subroutine run_clubb
