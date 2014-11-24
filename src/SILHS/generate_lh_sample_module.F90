@@ -739,10 +739,10 @@ module generate_lh_sample_module
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
   subroutine chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, & 
-                         crt_1, cthl_1, crt_2, cthl_2, & 
-                         mu_chi_1, mu_chi_2, &
-                         chi, eta, X_mixt_comp_one_lev, &
-                         lh_rt, lh_thl )
+                              crt_1, cthl_1, crt_2, cthl_2, & 
+                              mu_chi_1, mu_chi_2, &
+                              chi, eta, X_mixt_comp_one_lev, &
+                              lh_rt, lh_thl )
 ! Description:
 !   Converts from chi(s), eta(t) variables to rt, thl.  Also sets a limit on the value
 !   of cthl_1 and cthl_2 to prevent extreme values of temperature.
@@ -762,27 +762,22 @@ module generate_lh_sample_module
 
     ! Constant Parameters
 
-    ! Reduce the below value if model seems to crashing due excessive
-    ! lh_thlp2_zt and it will limit the extremes of the samples.
-!   real(kind = dp), parameter :: &
-!     cthl_thresh = 1e-5_dp ! Threshold on cthl_1 and cthl_2 [kg/kg/K]
-
-    real(kind = dp), parameter :: &
-      thl_dev_lim = 5.0_dp ! Max deviation from mean thetal [K]
+    real(kind = core_rknd), parameter :: &
+      thl_dev_lim = 5.0_core_rknd ! Max deviation from mean thetal [K]
 
     ! Input Variables
 
-    real( kind = dp ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       rt_1, rt_2,    & ! n dimensional column vector of rt         [kg/kg]
       thl_1, thl_2,  & ! n dimensional column vector of thetal     [K]
       crt_1, crt_2,  & ! Constants from plumes 1 & 2 of rt
       cthl_1, cthl_2   ! Constants from plumes 1 & 2 of thetal
 
-    real( kind = dp ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mu_chi_1, mu_chi_2 ! Mean for chi_1 and chi_2         [kg/kg]
 
     ! n-dimensional column vector of Mellor's chi(s) and eta(t), including mean and perturbation
-    real( kind = dp ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       chi, &  ! [kg/kg]
       eta     ! [-]
 
@@ -796,55 +791,35 @@ module generate_lh_sample_module
 
     ! Local Variables
 
-!   real( kind= dp ) :: cthl_1_clip, cthl_2_clip, & ! Clipped values of cthl_1,2 [kg/kg/K]
-    real( kind= dp ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
+    real( kind= core_rknd ) :: lh_dev_thl_lim ! Limited value of the deviation on thetal [K]
 
     ! ---- Begin Code ----
 
-    ! Clip the value of cthl_1,2.  This prevents large values of theta_l when the
-    ! saturation point is low and limits the chance of instability.
-    ! See ticket #527 on the CLUBB TRAC
-!   cthl_1_clip = max( cthl_1, cthl_thresh )
-!   cthl_2_clip = max( cthl_2, cthl_thresh )
-
-    ! Choose which mixture fraction we are in.
-    ! Account for cloud fraction.
-    ! Follow M. E. Johnson (1987), p. 56.
-!     fraction_1     = mixt_frac*cloud_frac_1 / &
-!                      (mixt_frac*cloud_frac_1+(1-mixt_frac)*cloud_frac_2)
-
     if ( X_mixt_comp_one_lev == 1 ) then
-      lh_rt  = real( rt_1 + (0.5_dp/crt_1)*(chi-mu_chi_1) +  & 
-                             (0.5_dp/crt_1)*eta, kind=core_rknd )
+      lh_rt  = real( rt_1 + (0.5_core_rknd/crt_1)*(chi-mu_chi_1) +  & 
+                             (0.5_core_rknd/crt_1)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl_1)*(chi-mu_chi_1) & 
-                     + (0.5_dp/cthl_1)*eta
+      lh_dev_thl_lim = (-0.5_core_rknd/cthl_1)*(chi-mu_chi_1) & 
+                     + (0.5_core_rknd/cthl_1)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
       lh_thl = real( thl_1 + lh_dev_thl_lim, kind=core_rknd )
 
-        ! Old code
-!       lh_thl = real( thl_1 + (-0.5_dp/cthl_1_clip)*(chi-mu_chi_1) +  & 
-!                              (0.5_dp/cthl_1_clip)*eta, kind=core_rknd )
-
     else if ( X_mixt_comp_one_lev == 2 ) then
-        ! mixture fraction 2
-      lh_rt = real( rt_2 + (0.5_dp/crt_2)*(chi-mu_chi_2) +  & 
-                             (0.5_dp/crt_2)*eta, kind=core_rknd )
+      ! Mixture fraction 2
+      lh_rt = real( rt_2 + (0.5_core_rknd/crt_2)*(chi-mu_chi_2) +  & 
+                             (0.5_core_rknd/crt_2)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_dp/cthl_2)*(chi-mu_chi_2) & 
-                     + (0.5_dp/cthl_2)*eta
+      lh_dev_thl_lim = (-0.5_core_rknd/cthl_2)*(chi-mu_chi_2) & 
+                     + (0.5_core_rknd/cthl_2)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
 
       lh_thl = real( thl_2 + lh_dev_thl_lim, kind=core_rknd )
 
-      ! Old code
-!     lh_thl = real( thl_2 + (-0.5_dp/cthl_2_clip)*(chi-mu_chi_2) +  & 
-!                           (0.5_dp/cthl_2_clip)*eta, kind=core_rknd )
     else
       stop "Error determining mixture fraction in chi_eta_2_rtthl"
 

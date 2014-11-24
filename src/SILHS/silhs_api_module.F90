@@ -41,7 +41,6 @@ module silhs_api_module
     l_lh_vert_overlap, &
     l_lh_cloud_weighted_sampling, &
     l_Lscale_vert_avg, &
-    Ncn_to_Nc_api, &
     clip_transform_silhs_output_api, &
     lh_clipped_variables_type
 
@@ -239,34 +238,6 @@ contains
       AKm_rcm, AKm_rcc, lh_rcm_avg )
 
   end subroutine est_kessler_microphys_api
-
-  !================================================================================================
-  ! Ncn_to_Nc - Converts a sample of Ncn to a sample of Nc.
-  !================================================================================================
-
-  elemental function Ncn_to_Nc_api( &
-    Ncn, chi ) result ( Nc )
-
-    use latin_hypercube_driver_module, only : Ncn_to_Nc
-
-    use clubb_precision, only: &
-      core_rknd    ! Our awesome generalized precision (constant)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      Ncn,  &  ! Simplified cloud nuclei concentration N_cn  [num/kg]
-      chi      ! Extended cloud water mixing ratio           [kg/kg]
-
-    ! Output Variable
-    real( kind = core_rknd ) :: &
-      Nc       ! Cloud droplet concentration                 [num/kg]
-
-    Nc = Ncn_to_Nc( &
-      Ncn, chi )
-
-  end function Ncn_to_Nc_api
 
   !================================================================================================
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.

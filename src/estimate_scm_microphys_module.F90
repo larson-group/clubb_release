@@ -75,8 +75,6 @@ module estimate_scm_microphys_module
     use latin_hypercube_driver_module, only: &
       copy_X_nl_into_hydromet_all_pts, &    ! Procedure(s)
       clip_transform_silhs_output,     &
-      Ncn_to_Nc, &
-      chi_to_rc, &
       lh_clipped_variables_type             ! Type
 
 

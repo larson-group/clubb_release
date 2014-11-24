@@ -11,8 +11,8 @@ module latin_hypercube_driver_module
   ! Constant Parameters
   logical, parameter, private :: &
     l_diagnostic_iter_check      = .true.,  & ! Check for a problem in iteration
-    l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
-    l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
+    l_output_2D_lognormal_dist   = .true., & ! Output a 2D netCDF file of the lognormal variates
+    l_output_2D_uniform_dist     = .true.    ! Output a 2D netCDF file of the uniform distribution
 
   integer, private :: &
     prior_iter ! Prior iteration number (for diagnostic purposes)
@@ -40,8 +40,8 @@ module latin_hypercube_driver_module
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
-    copy_X_nl_into_hydromet_all_pts, copy_X_nl_into_rc_all_pts, Ncn_to_Nc, &
-    generate_strat_uniform_variate, pick_sample_categories, chi_to_rc,     &
+    copy_X_nl_into_hydromet_all_pts, &
+    generate_strat_uniform_variate, pick_sample_categories, &
     clip_transform_silhs_output
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
@@ -649,20 +649,11 @@ module latin_hypercube_driver_module
         lh_eta = real( X_nl_all_levs(k,isample,iiPDF_eta), kind=core_rknd )
 
         ! Compute lh_rt and lh_thl
-        call chi_eta_2_rtthl( real( rt_1, kind=dp ), &    ! In
-                              real( thl_1, kind=dp ), &   ! In
-                              real( rt_2, kind=dp ), &    ! In
-                              real( thl_2, kind=dp), &    ! In
-                              real( crt_1, kind=dp ), &   ! In
-                              real( cthl_1, kind=dp ), &  ! In
-                              real( crt_2, kind=dp ), &   ! In
-                              real( cthl_2, kind=dp ), &  ! In
-                              real( chi_1, kind=dp ), &   ! In
-                              real( chi_2, kind=dp ), &   ! In
-                              real( lh_chi, kind=dp), &   ! In
-                              real( lh_eta, kind=dp), &   ! In
-                              X_mixt_comp_all_levs(k,isample), &    ! Intent(in)
-                              lh_rt(k,isample), lh_thl(k,isample) ) ! Intent(out)
+        call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &                        ! Intent(in)
+                              crt_1, cthl_1, crt_2, cthl_2, &                    ! Intent(in)
+                              chi_1, chi_2, &                                    ! Intent(in)
+                              lh_chi, lh_eta, X_mixt_comp_all_levs(k,isample), & ! Intent(in)
+                              lh_rt(k,isample), lh_thl(k,isample) )              ! Intent(out)
 
         ! If necessary, clip rt
         if ( lh_rt(k,isample) < zero ) then
@@ -3691,53 +3682,6 @@ module latin_hypercube_driver_module
     return
   end subroutine copy_X_nl_into_hydromet_all_pts
   !-----------------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_rc_all_pts &
-             ( nz, d_variables, num_samples, X_nl_all_levs, &
-               lh_rc )
-  ! Description:
-  !   Extracts a sample of rc from X_nl_all_levs, where rc = chi * H(chi), for
-  !   each subcolumn.
-
-  ! References:
-  !   none
-  !-----------------------------------------------------------------------------
-    use clubb_precision, only: &
-      dp, &
-      core_rknd
-
-    use corr_varnce_module, only: &
-      iiPDF_chi        ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz, &            ! Number of vertical levels
-      d_variables, &   ! Number of lognormal variates
-      num_samples      ! Number of SILHS samples per variate
-
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
-      X_nl_all_levs    ! Normal-lognormal SILHS sample   [units vary]
-
-    ! Output variables
-    real( kind = core_rknd ), dimension(nz,num_samples), intent(out) :: &
-      lh_rc            ! SILHS samples of rc       [kg/kg]
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    where ( X_nl_all_levs(:,:,iiPDF_chi) >= 0.0_dp )
-      lh_rc = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
-    elsewhere
-      lh_rc = 0.0_core_rknd
-    end where
-
-    return
-  end subroutine copy_X_nl_into_rc_all_pts
-  !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
   elemental function Ncn_to_Nc( Ncn, chi ) result ( Nc )
