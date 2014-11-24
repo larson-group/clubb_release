@@ -64,7 +64,7 @@ module latin_hypercube_driver_module
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
                hydromet_pdf_params, & ! In
-               X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+               X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
                lh_sample_point_weights ) ! Out
 
 ! Description:
@@ -168,9 +168,6 @@ module latin_hypercube_driver_module
 
     integer, intent(out), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
-
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
 
     real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
       lh_sample_point_weights
@@ -466,23 +463,20 @@ module latin_hypercube_driver_module
       do sample = 1, num_samples, 1
         call generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
-               pdf_params(k)%thl_1, pdf_params(k)%thl_2, & ! In
-               pdf_params(k)%rt_1, pdf_params(k)%rt_2, & ! In
-               pdf_params(k)%crt_1, pdf_params(k)%crt_2, & ! In
-               pdf_params(k)%cthl_1, pdf_params(k)%cthl_2, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
                corr_cholesky_mtx_1(:,:,k), & ! In
                corr_cholesky_mtx_2(:,:,k), & ! In
                X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
                l_in_precip(k,sample), & ! In
-               lh_rt(k,sample), lh_thl(k,sample), X_nl_all_levs(k,sample,:) ) ! Out
+               X_nl_all_levs(k,sample,:) ) ! Out
       end do ! sample = 1, num_samples, 1
     end do ! k = 1, nz
 
     if ( l_output_2D_lognormal_dist ) then
+      ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
+      ! because they are no longer generated in lh_subcolumn_generator.
       call output_2D_lognormal_dist_file( nz, num_samples, d_variables, &
-                                          real(X_nl_all_levs, kind = stat_rknd), &
-                                          lh_rt, lh_thl )
+                                          real(X_nl_all_levs, kind = stat_rknd) )
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
@@ -535,17 +529,6 @@ module latin_hypercube_driver_module
       end do ! k=2, nz
 
     end if ! clubb_at_least_debug_level( 2 )
-
-    ! Verify total water isn't negative
-    if ( any( lh_rt < 0._core_rknd) ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
-        write(fstderr,*) "Total water negative in LH sample point"
-        write(fstderr,*) "Applying non-conservative hard clipping to rv sample point."
-      end if ! clubb_at_least_debug_level( 1 )
-      where ( lh_rt < 0._core_rknd)
-        lh_rt = zero_threshold
-      end where
-    end if ! Some rv_all_points(:,sample) < 0
 
     ! Stop the run if an error occurred
     if ( l_error ) then
@@ -2317,8 +2300,8 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_lognormal_dist ) then
 
-      allocate( variable_names(d_variables+2), variable_descriptions(d_variables+2), &
-                variable_units(d_variables+2) )
+      allocate( variable_names(d_variables), variable_descriptions(d_variables), &
+                variable_units(d_variables) )
 
       variable_names(iiPDF_chi)        = "chi"
       variable_descriptions(iiPDF_chi) = "The variable 's' from Mellor 1977"
@@ -2379,17 +2362,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ng)        = "count/kg"
       end if
 
-      i = d_variables + 1
-      variable_names(i)        = "rt"
-      variable_descriptions(i) = "Total water mixing ratio"
-      variable_units(i)        = "kg/kg"
-
-      i = d_variables + 2
-      variable_names(i)        = "thl"
-      variable_descriptions(i) = "Liquid potential temperature"
-      variable_units(i)        = "K"
-
-      call open_2D_samples_file( nz, num_samples, d_variables+2, & ! In
+      call open_2D_samples_file( nz, num_samples, d_variables, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, stats_zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In

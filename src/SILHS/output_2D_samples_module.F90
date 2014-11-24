@@ -119,8 +119,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
-             ( nz, num_samples, d_variables, X_nl_all_levs, &
-               lh_rt, lh_thl )
+             ( nz, num_samples, d_variables, X_nl_all_levs )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -143,15 +142,11 @@ module output_2D_samples_module
     real(kind=stat_rknd), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
-      lh_rt, & ! Sample of total water mixing ratio             [kg/kg]
-      lh_thl   ! Sample of liquid potential temperature         [K]
-
     integer :: sample, j
 
     ! ---- Begin Code ----
 
-    do j = 1, d_variables+2
+    do j = 1, d_variables
       allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
@@ -161,24 +156,13 @@ module output_2D_samples_module
       end do
     end do
 
-    ! Append rt, thl at the end of the variables
-    j = d_variables+1
-    do sample = 1, num_samples
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(lh_rt(1:nz,sample), kind=dp)
-    end do
-
-    j = d_variables+2
-    do sample = 1, num_samples
-      lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = real(lh_thl(1:nz,sample), kind=dp)
-    end do
-
 #ifdef NETCDF
     call write_netcdf( lognormal_sample_file )
 #else
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, d_variables+2
+    do j = 1, d_variables
       deallocate( lognormal_sample_file%var(j)%ptr )
     end do
 

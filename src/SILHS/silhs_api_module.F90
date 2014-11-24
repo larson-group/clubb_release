@@ -57,7 +57,7 @@ contains
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
     hydromet_pdf_params, & ! In
-    X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+    X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
     use latin_hypercube_driver_module, only : lh_subcolumn_generator
@@ -102,9 +102,6 @@ contains
     integer, intent(out), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
-      lh_rt, lh_thl ! Sample of total water and liquid potential temperature [kg/kg],[K]
-
     real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
       lh_sample_point_weights
 
@@ -128,7 +125,7 @@ contains
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
       hydromet_pdf_params, & ! In
-      X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+      X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
   end subroutine lh_subcolumn_generator_api

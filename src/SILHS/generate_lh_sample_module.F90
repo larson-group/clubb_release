@@ -21,14 +21,12 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
   subroutine generate_lh_sample &
              ( d_variables, d_uniform_extra, & ! In
-               thl_1, thl_2, rt_1, rt_2, & ! In
-               crt_1, crt_2, cthl_1, cthl_2, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_Cholesky_mtx_1, & ! In
                corr_Cholesky_mtx_2, & ! In
                X_u_one_lev, X_mixt_comp_one_lev, & ! In
                l_in_precip_one_lev, & ! In
-               lh_rt, lh_thl, X_nl_one_lev ) ! Out
+               X_nl_one_lev ) ! Out
 ! Description:
 !   This subroutine generates a Latin Hypercube sample.
 
@@ -64,16 +62,6 @@ module generate_lh_sample_module
       d_variables, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
-    real( kind = core_rknd ), intent(in) :: &
-      rt_1,         & ! Mean of r_t for 1st normal distribution   [kg/kg]
-      rt_2,         & ! Mean of r_t for 2nd normal distribution   [kg/kg]
-      thl_1,        & ! Mean of th_l for 1st normal distribution  [K]
-      thl_2,        & ! Mean of th_l for 2nd normal distribution  [K]
-      crt_1,        & ! Coefficient for s'                        [-]
-      crt_2,        & ! Coefficient for s'                        [-]
-      cthl_1,       & ! Coefficient for s'                        [1/K]
-      cthl_2          ! Coefficient for s'                        [1/K]
-
     real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
       corr_Cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_Cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
@@ -92,11 +80,6 @@ module generate_lh_sample_module
 
     logical, intent(in) :: &
       l_in_precip_one_lev ! Whether we are in precipitation (T/F)
-
-    ! Output Variables
-    real( kind = core_rknd ), intent(out) :: &
-      lh_rt, & ! Total water mixing ratio          [kg/kg]
-      lh_thl   ! Liquid potential temperature      [K]
 
     real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -176,10 +159,6 @@ module generate_lh_sample_module
     ! Compute the new set of sample points using the update variance matrices
     ! for this level
     call sample_points( d_variables, d_uniform_extra, &  ! intent(in)
-                        real(rt_1, kind = dp), real(thl_1, kind = dp), &  ! intent(in)
-                        real(rt_2, kind = dp), real(thl_2, kind = dp), &  ! intent(in)
-                        real(crt_1, kind = dp), real(cthl_1, kind = dp), &  ! intent(in)
-                        real(crt_2, kind = dp), real(cthl_2, kind = dp), &  ! intent(in)
                         mu1, mu2, &  ! intent(in)
                         l_d_variable_lognormal, & ! intent(in)
                         X_u_one_lev, & ! intent(in)
@@ -187,7 +166,7 @@ module generate_lh_sample_module
                         Sigma1_Cholesky, Sigma2_Cholesky, & ! intent(in)
                         Sigma1_scaling, Sigma2_scaling, & ! intent(in)
                         l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
-                        lh_rt, lh_thl, X_nl_one_lev ) ! intent(out)
+                        X_nl_one_lev ) ! intent(out)
 
     ! Zero precipitation hydrometeors if not in precipitation
     if ( .not. l_in_precip_one_lev ) then
@@ -244,8 +223,6 @@ module generate_lh_sample_module
 
 !---------------------------------------------------------------------------------------------------
   subroutine sample_points( d_variables, d_uniform_extra, &
-                            rt_1, thl_1, rt_2, thl_2, &
-                            crt_1, cthl_1, crt_2, cthl_2, &
                             mu1, mu2,  &
                             l_d_variable_lognormal, &
                             X_u_one_lev, &
@@ -253,7 +230,7 @@ module generate_lh_sample_module
                             Sigma1_Cholesky, Sigma2_Cholesky, &
                             Sigma1_scaling, Sigma2_scaling, &
                             l_Sigma1_scaling, l_Sigma2_scaling, &
-                            lh_rt, lh_thl, X_nl_one_lev )
+                            X_nl_one_lev )
 
 ! Description:
 !   Generates n random samples from a d-dim Gaussian-mixture PDF.
@@ -283,17 +260,6 @@ module generate_lh_sample_module
       d_variables, &    ! Number of variates
       d_uniform_extra   ! Variates included in uniform sample only  
 
-    !rt_1, thl_1 = mean of rt, thl for Gaus comp 1
-    !rt_2, thl_2 = mean of rt, thl for Gaus comp 2
-    real( kind = dp ), intent(in) :: rt_1, thl_1, rt_2, thl_2
-
-    ! Thermodynamic constants for plumes 1 and 2, units of kg/kg
-    real( kind = dp ), intent(in) :: &
-      crt_1,  & ! coefficient relating rt, chi(s) and eta(t) for Gaus comp 1
-      cthl_1, & ! coeff relating thl, chi(s) and eta(t) for component 1
-      crt_2,  & ! coefficient relating rt, chi(s) and eta(t) for component 2
-      cthl_2    ! coefficient relating thl, chi(s) and eta(t) for comp. 2
-
     ! Latin hypercube variables, i.e. chi, eta, w, etc.
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd components
@@ -320,10 +286,6 @@ module generate_lh_sample_module
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
 
     ! Output Variables
-    ! Total water, theta_l: mean plus perturbations
-    real( kind = core_rknd ), intent(out) :: &
-      lh_rt,  & ! Total water   [kg/kg]
-      lh_thl    ! Liquid potential temperature  [K]
 
     real( kind = dp ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
@@ -338,18 +300,6 @@ module generate_lh_sample_module
                            l_Sigma1_scaling, l_Sigma2_scaling, & ! intent(in)
                            X_u_one_lev, X_mixt_comp_one_lev, & ! intent(in)
                            X_nl_one_lev ) ! intent(out)
-
-! Transform chi(s) (column 1) and eta(t) (column 2) back to rt and thl
-!   This is only needed if you need total water mixing ratio and liquid potential
-!   samples points.
-    call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, & ! intent(in)
-                     crt_1, cthl_1, crt_2, cthl_2, & ! intent(in)
-                     real(mu1(iiPDF_chi), kind = dp), & ! intent(in)
-                     real(mu2(iiPDF_chi), kind = dp), & ! intent(in)
-                     X_nl_one_lev(iiPDF_chi), & ! intent(in)
-                     X_nl_one_lev(iiPDF_eta), & ! intent(in)
-                     X_mixt_comp_one_lev, & ! intent(in)
-                     lh_rt, lh_thl ) ! intent(out)
 
     ! Convert lognormal variates (e.g. Ncn and rr) to lognormal
     where ( l_d_variable_lognormal )

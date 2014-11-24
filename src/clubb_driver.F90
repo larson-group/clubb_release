@@ -468,9 +468,6 @@ module clubb_driver
     integer, dimension(:,:), allocatable :: &
       X_mixt_comp_all_levs ! Which mixture component a sample is in
 
-    real( kind = core_rknd ), dimension(:,:), allocatable :: &
-      lh_rt, lh_thl ! Samples of rt, thl          [kg/kg, K]
-
     type(lh_clipped_variables_type), dimension(:,:), allocatable :: &
       lh_clipped_vars ! Samples of rt, thl, rc, rv, and Nc
 
@@ -985,8 +982,8 @@ module clubb_driver
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
 
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,d_variables), &
-              X_mixt_comp_all_levs(gr%nz,lh_num_samples), lh_rt(gr%nz,lh_num_samples), &
-              lh_thl(gr%nz,lh_num_samples), lh_clipped_vars(gr%nz,lh_num_samples), &
+              X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
+              lh_clipped_vars(gr%nz,lh_num_samples), &
               lh_sample_point_weights(lh_num_samples), &
               Nc_in_cloud(gr%nz) )
 
@@ -1350,7 +1347,7 @@ module clubb_driver
                real( corr_cholesky_mtx_1, kind = dp ), & ! In
                real( corr_cholesky_mtx_2, kind = dp ), & ! In
                hydromet_pdf_params, & ! In
-               X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, & ! Out
+               X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
                lh_sample_point_weights ) ! Out
 
         call clip_transform_silhs_output &
@@ -1368,8 +1365,6 @@ module clubb_driver
 #else
       ! Alleviate compiler warnings
       X_nl_all_levs = -999._core_rknd
-      lh_rt = -999._core_rknd
-      lh_thl = -999._core_rknd
       lh_clipped_vars%rt = -999._core_rknd
       X_mixt_comp_all_levs = -999
       lh_sample_point_weights = -999._core_rknd
@@ -1527,7 +1522,7 @@ module clubb_driver
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
 
-    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, lh_rt, lh_thl, &
+    deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, &
                 lh_sample_point_weights, Nc_in_cloud, lh_clipped_vars )
 
     return
