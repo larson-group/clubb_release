@@ -70,8 +70,8 @@ module lba
   end subroutine lba_tndcy
 
   !----------------------------------------------------------------------
-  subroutine lba_sfclyr( time, z, rho_sfc, & 
-                         thlm_sfc, ubar,  & 
+  subroutine lba_sfclyr( time_current, time_initial, z, & 
+                         rho_sfc, thlm_sfc, ubar,  & 
                          wpthlp_sfc, wprtp_sfc, ustar )
 
     !       Description:
@@ -101,7 +101,8 @@ module lba
 
     ! Input Variables
     real(kind=time_precision), intent(in) ::  & 
-      time      ! Current time        [s]
+      time_current, & ! Current time              [s]
+      time_initial    ! Start time of model run   [s]
 
     real( kind = core_rknd ), intent(in) ::  & 
       z,         & ! Height at zt=2      [m] 
@@ -116,10 +117,14 @@ module lba
       ustar           ! surface friction velocity [m/s]
 
     ! Local variables
+    real(kind=time_precision) ::  & 
+      time      ! Elapsed time of model run    [s]
+
     real( kind = core_rknd ) :: ft, bflx
 
     ! Compute heat and moisture fluxes
     ! From Table A.1.
+    time = time_current - time_initial
     ft = real( max( 0._core_rknd,  & 
                  cos( 0.5_core_rknd * pi * ( (5.25_core_rknd - &
                  real( time,kind=core_rknd)/sec_per_hr) / 5.25_core_rknd ) ) & 

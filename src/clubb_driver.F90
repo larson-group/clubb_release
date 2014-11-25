@@ -1429,7 +1429,7 @@ module clubb_driver
 
           call silhs_radiation_driver &
                ( gr%nz, lh_num_samples, d_variables, hydromet_dim, & !In
-                 time_current, rho, rho_zm, & !In
+                 time_current, time_initial, rho, rho_zm, & !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
                  lh_clipped_vars, lh_sample_point_weights, hydromet, & !In
                  err_code, & !inout
@@ -1438,7 +1438,7 @@ module clubb_driver
         else
 
           call advance_clubb_radiation &
-               ( time_current, rho, rho_zm, p_in_Pa, &          ! Intent(in)
+               ( time_current, time_initial, rho, rho_zm, p_in_Pa, &! Intent(in)
                  exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
                  err_code, &                                    ! Intent(inout)
                  radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
@@ -3742,9 +3742,9 @@ module clubb_driver
     case ( "lba" )
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
-      call lba_sfclyr( time_current, gr%zt(2), rho_zm(1), &  ! Intent(in)
-                        thlm(2), ubar, &                     ! Intent(in)
-                        wpthlp_sfc, wprtp_sfc, ustar )       ! Intent(out)
+      call lba_sfclyr( time_current, time_initial, gr%zt(2), &  ! Intent(in)
+                       rho_zm(1), thlm(2), ubar, &              ! Intent(in)
+                       wpthlp_sfc, wprtp_sfc, ustar )           ! Intent(out)
 #endif
 
     case ( "mpace_a" )
@@ -3852,7 +3852,7 @@ module clubb_driver
 
 !-------------------------------------------------------------------------------
   subroutine advance_clubb_radiation &
-             ( time_current, rho, rho_zm, p_in_Pa, &
+             ( time_current, time_initial, rho, rho_zm, p_in_Pa, &
                exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, &
                err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, &
@@ -3928,7 +3928,8 @@ module clubb_driver
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
-      time_current ! Current time (UTC)    [s]
+      time_current, & ! Current time (UTC)               [s]
+      time_initial    ! Start time of model run (UTC)    [s]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       rho,              & ! Density on thermo. grid                          [kg/m^3]
@@ -4157,7 +4158,7 @@ module clubb_driver
       call simple_rad_bomex( radht ) ! Out
 
     case ( "lba"  )
-      call simple_rad_lba( time_current, & ! In
+      call simple_rad_lba( time_current, time_initial, & ! In
                            radht ) ! Out
 
     case ( "none" )
@@ -4334,8 +4335,9 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine silhs_radiation_driver &
-             ( nz, lh_num_samples, d_variables, hydromet_dim, time_current, rho, rho_zm, &
-               p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &
+             ( nz, lh_num_samples, d_variables, hydromet_dim, time_current, &
+               time_initial, rho, rho_zm, p_in_Pa, exner, &
+               cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_clipped_vars, lh_sample_point_weights, hydromet, &
                err_code, &
                radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down )
@@ -4376,7 +4378,8 @@ module clubb_driver
       hydromet_dim          ! Number of hydrometeor species
 
     real( kind = time_precision ), intent(in) :: &
-      time_current        ! Current time of simulation                 [s]
+      time_current, & ! Current time of simulation               [s]
+      time_initial    ! Start time of simulation                 [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho,               & ! Density on thermo. grid                   [kg/m^3]
@@ -4447,7 +4450,7 @@ module clubb_driver
     do isample=1, lh_num_samples
       ! Call a radiation scheme
       call advance_clubb_radiation &
-           ( time_current, rho, rho_zm, p_in_Pa, &                                   ! Intent(in)
+           ( time_current, time_initial, rho, rho_zm, p_in_Pa, &                     ! Intent(in)
              exner, cloud_frac, ice_supersat_frac, lh_clipped_vars(:,isample)%thl, & ! Intent(in)
              lh_clipped_vars(:,isample)%rt, lh_clipped_vars(:,isample)%rc, &         ! Intent(in)
              hydromet_all_pts(:,isample,:), &                                        ! Intent(in)

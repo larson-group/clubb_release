@@ -369,7 +369,7 @@ module simple_rad_module
   end subroutine simple_rad_bomex
 
 !-------------------------------------------------------------------------------
-  subroutine simple_rad_lba( time_in, radht )
+  subroutine simple_rad_lba( time_current, time_initial, radht )
 ! Description:
 !   Compute radiation For the LBA TRMM case.  Uses a prescribed formula and
 !   interpolates with respect to time.
@@ -388,8 +388,8 @@ module simple_rad_module
 
     ! Input Variables
     real(kind=time_precision), intent(in) :: &
-      time_in ! Model time [s]
-
+      time_current, & ! Current time of model run   [s]
+      time_initial    ! Start time of model run     [s]
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: radht
 
@@ -398,7 +398,7 @@ module simple_rad_module
     real( kind = core_rknd ) :: a, time
     integer :: i1, i2
 
-    time = real( time_in, kind = core_rknd )
+    time = real( time_current - time_initial, kind = core_rknd )
 
     ! Calculate radiative heating rate
     if ( time <=  600._core_rknd ) then
