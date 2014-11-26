@@ -558,7 +558,8 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      zero  ! Constant
+      zero, &   ! Constant(s)
+      rt_tol
 
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
@@ -656,20 +657,20 @@ module latin_hypercube_driver_module
                               lh_rt(k,isample), lh_thl(k,isample) )              ! Intent(out)
 
         ! If necessary, clip rt
-        if ( lh_rt(k,isample) < zero ) then
-          lh_rt(k,isample) = zero
+        if ( lh_rt(k,isample) < rt_tol ) then
+          lh_rt(k,isample) = rt_tol
           l_rt_clipped = .true.
         end if
 
-        ! Compute lh_rc and lh_rv
+        ! Compute lh_rc
         lh_rc(k,isample) = chi_to_rc( real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
-        lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
-
-        ! If necessary, clip rv
-        if ( lh_rv(k,isample) < zero ) then
-          lh_rv(k,isample) = zero
-          l_rv_clipped = .true.
+        ! Clip lh_rc.
+        if ( lh_rc(k,isample) > lh_rt(k,isample) - rt_tol ) then
+          lh_rc(k,isample) = lh_rt(k,isample) - rt_tol
         end if
+
+        ! Compute lh_rv
+        lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
 
         ! Compute lh_Nc
         lh_Nc(k,isample) = Ncn_to_Nc( real( X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd ), &
