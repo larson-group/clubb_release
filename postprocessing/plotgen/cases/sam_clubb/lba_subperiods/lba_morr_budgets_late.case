@@ -1,0 +1,444 @@
+# LBA Morrison Micro Budgets
+
+%CASE = 
+(
+name => 'LBA_Morrison_late',
+    'enabled' => 'true',
+    'type' => 'morrbudget',
+    'headerText' => 'LBA Morrison minutes 260-360',
+    'startTime' => 260.0,  # [minutes]
+    'endTime' => 360.0,    # [minutes]
+    'startHeight' => 0.,   # [m]
+    'endHeight' => 18000.0, # [m]
+    'plots' =>
+    [
+
+       {'plotTitle' => 'HL Budgets', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'T_TNDCY', 'expression' => 'T_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '(HLSTOR-1*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND+T_TNDCY * 86400))/86400.0', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'T3D Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'LV\_TERMS', 'expression' => ' (( PRE + PCC ) * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'LS\_TERMS', 'expression' => ' (( EVPMS + EVPMG + PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'LF\_TERMS', 'expression' => '(( PSMLT + PGMLT + PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'T3D\_SUM', 'expression' => '(( PRE + PCC )* 2.5e6) / 1005 + (( EVPMS + EVPMG + PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005 + (( PSMLT + PGMLT + PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005 ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'T3D LV\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRE', 'expression' => ' (PRE * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PCC', 'expression' => ' (PCC * 2.5e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'T3D LS\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => ' (EVPMS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => ' (EVPMG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRD', 'expression' => ' (PRD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRDS', 'expression' => ' (PRDS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => ' (MNUCCD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRD', 'expression' => ' (EPRD * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRDS', 'expression' => ' (EPRDS * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRDG', 'expression' => ' (PRDG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRDG', 'expression' => ' (EPRDG * 2.834e6) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'T3D LF\_TERMS Morrison Budget Terms', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => '(PSMLT * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => '(PGMLT * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => '(PSACWS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWI', 'expression' => '(PSACWI * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCC', 'expression' => '(MNUCCC * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCR', 'expression' => '(MNUCCR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTS', 'expression' => '(QMULTS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTG', 'expression' => '(QMULTG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTR', 'expression' => '(QMULTR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTRG', 'expression' => '(QMULTRG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACS', 'expression' => '(PRACS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWG', 'expression' => '(PSACWG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACG', 'expression' => '(PRACG * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGSACW', 'expression' => '(PGSACW * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGRACS', 'expression' => '(PGRACS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PIACR', 'expression' => '(PIACR * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => '(PIACRS * 3.33e5) / 1005', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'T3D Budget Test', 'axisLabel' => '[K/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.0', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'T3D\_SUM', 'expression' => '(( PRE + PCC )* 2.5e6) / 1005 + (( EVPMS + EVPMG + PRD + PRDS + MNUCCD + EPRD + EPRDS + PRDG + EPRDG ) * 2.834e6) / 1005 + (( PSMLT + PGMLT + PSACWS + PSACWI + MNUCCC + MNUCCR + QMULTS + QMULTG + QMULTR + QMULTRG + PRACS + PSACWG + PRACG + PGSACW + PGRACS + PIACR + PIACRS ) * 3.33e5) / 1005 ', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QTO Budgets', 'axisLabel' => 'QTO [kg/kg/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QV\_TNDCY', 'expression' => 'QV_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QC\_TNDCY', 'expression' => 'QC_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR/(1000.*86400)) + ((-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND) - QV_TNDCY - QC_TNDCY)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QV3D Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRE', 'expression' => '-PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-EVPMS', 'expression' => '-EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-EVPMG', 'expression' => '-EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PCC', 'expression' => '-PCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRD', 'expression' => '-PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRDS', 'expression' => '-PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-MNUCCD', 'expression' => '-MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-EPRD', 'expression' => '-EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-EPRDS', 'expression' => '-EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRDG', 'expression' => '-PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-EPRDG', 'expression' => '-EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QV3D\_SUM', 'expression' => '-1*(PRE+EVPMS+EVPMG+PCC+PRD+PRDS+MNUCCD+EPRD+EPRDS+PRDG+EPRDG)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QC3D Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+	  {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRA', 'expression' => '-PRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRC', 'expression' => '-PRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PCC', 'expression' => 'PCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-MNUCCC', 'expression' => '-MNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PSACWS', 'expression' => '-PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PSACWI', 'expression' => '-PSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-QMULTS', 'expression' => '-QMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-QMULTG', 'expression' => '-QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PSACWG', 'expression' => '-PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PGSACW', 'expression' => '-PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QC\_INST', 'expression' => 'QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM', 'expression' => '-PRA - PRC+ PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QTO Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000*86400.)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QC3D\_SUM+QV3D\_SUM', 'expression' => '(-PRA - PRC + PCC - MNUCCC  - PSACWS - PSACWI - QMULTS - QMULTG - PSACWG - PGSACW + QC_INST)-(PRE+EVPMS+EVPMG+PCC+PRD+PRDS+MNUCCD+EPRD+EPRDS+PRDG+EPRDG)', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+
+{'plotTitle' => 'Ncm Morrison Budgets', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NC', 'expression' => 'SIZEFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NC', 'expression' => '-NEGFIX_NC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NACT', 'expression' => 'NACT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NNUCCC', 'expression' => '-NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPSACWS', 'expression' => '-NPSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRA', 'expression' => '-NPRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRC', 'expression' => '-NPRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPSACWI', 'expression' => '-NPSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPSACWG', 'expression' => '-NPSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NC\_INST', 'expression' => 'NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'Ncm\_sum', 'expression' => 'SIZEFIX_NC - NEGFIX_NC + NACT - NNUCCC - NPSACWS - NPRA - NPRC - NPSACWI - NPSACWG + NC_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+    ]},
+
+
+       {'plotTitle' => 'QI Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QIADV', 'expression' => 'QIADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QIDIFF', 'expression' => 'QIDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QILSADV', 'expression' => 'QILSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => 'QIMPHY * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QISED', 'expression' => 'QISED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QISTO', 'expression' => 'QISTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QI\_RES', 'expression' => '(QISTO - 1.*(QIADV+QIDIFF+QILSADV+QIMPHY+QISED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'QI Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRD', 'expression' => 'PRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRD', 'expression' => 'EPRD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWI', 'expression' => 'PSACWI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCC', 'expression' => 'MNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRCI', 'expression' => '-PRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRAI', 'expression' => '-PRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTS', 'expression' => 'QMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTG', 'expression' => 'QMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTR', 'expression' => 'QMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QMULTRG', 'expression' => 'QMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCD', 'expression' => 'MNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRACI', 'expression' => '-PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRACIS', 'expression' => '-PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QI\_INST', 'expression' => 'QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QI\_SUM', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QI Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QIMPHY', 'expression' => '(QIMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QI\_sum', 'expression' => 'PRD + EPRD + PSACWI + MNUCCC - PRCI - PRAI + QMULTS + QMULTG + QMULTR + QMULTRG + MNUCCD - PRACI - PRACIS + QI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+
+       {'plotTitle' => 'NI Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIADV', 'expression' => '(NIADV ./RHO )* (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIDIFF', 'expression' => '(NIDIFF ./RHO )* (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NILSADV', 'expression' => '(NILSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '(NIMPHY ./RHO ) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NISED', 'expression' => '(NISED ./ RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NISTO', 'expression' => '(NISTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NI\_RES', 'expression' => '((NISTO - 1.*(NIADV+NIDIFF+NILSADV+NIMPHY+NISED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+
+    ]},
+
+
+       {'plotTitle' => 'NI Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NI', 'expression' => 'SIZEFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NI', 'expression' => '-NEGFIX_NI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NNUCCC', 'expression' => 'NNUCCC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRCI', 'expression' => '-NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRAI', 'expression' => '-NPRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NMULTS', 'expression' => 'NMULTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NMULTG', 'expression' => 'NMULTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NMULTR', 'expression' => 'NMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NMULTRG', 'expression' => 'NMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NNUCCD', 'expression' => 'NNUCCD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSUBI', 'expression' => 'NSUBI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NIM\_MORR\_CL', 'expression' => '-NIM_MORR_CL', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NI\_INST', 'expression' => 'NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NI Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIMPHY', 'expression' => '((NIMPHY) ./RHO)* (1.0e6/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NI\_SUM', 'expression' => 'SIZEFIX_NI - NEGFIX_NI + NNUCCC - NPRCI - NPRAI + NMULTS + NMULTG + NMULTR + NMULTRG + NNUCCD - NIACR - NIACRS + NSUBI - NIM_MORR_CL + NI_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QR Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRADV', 'expression' => 'QRADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRDIFF', 'expression' => 'QRDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRLSADV', 'expression' => 'QRLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRSED', 'expression' => 'QRSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRSTO', 'expression' => 'QRSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QR\_RES', 'expression' => '(QRSTO - 1.*(QRADV+QRDIFF+QRLSADV+QRMPHY+QRSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'QR Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRE', 'expression' => 'PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRA', 'expression' => 'PRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRC', 'expression' => 'PRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRACS', 'expression' => '-PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-MNUCCR', 'expression' => '-MNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-QMULTR', 'expression' => '-QMULTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-QMULTRG', 'expression' => '-QMULTRG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PIACR', 'expression' => '-PIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PIACRS', 'expression' => '-PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PRACG', 'expression' => '-PRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PGRACS', 'expression' => '-PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PSMLT', 'expression' => '-PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PGMLT', 'expression' => '-PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QR\_INST', 'expression' => 'QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QR Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QRMPHY', 'expression' => '(QRMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QR\_SUM', 'expression' => 'PRE + PRA + PRC - PRACS - MNUCCR - QMULTR - QMULTRG - PIACR - PIACRS - PRACG - PGRACS - PSMLT - PGMLT + QR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NR Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRADV', 'expression' => '(NRADV ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRDIFF', 'expression' => '(NRDIFF ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRLSADV', 'expression' => '(NRLSADV ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRSED', 'expression' => '(NRSED ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRSTO', 'expression' => '(NRSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NR\_RES', 'expression' => '((NRSTO - 1.*(NRADV+NRDIFF+NRLSADV+NRMPHY+NRSED)) ./RHO) * (1.0e6/(86400.0)) ', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'NR Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NR', 'expression' => 'SIZEFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NR', 'expression' => '-NEGFIX_NR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSUBR', 'expression' => 'NSUBR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NSMLTR', 'expression' => '-NSMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NGMLTR', 'expression' => '-NGMLTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NPRC1', 'expression' => 'NPRC1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRACS', 'expression' => '-NPRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NNUCCR', 'expression' => '-NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRAGG', 'expression' => 'NRAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NIACR', 'expression' => '-NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NIACRS', 'expression' => '-NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NPRACG', 'expression' => '-NPRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NR\_INST', 'expression' => 'NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NR Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NRMPHY', 'expression' => '((NRMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NR\_SUM', 'expression' => 'SIZEFIX_NR - NEGFIX_NR + NSUBR - NSMLTR - NGMLTR + NPRC1 - NPRACS - NNUCCR + NRAGG - NIACR - NIACRS - NPRACG - NGRACS + NR_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QS Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSADV', 'expression' => 'QSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSDIFF', 'expression' => 'QSDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSLSADV', 'expression' => 'QSLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSSED', 'expression' => 'QSSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSSTO', 'expression' => 'QSSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QS\_RES', 'expression' => '(QSSTO - 1.*(QSADV+QSDIFF+QSLSADV+QSMPHY+QSSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+
+       {'plotTitle' => 'QS Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRAI', 'expression' => 'PRAI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWS', 'expression' => 'PSACWS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRDS', 'expression' => 'PRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACS', 'expression' => 'PRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRCI', 'expression' => 'PRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRDS', 'expression' => 'EPRDS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-PSACR', 'expression' => '-PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PIACRS', 'expression' => 'PIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACIS', 'expression' => 'PRACIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSMLT', 'expression' => 'PSMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EVPMS', 'expression' => 'EVPMS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QS\_INST', 'expression' => 'QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QS Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QSMPHY', 'expression' => '(QSMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QS\_SUM', 'expression' => 'PRAI + PSACWS + PRDS + PRACS + PRCI + EPRDS - PSACR + PIACRS + PRACIS + PSMLT + EVPMS + QS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NS Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSADV', 'expression' => '(NSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSDIFF', 'expression' => '(NSDIFF ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSLSADV', 'expression' => '(NSLSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSSED', 'expression' => '(NSSED ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSSTO', 'expression' => '(NSSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NS\_RES', 'expression' => '((NSSTO - 1.*(NSADV+NSDIFF+NSLSADV+NSMPHY+NSSED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'NS Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NS', 'expression' => 'SIZEFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NS', 'expression' => '-NEGFIX_NS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSMLTS', 'expression' => 'NSMLTS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSAGG', 'expression' => 'NSAGG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NPRCI', 'expression' => 'NPRCI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NSCNG', 'expression' => '-NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NGRACS', 'expression' => '-NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIACRS', 'expression' => 'NIACRS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSUBS', 'expression' => 'NSUBS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NS\_INST', 'expression' => 'NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NS Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSMPHY', 'expression' => '((NSMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NS\_SUM', 'expression' => 'SIZEFIX_NS - NEGFIX_NS + NSMLTS + NSAGG + NPRCI - NSCNG - NGRACS + NIACRS + NSUBS + NS_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QG Budget', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGADV', 'expression' => 'QGADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGDIFF', 'expression' => 'QGDIFF * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGLSADV', 'expression' => 'QGLSADV * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGSED', 'expression' => 'QGSED * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGSTO', 'expression' => 'QGSTO * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QG\_RES', 'expression' => '(QGSTO - 1.*(QGADV+QGDIFF+QGLSADV+QGMPHY+QGSED)) * (1.0e-3/86400.0)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'QG Morrison Budget Terms', 'axisLabel' => '[(kg/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACG', 'expression' => 'PRACG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACWG', 'expression' => 'PSACWG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGSACW', 'expression' => 'PGSACW', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGRACS', 'expression' => 'PGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRDG', 'expression' => 'PRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EPRDG', 'expression' => 'EPRDG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'MNUCCR', 'expression' => 'MNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PIACR', 'expression' => 'PIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PRACI', 'expression' => 'PRACI', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PSACR', 'expression' => 'PSACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'PGMLT', 'expression' => 'PGMLT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'EVPMG', 'expression' => 'EVPMG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QG\_INST', 'expression' => 'QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'QG Budget Test', 'axisLabel' => '[kg/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QGMPHY', 'expression' => '(QGMPHY) * (1.0e-3/86400.0)', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'QG\_SUM', 'expression' => 'PRACG + PSACWG + PGSACW + PGRACS + PRDG + EPRDG + MNUCCR + PIACR + PRACI + PSACR + PGMLT + EVPMG + QG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+       {'plotTitle' => 'NG Budget', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGADV', 'expression' => '(NGADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGDIFF', 'expression' => '(NGDIFF ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGLSADV', 'expression' => '(NGLSADV ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGSED', 'expression' => '(NGSED ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGSTO', 'expression' => '(NGSTO ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NG\_RES', 'expression' => '((NGSTO - 1.*(NGADV+NGDIFF+NGLSADV+NGMPHY+NGSED)) ./RHO) * (1.0e6/(86400.0))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+    ]},
+
+       {'plotTitle' => 'NG Morrison Budget Terms', 'axisLabel' => '[(#/kg)/s]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'SIZEFIX\_NG', 'expression' => 'SIZEFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => '-NEGFIX\_NG', 'expression' => '-NEGFIX_NG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGMLTG', 'expression' => 'NGMLTG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSCNG', 'expression' => 'NSCNG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGRACS', 'expression' => 'NGRACS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NNUCCR', 'expression' => 'NNUCCR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NIACR', 'expression' => 'NIACR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NSUBG', 'expression' => 'NSUBG', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NG\_INST', 'expression' => 'NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+    
+       {'plotTitle' => 'NG Budget Test', 'axisLabel' => '[#/(kg s)]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NGMPHY', 'expression' => '((NGMPHY) ./RHO)  * (1.0e6/(86400.0))', 'lineWidth' => '4.5', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'LBA.nc', 'type' => 'auto', 'name' => 'NG\_SUM', 'expression' => 'SIZEFIX_NG - NEGFIX_NG + NGMLTG + NSCNG + NGRACS + NNUCCR + NIACR + NSUBG + NG_INST', 'lineWidth' => '3', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+
+
+    ],
+    'nightlyOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    },
+    'additionalOutput' =>
+    {
+        'subText' => '',
+        'subHtml' => ''
+    }
+)
