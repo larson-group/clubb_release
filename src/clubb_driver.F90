@@ -1182,15 +1182,21 @@ module clubb_driver
         call stats_begin_timestep( itime, stats_nsamp, stats_nout ) ! Intent(in)
 
       ! If we're doing an inputfields run, get the values for our
-      ! model arrays from a netCDF or GrADS file
+      ! model arrays from a netCDF or GrADS file.
+      ! Note:  the time of the 1st LES statistical output is time_initial_LES
+      !        plus the time of one LES statistical time step.  For example, a
+      !        LES run that starts at 00:00Z and outputs stats every minute has
+      !        its first statistical output at 00:01Z.  In order to match the
+      !        LES stat output times to CLUBB timesteps, CLUBB's time_current
+      !        + dt_main needs to be passed into subroutine compute_timestep.
       if ( l_input_fields ) then
         l_restart_input = .false.
         call compute_timestep( &
-             iunit, stat_files(1), l_restart_input,  &  ! Intent(in)
-             time_current-time_initial+real(dt_main,kind=time_precision), &    ! Intent(in)
-             itime_nearest )    ! Intent(out)
+             iunit, stat_files(1), l_restart_input, &            ! Intent(in)
+             time_current + real(dt_main,kind=time_precision), & ! Intent(in)
+             itime_nearest )                                     ! Intent(out)
 
-        call stat_fields_reader( max( itime_nearest, 1 ) )                     ! Intent(in)
+        call stat_fields_reader( max( itime_nearest, 1 ) )       ! Intent(in)
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
