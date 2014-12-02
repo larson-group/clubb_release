@@ -544,7 +544,7 @@ module generate_lh_sample_module
 
     ! Apply Halley's method to answer to achieve more accurate result
     logical, parameter :: &
-      l_apply_halley_method = .false.
+      l_apply_halley_method = .true.
 
     ! Input Variable(s)
 
