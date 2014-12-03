@@ -82,6 +82,21 @@
           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
+       {'plotTitle' => 'cloud\_frac (unweighted)', 'axisLabel' => 'cloud\_frac', 'type' => 'profile', 'lines' =>
+        [
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'cloud_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_cloud_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
+        {'plotTitle' => 'mixt\_frac (unweighted)', 'axisLabel' => 'mixt\_frac', 'type' => 'profile', 'lines' =>
+        [
+           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_mixt_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
+        {'plotTitle' => 'precip\_frac (unweighted)', 'axisLabel' => 'precip\_frac', 'type' => 'profile', 'lines' =>
+        [
+           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'precip_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_precip_frac_unweighted', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+        ]},
     ],
     'nightlyOutput' =>
     {
