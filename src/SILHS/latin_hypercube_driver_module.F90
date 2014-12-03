@@ -213,8 +213,6 @@ module latin_hypercube_driver_module
     logical :: &
       l_half_in_cloud                 ! True if half of all samples should land up in cloud
 
-    integer, dimension(1) :: tmp_loc
-
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
 
@@ -295,10 +293,7 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
 
 
-    ! For a 100 level fixed grid, this looks to be about the middle of the cloud for RICO
-!   k_lh_start = 50
-    tmp_loc    = maxloc( rcm )
-    k_lh_start = tmp_loc(1) ! Attempt using the maximal value of rcm for now
+    k_lh_start    = maxloc( rcm, 1 )
 
     ! If there's no cloud k_lh_start appears to end up being 1. Check if
     ! k_lh_start is 1 or nz and set it to the middle of the domain in that
