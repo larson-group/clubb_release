@@ -20,9 +20,11 @@ end
 % this level.  SAM LES data will be interpolated to the altitude of this
 % level and then displayed in scatterplots and histograms.
 clubb_height_idx = 19;
+%clubb_height_idx = 59;
 
 % Information to be printed on the plots.
 casename = 'RICO';
+%casename = 'RF02';
 print_note = 'Input fields (predictive fields)';
 
 % Select the plots that will be plotted.
@@ -93,6 +95,7 @@ global idx_corr_rr_Nr_2_n
 global idx_mixt_frac
 global idx_precip_frac_1
 global idx_precip_frac_2
+global idx_sigma_sqd_w
 
 % Read SAM NetCDF file and obtain variables.
 [ z_sam, time_sam, var_sam, units_corrector_type_sam, ...
@@ -132,15 +135,15 @@ end
 clubb_time_idx = idx_min_time_diff;
 
 % Print the time of the SAM LES output.
-fprintf( 'Time of SAM LES output (seconds): %d\n', time_sam_sec );
+fprintf( 'Time of SAM LES output (seconds): %g\n', time_sam_sec );
 
 % Print the CLUBB output time index and the associated time.
-fprintf( [ 'Time index of CLUBB output: %d;', ...
-           ' Time of CLUBB output (seconds): %d\n' ], ...
+fprintf( [ 'Time index of CLUBB output: %g;', ...
+           ' Time of CLUBB output (seconds): %g\n' ], ...
            clubb_time_idx, time_clubb(clubb_time_idx) );
 
 % Print the altitude at the CLUBB vertical level index.
-fprintf( 'Altitude of CLUBB zt grid level (meters): %d\n', ...
+fprintf( 'Altitude of CLUBB zt grid level (meters): %g\n', ...
          z_clubb(clubb_height_idx) );
 
 % Place the SAM variables from the same location in the same 1-D index for
@@ -154,7 +157,7 @@ if ( z_clubb(clubb_height_idx) > z_sam(nz_sam) )
    fprintf( [ 'The altitude of the CLUBB zt grid level is higher ', ...
               'than the highest SAM LES grid level.  The highest ', ...
               'SAM LES grid level will be used.\n' ] );
-   fprintf( 'Altitude of SAM LES grid level (meters): %d\n', ...
+   fprintf( 'Altitude of SAM LES grid level (meters): %g\n', ...
             z_sam(nz_sam) );
 
    for i = 1:1:nx_sam
@@ -173,7 +176,7 @@ elseif ( z_clubb(clubb_height_idx) < z_sam(1) )
    fprintf( [ 'The altitude of the CLUBB zt grid level is lower ', ...
               'than the lowest SAM LES grid level.  The lowest ', ...
               'SAM LES grid level will be used.\n' ] );
-   fprintf( 'Altitude of SAM LES grid level (meters):  %d\n', ...
+   fprintf( 'Altitude of SAM LES grid level (meters):  %g\n', ...
             z_sam(1) );
 
    for i = 1:1:nx_sam
@@ -241,10 +244,10 @@ else % z_sam(1) <= z_clubb(clubb_height_idx) <= z_sam(nz_sam)
       fprintf( [ 'The altitude of the CLUBB zt grid level is between ', ...
                  'two SAM LES grid levels.\n' ] );
       fprintf( [ 'Altitude of the SAM LES grid level above the ', ...
-                 'CLUBB zt grid level (meters):  %d\n' ], ...
+                 'CLUBB zt grid level (meters):  %g\n' ], ...
                  z_sam(upper_lev_idx) );
       fprintf( [ 'Altitude of the SAM LES grid level below the ', ...
-                 'CLUBB zt grid level (meters):  %d\n' ], ...
+                 'CLUBB zt grid level (meters):  %g\n' ], ...
                  z_sam(lower_lev_idx) );
 
       for i = 1:1:nx_sam
@@ -363,6 +366,154 @@ precip_frac_1 = var_clubb( idx_precip_frac_1, 1, 1, ...
                            clubb_height_idx, clubb_time_idx );
 precip_frac_2 = var_clubb( idx_precip_frac_2, 1, 1, ...
                            clubb_height_idx, clubb_time_idx );
+
+sigma_sqd_w = var_clubb( idx_sigma_sqd_w, 1, 1, ...
+                         clubb_height_idx, clubb_time_idx );
+
+%==========================================================================
+
+% Calculations of distribution properties (skewness, etc.) from both SAM
+% and CLUBB.
+
+% Calculations based on SAM LES 3D data.
+mean_w_sam = mean( sam_var_lev(idx_3D_w,:) );
+mean_rt_sam = mean( sam_var_lev(idx_3D_rt,:) );
+mean_thetal_sam = mean( sam_var_lev(idx_3D_thl,:) );
+sumw2 = 0.0;
+sumw3 = 0.0;
+sumrt2 = 0.0;
+sumrt3 = 0.0;
+sumthl2 = 0.0;
+sumthl3 = 0.0;
+sumwrt = 0.0;
+sumwthl = 0.0;
+sumrtthl = 0.0;
+for idx = 1:1:nx_sam*ny_sam
+   sumw2   = sumw2   + ( sam_var_lev(idx_3D_w,idx)   - mean_w_sam )^2;
+   sumw3   = sumw3   + ( sam_var_lev(idx_3D_w,idx)   - mean_w_sam )^3;
+   sumrt2  = sumrt2  + ( sam_var_lev(idx_3D_rt,idx)  - mean_rt_sam )^2;
+   sumrt3  = sumrt3  + ( sam_var_lev(idx_3D_rt,idx)  - mean_rt_sam )^3;
+   sumthl2 = sumthl2 + ( sam_var_lev(idx_3D_thl,idx) - mean_thetal_sam )^2;
+   sumthl3 = sumthl3 + ( sam_var_lev(idx_3D_thl,idx) - mean_thetal_sam )^3;
+   sumwrt   = sumwrt ...
+              + ( sam_var_lev(idx_3D_w,idx) - mean_w_sam ) ...
+                * ( sam_var_lev(idx_3D_rt,idx) - mean_rt_sam );
+   sumwthl  = sumwthl ...
+              + ( sam_var_lev(idx_3D_w,idx) - mean_w_sam ) ...
+                * ( sam_var_lev(idx_3D_thl,idx) - mean_thetal_sam );
+   sumrtthl = sumrtthl ...
+              + ( sam_var_lev(idx_3D_rt,idx) - mean_rt_sam ) ...
+                * ( sam_var_lev(idx_3D_thl,idx) - mean_thetal_sam );
+end
+wp2_sam   = sumw2   / ( nx_sam * ny_sam );
+wp3_sam   = sumw3   / ( nx_sam * ny_sam );
+rtp2_sam  = sumrt2  / ( nx_sam * ny_sam );
+rtp3_sam  = sumrt3  / ( nx_sam * ny_sam );
+thlp2_sam = sumthl2 / ( nx_sam * ny_sam );
+thlp3_sam = sumthl3 / ( nx_sam * ny_sam );
+wprtp_sam   = sumwrt   / ( nx_sam * ny_sam );
+wpthlp_sam  = sumwthl  / ( nx_sam * ny_sam );
+rtpthlp_sam = sumrtthl / ( nx_sam * ny_sam );
+
+Skw_sam   = wp3_sam   / wp2_sam^1.5;
+Skrt_sam  = rtp3_sam  / rtp2_sam^1.5;
+Skthl_sam = thlp3_sam / thlp2_sam^1.5;
+corr_w_rt_ov_sam ...
+   = wprtp_sam   / ( sqrt( wp2_sam )  * sqrt( rtp2_sam ) );
+corr_w_thl_ov_sam ...
+   = wpthlp_sam  / ( sqrt( wp2_sam )  * sqrt( thlp2_sam ) );
+corr_rt_thl_ov_sam ...
+   = rtpthlp_sam / ( sqrt( rtp2_sam ) * sqrt( thlp2_sam ) );
+
+% Calculations based on SAM LES 3D data from this level.
+fprintf( '\n' )
+fprintf( 'Calculations based on SAM LES 3D data at this level:\n' )
+fprintf( 'SAM wp2 = %g\n', wp2_sam );
+fprintf( 'SAM wp3 = %g\n', wp3_sam );
+fprintf( 'SAM rtp2 = %g\n', rtp2_sam );
+fprintf( 'SAM rtp3 = %g\n', rtp3_sam );
+fprintf( 'SAM thlp2 = %g\n', thlp2_sam );
+fprintf( 'SAM thlp3 = %g\n', thlp3_sam );
+fprintf( 'SAM wprtp = %g\n', wprtp_sam );
+fprintf( 'SAM wpthlp = %g\n', wpthlp_sam );
+fprintf( 'SAM rtpthlp = %g\n', rtpthlp_sam );
+fprintf( 'SAM skewness of w = %g\n', Skw_sam );
+fprintf( 'SAM skewness of rt = %g\n', Skrt_sam );
+fprintf( 'SAM skewness of thl = %g\n', Skthl_sam );
+fprintf( 'SAM overall correlation of w and rt = %g\n', ...
+         corr_w_rt_ov_sam );
+fprintf( 'SAM overall correlation of w and thl = %g\n', ...
+         corr_w_thl_ov_sam );
+fprintf( 'SAM overall correlation of rt and thl = %g\n', ...
+         corr_rt_thl_ov_sam );
+
+% Calculations based on CLUBB PDF parameters.
+wm   = mixt_frac * mu_w_1   + ( 1.0 - mixt_frac ) * mu_w_2;
+rtm  = mixt_frac * mu_rt_1  + ( 1.0 - mixt_frac ) * mu_rt_2;
+thlm = mixt_frac * mu_thl_1 + ( 1.0 - mixt_frac ) * mu_thl_2;
+wp2_clubb_pdf ...
+= mixt_frac * ( ( mu_w_1 - wm )^2 + sigma_w_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( ( mu_w_2 - wm )^2 + sigma_w_2^2 );
+rtp2_clubb_pdf ...
+= mixt_frac * ( ( mu_rt_1 - rtm )^2 + sigma_rt_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( ( mu_rt_2 - rtm )^2 + sigma_rt_2^2 );
+thlp2_clubb_pdf ...
+= mixt_frac * ( ( mu_thl_1 - thlm )^2 + sigma_thl_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( ( mu_thl_2 - thlm )^2 + sigma_thl_2^2 );
+wp3_clubb_pdf ...
+= mixt_frac * ( mu_w_1 - wm ) ...
+            * ( ( mu_w_1 - wm )^2 + 3.0*sigma_w_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( mu_w_2 - wm ) ...
+                        * ( ( mu_w_2 - wm )^2 + 3.0*sigma_w_2^2 );
+rtp3_clubb_pdf ...
+= mixt_frac * ( mu_rt_1 - rtm ) ...
+            * ( ( mu_rt_1 - rtm )^2 + 3.0*sigma_rt_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( mu_rt_2 - rtm ) ...
+                        * ( ( mu_rt_2 - rtm )^2 + 3.0*sigma_rt_2^2 );
+thlp3_clubb_pdf ...
+= mixt_frac * ( mu_thl_1 - thlm ) ...
+            * ( ( mu_thl_1 - thlm )^2 + 3.0*sigma_thl_1^2 ) ...
+  + ( 1.0 - mixt_frac ) * ( mu_thl_2 - thlm ) ...
+                        * ( ( mu_thl_2 - thlm )^2 + 3.0*sigma_thl_2^2 );
+
+Skw_clubb_pdf   = wp3_clubb_pdf   / wp2_clubb_pdf^1.5;
+Skrt_clubb_pdf  = rtp3_clubb_pdf  / rtp2_clubb_pdf^1.5;
+Skthl_clubb_pdf = thlp3_clubb_pdf / thlp2_clubb_pdf^1.5;
+
+% Calculations based on CLUBB PDF parameters from this level.
+fprintf( '\n' )
+fprintf( 'Calculations based on CLUBB PDF parameters at this level:\n' )
+fprintf( 'CLUBB PDF wp2 = %g\n', wp2_clubb_pdf );
+fprintf( 'CLUBB PDF wp3 = %g\n', wp3_clubb_pdf );
+fprintf( 'CLUBB PDF rtp2 = %g\n', rtp2_clubb_pdf );
+fprintf( 'CLUBB PDF rtp3 = %g\n', rtp3_clubb_pdf );
+fprintf( 'CLUBB PDF thlp2 = %g\n', thlp2_clubb_pdf );
+fprintf( 'CLUBB PDF thlp3 = %g\n', thlp3_clubb_pdf );
+fprintf( 'CLUBB PDF skewness of w = %g\n', Skw_clubb_pdf );
+fprintf( 'CLUBB PDF skewness of rt = %g\n', Skrt_clubb_pdf );
+fprintf( 'CLUBB PDF skewness of thl = %g\n', Skthl_clubb_pdf );
+
+% Backsolve for the appropriate values of beta (for each of rt and thl)
+% using SAM LES data (and CLUBB output for sigma_sqd_w) based on Larson
+% and Golaz (2005), Eq. 33.
+Skw_hat = Skw_sam / ( 1.0 - sigma_sqd_w )^1.5;
+corr_w_rt_ov_hat  = corr_w_rt_ov_sam  / sqrt( 1.0 - sigma_sqd_w );
+corr_w_thl_ov_hat = corr_w_thl_ov_sam / sqrt( 1.0 - sigma_sqd_w );
+
+beta_rt ...
+= ( Skrt_sam / ( Skw_hat * corr_w_rt_ov_hat ) - corr_w_rt_ov_hat^2 ) ...
+  / ( 1.0 - corr_w_rt_ov_hat^2 );
+
+beta_thl ...
+= ( Skthl_sam / ( Skw_hat * corr_w_thl_ov_hat ) - corr_w_thl_ov_hat^2 ) ...
+  / ( 1.0 - corr_w_thl_ov_hat^2 );
+
+% Calculations based on CLUBB PDF parameters from this level.
+fprintf( '\n' )
+fprintf( 'Backsolve for the parameter beta based largely on SAM LES:\n' )
+fprintf( 'Ideal beta for skewness of rt = %g\n', beta_rt );
+fprintf( 'Ideal beta for skewness of thl = %g\n', beta_thl );
+fprintf( '\n' )
 
 %==========================================================================
 

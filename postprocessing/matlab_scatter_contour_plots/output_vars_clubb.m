@@ -328,6 +328,13 @@ idx_precip_frac_2 = idx_count;
 units_corrector_type(idx_precip_frac_2) = 0;
 varname_clubb(idx_precip_frac_2,1:13) = 'precip_frac_2';
 
+% sigma_sqd_w (-).
+idx_count = idx_count + 1;
+global idx_sigma_sqd_w
+idx_sigma_sqd_w = idx_count;
+units_corrector_type(idx_sigma_sqd_w) = 0;
+varname_clubb(idx_sigma_sqd_w,1:14) = 'sigma_sqd_w_zt';
+
 num_var_clubb = idx_count;
 
 %============= Add Model Coordinates (Height and Time) Here ===============
