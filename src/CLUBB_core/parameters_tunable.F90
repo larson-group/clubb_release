@@ -39,8 +39,8 @@ module parameters_tunable
 
   ! Model constant parameters
   real( kind = core_rknd ), public :: & 
-    C1      = 2.500000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
-    C1b     = 2.500000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
+    C1      = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
+    C1b     = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
     C1c     = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
     C2      = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
     C2rt    = 1.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]

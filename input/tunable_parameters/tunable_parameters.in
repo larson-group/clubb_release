@@ -5,8 +5,8 @@
 ! C2, C2b, & C2c are not used unless l_single_C2_Skw is true.
 
 &initvars 
-C1          = 2.500000 ! Low Skewness in C1 Skewness Function. Units [-]
-C1b         = 2.500000 ! High Skewness in C1 Skewness Function. Units [-]
+C1          = 1.000000 ! Low Skewness in C1 Skewness Function. Units [-]
+C1b         = 1.000000 ! High Skewness in C1 Skewness Function. Units [-]
 C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. Units [-]
 C2rt        = 1.000000 ! C2 constant associated with rtp2 dissipation term. Units [-]
 C2thl       = 1.000000 ! C2 constant associated with thlp2 dissipation term. Units [-]

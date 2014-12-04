@@ -390,7 +390,7 @@ module advance_clubb_core_module
       chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with respect to ice
                                    ! (zero for liquid)
     logical, parameter :: &
-      l_stability_correct_tau_zm = .false. ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
+      l_stability_correct_tau_zm = .true. ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
 
     !!! Input Variables
     logical, intent(in) ::  & 
