@@ -1879,7 +1879,8 @@ module inputfields
       ! Note that this needs to be adjusted by 1e6/RHO
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_Nrm
-      SAM_variables(k)%input_name = "CONP"
+      SAM_variables(k)%input_name = "NR" ! SAM Morrison microphysics
+      !SAM_variables(k)%input_name = "CONP" ! SAM KK microphysics
       SAM_variables(k)%clubb_var => temp_Nrm
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
