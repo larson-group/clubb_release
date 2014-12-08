@@ -188,8 +188,8 @@ stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 !theta = 297.900, 297.900, 312.664, 317.000, 335.210, 348.098, 352.784, 362.812, 392.084, 470.365
 
 &setfields
-datafile      = "../les_data/RICO_128x128x230_dz40m100m2s_drizzle.nc"
-input_type    = "SAM"  
+datafile = "../sam_benchmark_runs/RICO_128x128x100_drizzle/RICO_128x128x100_drizzle.nc"
+input_type = "SAM"  
 l_input_um = .true. 
 l_input_vm = .true.
 l_input_rtm = .true. 
