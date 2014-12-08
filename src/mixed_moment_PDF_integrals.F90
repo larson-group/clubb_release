@@ -860,8 +860,8 @@ module mixed_moment_PDF_integrals
     !
     ! INT(0:inf) ( x - <x> )^b * P_L_i( x ) dx;
     ! = SUM ( q = 0:b ) ( b! / ( ( b - q )! q! ) )
-    !   * ( -<x2> )**(b-q)
-    !   * exp{ mu_x2_i_n * q + (1/2) * sigma_x2_i_n**2 * q**2 }.
+    !   * ( -<x> )**(b-q)
+    !   * exp{ mu_x_i_n * q + (1/2) * sigma_x_i_n**2 * q**2 }.
 
     ! References:
     !-----------------------------------------------------------------------
