@@ -258,7 +258,7 @@ module generate_lh_sample_module
     ! Input variables
     integer, intent(in) :: &
       d_variables, &    ! Number of variates
-      d_uniform_extra   ! Variates included in uniform sample only  
+      d_uniform_extra   ! Variates included in uniform sample only
 
     ! Latin hypercube variables, i.e. chi, eta, w, etc.
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
@@ -379,7 +379,7 @@ module generate_lh_sample_module
     implicit none
 
     ! Input Variables
-    integer, intent(in) :: & 
+    integer, intent(in) :: &
       nt_repeat,        & ! Number of samples before the sequence repeats
       p_matrix_element    ! Permuted integer
 
@@ -387,7 +387,7 @@ module generate_lh_sample_module
     real(kind=genrand_real) :: choose_permuted_random
 
     ! Local Variable
-    real(kind=genrand_real) :: & 
+    real(kind=genrand_real) :: &
       rand ! Random float with a range of (0,1)
 
     ! ---- Begin Code ----
@@ -557,7 +557,7 @@ module generate_lh_sample_module
 
     ! Local Variable(s)
 
-    real( kind = dp ) a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, & 
+    real( kind = dp ) a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, &
                      c1, c2, c3, c4, c5, c6, d1, d2, d3, d4
 
     real( kind = dp ) q, r, z, z1, plow, phigh
@@ -602,18 +602,18 @@ module generate_lh_sample_module
 !  Rational approximation for lower region:
     if (p > 0._dp .and. p < plow) then
       q = sqrt( -2._dp * log( p ) )
-      z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/ & 
+      z = (((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6)/ &
                 ((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
 !  Rational approximation for central region:
     else if (p >= plow .and. p <= phigh) then
       q = p - 0.5_dp
       r = q * q
-      z = (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q & 
+      z = (((((a1*r+a2)*r+a3)*r+a4)*r+a5)*r+a6)*q &
                  /(((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1._dp)
 ! Rational approximation for upper region:
     else if (p > phigh .and. p < 1._dp) then
       q  = sqrt( -2._dp * log(1._dp - p) )
-      z  = -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) & 
+      z  = -(((((c1*q+c2)*q+c3)*q+c4)*q+c5)*q+c6) &
                   /((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
     end if
 
@@ -664,7 +664,7 @@ module generate_lh_sample_module
   end function ltqnorm
 
 !-------------------------------------------------------------------------------
-  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, & 
+  subroutine multiply_Cholesky( d_variables, std_normal, mu, Sigma_Cholesky, &
                                   Sigma_scaling, l_scaled, &
                                   nonstd_normal )
 ! Description:
@@ -738,8 +738,8 @@ module generate_lh_sample_module
     return
   end subroutine multiply_Cholesky
 !-----------------------------------------------------------------------
-  subroutine chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, & 
-                              crt_1, cthl_1, crt_2, cthl_2, & 
+  subroutine chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &
+                              crt_1, cthl_1, crt_2, cthl_2, &
                               mu_chi_1, mu_chi_2, &
                               chi, eta, X_mixt_comp_one_lev, &
                               lh_rt, lh_thl )
@@ -796,11 +796,11 @@ module generate_lh_sample_module
     ! ---- Begin Code ----
 
     if ( X_mixt_comp_one_lev == 1 ) then
-      lh_rt  = real( rt_1 + (0.5_core_rknd/crt_1)*(chi-mu_chi_1) +  & 
+      lh_rt  = real( rt_1 + (0.5_core_rknd/crt_1)*(chi-mu_chi_1) +  &
                              (0.5_core_rknd/crt_1)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_core_rknd/cthl_1)*(chi-mu_chi_1) & 
+      lh_dev_thl_lim = (-0.5_core_rknd/cthl_1)*(chi-mu_chi_1) &
                      + (0.5_core_rknd/cthl_1)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
@@ -809,11 +809,11 @@ module generate_lh_sample_module
 
     else if ( X_mixt_comp_one_lev == 2 ) then
       ! Mixture fraction 2
-      lh_rt = real( rt_2 + (0.5_core_rknd/crt_2)*(chi-mu_chi_2) +  & 
+      lh_rt = real( rt_2 + (0.5_core_rknd/crt_2)*(chi-mu_chi_2) +  &
                              (0.5_core_rknd/crt_2)*eta, kind=core_rknd )
 
       ! Limit the quantity that temperature can vary by (in K)
-      lh_dev_thl_lim = (-0.5_core_rknd/cthl_2)*(chi-mu_chi_2) & 
+      lh_dev_thl_lim = (-0.5_core_rknd/cthl_2)*(chi-mu_chi_2) &
                      + (0.5_core_rknd/cthl_2)*eta
 
       lh_dev_thl_lim = max( min( lh_dev_thl_lim, thl_dev_lim ), -thl_dev_lim )
