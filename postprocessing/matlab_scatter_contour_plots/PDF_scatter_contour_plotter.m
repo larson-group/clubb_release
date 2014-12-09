@@ -496,23 +496,103 @@ fprintf( 'CLUBB PDF skewness of thl = %g\n', Skthl_clubb_pdf );
 % Backsolve for the appropriate values of beta (for each of rt and thl)
 % using SAM LES data (and CLUBB output for sigma_sqd_w) based on Larson
 % and Golaz (2005), Eq. 33.
-Skw_hat = Skw_sam / ( 1.0 - sigma_sqd_w )^1.5;
-corr_w_rt_ov_hat  = corr_w_rt_ov_sam  / sqrt( 1.0 - sigma_sqd_w );
-corr_w_thl_ov_hat = corr_w_thl_ov_sam / sqrt( 1.0 - sigma_sqd_w );
-
-beta_rt ...
-= ( Skrt_sam / ( Skw_hat * corr_w_rt_ov_hat ) - corr_w_rt_ov_hat^2 ) ...
-  / ( 1.0 - corr_w_rt_ov_hat^2 );
-
-beta_thl ...
-= ( Skthl_sam / ( Skw_hat * corr_w_thl_ov_hat ) - corr_w_thl_ov_hat^2 ) ...
-  / ( 1.0 - corr_w_thl_ov_hat^2 );
-
+%Skw_hat = Skw_sam / ( 1.0 - sigma_sqd_w )^1.5;
+%corr_w_rt_ov_hat  = corr_w_rt_ov_sam  / sqrt( 1.0 - sigma_sqd_w );
+%corr_w_thl_ov_hat = corr_w_thl_ov_sam / sqrt( 1.0 - sigma_sqd_w );
+%
+%beta_rt ...
+%= ( Skrt_sam / ( Skw_hat * corr_w_rt_ov_hat ) - corr_w_rt_ov_hat^2 ) ...
+%  / ( 1.0 - corr_w_rt_ov_hat^2 );
+%
+%beta_thl ...
+%= ( Skthl_sam / ( Skw_hat * corr_w_thl_ov_hat ) - corr_w_thl_ov_hat^2 ) ...
+%  / ( 1.0 - corr_w_thl_ov_hat^2 );
+%
 % Calculations based on CLUBB PDF parameters from this level.
+%fprintf( '\n' )
+%fprintf( 'Backsolve for the parameter beta based largely on SAM LES:\n' )
+%fprintf( 'Ideal beta for skewness of rt = %g\n', beta_rt );
+%fprintf( 'Ideal beta for skewness of thl = %g\n', beta_thl );
+
+% Calculations for hydrometeor fields based on SAM LES 3D data.
+mean_rr_sam = mean( sam_var_lev(idx_3D_rr,:) );
+mean_Nr_sam = mean( sam_var_lev(idx_3D_Nr,:) );
+sumrr2 = 0.0;
+sumrr3 = 0.0;
+sumNr2 = 0.0;
+sumNr3 = 0.0;
+for idx = 1:1:nx_sam*ny_sam
+   sumrr2 = sumrr2 + ( sam_var_lev(idx_3D_rr,idx) - mean_rr_sam )^2;
+   sumrr3 = sumrr3 + ( sam_var_lev(idx_3D_rr,idx) - mean_rr_sam )^3;
+   sumNr2 = sumNr2 + ( sam_var_lev(idx_3D_Nr,idx) - mean_Nr_sam )^2;
+   sumNr3 = sumNr3 + ( sam_var_lev(idx_3D_Nr,idx) - mean_Nr_sam )^3;
+end
+rrp2_sam = sumrr2 / ( nx_sam * ny_sam );
+rrp3_sam = sumrr3 / ( nx_sam * ny_sam );
+Nrp2_sam = sumNr2 / ( nx_sam * ny_sam );
+Nrp3_sam = sumNr3 / ( nx_sam * ny_sam );
+
+Skrr_sam = rrp3_sam / rrp2_sam^1.5;
+SkNr_sam = Nrp3_sam / Nrp2_sam^1.5;
+
+% Calculations for hydrometeor fields based on CLUBB PDF parameters.
+rrm_clubb_pdf = mixt_frac * precip_frac_1 ...
+                * exp( mu_rr_1_n + 0.5 * sigma_rr_1_n^2 ) ...
+                + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                  * exp( mu_rr_2_n + 0.5 * sigma_rr_2_n^2 );
+Nrm_clubb_pdf = mixt_frac * precip_frac_1 ...
+                * exp( mu_Nr_1_n + 0.5 * sigma_Nr_1_n^2 ) ...
+                + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                  * exp( mu_Nr_2_n + 0.5 * sigma_Nr_2_n^2 );
+rrp2_clubb_pdf = mixt_frac * precip_frac_1 ...
+                 * exp( 2.0 * mu_rr_1_n + 2.0 * sigma_rr_1_n^2 ) ...
+                 + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                   * exp( 2.0 * mu_rr_2_n + 2.0 * sigma_rr_2_n^2 ) ...
+                 - rrm_clubb_pdf^2;
+Nrp2_clubb_pdf = mixt_frac * precip_frac_1 ...
+                 * exp( 2.0 * mu_Nr_1_n + 2.0 * sigma_Nr_1_n^2 ) ...
+                 + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                   * exp( 2.0 * mu_Nr_2_n + 2.0 * sigma_Nr_2_n^2 ) ...
+                 - Nrm_clubb_pdf^2;
+rrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
+                 * exp( 3.0 * mu_rr_1_n + 4.5 * sigma_rr_1_n^2 ) ...
+                 + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                   * exp( 3.0 * mu_rr_2_n + 4.0 * sigma_rr_2_n^2 ) ...
+                 - 3.0 * rrp2_clubb_pdf * rrm_clubb_pdf ...
+                 - rrm_clubb_pdf^3;
+Nrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
+                 * exp( 3.0 * mu_Nr_1_n + 4.5 * sigma_Nr_1_n^2 ) ...
+                 + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+                   * exp( 3.0 * mu_Nr_2_n + 4.0 * sigma_Nr_2_n^2 ) ...
+                 - 3.0 * Nrp2_clubb_pdf * Nrm_clubb_pdf ...
+                 - Nrm_clubb_pdf^3;
+
+Skrr_clubb_pdf = rrp3_clubb_pdf / rrp2_clubb_pdf^1.5;
+SkNr_clubb_pdf = Nrp3_clubb_pdf / Nrp2_clubb_pdf^1.5;
+
+% Calculations based on SAM LES 3D data from this level.
 fprintf( '\n' )
-fprintf( 'Backsolve for the parameter beta based largely on SAM LES:\n' )
-fprintf( 'Ideal beta for skewness of rt = %g\n', beta_rt );
-fprintf( 'Ideal beta for skewness of thl = %g\n', beta_thl );
+fprintf( 'Calculations for hydrometeors at this level:\n' )
+fprintf( 'rain water mixing ratio, rr\n' )
+fprintf( 'SAM rrm = %g\n', mean_rr_sam );
+fprintf( 'SAM rrp2 = %g\n', rrp2_sam );
+fprintf( 'SAM rrp3 = %g\n', rrp3_sam );
+fprintf( 'SAM skewness of rr = %g\n', Skrr_sam );
+fprintf( 'CLUBB PDF rrm = %g\n', rrm_clubb_pdf );
+fprintf( 'CLUBB PDF rrp2 = %g\n', rrp2_clubb_pdf );
+fprintf( 'CLUBB PDF rrp3 = %g\n', rrp3_clubb_pdf );
+fprintf( 'CLUBB PDF skewness of rr = %g\n', Skrr_clubb_pdf );
+fprintf( 'rain drop concentration, Nr\n' )
+fprintf( 'SAM Nrm = %g\n', mean_Nr_sam );
+fprintf( 'SAM Nrp2 = %g\n', Nrp2_sam );
+fprintf( 'SAM Nrp3 = %g\n', Nrp3_sam );
+fprintf( 'SAM skewness of Nr = %g\n', SkNr_sam );
+fprintf( 'CLUBB PDF Nrm = %g\n', Nrm_clubb_pdf );
+fprintf( 'CLUBB PDF Nrp2 = %g\n', Nrp2_clubb_pdf );
+fprintf( 'CLUBB PDF Nrp3 = %g\n', Nrp3_clubb_pdf );
+fprintf( 'CLUBB PDF skewness of Nr = %g\n', SkNr_clubb_pdf );
+
+% Print a blank line after the calculations have been printed.
 fprintf( '\n' )
 
 %==========================================================================
