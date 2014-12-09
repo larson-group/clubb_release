@@ -570,7 +570,7 @@ Nrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
 Skrr_clubb_pdf = rrp3_clubb_pdf / rrp2_clubb_pdf^1.5;
 SkNr_clubb_pdf = Nrp3_clubb_pdf / Nrp2_clubb_pdf^1.5;
 
-% Calculations based on SAM LES 3D data from this level.
+% Print the values of hydrometeor statistics.
 fprintf( '\n' )
 fprintf( 'Calculations for hydrometeors at this level:\n' )
 fprintf( 'rain water mixing ratio, rr\n' )
