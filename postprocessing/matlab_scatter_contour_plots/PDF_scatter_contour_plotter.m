@@ -535,6 +535,49 @@ Nrp3_sam = sumNr3 / ( nx_sam * ny_sam );
 Skrr_sam = rrp3_sam / rrp2_sam^1.5;
 SkNr_sam = Nrp3_sam / Nrp2_sam^1.5;
 
+precipitating = zeros(nx_sam*ny_sam,1);
+for idx = 1:1:nx_sam*ny_sam
+   if ( sam_var_lev(idx_3D_rr,idx) > 0.0 ...
+        || sam_var_lev(idx_3D_Nr,idx) > 0.0 )
+      precipitating(idx) = 1.0;
+   else
+      precipitating(idx) = 0.0;
+   end
+end
+precip_frac_sam = sum( precipitating ) / ( nx_sam * ny_sam );
+
+if ( mean_rr_sam > 0.0 )
+   % Rain water mixing ratio is found at this level in SAM.
+   [ mean_rr_ip_sam, rrp2_ip_sam, rrp3_ip_sam, Skrr_ip_sam ] ...
+   = calc_in_precip_values( mean_rr_sam, rrp2_sam, ...
+                            rrp3_sam, precip_frac_sam );
+   % Calculate in-precip variance-over-mean-squared for rr.
+   voms_ip_rr_sam = rrp2_ip_sam / mean_rr_ip_sam^2;
+else
+   % Set values to 0.
+   mean_rr_ip_sam = 0.0;
+   rrp2_ip_sam = 0.0;
+   rrp2_ip_sam = 0.0;
+   Skrr_ip_sam = 0.0;
+   voms_ip_rr_sam = 0.0;
+end
+
+if ( mean_Nr_sam > 0.0 )
+   % Rain drop concentration is found at this level in SAM.
+   [ mean_Nr_ip_sam, Nrp2_ip_sam, Nrp3_ip_sam, SkNr_ip_sam ] ...
+   = calc_in_precip_values( mean_Nr_sam, Nrp2_sam, ...
+                            Nrp3_sam, precip_frac_sam );
+   % Calculate in-precip variance-over-mean-squared for Nr.
+   voms_ip_Nr_sam = Nrp2_ip_sam / mean_Nr_ip_sam^2;
+else
+   % Set values to 0.
+   mean_Nr_ip_sam = 0.0;
+   Nrp2_ip_sam = 0.0;
+   Nrp2_ip_sam = 0.0;
+   SkNr_ip_sam = 0.0;
+   voms_ip_Nr_sam = 0.0;
+end
+
 % Calculations for hydrometeor fields based on CLUBB PDF parameters.
 rrm_clubb_pdf = mixt_frac * precip_frac_1 ...
                 * exp( mu_rr_1_n + 0.5 * sigma_rr_1_n^2 ) ...
@@ -570,10 +613,53 @@ Nrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
 Skrr_clubb_pdf = rrp3_clubb_pdf / rrp2_clubb_pdf^1.5;
 SkNr_clubb_pdf = Nrp3_clubb_pdf / Nrp2_clubb_pdf^1.5;
 
+precip_frac_clubb = mixt_frac * precip_frac_1 ...
+                    + ( 1.0 - mixt_frac ) * precip_frac_2;
+
+if ( rrm_clubb_pdf > 0.0 )
+   % Rain water mixing ratio is found at this level in CLUBB.
+   [ rrm_ip_clubb_pdf, rrp2_ip_clubb_pdf, ...
+     rrp3_ip_clubb_pdf, Skrr_ip_clubb_pdf ] ...
+   = calc_in_precip_values( rrm_clubb_pdf, rrp2_clubb_pdf, ...
+                            rrp3_clubb_pdf, precip_frac_clubb );
+   % Calculate in-precip variance-over-mean-squared for rr.
+   voms_ip_rr_clubb_pdf = rrp2_ip_clubb_pdf / rrm_ip_clubb_pdf^2;
+else
+   % Set values to 0.
+   rrm_ip_clubb_pdf = 0.0;
+   rrp2_ip_clubb_pdf = 0.0;
+   rrp2_ip_clubb_pdf = 0.0;
+   Skrr_ip_clubb_pdf = 0.0;
+   voms_ip_rr_clubb_pdf = 0.0;
+end
+
+if ( Nrm_clubb_pdf > 0.0 )
+   % Rain drop concentration is found at this level in CLUBB.
+   [ Nrm_ip_clubb_pdf, Nrp2_ip_clubb_pdf, ...
+     Nrp3_ip_clubb_pdf, SkNr_ip_clubb_pdf ] ...
+   = calc_in_precip_values( Nrm_clubb_pdf, Nrp2_clubb_pdf, ...
+                            Nrp3_clubb_pdf, precip_frac_clubb );
+   % Calculate in-precip variance-over-mean-squared for Nr.
+   voms_ip_Nr_clubb_pdf = Nrp2_ip_clubb_pdf / Nrm_ip_clubb_pdf^2;
+else
+   % Set values to 0.
+   Nrm_ip_clubb_pdf = 0.0;
+   Nrp2_ip_clubb_pdf = 0.0;
+   Nrp2_ip_clubb_pdf = 0.0;
+   SkNr_ip_clubb_pdf = 0.0;
+   voms_ip_Nr_clubb_pdf = 0.0;
+end
+
 % Print the values of hydrometeor statistics.
+% Note:  v.o.m.s. stands for variance over mean-squared.
 fprintf( '\n' )
 fprintf( 'Calculations for hydrometeors at this level:\n' )
-fprintf( 'rain water mixing ratio, rr\n' )
+fprintf( '\n' )
+fprintf( 'SAM precipitation fraction = %g\n', precip_frac_sam );
+fprintf( 'CLUBB precipitation fraction = %g\n', precip_frac_clubb );
+fprintf( '\n' )
+fprintf( 'Rain water mixing ratio, rr\n' )
+fprintf( 'Overall values:\n' )
 fprintf( 'SAM rrm = %g\n', mean_rr_sam );
 fprintf( 'SAM rrp2 = %g\n', rrp2_sam );
 fprintf( 'SAM rrp3 = %g\n', rrp3_sam );
@@ -582,7 +668,20 @@ fprintf( 'CLUBB PDF rrm = %g\n', rrm_clubb_pdf );
 fprintf( 'CLUBB PDF rrp2 = %g\n', rrp2_clubb_pdf );
 fprintf( 'CLUBB PDF rrp3 = %g\n', rrp3_clubb_pdf );
 fprintf( 'CLUBB PDF skewness of rr = %g\n', Skrr_clubb_pdf );
-fprintf( 'rain drop concentration, Nr\n' )
+fprintf( 'In-precip. (i.p.) values:\n' )
+fprintf( 'SAM mean (i.p.) of rr = %g\n', mean_rr_ip_sam );
+fprintf( 'SAM variance (i.p.) of rr = %g\n', rrp2_ip_sam );
+fprintf( 'SAM 3rd moment (i.p.) of rr = %g\n', rrp3_ip_sam );
+fprintf( 'SAM skewness (i.p.) of rr = %g\n', Skrr_ip_sam );
+fprintf( 'SAM v.o.m.s (i.p.) of rr = %g\n', voms_ip_rr_sam );
+fprintf( 'CLUBB PDF mean (i.p.) of rr = %g\n', rrm_ip_clubb_pdf );
+fprintf( 'CLUBB PDF variance (i.p.) of rr = %g\n', rrp2_ip_clubb_pdf );
+fprintf( 'CLUBB PDF 3rd moment (i.p.) of rr = %g\n', rrp3_ip_clubb_pdf );
+fprintf( 'CLUBB PDF skewness (i.p.) of rr = %g\n', Skrr_ip_clubb_pdf );
+fprintf( 'CLUBB PDF v.o.m.s (i.p.) of rr = %g\n', voms_ip_rr_clubb_pdf );
+fprintf( '\n' )
+fprintf( 'Rain drop concentration, Nr\n' )
+fprintf( 'Overall values:\n' )
 fprintf( 'SAM Nrm = %g\n', mean_Nr_sam );
 fprintf( 'SAM Nrp2 = %g\n', Nrp2_sam );
 fprintf( 'SAM Nrp3 = %g\n', Nrp3_sam );
@@ -591,6 +690,17 @@ fprintf( 'CLUBB PDF Nrm = %g\n', Nrm_clubb_pdf );
 fprintf( 'CLUBB PDF Nrp2 = %g\n', Nrp2_clubb_pdf );
 fprintf( 'CLUBB PDF Nrp3 = %g\n', Nrp3_clubb_pdf );
 fprintf( 'CLUBB PDF skewness of Nr = %g\n', SkNr_clubb_pdf );
+fprintf( 'In-precip. (i.p.) values:\n' )
+fprintf( 'SAM mean (i.p.) of Nr = %g\n', mean_Nr_ip_sam );
+fprintf( 'SAM variance (i.p.) of Nr = %g\n', Nrp2_ip_sam );
+fprintf( 'SAM 3rd moment (i.p.) of Nr = %g\n', Nrp3_ip_sam );
+fprintf( 'SAM skewness (i.p.) of Nr = %g\n', SkNr_ip_sam );
+fprintf( 'SAM v.o.m.s (i.p.) of Nr = %g\n', voms_ip_Nr_sam );
+fprintf( 'CLUBB PDF mean (i.p.) of Nr = %g\n', Nrm_ip_clubb_pdf );
+fprintf( 'CLUBB PDF variance (i.p.) of Nr = %g\n', Nrp2_ip_clubb_pdf );
+fprintf( 'CLUBB PDF 3rd moment (i.p.) of Nr = %g\n', Nrp3_ip_clubb_pdf );
+fprintf( 'CLUBB PDF skewness (i.p.) of Nr = %g\n', SkNr_ip_clubb_pdf );
+fprintf( 'CLUBB PDF v.o.m.s (i.p.) of Nr = %g\n', voms_ip_Nr_clubb_pdf );
 
 % Print a blank line after the calculations have been printed.
 fprintf( '\n' )
