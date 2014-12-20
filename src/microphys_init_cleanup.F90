@@ -798,12 +798,6 @@ module microphys_init_cleanup
             // " morrison_gettelman, or simplified_ice microphysics types"
     endif
 
-    ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when SILHS is disabled
-    if ( l_silhs_KK_convergence_adj_mean .and. &
-       lh_microphys_type_int == lh_microphys_disabled) then
-       stop "l_silhs_KK_convergence_adj_mean requires LH microphysics to be enabled."
-    endif
-
     ! Make sure user hasn't selected l_silhs_KK_convergence_adj_mean when using
     ! a microphysics scheme other than khairoutdinov_kogan (KK)
     if ( l_silhs_KK_convergence_adj_mean .and. &
