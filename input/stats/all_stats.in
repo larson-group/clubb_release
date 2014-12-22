@@ -111,7 +111,7 @@ vars_lh_zt =
 'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac',
 ''
 vars_lh_sfc =
-'lh_morr_snow_rate', 'lh_vwp', 'lh_lwp',
+'lh_morr_snow_rate', 'lh_vwp', 'lh_lwp', 'k_lh_start',
 ''
 
 vars_zm = 
