@@ -4,8 +4,8 @@ import pylab as pl
 
 sim_points_all = [50, 100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000]
 
-clubb_var_str = 'rrm_cond'
-silhs_var_str  = 'lh_rrm_evap'
+clubb_var_str = 'rrm_auto'
+silhs_var_str  = 'lh_rrm_auto'
 
 clubb_var = netCDF4.Dataset('silhs_'+str(sim_points_all[0])+'/rico_lh_zt.nc').variables[clubb_var_str]
 
@@ -27,11 +27,11 @@ for n in range(0,len(sim_points_all)):
     rms_val = np.sqrt(rms_val)
     rms_all.append(rms_val)
     if n == 0:
-      rms_1_over_n.append(rms_val)
-      rms_1_over_sqrt_n.append(rms_val)
-    else:
-      rms_1_over_n.append(rms_1_over_n[n-1] * (float(sim_points_all[n-1]) / sim_points_all[n]))
-      rms_1_over_sqrt_n.append(rms_1_over_sqrt_n[n-1] * np.sqrt(float(sim_points_all[n-1]) / sim_points_all[n]))
+        rms_1_over_n.append(rms_val)
+        rms_1_over_sqrt_n.append(rms_val)
+    elif n > 0:
+        rms_1_over_n.append(rms_1_over_n[n-1] * (float(sim_points_all[n-1]) / sim_points_all[n]))
+        rms_1_over_sqrt_n.append(rms_1_over_sqrt_n[n-1] * np.sqrt(float(sim_points_all[n-1]) / sim_points_all[n]))
 
 pl.plot(sim_points_all, rms_all, label='SILHS')
 pl.plot(sim_points_all, rms_1_over_n, label='1 over N')
@@ -39,5 +39,9 @@ pl.plot(sim_points_all, rms_1_over_sqrt_n, label='1 over sqrt N')
 
 pl.xlabel('Number of Sample Points')
 pl.ylabel('Root Mean Square of Absolute Error')
+pl.xscale('log')
+pl.yscale('log')
+pl.axis('tight')
+
 pl.legend()
 pl.show()
