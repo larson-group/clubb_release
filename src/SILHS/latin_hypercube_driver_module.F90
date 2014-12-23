@@ -1329,28 +1329,28 @@ module latin_hypercube_driver_module
       l_in_precip      = importance_categories(icategory)%l_in_precip
 
       if ( l_in_cloud .and. l_in_precip .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.25_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( l_in_cloud .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.25_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( l_in_cloud .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.0625_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( l_in_cloud .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.0625_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.125_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.125_core_rknd
+        category_prescribed_probs(icategory) = 0.15_core_rknd
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.0625_core_rknd
+        category_prescribed_probs(icategory) = 0.05_core_rknd
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.0625_core_rknd
+        category_prescribed_probs(icategory) = 0.05_core_rknd
 
       else
         stop "Invalid category in prescribe_importance_probs"
