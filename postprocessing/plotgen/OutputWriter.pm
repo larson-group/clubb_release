@@ -116,19 +116,18 @@ EOF
 }
 
 ###############################################################################
-# Writes HTML under the case header
+# Writes link to setup
 ###############################################################################
-sub writeSubHtml()
+sub writeSetupLink()
 {
 	shift(@_);
 	my $fh = shift(@_);
+        my $inDir = shift(@_);
+        my $name = shift(@_);
 	open(FILE, ">> $fh");
-
-	my($HTML) = shift;
-
 	print FILE <<"EOF";
 	<div align="CENTER">
-		$HTML
+		<a href = ${inDir}/${name}_setup.txt>Case setup information for input at ${inDir}</a>
 	</div>
 EOF
 	close(FILE);

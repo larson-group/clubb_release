@@ -31,6 +31,7 @@ use File::Path;
 use CaseReader;
 use OutputWriter;
 use File::Copy::Recursive qw(fcopy rcopy dircopy fmove rmove dirmove);
+use File::Copy;
 
 # The location of MATLAB. External users probably will not need the
 # sudo -u matlabuser part.
@@ -107,6 +108,9 @@ my $keepEps = 0;
 
 # Whether or not to compress output into a maff file. Default (0) is no.
 my $outputAsMaff = 0;
+
+# Whether or not to include setup text files.  Default (1) is yes.
+my $includeSetup = 1;
 
 # Whether or not to display legens.  Default (1) is yes.
 my $displayLegend = 1;
@@ -466,6 +470,13 @@ sub runCases() {
                                 $subHtml );
                         }
 
+                    }
+        # Check for includeSetup and print links for each input folder
+                    if ( $includeSetup == 1 ) {
+                        foreach my $i (@inputDirs) {
+                            OutputWriter->writeSetupLink( $outputIndex,
+                                $i, $CASE::CASE{'name'} );
+                        }
                     }
                 }
 
@@ -1179,6 +1190,19 @@ sub readArgs() {
             mkdir $output;
         }
         mkdir $outputTemp;
+
+        # Copies all (case)_setup.txt files to outputTemp folder.
+        if ( $includeSetup == 1 ) {
+            foreach my $inputD ( @inputDirs ) {
+                mkpath("${outputTemp}" . "${inputD}");
+                my @files = glob("$inputD/*_setup.txt");
+                for my $file (@files) {
+                    print "$file \n";
+                    print "${outputTemp}${file} \n";
+                    copy("$file", "${outputTemp}${file}");
+                }
+            }
+        }
 
         my $plotgenDirectory = $dirPrefix;
 
