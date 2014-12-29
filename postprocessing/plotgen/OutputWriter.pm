@@ -125,9 +125,10 @@ sub writeSetupLink()
         my $inDir = shift(@_);
         my $name = shift(@_);
 	open(FILE, ">> $fh");
+	my $inDir_minus_first_character = substr($inDir, 1);
 	print FILE <<"EOF";
 	<div align="CENTER">
-		<a href = ${inDir}/${name}_setup.txt>Case setup information for input at ${inDir}</a>
+		<a href = ${inDir_minus_first_character}/${name}_setup.txt>Case setup information for input at ${inDir}</a>
 	</div>
 EOF
 	close(FILE);
