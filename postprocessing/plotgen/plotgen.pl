@@ -1103,6 +1103,7 @@ sub readArgs() {
                 case 'dfrnce'   { $diffRun         = 1; }
                 case 'ensemble' { $ensembleTuner   = 1; }
                 case 'nolegend' { $displayLegend   = 0; }
+                case 'nosetup'  { $includeSetup    = 0; }
                 case 's'        { $plotgenMode     = "splotgen"; }
                 case 'c'        { $plotgenMode     = "plotgen"; }
                 case 'w'        { $plotgenMode     = "wrfgen"; }
@@ -1191,6 +1192,11 @@ sub readArgs() {
         }
         mkdir $outputTemp;
 
+        # includeSetup only works in clubb standalone.
+        if ( $plotgenMode ne "plotgen" ) {
+            $includeSetup = 0;
+        }
+
         # Copies all (case)_setup.txt files to outputTemp folder.
         if ( $includeSetup == 1 ) {
             foreach my $inputD ( @inputDirs ) {
@@ -1239,6 +1245,7 @@ sub main::HELP_MESSAGE() {
     print("  -thin\tUses thin solid lines\n");
     print("  -dfrnce\tPerforms a 'difference' plot of two output folders\n");
     print("  -nolegend\tPlot without legends\n");
+    print("  -nosetup\tPlot without including (case)_setup.txt\n");
     print("  -ensemble\tUsed for plotting ensemble tuner runs\n");
     print("  -bu\tUsed to plot standard budget plots\n");
     print("  -bumorr\tUsed to plot Morrison budget plots\n");
