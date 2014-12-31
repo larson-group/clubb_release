@@ -19,6 +19,7 @@ for d in silhs_dirs:
 
 time1 = 3000
 time2 = 4320
+n_timesteps = time2-time1
 
 if not l_all_height_avg:
     k_lh_start = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+'/rico_lh_lh_sfc.nc').variables['k_lh_start']
@@ -35,12 +36,11 @@ for n_i in range(0,len(sim_points_all)):
         silhs_dir = silhs_dirs[d_i]
         rms_val = 0.0
         silhs_var = netCDF4.Dataset(silhs_dir+'/silhs_'+str(num_samples)+'/rico_lh_lh_zt.nc').variables[silhs_var_str]
-        n_timesteps = time2-time1
         silhs_var = silhs_var[:,:,0,0]
 
         for t in range(time1,time2):
             if l_all_height_avg:
-                for k in range(0,n_heights):
+                for k in range(1,n_heights):
                     rms_val = rms_val + (clubb_var[t,k]-silhs_var[t,k])**2
             else:
                 k = int(round(k_lh_start[t]))-1
@@ -59,6 +59,7 @@ pl.xlabel('Number of Sample Points')
 pl.ylabel('Root Mean Square of Absolute Error')
 pl.xscale('log')
 pl.yscale('log')
+# This will change the axes so that the plot 'tight'ly hugs the data
 #pl.axis('tight')
 
 pl.legend()
