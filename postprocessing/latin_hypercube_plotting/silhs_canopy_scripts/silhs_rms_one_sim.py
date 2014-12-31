@@ -19,6 +19,10 @@ time1 = 0
 time2 = 4320
 n_timesteps = time2 - time1
 
+k_lh_start = k_lh_start[:]
+clubb_var  = clubb_var[:]
+silhs_var  = silhs_var[:]
+
 for t in range(time1,time2):
     k = int(round(k_lh_start[t,0,0,0]))-1
     rms_val = rms_val + (clubb_var[t,k,0,0]-silhs_var[t,k,0,0])**2
