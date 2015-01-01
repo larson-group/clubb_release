@@ -99,8 +99,10 @@ module latin_hypercube_driver_module
       hydromet_pdf_parameter ! Type
 
     use constants_clubb, only: &
-      fstderr, & ! Constant
-      zero_threshold
+      fstderr, & ! Constant(s)
+      zero_threshold, &
+      one, &
+      cloud_frac_min
 
     use parameters_silhs, only: &
       l_lh_vert_overlap, &  ! Variables
@@ -123,6 +125,9 @@ module latin_hypercube_driver_module
 
     use grid_class, only : gr
 
+    use pdf_utilities, only: &
+      compute_mean_binormal
+
     implicit none
 
     ! External
@@ -131,7 +136,9 @@ module latin_hypercube_driver_module
     ! Parameter Constants
 
     logical, parameter :: &
-      l_lh_importance_sampling = .true.
+      l_lh_importance_sampling  = .true., &
+      l_rcm_in_cloud_k_lh_start = .false. ! Use rcm_in_cloud instead of rcm to determine
+                                          ! k_lh_start
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -188,7 +195,9 @@ module latin_hypercube_driver_module
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz) :: &
-      Lscale_vert_avg ! 3pt vertical average of Lscale  [m]
+      Lscale_vert_avg, & ! 3pt vertical average of Lscale  [m]
+      rcm_pdf,         &
+      cloud_frac_pdf
 
     real( kind = dp ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
@@ -291,9 +300,15 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
     ! Latin hypercube sampling
     !--------------------------------------------------------------
+    if ( l_rcm_in_cloud_k_lh_start ) then
+      rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
+      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+                                              pdf_params%mixt_frac )
 
-
-    k_lh_start    = maxloc( rcm, 1 )
+      k_lh_start    = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+    else
+      k_lh_start    = maxloc( rcm, 1 )
+    end if
 
     ! If there's no cloud k_lh_start appears to end up being 1. Check if
     ! k_lh_start is 1 or nz and set it to the middle of the domain in that
