@@ -39,6 +39,7 @@ module input_netcdf
       NF90_NOERR,        & 
       NF90_MAX_VAR_DIMS, &
       NF90_FLOAT, &
+      NF90_DOUBLE, &
       NF90_MAX_NAME
 
     use stat_file_module, only: stat_file ! Type
@@ -120,7 +121,8 @@ module input_netcdf
     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
                                   ndims=ndims, dimIds=dimIds )
 
-    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. xtype /= NF90_FLOAT ) then
+    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. &
+                            .not. (xtype == NF90_DOUBLE .or. xtype == NF90_FLOAT) ) then
             write(fstderr,*) "input_netcdf.open_netcdf_read : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
       l_error = .true.
@@ -316,6 +318,7 @@ module input_netcdf
     use netcdf, only: &
       NF90_NOERR, & ! Constant(s)
       NF90_MAX_VAR_DIMS, &
+      NF90_DOUBLE, &
       NF90_FLOAT
 
     use stat_file_module, only: &
@@ -358,11 +361,12 @@ module input_netcdf
     character(len=10) :: &
       units ! The units on the variable
 
-    real(kind=4), dimension(:,:,:,:), allocatable :: & 
+    real( kind = core_rknd ), dimension(:,:,:,:), allocatable :: & 
       x4 ! The variable from the file
 
 
     ! ---- Begin Code ----
+
 
     ! Initialize l_error to false
     l_error = .false.
@@ -378,7 +382,8 @@ module input_netcdf
     ierr = nf90_inquire_variable( ncid=ncf%iounit, varid=varid, xtype=xtype, &
                                   ndims=ndims, dimIds=dimIds )
 
-    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. xtype /= NF90_FLOAT ) then
+    if ( ierr /= NF90_NOERR .or. ndims /= 4 .or. &
+                            .not. (xtype == NF90_DOUBLE .or. xtype == NF90_FLOAT) ) then
             write(fstderr,*) "input_netcdf.get_var : The netCDF data doesn't "// &
             "conform to expected precision, shape, or dimensions"
       l_error = .true.

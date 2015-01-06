@@ -553,7 +553,7 @@ module output_netcdf
     character(len=10) :: current_time
     character(len=8)  :: current_date
     ! Range for NetCDF variables
-    real(kind=4), dimension(2) :: var_range
+    real( kind = core_rknd ), dimension(2) :: var_range
 
     ! Dimensions for variables
     integer, dimension(4) :: var_dim
@@ -566,7 +566,6 @@ module output_netcdf
 !      real(kind=8): +/- 1.797693134862316E+308
 !      real(kind=16):+/- 1.189731495357231765085759326628007E+4932
 
-!      We use a 4 byte data model for NetCDF and GrADS to save disk space
 !-------------------------------------------------------------------------------
 
     ! ---- Begin Code ----
@@ -851,6 +850,12 @@ module output_netcdf
     write(date(23:24),'(i2.2)') iday
     write(date(26:27),'(i2.2)') floor( st_time / 3600._time_precision )
     write(date(29:30),'(i2.2)') int( mod( nint( st_time ),3600 ) / 60 )
+    
+    if ( .not. l_grads_netcdf_boost_ts ) then
+      write(date(32:33),'(i2.2)') nint(((real(mod( nint( st_time ),3600),kind=time_precision) / &
+                     60._time_precision) - (real(int(mod( nint( st_time ),3600 ) / 60 ), & 
+                                               kind=time_precision) ) )*60._time_precision)
+    end if
 
     return
   end subroutine format_date
