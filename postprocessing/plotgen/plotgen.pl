@@ -38,7 +38,7 @@ use File::Copy;
 my $MATLAB =
   "sudo -H -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 
-#my $MATLAB = "/Applications/MATLAB_R2010a.app/bin/matlab -nodisplay -nodesktop"; #For Macs in W434
+#my $MATLAB = "/Applications/MATLAB_R2014a.app/bin/matlab -nodisplay -nodesktop"; #For Macs in W434
 
 # The pipe name used to communicate with MATLAB
 my $matlabPipe;
