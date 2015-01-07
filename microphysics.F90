@@ -183,7 +183,7 @@ subroutine micro_setparm()
   integer ierr, ios, ios_missing_namelist, place_holder
   
    NAMELIST /MICRO_M2005/ &
-#ifdef UWM_MISC
+#ifdef CLUBB
       NNUCCD_REDUCE_COEF, NNUCCC_REDUCE_COEF, &
 #endif
 #ifdef UWM_STATS
