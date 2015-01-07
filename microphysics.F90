@@ -3908,14 +3908,25 @@ real, dimension(11,11,nzm) :: micro_correlations ! Magic numbers are the number
 !                                                  and covariance matricies
 real, dimension(11,11,nzm) :: micro_covarnce 
 
+!Microphysics correlations and covariances matricies in-cloud
+real, dimension(11,11,nzm) :: ic_micro_correlations 
+real, dimension(11,11,nzm) :: ic_micro_covarnce 
+
 ! Mean and variance of chi(s_mellor)
 real, dimension(nzm) :: domain_mean_chi 
 real, dimension(nzm) :: domain_varnce_chi 
+
+! Mean and variance of chi(s_mellor) in-cloud
+real, dimension(nzm) :: ic_mean_chi 
+real, dimension(nzm) :: ic_varnce_chi 
 
 ! Vertical velocity, interpolated, domain means, and variances
 real, dimension(nx,ny,nzm) :: w_zt !vertical velocity interpolated on the scalar grid
 real, dimension(nzm) :: domain_mean_w_zt !domain average of w_zt
 real, dimension(nzm) :: domain_varnce_w_zt !domain variance of w_zt
+
+real, dimension(nzm) :: ic_mean_w_zt !domain average of w_zt in-cloud
+real, dimension(nzm) :: ic_varnce_w_zt !domain variance of w_zt in-cloud
 
 !Microphysical domain-wide means and variances 
 real, dimension(nmicro_fields,nzm) :: domain_mean_micro !domain averages of micro_fields
@@ -3924,6 +3935,10 @@ real, dimension(nmicro_fields,nzm) :: domain_varnce_micro !domain variance of mi
 !Microphysical within-'precip' means and variances 
 real, dimension(nmicro_fields,nzm) :: ip_mean_micro ! within-'precip' averages of micro_fields
 real, dimension(nmicro_fields,nzm) :: ip_varnce_micro ! within-'precip' of micro_fields
+
+!Microphysical within-cloud means and variances 
+real, dimension(nmicro_fields,nzm) :: ic_mean_micro ! within-'precip' averages of micro_fields
+real, dimension(nmicro_fields,nzm) :: ic_varnce_micro ! within-'precip' of micro_fields
 
 integer :: idx_s, idx_w, idx_Nc, idx_rr, idx_Nr, idx_ri, idx_Ni,&
            idx_rs, idx_Ns, idx_rg, idx_Ng, micro_indx_start, &
@@ -4300,19 +4315,37 @@ endif
     end do
   end do
 
-  !Find the domain wide means and variances
-  domain_mean_chi = mean_xy_domain(nzm, chi)
-  domain_varnce_chi = variance_xy_domain(nzm, chi, domain_mean_chi)
+  !Find the domain wide means and variances of chi and w_zt
+  domain_mean_chi(:) = mean_xy_domain(nzm, chi)
+  domain_varnce_chi(:) = variance_xy_domain(nzm, chi, domain_mean_chi)
   
-  !Find the domain wide means and variances
-  domain_mean_w_zt = mean_xy_domain(nzm, w_zt)
-  domain_varnce_w_zt = variance_xy_domain(nzm, w_zt, domain_mean_w_zt)
+  domain_mean_w_zt(:) = mean_xy_domain(nzm, w_zt)
+  domain_varnce_w_zt(:) = variance_xy_domain(nzm, w_zt, domain_mean_w_zt)
 
+  !Find the in-cloud means and variances of chi and w_zt
+  ic_mean_chi(:) = mean_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                   micro_sum(1:nzm,rc_pts,thresh_out) )
+  ic_varnce_chi(:) = variance_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                            ic_mean_chi(:), micro_sum(1:nzm,rc_pts,thresh_out) )
+
+  ic_mean_w_zt(:) = mean_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                   micro_sum(1:nzm,rc_pts,thresh_out) )
+  ic_varnce_w_zt(:) = variance_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                            ic_mean_w_zt(:), micro_sum(1:nzm,rc_pts,thresh_out) )
+  
   do n=micro_indx_start,nmicro_fields
     ! Domain mean and variances stored according to Morrison indicies
     domain_mean_micro(n,:) = mean_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n))
     domain_varnce_micro(n,:) = variance_xy_domain(nzm, micro_field(1:nx,1:ny,1:nzm,n),&
                                                 domain_mean_micro(n,:))
+
+    ! in-cloud means and variances
+    ic_mean_micro(n,:) = mean_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
+                                          micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),micro_sum(1:nzm,rc_pts,thresh_out))
+
+    ic_varnce_micro(n,:) = variance_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
+                                          micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),ic_mean_micro(n,:),&
+                                          micro_sum(1:nzm,rc_pts,thresh_out))
   end do
   !----------------
   ! Within precip means
