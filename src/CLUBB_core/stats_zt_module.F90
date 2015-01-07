@@ -566,8 +566,6 @@ module stats_zt_module
 
     character(len=10) :: hm_type, hmx_type, hmy_type
 
-    logical :: l_found
-
     character(len=50) :: sclr_idx
 
 
@@ -884,6 +882,39 @@ module stats_zt_module
        ! Subtract 1 from the loop size for each hydrometeor.
        tot_zt_loops = tot_zt_loops - hydromet_dim
        ! Add 1 for "wp2hmp" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+    
+    if ( any( vars_zt == "sclrm" ) ) then
+       ! Correct for number of variables found under "sclrm".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zt_loops = tot_zt_loops - sclr_dim
+       
+       ! Add 1 for "sclrm" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
+    if ( any( vars_zt == "sclrm_f" ) ) then
+       ! Correct for number of variables found under "sclrm_f".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zt_loops = tot_zt_loops - sclr_dim
+       ! Add 1 for "sclrm_f" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
+    if ( any( vars_zt == "edsclrm" ) ) then
+       ! Correct for number of variables found under "edsclrm".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zt_loops = tot_zt_loops - edsclr_dim
+       ! Add 1 for "edsclrm" to the loop size.
+       tot_zt_loops = tot_zt_loops + 1
+    endif
+
+    if ( any( vars_zt == "edsclrm_f" ) ) then
+       ! Correct for number of variables found under "edsclrm_f".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zt_loops = tot_zt_loops - edsclr_dim
+       ! Add 1 for "edsclrm_f" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
 
@@ -4923,92 +4954,54 @@ module stats_zt_module
                           var_units="kg/kg", l_silhs=.true., grid_kind=stats_zt)
         k = k + 1
 
+      case ( 'sclrm' )
+        do j = 1, sclr_dim, 1
+          write(sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrm(j) = k
+          call stat_assign( var_index=isclrm(j), var_name="sclr"//trim(sclr_idx)//"m", &
+            var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zt )
+          k = k + 1
+        end do
+
+      case ( 'sclrm_f' )
+        do j = 1, sclr_dim, 1
+          write(sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrm_f(j) = k
+          call stat_assign( var_index=isclrm_f(j), var_name="sclr"//trim(sclr_idx)//"m_f", &
+            var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zt )
+          k = k + 1
+        end do
+
+      case ( 'edsclrm' )
+        do j = 1, edsclr_dim, 1
+          write(sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iedsclrm(j) = k
+          call stat_assign( var_index=iedsclrm(j), var_name="edsclr"//trim(sclr_idx)//"m", &
+            var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zt )
+          k = k + 1
+        end do
+
+      case ( 'edsclrm_f' )
+        do j = 1, edsclr_dim, 1
+          write(sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iedsclrm_f(j) = k
+          call stat_assign( var_index=iedsclrm_f(j), var_name="edsclr"//trim(sclr_idx)//"m_f", &
+            var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zt )
+          k = k + 1
+        end do
 
       case default
-
-        l_found = .false.
-
-        j = 1
-
-        do while( j <= sclr_dim .and. .not. l_found)
-          write(sclr_idx, * ) j
-
-          sclr_idx = adjustl(sclr_idx)
-
-          if(trim(vars_zt(i)) == "sclr"//trim(sclr_idx)//"m" .and. .not. l_found) then
-
-            isclrm(j) = k
-
-        call stat_assign( var_index=isclrm(j), var_name="sclr"//trim(sclr_idx)//"m", &
-             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zt )
-
-            k = k + 1
-
-            l_found = .true.
-
-          else if(trim(vars_zt(i)) == "sclr"//trim(sclr_idx)//"m_f" .and. .not. l_found) then
-
-            isclrm_f(j) = k
-
-        call stat_assign( var_index=isclrm_f(j), var_name="sclr"//trim(sclr_idx)//"m_f", &
-             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zt )
-
-            k = k + 1
-
-            l_found = .true.
-
-          endif
-
-          j = j + 1
-        end do
-
-        j = 1
-
-        do while( j <= edsclr_dim .and. .not. l_found)
-
-          write(sclr_idx, * ) j
-
-          sclr_idx = adjustl(sclr_idx)
-
-          if(trim(vars_zt(i)) == "edsclr"//trim(sclr_idx)//"m" .and. .not. l_found ) then
-
-            iedsclrm(j) = k
-
-        call stat_assign( var_index=iedsclrm(j), var_name="edsclr"//trim(sclr_idx)//"m", &
-             var_description="passive scalar "//trim(sclr_idx), var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zt )
-
-            k = k + 1
-
-            l_found = .true.
-
-          else if(trim(vars_zt(i)) == "edsclr"//trim(sclr_idx)//"m_f" .and. .not. l_found) then
-
-            iedsclrm_f(j) = k
-
-        call stat_assign( var_index=iedsclrm_f(j), var_name="edsclr"//trim(sclr_idx)//"m_f", &
-             var_description="passive scalar forcing "//trim(sclr_idx), var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zt )
-
-            k = k + 1
-
-            l_found = .true.
-
-          endif
-
-          j = j + 1
-
-        end do
-
-        if (.not. l_found ) then
-
-          write(fstderr,*) 'Error:  unrecognized variable in vars_zt:  ', trim( vars_zt(i) )
-
-          l_error = .true.  ! This will stop the run.
-
-        end if
+          
+        write(fstderr,*) 'Error:  unrecognized variable in vars_zt:  ', trim( vars_zt(i) )
+        l_error = .true.  ! This will stop the run.
 
       end select ! trim( vars_zt )
 

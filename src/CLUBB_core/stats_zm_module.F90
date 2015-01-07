@@ -286,8 +286,6 @@ module stats_zm_module
 
     integer :: i, j, k
 
-    logical :: l_found
-
     character(len=50) :: sclr_idx
 
     ! The default initialization for array indices for stats_zm is zero (see module
@@ -373,9 +371,99 @@ module stats_zm_module
        ! Correct for number of variables found under "K_hm".
        ! Subtract 1 from the loop size for each hydrometeor.
        tot_zm_loops = tot_zm_loops - hydromet_dim
-       ! Add 1 for "thlphmp" to the loop size.
+       ! Add 1 for "K_hm" to the loop size.
        tot_zm_loops = tot_zm_loops + 1
     endif
+
+     if ( any( vars_zm == "sclrprtp" ) ) then
+       ! Correct for number of variables found under "sclrprtp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "sclrprtp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif   
+
+    if ( any( vars_zm == "sclrp2" ) ) then
+       ! Correct for number of variables found under "sclrp2".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "sclrp2" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "sclrpthvp" ) ) then 
+       ! Correct for number of variables found under "sclrpthvp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "sclrpthvp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "sclrpthlp" ) ) then 
+       ! Correct for number of variables found under "sclrpthlp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "sclrpthlp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "sclrprcp" ) ) then 
+       ! Correct for number of variables found under "sclrprcp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "sclrprcp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wpsclrp" ) ) then 
+       ! Correct for number of variables found under "wpsclrp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "wpsclrp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wpsclrp2" ) ) then 
+       ! Correct for number of variables found under "wpsclrp2".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "wpsclrp2" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wp2sclrp" ) ) then 
+       ! Correct for number of variables found under "wp2sclrp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "wp2sclrp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wpsclrprtp" ) ) then 
+       ! Correct for number of variables found under "wpsclrprtp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "wpsclrprtp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wpsclrpthlp" ) ) then 
+       ! Correct for number of variables found under "wpsclrpthlp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - sclr_dim
+       ! Add 1 for "wpsclrpthlp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "wpedsclrp" ) ) then 
+       ! Correct for number of variables found under "wpedsclrp".
+       ! Subtract 1 from the loop size for each scalar.
+       tot_zm_loops = tot_zm_loops - edsclr_dim
+       ! Add 1 for "wpedsclrp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+  endif
+
+
 
     k = 1
 
@@ -1810,135 +1898,132 @@ module stats_zm_module
         call stat_assign( var_index=irtp2_from_chi, var_name="rtp2_from_chi", &
              var_description="Variance of rt, computed from the chi/eta distribution [(kg/kg)^2]", &
              var_units="(kg/kg)^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
 
+      case ( 'sclrprtp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrprtp(j) = k
+          call stat_assign( var_index=isclrprtp(j), var_name="sclr"//trim(sclr_idx)//"prtp", &
+            var_description="scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'sclrp2' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrp2(j) = k
+          call stat_assign( var_index=isclrp2(j), var_name="sclr"//trim(sclr_idx)//"p2", &
+            var_description="scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'sclrpthvp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrpthvp(j) = k
+          call stat_assign( var_index=isclrpthvp(j), var_name="sclr"//trim(sclr_idx)//"pthvp", &
+            var_description="scalar("//trim(sclr_idx)//")'th_v'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'sclrpthlp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrpthlp(j) = k
+          call stat_assign( var_index=isclrpthlp(j), var_name="sclr"//trim(sclr_idx)//"pthlp", &
+            var_description="scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'sclrprcp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          isclrprcp(j) = k
+          call stat_assign( var_index=isclrprcp(j), var_name="sclr"//trim(sclr_idx)//"prcp", &
+            var_description="scalar("//trim(sclr_idx)//")'rc'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wpsclrp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwpsclrp(j) = k
+          call stat_assign( var_index=iwpsclrp(j), var_name="wpsclr"//trim(sclr_idx)//"p", &
+            var_description="'w'scalar("//trim(sclr_idx)//")", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wpsclrp2' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwpsclrp2(j) = k
+          call stat_assign( var_index=iwpsclrp2(j), var_name="wpsclr"//trim(sclr_idx)//"p2", &
+            var_description="'w'scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wp2sclrp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwp2sclrp(j) = k          
+          call stat_assign( var_index=iwp2sclrp(j), var_name="wp2sclr"//trim(sclr_idx)//"p", &
+            var_description="'w'^2 scalar("//trim(sclr_idx)//")", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wpsclrprtp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwpsclrprtp(j) = k
+          call stat_assign( var_index=iwpsclrprtp(j), var_name="wpsclr"//trim(sclr_idx)//"prtp", &
+            var_description="'w' scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wpsclrpthlp' )
+        do j = 1, sclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwpsclrpthlp(j) = k
+          call stat_assign( var_index=iwpsclrpthlp(j), var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
+            var_description="'w' scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+
+      case ( 'wpedsclrp' )
+        do j = 1, edsclr_dim, 1
+          write( sclr_idx, * ) j
+          sclr_idx = adjustl(sclr_idx)
+          iwpedsclrp(j) = k
+          call stat_assign( var_index=iwpedsclrp(j), var_name="wpedsclr"//trim(sclr_idx)//"p", &
+            var_description="eddy scalar("//trim(sclr_idx)//")'w'", var_units="unknown", &
+            l_silhs=.false., grid_kind=stats_zm )
+          k = k + 1
+        end do
+          
       case default
-        l_found = .false.
-
-        j = 1
-
-        do while( j <= sclr_dim .and. .not. l_found )
-          write( sclr_idx, * ) j
-          sclr_idx = adjustl(sclr_idx)
-
-          if( trim(vars_zm(i)) == 'sclr'//trim(sclr_idx)//'prtp'.and. .not. l_found ) then
-            isclrprtp(j) = k
-
-        call stat_assign( var_index=isclrprtp(j), var_name="sclr"//trim(sclr_idx)//"prtp", &
-             var_description="scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'sclr'//trim(sclr_idx)//'p2'.and. .not. l_found ) then
-            isclrp2(j) = k
-        call stat_assign( var_index=isclrp2(j), var_name="sclr"//trim(sclr_idx)//"p2", &
-             var_description="scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'sclr'//trim(sclr_idx)//'pthvp'.and. .not. l_found ) then
-            isclrpthvp(j) = k
-        call stat_assign( var_index=isclrpthvp(j), var_name="sclr"//trim(sclr_idx)//"pthvp", &
-             var_description="scalar("//trim(sclr_idx)//")'th_v'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'sclr'//trim(sclr_idx)//'pthlp'.and. .not. l_found ) then
-            isclrpthlp(j) = k
-
-        call stat_assign( var_index=isclrpthlp(j), var_name="sclr"//trim(sclr_idx)//"pthlp", &
-             var_description="scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'sclr'//trim(sclr_idx)//'prcp'.and. .not. l_found ) then
-
-            isclrprcp(j) = k
-
-        call stat_assign( var_index=isclrprcp(j), var_name="sclr"//trim(sclr_idx)//"prcp", &
-             var_description="scalar("//trim(sclr_idx)//")'rc'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'wpsclr'//trim(sclr_idx)//'p'.and. .not. l_found ) then
-            iwpsclrp(j) = k
-
-        call stat_assign( var_index=iwpsclrp(j), var_name="wpsclr"//trim(sclr_idx)//"p", &
-             var_description="'w'scalar("//trim(sclr_idx)//")", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'wpsclr'//trim(sclr_idx)//'p2'.and. .not. l_found ) then
-
-            iwpsclrp2(j) = k
-
-        call stat_assign( var_index=iwpsclrp2(j), var_name="wpsclr"//trim(sclr_idx)//"p2", &
-             var_description="'w'scalar("//trim(sclr_idx)//")'^2'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'wp2sclr'//trim(sclr_idx)//'p'.and. .not. l_found ) then
-
-            iwp2sclrp(j) = k
-
-        call stat_assign( var_index=iwp2sclrp(j), var_name="wp2sclr"//trim(sclr_idx)//"p", &
-             var_description="'w'^2 scalar("//trim(sclr_idx)//")", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'wpsclr'//trim(sclr_idx)//'prtp'.and. .not. l_found ) then
-            iwpsclrprtp(j) = k
-
-        call stat_assign( var_index=iwpsclrprtp(j), var_name="wpsclr"//trim(sclr_idx)//"prtp", &
-             var_description="'w' scalar("//trim(sclr_idx)//")'rt'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          if( trim(vars_zm(i)) == 'wpsclr'//trim(sclr_idx)//'pthlp'.and. .not. l_found ) then
-            iwpsclrpthlp(j) = k
-
-        call stat_assign( var_index=iwpsclrpthlp(j), var_name="wpsclr"//trim(sclr_idx)//"pthlp", &
-             var_description="'w' scalar("//trim(sclr_idx)//")'th_l'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-          j = j + 1
-        end do
-
-        j = 1
-
-        do while( j <= edsclr_dim .and. .not. l_found )
-
-          write( sclr_idx, * ) j
-          sclr_idx = adjustl(sclr_idx)
-
-          if( trim(vars_zm(i)) == 'wpedsclr'//trim(sclr_idx)//'p'.and. .not. l_found ) then
-            iwpedsclrp(j) = k
-
-        call stat_assign( var_index=iwpedsclrp(j), var_name="wpedsclr"//trim(sclr_idx)//"p", &
-             var_description="eddy scalar("//trim(sclr_idx)//")'w'", var_units="unknown", &
-             l_silhs=.false., grid_kind=stats_zm )
-            k = k + 1
-            l_found = .true.
-          end if
-
-          j = j + 1
-
-        end do
-
-        if ( .not. l_found ) then
-          write(fstderr,*) 'Error:  unrecognized variable in vars_zm:  ',  trim(vars_zm(i))
-          l_error = .true.  ! This will stop the run.
-        end if
+        write(fstderr,*) 'Error:  unrecognized variable in vars_zm:  ',  trim(vars_zm(i))
+        l_error = .true.  ! This will stop the run.
 
       end select
 

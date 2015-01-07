@@ -145,7 +145,9 @@ module stats_clubb_utilities
       fstdout, fstderr, var_length ! Constants
 
     use parameters_model, only: &
-        hydromet_dim  ! Variable(s)
+        hydromet_dim, &  ! Variable(s)
+        sclr_dim, &
+        edsclr_dim
 
     implicit none
 
@@ -655,6 +657,38 @@ module stats_clubb_utilities
        ntot = ntot + hydromet_dim
     endif
 
+    if ( any( vars_zt == "sclrm" ) ) then
+       ! Correct for number of variables found under "sclrm".
+       ! Subtract "sclrm" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif   
+
+    if ( any( vars_zt == "sclrm_f" ) ) then
+       ! Correct for number of variables found under "sclrm_f".
+       ! Subtract "sclrm_f" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+    if ( any( vars_zt == "edsclrm" ) ) then
+       ! Correct for number of variables found under "edsclrm".
+       ! Subtract "edsclrm" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + edsclr_dim
+    endif
+
+    if ( any( vars_zt == "edsclrm_f" ) ) then
+       ! Correct for number of variables found under "edsclrm_f".
+       ! Subtract "edsclrm_f" from the number of zt statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zt statistical variables.
+       ntot = ntot + edsclr_dim
+    endif
+
     if ( ntot >= nvarmax_zt ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
                        "vars_zt than allowed for by nvarmax_zt."
@@ -939,6 +973,105 @@ module stats_clubb_utilities
        ! Add 1 for each hydrometeor to the number of zm statistical variables.
        ntot = ntot + hydromet_dim
     endif
+
+    if ( any( vars_zm == "sclrprtp" ) ) then
+       ! Correct for number of variables found under "sclrprtp".
+       ! Subtract "sclrprtp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+    if ( any( vars_zm == "sclrp2" ) ) then
+       ! Correct for number of variables found under "sclrp2".
+       ! Subtract "sclrp2" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "sclrpthvp" ) ) then
+       ! Correct for number of variables found under "sclrpthvp".
+       ! Subtract "sclrpthvp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "sclrpthlp" ) ) then
+       ! Correct for number of variables found under "sclrpthlp".
+       ! Subtract "sclrpthlp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "sclrprcp" ) ) then
+       ! Correct for number of variables found under "sclrprcp".
+       ! Subtract "sclrprcp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wpsclrp" ) ) then
+       ! Correct for number of variables found under "wpsclrp".
+       ! Subtract "wpsclrp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wpsclrp2" ) ) then
+       ! Correct for number of variables found under "wpsclrp2".
+       ! Subtract "wpsclrp2" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wp2sclrp" ) ) then
+       ! Correct for number of variables found under "wp2sclrp".
+       ! Subtract "wp2sclrp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wpsclrprtp" ) ) then
+       ! Correct for number of variables found under "wpsclrprtp".
+       ! Subtract "wpsclrprtp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wpsclrpthlp" ) ) then
+       ! Correct for number of variables found under "wpsclrpthlp".
+       ! Subtract "wpsclrpthlp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + sclr_dim
+    endif
+
+
+    if ( any( vars_zm == "wpedsclrp" ) ) then
+       ! Correct for number of variables found under "wpedsclrp".
+       ! Subtract "wpedsclrp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add 1 for each scalar to the number of zm statistical variables.
+       ntot = ntot + edsclr_dim
+    endif
+
+
 
     if ( ntot == nvarmax_zm ) then
       write(fstderr,*) "There are more statistical variables listed in ",  &
