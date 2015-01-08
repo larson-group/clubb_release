@@ -6546,6 +6546,7 @@ endif
       endif
 
     end do ! do k = 1, nzm, 1
+
 !---------------------------------
 ! Covariances
 !--------------------------------
@@ -6708,6 +6709,172 @@ if (doicemicro) then
 ! Graupel mixing ratio / number concentration
 !--------------------------------
     call hbuf_put('covarnce_rg_Ng',micro_covarnce(idx_rg,idx_Ng,:),1.)
+  endif !dograupel
+endif !doicemicro
+
+
+!---------------------------------
+! In-cloud covariances
+!--------------------------------
+
+!---------------------------------
+! chi
+!--------------------------------
+
+call hbuf_put('ic_covarnce_chi_w',ic_micro_covarnce(idx_s,idx_w,:),1.)
+
+if(dopredictNc) then
+  call hbuf_put('ic_covarnce_chi_Nc',ic_micro_covarnce(idx_s,idx_Nc,:),1.)
+endif !dopredictNc
+
+if (doprecip) then
+  call hbuf_put('ic_covarnce_chi_rr',ic_micro_covarnce(idx_s,idx_rr,:),1.)
+  call hbuf_put('ic_covarnce_chi_Nr',ic_micro_covarnce(idx_s,idx_Nr,:),1.)
+end if ! doprecip
+
+if (doicemicro) then
+  call hbuf_put('ic_covarnce_chi_ri',ic_micro_covarnce(idx_s,idx_ri,:),1.)
+  call hbuf_put('ic_covarnce_chi_Ni',ic_micro_covarnce(idx_s,idx_Ni,:),1.)
+  call hbuf_put('ic_covarnce_chi_rs',ic_micro_covarnce(idx_s,idx_rs,:),1.)
+  call hbuf_put('ic_covarnce_chi_Ns',ic_micro_covarnce(idx_s,idx_Ns,:),1.)
+end if ! doicemicro
+
+if (dograupel) then
+  call hbuf_put('ic_covarnce_chi_rg',ic_micro_covarnce(idx_s,idx_rg,:),1.)
+  call hbuf_put('ic_covarnce_chi_Ng',ic_micro_covarnce(idx_s,idx_Ng,:),1.)
+end if ! dograupel
+
+
+!---------------------------------
+! Vertical velocity
+!--------------------------------
+if(dopredictNc) then
+  call hbuf_put('ic_covarnce_w_Nc',ic_micro_covarnce(idx_w,idx_Nc,:),1.)
+endif !dopredictNc
+
+if (doprecip) then
+  call hbuf_put('ic_covarnce_w_rr',ic_micro_covarnce(idx_w,idx_rr,:),1.)
+  call hbuf_put('ic_covarnce_w_Nr',ic_micro_covarnce(idx_w,idx_Nr,:),1.)
+end if ! doprecip
+
+if (doicemicro) then
+  call hbuf_put('ic_covarnce_w_ri',ic_micro_covarnce(idx_w,idx_ri,:),1.)
+  call hbuf_put('ic_covarnce_w_Ni',ic_micro_covarnce(idx_w,idx_Ni,:),1.)
+  call hbuf_put('ic_covarnce_w_rs',ic_micro_covarnce(idx_w,idx_rs,:),1.)
+  call hbuf_put('ic_covarnce_w_Ns',ic_micro_covarnce(idx_w,idx_Ns,:),1.)
+end if ! doicemicro
+
+if (dograupel) then
+  call hbuf_put('ic_covarnce_w_rg',ic_micro_covarnce(idx_w,idx_rg,:),1.)
+  call hbuf_put('ic_covarnce_w_Ng',ic_micro_covarnce(idx_w,idx_Ng,:),1.)
+end if ! dograupel
+
+!---------------------------------
+! Cloud liquid number concentration
+!--------------------------------
+
+if(dopredictNc) then  
+  if (doprecip) then
+    call hbuf_put('ic_covarnce_Nc_rr',ic_micro_covarnce(idx_Nc,idx_rr,:),1.)
+    call hbuf_put('ic_covarnce_Nc_Nr',ic_micro_covarnce(idx_Nc,idx_Nr,:),1.)
+  end if ! doprecip
+     
+  if (doicemicro) then
+    call hbuf_put('ic_covarnce_Nc_ri',ic_micro_covarnce(idx_Nc,idx_ri,:),1.) 
+    call hbuf_put('ic_covarnce_Nc_Ni',ic_micro_covarnce(idx_Nc,idx_Ni,:),1.)
+    call hbuf_put('ic_covarnce_Nc_rs',ic_micro_covarnce(idx_Nc,idx_rs,:),1.)
+    call hbuf_put('ic_covarnce_Nc_Ns',ic_micro_covarnce(idx_Nc,idx_Ns,:),1.)
+  end if ! doicemicro    
+
+  if (dograupel) then
+    call hbuf_put('ic_covarnce_Nc_rg',ic_micro_covarnce(idx_Nc,idx_rg,:),1.)
+    call hbuf_put('ic_covarnce_Nc_Ng',ic_micro_covarnce(idx_Nc,idx_Ng,:),1.)
+  end if ! dograupel
+
+end if !dopredictNc
+
+!---------------------------------
+! Rainwater mixing ratio
+!--------------------------------
+  
+if (doprecip) then 
+  call hbuf_put('ic_covarnce_rr_Nr',ic_micro_covarnce(idx_rr,idx_Nr,:),1.)
+
+  if (doicemicro) then
+    call hbuf_put('ic_covarnce_rr_ri',ic_micro_covarnce(idx_rr,idx_ri,:),1.)
+    call hbuf_put('ic_covarnce_rr_Ni',ic_micro_covarnce(idx_rr,idx_Ni,:),1.)
+    call hbuf_put('ic_covarnce_rr_rs',ic_micro_covarnce(idx_rr,idx_rs,:),1.)
+    call hbuf_put('ic_covarnce_rr_Ns',ic_micro_covarnce(idx_rr,idx_Ns,:),1.)
+
+    if (dograupel) then
+      call hbuf_put('ic_covarnce_rr_rg',ic_micro_covarnce(idx_rr,idx_rg,:),1.)
+      call hbuf_put('ic_covarnce_rr_Ng',ic_micro_covarnce(idx_rr,idx_Ng,:),1.)
+    end if !dograupel
+
+!---------------------------------
+! Rainwater number concentration
+!--------------------------------
+
+    call hbuf_put('ic_covarnce_Nr_ri',ic_micro_covarnce(idx_Nr,idx_ri,:),1.)
+    call hbuf_put('ic_covarnce_Nr_Ni',ic_micro_covarnce(idx_Nr,idx_Ni,:),1.)
+    call hbuf_put('ic_covarnce_Nr_rs',ic_micro_covarnce(idx_Nr,idx_rs,:),1.)
+    call hbuf_put('ic_covarnce_Nr_Ns',ic_micro_covarnce(idx_Nr,idx_Ns,:),1.)
+
+    if (dograupel) then
+      call hbuf_put('ic_covarnce_Nr_rg',ic_micro_covarnce(idx_Nr,idx_rg,:),1.)
+      call hbuf_put('ic_covarnce_Nr_Ng',ic_micro_covarnce(idx_Nr,idx_Ng,:),1.)
+    end if !dograupel
+  
+  end if !doicemicro
+
+end if !doprecip
+
+!---------------------------------
+! Cloud-ice mixing ratio
+!--------------------------------
+
+if (doicemicro) then   
+  call hbuf_put('ic_covarnce_ri_Ni',ic_micro_covarnce(idx_ri,idx_Ni,:),1.)
+  call hbuf_put('ic_covarnce_ri_rs',ic_micro_covarnce(idx_ri,idx_rs,:),1.)
+  call hbuf_put('ic_covarnce_ri_Ns',ic_micro_covarnce(idx_ri,idx_Ns,:),1.)
+
+  if (dograupel) then
+    call hbuf_put('ic_covarnce_ri_rg',ic_micro_covarnce(idx_ri,idx_rg,:),1.)
+    call hbuf_put('ic_covarnce_ri_Ng',ic_micro_covarnce(idx_ri,idx_Ng,:),1.)
+  end if !dograupel
+
+!---------------------------------
+! Cloud-ice number concentration
+!--------------------------------
+ 
+  call hbuf_put('ic_covarnce_Ni_rs',ic_micro_covarnce(idx_Ni,idx_rs,:),1.)
+  call hbuf_put('ic_covarnce_Ni_Ns',ic_micro_covarnce(idx_Ni,idx_Ns,:),1.)
+      
+  if (dograupel) then     
+    call hbuf_put('ic_covarnce_Ni_rg',ic_micro_covarnce(idx_Ni,idx_rg,:),1.)
+    call hbuf_put('ic_covarnce_Ni_Ng',ic_micro_covarnce(idx_Ni,idx_Ng,:),1.)
+  end if !dograupel
+
+!---------------------------------
+! Snow mixing ratio
+!--------------------------------
+
+  call hbuf_put('ic_covarnce_rs_Ns',ic_micro_covarnce(idx_rs,idx_Ns,:),1.)
+       
+  if (dograupel) then   
+    call hbuf_put('ic_covarnce_rs_rg',ic_micro_covarnce(idx_rs,idx_rg,:),1.)
+    call hbuf_put('ic_covarnce_rs_Ng',ic_micro_covarnce(idx_rs,idx_Ng,:),1.)
+
+!---------------------------------
+! Snow number concentration
+!--------------------------------
+    call hbuf_put('ic_covarnce_Ns_rg',ic_micro_covarnce(idx_Ns,idx_rg,:),1.)
+    call hbuf_put('ic_covarnce_Ns_Ng',ic_micro_covarnce(idx_Ns,idx_Ng,:),1.)
+
+!---------------------------------
+! Graupel mixing ratio / number concentration
+!--------------------------------
+    call hbuf_put('ic_covarnce_rg_Ng',ic_micro_covarnce(idx_rg,idx_Ng,:),1.)
   endif !dograupel
 endif !doicemicro
 
