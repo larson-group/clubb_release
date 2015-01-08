@@ -321,6 +321,7 @@ then
 		mv "../output/$run_case"_zt.dat "$OUTPUT_DIR"/CLUBB_current/
 		mv "../output/$run_case"_zm.ctl "$OUTPUT_DIR"/CLUBB_current/
 		mv "../output/$run_case"_zm.dat "$OUTPUT_DIR"/CLUBB_current/
+		mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
 		case $run_case in
 			# We only run TWP_ICE, Cloud Feedback, and Dycoms2_rf01_fixed_sst once so we 
 			# want to keep the SFC files.
@@ -380,6 +381,7 @@ then
 				rm "../output/$run_case"_zm.dat
 				mv "../output/$run_case"_sfc.ctl "$OUTPUT_DIR"/CLUBB_current/
 				mv "../output/$run_case"_sfc.dat "$OUTPUT_DIR"/CLUBB_current/
+				mv "../output/$run_case"_setup.txt "$OUTPUT_DIR"/CLUBB_current/
 			fi
 			;;
 	esac

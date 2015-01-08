@@ -184,6 +184,8 @@ if [ $NIGHTLY == true ] ; then
 
     mv $OUTPUT_DIR/CLUBB_current/*.ctl $OUTPUT_DIR/CLUBB_previous/
     mv $OUTPUT_DIR/CLUBB_current/*.dat $OUTPUT_DIR/CLUBB_previous/
+    mv $OUTPUT_DIR/CLUBB_current/*.txt $OUTPUT_DIR/CLUBB_previous/
+
 elif [ $SHORT_CASES == true ] ; then
     echo -e "\nPerforming short-cases run\n"
 elif [ $PRIORITY_CASES == true ] ; then
