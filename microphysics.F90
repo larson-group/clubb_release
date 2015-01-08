@@ -3373,6 +3373,32 @@ if (doprecip) then
     end if !doicemicro
   end if !doprecip
 
+
+!----------------------------
+! In-cloud means and variances
+!----------------------------
+name = 'chim_ic'
+longname = 'In-cloud mean of chi'
+units = '[(kg/kg)]'
+call add_to_namelist(count,microcount,name,longname,units,0)
+
+name = 'chip2_ic'
+longname = 'In-cloud variance of chi'
+units = '[(kg/kg)^2]'
+call add_to_namelist(count,microcount,name,longname,units,0)
+
+name = 'wm_zt_ic'
+longname = 'In-cloud mean of w (on zt grid)'
+units = '[(m/s)]'
+call add_to_namelist(count,microcount,name,longname,units,0)
+
+name = 'wp2_zt_ic'
+longname = 'In-cloud variance of w (on zt grid)'
+units = '[(kg/kg)^2]'
+call add_to_namelist(count,microcount,name,longname,units,0)
+
+
+
 !----------------------------
 ! In-precip means and variances
 !----------------------------
@@ -3898,7 +3924,8 @@ use params, only : lcond
 use compute_correlation_module, only: corravg_count, sum_value_xy_domain,& 
                                       mean_xy_domain, variance_xy_domain,&
                                       mean_ip_xy_domain, variance_ip_xy_domain,&
-                                      covariance_xy_domain, compute_correlation, undef_corr  
+                                      covariance_xy_domain, covariance_ip_xy_domain,&
+                                      compute_correlation, undef_corr  
 
 implicit none
 
@@ -4434,6 +4461,10 @@ endif
     endif !doice
   endif !doprecip
  
+!-----------------------------------------
+! Domain-wide covariances and correlations
+!-----------------------------------------
+
   ! Compute covariances and correlations, first for chi(s_mellor). Manually for
   ! vertical velocity. 
   micro_covarnce(idx_s,idx_w,:) = covariance_xy_domain(nzm,&
@@ -4479,6 +4510,60 @@ endif
                                   domain_varnce_micro(n,:), micro_covarnce(m+offset,n+offset,:) )
     end do
   end do
+
+!-----------------------------------------
+! In-cloud covariances and correlations
+!-----------------------------------------
+
+  ic_micro_covarnce(idx_s,idx_w,:) = covariance_ip_xy_domain(nzm,&
+                                    chi(1:nx,1:ny,1:nzm), w_zt(1:nx,1:ny,1:nzm),&
+                                    micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                    ic_mean_chi(:), ic_mean_w_zt(:),&
+                                    micro_sum(:,rc_pts,thresh_out) )
+
+  ic_micro_correlations(idx_s,idx_w,:) = compute_correlation(nzm, ic_varnce_chi(:),&
+                                        ic_varnce_w_zt(:), ic_micro_covarnce(idx_s,idx_w,:) )
+  
+
+  do n = micro_indx_start,nmicro_fields 
+      ic_micro_covarnce(idx_s,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                             chi(1:nx,1:ny,1:nzm), micro_field(1:nx,1:ny,1:nzm,n),&
+                                             micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                             ic_mean_chi(:), ic_mean_micro(n,:),&
+                                             micro_sum(:,rc_pts,thresh_out) )
+
+      ic_micro_correlations(idx_s,n+offset,:) = compute_correlation(nzm, ic_varnce_chi(:),&
+                                        ic_varnce_micro(n,:), ic_micro_covarnce(idx_s,n+offset,:) )
+  end do
+  
+  ! Compute covariances and correlations, now for vertical velocity and all
+  ! hydrometeor variables.
+  do n = micro_indx_start,nmicro_fields 
+      ic_micro_covarnce(idx_w,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                            w_zt, micro_field(1:nx,1:ny,1:nzm,n),&
+                                            micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                            ic_mean_w_zt, ic_mean_micro(n,:), &
+                                            micro_sum(:,rc_pts,thresh_out) )
+
+      ic_micro_correlations(idx_w,n+offset,:) = compute_correlation(nzm, ic_varnce_w_zt,&
+                                  ic_varnce_micro(n,:), ic_micro_covarnce(idx_w,n+offset,:) )
+  end do
+
+  ! Continue to fill the covariance and correlation matricies  
+  do m = micro_indx_start, nmicro_fields 
+    do n = m, nmicro_fields
+  
+      ic_micro_covarnce(m+offset,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                 micro_field(1:nx,1:ny,1:nzm,m), micro_field(1:nx,1:ny,1:nzm,n),&
+                                 micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
+                                 ic_mean_micro(m,:), ic_mean_micro(n,:),&
+                                 micro_sum(:,rc_pts,thresh_out) )
+
+      ic_micro_correlations(m+offset,n+offset,:) = compute_correlation(nzm, ic_varnce_micro(m,:),&
+                                  ic_varnce_micro(n,:), ic_micro_covarnce(m+offset,n+offset,:) )
+    end do
+  end do
+  
   
 #endif /* UWM_STATS */
 
