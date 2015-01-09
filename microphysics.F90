@@ -125,6 +125,18 @@ integer ::                                                                      
   idx_ic_cor_ri_Ni, idx_ic_cor_ri_rs, idx_ic_cor_ri_Ns, idx_ic_cor_ri_rg, idx_ic_cor_ri_Ng,        &
   idx_ic_cor_Ni_rs, idx_ic_cor_Ni_Ns, idx_ic_cor_Ni_rg, idx_ic_cor_Ni_Ng, idx_ic_cor_rs_Ns,        &
   idx_ic_cor_rs_rg, idx_ic_cor_rs_Ng, idx_ic_cor_Ns_rg, idx_ic_cor_Ns_Ng, idx_ic_cor_rg_Ng,        &
+
+  idx_oc_cor_chi_w, idx_oc_cor_chi_Nc, idx_oc_cor_chi_rr, idx_oc_cor_chi_Nr, idx_oc_cor_chi_ri,    &
+  idx_oc_cor_chi_Ni, idx_oc_cor_chi_rs, idx_oc_cor_chi_Ns, idx_oc_cor_chi_rg, idx_oc_cor_chi_Ng,   &
+  idx_oc_cor_w_Nc, idx_oc_cor_w_rr, idx_oc_cor_w_Nr, idx_oc_cor_w_ri, idx_oc_cor_w_Ni,             &
+  idx_oc_cor_w_rs, idx_oc_cor_w_Ns, idx_oc_cor_w_rg, idx_oc_cor_w_Ng, idx_oc_cor_Nc_rr,            &
+  idx_oc_cor_Nc_Nr, idx_oc_cor_Nc_ri, idx_oc_cor_Nc_Ni, idx_oc_cor_Nc_rs, idx_oc_cor_Nc_Ns,        &
+  idx_oc_cor_Nc_rg, idx_oc_cor_Nc_Ng, idx_oc_cor_rr_Nr, idx_oc_cor_rr_ri, idx_oc_cor_rr_Ni,        &
+  idx_oc_cor_rr_rs, idx_oc_cor_rr_Ns, idx_oc_cor_rr_rg, idx_oc_cor_rr_Ng, idx_oc_cor_Nr_ri,        &
+  idx_oc_cor_Nr_Ni, idx_oc_cor_Nr_rs, idx_oc_cor_Nr_Ns, idx_oc_cor_Nr_rg, idx_oc_cor_Nr_Ng,        &
+  idx_oc_cor_ri_Ni, idx_oc_cor_ri_rs, idx_oc_cor_ri_Ns, idx_oc_cor_ri_rg, idx_oc_cor_ri_Ng,        &
+  idx_oc_cor_Ni_rs, idx_oc_cor_Ni_Ns, idx_oc_cor_Ni_rg, idx_oc_cor_Ni_Ng, idx_oc_cor_rs_Ns,        &
+  idx_oc_cor_rs_rg, idx_oc_cor_rs_Ng, idx_oc_cor_Ns_rg, idx_oc_cor_Ns_Ng, idx_oc_cor_rg_Ng,        &
   
   !Fractions
   idx_cld_frac, idx_rain_frac, idx_cldic_frac, idx_snw_frac, idx_grpl_frac 
@@ -3739,6 +3751,502 @@ if (doicemicro) then
   end if !dograupel
 end if !doicemicro
 
+!---------------------------
+! Out of cloud oc_correlations 
+!----------------------------
+
+!----------------------------
+! chi(S_mellor) 
+!----------------------------
+  name = 'oc_corr_chi_w'
+  longname = 'In-Cloud Correlation of chi and vertical velocity'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_chi_w = count
+
+if(dopredictNc) then
+  name = 'oc_corr_chi_Nc'
+  longname = 'In-Cloud Correlation of chi and cloud droplet concentration'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_chi_Nc = count
+end if ! do predictNc
+    
+
+  if (doprecip) then
+    
+    name = 'oc_corr_chi_rr'
+    longname = 'In-Cloud Correlation of chi and rain water mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_rr = count
+    
+    name = 'oc_corr_chi_Nr'
+    longname = 'In-Cloud Correlation of chi and rain drop concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_Nr = count
+    
+  end if ! doprecip
+
+  if (doicemicro) then
+    
+    name = 'oc_corr_chi_ri'
+    longname = 'In-Cloud Correlation of chi and cloud ice mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_ri = count
+    
+    name = 'oc_corr_chi_Ni'
+    longname = 'In-Cloud Correlation of chi and cloud ice concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_Ni = count
+    
+    name = 'oc_corr_chi_rs'
+    longname = 'In-Cloud Correlation of chi and snow mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_rs = count
+    
+    name = 'oc_corr_chi_Ns'
+    longname = 'In-Cloud Correlation of chi and snowflake concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_chi_Ns = count
+    
+
+    if (dograupel) then
+    
+      name = 'oc_corr_chi_rg'
+      longname = 'In-Cloud Correlation of chi and graupel mixing ratio'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_chi_rg = count
+    
+      name = 'oc_corr_chi_Ng'
+      longname = 'In-Cloud Correlation of chi and graupel concentration'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_chi_Ng = count
+    
+    end if ! dograupel
+  endif ! doicemicro
+!----------------------------
+! Vertical Velocity 
+!----------------------------
+
+if(dopredictNc) then
+  name = 'oc_corr_w_Nc'
+  longname = 'In-Cloud Correlation of vertical velocity and cloud droplet concentration'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_w_Nc = count
+end if ! do predictNc
+    
+
+  if (doprecip) then
+    
+    name = 'oc_corr_w_rr'
+    longname = 'In-Cloud Correlation of vertical velocity and rain water mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_rr = count
+    
+    name = 'oc_corr_w_Nr'
+    longname = 'In-Cloud Correlation of vertical velocity and rain drop concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_Nr = count
+    
+  end if ! doprecip
+
+  if (doicemicro) then
+    
+    name = 'oc_corr_w_ri'
+    longname = 'In-Cloud Correlation of vertical velocity and cloud ice mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_ri = count
+    
+    name = 'oc_corr_w_Ni'
+    longname = 'In-Cloud Correlation of vertical velocity and cloud ice concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_Ni = count
+    
+    name = 'oc_corr_w_rs'
+    longname = 'In-Cloud Correlation of vertical velocity and snow mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_rs = count
+    
+    name = 'oc_corr_w_Ns'
+    longname = 'In-Cloud Correlation of vertical velocity and snowflake concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_w_Ns = count
+    
+
+    if (dograupel) then
+    
+      name = 'oc_corr_w_rg'
+      longname = 'In-Cloud Correlation of vertical velocity and graupel mixing ratio'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_w_rg = count
+    
+      name = 'oc_corr_w_Ng'
+      longname = 'In-Cloud Correlation of vertical velocity and graupel concentration'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_w_Ng = count
+    
+    end if ! dograupel
+  end if ! doicemicro
+
+!----------------------------
+! Cloud droplet number concentration 
+!----------------------------
+if(dopredictNc) then
+  if (doprecip) then
+        
+    name = 'oc_corr_Nc_rr'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and rain water mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_rr = count
+        
+    name = 'oc_corr_Nc_Nr'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and rain drop conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_Nr = count
+        
+  end if ! doprecip
+    
+  if (doicemicro) then
+        
+    name = 'oc_corr_Nc_ri'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and cloud ice mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_ri = count
+        
+    name = 'oc_corr_Nc_Ni'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and cloud ice conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_Ni = count
+       
+    name = 'oc_corr_Nc_rs'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and snow mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_rs = count
+      
+    name = 'oc_corr_Nc_Ns'
+    longname = 'In-Cloud Correlation of cloud droplet conc. and snowflake conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nc_Ns = count
+        
+    if (dograupel) then
+        
+      name = 'oc_corr_Nc_rg'
+      longname = 'In-Cloud Correlation of cloud droplet conc. and graupel mixing ratio'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_Nc_rg = count
+        
+      name = 'oc_corr_Nc_Ng'
+      longname = 'In-Cloud Correlation of cloud droplet conc. and graupel conc.'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_Nc_Ng = count
+        
+    end if ! dograupel
+  end if ! doicemicro 
+end if ! dopredictNc
+
+!----------------------------
+! Rainwater mixing ratio 
+!----------------------------
+if (doprecip) then
+
+    name = 'oc_corr_rr_Nr'
+    longname = 'In-Cloud Correlation of rain water mixing ratio and rain drop concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rr_Nr = count
+  
+  if(doicemicro) then
+
+    name = 'oc_corr_rr_ri'
+    longname = 'In-Cloud Correlation of rain water mixing ratio and cloud ice mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rr_ri = count
+        
+    name = 'oc_corr_rr_Ni'
+    longname = 'In-Cloud Correlation of rain water mixing ratio and cloud ice conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rr_Ni = count
+        
+    name = 'oc_corr_rr_rs'
+    longname = 'In-Cloud Correlation of rain water mixing ratio and snow mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rr_rs = count
+        
+    name = 'oc_corr_rr_Ns'
+    longname = 'In-Cloud Correlation of rain water mixing ratio and snowflake conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rr_Ns = count
+        
+
+    if(dograupel) then
+
+      name = 'oc_corr_rr_rg'
+      longname = 'In-Cloud Correlation of rain water mixing ratio and graupel mixing ratio'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_rr_rg = count
+        
+      name = 'oc_corr_rr_Ng'
+      longname = 'In-Cloud Correlation of rain water mixing ratio and graupel conc.'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+      ! Note:  it is important to place these after the call to add_to_namelist.
+      idx_oc_cor_rr_Ng = count
+        
+    end if !dograupel
+
+!----------------------------
+! Rainwater number concentration 
+!----------------------------
+        
+    name = 'oc_corr_Nr_ri'
+    longname = 'In-Cloud Correlation of rain drop conc. and cloud ice mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nr_ri = count
+        
+    name = 'oc_corr_Nr_Ni'
+    longname = 'In-Cloud Correlation of rain drop conc. and cloud ice conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nr_Ni = count
+        
+    name = 'oc_corr_Nr_rs'
+    longname = 'In-Cloud Correlation of rain drop conc. and snow mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nr_rs = count
+        
+    name = 'oc_corr_Nr_Ns'
+    longname = 'In-Cloud Correlation of rain drop conc. and snowflake conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Nr_Ns = count
+        
+      if(dograupel) then
+
+        name = 'oc_corr_Nr_rg'
+        longname = 'In-Cloud Correlation of rain drop conc. and graupel mixing ratio'
+        units = '-'
+        call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+        ! Note:  it is important to place these after the call to add_to_namelist.
+        idx_oc_cor_Nr_rg = count
+        
+        name = 'oc_corr_Nr_Ng'
+        longname = 'In-Cloud Correlation of rain drop conc. and graupel conc.'
+        units = '-'
+        call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+        ! Note:  it is important to place these after the call to add_to_namelist.
+        idx_oc_cor_Nr_Ng = count
+        
+      end if !dograupel
+    end if !doicemicro
+end if !doprecip
+
+!----------------------------
+! Cloud-ice mixing ratio 
+!----------------------------
+if (doicemicro) then
+    
+  name = 'oc_corr_ri_Ni'
+  longname = 'In-Cloud Correlation of cloud ice mixing ratio and cloud ice conc.'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_ri_Ni = count
+    
+  name = 'oc_corr_ri_rs'
+  longname = 'In-Cloud Correlation of cloud ice mixing ratio and snow mixing ratio'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_ri_rs = count
+    
+  name = 'oc_corr_ri_Ns'
+  longname = 'In-Cloud Correlation of cloud ice mixing ratio and snowflake conc.'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_ri_Ns = count
+    
+  if (dograupel) then
+
+    name = 'oc_corr_ri_rg'
+    longname = 'In-Cloud Correlation of cloud ice mixing ratio and graupel mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_ri_rg = count
+        
+    name = 'oc_corr_ri_Ng'
+    longname = 'In-Cloud Correlation of cloud ice mixing ratio and graupel conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_ri_Ng = count
+        
+  end if !dograupel
+
+!----------------------------
+! Cloud-ice number concentration 
+!----------------------------
+    
+  name = 'oc_corr_Ni_rs'
+  longname = 'In-Cloud Correlation of cloud ice concentration and snow mixing ratio'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_Ni_rs = count
+    
+  name = 'oc_corr_Ni_Ns'
+  longname = 'In-Cloud Correlation of cloud ice concentration and snowflake conc.'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_Ni_Ns = count
+    
+  if (dograupel) then
+
+    name = 'oc_corr_Ni_rg'
+    longname = 'In-Cloud Correlation of cloud ice conc. and graupel mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Ni_rg = count
+        
+    name = 'oc_corr_Ni_Ng'
+    longname = 'In-Cloud Correlation of cloud ice conc. and graupel conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Ni_Ng = count
+        
+  end if !dograupel
+
+!----------------------------
+! Snow mixing ratio 
+!----------------------------
+  
+  name = 'oc_corr_rs_Ns'
+  longname = 'In-Cloud Correlation of snow mixing ratio and snowflake concentration'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+  ! Note:  it is important to place these after the call to add_to_namelist.
+  idx_oc_cor_rs_Ns = count
+    
+  if (dograupel) then
+
+    name = 'oc_corr_rs_rg'
+    longname = 'In-Cloud Correlation of snow mixing ratio and graupel mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rs_rg = count
+        
+    name = 'oc_corr_rs_Ng'
+    longname = 'In-Cloud Correlation of snow mixing ratio and graupel concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rs_Ng = count
+        
+!----------------------------
+! Snow number concentration 
+!----------------------------
+    name = 'oc_corr_Ns_rg'
+    longname = 'In-Cloud Correlation of snowflake concentration and graupel mixing ratio'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Ns_rg = count
+        
+    name = 'oc_corr_Ns_Ng'
+    longname = 'In-Cloud Correlation of snowflake concentration and graupel conc.'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_Ns_Ng = count
+
+!----------------------------
+! Graupel mixing ratio / number concentration 
+!----------------------------
+        
+    name = 'oc_corr_rg_Ng'
+    longname = 'In-Cloud Correlation of graupel mixing ratio and graupel concentration'
+    units = '-'
+    call add_to_namelist(count,microcount,name,longname,units,corr_avg)
+    ! Note:  it is important to place these after the call to add_to_namelist.
+    idx_oc_cor_rg_Ng = count
+        
+  end if !dograupel
+end if !doicemicro
+
 !----------------------------
 ! Fractions
 !----------------------------
@@ -4802,6 +5310,401 @@ if (doicemicro) then
   end if !dograupel
 end if !doicemicro
 
+!----------------------------
+!  Out of cloud covariances
+!---------------------------
+
+!----------------------------
+! chi(s_mellor)
+!---------------------------
+name = 'oc_covarnce_chi_w'
+longname = 'In-cloud Covariance of chi and cloud droplet concentration'
+units = '[(kg kg^-1)(m s^-1) ]'
+call add_to_namelist(count,microcount,name,longname,units,0)
+
+if(dopredictNc) then
+  
+  name = 'oc_covarnce_chi_Nc'
+  longname = 'In-cloud Covariance of chi and cloud droplet concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if
+
+if (doprecip) then
+    
+  name = 'oc_covarnce_chi_rr'
+  longname = 'In-cloud Covariance of chi and rain water mixing ratio'
+  units = '[(kg kg^-1)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_chi_Nr'
+  longname = 'In-cloud Covariance of chi and rain drop concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doprecip
+
+if (doicemicro) then
+    
+  name = 'oc_covarnce_chi_ri'
+  longname = 'In-cloud Covariance of chi and cloud ice mixing ratio'
+  units = '[(kg kg^-1)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_chi_Ni'
+  longname = 'In-cloud Covariance of chi and cloud ice concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_chi_rs'
+  longname = 'In-cloud Covariance of chi and snow mixing ratio'
+  units = '[(kg kg^-1)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_chi_Ns'
+  longname = 'In-cloud Covariance of chi and snowflake concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doicemicro
+
+if (dograupel) then
+    
+  name = 'oc_covarnce_chi_rg'
+  longname = 'In-cloud Covariance of chi and graupel mixing ratio'
+  units = '[(kg kg^-1)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_chi_Ng'
+  longname = 'In-cloud Covariance of chi and graupel concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+endif !doicemicro
+
+!----------------------------
+! Vertical velocity
+!---------------------------
+if(dopredictNc) then
+  
+  name = 'oc_covarnce_w_Nc'
+  longname = 'In-cloud Covariance of vertical velocity and cloud droplet concentration'
+  units = '[(m s^-1)(# kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if
+
+if (doprecip) then
+    
+  name = 'oc_covarnce_w_rr'
+  longname = 'In-cloud Covariance of vertical velocity and rain water mixing ratio'
+  units = '[(m s^-1)(kg kg^-1) ]'
+  units = '-'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_w_Nr'
+  longname = 'In-cloud Covariance of vertical velocity and rain drop concentration'
+  units = '[(m s^-1)(# kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doprecip
+
+if (doicemicro) then
+    
+  name = 'oc_covarnce_w_ri'
+  longname = 'In-cloud Covariance of vertical velocity and cloud ice mixing ratio'
+  units = '[(m s^-1)(kg kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_w_Ni'
+  longname = 'In-cloud Covariance of vertical velocity and cloud ice concentration'
+  units = '[(m s^-1)(# kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_w_rs'
+  longname = 'In-cloud Covariance of vertical velocity and snow mixing ratio'
+  units = '[(m s^-1)(kg kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_w_Ns'
+  longname = 'In-cloud Covariance of vertical velocity and snowflake concentration'
+  units = '[(m s^-1)(# kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doicemicro
+
+if (dograupel) then
+    
+  name = 'oc_covarnce_w_rg'
+  longname = 'In-cloud Covariance of vertical velocity and graupel mixing ratio'
+  units = '[(m s^-1)(kg kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_w_Ng'
+  longname = 'In-cloud Covariance of vertical velocity and graupel concentration'
+  units = '[(m s^-1)(# kg^-1) ]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! dograupel
+
+!----------------------------
+! Cloud droplet number concentration
+!---------------------------
+
+if(dopredictNc) then
+    if (doprecip) then
+        
+      name = 'oc_covarnce_Nc_rr'
+      longname = 'In-cloud Covariance of cloud droplet conc. and rain water mixing ratio'
+      units = '[(# kg^-1)(kg kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+        
+      name = 'oc_covarnce_Nc_Nr'
+      longname = 'In-cloud Covariance of cloud droplet conc. and rain drop conc.'
+      units = '[(# kg^-1)(# kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    end if ! doprecip
+    
+    if (doicemicro) then
+        
+      name = 'oc_covarnce_Nc_ri'
+      longname = 'In-cloud Covariance of cloud droplet conc. and cloud ice mixing ratio'
+      units = '[(# kg^-1)(kg kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+        
+      name = 'oc_covarnce_Nc_Ni'
+      longname = 'In-cloud Covariance of cloud droplet conc. and cloud ice conc.'
+      units = '[(# kg^-1)(# kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+        
+      name = 'oc_covarnce_Nc_rs'
+      longname = 'In-cloud Covariance of cloud droplet conc. and snow mixing ratio'
+      units = '[(# kg^-1)(kg kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+    
+      name = 'oc_covarnce_Nc_Ns'
+      longname = 'In-cloud Covariance of cloud droplet conc. and snowflake conc.'
+      units = '[(# kg^-1)(# kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    end if ! doicemicro
+    
+    if (dograupel) then
+        
+      name = 'oc_covarnce_Nc_rg'
+      longname = 'In-cloud Covariance of cloud droplet conc. and graupel mixing ratio'
+      units = '[(# kg^-1)(kg kg^-1)]'
+      units = '-'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+        
+      name = 'oc_covarnce_Nc_Ng'
+      longname = 'In-cloud Covariance of cloud droplet conc. and graupel conc.'
+      units = '[(# kg^-1)(# kg^-1)]'
+      call add_to_namelist(count,microcount,name,longname,units,0)
+
+    end if ! dograupel
+end if ! do predictNc
+
+!----------------------------
+! Rainwater mixing ratio
+!---------------------------
+if (doprecip) then
+
+    name = 'oc_covarnce_rr_Nr'
+    longname = 'In-cloud Covariance of rain water mixing ratio and rain drop concentration'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+  if(doicemicro) then
+
+    name = 'oc_covarnce_rr_ri'
+    longname = 'In-cloud Covariance of rain water mixing ratio and cloud ice mixing ratio'
+    units = '[(kg kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+        
+    name = 'oc_covarnce_rr_Ni'
+    longname = 'In-cloud Covariance of rain water mixing ratio and cloud ice conc.'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    name = 'oc_covarnce_rr_rs'
+    longname = 'In-cloud Covariance of rain water mixing ratio and snow mixing ratio'
+    units = '[(kg kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    name = 'oc_covarnce_rr_Ns'
+    longname = 'In-cloud Covariance of rain water mixing ratio and snowflake conc.'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+  
+  end if !doicemicro
+
+  if(dograupel) then
+
+    name = 'oc_covarnce_rr_rg'
+    longname = 'In-cloud Covariance of rain water mixing ratio and graupel mixing ratio'
+    units = '[(kg kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+        
+    name = 'oc_covarnce_rr_Ng'
+    longname = 'In-cloud Covariance of rain water mixing ratio and graupel conc.'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+  end if !dograupel
+
+!----------------------------
+! Rainwater number concentration
+!---------------------------
+  if(doicemicro) then
+        
+    name = 'oc_covarnce_Nr_ri'
+    longname = 'In-cloud Covariance of rain drop conc. and cloud ice mixing ratio'
+    units = '[(# kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+        
+    name = 'oc_covarnce_Nr_Ni'
+    longname = 'In-cloud Covariance of rain drop conc. and cloud ice conc.'
+    units = '[(# kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    name = 'oc_covarnce_Nr_rs'
+    longname = 'In-cloud Covariance of rain drop conc. and snow mixing ratio'
+    units = '[(# kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+    name = 'oc_covarnce_Nr_Ns'
+    longname = 'In-cloud Covariance of rain drop conc. and snowflake conc.'
+    units = '[(# kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+  
+  end if !doicemicro
+
+  if(dograupel) then
+
+    name = 'oc_covarnce_Nr_rg'
+    longname = 'In-cloud Covariance of rain drop conc. and graupel mixing ratio'
+    units = '[(# kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+        
+    name = 'oc_covarnce_Nr_Ng'
+    longname = 'In-cloud Covariance of rain drop conc. and graupel conc.'
+    units = '[(# kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+  end if !dograupel
+end if !doprecip
+!----------------------------
+! Cloudice mixing ratio
+!---------------------------
+
+if (doicemicro) then
+    
+  name = 'oc_covarnce_ri_Ni'
+  longname = 'In-cloud Covariance of cloud ice mixing ratio and cloud ice conc.'
+  units = '[(kg kg^-1)(# kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_ri_rs'
+  longname = 'In-cloud Covariance of cloud ice mixing ratio and snow mixing ratio'
+  units = '[(kg kg^-1)(kg kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_ri_Ns'
+  longname = 'In-cloud Covariance of cloud ice mixing ratio and snowflake conc.'
+  units = '[(kg kg^-1)(# kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  if (dograupel) then
+
+    name = 'oc_covarnce_ri_rg'
+    longname = 'In-cloud Covariance of cloud ice mixing ratio and graupel mixing ratio'
+    units = '[(kg kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+    name = 'oc_covarnce_ri_Ng'
+    longname = 'In-cloud Covariance of cloud ice mixing ratio and graupel conc.'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+  end if !dograupel
+
+!----------------------------
+! Cloudice number concentration
+!---------------------------
+    
+  name = 'oc_covarnce_Ni_rs'
+  longname = 'In-cloud Covariance of cloud ice concentration and snow mixing ratio'
+  units = '[(# kg^-1)(kg kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'oc_covarnce_Ni_Ns'
+  longname = 'In-cloud Covariance of cloud ice concentration and snowflake conc.'
+  units = '[(# kg^-1)(# kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  if (dograupel) then
+
+    name = 'oc_covarnce_Ni_rg'
+    longname = 'In-cloud Covariance of cloud ice conc. and graupel mixing ratio'
+    units = '[(# kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+    name = 'oc_covarnce_Ni_Ng'
+    longname = 'In-cloud Covariance of cloud ice conc. and graupel conc.'
+    units = '[(# kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+  end if !dograupel
+
+!----------------------------
+! Snow mixing ratio
+!---------------------------
+    
+  name = 'oc_covarnce_rs_Ns'
+  longname = 'In-cloud Covariance of snow mixing ratio and snowflake concentration'
+  units = '[(kg kg^-1)(# kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  if (dograupel) then
+
+    name = 'oc_covarnce_rs_rg'
+    longname = 'In-cloud Covariance of snow mixing ratio and graupel mixing ratio'
+    units = '[(kg kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+    name = 'oc_covarnce_rs_Ng'
+    longname = 'In-cloud Covariance of snow mixing ratio and graupel concentration'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+!----------------------------
+! Snow number concentration
+!---------------------------
+    
+    name = 'oc_covarnce_Ns_rg'
+    longname = 'In-cloud Covariance of snowflake concentration and graupel mixing ratio'
+    units = '[(# kg^-1)(kg kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+    name = 'oc_covarnce_Ns_Ng'
+    longname = 'In-cloud Covariance of snowflake concentration and graupel conc.'
+    units = '[(# kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+
+!----------------------------
+! Graupel mixing ratio / number concentration
+!---------------------------
+    
+    name = 'oc_covarnce_rg_Ng'
+    longname = 'In-cloud Covariance of graupel mixing ratio and graupel concentration'
+    units = '[(kg kg^-1)(# kg^-1)]'
+    call add_to_namelist(count,microcount,name,longname,units,0)
+    
+  end if !dograupel
+end if !doicemicro
+
 if(masterproc) then
    write(*,*) 'Added ', microcount, ' arrays to statistics for M2005 microphysics'
 end if
@@ -4843,6 +5746,10 @@ real, dimension(11,11,nzm) :: micro_covarnce
 real, dimension(11,11,nzm) :: ic_micro_correlations 
 real, dimension(11,11,nzm) :: ic_micro_covarnce 
 
+!Microphysics correlations and covariances matricies out of cloud
+real, dimension(11,11,nzm) :: oc_micro_correlations 
+real, dimension(11,11,nzm) :: oc_micro_covarnce 
+
 ! Mean and variance of chi(s_mellor)
 real, dimension(nzm) :: domain_mean_chi 
 real, dimension(nzm) :: domain_varnce_chi 
@@ -4851,6 +5758,10 @@ real, dimension(nzm) :: domain_varnce_chi
 real, dimension(nzm) :: ic_mean_chi 
 real, dimension(nzm) :: ic_varnce_chi 
 
+! Mean and variance of chi(s_mellor) out of cloud
+real, dimension(nzm) :: oc_mean_chi 
+real, dimension(nzm) :: oc_varnce_chi 
+
 ! Vertical velocity, interpolated, domain means, and variances
 real, dimension(nx,ny,nzm) :: w_zt !vertical velocity interpolated on the scalar grid
 real, dimension(nzm) :: domain_mean_w_zt !domain average of w_zt
@@ -4858,6 +5769,9 @@ real, dimension(nzm) :: domain_varnce_w_zt !domain variance of w_zt
 
 real, dimension(nzm) :: ic_mean_w_zt !domain average of w_zt in-cloud
 real, dimension(nzm) :: ic_varnce_w_zt !domain variance of w_zt in-cloud
+
+real, dimension(nzm) :: oc_mean_w_zt !domain average of w_zt out of cloud
+real, dimension(nzm) :: oc_varnce_w_zt !domain variance of w_zt out of cloud
 
 !Microphysical domain-wide means and variances 
 real, dimension(nmicro_fields,nzm) :: domain_mean_micro !domain averages of micro_fields
@@ -4868,8 +5782,12 @@ real, dimension(nmicro_fields,nzm) :: ip_mean_micro ! within-'precip' averages o
 real, dimension(nmicro_fields,nzm) :: ip_varnce_micro ! within-'precip' of micro_fields
 
 !Microphysical within-cloud means and variances 
-real, dimension(nmicro_fields,nzm) :: ic_mean_micro ! within-'precip' averages of micro_fields
-real, dimension(nmicro_fields,nzm) :: ic_varnce_micro ! within-'precip' of micro_fields
+real, dimension(nmicro_fields,nzm) :: ic_mean_micro ! within-cloud averages of micro_fields
+real, dimension(nmicro_fields,nzm) :: ic_varnce_micro ! within-cloud of micro_fields
+
+!Microphysical out of cloud means and variances 
+real, dimension(nmicro_fields,nzm) :: oc_mean_micro ! within-cloud averages of micro_fields
+real, dimension(nmicro_fields,nzm) :: oc_varnce_micro ! within-cloud of micro_fields
 
 integer :: idx_s, idx_w, idx_Nc, idx_rr, idx_Nr, idx_ri, idx_Ni,&
            idx_rs, idx_Ns, idx_rg, idx_Ng, micro_indx_start, &
@@ -4887,18 +5805,21 @@ integer :: idx_s, idx_w, idx_Nc, idx_rr, idx_Nr, idx_ri, idx_Ni,&
 !  Any variables that are reliant on these thresholds are defined in this
 !  section
 
-! Binary mask of in(1) and out(0) of micro. species.
-real, dimension(nx,ny,nzm,nfrac_fields,nfractions) :: micro_mask
+! Binary mask of in(1) and out(0) of micro. species. Add '1' for 'out of cloud'
+! field
+real, dimension(nx,ny,nzm,nfrac_fields+1,nfractions) :: micro_mask
 
-! Number of gridpoints within micro. species
-integer, dimension(nzm,nfrac_fields,nfractions) :: micro_sum
+! Number of gridpoints within micro. species. Add '1' for 'out of cloud'
+! field
+integer, dimension(nzm,nfrac_fields+1,nfractions) :: micro_sum
 
-! Micro. fractions
-real, dimension(nzm, nfrac_fields, nfractions) :: micro_frac 
+! Micro. fractions. Add '1' for 'out of cloud'
+! field
+real, dimension(nzm, nfrac_fields+1, nfractions) :: micro_frac 
 
 ! Cloud, Rain, Ice, Snow, Graupel points as defined by the threshhold,
 ! (thresh_index [kg kg^-1])
-integer :: rc_pts, rr_pts, ri_pts, rs_pts, rg_pts, thresh_index
+integer :: rc_pts, rr_pts, ri_pts, rs_pts, rg_pts, out_rc_pts, thresh_index
 
 real ::  curr_thresh ! Current threshold value 
 integer :: order_of_magnitude ! 10
@@ -5130,12 +6051,13 @@ end if
 
 
 #ifdef UWM_STATS
-!Ensemble fractions. Indicies for thresholds of 1e-8 [kg/kg], 1e-7, etc.
+! In micro arrays, indicies for hydrometeor
  rc_pts = 1 
  rr_pts = 2
  ri_pts = 3
  rs_pts = 4
  rg_pts = 5
+ out_rc_pts = 6 ! Out of cloud points
  
  ! Compute in-precip means/variance with the final threshold
  thresh_out = nfractions
@@ -5152,8 +6074,10 @@ do thresh_index=1,nfractions
         ! We only want cloud water, not cloud water + rain water.
         if ( cloudliq(i,j,k)  > curr_thresh) then
           micro_mask(i,j,k,rc_pts,thresh_index) = 1
+          micro_mask(i,j,k,out_rc_pts,thresh_index) = 0
         else
           micro_mask(i,j,k,rc_pts,thresh_index) = 0
+          micro_mask(i,j,k,out_rc_pts,thresh_index) = 1
         end if 
         
         if (doprecip) then
@@ -5263,6 +6187,17 @@ endif
                                    micro_sum(1:nzm,rc_pts,thresh_out) )
   ic_varnce_w_zt(:) = variance_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),&
                                             ic_mean_w_zt(:), micro_sum(1:nzm,rc_pts,thresh_out) )
+
+  !Find the out of cloud means and variances of chi and w_zt
+  oc_mean_chi(:) = mean_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                   micro_sum(1:nzm,out_rc_pts,thresh_out) )
+  oc_varnce_chi(:) = variance_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                            oc_mean_chi(:), micro_sum(1:nzm,out_rc_pts,thresh_out) )
+
+  oc_mean_w_zt(:) = mean_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                   micro_sum(1:nzm,out_rc_pts,thresh_out) )
+  oc_varnce_w_zt(:) = variance_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                            oc_mean_w_zt(:), micro_sum(1:nzm,out_rc_pts,thresh_out) )
   
   do n=micro_indx_start,nmicro_fields
     ! Domain mean and variances stored according to Morrison indicies
@@ -5277,6 +6212,14 @@ endif
     ic_varnce_micro(n,:) = variance_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
                                           micro_mask(1:nx,1:ny,1:nzm,rc_pts,thresh_out),ic_mean_micro(n,:),&
                                           micro_sum(1:nzm,rc_pts,thresh_out))
+
+    ! out of cloud means and variances
+    oc_mean_micro(n,:) = mean_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
+                                          micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),micro_sum(1:nzm,out_rc_pts,thresh_out))
+
+    oc_varnce_micro(n,:) = variance_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
+                                          micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),oc_mean_micro(n,:),&
+                                          micro_sum(1:nzm,out_rc_pts,thresh_out))
   end do
   !----------------
   ! Within precip means
@@ -5465,6 +6408,59 @@ endif
 
       ic_micro_correlations(m+offset,n+offset,:) = compute_correlation(nzm, ic_varnce_micro(m,:),&
                                   ic_varnce_micro(n,:), ic_micro_covarnce(m+offset,n+offset,:) )
+    end do
+  end do
+
+!-----------------------------------------
+! Out of cloud covariances and correlations
+!-----------------------------------------
+
+  oc_micro_covarnce(idx_s,idx_w,:) = covariance_ip_xy_domain(nzm,&
+                                    chi(1:nx,1:ny,1:nzm), w_zt(1:nx,1:ny,1:nzm),&
+                                    micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                    oc_mean_chi(:), oc_mean_w_zt(:),&
+                                    micro_sum(:,out_rc_pts,thresh_out) )
+
+  oc_micro_correlations(idx_s,idx_w,:) = compute_correlation(nzm, oc_varnce_chi(:),&
+                                        oc_varnce_w_zt(:), oc_micro_covarnce(idx_s,idx_w,:) )
+  
+
+  do n = micro_indx_start,nmicro_fields 
+      oc_micro_covarnce(idx_s,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                             chi(1:nx,1:ny,1:nzm), micro_field(1:nx,1:ny,1:nzm,n),&
+                                             micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                             oc_mean_chi(:), oc_mean_micro(n,:),&
+                                             micro_sum(:,out_rc_pts,thresh_out) )
+
+      oc_micro_correlations(idx_s,n+offset,:) = compute_correlation(nzm, oc_varnce_chi(:),&
+                                        oc_varnce_micro(n,:), oc_micro_covarnce(idx_s,n+offset,:) )
+  end do
+  
+  ! Compute covariances and correlations, now for vertical velocity and all
+  ! hydrometeor variables.
+  do n = micro_indx_start,nmicro_fields 
+      oc_micro_covarnce(idx_w,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                            w_zt, micro_field(1:nx,1:ny,1:nzm,n),&
+                                            micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                            oc_mean_w_zt, oc_mean_micro(n,:), &
+                                            micro_sum(:,out_rc_pts,thresh_out) )
+
+      oc_micro_correlations(idx_w,n+offset,:) = compute_correlation(nzm, oc_varnce_w_zt,&
+                                  oc_varnce_micro(n,:), oc_micro_covarnce(idx_w,n+offset,:) )
+  end do
+
+  ! Continue to fill the covariance and correlation matricies  
+  do m = micro_indx_start, nmicro_fields 
+    do n = m, nmicro_fields
+  
+      oc_micro_covarnce(m+offset,n+offset,:) = covariance_ip_xy_domain(nzm,&
+                                 micro_field(1:nx,1:ny,1:nzm,m), micro_field(1:nx,1:ny,1:nzm,n),&
+                                 micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                 oc_mean_micro(m,:), oc_mean_micro(n,:),&
+                                 micro_sum(:,out_rc_pts,thresh_out) )
+
+      oc_micro_correlations(m+offset,n+offset,:) = compute_correlation(nzm, oc_varnce_micro(m,:),&
+                                  oc_varnce_micro(n,:), oc_micro_covarnce(m+offset,n+offset,:) )
     end do
   end do
   
@@ -6547,6 +7543,448 @@ endif
 
     end do ! do k = 1, nzm, 1
 
+!------------
+! In-cloud correlations
+!------------
+   do k = 1, nzm, 1
+!-------------
+! chi
+!-------------
+      if ( oc_micro_correlations(idx_s,idx_w,k) /= undef_corr ) then
+         call hbuf_put_level('oc_corr_chi_w',oc_micro_correlations(idx_s,idx_w,k),1.,k)
+         corravg_count(idx_oc_cor_chi_w,k) = corravg_count(idx_oc_cor_chi_w,k) + 1
+      else ! oc_micro_correlations(1,incl,k) == undef_corr
+         call hbuf_put_level('oc_corr_chi_w',0.0,1.,k)
+      endif ! oc_micro_correlations(1,incl,k) /= undef_corr
+      
+      if(dopredictNc) then
+        if ( oc_micro_correlations(idx_s,idx_Nc,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_Nc',oc_micro_correlations(idx_s,idx_Nc,k),1.,k)
+           corravg_count(idx_oc_cor_chi_Nc,k) = corravg_count(idx_oc_cor_chi_Nc,k) + 1
+        else ! oc_micro_correlations(1,incl,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_Nc',0.0,1.,k)
+        endif ! oc_micro_correlations(1,incl,k) /= undef_corr
+      end if
+
+      if (doprecip) then
+      if ( oc_micro_correlations(idx_s,idx_rr,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_rr',oc_micro_correlations(idx_s,idx_rr,k),1.,k)
+           corravg_count(idx_oc_cor_chi_rr,k) = corravg_count(idx_oc_cor_chi_rr,k) + 1
+        else ! oc_micro_correlations(1,iqr,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_rr',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqr,k) /= undef_corr
+        if ( oc_micro_correlations(idx_s,idx_Nr,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_Nr',oc_micro_correlations(idx_s,idx_Nr,k),1.,k)
+           corravg_count(idx_oc_cor_chi_Nr,k) = corravg_count(idx_oc_cor_chi_Nr,k) + 1
+        else ! oc_micro_correlations(1,inr,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_Nr',0.0,1.,k)
+        endif ! ! oc_micro_correlations(1,inr,k) /= undef_corr
+      end if ! doprecip
+
+      if (doicemicro) then
+      if ( oc_micro_correlations(idx_s,idx_ri,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_ri',oc_micro_correlations(idx_s,idx_ri,k),1.,k)
+           corravg_count(idx_oc_cor_chi_ri,k) = corravg_count(idx_oc_cor_chi_ri,k) + 1
+        else ! oc_micro_correlations(1,iqci,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_ri',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqci,k) /= undef_corr
+        if ( oc_micro_correlations(idx_s,idx_Ni,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_Ni',oc_micro_correlations(idx_s,idx_Ni,k),1.,k)
+           corravg_count(idx_oc_cor_chi_Ni,k) = corravg_count(idx_oc_cor_chi_Ni,k) + 1
+        else ! oc_micro_correlations(1,inci,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_Ni',0.0,1.,k)
+        endif ! oc_micro_correlations(1,inci,k) /= undef_corr
+        if ( oc_micro_correlations(idx_s,idx_rs,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_rs',oc_micro_correlations(idx_s,idx_rs,k),1.,k)
+           corravg_count(idx_oc_cor_chi_rs,k) = corravg_count(idx_oc_cor_chi_rs,k) + 1
+        else ! oc_micro_correlations(1,iqs,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_rs',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqs,k) /= undef_corr
+        if ( oc_micro_correlations(idx_s,idx_Ns,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_Ns',oc_micro_correlations(idx_s,idx_Ns,k),1.,k)
+           corravg_count(idx_oc_cor_chi_Ns,k) = corravg_count(idx_oc_cor_chi_Ns,k) + 1
+        else ! oc_micro_correlations(1,ins,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_Ns',0.0,1.,k)
+        endif ! oc_micro_correlations(1,ins,k) /= undef_corr
+      end if ! doicemicro
+
+      if (dograupel) then
+        if ( oc_micro_correlations(idx_s,idx_rg,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_rg',oc_micro_correlations(idx_s,idx_rg,k),1.,k)
+           corravg_count(idx_oc_cor_chi_rg,k) = corravg_count(idx_oc_cor_chi_rg,k) + 1
+        else ! oc_micro_correlations(1,iqg,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_rg',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqg,k) /= undef_corr
+        if ( oc_micro_correlations(idx_s,idx_Ng,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_chi_Ng',oc_micro_correlations(idx_s,idx_Ng,k),1.,k)
+           corravg_count(idx_oc_cor_chi_Ng,k) = corravg_count(idx_oc_cor_chi_Ng,k) + 1
+        else ! oc_micro_correlations(1,ing,k) == undef_corr
+           call hbuf_put_level('oc_corr_chi_Ng',0.0,1.,k)
+        endif ! oc_micro_correlations(1,ing,k) /= undef_corr
+      end if ! dograupel
+
+!-------------
+! Vertical Velocity
+!-------------
+      if(dopredictNc) then
+        if ( oc_micro_correlations(idx_w,idx_Nc,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_Nc',oc_micro_correlations(idx_w,idx_Nc,k),1.,k)
+           corravg_count(idx_oc_cor_w_Nc,k) = corravg_count(idx_oc_cor_w_Nc,k) + 1
+        else ! oc_micro_correlations(1,incl,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_Nc',0.0,1.,k)
+        endif ! oc_micro_correlations(1,incl,k) /= undef_corr
+      end if
+
+      if (doprecip) then
+      if ( oc_micro_correlations(idx_w,idx_rr,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_rr',oc_micro_correlations(idx_w,idx_rr,k),1.,k)
+           corravg_count(idx_oc_cor_w_rr,k) = corravg_count(idx_oc_cor_w_rr,k) + 1
+        else ! oc_micro_correlations(1,iqr,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_rr',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqr,k) /= undef_corr
+        if ( oc_micro_correlations(idx_w,idx_Nr,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_Nr',oc_micro_correlations(idx_w,idx_Nr,k),1.,k)
+           corravg_count(idx_oc_cor_w_nr,k) = corravg_count(idx_oc_cor_w_nr,k) + 1
+        else ! oc_micro_correlations(1,inr,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_Nr',0.0,1.,k)
+        endif ! ! oc_micro_correlations(1,inr,k) /= undef_corr
+      end if ! doprecip
+
+      if (doicemicro) then
+      if ( oc_micro_correlations(idx_w,idx_ri,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_ri',oc_micro_correlations(idx_w,idx_ri,k),1.,k)
+           corravg_count(idx_oc_cor_w_ri,k) = corravg_count(idx_oc_cor_w_ri,k) + 1
+        else ! oc_micro_correlations(1,iqci,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_ri',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqci,k) /= undef_corr
+        if ( oc_micro_correlations(idx_w,idx_Ni,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_Ni',oc_micro_correlations(idx_w,idx_Ni,k),1.,k)
+           corravg_count(idx_oc_cor_w_Ni,k) = corravg_count(idx_oc_cor_w_Ni,k) + 1
+        else ! oc_micro_correlations(1,inci,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_Ni',0.0,1.,k)
+        endif ! oc_micro_correlations(1,inci,k) /= undef_corr
+        if ( oc_micro_correlations(idx_w,idx_rs,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_rs',oc_micro_correlations(idx_w,idx_rs,k),1.,k)
+           corravg_count(idx_oc_cor_w_rs,k) = corravg_count(idx_oc_cor_w_rs,k) + 1
+        else ! oc_micro_correlations(1,iqs,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_rs',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqs,k) /= undef_corr
+        if ( oc_micro_correlations(idx_w,idx_Ns,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_Ns',oc_micro_correlations(idx_w,idx_Ns,k),1.,k)
+           corravg_count(idx_oc_cor_w_Ns,k) = corravg_count(idx_oc_cor_w_Ns,k) + 1
+        else ! oc_micro_correlations(1,ins,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_Ns',0.0,1.,k)
+        endif ! oc_micro_correlations(1,ins,k) /= undef_corr
+      end if ! doicemicro
+
+      if (dograupel) then
+        if ( oc_micro_correlations(idx_w,idx_rg,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_rg',oc_micro_correlations(idx_w,idx_rg,k),1.,k)
+           corravg_count(idx_oc_cor_w_rg,k) = corravg_count(idx_oc_cor_w_rg,k) + 1
+        else ! oc_micro_correlations(1,iqg,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_rg',0.0,1.,k)
+        endif ! oc_micro_correlations(1,iqg,k) /= undef_corr
+        if ( oc_micro_correlations(idx_w,idx_Ng,k) /= undef_corr ) then
+           call hbuf_put_level('oc_corr_w_Ng',oc_micro_correlations(idx_w,idx_Ng,k),1.,k)
+           corravg_count(idx_oc_cor_w_Ng,k) = corravg_count(idx_oc_cor_w_Ng,k) + 1
+        else ! oc_micro_correlations(1,ing,k) == undef_corr
+           call hbuf_put_level('oc_corr_w_Ng',0.0,1.,k)
+        endif ! oc_micro_correlations(1,ing,k) /= undef_corr
+      end if ! dograupel
+
+!-------------
+! Cloud droplet number concentration
+!-------------
+      if (dopredictNc) then
+     
+        if (doprecip) then
+           if ( oc_micro_correlations(idx_Nc,idx_rr,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_rr',oc_micro_correlations(idx_Nc,idx_rr,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_rr,k) = corravg_count(idx_oc_cor_Nc_rr,k) + 1
+           else ! oc_micro_correlations(incl,iqr,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_rr',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,iqr,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nc,idx_Nr,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_Nr',oc_micro_correlations(idx_Nc,idx_Nr,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_nr,k) = corravg_count(idx_oc_cor_Nc_nr,k) + 1
+           else ! oc_micro_correlations(incl,inr,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_Nr',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,inr,k) /= undef_corr
+        end if
+     
+        if (doicemicro) then
+           if ( oc_micro_correlations(idx_Nc,idx_ri,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_ri',oc_micro_correlations(idx_Nc,idx_ri,k),1.,k) 
+              corravg_count(idx_oc_cor_Nc_ri,k) = corravg_count(idx_oc_cor_Nc_ri,k) + 1
+           else ! oc_micro_correlations(incl,iqci,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_ri',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,iqci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nc,idx_Ni,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_Ni',oc_micro_correlations(idx_Nc,idx_Ni,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_Ni,k) = corravg_count(idx_oc_cor_Nc_Ni,k) + 1
+           else ! oc_micro_correlations(incl,inci,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_Ni',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,inci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nc,idx_rs,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_rs',oc_micro_correlations(idx_Nc,idx_rs,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_rs,k) = corravg_count(idx_oc_cor_Nc_rs,k) + 1
+           else ! oc_micro_correlations(incl,iqs,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_rs',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,iqs,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nc,idx_Ns,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_Ns',oc_micro_correlations(idx_Nc,idx_Ns,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_Ns,k) = corravg_count(idx_oc_cor_Nc_Ns,k) + 1
+           else ! oc_micro_correlations(incl,ins,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_Ns',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,ins,k) /= undef_corr
+        end if    
+
+        if (dograupel) then
+           if ( oc_micro_correlations(idx_Nc,idx_rg,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_rg',oc_micro_correlations(idx_Nc,idx_rg,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_rg,k) = corravg_count(idx_oc_cor_Nc_rg,k) + 1
+           else ! oc_micro_correlations(incl,iqg,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_rg',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,iqg,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nc,idx_Ng,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nc_Ng',oc_micro_correlations(idx_Nc,idx_Ng,k),1.,k)
+              corravg_count(idx_oc_cor_Nc_Ng,k) = corravg_count(idx_oc_cor_Nc_Ng,k) + 1
+           else ! oc_micro_correlations(incl,ing,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nc_Ng',0.0,1.,k)
+           endif ! oc_micro_correlations(incl,ing,k) /= undef_corr
+        end if   
+
+      end if !dopredictNc
+  
+!-------------
+! Rainwater mixing ratio
+!-------------
+      if (doprecip) then 
+      
+         if ( oc_micro_correlations(idx_rr,idx_Nr,k) /= undef_corr ) then
+             call hbuf_put_level('oc_corr_rr_Nr',oc_micro_correlations(idx_rr,idx_Nr,k),1.,k)
+             corravg_count(idx_oc_cor_rr_nr,k) = corravg_count(idx_oc_cor_rr_nr,k) + 1
+          else ! oc_micro_correlations(iqr,inr,k) == undef_corr
+             call hbuf_put_level('oc_corr_rr_Nr',0.0,1.,k)
+          endif ! oc_micro_correlations(iqr,inr,k) /= undef_corr
+
+        if (doicemicro) then
+           if ( oc_micro_correlations(idx_rr,idx_ri,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_ri',oc_micro_correlations(idx_rr,idx_ri,k),1.,k)
+              corravg_count(idx_oc_cor_rr_ri,k) = corravg_count(idx_oc_cor_rr_ri,k) + 1
+           else ! oc_micro_correlations(iqr,iqci,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_ri',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,iqci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_rr,idx_Ni,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_Ni',oc_micro_correlations(idx_rr,idx_Ni,k),1.,k)
+              corravg_count(idx_oc_cor_rr_Ni,k) = corravg_count(idx_oc_cor_rr_Ni,k) + 1
+           else ! oc_micro_correlations(iqr,inci,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_Ni',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,inci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_rr,idx_rs,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_rs',oc_micro_correlations(idx_rr,idx_rs,k),1.,k)
+              corravg_count(idx_oc_cor_rr_rs,k) = corravg_count(idx_oc_cor_rr_rs,k) + 1
+           else ! oc_micro_correlations(iqr,iqs,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_rs',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,iqs,k) /= undef_corr
+           if ( oc_micro_correlations(idx_rr,idx_Ns,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_Ns',oc_micro_correlations(idx_rr,idx_Ns,k),1.,k)
+              corravg_count(idx_oc_cor_rr_Ns,k) = corravg_count(idx_oc_cor_rr_Ns,k) + 1
+           else ! oc_micro_correlations(iqr,ins,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_Ns',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,ins,k) /= undef_corr
+        end if    
+
+        if (dograupel) then
+           if ( oc_micro_correlations(idx_rr,idx_rg,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_rg',oc_micro_correlations(idx_rr,idx_rg,k),1.,k)
+              corravg_count(idx_oc_cor_rr_rg,k) = corravg_count(idx_oc_cor_rr_rg,k) + 1
+           else ! oc_micro_correlations(iqr,iqg,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_rg',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,iqg,k) /= undef_corr
+           if ( oc_micro_correlations(idx_rr,idx_Ng,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_rr_Ng',oc_micro_correlations(idx_rr,idx_Ng,k),1.,k)
+              corravg_count(idx_oc_cor_rr_Ng,k) = corravg_count(idx_oc_cor_rr_Ng,k) + 1
+           else ! oc_micro_correlations(iqr,ing,k) == undef_corr
+              call hbuf_put_level('oc_corr_rr_Ng',0.0,1.,k)
+           endif ! oc_micro_correlations(iqr,ing,k) /= undef_corr
+        end if
+!-------------
+! Rainwater number concentration
+!-------------
+
+        if (doicemicro) then
+           if ( oc_micro_correlations(idx_Nr,idx_ri,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_ri',oc_micro_correlations(idx_Nr,idx_ri,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_ri,k) = corravg_count(idx_oc_cor_Nr_ri,k) + 1
+           else ! oc_micro_correlations(inr,iqci,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_ri',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,iqci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nr,idx_Ni,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_Ni',oc_micro_correlations(idx_Nr,idx_Ni,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_Ni,k) = corravg_count(idx_oc_cor_Nr_Ni,k) + 1
+           else ! oc_micro_correlations(inr,inci,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_Ni',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,inci,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nr,idx_rs,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_rs',oc_micro_correlations(idx_Nr,idx_rs,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_rs,k) = corravg_count(idx_oc_cor_Nr_rs,k) + 1
+           else ! oc_micro_correlations(inr,iqs,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_rs',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,iqs,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nr,idx_Ns,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_Ns',oc_micro_correlations(idx_Nr,idx_Ns,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_Ns,k) = corravg_count(idx_oc_cor_Nr_Ns,k) + 1
+           else ! oc_micro_correlations(inr,ins,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_Ns',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,ins,k) /= undef_corr
+        end if
+
+        if (dograupel) then
+        if ( oc_micro_correlations(idx_Nr,idx_rg,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_rg',oc_micro_correlations(idx_Nr,idx_rg,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_rg,k) = corravg_count(idx_oc_cor_Nr_rg,k) + 1
+           else ! oc_micro_correlations(inr,iqg,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_rg',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,iqg,k) /= undef_corr
+           if ( oc_micro_correlations(idx_Nr,idx_Ng,k) /= undef_corr ) then
+              call hbuf_put_level('oc_corr_Nr_Ng',oc_micro_correlations(idx_Nr,idx_Ng,k),1.,k)
+              corravg_count(idx_oc_cor_Nr_Ng,k) = corravg_count(idx_oc_cor_Nr_Ng,k) + 1
+           else ! oc_micro_correlations(inr,ing,k) == undef_corr
+              call hbuf_put_level('oc_corr_Nr_Ng',0.0,1.,k)
+           endif ! oc_micro_correlations(inr,ing,k) /= undef_corr
+        end if
+
+      end if !doprecip
+!-------------
+! Cloud-ice mixing ratio
+!-------------
+
+      if (doicemicro) then   
+         if ( oc_micro_correlations(idx_ri,idx_Ni,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_ri_Ni',oc_micro_correlations(idx_ri,idx_Ni,k),1.,k)
+            corravg_count(idx_oc_cor_ri_Ni,k) = corravg_count(idx_oc_cor_ri_Ni,k) + 1
+         else ! oc_micro_correlations(iqci,inci,k) == undef_corr
+            call hbuf_put_level('oc_corr_ri_Ni',0.0,1.,k)
+         endif ! oc_micro_correlations(iqci,inci,k) /= undef_corr
+         if ( oc_micro_correlations(idx_ri,idx_rs,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_ri_rs',oc_micro_correlations(idx_ri,idx_rs,k),1.,k)
+            corravg_count(idx_oc_cor_ri_rs,k) = corravg_count(idx_oc_cor_ri_rs,k) + 1
+         else ! oc_micro_correlations(iqci,iqs,k) == undef_corr
+            call hbuf_put_level('oc_corr_ri_rs',0.0,1.,k)
+         endif ! oc_micro_correlations(iqci,iqs,k) /= undef_corr
+         if ( oc_micro_correlations(idx_ri,idx_Ns,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_ri_Ns',oc_micro_correlations(idx_ri,idx_Ns,k),1.,k)
+            corravg_count(idx_oc_cor_ri_Ns,k) = corravg_count(idx_oc_cor_ri_Ns,k) + 1
+         else ! oc_micro_correlations(iqci,ins,k) == undef_corr
+            call hbuf_put_level('oc_corr_ri_Ns',0.0,1.,k)
+         endif ! oc_micro_correlations(iqci,ins,k) /= undef_corr
+      end if   
+
+      if (dograupel) then
+         if ( oc_micro_correlations(idx_ri,idx_rg,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_ri_rg',oc_micro_correlations(idx_ri,idx_rg,k),1.,k)
+            corravg_count(idx_oc_cor_ri_rg,k) = corravg_count(idx_oc_cor_ri_rg,k) + 1
+         else ! oc_micro_correlations(iqci,iqg,k) == undef_corr
+            call hbuf_put_level('oc_corr_ri_rg',0.0,1.,k)
+         endif ! oc_micro_correlations(iqci,iqg,k) /= undef_corr
+         if ( oc_micro_correlations(idx_ri,idx_Ng,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_ri_Ng',oc_micro_correlations(idx_ri,idx_Ng,k),1.,k)
+            corravg_count(idx_oc_cor_ri_Ng,k) = corravg_count(idx_oc_cor_ri_Ng,k) + 1
+         else ! oc_micro_correlations(iqci,ing,k) == undef_corr
+            call hbuf_put_level('oc_corr_ri_Ng',0.0,1.,k)
+         endif ! oc_micro_correlations(iqci,ing,k) /= undef_corr
+      end if
+ 
+!-------------
+! Cloud-ice number concentration
+!-------------
+      if (doicemicro) then   
+         if ( oc_micro_correlations(idx_Ni,idx_rs,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_Ni_rs',oc_micro_correlations(idx_Ni,idx_rs,k),1.,k)
+            corravg_count(idx_oc_cor_Ni_rs,k) = corravg_count(idx_oc_cor_Ni_rs,k) + 1
+         else ! oc_micro_correlations(inci,iqs,k) == undef_corr
+            call hbuf_put_level('oc_corr_Ni_rs',0.0,1.,k)
+         endif ! oc_micro_correlations(inci,iqs,k) /= undef_corr
+         if ( oc_micro_correlations(idx_Ni,idx_Ns,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_Ni_Ns',oc_micro_correlations(idx_Ni,idx_Ns,k),1.,k)
+            corravg_count(idx_oc_cor_Ni_Ns,k) = corravg_count(idx_oc_cor_Ni_Ns,k) + 1
+         else ! oc_micro_correlations(inci,ins,k) == undef_corr
+            call hbuf_put_level('oc_corr_Ni_Ns',0.0,1.,k)
+         endif ! oc_micro_correlations(inci,ins,k) /= undef_corr
+      end if
+
+      if (dograupel) then     
+         if ( oc_micro_correlations(idx_Ni,idx_rg,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_Ni_rg',oc_micro_correlations(idx_Ni,idx_rg,k),1.,k)
+            corravg_count(idx_oc_cor_Ni_rg,k) = corravg_count(idx_oc_cor_Ni_rg,k) + 1
+         else ! oc_micro_correlations(inci,iqg,k) == undef_corr
+            call hbuf_put_level('oc_corr_Ni_rg',0.0,1.,k)
+         endif ! oc_micro_correlations(inci,iqg,k) /= undef_corr
+         if ( oc_micro_correlations(idx_Ni,idx_Ng,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_Ni_Ng',oc_micro_correlations(idx_Ni,idx_Ng,k),1.,k)
+            corravg_count(idx_oc_cor_Ni_Ng,k) = corravg_count(idx_oc_cor_Ni_Ng,k) + 1
+         else ! oc_micro_correlations(inci,ing,k) == undef_corr
+            call hbuf_put_level('oc_corr_Ni_Ng',0.0,1.,k)
+         endif ! oc_micro_correlations(inci,ing,k) /= undef_corr
+      end if 
+!-------------
+! Snow mixing ratio
+!-------------
+
+      if (doicemicro) then
+         if ( oc_micro_correlations(idx_rs,idx_Ns,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_rs_Ns',oc_micro_correlations(idx_rs,idx_Ns,k),1.,k)
+            corravg_count(idx_oc_cor_rs_Ns,k) = corravg_count(idx_oc_cor_rs_Ns,k) + 1
+         else ! oc_micro_correlations(iqs,ins,k) == undef_corr
+            call hbuf_put_level('oc_corr_rs_Ns',0.0,1.,k)
+         endif ! oc_micro_correlations(iqs,ins,k) /= undef_corr
+       
+          if (dograupel) then   
+             if ( oc_micro_correlations(idx_rs,idx_rg,k) /= undef_corr ) then
+                call hbuf_put_level('oc_corr_rs_rg',oc_micro_correlations(idx_rs,idx_rg,k),1.,k)
+                corravg_count(idx_oc_cor_rs_rg,k) = corravg_count(idx_oc_cor_rs_rg,k) + 1
+             else ! oc_micro_correlations(iqs,iqg,k) == undef_corr
+                call hbuf_put_level('oc_corr_rs_rg',0.0,1.,k)
+             endif ! oc_micro_correlations(iqs,iqg,k) /= undef_corr
+             if ( oc_micro_correlations(idx_rs,idx_Ng,k) /= undef_corr ) then
+                call hbuf_put_level('oc_corr_rs_Ng',oc_micro_correlations(idx_rs,idx_Ng,k),1.,k)
+                corravg_count(idx_oc_cor_rs_Ng,k) = corravg_count(idx_oc_cor_rs_Ng,k) + 1
+             else ! oc_micro_correlations(iqs,ing,k) == undef_corr
+                call hbuf_put_level('oc_corr_rs_Ng',0.0,1.,k)
+             endif ! oc_micro_correlations(iqs,ing,k) /= undef_corr
+!-------------
+! Snow number concentration
+!-------------
+             if ( oc_micro_correlations(idx_Ns,idx_rg,k) /= undef_corr ) then
+                call hbuf_put_level('oc_corr_Ns_rg',oc_micro_correlations(idx_Ns,idx_rg,k),1.,k)
+                corravg_count(idx_oc_cor_Ns_rg,k) = corravg_count(idx_oc_cor_Ns_rg,k) + 1
+             else ! oc_micro_correlations(ins,iqg,k) == undef_corr
+                call hbuf_put_level('oc_corr_Ns_rg',0.0,1.,k)
+             endif ! oc_micro_correlations(ins,iqg,k) /= undef_corr
+             if ( oc_micro_correlations(idx_Ns,idx_Ng,k) /= undef_corr ) then
+                call hbuf_put_level('oc_corr_Ns_Ng',oc_micro_correlations(idx_Ns,idx_Ng,k),1.,k)
+                corravg_count(idx_oc_cor_Ns_Ng,k) = corravg_count(idx_oc_cor_Ns_Ng,k) + 1
+             else ! oc_micro_correlations(ins,ing,k) == undef_corr
+                call hbuf_put_level('oc_corr_Ns_Ng',0.0,1.,k)
+             endif ! oc_micro_correlations(ins,ing,k) /= undef_corr
+          end if
+      end if
+
+!-------------
+! Graupel mixing ratio / number concentration
+!-------------
+      if (dograupel) then      
+        if ( oc_micro_correlations(idx_rg,idx_Ng,k) /= undef_corr ) then
+            call hbuf_put_level('oc_corr_rg_Ng',oc_micro_correlations(idx_rg,idx_Ng,k),1.,k)
+            corravg_count(idx_oc_cor_rg_Ng,k) = corravg_count(idx_oc_cor_rg_Ng,k) + 1
+         else ! oc_micro_correlations(iqg,ing,k) == undef_corr
+            call hbuf_put_level('oc_corr_rg_Ng',0.0,1.,k)
+         endif ! oc_micro_correlations(iqg,ing,k) /= undef_corr
+      endif
+
+    end do ! do k = 1, nzm, 1
+
 !---------------------------------
 ! Covariances
 !--------------------------------
@@ -6875,6 +8313,171 @@ if (doicemicro) then
 ! Graupel mixing ratio / number concentration
 !--------------------------------
     call hbuf_put('ic_covarnce_rg_Ng',ic_micro_covarnce(idx_rg,idx_Ng,:),1.)
+  endif !dograupel
+endif !doicemicro
+
+!---------------------------------
+! Out of cloud covariances
+!--------------------------------
+
+!---------------------------------
+! chi
+!--------------------------------
+
+call hbuf_put('oc_covarnce_chi_w',oc_micro_covarnce(idx_s,idx_w,:),1.)
+
+if(dopredictNc) then
+  call hbuf_put('oc_covarnce_chi_Nc',oc_micro_covarnce(idx_s,idx_Nc,:),1.)
+endif !dopredictNc
+
+if (doprecip) then
+  call hbuf_put('oc_covarnce_chi_rr',oc_micro_covarnce(idx_s,idx_rr,:),1.)
+  call hbuf_put('oc_covarnce_chi_Nr',oc_micro_covarnce(idx_s,idx_Nr,:),1.)
+end if ! doprecip
+
+if (doicemicro) then
+  call hbuf_put('oc_covarnce_chi_ri',oc_micro_covarnce(idx_s,idx_ri,:),1.)
+  call hbuf_put('oc_covarnce_chi_Ni',oc_micro_covarnce(idx_s,idx_Ni,:),1.)
+  call hbuf_put('oc_covarnce_chi_rs',oc_micro_covarnce(idx_s,idx_rs,:),1.)
+  call hbuf_put('oc_covarnce_chi_Ns',oc_micro_covarnce(idx_s,idx_Ns,:),1.)
+end if ! doicemicro
+
+if (dograupel) then
+  call hbuf_put('oc_covarnce_chi_rg',oc_micro_covarnce(idx_s,idx_rg,:),1.)
+  call hbuf_put('oc_covarnce_chi_Ng',oc_micro_covarnce(idx_s,idx_Ng,:),1.)
+end if ! dograupel
+
+
+!---------------------------------
+! Vertical velocity
+!--------------------------------
+if(dopredictNc) then
+  call hbuf_put('oc_covarnce_w_Nc',oc_micro_covarnce(idx_w,idx_Nc,:),1.)
+endif !dopredictNc
+
+if (doprecip) then
+  call hbuf_put('oc_covarnce_w_rr',oc_micro_covarnce(idx_w,idx_rr,:),1.)
+  call hbuf_put('oc_covarnce_w_Nr',oc_micro_covarnce(idx_w,idx_Nr,:),1.)
+end if ! doprecip
+
+if (doicemicro) then
+  call hbuf_put('oc_covarnce_w_ri',oc_micro_covarnce(idx_w,idx_ri,:),1.)
+  call hbuf_put('oc_covarnce_w_Ni',oc_micro_covarnce(idx_w,idx_Ni,:),1.)
+  call hbuf_put('oc_covarnce_w_rs',oc_micro_covarnce(idx_w,idx_rs,:),1.)
+  call hbuf_put('oc_covarnce_w_Ns',oc_micro_covarnce(idx_w,idx_Ns,:),1.)
+end if ! doicemicro
+
+if (dograupel) then
+  call hbuf_put('oc_covarnce_w_rg',oc_micro_covarnce(idx_w,idx_rg,:),1.)
+  call hbuf_put('oc_covarnce_w_Ng',oc_micro_covarnce(idx_w,idx_Ng,:),1.)
+end if ! dograupel
+
+!---------------------------------
+! Cloud liquid number concentration
+!--------------------------------
+
+if(dopredictNc) then  
+  if (doprecip) then
+    call hbuf_put('oc_covarnce_Nc_rr',oc_micro_covarnce(idx_Nc,idx_rr,:),1.)
+    call hbuf_put('oc_covarnce_Nc_Nr',oc_micro_covarnce(idx_Nc,idx_Nr,:),1.)
+  end if ! doprecip
+     
+  if (doicemicro) then
+    call hbuf_put('oc_covarnce_Nc_ri',oc_micro_covarnce(idx_Nc,idx_ri,:),1.) 
+    call hbuf_put('oc_covarnce_Nc_Ni',oc_micro_covarnce(idx_Nc,idx_Ni,:),1.)
+    call hbuf_put('oc_covarnce_Nc_rs',oc_micro_covarnce(idx_Nc,idx_rs,:),1.)
+    call hbuf_put('oc_covarnce_Nc_Ns',oc_micro_covarnce(idx_Nc,idx_Ns,:),1.)
+  end if ! doicemicro    
+
+  if (dograupel) then
+    call hbuf_put('oc_covarnce_Nc_rg',oc_micro_covarnce(idx_Nc,idx_rg,:),1.)
+    call hbuf_put('oc_covarnce_Nc_Ng',oc_micro_covarnce(idx_Nc,idx_Ng,:),1.)
+  end if ! dograupel
+
+end if !dopredictNc
+
+!---------------------------------
+! Rainwater mixing ratio
+!--------------------------------
+  
+if (doprecip) then 
+  call hbuf_put('oc_covarnce_rr_Nr',oc_micro_covarnce(idx_rr,idx_Nr,:),1.)
+
+  if (doicemicro) then
+    call hbuf_put('oc_covarnce_rr_ri',oc_micro_covarnce(idx_rr,idx_ri,:),1.)
+    call hbuf_put('oc_covarnce_rr_Ni',oc_micro_covarnce(idx_rr,idx_Ni,:),1.)
+    call hbuf_put('oc_covarnce_rr_rs',oc_micro_covarnce(idx_rr,idx_rs,:),1.)
+    call hbuf_put('oc_covarnce_rr_Ns',oc_micro_covarnce(idx_rr,idx_Ns,:),1.)
+
+    if (dograupel) then
+      call hbuf_put('oc_covarnce_rr_rg',oc_micro_covarnce(idx_rr,idx_rg,:),1.)
+      call hbuf_put('oc_covarnce_rr_Ng',oc_micro_covarnce(idx_rr,idx_Ng,:),1.)
+    end if !dograupel
+
+!---------------------------------
+! Rainwater number concentration
+!--------------------------------
+
+    call hbuf_put('oc_covarnce_Nr_ri',oc_micro_covarnce(idx_Nr,idx_ri,:),1.)
+    call hbuf_put('oc_covarnce_Nr_Ni',oc_micro_covarnce(idx_Nr,idx_Ni,:),1.)
+    call hbuf_put('oc_covarnce_Nr_rs',oc_micro_covarnce(idx_Nr,idx_rs,:),1.)
+    call hbuf_put('oc_covarnce_Nr_Ns',oc_micro_covarnce(idx_Nr,idx_Ns,:),1.)
+
+    if (dograupel) then
+      call hbuf_put('oc_covarnce_Nr_rg',oc_micro_covarnce(idx_Nr,idx_rg,:),1.)
+      call hbuf_put('oc_covarnce_Nr_Ng',oc_micro_covarnce(idx_Nr,idx_Ng,:),1.)
+    end if !dograupel
+  
+  end if !doicemicro
+
+end if !doprecip
+
+!---------------------------------
+! Cloud-ice mixing ratio
+!--------------------------------
+
+if (doicemicro) then   
+  call hbuf_put('oc_covarnce_ri_Ni',oc_micro_covarnce(idx_ri,idx_Ni,:),1.)
+  call hbuf_put('oc_covarnce_ri_rs',oc_micro_covarnce(idx_ri,idx_rs,:),1.)
+  call hbuf_put('oc_covarnce_ri_Ns',oc_micro_covarnce(idx_ri,idx_Ns,:),1.)
+
+  if (dograupel) then
+    call hbuf_put('oc_covarnce_ri_rg',oc_micro_covarnce(idx_ri,idx_rg,:),1.)
+    call hbuf_put('oc_covarnce_ri_Ng',oc_micro_covarnce(idx_ri,idx_Ng,:),1.)
+  end if !dograupel
+
+!---------------------------------
+! Cloud-ice number concentration
+!--------------------------------
+ 
+  call hbuf_put('oc_covarnce_Ni_rs',oc_micro_covarnce(idx_Ni,idx_rs,:),1.)
+  call hbuf_put('oc_covarnce_Ni_Ns',oc_micro_covarnce(idx_Ni,idx_Ns,:),1.)
+      
+  if (dograupel) then     
+    call hbuf_put('oc_covarnce_Ni_rg',oc_micro_covarnce(idx_Ni,idx_rg,:),1.)
+    call hbuf_put('oc_covarnce_Ni_Ng',oc_micro_covarnce(idx_Ni,idx_Ng,:),1.)
+  end if !dograupel
+
+!---------------------------------
+! Snow mixing ratio
+!--------------------------------
+
+  call hbuf_put('oc_covarnce_rs_Ns',oc_micro_covarnce(idx_rs,idx_Ns,:),1.)
+       
+  if (dograupel) then   
+    call hbuf_put('oc_covarnce_rs_rg',oc_micro_covarnce(idx_rs,idx_rg,:),1.)
+    call hbuf_put('oc_covarnce_rs_Ng',oc_micro_covarnce(idx_rs,idx_Ng,:),1.)
+
+!---------------------------------
+! Snow number concentration
+!--------------------------------
+    call hbuf_put('oc_covarnce_Ns_rg',oc_micro_covarnce(idx_Ns,idx_rg,:),1.)
+    call hbuf_put('oc_covarnce_Ns_Ng',oc_micro_covarnce(idx_Ns,idx_Ng,:),1.)
+
+!---------------------------------
+! Graupel mixing ratio / number concentration
+!--------------------------------
+    call hbuf_put('oc_covarnce_rg_Ng',oc_micro_covarnce(idx_rg,idx_Ng,:),1.)
   endif !dograupel
 endif !doicemicro
 
