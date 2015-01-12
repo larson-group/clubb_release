@@ -391,10 +391,18 @@ subroutine micro_setparm()
   end if
 #endif /* MICRO_RESTART */
 #ifdef PNNL_STATS
-indx_qr = iqr  ! Index for rain water mixing ratio (theta-l/qtog adv. budgets)
-indx_qi = iqci ! Index for ice mixing ratio (theta-l/qtog adv. budgets)
-indx_qs = iqs  ! Index for snow mixing ratio (theta-l/qtog adv. budgets)
-indx_qg = iqg  ! Index for graupel mixing ratio (theta-l/qtog adv. budgets)
+if(doprecip) then
+  indx_qr = iqr  ! Index for rain water mixing ratio (theta-l/qtog adv. budgets)
+endif
+
+if(doicemicro) then
+  indx_qi = iqci ! Index for ice mixing ratio (theta-l/qtog adv. budgets)
+  indx_qs = iqs  ! Index for snow mixing ratio (theta-l/qtog adv. budgets)
+endif
+
+if(dograupel) then
+  indx_qg = iqg  ! Index for graupel mixing ratio (theta-l/qtog adv. budgets)
+endif
 #endif /* PNNL_STATS */
   ! stop if icemicro is specified without precip -- we don't support this right now.
   if((doicemicro).and.(.not.doprecip)) then
@@ -5807,19 +5815,21 @@ integer :: idx_s, idx_w, idx_Nc, idx_rr, idx_Nr, idx_ri, idx_Ni,&
 
 ! Binary mask of in(1) and out(0) of micro. species. Add '1' for 'out of cloud'
 ! field
-real, dimension(nx,ny,nzm,nfrac_fields+1,nfractions) :: micro_mask
+real, dimension(nx,ny,nzm,nfrac_fields,nfractions) :: micro_mask
+real, dimension(nx,ny,nzm) :: out_cloud_mask
 
 ! Number of gridpoints within micro. species. Add '1' for 'out of cloud'
 ! field
-integer, dimension(nzm,nfrac_fields+1,nfractions) :: micro_sum
+integer, dimension(nzm,nfrac_fields,nfractions) :: micro_sum
+integer, dimension(nzm) :: out_cloud_sum
 
 ! Micro. fractions. Add '1' for 'out of cloud'
 ! field
-real, dimension(nzm, nfrac_fields+1, nfractions) :: micro_frac 
+real, dimension(nzm, nfrac_fields, nfractions) :: micro_frac 
 
 ! Cloud, Rain, Ice, Snow, Graupel points as defined by the threshhold,
 ! (thresh_index [kg kg^-1])
-integer :: rc_pts, rr_pts, ri_pts, rs_pts, rg_pts, out_rc_pts, thresh_index
+integer :: rc_pts, rr_pts, ri_pts, rs_pts, rg_pts, thresh_index
 
 real ::  curr_thresh ! Current threshold value 
 integer :: order_of_magnitude ! 10
@@ -6057,7 +6067,6 @@ end if
  ri_pts = 3
  rs_pts = 4
  rg_pts = 5
- out_rc_pts = 6 ! Out of cloud points
  
  ! Compute in-precip means/variance with the final threshold
  thresh_out = nfractions
@@ -6074,10 +6083,10 @@ do thresh_index=1,nfractions
         ! We only want cloud water, not cloud water + rain water.
         if ( cloudliq(i,j,k)  > curr_thresh) then
           micro_mask(i,j,k,rc_pts,thresh_index) = 1
-          micro_mask(i,j,k,out_rc_pts,thresh_index) = 0
+          out_cloud_mask(i,j,k) = 0
         else
           micro_mask(i,j,k,rc_pts,thresh_index) = 0
-          micro_mask(i,j,k,out_rc_pts,thresh_index) = 1
+          out_cloud_mask(i,j,k) = 1
         end if 
         
         if (doprecip) then
@@ -6126,6 +6135,8 @@ do n=1,nfrac_fields
     micro_frac(:,n,m) = mean_xy_domain(nzm,micro_mask(1:nx,1:ny,1:nzm,n,m))
   end do
 end do
+! Take care of 'out of' cloud points
+out_cloud_sum(:) = sum_value_xy_domain( nzm,out_cloud_mask(1:nx,1:ny,1:nzm) )
 
 !Below is used to compute covariances and correlations of microphysical quantities
 !=================================================================================
@@ -6189,15 +6200,15 @@ endif
                                             ic_mean_w_zt(:), micro_sum(1:nzm,rc_pts,thresh_out) )
 
   !Find the out of cloud means and variances of chi and w_zt
-  oc_mean_chi(:) = mean_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
-                                   micro_sum(1:nzm,out_rc_pts,thresh_out) )
-  oc_varnce_chi(:) = variance_ip_xy_domain( nzm, chi, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
-                                            oc_mean_chi(:), micro_sum(1:nzm,out_rc_pts,thresh_out) )
+  oc_mean_chi(:) = mean_ip_xy_domain( nzm, chi, out_cloud_mask(1:nx,1:ny,1:nzm),&
+                                   out_cloud_sum(1:nzm) )
+  oc_varnce_chi(:) = variance_ip_xy_domain( nzm, chi, out_cloud_mask(1:nx,1:ny,1:nzm),&
+                                            oc_mean_chi(:), out_cloud_sum(1:nzm) )
 
-  oc_mean_w_zt(:) = mean_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
-                                   micro_sum(1:nzm,out_rc_pts,thresh_out) )
-  oc_varnce_w_zt(:) = variance_ip_xy_domain( nzm, w_zt, micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
-                                            oc_mean_w_zt(:), micro_sum(1:nzm,out_rc_pts,thresh_out) )
+  oc_mean_w_zt(:) = mean_ip_xy_domain( nzm, w_zt, out_cloud_mask(1:nx,1:ny,1:nzm),&
+                                   out_cloud_sum(1:nzm) )
+  oc_varnce_w_zt(:) = variance_ip_xy_domain( nzm, w_zt, out_cloud_mask(1:nx,1:ny,1:nzm),&
+                                            oc_mean_w_zt(:), out_cloud_sum(1:nzm) )
   
   do n=micro_indx_start,nmicro_fields
     ! Domain mean and variances stored according to Morrison indicies
@@ -6215,11 +6226,11 @@ endif
 
     ! out of cloud means and variances
     oc_mean_micro(n,:) = mean_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
-                                          micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),micro_sum(1:nzm,out_rc_pts,thresh_out))
+                                          out_cloud_mask(1:nx,1:ny,1:nzm),out_cloud_sum(1:nzm) )
 
     oc_varnce_micro(n,:) = variance_ip_xy_domain(nzm,micro_field(1:nx,1:ny,1:nzm,n),&
-                                          micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),oc_mean_micro(n,:),&
-                                          micro_sum(1:nzm,out_rc_pts,thresh_out))
+                                          out_cloud_mask(1:nx,1:ny,1:nzm),oc_mean_micro(n,:),&
+                                          out_cloud_sum(1:nzm) )
   end do
   !----------------
   ! Within precip means
@@ -6417,9 +6428,9 @@ endif
 
   oc_micro_covarnce(idx_s,idx_w,:) = covariance_ip_xy_domain(nzm,&
                                     chi(1:nx,1:ny,1:nzm), w_zt(1:nx,1:ny,1:nzm),&
-                                    micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                    out_cloud_mask(1:nx,1:ny,1:nzm),&
                                     oc_mean_chi(:), oc_mean_w_zt(:),&
-                                    micro_sum(:,out_rc_pts,thresh_out) )
+                                    out_cloud_sum(:) )
 
   oc_micro_correlations(idx_s,idx_w,:) = compute_correlation(nzm, oc_varnce_chi(:),&
                                         oc_varnce_w_zt(:), oc_micro_covarnce(idx_s,idx_w,:) )
@@ -6428,9 +6439,9 @@ endif
   do n = micro_indx_start,nmicro_fields 
       oc_micro_covarnce(idx_s,n+offset,:) = covariance_ip_xy_domain(nzm,&
                                              chi(1:nx,1:ny,1:nzm), micro_field(1:nx,1:ny,1:nzm,n),&
-                                             micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                             out_cloud_mask(1:nx,1:ny,1:nzm),&
                                              oc_mean_chi(:), oc_mean_micro(n,:),&
-                                             micro_sum(:,out_rc_pts,thresh_out) )
+                                             out_cloud_sum(:) )
 
       oc_micro_correlations(idx_s,n+offset,:) = compute_correlation(nzm, oc_varnce_chi(:),&
                                         oc_varnce_micro(n,:), oc_micro_covarnce(idx_s,n+offset,:) )
@@ -6441,9 +6452,9 @@ endif
   do n = micro_indx_start,nmicro_fields 
       oc_micro_covarnce(idx_w,n+offset,:) = covariance_ip_xy_domain(nzm,&
                                             w_zt, micro_field(1:nx,1:ny,1:nzm,n),&
-                                            micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                            out_cloud_mask(1:nx,1:ny,1:nzm),&
                                             oc_mean_w_zt, oc_mean_micro(n,:), &
-                                            micro_sum(:,out_rc_pts,thresh_out) )
+                                            out_cloud_sum(:) )
 
       oc_micro_correlations(idx_w,n+offset,:) = compute_correlation(nzm, oc_varnce_w_zt,&
                                   oc_varnce_micro(n,:), oc_micro_covarnce(idx_w,n+offset,:) )
@@ -6455,9 +6466,9 @@ endif
   
       oc_micro_covarnce(m+offset,n+offset,:) = covariance_ip_xy_domain(nzm,&
                                  micro_field(1:nx,1:ny,1:nzm,m), micro_field(1:nx,1:ny,1:nzm,n),&
-                                 micro_mask(1:nx,1:ny,1:nzm,out_rc_pts,thresh_out),&
+                                 out_cloud_mask(1:nx,1:ny,1:nzm),&
                                  oc_mean_micro(m,:), oc_mean_micro(n,:),&
-                                 micro_sum(:,out_rc_pts,thresh_out) )
+                                 out_cloud_sum(:) )
 
       oc_micro_correlations(m+offset,n+offset,:) = compute_correlation(nzm, oc_varnce_micro(m,:),&
                                   oc_varnce_micro(n,:), oc_micro_covarnce(m+offset,n+offset,:) )
@@ -7544,7 +7555,7 @@ endif
     end do ! do k = 1, nzm, 1
 
 !------------
-! In-cloud correlations
+! Out of cloud correlations
 !------------
    do k = 1, nzm, 1
 !-------------
