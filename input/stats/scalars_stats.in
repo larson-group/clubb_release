@@ -52,8 +52,7 @@ vars_zt =
 'corr_Ncn_hm_i', 'corr_hmx_hmy_i',
 'wp2_zt', 'thlp2_zt', 'wpthlp_zt', 'wprtp_zt', 'rtp2_zt', 'rtpthlp_zt',
 'hmp2_zt',
-'sclr1m', 'sclr1m_f', 'sclr2m', 'sclr2m_f',
-'edsclr1m', 'edsclr2m', 'edsclr1m_f', 'edsclr2m_f',
+'sclrm', 'sclrm_f', 'edsclrm', 'edsclrm_f', 
 ''
 
 vars_zm = 
@@ -85,12 +84,9 @@ vars_zm =
 'rtpthlp_dp1', 'rtpthlp_dp2', 'rtpthlp_cl', 'rtpthlp_mc',
 'wpthlp_entermfl', 'wpthlp_exit_mfl', 'wprtp_enter_mfl', 'wprtp_exit_mfl',
 'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max',
-'sclr1prtp', 'sclr2prtp', 'sclr1p2', 'sclr2p2',
-'sclr1pthvp', 'sclr2pthvp', 'sclr1pthlp', 'sclr2pthlp', 
-'sclr1prcp', 'sclr2prcp', 'wpsclr1p', 'wpsclr2p', 
-'wpsclr1p2', 'wpsclr2p2', 'wp2sclr1p', 'wp2sclr2p',
-'wpsclr1prtp', 'wpsclr2prtp', 'wpsclr1pthlp', 'wpsclr2pthlp',
-'wpedsclr1p', 'wpedsclr2p',
+'sclrprtp', 'sclrp2', 'sclrpthvp', 'sclrpthlp', 
+'sclrprcp', 'wpsclrp', 'wpsclrp2', 'wp2sclrp',
+'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp', 
 ''
 
 vars_sfc = 
