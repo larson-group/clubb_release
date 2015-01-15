@@ -568,7 +568,7 @@ module stats_clubb_utilities
        ! Subtract "corr_hmx_hmy_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of correlations between two hydrometeors, which is found by:
+       ! number of correlations of two hydrometeors, which is found by:
        ! (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! to the number of zt statistical variables.
        ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )
@@ -635,7 +635,7 @@ module stats_clubb_utilities
        ! Subtract "corr_hmx_hmy_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations between two hydrometeors, which is
+       ! number of normalized correlations of two hydrometeors, which is
        ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! to the number of zt statistical variables.
        ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )
@@ -964,6 +964,16 @@ module stats_clubb_utilities
        ntot = ntot - 1
        ! Add 1 for each hydrometeor to the number of zm statistical variables.
        ntot = ntot + hydromet_dim
+    endif
+
+    if ( any( vars_zm == "hmxphmyp" ) ) then
+       ! Correct for number of variables found under "hmxphmyp".
+       ! Subtract "hmxphmyp" from the number of zm statistical variables.
+       ntot = ntot - 1
+       ! Add the number of overall covariances of two hydrometeors, which is
+       ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! to the number of zm statistical variables.
+       ntot = ntot + hydromet_dim * ( hydromet_dim - 1 ) / 2
     endif
 
     if ( any( vars_zm == "K_hm" ) ) then
@@ -2780,7 +2790,8 @@ module stats_clubb_utilities
         iwphydrometp, &
         iK_hm, &
         irtphmp, &
-        ithlphmp
+        ithlphmp, &
+        ihmxphmyp
 
 #ifdef NETCDF
     use output_netcdf, only:  & 
@@ -2992,6 +3003,7 @@ module stats_clubb_utilities
       deallocate( iwphydrometp )
       deallocate( irtphmp )
       deallocate( ithlphmp )
+      deallocate( ihmxphmyp )
       deallocate( iK_hm )
     end if ! l_stats
 

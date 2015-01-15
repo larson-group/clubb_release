@@ -249,7 +249,8 @@ module stats_zm_module
         ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
-        ithlphmp
+        ithlphmp, &
+        ihmxphmyp
 
     use stats_variables, only: &
         irtp2_from_chi
@@ -280,9 +281,9 @@ module stats_zm_module
     ! Local Varables
     integer :: tot_zm_loops
 
-    integer :: hm_idx
+    integer :: hm_idx, hmx_idx, hmy_idx
 
-    character(len=10) :: hm_type
+    character(len=10) :: hm_type, hmx_type, hmy_type
 
     integer :: i, j, k
 
@@ -295,12 +296,14 @@ module stats_zm_module
     allocate( iwphydrometp(1:hydromet_dim) )
     allocate( irtphmp(1:hydromet_dim) )
     allocate( ithlphmp(1:hydromet_dim) )
+    allocate( ihmxphmyp(1:hydromet_dim,1:hydromet_dim) )
     allocate( iK_hm(1:hydromet_dim) )
 
     ihydrometp2(:) = 0
     iwphydrometp(:) = 0
     irtphmp(:) = 0
     ithlphmp(:) = 0
+    ihmxphmyp(:,:) = 0
     iK_hm(:) = 0
 
     ! Allocate and then zero out passive scalar arrays on the stats_zm grid (fluxes,
@@ -364,6 +367,16 @@ module stats_zm_module
        ! Subtract 1 from the loop size for each hydrometeor.
        tot_zm_loops = tot_zm_loops - hydromet_dim
        ! Add 1 for "thlphmp" to the loop size.
+       tot_zm_loops = tot_zm_loops + 1
+    endif
+
+    if ( any( vars_zm == "hmxphmyp" ) ) then
+       ! Correct for number of variables found under "hmxphmyp".
+       ! Subtract the number of overall covariances of two hydrometeors, which
+       ! is found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
+       ! from the loop size.
+       tot_zm_loops = tot_zm_loops - hydromet_dim * ( hydromet_dim - 1 ) / 2
+       ! Add 1 for "hmxphmyp" to the loop size.
        tot_zm_loops = tot_zm_loops + 1
     endif
 
@@ -892,6 +905,71 @@ module stats_zm_module
             k = k + 1
 
          enddo ! hm_idx = 1, hydromet_dim, 1
+
+      case ('hmxphmyp')
+
+         do hmx_idx = 1, hydromet_dim, 1
+
+            hmx_type = hydromet_list(hmx_idx)
+
+            do hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+               hmy_type = hydromet_list(hmy_idx)
+
+               ! The covariance (overall) of hmx and hmy.
+               ihmxphmyp(hmy_idx,hmx_idx) = k
+
+               if ( l_mix_rat_hm(hmx_idx) .and. l_mix_rat_hm(hmy_idx) ) then
+
+                  ! Both hydrometeors are mixing ratios.
+                  call stat_assign( var_index=ihmxphmyp(hmy_idx,hmx_idx), &
+                                    var_name=trim( hmx_type(1:2) )//"p" &
+                                    // trim( hmy_type(1:2) )//"p", &
+                                    var_description="Covariance of " &
+                                    // hmx_type(1:1)//"_"//trim(hmx_type(2:2)) &
+                                    // " and " &
+                                    // hmy_type(1:1)//"_"//trim(hmy_type(2:2)) &
+                                    // " [(kg/kg)^2]", &
+                                    var_units="(kg/kg)^2", l_silhs=.false., &
+                                    grid_kind=stats_zm )
+
+               elseif ( ( .not. l_mix_rat_hm(hmx_idx) ) &
+                        .and. ( .not. l_mix_rat_hm(hmy_idx) ) ) then
+
+                  ! Both hydrometeors are concentrations.
+                  call stat_assign( var_index=ihmxphmyp(hmy_idx,hmx_idx), &
+                                    var_name=trim( hmx_type(1:2) )//"p" &
+                                    // trim( hmy_type(1:2) )//"p", &
+                                    var_description="Covariance of " &
+                                    // hmx_type(1:1)//"_"//trim(hmx_type(2:2)) &
+                                    // " and " &
+                                    // hmy_type(1:1)//"_"//trim(hmy_type(2:2)) &
+                                    // " [(num/kg)^2]", &
+                                    var_units="(num/kg)^2", l_silhs=.false., &
+                                    grid_kind=stats_zm )
+
+               else
+
+                  ! One hydrometeor is a mixing ratio and the other hydrometeor
+                  ! is a concentration.
+                  call stat_assign( var_index=ihmxphmyp(hmy_idx,hmx_idx), &
+                                    var_name=trim( hmx_type(1:2) )//"p" &
+                                    // trim( hmy_type(1:2) )//"p", &
+                                    var_description="Covariance of " &
+                                    // hmx_type(1:1)//"_"//trim(hmx_type(2:2)) &
+                                    // " and " &
+                                    // hmy_type(1:1)//"_"//trim(hmy_type(2:2)) &
+                                    // " [(kg/kg) num/kg]", &
+                                    var_units="(kg/kg) num/kg", &
+                                    l_silhs=.false., grid_kind=stats_zm )
+
+               endif
+
+               k = k + 1
+
+            enddo ! hmy_idx = hmx_idx+1, hydromet_dim, 1
+
+         enddo ! hmx_idx = 1, hydromet_dim, 1
 
       case ('VNr')
         iVNr = k

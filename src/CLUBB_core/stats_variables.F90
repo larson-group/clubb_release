@@ -625,12 +625,17 @@ module stats_variables
 !$omp   threadprivate( iwp2hmp )
 
   integer, dimension(:), allocatable, public :: &
-    ihydrometp2, &
+    ihydrometp2,  &
     iwphydrometp, &
     irtphmp,      &
     ithlphmp
 
 !$omp   threadprivate( ihydrometp2, iwphydrometp, irtphmp, ithlphmp )
+
+  integer, dimension(:,:), allocatable, public :: &
+    ihmxphmyp
+
+!$omp   threadprivate( ihmxphmyp )
 
   integer, dimension(:), allocatable, public :: &
     ihmp2_zt
