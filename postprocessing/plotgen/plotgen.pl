@@ -38,7 +38,7 @@ use File::Copy;
 my $MATLAB =
   "sudo -H -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop";
 
-if ( $^O == "darwin" ) {
+if ( $^O eq "darwin" ) {
     $MATLAB = "/Applications/MATLAB_R2014a.app/bin/matlab -nodisplay -nodesktop"; #For Macs in W434
 }
 
