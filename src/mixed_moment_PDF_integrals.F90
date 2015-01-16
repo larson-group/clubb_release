@@ -9,6 +9,7 @@ module mixed_moment_PDF_integrals
   public :: hydrometeor_mixed_moments
 
   private :: xphmp_integral_covar,         &
+             hmxphmyp_integral_covar,      &
              xp_a_hmpb_integrals_all_MM,   &
              bivar_NL_x_hm_all_MM_comp_eq, &
              bivar_NL_int_PDF_comp_all_MM, &
@@ -75,8 +76,9 @@ module mixed_moment_PDF_integrals
         iwp2hmp,      & ! Variable(s)
         irtphmp,      &
         ithlphmp,     &
-        stats_zt,           &
-        stats_zm,           &
+        ihmxphmyp,    &
+        stats_zt,     &
+        stats_zm,     &
         l_stats_samp
 
     use clubb_precision, only: &
@@ -118,36 +120,44 @@ module mixed_moment_PDF_integrals
     ! Local Variables
     ! Unpacked parameters.
     real( kind = core_rknd ) :: &
-      mu_w_1,        & ! Mean of w (1st PDF component)                     [m/s]
-      mu_w_2,        & ! Mean of w (2nd PDF component)                     [m/s]
-      mu_rt_1,       & ! Mean of rt (1st PDF component)                  [kg/kg]
-      mu_rt_2,       & ! Mean of rt (2nd PDF component)                  [kg/kg]
-      mu_thl_1,      & ! Mean of thl (1st PDF component)                     [K]
-      mu_thl_2,      & ! Mean of thl (2nd PDF component)                     [K]
-      mu_hm_1,       & ! Mean of hm (1st PDF component)               [hm units]
-      mu_hm_2,       & ! Mean of hm (2nd PDF component)               [hm units]
-      mu_hm_1_n,     & ! Mean of ln hm (1st PDF component)        [ln(hm units)]
-      mu_hm_2_n,     & ! Mean of ln hm (2nd PDF component)        [ln(hm units)]
-      sigma_w_1,     & ! Standard deviation of w (1st PDF component)       [m/s]
-      sigma_w_2,     & ! Standard deviation of w (2nd PDF component)       [m/s]
-      sigma_rt_1,    & ! Standard deviation of rt (1st PDF component)    [kg/kg]
-      sigma_rt_2,    & ! Standard deviation of rt (2nd PDF component)    [kg/kg]
-      sigma_thl_1,   & ! Standard deviation of thl (1st PDF component)       [K]
-      sigma_thl_2,   & ! Standard deviation of thl (2nd PDF component)       [K]
-      sigma_chi_1,   & ! Standard deviation of chi (1st PDF component)   [kg/kg]
-      sigma_chi_2,   & ! Standard deviation of chi (2nd PDF component)   [kg/kg]
-      sigma_eta_1,   & ! Standard deviation of eta (1st PDF component)   [kg/kg]
-      sigma_eta_2,   & ! Standard deviation of eta (2nd PDF component)   [kg/kg]
-      sigma_hm_1,    & ! Standard deviation of hm (1st PDF component) [hm units]
-      sigma_hm_2,    & ! Standard deviation of hm (2nd PDF component) [hm units]
-      sigma_hm_1_n,  & ! Standard deviation of ln hm (1st PDF component)     [-]
-      sigma_hm_2_n,  & ! Standard deviation of ln hm (2nd PDF component)     [-]
-      corr_chi_hm_1, & ! Correlation of chi and hm (1st PDF component)       [-]
-      corr_chi_hm_2, & ! Correlation of chi and hm (2nd PDF component)       [-]
-      corr_eta_hm_1, & ! Correlation of eta and hm (1st PDF component)       [-]
-      corr_eta_hm_2, & ! Correlation of eta and hm (2nd PDF component)       [-]
-      corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component)      [-]
-      corr_w_hm_2_n, & ! Correlation of w and ln hm (2nd PDF component)      [-]
+      mu_w_1,       & ! Mean of w (1st PDF component)                      [m/s]
+      mu_w_2,       & ! Mean of w (2nd PDF component)                      [m/s]
+      mu_rt_1,      & ! Mean of rt (1st PDF component)                   [kg/kg]
+      mu_rt_2,      & ! Mean of rt (2nd PDF component)                   [kg/kg]
+      mu_thl_1,     & ! Mean of thl (1st PDF component)                      [K]
+      mu_thl_2,     & ! Mean of thl (2nd PDF component)                      [K]
+      mu_hm_1,      & ! Mean of hm (1st PDF component) in-precip (ip) [hm units]
+      mu_hm_2,      & ! Mean of hm (2nd PDF component) ip             [hm units]
+      mu_hmy_1,     & ! Mean of hmy (1st PDF component) ip           [hmy units]
+      mu_hmy_2,     & ! Mean of hmy (2nd PDF component) ip           [hmy units]
+      mu_hm_1_n,    & ! Mean of ln hm (1st PDF component) ip      [ln(hm units)]
+      mu_hm_2_n,    & ! Mean of ln hm (2nd PDF component) ip      [ln(hm units)]
+      sigma_w_1,    & ! Standard deviation of w (1st PDF component)        [m/s]
+      sigma_w_2,    & ! Standard deviation of w (2nd PDF component)        [m/s]
+      sigma_rt_1,   & ! Standard deviation of rt (1st PDF component)     [kg/kg]
+      sigma_rt_2,   & ! Standard deviation of rt (2nd PDF component)     [kg/kg]
+      sigma_thl_1,  & ! Standard deviation of thl (1st PDF component)        [K]
+      sigma_thl_2,  & ! Standard deviation of thl (2nd PDF component)        [K]
+      sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
+      sigma_chi_2,  & ! Standard deviation of chi (2nd PDF component)    [kg/kg]
+      sigma_eta_1,  & ! Standard deviation of eta (1st PDF component)    [kg/kg]
+      sigma_eta_2,  & ! Standard deviation of eta (2nd PDF component)    [kg/kg]
+      sigma_hm_1,   & ! Standard deviation of hm (1st PDF comp.) ip   [hm units]
+      sigma_hm_2,   & ! Standard deviation of hm (2nd PDF comp.) ip   [hm units]
+      sigma_hmy_1,  & ! Standard deviation of hmy (1st PDF comp.) ip [hmy units]
+      sigma_hmy_2,  & ! Standard deviation of hmy (2nd PDF comp.) ip [hmy units]
+      sigma_hm_1_n, & ! Standard deviation of ln hm (1st PDF component) ip   [-]
+      sigma_hm_2_n    ! Standard deviation of ln hm (2nd PDF component) ip   [-]
+
+    real( kind = core_rknd ) :: &
+      corr_chi_hm_1, & ! Correlation of chi and hm (1st PDF component) ip    [-]
+      corr_chi_hm_2, & ! Correlation of chi and hm (2nd PDF component) ip    [-]
+      corr_eta_hm_1, & ! Correlation of eta and hm (1st PDF component) ip    [-]
+      corr_eta_hm_2, & ! Correlation of eta and hm (2nd PDF component) ip    [-]
+      corr_hm_hmy_1, & ! Correlation of hm and hmy (1st PDF component) ip    [-]
+      corr_hm_hmy_2, & ! Correlation of hm and hmy (2nd PDF component) ip    [-]
+      corr_w_hm_1_n, & ! Correlation of w and ln hm (1st PDF component) ip   [-]
+      corr_w_hm_2_n, & ! Correlation of w and ln hm (2nd PDF component) ip   [-]
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
       precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
@@ -156,7 +166,9 @@ module mixed_moment_PDF_integrals
       cthl_1,        & ! Coef. of thl: chi/eta eqns. (1st PDF comp.) [(kg/kg)/K]
       cthl_2,        & ! Coef. of thl: chi/eta eqns. (2nd PDF comp.) [(kg/kg)/K]
       hm_mean,       & ! Mean of hydrometeor, hm (overall)            [hm units]
-      hm_tol           ! Tolerance value of a hydrometeor             [hm units]
+      hmy_mean,      & ! Mean of second hydrometeor, hmy (overall)   [hmy units]
+      hm_tol,        & ! Tolerance value of hydrometeor, hm           [hm units]
+      hmy_tol          ! Tolerance value of second hydrometeor, hmy  [hmy units]
 
     ! Calculated or recalculated values.
     real( kind = core_rknd ) :: &
@@ -168,8 +180,12 @@ module mixed_moment_PDF_integrals
       rtm,           & ! Mean of rt (overall)                            [kg/kg]
       thlm             ! Mean of thl (overall)                               [K]
 
+    real( kind = core_rknd ), dimension(nz,hydromet_dim,hydromet_dim) :: &
+      hmxphmyp_zt    ! Covariance (overall) of two hydrometeors  [hmx*hmy units]
+
     integer :: &
       hm_idx,  & ! Index of a hydrometeor in the hydrometeor set of indices
+      hmy_idx, & ! Index of second hydrometeor in the hydrometeor set of indices
       pdf_idx, & ! Index of a hydrometeor in the PDF set of indices
       a_exp,   & ! Exponent on w' in < w'^a hm'^b >
       b_exp,   & ! Exponent on hm' in < w'^a hm'^b >
@@ -323,6 +339,44 @@ module mixed_moment_PDF_integrals
                                         precip_frac_2, wm, hm_mean, &
                                         w_tol, hm_tol, a_exp, b_exp )
 
+          ! Calculate the covariance (overall) of two hydrometeors, <hmx'hmy'>,
+          ! for each unique set of two different hydrometeors.
+          do hmy_idx = hm_idx+1, hydromet_dim, 1
+
+             ! Unpack the mean (in-precip) of the second hydrometeor, hmy, in
+             ! each PDF component.
+             mu_hmy_1 = hydromet_pdf_params(k)%mu_hm_1(hmy_idx)
+             mu_hmy_2 = hydromet_pdf_params(k)%mu_hm_2(hmy_idx)
+
+             ! Unpack the standard deviation (in-precip) of hmy in each PDF
+             ! component.
+             sigma_hmy_1 = hydromet_pdf_params(k)%sigma_hm_1(hmy_idx)
+             sigma_hmy_2 = hydromet_pdf_params(k)%sigma_hm_2(hmy_idx)
+
+             ! Unpack the correlation (in-precip) of hm and hmy in each PDF
+             ! component.
+             corr_hm_hmy_1 &
+             = hydromet_pdf_params(k)%corr_hmx_hmy_1(hm_idx,hmy_idx)
+             corr_hm_hmy_2 &
+             = hydromet_pdf_params(k)%corr_hmx_hmy_2(hm_idx,hmy_idx)
+
+             ! Unpack the mean (overall) value of hmy.
+             hmy_mean = hydromet(k,hmy_idx)
+
+             ! Unpack the tolerance value for the second hydrometeor, hmy.
+             hmy_tol = hydromet_tol(hmy_idx)
+
+             ! Calculate the covariance <hmx'hmy'>.
+             hmxphmyp_zt(k,hmy_idx,hm_idx) &
+             = hmxphmyp_integral_covar( mu_hm_1, mu_hm_2, mu_hmy_1, mu_hmy_2, &
+                                        sigma_hm_1, sigma_hm_2, sigma_hmy_1, &
+                                        sigma_hmy_2, corr_hm_hmy_1, &
+                                        corr_hm_hmy_2, mixt_frac, &
+                                        precip_frac_1, precip_frac_2, hm_mean, &
+                                        hmy_mean, hm_tol, hmy_tol )
+
+          enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1
+
        enddo ! hm_idx = 1, hydromet_dim, 1
 
     enddo ! k = 2, nz, 1
@@ -330,9 +384,10 @@ module mixed_moment_PDF_integrals
     ! Lower boundary
     ! The k = 1 thermodynamic is below the model lower boundary.
     ! Set all moments to 0.
-    rtphmp_zt(1,:)  = zero
-    thlphmp_zt(1,:) = zero
-    wp2hmp(1,:)     = zero
+    rtphmp_zt(1,:)     = zero
+    thlphmp_zt(1,:)    = zero
+    wp2hmp(1,:)        = zero
+    hmxphmyp_zt(1,:,:) = zero
 
 
     ! Statistics
@@ -353,6 +408,14 @@ module mixed_moment_PDF_integrals
              call stat_update_var( ithlphmp(hm_idx), &
                                    zt2zm( thlphmp_zt(:,hm_idx) ), stats_zm )
           endif ! ithlphmp(hm_idx) > 0
+
+          do hmy_idx = hm_idx+1, hydromet_dim, 1
+             if ( ihmxphmyp(hmy_idx,hm_idx) > 0 ) then
+                call stat_update_var( ihmxphmyp(hmy_idx,hm_idx), &
+                                      zt2zm( hmxphmyp_zt(:,hmy_idx,hm_idx) ), &
+                                      stats_zm )
+             endif ! ihmxphmyp(hmy_idx,hm_idx) > 0
+          enddo ! hmy_idx = hm_idx+1, hydromet_dim, 1
 
        enddo ! hm_idx = 1, hydromet_dim, 1
 
@@ -464,6 +527,105 @@ module mixed_moment_PDF_integrals
     return
 
   end function xphmp_integral_covar
+
+  !=============================================================================
+  function hmxphmyp_integral_covar( mu_hmx_1, mu_hmx_2, mu_hmy_1, mu_hmy_2, &
+                                    sigma_hmx_1, sigma_hmx_2, sigma_hmy_1, &
+                                    sigma_hmy_2, corr_hmx_hmy_1, &
+                                    corr_hmx_hmy_2, mixt_frac, &
+                                    precip_frac_1, precip_frac_2, hmx_mean, &
+                                    hmy_mean, hmx_tol, hmy_tol )
+
+    ! Description:
+    ! Solves for the covariance of two precipitating hydrometoers < hmx'hmy' >.
+    ! The variable "hmx" stands for any precipitating hydrometeor.  This applies
+    ! to such variables as rr, Nr, ri, Ni, etc.  The variable "hmy" stands for
+    ! any different precipitating hydrometeor.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one  ! Constant(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s) 
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mu_hmx_1,       & ! Mean of hmx (1st PDF component)            [hmx units]
+      mu_hmx_2,       & ! Mean of hmx (2nd PDF component)            [hmx units]
+      mu_hmy_1,       & ! Mean of hmy (1st PDF component)            [hmy units]
+      mu_hmy_2,       & ! Mean of hmy (2nd PDF component)            [hmy units]
+      sigma_hmx_1,    & ! Standard deviation of hmx (1st PDF comp.)  [hmx units]
+      sigma_hmx_2,    & ! Standard deviation of hmx (2nd PDF comp.)  [hmx units]
+      sigma_hmy_1,    & ! Standard deviation of hmy (1st PDF comp.)  [hmy units]
+      sigma_hmy_2,    & ! Standard deviation of hmy (2nd PDF comp.)  [hmy units]
+      corr_hmx_hmy_1, & ! Correlation of hmx and hmy (1st PDF component)     [-]
+      corr_hmx_hmy_2, & ! Correlation of hmx and hmy (2nd PDF component)     [-]
+      mixt_frac,      & ! Mixture fraction                                   [-]
+      precip_frac_1,  & ! Precipitation fraction (1st PDF component)         [-]
+      precip_frac_2,  & ! Precipitation fraction (2nd PDF component)         [-]
+      hmx_mean,       & ! Mean of hmx (overall)                      [hmx units]
+      hmy_mean,       & ! Mean of hmy (overall)                      [hmy units]
+      hmx_tol,        & ! Tolerance value for hmx                    [hmx units]
+      hmy_tol           ! Tolerance value for hmy                    [hmy units]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      hmxphmyp_integral_covar    ! Covariance of hmx and hmy     [hmx*hmy units]
+
+
+    if ( ( sigma_hmx_1 <= hmx_tol .or. sigma_hmy_1 <= hmy_tol ) .and. &
+         ( sigma_hmx_2 <= hmx_tol .or. sigma_hmy_2 <= hmy_tol ) ) then
+
+       hmxphmyp_integral_covar &
+       = mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1 &
+         + ( one - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 &
+         - hmx_mean * hmy_mean
+
+
+    elseif ( sigma_hmx_1 <= hmx_tol .or. sigma_hmy_1 <= hmy_tol ) then
+
+       hmxphmyp_integral_covar &
+       = mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1 &
+         + ( one - mixt_frac ) * precip_frac_2 &
+           * ( mu_hmx_2 * mu_hmy_2 &
+               + corr_hmx_hmy_2 * sigma_hmx_2 * sigma_hmy_2 ) &
+         - hmx_mean * hmy_mean
+
+
+    elseif ( sigma_hmx_2 <= hmx_tol .or. sigma_hmy_2 <= hmy_tol ) then
+
+       hmxphmyp_integral_covar &
+       = mixt_frac * precip_frac_1 &
+         * ( mu_hmx_1 * mu_hmy_1 &
+             + corr_hmx_hmy_1 * sigma_hmx_1 * sigma_hmy_1 ) &
+         + ( one - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 &
+         - hmx_mean * hmy_mean
+
+
+    else ! sigma_hmx_1 > hmx_tol and sigma_hmy_1 > hmy_tol
+         ! and sigma_hmx_2 > hmx_tol and sigma_hmy_2 > hmy_tol
+
+       hmxphmyp_integral_covar &
+       = mixt_frac * precip_frac_1 &
+         * ( mu_hmx_1 * mu_hmy_1 &
+             + corr_hmx_hmy_1 * sigma_hmx_1 * sigma_hmy_1 ) &
+         + ( one - mixt_frac ) * precip_frac_2 &
+           * ( mu_hmx_2 * mu_hmy_2 &
+               + corr_hmx_hmy_2 * sigma_hmx_2 * sigma_hmy_2 ) &
+         - hmx_mean * hmy_mean
+
+
+    endif
+
+
+    return
+
+  end function hmxphmyp_integral_covar
 
   !=============================================================================
   function xp_a_hmpb_integrals_all_MM( mu_x_1, mu_x_2, mu_hm_1, mu_hm_2, &

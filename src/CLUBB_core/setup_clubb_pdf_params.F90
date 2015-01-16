@@ -4397,6 +4397,9 @@ module setup_clubb_pdf_params
     ! References:
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+        one  ! Constant(s)
+
     use hydromet_pdf_parameter_module, only: &
         hydromet_pdf_parameter  ! Variable(s)
 
@@ -4446,7 +4449,7 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
-    integer :: ivar  ! Loop index
+    integer :: ivar, jvar  ! Loop indices
 
 
     ! Pack remaining means and standard deviations into hydromet_pdf_params.
@@ -4498,6 +4501,34 @@ module setup_clubb_pdf_params
        ! component.
        hydromet_pdf_params%corr_eta_hm_2(ivar) &
        = corr_array_2( hydromet2pdf_idx(ivar), iiPDF_eta )
+
+       ! Correlation (in-precip) of two hydrometeors, hmx and hmy, in the 1st
+       ! PDF component.
+       hydromet_pdf_params%corr_hmx_hmy_1(ivar,ivar) = one
+
+       do jvar = ivar+1, hydromet_dim, 1
+
+          hydromet_pdf_params%corr_hmx_hmy_1(jvar,ivar) &
+          = corr_array_1( hydromet2pdf_idx(jvar), hydromet2pdf_idx(ivar) )
+
+          hydromet_pdf_params%corr_hmx_hmy_1(ivar,jvar) &
+          = hydromet_pdf_params%corr_hmx_hmy_1(jvar,ivar)
+
+       enddo ! jvar = ivar+1, hydromet_dim, 1
+
+       ! Correlation (in-precip) of two hydrometeors, hmx and hmy, in the 2nd
+       ! PDF component.
+       hydromet_pdf_params%corr_hmx_hmy_2(ivar,ivar) = one
+
+       do jvar = ivar+1, hydromet_dim, 1
+
+          hydromet_pdf_params%corr_hmx_hmy_2(jvar,ivar) &
+          = corr_array_2( hydromet2pdf_idx(jvar), hydromet2pdf_idx(ivar) )
+
+          hydromet_pdf_params%corr_hmx_hmy_2(ivar,jvar) &
+          = hydromet_pdf_params%corr_hmx_hmy_2(jvar,ivar)
+
+       enddo ! jvar = ivar+1, hydromet_dim, 1
 
     enddo ! ivar = 1, hydromet_dim, 1
 

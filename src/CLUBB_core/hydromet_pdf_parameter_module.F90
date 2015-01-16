@@ -39,6 +39,10 @@ module hydromet_pdf_parameter_module
       corr_eta_hm_1, & ! Correlation of eta and hm (1st PDF component) ip    [-]
       corr_eta_hm_2    ! Correlation of eta and hm (2nd PDF component) ip    [-]
 
+    real( kind = core_rknd ), dimension(max_hydromet_dim,max_hydromet_dim) :: &
+      corr_hmx_hmy_1, & ! Correlation of hmx and hmy (1st PDF component) ip  [-]
+      corr_hmx_hmy_2    ! Correlation of hmx and hmy (2nd PDF component) ip  [-]
+
     real( kind = core_rknd ) :: &
       mu_Ncn_1,    & ! Mean of Ncn (1st PDF component)                  [num/kg]
       mu_Ncn_2,    & ! Mean of Ncn (2nd PDF component)                  [num/kg]
@@ -85,6 +89,9 @@ contains
     hydromet_pdf_params%corr_chi_hm_2 = zero
     hydromet_pdf_params%corr_eta_hm_1 = zero
     hydromet_pdf_params%corr_eta_hm_2 = zero
+
+    hydromet_pdf_params%corr_hmx_hmy_1 = zero
+    hydromet_pdf_params%corr_hmx_hmy_2 = zero
 
     hydromet_pdf_params%mu_Ncn_1 = zero
     hydromet_pdf_params%mu_Ncn_2 = zero
