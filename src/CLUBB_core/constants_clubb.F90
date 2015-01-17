@@ -135,6 +135,10 @@ module constants_clubb
     radians_per_deg_dp = pi_dp / 180._dp
 #endif
 
+  real( kind = dp ), parameter, public :: &
+    sqrt_2pi_dp = 2.5066282746310005024_dp, &  ! sqrt(2*pi)
+    sqrt_2_dp   = 1.4142135623730950488_dp     ! sqrt(2)
+
   real( kind = core_rknd ), parameter, public :: &
     sqrt_2pi = 2.5066282746310005024_core_rknd, &  ! sqrt(2*pi)
     sqrt_2   = 1.4142135623730950488_core_rknd     ! sqrt(2)

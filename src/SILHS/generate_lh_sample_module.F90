@@ -525,8 +525,8 @@ module generate_lh_sample_module
 
     use constants_clubb, only: &
       pi_dp,       &     ! Constant(s)
-      sqrt_2,      &
-      sqrt_2pi,    &
+      sqrt_2_dp,   &
+      sqrt_2pi_dp, &
       two_dp,      &
       one_dp,      &
       one_half_dp
@@ -652,8 +652,8 @@ module generate_lh_sample_module
     ! slightly but did improve results.
     ! Eric Raut 23Aug14
     if ( l_apply_halley_method ) then
-      e = one_half_dp * dp_erfc(-z/sqrt_2) - p
-      u = e * sqrt_2pi * exp( (z**2) / two_dp )
+      e = one_half_dp * dp_erfc(-z/sqrt_2_dp) - p
+      u = e * sqrt_2pi_dp * exp( (z**2) / two_dp )
       z = z - u / ( one_dp + z*u/two_dp )
     end if
 
