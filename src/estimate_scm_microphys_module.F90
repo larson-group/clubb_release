@@ -77,14 +77,15 @@ module estimate_scm_microphys_module
       clip_transform_silhs_output,     &
       lh_clipped_variables_type             ! Type
 
-
-
     use parameters_microphys, only: &
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
     use array_index, only: &
       iiNrm, & ! Variable(s)
       iirrm
+
+    use lh_microphys_var_covar_module, only: &
+      lh_microphys_var_covar_driver   ! Procedure
 
     implicit none
 
@@ -167,18 +168,6 @@ module estimate_scm_microphys_module
       w_all_points,   &    ! Vertical velocity                              [m/s]
       Nc_all_points        ! Cloud droplet concentration                    [#/kg]
 
-    real( kind = core_rknd ), dimension(nz) :: &
-      lh_rtp2_before_microphys,    & ! <rt'^2> before microphys_sub    [(kg/kg)^2]
-      lh_rtp2_after_microphys,     & ! <rt'^2> after microphys_sub     [(kg/kg)^2]
-      lh_thlp2_before_microphys,   & ! <thl'^2> before microphys_sub   [K^2]
-      lh_thlp2_after_microphys,    & ! <thl'^2> after microphys_sub    [K^2]
-      lh_wprtp_before_microphys,   & ! <w'rt'> before microphys_sub    [m*(kg/kg)/s]
-      lh_wprtp_after_microphys,    & ! <w'rt'> after microphys_sub     [m*(kg/kg)/s]
-      lh_wpthlp_before_microphys,  & ! <w'thl'> before microphys_sub   [m*K/s]
-      lh_wpthlp_after_microphys,   & ! <w'thl'> after microphys_sub    [m*K/s]
-      lh_rtpthlp_before_microphys, & ! <rt'thl'> before microphys_sub  [K*(kg/kg)/s]
-      lh_rtpthlp_after_microphys     ! <rt'thl'> after microphys_sub   [K*(kg/kg)/s]
-
     ! These parameters are not used by the microphysics scheme when SILHS is
     ! turned on.
     real( kind = core_rknd ), dimension(nz) :: &
@@ -214,14 +203,6 @@ module estimate_scm_microphys_module
     rv_all_points  = lh_clipped_vars%rv
     Nc_all_points  = lh_clipped_vars%Nc
 
-    if ( l_var_covar_src ) then
-      call lh_moments ( num_samples, lh_sample_point_weights, nz, &              ! Intent (in)
-                        rt_all_points, thl_all_points, w_all_points, &           ! Intent (in)
-                        lh_rtp2_before_microphys, lh_thlp2_before_microphys, &   ! Intent (out)
-                        lh_wprtp_before_microphys, lh_wpthlp_before_microphys, & ! Intent (out)
-                        lh_rtpthlp_before_microphys )                            ! Intent (out)
-    end if
-
     do sample = 1, num_samples
 
       cloud_frac_unused = unused_var
@@ -239,26 +220,17 @@ module estimate_scm_microphys_module
              lh_rcm_mc_all(:,sample), lh_rvm_mc_all(:,sample), lh_thlm_mc_all(:,sample), & ! Out
              microphys_stats_zt_all(sample), microphys_stats_sfc_all(sample) ) ! Out
 
-      rt_all_points(:,sample) = rc_all_points(:,sample) + rv_all_points(:,sample) + &
-        dt* ( lh_rcm_mc_all(:,sample) + lh_rvm_mc_all(:,sample) )
-
-      thl_all_points(:,sample) = thl_all_points(:,sample) + dt * lh_thlm_mc_all(:,sample)
-
       ! Loop to get new sample
     end do ! sample = 1, num_samples
 
     if ( l_var_covar_src ) then
-      call lh_moments( num_samples, lh_sample_point_weights, nz, &            ! Intent (in)
-                       rt_all_points, thl_all_points, w_all_points, &         ! Intent (in)
-                       lh_rtp2_after_microphys, lh_thlp2_after_microphys, &   ! Intent (out)
-                       lh_wprtp_after_microphys, lh_wpthlp_after_microphys, & ! Intent (out)
-                       lh_rtpthlp_after_microphys )                           ! Intent (out)
 
-      lh_wpthlp_mc = ( lh_wpthlp_after_microphys - lh_wpthlp_before_microphys ) / dt
-      lh_wprtp_mc = ( lh_wprtp_after_microphys - lh_wprtp_before_microphys ) / dt
-      lh_rtp2_mc = ( lh_rtp2_after_microphys - lh_rtp2_before_microphys ) / dt 
-      lh_thlp2_mc = ( lh_thlp2_after_microphys - lh_thlp2_before_microphys) / dt
-      lh_rtpthlp_mc = ( lh_rtpthlp_after_microphys - lh_rtpthlp_before_microphys) / dt
+      call lh_microphys_var_covar_driver &
+           ( nz, num_samples, dt, lh_sample_point_weights, &   ! Intent(in)
+             rt_all_points, thl_all_points, w_all_points,  &   ! Intent(in)
+             lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &   ! Intent(in)
+             lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc,         &   ! Intent(out)
+             lh_wpthlp_mc, lh_rtpthlp_mc )                     ! Intent(out)
 
     else ! .not. l_var_covar_src
 
