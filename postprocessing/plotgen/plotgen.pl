@@ -475,9 +475,14 @@ sub runCases() {
                     }
         # Check for includeSetup and print links for each input folder
                     if ( $includeSetup == 1 ) {
-                        foreach my $i (@inputDirs) {
-                            OutputWriter->writeSetupLink( $outputIndex,
-                                $i, $CASE::CASE{'name'} );
+                        my $i = 1;
+                        foreach my $inDir (@inputDirs) {
+                            my $setupFileName = "${inDir}/$CASE::CASE{'name'}_setup.txt";
+                            if ( -e $setupFileName ) {
+                                OutputWriter->writeSetupLink( $outputIndex,
+                                    $i, basename($inDir), $CASE::CASE{'name'} );
+                                $i++;
+                            }
                         }
                     }
                 }
@@ -1201,14 +1206,15 @@ sub readArgs() {
 
         # Copies all (case)_setup.txt files to outputTemp folder.
         if ( $includeSetup == 1 ) {
+            my $i = 1;
             foreach my $inputD ( @inputDirs ) {
-                mkpath("${outputTemp}" . "${inputD}");
+                mkpath("${outputTemp}/setup/${i}");
                 my @files = glob("$inputD/*_setup.txt");
                 for my $file (@files) {
-                    print "$file \n";
-                    print "${outputTemp}${file} \n";
-                    copy("$file", "${outputTemp}${file}");
+                    my $fileOut = basename($file);
+                    copy("$file", "${outputTemp}/setup/$i/${fileOut}");
                 }
+            $i++;
             }
         }
 

@@ -330,5 +330,6 @@ def parseArgs(argList):
 def VERSION_MESSAGE():
     print('Plotgen version $VERSION, Copyright (C) 2013 Larson Group.\n')
 
-parseArgs(sys.argv[1:])
+
+# Now that 
 main()
