@@ -368,8 +368,7 @@ module latin_hypercube_driver_module
 
       ! Compute vertical correlation using a formula based on Lscale, the
       ! the difference in height levels, and an empirical constant
-      X_vert_corr(1:nz) = &
-        real(compute_vert_corr( nz, delta_zm, Lscale_vert_avg ), kind = dp)
+      X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
 
       ! Assertion check for the vertical correlation
       if ( clubb_at_least_debug_level( 2 ) ) then
@@ -3015,7 +3014,7 @@ module latin_hypercube_driver_module
   end subroutine assert_half_cloudy_uniform
 
 !-------------------------------------------------------------------------------
-  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg ) result( vert_corr )
+  function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm ) result( vert_corr )
 ! Description:
 !   This function computes the vertical correlation for arbitrary overlap, using
 !   density weighted 3pt averaged Lscale and the difference in height levels
@@ -3028,6 +3027,10 @@ module latin_hypercube_driver_module
       dp, & ! Variable(s)
       core_rknd
 
+    use constants_clubb, only: &
+      rc_tol, &
+      one_dp
+
     implicit none
 
     ! External
@@ -3037,13 +3040,17 @@ module latin_hypercube_driver_module
     real( kind = dp ), parameter :: &
       vert_decorr_coef = 0.03_dp ! Empirically defined de-correlation constant [-]
 
+    logical, parameter :: &
+      l_max_overlap_in_cloud = .false. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
+
     ! Input Variables
     integer, intent(in) :: &
       nz ! Number of vertical levels  [-]
 
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
-      delta_zm, &     ! Difference between altitudes    [m]
-      Lscale_vert_avg ! Vertically averaged Lscale      [m]
+      delta_zm, &        ! Difference between altitudes    [m]
+      Lscale_vert_avg, & ! Vertically averaged Lscale      [m]
+      rcm                ! Cloud water mixing ratio        [kg/kg]
 
     ! Output Variable
     real( kind = dp ), dimension(nz) :: &
@@ -3052,6 +3059,12 @@ module latin_hypercube_driver_module
     ! ---- Begin Code ----
     vert_corr(1:nz) = exp( -vert_decorr_coef &
                             * real( delta_zm(1:nz) / Lscale_vert_avg(1:nz), kind=dp ) )
+
+    if ( l_max_overlap_in_cloud ) then
+      where ( rcm > rc_tol )
+        vert_corr = one_dp
+      end where
+    end if
 
     return
   end function compute_vert_corr
