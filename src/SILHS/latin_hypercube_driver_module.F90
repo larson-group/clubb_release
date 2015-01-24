@@ -136,9 +136,7 @@ module latin_hypercube_driver_module
     ! Parameter Constants
 
     logical, parameter :: &
-      l_lh_importance_sampling  = .true., &
-      l_rcm_in_cloud_k_lh_start = .false. ! Use rcm_in_cloud instead of rcm to determine
-                                          ! k_lh_start
+      l_lh_importance_sampling  = .true.
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -195,9 +193,7 @@ module latin_hypercube_driver_module
 
     ! Local variables
     real( kind = core_rknd ), dimension(nz) :: &
-      Lscale_vert_avg, & ! 3pt vertical average of Lscale  [m]
-      rcm_pdf,         &
-      cloud_frac_pdf
+      Lscale_vert_avg    ! 3pt vertical average of Lscale  [m]
 
     real( kind = dp ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
@@ -300,22 +296,8 @@ module latin_hypercube_driver_module
     !--------------------------------------------------------------
     ! Latin hypercube sampling
     !--------------------------------------------------------------
-    if ( l_rcm_in_cloud_k_lh_start ) then
-      rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
-      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
-                                              pdf_params%mixt_frac )
 
-      k_lh_start    = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
-    else
-      k_lh_start    = maxloc( rcm, 1 )
-    end if
-
-    ! If there's no cloud k_lh_start appears to end up being 1. Check if
-    ! k_lh_start is 1 or nz and set it to the middle of the domain in that
-    ! case.
-    if ( k_lh_start == nz .or. k_lh_start == 1 ) then
-      k_lh_start = nz / 2
-    end if
+    k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
 
     if ( l_lh_vert_overlap ) then
 
@@ -548,6 +530,77 @@ module latin_hypercube_driver_module
   end subroutine lh_subcolumn_generator
 !-------------------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
+  function compute_k_lh_start( nz, rcm, pdf_params ) result( k_lh_start )
+
+  ! Description:
+  !   Determines the starting SILHS sample level
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
+    use constants_clubb, only: &
+      cloud_frac_min ! Constant
+
+    use pdf_parameter_module, only: &
+      pdf_parameter  ! Type
+
+    use pdf_utilities, only: &
+      compute_mean_binormal  ! Procedure
+
+    implicit none
+
+    ! Local Constants
+    logical, parameter :: &
+      l_rcm_in_cloud_k_lh_start = .false.    ! Compute k_lh_start based on rcm_in_cloud instead
+                                             ! of rcm
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz          ! Number of vertical levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm         ! Liquid water mixing ratio               [kg/kg]
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params  ! PDF parameters       [units vary]
+
+    ! Output Variable
+    integer :: &
+      k_lh_start  ! Starting SILHS sample level
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      rcm_pdf, cloud_frac_pdf
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    if ( l_rcm_in_cloud_k_lh_start ) then
+      rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
+      cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
+                                              pdf_params%mixt_frac )
+
+      k_lh_start    = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+    else
+      k_lh_start    = maxloc( rcm, 1 )
+    end if
+
+    ! If there's no cloud k_lh_start appears to end up being 1. Check if
+    ! k_lh_start is 1 or nz and set it to the middle of the domain in that
+    ! case.
+    if ( k_lh_start == nz .or. k_lh_start == 1 ) then
+      k_lh_start = nz / 2
+    end if
+
+    return
+  end function compute_k_lh_start
+
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output &
              ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
@@ -567,7 +620,7 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      zero, &   ! Constant(s)
+      zero, &   ! Constan`t(s)
       rt_tol
 
     use pdf_parameter_module, only: &
