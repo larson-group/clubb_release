@@ -620,7 +620,7 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      zero, &   ! Constan`t(s)
+      zero, &   ! Constant(s)
       rt_tol
 
     use pdf_parameter_module, only: &
