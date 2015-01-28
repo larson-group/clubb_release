@@ -547,7 +547,7 @@ module clubb_driver
 
     l_uv_nudge     = .false.
     l_restart      = .false.
-    l_input_fields  = .false.
+    l_input_fields  = .true. ! Brian:  Hard-wired on for this branch.
     restart_path_case = "none"
     time_restart  = 0._time_precision
     debug_level   = 2
