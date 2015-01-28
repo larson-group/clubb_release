@@ -9,9 +9,9 @@
 runtype = "rico"  ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax = 128       ! Number of vertical levels.
+nzmax = 100       ! Number of vertical levels.
 
-grid_type = 2     ! Select grid type:
+grid_type = 1     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -26,14 +26,15 @@ grid_type = 2     ! Select grid type:
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top = 4000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+!zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
+zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -61,8 +62,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 300.0   ! Radiation timestep [s] 
+dt_main = 60.0   ! Model timestep [s]
+dt_rad = 60.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -110,7 +111,7 @@ time_restart  = 0.0      ! Time of model restart.
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
 !                e.g. checks for NaNs and spurious negative values.
-debug_level   = 2
+debug_level = 0
 
 
 ! Add scalars that are computed using higher-order closure
@@ -135,7 +136,10 @@ iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thet
 l_prescribed_avg_deltaz = .false.
 
 l_diagnose_correlations = .false.
-l_calc_w_corr = .false.
+l_calc_w_corr = .true.
+
+l_input_fields = .true.
+
 /
 
 &gfdl_activation_setting
@@ -176,11 +180,11 @@ l_calc_thlp2_rad = .false.,
 
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
-stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
+stats_tsamp  = 60.      ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main
                         ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 300.     ! Frequency of statistical output.  [s]
+stats_tout   = 60.      ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
@@ -203,9 +207,18 @@ l_input_thlp2 = .true.
 l_input_rtpthlp = .true.
 l_input_upwp = .true.
 l_input_vpwp = .true.
-l_input_rcm = .true.
-l_input_em = .true.
-l_input_p = .true.
 l_input_up2 = .true.
 l_input_vp2 = .true.
+l_input_p = .true.
+l_input_rrm = .true.
+l_input_Nrm = .true.
+l_input_rrp2 = .true.
+l_input_Nrp2 = .true.
+l_input_wprrp = .true.
+l_input_wpNrp = .true.
+l_input_precip_frac = .true.
+l_input_rtprrp = .true.
+l_input_rtpNrp = .true.
+l_input_thlprrp = .true.
+l_input_thlpNrp = .true.
 /

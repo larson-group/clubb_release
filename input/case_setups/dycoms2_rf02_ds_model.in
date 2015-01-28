@@ -9,10 +9,10 @@
 runtype = "dycoms2_rf02" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-!nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
+nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
 !nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
 
-grid_type = 1     ! Select grid type:
+grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -33,8 +33,8 @@ zm_top = 1600.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-!zt_grid_fname = '../input/grid/dycoms2_rf02_sam_zt_grid.grd'
-zt_grid_fname = ''
+zt_grid_fname = '../input/grid/dycoms2_rf02_sam_zt_grid.grd'
+!zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -104,7 +104,7 @@ time_restart  = 0.0      ! Time of model restart.
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
 !                e.g. checks for NaNs and spurious negative values.
-debug_level   = 2
+debug_level = 0
 
 
 ! Add scalars that are computed using higher-order closure
@@ -131,7 +131,7 @@ l_prescribed_avg_deltaz = .false.
 l_diagnose_correlations = .false.
 l_calc_w_corr = .false.
 
-l_input_fields = .false.,
+l_input_fields = .true.,
 
 /
 
@@ -202,9 +202,18 @@ l_input_thlp2 = .true.
 l_input_rtpthlp = .true.
 l_input_upwp = .true.
 l_input_vpwp = .true.
-l_input_rcm = .true.
-l_input_em = .true.
-l_input_p = .true.
 l_input_up2 = .true.
 l_input_vp2 = .true.
+l_input_p = .true.
+l_input_rrm = .true.
+l_input_Nrm = .true.
+l_input_rrp2 = .true.
+l_input_Nrp2 = .true.
+l_input_wprrp = .true.
+l_input_wpNrp = .true.
+l_input_precip_frac = .true.
+l_input_rtprrp = .true.
+l_input_rtpNrp = .true.
+l_input_thlprrp = .true.
+l_input_thlpNrp = .true.
 /
