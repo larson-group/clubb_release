@@ -1061,7 +1061,7 @@ module clubb_driver
            ( iunit, runfile,                  &            ! Intent(in)
              restart_path_case, time_restart, &            ! Intent(in)
              upwp, vpwp, wm_zt, wm_zm,        &            ! Intent(inout)
-             wpthlp, wprtp,   &                            ! Intent(inout)
+             wpthlp, wprtp, hydromet_pdf_params,  &        ! Intent(inout)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
 
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
@@ -1196,7 +1196,8 @@ module clubb_driver
              time_current + real(dt_main,kind=time_precision), & ! Intent(in)
              itime_nearest )                                     ! Intent(out)
 
-        call stat_fields_reader( max( itime_nearest, 1 ) )       ! Intent(in)
+        call stat_fields_reader( max( itime_nearest, 1 ), hydromet_pdf_params, &
+                                 rtphmp_zt, thlphmp_zt )       ! Intent(in)
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
@@ -1322,6 +1323,7 @@ module clubb_driver
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, &       ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
+                                    rtphmp_zt, thlphmp_zt, &
                                     hydrometp2, &                               ! Intent(inout)
                                     mu_x_1, mu_x_2, &                           ! Intent(out)
                                     sigma_x_1, sigma_x_2, &                     ! Intent(out)
@@ -3010,7 +3012,7 @@ module clubb_driver
              ( iunit, runfile, &
                restart_path_case, time_restart, & 
                upwp, vpwp, wm_zt, wm_zm,  & 
-               wpthlp, wprtp, & 
+               wpthlp, wprtp, hydromet_pdf_params, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -3060,6 +3062,12 @@ module clubb_driver
       microphys_scheme, &  ! Variable
       l_predict_Nc
 
+    use hydromet_pdf_parameter_module, only: &
+        hydromet_pdf_parameter
+
+    use parameters_model, only: &
+        hydromet_dim
+
     implicit none
 
     ! Input Variables
@@ -3081,6 +3089,9 @@ module clubb_driver
       wpthlp,          & ! w' th_l'                     [(m K)/s]
       wprtp              ! w' r_t'                      [(kg m)(kg s)]
 
+    type(hydromet_pdf_parameter), dimension(gr%nz), intent(inout) :: &
+      hydromet_pdf_params
+
     ! Output
     real( kind = core_rknd ), intent(out) :: & 
       wpthlp_sfc,      & ! w'theta_l' surface flux   [(m K)/s]
@@ -3093,6 +3104,8 @@ module clubb_driver
 
     logical :: l_restart
 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
+      dummy
 
     ! --- Begin Code ---
 
@@ -3235,8 +3248,11 @@ module clubb_driver
       stop
     end if
 
+    dummy = 0.0_core_rknd
+
     ! Read data from stats files
-    call stat_fields_reader( timestep )  ! Intent(in)
+    call stat_fields_reader( timestep, hydromet_pdf_params, &
+                             dummy, dummy )  ! Intent(in)
 
     wm_zm = zt2zm( wm_zt )
 
