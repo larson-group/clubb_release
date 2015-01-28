@@ -553,12 +553,17 @@ module latin_hypercube_driver_module
     use pdf_utilities, only: &
       compute_mean_binormal  ! Procedure
 
+    use math_utilities, only: &
+      rand_integer_in_range  ! Procedure
+
     implicit none
 
     ! Local Constants
     logical, parameter :: &
-      l_rcm_in_cloud_k_lh_start = .false.    ! Compute k_lh_start based on rcm_in_cloud instead
-                                             ! of rcm
+      l_rcm_in_cloud_k_lh_start = .false., &  ! Compute k_lh_start based on rcm_in_cloud instead
+                                              ! of rcm
+      l_random_k_lh_start = .false.            ! Use a random value of k_lh_start between rcm and
+                                              ! rcm_in_cloud
 
     ! Input Variables
     integer, intent(in) :: &
@@ -575,20 +580,43 @@ module latin_hypercube_driver_module
       k_lh_start  ! Starting SILHS sample level
 
     ! Local Variables
+    integer :: &
+      k_lh_start_rcm_in_cloud, &
+      k_lh_start_rcm
+
     real( kind = core_rknd ), dimension(nz) :: &
       rcm_pdf, cloud_frac_pdf
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( l_rcm_in_cloud_k_lh_start ) then
+    if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
       rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
       cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
                                               pdf_params%mixt_frac )
+      k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+    end if
 
-      k_lh_start    = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
-    else
-      k_lh_start    = maxloc( rcm, 1 )
+    if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
+      k_lh_start_rcm    = maxloc( rcm, 1 )
+    end if
+
+    if ( l_random_k_lh_start ) then
+      if ( k_lh_start_rcm_in_cloud == k_lh_start_rcm ) then
+        k_lh_start = k_lh_start_rcm
+      else
+        ! Pick a random height level between k_lh_start_rcm and
+        ! k_lh_start_rcm_in_cloud
+        if ( k_lh_start_rcm_in_cloud > k_lh_start_rcm ) then
+          k_lh_start = rand_integer_in_range( k_lh_start_rcm, k_lh_start_rcm_in_cloud )
+        else if ( k_lh_start_rcm > k_lh_start_rcm_in_cloud ) then
+          k_lh_start = rand_integer_in_range( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
+        end if
+      end if
+    else if ( l_rcm_in_cloud_k_lh_start ) then
+      k_lh_start = k_lh_start_rcm_in_cloud
+    else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
+      k_lh_start = k_lh_start_rcm
     end if
 
     ! If there's no cloud k_lh_start appears to end up being 1. Check if
@@ -600,6 +628,7 @@ module latin_hypercube_driver_module
 
     return
   end function compute_k_lh_start
+  !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output &
