@@ -7,7 +7,8 @@ module math_utilities
 !-----------------------------------------------------------------------
   implicit none
 
-  public :: compute_sample_mean, compute_sample_variance, compute_sample_covariance
+  public :: compute_sample_mean, compute_sample_variance, compute_sample_covariance, &
+            rand_integer_in_range
 
   private
 
@@ -165,5 +166,57 @@ module math_utilities
 
     return
   end function compute_sample_covariance
+
+  !-----------------------------------------------------------------------
+  function rand_integer_in_range(low, high)
+
+  ! Description:
+  !   Returns a uniformly distributed integer in the range [low,high]
+  !   using the Mersenne Twister PRNG library.
+  !
+  !   The integers returned from this function are actually not quite
+  !   evenly distributed because of the use of MOD. Smaller numbers are
+  !   slightly more likely than larger ones. This could be fixed someday.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use mt95, only: &
+      genrand_intg, & ! Constant
+      genrand_int32   ! Procedure
+
+    implicit none
+
+    ! Local Constants
+
+    ! Input Variables
+    integer, intent(in) :: &
+      low,   &      ! Lowest possible returned value
+      high          ! Highest possible returned value
+
+    ! Output Variable
+    integer :: &
+      rand_integer_in_range  ! Random integer in range [low,high]
+
+    ! Local Variables
+    integer( kind = genrand_intg ) :: &
+      rand_32                ! Random integer in range[-2^31, +2^31-1]
+
+    integer :: &
+      range_width
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    range_width = high - low + 1
+    call genrand_int32( rand_32 )
+    rand_integer_in_range = abs( mod( rand_32, range_width ) ) + low
+
+    return
+  end function rand_integer_in_range
+  !-----------------------------------------------------------------------
+
 
 end module math_utilities
