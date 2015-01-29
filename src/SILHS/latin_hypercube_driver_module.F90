@@ -3123,7 +3123,7 @@ module latin_hypercube_driver_module
       vert_decorr_coef = 0.03_dp ! Empirically defined de-correlation constant [-]
 
     logical, parameter :: &
-      l_max_overlap_in_cloud = .false. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
+      l_max_overlap_in_cloud = .true. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
 
     ! Input Variables
     integer, intent(in) :: &
