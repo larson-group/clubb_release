@@ -208,4 +208,5 @@ l_input_rtprrp = .true.
 l_input_rtpNrp = .true.
 l_input_thlprrp = .true.
 l_input_thlpNrp = .true.
+l_input_rrpNrp = .true.
 /

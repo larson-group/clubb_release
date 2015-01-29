@@ -46,6 +46,7 @@ module inputfields
     l_input_precip_frac = .false., &
     l_input_rtprrp = .false., l_input_thlprrp = .false., &
     l_input_rtpNrp = .false., l_input_thlpNrp = .false., &
+    l_input_rrpNrp = .false., &
     l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
@@ -69,7 +70,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 71, & ! The number of input fields for SAM
+    num_sam_inputfields = 72, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -193,7 +194,7 @@ module inputfields
 
 !-----------------------------------------------------------------------
   subroutine stat_fields_reader( timestep, hydromet_pdf_params, &
-                                 rtphmp_zt, thlphmp_zt )
+                                 rtphmp_zt, thlphmp_zt, hmxphmyp_zt )
 ! Description:
 !   Reads in variables for the model from statistical data
 
@@ -313,6 +314,10 @@ module inputfields
       rtphmp_zt,  &
       thlphmp_zt
 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim,hydromet_dim), &
+    intent(inout) :: &
+      hmxphmyp_zt
+
     ! Local Variables
     logical :: l_read_error, l_fatal_error
 
@@ -331,7 +336,7 @@ module inputfields
       temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
       temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp, &
       temp_precip_frac, temp_rtprrp, temp_rtpNrp, temp_thlprrp, &
-      temp_thlpNrp ! temp. variables
+      temp_thlpNrp, temp_rrpNrp ! temp. variables
 
     type (input_field), dimension(:), allocatable :: &
       SAM_variables, & ! A list of SAM variables to read in.
@@ -2070,6 +2075,17 @@ module inputfields
 
       k = k + 1
 
+      temp_rrpNrp = 0.0_core_rknd
+
+      SAM_variables(k)%l_input_var = l_input_rrpNrp
+      SAM_variables(k)%input_name = "RRPNRP"
+      SAM_variables(k)%clubb_var => temp_rrpNrp
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
       SAM_variables(k)%l_input_var = l_input_thlm_forcing
       SAM_variables(k)%clubb_name = "thlm_forcing"
       SAM_variables(k)%input_name = "none"
@@ -2301,6 +2317,13 @@ module inputfields
       if ( l_input_thlpNrp .and. iiNrm > 0 ) then
          thlphmp_zt(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm) &
          = temp_thlpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_rrpNrp .and. iirrm > 0 .and. iiNrm > 0 ) then
+         hmxphmyp_zt(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrm,iiNrm) &
+         = temp_rrpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+         hmxphmyp_zt(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNrm,iirrm) &
+         = temp_rrpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       endif
 
       hydromet_pdf_params(k_lowest_zt(sam_file):k_highest_zt(sam_file))%precip_frac &
@@ -2969,7 +2992,7 @@ module inputfields
       l_input_rsm, l_input_rim, l_input_rgm,  &
       l_input_rrp2, l_input_Nrp2, l_input_wprrp, l_input_wpNrp, &
       l_input_precip_frac, l_input_rtprrp, l_input_thlprrp, & 
-      l_input_rtpNrp, l_input_thlpNrp, & 
+      l_input_rtpNrp, l_input_thlpNrp, l_input_rrpNrp, & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
       l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &

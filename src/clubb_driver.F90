@@ -462,6 +462,9 @@ module clubb_driver
       rtphmp_zt,  & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt    ! Covariance of thl and a hydrometeor [K <hm units>]
 
+    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
+      hmxphmyp_zt    ! Covariance of two hydrometeors, hmx and hmy [hmx*hmy un]
+
     real( kind = dp ), dimension(:,:,:), allocatable :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
@@ -880,11 +883,13 @@ module clubb_driver
     radf(1:gr%nz) = 0.0_core_rknd
 
     allocate( wp2hmp(gr%nz,hydromet_dim), rtphmp_zt(gr%nz,hydromet_dim), &
-              thlphmp_zt(gr%nz,hydromet_dim) )
+              thlphmp_zt(gr%nz,hydromet_dim), &
+              hmxphmyp_zt(gr%nz,hydromet_dim,hydromet_dim) )
 
     wp2hmp(:,:)     = 0._core_rknd
     rtphmp_zt(:,:)  = 0._core_rknd
     thlphmp_zt(:,:) = 0._core_rknd
+    hmxphmyp_zt(:,:,:) = 0._core_rknd
 
     if ( fatal_error( err_code ) ) return
 
@@ -1197,7 +1202,7 @@ module clubb_driver
              itime_nearest )                                     ! Intent(out)
 
         call stat_fields_reader( max( itime_nearest, 1 ), hydromet_pdf_params, &
-                                 rtphmp_zt, thlphmp_zt )       ! Intent(in)
+                                 rtphmp_zt, thlphmp_zt, hmxphmyp_zt ) ! Intent(in)
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
         if( l_input_wp3 ) then
@@ -1323,7 +1328,7 @@ module clubb_driver
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_cloud, corr_array_below, &       ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
-                                    rtphmp_zt, thlphmp_zt, &
+                                    rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
                                     hydrometp2, &                               ! Intent(inout)
                                     mu_x_1, mu_x_2, &                           ! Intent(out)
                                     sigma_x_1, sigma_x_2, &                     ! Intent(out)
@@ -1529,6 +1534,8 @@ module clubb_driver
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
                 hydromet_vel_covar_zt_impc, hydromet_vel_covar_zt_expc )
+
+    deallocate( wp2hmp, rtphmp_zt, thlphmp_zt, hmxphmyp_zt )
 
     deallocate( radf, rcm_zm, radht_zm, X_nl_all_levs, X_mixt_comp_all_levs, &
                 lh_sample_point_weights, Nc_in_cloud, lh_clipped_vars )
@@ -3107,6 +3114,9 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: &
       dummy
 
+    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim,hydromet_dim) :: &
+      dummy2
+
     ! --- Begin Code ---
 
     ! Inform inputfields module
@@ -3248,11 +3258,12 @@ module clubb_driver
       stop
     end if
 
-    dummy = 0.0_core_rknd
+    dummy  = 0.0_core_rknd
+    dummy2 = 0.0_core_rknd
 
     ! Read data from stats files
     call stat_fields_reader( timestep, hydromet_pdf_params, &
-                             dummy, dummy )  ! Intent(in)
+                             dummy, dummy, dummy2 )  ! Intent(in)
 
     wm_zm = zt2zm( wm_zt )
 

@@ -951,11 +951,15 @@ subroutine mmicro_pcond ( sub_column,           &
       mixt_frac        ! Mixture fraction                                    [-]
 
     real ( kind = core_rknd ), dimension(hydromet_dim) :: &
+      hydromet,       &
       hm1,            &
       hm2,            &
       wphydrometp_zt, &
       rtphmp_zt,      &
       thlphmp_zt
+
+    real ( kind = core_rknd ), dimension(hydromet_dim,hydromet_dim) :: &
+      hmxphmyp_zt
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
       mu_x_1, &
@@ -1808,6 +1812,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
+                 hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm1(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm2(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
                  hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
@@ -1819,6 +1825,7 @@ subroutine mmicro_pcond ( sub_column,           &
                  rtphmp_zt(2) = zero
                  thlphmp_zt(1) = zero
                  thlphmp_zt(2) = zero
+                 hmxphmyp_zt(:,:) = zero
 
                  if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
                     sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
@@ -1860,6 +1867,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, &
+                                    hydromet, hmxphmyp_zt, &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
@@ -2416,6 +2424,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     corr_array_cloud, corr_array_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, &
+                                    hydromet, hmxphmyp_zt, &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &

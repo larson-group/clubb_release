@@ -1478,7 +1478,7 @@ contains
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_cloud, corr_array_below, &       ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
-    rtphmp_zt, thlphmp_zt, &
+    rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -1556,6 +1556,10 @@ contains
       rtphmp_zt,  &
       thlphmp_zt
 
+    real( kind = core_rknd ), dimension(nz,hydromet_dim,hydromet_dim), &
+    intent(in) :: &
+      hmxphmyp_zt
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -1586,7 +1590,7 @@ contains
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_cloud, corr_array_below, &       ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)
-      rtphmp_zt, thlphmp_zt, &
+      rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
       hydrometp2, &                               ! Intent(inout)
       mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
       sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)

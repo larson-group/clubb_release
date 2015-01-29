@@ -24,6 +24,7 @@ module setup_clubb_pdf_params
              component_corr_x_hm_ip,        &
              component_corr_hmx_hmy_ip,     &
              calc_corr_w_hm,                &
+             calc_corr_hmx_hmy,             &
              pdf_param_hm_stats,            &
              pdf_param_ln_hm_stats,         &
              pack_pdf_params
@@ -46,7 +47,7 @@ module setup_clubb_pdf_params
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
-                                   rtphmp_zt, thlphmp_zt, &
+                                   rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
                                    hydrometp2, &                               ! Intent(inout)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -196,6 +197,10 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       rtphmp_zt,  & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt    ! Covariance of thl and a hydrometeor [K <hm units>]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim,hydromet_dim), &
+    intent(in) :: &
+      hmxphmyp_zt    ! Covariance of two hydrometeors, hmx and hmy [hmx*hmy un]
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
@@ -666,6 +671,7 @@ module setup_clubb_pdf_params
                              corr_array_cloud, corr_array_below, &
                              pdf_params(k), d_variables, &
                              rtphmp_zt(k,:), thlphmp_zt(k,:), &
+                             hydromet(k,:), hmxphmyp_zt(k,:,:), &
                              corr_array_1, corr_array_2 )
 
        endif ! l_diagnose_correlations
@@ -2335,6 +2341,7 @@ module setup_clubb_pdf_params
                            corr_array_cloud, corr_array_below, &
                            pdf_params, d_variables, &
                            rtphmp_zt, thlphmp_zt, &
+                           hydromet, hmxphmyp_zt, &
                            corr_array_1, corr_array_2 )
 
     ! Description:
@@ -2421,7 +2428,12 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       rtphmp_zt,  & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
-      thlphmp_zt    ! Covariance of thl and a hydrometeor [K <hm units>]
+      thlphmp_zt, & ! Covariance of thl and a hydrometeor [K <hm units>]
+      hydromet      ! Mean (overall) of a hydrometeor     [hm units]
+
+    real( kind = core_rknd ), dimension(hydromet_dim,hydromet_dim), &
+    intent(in) :: &
+      hmxphmyp_zt    ! Covariance of two hydrometeors, hmx and hmy  [hmx*hmy un]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
@@ -2688,15 +2700,29 @@ module setup_clubb_pdf_params
     do ivar = iiPDF_Ncn+1, d_variables-1
        do jvar = ivar+1, d_variables
 
-          corr_array_1(jvar, ivar) &
-          = component_corr_hmx_hmy_ip( rc_1, cloud_frac_1, &
-                                       corr_array_cloud(jvar, ivar), &
-                                       corr_array_below(jvar, ivar) )
+          call calc_corr_hmx_hmy( hydromet(pdf2hydromet_idx(ivar)), &
+                                  hydromet(pdf2hydromet_idx(jvar)), &
+                                  hmxphmyp_zt(pdf2hydromet_idx(jvar),&
+                                              pdf2hydromet_idx(ivar)), &
+                                  mu_x_1(ivar), mu_x_2(ivar), &
+                                  mu_x_1(jvar), mu_x_2(jvar), &
+                                  sigma_x_1(ivar), sigma_x_2(ivar), &
+                                  sigma_x_1(jvar), sigma_x_2(jvar), &
+                                  mixt_frac, precip_frac_1, precip_frac_2, &
+                                  corr_array_1(jvar,ivar), &
+                                  corr_array_2(jvar,ivar), &
+                                  hydromet_tol(pdf2hydromet_idx(ivar)), &
+                                  hydromet_tol(pdf2hydromet_idx(jvar)) )
 
-          corr_array_2(jvar, ivar) &
-          = component_corr_hmx_hmy_ip( rc_2, cloud_frac_2, &
-                                       corr_array_cloud(jvar, ivar), &
-                                       corr_array_below(jvar, ivar) )
+!          corr_array_1(jvar, ivar) &
+!          = component_corr_hmx_hmy_ip( rc_1, cloud_frac_1, &
+!                                       corr_array_cloud(jvar, ivar), &
+!                                       corr_array_below(jvar, ivar) )
+!
+!          corr_array_2(jvar, ivar) &
+!          = component_corr_hmx_hmy_ip( rc_2, cloud_frac_2, &
+!                                       corr_array_cloud(jvar, ivar), &
+!                                       corr_array_below(jvar, ivar) )
 
        enddo ! jvar
     enddo ! ivar
@@ -3800,6 +3826,208 @@ module setup_clubb_pdf_params
     return
 
   end subroutine calc_corr_w_hm
+
+  !=============================================================================
+  subroutine calc_corr_hmx_hmy( mean_hmx, mean_hmy, &
+                                hmxphmyp, &
+                                mu_hmx_1, mu_hmx_2, &
+                                mu_hmy_1, mu_hmy_2, &
+                                sigma_hmx_1, sigma_hmx_2, &
+                                sigma_hmy_1, sigma_hmy_2, &
+                                mixt_frac, precip_frac_1, precip_frac_2, &
+                                corr_hmx_hmy_1, corr_hmx_hmy_2, &
+                                hmx_tol, hmy_tol )
+
+    ! Description:
+    ! Calculates the PDF component correlation (in-precip) between two
+    ! hydrometeor species, hmx and hmy.  The overall covariance of hmx and hmy,
+    ! <hmx'hmy'> can be written in terms of the PDF parameters.  When both hmx
+    ! and hmy vary in both PDF components, the equation is written as:
+    !
+    ! <hmx'hmy'> = mixt_frac * precip_frac_1
+    !              * ( mu_hmx_1 * mu_hmy_1
+    !                  + corr_hmx_hmy_1 * sigma_hmx_1 * sigma_hmy_1 )
+    !              + ( 1 - mixt_frac ) * precip_frac_2
+    !                * ( mu_hmx_2 * mu_hmy_2
+    !                    + corr_hmx_hmy_2 * sigma_hmx_2 * sigma_hmy_2 )
+    !              - <hmx> * <hmy>.
+    !
+    ! The overall covariance is provided, so the component correlation is solved
+    ! by setting corr_hmx_hmy_1 = corr_hmx_hmy_2 ( = corr_hmx_hmy ).  The
+    ! equation is:
+    !
+    ! corr_hmx_hmy
+    ! = ( <hmx'hmy'> + <hmx> * <hmy>
+    !     - mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1
+    !     - ( 1 - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 )
+    !   / ( mixt_frac * precip_frac_1 * sigma_hmx_1 * sigma_hmy_1
+    !       + ( 1 - mixt_frac ) * precip_frac_2 * sigma_hmx_2 * sigma_hmy_2 );
+    !
+    ! again, where corr_hmx_hmy_1 = corr_hmx_hmy_2 = corr_hmx_hmy.  When either
+    ! hmx or hmy is constant in one PDF component, but both hmx and hmy vary in
+    ! the other PDF component, the equation for <hmx'hmy'> is written as:
+    !
+    ! <hmx'hmy'> = mixt_frac * precip_frac_1
+    !              * ( mu_hmx_1 * mu_hmy_1
+    !                  + corr_hmx_hmy_1 * sigma_hmx_1 * sigma_hmy_1 )
+    !              + ( 1 - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2
+    !              - <hmx> * <hmy>.
+    !
+    ! In the above equation, either hmx or hmy (or both) is (are) constant in
+    ! PDF component 2, but both hmx and hmy vary in PDF component 1.  When both
+    ! hmx and hmy vary in PDF component 2, but at least one of hmx or hmy is
+    ! constant in PDF component 1, the equation is similar.  The above equation
+    ! can be rewritten to solve for corr_hmx_hmy_1, such that:
+    !
+    ! corr_hmx_hmy_1
+    ! = ( <hmx'hmy'> + <hmx> * <hmy>
+    !     - mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1
+    !     - ( 1 - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 )
+    !   / ( mixt_frac * precip_frac_1 * sigma_hmx_1 * sigma_hmy_1 ).
+    !
+    ! Since either hmx or hmy is constant in PDF component 2, corr_hmx_hmy_2 is
+    ! undefined.  When both hmx and hmy vary in PDF component 2, but at least
+    ! one of hmx or hmy is constant in PDF component 1, the equation is similar,
+    ! but is in terms of corr_hmx_hmy_2, while corr_hmx_hmy_1 is undefined.
+    ! When either hmx or hmy is constant in both PDF components, the equation
+    ! for <hmx'hmy'> is:
+    !
+    ! <hmx'hmy'> = mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1
+    !              + ( 1 - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2
+    !              - <hmx> * <hmy>.
+    !
+    ! When this is the case, both corr_hmx_hmy_1 and corr_hmx_hmy_2 are
+    ! undefined.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        one,                 & ! Constant(s)
+        zero,                &
+        max_mag_correlation
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mean_hmx,      & ! Mean of hydrometeor x (overall), <hmx>      [hmx units]
+      mean_hmy,      & ! Mean of hydrometeor y (overall), <hmy>      [hmy units]
+      hmxphmyp,      & ! Covariance of hmx and hmy (overall)     [hmx*hmy units]
+      mu_hmx_1,      & ! Mean of hmx (1st PDF component) in-precip (ip) [hmx un]
+      mu_hmx_2,      & ! Mean of hmx (2nd PDF component) ip             [hmx un]
+      mu_hmy_1,      & ! Mean of hmy (1st PDF component) ip             [hmy un]
+      mu_hmy_2,      & ! Mean of hmy (2nd PDF component) ip             [hmy un]
+      sigma_hmx_1,   & ! Standard deviation of hmx (1st PDF comp.) ip   [hmx un]
+      sigma_hmx_2,   & ! Standard deviation of hmx (2nd PDF comp.) ip   [hmx un]
+      sigma_hmy_1,   & ! Standard deviation of hmy (1st PDF comp.) ip   [hmy un]
+      sigma_hmy_2,   & ! Standard deviation of hmy (2nd PDF comp.) ip   [hmy un]
+      mixt_frac,     & ! Mixture fraction                                    [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
+      hmx_tol,       & ! Hydrometeor x tolerance value                  [hmx un]
+      hmy_tol          ! Hydrometeor y tolerance value                  [hmy un]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      corr_hmx_hmy_1, & ! Correlation of hmx and hmy (1st PDF component) ip  [-]
+      corr_hmx_hmy_2    ! Correlation of hmx and hmy (2nd PDF component) ip  [-]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      corr_hmx_hmy    ! Correlation of hmx and hmy (both PDF components) ip  [-]
+
+
+    ! Calculate the PDF component correlation of two hydrometers, hmx and hmy,
+    ! in precipitation.
+    if ( sigma_hmx_1 > hmx_tol .and. sigma_hmy_1 > hmy_tol .and. &
+         sigma_hmx_2 > hmx_tol .and. sigma_hmy_2 > hmy_tol ) then
+
+       ! Both hmx and hmy vary in both PDF components.
+       ! Calculate corr_hmx_hmy (where corr_hmx_hmy_1 = corr_hmx_hmy_2
+       ! = corr_hmx_hmy).
+       corr_hmx_hmy &
+       = ( hmxphmyp + mean_hmx * mean_hmy &
+           - mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1 &
+           - ( one - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 ) &
+         / ( mixt_frac * precip_frac_1 * sigma_hmx_1 * sigma_hmy_1 &
+             + ( one - mixt_frac ) * precip_frac_2 * sigma_hmx_2 * sigma_hmy_2 )
+
+       ! Check that the PDF component correlations have reasonable values.
+       if ( corr_hmx_hmy > max_mag_correlation ) then
+          corr_hmx_hmy = max_mag_correlation
+       elseif ( corr_hmx_hmy < -max_mag_correlation ) then
+          corr_hmx_hmy = -max_mag_correlation
+       endif
+
+       ! The PDF component correlations of two hydrometeors (in-precip) are
+       ! equal.
+       corr_hmx_hmy_1 = corr_hmx_hmy
+       corr_hmx_hmy_2 = corr_hmx_hmy
+
+
+    elseif ( sigma_hmx_1 > hmx_tol .and. sigma_hmy_1 > hmy_tol ) then
+
+       ! Both hmx and hmy vary in PDF component 1, but at least one of hmx and
+       ! hmy is constant in PDF component 2.
+       ! Calculate the PDF component 1 correlation of hmx and hmy (in-precip).
+       corr_hmx_hmy_1 &
+       = ( hmxphmyp + mean_hmx * mean_hmy &
+           - mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1 &
+           - ( one - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 ) &
+         / ( mixt_frac * precip_frac_1 * sigma_hmx_1 * sigma_hmy_1 )
+
+       ! Check that the PDF component 1 correlation has a reasonable value.
+       if ( corr_hmx_hmy_1 > max_mag_correlation ) then
+          corr_hmx_hmy_1 = max_mag_correlation
+       elseif ( corr_hmx_hmy_1 < -max_mag_correlation ) then
+          corr_hmx_hmy_1 = -max_mag_correlation
+       endif
+
+       ! The PDF component 2 correlation is undefined.
+       corr_hmx_hmy_2 = zero
+
+
+    elseif ( sigma_hmx_2 > hmx_tol .and. sigma_hmy_2 > hmy_tol ) then
+
+       ! Both hmx and hmy vary in PDF component 2, but at least one of hmx and
+       ! hmy is constant in PDF component 1.
+       ! Calculate the PDF component 2 correlation of hmx and hmy (in-precip).
+       corr_hmx_hmy_2 &
+       = ( hmxphmyp + mean_hmx * mean_hmy &
+           - mixt_frac * precip_frac_1 * mu_hmx_1 * mu_hmy_1 &
+           - ( one - mixt_frac ) * precip_frac_2 * mu_hmx_2 * mu_hmy_2 ) &
+         / ( ( one - mixt_frac ) * precip_frac_2 * sigma_hmx_2 * sigma_hmy_2 )
+
+       ! Check that the PDF component 2 correlation has a reasonable value.
+       if ( corr_hmx_hmy_2 > max_mag_correlation ) then
+          corr_hmx_hmy_2 = max_mag_correlation
+       elseif ( corr_hmx_hmy_2 < -max_mag_correlation ) then
+          corr_hmx_hmy_2 = -max_mag_correlation
+       endif
+
+       ! The PDF component 1 correlation is undefined.
+       corr_hmx_hmy_1 = zero
+
+
+    else    ! sigma_hmx_1 * sigma_hmy_1 = 0 .and. sigma_hmx_2 * sigma_hmy_2 = 0.
+
+       ! At least one of hmx and hmy is constant in both PDF components.
+
+       ! The PDF component 1 and component 2 correlations are both undefined.
+       corr_hmx_hmy_1 = zero
+       corr_hmx_hmy_2 = zero
+
+
+    endif
+
+
+    return
+
+  end subroutine calc_corr_hmx_hmy
 
   !=============================================================================
   subroutine pdf_param_hm_stats( d_variables, level, mu_x_1, mu_x_2, &
