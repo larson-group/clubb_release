@@ -1479,6 +1479,11 @@ contains
     corr_array_cloud, corr_array_below, &       ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
     rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
+    l_input_fields, l_input_precip_frac, &      ! Intent(in)
+    l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+    l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
+    l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
+    l_input_rrpNrp, &                           ! Intent(in)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -1560,6 +1565,17 @@ contains
     intent(in) :: &
       hmxphmyp_zt
 
+    logical, intent(in) :: &
+      l_input_fields,      & ! Flag for input fields
+      l_input_precip_frac, & ! Flag to input precip. fraction (overall)
+      l_input_rrp2,        & ! Flag to input rrp2
+      l_input_Nrp2,        & ! Flag to input Nrp2
+      l_input_rtprrp,      & ! Flag to input rtprrp
+      l_input_rtpNrp,      & ! Flag to input rtpNrp
+      l_input_thlprrp,     & ! Flag to input thlprrp
+      l_input_thlpNrp,     & ! Flag to input thlpNrp
+      l_input_rrpNrp         ! Flag to input rrpNrp
+
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
@@ -1591,6 +1607,11 @@ contains
       corr_array_cloud, corr_array_below, &       ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)
       rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
+      l_input_fields, l_input_precip_frac, &      ! Intent(in)
+      l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+      l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
+      l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
+      l_input_rrpNrp, &                           ! Intent(in)
       hydrometp2, &                               ! Intent(inout)
       mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
       sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)

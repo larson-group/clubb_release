@@ -48,6 +48,11 @@ module setup_clubb_pdf_params
                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
                                    rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
+                                   l_input_fields, l_input_precip_frac, &      ! Intent(in)
+                                   l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+                                   l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
+                                   l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
+                                   l_input_rrpNrp, &                           ! Intent(in)
                                    hydrometp2, &                               ! Intent(inout)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
@@ -201,6 +206,17 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), dimension(nz,hydromet_dim,hydromet_dim), &
     intent(in) :: &
       hmxphmyp_zt    ! Covariance of two hydrometeors, hmx and hmy [hmx*hmy un]
+
+    logical, intent(in) :: &
+      l_input_fields,      & ! Flag for input fields
+      l_input_precip_frac, & ! Flag to input precip. fraction (overall)
+      l_input_rrp2,        & ! Flag to input rrp2
+      l_input_Nrp2,        & ! Flag to input Nrp2
+      l_input_rtprrp,      & ! Flag to input rtprrp
+      l_input_rtpNrp,      & ! Flag to input rtpNrp
+      l_input_thlprrp,     & ! Flag to input thlprrp
+      l_input_thlpNrp,     & ! Flag to input thlpNrp
+      l_input_rrpNrp         ! Flag to input rrpNrp
 
     ! Input/Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
@@ -436,11 +452,14 @@ module setup_clubb_pdf_params
 
        endif ! comp_means_hm_type
 
-       precip_frac = hydromet_pdf_params%precip_frac
+       if ( l_input_fields .and. l_input_precip_frac ) then
+          precip_frac = hydromet_pdf_params%precip_frac
+       endif ! l_input_fields .and. l_input_precip_frac
 
        call precip_fraction( nz, hydromet, hm1, hm2, &
                              cloud_frac, cloud_frac_1, mixt_frac, &
                              ice_supersat_frac, &
+                             l_input_fields, l_input_precip_frac, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else
@@ -561,21 +580,6 @@ module setup_clubb_pdf_params
     ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
     do k = 2, nz, 1
 
-       !!! Calculate the means and standard deviations involving PDF variables
-       !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
-       !!! -- for each PDF component.
-       call compute_mean_stdev( Ncnm(k), rc_1(k), rc_2(k), &          ! Intent(in)
-                                cloud_frac_1(k), cloud_frac_2(k), &   ! Intent(in)
-                                hm1(k,:), hm2(k,:), &                 ! Intent(in)
-                                hydrometp2_zt(k,:), hydromet(k,:), mixt_frac(k), &
-                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                                sigma2_on_mu2_ip_array_cloud, &       ! Intent(in)
-                                sigma2_on_mu2_ip_array_below, &       ! Intent(in)
-                                pdf_params(k), d_variables, &         ! Intent(in)
-                                mu_x_1, mu_x_2, &                     ! Intent(out)
-                                sigma_x_1, sigma_x_2 )                ! Intent(out)
-
-
        if ( rc_1(k) > rc_tol ) then
           sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_cloud
        else
@@ -587,6 +591,41 @@ module setup_clubb_pdf_params
        else
           sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_below
        endif
+
+       !!! Calculate the means and standard deviations involving PDF variables
+       !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm in-precip)
+       !!! -- for each PDF component.
+       call compute_mean_stdev( Ncnm(k), rc_1(k), rc_2(k), &          ! Intent(in)
+                                cloud_frac_1(k), cloud_frac_2(k), &   ! Intent(in)
+                                hm1(k,:), hm2(k,:), &                 ! Intent(in)
+                                hydrometp2_zt(k,:), hydromet(k,:), mixt_frac(k), &
+                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                sigma2_on_mu2_ip_array_cloud, &       ! Intent(in)
+                                sigma2_on_mu2_ip_array_below, &       ! Intent(in)
+                                pdf_params(k), d_variables, &         ! Intent(in)
+                                l_input_fields, l_input_rrp2, &       ! Intent(in)
+                                l_input_Nrp2, &                       ! Intent(in)
+                                mu_x_1, mu_x_2, &                     ! Intent(out)
+                                sigma_x_1, sigma_x_2 )                ! Intent(out)
+
+
+       ! When input fields are used and any hydrometeor variance field is input,
+       ! recalculate sigma2_on_mu2
+       if ( l_input_fields .and. ( l_input_rrp2 .or. l_input_Nrp2 ) ) then
+
+          if ( rc_1(k) > rc_tol ) then
+             sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_cloud
+          else
+             sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_below
+          endif
+
+          if ( rc_2(k) > rc_tol ) then
+             sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_cloud
+          else
+             sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_below
+          endif
+
+       endif ! l_input_fields .and. ( l_input_rrp2 .or. l_input_Nrp2 )
 
        !!! Calculate the normalized means and normalized standard deviations
        !!! involving precipitating hydrometeors (hm in-precip) and N_cn --
@@ -672,6 +711,9 @@ module setup_clubb_pdf_params
                              pdf_params(k), d_variables, &
                              rtphmp_zt(k,:), thlphmp_zt(k,:), &
                              hydromet(k,:), hmxphmyp_zt(k,:,:), &
+                             l_input_fields, l_input_rtprrp, &
+                             l_input_rtpNrp, l_input_thlprrp, &
+                             l_input_thlpNrp, l_input_rrpNrp, &
                              corr_array_1, corr_array_2 )
 
        endif ! l_diagnose_correlations
@@ -971,7 +1013,7 @@ module setup_clubb_pdf_params
     integer :: k, i  ! Array index
 
     real( kind = core_rknd ), parameter :: &
-      LWP_tol = 5.0e-10_core_rknd  ! Tolerance value for component LWP
+      LWP_tol = 5.0e-7_core_rknd  ! Tolerance value for component LWP
 
 
     !!! Compute component liquid water paths using trapezoidal rule for
@@ -1497,6 +1539,7 @@ module setup_clubb_pdf_params
   subroutine precip_fraction( nz, hydromet, hm1, hm2, &
                               cloud_frac, cloud_frac_1, mixt_frac, &
                               ice_supersat_frac, &
+                              l_input_fields, l_input_precip_frac, &
                               precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -1540,6 +1583,10 @@ module setup_clubb_pdf_params
       mixt_frac,         &  ! Mixture fraction                             [-]
       ice_supersat_frac     ! Ice cloud fraction                           [-]
 
+    logical, intent(in) :: &
+      l_input_fields,      & ! Flag for input fields
+      l_input_precip_frac    ! Flag to input precip. fraction (overall)
+
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(inout) :: &
       precip_frac,   & ! Precipitation fraction (overall)               [-]
@@ -1572,47 +1619,53 @@ module setup_clubb_pdf_params
 
     ! Initialize the precipitation fraction variables (precip_frac,
     ! precip_frac_1, and precip_frac_2) to 0.
-!    precip_frac   = zero
+    if ( ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac ) ) then
+       precip_frac = zero
+    endif ! ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac )
     precip_frac_1 = zero
     precip_frac_2 = zero
 
-!    !!! Find overall precipitation fraction.
-!    do k = nz, 1, -1
-!
-!       ! The precipitation fraction is the greatest cloud fraction at or above a
-!       ! vertical level.
-!       if ( k < nz ) then
-!          precip_frac(k) = max( precip_frac(k+1), cloud_frac(k) )
-!       else  ! k = nz
-!          precip_frac(k) = cloud_frac(k)
-!       endif
-!
-!       if ( any( hydromet(k,:) > hydromet_tol(:) ) &
-!            .and. precip_frac(k) < precip_frac_tol ) then
-!
-!          ! In a scenario where we find any hydrometeor at this grid level, but
-!          ! no cloud at or above this grid level, set precipitation fraction to
-!          ! a minimum threshold value.
-!          precip_frac(k) = precip_frac_tol
-!
-!       elseif ( all( hydromet(k,:) <= hydromet_tol(:) ) &
-!                .and. precip_frac(k) < precip_frac_tol ) then
-!
-!          ! The means (overall) of every precipitating hydrometeor are all less
-!          ! than their respective tolerance amounts.  They are all considered to
-!          ! have values of 0.  There are not any hydrometeor species found at
-!          ! this grid level.  There is also no cloud at or above this grid
-!          ! level, so set precipitation fraction to 0.
-!          precip_frac(k) = zero
-!
-!       endif
-!
-!    enddo ! Overall precipitation fraction loop: k = nz, 1, -1.
-!
-!    !!! Account for ice cloud fraction
-!    do k = nz, 1, -1
-!      precip_frac(k) = max( precip_frac(k), ice_supersat_frac(k) )
-!    enddo
+    if ( ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac ) ) then
+
+       !!! Find overall precipitation fraction.
+       do k = nz, 1, -1
+
+          ! The precipitation fraction is the greatest cloud fraction at or
+          ! above a vertical level.
+          if ( k < nz ) then
+             precip_frac(k) = max( precip_frac(k+1), cloud_frac(k) )
+          else  ! k = nz
+             precip_frac(k) = cloud_frac(k)
+          endif
+
+          if ( any( hydromet(k,:) > hydromet_tol(:) ) &
+               .and. precip_frac(k) < precip_frac_tol ) then
+
+             ! In a scenario where we find any hydrometeor at this grid level,
+             ! but no cloud at or above this grid level, set precipitation
+             ! fraction to a minimum threshold value.
+             precip_frac(k) = precip_frac_tol
+
+          elseif ( all( hydromet(k,:) <= hydromet_tol(:) ) &
+                   .and. precip_frac(k) < precip_frac_tol ) then
+
+             ! The means (overall) of every precipitating hydrometeor are all
+             ! less than their respective tolerance amounts.  They are all
+             ! considered to have values of 0.  There are not any hydrometeor
+             ! species found at this grid level.  There is also no cloud at or
+             ! above this grid level, so set precipitation fraction to 0.
+             precip_frac(k) = zero
+
+         endif
+
+       enddo ! Overall precipitation fraction loop: k = nz, 1, -1.
+
+       !!! Account for ice cloud fraction
+       do k = nz, 1, -1
+          precip_frac(k) = max( precip_frac(k), ice_supersat_frac(k) )
+       enddo
+
+    endif ! ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac )
 
 
     !!! Find precipitation fraction within each PDF component.
@@ -2077,14 +2130,16 @@ module setup_clubb_pdf_params
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine compute_mean_stdev( Ncnm, rc_1, rc_2, &                      ! Intent(in)
+  subroutine compute_mean_stdev( Ncnm, rc_1, rc_2, &                    ! Intent(in)
                                  cloud_frac_1, cloud_frac_2, &          ! Intent(in)
                                  hm1, hm2, &                            ! Intent(in)
-                                 hmp2, hmm, mixt_frac, &
+                                 hmp2, hmm, mixt_frac, &                ! Intent(in)
                                  precip_frac_1, precip_frac_2, &        ! Intent(in)
                                  sigma2_on_mu2_ip_array_cloud, &        ! Intent(in)
                                  sigma2_on_mu2_ip_array_below, &        ! Intent(in)
                                  pdf_params, d_variables, &             ! Intent(in)
+                                 l_input_fields, l_input_rrp2, &        ! Intent(in)
+                                 l_input_Nrp2, &                        ! Intent(in)
                                  mu_x_1, mu_x_2, sigma_x_1, sigma_x_2 ) ! Intent(out)
        
     ! Description:
@@ -2114,8 +2169,10 @@ module setup_clubb_pdf_params
     use corr_varnce_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
-        iiPDF_w,        &
-        iiPDF_Ncn
+        iiPDF_w,   &
+        iiPDF_Ncn, &
+        iiPDF_rr,  &
+        iiPDF_Nr
 
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
@@ -2151,6 +2208,11 @@ module setup_clubb_pdf_params
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
 
+    logical, intent(in) :: &
+      l_input_fields, & ! Flag for input fields
+      l_input_rrp2,   & ! Flag to input rrp2
+      l_input_Nrp2      ! Flag to input Nrp2
+
     ! Output Variables
     ! Note:  This code assumes to be these arrays in the same order as the
     ! correlation arrays, etc., which is determined by the iiPDF indices.
@@ -2164,6 +2226,8 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     integer :: ivar ! Loop iterator
+
+    logical :: l_input_hmp2
 
 
     !!! Enter the PDF parameters.
@@ -2288,27 +2352,39 @@ module setup_clubb_pdf_params
 
     do ivar = iiPDF_Ncn+1, d_variables
 
-       if ( precip_frac_1 * mu_x_1(ivar) > zero  &
-            .or. precip_frac_2 * mu_x_2(ivar) > zero ) then
-
-          sigma2_on_mu2_ip_array_cloud(ivar) &
-          = ( hmp2(pdf2hydromet_idx(ivar)) + hmm(pdf2hydromet_idx(ivar))**2 &
-              - mixt_frac * precip_frac_1 * mu_x_1(ivar)**2 &
-              - ( one - mixt_frac ) * precip_frac_2 * mu_x_2(ivar)**2 ) &
-            / ( mixt_frac * precip_frac_1 * mu_x_1(ivar)**2 &
-                + ( one - mixt_frac ) * precip_frac_2 * mu_x_2(ivar)**2 )
-
-       else
-
-          sigma2_on_mu2_ip_array_cloud(ivar) = zero
-
+       if ( ivar == iiPDF_rr ) then
+          l_input_hmp2 = l_input_rrp2
+       elseif ( ivar == iiPDF_Nr ) then
+          l_input_hmp2 = l_input_Nrp2
+       else ! default
+          l_input_hmp2 = .false.
        endif
 
-       if ( sigma2_on_mu2_ip_array_cloud(ivar) < 0.1_core_rknd ) then
-          sigma2_on_mu2_ip_array_cloud(ivar) = 0.11_core_rknd
-       endif
+       if ( l_input_fields .and. l_input_hmp2 ) then
 
-       sigma2_on_mu2_ip_array_below(ivar) = sigma2_on_mu2_ip_array_cloud(ivar)
+          if ( precip_frac_1 * mu_x_1(ivar) > zero  &
+               .or. precip_frac_2 * mu_x_2(ivar) > zero ) then
+
+             sigma2_on_mu2_ip_array_cloud(ivar) &
+             = ( hmp2(pdf2hydromet_idx(ivar)) + hmm(pdf2hydromet_idx(ivar))**2 &
+                 - mixt_frac * precip_frac_1 * mu_x_1(ivar)**2 &
+                 - ( one - mixt_frac ) * precip_frac_2 * mu_x_2(ivar)**2 ) &
+               / ( mixt_frac * precip_frac_1 * mu_x_1(ivar)**2 &
+                   + ( one - mixt_frac ) * precip_frac_2 * mu_x_2(ivar)**2 )
+
+          else
+
+             sigma2_on_mu2_ip_array_cloud(ivar) = zero
+
+          endif
+
+          if ( sigma2_on_mu2_ip_array_cloud(ivar) < 0.1_core_rknd ) then
+             sigma2_on_mu2_ip_array_cloud(ivar) = 0.11_core_rknd
+          endif
+
+          sigma2_on_mu2_ip_array_below(ivar) = sigma2_on_mu2_ip_array_cloud(ivar)
+
+       endif ! l_input_fields .and. l_input_hmp2
 
 
        ! Standard deviation of hydrometeor, hm, in PDF component 1.
@@ -2342,6 +2418,9 @@ module setup_clubb_pdf_params
                            pdf_params, d_variables, &
                            rtphmp_zt, thlphmp_zt, &
                            hydromet, hmxphmyp_zt, &
+                           l_input_fields, l_input_rtprrp, &
+                           l_input_rtpNrp, l_input_thlprrp, &
+                           l_input_thlpNrp, l_input_rrpNrp, &
                            corr_array_1, corr_array_2 )
 
     ! Description:
@@ -2350,12 +2429,12 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        Ncn_tol,      &
-        w_tol,        & ! [m/s]
+        Ncn_tol, &
+        w_tol,   & ! [m/s]
         rt_tol,  &
         thl_tol, &
         chi_tol, & ! [kg/kg]
-        one,          &
+        one,     &
         zero
 
     use model_flags, only: &
@@ -2380,8 +2459,10 @@ module setup_clubb_pdf_params
     use corr_varnce_module, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
-        iiPDF_w,        &
-        iiPDF_Ncn
+        iiPDF_w,   &
+        iiPDF_Ncn, &
+        iiPDF_rr,  &
+        iiPDF_Nr
 
     use array_index, only: &
         hydromet_tol
@@ -2435,6 +2516,14 @@ module setup_clubb_pdf_params
     intent(in) :: &
       hmxphmyp_zt    ! Covariance of two hydrometeors, hmx and hmy  [hmx*hmy un]
 
+    logical, intent(in) :: &
+      l_input_fields,  & ! Flag for input fields
+      l_input_rtprrp,  & ! Flag to input rtprrp
+      l_input_rtpNrp,  & ! Flag to input rtpNrp
+      l_input_thlprrp, & ! Flag to input thlprrp
+      l_input_thlpNrp, & ! Flag to input thlpNrp
+      l_input_rrpNrp     ! Flag to input rrpNrp
+
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
     intent(out) :: &
@@ -2463,6 +2552,11 @@ module setup_clubb_pdf_params
       l_limit_corr_chi_eta    ! Flag to limit the correlation of chi and eta [-]
 
     integer :: ivar, jvar ! Loop iterators
+
+    logical :: &
+      l_input_rtphmp,   &
+      l_input_thlphmp,  &
+      l_input_hmxphmyp
 
     ! ---- Begin Code ----
 
@@ -2598,32 +2692,46 @@ module setup_clubb_pdf_params
     ivar = iiPDF_chi
     do jvar = iiPDF_Ncn+1, d_variables
 
-!       corr_array_1(jvar, ivar) &
-!       = component_corr_x_hm_ip( rc_1, cloud_frac_1,&
-!                                 corr_array_cloud(jvar, ivar), &
-!                                 corr_array_below(jvar, ivar) )
+       if ( jvar == iiPDF_rr ) then
+          l_input_rtphmp  = l_input_rtprrp
+          l_input_thlphmp = l_input_thlprrp
+       elseif ( jvar == iiPDF_Nr ) then
+          l_input_rtphmp  = l_input_rtpNrp
+          l_input_thlphmp = l_input_thlpNrp
+       else ! default
+          l_input_rtphmp  = .false.
+          l_input_thlphmp = .false.
+       endif
 
-!       corr_array_2(jvar, ivar) &
-!       = component_corr_x_hm_ip( rc_2, cloud_frac_2,&
-!                                 corr_array_cloud(jvar, ivar), &
-!                                 corr_array_below(jvar, ivar) )
+       if ( l_input_fields .and. ( l_input_rtphmp .and. l_input_thlphmp ) ) then
 
-       corr_array_1(jvar, ivar) &
-       = calc_corr_chi_x( pdf_params%crt_1, pdf_params%cthl_1, &
-                          sqrt(pdf_params%varnce_rt_1), &
-                          sqrt(pdf_params%varnce_thl_1),  &
-                          pdf_params%stdev_chi_1, corr_rt_hm_1(jvar), &
-                          corr_thl_hm_1(jvar) )
+          corr_array_1(jvar, ivar) &
+          = calc_corr_chi_x( pdf_params%crt_1, pdf_params%cthl_1, &
+                             sqrt(pdf_params%varnce_rt_1), &
+                             sqrt(pdf_params%varnce_thl_1),  &
+                             pdf_params%stdev_chi_1, corr_rt_hm_1(jvar), &
+                             corr_thl_hm_1(jvar) )
 
-       corr_array_2(jvar, ivar) &
-       = calc_corr_chi_x( pdf_params%crt_2, pdf_params%cthl_2, &
-                          sqrt(pdf_params%varnce_rt_2), &
-                          sqrt(pdf_params%varnce_thl_2),  &
-                          pdf_params%stdev_chi_2, corr_rt_hm_2(jvar), &
-                          corr_thl_hm_2(jvar) )
+          corr_array_2(jvar, ivar) &
+          = calc_corr_chi_x( pdf_params%crt_2, pdf_params%cthl_2, &
+                             sqrt(pdf_params%varnce_rt_2), &
+                             sqrt(pdf_params%varnce_thl_2),  &
+                             pdf_params%stdev_chi_2, corr_rt_hm_2(jvar), &
+                             corr_thl_hm_2(jvar) )
 
-       !print *, "corr_chi_hm_1 = ", corr_array_1(jvar, ivar), &
-       !         "corr_chi_hm_2 = ", corr_array_2(jvar, ivar)
+       else
+
+          corr_array_1(jvar, ivar) &
+          = component_corr_x_hm_ip( rc_1, cloud_frac_1,&
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
+
+          corr_array_2(jvar, ivar) &
+          = component_corr_x_hm_ip( rc_2, cloud_frac_2,&
+                                    corr_array_cloud(jvar, ivar), &
+                                    corr_array_below(jvar, ivar) )
+
+       endif ! l_input_fields .and. ( l_input_rtphmp .and. l_input_thlphmp )
 
     enddo
 
@@ -2700,29 +2808,42 @@ module setup_clubb_pdf_params
     do ivar = iiPDF_Ncn+1, d_variables-1
        do jvar = ivar+1, d_variables
 
-          call calc_corr_hmx_hmy( hydromet(pdf2hydromet_idx(ivar)), &
-                                  hydromet(pdf2hydromet_idx(jvar)), &
-                                  hmxphmyp_zt(pdf2hydromet_idx(jvar),&
-                                              pdf2hydromet_idx(ivar)), &
-                                  mu_x_1(ivar), mu_x_2(ivar), &
-                                  mu_x_1(jvar), mu_x_2(jvar), &
-                                  sigma_x_1(ivar), sigma_x_2(ivar), &
-                                  sigma_x_1(jvar), sigma_x_2(jvar), &
-                                  mixt_frac, precip_frac_1, precip_frac_2, &
-                                  corr_array_1(jvar,ivar), &
-                                  corr_array_2(jvar,ivar), &
-                                  hydromet_tol(pdf2hydromet_idx(ivar)), &
-                                  hydromet_tol(pdf2hydromet_idx(jvar)) )
+          if ( ( ivar == iiPDF_rr .and. jvar == iiPDF_Nr ) &
+               .or. ( ivar == iiPDF_Nr .and. jvar == iiPDF_rr ) ) then
+             l_input_hmxphmyp = l_input_rrpNrp
+          else ! default
+             l_input_hmxphmyp = .false.
+          endif
 
-!          corr_array_1(jvar, ivar) &
-!          = component_corr_hmx_hmy_ip( rc_1, cloud_frac_1, &
-!                                       corr_array_cloud(jvar, ivar), &
-!                                       corr_array_below(jvar, ivar) )
-!
-!          corr_array_2(jvar, ivar) &
-!          = component_corr_hmx_hmy_ip( rc_2, cloud_frac_2, &
-!                                       corr_array_cloud(jvar, ivar), &
-!                                       corr_array_below(jvar, ivar) )
+          if ( l_input_fields .and. l_input_hmxphmyp ) then
+
+             call calc_corr_hmx_hmy( hydromet(pdf2hydromet_idx(ivar)), &
+                                     hydromet(pdf2hydromet_idx(jvar)), &
+                                     hmxphmyp_zt(pdf2hydromet_idx(jvar),&
+                                                 pdf2hydromet_idx(ivar)), &
+                                     mu_x_1(ivar), mu_x_2(ivar), &
+                                     mu_x_1(jvar), mu_x_2(jvar), &
+                                     sigma_x_1(ivar), sigma_x_2(ivar), &
+                                     sigma_x_1(jvar), sigma_x_2(jvar), &
+                                     mixt_frac, precip_frac_1, precip_frac_2, &
+                                     corr_array_1(jvar,ivar), &
+                                     corr_array_2(jvar,ivar), &
+                                     hydromet_tol(pdf2hydromet_idx(ivar)), &
+                                     hydromet_tol(pdf2hydromet_idx(jvar)) )
+
+          else
+
+             corr_array_1(jvar, ivar) &
+             = component_corr_hmx_hmy_ip( rc_1, cloud_frac_1, &
+                                          corr_array_cloud(jvar, ivar), &
+                                          corr_array_below(jvar, ivar) )
+
+             corr_array_2(jvar, ivar) &
+             = component_corr_hmx_hmy_ip( rc_2, cloud_frac_2, &
+                                          corr_array_cloud(jvar, ivar), &
+                                          corr_array_below(jvar, ivar) )
+
+          endif ! l_input_fields .and. l_input_hmxphmyp
 
        enddo ! jvar
     enddo ! ivar

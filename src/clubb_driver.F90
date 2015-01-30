@@ -76,9 +76,14 @@ module clubb_driver
     use numerical_check, only: invalid_model_arrays ! Procedure(s)
 
     use inputfields, only: &
-      inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
-      cleanup_input_fields, &
-      l_input_wp3                                                 ! Variable(s)
+        inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
+        cleanup_input_fields, &
+        l_input_wp3, &                                            ! Variable(s)
+        l_input_precip_frac, &
+        l_input_rrp2, l_input_Nrp2, &
+        l_input_rtprrp, l_input_rtpNrp, &
+        l_input_thlprrp, l_input_thlpNrp, &
+        l_input_rrpNrp
 
     use inputfields, only: stat_files
 
@@ -1329,6 +1334,11 @@ module clubb_driver
                                     corr_array_cloud, corr_array_below, &       ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
+                                    l_input_fields, l_input_precip_frac, &      ! Intent(in)
+                                    l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+                                    l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
+                                    l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
+                                    l_input_rrpNrp, &                           ! Intent(in)
                                     hydrometp2, &                               ! Intent(inout)
                                     mu_x_1, mu_x_2, &                           ! Intent(out)
                                     sigma_x_1, sigma_x_2, &                     ! Intent(out)

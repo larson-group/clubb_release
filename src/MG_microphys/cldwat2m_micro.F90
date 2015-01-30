@@ -1844,6 +1844,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma2_on_mu2_ip_array_cloud, & ! Intent(in)
                                           sigma2_on_mu2_ip_array_below, & ! Intent(in)
                                           pdf_params(k), d_variables, & ! Intent(in)
+                                          .false., .false., .false., & ! Intent(in)
                                           mu_x_1, mu_x_2, & ! Intent(out)
                                           sigma_x_1, sigma_x_2 ) ! Intent(out)
 
@@ -1868,6 +1869,9 @@ subroutine mmicro_pcond ( sub_column,           &
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, &
                                     hydromet, hmxphmyp_zt, &
+                                    .false., .false., &
+                                    .false., .false., &
+                                    .false., .false., &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
@@ -2401,6 +2405,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                   sigma2_on_mu2_ip_array_cloud, &              ! Intent(in)
                                   sigma2_on_mu2_ip_array_below, &              ! Intent(in)
                                   pdf_params(k), d_variables, & ! Intent(in)
+                                  .false., .false., .false., & ! Intent(in)
                                   mu_x_1, mu_x_2, & ! Intent(out)
                                   sigma_x_1, sigma_x_2 ) ! Intent(out)
 
@@ -2425,6 +2430,9 @@ subroutine mmicro_pcond ( sub_column,           &
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, &
                                     hydromet, hmxphmyp_zt, &
+                                    .false., .false., &
+                                    .false., .false., &
+                                    .false., .false., &
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
                  call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
