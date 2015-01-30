@@ -18,6 +18,7 @@ module pdf_utilities
             compute_mean_binormal,     &
             compute_variance_binormal, &
             calc_corr_chi_x,           &
+            calc_corr_eta_x,           &
             calc_corr_rt_x,            &
             calc_corr_thl_x,           &
             calc_xp2
@@ -633,6 +634,114 @@ module pdf_utilities
     return
 
   end function calc_corr_chi_x
+
+  !=============================================================================
+  pure function calc_corr_eta_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
+                                 sigma_eta_i, corr_rt_x_i, corr_thl_x_i )  &
+  result( corr_eta_x_i )
+
+    ! Description:
+    ! This function calculates the correlation of eta (old t), which is
+    ! orthogonal to extended liquid water mixing ratio, chi (old s), and a
+    ! generic variable x, within the ith component of the PDF.  The variable
+    ! eta can be split into mean and turbulent components, such that:
+    !
+    ! eta = <eta> + eta';
+    !
+    ! where < > denotes a mean field an ' denotes a turbulent component.
+    !
+    ! The linearized equation for eta' is given in Larson et al. (2001), where
+    ! within the ith component of the PDF:
+    !
+    ! eta_(i)' = Coef_rt(i) * r_t(i)' + Coef_thl(i) * th_l(i)'.
+    !
+    ! The equation for eta' can be multiplied by x'.  The equation becomes:
+    !
+    ! eta'x'_(i) = Coef_rt(i) * r_t'x'_(i) + Coef_thl(i) * th_l'x'_(i).
+    !
+    ! Averaging both sides, the covariance <eta'x'> is given by the equation:
+    !
+    ! <eta'x'_(i)> = Coef_rt(i) * <r_t'x'_(i)> + Coef_thl(i) * <th_l'x'_(i)>.
+    !
+    ! This equation can be rewritten as:
+    !
+    ! sigma_eta(i) * sigma_x(i) * corr_eta_x(i)
+    !   = Coef_rt(i) * sigma_rt(i) * sigma_x(i) * corr_rt_x(i)
+    !     + Coef_thl(i) * sigma_thl(i) * sigma_x(i) * corr_thl_x(i).
+    !
+    ! This equation can be solved for corr_eta_x(i):
+    !
+    ! corr_eta_x(i)
+    ! = Coef_rt(i) * ( sigma_rt(i) / sigma_eta(i) ) * corr_rt_x(i)
+    !   + Coef_thl(i) * ( sigma_thl(i) / sigma_eta(i) ) * corr_thl_x(i).
+    !
+    ! The correlation of eta and x within the ith component of the PDF is
+    ! calculated.
+
+    ! References:
+    !  Larson, V. E., R. Wood, P. R. Field, J.-C. Golaz, T. H. Vonder Haar,
+    !    W. R. Cotton, 2001: Systematic Biases in the Microphysics and
+    !    Thermodynamics of Numerical Models That Ignore Subgrid-Scale
+    !    Variability. J. Atmos. Sci., 58, 1117--1128.
+    !  -- Eq. 13 and 14.
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero,                & ! Constant(s)
+        eta_tol,             &
+        max_mag_correlation
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      crt_i,        & ! Coef. of r_t: chi/eta eqns. (ith PDF comp.)          [-]
+      cthl_i,       & ! Coef. of th_l: chi/eta eqns. (ith PDF comp.) [(kg/kg)/K]
+      sigma_rt_i,   & ! Standard deviation of r_t (ith PDF component)    [kg/kg]
+      sigma_thl_i,  & ! Standard deviation of th_l (ith PDF component)       [K]
+      sigma_eta_i,  & ! Standard deviation of eta (ith PDF component)    [kg/kg]
+      corr_rt_x_i,  & ! Correlation of r_t and x (ith PDF component)         [-]
+      corr_thl_x_i    ! Correlation of th_l and x (ith PDF component)        [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      corr_eta_x_i  ! Correlation of eta and x (ith PDF component)   [-]
+
+
+    ! Calculate the correlation of eta and x in the ith PDF component.
+    if ( sigma_eta_i > eta_tol ) then
+
+       corr_eta_x_i = crt_i * ( sigma_rt_i / sigma_eta_i ) * corr_rt_x_i  &
+                      + cthl_i * ( sigma_thl_i / sigma_eta_i ) * corr_thl_x_i
+
+    else  ! sigma_eta_i = 0
+
+       ! The standard deviation of eta in the ith PDF component is 0.  This
+       ! means that eta is constant within the ith PDF component, and the ith
+       ! PDF component covariance of eta and x is also 0.  The correlation of
+       ! eta and x is undefined in the ith PDF component, so a value of 0 will
+       ! be used.
+       corr_eta_x_i = zero
+
+    endif
+
+    ! Clip the magnitude of the correlation of eta and x in the ith PDF
+    ! component, just in case the correlations and standard deviations used in
+    ! calculating it are inconsistent, resulting in an unrealizable value for
+    ! corr_eta_x_i.
+    if ( corr_eta_x_i > max_mag_correlation ) then
+       corr_eta_x_i = max_mag_correlation
+    elseif ( corr_eta_x_i < -max_mag_correlation ) then
+       corr_eta_x_i = -max_mag_correlation
+    endif
+
+
+    return
+
+  end function calc_corr_eta_x
 
   !=============================================================================
   pure function calc_corr_rt_x( crt_i, sigma_rt_i, sigma_chi_i, &

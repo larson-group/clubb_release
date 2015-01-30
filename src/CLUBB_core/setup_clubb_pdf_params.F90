@@ -2468,7 +2468,8 @@ module setup_clubb_pdf_params
         hydromet_tol
 
     use pdf_utilities, only: &
-        calc_corr_chi_x
+        calc_corr_chi_x, & ! Procedure(s)
+        calc_corr_eta_x
 
     implicit none
 
@@ -2753,13 +2754,46 @@ module setup_clubb_pdf_params
     ! Correlation of eta (old t) and the hydrometeors
     ivar = iiPDF_eta
     do jvar = iiPDF_Ncn+1, d_variables
-      corr_array_1(jvar, ivar) &
-      = component_corr_eta_hm_ip( corr_array_1( iiPDF_eta, iiPDF_chi), &
-                                  corr_array_1( jvar, iiPDF_chi) )
 
-      corr_array_2(jvar, ivar) &
-      = component_corr_eta_hm_ip( corr_array_2( iiPDF_eta, iiPDF_chi), &
-                                  corr_array_2( jvar, iiPDF_chi) )
+       if ( jvar == iiPDF_rr ) then
+          l_input_rtphmp  = l_input_rtprrp
+          l_input_thlphmp = l_input_thlprrp
+       elseif ( jvar == iiPDF_Nr ) then
+          l_input_rtphmp  = l_input_rtpNrp
+          l_input_thlphmp = l_input_thlpNrp
+       else ! default
+          l_input_rtphmp  = .false.
+          l_input_thlphmp = .false.
+       endif
+
+       if ( l_input_fields .and. ( l_input_rtphmp .and. l_input_thlphmp ) ) then
+
+          corr_array_1(jvar, ivar) &
+          = calc_corr_eta_x( pdf_params%crt_1, pdf_params%cthl_1, &
+                             sqrt(pdf_params%varnce_rt_1), &
+                             sqrt(pdf_params%varnce_thl_1),  &
+                             pdf_params%stdev_eta_1, corr_rt_hm_1(jvar), &
+                             corr_thl_hm_1(jvar) )
+
+          corr_array_2(jvar, ivar) &
+          = calc_corr_eta_x( pdf_params%crt_2, pdf_params%cthl_2, &
+                             sqrt(pdf_params%varnce_rt_2), &
+                             sqrt(pdf_params%varnce_thl_2),  &
+                             pdf_params%stdev_eta_2, corr_rt_hm_2(jvar), &
+                             corr_thl_hm_2(jvar) )
+
+       else
+
+          corr_array_1(jvar, ivar) &
+          = component_corr_eta_hm_ip( corr_array_1( iiPDF_eta, iiPDF_chi), &
+                                      corr_array_1( jvar, iiPDF_chi) )
+
+          corr_array_2(jvar, ivar) &
+          = component_corr_eta_hm_ip( corr_array_2( iiPDF_eta, iiPDF_chi), &
+                                      corr_array_2( jvar, iiPDF_chi) )
+
+       endif ! l_input_fields .and. ( l_input_rtphmp .and. l_input_thlphmp )
+
     enddo
 
 
