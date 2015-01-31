@@ -1395,7 +1395,7 @@ module latin_hypercube_driver_module
 
     ! Local Constants
     real( kind = core_rknd ), parameter :: &
-      prob_thresh = 1.0e-8_core_rknd
+      prob_thresh = 5.0e-3_core_rknd
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
