@@ -37,6 +37,8 @@ plot_chi_Nr  = true;
 plot_eta_rr  = true;
 plot_eta_Nr  = true;
 plot_rr_Nr   = true;
+plot_ln_rr   = true;
+plot_ln_Nr   = true;
 
 %==========================================================================
 
@@ -578,6 +580,49 @@ else
    voms_ip_Nr_sam = 0.0;
 end
 
+% Calculate the mean, variance, 3rd-order central moment, and skewness of
+% ln rr for all rr in precip. (where rr > 0) for SAM LES.
+count_lnrr = 0;
+for idx = 1:1:nx_sam*ny_sam
+   if ( sam_var_lev(idx_3D_rr,idx) > 0.0 )
+      count_lnrr = count_lnrr + 1;
+      sam_lnrr(count_lnrr) = log( sam_var_lev(idx_3D_rr,idx) );
+   end
+end
+if ( count_lnrr > 0 )
+   mean_lnrr_sam = mean( sam_lnrr );
+   sum_lnrr2 = 0.0;
+   sum_lnrr3 = 0.0;
+   for idx = 1:1:count_lnrr
+      sum_lnrr2 = sum_lnrr2 + ( sam_lnrr(idx) - mean_lnrr_sam )^2;
+      sum_lnrr3 = sum_lnrr3 + ( sam_lnrr(idx) - mean_lnrr_sam )^3;
+   end
+   lnrrp2_sam = sum_lnrr2 / count_lnrr;
+   lnrrp3_sam = sum_lnrr3 / count_lnrr;
+   Sk_lnrr_sam = lnrrp3_sam / lnrrp2_sam^1.5;
+end % count_lnrr > 0
+count_lnNr = 0;
+for idx = 1:1:nx_sam*ny_sam
+   if ( sam_var_lev(idx_3D_Nr,idx) > 0.0 )
+      count_lnNr = count_lnNr + 1;
+      sam_lnNr(count_lnNr) = log( sam_var_lev(idx_3D_Nr,idx) );
+   end
+end
+% Calculate the mean, variance, 3rd-order central moment, and skewness of
+% ln Nr for all Nr in precip. (where Nr > 0) for SAM LES.
+if ( count_lnNr > 0 )
+   mean_lnNr_sam = mean( sam_lnNr );
+   sum_lnNr2 = 0.0;
+   sum_lnNr3 = 0.0;
+   for idx = 1:1:count_lnNr
+      sum_lnNr2 = sum_lnNr2 + ( sam_lnNr(idx) - mean_lnNr_sam )^2;
+      sum_lnNr3 = sum_lnNr3 + ( sam_lnNr(idx) - mean_lnNr_sam )^3;
+   end
+   lnNrp2_sam = sum_lnNr2 / count_lnNr;
+   lnNrp3_sam = sum_lnNr3 / count_lnNr;
+   Sk_lnNr_sam = lnNrp3_sam / lnNrp2_sam^1.5;
+end % count_lnNr > 0
+
 % Calculations for hydrometeor fields based on CLUBB PDF parameters.
 rrm_clubb_pdf = mixt_frac * precip_frac_1 ...
                 * exp( mu_rr_1_n + 0.5 * sigma_rr_1_n^2 ) ...
@@ -673,6 +718,7 @@ fprintf( 'SAM mean (i.p.) of rr = %g\n', mean_rr_ip_sam );
 fprintf( 'SAM variance (i.p.) of rr = %g\n', rrp2_ip_sam );
 fprintf( 'SAM 3rd moment (i.p.) of rr = %g\n', rrp3_ip_sam );
 fprintf( 'SAM skewness (i.p.) of rr = %g\n', Skrr_ip_sam );
+fprintf( 'SAM skewness (i.p.) of ln rr = %g\n', Sk_lnrr_sam );
 fprintf( 'SAM v.o.m.s (i.p.) of rr = %g\n', voms_ip_rr_sam );
 fprintf( 'CLUBB PDF mean (i.p.) of rr = %g\n', rrm_ip_clubb_pdf );
 fprintf( 'CLUBB PDF variance (i.p.) of rr = %g\n', rrp2_ip_clubb_pdf );
@@ -695,6 +741,7 @@ fprintf( 'SAM mean (i.p.) of Nr = %g\n', mean_Nr_ip_sam );
 fprintf( 'SAM variance (i.p.) of Nr = %g\n', Nrp2_ip_sam );
 fprintf( 'SAM 3rd moment (i.p.) of Nr = %g\n', Nrp3_ip_sam );
 fprintf( 'SAM skewness (i.p.) of Nr = %g\n', SkNr_ip_sam );
+fprintf( 'SAM skewness (i.p.) of ln Nr = %g\n', Sk_lnNr_sam );
 fprintf( 'SAM v.o.m.s (i.p.) of Nr = %g\n', voms_ip_Nr_sam );
 fprintf( 'CLUBB PDF mean (i.p.) of Nr = %g\n', Nrm_ip_clubb_pdf );
 fprintf( 'CLUBB PDF variance (i.p.) of Nr = %g\n', Nrp2_ip_clubb_pdf );
@@ -724,6 +771,7 @@ if ( all( sam_var_lev(idx_3D_rr,:) == 0.0 ) )
    plot_chi_rr = false;
    plot_eta_rr = false;
    plot_rr_Nr  = false;
+   plot_ln_rr  = false;
 
 end
 
@@ -740,6 +788,7 @@ if ( all( sam_var_lev(idx_3D_Nr,:) == 0.0 ) )
    plot_chi_Nr = false;
    plot_eta_Nr = false;
    plot_rr_Nr  = false;
+   plot_ln_Nr  = false;
 
 end
  
@@ -1109,3 +1158,57 @@ if ( plot_rr_Nr )
    print( '-dpng', output_filename );
 
 end % plot_rr_Nr
+
+% Plot the CLUBB PDF and LES points for ln rr.
+if ( plot_ln_rr )
+
+   fprintf( 'Plotting marginal plot for ln rr\n' );
+
+   % The number of ln rr bins/points to plot.
+   num_rr_pts = 100;
+
+   plot_CLUBB_PDF_LES_pts_ln_L( sam_var_lev(idx_3D_rr,:), ...
+                                nx_sam, ny_sam, ...
+                                num_rr_pts, ...
+                                mu_rr_1_n, mu_rr_2_n, ...
+                                sigma_rr_1_n, sigma_rr_2_n, ...
+                                precip_frac_1, precip_frac_2, ...
+                                mixt_frac, 'ln r_{r}    [ln(kg/kg)]', ...
+                                [ '\bf ', casename ], 'ln r_{r}', ...
+                                [ 'Time = ', print_time, ' minutes' ], ...
+                                [ 'Altitude = ', print_alt, ' meters' ], ...
+                                print_note )
+
+   output_filename = [ 'output/', casename, '_ln_rr_z', ...
+                       print_alt, '_t', print_time ];
+
+   print( '-dpng', output_filename );
+
+end % plot_w_rr
+
+% Plot the CLUBB PDF and LES points for ln Nr.
+if ( plot_ln_Nr )
+
+   fprintf( 'Plotting marginal plot for ln Nr\n' );
+
+   % The number of ln Nr bins/points to plot.
+   num_Nr_pts = 100;
+
+   plot_CLUBB_PDF_LES_pts_ln_L( sam_var_lev(idx_3D_Nr,:), ...
+                                nx_sam, ny_sam, ...
+                                num_Nr_pts, ...
+                                mu_Nr_1_n, mu_Nr_2_n, ...
+                                sigma_Nr_1_n, sigma_Nr_2_n, ...
+                                precip_frac_1, precip_frac_2, ...
+                                mixt_frac, 'ln N_{r}    [ln(num/kg)]', ...
+                                [ '\bf ', casename ], 'ln N_{r}', ...
+                                [ 'Time = ', print_time, ' minutes' ], ...
+                                [ 'Altitude = ', print_alt, ' meters' ], ...
+                                print_note )
+
+   output_filename = [ 'output/', casename, '_ln_Nr_z', ...
+                       print_alt, '_t', print_time ];
+
+   print( '-dpng', output_filename );
+
+end % plot_w_rr
