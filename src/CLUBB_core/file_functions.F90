@@ -63,6 +63,12 @@ module file_functions
     integer :: ierr
 
     ! ---- Begin Code ----
+! A ThreadLock is necessary here because FORTRAN can only have each file open on
+! one file_unit at a time. For example, suppose we are running CLUBB in parallel
+! with OpenMP using two threads. Suppose the first thread opens the file with file_unit = 0
+! (file_unit is assigned a value based on thread number).
+! Then suppose, that before thread 1 exits, thread 2 opens the same file with file_unit = 1.
+! This would cause FORTRAN to crash.
 !$omp critical
 
     ! Open data file.

@@ -8,7 +8,7 @@
 #
 #######################################################################
 # Useful on SMP machines with OpenMP
-# The tuner is capable of tuning on case per processor if compiled with
+# The tuner is capable of tuning one case per processor if compiled with
 # OpenMP compiler flags.
 OMP_NUM_THREADS=2
 #######################################################################
@@ -267,8 +267,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    for EACH_CASE in "${MODEL_MULT[@]}"; do
 		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
 		# Concatenate *_model.in and *_stats.in into hoc.in
-		# cat $PARAMS_FILE $MODEL_FILE $STATS_OPT_IN $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-                cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
 		../bin/clubb_standalone
    done
 

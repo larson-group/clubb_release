@@ -116,6 +116,7 @@ module sponge_layer_damping
 ! However, for steady profiles of xm_ref, it won't matter.        
         xm_p(k) = ( xm(k) + dt_on_tau * xm_ref(k) ) / &
                         ( 1.0_core_rknd + dt_on_tau )
+! End Vince Larson's change
       end do ! k
 
     else
