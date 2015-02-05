@@ -63,6 +63,7 @@ module file_functions
     integer :: ierr
 
     ! ---- Begin Code ----
+!$omp critical
 
     ! Open data file.
     open( unit=file_unit, file=path_and_filename, action='read', status='old', &
@@ -91,6 +92,8 @@ module file_functions
 
     ! Close data file.
     close( file_unit )
+
+!$omp end critical
 
     return
 

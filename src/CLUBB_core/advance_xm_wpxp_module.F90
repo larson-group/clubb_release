@@ -813,6 +813,7 @@ module advance_xm_wpxp_module
       if( l_stats_samp ) then
         call stat_begin_update( irtm_sdmp, rtm / dt, stats_zt )
       end if
+
       rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
                                        rtm_sponge_damp_profile )
 

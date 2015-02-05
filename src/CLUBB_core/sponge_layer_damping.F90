@@ -44,11 +44,13 @@ module sponge_layer_damping
     thlm_sponge_damp_settings, &
     rtm_sponge_damp_settings, &
     uv_sponge_damp_settings
+!$OMP THREADPRIVATE(thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings)
 
   type(sponge_damp_profile), public :: &
     thlm_sponge_damp_profile, &
     rtm_sponge_damp_profile, &
     uv_sponge_damp_profile
+!$OMP THREADPRIVATE(thlm_sponge_damp_profile, rtm_sponge_damp_profile, uv_sponge_damp_profile)
 
 
   private
@@ -101,7 +103,7 @@ module sponge_layer_damping
     if ( associated( damping_profile%tau_sponge_damp ) ) then
 
       xm_p = xm
-
+     
       do k = gr%nz, gr%nz-damping_profile%n_sponge_damp, -1
 
 ! Vince Larson used implicit discretization in order to 
@@ -114,7 +116,6 @@ module sponge_layer_damping
 ! However, for steady profiles of xm_ref, it won't matter.        
         xm_p(k) = ( xm(k) + dt_on_tau * xm_ref(k) ) / &
                         ( 1.0_core_rknd + dt_on_tau )
-! End Vince Larson's change
       end do ! k
 
     else
