@@ -17,18 +17,17 @@ clubb_file = '/home/weberjk/Summarize_Progress/CLUBB/output/prescribe_thl_thlp2_
 savedir = '/home/weberjk/Summarize_Progress/'
 save_filename = 'LBA_warmrain.png'
 
-z0 = 0 # [m]
-z1 = 6000 
+z0 = 0    # Height start [m]
+z1 = 6000 # Height end
 
-t0 = 189 # [min]
-t1 = 249
-
-t0_in_s = t0*60. # CLUBB's time is in seconds.
-t1_in_s = t1*60.
+t0 = 189  # Averaging interval start [min]
+t1 = 249  # Averaging interval end
 
 #----------------------------------------------------------------------------------------
 # Should not have to edit below this line. That is, the warrenty is void if you do.
 #----------------------------------------------------------------------------------------
+t0_in_s = t0*60. # CLUBB's time is in seconds.
+t1_in_s = t1*60.
 
 def pull_profiles(nc, varname):
     var = nc.variables[varname]
