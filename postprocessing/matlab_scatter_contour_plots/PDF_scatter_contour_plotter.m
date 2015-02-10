@@ -645,13 +645,13 @@ Nrp2_clubb_pdf = mixt_frac * precip_frac_1 ...
 rrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
                  * exp( 3.0 * mu_rr_1_n + 4.5 * sigma_rr_1_n^2 ) ...
                  + ( 1.0 - mixt_frac ) * precip_frac_2 ...
-                   * exp( 3.0 * mu_rr_2_n + 4.0 * sigma_rr_2_n^2 ) ...
+                   * exp( 3.0 * mu_rr_2_n + 4.5 * sigma_rr_2_n^2 ) ...
                  - 3.0 * rrp2_clubb_pdf * rrm_clubb_pdf ...
                  - rrm_clubb_pdf^3;
 Nrp3_clubb_pdf = mixt_frac * precip_frac_1 ...
                  * exp( 3.0 * mu_Nr_1_n + 4.5 * sigma_Nr_1_n^2 ) ...
                  + ( 1.0 - mixt_frac ) * precip_frac_2 ...
-                   * exp( 3.0 * mu_Nr_2_n + 4.0 * sigma_Nr_2_n^2 ) ...
+                   * exp( 3.0 * mu_Nr_2_n + 4.5 * sigma_Nr_2_n^2 ) ...
                  - 3.0 * Nrp2_clubb_pdf * Nrm_clubb_pdf ...
                  - Nrm_clubb_pdf^3;
 
@@ -695,6 +695,40 @@ else
    voms_ip_Nr_clubb_pdf = 0.0;
 end
 
+% Calculate the mean, variance, 3rd-order central moment, and skewness of
+% ln rr for all rr in precip. (where rr > 0) for CLUBB.
+precip_frac ...
+= mixt_frac * precip_frac_1 + ( 1.0 - mixt_frac ) * precip_frac_2;
+
+if ( mu_rr_1_n > -realmax('single') && mu_rr_2_n > -realmax('single') )
+   mean_lnrr_clubb_pdf ...
+   = mixt_frac * ( precip_frac_1 / precip_frac ) * mu_rr_1_n ...
+     + ( 1.0 - mixt_frac ) * ( precip_frac_2 / precip_frac ) * mu_rr_2_n;
+elseif ( mu_rr_1_n > -realmax('single') )
+   mean_lnrr_clubb_pdf ...
+   = mixt_frac * ( precip_frac_1 / precip_frac ) * mu_rr_1_n;
+elseif ( mu_rr_2_n > -realmax('single') )
+   mean_lnrr_clubb_pdf ...
+   = ( 1.0 - mixt_frac ) * ( precip_frac_2 / precip_frac ) * mu_rr_2_n;
+else
+   mean_lnrr_clubb_pdf = -realmax('single');
+end
+
+if ( mu_Nr_1_n > -realmax('single') && mu_Nr_2_n > -realmax('single') )
+   mean_lnNr_clubb_pdf ...
+   = mixt_frac * ( precip_frac_1 / precip_frac ) * mu_Nr_1_n ...
+     + ( 1.0 - mixt_frac ) * ( precip_frac_2 / precip_frac ) * mu_Nr_2_n;
+elseif ( mu_Nr_1_n > -realmax('single') )
+   mean_lnNr_clubb_pdf ...
+   = mixt_frac * ( precip_frac_1 / precip_frac ) * mu_Nr_1_n;
+elseif ( mu_Nr_2_n > -realmax('single') )
+   mean_lnNr_clubb_pdf ...
+   = ( 1.0 - mixt_frac ) * ( precip_frac_2 / precip_frac ) * mu_Nr_2_n;
+else
+   mean_lnNr_clubb_pdf = -realmax('single');
+end
+
+
 % Print the values of hydrometeor statistics.
 % Note:  v.o.m.s. stands for variance over mean-squared.
 fprintf( '\n' )
@@ -718,13 +752,17 @@ fprintf( 'SAM mean (i.p.) of rr = %g\n', mean_rr_ip_sam );
 fprintf( 'SAM variance (i.p.) of rr = %g\n', rrp2_ip_sam );
 fprintf( 'SAM 3rd moment (i.p.) of rr = %g\n', rrp3_ip_sam );
 fprintf( 'SAM skewness (i.p.) of rr = %g\n', Skrr_ip_sam );
-fprintf( 'SAM skewness (i.p.) of ln rr = %g\n', Sk_lnrr_sam );
 fprintf( 'SAM v.o.m.s (i.p.) of rr = %g\n', voms_ip_rr_sam );
+fprintf( 'SAM mean (i.p.) of ln rr = %g\n', mean_lnrr_sam );
+fprintf( 'SAM variance (i.p.) of ln rr = %g\n', lnrrp2_sam );
+fprintf( 'SAM 3rd moment (i.p.) of ln rr = %g\n', lnrrp3_sam );
+fprintf( 'SAM skewness (i.p.) of ln rr = %g\n', Sk_lnrr_sam );
 fprintf( 'CLUBB PDF mean (i.p.) of rr = %g\n', rrm_ip_clubb_pdf );
 fprintf( 'CLUBB PDF variance (i.p.) of rr = %g\n', rrp2_ip_clubb_pdf );
 fprintf( 'CLUBB PDF 3rd moment (i.p.) of rr = %g\n', rrp3_ip_clubb_pdf );
 fprintf( 'CLUBB PDF skewness (i.p.) of rr = %g\n', Skrr_ip_clubb_pdf );
 fprintf( 'CLUBB PDF v.o.m.s (i.p.) of rr = %g\n', voms_ip_rr_clubb_pdf );
+fprintf( 'CLUBB PDF mean (i.p.) of ln rr = %g\n', mean_lnrr_clubb_pdf );
 fprintf( '\n' )
 fprintf( 'Rain drop concentration, Nr\n' )
 fprintf( 'Overall values:\n' )
@@ -741,13 +779,17 @@ fprintf( 'SAM mean (i.p.) of Nr = %g\n', mean_Nr_ip_sam );
 fprintf( 'SAM variance (i.p.) of Nr = %g\n', Nrp2_ip_sam );
 fprintf( 'SAM 3rd moment (i.p.) of Nr = %g\n', Nrp3_ip_sam );
 fprintf( 'SAM skewness (i.p.) of Nr = %g\n', SkNr_ip_sam );
-fprintf( 'SAM skewness (i.p.) of ln Nr = %g\n', Sk_lnNr_sam );
 fprintf( 'SAM v.o.m.s (i.p.) of Nr = %g\n', voms_ip_Nr_sam );
+fprintf( 'SAM mean (i.p.) of ln Nr = %g\n', mean_lnNr_sam );
+fprintf( 'SAM variance (i.p.) of ln Nr = %g\n', lnNrp2_sam );
+fprintf( 'SAM 3rd moment (i.p.) of ln Nr = %g\n', lnNrp3_sam );
+fprintf( 'SAM skewness (i.p.) of ln Nr = %g\n', Sk_lnNr_sam );
 fprintf( 'CLUBB PDF mean (i.p.) of Nr = %g\n', Nrm_ip_clubb_pdf );
 fprintf( 'CLUBB PDF variance (i.p.) of Nr = %g\n', Nrp2_ip_clubb_pdf );
 fprintf( 'CLUBB PDF 3rd moment (i.p.) of Nr = %g\n', Nrp3_ip_clubb_pdf );
 fprintf( 'CLUBB PDF skewness (i.p.) of Nr = %g\n', SkNr_ip_clubb_pdf );
 fprintf( 'CLUBB PDF v.o.m.s (i.p.) of Nr = %g\n', voms_ip_Nr_clubb_pdf );
+fprintf( 'CLUBB PDF mean (i.p.) of ln Nr = %g\n', mean_lnNr_clubb_pdf );
 
 % Print a blank line after the calculations have been printed.
 fprintf( '\n' )
