@@ -138,7 +138,8 @@ contains
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
          ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
-           X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in)
+           X_nl_all_levs, X_mixt_comp_all_levs, &                    ! Intent(in)
+           lh_sample_point_weights, &                                ! Intent(in)
            p_in_Pa, exner, rho, &                                    ! Intent(in)
            delta_zt, hydromet, rcm, &                                ! Intent(in)
            lh_clipped_vars, &                                        ! Intent(in)

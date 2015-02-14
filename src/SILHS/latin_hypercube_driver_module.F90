@@ -18,7 +18,7 @@ module latin_hypercube_driver_module
     prior_iter ! Prior iteration number (for diagnostic purposes)
 !$omp threadprivate( prior_iter )
 
-  integer, parameter, private :: &
+  integer, parameter, public :: &
     num_importance_categories = 8 ! Number of importance sampling categories
                                   ! ( e.g., (cloud,precip,comp1) )
 
@@ -42,7 +42,7 @@ module latin_hypercube_driver_module
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, &
     generate_strat_uniform_variate, pick_sample_categories, &
-    clip_transform_silhs_output
+    clip_transform_silhs_output, define_importance_categories, importance_category_type
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
 
@@ -669,7 +669,7 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
-      d_variables            ! Number of variates in X_nl_one_lev
+      d_variables            ! Number of variates in X_nl
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)

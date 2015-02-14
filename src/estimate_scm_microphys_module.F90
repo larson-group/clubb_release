@@ -14,7 +14,7 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               X_nl_all_levs, lh_sample_point_weights, &
+               X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
                lh_clipped_vars, &
@@ -56,9 +56,11 @@ module estimate_scm_microphys_module
       core_rknd
 
     use stats_variables, only: &
-      stats_zt,           &
+      stats_zt,           & ! Variable(s)
       stats_sfc,          &
-      l_stats_samp ! Variable(s)
+      isilhs_variance_category, &
+      irrm_auto,          &
+      l_stats_samp
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
@@ -87,6 +89,9 @@ module estimate_scm_microphys_module
     use lh_microphys_var_covar_module, only: &
       lh_microphys_var_covar_driver   ! Procedure
 
+    use silhs_category_variance_module, only: &
+      silhs_category_variance_driver  ! Procedure
+
     implicit none
 
     ! External
@@ -108,7 +113,10 @@ module estimate_scm_microphys_module
       d_variables      ! Number of variates
 
     real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs    ! Mixture component of each sample
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
@@ -281,6 +289,18 @@ module estimate_scm_microphys_module
                                 lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                 ! intent(out)
     end if
+
+    ! Invoke the SILHS category variance sampler (if desired by user)!!
+    if ( isilhs_variance_category(1) > 0 ) then
+
+      if ( l_stats_samp ) then
+        call silhs_category_variance_driver &
+             ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs,  & ! Intent(in)
+               irrm_auto, microphys_stats_zt_all, microphys_stats_zt_avg,          & ! Intent(in)
+               lh_sample_point_weights )                                             ! Intent(in)
+      end if
+
+    end if ! isilhs_variance_category(1) > 0
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples

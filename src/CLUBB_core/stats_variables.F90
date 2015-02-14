@@ -207,6 +207,11 @@ module stats_variables
 !$omp threadprivate( icorr_w_Ncn_1_n, icorr_w_Ncn_2_n, icorr_chi_Ncn_1_n, &
 !$omp   icorr_chi_Ncn_2_n, icorr_eta_Ncn_1_n, icorr_eta_Ncn_2_n )
 
+  integer, dimension(:), allocatable, public :: &
+    isilhs_variance_category
+
+!$omp threadprivate( isilhs_variance_category )
+
   integer, public :: & 
      iNcm = 0,             & ! Brian
      iNccnm = 0,           & 
