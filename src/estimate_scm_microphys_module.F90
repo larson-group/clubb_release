@@ -294,12 +294,16 @@ module estimate_scm_microphys_module
 
     if ( l_stats_samp ) then
 
-      if ( isilhs_variance_category(1) > 0 ) then
-        call silhs_category_variance_driver &
-             ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs,  & ! Intent(in)
-               irrm_auto, microphys_stats_zt_all, microphys_stats_zt_avg,          & ! Intent(in)
-               lh_sample_point_weights )                                             ! Intent(in)
-      end if ! isilhs_variance_category(1) > 0
+      if ( allocated( isilhs_variance_category ) ) then
+
+        if( isilhs_variance_category(1) > 0 ) then
+          call silhs_category_variance_driver &
+               ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs,  & ! Intent(in)
+                 irrm_auto, microphys_stats_zt_all, microphys_stats_zt_avg,          & ! Intent(in)
+                 lh_sample_point_weights )                                             ! Intent(in)
+        end if ! isilhs_variance_category(1) > 0
+
+      end if ! allocated( isilhs_variance_category ) 
 
     end if ! l_stats_samp
 
