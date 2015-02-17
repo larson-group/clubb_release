@@ -639,10 +639,11 @@ module stats_lh_zt_module
       case ( 'silhs_variance_category' )
 
         do icategory=1, silhs_num_importance_categories
+
           isilhs_variance_category(icategory) = k
           write(category_num_as_string,'(I1)') icategory
           call stat_assign( var_index=isilhs_variance_category(icategory), &
-               var_name="silhs_variance_category_"//category_num_as_string, &
+               var_name="silhs_var_cat_"//category_num_as_string, &
                var_description="Variance of SILHS variable in importance category " // &
                category_num_as_string, var_units="various", l_silhs=.false., grid_kind=stats_lh_zt )
           k = k + 1
