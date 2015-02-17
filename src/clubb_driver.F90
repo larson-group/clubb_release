@@ -346,6 +346,11 @@ module clubb_driver
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields    ! Whether to set model variables from a file
 
+    logical :: l_use_Ncn_to_Nc ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                               ! Ncn_to_Nc might cause problems with the MG microphysics 
+                               ! since the changes made here (Nc-tendency) are not fed into 
+                               ! the microphysics
+
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
 
@@ -570,6 +575,8 @@ module clubb_driver
     iiedsclr_CO2 = -1
 
     sclr_tol(1:sclr_max) = 1.e-2_core_rknd
+
+    l_use_Ncn_to_Nc = .true.
 
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
@@ -1358,7 +1365,7 @@ module clubb_driver
 
         call clip_transform_silhs_output &
              ( gr%nz, lh_num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
-               pdf_params, & ! In
+               pdf_params, l_use_Ncn_to_Nc, & ! In
                lh_clipped_vars ) ! Out
 
         call stats_accumulate_lh &

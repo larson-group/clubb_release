@@ -245,8 +245,7 @@ contains
 
   subroutine clip_transform_silhs_output_api( nz, num_samples, d_variables, &        ! In
                                               X_mixt_comp_all_levs, X_nl_all_levs, & ! In
-                                              pdf_params, &                          ! In
-                                              l_use_Ncn_to_Nc_in, &                  ! In (optional)
+                                              pdf_params, l_use_Ncn_to_Nc, &         ! In
                                               lh_clipped_vars )                      ! Out
 
     use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
@@ -261,7 +260,7 @@ contains
     implicit none
 
     ! Input Variables
-    logical, optional, intent(in) :: l_use_Ncn_to_Nc_in ! Whether the 
+    logical, intent(in) :: l_use_Ncn_to_Nc
 
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
@@ -281,21 +280,10 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    ! Local Variables
-    logical :: l_use_Ncn_to_Nc = .true.
-
-    if ( present(l_use_Ncn_to_Nc_in) ) then
-       l_use_Ncn_to_Nc = l_use_Ncn_to_Nc_in
-    else
-       l_use_Ncn_to_Nc = .true.
-    endif
- 
-
     call clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
                                       X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
-                                      pdf_params, &                           ! In
-                                      l_use_Ncn_to_Nc_in = l_use_Ncn_to_Nc, & ! In (optional)
-                                      lh_clipped_vars = lh_clipped_vars )     ! Out
+                                      pdf_params, l_use_Ncn_to_Nc, &          ! In
+                                      lh_clipped_vars )                       ! Out
 
   end subroutine clip_transform_silhs_output_api
 

@@ -633,8 +633,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
                                           X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
-                                          pdf_params, &                           ! In
-                                          l_use_Ncn_to_Nc_in, &                   ! In (optional)
+                                          pdf_params, l_use_Ncn_to_Nc, &          ! In
                                           lh_clipped_vars )                       ! Out
 
   ! Description:
@@ -668,8 +667,11 @@ module latin_hypercube_driver_module
     implicit none
 
     ! Input Variables
-    logical, intent(in), optional :: &
-      l_use_Ncn_to_Nc_in
+    logical, intent(in) :: &
+      l_use_Ncn_to_Nc        ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                             ! Ncn_to_Nc might cause problems with the MG microphysics 
+                             ! since the changes made here (Nc-tendency) are not fed into 
+                             ! the microphysics
 
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
@@ -688,12 +690,6 @@ module latin_hypercube_driver_module
     ! Output Variables
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
-
-    ! Local Variables
-    logical :: l_use_Ncn_to_nc = .true. ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
-                                        ! Ncn_to_Nc might cause problems with the MG microphysics 
-                                        ! since the changes made here (Nc-tendency) are not fed into 
-                                        ! the microphysics
 
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
@@ -727,12 +723,6 @@ module latin_hypercube_driver_module
 
     l_rt_clipped = .false.
     l_rv_clipped = .false.
-
-    if ( present(l_use_Ncn_to_Nc_in) ) then
-       l_use_Ncn_to_Nc = l_use_Ncn_to_Nc_in
-    else
-       l_use_Ncn_to_Nc = .true.
-    endif
 
     !----- Begin Code -----
 
