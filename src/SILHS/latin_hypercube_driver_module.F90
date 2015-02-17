@@ -631,9 +631,11 @@ module latin_hypercube_driver_module
   !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output &
-             ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-               lh_clipped_vars )
+  subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
+                                          X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
+                                          pdf_params, &                           ! In
+                                          l_use_Ncn_to_Nc_in, &                   ! In (optional)
+                                          lh_clipped_vars )                       ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -666,6 +668,9 @@ module latin_hypercube_driver_module
     implicit none
 
     ! Input Variables
+    logical, intent(in), optional :: &
+      l_use_Ncn_to_Nc_in
+
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
@@ -685,6 +690,11 @@ module latin_hypercube_driver_module
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
     ! Local Variables
+    logical :: l_use_Ncn_to_nc = .true. ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                                        ! Ncn_to_Nc might cause problems with the MG microphysics 
+                                        ! since the changes made here (Nc-tendency) are not fed into 
+                                        ! the microphysics
+
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
       lh_thl,  &             ! Liquid potential temperature        [K]
@@ -717,6 +727,12 @@ module latin_hypercube_driver_module
 
     l_rt_clipped = .false.
     l_rv_clipped = .false.
+
+    if ( present(l_use_Ncn_to_Nc_in) ) then
+       l_use_Ncn_to_Nc = l_use_Ncn_to_Nc_in
+    else
+       l_use_Ncn_to_Nc = .true.
+    endif
 
     !----- Begin Code -----
 
@@ -764,8 +780,12 @@ module latin_hypercube_driver_module
         lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
 
         ! Compute lh_Nc
-        lh_Nc(k,isample) = Ncn_to_Nc( real( X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd ), &
-                                      real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
+        if ( l_use_Ncn_to_Nc ) then
+           lh_Nc(k,isample) = Ncn_to_Nc(real(X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd), &
+                                        real(X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd) )
+        else
+           lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
+        endif ! l_use_Ncn_to_Nc
 
       end do ! isample=1, num_samples
 
