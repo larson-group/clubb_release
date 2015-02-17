@@ -291,16 +291,17 @@ module estimate_scm_microphys_module
     end if
 
     ! Invoke the SILHS category variance sampler (if desired by user)!!
-    if ( isilhs_variance_category(1) > 0 ) then
 
-      if ( l_stats_samp ) then
+    if ( l_stats_samp ) then
+
+      if ( isilhs_variance_category(1) > 0 ) then
         call silhs_category_variance_driver &
              ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs,  & ! Intent(in)
                irrm_auto, microphys_stats_zt_all, microphys_stats_zt_avg,          & ! Intent(in)
                lh_sample_point_weights )                                             ! Intent(in)
-      end if
+      end if ! isilhs_variance_category(1) > 0
 
-    end if ! isilhs_variance_category(1) > 0
+    end if ! l_stats_samp
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples
