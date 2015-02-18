@@ -746,7 +746,9 @@ module parameters_tunable
     real( kind = core_rknd ), intent(out), dimension(nparams) ::  & 
       param_spread  ! Amount to vary the parameter in the initial simplex
 
-    integer, intent(out) :: ndim  ! Dimension of the init simplex
+    integer, intent(out) :: &
+        ndim  ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
+
 
     ! Local variables
     integer :: i

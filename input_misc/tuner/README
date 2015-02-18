@@ -115,6 +115,7 @@ C1, etc. | real, default precision
  In the case of amoeba and amebsa the formula is 
  Parameter * ( (1 - spread) + rannum * spread * 2 )
  thus a spread of 0 will keep a constant static through the run.
+ We must have 0 <= spread < 1.
 
 In the Siarry, et al. case this is the value of ROSTEP.  Where the initial step vector is defined by the equation:
 STPINI(k) = ( X0MAX(k) - X0MIN(k) ) * ROSTEP(k)
