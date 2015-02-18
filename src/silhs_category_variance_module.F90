@@ -80,7 +80,7 @@ module silhs_category_variance_module
       int_sample_category     ! Category of each sample point
 
     real( kind = core_rknd ) :: &
-      var_value,      &
+      sample_value,      &
       overall_mean
 
     real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
@@ -109,9 +109,9 @@ module silhs_category_variance_module
       do isample=1, num_samples
 
         icat = int_sample_category(isample)
-        var_value = microphys_stats_vars_all(isample)%output_values(k,structure_index)
+        sample_value = microphys_stats_vars_all(isample)%output_values(k,structure_index)
         category_variance(k,icat) = category_variance(k,icat) + &
-          lh_sample_point_weights(isample) * ( ( var_value - overall_mean ) ** 2 )
+          lh_sample_point_weights(isample) * ( ( sample_value - overall_mean ) ** 2 )
 
       end do ! isample=1, num_samples
 
@@ -224,9 +224,10 @@ module silhs_category_variance_module
 
       do icategory=1, num_importance_categories
 
-        if ( importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud .and. &
-             importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud .and. &
-             importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud ) then
+        if ( (importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud) .and. &
+             (importance_categories(icategory)%l_in_precip .eqv. sample_category%l_in_precip) .and.&
+             (importance_categories(icategory)%l_in_component_1 .eqv. &
+             sample_category%l_in_component_1) ) then
 
           found_category_index = icategory
           exit
