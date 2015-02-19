@@ -71,7 +71,7 @@ Lscale_mu_coef = 2.0   ! Coefficient to perturb mu for an average calculation of
 Lscale_pert_coef = 0.1 ! Coefficient to perturb thlm and rtm for an average calculation of Lscale. Units [-]
 alpha_corr = 0.15      ! Coefficient for the correlation diagnosis algorithm. Units [-]
 Skw_denom_coef = 4.0   ! Factor to decrease sensitivity in the denominator of Skw calculation. Units [-]
-c_K10 = 0.6            ! Coefficient of momentum diffusivity, Km_zm. Units [-]
+c_K10 = 1.0            ! Coefficient of momentum diffusivity, Km_zm. Units [-]
 thlp2_rad_coef = 1.0   ! Coefficient of thlp2_rad. Units [-]
 thlp2_rad_cloud_frac_thresh = 0.1 ! Minimum cloud fraction for computation of thlp2_rad. Units [-]
 /

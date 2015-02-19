@@ -189,7 +189,7 @@ module parameters_tunable
 
   ! Coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
-    c_K10 = 0.6_core_rknd
+    c_K10 = 1.0_core_rknd
 
 !$omp threadprivate( c_K10 )
 
