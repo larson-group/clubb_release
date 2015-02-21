@@ -136,6 +136,9 @@ program G_unit_tests
   use silhs_category_test, only: &
       silhs_category_test_driver ! Procedure
 
+  use mu_sigma_hm_tests, only: &
+      mu_sigma_hm_unit_tests  ! Procedure(s)
+
   implicit none
 
   ! Local Constants
@@ -152,13 +155,15 @@ program G_unit_tests
     l_Nc_Ncn_test = .true.,             & ! Flag for Nc-Ncn Equations tests
     l_read_corr_mtx_test = .true.,      & ! Flag for corr matrix read test
     l_silhs_category_test = .true.,     & ! Flag for silhs category test
-    show_read_test_arrays = .true.        ! If true, the arrays used in
+    show_read_test_arrays = .true.,     & ! If true, the arrays used in
                                           !   read_corr_mtx_test will be shown
+    l_mu_sigma_hm_tests = .true.          ! Flag for the hydromet mu/sigma tests
 
   ! Definition of namelist
   namelist /G_unit_namelist/ &
     l_KK_unit_tests, l_corr_cholesky_mtx_tests, l_hole_filling_tests, &
-    l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test
+    l_Nc_Ncn_test, l_read_corr_mtx_test, l_silhs_category_test, &
+    l_mu_sigma_hm_tests
 
 
   ! Read namelist file
@@ -206,6 +211,12 @@ program G_unit_tests
        exit_code = 1
      end if
   end if
+
+  if ( l_mu_sigma_hm_tests ) then
+     if ( mu_sigma_hm_unit_tests( ) /= 0 ) then
+        exit_code = 1
+     endif
+  endif
 
   ! Stop with exit code if error found
   if (exit_code /= 0) then

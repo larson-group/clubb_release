@@ -3082,10 +3082,14 @@ module setup_clubb_pdf_params
     !----------------------------------------------------------------------- 
 
     use constants_clubb, only: &
-        four,  & ! Constant(s)
-        two,   &
-        one,   &
-        zero
+        four,    & ! Constant(s)
+        two,     &
+        one,     &
+        zero,    &
+        fstderr
+
+    use error_code, only: &
+        clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -3197,6 +3201,18 @@ module setup_clubb_pdf_params
     ! component mean that is too small (below tolerance value) or negative.
     if ( mu_hm_1 < hm_tol / precip_frac_1 ) then
 
+       ! Print warning message informing the user that the value of omicron
+       ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
+       ! decreased.
+       if ( clubb_at_least_debug_level( 2 ) ) then
+          write(fstderr,*) "The value of mu_hm_1 is too small or negative " &
+                           // "and is being reset to a minimum positive " &
+                           // "value.  To avoid this problem, please " &
+                           // "increase the value of omicron or decrease the " &
+                           // "value of the prescribed in-precip. " &
+                           // "variance-over-mean-squared."
+       endif ! clubb_debug_level_at_least( 2 )
+
        ! Set the value of mu_hm_1 to the threshold positive value (so that
        ! hm_1 = hm_tol).
        mu_hm_1 = hm_tol / precip_frac_1
@@ -3226,6 +3242,18 @@ module setup_clubb_pdf_params
        endif
 
     elseif ( mu_hm_2 < hm_tol / precip_frac_2 ) then
+
+       ! Print warning message informing the user that the value of omicron
+       ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
+       ! decreased.
+       if ( clubb_at_least_debug_level( 2 ) ) then
+          write(fstderr,*) "The value of mu_hm_2 is too small or negative " &
+                           // "and is being reset to a minimum positive " &
+                           // "value.  To avoid this problem, please " &
+                           // "increase the value of omicron or decrease the " &
+                           // "value of the prescribed in-precip. " &
+                           // "variance-over-mean-squared."
+       endif ! clubb_debug_level_at_least( 2 )
 
        ! Set the value of mu_hm_2 to the threshold positive value (so that
        ! hm_2 = hm_tol).
@@ -3268,10 +3296,10 @@ module setup_clubb_pdf_params
     sigma_hm_2 = sqrt( sigma_hm_2_sqd_on_mu_hm_2_sqd ) * mu_hm_2
 
     ! Calculate the mean of the hydrometeor in the 1st PDF component.
-    hm_1 = mu_hm_1 * precip_frac_1
+    hm_1 = max( mu_hm_1 * precip_frac_1, hm_tol )
 
     ! Calculate the mean of the hydrometeor in the 1st PDF component.
-    hm_2 = mu_hm_2 * precip_frac_2
+    hm_2 = max( mu_hm_2 * precip_frac_2, hm_tol )
 
     ! Calculate the ratio of sigma_hm_1^2 / mu_hm_1^2.
     sigma_hm_1_sqd_on_mu_hm_1_sqd = sigma_hm_1**2 / mu_hm_1**2
