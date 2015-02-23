@@ -27,7 +27,7 @@ module parameters_tunable
   use grid_class, only: gr ! Variable(s)
 
   use clubb_precision, only: &
-    core_rknd ! Variable(s)
+      core_rknd ! Variable(s)
 
   implicit none
 
@@ -156,20 +156,36 @@ module parameters_tunable
 #else
   real( kind = core_rknd ), public :: &
     beta = 2.400000_core_rknd    ! Beta coefficient     [-]
-#endif  
+#endif
 
 !$omp threadprivate(beta)
 
   real( kind = core_rknd ), private :: &
-    lmin_coef = 0.500000_core_rknd    ! Coefficient of lmin    [-]
+    lmin_coef = 0.500000_core_rknd   ! Coefficient of lmin    [-]
 
 !$omp threadprivate(lmin_coef)
 
-  ! Coefficient for adjusted overall correlation in hm_1/hm_2 calculation [-]
+  ! Brian Griffin added a parameter for hydrometeors, omicron, to increase the
+  ! standard deviation of each component and decrease the spread between the
+  ! component means as the value of omicron inreases.  Valid value are
+  ! 0 < omicron <= 1.
+  ! A second parameter for hydrometeors, zeta, increases the standard deviation
+  ! of component 1 at the expense of the standard deviation of component 2 when
+  ! the value of zeta > 0 (and increasingly so as zeta increases).  Valid values
+  ! are zeta > -1.
   real( kind = core_rknd ), public :: &
-    coef_hm_1_hm_2_corr_adj = 1.0_core_rknd
+    omicron        = 0.8_core_rknd, & ! Hydromet width/spread-of-means param [-]
+    zeta_vrnce_rat = 0.0_core_rknd    ! Ratio sigma^2/mu^2 comp. 1 / comp. 2 [-]
 
-!$omp threadprivate( coef_hm_1_hm_2_corr_adj )
+!$omp threadprivate( omicron, zeta_vrnce_rat )
+
+  real( kind = core_rknd ), public :: &
+    ! Coefficient for adjusted overall correlation in hm_1/hm_2 calculation [-]
+    coef_hm_1_hm_2_corr_adj = 1.0_core_rknd, &
+    ! Intensity of stability correction applied to C1 and C6 [-]
+    lambda0_stability_coef = 0.03_core_rknd
+
+!$omp threadprivate( coef_hm_1_hm_2_corr_adj, lambda0_stability_coef)
 
   ! Factor to decrease sensitivity in the denominator of Skw calculation
   real( kind = core_rknd ), public :: &
@@ -187,7 +203,7 @@ module parameters_tunable
 
   ! Coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
-    c_K10 = 0.6_core_rknd
+    c_K10 = 1.0_core_rknd
 
 !$omp threadprivate( c_K10 )
 
@@ -218,7 +234,8 @@ module parameters_tunable
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
     nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
-    coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
+    omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+    lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
     thlp2_rad_cloud_frac_thresh
 
@@ -262,12 +279,13 @@ module parameters_tunable
        "gamma_coef                 ", "gamma_coefb                ", &
        "gamma_coefc                ", "mu                         ", &
        "beta                       ", "lmin_coef                  ", &
-       "coef_hm_1_hm_2_corr_adj    ", "mult_coef                  ", &
-       "taumin                     ", "taumax                     ", &
-       "Lscale_mu_coef             ", "Lscale_pert_coef           ", &
-       "alpha_corr                 ", "Skw_denom_coef             ", &
-       "c_K10                      ", "thlp2_rad_coef             ", &
-       "thlp2_rad_cloud_frac_thresh"                                /)
+       "omicron                    ", "zeta_vrnce_rat             ", &
+       "coef_hm_1_hm_2_corr_adj    ", "lambda0_stability_coef     ", &
+       "mult_coef                  ", "taumin                     ", &
+       "taumax                     ", "Lscale_mu_coef             ", &
+       "Lscale_pert_coef           ", "alpha_corr                 ", &
+       "Skw_denom_coef             ", "c_K10                      ", &
+       "thlp2_rad_coef             ", "thlp2_rad_cloud_frac_thresh"  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -353,9 +371,10 @@ module parameters_tunable
                             c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                             c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                             nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
-                            mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, &
-                            taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                            Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                            mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+                            coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                            mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+                            alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                             thlp2_rad_cloud_frac_thresh )
 
 
@@ -384,6 +403,24 @@ module parameters_tunable
 
     endif ! beta < 0 or beta > 3
 
+    if ( omicron <= 0.0_core_rknd .or. omicron > 1.0_core_rknd ) then
+
+       ! Constraints on omicron
+       write(fstderr,*) "omicron = ", omicron
+       write(fstderr,*) "omicron cannot be <= 0 or > 1"
+       err_code = clubb_var_out_of_bounds
+
+    endif ! omicron <= 0 or omicron > 1
+
+    if ( zeta_vrnce_rat <= -1.0_core_rknd ) then
+
+       ! Constraints on zeta_vrnce_rat
+       write(fstderr,*) "zeta_vrnce_rat = ", zeta_vrnce_rat
+       write(fstderr,*) "zeta_vrnce_rat cannot be <= -1"
+       err_code = clubb_var_out_of_bounds
+
+    endif ! zeta_vrnce_rat <= -1
+
     if ( coef_hm_1_hm_2_corr_adj < 0.0_core_rknd &
          .or. coef_hm_1_hm_2_corr_adj > 1.0_core_rknd ) then
 
@@ -392,7 +429,7 @@ module parameters_tunable
        write(fstderr,*) "coef_hm_1_hm_2_corr_adj cannot be < 0 or > 1"
        err_code = clubb_var_out_of_bounds
 
-    endif ! beta < 0 or beta > 3
+    endif ! coef_hm_1_hm_2_corr_adj < 0 or coef_hm_1_hm_2_corr_adj > 1
 
     if ( mu < 0.0_core_rknd ) then
 
@@ -691,9 +728,10 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
-                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
-                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+                          alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
 
     l_error = .false.
@@ -744,7 +782,9 @@ module parameters_tunable
     real( kind = core_rknd ), intent(out), dimension(nparams) ::  & 
       param_spread  ! Amount to vary the parameter in the initial simplex
 
-    integer, intent(out) :: ndim  ! Dimension of the init simplex
+    integer, intent(out) :: &
+        ndim  ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
+
 
     ! Local variables
     integer :: i
@@ -762,7 +802,8 @@ module parameters_tunable
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
       nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, mu, &
+      lmin_coef, omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      lambda0_stability_coef, mult_coef, taumin, taumax, mu, &
       Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
@@ -785,9 +826,10 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
-                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
-                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+                          alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, param_spread )
 
     l_error = .false.
@@ -830,9 +872,10 @@ module parameters_tunable
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
-               mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
-               taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-               Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+               coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+               mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+               alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, params )
 
     ! Description:
@@ -905,7 +948,10 @@ module parameters_tunable
       imu, & 
       ibeta, & 
       ilmin_coef, &
-      icoef_hm_1_hm_2_corr_adj, & 
+      iomicron, &
+      izeta_vrnce_rat, &
+      icoef_hm_1_hm_2_corr_adj, &
+      ilambda0_stability_coef, &
       imult_coef, &
       itaumin, & 
       itaumax, & 
@@ -929,9 +975,10 @@ module parameters_tunable
       C6rt_Lscale0, C6thl_Lscale0, C7_Lscale0, wpxp_L_thresh, &
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, gamma_coef, &
-      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, &
-      mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
-      alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
+      gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
+      omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
+      Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
       thlp2_rad_cloud_frac_thresh
 
     ! Output variables
@@ -1000,8 +1047,11 @@ module parameters_tunable
 
     params(ilmin_coef) = lmin_coef
 
-    params(icoef_hm_1_hm_2_corr_adj) = coef_hm_1_hm_2_corr_adj
+    params(iomicron) = omicron
+    params(izeta_vrnce_rat) = zeta_vrnce_rat
 
+    params(icoef_hm_1_hm_2_corr_adj) = coef_hm_1_hm_2_corr_adj
+    params(ilambda0_stability_coef) = lambda0_stability_coef
     params(imult_coef) = mult_coef
 
     params(itaumin) = taumin
@@ -1029,9 +1079,10 @@ module parameters_tunable
                c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
-               mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, &
-               taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-               Skw_denom_coef, c_K10, thlp2_rad_coef, &
+               mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+               coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+               mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+               alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh )
 
     ! Description:
@@ -1104,7 +1155,10 @@ module parameters_tunable
       imu, & 
       ibeta, & 
       ilmin_coef, &
-      icoef_hm_1_hm_2_corr_adj, & 
+      iomicron, &
+      izeta_vrnce_rat, &
+      icoef_hm_1_hm_2_corr_adj, &
+      ilambda0_stability_coef, &
       imult_coef, &
       itaumin, & 
       itaumax, & 
@@ -1132,8 +1186,9 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
       gamma_coef, gamma_coefb, gamma_coefc, & 
-      mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, taumin, taumax, &
-      Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
+      mu, beta, lmin_coef, omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      lambda0_stability_coef, mult_coef, taumin, &
+      taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
 
     C1      = params(iC1)
@@ -1199,8 +1254,11 @@ module parameters_tunable
 
     lmin_coef = params(ilmin_coef)
 
-    coef_hm_1_hm_2_corr_adj = params(icoef_hm_1_hm_2_corr_adj)
+    omicron = params(iomicron)
+    zeta_vrnce_rat = params(izeta_vrnce_rat)
 
+    coef_hm_1_hm_2_corr_adj = params(icoef_hm_1_hm_2_corr_adj)
+    lambda0_stability_coef = params(ilambda0_stability_coef)
     mult_coef = params(imult_coef)
 
     taumin = params(itaumin)
@@ -1241,9 +1299,10 @@ module parameters_tunable
                           c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6,  &
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
-                          mu, beta, lmin_coef, coef_hm_1_hm_2_corr_adj, mult_coef, &
-                          taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, &
-                          Skw_denom_coef, c_K10, thlp2_rad_coef, &
+                          mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
+                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
+                          alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
 
     return
@@ -1322,7 +1381,10 @@ module parameters_tunable
     taumin                      = init_value
     taumax                      = init_value
     lmin_coef                   = init_value
+    omicron                     = init_value
+    zeta_vrnce_rat              = init_value
     coef_hm_1_hm_2_corr_adj     = init_value
+    lambda0_stability_coef      = init_value
     mu                          = init_value
     Lscale_mu_coef              = init_value
     Lscale_pert_coef            = init_value
