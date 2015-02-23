@@ -2147,13 +2147,22 @@ module setup_clubb_pdf_params
 
     !!! Enter the PDF parameters.
 
-    !!! Means.
+    !!! Vertical velocity, w.
 
     ! Mean of vertical velocity, w, in PDF component 1.
     mu_x_1(iiPDF_w) = pdf_params%w_1
 
     ! Mean of vertical velocity, w, in PDF component 2.
     mu_x_2(iiPDF_w) = pdf_params%w_2
+
+    ! Standard deviation of vertical velocity, w, in PDF component 1.
+    sigma_x_1(iiPDF_w) = sqrt( pdf_params%varnce_w_1 )
+
+    ! Standard deviation of vertical velocity, w, in PDF component 2.
+    sigma_x_2(iiPDF_w) = sqrt( pdf_params%varnce_w_2 )
+
+
+    !!! Extended liquid water mixing ratio, chi.
 
     ! Mean of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 1.
@@ -2162,6 +2171,17 @@ module setup_clubb_pdf_params
     ! Mean of extended liquid water mixing ratio, chi (old s),
     ! in PDF component 2.
     mu_x_2(iiPDF_chi) = pdf_params%chi_2
+
+    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
+    ! in PDF component 1.
+    sigma_x_1(iiPDF_chi) = pdf_params%stdev_chi_1
+
+    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
+    ! in PDF component 2.
+    sigma_x_2(iiPDF_chi) = pdf_params%stdev_chi_2
+
+
+    !!! Coordinate orthogonal to chi, eta.
 
     ! Mean of eta (old t) in PDF component 1.
     ! Set the component mean values of eta to 0.
@@ -2177,13 +2197,43 @@ module setup_clubb_pdf_params
     ! do is to set them to 0 and avoid any kind of numerical error.
     mu_x_2(iiPDF_eta) = zero
 
+    ! Standard deviation of eta (old t) in PDF component 1.
+    sigma_x_1(iiPDF_eta) = pdf_params%stdev_eta_1
+
+    ! Standard deviation of eta (old t) in PDF component 2.
+    sigma_x_2(iiPDF_eta) = pdf_params%stdev_eta_2
+
+
+    !!! Simplified cloud nuclei concentration, Ncn.
+
     ! Mean of simplified cloud nuclei concentration, Ncn, in PDF component 1.
     mu_x_1(iiPDF_Ncn) = Ncnm
 
     ! Mean of simplified cloud nuclei concentration, Ncn, in PDF component 2.
     mu_x_2(iiPDF_Ncn) = Ncnm
 
-    ! Mean of the hydrometeor species
+    ! Standard deviation of simplified cloud nuclei concentration, Ncn,
+    ! in PDF component 1.
+    if ( .not. l_const_Nc_in_cloud ) then
+
+       ! Ncn varies in both PDF components.
+       sigma_x_1(iiPDF_Ncn) &
+       = sqrt( sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) ) * Ncnm
+
+       sigma_x_2(iiPDF_Ncn) &
+       = sqrt( sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) ) * Ncnm
+
+    else ! l_const_Nc_in_cloud
+
+       ! Ncn is constant in both PDF components.
+       sigma_x_1(iiPDF_Ncn) = zero
+
+       sigma_x_2(iiPDF_Ncn) = zero
+
+    endif ! .not. l_const_Nc_in_cloud
+
+
+    !!! Precipitating hydrometeor species.
     do ivar = iiPDF_Ncn+1, d_variables
 
        ! Mean of hydrometeor, hm, in PDF component 1.
@@ -2195,77 +2245,6 @@ module setup_clubb_pdf_params
        mu_x_2(ivar) &
        = component_mean_hm_ip( hm2(pdf2hydromet_idx(ivar)), precip_frac_2, &
                                hydromet_tol(pdf2hydromet_idx(ivar)) )
-
-    enddo
-
-
-    !!! Standard deviations.
-
-    ! Standard deviation of vertical velocity, w, in PDF component 1.
-    sigma_x_1(iiPDF_w) = sqrt( pdf_params%varnce_w_1 )
-
-    ! Standard deviation of vertical velocity, w, in PDF component 2.
-    sigma_x_2(iiPDF_w) = sqrt( pdf_params%varnce_w_2 )
-
-    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
-    ! in PDF component 1.
-    sigma_x_1(iiPDF_chi) = pdf_params%stdev_chi_1
-
-    ! Standard deviation of extended liquid water mixing ratio, chi (old s),
-    ! in PDF component 2.
-    sigma_x_2(iiPDF_chi) = pdf_params%stdev_chi_2
-
-    ! Standard deviation of eta (old t) in PDF component 1.
-    sigma_x_1(iiPDF_eta) = pdf_params%stdev_eta_1
-
-    ! Standard deviation of eta (old t) in PDF component 2.
-    sigma_x_2(iiPDF_eta) = pdf_params%stdev_eta_2
-
-    ! Standard deviation of simplified cloud nuclei concentration, Ncn,
-    ! in PDF component 1.
-    if ( .not. l_const_Nc_in_cloud ) then
-
-       ! Ncn varies in both PDF components.
-       sigma_x_1(iiPDF_Ncn) &
-       = component_stdev_hm_ip( mu_x_1(iiPDF_Ncn), rc_1, one, &
-                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn), &
-                                sigma2_on_mu2_ip_array_below(iiPDF_Ncn) )
-
-    else ! l_const_Nc_in_cloud
-
-       ! Ncn is constant in both PDF components.
-       sigma_x_1(iiPDF_Ncn) = zero
-
-    endif ! .not. l_const_Nc_in_cloud
-
-    ! Standard deviation of simplified cloud nuclei concentration, Ncn,
-    ! in PDF component 2.
-    if ( .not. l_const_Nc_in_cloud ) then
-
-       ! Ncn varies in both PDF components.
-       sigma_x_2(iiPDF_Ncn) &
-       = component_stdev_hm_ip( mu_x_2(iiPDF_Ncn), rc_2, one, &
-                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn), &
-                                sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) )
-
-    else ! l_const_Nc_in_cloud
-
-       ! Ncn is constant in both PDF components.
-       sigma_x_2(iiPDF_Ncn) = zero
-
-    endif ! .not. l_const_Nc_in_cloud
-
-    ! Set up the values of the statistical correlations and variances.  Since we
-    ! currently do not have enough variables to compute the correlations and
-    ! variances directly, we have obtained these values by analyzing LES runs of
-    ! certain cases.  We have divided those results into an inside-cloud average
-    ! and an outside-cloud (or below-cloud) average.  This coding leaves the
-    ! software architecture in place in case we ever have the variables in place
-    ! to compute these values directly.  It also allows us to use separate
-    ! inside-cloud and outside-cloud parameter values.
-    ! Brian Griffin; February 3, 2007.
-
-    do ivar = iiPDF_Ncn+1, d_variables
 
        ! Standard deviation of hydrometeor, hm, in PDF component 1.
        sigma_x_1(ivar) &
