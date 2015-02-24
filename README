@@ -38,7 +38,8 @@ Larson, V. E. and J.-C. Golaz, 2005:  Using Probability Density Functions to
 model equations and finer details on how the discretization was done.
 
 The single column model executable ("clubb_standalone") runs a particular 
-case (e.g. BOMEX) and outputs statistical data in either Grid Analysis and
+case (e.g. BOMEX shallow nonprecipitating cumulus case) 
+and outputs statistical data in either Grid Analysis and
 Display System (GrADS) format or Network Common Data Form (netCDF) format.
 GrADS is both a data file format and a plotting program.  See
 <http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
@@ -65,7 +66,7 @@ these variables; and the parameters to tune (C1, beta, etc.).
 ***********************************************************************
 CLUBB is a single-column atmospheric model written in ISO Fortran 95, and
 executed using scripts written in the GNU Bash scripting language.
-Some utilities for CLUBB have implemented in MATLAB, Python, or Perl.
+Some utilities for CLUBB have been implemented in MATLAB, Python, or Perl.
 
 This quick start guide has instructions for checking CLUBB out from the UWM
 repositories, compiling CLUBB using the gfortran compiler, running one of the
@@ -87,7 +88,7 @@ After this, the same e-mail address and password combination will work to
 download the CLUBB code.
 
 With a valid CLUBB account, the CLUBB code can be checked out from its
-repository using subversion (svn).  If you have not already downloaded CLUBB,
+repository using subversion (a.k.a. svn).  If you have not already downloaded CLUBB,
 then at a bash prompt, type in the following command, all on one line:
 user@computer ~$ svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk 
           clubb --username EMAIL
@@ -99,7 +100,7 @@ password is entered, subversion will download the CLUBB source code into the
 directory specified as the last option in the svn command; in the example
 above, it will be downloaded to the clubb/ directory.  On some computers,
 when entering the password, the cursor may remain in the same spot
-and the screen may remain blank.  Don't be confused; hit return and 
+and the screen may remain blank.  Don't be confused; hit return, and 
 your password will be entered.  
 
 -------------------------------------------------------
@@ -124,13 +125,15 @@ To run this on a Mac OS X machine, you should use the following command:
 $ ./compile.bash config/macosx_x86_64_gfortran.bash
 
 (If you want a primer on using the command line shell on Macs, see
-http://developer.apple.com/library/mac/#documentation/MacOSX/Conceptual/OSX_Technology_Overview/CommandLine/CommandLine.html#//apple_ref/doc/uid/TP40001067-CH271-BBCBEAJD .)
+https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/CommandLInePrimer/CommandLine.html .)
 
 The command line will output information relating to the compilation of CLUBB.
 
 If you change something in the configuration and need to remove the old 
 executables and object files you can type:
 $ ./clean_all.bash
+
+Then recompile the code.
 
 -------------------------------------------------------
 - STEP 3: RUNNING A BENCHMARK TEST CASE
@@ -152,7 +155,8 @@ checkout.
 -------------------------------------------------------
 - STEP 4: VIEWING THE RESULTS WITH PLOTGEN
 -------------------------------------------------------
-After a case has been run, the resulting output (in GrADS or netCDF format) can
+After a case has been run, the resulting output (whether it be in either GrADS 
+or netCDF format) can
 be used to create graphs.  There are many programs available that can be used to
 do this, but one way is to use an included perl script called plotgen. 
 Plotgen interfaces with MATLAB to produce high-quality plots that allow 
@@ -170,32 +174,25 @@ telling it where the CLUBB output directory is, and specifying the desired
 plots output directory. This must be called from the postprocessing/plotgen
 directory inside the CLUBB checkout.
 
-NOTE: For Mac users in W434, you must change a line in plotgen.pl.  To do this
-go into the directory that plotgen.pl is located, type in:
-$ cd ~/clubb/postprocessing/plotgen
-$ nano plotgen.pl
-Locate the line starting with "my $MATLAB".  There should be two, find the one
-with the comment at the end saying "For Macs in W434" and at the beginning of
-the line remove the # symbol.  Now go to the line above it and at the beginning
-of that line insert a # symbol.  Then use Control-X to exit, then "y" to save
-the changes that are made and then enter to overwrite the current plotgen.
-Also, at the terminal type in the following command:
+Mac users in W434, at the terminal, type in the following command:
 $ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
 
-Then, to generate a webpage containing plots, type, (if your output 
+Then, to generate a webpage containing plots, type (if your output 
 is in ~/clubb/output and you want the plots to go in directory ~/plots):
 
-user@computer ~/clubb/postprocessing/plotgen$
-./plotgen.pl ~/clubb/output ~/plots
+user@computer$ cd  ~/clubb/postprocessing/plotgen
+
+user@computer$ ./plotgen.pl ~/clubb/output ~/plots
 
 The above line will use plotgen to create plots from the simulation output
 in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
+(Here the tilde, ~, tells the OS to look in the user's home directory.)
 If you want to overplot two simulations, move each set of output files to 
 its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
 type the command
 
-user@computer ~/clubb/postprocessing/plotgen$
-./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
+user@computer$ cd  ~/clubb/postprocessing/plotgen
+user@computer$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
 
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
@@ -207,6 +204,9 @@ assuming that the index.html file is in the plots directory.
 Plotgen will plot only the test cases that have output; therefore, if only
 the BOMEX case has been run, for example, the resulting plotgen plots will
 only have BOMEX included.
+
+Nota bene: If "./plotgen.pl " is replaced by "./plotgen.pl -r ", then 
+the contents of the plotgen output folder will be replaced.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
@@ -225,7 +225,7 @@ follow the following steps:
 - Compile the CLUBB source code with a Fortran 95 compiler (e.g. gfortran)
   - ./compile.bash config/linux_x86_64_gfortran.bash
     (in the clubb/compile directory)
-    (replace config/linux_x86_64_gfortran.bash to match the desired platform
+    (Replace config/linux_x86_64_gfortran.bash to match the desired platform
      and compiler.  You may need to edit these for your pariticular computer
      setup if your paths are not the same as ours)
 - Run a benchmark case (e.g. BOMEX)
@@ -264,10 +264,10 @@ of configuration.
 When compiling CLUBB to a new platform there are sometimes portability 
 difficulties that arise, usually from different Fortran compilers.  When 
 possible it may be helpful to look at similar platforms in the compile/config 
-directory.  Another useful troubleshooting technique to examine the 
+directory.  Another useful troubleshooting technique is to examine the 
 configuration of other Fortran projects (e.g. WRF) on the same platform.  If you
 manage to compile CLUBB on a new configuration and would like to share it with
-other users feel free to send us an email with your configuration attached.
+other users, feel free to send us an email with your configuration attached.
 
 We mainly use the GNU Fortran compiler on Intel and AMD x64 processors running 
 CentOS 6.5.  GNU Fortran <http://gcc.gnu.org/fortran/> has been tested 
