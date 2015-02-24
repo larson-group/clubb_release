@@ -6,6 +6,8 @@ module mu_sigma_hm_tests
 
   public :: mu_sigma_hm_unit_tests
 
+  private :: produce_seed
+
   private  ! default scope
 
   contains
@@ -133,8 +135,11 @@ module mu_sigma_hm_tests
     integer :: &
       num_failed_sets    ! Records the number of failed parameter sets
 
-    integer, dimension(8) :: &
-      date_vals    ! Date values used to seed the random number generator
+    integer :: &
+      seed_size    ! The size of the random seed array expected by the system
+
+    integer, dimension(:), allocatable :: &
+      seed_vals    ! Values used to seed the random number generator
 
     real( kind = core_rknd ) :: &
       precip_frac_1_min, & ! Minimum value for precip_frac_1 in parameter set 10
@@ -143,7 +148,6 @@ module mu_sigma_hm_tests
       rand3,             & ! Random number 3 used for PDF parameter set 10
       rand4,             & ! Random number 4 used for PDF parameter set 10
       rand5                ! Random number 5 used for PDF parameter set 10
-
 
     integer, parameter :: &
       num_param_sets = 10,     & ! Number of different PDF parameter sets used
@@ -189,7 +193,7 @@ module mu_sigma_hm_tests
           hmm = 1.0e-10_core_rknd
           mixt_frac = 0.25_core_rknd
           precip_frac = 0.4_core_rknd
-          precip_frac_1 = 0.8_core_rknd
+          precip_frac_1 = 0.75_core_rknd
           hmp2_ip_on_hmm2_ip = 0.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
        elseif ( iter_param_sets == 4 ) then
@@ -242,23 +246,38 @@ module mu_sigma_hm_tests
           hm_tol = 1.0e-10_core_rknd
        elseif ( iter_param_sets == 10 ) then
           write(fstdout,*) "PDF parameter set 10 (randomly generated):"
-          call date_and_time( values=date_vals )
-          call random_seed( put=date_vals )
+          call random_seed( size=seed_size )
+          allocate( seed_vals(1:seed_size) )
+          seed_vals = produce_seed( seed_size )
+          write(fstdout,*) "Random seed values = ", seed_vals
+          call random_seed( put=seed_vals )
+          deallocate( seed_vals )
           call random_number( rand1 )
           call random_number( rand2 )
           call random_number( rand3 )
           call random_number( rand4 )
           call random_number( rand5 )
+          ! The value of hmm can range from 1.0 x 10^-6 to 5.1 x 10^-5.
           hmm = 5.0e-5_core_rknd * rand1 + 1.0e-6_core_rknd
+          ! The value of mixt_frac can range from 0.01 to 0.99.
           mixt_frac = 0.98_core_rknd * rand2 + 0.01_core_rknd
+          ! The value of precip_frac must be greater than mixt_frac (so that
+          ! precipitation must be found in both PDF components).  The upper
+          ! limit of precip_frac is 1.
           precip_frac = mixt_frac + epsilon( mixt_frac ) &
                         + rand3 * ( one - ( mixt_frac + epsilon( mixt_frac ) ) )
+          ! The minimum value of precip_frac_1 is set such that the resulting
+          ! precip_frac_2 is not greater than 1.  Alternatively, it must have a
+          ! value of at least 0.01.
           precip_frac_1_min &
           = max( ( precip_frac - ( one - mixt_frac ) ) / mixt_frac, &
                  0.01_core_rknd )
+          ! The value of precip_frac_1 can range from precip_frac_1_min to 1.
           precip_frac_1 &
           = precip_frac_1_min + rand4 * ( one - precip_frac_1_min )
+          ! The value of hmp2_ip_on_hmm2_ip can range from 0.2 to 5.0.
           hmp2_ip_on_hmm2_ip = 0.2_core_rknd + rand5 * 4.8_core_rknd
+          ! The value of hm_tol remains constant.
           hm_tol = 1.0e-10_core_rknd
        endif ! iter_param_sets == index
 
@@ -440,8 +459,9 @@ module mu_sigma_hm_tests
               write(fstderr,*) ""
            endif
 
-           ! Test 4
-           ! Check that sigma_hm_1 and sigma_hm_2 have at least zero value.
+           ! Test 5
+           ! Check that sigma_hm_1, sigma_hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd,
+           ! and sigma_hm_2_sqd_on_mu_hm_2_sqd have a value of at least zero.
            if ( ( sigma_hm_1 >= zero ) .and. ( sigma_hm_2 >= zero ) &
                 .and. ( sigma_hm_1_sqd_on_mu_hm_1_sqd >= zero ) &
                 .and. ( sigma_hm_2_sqd_on_mu_hm_2_sqd >= zero ) ) then
@@ -680,6 +700,94 @@ module mu_sigma_hm_tests
     return
 
   end function mu_sigma_hm_unit_tests
+
+  !=============================================================================
+  function produce_seed( seed_size ) result( seed_vals )
+
+    ! Description:
+    ! Produces a random seed based on the date and time for a variety of seed
+    ! sizes.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      seed_size    ! The size of the random seed array expected by the system
+
+    ! Return Variable(s)
+    integer, dimension(seed_size) :: &
+      seed_vals    ! The values of the random seed array
+
+    ! Local Variable(s)
+    integer, dimension(8) :: &
+      date_vals    ! Date values used to seed the random number generator
+
+    integer :: &
+      indx,   & ! Loop index
+      offset    ! Array index for scenario that seed_size > 8
+
+
+    ! Get the current date and time
+    call date_and_time( values=date_vals )
+
+    ! The intrisic subroutine date_and_time returns an array that has size 8.
+    ! date_vals(1):  year
+    ! date_vals(2):  month
+    ! date_vals(3):  day
+    ! date_vals(4):  time difference in minutes vs. UTC
+    ! date_vals(5):  hour
+    ! date_vals(6):  minute
+    ! date_vals(7):  second
+    ! date_vals(8):  millisecond
+    if ( seed_size == 8 ) then
+
+       ! The date_vals can be directly used as the seed_vals.
+       seed_vals = date_vals
+
+    elseif ( seed_size < 8 ) then
+
+       ! The size of the seed_vals array is smaller than the size of the
+       ! date_vals array.  Use the most highly variant date_vals in the
+       ! seed_vals array.
+       do indx = 1, seed_size, 1
+          seed_vals(indx) = date_vals(8-seed_size+indx)
+       enddo ! indx = 1, seed_size, 1
+
+    else ! seed_size > 8
+
+       ! The size of the seed_vals array is larger than the size of the
+       ! date_vals array.
+
+       ! Set the first 8 seed_vals to the date_vals.
+       seed_vals(1:8) = date_vals
+
+       ! Set the remaining seed_vals (array indices > 8) by adding the remainder
+       ! of the loop index when divided by 8 to date_vals(8).  When the loop
+       ! index is evenly divisible by 8, use 8 as the remainder (rather than 0).
+       do indx = 9, seed_size, 1
+          ! The value of offset is the integer remainder of indx when divided
+          ! by 8.
+          offset = mod( indx, 8 )
+          ! When indx is evenly divisible by 8, the remainder is 0.  The array
+          ! date_vals doesn't have an index 0, so set offset to 8, which
+          ! otherwise wouldn't be produced by the mod command.
+          if ( offset == 0 ) then
+             offset = 8
+          endif ! offset = 0
+          ! Add date_vals(offset) to date_vals(8) to produce the seed value at
+          ! indx.
+          seed_vals(indx) = date_vals(8) + date_vals(offset)
+       enddo ! indx = 1, seed_size, 1
+
+    endif ! seed_size
+
+
+    return
+
+  end function produce_seed
 
 !===============================================================================
 
