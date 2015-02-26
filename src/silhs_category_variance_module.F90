@@ -162,8 +162,13 @@ module silhs_category_variance_module
       int_sample_category     ! Category of each sample point
 
     real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
-      category_mean,    &
       category_variance
+
+    integer, dimension(num_importance_categories) :: &
+      category_num
+
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_mean
 
     integer :: isample, icat, k
 
@@ -171,11 +176,12 @@ module silhs_category_variance_module
 
     !----- Begin Code -----
 
-    category_mean        =    zero
     category_variance    =    zero
 
     do k=2, nz
 
+      category_num         =    0
+      category_mean        =    zero
       int_sample_category = determine_sample_categories &
                             ( num_samples, d_variables, X_nl_all_levs(k,:,:), &
                               X_mixt_comp_all_levs(k,:) )
@@ -184,12 +190,16 @@ module silhs_category_variance_module
         
         icat = int_sample_category(isample)
 
-        category_mean(k,icat) = category_mean(k,icat) + &
-                                lh_sample_point_weights(isample) * samples_all(k,isample)
+        category_mean(icat) = category_mean(icat) + samples_all(k,isample)
+        category_num (icat) = category_num (icat) + 1
 
       end do ! isample=1, num_samples
 
-      category_mean(k,:) = category_mean(k,:) / real( num_samples, kind=core_rknd )
+      where ( category_num > 0 )
+        category_mean(:) = category_mean(:) / real( category_num(:), kind=core_rknd )
+      else where
+        category_mean(:) = zero
+      end where
 
       do isample=1, num_samples
 
@@ -197,7 +207,7 @@ module silhs_category_variance_module
 
         category_variance(k,icat) = category_variance(k,icat) + &
           lh_sample_point_weights(isample) * &
-          ( ( samples_all(k,isample) - category_mean(k,icat) ) ** 2 )
+          ( ( samples_all(k,isample) - category_mean(icat) ) ** 2 )
 
       end do ! isample=1, num_samples
 
