@@ -8,6 +8,34 @@ module corr_varnce_module
 
   implicit none
 
+  type hmp2_ip_on_hmm2_ip_ratios_type
+
+    ! In CLUBB standalone, these parameters can be set based on the value for a
+    ! given case in the CASE_model.in file.
+
+    ! Prescribed parameters for hydrometeor values of <hm|_ip'^2> / <hm|_ip>^2,
+    ! where <hm|_ip> is the in-precip. mean of the hydrometeor and <hm|_ip'^2>
+    ! is the in-precip. variance of the hydrometeor.
+    ! They can be set based on values for a given case in the CASE_model.in file.
+    real( kind = core_rknd ) :: &
+      rrp2_ip_on_rrm2_ip = 1.0_core_rknd, & ! Ratio <rr|_ip'^2> / <rr|_ip>^2 [-]
+      Nrp2_ip_on_Nrm2_ip = 1.0_core_rknd, & ! Ratio <Nr|_ip'^2> / <Nr|_ip>^2 [-]
+      rip2_ip_on_rim2_ip = 1.0_core_rknd, & ! Ratio <ri|_ip'^2> / <ri|_ip>^2 [-]
+      Nip2_ip_on_Nim2_ip = 1.0_core_rknd, & ! Ratio <Ni|_ip'^2> / <Ni|_ip>^2 [-]
+      rsp2_ip_on_rsm2_ip = 1.0_core_rknd, & ! Ratio <rs|_ip'^2> / <rs|_ip>^2 [-]
+      Nsp2_ip_on_Nsm2_ip = 1.0_core_rknd, & ! Ratio <Ns|_ip'^2> / <Ns|_ip>^2 [-]
+      rgp2_ip_on_rgm2_ip = 1.0_core_rknd, & ! Ratio <rg|_ip'^2> / <rg|_ip>^2 [-]
+      Ngp2_ip_on_Ngm2_ip = 1.0_core_rknd    ! Ratio <Ng|_ip'^2> / <Ng|_ip>^2 [-]
+
+    ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
+    ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
+    !       throughout the entire grid box, so the parameter below should be
+    !       ignored.
+    real( kind = core_rknd ) :: &
+      Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
+
+  end type hmp2_ip_on_hmm2_ip_ratios_type
+
   type sigma2_on_mu2_ratios_type
 
     ! In CLUBB standalone, these parameters can be set based on the value for a
@@ -83,6 +111,11 @@ module corr_varnce_module
     d_variables
 !$omp threadprivate(d_variables)
 
+  real( kind = core_rknd ), dimension(:), allocatable, public :: &
+     hmp2_ip_on_hmm2_ip
+
+!$omp threadprivate(hmp2_ip_on_hmm2_ip)
+
   real( kind = core_rknd ), public, dimension(:), allocatable :: &
     sigma2_on_mu2_ip_array_cloud, &
     sigma2_on_mu2_ip_array_below
@@ -101,7 +134,8 @@ module corr_varnce_module
 
   private
 
-  public :: sigma2_on_mu2_ratios_type, read_correlation_matrix, setup_pdf_indices, &
+  public :: hmp2_ip_on_hmm2_ip_ratios_type, sigma2_on_mu2_ratios_type, &
+            read_correlation_matrix, setup_pdf_indices, &
             setup_corr_varnce_array, cleanup_corr_matrix_arrays, &
             assert_corr_symmetric, print_corr_matrix
 

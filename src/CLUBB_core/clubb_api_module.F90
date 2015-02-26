@@ -95,21 +95,22 @@ module clubb_api_module
     w_tol_sqd ! [m^2/s^2]
 
   use corr_varnce_module, only : &
-    corr_array_cloud, & !
-    corr_array_below, &
-    d_variables, &
-    iiPDF_chi, &
-    iiPDF_rr, &
-    iiPDF_w, &
-    iiPDF_Nr, &
-    iiPDF_ri, &
-    iiPDF_Ni, &
-    iiPDF_Ncn, &
-    iiPDF_rs, &
-    iiPDF_Ns, &
-    iiPDF_rg, &
-    iiPDF_Ng, &
-    sigma2_on_mu2_ratios_type
+      corr_array_cloud,   & ! Variable(s)
+      corr_array_below,   &
+      d_variables,        &
+      iiPDF_chi,          &
+      iiPDF_rr,           &
+      iiPDF_w,            &
+      iiPDF_Nr,           &
+      iiPDF_ri,           &
+      iiPDF_Ni,           &
+      iiPDF_Ncn,          &
+      iiPDF_rs,           &
+      iiPDF_Ns,           &
+      iiPDF_rg,           &
+      iiPDF_Ng,           &
+      hmp2_ip_on_hmm2_ip, &
+      sigma2_on_mu2_ratios_type
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -263,20 +264,21 @@ module clubb_api_module
     genrand_srepr, &
     genrand_intg, &
     ! To use the results, you will need these variables:
-    corr_array_cloud, &
-    corr_array_below, &
-    d_variables, &
-    iiPDF_chi, &
-    iiPDF_rr, &
-    iiPDF_w, &
-    iiPDF_Nr, &
-    iiPDF_ri, &
-    iiPDF_Ni, &
-    iiPDF_Ncn, &
-    iiPDF_rs, &
-    iiPDF_Ns, &
-    iiPDF_rg, &
-    iiPDF_Ng
+    corr_array_cloud,   &
+    corr_array_below,   &
+    d_variables,        &
+    iiPDF_chi,          &
+    iiPDF_rr,           &
+    iiPDF_w,            &
+    iiPDF_Nr,           &
+    iiPDF_ri,           &
+    iiPDF_Ni,           &
+    iiPDF_Ncn,          &
+    iiPDF_rs,           &
+    iiPDF_Ns,           &
+    iiPDF_rg,           &
+    iiPDF_Ng,           &
+    hmp2_ip_on_hmm2_ip
 
   public &
     ! To Interact With CLUBB's Grid:
