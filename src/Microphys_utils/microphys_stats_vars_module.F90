@@ -221,7 +221,7 @@ module microphys_stats_vars_module
     end do
 
     if ( .not. l_found ) then
-      stop "Variable not found in microphys_get_var"
+      stop "Variable not found in microphys_get_index"
     end if
 
     return
