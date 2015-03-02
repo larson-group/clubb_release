@@ -316,7 +316,7 @@ module pdf_closure_module
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
 
     logical, parameter :: &
-      l_use_ADG2 = .true. ! Temp. flag. See Larson et al. (2002) Appendix paragraph e.
+      l_use_ADG2 = .false. ! Temp. flag. See Larson et al. (2002) Appendix paragraph e.
 
     integer :: i, hm_idx   ! Indices
 
