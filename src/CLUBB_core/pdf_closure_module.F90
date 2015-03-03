@@ -445,13 +445,13 @@ module pdf_closure_module
           ! divide by zero. To ameliorate this problem, we enforce abs( w_1_n )
           ! and abs( w_2_n ) > .05
           small_m = max( 5e-2_core_rknd, &
-                       (1.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)) 
+                       (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)) 
 
           small_m_sqd = small_m**2
 
         else
 
-          small_m = (1.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)
+          small_m = (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)
 
           small_m_sqd = small_m**2
 
