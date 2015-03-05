@@ -42,7 +42,8 @@ module latin_hypercube_driver_module
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, &
     generate_strat_uniform_variate, pick_sample_categories, &
-    clip_transform_silhs_output, define_importance_categories, importance_category_type
+    clip_transform_silhs_output, define_importance_categories, importance_category_type, &
+    compute_category_real_probs
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
 

@@ -15,7 +15,8 @@ module silhs_category_variance_module
   subroutine silhs_category_variance_driver &
              ( nz, num_samples, d_variables, hydromet_dim, X_nl_all_levs, &
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
-               lh_hydromet_mc_all, lh_sample_point_weights )
+               lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
+               hydromet_pdf_params )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -40,6 +41,12 @@ module silhs_category_variance_module
     use array_index, only: &
       iirrm
 
+    use pdf_parameter_module, only: &
+      pdf_parameter     ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
     implicit none
 
     ! Input Variables
@@ -63,6 +70,12 @@ module silhs_category_variance_module
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params              ! The PDF parameters!
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
@@ -99,7 +112,7 @@ module silhs_category_variance_module
 
     call silhs_sample_category_variance &
          ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs, &
-           samples_all, lh_sample_point_weights )
+           samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
 
     return
   end subroutine silhs_category_variance_driver
@@ -108,7 +121,7 @@ module silhs_category_variance_module
   !-----------------------------------------------------------------------
   subroutine silhs_sample_category_variance &
              ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs, &
-               samples_all, lh_sample_point_weights )
+               samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
 
   ! Description:
   !   Computes the variance of a microphysics variable in each importance
@@ -127,7 +140,10 @@ module silhs_category_variance_module
       zero         ! Constant
 
     use latin_hypercube_driver_module, only: &
-      num_importance_categories       ! Constant
+      num_importance_categories, &       ! Constant
+      define_importance_categories, &
+      compute_category_real_probs, &
+      importance_category_type
 
     use stats_variables, only: &
       stats_lh_zt, &                  ! Variable(s)
@@ -136,6 +152,12 @@ module silhs_category_variance_module
 
     use stats_type_utilities, only: &
       stat_update_var                 ! Procedure
+
+    use pdf_parameter_module, only: &
+      pdf_parameter       ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
 
     implicit none
 
@@ -157,18 +179,24 @@ module silhs_category_variance_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of SILHS sample points
 
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params              ! The PDF parameters!
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
+
     ! Local Variables
+    type(importance_category_type), dimension(num_importance_categories) :: &
+      importance_categories
+
     integer, dimension(num_samples) :: &
       int_sample_category     ! Category of each sample point
 
-    real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
-      category_variance
-
-    integer, dimension(num_importance_categories) :: &
-      category_num
-
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
-      category_mean
+      category_real_probs     ! PDF probability of each category
+
+    real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
+      root_weight_mean_sq_cat
 
     integer :: isample, icat, k
 
@@ -176,52 +204,48 @@ module silhs_category_variance_module
 
     !----- Begin Code -----
 
-    category_variance    =    zero
+    root_weight_mean_sq_cat = zero
+
+    ! We want to make sure that the output from the determine_sample_categories
+    ! function is consistent with the categories from the
+    ! define_importance_categories function.
+    importance_categories   = define_importance_categories( )
+
 
     do k=2, nz
 
-      category_num         =    0
-      category_mean        =    zero
       int_sample_category = determine_sample_categories &
                             ( num_samples, d_variables, X_nl_all_levs(k,:,:), &
-                              X_mixt_comp_all_levs(k,:) )
+                              X_mixt_comp_all_levs(k,:), importance_categories )
 
-      do isample=1, num_samples
-        
-        icat = int_sample_category(isample)
-
-        category_mean(icat) = category_mean(icat) + samples_all(k,isample)
-        category_num (icat) = category_num (icat) + 1
-
-      end do ! isample=1, num_samples
-
-      where ( category_num > 0 )
-        category_mean(:) = category_mean(:) / real( category_num(:), kind=core_rknd )
-      else where
-        category_mean(:) = zero
-      end where
+      category_real_probs = &
+        compute_category_real_probs( importance_categories, pdf_params(k), &
+                                     hydromet_pdf_params(k) )
 
       do isample=1, num_samples
 
         icat = int_sample_category(isample)
 
-        category_variance(k,icat) = category_variance(k,icat) + &
-          lh_sample_point_weights(isample) * &
-          ( ( samples_all(k,isample) - category_mean(icat) ) ** 2 )
+        root_weight_mean_sq_cat(k,icat) = root_weight_mean_sq_cat(k,icat) + &
+          lh_sample_point_weights(isample) * ( samples_all(k,isample) ** 2 )
 
       end do ! isample=1, num_samples
 
-      category_variance(k,:) = category_variance(k,:) / real( num_samples, kind=core_rknd )
+      root_weight_mean_sq_cat(k,:) = root_weight_mean_sq_cat(k,:) / &
+                                     real( num_samples, kind=core_rknd )
+
+      root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) * &
+                                           category_real_probs(:) )
 
     end do ! k=2, nz
 
     ! Microphysics is not run on the lowest thermodynamic grid level.
-    category_variance(1,:) = zero
+    root_weight_mean_sq_cat(1,:) = zero
 
     if ( l_stats_samp ) then
       do icat=1, num_importance_categories
         call stat_update_var( isilhs_variance_category(icat), &
-                              category_variance(:,icat), stats_lh_zt )
+                              root_weight_mean_sq_cat(:,icat), stats_lh_zt )
       end do
     end if
 
@@ -231,8 +255,8 @@ module silhs_category_variance_module
 
   !-----------------------------------------------------------------------
   function determine_sample_categories( num_samples, d_variables, X_nl_one_lev, &
-                                        X_mixt_comp_one_lev ) &
-    result( int_sample_category )
+                                        X_mixt_comp_one_lev, importance_categories ) &
+  result( int_sample_category )
 
   ! Description:
   !   Determines the importance category of each sample.
@@ -251,8 +275,7 @@ module silhs_category_variance_module
 
     use latin_hypercube_driver_module, only: &
       num_importance_categories, &     ! Constant
-      importance_category_type,  &     ! Type
-      define_importance_categories     ! Procedure
+      importance_category_type         ! Type
 
     use corr_varnce_module, only: &
       iiPDF_chi, &
@@ -271,13 +294,12 @@ module silhs_category_variance_module
     integer, dimension(num_samples), intent(in) :: &
       X_mixt_comp_one_lev   ! Category of each sample point
 
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories
+
     ! Output Variable
     integer, dimension(num_samples) :: &
       int_sample_category   ! Category of each sample
-
-    ! Local Variables
-    type(importance_category_type), dimension(num_importance_categories) :: &
-      importance_categories
 
     type(importance_category_type) :: sample_category
 
@@ -286,11 +308,6 @@ module silhs_category_variance_module
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    ! We want to make sure that the output from the determine_sample_categories
-    ! function is consistent with the categories from the define_importance_categories
-    ! function.
-    importance_categories = define_importance_categories( )
 
     do isample=1, num_samples
 
@@ -323,7 +340,7 @@ module silhs_category_variance_module
         if ( (importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud) .and. &
              (importance_categories(icategory)%l_in_precip .eqv. sample_category%l_in_precip) .and.&
              (importance_categories(icategory)%l_in_component_1 .eqv. &
-             sample_category%l_in_component_1) ) then
+              sample_category%l_in_component_1) ) then
 
           found_category_index = icategory
           exit

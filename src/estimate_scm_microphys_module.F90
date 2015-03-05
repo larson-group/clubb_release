@@ -15,7 +15,7 @@ module estimate_scm_microphys_module
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
-               p_in_Pa, exner, rho, &
+               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
                lh_clipped_vars, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -92,6 +92,12 @@ module estimate_scm_microphys_module
     use silhs_category_variance_module, only: &
       silhs_category_variance_driver  ! Procedure
 
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
     implicit none
 
     ! External
@@ -120,6 +126,12 @@ module estimate_scm_microphys_module
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! The PDF parameters
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
@@ -300,7 +312,8 @@ module estimate_scm_microphys_module
           call silhs_category_variance_driver &
                ( nz, num_samples, d_variables, hydromet_dim, X_nl_all_levs, & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
-                 lh_hydromet_mc_all, lh_sample_point_weights )                ! Intent(in)
+                 lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
+                 hydromet_pdf_params )                                        ! Intent(in)
         end if ! isilhs_variance_category(1) > 0
 
       end if ! allocated( isilhs_variance_category ) 
