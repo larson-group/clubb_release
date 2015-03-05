@@ -3607,7 +3607,7 @@ the ``sample probability'' of the category.
 Given SILHS sample points picked according to the distribution given by the PDF
 $P(\mathbf{x})$, an integral of the form
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
 \end{equation}
 can be approximated using the following formulas. To integrate over
 the entire PDF, use:
@@ -3633,6 +3633,85 @@ where $\mathbf{1}_\Omega(\mathbf{x}_i)$ is the indicator function of $\Omega$:
 1 & \mathbf{x} \in \Omega \\
 0 & \mathbf{x} \notin \Omega
 \end{cases}
+\end{equation}
+
+\subsection{Optimal Allocation of Sample Points}
+
+Mathematically, SILHS performs importance sampling by defining a new
+``importance'' function:
+\begin{equation}
+L(\mathbf{x}) = \frac{\zeta_i}{S_i} \mbox{when \textbf{x} is in category $i$}
+\end{equation}
+
+The integral given in \eqref{SILHS integral form} is rewritten as:
+\begin{equation}
+\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
+\int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
+\right)d\mathbf{x}
+\end{equation}
+
+Thus, rather than choose sample points that match the $P(\mathbf{x})$
+distribution and evaluate $f(\mathbf{x})$, we instead choose points that follow
+the distribution $\frac{P(\mathbf{x})}{L(\mathbf{x})}$ and evaluate the function
+$f(\mathbf{x}) L(\mathbf{x})$ using these points.
+
+The hope of using this method is that our new function will have less variance
+than the old one. The variance of the new function is given by:
+\begin{equation}
+v = \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
+\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}\right)d\mathbf{x} - \mu^2
+\end{equation}
+
+We can split the integral up over our importance categories.
+\begin{align}
+v &= \sum_{i=1}^{N_c} \left\{ \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
+\mathbf{1}_i(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}\right)
+d\mathbf{x} \right\} - \mu^2 \\
+&= \sum_{i=1}^{N_c} \left\{\left(\frac{\zeta_i}{S_i}\right)^2
+\int\left[f(\mathbf{x})\right]^2\left(\frac{S_i}{\zeta_i}\right)
+\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
+&= \sum_{i=1}^{N_c} \left\{ \left(\frac{\zeta_i}{S_i}\right)
+\int\left[f(\mathbf{x})\right]^2\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\
+d\mathbf{x} \right\} - \mu^2 \label{SILHS importance variance simplified}
+\end{align}
+
+It is interesting to ask how we might choose our sample probabilities $S_i$ such
+that \eqref{SILHS importance variance simplified} is minimized. For convenience,
+let $u_i=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\
+d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
+\begin{equation}
+v = \sum_{i=1}^{N_c} \frac{\zeta_i u_i}{S_i} - \mu^2
+\end{equation}
+The probabilities $S_i$ must add to one, so we can write this as:
+\begin{equation}
+v = \sum_{i=1}^{N_c-1} \frac{\zeta_i u_i}{S_i} + \frac{\zeta_{N_c}
+u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
+\end{equation}
+
+To optimize this, we take the $N_c-1$ partial derivitives of $v$ with respect to
+$S_i$ and set them all equal to zero.
+\begin{gather}
+\frac{\partial v}{\partial S_i} = -\frac{\zeta_i u_i}{S_i^2} + \frac{\zeta_{N_c}
+u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} = 0 \\
+\frac{\zeta_i u_i}{S_i^2} = \frac{\zeta_{N_c}
+u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} \\
+\frac{\zeta_i u_i}{S_i^2} = \frac{\zeta_{N_c}u_{N_c}}{S_{N_c}^2} \\
+\frac{\sqrt{\zeta_i u_i}}{S_i} = \frac{\sqrt{\zeta_{N_c}u_{N_c}}}{S_{N_c}}
+\end{gather}
+
+So, in each category, the sample probability $S_i$ should be proportional to
+$\sqrt{\zeta_i u_i}$. If we let
+\begin{equation}
+\alpha = \frac{S_i}{\sqrt{\zeta_i u_i}} \label{alpha def}
+\end{equation}
+and impose the constraint that the sample probabilities add to one, we have
+\begin{gather}
+\sum_{j=1}^{N_c} \alpha\sqrt{\zeta_j u_j} = 1 \\
+\alpha = \frac{1}{\sum_{i=j}^{N_c} \sqrt{\zeta_j u_j}} \label{alpha solved}
+\end{gather}
+Substituting \eqref{alpha solved} into \eqref{alpha def}, we find that
+\begin{equation}
+S_i = \frac{\sqrt{\zeta_i u_i}}{\sum_{j=1}^{N_c}\sqrt{\zeta_j u_j}}
 \end{equation}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
