@@ -47,6 +47,9 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter
 
+    use corr_varnce_module, only: &
+      iiPDF_chi
+
     implicit none
 
     ! Input Variables
@@ -103,6 +106,10 @@ module silhs_category_variance_module
         samples_all(:,isample) = microphys_stats_vars_all(isample)%output_values &
                                    (:,structure_index)
       end do
+
+    else if ( .false. ) then
+
+      samples_all = X_nl_all_levs(:,:,iiPDF_chi)
 
     else ! .true.
 
