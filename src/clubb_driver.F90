@@ -263,8 +263,8 @@ module clubb_driver
         rtm_nudge_max_altitude
 
     use corr_varnce_module, only: &
-        corr_array_cloud, & ! Variable(s)
-        corr_array_below, &
+        corr_array_n_cloud, & ! Variable(s)
+        corr_array_n_below, &
         d_variables, &
         cleanup_corr_matrix_arrays, &
         iiPDF_Ncn, &
@@ -1327,7 +1327,7 @@ module clubb_driver
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &         ! Intent(in)
                                     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
                                     hydrometp2, &                               ! Intent(inout)
                                     mu_x_1, mu_x_2, &                           ! Intent(out)

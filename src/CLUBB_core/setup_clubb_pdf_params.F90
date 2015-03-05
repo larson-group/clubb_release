@@ -25,6 +25,7 @@ module setup_clubb_pdf_params
              component_corr_w_hm_ip,        &
              component_corr_x_hm_ip,        &
              component_corr_hmx_hmy_ip,     &
+             denormalize_corr,              &
              calc_corr_w_hm,                &
              pdf_param_hm_stats,            &
              pdf_param_ln_hm_stats,         &
@@ -4189,6 +4190,215 @@ module setup_clubb_pdf_params
     return
 
   end subroutine normalize_corr
+
+  !=============================================================================
+  subroutine denormalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
+                               sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
+                               corr_array_1_n, corr_array_2_n, &
+                               corr_array_1, corr_array_2 )
+
+    ! Description:
+    ! Calculates the true or "real-space" correlations between PDF variables,
+    ! where at least one of the variables that is part of a correlation has an
+    ! assumed lognormal distribution -- which are the precipitating hydrometeors
+    ! (in precipitation) and N_cn.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero          ! Constant
+
+    use pdf_utilities, only: &
+        corr_NN2NL, & ! Procedure(s)
+        corr_NN2LL
+
+    use corr_varnce_module, only: &
+        iiPDF_chi, & ! Variable(s)
+        iiPDF_eta, &
+        iiPDF_w,  &
+        iiPDF_Ncn
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    use model_flags, only: &
+        l_const_Nc_in_cloud  ! Variable!!
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      d_variables ! Number of PDF variables
+
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      sigma_x_1_n, & ! Std. dev. array (normalized) of PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
+
+    real ( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
+      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
+
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    intent(in) :: &
+      corr_array_1_n, & ! Corr. array (normalized) of PDF vars. (comp. 1)    [-]
+      corr_array_2_n    ! Corr. array (normalized) of PDF vars. (comp. 2)    [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    intent(out) :: &
+      corr_array_1, & ! Correlation array of PDF vars. (comp. 1)             [-]
+      corr_array_2    ! Correlation array of PDF vars. (comp. 2)             [-]
+
+    ! Local Variables
+    integer :: ivar, jvar ! Loop indices
+
+
+    ! The correlations in each PDF component between two of w, chi (old s), and
+    ! eta (old t) do not need to be denormalized, since w, chi, and eta follow
+    ! assumed normal distributions in each PDF component.  The normalized
+    ! correlations between any two of these variables are the same as the actual
+    ! correlations.    
+    corr_array_1 = corr_array_1_n
+    corr_array_2 = corr_array_2_n
+
+    !!! Calculate the true correlation of variables that have an assumed normal
+    !!! distribution and variables that have an assumed lognormal distribution
+    !!! for the ith PDF component, given their normalized correlation and the
+    !!! normalized standard deviation of the variable with the assumed lognormal
+    !!! distribution.
+
+    if ( l_const_Nc_in_cloud ) then
+
+      ! Ncn does not vary in the grid box. Consequently, the correlation between
+      ! Ncn and any other variate is not defined. Here, we set the correlations
+      ! between Ncn and chi/eta/w to zero.
+      corr_array_1(iiPDF_Ncn, iiPDF_w) = zero
+      corr_array_2(iiPDF_Ncn, iiPDF_w) = zero
+      corr_array_1(iiPDF_Ncn, iiPDF_chi) = zero
+      corr_array_2(iiPDF_Ncn, iiPDF_chi) = zero
+      corr_array_1(iiPDF_Ncn, iiPDF_eta) = zero
+      corr_array_2(iiPDF_Ncn, iiPDF_eta) = zero
+
+    else ! .not. l_const_Nc_in_cloud
+
+      ! Denormalize the correlations between chi/eta/w and N_cn.
+
+      ! Denormalize the correlation of w and N_cn in PDF component 1.
+      corr_array_1(iiPDF_Ncn, iiPDF_w) &
+      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_w), &
+                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Denormalize the correlation of w and N_cn in PDF component 2.
+      corr_array_2(iiPDF_Ncn, iiPDF_w) &
+      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_w), &
+                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Denormalize the correlation of chi (old s) and N_cn in PDF component 1.
+      corr_array_1(iiPDF_Ncn, iiPDF_chi) &
+      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_chi), &
+                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Denormalize the correlation of chi (old s) and N_cn in PDF component 2.
+      corr_array_2(iiPDF_Ncn, iiPDF_chi) &
+      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_chi), &
+                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Denormalize the correlation of eta (old t) and N_cn in PDF component 1.
+      corr_array_1(iiPDF_Ncn, iiPDF_eta) &
+      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_eta), &
+                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+      ! Denormalize the correlation of eta (old t) and N_cn in PDF component 2.
+      corr_array_2(iiPDF_Ncn, iiPDF_eta) &
+      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_eta), &
+                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+
+    end if ! l_const_Nc_in_cloud
+
+    ! Denormalize the correlations (in-precip) between chi/eta/w and the
+    ! precipitating hydrometeors.
+    do ivar = iiPDF_chi, iiPDF_w
+       do jvar = iiPDF_Ncn+1, d_variables
+
+          ! Denormalize the correlation (in-precip) between w, chi, or eta and a
+          ! precipitating hydrometeor, hm, in PDF component 1.
+          corr_array_1(jvar, ivar) &
+          = corr_NN2NL( corr_array_1_n(jvar, ivar), sigma_x_1_n(jvar), &
+                        sigma2_on_mu2_ip_1(jvar) )
+
+          ! Denormalize the correlation (in-precip) between w, chi, or eta and a
+          ! precipitating hydrometeor, hm, in PDF component 2.
+          corr_array_2(jvar, ivar) &
+          = corr_NN2NL( corr_array_2_n(jvar, ivar), sigma_x_2_n(jvar), &
+                        sigma2_on_mu2_ip_2(jvar) )
+
+       enddo ! jvar = iiPDF_Ncn+1, d_variables
+    enddo ! ivar = iiPDF_chi, iiPDF_w
+
+
+    !!! Calculate the true correlation of two variables that both have an
+    !!! assumed lognormal distribution for the ith PDF component, given their
+    !!! normalized correlation and both of their normalized standard deviations.
+
+    ! Denormalize the correlations (in-precip) between N_cn and the
+    ! precipitating hydrometeors.
+    ivar = iiPDF_Ncn
+    do jvar = ivar+1, d_variables
+
+       if ( l_const_Nc_in_cloud ) then
+
+         ! Ncn does not vary, so these correlations are undefined. Set them to
+         ! zero.
+         corr_array_1(jvar,ivar) = zero
+         corr_array_2(jvar,ivar) = zero
+
+       else ! .not. l_const_Nc_in_cloud
+
+         ! Denormalize the correlation (in-precip) between N_cn and a
+         ! precipitating hydrometeor, hm, in PDF component 1.
+         corr_array_1(jvar, ivar) &
+         = corr_NN2LL( corr_array_1_n(jvar, ivar), &
+                       sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
+                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
+
+         ! Denormalize the correlation (in-precip) between N_cn and a
+         ! precipitating hydrometeor, hm, in PDF component 2.
+         corr_array_2(jvar, ivar) &
+         = corr_NN2LL( corr_array_2_n(jvar, ivar), &
+                       sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
+                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
+
+       end if ! l_const_Nc_in_cloud
+
+    enddo ! jvar = ivar+1, d_variables
+
+    ! Denormalize the correlations (in-precip) between two precipitating
+    ! hydrometeors.
+    do ivar = iiPDF_Ncn+1, d_variables-1
+       do jvar = ivar+1, d_variables
+
+          ! Denormalize the correlation (in-precip) between two precipitating
+          ! hydrometeors (for example, r_r and N_r) in PDF component 1.
+          corr_array_1(jvar, ivar) &
+          = corr_NN2LL( corr_array_1_n(jvar, ivar), &
+                        sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
+                        sigma2_on_mu2_ip_1(ivar), sigma2_on_mu2_ip_1(jvar) )
+
+          ! Denormalize the correlation (in-precip) between two precipitating
+          ! hydrometeors (for example, r_r and N_r) in PDF component 2.
+          corr_array_2(jvar, ivar) &
+          = corr_NN2LL( corr_array_2_n(jvar, ivar), &
+                        sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
+                        sigma2_on_mu2_ip_2(ivar), sigma2_on_mu2_ip_2(jvar) )
+
+       enddo ! jvar = ivar+1, d_variables
+    enddo ! ivar = iiPDF_Ncn+1, d_variables-1
+
+
+    return
+
+  end subroutine denormalize_corr
 
   !=============================================================================
   subroutine calc_corr_w_hm( wm, wphydrometp, &

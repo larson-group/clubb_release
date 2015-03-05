@@ -435,8 +435,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
    use corr_varnce_module, only: &
        d_variables, &
-       corr_array_cloud, &
-       corr_array_below, &
+       corr_array_n_cloud, &
+       corr_array_n_below, &
        sigma2_on_mu2_ip_array_cloud, &
        sigma2_on_mu2_ip_array_below, &
        iiPDF_chi, &
@@ -1850,7 +1850,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     zero, mixt_frac, one, & ! Intent(in)
                                     one, wphydrometp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
-                                    corr_array_cloud, corr_array_below, & ! Intent(in)
+                                    corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 
@@ -2404,7 +2404,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                     zero, mixt_frac, one, & ! Intent(in)
                                     one, wphydrometp_zt, &
                                     mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
-                                    corr_array_cloud, corr_array_below, & ! Intent(in)
+                                    corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
                                     pdf_params(k), d_variables, & ! Intent(in)
                                     corr_array_1, corr_array_2 ) ! Intent(out)
 

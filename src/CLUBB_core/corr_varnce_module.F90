@@ -121,15 +121,15 @@ module corr_varnce_module
     sigma2_on_mu2_ip_array_below
 
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
-    corr_array_cloud, &
-    corr_array_below
+    corr_array_n_cloud, &
+    corr_array_n_below
 !$omp threadprivate(sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
-!$omp   corr_array_cloud, corr_array_below)
+!$omp   corr_array_n_cloud, corr_array_n_below)
 
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
-      corr_array_cloud_def, &
-      corr_array_below_def
-!$omp threadprivate( corr_array_cloud_def, corr_array_below_def )
+      corr_array_n_cloud_def, &
+      corr_array_n_below_def
+!$omp threadprivate( corr_array_n_cloud_def, corr_array_n_below_def )
 
 
   private
@@ -165,17 +165,17 @@ module corr_varnce_module
     ! ---- Begin Code ----
  
     ! Allocate Arrays.
-    allocate( corr_array_cloud_def(d_var_total,d_var_total) )
-    allocate( corr_array_below_def(d_var_total,d_var_total) )
+    allocate( corr_array_n_cloud_def(d_var_total,d_var_total) )
+    allocate( corr_array_n_below_def(d_var_total,d_var_total) )
 
     ! Initialize all values to 0.
-    corr_array_cloud_def = zero
-    corr_array_below_def = zero
+    corr_array_n_cloud_def = zero
+    corr_array_n_below_def = zero
 
     ! Set the correlation of any variable with itself to 1.
     do indx = 1, d_var_total, 1
-       corr_array_cloud_def(indx,indx) = one
-       corr_array_below_def(indx,indx) = one
+       corr_array_n_cloud_def(indx,indx) = one
+       corr_array_n_below_def(indx,indx) = one
     enddo
 
     ! Set up default correlation arrays.
@@ -183,7 +183,7 @@ module corr_varnce_module
     ! for the ARM 97 case.  Any changes should be made concurrently here and in
     ! ../../input/case_setups/arm_97_corr_array_cloud.in (for "in-cloud") and
     ! in ../../input/case_setups/arm_97_corr_array_cloud.in (for "below-cloud").
-    corr_array_cloud_def = reshape( &
+    corr_array_n_cloud_def = reshape( &
 
 (/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
   0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
@@ -198,13 +198,13 @@ module corr_varnce_module
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
 
-    shape(corr_array_cloud_def) )
+    shape(corr_array_n_cloud_def) )
 !  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
 
-    corr_array_cloud_def = transpose( corr_array_cloud_def )
+    corr_array_n_cloud_def = transpose( corr_array_n_cloud_def )
 
 
-    corr_array_below_def = reshape( &
+    corr_array_n_below_def = reshape( &
 
 (/1._c, .3_c , .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
   0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
@@ -219,10 +219,10 @@ module corr_varnce_module
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
   0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
 
-    shape(corr_array_below_def) )
+    shape(corr_array_n_below_def) )
 !  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
 
-    corr_array_below_def = transpose( corr_array_below_def )
+    corr_array_n_below_def = transpose( corr_array_n_below_def )
 
 
     return
@@ -328,22 +328,22 @@ module corr_varnce_module
 
     ! ---- Begin Code ----
 
-    corr_array_cloud = zero
-    corr_array_below = zero
+    corr_array_n_cloud = zero
+    corr_array_n_below = zero
 
     do i = 1, d_variables
-       corr_array_cloud(i,i) = one
-       corr_array_below(i,i) = one
+       corr_array_n_cloud(i,i) = one
+       corr_array_n_below(i,i) = one
     enddo
 
     do i = 1, d_variables-1
        do j = i+1, d_variables
           if ( def_corr_idx(i) > def_corr_idx(j) ) then
-             corr_array_cloud(j, i) = corr_array_cloud_def(def_corr_idx(j), def_corr_idx(i))
-             corr_array_below(j, i) = corr_array_below_def(def_corr_idx(j), def_corr_idx(i))
+             corr_array_n_cloud(j, i) = corr_array_n_cloud_def(def_corr_idx(j), def_corr_idx(i))
+             corr_array_n_below(j, i) = corr_array_n_below_def(def_corr_idx(j), def_corr_idx(i))
           else
-             corr_array_cloud(j, i) = corr_array_cloud_def(def_corr_idx(i), def_corr_idx(j))
-             corr_array_below(j, i) = corr_array_below_def(def_corr_idx(i), def_corr_idx(j))
+             corr_array_n_cloud(j, i) = corr_array_n_cloud_def(def_corr_idx(i), def_corr_idx(j))
+             corr_array_n_below(j, i) = corr_array_n_below_def(def_corr_idx(i), def_corr_idx(j))
           endif
        enddo
     enddo
@@ -353,7 +353,7 @@ module corr_varnce_module
 
   !-----------------------------------------------------------------------------
   subroutine read_correlation_matrix( iunit, input_file, d_variables, &
-                                      corr_array )
+                                      corr_array_n )
 
     ! Description:
     !   Reads a correlation variance array from a file and stores it in an array.
@@ -381,7 +381,7 @@ module corr_varnce_module
 
     ! Input/Output Variable(s)
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
-      corr_array ! Correlation variance array
+      corr_array_n ! Normalized correlation array
 
     ! Local Variable(s)
 
@@ -403,11 +403,11 @@ module corr_varnce_module
     allocate( retVars(1:nCols) )
 
     ! Initializing to zero means that correlations we don't have are assumed to be 0.
-    corr_array(:,:) = 0.0_core_rknd
+    corr_array_n(:,:) = 0.0_core_rknd
 
     ! Set main diagonal to 1
     do i=1, d_variables
-      corr_array(i,i) = 1.0_core_rknd
+      corr_array_n(i,i) = 1.0_core_rknd
     end do
 
     ! Read the values from the specified file
@@ -429,7 +429,7 @@ module corr_varnce_module
           if( var_index2 > -1 ) then
             call set_lower_triangular_matrix &
                  ( d_variables, var_index1, var_index2, retVars(i)%values(j), &
-                   corr_array )
+                   corr_array_n )
           end if
         end do
       end if
@@ -688,8 +688,8 @@ module corr_varnce_module
 
     ! ---- Begin Code ----
 
-    allocate( corr_array_cloud(d_variables,d_variables) )
-    allocate( corr_array_below(d_variables,d_variables) )
+    allocate( corr_array_n_cloud(d_variables,d_variables) )
+    allocate( corr_array_n_below(d_variables,d_variables) )
 
     allocate( sigma2_on_mu2_ip_array_cloud(d_variables) )
     allocate( sigma2_on_mu2_ip_array_below(d_variables) )
@@ -705,10 +705,10 @@ module corr_varnce_module
     if ( corr_file_exist ) then
 
        call read_correlation_matrix( iunit, trim( input_file_cloud ), d_variables, & ! In
-                                     corr_array_cloud ) ! Out
+                                     corr_array_n_cloud ) ! Out
 
        call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, & ! In
-                                     corr_array_below ) ! Out
+                                     corr_array_n_below ) ! Out
 
     else ! Read in default correlation matrices
 
@@ -722,8 +722,8 @@ module corr_varnce_module
     endif
 
     ! Mirror the correlation matrices
-    call mirror_lower_triangular_matrix( d_variables, corr_array_cloud )
-    call mirror_lower_triangular_matrix( d_variables, corr_array_below )
+    call mirror_lower_triangular_matrix( d_variables, corr_array_n_cloud )
+    call mirror_lower_triangular_matrix( d_variables, corr_array_n_below )
 
     ! Sanity check to avoid confusing non-convergence results.
     if ( clubb_at_least_debug_level( 2 ) ) then
@@ -731,8 +731,8 @@ module corr_varnce_module
       if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
         l_warning = .false.
         do i = 1, d_variables
-          if ( ( corr_array_cloud(i,iiPDF_Ncn) /= zero .or.  &
-                 corr_array_below(i,iiPDF_Ncn) /= zero ) .and. &
+          if ( ( corr_array_n_cloud(i,iiPDF_Ncn) /= zero .or.  &
+                 corr_array_n_below(i,iiPDF_Ncn) /= zero ) .and. &
                i /= iiPDF_Ncn ) then
             l_warning = .true.
           end if
@@ -861,12 +861,12 @@ module corr_varnce_module
 
     ! ---- Begin Code ----
 
-    if ( allocated( corr_array_cloud ) ) then
-      deallocate( corr_array_cloud )
+    if ( allocated( corr_array_n_cloud ) ) then
+      deallocate( corr_array_n_cloud )
     end if
 
-    if ( allocated( corr_array_below ) ) then
-      deallocate( corr_array_below )
+    if ( allocated( corr_array_n_below ) ) then
+      deallocate( corr_array_n_below )
     end if
 
     if ( allocated( sigma2_on_mu2_ip_array_cloud ) ) then
@@ -877,19 +877,19 @@ module corr_varnce_module
       deallocate( sigma2_on_mu2_ip_array_below )
     end if
 
-    if ( allocated( corr_array_cloud_def ) ) then
-      deallocate( corr_array_cloud_def )
+    if ( allocated( corr_array_n_cloud_def ) ) then
+      deallocate( corr_array_n_cloud_def )
     end if
 
-    if ( allocated( corr_array_below_def ) ) then
-      deallocate( corr_array_below_def )
+    if ( allocated( corr_array_n_below_def ) ) then
+      deallocate( corr_array_n_below_def )
     end if
 
     return
   end subroutine cleanup_corr_matrix_arrays
 
   !-----------------------------------------------------------------------------
-  subroutine assert_corr_symmetric( corr_array, & ! intent(in)
+  subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)
                                     d_variables ) ! intent(in)
 
     ! Description:
@@ -908,7 +908,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array ! Correlation array to be checked
+      intent(in) :: corr_array_n ! Normalized correlation array to be checked
 
     ! Local Variables
 
@@ -926,10 +926,10 @@ module corr_varnce_module
     !Do the check
     do n_col = 1, d_variables
       do n_row = 1, d_variables
-        if (abs(corr_array(n_col, n_row) - corr_array(n_row, n_col)) > tol) then
+        if (abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol) then
           l_error = .true.
         end if
-        if (n_col == n_row .and. corr_array(n_col, n_row) /= 1.0_core_rknd) then
+        if (n_col == n_row .and. corr_array_n(n_col, n_row) /= 1.0_core_rknd) then
           l_error = .true.
         end if
       end do
@@ -938,7 +938,7 @@ module corr_varnce_module
     !Report if any errors are found
     if (l_error) then
       write(fstderr,*) "Error: Correlation array is non symmetric or formatted incorrectly."
-      write(fstderr,*) corr_array
+      write(fstderr,*) corr_array_n
       stop
     end if
 
@@ -946,7 +946,7 @@ module corr_varnce_module
 
   !-----------------------------------------------------------------------------
   subroutine print_corr_matrix( d_variables, & ! intent(in)
-                                corr_array ) ! intent(in)
+                                corr_array_n ) ! intent(in)
 
     ! Description:
     !   Prints the correlation matrix to the console.
@@ -963,7 +963,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array ! Correlation array to be printed
+      intent(in) :: corr_array_n ! Normalized correlation array to be printed
 
     ! Local Variables
     integer :: n, & ! Loop indeces
@@ -979,7 +979,7 @@ module corr_varnce_module
 
     do n = 1, d_variables
       do m = 1, d_variables
-        write(str_array_value,'(F5.2)') corr_array(m,n)
+        write(str_array_value,'(F5.2)') corr_array_n(m,n)
         current_line = current_line(1:current_character_index)//str_array_value
         current_character_index = current_character_index + 6
       end do

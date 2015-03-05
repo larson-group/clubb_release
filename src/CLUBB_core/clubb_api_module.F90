@@ -95,8 +95,8 @@ module clubb_api_module
     w_tol_sqd ! [m^2/s^2]
 
   use corr_varnce_module, only : &
-      corr_array_cloud,   & ! Variable(s)
-      corr_array_below,   &
+      corr_array_n_cloud, & ! Variable(s)
+      corr_array_n_below, &
       d_variables,        &
       iiPDF_chi,          &
       iiPDF_rr,           &
@@ -264,8 +264,8 @@ module clubb_api_module
     genrand_srepr, &
     genrand_intg, &
     ! To use the results, you will need these variables:
-    corr_array_cloud,   &
-    corr_array_below,   &
+    corr_array_n_cloud, &
+    corr_array_n_below, &
     d_variables,        &
     iiPDF_chi,          &
     iiPDF_rr,           &
@@ -1478,7 +1478,7 @@ contains
     nz, d_variables, dt, rho, &                 ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-    corr_array_cloud, corr_array_below, &       ! Intent(in)
+    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
     pdf_params, l_stats_samp, &                 ! Intent(in)
     hydrometp2, &                               ! Intent(inout)
     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
@@ -1544,8 +1544,8 @@ contains
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), &
       intent(in) :: &
-      corr_array_cloud, & ! Prescribed correlation array in cloud      [-]
-      corr_array_below    ! Prescribed correlation array below cloud   [-]
+      corr_array_n_cloud, & ! Prescribed normalized corr. array in cloud     [-]
+      corr_array_n_below    ! Prescribed normalized corr. array below cloud  [-]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
@@ -1581,7 +1581,7 @@ contains
       nz, d_variables, dt, rho, &                 ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-      corr_array_cloud, corr_array_below, &       ! Intent(in)
+      corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
       pdf_params, l_stats_samp, &                 ! Intent(in)
       hydrometp2, &                               ! Intent(inout)
       mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
