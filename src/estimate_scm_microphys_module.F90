@@ -621,7 +621,7 @@ module estimate_scm_microphys_module
              irrm_accr, microphys_stats_zt ), stats_lh_zt )
       end if
 
-      if ( ilh_rrm_auto > 0 ) then
+      if ( ilh_rrm_evap > 0 ) then
         call stat_update_var( ilh_rrm_evap, microphys_get_var( &
              irrm_cond, microphys_stats_zt ), stats_lh_zt )
       end if
