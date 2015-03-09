@@ -3599,8 +3599,9 @@ $\omega_i$, is given by
 \begin{equation}
 \omega_i = \frac{\zeta_i}{S_i}
 \end{equation}
-where $\zeta_i$ is the amount of the PDF occupied by category $i$ and $S_i$ is
-the ``sample probability'' of the category.
+where $\zeta_i$ is the fraction of the PDF probability mass contained in category $i$, and $S_i$ is
+the ``sample probability'' of the category, that is, the probability that a 
+sample point will be drawn from the category.
 
 \subsection{Integrating over a PDF using SILHS}
 
@@ -3650,7 +3651,7 @@ The integral given in \eqref{SILHS integral form} is rewritten as:
 \right)d\mathbf{x}
 \end{equation}
 
-Thus, rather than choose sample points that match the $P(\mathbf{x})$
+Thus, rather than draw sample points from the $P(\mathbf{x})$
 distribution and evaluate $f(\mathbf{x})$, we instead choose points that follow
 the distribution $\frac{P(\mathbf{x})}{L(\mathbf{x})}$ and evaluate the function
 $f(\mathbf{x}) L(\mathbf{x})$ using these points.
