@@ -3689,7 +3689,7 @@ probabililties. We can easily verify this:
 When importance sampling is used, the weight of each category $C_j$, denoted as
 $\omega_j$, is given by
 \begin{equation}
-\omega_j = \frac{\zeta_i}{S_i}
+\omega_j = \frac{\zeta_j}{S_j}
 \end{equation}
 
 Given SILHS sample points picked according to the distribution given by the PDF
@@ -3735,7 +3735,7 @@ d\mathbf{x} \right\} - \mu^2 \\
 d\mathbf{x} \right\} - \mu^2 \label{SILHS importance variance simplified}
 \end{align}
 
-It is interesting to ask how we might choose our sample probabilities $S_i$ such
+It is interesting to ask how we might choose our sample probabilities $S_j$ such
 that \eqref{SILHS importance variance simplified} is minimized. For convenience,
 let $u_j=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
 d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
@@ -3744,7 +3744,7 @@ v = \sum_{j=1}^{N_c} \frac{\zeta_j u_j}{S_j} - \mu^2
 \end{equation}
 The probabilities $S_j$ must add to one, so we can write this as:
 \begin{equation}
-v = \sum_{j=1}^{N_c-1} \frac{\zeta_j u_i}{S_j} + \frac{\zeta_{N_c}
+v = \sum_{j=1}^{N_c-1} \frac{\zeta_j u_j}{S_j} + \frac{\zeta_{N_c}
 u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
 \end{equation}
 
