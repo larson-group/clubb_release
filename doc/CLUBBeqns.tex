@@ -42,6 +42,9 @@
 \newcommand{\ptlsqd}[2]{\frac{\partial^{2} #1}{\partial #2^{2}}}
 \newcommand{\totsqd}[2]{\frac{d^{2} #1}{d #2^{2}}}
 
+% provide lists with tight line spacing
+\usepackage{mdwlist}
+
 \begin{document}
 
 \begin{flushright} \today \end{flushright}
@@ -3592,33 +3595,114 @@ SILHS picks sample points from a joint probability distribution. In CLUBB, SILHS
 is used to account for subgrid variability in physical processes such as
 microphysics.
 
-\subsection{Weights}
-
-When importance sampling is used, the weight of each category $i$, denoted as
-$\omega_i$, is given by
-\begin{equation}
-\omega_i = \frac{\zeta_i}{S_i}
-\end{equation}
-where $\zeta_i$ is the fraction of the PDF probability mass contained in category $i$, and $S_i$ is
-the ``sample probability'' of the category, that is, the probability that a 
-sample point will be drawn from the category.
-
-\subsection{Integrating over a PDF using SILHS}
-
-Given SILHS sample points picked according to the distribution given by the PDF
-$P(\mathbf{x})$, an integral of the form
+Mathematically, the goal of SILHS is to numerically approximate integrals of the
+following form:
 \begin{equation}
 \int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
 \end{equation}
-can be approximated using the following formulas. To integrate over
-the entire PDF, use:
+where $P(\mathbf{x})$ is the PDF that describes CLUBB's joint probability
+distribution of variables, and $f(\mathbf{x})$ is a function of some or all of
+these variables. In other words, we want to compute the average value of
+$f(\mathbf{x})$ over the entire domain.
+
+\subsection{Importance Sampling}
+
+Importance sampling is a technique used in SILHS for variance reduction. The
+basic idea is to sample some parts of the PDF (the ``important'' regions) more
+often than they would normally be sampled.
+
+First, the PDF is split into a set of disjoint categories, $C_j$. These
+categories, which span the entire PDF, are currently defined as follows:
+\begin{enumerate*}
+\item In cloud, in precipitation, in mixture component 1
+\item In cloud, in precipitation, in mixture component 2
+\item Out of cloud, in precipitation, in mixture component 1
+\item Out of cloud, in precipitation, in mixture component 2
+\item In cloud, out of precipitation, in mixture component 1
+\item In cloud, out of precipitation, in mixture component 2
+\item Out of cloud, out of precipitation, in mixture component 1
+\item Out of cloud, out of precipitation, in mixture component 2
+\end{enumerate*}
+
+Each category $C_j$ is associated with a certain amount of PDF mass, called the
+category's ``PDF probability'' and denoted as:
+\begin{equation}
+\zeta_j = \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\end{equation}
+where $\mathbf{1}_j(\mathbf{x})$ is the indicator function of $C_j$:
+\begin{equation}
+\mathbf{1}_j(\mathbf{x}) =
+\begin{cases}
+1 & \mathbf{x} \in C_j \\
+0 & \mathbf{x} \notin C_j
+\end{cases}
+\end{equation}
+
+Since the categories $C_j$ span the entire PDF, we have:
+\begin{equation}
+\sum_{j=1}^{N_c} \zeta_j = 1
+\end{equation}
+where $N_c$ is the number of categories (currently eight in CLUBB).
+
+Next, we prescribe for each category another probability, $S_j$, called the
+category's ``prescribed probability''. The probabilities must be prescribed such
+that
+\begin{equation}
+\sum_{j=1}^{N_c} S_j = 1
+\end{equation}
+The prescribed probability $S_j$ of a given category is the probability that any
+sample will fall in that category. In other words, it is the expected fraction
+of sample points in the category. Therefore, intuitively, it is advantageous to
+prescribe the probabilities such that the categories that are ``important'' for
+a desired process are sampled more often than the unimportant categories.
+
+We want to generate sample points such that the expected fraction of sample
+points in the category $C_j$ is $S_j$ rather than $\zeta_j$. In order to do this,
+we define a new function:
+\begin{equation}
+L(\mathbf{x}) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
+\end{equation}
+We then rewrite the integral given in \eqref{SILHS integral form} as:
+\begin{equation}
+\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
+\int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
+\right)d\mathbf{x} =
+\int f(\mathbf{x}) L(\mathbf{x}) H(\mathbf{x}) d\mathbf{x}
+\end{equation}
+where
+\begin{equation}
+H(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
+\end{equation}
+
+Here, $H(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
+probabililties. We can easily verify this:
+\begin{align}
+\int \mathbf{1}_j(\mathbf{x}) H(\mathbf{x}) d\mathbf{x} &=
+\int \mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L(\mathbf{x})} d\mathbf{x} \\
+ &= \frac{S_j}{\zeta_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
+ &= \frac{S_j}{\zeta_j} \zeta_j \\
+ &= S_j
+\end{align}
+
+\subsection{Integrating over a PDF using SILHS}
+
+When importance sampling is used, the weight of each category $C_j$, denoted as
+$\omega_j$, is given by
+\begin{equation}
+\omega_j = \frac{\zeta_i}{S_i}
+\end{equation}
+
+Given SILHS sample points picked according to the distribution given by the PDF
+$P(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
+approximated using the following formulas. To integrate over the entire PDF,
+use:
 \begin{equation}
 \int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
 \sum_{i=1}^{N_s} \omega_i f(\mathbf{x}_i)
 \end{equation}
-where $\mathbf{x}_i$ is the $i$th sample point. The integral gives the mean of
-$f(\mathbf{x})$ over the entire PDF. To determine the mean over some subset
-$\Omega$ of the PDF, the following formula should be used:
+where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point. The integral
+gives the mean of $f(\mathbf{x})$ over the entire PDF. To determine the mean
+over some subset $\Omega$ of the PDF, the following formula should be used:
 \begin{equation}
 \frac{\displaystyle\int_\Omega f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}}
 {\displaystyle\int_\Omega P(\mathbf{x}) d\mathbf{x}}
@@ -3627,83 +3711,58 @@ $\Omega$ of the PDF, the following formula should be used:
 f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)}
 {\displaystyle\int_\Omega P(\mathbf{x}) d\mathbf{x}}
 \end{equation}
-where $\mathbf{1}_\Omega(\mathbf{x}_i)$ is the indicator function of $\Omega$:
-\begin{equation}
-\mathbf{1}_\Omega(\mathbf{x}) =
-\begin{cases}
-1 & \mathbf{x} \in \Omega \\
-0 & \mathbf{x} \notin \Omega
-\end{cases}
-\end{equation}
 
 \subsection{Optimal Allocation of Sample Points}
 
-Mathematically, SILHS performs importance sampling by defining a new
-``importance'' function:
+The hope of using the importance sampling method is that our new function will
+have less variance than the old one. The variance of the new function is given
+by:
 \begin{equation}
-L(\mathbf{x}) = \frac{\zeta_i}{S_i} \mbox{when \textbf{x} is in category $i$}
-\end{equation}
-
-The integral given in \eqref{SILHS integral form} is rewritten as:
-\begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
-\int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
-\right)d\mathbf{x}
-\end{equation}
-
-Thus, rather than draw sample points from the $P(\mathbf{x})$
-distribution and evaluate $f(\mathbf{x})$, we instead choose points that follow
-the distribution $\frac{P(\mathbf{x})}{L(\mathbf{x})}$ and evaluate the function
-$f(\mathbf{x}) L(\mathbf{x})$ using these points.
-
-The hope of using this method is that our new function will have less variance
-than the old one. The variance of the new function is given by:
-\begin{equation}
-v = \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
-\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}\right)d\mathbf{x} - \mu^2
+v = \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2 H(\mathbf{x})d\mathbf{x}
+- \mu^2
 \end{equation}
 
 We can split the integral up over our importance categories.
 \begin{align}
-v &= \sum_{i=1}^{N_c} \left\{ \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
-\mathbf{1}_i(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}\right)
+v &= \sum_{j=1}^{N_c} \left\{ \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
+\mathbf{1}_j(\mathbf{x}) H(\mathbf{x})
 d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{i=1}^{N_c} \left\{\left(\frac{\zeta_i}{S_i}\right)^2
-\int\left[f(\mathbf{x})\right]^2\left(\frac{S_i}{\zeta_i}\right)
-\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{i=1}^{N_c} \left\{ \left(\frac{\zeta_i}{S_i}\right)
-\int\left[f(\mathbf{x})\right]^2\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\
+&= \sum_{j=1}^{N_c} \left\{\left(\frac{\zeta_j}{S_j}\right)^2
+\int\left[f(\mathbf{x})\right]^2 \mathbf{1}_j(\mathbf{x})
+\left(\frac{S_j}{\zeta_j}\right) P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
+&= \sum_{j=1}^{N_c} \left\{ \left(\frac{\zeta_j}{S_j}\right)
+\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x}) P(\mathbf{x})\
 d\mathbf{x} \right\} - \mu^2 \label{SILHS importance variance simplified}
 \end{align}
 
 It is interesting to ask how we might choose our sample probabilities $S_i$ such
 that \eqref{SILHS importance variance simplified} is minimized. For convenience,
-let $u_i=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_i(\mathbf{x})P(\mathbf{x})\
+let $u_j=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
 d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
 \begin{equation}
-v = \sum_{i=1}^{N_c} \frac{\zeta_i u_i}{S_i} - \mu^2
+v = \sum_{j=1}^{N_c} \frac{\zeta_j u_j}{S_j} - \mu^2
 \end{equation}
-The probabilities $S_i$ must add to one, so we can write this as:
+The probabilities $S_j$ must add to one, so we can write this as:
 \begin{equation}
-v = \sum_{i=1}^{N_c-1} \frac{\zeta_i u_i}{S_i} + \frac{\zeta_{N_c}
+v = \sum_{j=1}^{N_c-1} \frac{\zeta_j u_i}{S_j} + \frac{\zeta_{N_c}
 u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
 \end{equation}
 
 To optimize this, we take the $N_c-1$ partial derivitives of $v$ with respect to
-$S_i$ and set them all equal to zero.
+$S_j$ and set them all equal to zero.
 \begin{gather}
-\frac{\partial v}{\partial S_i} = -\frac{\zeta_i u_i}{S_i^2} + \frac{\zeta_{N_c}
+\frac{\partial v}{\partial S_j} = -\frac{\zeta_j u_j}{S_j^2} + \frac{\zeta_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} = 0 \\
-\frac{\zeta_i u_i}{S_i^2} = \frac{\zeta_{N_c}
+\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} \\
-\frac{\zeta_i u_i}{S_i^2} = \frac{\zeta_{N_c}u_{N_c}}{S_{N_c}^2} \\
-\frac{\sqrt{\zeta_i u_i}}{S_i} = \frac{\sqrt{\zeta_{N_c}u_{N_c}}}{S_{N_c}}
+\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}u_{N_c}}{S_{N_c}^2} \\
+\frac{\sqrt{\zeta_j u_j}}{S_j} = \frac{\sqrt{\zeta_{N_c}u_{N_c}}}{S_{N_c}}
 \end{gather}
 
-So, in each category, the sample probability $S_i$ should be proportional to
-$\sqrt{\zeta_i u_i}$. If we let
+So, in each category, the sample probability $S_j$ should be proportional to
+$\sqrt{\zeta_j u_j}$. If we let
 \begin{equation}
-\alpha = \frac{S_i}{\sqrt{\zeta_i u_i}} \label{alpha def}
+\alpha = \frac{S_j}{\sqrt{\zeta_j u_j}} \label{alpha def}
 \end{equation}
 and impose the constraint that the sample probabilities add to one, we have
 \begin{gather}
@@ -3712,7 +3771,7 @@ and impose the constraint that the sample probabilities add to one, we have
 \end{gather}
 Substituting \eqref{alpha solved} into \eqref{alpha def}, we find that
 \begin{equation}
-S_i = \frac{\sqrt{\zeta_i u_i}}{\sum_{j=1}^{N_c}\sqrt{\zeta_j u_j}}
+S_j = \frac{\sqrt{\zeta_j u_j}}{\sum_{j^*=1}^{N_c}\sqrt{\zeta_{j^*} u_{j^*}}}
 \end{equation}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
