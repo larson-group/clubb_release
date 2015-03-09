@@ -3685,6 +3685,10 @@ probabililties. We can easily verify this:
  &= S_j
 \end{align}
 
+Now, instead of drawing points from the $P(\mathbf{x})$ distribution and
+evaluate the function $f(\mathbf{x})$, we draw points from the $H(\mathbf{x})$
+distribution and evaluate the function $f(\mathbf{x}) L(\mathbf{x})$.
+
 Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
 $f(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
 referred to as the sample point ``weight''. Each sample point has a weight,
@@ -3715,12 +3719,18 @@ where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point. The integral
 gives the mean of $f(\mathbf{x})$ over the entire PDF. To determine the mean
 over some subset $\Omega$ of the PDF, the following formula should be used:
 \begin{equation}
-\frac{\displaystyle\int_\Omega f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}}
-{\displaystyle\int_\Omega P(\mathbf{x}) d\mathbf{x}}
-\approx 
-\frac{\displaystyle\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
-f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)}
-{\displaystyle\int_\Omega P(\mathbf{x}) d\mathbf{x}}
+\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\approx \frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+\end{equation}
+However, note that this equation will implicitly be scaled by $\zeta_\Omega$. To
+compute and unscaled version of the integral, the following could be used
+instead:
+\begin{equation}
+\frac{1}{\zeta_\Omega}
+\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\approx \frac{1}{\zeta_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 
 \subsection{Optimal Allocation of Sample Points}
