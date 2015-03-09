@@ -3586,7 +3586,7 @@ It is also necessary to provide CLUBB with information on cloud water mixing
 ratio for the initial timestep of the run.  Cloud fraction is usually saved for
 output purposes only.
 
-% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 %
 
 \section{SILHS}
@@ -3668,6 +3668,7 @@ We then rewrite the integral given in \eqref{SILHS integral form} as:
 \int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
 \right)d\mathbf{x} =
 \int f(\mathbf{x}) L(\mathbf{x}) H(\mathbf{x}) d\mathbf{x}
+\label{SILHS integral rewrite}
 \end{equation}
 where
 \begin{equation}
@@ -3684,12 +3685,22 @@ probabililties. We can easily verify this:
  &= S_j
 \end{align}
 
+Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
+$f(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
+referred to as the sample point ``weight''. Each sample point has a weight,
+denoted as:
+\begin{equation}
+\omega_i = L(\mathbf{x}_i) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
+C_j \label{SILHS importance weights def}
+\end{equation}
+
 \subsection{Integrating over a PDF using SILHS}
 
-When importance sampling is used, the weight of each category $C_j$, denoted as
-$\omega_j$, is given by
+When importance sampling is used, the weight of each sample point, denoted as
+$\omega_i$, is given in \eqref{SILHS importance weights def}. When importance
+sampling is not used, the sample points are not weighted, or
 \begin{equation}
-\omega_j = \frac{\zeta_j}{S_j}
+\omega_i = 1
 \end{equation}
 
 Given SILHS sample points picked according to the distribution given by the PDF
