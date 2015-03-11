@@ -104,7 +104,7 @@ time_restart = 0.0       ! Time of model restart.
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
 !                e.g. checks for NaNs and spurious negative values.
-debug_level = 1
+debug_level = 2
 
 ! Add scalars that are computed using higher-order closure
 ! 0 to shut off all scalar computations
