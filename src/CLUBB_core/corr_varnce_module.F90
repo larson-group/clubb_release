@@ -178,49 +178,50 @@ module corr_varnce_module
        corr_array_n_below_def(indx,indx) = one
     enddo
 
-    ! Set up default correlation arrays.
-    ! The default correlation arrays used here are the correlation arrays used
-    ! for the ARM 97 case.  Any changes should be made concurrently here and in
+    ! Set up default normalized correlation arrays.
+    ! The default normalized correlation arrays used here are the normalized
+    ! correlation arrays used for the ARM 97 case.  Any changes should be made
+    ! concurrently here and in
     ! ../../input/case_setups/arm_97_corr_array_cloud.in (for "in-cloud") and
     ! in ../../input/case_setups/arm_97_corr_array_cloud.in (for "below-cloud").
     corr_array_n_cloud_def = reshape( &
 
-(/1._c, -.6_c, .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
-  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
-  0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
-  0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
-  0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 1._c   ,  .1_c  , .1_c  , 0._c  , 0._c  , .2_c, .2_c, &! Nr
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  1._c  , .7_c  , .5_c  , .5_c  , .3_c, .3_c, &! ri
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 1._c  , .5_c  , .5_c  , .3_c, .3_c, &! Ni
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 1._c  , .7_c  , .4_c, .4_c, &! rs
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 1._c  , .4_c, .4_c, &! Ns
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
+(/1._c,-.6_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, &! chi
+  0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , &! eta
+  0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , &! w
+  0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , &! Ncn
+  0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, &! rr
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, &! Nr
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, &! ri
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, &! Ni
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, &! rs
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, &! Ns
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, &! rg
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), &! Ng
 
     shape(corr_array_n_cloud_def) )
-!  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
+!  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
 
     corr_array_n_cloud_def = transpose( corr_array_n_cloud_def )
 
 
     corr_array_n_below_def = reshape( &
 
-(/1._c, .3_c , .09_c , .09_c , .5_c   , .5_c   , .2_c   , .2_c  , .2_c  , .2_c  , .2_c, .2_c, &! chi
-  0._c, 1._c , .027_c, .027_c, .0726_c, .0855_c, -.024_c, .084_c, .018_c, .012_c, 0._c, 0._c, &! eta
-  0._c, 0._c , 1._c  , .34_c , 0.2_c  , 0.2_c  ,  .1_c  , .15_c , 0._c  , 0._c  , 0._c, 0._c, &! w
-  0._c, 0._c , 0._c  , 1._c  , 0._c   , 0._c   ,  .39_c , .29_c , .14_c , .21_c , 0._c, 0._c, &! Ncn
-  0._c, 0._c , 0._c  , 0._c  , 1._c   , .7_c   ,  0._c  , 0._c  , .1_c  , .1_c  , .2_c, .2_c, &! rr
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 1._c   ,  .1_c  , .1_c  , 0._c  , 0._c  , .2_c, .2_c, &! Nr
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  1._c  , .7_c  , .5_c  , .5_c  , .3_c, .3_c, &! ri
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 1._c  , .5_c  , .5_c  , .3_c, .3_c, &! Ni
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 1._c  , .7_c  , .4_c, .4_c, &! rs
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 1._c  , .4_c, .4_c, &! Ns
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 1._c, .7_c, &! rg
-  0._c, 0._c , 0._c  , 0._c  , 0._c   , 0._c   ,  0._c  , 0._c  , 0._c  , 0._c  , 0._c, 1._c/),&!Ng
+(/1._c, .3_c, .09_c , .09_c , .788_c, .675_c, .240_c, .222_c, .240_c, .222_c, .240_c, .222_c, &! chi
+  0._c, 1._c, .027_c, .027_c, .114_c, .115_c,-.029_c, .093_c, .022_c, .013_c, 0._c  , 0._c  , &! eta
+  0._c, 0._c, 1._c  , .34_c , .315_c, .270_c, .120_c, .167_c, 0._c  , 0._c  , 0._c  , 0._c  , &! w
+  0._c, 0._c, 0._c  , 1._c  , 0._c  , 0._c  , .464_c, .320_c, .168_c, .232_c, 0._c  , 0._c  , &! Ncn
+  0._c, 0._c, 0._c  , 0._c  , 1._c  , .821_c, 0._c  , 0._c  , .173_c, .164_c, .319_c, .308_c, &! rr
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 1._c  , .152_c, .143_c, 0._c  , 0._c  , .285_c, .273_c, &! Nr
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .585_c, .571_c, .379_c, .363_c, &! ri
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .571_c, .550_c, .363_c, .345_c, &! Ni
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, .485_c, .470_c, &! rs
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .470_c, .450_c, &! Ns
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c  , .758_c, &! rg
+  0._c, 0._c, 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 0._c  , 1._c/), &! Ng
 
     shape(corr_array_n_below_def) )
-!  chi   eta     w      Ncn      rr       Nr        ri      Ni      rs      Ns      rg    Ng
+!  chi   eta    w      Ncn     rr      Nr      ri      Ni      rs      Ns      rg      Ng
 
     corr_array_n_below_def = transpose( corr_array_n_below_def )
 

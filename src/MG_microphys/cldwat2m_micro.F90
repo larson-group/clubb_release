@@ -406,7 +406,7 @@ subroutine mmicro_pcond ( sub_column,           &
    use setup_clubb_pdf_params, only: &
        compute_mean_stdev,   & ! Procedure(s)
        normalize_mean_stdev, &
-       compute_corr,         &
+       comp_corr_norm,       &
        normalize_corr
 
    use KK_upscaled_means, only: &
@@ -1842,30 +1842,26 @@ subroutine mmicro_pcond ( sub_column,           &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 
-                 call compute_corr( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    zero, zero, & ! Intent(in)
-                                    zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphydrometp_zt, &
-                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
-                                    corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
-                                    pdf_params(k), d_variables, & ! Intent(in)
-                                    corr_array_1, corr_array_2 ) ! Intent(out)
-
-                 call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
-                                      sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
-                                      corr_array_1, corr_array_2, &
-                                      corr_array_1_n, corr_array_2_n )
+                 call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                      zero, zero, & ! Intent(in)
+                                      zero, mixt_frac, one, & ! Intent(in)
+                                      one, wphydrometp_zt, &
+                                      mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                      sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
+                                      corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
+                                      pdf_params(k), d_variables, & ! Intent(in)
+                                      corr_array_1_n, corr_array_2_n ) ! Intent(out)
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)
                  mu_w_2        = mu_x_2_n(iiPDF_w)
-                 mu_chi_1        = mu_x_1_n(iiPDF_chi)
-                 mu_chi_2        = mu_x_2_n(iiPDF_chi)
-                 mu_eta_1        = mu_x_1_n(iiPDF_eta)
-                 mu_eta_2        = mu_x_2_n(iiPDF_eta)
+                 mu_chi_1      = mu_x_1_n(iiPDF_chi)
+                 mu_chi_2      = mu_x_2_n(iiPDF_chi)
+                 mu_eta_1      = mu_x_1_n(iiPDF_eta)
+                 mu_eta_2      = mu_x_2_n(iiPDF_eta)
                  mu_rr_1_n     = mu_x_1_n(iiPDF_rr)
                  mu_rr_2_n     = mu_x_2_n(iiPDF_rr)
                  mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
@@ -1874,10 +1870,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
                  sigma_w_1     = sigma_x_1_n(iiPDF_w)
                  sigma_w_2     = sigma_x_2_n(iiPDF_w)
-                 sigma_chi_1     = sigma_x_1_n(iiPDF_chi)
-                 sigma_chi_2     = sigma_x_2_n(iiPDF_chi)
-                 sigma_eta_1     = sigma_x_1_n(iiPDF_eta)
-                 sigma_eta_2     = sigma_x_2_n(iiPDF_eta)
+                 sigma_chi_1   = sigma_x_1_n(iiPDF_chi)
+                 sigma_chi_2   = sigma_x_2_n(iiPDF_chi)
+                 sigma_eta_1   = sigma_x_1_n(iiPDF_eta)
+                 sigma_eta_2   = sigma_x_2_n(iiPDF_eta)
                  sigma_rr_1_n  = sigma_x_1_n(iiPDF_rr)
                  sigma_rr_2_n  = sigma_x_2_n(iiPDF_rr)
                  sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
@@ -1885,13 +1881,13 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
                  sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
-                 mu_Ncn_1 = mu_x_1(iiPDF_Ncn)
-                 mu_Ncn_2 = mu_x_2(iiPDF_Ncn)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
                  sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
                  sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
-                 corr_chi_eta_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
+                 corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
                  corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
                  corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_chi)
                  corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
@@ -1899,13 +1895,13 @@ subroutine mmicro_pcond ( sub_column,           &
                  corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_eta)
                  corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
                  corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
-                 corr_wrr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_w)
-                 corr_wNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_w)
-                 corr_wNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
-                 corr_rrNr_1_n = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
+                 corr_wrr_1_n     = corr_array_1_n(iiPDF_rr, iiPDF_w)
+                 corr_wNr_1_n     = corr_array_1_n(iiPDF_Nr, iiPDF_w)
+                 corr_wNcn_1_n    = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
+                 corr_rrNr_1_n    = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
 
                  ! Unpack corr_array_2 into correlations (2nd PDF component).
-                 corr_chi_eta_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
+                 corr_chi_eta_2   = corr_array_2_n(iiPDF_eta, iiPDF_chi)
                  corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
                  corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_chi)
                  corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
@@ -1913,10 +1909,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_eta)
                  corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
                  corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
-                 corr_wrr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_w)
-                 corr_wNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_w)
-                 corr_wNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
-                 corr_rrNr_2_n = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
+                 corr_wrr_2_n     = corr_array_2_n(iiPDF_rr, iiPDF_w)
+                 corr_wNr_2_n     = corr_array_2_n(iiPDF_Nr, iiPDF_w)
+                 corr_wNcn_2_n    = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
+                 corr_rrNr_2_n    = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
 
                  KK_auto_coef &
                  = 1350.0_core_rknd &
@@ -2396,30 +2392,26 @@ subroutine mmicro_pcond ( sub_column,           &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 
-                 call compute_corr( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                    zero, zero, & ! Intent(in)
-                                    zero, mixt_frac, one, & ! Intent(in)
-                                    one, wphydrometp_zt, &
-                                    mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
-                                    corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
-                                    pdf_params(k), d_variables, & ! Intent(in)
-                                    corr_array_1, corr_array_2 ) ! Intent(out)
-
-                 call normalize_corr( d_variables, sigma_x_1_n, sigma_x_2_n, &
-                                      sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
-                                      corr_array_1, corr_array_2, &
-                                      corr_array_1_n, corr_array_2_n )
+                 call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( qc(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                      real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
+                                      zero, zero, & ! Intent(in)
+                                      zero, mixt_frac, one, & ! Intent(in)
+                                      one, wphydrometp_zt, &
+                                      mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
+                                      sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
+                                      corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
+                                      pdf_params(k), d_variables, & ! Intent(in)
+                                      corr_array_1_n, corr_array_2_n ) ! Intent(out)
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
                  mu_w_1        = mu_x_1_n(iiPDF_w)
                  mu_w_2        = mu_x_2_n(iiPDF_w)
-                 mu_chi_1        = mu_x_1_n(iiPDF_chi)
-                 mu_chi_2        = mu_x_2_n(iiPDF_chi)
-                 mu_eta_1        = mu_x_1_n(iiPDF_eta)
-                 mu_eta_2        = mu_x_2_n(iiPDF_eta)
+                 mu_chi_1      = mu_x_1_n(iiPDF_chi)
+                 mu_chi_2      = mu_x_2_n(iiPDF_chi)
+                 mu_eta_1      = mu_x_1_n(iiPDF_eta)
+                 mu_eta_2      = mu_x_2_n(iiPDF_eta)
                  mu_rr_1_n     = mu_x_1_n(iiPDF_rr)
                  mu_rr_2_n     = mu_x_2_n(iiPDF_rr)
                  mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
@@ -2428,10 +2420,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
                  sigma_w_1     = sigma_x_1_n(iiPDF_w)
                  sigma_w_2     = sigma_x_2_n(iiPDF_w)
-                 sigma_chi_1     = sigma_x_1_n(iiPDF_chi)
-                 sigma_chi_2     = sigma_x_2_n(iiPDF_chi)
-                 sigma_eta_1     = sigma_x_1_n(iiPDF_eta)
-                 sigma_eta_2     = sigma_x_2_n(iiPDF_eta)
+                 sigma_chi_1   = sigma_x_1_n(iiPDF_chi)
+                 sigma_chi_2   = sigma_x_2_n(iiPDF_chi)
+                 sigma_eta_1   = sigma_x_1_n(iiPDF_eta)
+                 sigma_eta_2   = sigma_x_2_n(iiPDF_eta)
                  sigma_rr_1_n  = sigma_x_1_n(iiPDF_rr)
                  sigma_rr_2_n  = sigma_x_2_n(iiPDF_rr)
                  sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
@@ -2439,13 +2431,13 @@ subroutine mmicro_pcond ( sub_column,           &
                  sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
                  sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
-                 mu_Ncn_1 = mu_x_1(iiPDF_Ncn)
-                 mu_Ncn_2 = mu_x_2(iiPDF_Ncn)
+                 mu_Ncn_1    = mu_x_1(iiPDF_Ncn)
+                 mu_Ncn_2    = mu_x_2(iiPDF_Ncn)
                  sigma_Ncn_1 = sigma_x_1(iiPDF_Ncn)
                  sigma_Ncn_2 = sigma_x_2(iiPDF_Ncn)
 
                  ! Unpack corr_array_1 into correlations (1st PDF component).
-                 corr_chi_eta_1     = corr_array_1_n(iiPDF_eta, iiPDF_chi)
+                 corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
                  corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
                  corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_chi)
                  corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
@@ -2453,13 +2445,13 @@ subroutine mmicro_pcond ( sub_column,           &
                  corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_eta)
                  corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
                  corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
-                 corr_wrr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_w)
-                 corr_wNr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_w)
-                 corr_wNcn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
-                 corr_rrNr_1_n = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
+                 corr_wrr_1_n     = corr_array_1_n(iiPDF_rr, iiPDF_w)
+                 corr_wNr_1_n     = corr_array_1_n(iiPDF_Nr, iiPDF_w)
+                 corr_wNcn_1_n    = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
+                 corr_rrNr_1_n    = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
 
                  ! Unpack corr_array_2 into correlations (2nd PDF component).
-                 corr_chi_eta_2     = corr_array_2_n(iiPDF_eta, iiPDF_chi)
+                 corr_chi_eta_2   = corr_array_2_n(iiPDF_eta, iiPDF_chi)
                  corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
                  corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_chi)
                  corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
@@ -2467,10 +2459,10 @@ subroutine mmicro_pcond ( sub_column,           &
                  corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_eta)
                  corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
                  corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
-                 corr_wrr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_w)
-                 corr_wNr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_w)
-                 corr_wNcn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
-                 corr_rrNr_2_n = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
+                 corr_wrr_2_n     = corr_array_2_n(iiPDF_rr, iiPDF_w)
+                 corr_wNr_2_n     = corr_array_2_n(iiPDF_Nr, iiPDF_w)
+                 corr_wNcn_2_n    = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
+                 corr_rrNr_2_n    = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
 
                  KK_accr_coef = 67.0_core_rknd
 
