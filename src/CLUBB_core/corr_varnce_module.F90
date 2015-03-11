@@ -27,14 +27,16 @@ module corr_varnce_module
       rgp2_ip_on_rgm2_ip = 1.0_core_rknd, & ! Ratio <rg|_ip'^2> / <rg|_ip>^2 [-]
       Ngp2_ip_on_Ngm2_ip = 1.0_core_rknd    ! Ratio <Ng|_ip'^2> / <Ng|_ip>^2 [-]
 
-    ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
-    ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
-    !       throughout the entire grid box, so the parameter below should be
-    !       ignored.
-    real( kind = core_rknd ) :: &
-      Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
-
   end type hmp2_ip_on_hmm2_ip_ratios_type
+
+  ! Prescribed parameter for <N_cn'^2> / <N_cn>^2.
+  ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
+  !       throughout the entire grid box, so the parameter below should be
+  !       ignored.
+  real( kind = core_rknd ), public :: &
+    Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
+
+!$omp threadprivate(Ncnp2_on_Ncnm2)
 
   type sigma2_on_mu2_ratios_type
 

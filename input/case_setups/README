@@ -291,6 +291,43 @@ Nc0_in_cloud
   Initial value for Ncm (cloud droplet number concentration) in #/m^3.
   (K&K, l_cloud_sed = .true., Morrison).
 
+rrp2_ip_on_rrm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of rain water mixing ratio
+  divided by the in-precip. mean squared (Upscaled KK, Latin Hypercube).
+
+Nrp2_ip_on_Nrm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of rain drop concentration
+  divided by the in-precip. mean squared (Upscaled KK, Latin Hypercube).
+
+rip2_ip_on_rim2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of ice mixing ratio divided
+  by the in-precip. mean squared (Latin Hypercube).
+
+Nip2_ip_on_Nim2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of ice crystal concentration
+  divided by the in-precip. mean squared (Latin Hypercube).
+
+rsp2_ip_on_rsm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of snow mixing ratio divided
+  by the in-precip. mean squared (Latin Hypercube).
+
+Nsp2_ip_on_Nsm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of snow flake concentration
+  divided by the in-precip. mean squared (Latin Hypercube).
+
+rgp2_ip_on_rgm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of graupel mixing ratio
+  divided by the in-precip. mean squared (Latin Hypercube).
+
+Ngp2_ip_on_Ngm2_ip | real, default precision
+  Prescribed parameter for the in-precip. variance of graupel concentration
+  divided by the in-precip. mean squared (Latin Hypercube).
+
+Ncnp2_on_Ncnm2 | real, default precision
+  Prescribed parameter for the variance (overall) of simplified cloud nuclei
+  concentration divided by the mean (overall) squared
+  (Upscaled KK, Latin Hypercube).
+
 rr_sigma2_on_mu2_ip_cloud | real, default precision
 rr_sigma2_on_mu2_ip_below | real, default precision
   Prescribed parameters for the in-precip variance (ith PDF component) of rain

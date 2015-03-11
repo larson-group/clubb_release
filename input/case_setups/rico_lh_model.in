@@ -151,6 +151,9 @@ microphys_scheme = "khairoutdinov_kogan"
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
 !!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
 ! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
+hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
+Ncnp2_on_Ncnm2                               = 2.2
 sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 1.0
 sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 1.0
 sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 1.0

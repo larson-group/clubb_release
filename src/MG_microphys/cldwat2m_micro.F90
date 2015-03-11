@@ -437,8 +437,6 @@ subroutine mmicro_pcond ( sub_column,           &
        d_variables, &
        corr_array_n_cloud, &
        corr_array_n_below, &
-       sigma2_on_mu2_ip_array_cloud, &
-       sigma2_on_mu2_ip_array_below, &
        iiPDF_chi, &
        iiPDF_eta, &
        iiPDF_w, &
@@ -951,20 +949,22 @@ subroutine mmicro_pcond ( sub_column,           &
       mixt_frac        ! Mixture fraction                                    [-]
 
     real ( kind = core_rknd ), dimension(hydromet_dim) :: &
+      hydromet,       &
       hm1,            &
       hm2,            &
       wphydrometp_zt
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
-      mu_x_1, &
-      mu_x_2, &
-      sigma_x_1, &
-      sigma_x_2, &
-      sigma2_on_mu2_ip
+      mu_x_1,             &
+      mu_x_2,             &
+      sigma_x_1,          &
+      sigma_x_2,          &
+      sigma2_on_mu2_ip_1, &
+      sigma2_on_mu2_ip_2
 
     real ( kind = core_rknd ), dimension( d_variables ) :: &
-      mu_x_1_n, &
-      mu_x_2_n, &
+      mu_x_1_n,    &
+      mu_x_2_n,    &
       sigma_x_1_n, &
       sigma_x_2_n
 
@@ -1806,39 +1806,29 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 hm1(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm2(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
                  wphydrometp_zt(1) = zero
                  wphydrometp_zt(2) = zero
 
-                 if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
-                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
-                 else
-                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_below
-                 endif
-
-                 call compute_mean_stdev( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                          real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                          hm1, hm2, & ! Intent(in)
-                                          one, one, & ! Intent(in)
-                                          sigma2_on_mu2_ip_array_cloud, & ! Intent(in)
-                                          sigma2_on_mu2_ip_array_below, & ! Intent(in)
-                                          pdf_params(k), d_variables, & ! Intent(in)
-                                          mu_x_1, mu_x_2, & ! Intent(out)
-                                          sigma_x_1, sigma_x_2 ) ! Intent(out)
+                 call compute_mean_stdev( hydromet,                           & ! Intent(in)
+                                          real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
+                                          mixt_frac, one,                     & ! Intent(in)
+                                          one, one,                           & ! Intent(in)
+                                          pdf_params(k), d_variables,         & ! Intent(in)
+                                          mu_x_1, mu_x_2,                     & ! Intent(out)
+                                          sigma_x_1, sigma_x_2,               & ! Intent(out)
+                                          hm1, hm2,                           & ! Intent(out)
+                                          sigma2_on_mu2_ip_1,                 & ! Intent(out)
+                                          sigma2_on_mu2_ip_2                  ) ! Intent(out)
 
                  call normalize_mean_stdev( hm1, hm2, &
                                             real( nc(i,k), kind = core_rknd ), &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
                                             sigma_x_1, sigma_x_2, &
-                                            sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
+                                            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 
@@ -2358,37 +2348,26 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
-                 hm1(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm2(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm1(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
-                 hm2(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
+                 hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 if ( real( qc(i,k), kind = core_rknd ) > rc_tol ) then
-                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_cloud
-                 else
-                    sigma2_on_mu2_ip = sigma2_on_mu2_ip_array_below
-                 endif
-
-                 call compute_mean_stdev &
-                                ( real( nc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( qc(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                  real( lcldm(i,k), kind = core_rknd ), & ! Intent(in)
-                                  hm1, hm2, & ! Intent(in)
-                                  one, one, & ! Intent(in)
-                                  sigma2_on_mu2_ip_array_cloud, &              ! Intent(in)
-                                  sigma2_on_mu2_ip_array_below, &              ! Intent(in)
-                                  pdf_params(k), d_variables, & ! Intent(in)
-                                  mu_x_1, mu_x_2, & ! Intent(out)
-                                  sigma_x_1, sigma_x_2 ) ! Intent(out)
+                 call compute_mean_stdev( hydromet,                           & ! Intent(in)
+                                          real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
+                                          mixt_frac, one,                     & ! Intent(in)
+                                          one, one,                           & ! Intent(in)
+                                          pdf_params(k), d_variables,         & ! Intent(in)
+                                          mu_x_1, mu_x_2,                     & ! Intent(out)
+                                          sigma_x_1, sigma_x_2,               & ! Intent(out)
+                                          hm1, hm2,                           & ! Intent(out)
+                                          sigma2_on_mu2_ip_1,                 & ! Intent(out)
+                                          sigma2_on_mu2_ip_2                  ) ! Intent(out)
 
                  call normalize_mean_stdev( hm1, hm2, &
                                             real( nc(i,k), kind = core_rknd ), &
                                             d_variables, &
                                             mu_x_1, mu_x_2, &
                                             sigma_x_1, sigma_x_2, &
-                                            sigma2_on_mu2_ip, sigma2_on_mu2_ip, &
+                                            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                                             mu_x_1_n, mu_x_2_n, &
                                             sigma_x_1_n, sigma_x_2_n )
 

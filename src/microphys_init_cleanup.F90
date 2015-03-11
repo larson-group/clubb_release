@@ -89,8 +89,8 @@ module microphys_init_cleanup
         lh_microphys_type_int => lh_microphys_type ! Determines how the LH samples are used
 
     use array_index, only: &
-        hydromet_list,                & ! Names of the hydrometeor species
-        hydromet_tol  ! Variable(s)
+        hydromet_list, & ! Names of the hydrometeor species
+        hydromet_tol     ! Variable(s)
 
     use phys_buffer, only: & ! Used for placing wp2_zt in morrison_gettelman microphysics
         pbuf_init
@@ -176,6 +176,7 @@ module microphys_init_cleanup
         hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
         sigma2_on_mu2_ratios_type,      &
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
+        Ncnp2_on_Ncnm2,                 &
         setup_pdf_indices,              & ! Procedure(s)
         setup_corr_varnce_array
 
@@ -240,7 +241,7 @@ module microphys_init_cleanup
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
       l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      hmp2_ip_on_hmm2_ip_ratios, sigma2_on_mu2_ratios, &
+      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, sigma2_on_mu2_ratios, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -380,8 +381,7 @@ module microphys_init_cleanup
        call write_text ( "Ngp2_ip_on_Ngm2_ip = ", &
                          hmp2_ip_on_hmm2_ip_ratios%Ngp2_ip_on_Ngm2_ip, &
                          l_write_to_file, iunit )
-       call write_text ( "Ncnp2_on_Ncnm2 = ", &
-                         hmp2_ip_on_hmm2_ip_ratios%Ncnp2_on_Ncnm2, &
+       call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
                          l_write_to_file, iunit )
        call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", &
                          sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
