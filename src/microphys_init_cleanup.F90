@@ -174,7 +174,6 @@ module microphys_init_cleanup
 
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
-        sigma2_on_mu2_ratios_type,      &
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
         Ncnp2_on_Ncnm2,                 &
         setup_pdf_indices,              & ! Procedure(s)
@@ -231,8 +230,6 @@ module microphys_init_cleanup
 
     type(hmp2_ip_on_hmm2_ip_ratios_type) :: hmp2_ip_on_hmm2_ip_ratios
 
-    type(sigma2_on_mu2_ratios_type) :: sigma2_on_mu2_ratios
-
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
       l_ice_microphys, l_graupel, l_hail, l_var_covar_src, l_upwind_diff_sed, &
@@ -241,7 +238,7 @@ module microphys_init_cleanup
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
       l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, sigma2_on_mu2_ratios, &
+      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -383,40 +380,6 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
                          l_write_to_file, iunit )
-       call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Nr_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rr_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Nr_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ncnp2_on_Ncnm2 = ", sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2, &
-                         l_write_to_file, iunit )
-       call write_text ( "rs_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ns_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "ri_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ni_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rg_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ng_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rs_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ns_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "ri_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ni_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "rg_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ng_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
        call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
        call write_text ( "microphys_start_time = ", &
@@ -898,8 +861,7 @@ module microphys_init_cleanup
 
     ! Allocate and set the arrays containing the correlations
     ! and the X'^2 / X'^2 terms
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit, & ! Intent(in)
-                                  sigma2_on_mu2_ratios )                               ! Intent(in)
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit ) ! Intent(in)
 
 
     return

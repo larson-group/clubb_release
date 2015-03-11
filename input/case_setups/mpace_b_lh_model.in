@@ -158,18 +158,6 @@ hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip = 0.6
 
 Ncnp2_on_Ncnm2                               = 2.2
 
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 0.766
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 0.429
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud = 0.766
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud = 0.429
-
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below = 0.766
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below = 0.429
-
-sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2            = 2.2
-
 lh_microphys_type = "interactive",
 l_local_kk = .true.,
 l_lh_vert_overlap = .true.,

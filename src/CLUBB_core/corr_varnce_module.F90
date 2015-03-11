@@ -38,52 +38,6 @@ module corr_varnce_module
 
 !$omp threadprivate(Ncnp2_on_Ncnm2)
 
-  type sigma2_on_mu2_ratios_type
-
-    ! In CLUBB standalone, these parameters can be set based on the value for a
-    ! given case in the CASE_model.in file.
-
-    ! Prescribed parameters for hydrometeor in-precip values of
-    ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that have some cloud.
-    ! They can be set based on values for a given case in the CASE_model.in file.
-    real( kind = core_rknd ) :: &
-      rr_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-      Nr_sigma2_on_mu2_ip_cloud = 1.0_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
-
-    ! Prescribed parameters for hydrometeor in-precip values of
-    ! sigma_hm_i^2 / mu_hm_i^2 at grid levels that are entirely clear.
-    ! They can be set based on values for a given case in the CASE_model.in file.
-    real( kind = core_rknd ) :: &
-      rr_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rr_i^2/mu_rr_i^2  [-]
-      Nr_sigma2_on_mu2_ip_below = 1.0_core_rknd    ! sigma_Nr_i^2/mu_Nr_i^2  [-]
-
-    ! Parameters added for ice microphysics and latin hypercube sampling
-    real( kind = core_rknd ) :: &
-      rs_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rs_i^2/mu_rs_i^2  [-]
-      Ns_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
-      ri_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_ri_i^2/mu_ri_i^2  [-]
-      Ni_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
-      rg_sigma2_on_mu2_ip_cloud = 1.0_core_rknd, & ! sigma_rg_i^2/mu_rg_i^2  [-]
-      Ng_sigma2_on_mu2_ip_cloud = 1.0_core_rknd    ! sigma_Ng_i^2/mu_Ng_i^2  [-]
-
-    ! Parameters added for ice microphysics and latin hypercube sampling
-    real( kind = core_rknd ) :: &
-      rs_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rs_i^2/mu_rs_i^2  [-]
-      Ns_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_Ns_i^2/mu_Ns_i^2  [-]
-      ri_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_ri_i^2/mu_ri_i^2  [-]
-      Ni_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_Ni_i^2/mu_Ni_i^2  [-]
-      rg_sigma2_on_mu2_ip_below = 1.0_core_rknd, & ! sigma_rg_i^2/mu_rg_i^2  [-]
-      Ng_sigma2_on_mu2_ip_below = 1.0_core_rknd    ! sigma_Ng_i^2/mu_Ng_i^2  [-]
-
-    ! Prescribed parameter for <N_cn'^2> / <N_cn>^2 at any grid level.
-    ! NOTE: In the case that l_const_Nc_in_cloud is true, Ncn is constant
-    !       throughout the entire grid box, so the parameter below should be
-    !       ignored.
-    real( kind = core_rknd ) :: &
-      Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2>/<N_cn>^2 [-]
-
-  end type sigma2_on_mu2_ratios_type
-
   ! Latin hypercube indices / Correlation array indices
   integer, public :: &
     iiPDF_chi = -1, &
@@ -118,15 +72,10 @@ module corr_varnce_module
 
 !$omp threadprivate(hmp2_ip_on_hmm2_ip)
 
-  real( kind = core_rknd ), public, dimension(:), allocatable :: &
-    sigma2_on_mu2_ip_array_cloud, &
-    sigma2_on_mu2_ip_array_below
-
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
     corr_array_n_cloud, &
     corr_array_n_below
-!$omp threadprivate(sigma2_on_mu2_ip_array_cloud, sigma2_on_mu2_ip_array_below, &
-!$omp   corr_array_n_cloud, corr_array_n_below)
+!$omp threadprivate(corr_array_n_cloud, corr_array_n_below)
 
   real( kind = core_rknd ), public, dimension(:,:), allocatable :: &
       corr_array_n_cloud_def, &
@@ -136,7 +85,7 @@ module corr_varnce_module
 
   private
 
-  public :: hmp2_ip_on_hmm2_ip_ratios_type, sigma2_on_mu2_ratios_type, &
+  public :: hmp2_ip_on_hmm2_ip_ratios_type, &
             read_correlation_matrix, setup_pdf_indices, &
             setup_corr_varnce_array, cleanup_corr_matrix_arrays, &
             assert_corr_symmetric, print_corr_matrix
@@ -645,7 +594,7 @@ module corr_varnce_module
 
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
-                                      iunit, sigma2_on_mu2_ratios )
+                                      iunit )
 
 ! Description:
 !   Setup an array with the x'^2/xm^2 variables on the diagonal and the other
@@ -682,9 +631,6 @@ module corr_varnce_module
     integer, intent(in) :: &
       iunit ! The file unit
 
-    type(sigma2_on_mu2_ratios_type), intent(in) :: &
-      sigma2_on_mu2_ratios   ! Prescribed sigma^2 / mu^2 terms
-
     ! Local variables
     logical :: l_warning, corr_file_exist
     integer :: i
@@ -693,12 +639,6 @@ module corr_varnce_module
 
     allocate( corr_array_n_cloud(d_variables,d_variables) )
     allocate( corr_array_n_below(d_variables,d_variables) )
-
-    allocate( sigma2_on_mu2_ip_array_cloud(d_variables) )
-    allocate( sigma2_on_mu2_ip_array_below(d_variables) )
-
-    sigma2_on_mu2_ip_array_cloud(:) = zero
-    sigma2_on_mu2_ip_array_below(:) = zero
 
     ! corr_file_exist is true if the *_corr_array_cloud.in file exists
     ! Note: It is assumed that if the *_corr_array_cloud.in file exists
@@ -750,103 +690,9 @@ module corr_varnce_module
 
     end if ! clubb_at_least_debug_level( 2 )
 
-    if ( iiPDF_Ncn > 0 ) then
-
-      if ( l_const_Nc_in_cloud ) then
-        ! Ncn is constant throughout every grid box!
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = zero
-        sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = zero
-      else
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
-        sigma2_on_mu2_ip_array_below(iiPDF_Ncn) = sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2
-      end if
-
-    end if
-
-    if ( iiPDF_rr > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rr) = sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud
-      if ( iiPDF_Nr > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Nr) = sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud
-      end if ! iiPDF_Nr > 0
-    end if ! iiPDF_rr > 0
-
-    if ( iiPDF_rs > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rs) = sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud
-
-
-      if ( iiPDF_Ns > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ns) = sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud
-
-
-      end if ! iiPDF_Ns > 0
-    end if ! iiPDF_rs > 0
-
-    if ( iiPDF_ri > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_ri) = sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud
-
-
-      if ( iiPDF_Ni > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ni) = sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud
-
-      end if ! iiPDF_Ni > 0
-    end if ! iiPDF_ri > 0
-
-    ! Sampling for graupel (disabled)
-    if ( iiPDF_rg > 0 ) then
-      sigma2_on_mu2_ip_array_cloud(iiPDF_rg) = sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud
-
-
-      if ( iiPDF_Ng > 0 ) then
-        sigma2_on_mu2_ip_array_cloud(iiPDF_Ng) = sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud
-
-
-      end if ! iiPDF_Ng > 0
-    end if ! iiPDF_rg > 0
-
-    if ( iiPDF_rr > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rr) = sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below
-
-
-
-      if ( iiPDF_Nr > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Nr) = sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below
-
-
-      end if ! iiPDF_Nr > 0
-    end if ! iiPDF_rr > 0
-
-    if ( iiPDF_rs > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rs) = sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below
-
-
-      if ( iiPDF_Ns > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Ns) = sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below
-
-      end if ! iiPDF_Ns > 0
-    end if ! iiPDF_rs > 0
-
-    if ( iiPDF_ri > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_ri) = sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below
-
-
-      if ( iiPDF_Ni > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Ni) =  sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below
-      end if ! iiPDF_Ni > 0
-
-    end if ! iiPDF_ri > 0
-
-    if ( iiPDF_rg > 0 ) then
-      sigma2_on_mu2_ip_array_below(iiPDF_rg) = sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below
-
-
-      if ( iiPDF_Ng > 0 ) then
-        sigma2_on_mu2_ip_array_below(iiPDF_Ng) = sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below
-
-
-      end if ! iiPDF_Ng > 0
-    end if ! iiPDF_rg > 0
 
     return
+
   end subroutine setup_corr_varnce_array
 
   !-----------------------------------------------------------------------------
@@ -872,14 +718,6 @@ module corr_varnce_module
       deallocate( corr_array_n_below )
     end if
 
-    if ( allocated( sigma2_on_mu2_ip_array_cloud ) ) then
-      deallocate( sigma2_on_mu2_ip_array_cloud )
-    end if
-
-    if ( allocated( sigma2_on_mu2_ip_array_below ) ) then
-      deallocate( sigma2_on_mu2_ip_array_below )
-    end if
-
     if ( allocated( corr_array_n_cloud_def ) ) then
       deallocate( corr_array_n_cloud_def )
     end if
@@ -888,7 +726,9 @@ module corr_varnce_module
       deallocate( corr_array_n_below_def )
     end if
 
+
     return
+
   end subroutine cleanup_corr_matrix_arrays
 
   !-----------------------------------------------------------------------------

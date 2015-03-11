@@ -267,9 +267,7 @@ module clubb_driver
         corr_array_n_below, &
         d_variables, &
         cleanup_corr_matrix_arrays, &
-        iiPDF_Ncn, &
-        sigma2_on_mu2_ip_array_cloud, &
-        sigma2_on_mu2_ip_array_below
+        iiPDF_Ncn
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)

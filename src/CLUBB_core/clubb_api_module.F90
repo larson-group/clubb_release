@@ -109,8 +109,7 @@ module clubb_api_module
       iiPDF_Ns,           &
       iiPDF_rg,           &
       iiPDF_Ng,           &
-      hmp2_ip_on_hmm2_ip, &
-      sigma2_on_mu2_ratios_type
+      hmp2_ip_on_hmm2_ip
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -392,7 +391,6 @@ module clubb_api_module
     stats_rad_zm, &
     stats_rad_zt
     public &
-    sigma2_on_mu2_ratios_type, &
     nparams, &
     setup_parameters_api, &
     stats_sfc, &
@@ -902,9 +900,9 @@ contains
   !================================================================================================
 
   subroutine setup_corr_varnce_array_api( &
-    input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
+    input_file_cloud, input_file_below, iunit )
 
-    use corr_varnce_module, only : setup_corr_varnce_array, sigma2_on_mu2_ratios_type
+    use corr_varnce_module, only : setup_corr_varnce_array
 
     implicit none
 
@@ -919,11 +917,8 @@ contains
       input_file_cloud, &  ! Path to the in cloud correlation file
       input_file_below     ! Path to the out of cloud correlation file
 
-    type(sigma2_on_mu2_ratios_type), intent(in) :: &
-      sigma2_on_mu2_ratios ! Prescribed sigma^2/mu^2 ratios
-
     call setup_corr_varnce_array( &
-      input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
+      input_file_cloud, input_file_below, iunit )
 
   end subroutine setup_corr_varnce_array_api
 

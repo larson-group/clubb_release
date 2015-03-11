@@ -151,12 +151,11 @@ module setup_clubb_pdf_params
         calc_cholesky_corr_mtx_approx
 
     use corr_varnce_module, only: &
-        assert_corr_symmetric,        & ! Procedure(s)
-        sigma2_on_mu2_ip_array_cloud, & ! Variable(s)
-        sigma2_on_mu2_ip_array_below, &
-        iiPDF_Ncn,                    &
-        iiPDF_chi,                    &
-        iiPDF_eta
+        assert_corr_symmetric, & ! Procedure(s)
+        iiPDF_Ncn,             & ! Variable(s)
+        iiPDF_chi,             &
+        iiPDF_eta,             &
+        Ncnp2_on_Ncnm2
 
     use index_mapping, only: &
         hydromet2pdf_idx    ! Procedure(s)
@@ -282,8 +281,8 @@ module setup_clubb_pdf_params
       corr_array_scaling
 
     real( kind = core_rknd ), dimension(d_variables) :: &
-      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
-      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
+      sigma2_on_mu2_ip_1, & ! Ratio array sigma_hm_1^2/mu_hm_1^2             [-]
+      sigma2_on_mu2_ip_2    ! Ratio array sigma_hm_2^2/mu_hm_2^2             [-]
 
     real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
@@ -449,7 +448,7 @@ module setup_clubb_pdf_params
     ! over the grid level.
     if ( .not. l_const_Nc_in_cloud ) then
        ! Ncn varies at each vertical level.
-       const_Ncnp2_on_Ncnm2 = sigma2_on_mu2_ip_array_cloud(iiPDF_Ncn)
+       const_Ncnp2_on_Ncnm2 = Ncnp2_on_Ncnm2
     else  ! l_const_Nc_in_cloud
        ! Ncn is constant at each vertical level.
        const_Ncnp2_on_Ncnm2 = zero
@@ -552,18 +551,6 @@ module setup_clubb_pdf_params
     ! Now also including "model lower boundary" -- Eric Raut Aug 2013
     ! Now not  including "model lower boundary" -- Eric Raut Aug 2014
     do k = 2, nz, 1
-
-       if ( rc_1(k) > rc_tol ) then
-          sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_cloud
-       else
-          sigma2_on_mu2_ip_1 = sigma2_on_mu2_ip_array_below
-       endif
-
-       if ( rc_2(k) > rc_tol ) then
-          sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_cloud
-       else
-          sigma2_on_mu2_ip_2 = sigma2_on_mu2_ip_array_below
-       endif
 
        !!! Calculate the means and standard deviations involving PDF variables
        !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm
@@ -4289,8 +4276,8 @@ module setup_clubb_pdf_params
       sigma_x_2_n    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
 
     real ( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      sigma2_on_mu2_ip_1, & ! Prescribed ratio array: sigma_hm_1^2/mu_hm_1^2 [-]
-      sigma2_on_mu2_ip_2    ! Prescribed ratio array: sigma_hm_2^2/mu_hm_2^2 [-]
+      sigma2_on_mu2_ip_1, & ! Ratio array sigma_hm_1^2/mu_hm_1^2             [-]
+      sigma2_on_mu2_ip_2    ! Ratio array sigma_hm_2^2/mu_hm_2^2             [-]
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
     intent(in) :: &
