@@ -16,8 +16,8 @@ OMP_NUM_THREADS=2
 NIGHTLY=false
 # Select 'single' for a single case tuning run, or select 'multiple'
 # for a multiple case tuning run.
-#RUN_TYPE='single'
-RUN_TYPE='multiple'
+RUN_TYPE='single'
+#RUN_TYPE='multiple'
 
 # The code below is borrowed from run_scm.bash to allow command line arguments to this script
 
@@ -58,6 +58,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    #       filename "error_RUN_CASE.in".
 
    # Select a run, comment out the rest.
+   # The selected case will be used in the nightly tuning run
    # RUN_CASE=arm
    # RUN_CASE=atex
    # RUN_CASE=bomex
@@ -68,12 +69,12 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
    # RUN_CASE=dycoms2_rf02_nd
-   # RUN_CASE=fire
+   RUN_CASE=fire
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
    # RUN_CASE=nov11_altocu
-   RUN_CASE=rico
+   # RUN_CASE=rico
    # RUN_CASE=wangara 
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
