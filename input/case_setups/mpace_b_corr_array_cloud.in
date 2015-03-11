@@ -19,6 +19,8 @@
 ! All unkown values are left at 0.0. All values in the bottom of
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
+!
+! Note:  REMINDER, these are NORMALIZED correlation arrays!
 chi   eta   w       Ncn     rr      Nr      ri       Ni      rs      Ns      rg    Ng
 1.0   0.3   0.09    0.124   0.281   0.312   -0.096   0.336   0.070   0.044   0.0   0.0
 0.0   1.0   0.027   0.037   0.084   0.094   -0.029   0.101   0.021   0.013   0.0   0.0

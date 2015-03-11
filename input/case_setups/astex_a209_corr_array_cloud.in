@@ -20,6 +20,8 @@
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
 ! The values below were copied from those chosen for the RICO Cu case.
+!
+! Note:  REMINDER, these are NORMALIZED correlation arrays!
 chi       eta       w       Ncn     rr       Nr      ri     Ni      rs       Ns       rg        Ng
 1.0       0.3       0.09    0.0     0.281    0.312   0.0    0.0     0.0      0.0      0.0       0.0
 0.0       1.0       0.027   0.0     0.020    0.005   0.0    0.0     0.0      0.0      0.0       0.0
