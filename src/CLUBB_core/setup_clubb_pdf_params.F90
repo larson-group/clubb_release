@@ -2165,6 +2165,17 @@ module setup_clubb_pdf_params
     integer :: ivar ! Loop iterator
 
 
+    !!! Initialize output variables.
+    mu_x_1 = zero
+    mu_x_2 = zero
+    sigma_x_1 = zero
+    sigma_x_2 = zero
+    hm_1 = zero
+    hm_2 = zero
+    sigma_hm_1_sqd_on_mu_hm_1_sqd = zero
+    sigma_hm_2_sqd_on_mu_hm_2_sqd = zero
+
+
     !!! Enter the PDF parameters.
 
     !!! Vertical velocity, w.
@@ -2241,12 +2252,26 @@ module setup_clubb_pdf_params
 
        sigma_x_2(iiPDF_Ncn) = sqrt( Ncnp2_on_Ncnm2 ) * Ncnm
 
+       ! Ncn is not an official hydrometeor.  However, both the
+       ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
+       ! have size d_variables, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
+       ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
+       sigma_hm_1_sqd_on_mu_hm_1_sqd(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+       sigma_hm_2_sqd_on_mu_hm_2_sqd(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+
     else ! l_const_Nc_in_cloud
 
        ! Ncn is constant in both PDF components.
        sigma_x_1(iiPDF_Ncn) = zero
 
        sigma_x_2(iiPDF_Ncn) = zero
+
+       ! Ncn is not an official hydrometeor.  However, both the
+       ! sigma_hm_1_sqd_on_mu_hm_1_sqd and sigma_hm_2_sqd_on_mu_hm_2_sqd arrays
+       ! have size d_variables, and both sigma_Ncn_1^2/mu_Ncn_1^2 and
+       ! sigma_Ncn_2^2/mu_Ncn_2^2 need to be output as part of these arrays.
+       sigma_hm_1_sqd_on_mu_hm_1_sqd(iiPDF_Ncn) = zero
+       sigma_hm_2_sqd_on_mu_hm_2_sqd(iiPDF_Ncn) = zero
 
     endif ! .not. l_const_Nc_in_cloud
 
