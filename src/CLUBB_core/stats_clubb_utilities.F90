@@ -2840,8 +2840,10 @@ module stats_clubb_utilities
 
       deallocate( stats_zt%file%var )
       deallocate( stats_zt%file%z )
-      deallocate( stats_zt%file%rlat )
-      deallocate( stats_zt%file%rlon )
+      if ( .not. ( stats_zt%file%nvar == 0 .and. l_netcdf ) ) then
+        deallocate( stats_zt%file%rlat )
+        deallocate( stats_zt%file%rlon )
+      end if
 
       deallocate ( ztscr01 )
       deallocate ( ztscr02 )
@@ -2877,8 +2879,10 @@ module stats_clubb_utilities
 
         deallocate( stats_lh_zt%file%var )
         deallocate( stats_lh_zt%file%z )
-        deallocate( stats_lh_zt%file%rlat )
-        deallocate( stats_lh_zt%file%rlon )
+        if ( .not. ( stats_lh_zt%file%nvar == 0 .and. l_netcdf ) ) then
+          deallocate( stats_lh_zt%file%rlat )
+          deallocate( stats_lh_zt%file%rlon )
+        end if
 
         ! De-allocate all stats_lh_sfc variables
         deallocate( stats_lh_sfc%z )
@@ -2891,8 +2895,10 @@ module stats_clubb_utilities
 
         deallocate( stats_lh_sfc%file%var )
         deallocate( stats_lh_sfc%file%z )
-        deallocate( stats_lh_sfc%file%rlat )
-        deallocate( stats_lh_sfc%file%rlon )
+        if ( .not. ( stats_lh_sfc%file%nvar == 0 .and. l_netcdf ) ) then
+          deallocate( stats_lh_sfc%file%rlat )
+          deallocate( stats_lh_sfc%file%rlon )
+        end if
       end if ! l_silhs_out
 
       ! De-allocate all stats_zm variables
@@ -2903,8 +2909,10 @@ module stats_clubb_utilities
 
       deallocate( stats_zm%file%var )
       deallocate( stats_zm%file%z )
-      deallocate( stats_zm%file%rlat )
-      deallocate( stats_zm%file%rlon )
+      if ( .not. ( stats_zm%file%nvar == 0 .and. l_netcdf ) ) then
+        deallocate( stats_zm%file%rlat )
+        deallocate( stats_zm%file%rlon )
+      end if
       deallocate( stats_zm%l_in_update )
 
       deallocate ( zmscr01 )
@@ -2934,8 +2942,10 @@ module stats_clubb_utilities
 
         deallocate( stats_rad_zt%file%var )
         deallocate( stats_rad_zt%file%z )
-        deallocate( stats_rad_zt%file%rlat )
-        deallocate( stats_rad_zt%file%rlon )
+        if ( .not. ( stats_rad_zt%file%nvar == 0 .and. l_netcdf ) ) then
+          deallocate( stats_rad_zt%file%rlat )
+          deallocate( stats_rad_zt%file%rlon )
+        end if
         deallocate( stats_rad_zt%l_in_update )
 
         ! De-allocate all stats_rad_zm variables
@@ -2959,8 +2969,10 @@ module stats_clubb_utilities
 
       deallocate( stats_sfc%file%var )
       deallocate( stats_sfc%file%z )
-      deallocate( stats_sfc%file%rlat )
-      deallocate( stats_sfc%file%rlon )
+      if ( .not. ( stats_sfc%file%nvar == 0 .and. l_netcdf ) ) then
+        deallocate( stats_sfc%file%rlat )
+        deallocate( stats_sfc%file%rlon )
+      end if
 
       ! De-allocate scalar indices
       deallocate( isclrm )
