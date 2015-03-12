@@ -109,7 +109,9 @@ module clubb_api_module
       iiPDF_Ns,           &
       iiPDF_rg,           &
       iiPDF_Ng,           &
-      hmp2_ip_on_hmm2_ip
+      hmp2_ip_on_hmm2_ip, &
+      Ncnp2_on_Ncnm2,     &
+      hmp2_ip_on_hmm2_ip_ratios_type
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -277,7 +279,9 @@ module clubb_api_module
     iiPDF_Ns,           &
     iiPDF_rg,           &
     iiPDF_Ng,           &
-    hmp2_ip_on_hmm2_ip
+    hmp2_ip_on_hmm2_ip, &
+    Ncnp2_on_Ncnm2,     &
+    hmp2_ip_on_hmm2_ip_ratios_type
 
   public &
     ! To Interact With CLUBB's Grid:
