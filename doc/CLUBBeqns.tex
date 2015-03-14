@@ -3605,6 +3605,37 @@ distribution of variables, and $h(\mathbf{x})$ is a function of some or all of
 these variables. In other words, we want to compute the average value of
 $h(\mathbf{x})$ over the entire domain.
 
+\subsection{CLUBB's PDF}
+
+In CLUBB, SILHS draws sample points from CLUBB's PDF, which has the following
+form.
+
+\begin{gather}
+\begin{split}
+P(\mathbf{x}) = \sum_{m=1}^{N_\mathrm{comp}} \xi_{(m)}\ [\ & f_{p(m)}
+ P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})\ + \\
+& (1-f_{p(m)})\ \delta(\mathbf{hm})\ P_{(m)}(\chi,\eta,w,N_{cn})\ ]
+\end{split}
+\label{CLUBB PDF}
+\end{gather}
+
+The PDF has $N_\mathrm{comp}$ components; currently, in CLUBB, $N_\mathrm{comp}
+= 2$. Each component $m$ has a weight $\xi_{(m)}$, where
+$\sum_{m=1}^{N_\mathrm{comp}} \xi_{(m)} = 1$. In each component, a fraction
+$f_{p(m)}$ of the component is allowed to contain precipitation, where $0 \le
+f_{p(m)} \le 1$. The vector $\mathbf{hm}$ contains hydrometeor species (e.g.,
+rain, snow). The exact type and number of hydrometeors depends on the
+microphysics scheme used.
+
+In the portions of the PDF that contain precipitation,
+$P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is a joint normal-lognormal
+distribution, where $\chi$, $\eta$, and $w$ are normally distributed, and
+$N_{cn}$ and all the variables in $\mathbf{hm}$ are lognormally distributed. In
+the parts of the PDF that don't contain precipitation,
+$P_{(m)}(\chi,\eta,w,N_{cn})$ is a joint normal-lognormal distribution, just like
+before, but all the hydrometeors are zero. ($\delta(\mathbf{hm})$ is short for
+$\delta(\mathrm{hm}_1)\delta(\mathrm{hm}_2)\cdots\delta(\mathrm{hm}_n)$).
+
 \subsection{Importance Sampling}
 
 Importance sampling is a technique used in SILHS for variance reduction. The
