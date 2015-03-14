@@ -3598,12 +3598,12 @@ microphysics.
 Mathematically, the goal of SILHS is to numerically approximate integrals of the
 following form:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
 \end{equation}
 where $P(\mathbf{x})$ is the PDF that describes CLUBB's joint probability
-distribution of variables, and $f(\mathbf{x})$ is a function of some or all of
+distribution of variables, and $h(\mathbf{x})$ is a function of some or all of
 these variables. In other words, we want to compute the average value of
-$f(\mathbf{x})$ over the entire domain.
+$h(\mathbf{x})$ over the entire domain.
 
 \subsection{Importance Sampling}
 
@@ -3627,7 +3627,7 @@ categories, which span the entire PDF, are currently defined as follows:
 Each category $C_j$ is associated with a certain amount of PDF mass, called the
 category's ``PDF probability'' and denoted as:
 \begin{equation}
-\zeta_j = \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+p_j = \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
 \end{equation}
 where $\mathbf{1}_j(\mathbf{x})$ is the indicator function of $C_j$:
 \begin{equation}
@@ -3640,7 +3640,7 @@ where $\mathbf{1}_j(\mathbf{x})$ is the indicator function of $C_j$:
 
 Since the categories $C_j$ span the entire PDF, we have:
 \begin{equation}
-\sum_{j=1}^{N_c} \zeta_j = 1
+\sum_{j=1}^{N_c} p_j = 1
 \end{equation}
 where $N_c$ is the number of categories (currently eight in CLUBB).
 
@@ -3657,44 +3657,44 @@ prescribe the probabilities such that the categories that are ``important'' for
 a desired process are sampled more often than the unimportant categories.
 
 We want to generate sample points such that the expected fraction of sample
-points in the category $C_j$ is $S_j$ rather than $\zeta_j$. In order to do this,
+points in the category $C_j$ is $S_j$ rather than $p_j$. In order to do this,
 we define a new function:
 \begin{equation}
-L(\mathbf{x}) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
+L(\mathbf{x}) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
 \end{equation}
 We then rewrite the integral given in \eqref{SILHS integral form} as:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
-\int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
+\int h(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
 \right)d\mathbf{x} =
-\int f(\mathbf{x}) L(\mathbf{x}) H(\mathbf{x}) d\mathbf{x}
+\int h(\mathbf{x}) L(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x}
 \label{SILHS integral rewrite}
 \end{equation}
 where
 \begin{equation}
-H(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
+Q(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
 \end{equation}
 
-Here, $H(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
+Here, $Q(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
 probabililties. We can easily verify this:
 \begin{align}
-\int \mathbf{1}_j(\mathbf{x}) H(\mathbf{x}) d\mathbf{x} &=
+\int \mathbf{1}_j(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x} &=
 \int \mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L(\mathbf{x})} d\mathbf{x} \\
- &= \frac{S_j}{\zeta_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
- &= \frac{S_j}{\zeta_j} \zeta_j \\
+ &= \frac{S_j}{p_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
+ &= \frac{S_j}{p_j} p_j \\
  &= S_j
 \end{align}
 
 Now, instead of drawing points from the $P(\mathbf{x})$ distribution and
-evaluate the function $f(\mathbf{x})$, we draw points from the $H(\mathbf{x})$
-distribution and evaluate the function $f(\mathbf{x}) L(\mathbf{x})$.
+evaluate the function $h(\mathbf{x})$, we draw points from the $Q(\mathbf{x})$
+distribution and evaluate the function $h(\mathbf{x}) L(\mathbf{x})$.
 
 Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
-$f(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
+$h(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
 referred to as the sample point ``weight''. Each sample point has a weight,
 denoted as:
 \begin{equation}
-\omega_i = L(\mathbf{x}_i) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
+\omega_i = L(\mathbf{x}_i) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
 C_j \label{SILHS importance weights def}
 \end{equation}
 
@@ -3712,25 +3712,26 @@ $P(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
 approximated using the following formulas. To integrate over the entire PDF,
 use:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
-\sum_{i=1}^{N_s} \omega_i f(\mathbf{x}_i)
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
+\sum_{i=1}^{N_s} \omega_i h(\mathbf{x}_i)
 \end{equation}
-where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point. The integral
-gives the mean of $f(\mathbf{x})$ over the entire PDF. To determine the mean
-over some subset $\Omega$ of the PDF, the following formula should be used:
+where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point and $N_s$ is
+the total number of sample points. The integral gives the mean of
+$h(\mathbf{x})$ over the entire PDF. To determine the mean over some subset
+$\Omega$ of the PDF, the following formula should be used:
 \begin{equation}
-\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
 \approx \frac{1}{N}\sum_{i=1}^{N_s} \omega_i
-f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
-However, note that this equation will implicitly be scaled by $\zeta_\Omega$. To
+However, note that this equation will implicitly be scaled by $p_\Omega$. To
 compute and unscaled version of the integral, the following could be used
 instead:
 \begin{equation}
-\frac{1}{\zeta_\Omega}
-\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
-\approx \frac{1}{\zeta_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
-f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+\frac{1}{p_\Omega}
+\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\approx \frac{1}{p_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 
 \subsection{Optimal Allocation of Sample Points}
@@ -3739,60 +3740,60 @@ The hope of using the importance sampling method is that our new function will
 have less variance than the old one. The variance of the new function is given
 by:
 \begin{equation}
-v = \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2 H(\mathbf{x})d\mathbf{x}
+v = \int\left[h(\mathbf{x})L(\mathbf{x})\right]^2 Q(\mathbf{x})d\mathbf{x}
 - \mu^2
 \end{equation}
 
 We can split the integral up over our importance categories.
 \begin{align}
-v &= \sum_{j=1}^{N_c} \left\{ \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
-\mathbf{1}_j(\mathbf{x}) H(\mathbf{x})
+v &= \sum_{j=1}^{N_c} \left\{ \int\left[h(\mathbf{x})L(\mathbf{x})\right]^2
+\mathbf{1}_j(\mathbf{x}) Q(\mathbf{x})
 d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{j=1}^{N_c} \left\{\left(\frac{\zeta_j}{S_j}\right)^2
-\int\left[f(\mathbf{x})\right]^2 \mathbf{1}_j(\mathbf{x})
-\left(\frac{S_j}{\zeta_j}\right) P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{j=1}^{N_c} \left\{ \left(\frac{\zeta_j}{S_j}\right)
-\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x}) P(\mathbf{x})\
+&= \sum_{j=1}^{N_c} \left\{\left(\frac{p_j}{S_j}\right)^2
+\int\left[h(\mathbf{x})\right]^2 \mathbf{1}_j(\mathbf{x})
+\left(\frac{S_j}{p_j}\right) P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
+&= \sum_{j=1}^{N_c} \left\{ \left(\frac{p_j}{S_j}\right)
+\int\left[h(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x}) P(\mathbf{x})\
 d\mathbf{x} \right\} - \mu^2 \label{SILHS importance variance simplified}
 \end{align}
 
 It is interesting to ask how we might choose our sample probabilities $S_j$ such
 that \eqref{SILHS importance variance simplified} is minimized. For convenience,
-let $u_j=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
+let $u_j=\int\left[h(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
 d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
 \begin{equation}
-v = \sum_{j=1}^{N_c} \frac{\zeta_j u_j}{S_j} - \mu^2
+v = \sum_{j=1}^{N_c} \frac{p_j u_j}{S_j} - \mu^2
 \end{equation}
 The probabilities $S_j$ must add to one, so we can write this as:
 \begin{equation}
-v = \sum_{j=1}^{N_c-1} \frac{\zeta_j u_j}{S_j} + \frac{\zeta_{N_c}
+v = \sum_{j=1}^{N_c-1} \frac{p_j u_j}{S_j} + \frac{p_{N_c}
 u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
 \end{equation}
 
 To optimize this, we take the $N_c-1$ partial derivitives of $v$ with respect to
 $S_j$ and set them all equal to zero.
 \begin{gather}
-\frac{\partial v}{\partial S_j} = -\frac{\zeta_j u_j}{S_j^2} + \frac{\zeta_{N_c}
+\frac{\partial v}{\partial S_j} = -\frac{p_j u_j}{S_j^2} + \frac{p_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} = 0 \\
-\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}
+\frac{p_j u_j}{S_j^2} = \frac{p_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} \\
-\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}u_{N_c}}{S_{N_c}^2} \\
-\frac{\sqrt{\zeta_j u_j}}{S_j} = \frac{\sqrt{\zeta_{N_c}u_{N_c}}}{S_{N_c}}
+\frac{p_j u_j}{S_j^2} = \frac{p_{N_c}u_{N_c}}{S_{N_c}^2} \\
+\frac{\sqrt{p_j u_j}}{S_j} = \frac{\sqrt{p_{N_c}u_{N_c}}}{S_{N_c}}
 \end{gather}
 
 So, in each category, the sample probability $S_j$ should be proportional to
-$\sqrt{\zeta_j u_j}$. If we let
+$\sqrt{p_j u_j}$. If we let
 \begin{equation}
-\alpha = \frac{S_j}{\sqrt{\zeta_j u_j}} \label{alpha def}
+\alpha = \frac{S_j}{\sqrt{p_j u_j}} \label{alpha def}
 \end{equation}
 and impose the constraint that the sample probabilities add to one, we have
 \begin{gather}
-\sum_{j=1}^{N_c} \alpha\sqrt{\zeta_j u_j} = 1 \\
-\alpha = \frac{1}{\sum_{i=j}^{N_c} \sqrt{\zeta_j u_j}} \label{alpha solved}
+\sum_{j=1}^{N_c} \alpha\sqrt{p_j u_j} = 1 \\
+\alpha = \frac{1}{\sum_{i=j}^{N_c} \sqrt{p_j u_j}} \label{alpha solved}
 \end{gather}
 Substituting \eqref{alpha solved} into \eqref{alpha def}, we find that
 \begin{equation}
-S_j = \frac{\sqrt{\zeta_j u_j}}{\sum_{j^*=1}^{N_c}\sqrt{\zeta_{j^*} u_{j^*}}}
+S_j = \frac{\sqrt{p_j u_j}}{\sum_{j^*=1}^{N_c}\sqrt{p_{j^*} u_{j^*}}}
 \end{equation}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
