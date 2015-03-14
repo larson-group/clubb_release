@@ -3633,8 +3633,37 @@ distribution, where $\chi$, $\eta$, and $w$ are normally distributed, and
 $N_{cn}$ and all the variables in $\mathbf{hm}$ are lognormally distributed. In
 the parts of the PDF that don't contain precipitation,
 $P_{(m)}(\chi,\eta,w,N_{cn})$ is a joint normal-lognormal distribution, just like
-before, but all the hydrometeors are zero. ($\delta(\mathbf{hm})$ is short for
+before, but all the hydrometeors are zero, rather than lognormally distributed.
+($\delta(\mathbf{hm})$ is short for
 $\delta(\mathrm{hm}_1)\delta(\mathrm{hm}_2)\cdots\delta(\mathrm{hm}_n)$).
+
+Let $d$ be the total number of variates in the PDF (the four fixed ones plus the
+number of hydrometeors). The key parameters associated with \eqref{CLUBB PDF},
+which must be supplied to SILHS, are:
+
+\begin{enumerate}
+\item The weight of each PDF component, $\xi_{(m)}$, and the precipitation
+fraction in each component, $f_{p(m)}$.
+
+\item $\mathbf{\mu}_{(m)}$: a vector of $d$ means corresponding to each variate in the
+PDF, for a given PDF component. These means are ``normalized'', which means that
+for the lognormal variates, the corresponding mean that appears in $\mu_{(m)}$
+is the mean of the natural logarithm of the variate. Also, these are
+in-precipitation means. This means that in the portion of the PDF that contains
+precipitation, $P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is distributed such
+that each (normalized) variate has a mean given by $\mu_{(m)}$. Outside of
+precipitation, the four variates of $P_{(m)}(\chi,\eta,w,N_{cn})$ have means
+corresponding to $\mu_{(m)}$, but the hydrometeors are zero, and so have a mean
+of zero.
+
+\item $\sigma_{(m)}$: a vector of $d$ in-precipitation normalized standard
+deviations for a given PDF component.
+
+\item $\Sigma_{(m)}$: a $d\mathrm{x}d$ correlation matrix, where
+$\Sigma_{(m)i,j}$ is the in-precipitation, normalized correlation between the
+$i$\textsuperscript{th} and $j$\textsuperscript{th} variates (in PDF component
+$m$).
+\end{enumerate}
 
 \subsection{Importance Sampling}
 
