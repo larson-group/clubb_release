@@ -304,8 +304,8 @@ module pdf_closure_module
     
     ! variables for computing ice cloud fraction
     real( kind = core_rknd) :: &
-      ice_supersat_frac1, & ! first  pdf component of ice_supersat_frac
-      ice_supersat_frac2, & ! second pdf component of ice_supersat_frac
+      ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
+      ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
       rt_at_ice_sat1, rt_at_ice_sat2, &
       chi_at_ice_sat1, chi_at_ice_sat2, rc_1_ice, rc_2_ice
     
@@ -878,13 +878,13 @@ module pdf_closure_module
         chi_at_ice_sat2 = chi_at_liq_sat
       end if
 
-      ! Calculate ice_supersat_frac1
+      ! Calculate ice supersaturation fraction in the 1st PDF component.
       call calc_cloud_frac_component( chi_1, stdev_chi_1, chi_at_ice_sat1, &
-                                      ice_supersat_frac1, rc_1_ice )
+                                      ice_supersat_frac_1, rc_1_ice )
       
-      ! Calculate ice_supersat_frac2
+      ! Calculate ice supersaturation fraction in the 2nd PDF component.
       call calc_cloud_frac_component( chi_2, stdev_chi_2, chi_at_ice_sat2, &
-                                      ice_supersat_frac2, rc_2_ice )
+                                      ice_supersat_frac_2, rc_2_ice )
     end if
 
     ! Compute moments that depend on theta_v
@@ -973,7 +973,8 @@ module pdf_closure_module
     
     if (l_calc_ice_supersat_frac) then
       ! Compute ice cloud fraction, ice_supersat_frac
-      ice_supersat_frac = calc_cloud_frac(ice_supersat_frac1, ice_supersat_frac2, mixt_frac)
+      ice_supersat_frac = calc_cloud_frac( ice_supersat_frac_1, &
+                                           ice_supersat_frac_2, mixt_frac )
     else
       ! ice_supersat_frac will be garbage if computed as above
       ice_supersat_frac = 0.0_core_rknd
@@ -1038,6 +1039,8 @@ module pdf_closure_module
     pdf_params%cloud_frac_2    = cloud_frac_2
     pdf_params%mixt_frac       = mixt_frac
 
+    pdf_params%ice_supersat_frac_1 = ice_supersat_frac_1
+    pdf_params%ice_supersat_frac_2 = ice_supersat_frac_2
 
     if ( clubb_at_least_debug_level( 2 ) ) then
 
@@ -1129,10 +1132,14 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%stdev_chi_2 = ", pdf_params%stdev_chi_2
         write(fstderr,*) "pdf_params%stdev_eta_1 = ", pdf_params%stdev_eta_1
         write(fstderr,*) "pdf_params%stdev_eta_2 = ", pdf_params%stdev_eta_2
-        write(fstderr,*) "pdf_params%covar_chi_eta_1 = ", pdf_params%covar_chi_eta_1
-        write(fstderr,*) "pdf_params%covar_chi_eta_2 = ", pdf_params%covar_chi_eta_2
-        write(fstderr,*) "pdf_params%corr_chi_eta_1 = ", pdf_params%corr_chi_eta_1
-        write(fstderr,*) "pdf_params%corr_chi_eta_2 = ", pdf_params%corr_chi_eta_2
+        write(fstderr,*) "pdf_params%covar_chi_eta_1 = ", &
+                         pdf_params%covar_chi_eta_1
+        write(fstderr,*) "pdf_params%covar_chi_eta_2 = ", &
+                         pdf_params%covar_chi_eta_2
+        write(fstderr,*) "pdf_params%corr_chi_eta_1 = ", &
+                         pdf_params%corr_chi_eta_1
+        write(fstderr,*) "pdf_params%corr_chi_eta_2 = ", &
+                         pdf_params%corr_chi_eta_2
         write(fstderr,*) "pdf_params%rsatl_1 = ", pdf_params%rsatl_1
         write(fstderr,*) "pdf_params%rsatl_2 = ", pdf_params%rsatl_2
         write(fstderr,*) "pdf_params%rc_1 = ", pdf_params%rc_1
@@ -1140,6 +1147,10 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%cloud_frac_1 = ", pdf_params%cloud_frac_1
         write(fstderr,*) "pdf_params%cloud_frac_2 = ", pdf_params%cloud_frac_2
         write(fstderr,*) "pdf_params%mixt_frac = ", pdf_params%mixt_frac
+        write(fstderr,*) "pdf_params%ice_supersat_frac_1 = ", &
+                         pdf_params%ice_supersat_frac_1
+        write(fstderr,*) "pdf_params%ice_supersat_frac_2 = ", &
+                         pdf_params%ice_supersat_frac_2
 
         if ( sclr_dim > 0 )then
           write(fstderr,*) "sclrpthvp = ", sclrpthvp

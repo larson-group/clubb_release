@@ -406,8 +406,7 @@ subroutine mmicro_pcond ( sub_column,           &
    use setup_clubb_pdf_params, only: &
        compute_mean_stdev,   & ! Procedure(s)
        normalize_mean_stdev, &
-       comp_corr_norm,       &
-       normalize_corr
+       comp_corr_norm
 
    use KK_upscaled_means, only: &
        KK_auto_upscaled_mean, & ! Procedure(s)
