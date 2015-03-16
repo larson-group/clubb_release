@@ -3665,6 +3665,35 @@ $i$\textsuperscript{th} and $j$\textsuperscript{th} variates (in PDF component
 $m$).
 \end{enumerate}
 
+It is easy to draw sample points directly from a joint normal-lognormal
+distribution. A simple way to draw sample points from \eqref{CLUBB PDF} is to
+draw samples from one of the joint normal-lognormal PDFs indicated in the
+equation (one of the $P_{(m)}$ functions). How often to sample from each
+distribution is decided by the weights $\xi_{(m)}$ and $f_{p(m)}$. To do this,
+\eqref{CLUBB PDF} can be written in terms of two new variates: $u_{d+1}$ and
+$u_{d+2}$. The two variates are uniformly distributed, with $0 \le
+u_{d+1},u_{d+2} \le 1$. The variate $u_{d+1}$ is used to determine the PDF
+component to sample from, and $u_{d+2}$ determines whether to sample from the
+portion of the PDF with precipitation. The PDF in \eqref{CLUBB PDF} can then be
+written as follows:
+\begin{equation}
+P(\chi,\eta,w,N_{cn},\mathbf{hm},u_{d+1},u_{d+2}) =
+\begin{cases}
+P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn},\mathbf{hm}) & u_{d+2} < f_{p(m(u_{d+1}))}
+\\ \delta(\mathbf{hm}) P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn}) & u_{d+2} \ge
+f_{p(m(u_{d+1}))}
+\end{cases}
+\end{equation}
+where $m(u_{d+1})$ is a function that associates $u_{d+1}$ with a PDF component.
+In CLUBB's two-component case, the function can simply be defined as:
+\begin{equation}
+m(u_{d+1}) =
+\begin{cases}
+1 & u_{d+1} < \xi_1 \\
+2 & u_{d+1} \ge \xi_1
+\end{cases}
+\end{equation}
+
 \subsection{Importance Sampling}
 
 Importance sampling is a technique used in SILHS for variance reduction. The
@@ -3674,14 +3703,22 @@ often than they would normally be sampled.
 First, the PDF is split into a set of disjoint categories, $C_j$. These
 categories, which span the entire PDF, are currently defined as follows:
 \begin{enumerate*}
-\item In cloud, in precipitation, in mixture component 1
-\item In cloud, in precipitation, in mixture component 2
-\item Out of cloud, in precipitation, in mixture component 1
-\item Out of cloud, in precipitation, in mixture component 2
-\item In cloud, out of precipitation, in mixture component 1
-\item In cloud, out of precipitation, in mixture component 2
-\item Out of cloud, out of precipitation, in mixture component 1
-\item Out of cloud, out of precipitation, in mixture component 2
+\item In cloud, in precipitation, in mixture component 1 \\
+($\chi > 0$,\quad$u_{d+2} < f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item In cloud, in precipitation, in mixture component 2 \\
+($\chi > 0$,\quad$u_{d+2} < f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item Out of cloud, in precipitation, in mixture component 1 \\
+($\chi \le 0$,\quad$u_{d+2} < f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item Out of cloud, in precipitation, in mixture component 2 \\
+($\chi \le 0$,\quad$u_{d+2} < f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item In cloud, out of precipitation, in mixture component 1 \\
+($\chi > 0$,\quad$u_{d+2} \ge f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item In cloud, out of precipitation, in mixture component 2 \\
+($\chi > 0$,\quad$u_{d+2} \ge f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item Out of cloud, out of precipitation, in mixture component 1 \\
+($\chi \le 0$,\quad$u_{d+2} \ge f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item Out of cloud, out of precipitation, in mixture component 2 \\
+($\chi \le 0$,\quad$u_{d+2} \ge f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
 \end{enumerate*}
 
 Each category $C_j$ is associated with a certain amount of PDF mass, called the
