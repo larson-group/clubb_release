@@ -4,8 +4,11 @@
 \usepackage{pstricks}
 
 % AMS math extensions
-\usepackage{amsmath}
+\usepackage{amsmath,bm}
 \usepackage{amssymb}
+
+% Block Array
+\usepackage{blkarray}
 
 % Use different colors
 \usepackage{color}
@@ -3632,9 +3635,9 @@ $P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is a joint normal-lognormal
 distribution, where $\chi$, $\eta$, and $w$ are normally distributed, and
 $N_{cn}$ and all the variables in $\mathbf{hm}$ are lognormally distributed. In
 the parts of the PDF that don't contain precipitation,
-$P_{(m)}(\chi,\eta,w,N_{cn})$ is a joint normal-lognormal distribution, just like
-before, but all the hydrometeors are zero, rather than lognormally distributed.
-($\delta(\mathbf{hm})$ is short for
+$P_{(m)}(\chi,\eta,w,N_{cn})$ is a joint normal-lognormal distribution, just
+like before, but all the hydrometeors are zero, rather than lognormally
+distributed.  ($\delta(\mathbf{hm})$ is short for
 $\delta(\mathrm{hm}_1)\delta(\mathrm{hm}_2)\cdots\delta(\mathrm{hm}_n)$).
 
 Let $d$ be the total number of variates in the PDF (the four fixed ones plus the
@@ -3645,22 +3648,22 @@ which must be supplied to SILHS, are:
 \item The weight of each PDF component, $\xi_{(m)}$, and the precipitation
 fraction in each component, $f_{p(m)}$.
 
-\item $\mathbf{\mu}_{(m)}$: a vector of $d$ means corresponding to each variate in the
-PDF, for a given PDF component. These means are ``normalized'', which means that
-for the lognormal variates, the corresponding mean that appears in $\mu_{(m)}$
-is the mean of the natural logarithm of the variate. Also, these are
-in-precipitation means. This means that in the portion of the PDF that contains
-precipitation, $P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is distributed such
-that each (normalized) variate has a mean given by $\mu_{(m)}$. Outside of
-precipitation, the four variates of $P_{(m)}(\chi,\eta,w,N_{cn})$ have means
-corresponding to $\mu_{(m)}$, but the hydrometeors are zero, and so have a mean
-of zero.
+\item $\bm{\mu}_{(m)}$: a vector of $d$ means corresponding to each variate in
+the PDF, for a given PDF component. These means are ``normalized'', which means
+that for the lognormal variates, the corresponding mean that appears in
+$\bm{\mu}_{(m)}$ is the mean of the natural logarithm of the variate. Also,
+these are in-precipitation means. This means that in the portion of the PDF that
+contains precipitation, $P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is distributed
+such that each (normalized) variate has a mean given by $\bm{\mu}_{(m)}$.
+Outside of precipitation, the four variates of $P_{(m)}(\chi,\eta,w,N_{cn})$
+have means corresponding to $\bm{\mu}_{(m)}$, but the hydrometeors are zero, and
+so have a mean of zero.
 
-\item $\sigma_{(m)}$: a vector of $d$ in-precipitation normalized standard
+\item $\bm{\sigma}_{(m)}$: a vector of $d$ in-precipitation normalized standard
 deviations for a given PDF component.
 
-\item $\Sigma_{(m)}$: a $d\mathrm{x}d$ correlation matrix, where
-$\Sigma_{(m)i,j}$ is the in-precipitation, normalized correlation between the
+\item $\bm{\Sigma}_{(m)}$: a $d\times d$ correlation matrix, where
+$\bm{\Sigma}_{(m)i,j}$ is the in-precipitation, normalized correlation between the
 $i$\textsuperscript{th} and $j$\textsuperscript{th} variates (in PDF component
 $m$).
 \end{enumerate}
@@ -3683,6 +3686,7 @@ P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn},\mathbf{hm}) & u_{d+2} < f_{p(m(u_{d+1}))}
 \\ \delta(\mathbf{hm}) P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn}) & u_{d+2} \ge
 f_{p(m(u_{d+1}))}
 \end{cases}
+\label{CLUBB PDF with uniform}
 \end{equation}
 where $m(u_{d+1})$ is a function that associates $u_{d+1}$ with a PDF component.
 In CLUBB's two-component case, the function can simply be defined as:
@@ -3693,6 +3697,11 @@ m(u_{d+1}) =
 2 & u_{d+1} \ge \xi_1
 \end{cases}
 \end{equation}
+
+\subsection{Generation of Points in Uniform Space}
+
+As a first step, sample points are picked from a uniform distribution. One
+uniform variate is picked for each variate in the PDF.
 
 \subsection{Importance Sampling}
 
@@ -3795,6 +3804,72 @@ denoted as:
 C_j \label{SILHS importance weights def}
 \end{equation}
 
+\subsection{Transformation to Desired Distribution}
+
+Each sample must now be transformed to be a sample from the PDF in \eqref{CLUBB
+PDF}. First, the sample values of $u_{d+1}$ and $u_{d+2}$ are used to determine
+a joint normal-lognormal distribution to sample from, as in \eqref{CLUBB PDF
+with uniform}.
+
+Next, the uniform values of the sample, excluding the $u_{d+1}$ and $u_{d+2}$
+variates, are transformed to an uncorrelated standard normal sample using the
+inverse cumulative distribution function of the standard normal distribution:
+\begin{equation}
+\mathbf{Z} = \Phi^{-1} (\mathbf{u}) = 
+\left(
+\begin{array}{c}
+\Phi^{-1} (u_1) \\
+\Phi^{-1} (u_2) \\
+\vdots          \\
+\Phi^{-1} (u_d)
+\end{array}
+\right)
+\end{equation}
+
+A well known result is that given a vector of uncorrelated standard normal
+values, a sample following the desired joint normal distribution (say,
+$\mathbf{x}_\mathrm{norm}$) can be obtained using the following formula:
+\begin{equation}
+\mathbf{x}_\mathrm{norm} = \mathbf{L}\mathbf{Z} + \bm{\mu}
+\end{equation}
+where $\mathbf{L}$ is a matrix that satisfies
+\begin{equation}
+\mathbf{\Sigma} = \mathbf{L} \mathbf{L}^\mathbf{T}
+\end{equation}
+and $\mathbf{\Sigma}$ is the covariance matrix of the joint distribution. One
+way to calculate such a matrix $\mathbf{L}$ is to use an algorithm called the
+Cholesky decomposition.
+
+In SILHS, instead of the Cholesky decomposition of the covariance matrix, we
+have the decomposition of the correlation matrix. The decomposition of the
+covariance matrix is found by multiplying each element of each row of
+correlation decomposition by the standard deviation of the associated variate.
+Mathematically,
+\begin{equation}
+\mathbf{L} = \left(\mathbf{I}_d \bm{\sigma}\right) \mathbf{L}_\mathrm{corr}
+\end{equation}
+where $\mathbf{I}_d$ is the $d\times d$ identity matrix and $\bm{\sigma}$ is the
+vector of standard deviations.
+
+The last step is to transform from a joint normal distribution to a joint
+normal-lognormal distribution. This can be done by applying the exponential
+function to each log-normally distributed variate in the sample (while the
+normally distributed variates remain the same).
+\begin{equation}
+\mathbf{x} =
+\begin{blockarray}{cc}
+\begin{block}{(c)c}
+x_{\mathrm{norm},1} & \chi \\
+x_{\mathrm{norm},2} & \eta \\
+x_{\mathrm{norm},3} & w \\
+\exp(x_{\mathrm{norm},4}) & N_{cn} \\
+\exp(x_{\mathrm{norm},5}) & \mathrm{hm}_1 \\
+\vdots & \\
+\exp(x_{\mathrm{norm},d}) & \mathrm{hm}_n \\
+\end{block}
+\end{blockarray}
+\end{equation}
+
 \subsection{Integrating over a PDF using SILHS}
 
 When importance sampling is used, the weight of each sample point, denoted as
@@ -3822,7 +3897,7 @@ $\Omega$ of the PDF, the following formula should be used:
 h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 However, note that this equation will implicitly be scaled by $p_\Omega$. To
-compute and unscaled version of the integral, the following could be used
+compute an unscaled version of the integral, the following could be used
 instead:
 \begin{equation}
 \frac{1}{p_\Omega}
