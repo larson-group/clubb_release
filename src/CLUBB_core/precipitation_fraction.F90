@@ -135,14 +135,14 @@ module precipitation_fraction
           ! a minimum threshold value.
           precip_frac(k) = precip_frac_tol
 
-       !elseif ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
+       elseif ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
 
           ! The means (overall) of every precipitating hydrometeor are all less
           ! than their respective tolerance amounts.  They are all considered to
           ! have values of 0.  There are not any hydrometeor species found at
           ! this grid level.  There is also no cloud at or above this grid
           ! level, so set precipitation fraction to 0.
-          !precip_frac(k) = zero
+          precip_frac(k) = zero
 
        endif
 
@@ -478,12 +478,12 @@ module precipitation_fraction
 
     ! When there aren't any hydrometeors found at a grid level, reset the
     ! component precipitation fractions to 0.
-    !do k = 1, nz, 1
-    !   if ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
-    !      precip_frac_1(k) = zero
-    !      precip_frac_2(k) = zero
-    !   endif
-    !enddo ! k = 1, nz, 1
+    do k = 1, nz, 1
+       if ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
+          precip_frac_1(k) = zero
+          precip_frac_2(k) = zero
+       endif
+    enddo ! k = 1, nz, 1
 
 
     return
