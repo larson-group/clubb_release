@@ -639,7 +639,7 @@ module stats_clubb_utilities
        ! Subtract "corr_hmx_hmy_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations of two hydrometeors, which is
+       ! number of normal space correlations of two hydrometeors, which is
        ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! to the number of zt statistical variables.
        ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )

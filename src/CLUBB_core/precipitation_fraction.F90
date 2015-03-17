@@ -183,8 +183,7 @@ module precipitation_fraction
 
     elseif ( precip_frac_calc_type == 3 ) then
 
-      ! Temporary third option to test setting precip_frac_1 = precip_frac_2
-      ! ( = precip_frac ).  Brian; 11/10/2014.
+      ! Simply set precip_frac_1 = precip_frac_2 = precip_frac ).
       precip_frac_1 = precip_frac
       precip_frac_2 = precip_frac
 
@@ -215,13 +214,13 @@ module precipitation_fraction
     ! ith PDF component in-precip mean of a hydrometeor, mu_hm_i,  is given by
     ! the equation:
     !
-    ! mu_hm_i = hmi / precip_frac_i;
+    ! mu_hm_i = hm_i / precip_frac_i;
     !
-    ! where hmi is the overall ith PDF component mean of the hydrometeor, and
+    ! where hm_i is the overall ith PDF component mean of the hydrometeor, and
     ! precip_frac_i is the ith PDF component precipitation fraction.  When
-    ! precip_frac_i has a value of precip_frac_tol and hmi is large, mu_hm_i can
-    ! be huge.  This can cause enormous microphysical process rates and result
-    ! in numerical instability.  It is also very inaccurate.
+    ! precip_frac_i has a value of precip_frac_tol and hm_i is large, mu_hm_i
+    ! can be huge.  This can cause enormous microphysical process rates and
+    ! result in numerical instability.  It is also very inaccurate.
     !
     ! In order to limit this problem, the ith PDF component precipitation
     ! fraction is increased in order to decrease mu_hm_i.  First, an "upper
@@ -229,19 +228,44 @@ module precipitation_fraction
     ! called max_hm_ip_comp_mean.  At every vertical level and for every
     ! hydrometeor mixing ratio, a check is made to try to prevent mu_hm_i from
     ! exceeding the "upper limit".  The check is:
-    ! hmi / precip_frac_i ( which = mu_hm_i ) > max_hm_ip_comp_mean, which can
-    ! be rewritten:  hmi > precip_frac_i * max_hm_ip_comp_mean.  Since hmi has
-    ! not been calculated yet, the assumption for this check is that all of the
-    ! hydrometeor is found in one PDF component, which is <hm>/mixt_frac in the
-    ! 1st PDF component and <hm>/(1-mixt_frac) in the 2nd PDF component.  When
-    ! component precipitation fraction is found to be in excess of the limit,
-    ! precip_frac_i is increased to hmi/max_hm_ip_comp_mean.  Of course,
-    ! precip_frac_i is not allowed to exceed 1, so when hmi is already greater
-    ! than max_hm_ip_comp_mean, mu_hm_i will also have to be greater than
+    !
+    ! hm_i / precip_frac_i ( which = mu_hm_i )  >  max_hm_ip_comp_mean,
+    !
+    ! which can be rewritten:
+    !
+    ! hm_i > precip_frac_i * max_hm_ip_comp_mean.
+    !
+    ! Since hm_i has not been calculated yet, the assumption for this check is
+    ! that all of the hydrometeor is found in one PDF component, which is the
+    ! worst-case scenario in violating this limit.  The check becomes:
+    !
+    ! <hm> / ( mixt_frac * precip_frac_1 )  >  max_hm_ip_comp_mean;
+    !    in PDF comp. 1; and
+    ! <hm> / ( ( 1 - mixt_frac ) * precip_frac_2 )  >  max_hm_ip_comp_mean;
+    !    in PDF comp. 2.
+    !
+    ! These limits can be rewritten as:
+    !
+    ! <hm>  >  mixt_frac * precip_frac_1 * max_hm_ip_comp_mean;
+    !    in PDF comp. 1; and
+    ! <hm>  >  ( 1 - mixt_frac ) * precip_frac_2 * max_hm_ip_comp_mean;
+    !    in PDF comp. 2.
+    !
+    ! When component precipitation fraction is found to be in excess of the
+    ! limit, precip_frac_i is increased to:
+    !
+    ! <hm> / ( mixt_frac * max_hm_ip_comp_mean );
+    !    when the limit is exceeded in PDF comp. 1; and
+    ! <hm> / ( ( 1 - mixt_frac ) * max_hm_ip_comp_mean );
+    !    when the limit is exceeded in PDF comp. 2.
+    !
+    ! Of course, precip_frac_i is not allowed to exceed 1, so when
+    ! <hm> / mixt_frac (or <hm> / ( 1 - mixt_frac )) is already greater than
+    ! max_hm_ip_comp_mean, mu_hm_i will also have to be greater than
     ! max_hm_ip_comp_mean.  However, the value of mu_hm_i is still reduced when
     ! compared to what it would have been using precip_frac_tol.  In the event
     ! that multiple hydrometeor mixing ratios violate the check, the code is set
-    ! up so that precip_frac_i is increased based on the highest hmi.
+    ! up so that precip_frac_i is increased based on the highest hm_i.
     do k = 1, nz, 1
 
        do ivar = 1, hydromet_dim, 1

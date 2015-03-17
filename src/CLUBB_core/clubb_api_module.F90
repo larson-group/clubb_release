@@ -1543,8 +1543,8 @@ contains
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), &
       intent(in) :: &
-      corr_array_n_cloud, & ! Prescribed normalized corr. array in cloud     [-]
-      corr_array_n_below    ! Prescribed normalized corr. array below cloud  [-]
+      corr_array_n_cloud, & ! Prescribed norm. space corr. array in cloud    [-]
+      corr_array_n_below    ! Prescribed norm. space corr. array below cloud [-]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
@@ -1559,14 +1559,14 @@ contains
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
       intent(out) :: &
-      corr_array_1_n, & ! Corr. array (normalized) of PDF vars. (comp. 1)    [-]
-      corr_array_2_n    ! Corr. array (normalized) of PDF vars. (comp. 2)    [-]
+      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
+      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
     real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
-      mu_x_1_n,    & ! Mean array (normalized) of PDF vars. (comp. 1) [un. vary]
-      mu_x_2_n,    & ! Mean array (normalized) of PDF vars. (comp. 2) [un. vary]
-      sigma_x_1_n, & ! Std. dev. array (normalized) of PDF vars (comp. 1) [u.v.]
-      sigma_x_2_n    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]

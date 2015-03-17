@@ -129,8 +129,8 @@ module corr_varnce_module
        corr_array_n_below_def(indx,indx) = one
     enddo
 
-    ! Set up default normalized correlation arrays.
-    ! The default normalized correlation arrays used here are the normalized
+    ! Set up default normal space correlation arrays.
+    ! The default normal space correlation arrays used here are the normal space
     ! correlation arrays used for the ARM 97 case.  Any changes should be made
     ! concurrently here and in
     ! ../../input/case_setups/arm_97_corr_array_cloud.in (for "in-cloud") and

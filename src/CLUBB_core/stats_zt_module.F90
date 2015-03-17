@@ -861,7 +861,7 @@ module stats_zt_module
     if ( any( vars_zt == "corr_hmx_hmy_i_n" ) ) then
        ! Correct for number of variables found under "corr_hmxhmy_i_n".
        ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations of two hydrometeors, which is found
+       ! number of normal space correlations of two hydrometeors, which is found
        ! by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! from the loop size.
        tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
