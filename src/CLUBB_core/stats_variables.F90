@@ -112,10 +112,9 @@ module stats_variables
 !$omp   itau_zt, iKh_zt, iwp2thvp, iwp2rcp, iwprtpthlp, isigma_sqd_w_zt, irho )
 
   integer, dimension(:), allocatable, public :: & 
-     icorr_w_hm_ov_adj, &
      ihm1, &
      ihm2
-!$omp threadprivate( icorr_w_hm_ov_adj, ihm1, ihm2 )
+!$omp threadprivate( ihm1, ihm2 )
 
   integer, public :: & 
      iLWP1 = 0, &
