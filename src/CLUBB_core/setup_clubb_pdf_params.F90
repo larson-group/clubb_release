@@ -11,7 +11,8 @@ module setup_clubb_pdf_params
             compute_mean_stdev,    &
             calc_comp_mu_sigma_hm, &
             normalize_mean_stdev,  &
-            comp_corr_norm
+            comp_corr_norm,        &
+            denormalize_corr
 
   private :: calc_mu_sigma_two_comps,     &
              component_corr_w_x,          &
@@ -20,7 +21,6 @@ module setup_clubb_pdf_params
              component_corr_x_hm_n_ip,    &
              component_corr_hmx_hmy_n_ip, &
              component_corr_eta_hm_n_ip,  &
-             denormalize_corr,            &
              calc_corr_w_hm_n,            &
              pdf_param_hm_stats,          &
              pdf_param_ln_hm_stats,       &
