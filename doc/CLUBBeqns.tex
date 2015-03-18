@@ -3703,11 +3703,41 @@ m(u_{d+1}) =
 As a first step, sample points are picked from a uniform distribution. One
 uniform variate is picked for each variate in the PDF.
 
+As a variance reduction technique, SILHS employs Latin hypercube sampling. The
+basic idea of this algorithm is to stratify each distribution variate into
+several equally-sized regions, and ensure that each region is sampled. The
+algorithm, which is described in \citet{larson2005supplying}, is implemented as
+follows.
+
+Let $N_s$ be the number of SILHS sample points used. Each of the $d+2$ uniform
+variates is split into $N_s$ sections: $\left(0,\frac{1}{N_s}\right),
+\left(\frac{1}{N_s},\frac{2}{N_s}\right), \ldots,
+\left(\frac{N_s-1}{N_s},1\right)$. Next, for each variate, an independent
+permutation of the integers $\left(0,1,\ldots,N_s-1\right)$ is chosen,
+corresponding to the $N_s$ sections of the variate. These $d+2$ permutations
+form a $N_s\times \left(d+2\right)$ matrix, $\bm{\Pi}$, where each column of the
+matrix, $\bm{\Pi}_{\left(1\ldots N_s\right),j}$ is the permutation corresponding
+to the $j$\textsuperscript{th} variate. Finally, we form another $N_s\times
+\left(d+2\right)$ matrix, $\mathbf{U}$, each element of which is a random
+uniform number between $0$ and $1$. The purpose of the matrix $\mathbf{U}$ is to
+choose uniformly a value within each section. Our sample matrix, $\mathbf{V}$,
+is then given by: 
+\begin{equation}
+\mathbf{V} = \frac{1}{N_s}\left(\bm{\Pi} + \mathbf{U}\right)
+\end{equation}
+
+Each of the $N_s$ rows of $\mathbf{V}$ is a SILHS sample. In a given row of
+$\mathbf{V}$, the value in each of the $\left(d+2\right)$ columns is the sample
+value of the corresponding variate in the PDF. Note that using this method, the
+association of sections between the variates is scrambled. For example, one
+sample might contain a sample of one variate in the 2\textsuperscript{nd}
+section and a sample of another variate in the 5\textsuperscript{th} section.
+
 \subsection{Importance Sampling}
 
-Importance sampling is a technique used in SILHS for variance reduction. The
-basic idea is to sample some parts of the PDF (the ``important'' regions) more
-often than they would normally be sampled.
+Importance sampling is another technique used in SILHS for variance reduction.
+The basic idea is to sample some parts of the PDF (the ``important'' regions)
+more often than they would normally be sampled.
 
 First, the PDF is split into a set of disjoint categories, $C_j$. These
 categories, which span the entire PDF, are currently defined as follows:
