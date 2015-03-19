@@ -14,7 +14,11 @@ module precipitation_fraction
   public :: precip_fraction
 
   private :: component_precip_frac_weighted, &
+             component_precip_frac_specify,  &
              component_precip_frac_ratio
+
+  integer, parameter, public :: &
+    precip_frac_calc_type = 1  ! Option used to calculate component precip_frac
 
   contains
 
@@ -84,9 +88,6 @@ module precipitation_fraction
     ! "Maximum allowable" hydrometeor mixing ratio in-precip component mean.
     real( kind = core_rknd ), parameter :: &
       max_hm_ip_comp_mean = 0.0025_core_rknd  ! [kg/kg]
-
-    integer, parameter :: &
-      precip_frac_calc_type = 1  ! Option used to calc. component precip_frac
 
     integer :: &
       k, ivar   ! Loop indices
@@ -171,8 +172,14 @@ module precipitation_fraction
                                             precip_frac_tol, &
                                             precip_frac_1, precip_frac_2 )
 
-
     elseif ( precip_frac_calc_type == 2 ) then
+
+       ! Specified method.
+       call component_precip_frac_specify( nz, hydromet, precip_frac, &
+                                           mixt_frac, precip_frac_tol, &
+                                           precip_frac_1, precip_frac_2 )
+
+    elseif ( precip_frac_calc_type == 3 ) then
 
        ! Ratio method:  precip_frac_2 / precip_frac_1 = LWP_2 / LWP_1.
        call component_precip_frac_ratio( nz, hydromet, precip_frac, &
@@ -180,20 +187,11 @@ module precipitation_fraction
                                          precip_frac_tol, l_stats_samp, &
                                          precip_frac_1, precip_frac_2 )
 
-
-    elseif ( precip_frac_calc_type == 3 ) then
-
-      ! Simply set precip_frac_1 = precip_frac_2 = precip_frac ).
-      precip_frac_1 = precip_frac
-      precip_frac_2 = precip_frac
-
-
     else ! Invalid option selected.
 
        write(fstderr,*) "Invalid option to calculate precip_frac_1 " &
                         // "and precip_frac_2."
        stop
-
 
     endif ! precip_frac_calc_type
 
@@ -463,15 +461,15 @@ module precipitation_fraction
 
           ! Recalculate the precipitation fraction in PDF component 1.
           precip_frac_1(k) &
-          = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
-            / mixt_frac(k)
+          = ( precip_frac(k) - ( one - mixt_frac(k) ) ) / mixt_frac(k)
 
-          ! Double check for errors in PDF component 1.
-          if ( precip_frac_1(k) > one ) then
-             precip_frac_1(k) = one
-          elseif ( precip_frac_1(k) > zero &
-                   .and. precip_frac_1(k) < precip_frac_tol ) then
+          ! Double check precip_frac_1
+          if ( precip_frac_1(k) > zero &
+               .and. precip_frac_1(k) < precip_frac_tol ) then
              precip_frac_1(k) = precip_frac_tol
+             precip_frac_2(k) = ( precip_frac(k) &
+                                  - mixt_frac(k) * precip_frac_1(k) ) &
+                                / ( one - mixt_frac(k) )
           endif
 
        elseif ( precip_frac_2(k) > zero &
@@ -487,12 +485,11 @@ module precipitation_fraction
           = ( precip_frac(k) - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
             / mixt_frac(k)
 
-          ! Double check for errors in PDF component 1.
+          ! Double check precip_frac_1
           if ( precip_frac_1(k) > one ) then
              precip_frac_1(k) = one
-          elseif ( precip_frac_1(k) > zero &
-                   .and. precip_frac_1(k) < precip_frac_tol ) then
-             precip_frac_1(k) = precip_frac_tol
+             precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                / ( one - mixt_frac(k) )
           endif
 
        endif
@@ -513,6 +510,189 @@ module precipitation_fraction
     return
 
   end subroutine component_precip_frac_weighted
+
+  !=============================================================================
+  subroutine component_precip_frac_specify( nz, hydromet, precip_frac, &
+                                            mixt_frac, precip_frac_tol, &
+                                            precip_frac_1, precip_frac_2 )
+
+    ! Description:
+    ! Calculates the precipitation fraction in each PDF component.
+    !
+    ! The equation for precipitation fraction is:
+    !
+    ! f_p = mixt_frac * f_p(1) + ( 1 - mixt_frac ) * f_p(2);
+    !
+    ! where f_p is overall precipitation fraction, f_p(1) is precipitation
+    ! fraction in the 1st PDF component, f_p(2) is precipitation fraction in the
+    ! 2nd PDF component, and mixt_frac is the mixture fraction.  Using this
+    ! method, a new specified parameter is introduced, upsilon, where:
+    !
+    ! upsilon = mixt_frac * f_p(1) / f_p; and where 0 <= upsilon <= 1.
+    !
+    ! In other words, upsilon is the ratio of mixt_frac * f_p(1) to f_p.  Since
+    ! f_p and mixt_frac are calculated previously, and upsilon is specified,
+    ! f_p(1) can be calculated by:
+    !
+    ! f_p(1) = upsilon * f_p / mixt_frac;
+    !
+    ! and has an upper limit of 1.  The value of f_p(2) can then be calculated
+    ! by:
+    !
+    ! f_p(2) = ( f_p - mixt_frac * f_p(1) ) / ( 1 - mixt_frac );
+    !
+    ! and also has an upper limit of 1.  When upsilon = 1, all of the
+    ! precipitation is found in the 1st PDF component (as long as
+    ! f_p <= mixt_frac, otherwise it would cause f_p(1) to be greater than 1).
+    ! When upsilon = 0, all of the precipitation is found in the 2nd PDF
+    ! component (as long as f_p <= 1 - mixt_frac, otherwise it would cause
+    ! f_p(2) to be greater than 1).  When upsilon is between 0 and 1,
+    ! precipitation is split between the two PDF components accordingly.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,  & ! Constant(s)
+        zero
+
+    use parameters_tunable, only: &
+        upsilon_precip_frac_rat  ! Variable(s)
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use array_index, only: &
+        hydromet_tol  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      precip_frac, & ! Precipitation fraction (overall)                      [-]
+      mixt_frac      ! Mixture fraction                                      [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
+
+    integer :: k  ! Loop index.
+
+
+    ! Loop over all vertical levels.
+    do k = 1, nz, 1
+
+       if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
+
+          ! There are hydrometeors found at this grid level.
+          if ( upsilon_precip_frac_rat == one ) then
+
+             if ( precip_frac(k) <= mixt_frac(k) ) then
+                ! All the precipitation is found in the 1st PDF component.
+                precip_frac_1(k) = precip_frac(k) / mixt_frac(k)
+                precip_frac_2(k) = zero
+             else ! precip_frac(k) > mixt_frac(k)
+                ! Some precipitation is found in the 2nd PDF component.
+                precip_frac_1(k) = one
+                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                   / ( one - mixt_frac(k) )
+                if ( precip_frac_2(k) < precip_frac_tol ) then
+                   ! Since precipitation is found in the 2nd PDF component, it
+                   ! must have a value of at least precip_frac_tol.
+                   precip_frac_2(k) = precip_frac_tol
+                   ! Recalculate precip_frac_1
+                   precip_frac_1(k) &
+                   = ( precip_frac(k) &
+                       - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
+                     / mixt_frac(k)
+                endif ! precip_frac_2(k) < precip_frac_tol
+             endif ! precip_frac(k) <= mixt_frac(k)
+
+          elseif ( upsilon_precip_frac_rat == zero ) then
+
+             if ( precip_frac(k) <= ( one - mixt_frac(k) ) ) then
+                ! All the precipitation is found in the 2nd PDF component.
+                precip_frac_1(k) = zero
+                precip_frac_2(k) = precip_frac(k) / ( one - mixt_frac(k) )
+             else ! precip_frac(k) > ( 1 - mixt_frac(k) )
+                ! Some precipitation is found in the 1st PDF component.
+                precip_frac_1(k) = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
+                                   / mixt_frac(k)
+                precip_frac_2(k) = one
+                if ( precip_frac_1(k) < precip_frac_tol ) then
+                   ! Since precipitation is found in the 1st PDF component, it
+                   ! must have a value of at least precip_frac_tol.
+                   precip_frac_1(k) = precip_frac_tol
+                   ! Recalculate precip_frac_2
+                   precip_frac_2(k) = ( precip_frac(k) &
+                                        - mixt_frac(k) * precip_frac_1(k) ) &
+                                      / ( one - mixt_frac(k) )
+                endif ! precip_frac_1(k) < precip_frac_tol
+             endif ! precip_frac(k) <= ( 1 - mixt_frac(k) )
+
+          else  ! 0 < upsilon_precip_frac_rat < 1
+
+             ! Precipitation is found in both PDF components.  Each component
+             ! must have a precipitation fraction that is at least
+             ! precip_frac_tol and that does not exceed 1.
+             precip_frac_1(k) &
+             = upsilon_precip_frac_rat * precip_frac(k) / mixt_frac(k)
+
+             if ( precip_frac_1(k) > one ) then
+                precip_frac_1(k) = one
+             elseif ( precip_frac_1(k) < precip_frac_tol ) then
+                precip_frac_1(k) = precip_frac_tol
+             endif
+
+             precip_frac_2(k) = ( precip_frac(k) &
+                                  - mixt_frac(k) * precip_frac_1(k) ) &
+                                / ( one - mixt_frac(k) )
+
+             if ( precip_frac_2(k) > one ) then
+                precip_frac_2(k) = one
+                ! Recalculate precip_frac_1
+                precip_frac_1(k) = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
+                                   / mixt_frac(k)
+             elseif ( precip_frac_2(k) < precip_frac_tol ) then
+                precip_frac_2(k) = precip_frac_tol
+                ! Recalculate precip_frac_1
+                precip_frac_1(k) &
+                = ( precip_frac(k) &
+                    - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
+                  / mixt_frac(k)
+             endif
+
+          endif  ! upsilon_precip_frac_rat
+
+
+       else ! all( hydromet(k,:) < hydromet_tol(:) )
+
+          ! There aren't any hydrometeors found at the grid level.
+          precip_frac_1(k) = zero
+          precip_frac_2(k) = zero
+
+
+       endif ! any( hydromet(k,:) >= hydromet_tol(:) )
+
+    enddo ! k = 1, nz, 1
+
+
+    return
+
+  end subroutine component_precip_frac_specify
 
   !=============================================================================
   subroutine component_precip_frac_ratio( nz, hydromet, precip_frac, &

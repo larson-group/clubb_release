@@ -180,12 +180,12 @@ module parameters_tunable
 !$omp threadprivate( omicron, zeta_vrnce_rat )
 
   real( kind = core_rknd ), public :: &
-    ! Coefficient for adjusted overall correlation in hm_1/hm_2 calculation [-]
-    coef_hm_1_hm_2_corr_adj = 1.0_core_rknd, &
+    ! ratio mixt_frac*precip_frac_1/precip_frac (precip_frac_calc_type=2)    [-]
+    upsilon_precip_frac_rat = 0.9_core_rknd, &
     ! Intensity of stability correction applied to C1 and C6 [-]
     lambda0_stability_coef = 0.03_core_rknd
 
-!$omp threadprivate( coef_hm_1_hm_2_corr_adj, lambda0_stability_coef)
+!$omp threadprivate( upsilon_precip_frac_rat, lambda0_stability_coef)
 
   ! Factor to decrease sensitivity in the denominator of Skw calculation
   real( kind = core_rknd ), public :: &
@@ -234,7 +234,7 @@ module parameters_tunable
     C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2, & 
     c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
     nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, lmin_coef, &
-    omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+    omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
     thlp2_rad_cloud_frac_thresh
@@ -280,7 +280,7 @@ module parameters_tunable
        "gamma_coefc                ", "mu                         ", &
        "beta                       ", "lmin_coef                  ", &
        "omicron                    ", "zeta_vrnce_rat             ", &
-       "coef_hm_1_hm_2_corr_adj    ", "lambda0_stability_coef     ", &
+       "upsilon_precip_frac_rat    ", "lambda0_stability_coef     ", &
        "mult_coef                  ", "taumin                     ", &
        "taumax                     ", "Lscale_mu_coef             ", &
        "Lscale_pert_coef           ", "alpha_corr                 ", &
@@ -372,7 +372,7 @@ module parameters_tunable
                             c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                             nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
                             mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-                            coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                            upsilon_precip_frac_rat, lambda0_stability_coef, &
                             mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                             alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                             thlp2_rad_cloud_frac_thresh )
@@ -421,15 +421,15 @@ module parameters_tunable
 
     endif ! zeta_vrnce_rat <= -1
 
-    if ( coef_hm_1_hm_2_corr_adj < 0.0_core_rknd &
-         .or. coef_hm_1_hm_2_corr_adj > 1.0_core_rknd ) then
+    if ( upsilon_precip_frac_rat < 0.0_core_rknd &
+         .or. upsilon_precip_frac_rat > 1.0_core_rknd ) then
 
-       ! Constraints on coef_hm_1_hm_2_corr_adj
-       write(fstderr,*) "coef_hm_1_hm_2_corr_adj = ", coef_hm_1_hm_2_corr_adj
-       write(fstderr,*) "coef_hm_1_hm_2_corr_adj cannot be < 0 or > 1"
+       ! Constraints on upsilon_precip_frac_rat
+       write(fstderr,*) "upsilon_precip_frac_rat = ", upsilon_precip_frac_rat
+       write(fstderr,*) "upsilon_precip_frac_rat cannot be < 0 or > 1"
        err_code = clubb_var_out_of_bounds
 
-    endif ! coef_hm_1_hm_2_corr_adj < 0 or coef_hm_1_hm_2_corr_adj > 1
+    endif ! upsilon_precip_frac_rat < 0 or upsilon_precip_frac_rat > 1
 
     if ( mu < 0.0_core_rknd ) then
 
@@ -729,7 +729,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
                           mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
@@ -802,7 +802,7 @@ module parameters_tunable
       C7_Lscale0, wpxp_L_thresh, c_K, c_K1, nu1, c_K2, nu2,  & 
       c_K6, nu6, c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
       nu_hm, beta, gamma_coef, gamma_coefb, gamma_coefc, & 
-      lmin_coef, omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      lmin_coef, omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, &
       Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -827,7 +827,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
                           mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, param_spread )
@@ -873,7 +873,7 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
                mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-               coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+               upsilon_precip_frac_rat, lambda0_stability_coef, &
                mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh, params )
@@ -950,7 +950,7 @@ module parameters_tunable
       ilmin_coef, &
       iomicron, &
       izeta_vrnce_rat, &
-      icoef_hm_1_hm_2_corr_adj, &
+      iupsilon_precip_frac_rat, &
       ilambda0_stability_coef, &
       imult_coef, &
       itaumin, & 
@@ -976,7 +976,7 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, c_K8, nu8,  & 
       c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, gamma_coef, &
       gamma_coefb, gamma_coefc, mu, beta, lmin_coef, &
-      omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
       thlp2_rad_cloud_frac_thresh
@@ -1050,7 +1050,7 @@ module parameters_tunable
     params(iomicron) = omicron
     params(izeta_vrnce_rat) = zeta_vrnce_rat
 
-    params(icoef_hm_1_hm_2_corr_adj) = coef_hm_1_hm_2_corr_adj
+    params(iupsilon_precip_frac_rat) = upsilon_precip_frac_rat
     params(ilambda0_stability_coef) = lambda0_stability_coef
     params(imult_coef) = mult_coef
 
@@ -1080,7 +1080,7 @@ module parameters_tunable
                c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                nu_hm, gamma_coef, gamma_coefb, gamma_coefc, & 
                mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-               coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+               upsilon_precip_frac_rat, lambda0_stability_coef, &
                mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                thlp2_rad_cloud_frac_thresh )
@@ -1157,7 +1157,7 @@ module parameters_tunable
       ilmin_coef, &
       iomicron, &
       izeta_vrnce_rat, &
-      icoef_hm_1_hm_2_corr_adj, &
+      iupsilon_precip_frac_rat, &
       ilambda0_stability_coef, &
       imult_coef, &
       itaumin, & 
@@ -1186,7 +1186,7 @@ module parameters_tunable
       c_K, c_K1, nu1, c_K2, nu2, c_K6, nu6, & 
       c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, nu_hm, & 
       gamma_coef, gamma_coefb, gamma_coefc, & 
-      mu, beta, lmin_coef, omicron, zeta_vrnce_rat, coef_hm_1_hm_2_corr_adj, &
+      mu, beta, lmin_coef, omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, &
       taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
       thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
@@ -1257,7 +1257,7 @@ module parameters_tunable
     omicron = params(iomicron)
     zeta_vrnce_rat = params(izeta_vrnce_rat)
 
-    coef_hm_1_hm_2_corr_adj = params(icoef_hm_1_hm_2_corr_adj)
+    upsilon_precip_frac_rat = params(iupsilon_precip_frac_rat)
     lambda0_stability_coef = params(ilambda0_stability_coef)
     mult_coef = params(imult_coef)
 
@@ -1300,7 +1300,7 @@ module parameters_tunable
                           c_K8, nu8, c_K9, nu9, nu10, c_K_hm, c_K_hmb, K_hm_min_coef, &
                           nu_hm, gamma_coef, gamma_coefb, gamma_coefc, &
                           mu, beta, lmin_coef, omicron, zeta_vrnce_rat, &
-                          coef_hm_1_hm_2_corr_adj, lambda0_stability_coef, &
+                          upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, thlp2_rad_coef, &
                           thlp2_rad_cloud_frac_thresh, params )
@@ -1383,7 +1383,7 @@ module parameters_tunable
     lmin_coef                   = init_value
     omicron                     = init_value
     zeta_vrnce_rat              = init_value
-    coef_hm_1_hm_2_corr_adj     = init_value
+    upsilon_precip_frac_rat     = init_value
     lambda0_stability_coef      = init_value
     mu                          = init_value
     Lscale_mu_coef              = init_value

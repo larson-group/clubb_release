@@ -174,6 +174,9 @@ module microphys_init_cleanup
     use clubb_precision, only:  & 
         core_rknd
 
+    use precipitation_fraction, only: &
+        precip_frac_calc_type  ! Variable(s)
+
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
@@ -441,6 +444,8 @@ module microphys_init_cleanup
        call write_text ( "aer_sig2 = ", real(aer_sig2, kind = core_rknd), &
                          l_write_to_file, iunit )
        call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "precip_frac_calc_type = ", precip_frac_calc_type, &
                          l_write_to_file, iunit )
 
        if ( l_write_to_file ) close(unit=iunit)
@@ -969,7 +974,7 @@ module microphys_init_cleanup
 
        write(fstdout,'(1x,A)') "Correlation array (approximate); below cloud:"
        do ivar = 1, d_variables, 1
-          write(fstdout,'(12F7.3)') corr_array_cloud(ivar,:)
+          write(fstdout,'(12F7.3)') corr_array_below(ivar,:)
        enddo ! ivar = 1, d_variables, 1
 
        ! This will open the cases setup.txt file and append it to include the
