@@ -3733,6 +3733,13 @@ association of sections between the variates is scrambled. For example, one
 sample might contain a sample of one variate in the 2\textsuperscript{nd}
 section and a sample of another variate in the 5\textsuperscript{th} section.
 
+SILHS also has an option that splits a SILHS sample over multiple timesteps. To
+use this feature, the user specifies an integer, $N_t$, which is an integer
+multiple of $N_s$. Then, the Latin hypercube algorithm, as described above,
+generates $N_t$ points instead of $N_s$ points. $N_s$ of these points are
+used (without replacement) each timestep, until $\frac{N_t}{N_s}$ timesteps have
+elapsed, at which point the samples are regenerated.
+
 \subsection{Importance Sampling}
 
 Importance sampling is another technique used in SILHS for variance reduction.
