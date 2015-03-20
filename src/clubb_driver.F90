@@ -1322,7 +1322,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &         ! Intent(in)
+         call setup_pdf_parameters( gr%nz, d_variables, dt_main, &              ! Intent(in)
                                     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)

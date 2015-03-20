@@ -1474,7 +1474,7 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_parameters_api( &
-    nz, d_variables, dt, rho, &                 ! Intent(in)
+    nz, d_variables, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -1529,10 +1529,7 @@ contains
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rho,         & ! Density                                         [kg/m^3]
-      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
@@ -1577,7 +1574,7 @@ contains
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
     call setup_pdf_parameters( &
-      nz, d_variables, dt, rho, &                 ! Intent(in)
+      nz, d_variables, dt, &                      ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)

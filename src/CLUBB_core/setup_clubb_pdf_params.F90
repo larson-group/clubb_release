@@ -40,7 +40,7 @@ module setup_clubb_pdf_params
   contains
 
   !=============================================================================
-  subroutine setup_pdf_parameters( nz, d_variables, dt, rho, &                 ! Intent(in)
+  subroutine setup_pdf_parameters( nz, d_variables, dt, &                      ! Intent(in)
                                    Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -168,10 +168,7 @@ module setup_clubb_pdf_params
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rho,         & ! Density                                         [kg/m^3]
-      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
@@ -379,7 +376,7 @@ module setup_clubb_pdf_params
 
        call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
                              ice_supersat_frac, ice_supersat_frac_1, &
-                             mixt_frac, rho, rc_1, rc_2, l_stats_samp, &
+                             mixt_frac, l_stats_samp, &
                              precip_frac, precip_frac_1, precip_frac_2 )
 
     else

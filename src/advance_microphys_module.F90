@@ -817,7 +817,7 @@ module advance_microphys_module
        ! Lower boundary condition
        ! Hydrometeors that are below the model lower boundary level have
        ! sedimented out of the model domain, and is not conserved.
-       if ( hydromet(1,i) < zero_threshold ) then
+       if ( hydromet(1,i) < hydromet_tol(i) ) then
           hydromet(1,i) = zero_threshold
        endif
 

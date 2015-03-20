@@ -75,8 +75,6 @@ module stats_zt_module
     use stats_variables, only: & 
         ihm1, & ! Variable(s)
         ihm2, &
-        iLWP1, &
-        iLWP2, &
         iprecip_frac, &
         iprecip_frac_1, &
         iprecip_frac_2, &
@@ -3871,20 +3869,6 @@ module stats_zt_module
             k = k + 1
 
          enddo ! hm_idx = 1, hydromet_dim, 1
-
-      case ( 'LWP1' )
-        iLWP1 = k
-        call stat_assign( var_index=iLWP1, var_name="LWP1", &
-             var_description="Liquid water path (1st PDF component) [kg/m^2]", &
-             var_units="kg/m^2", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
-
-      case ( 'LWP2' )
-        iLWP2 = k
-        call stat_assign( var_index=iLWP2, var_name="LWP2", &
-             var_description="Liquid water path (2nd PDF component) [kg/m^2]", &
-             var_units="kg/m^2", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
 
       case ( 'precip_frac' )
         iprecip_frac = k

@@ -117,14 +117,11 @@ module stats_variables
 !$omp threadprivate( ihm1, ihm2 )
 
   integer, public :: & 
-     iLWP1 = 0, &
-     iLWP2 = 0, &
      iprecip_frac = 0, &
      iprecip_frac_1 = 0, &
      iprecip_frac_2 = 0, &
      iNcnm = 0 
-!$omp threadprivate( iLWP1, iLWP2, iprecip_frac, &
-!$omp   iprecip_frac_1, iprecip_frac_2, iNcnm )
+!$omp threadprivate( iprecip_frac, iprecip_frac_1, iprecip_frac_2, iNcnm )
 
   integer, dimension(:), allocatable, public :: &
      imu_hm_1,         &
@@ -1209,11 +1206,12 @@ module stats_variables
     iprecip_rate_sfc = 0,    &    ! Brian
     irain_flux_sfc = 0,   &    ! Brian
     irrm_sfc = 0, & ! Brian
-    iwpthlp_sfc = 0
+    iwpthlp_sfc = 0, &
+    iprecip_frac_tol = 0
 !$omp threadprivate(iustar, isoil_heat_flux, iveg_T_in_K, isfc_soil_T_in_K, ideep_soil_T_in_K, &
 !$omp   ilh, ish, icc, ilwp, ivwp, iiwp, iswp, irwp, iz_cloud_base, iz_inversion, &
 !$omp   iprecip_rate_sfc, irain_flux_sfc, irrm_sfc, &
-!$omp   iwpthlp_sfc )
+!$omp   iwpthlp_sfc, iprecip_frac_tol )
 
   integer, public :: &
     iwprtp_sfc = 0, &
