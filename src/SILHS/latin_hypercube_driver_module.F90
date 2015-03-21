@@ -2182,6 +2182,11 @@ module latin_hypercube_driver_module
 
     implicit none
 
+    ! Local Constants
+    real( kind = dp ), parameter :: &
+      error_threshold = 1.0e-8_dp ! A threshold to determine whether a rogue
+                                  ! value triggers the assertion check.
+
     ! Input Variables
     integer, intent(in) :: &
       num_samples            ! Number of SILHS sample points
@@ -2224,7 +2229,7 @@ module latin_hypercube_driver_module
       if ( X_u_chi(sample) < (one - cloud_frac_i) ) then
 
         ! The uniform sample is in clear air
-        if ( X_nl_chi(sample) > zero_dp ) then
+        if ( X_nl_chi(sample) > error_threshold ) then
           l_error = .true.
         end if
 
@@ -2232,7 +2237,7 @@ module latin_hypercube_driver_module
                 X_u_chi(sample) < one ) then
 
         ! The uniform sample is in cloud
-        if ( X_nl_chi(sample) <= zero_dp ) then
+        if ( X_nl_chi(sample) <= -error_threshold ) then
           l_error = .true.
         end if
 
