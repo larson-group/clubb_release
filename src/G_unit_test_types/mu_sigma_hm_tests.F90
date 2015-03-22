@@ -95,7 +95,8 @@ module mu_sigma_hm_tests
       precip_frac,        & ! Precipitation fraction (overall)               [-]
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
-      hm_tol                ! Tolerance value of hydrometeor             [hm un]
+      hm_tol,             & ! Tolerance value of hydrometeor             [hm un]
+      precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
 
     real( kind = core_rknd ) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
@@ -285,6 +286,10 @@ module mu_sigma_hm_tests
        precip_frac_2 = ( precip_frac - mixt_frac * precip_frac_1 ) &
                        / ( one - mixt_frac )
 
+       ! Set the minimum precipitation fraction allowable when hydrometeors are
+       ! present, precip_frac_tol.
+       precip_frac_tol = 0.01_core_rknd
+
        ! Calculate <hm|_ip>.
        hmm_ip = hmm / precip_frac
 
@@ -301,6 +306,7 @@ module mu_sigma_hm_tests
        write(fstdout,*) "hmm_ip = ", hmm_ip
        write(fstdout,*) "hmp2 = ", hmp2
        write(fstdout,*) "hm_tol = ", hm_tol
+       write(fstdout,*) "precip_frac_tol = ", precip_frac_tol
        write(fstdout,*) ""
 
        write(fstdout,*) "Running tests for the above parameter set for all " &
@@ -350,6 +356,7 @@ module mu_sigma_hm_tests
            call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
                                        mixt_frac, precip_frac, precip_frac_1, &
                                        precip_frac_2, hm_tol, &
+                                       precip_frac_tol, &
                                        omicron, zeta_vrnce_rat, &
                                        mu_hm_1, mu_hm_2, sigma_hm_1, &
                                        sigma_hm_2, hm_1, hm_2, &
@@ -516,6 +523,7 @@ module mu_sigma_hm_tests
     precip_frac_2 = zero
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
+    precip_frac_tol = 0.01_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -529,6 +537,7 @@ module mu_sigma_hm_tests
     call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
                                 mixt_frac, precip_frac, precip_frac_1, &
                                 precip_frac_2, hm_tol, &
+                                precip_frac_tol, &
                                 omicron, zeta_vrnce_rat, &
                                 mu_hm_1, mu_hm_2, sigma_hm_1, &
                                 sigma_hm_2, hm_1, hm_2, &
@@ -605,6 +614,7 @@ module mu_sigma_hm_tests
     precip_frac_2 = precip_frac / ( one - mixt_frac )
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
+    precip_frac_tol = 0.01_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -618,6 +628,7 @@ module mu_sigma_hm_tests
     call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
                                 mixt_frac, precip_frac, precip_frac_1, &
                                 precip_frac_2, hm_tol, &
+                                precip_frac_tol, &
                                 omicron, zeta_vrnce_rat, &
                                 mu_hm_1, mu_hm_2, sigma_hm_1, &
                                 sigma_hm_2, hm_1, hm_2, &

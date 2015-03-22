@@ -281,7 +281,8 @@ module setup_clubb_pdf_params
 
     real( kind = core_rknd ) :: &
       const_Ncnp2_on_Ncnm2, & ! Prescribed ratio of <Ncn'^2> to <Ncn>^2      [-]
-      const_corr_chi_Ncn      ! Prescribed correlation of chi (old s) & Ncn  [-]
+      const_corr_chi_Ncn,   & ! Prescribed correlation of chi (old s) & Ncn  [-]
+      precip_frac_tol         ! Min. precip. frac. when hydromet. present    [-]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
@@ -377,7 +378,8 @@ module setup_clubb_pdf_params
        call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
                              ice_supersat_frac, ice_supersat_frac_1, &
                              mixt_frac, l_stats_samp, &
-                             precip_frac, precip_frac_1, precip_frac_2 )
+                             precip_frac, precip_frac_1, precip_frac_2, &
+                             precip_frac_tol )
 
     else
 
@@ -537,6 +539,7 @@ module setup_clubb_pdf_params
        call compute_mean_stdev( hydromet(k,:), Ncnm(k),             & ! Intent(in)
                                 mixt_frac(k), precip_frac(k),       & ! Intent(in)
                                 precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
+                                precip_frac_tol,                    & ! Intent(in)
                                 pdf_params(k), d_variables,         & ! Intent(in)
                                 mu_x_1, mu_x_2,                     & ! Intent(out)
                                 sigma_x_1, sigma_x_2,               & ! Intent(out)
@@ -700,6 +703,7 @@ module setup_clubb_pdf_params
   subroutine compute_mean_stdev( hydromet, Ncnm,                & ! Intent(in)
                                  mixt_frac, precip_frac,        & ! Intent(in)
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
+                                 precip_frac_tol,               & ! Intent(in)
                                  pdf_params, d_variables,       & ! Intent(in)
                                  mu_x_1, mu_x_2,                & ! Intent(out)
                                  sigma_x_1, sigma_x_2,          & ! Intent(out)
@@ -757,11 +761,12 @@ module setup_clubb_pdf_params
       hydromet    ! Mean of a precipitating hydrometeor (overall)   [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
-      Ncnm,          & ! Mean simplified cloud nuclei concentration     [num/kg]
-      mixt_frac,     & ! Mixture fraction                                    [-]
-      precip_frac,   & ! Precipitation fraction (overall)                    [-]
-      precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
+      Ncnm,            & ! Mean simplified cloud nuclei concentration   [num/kg]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac,     & ! Precipitation fraction (overall)                  [-]
+      precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
+      precip_frac_2,   & ! Precipitation fraction (2nd PDF component)        [-]
+      precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
@@ -911,6 +916,7 @@ module setup_clubb_pdf_params
                                    mixt_frac, precip_frac, precip_frac_1, &
                                    precip_frac_2, &
                                    hydromet_tol(pdf2hydromet_idx(ivar)), &
+                                   precip_frac_tol, &
                                    omicron, zeta_vrnce_rat, &
                                    mu_x_1(ivar), mu_x_2(ivar), &
                                    sigma_x_1(ivar), sigma_x_2(ivar), &
@@ -1265,6 +1271,7 @@ module setup_clubb_pdf_params
   subroutine calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &              !In
                                     mixt_frac, precip_frac, precip_frac_1, &!In
                                     precip_frac_2, hm_tol, &                !In
+                                    precip_frac_tol, &                      !In
                                     omicron, zeta_vrnce_rat, &              !In
                                     mu_hm_1, mu_hm_2, sigma_hm_1, &         !Out
                                     sigma_hm_2, hm_1, hm_2, &               !Out
@@ -1303,7 +1310,8 @@ module setup_clubb_pdf_params
       precip_frac,        & ! Precipitation fraction (overall)               [-]
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
-      hm_tol                ! Tolerance value of hydrometeor          [hm units]
+      hm_tol,             & ! Tolerance value of hydrometeor          [hm units]
+      precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
 
     real( kind = core_rknd ), intent(in) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
@@ -1330,7 +1338,8 @@ module setup_clubb_pdf_params
 
 
     if ( hmm >= hm_tol &
-         .and. precip_frac_1 > zero .and. precip_frac_2 > zero ) then
+         .and. precip_frac_1 >= precip_frac_tol &
+         .and. precip_frac_2 >= precip_frac_tol ) then
 
        ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
        hmm_ip = hmm / precip_frac
@@ -1347,7 +1356,7 @@ module setup_clubb_pdf_params
                                      sigma_hm_2_sqd_on_mu_hm_2_sqd )
 
 
-    elseif ( hmm >= hm_tol .and. precip_frac_1 > zero ) then
+    elseif ( hmm >= hm_tol .and. precip_frac_1 >= precip_frac_tol ) then
 
        ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
        hmm_ip = hmm / precip_frac
@@ -1372,7 +1381,7 @@ module setup_clubb_pdf_params
        sigma_hm_2_sqd_on_mu_hm_2_sqd = zero
 
 
-    elseif ( hmm >= hm_tol .and. precip_frac_2 > zero ) then
+    elseif ( hmm >= hm_tol .and. precip_frac_2 >= precip_frac_tol ) then
 
        ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
        hmm_ip = hmm / precip_frac
@@ -1416,7 +1425,8 @@ module setup_clubb_pdf_params
        sigma_hm_2_sqd_on_mu_hm_2_sqd = zero
 
 
-    endif ! precip_frac_1 > 0 and precip_frac_2 > 0
+    endif ! hmm >= hm_tol and precip_frac_1 >= precip_frac_tol
+          ! and precip_frac_2 >= precip_frac_tol
 
 
     return

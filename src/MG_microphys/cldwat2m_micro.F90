@@ -941,11 +941,12 @@ subroutine mmicro_pcond ( sub_column,           &
       corr_eta_Nr_2_n,  & ! Correlation between eta(t) and ln Nr (2nd PDF comp.) ip  [-]
       corr_eta_Ncn_1_n, & ! Correlation between eta(t) and ln Ncn (1st PDF comp.)    [-]
       corr_eta_Ncn_2_n, & ! Correlation between eta(t) and ln Ncn (2nd PDF comp.)    [-]
-      corr_rrNr_1_n, & ! Correlation btwn. ln rr & ln Nr (1st PDF comp.) ip  [-]
-      corr_rrNr_2_n, & ! Correlation btwn. ln rr & ln Nr (2nd PDF comp.) ip  [-]
-      KK_auto_coef,  & ! KK autoconversion coefficient               [(kg/kg)/s]
-      KK_accr_coef,  & ! KK accretion coefficient                    [(kg/kg)/s]
-      mixt_frac        ! Mixture fraction                                    [-]
+      corr_rrNr_1_n,   & ! Correlation of ln rr and ln Nr (1st PDF comp.) ip [-]
+      corr_rrNr_2_n,   & ! Correlation of ln rr and ln Nr (2nd PDF comp.) ip [-]
+      KK_auto_coef,    & ! KK autoconversion coefficient             [(kg/kg)/s]
+      KK_accr_coef,    & ! KK accretion coefficient                  [(kg/kg)/s]
+      mixt_frac,       & ! Mixture fraction                                  [-]
+      precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     real ( kind = core_rknd ), dimension(hydromet_dim) :: &
       hydromet,       &
@@ -1805,6 +1806,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
+                 precip_frac_tol = 0.005_core_rknd
+
                  hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
                  hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
@@ -1815,6 +1818,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
+                                          precip_frac_tol,                    & ! Intent(in)
                                           pdf_params(k), d_variables,         & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)
@@ -2354,6 +2358,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
+                                          precip_frac_tol,                    & ! Intent(in)
                                           pdf_params(k), d_variables,         & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)

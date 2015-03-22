@@ -25,7 +25,8 @@ module precipitation_fraction
   subroutine precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
                               ice_supersat_frac, ice_supersat_frac_1, &
                               mixt_frac, l_stats_samp, &
-                              precip_frac, precip_frac_1, precip_frac_2 )
+                              precip_frac, precip_frac_1, precip_frac_2, &
+                              precip_frac_tol )
 
     ! Description:
     ! Determines (overall) precipitation fraction over the horizontal domain, as
@@ -84,9 +85,10 @@ module precipitation_fraction
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
+    real( kind = core_rknd ), intent(out) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+
+    ! Local Variables
 
     ! "Maximum allowable" hydrometeor mixing ratio in-precip component mean.
     real( kind = core_rknd ), parameter :: &
