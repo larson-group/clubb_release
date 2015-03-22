@@ -14,7 +14,8 @@ module precipitation_fraction
   public :: precip_fraction
 
   private :: component_precip_frac_weighted, &
-             component_precip_frac_specify
+             component_precip_frac_specify,  &
+             precip_frac_assert_check
 
   integer, parameter, public :: &
     precip_frac_calc_type = 1  ! Option used to calculate component precip_frac
@@ -49,6 +50,9 @@ module precipitation_fraction
         l_mix_rat_hm, & ! Variable(s)
         l_frozen_hm,  &
         hydromet_tol
+
+    use error_code, only : &
+        clubb_at_least_debug_level ! Procedure(s)
 
     use stats_variables, only: &
         stats_sfc,        & ! Variable(s)
@@ -344,6 +348,14 @@ module precipitation_fraction
                                    stats_sfc )
        endif ! iprecip_frac_tol
     endif ! l_stats_samp
+
+
+    ! Assertion check for precip_frac, precip_frac_1, and precip_frac_2.
+    if ( clubb_at_least_debug_level( 2 ) ) then
+       call precip_frac_assert_check( nz, hydromet, mixt_frac, precip_frac, &
+                                      precip_frac_1, precip_frac_2, &
+                                      precip_frac_tol )
+    endif
 
 
     return
@@ -918,6 +930,205 @@ module precipitation_fraction
     return
 
   end subroutine component_precip_frac_specify
+
+  !=============================================================================
+  subroutine precip_frac_assert_check( nz, hydromet, mixt_frac, precip_frac, &
+                                       precip_frac_1, precip_frac_2, &
+                                       precip_frac_tol )
+
+    ! Description:
+    ! Assertion check for the precipitation fraction code.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,     & ! Constant(s)
+        zero,    &
+        fstderr
+
+    use array_index, only: &
+        hydromet_tol  ! Variable(s)
+
+    use parameters_model, only: &
+        hydromet_dim  ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd  ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz          ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Mean of hydrometeor, hm (overall)           [units vary]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      mixt_frac,     & ! Mixture fraction                               [-]
+      precip_frac,   & ! Precipitation fraction (overall)               [-]
+      precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
+      precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
+
+    real( kind = core_rknd ), intent(out) :: &
+      precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+
+    ! Local Variables
+    integer :: k  ! Loop index
+
+
+    ! Loop over all vertical levels.
+    do k = 1, nz, 1
+
+       if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
+
+          ! Overall precipitation fraction cannot be less than precip_frac_tol
+          ! when a hydrometeor is present at a grid level.
+          if ( precip_frac(k) < precip_frac_tol ) then
+             write(fstderr,*) "precip_frac < precip_frac_tol when " &
+                              // "a hydrometeor is present"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac = ", precip_frac(k), &
+                              "precip_frac_tol = ", precip_frac_tol
+             stop
+          endif
+
+          ! Overall precipitation fraction cannot exceed 1.
+          if ( precip_frac(k) > one ) then
+             write(fstderr,*) "precip_frac > 1"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac = ", precip_frac(k)
+             stop
+          endif
+
+          ! Precipitation fraction in the 1st PDF component is allowed to be 0
+          ! when all the precipitation is found in the 2nd PDF component.
+          ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
+          ! is present at a grid level.  In other words, it cannot have a value
+          ! that is greater than 0 but less than precip_frac_tol
+          if ( precip_frac_1(k) > zero &
+               .and. precip_frac_1(k) < precip_frac_tol ) then
+             write(fstderr,*) "0 < precip_frac_1 < precip_frac_tol"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k), &
+                              "precip_frac_tol = ", precip_frac_tol
+             stop
+          endif
+
+          ! Precipitation fraction in the 1st PDF component cannot exceed 1.
+          if ( precip_frac_1(k) > one ) then
+             write(fstderr,*) "precip_frac_1 > 1"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
+             stop
+          endif
+
+          ! Precipiation fraction in the 1st PDF component cannot be negative.
+          if ( precip_frac_1(k) < zero ) then
+             write(fstderr,*) "precip_frac_1 < 0"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
+             stop
+          endif
+
+          ! Precipitation fraction in the 2nd PDF component is allowed to be 0
+          ! when all the precipitation is found in the 1st PDF component.
+          ! Otherwise, it cannot be less than precip_frac_tol when a hydrometeor
+          ! is present at a grid level.  In other words, it cannot have a value
+          ! that is greater than 0 but less than precip_frac_tol
+          if ( precip_frac_2(k) > zero &
+               .and. precip_frac_2(k) < precip_frac_tol ) then
+             write(fstderr,*) "0 < precip_frac_2 < precip_frac_tol"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k), &
+                              "precip_frac_tol = ", precip_frac_tol
+             stop
+          endif
+
+          ! Precipitation fraction in the 2nd PDF component cannot exceed 1.
+          if ( precip_frac_2(k) > one ) then
+             write(fstderr,*) "precip_frac_2 > 1"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
+             stop
+          endif
+
+          ! Precipiation fraction in the 2nd PDF component cannot be negative.
+          if ( precip_frac_2(k) < zero ) then
+             write(fstderr,*) "precip_frac_2 < 0"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
+             stop
+          endif
+
+       else  ! all( hydromet(k,:) < hydromet_tol(:) )
+
+          ! Overall precipitation fraction must be 0 when no hydrometeors are
+          ! found at a grid level.
+          if ( precip_frac(k) /= zero ) then
+             write(fstderr,*) "precip_frac /= 0 when no hydrometeors are found"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac = ", precip_frac(k)
+             stop
+          endif
+
+          ! Precipitation fraction in the 1st PDF component must be 0 when no
+          ! hydrometeors are found at a grid level.
+          if ( precip_frac_1(k) /= zero ) then
+             write(fstderr,*) "precip_frac_1 /= 0 when no hydrometeors " &
+                              // "are found"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_1 = ", precip_frac_1(k)
+             stop
+          endif
+
+          ! Precipitation fraction in the 2nd PDF component must be 0 when no
+          ! hydrometeors are found at a grid level.
+          if ( precip_frac_2(k) /= zero ) then
+             write(fstderr,*) "precip_frac_2 /= 0 when no hydrometeors " &
+                              // "are found"
+             write(fstderr,*) "level = ", k
+             write(fstderr,*) "precip_frac_2 = ", precip_frac_2(k)
+             stop
+          endif
+
+       endif  ! any( hydromet(k,:) >= hydromet_tol(:) )
+
+       ! The precipitation fraction equation is:
+       !
+       ! precip_frac
+       !    = mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2;
+       !
+       ! which means that:
+       !
+       ! precip_frac
+       ! - ( mixt_frac * precip_frac_1 + ( 1 - mixt_frac ) * precip_frac_2 )
+       ! = 0.
+       !
+       ! Check that this is true with numerical round off.
+       if ( ( precip_frac(k) &
+              - ( mixt_frac(k) * precip_frac_1(k) &
+                  + ( one - mixt_frac(k) ) * precip_frac_2(k) ) ) &
+            > ( epsilon( precip_frac(k) ) * precip_frac(k) ) ) then
+          write(fstderr,*) "mixt_frac * precip_frac_1 " &
+                           // "+ ( 1 - mixt_frac ) * precip_frac_2 " &
+                           // "/= precip_frac within numerical roundoff"
+          write(fstderr,*) "level = ", k
+          write(fstderr,*) "mixt_frac * precip_frac_1 " &
+                           // "+ ( 1 - mixt_frac ) * precip_frac_2 = ", &
+                           mixt_frac(k) * precip_frac_1(k) &
+                           + ( one - mixt_frac(k) ) * precip_frac_2(k)
+          write(fstderr,*) "precip_frac = ", precip_frac(k)
+          stop
+       endif
+
+    enddo  ! k = 1, nz, 1
+
+
+    return
+
+  end subroutine precip_frac_assert_check
 
 !===============================================================================
 
