@@ -372,6 +372,17 @@ module setup_clubb_pdf_params
 
     enddo
 
+    ! Note on hydrometeor PDF shape:
+    ! To use a single lognormal over the entire grid level, turn off the
+    ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
+    ! tunable_parameters.in.
+    ! To use a single delta-lognormal (single lognormal in-precip.), enable the
+    ! l_use_precip_frac flag and set omicron to 1 and zeta_vrnce_rat to 0 in
+    ! tunable_parameters.in.
+    ! Otherwise, with l_use_precip_frac enabled and omicron and zeta_vrnce_rat
+    ! values that are not 1 and 0, respectively, the PDF shape is a double
+    ! delta-lognormal (two independent lognormals in-precip.).
+
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
 
@@ -1751,8 +1762,8 @@ module setup_clubb_pdf_params
         zero,    &
         fstderr
 
-    use error_code, only: &
-        clubb_at_least_debug_level  ! Procedure(s)
+    !use error_code, only: &
+    !    clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -1867,14 +1878,14 @@ module setup_clubb_pdf_params
        ! Print warning message informing the user that the value of omicron
        ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
        ! decreased.
-       if ( clubb_at_least_debug_level( 2 ) ) then
-          write(fstderr,*) "The value of mu_hm_1 is too small or negative " &
-                           // "and is being reset to a minimum positive " &
-                           // "value.  To avoid this problem, please " &
-                           // "increase the value of omicron or decrease the " &
-                           // "value of the prescribed in-precip. " &
-                           // "variance-over-mean-squared."
-       endif ! clubb_debug_level_at_least( 2 )
+      !if ( clubb_at_least_debug_level( 2 ) ) then
+      !   write(fstderr,*) "The value of mu_hm_1 is too small or negative " &
+      !                    // "and is being reset to a minimum positive " & 
+      !                    // "value.  To avoid this problem, please " &
+      !                    // "increase the value of omicron or decrease the " &
+      !                    // "value of the prescribed in-precip. " &
+      !                    // "variance-over-mean-squared."
+      ! endif ! clubb_debug_level_at_least( 2 )
 
        ! Set the value of mu_hm_1 to the threshold positive value (so that
        ! hm_1 = hm_tol).
@@ -1909,14 +1920,14 @@ module setup_clubb_pdf_params
        ! Print warning message informing the user that the value of omicron
        ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
        ! decreased.
-       if ( clubb_at_least_debug_level( 2 ) ) then
-          write(fstderr,*) "The value of mu_hm_2 is too small or negative " &
-                           // "and is being reset to a minimum positive " &
-                           // "value.  To avoid this problem, please " &
-                           // "increase the value of omicron or decrease the " &
-                           // "value of the prescribed in-precip. " &
-                           // "variance-over-mean-squared."
-       endif ! clubb_debug_level_at_least( 2 )
+      !if ( clubb_at_least_debug_level( 2 ) ) then
+      !   write(fstderr,*) "The value of mu_hm_2 is too small or negative " &
+      !                    // "and is being reset to a minimum positive " &
+      !                    // "value.  To avoid this problem, please " &
+      !                    // "increase the value of omicron or decrease the " &
+      !                    // "value of the prescribed in-precip. " &
+      !                    // "variance-over-mean-squared."
+      !endif ! clubb_debug_level_at_least( 2 )
 
        ! Set the value of mu_hm_2 to the threshold positive value (so that
        ! hm_2 = hm_tol).
