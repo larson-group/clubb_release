@@ -284,7 +284,8 @@ module precipitation_fraction
 
              ! The hydrometeor is a mixing ratio.
 
-             if ( hydromet(k,ivar) > mixt_frac(k) * precip_frac_1(k) &
+             if ( hydromet(k,ivar) >= hydromet_tol(ivar) .and. &
+                  hydromet(k,ivar) > mixt_frac(k) * precip_frac_1(k) &
                                      * max_hm_ip_comp_mean ) then
 
                 ! Increase precipitation fraction in the 1st PDF component.
@@ -298,7 +299,8 @@ module precipitation_fraction
 
              endif ! <hm>/(mixt_frac*precip_frac_1) > max_hm_ip_comp_mean
 
-             if ( hydromet(k,ivar) > ( one - mixt_frac(k) ) * precip_frac_2(k) &
+             if ( hydromet(k,ivar) >= hydromet_tol(ivar) .and. &
+                  hydromet(k,ivar) > ( one - mixt_frac(k) ) * precip_frac_2(k) &
                                      * max_hm_ip_comp_mean ) then
 
                 ! Increase precipitation fraction in the 2nd PDF component.
@@ -321,6 +323,16 @@ module precipitation_fraction
     ! Recalculate overall precipitation fraction for consistency.
     precip_frac = mixt_frac * precip_frac_1 &
                   + ( one - mixt_frac ) * precip_frac_2
+
+    ! Double check that precip_frac_tol <= precip_frac <= 1 when hydrometeors
+    ! are found at a grid level.
+    ! PLEASE DO NOT ALTER precip_frac, precip_frac_1, or precip_frac_2 anymore
+    ! after this point in the code.
+    do k = 1, nz, 1
+       if ( any( hydromet(k,:) >= hydromet_tol(:) ) ) then
+          precip_frac(k) = min( max( precip_frac(k), precip_frac_tol ), one )
+       endif ! any( hydromet(k,:) >= hydromet_tol(:) )
+    enddo ! k = 1, nz, 1
 
 
     ! Statistics
@@ -522,8 +534,12 @@ module precipitation_fraction
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
                 precip_frac_1(k) = one
-                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                   / ( one - mixt_frac(k) )
+                if ( precip_frac(k) == one ) then
+                   precip_frac_2(k) = one
+                else
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+                endif
              elseif ( precip_frac_1(k) > zero &
                       .and. precip_frac_1(k) < precip_frac_tol ) then
                 precip_frac_1(k) = precip_frac_tol
@@ -554,8 +570,12 @@ module precipitation_fraction
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
                 precip_frac_1(k) = one
-                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                   / ( one - mixt_frac(k) )
+                if ( precip_frac(k) == one ) then
+                   precip_frac_2(k) = one
+                else
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+                endif
              elseif ( precip_frac_1(k) > zero &
                       .and. precip_frac_1(k) < precip_frac_tol ) then
                 precip_frac_1(k) = precip_frac_tol
@@ -690,7 +710,13 @@ module precipitation_fraction
                 precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
                                    / ( one - mixt_frac(k) )
 
-                if ( precip_frac_2(k) < precip_frac_tol ) then
+                if ( precip_frac_2(k) > one &
+                     .and. precip_frac(k) == one ) then
+
+                   ! Set precip_frac_2 = 1.
+                   precip_frac_2(k) = one
+
+                elseif ( precip_frac_2(k) < precip_frac_tol ) then
 
                    ! Since precipitation is found in the 2nd PDF component, it
                    ! must have a value of at least precip_frac_tol.
@@ -705,8 +731,12 @@ module precipitation_fraction
                    ! Double check precip_frac_1
                    if ( precip_frac_1(k) > one ) then
                       precip_frac_1(k) = one
-                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                         / ( one - mixt_frac(k) )
+                      if ( precip_frac(k) == one ) then
+                         precip_frac_2(k) = one
+                      else
+                         precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                            / ( one - mixt_frac(k) )
+                      endif
                    elseif ( precip_frac_1(k) < precip_frac_tol ) then
                       precip_frac_1(k) = precip_frac_tol
                       if ( precip_frac(k) == precip_frac_tol ) then
@@ -739,7 +769,13 @@ module precipitation_fraction
                                    / mixt_frac(k)
                 precip_frac_2(k) = one
 
-                if ( precip_frac_1(k) < precip_frac_tol ) then
+                if ( precip_frac_1(k) > one &
+                     .and. precip_frac(k) == one ) then
+
+                   ! Set precip_frac_1 = 1.
+                   precip_frac_1(k) = one
+
+                elseif ( precip_frac_1(k) < precip_frac_tol ) then
 
                    ! Since precipitation is found in the 1st PDF component, it
                    ! must have a value of at least precip_frac_tol.
@@ -753,9 +789,13 @@ module precipitation_fraction
                    ! Double check precip_frac_2
                    if ( precip_frac_2(k) > one ) then
                       precip_frac_2(k) = one
-                      precip_frac_1(k) &
-                      = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
-                        / mixt_frac(k)
+                      if ( precip_frac(k) == one ) then
+                         precip_frac_1(k) = one
+                      else
+                         precip_frac_1(k) &
+                         = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
+                           / mixt_frac(k)
+                      endif
                    elseif ( precip_frac_2(k) < precip_frac_tol ) then
                       precip_frac_2(k) = precip_frac_tol
                       if ( precip_frac(k) == precip_frac_tol ) then
@@ -808,8 +848,12 @@ module precipitation_fraction
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
                    precip_frac_1(k) = one
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
+                   if ( precip_frac(k) == one ) then
+                      precip_frac_2(k) = one
+                   else
+                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                         / ( one - mixt_frac(k) )
+                   endif
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
                    precip_frac_1(k) = precip_frac_tol
                    if ( precip_frac(k) == precip_frac_tol ) then
@@ -835,8 +879,12 @@ module precipitation_fraction
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
                    precip_frac_1(k) = one
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
+                   if ( precip_frac(k) == one ) then
+                      precip_frac_2(k) = one
+                   else
+                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                         / ( one - mixt_frac(k) )
+                   endif
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
                    precip_frac_1(k) = precip_frac_tol
                    if ( precip_frac(k) == precip_frac_tol ) then
