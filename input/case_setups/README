@@ -328,58 +328,6 @@ Ncnp2_on_Ncnm2 | real, default precision
   concentration divided by the mean (overall) squared
   (Upscaled KK, Latin Hypercube).
 
-rr_sigma2_on_mu2_ip_cloud | real, default precision
-rr_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of rain
-  water mixing ratio divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-Nr_sigma2_on_mu2_ip_cloud | real, default precision
-Nr_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of rain
-  drop concentration divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-Ncnp2_on_Ncnm2 | real, default precision
-  Prescribed parameter for the variance (overall) of cloud nuclei concentration
-  divided by the mean (overall) squared (Upscaled KK, Latin Hypercube).
-
-ri_sigma2_on_mu2_ip_cloud | real, default precision
-ri_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of ice
-  mixing ratio divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-Ni_sigma2_on_mu2_ip_cloud | real, default precision
-Ni_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of ice
-  concentration divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-rs_sigma2_on_mu2_ip_cloud | real, default precision
-rs_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of snow
-  mixing ratio divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-Ns_sigma2_on_mu2_ip_cloud | real, default precision
-Ns_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of snow
-  concentration divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-rg_sigma2_on_mu2_ip_cloud | real, default precision
-rg_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of
-  graupel mixing ratio divided by the in-precip mean (ith PDF component) squared
-  (Upscaled KK, Latin Hypercube).
-
-Ng_sigma2_on_mu2_ip_cloud | real, default precision
-Ng_sigma2_on_mu2_ip_below | real, default precision
-  Prescribed parameters for the in-precip variance (ith PDF component) of
-  graupel concentration divided by the in-precip mean (ith PDF component)
-  squared (Upscaled KK, Latin Hypercube).
-
 C_evap | real, default precision
   Khairoutdinov and Kogan (2000) ratio of drizzle drop mean geometric radius to
   mean volume radius (K&K)

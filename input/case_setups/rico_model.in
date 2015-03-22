@@ -156,17 +156,6 @@ hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
 Ncnp2_on_Ncnm2                               = 2.2
 
-!!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
-!!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
-!!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
-! See also: rico_corr_array_cloud/below.in for the values of correlations in RICO
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 1.0
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 1.0
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2            = 2.2
-
-!!!!!!! END RICO COMMENTS --modified by Leah Grant, Apr. 2010
 Nc0_in_cloud  = 70.e6 ! num/m^3
 l_const_Nc_in_cloud = .true.
 l_var_covar_src = .true.

@@ -160,29 +160,6 @@ hmp2_ip_on_hmm2_ip_ratios%Ngp2_ip_on_Ngm2_ip = 0.625
 
 Ncnp2_on_Ncnm2 = 0.003
 
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud = 4.0
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud = 2.0
-
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud = 1.0
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud = 0.5
-sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud = 1.0
-sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud = 0.5
-sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud = 1.0
-sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud = 0.5
-
-sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below = 4.0
-sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below = 2.0
-
-sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below = 0.5
-sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below = 0.5
-sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below = 1.0
-sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below = 0.5
-
-sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2 = 0.003
-
-
 /
 
 &radiation_setting

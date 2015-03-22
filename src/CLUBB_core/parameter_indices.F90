@@ -101,7 +101,7 @@ module parameter_indices
     ilmin_coef                   = 56, &
     iomicron                     = 57, &
     izeta_vrnce_rat              = 58, &
-    icoef_hm_1_hm_2_corr_adj     = 59, &
+    iupsilon_precip_frac_rat     = 59, &
     ilambda0_stability_coef      = 60, &
     imult_coef                   = 61, &
     itaumin                      = 62, &

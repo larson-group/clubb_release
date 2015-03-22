@@ -123,7 +123,8 @@ module microphys_init_cleanup
         Nr_tol,     &
         Ni_tol,     &
         Ns_tol,     &
-        Ng_tol
+        Ng_tol,     &
+        zero
 
     ! The version of the Morrison 2005 microphysics that is in SAM.
     use module_mp_GRAUPEL, only: &
@@ -151,7 +152,8 @@ module microphys_init_cleanup
         ini_microp_aero ! Subroutine
 
     use constants_clubb, only: &
-        fstderr    ! Constant
+        fstdout, & ! Constant(s)
+        fstderr
 
     use text_writer, only: &
         write_text   ! Used to write microphysics settings to setup.txt file
@@ -172,13 +174,35 @@ module microphys_init_cleanup
     use clubb_precision, only:  & 
         core_rknd
 
+    use precipitation_fraction, only: &
+        precip_frac_calc_type  ! Variable(s)
+
     use corr_varnce_module, only: &
         hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
-        sigma2_on_mu2_ratios_type,      &
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
         Ncnp2_on_Ncnm2,                 &
+        d_variables,                    &
+        iiPDF_Ncn,                      &
+        corr_array_n_cloud,             &
+        corr_array_n_below,             &
         setup_pdf_indices,              & ! Procedure(s)
         setup_corr_varnce_array
+
+    use pdf_utilities, only: &
+        stdev_L2N    ! Procedure(s)
+
+    use setup_clubb_pdf_params, only: &
+        denormalize_corr    ! Procedure(s)
+
+    use parameters_tunable, only: &
+        omicron,        & ! Procedure(s)
+        zeta_vrnce_rat
+
+    use index_mapping, only: &
+        pdf2hydromet_idx    ! Procedure(s)
+
+    use matrix_operations, only: &
+        mirror_lower_triangular_matrix    ! Procedure(s)
 
     use model_flags, only: &
         l_diagnose_correlations, &
@@ -231,7 +255,20 @@ module microphys_init_cleanup
 
     type(hmp2_ip_on_hmm2_ip_ratios_type) :: hmp2_ip_on_hmm2_ip_ratios
 
-    type(sigma2_on_mu2_ratios_type) :: sigma2_on_mu2_ratios
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      sigma_x_n_cloud, & ! Std. devs. (normal space): PDF vars (in cloud) [u.v.]
+      sigma_x_n_below    ! Std. devs. (normal space): PDF vars (below cl) [u.v.]
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      sigma2_on_mu2_ip_cloud, & ! Ratio array sigma_x_cloud^2/mu_x_cloud^2   [-]
+      sigma2_on_mu2_ip_below    ! Ratio array sigma_x_below^2/mu_x_below^2   [-]
+
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      corr_array_cloud, & ! Correlation array of PDF vars. (in cloud)        [-]
+      corr_array_below    ! Correlation array of PDF vars. (below cloud)     [-]
+
+    integer :: ivar  ! Loop index
+
 
     namelist /microphysics_setting/ &
       microphys_scheme, l_cloud_sed, sigma_g, &
@@ -241,7 +278,7 @@ module microphys_init_cleanup
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
       l_fix_chi_eta_correlations, l_lh_vert_overlap, l_silhs_KK_convergence_adj_mean, &
-      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, sigma2_on_mu2_ratios, &
+      hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
       aer_n1, aer_n2, aer_sig1, aer_sig2, pgam_fixed
@@ -383,40 +420,6 @@ module microphys_init_cleanup
                          l_write_to_file, iunit )
        call write_text ( "Ncnp2_on_Ncnm2 = ", Ncnp2_on_Ncnm2, &
                          l_write_to_file, iunit )
-       call write_text ( "rr_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Nr_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rr_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Nr_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Nr_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ncnp2_on_Ncnm2 = ", sigma2_on_mu2_ratios%Ncnp2_on_Ncnm2, &
-                         l_write_to_file, iunit )
-       call write_text ( "rs_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ns_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "ri_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ni_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rg_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "Ng_sigma2_on_mu2_ip_cloud = ", &
-                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_cloud, l_write_to_file, iunit )
-       call write_text ( "rs_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rs_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ns_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ns_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "ri_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%ri_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ni_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ni_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "rg_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%rg_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
-       call write_text ( "Ng_sigma2_on_mu2_ip_below = ", &
-                         sigma2_on_mu2_ratios%Ng_sigma2_on_mu2_ip_below, l_write_to_file, iunit )
        call write_text ( "C_evap = ", C_evap, l_write_to_file, iunit )
        call write_text ( "r_0 = ", r_0, l_write_to_file, iunit )
        call write_text ( "microphys_start_time = ", &
@@ -441,6 +444,8 @@ module microphys_init_cleanup
        call write_text ( "aer_sig2 = ", real(aer_sig2, kind = core_rknd), &
                          l_write_to_file, iunit )
        call write_text ( "pgam_fixed = ", real(pgam_fixed, kind = core_rknd), &
+                         l_write_to_file, iunit )
+       call write_text ( "precip_frac_calc_type = ", precip_frac_calc_type, &
                          l_write_to_file, iunit )
 
        if ( l_write_to_file ) close(unit=iunit)
@@ -897,9 +902,114 @@ module microphys_init_cleanup
     corr_file_path_below = corr_input_path//trim( runtype )//below_file_ext
 
     ! Allocate and set the arrays containing the correlations
-    ! and the X'^2 / X'^2 terms
-    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, iunit, & ! Intent(in)
-                                  sigma2_on_mu2_ratios )                               ! Intent(in)
+    call setup_corr_varnce_array( corr_file_path_cloud, corr_file_path_below, &
+                                  iunit ) ! Intent(in)
+
+    ! Print the in-cloud and below-cloud actual (real-space) correlation arrays.
+    ! This should only be done when zeta_vrnce_rat = 0.  Even when this is true,
+    ! it is still possible to have a correlation that is other than these
+    ! values.  The code that sets component in-precip means and variances of
+    ! hydrometeors has an emergency situation (where one component mean is
+    ! being pushed negative) that requires a different hm_sigma2_on_mu than
+    ! hmp2_ip_on_hmm2_ip * omicron.  These printed arrays should be used as a
+    ! GUIDE.  I still recommend using the GrADS or netCDF output file.
+    if ( clubb_at_least_debug_level( 1 ) &
+         .and. zeta_vrnce_rat == zero &
+         .and. trim( microphys_scheme ) /= "none" ) then
+
+       ! Allocate variables.
+       allocate( sigma2_on_mu2_ip_cloud(d_variables) )
+       allocate( sigma2_on_mu2_ip_below(d_variables) )
+       allocate( sigma_x_n_cloud(d_variables) )
+       allocate( sigma_x_n_below(d_variables) )
+       allocate( corr_array_cloud(d_variables,d_variables) )
+       allocate( corr_array_below(d_variables,d_variables) )
+
+       ! Initialize variables.
+       sigma2_on_mu2_ip_cloud(d_variables) = zero
+       sigma2_on_mu2_ip_below(d_variables) = zero
+       sigma_x_n_cloud = zero
+       sigma_x_n_below = zero
+       corr_array_cloud = zero
+       corr_array_below = zero
+
+       ! Ncn:  sigma_Ncn_i^2/mu_Ncn_i^2
+       if ( .not. l_const_Nc_in_cloud ) then
+          sigma2_on_mu2_ip_cloud(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+          sigma2_on_mu2_ip_below(iiPDF_Ncn) = Ncnp2_on_Ncnm2
+       else
+          sigma2_on_mu2_ip_cloud(iiPDF_Ncn) = zero
+          sigma2_on_mu2_ip_below(iiPDF_Ncn) = zero
+       endif
+       ! Ncn:  sigma_Ncn_i_n
+       sigma_x_n_cloud(iiPDF_Ncn) &
+       = stdev_L2N( sigma2_on_mu2_ip_cloud(iiPDF_Ncn) )
+       sigma_x_n_below(iiPDF_Ncn) = sigma_x_n_cloud(iiPDF_Ncn)
+
+       ! Loop over all hydrometeors.
+       do ivar = iiPDF_Ncn+1, d_variables, 1
+          ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
+          sigma2_on_mu2_ip_cloud(ivar) &
+          = omicron * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
+          sigma2_on_mu2_ip_below(ivar) = sigma2_on_mu2_ip_cloud(ivar)
+          ! Hydrometeor sigma_hm_i_n
+          sigma_x_n_cloud(ivar) = stdev_L2N( sigma2_on_mu2_ip_cloud(ivar) )
+          sigma_x_n_below(ivar) = sigma_x_n_cloud(ivar)
+       enddo ! i = 1, hydromet_dim, 1
+
+       ! Calculate the correlations given the normal space correlations.
+       call denormalize_corr( d_variables, sigma_x_n_cloud, sigma_x_n_below, &
+                              sigma2_on_mu2_ip_cloud, sigma2_on_mu2_ip_below, &
+                              corr_array_n_cloud, corr_array_n_below, &
+                              corr_array_cloud, corr_array_below )
+
+       call mirror_lower_triangular_matrix( d_variables, corr_array_cloud(:,:) )
+       call mirror_lower_triangular_matrix( d_variables, corr_array_below(:,:) )
+
+       ! Print the correlation arrays to the screen.
+       write(fstdout,'(1x,A)') "Correlation array (approximate); in cloud:"
+       do ivar = 1, d_variables, 1
+          write(fstdout,'(12F7.3)') corr_array_cloud(ivar,:)
+       enddo ! ivar = 1, d_variables, 1
+
+       write(fstdout,'(1x,A)') "Correlation array (approximate); below cloud:"
+       do ivar = 1, d_variables, 1
+          write(fstdout,'(12F7.3)') corr_array_below(ivar,:)
+       enddo ! ivar = 1, d_variables, 1
+
+       ! This will open the cases setup.txt file and append it to include the
+       ! parameters in the microphysics_setting namelist. This file was created
+       ! and written to from clubb_driver previously.
+       if ( l_write_to_file ) then
+
+          open( unit=iunit, file=case_info_file, status='old', action='write', &
+                position='append' )
+
+          write(iunit,'(1x,A)') "Correlation array (approximate); in cloud:"
+          do ivar = 1, d_variables, 1
+             write(iunit,'(12F7.3)') corr_array_cloud(ivar,:)
+          enddo ! ivar = 1, d_variables, 1
+
+          write(iunit,'(1x,A)') "Correlation array (approximate); below cloud:"
+          do ivar = 1, d_variables, 1
+             write(iunit,'(12F7.3)') corr_array_below(ivar,:)
+          enddo ! ivar = 1, d_variables, 1
+
+          close( unit=iunit )
+
+       endif ! l_write_to_file
+
+       ! Deallocate variables.
+       deallocate( sigma2_on_mu2_ip_cloud )
+       deallocate( sigma2_on_mu2_ip_below )
+       deallocate( sigma_x_n_cloud )
+       deallocate( sigma_x_n_below )
+       deallocate( corr_array_cloud )
+       deallocate( corr_array_below )
+
+    endif ! clubb_at_least_debug_level( 1 )
+          ! and zeta_vrnce_rat = 0
+          ! and microphys_scheme /= "none"
 
 
     return

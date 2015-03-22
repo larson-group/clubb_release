@@ -19,7 +19,7 @@
 ! the matrix are 0.0, but they can be set to any number because they are
 ! ignored.
 !
-! Note:  REMINDER, these are NORMALIZED correlation arrays!
+! Note:  REMINDER, these are TRANSFORMED TO NORMAL SPACE correlation arrays!
 chi   eta   w       Ncn     rr      Nr      ri       Ni      rs      Ns      rg    Ng
 1.0   0.3   0.09    0.09    0.382   0.385   -0.096   0.311   0.072   0.044   0.0   0.0
 0.0   1.0   0.027   0.027   0.114   0.115   -0.029   0.093   0.022   0.013   0.0   0.0

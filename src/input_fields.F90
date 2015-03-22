@@ -40,6 +40,7 @@ module inputfields
     l_input_thvm = .false., l_input_rrm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
     l_input_rsm = .false., l_input_rim = .false., &
+    l_input_Nsm = .false., l_input_Ngm = .false., &
     l_input_rgm = .false., l_input_Nccnm = .false., l_input_Nim = .false., &
     l_input_rrp2 = .false., l_input_Nrp2 = .false., &
     l_input_wprrp = .false., l_input_wpNrp = .false., &
@@ -70,7 +71,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 72, & ! The number of input fields for SAM
+    num_sam_inputfields = 74, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -277,7 +278,7 @@ module inputfields
         sec_per_day
 
     use array_index, only:  & 
-        iirrm, iiNrm, iirsm, iirim, iirgm, iiNim
+        iirrm, iiNrm, iirsm, iirim, iirgm, iiNim, iiNgm, iiNsm
 
     use stat_file_utils, only: & 
         LES_grid_to_CLUBB_grid, & ! Procedure(s)
@@ -332,7 +333,7 @@ module inputfields
     integer :: k  ! Array index
  
     real( kind = core_rknd), dimension(gr%nz), target :: &
-      temp_Nrm, temp_Ncm, temp_rgm, temp_rim, &
+      temp_Nrm, temp_Ncm, temp_rgm, temp_rim, temp_Ngm, temp_Nsm, &
       temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
       temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp, &
       temp_precip_frac, temp_rtprrp, temp_rtpNrp, temp_thlprrp, &
@@ -1976,6 +1977,32 @@ module inputfields
 
       k = k + 1
 
+      temp_Nsm = 0.0_core_rknd ! initialize to 0.0
+
+      ! Note that this needs to be adjusted by 1e6/RHO
+      ! This will need to be adjusted outside of get_sam_variable_interpolated
+      SAM_variables(k)%l_input_var = l_input_Nsm
+      SAM_variables(k)%input_name = "NS"
+      SAM_variables(k)%clubb_var => temp_Nsm
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_Ngm = 0.0_core_rknd ! initialize to 0.0
+
+      ! Note that this needs to be adjusted by 1e6/RHO
+      ! This will need to be adjusted outside of get_sam_variable_interpolated
+      SAM_variables(k)%l_input_var = l_input_Ngm
+      SAM_variables(k)%input_name = "NG"
+      SAM_variables(k)%clubb_var => temp_Ngm
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
       temp_rrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrp2
@@ -2204,6 +2231,16 @@ module inputfields
           ! Nim = NI * (1.0e6 / RHO)
           temp_Nim(k) = temp_Nim(k) * (1.0e7_core_rknd / rho(k))
         end if
+
+        if(l_input_Nsm) then
+          ! Nsm = NI * (1.0e6 / RHO)
+          temp_Nsm(k) = temp_Nsm(k) * (1.0e7_core_rknd / rho(k))
+        end if
+
+        if(l_input_Ngm) then
+          ! Ngm = NG * (1.0e6 / RHO)
+          temp_Ngm(k) = temp_Ngm(k) * (1.0e7_core_rknd / rho(k))
+        end if
  
       end do
 
@@ -2264,6 +2301,11 @@ module inputfields
                    temp_rrm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
+      if( l_input_Ngm .and. iiNgm > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNgm) = &
+                 temp_Ngm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      end if
+
       if( l_input_rgm .and. iirgm > 0) then
         hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirgm) = &
                    temp_rgm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
@@ -2272,6 +2314,11 @@ module inputfields
       if( l_input_rim .and. iirim > 0) then
         hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirim) = &
                    temp_rim(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      end if
+
+      if( l_input_Nsm .and. iiNsm > 0) then
+        hydromet(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNsm) = &
+                 temp_Nsm(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       end if
 
       if( l_input_rsm .and. iirsm > 0) then
@@ -2995,7 +3042,8 @@ module inputfields
       l_input_rtpNrp, l_input_thlpNrp, l_input_rrpNrp, & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
-      l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
+      l_input_Nccnm, l_input_Nim, l_input_Ngm, l_input_Nsm, &
+      l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
       l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
       l_input_sfc_soil_T_in_K
 
@@ -3061,6 +3109,8 @@ module inputfields
     l_input_Ncm = .false.
     l_input_Nccnm = .false.
     l_input_Nim = .false.
+    l_input_Nsm = .false.
+    l_input_Ngm = .false.
     l_input_cloud_frac = .false.
     l_input_sigma_sqd_w_zt = .false.
     l_input_veg_T_in_K = .false.

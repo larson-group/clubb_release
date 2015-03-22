@@ -73,11 +73,8 @@ module stats_zt_module
         iSkw_zt
 
     use stats_variables, only: & 
-        icorr_w_hm_ov_adj, & ! Variable(s)
-        ihm1, &
+        ihm1, & ! Variable(s)
         ihm2, &
-        iLWP1, &
-        iLWP2, &
         iprecip_frac, &
         iprecip_frac_1, &
         iprecip_frac_2, &
@@ -573,7 +570,6 @@ module stats_zt_module
     ! stats_variables)
 
     ! Allocate and initialize hydrometeor statistical variables.
-    allocate( icorr_w_hm_ov_adj(1:hydromet_dim) )
     allocate( ihm1(1:hydromet_dim) )
     allocate( ihm2(1:hydromet_dim) )
     allocate( imu_hm_1(1:hydromet_dim) )
@@ -611,7 +607,6 @@ module stats_zt_module
 
     allocate( iwp2hmp(1:hydromet_dim) )
 
-    icorr_w_hm_ov_adj(:) = 0
     ihm1(:) = 0
     ihm2(:) = 0
     imu_hm_1(:) = 0
@@ -666,13 +661,6 @@ module stats_zt_module
 
     tot_zt_loops = stats_zt%num_output_fields
 
-    if ( any( vars_zt == "corr_w_hm_ov_adj" ) ) then
-       ! Correct for number of variables found under "corr_w_hm_ov_adj".
-       ! Subtract 1 from the loop size for each hydrometeor.
-       tot_zt_loops = tot_zt_loops - hydromet_dim
-       ! Add 1 for "corr_w_hm_ov_adj" to the loop size.
-       tot_zt_loops = tot_zt_loops + 1
-    endif
     if ( any( vars_zt == "hmi" ) ) then
        ! Correct for number of variables found under "hmi".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
@@ -861,7 +849,7 @@ module stats_zt_module
     if ( any( vars_zt == "corr_hmx_hmy_i_n" ) ) then
        ! Correct for number of variables found under "corr_hmxhmy_i_n".
        ! Subtract 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations of two hydrometeors, which is found
+       ! number of normal space correlations of two hydrometeors, which is found
        ! by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! from the loop size.
        tot_zt_loops = tot_zt_loops - hydromet_dim * ( hydromet_dim - 1 )
@@ -3818,33 +3806,6 @@ module stats_zt_module
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      ! Adjusted overall correlation of w and a hydrometeor for each hydrometeor
-      ! type.  The adjusted overall correlation is the overall correlation of w
-      ! and a hydrometeor multiplied by a constant tunable parameter that has a
-      ! value between 0 and 1, inclusive.
-      case ( 'corr_w_hm_ov_adj' )
-
-         do hm_idx = 1, hydromet_dim, 1
-
-            hm_type = hydromet_list(hm_idx)
-
-            ! The adjusted overall correlation of w and the hydrometeor.
-            icorr_w_hm_ov_adj(hm_idx) = k
-
-            call stat_assign( var_index=icorr_w_hm_ov_adj(hm_idx), &
-                              var_name="corr_w_"//trim( hm_type(1:2) ) &
-                                       //"_ov_adj", &
-                              var_description="Adjusted overall correlation " &
-                              // "of w and " &
-                              // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
-                              // " [-]", &
-                              var_units="-", l_silhs=.false., &
-                              grid_kind=stats_zt )
-
-            k = k + 1
-
-         enddo ! hm_idx = 1, hydromet_dim, 1
-
       ! Hydrometeor component mean values for each PDF component and hydrometeor
       ! type.
       case ( "hmi" )
@@ -3908,20 +3869,6 @@ module stats_zt_module
             k = k + 1
 
          enddo ! hm_idx = 1, hydromet_dim, 1
-
-      case ( 'LWP1' )
-        iLWP1 = k
-        call stat_assign( var_index=iLWP1, var_name="LWP1", &
-             var_description="Liquid water path (1st PDF component) [kg/m^2]", &
-             var_units="kg/m^2", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
-
-      case ( 'LWP2' )
-        iLWP2 = k
-        call stat_assign( var_index=iLWP2, var_name="LWP2", &
-             var_description="Liquid water path (2nd PDF component) [kg/m^2]", &
-             var_units="kg/m^2", l_silhs=.false., grid_kind=stats_zt )
-        k = k + 1
 
       case ( 'precip_frac' )
         iprecip_frac = k

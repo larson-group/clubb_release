@@ -4,8 +4,11 @@
 \usepackage{pstricks}
 
 % AMS math extensions
-\usepackage{amsmath}
+\usepackage{amsmath,bm}
 \usepackage{amssymb}
+
+% Block Array
+\usepackage{blkarray}
 
 % Use different colors
 \usepackage{color}
@@ -3598,36 +3601,195 @@ microphysics.
 Mathematically, the goal of SILHS is to numerically approximate integrals of the
 following form:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \label{SILHS integral form}
 \end{equation}
 where $P(\mathbf{x})$ is the PDF that describes CLUBB's joint probability
-distribution of variables, and $f(\mathbf{x})$ is a function of some or all of
+distribution of variables, and $h(\mathbf{x})$ is a function of some or all of
 these variables. In other words, we want to compute the average value of
-$f(\mathbf{x})$ over the entire domain.
+$h(\mathbf{x})$ over the entire domain.
+
+Briefly, SILHS performs the following tasks to numerically approximate
+$\eqref{SILHS integral form}$:
+\begin{enumerate}
+\item Choose a set of uniform sample points at one vertical level. Currently,
+the vertical level chosen is where cloud water is maximized. The uniform sample
+is picked using the Latin hypercube algorithm in order to reduce variance.
+\item Vertically correlate these uniform sample points to the other vertical
+levels in CLUBB. Vertical correlation is based on the spacing between vertical
+levels, CLUBB's length scale, and an emperical constant.
+\item Transform the uniform sample points to CLUBB's PDF. At this point, SILHS
+has produced a set of subcolumns drawn from the PDF $P(\mathbf{x})$ in
+\eqref{SILHS integral form}.
+\item Evaluate the function $h(\mathbf{x})$ using each of the SILHS sample
+points. Compute an average of these values to get an estimate of the average
+value of $h(\mathbf{x})$ over the distribution.
+\end{enumerate}
+
+The following sections discuss these tasks in depth.
+
+\subsection{CLUBB's PDF}
+
+In CLUBB, SILHS draws sample points from CLUBB's PDF, which has the following
+form.
+
+\begin{gather}
+\begin{split}
+P(\mathbf{x}) = \sum_{m=1}^{N_\mathrm{comp}} \xi_{(m)}\ [\ & f_{p(m)}
+ P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})\ + \\
+& (1-f_{p(m)})\ \delta(\mathbf{hm})\ P_{(m)}(\chi,\eta,w,N_{cn})\ ]
+\end{split}
+\label{CLUBB PDF}
+\end{gather}
+
+The PDF has $N_\mathrm{comp}$ components; currently, in CLUBB, $N_\mathrm{comp}
+= 2$. Each component $m$ has a weight $\xi_{(m)}$, where
+$\sum_{m=1}^{N_\mathrm{comp}} \xi_{(m)} = 1$. In each component, a fraction
+$f_{p(m)}$ of the component is allowed to contain precipitation, where $0 \le
+f_{p(m)} \le 1$. The vector $\mathbf{hm}$ contains hydrometeor species (e.g.,
+rain, snow). The exact type and number of hydrometeors depends on the
+microphysics scheme used.
+
+In the portions of the PDF that contain precipitation,
+$P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is a joint normal-lognormal
+distribution, where $\chi$, $\eta$, and $w$ are normally distributed, and
+$N_{cn}$ and all the variables in $\mathbf{hm}$ are lognormally distributed. In
+the parts of the PDF that don't contain precipitation,
+$P_{(m)}(\chi,\eta,w,N_{cn})$ is a joint normal-lognormal distribution, just
+like before, but all the hydrometeors are zero, rather than lognormally
+distributed.  ($\delta(\mathbf{hm})$ is short for
+$\delta(\mathrm{hm}_1)\delta(\mathrm{hm}_2)\cdots\delta(\mathrm{hm}_n)$).
+
+Let $d$ be the total number of variates in the PDF (the four fixed ones plus the
+number of hydrometeors). The key parameters associated with \eqref{CLUBB PDF},
+which must be supplied to SILHS, are:
+
+\begin{enumerate}
+\item The weight of each PDF component, $\xi_{(m)}$, and the precipitation
+fraction in each component, $f_{p(m)}$.
+
+\item $\bm{\mu}_{(m)}$: a vector of $d$ means corresponding to each variate in
+the PDF, for a given PDF component. These means are ``normalized'', which means
+that for the lognormal variates, the corresponding mean that appears in
+$\bm{\mu}_{(m)}$ is the mean of the natural logarithm of the variate. Also,
+these are in-precipitation means. This means that in the portion of the PDF that
+contains precipitation, $P_{(m)}(\chi,\eta,w,N_{cn},\mathbf{hm})$ is distributed
+such that each (normalized) variate has a mean given by $\bm{\mu}_{(m)}$.
+Outside of precipitation, the four variates of $P_{(m)}(\chi,\eta,w,N_{cn})$
+have means corresponding to $\bm{\mu}_{(m)}$, but the hydrometeors are zero, and
+so have a mean of zero.
+
+\item $\bm{\sigma}_{(m)}$: a vector of $d$ in-precipitation normalized standard
+deviations for a given PDF component.
+
+\item $\bm{\Sigma}_{(m)}$: a $d\times d$ correlation matrix, where
+$\bm{\Sigma}_{(m)i,j}$ is the in-precipitation, normalized correlation between the
+$i$\textsuperscript{th} and $j$\textsuperscript{th} variates (in PDF component
+$m$).
+\end{enumerate}
+
+It is easy to draw sample points directly from a joint normal-lognormal
+distribution. A simple way to draw sample points from \eqref{CLUBB PDF} is to
+draw samples from one of the joint normal-lognormal PDFs indicated in the
+equation (one of the $P_{(m)}$ functions). How often to sample from each
+distribution is decided by the weights $\xi_{(m)}$ and $f_{p(m)}$. To do this,
+\eqref{CLUBB PDF} can be written in terms of two new variates: $u_{d+1}$ and
+$u_{d+2}$. The two variates are uniformly distributed, with $0 \le
+u_{d+1},u_{d+2} \le 1$. The variate $u_{d+1}$ is used to determine the PDF
+component to sample from, and $u_{d+2}$ determines whether to sample from the
+portion of the PDF with precipitation. The PDF in \eqref{CLUBB PDF} can then be
+written as follows:
+\begin{equation}
+P(\chi,\eta,w,N_{cn},\mathbf{hm},u_{d+1},u_{d+2}) =
+\begin{cases}
+P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn},\mathbf{hm}) & u_{d+2} < f_{p(m(u_{d+1}))}
+\\ \delta(\mathbf{hm}) P_{(m(u_{d+1}))}(\chi,\eta,w,N_{cn}) & u_{d+2} \ge
+f_{p(m(u_{d+1}))}
+\end{cases}
+\label{CLUBB PDF with uniform}
+\end{equation}
+where $m(u_{d+1})$ is a function that associates $u_{d+1}$ with a PDF component.
+In CLUBB's two-component case, the function can simply be defined as:
+\begin{equation}
+m(u_{d+1}) =
+\begin{cases}
+1 & u_{d+1} < \xi_1 \\
+2 & u_{d+1} \ge \xi_1
+\end{cases}
+\end{equation}
+
+\subsection{Generation of Points in Uniform Space}
+
+As a first step, sample points are picked from a uniform distribution. One
+uniform variate is picked for each variate in the PDF.
+
+As a variance reduction technique, SILHS employs Latin hypercube sampling. The
+basic idea of this algorithm is to stratify each distribution variate into
+several equally-sized regions, and ensure that each region is sampled. The
+algorithm, which is described in \citet{larson2005supplying}, is implemented as
+follows.
+
+Let $N_s$ be the number of SILHS sample points used. Each of the $d+2$ uniform
+variates is split into $N_s$ sections: $\left(0,\frac{1}{N_s}\right),
+\left(\frac{1}{N_s},\frac{2}{N_s}\right), \ldots,
+\left(\frac{N_s-1}{N_s},1\right)$. Next, for each variate, an independent
+permutation of the integers $\left(0,1,\ldots,N_s-1\right)$ is chosen,
+corresponding to the $N_s$ sections of the variate. These $d+2$ permutations
+form a $N_s\times \left(d+2\right)$ matrix, $\bm{\Pi}$, where each column of the
+matrix, $\bm{\Pi}_{\left(1\ldots N_s\right),j}$ is the permutation corresponding
+to the $j$\textsuperscript{th} variate. Finally, we form another $N_s\times
+\left(d+2\right)$ matrix, $\mathbf{U}$, each element of which is a random
+uniform number between $0$ and $1$. The purpose of the matrix $\mathbf{U}$ is to
+choose uniformly a value within each section. Our sample matrix, $\mathbf{V}$,
+is then given by: 
+\begin{equation}
+\mathbf{V} = \frac{1}{N_s}\left(\bm{\Pi} + \mathbf{U}\right)
+\end{equation}
+
+Each of the $N_s$ rows of $\mathbf{V}$ is a SILHS sample. In a given row of
+$\mathbf{V}$, the value in each of the $\left(d+2\right)$ columns is the sample
+value of the corresponding variate in the PDF. Note that using this method, the
+association of sections between the variates is scrambled. For example, one
+sample might contain a sample of one variate in the 2\textsuperscript{nd}
+section and a sample of another variate in the 5\textsuperscript{th} section.
+
+SILHS also has an option that splits a SILHS sample over multiple timesteps. To
+use this feature, the user specifies an integer, $N_t$, which is an integer
+multiple of $N_s$. Then, the Latin hypercube algorithm, as described above,
+generates $N_t$ points instead of $N_s$ points. $N_s$ of these points are
+used (without replacement) each timestep, until $\frac{N_t}{N_s}$ timesteps have
+elapsed, at which point the samples are regenerated.
 
 \subsection{Importance Sampling}
 
-Importance sampling is a technique used in SILHS for variance reduction. The
-basic idea is to sample some parts of the PDF (the ``important'' regions) more
-often than they would normally be sampled.
+Importance sampling is another technique used in SILHS for variance reduction.
+The basic idea is to sample some parts of the PDF (the ``important'' regions)
+more often than they would normally be sampled.
 
 First, the PDF is split into a set of disjoint categories, $C_j$. These
 categories, which span the entire PDF, are currently defined as follows:
 \begin{enumerate*}
-\item In cloud, in precipitation, in mixture component 1
-\item In cloud, in precipitation, in mixture component 2
-\item Out of cloud, in precipitation, in mixture component 1
-\item Out of cloud, in precipitation, in mixture component 2
-\item In cloud, out of precipitation, in mixture component 1
-\item In cloud, out of precipitation, in mixture component 2
-\item Out of cloud, out of precipitation, in mixture component 1
-\item Out of cloud, out of precipitation, in mixture component 2
+\item In cloud, in precipitation, in mixture component 1 \\
+($\chi > 0$,\quad$u_{d+2} < f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item In cloud, in precipitation, in mixture component 2 \\
+($\chi > 0$,\quad$u_{d+2} < f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item Out of cloud, in precipitation, in mixture component 1 \\
+($\chi \le 0$,\quad$u_{d+2} < f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item Out of cloud, in precipitation, in mixture component 2 \\
+($\chi \le 0$,\quad$u_{d+2} < f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item In cloud, out of precipitation, in mixture component 1 \\
+($\chi > 0$,\quad$u_{d+2} \ge f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item In cloud, out of precipitation, in mixture component 2 \\
+($\chi > 0$,\quad$u_{d+2} \ge f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
+\item Out of cloud, out of precipitation, in mixture component 1 \\
+($\chi \le 0$,\quad$u_{d+2} \ge f_{p(1)}$,\quad$u_{d+1} < \xi_1$)
+\item Out of cloud, out of precipitation, in mixture component 2 \\
+($\chi \le 0$,\quad$u_{d+2} \ge f_{p(2)}$,\quad$u_{d+1} \ge \xi_1$)
 \end{enumerate*}
 
 Each category $C_j$ is associated with a certain amount of PDF mass, called the
 category's ``PDF probability'' and denoted as:
 \begin{equation}
-\zeta_j = \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+p_j = \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
 \end{equation}
 where $\mathbf{1}_j(\mathbf{x})$ is the indicator function of $C_j$:
 \begin{equation}
@@ -3640,7 +3802,7 @@ where $\mathbf{1}_j(\mathbf{x})$ is the indicator function of $C_j$:
 
 Since the categories $C_j$ span the entire PDF, we have:
 \begin{equation}
-\sum_{j=1}^{N_c} \zeta_j = 1
+\sum_{j=1}^{N_c} p_j = 1
 \end{equation}
 where $N_c$ is the number of categories (currently eight in CLUBB).
 
@@ -3657,45 +3819,166 @@ prescribe the probabilities such that the categories that are ``important'' for
 a desired process are sampled more often than the unimportant categories.
 
 We want to generate sample points such that the expected fraction of sample
-points in the category $C_j$ is $S_j$ rather than $\zeta_j$. In order to do this,
+points in the category $C_j$ is $S_j$ rather than $p_j$. In order to do this,
 we define a new function:
 \begin{equation}
-L(\mathbf{x}) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
+L(\mathbf{x}) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
 \end{equation}
 We then rewrite the integral given in \eqref{SILHS integral form} as:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
-\int f(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
+\int h(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
 \right)d\mathbf{x} =
-\int f(\mathbf{x}) L(\mathbf{x}) H(\mathbf{x}) d\mathbf{x}
+\int h(\mathbf{x}) L(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x}
 \label{SILHS integral rewrite}
 \end{equation}
 where
 \begin{equation}
-H(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
+Q(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
 \end{equation}
 
-Here, $H(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
+Here, $Q(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
 probabililties. We can easily verify this:
 \begin{align}
-\int \mathbf{1}_j(\mathbf{x}) H(\mathbf{x}) d\mathbf{x} &=
+\int \mathbf{1}_j(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x} &=
 \int \mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L(\mathbf{x})} d\mathbf{x} \\
- &= \frac{S_j}{\zeta_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
- &= \frac{S_j}{\zeta_j} \zeta_j \\
+ &= \frac{S_j}{p_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
+ &= \frac{S_j}{p_j} p_j \\
  &= S_j
 \end{align}
 
 Now, instead of drawing points from the $P(\mathbf{x})$ distribution and
-evaluate the function $f(\mathbf{x})$, we draw points from the $H(\mathbf{x})$
-distribution and evaluate the function $f(\mathbf{x}) L(\mathbf{x})$.
+evaluate the function $h(\mathbf{x})$, we draw points from the $Q(\mathbf{x})$
+distribution and evaluate the function $h(\mathbf{x}) L(\mathbf{x})$.
 
 Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
-$f(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
+$h(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
 referred to as the sample point ``weight''. Each sample point has a weight,
 denoted as:
 \begin{equation}
-\omega_i = L(\mathbf{x}_i) = \frac{\zeta_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
+\omega_i = L(\mathbf{x}_i) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
 C_j \label{SILHS importance weights def}
+\end{equation}
+
+\subsection{Vertical Correlation of Samples}
+
+At this point, a collection of sample points have been generated for a single
+vertical level. Each vertical level in CLUBB has its own PDF, each of the form
+given in \eqref{CLUBB PDF}. In principle, we could simply repeat the above
+process for every vertical level. We would generate a collection of single-level
+sample points for each vertical level, and arbitrarily match the samples among
+the vertical levels in order to form subcolumn samples. However, it is found
+emperically that this ``random overlap'' assumption does not match what happens
+in nature.
+
+Each subcolumn physically represents a vertical column in space. It is found
+that there is some degree of vertical overlap in space. That is, in many cases,
+the values of sample points are similar between adjacent vertical levels.
+
+In SILHS, this is mimiked by influencing the vertical correlation between
+uniform sample points. The process is as follows. First, a vertical level,
+$k_s$, is chosen to begin sampling (this variable is known as
+\texttt{k\_lh\_start} in the code. Next, the vertical correlation $\rho_k$
+(\texttt{vert\_corr} in code) is defined for each vertical level $k$ as:
+\begin{equation}
+\rho_k = \exp\left(\frac{\alpha\ \Delta z_k}{L}\right)
+\end{equation}
+where $L$ is the CLUBB's length scale, $\Delta z_k$ is the vertical spacing
+between grid levels at level $k$, and $\alpha$ is a parameter, known in the code
+as \texttt{vert\_decorr\_coef}, that controls how correlated fields are in the
+vertical. Intuitively, it can be seen that if $\alpha = 0$, then $\rho_k = 1$,
+and this corresponds to maximum vertical correlation (or maximal overlap). As
+$\alpha \rightarrow \infty$, $\rho_k \rightarrow 0$, and this corresponds to
+zero vertical correlation (or random overlap).
+
+The next step is to correlate each of the $d+2$ uniform sample points in the
+vertical. For $1 \le k < k_s$, we set
+\begin{equation}
+u_{k}^{'} = u_{k+1} + u^* \left(1-\rho_k\right)
+\end{equation}
+where $u_{k+1}$ is the uniform sample at the height level immediately above $k$,
+and $u^*$ is a uniform random number in the range $(-1,1)$. For $k_s < k \le
+\texttt{nzmax}$,
+\begin{equation}
+u_{k}^{'} = u_{k-1} + u^* \left(1-\rho_k\right)
+\end{equation}
+
+Depending on the value of $u^*$, there is a possibility that $u_{k}^{'}$ is not
+in the range $(0,1)$, and so the value might need to be folded back into the
+correct range. The actual uniform variate, $u_k$, is set to be a corrected
+version of $u_{k}^{'}$. Specifically,
+\begin{equation}
+u_k =
+\begin{cases}
+2 - u_{k}^{'} & u_{k}^{'} > 1 \\
+| u_{k}^{'} | & u_{k}^{'} < 0 \\
+u_{k}^{'} & 0 \le u_{k}^{'} \le 1
+\end{cases}
+\end{equation}
+
+\subsection{Transformation to Desired Distribution}
+
+Each sample must now be transformed to be a sample from the PDF in \eqref{CLUBB
+PDF}. First, the sample values of $u_{d+1}$ and $u_{d+2}$ are used to determine
+a joint normal-lognormal distribution to sample from, as in \eqref{CLUBB PDF
+with uniform}. Next, the uniform values of the sample, excluding the $u_{d+1}$
+and $u_{d+2}$ variates, are transformed to an uncorrelated standard normal
+sample using the inverse cumulative distribution function of the standard normal
+distribution:
+\begin{equation}
+\mathbf{Z} = \Phi^{-1} (\mathbf{u}) = 
+\left(
+\begin{array}{c}
+\Phi^{-1} (u_1) \\
+\Phi^{-1} (u_2) \\
+\vdots          \\
+\Phi^{-1} (u_d)
+\end{array}
+\right)
+\end{equation}
+
+A well known result is that given a vector of uncorrelated standard normal
+values, a sample following the desired joint normal distribution (say,
+$\mathbf{x}_\mathrm{norm}$) can be obtained using the following formula:
+\begin{equation}
+\mathbf{x}_\mathrm{norm} = \mathbf{L}\mathbf{Z} + \bm{\mu}
+\end{equation}
+where $\mathbf{L}$ is a matrix that satisfies
+\begin{equation}
+\mathbf{\Sigma} = \mathbf{L} \mathbf{L}^\mathbf{T}
+\end{equation}
+and $\mathbf{\Sigma}$ is the covariance matrix of the joint distribution. One
+way to calculate such a matrix $\mathbf{L}$ is to use an algorithm called the
+Cholesky decomposition.
+
+In SILHS, instead of the Cholesky decomposition of the covariance matrix, we
+have the decomposition of the correlation matrix. The decomposition of the
+covariance matrix is found by multiplying each element of each row of
+correlation decomposition by the standard deviation of the associated variate.
+Mathematically,
+\begin{equation}
+\mathbf{L} = \left(\mathbf{I}_d \bm{\sigma}\right) \mathbf{L}_\mathrm{corr}
+\end{equation}
+where $\mathbf{I}_d$ is the $d\times d$ identity matrix and $\bm{\sigma}$ is the
+vector of standard deviations.
+
+The last step is to transform from a joint normal distribution to a joint
+normal-lognormal distribution. This can be done by applying the exponential
+function to each log-normally distributed variate in the sample (while the
+normally distributed variates remain the same).
+\begin{equation}
+\mathbf{x} =
+\begin{blockarray}{cc}
+\begin{block}{(c)c}
+x_{\mathrm{norm},1} & \chi \\
+x_{\mathrm{norm},2} & \eta \\
+x_{\mathrm{norm},3} & w \\
+\exp(x_{\mathrm{norm},4}) & N_{cn} \\
+\exp(x_{\mathrm{norm},5}) & \mathrm{hm}_1 \\
+\vdots & \\
+\exp(x_{\mathrm{norm},d}) & \mathrm{hm}_n \\
+\end{block}
+\end{blockarray}
 \end{equation}
 
 \subsection{Integrating over a PDF using SILHS}
@@ -3712,25 +3995,26 @@ $P(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
 approximated using the following formulas. To integrate over the entire PDF,
 use:
 \begin{equation}
-\int f(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
-\sum_{i=1}^{N_s} \omega_i f(\mathbf{x}_i)
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
+\sum_{i=1}^{N_s} \omega_i h(\mathbf{x}_i)
 \end{equation}
-where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point. The integral
-gives the mean of $f(\mathbf{x})$ over the entire PDF. To determine the mean
-over some subset $\Omega$ of the PDF, the following formula should be used:
+where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point and $N_s$ is
+the total number of sample points. The integral gives the mean of
+$h(\mathbf{x})$ over the entire PDF. To determine the mean over some subset
+$\Omega$ of the PDF, the following formula should be used:
 \begin{equation}
-\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
 \approx \frac{1}{N}\sum_{i=1}^{N_s} \omega_i
-f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
-However, note that this equation will implicitly be scaled by $\zeta_\Omega$. To
-compute and unscaled version of the integral, the following could be used
+However, note that this equation will implicitly be scaled by $p_\Omega$. To
+compute an unscaled version of the integral, the following could be used
 instead:
 \begin{equation}
-\frac{1}{\zeta_\Omega}
-\int f(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
-\approx \frac{1}{\zeta_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
-f(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+\frac{1}{p_\Omega}
+\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\approx \frac{1}{p_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 
 \subsection{Optimal Allocation of Sample Points}
@@ -3739,60 +4023,60 @@ The hope of using the importance sampling method is that our new function will
 have less variance than the old one. The variance of the new function is given
 by:
 \begin{equation}
-v = \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2 H(\mathbf{x})d\mathbf{x}
+v = \int\left[h(\mathbf{x})L(\mathbf{x})\right]^2 Q(\mathbf{x})d\mathbf{x}
 - \mu^2
 \end{equation}
 
 We can split the integral up over our importance categories.
 \begin{align}
-v &= \sum_{j=1}^{N_c} \left\{ \int\left[f(\mathbf{x})L(\mathbf{x})\right]^2
-\mathbf{1}_j(\mathbf{x}) H(\mathbf{x})
+v &= \sum_{j=1}^{N_c} \left\{ \int\left[h(\mathbf{x})L(\mathbf{x})\right]^2
+\mathbf{1}_j(\mathbf{x}) Q(\mathbf{x})
 d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{j=1}^{N_c} \left\{\left(\frac{\zeta_j}{S_j}\right)^2
-\int\left[f(\mathbf{x})\right]^2 \mathbf{1}_j(\mathbf{x})
-\left(\frac{S_j}{\zeta_j}\right) P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
-&= \sum_{j=1}^{N_c} \left\{ \left(\frac{\zeta_j}{S_j}\right)
-\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x}) P(\mathbf{x})\
+&= \sum_{j=1}^{N_c} \left\{\left(\frac{p_j}{S_j}\right)^2
+\int\left[h(\mathbf{x})\right]^2 \mathbf{1}_j(\mathbf{x})
+\left(\frac{S_j}{p_j}\right) P(\mathbf{x})\ d\mathbf{x} \right\} - \mu^2 \\
+&= \sum_{j=1}^{N_c} \left\{ \left(\frac{p_j}{S_j}\right)
+\int\left[h(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x}) P(\mathbf{x})\
 d\mathbf{x} \right\} - \mu^2 \label{SILHS importance variance simplified}
 \end{align}
 
 It is interesting to ask how we might choose our sample probabilities $S_j$ such
 that \eqref{SILHS importance variance simplified} is minimized. For convenience,
-let $u_j=\int\left[f(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
+let $u_j=\int\left[h(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
 d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
 \begin{equation}
-v = \sum_{j=1}^{N_c} \frac{\zeta_j u_j}{S_j} - \mu^2
+v = \sum_{j=1}^{N_c} \frac{p_j u_j}{S_j} - \mu^2
 \end{equation}
 The probabilities $S_j$ must add to one, so we can write this as:
 \begin{equation}
-v = \sum_{j=1}^{N_c-1} \frac{\zeta_j u_j}{S_j} + \frac{\zeta_{N_c}
+v = \sum_{j=1}^{N_c-1} \frac{p_j u_j}{S_j} + \frac{p_{N_c}
 u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
 \end{equation}
 
 To optimize this, we take the $N_c-1$ partial derivitives of $v$ with respect to
 $S_j$ and set them all equal to zero.
 \begin{gather}
-\frac{\partial v}{\partial S_j} = -\frac{\zeta_j u_j}{S_j^2} + \frac{\zeta_{N_c}
+\frac{\partial v}{\partial S_j} = -\frac{p_j u_j}{S_j^2} + \frac{p_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} = 0 \\
-\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}
+\frac{p_j u_j}{S_j^2} = \frac{p_{N_c}
 u_{N_c}}{\left(1 - \sum_{j=1}^{N_c-1} S_j\right)^2} \\
-\frac{\zeta_j u_j}{S_j^2} = \frac{\zeta_{N_c}u_{N_c}}{S_{N_c}^2} \\
-\frac{\sqrt{\zeta_j u_j}}{S_j} = \frac{\sqrt{\zeta_{N_c}u_{N_c}}}{S_{N_c}}
+\frac{p_j u_j}{S_j^2} = \frac{p_{N_c}u_{N_c}}{S_{N_c}^2} \\
+\frac{\sqrt{p_j u_j}}{S_j} = \frac{\sqrt{p_{N_c}u_{N_c}}}{S_{N_c}}
 \end{gather}
 
 So, in each category, the sample probability $S_j$ should be proportional to
-$\sqrt{\zeta_j u_j}$. If we let
+$\sqrt{p_j u_j}$. If we let
 \begin{equation}
-\alpha = \frac{S_j}{\sqrt{\zeta_j u_j}} \label{alpha def}
+\alpha = \frac{S_j}{\sqrt{p_j u_j}} \label{alpha def}
 \end{equation}
 and impose the constraint that the sample probabilities add to one, we have
 \begin{gather}
-\sum_{j=1}^{N_c} \alpha\sqrt{\zeta_j u_j} = 1 \\
-\alpha = \frac{1}{\sum_{i=j}^{N_c} \sqrt{\zeta_j u_j}} \label{alpha solved}
+\sum_{j=1}^{N_c} \alpha\sqrt{p_j u_j} = 1 \\
+\alpha = \frac{1}{\sum_{i=j}^{N_c} \sqrt{p_j u_j}} \label{alpha solved}
 \end{gather}
 Substituting \eqref{alpha solved} into \eqref{alpha def}, we find that
 \begin{equation}
-S_j = \frac{\sqrt{\zeta_j u_j}}{\sum_{j^*=1}^{N_c}\sqrt{\zeta_{j^*} u_{j^*}}}
+S_j = \frac{\sqrt{p_j u_j}}{\sum_{j^*=1}^{N_c}\sqrt{p_{j^*} u_{j^*}}}
 \end{equation}
 
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 

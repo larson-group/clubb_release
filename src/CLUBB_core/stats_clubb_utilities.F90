@@ -430,14 +430,6 @@ module stats_clubb_utilities
     end do
     ntot = ivar - 1
 
-    if ( any( vars_zt == "corr_w_hm_ov_adj" ) ) then
-       ! Correct for number of variables found under "corr_w_hm_ov_adj".
-       ! Subtract "corr_w_hm_ov_adj" from the number of zt statistical
-       ! variables.
-       ntot = ntot - 1
-       ! Add 1 for each hydrometeor to the number of zt statistical variables.
-       ntot = ntot + hydromet_dim
-    endif
     if ( any( vars_zt == "hmi" ) ) then
        ! Correct for number of variables found under "hmi".
        ! Subtract "hmi" from the number of zt statistical variables.
@@ -639,7 +631,7 @@ module stats_clubb_utilities
        ! Subtract "corr_hmx_hmy_i_n" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) multipled by the
-       ! number of normalized correlations of two hydrometeors, which is
+       ! number of normal space correlations of two hydrometeors, which is
        ! found by:  (1/2) * hydromet_dim * ( hydromet_dim - 1 );
        ! to the number of zt statistical variables.
        ntot = ntot + hydromet_dim * ( hydromet_dim - 1 )
@@ -2767,7 +2759,6 @@ module stats_clubb_utilities
         iwpedsclrp
 
     use stats_variables, only: &
-        icorr_w_hm_ov_adj, &
         ihm1, &
         ihm2, &
         imu_hm_1, &
@@ -2840,8 +2831,14 @@ module stats_clubb_utilities
 
       deallocate( stats_zt%file%var )
       deallocate( stats_zt%file%z )
-      deallocate( stats_zt%file%rlat )
-      deallocate( stats_zt%file%rlon )
+             
+      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+      if ( associated( stats_zt%file%rlat ) ) then
+        deallocate( stats_zt%file%rlat )
+      end if
+      if ( associated( stats_zt%file%rlon ) ) then
+        deallocate( stats_zt%file%rlon )
+      end if
 
       deallocate ( ztscr01 )
       deallocate ( ztscr02 )
@@ -2877,8 +2874,14 @@ module stats_clubb_utilities
 
         deallocate( stats_lh_zt%file%var )
         deallocate( stats_lh_zt%file%z )
-        deallocate( stats_lh_zt%file%rlat )
-        deallocate( stats_lh_zt%file%rlon )
+        
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( associated(stats_lh_zt%file%rlat ) ) then
+          deallocate( stats_lh_zt%file%rlat )
+        end if
+        if ( associated(stats_lh_zt%file%rlon ) ) then
+          deallocate( stats_lh_zt%file%rlon )
+        end if
 
         ! De-allocate all stats_lh_sfc variables
         deallocate( stats_lh_sfc%z )
@@ -2891,8 +2894,14 @@ module stats_clubb_utilities
 
         deallocate( stats_lh_sfc%file%var )
         deallocate( stats_lh_sfc%file%z )
-        deallocate( stats_lh_sfc%file%rlat )
-        deallocate( stats_lh_sfc%file%rlon )
+             
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( associated( stats_lh_sfc%file%rlat ) ) then
+          deallocate( stats_lh_sfc%file%rlat )
+        end if
+        if ( associated( stats_lh_sfc%file%rlon ) ) then
+          deallocate( stats_lh_sfc%file%rlon )
+        end if
       end if ! l_silhs_out
 
       ! De-allocate all stats_zm variables
@@ -2903,8 +2912,14 @@ module stats_clubb_utilities
 
       deallocate( stats_zm%file%var )
       deallocate( stats_zm%file%z )
-      deallocate( stats_zm%file%rlat )
-      deallocate( stats_zm%file%rlon )
+             
+      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+      if ( associated( stats_zm%file%rlat ) ) then
+        deallocate( stats_zm%file%rlat )
+      end if
+      if ( associated( stats_zm%file%rlon ) ) then
+        deallocate( stats_zm%file%rlon )
+      end if
       deallocate( stats_zm%l_in_update )
 
       deallocate ( zmscr01 )
@@ -2934,8 +2949,14 @@ module stats_clubb_utilities
 
         deallocate( stats_rad_zt%file%var )
         deallocate( stats_rad_zt%file%z )
-        deallocate( stats_rad_zt%file%rlat )
-        deallocate( stats_rad_zt%file%rlon )
+             
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( associated( stats_rad_zt%file%rlat ) ) then
+          deallocate( stats_rad_zt%file%rlat )
+        end if
+        if ( associated( stats_rad_zt%file%rlon ) ) then
+          deallocate( stats_rad_zt%file%rlon )
+        end if
         deallocate( stats_rad_zt%l_in_update )
 
         ! De-allocate all stats_rad_zm variables
@@ -2959,8 +2980,14 @@ module stats_clubb_utilities
 
       deallocate( stats_sfc%file%var )
       deallocate( stats_sfc%file%z )
-      deallocate( stats_sfc%file%rlat )
-      deallocate( stats_sfc%file%rlon )
+             
+      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+      if ( associated( stats_sfc%file%rlat ) ) then
+        deallocate( stats_sfc%file%rlat )
+      end if
+      if ( associated( stats_sfc%file%rlon ) ) then
+        deallocate( stats_sfc%file%rlon )
+      end if
 
       ! De-allocate scalar indices
       deallocate( isclrm )
@@ -2980,7 +3007,6 @@ module stats_clubb_utilities
       deallocate( iwpedsclrp )
 
       ! De-allocate hyderometeor statistical variables
-      deallocate( icorr_w_hm_ov_adj )
       deallocate( ihm1 )
       deallocate( ihm2 )
       deallocate( imu_hm_1 )

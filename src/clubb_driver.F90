@@ -272,9 +272,7 @@ module clubb_driver
         corr_array_n_below, &
         d_variables, &
         cleanup_corr_matrix_arrays, &
-        iiPDF_Ncn, &
-        sigma2_on_mu2_ip_array_cloud, &
-        sigma2_on_mu2_ip_array_below
+        iiPDF_Ncn
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -1335,7 +1333,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &         ! Intent(in)
+         call setup_pdf_parameters( gr%nz, d_variables, dt_main, &              ! Intent(in)
                                     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)

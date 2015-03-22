@@ -110,7 +110,8 @@ module clubb_api_module
       iiPDF_rg,           &
       iiPDF_Ng,           &
       hmp2_ip_on_hmm2_ip, &
-      sigma2_on_mu2_ratios_type
+      Ncnp2_on_Ncnm2,     &
+      hmp2_ip_on_hmm2_ip_ratios_type
 
   use error_code, only : &
     clubb_no_error ! Enum representing that no errors have occurred in CLUBB
@@ -278,7 +279,9 @@ module clubb_api_module
     iiPDF_Ns,           &
     iiPDF_rg,           &
     iiPDF_Ng,           &
-    hmp2_ip_on_hmm2_ip
+    hmp2_ip_on_hmm2_ip, &
+    Ncnp2_on_Ncnm2,     &
+    hmp2_ip_on_hmm2_ip_ratios_type
 
   public &
     ! To Interact With CLUBB's Grid:
@@ -392,7 +395,6 @@ module clubb_api_module
     stats_rad_zm, &
     stats_rad_zt
     public &
-    sigma2_on_mu2_ratios_type, &
     nparams, &
     setup_parameters_api, &
     stats_sfc, &
@@ -902,9 +904,9 @@ contains
   !================================================================================================
 
   subroutine setup_corr_varnce_array_api( &
-    input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
+    input_file_cloud, input_file_below, iunit )
 
-    use corr_varnce_module, only : setup_corr_varnce_array, sigma2_on_mu2_ratios_type
+    use corr_varnce_module, only : setup_corr_varnce_array
 
     implicit none
 
@@ -919,11 +921,8 @@ contains
       input_file_cloud, &  ! Path to the in cloud correlation file
       input_file_below     ! Path to the out of cloud correlation file
 
-    type(sigma2_on_mu2_ratios_type), intent(in) :: &
-      sigma2_on_mu2_ratios ! Prescribed sigma^2/mu^2 ratios
-
     call setup_corr_varnce_array( &
-      input_file_cloud, input_file_below, iunit, sigma2_on_mu2_ratios )
+      input_file_cloud, input_file_below, iunit )
 
   end subroutine setup_corr_varnce_array_api
 
@@ -1475,7 +1474,7 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_parameters_api( &
-    nz, d_variables, dt, rho, &                 ! Intent(in)
+    nz, d_variables, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -1536,10 +1535,7 @@ contains
       dt    ! Model timestep                                           [s]
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      rho,         & ! Density                                         [kg/m^3]
-      Nc_in_cloud    ! Mean (in-cloud) cloud droplet concentration     [num/kg]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      Nc_in_cloud,       & ! Mean (in-cloud) cloud droplet conc.       [num/kg]
       rcm,               & ! Mean cloud water mixing ratio, < r_c >    [kg/kg]
       cloud_frac,        & ! Cloud fraction                            [-]
       ice_supersat_frac    ! Ice supersaturation fraction              [-]
@@ -1550,8 +1546,8 @@ contains
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), &
       intent(in) :: &
-      corr_array_n_cloud, & ! Prescribed normalized corr. array in cloud     [-]
-      corr_array_n_below    ! Prescribed normalized corr. array below cloud  [-]
+      corr_array_n_cloud, & ! Prescribed norm. space corr. array in cloud    [-]
+      corr_array_n_below    ! Prescribed norm. space corr. array below cloud [-]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                               [units vary]
@@ -1585,14 +1581,14 @@ contains
     ! Output Variables
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
       intent(out) :: &
-      corr_array_1_n, & ! Corr. array (normalized) of PDF vars. (comp. 1)    [-]
-      corr_array_2_n    ! Corr. array (normalized) of PDF vars. (comp. 2)    [-]
+      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
+      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
     real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
-      mu_x_1_n,    & ! Mean array (normalized) of PDF vars. (comp. 1) [un. vary]
-      mu_x_2_n,    & ! Mean array (normalized) of PDF vars. (comp. 2) [un. vary]
-      sigma_x_1_n, & ! Std. dev. array (normalized) of PDF vars (comp. 1) [u.v.]
-      sigma_x_2_n    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
@@ -1603,7 +1599,7 @@ contains
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
     call setup_pdf_parameters( &
-      nz, d_variables, dt, rho, &                 ! Intent(in)
+      nz, d_variables, dt, &                      ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
