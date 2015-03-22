@@ -3608,6 +3608,25 @@ distribution of variables, and $h(\mathbf{x})$ is a function of some or all of
 these variables. In other words, we want to compute the average value of
 $h(\mathbf{x})$ over the entire domain.
 
+Briefly, SILHS performs the following tasks to numerically approximate
+$\eqref{SILHS integral form}$:
+\begin{enumerate}
+\item Choose a set of uniform sample points at one vertical level. Currently,
+the vertical level chosen is where cloud water is maximized. The uniform sample
+is picked using the Latin hypercube algorithm in order to reduce variance.
+\item Vertically correlate these uniform sample points to the other vertical
+levels in CLUBB. Vertical correlation is based on the spacing between vertical
+levels, CLUBB's length scale, and an emperical constant.
+\item Transform the uniform sample points to CLUBB's PDF. At this point, SILHS
+has produced a set of subcolumns drawn from the PDF $P(\mathbf{x})$ in
+\eqref{SILHS integral form}.
+\item Evaluate the function $h(\mathbf{x})$ using each of the SILHS sample
+points. Compute an average of these values to get an estimate of the average
+value of $h(\mathbf{x})$ over the distribution.
+\end{enumerate}
+
+The following sections discuss these tasks in depth.
+
 \subsection{CLUBB's PDF}
 
 In CLUBB, SILHS draws sample points from CLUBB's PDF, which has the following
