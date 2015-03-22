@@ -3841,16 +3841,71 @@ denoted as:
 C_j \label{SILHS importance weights def}
 \end{equation}
 
+\subsection{Vertical Correlation of Samples}
+
+At this point, a collection of sample points have been generated for a single
+vertical level. Each vertical level in CLUBB has its own PDF, each of the form
+given in \eqref{CLUBB PDF}. In principle, we could simply repeat the above
+process for every vertical level. We would generate a collection of single-level
+sample points for each vertical level, and arbitrarily match the samples among
+the vertical levels in order to form subcolumn samples. However, it is found
+emperically that this ``random overlap'' assumption does not match what happens
+in nature.
+
+Each subcolumn physically represents a vertical column in space. It is found
+that there is some degree of vertical overlap in space. That is, in many cases,
+the values of sample points are similar between adjacent vertical levels.
+
+In SILHS, this is mimiked by influencing the vertical correlation between
+uniform sample points. The process is as follows. First, a vertical level,
+$k_s$, is chosen to begin sampling (this variable is known as
+\texttt{k\_lh\_start} in the code. Next, the vertical correlation $\rho_k$
+(\texttt{vert\_corr} in code) is defined for each vertical level $k$ as:
+\begin{equation}
+\rho_k = \exp\left(\frac{\alpha\ \Delta z_k}{L}\right)
+\end{equation}
+where $L$ is the CLUBB's length scale, $\Delta z_k$ is the vertical spacing
+between grid levels at level $k$, and $\alpha$ is a parameter, known in the code
+as \texttt{vert\_decorr\_coef}, that controls how correlated fields are in the
+vertical. Intuitively, it can be seen that if $\alpha = 0$, then $\rho_k = 1$,
+and this corresponds to maximum vertical correlation (or maximal overlap). As
+$\alpha \rightarrow \infty$, $\rho_k \rightarrow 0$, and this corresponds to
+zero vertical correlation (or random overlap).
+
+The next step is to correlate each of the $d+2$ uniform sample points in the
+vertical. For $1 \le k < k_s$, we set
+\begin{equation}
+u_{k}^{'} = u_{k+1} + u^* \left(1-\rho_k\right)
+\end{equation}
+where $u_{k+1}$ is the uniform sample at the height level immediately above $k$,
+and $u^*$ is a uniform random number in the range $(-1,1)$. For $k_s < k \le
+\texttt{nzmax}$,
+\begin{equation}
+u_{k}^{'} = u_{k-1} + u^* \left(1-\rho_k\right)
+\end{equation}
+
+Depending on the value of $u^*$, there is a possibility that $u_{k}^{'}$ is not
+in the range $(0,1)$, and so the value might need to be folded back into the
+correct range. The actual uniform variate, $u_k$, is set to be a corrected
+version of $u_{k}^{'}$. Specifically,
+\begin{equation}
+u_k =
+\begin{cases}
+2 - u_{k}^{'} & u_{k}^{'} > 1 \\
+| u_{k}^{'} | & u_{k}^{'} < 0 \\
+u_{k}^{'} & 0 \le u_{k}^{'} \le 1
+\end{cases}
+\end{equation}
+
 \subsection{Transformation to Desired Distribution}
 
 Each sample must now be transformed to be a sample from the PDF in \eqref{CLUBB
 PDF}. First, the sample values of $u_{d+1}$ and $u_{d+2}$ are used to determine
 a joint normal-lognormal distribution to sample from, as in \eqref{CLUBB PDF
-with uniform}.
-
-Next, the uniform values of the sample, excluding the $u_{d+1}$ and $u_{d+2}$
-variates, are transformed to an uncorrelated standard normal sample using the
-inverse cumulative distribution function of the standard normal distribution:
+with uniform}. Next, the uniform values of the sample, excluding the $u_{d+1}$
+and $u_{d+2}$ variates, are transformed to an uncorrelated standard normal
+sample using the inverse cumulative distribution function of the standard normal
+distribution:
 \begin{equation}
 \mathbf{Z} = \Phi^{-1} (\mathbf{u}) = 
 \left(
