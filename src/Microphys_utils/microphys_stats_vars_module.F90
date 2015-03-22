@@ -15,7 +15,8 @@ module microphys_stats_vars_module
   private ! Set Default Scope
 
   public :: microphys_stats_vars_type, microphys_stats_alloc, microphys_put_var, &
-            microphys_get_var, microphys_stats_accumulate, microphys_stats_cleanup
+            microphys_get_var, microphys_get_index, &
+            microphys_stats_accumulate, microphys_stats_cleanup
 
   type microphys_stats_vars_type
 
@@ -172,6 +173,59 @@ module microphys_stats_vars_module
     end if ! l_stats_samp
 
   end subroutine microphys_stats_accumulate
+  !-----------------------------------------------------------------------
+
+  !-----------------------------------------------------------------------
+  function microphys_get_index( stats_index, microphys_stats_vars ) result( var_index )
+
+  ! Description:
+  !   Get an index to the arrays in the microphys_stats_vars structure
+  !   associated with the given stats index.
+
+  ! References:
+  !   Eric Raut
+  !-----------------------------------------------------------------------
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      stats_index             ! The stats index of the variable
+
+    type(microphys_stats_vars_type), intent(in) :: &
+      microphys_stats_vars    ! The statistics structure
+
+    ! Output Variable
+    integer :: &
+      var_index               ! The index to the structure associated with
+                              ! the given stats index
+
+    ! Local Variables
+    integer :: ivar
+    logical :: l_found
+
+  !-----------------------------------------------------------------------
+
+    ! Initialize variables
+    var_index = 0
+    l_found = .false.
+
+    !----- Begin Code -----
+    do ivar=1, microphys_stats_vars%num_vars
+      if ( microphys_stats_vars%stats_indices(ivar) == stats_index) then
+
+        var_index = ivar
+        l_found = .true.
+        exit
+
+      end if
+    end do
+
+    if ( .not. l_found ) then
+      stop "Variable not found in microphys_get_index"
+    end if
+
+    return
+  end function microphys_get_index
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------

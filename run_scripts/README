@@ -130,4 +130,4 @@ run_timestep_tests.bash:
   each case at different timestep settings.
 
 run_tuner.bash: 
-  Runs the CLUBB tuning program.
+  Runs the CLUBB tuning program. More info can be found in input_misc/tuner/README.

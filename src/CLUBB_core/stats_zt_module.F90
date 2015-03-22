@@ -373,7 +373,7 @@ module stats_zt_module
         iNsm, & ! Variable(s)
         iNrm, &
         iNgm, &
-        iNim, & 
+        iNim, &
         iNsm_bt, &
         iNsm_mc, &
         iNsm_ma, &

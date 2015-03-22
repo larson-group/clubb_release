@@ -14,8 +14,8 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
              ( dt, nz, num_samples, d_variables, &
-               X_nl_all_levs, lh_sample_point_weights, &
-               p_in_Pa, exner, rho, &
+               X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
+               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
                lh_clipped_vars, &
                lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &
@@ -56,9 +56,11 @@ module estimate_scm_microphys_module
       core_rknd
 
     use stats_variables, only: &
-      stats_zt,           &
+      stats_zt,           & ! Variable(s)
       stats_sfc,          &
-      l_stats_samp ! Variable(s)
+      isilhs_variance_category, &
+      irrm_auto,          &
+      l_stats_samp
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
@@ -87,6 +89,15 @@ module estimate_scm_microphys_module
     use lh_microphys_var_covar_module, only: &
       lh_microphys_var_covar_driver   ! Procedure
 
+    use silhs_category_variance_module, only: &
+      silhs_category_variance_driver  ! Procedure
+
+    use pdf_parameter_module, only: &
+      pdf_parameter
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter
+
     implicit none
 
     ! External
@@ -108,10 +119,19 @@ module estimate_scm_microphys_module
       d_variables      ! Number of variates
 
     real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
-      X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
+      X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
+
+    integer, dimension(nz,num_samples), intent(in) :: &
+      X_mixt_comp_all_levs    ! Mixture component of each sample
 
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! The PDF parameters
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       p_in_Pa,    & ! Pressure                 [Pa]
@@ -281,6 +301,24 @@ module estimate_scm_microphys_module
                                 lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                 ! intent(out)
     end if
+
+    ! Invoke the SILHS category variance sampler (if desired by user)!!
+
+    if ( l_stats_samp ) then
+
+      if ( allocated( isilhs_variance_category ) ) then
+
+        if( isilhs_variance_category(1) > 0 ) then
+          call silhs_category_variance_driver &
+               ( nz, num_samples, d_variables, hydromet_dim, X_nl_all_levs, & ! Intent(in)
+                 X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
+                 lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
+                 hydromet_pdf_params )                                        ! Intent(in)
+        end if ! isilhs_variance_category(1) > 0
+
+      end if ! allocated( isilhs_variance_category ) 
+
+    end if ! l_stats_samp
 
     ! Cleanup microphys_stats_vars objects
     do ivar=1, num_samples
@@ -583,7 +621,7 @@ module estimate_scm_microphys_module
              irrm_accr, microphys_stats_zt ), stats_lh_zt )
       end if
 
-      if ( ilh_rrm_auto > 0 ) then
+      if ( ilh_rrm_evap > 0 ) then
         call stat_update_var( ilh_rrm_evap, microphys_get_var( &
              irrm_cond, microphys_stats_zt ), stats_lh_zt )
       end if

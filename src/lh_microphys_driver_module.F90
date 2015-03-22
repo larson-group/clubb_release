@@ -16,7 +16,7 @@ contains
   subroutine lh_microphys_driver &
              ( dt, nz, num_samples, d_variables, &
                X_nl_all_levs, lh_sample_point_weights, &
-               pdf_params, p_in_Pa, exner, rho, &
+               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                rcm, delta_zt, cloud_frac, &
                hydromet, X_mixt_comp_all_levs,  &
                lh_clipped_vars, &
@@ -47,6 +47,9 @@ contains
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter ! Type
 
     use est_kessler_microphys_module, only: &
       est_kessler_microphys
@@ -90,6 +93,9 @@ contains
 
     type(pdf_parameter), dimension(nz), intent(in) :: & 
       pdf_params ! PDF parameters       [units vary]
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
+      hydromet_pdf_params
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet ! Hydrometeor species    [units vary]
@@ -137,16 +143,17 @@ contains
 
     ! Call the latin hypercube microphysics driver for microphys_sub
     call est_single_column_tndcy &
-         ( dt, nz, num_samples, d_variables, &                       ! Intent(in)
-           X_nl_all_levs, lh_sample_point_weights, &                 ! Intent(in)
-           p_in_Pa, exner, rho, &                                    ! Intent(in)
-           delta_zt, hydromet, rcm, &                                ! Intent(in)
-           lh_clipped_vars, &                                        ! Intent(in)
-           lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &             ! Intent(out)
-           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                       ! Intent(out)
-           lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                   ! Intent(out)
-           lh_wpthlp_mc, lh_rtpthlp_mc, &                            ! Intent(out)
-           microphys_sub )                                           ! Intent(Procedure)
+         ( dt, nz, num_samples, d_variables, &                         ! Intent(in)
+           X_nl_all_levs, X_mixt_comp_all_levs, &                      ! Intent(in)
+           lh_sample_point_weights, pdf_params, hydromet_pdf_params, & ! Intent(in)
+           p_in_Pa, exner, rho, &                                      ! Intent(in)
+           delta_zt, hydromet, rcm, &                                  ! Intent(in)
+           lh_clipped_vars, &                                          ! Intent(in)
+           lh_hydromet_mc, lh_hydromet_vel, lh_Ncm_mc, &               ! Intent(out)
+           lh_rvm_mc, lh_rcm_mc, lh_thlm_mc, &                         ! Intent(out)
+           lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &                     ! Intent(out)
+           lh_wpthlp_mc, lh_rtpthlp_mc, &                              ! Intent(out)
+           microphys_sub )                                             ! Intent(Procedure)
 
     return
   end subroutine lh_microphys_driver

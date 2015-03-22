@@ -18,7 +18,7 @@ module latin_hypercube_driver_module
     prior_iter ! Prior iteration number (for diagnostic purposes)
 !$omp threadprivate( prior_iter )
 
-  integer, parameter, private :: &
+  integer, parameter, public :: &
     num_importance_categories = 8 ! Number of importance sampling categories
                                   ! ( e.g., (cloud,precip,comp1) )
 
@@ -42,7 +42,8 @@ module latin_hypercube_driver_module
     latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
     copy_X_nl_into_hydromet_all_pts, &
     generate_strat_uniform_variate, pick_sample_categories, &
-    clip_transform_silhs_output
+    clip_transform_silhs_output, define_importance_categories, importance_category_type, &
+    compute_category_real_probs
 
   private :: stats_accumulate_uniform_lh, cloud_weighted_sampling_driver
 
@@ -553,12 +554,17 @@ module latin_hypercube_driver_module
     use pdf_utilities, only: &
       compute_mean_binormal  ! Procedure
 
+    use math_utilities, only: &
+      rand_integer_in_range  ! Procedure
+
     implicit none
 
     ! Local Constants
     logical, parameter :: &
-      l_rcm_in_cloud_k_lh_start = .false.    ! Compute k_lh_start based on rcm_in_cloud instead
-                                             ! of rcm
+      l_rcm_in_cloud_k_lh_start = .false., &  ! Compute k_lh_start based on rcm_in_cloud instead
+                                              ! of rcm
+      l_random_k_lh_start = .false.            ! Use a random value of k_lh_start between rcm and
+                                              ! rcm_in_cloud
 
     ! Input Variables
     integer, intent(in) :: &
@@ -575,20 +581,43 @@ module latin_hypercube_driver_module
       k_lh_start  ! Starting SILHS sample level
 
     ! Local Variables
+    integer :: &
+      k_lh_start_rcm_in_cloud, &
+      k_lh_start_rcm
+
     real( kind = core_rknd ), dimension(nz) :: &
       rcm_pdf, cloud_frac_pdf
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-    if ( l_rcm_in_cloud_k_lh_start ) then
+    if ( l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
       rcm_pdf = compute_mean_binormal( pdf_params%rc_1, pdf_params%rc_2, pdf_params%mixt_frac )
       cloud_frac_pdf = compute_mean_binormal( pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, &
                                               pdf_params%mixt_frac )
+      k_lh_start_rcm_in_cloud = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
+    end if
 
-      k_lh_start    = maxloc( rcm_pdf / max( cloud_frac_pdf, cloud_frac_min ), 1 )
-    else
-      k_lh_start    = maxloc( rcm, 1 )
+    if ( .not. l_rcm_in_cloud_k_lh_start .or. l_random_k_lh_start ) then
+      k_lh_start_rcm    = maxloc( rcm, 1 )
+    end if
+
+    if ( l_random_k_lh_start ) then
+      if ( k_lh_start_rcm_in_cloud == k_lh_start_rcm ) then
+        k_lh_start = k_lh_start_rcm
+      else
+        ! Pick a random height level between k_lh_start_rcm and
+        ! k_lh_start_rcm_in_cloud
+        if ( k_lh_start_rcm_in_cloud > k_lh_start_rcm ) then
+          k_lh_start = rand_integer_in_range( k_lh_start_rcm, k_lh_start_rcm_in_cloud )
+        else if ( k_lh_start_rcm > k_lh_start_rcm_in_cloud ) then
+          k_lh_start = rand_integer_in_range( k_lh_start_rcm_in_cloud, k_lh_start_rcm )
+        end if
+      end if
+    else if ( l_rcm_in_cloud_k_lh_start ) then
+      k_lh_start = k_lh_start_rcm_in_cloud
+    else ! .not. l_random_k_lh_start .and. .not. l_rcm_in_cloud_k_lh_start
+      k_lh_start = k_lh_start_rcm
     end if
 
     ! If there's no cloud k_lh_start appears to end up being 1. Check if
@@ -600,11 +629,13 @@ module latin_hypercube_driver_module
 
     return
   end function compute_k_lh_start
+  !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output &
-             ( nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-               lh_clipped_vars )
+  subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
+                                          X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
+                                          pdf_params, l_use_Ncn_to_Nc, &          ! In
+                                          lh_clipped_vars )                       ! Out
 
   ! Description:
   !   Derives from the SILHS sampling structure X_nl_all_levs the variables
@@ -637,10 +668,16 @@ module latin_hypercube_driver_module
     implicit none
 
     ! Input Variables
+    logical, intent(in) :: &
+      l_use_Ncn_to_Nc        ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                             ! Ncn_to_Nc might cause problems with the MG microphysics 
+                             ! since the changes made here (Nc-tendency) are not fed into 
+                             ! the microphysics
+
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
-      d_variables            ! Number of variates in X_nl_one_lev
+      d_variables            ! Number of variates in X_nl
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
@@ -655,7 +692,6 @@ module latin_hypercube_driver_module
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    ! Local Variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
       lh_rt,   &             ! Total water mixing ratio            [kg/kg]
       lh_thl,  &             ! Liquid potential temperature        [K]
@@ -735,8 +771,12 @@ module latin_hypercube_driver_module
         lh_rv(k,isample) = lh_rt(k,isample) - lh_rc(k,isample)
 
         ! Compute lh_Nc
-        lh_Nc(k,isample) = Ncn_to_Nc( real( X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd ), &
-                                      real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
+        if ( l_use_Ncn_to_Nc ) then
+           lh_Nc(k,isample) = Ncn_to_Nc(real(X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd), &
+                                        real(X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd) )
+        else
+           lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
+        endif ! l_use_Ncn_to_Nc
 
       end do ! isample=1, num_samples
 
@@ -793,7 +833,7 @@ module latin_hypercube_driver_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_prescribed_probs = .false.   ! Use prescribed probability importance sampling
+      l_use_prescribed_probs = .true.   ! Use prescribed probability importance sampling
 
     ! Input Variables
     integer, intent(in) :: &
@@ -1366,7 +1406,7 @@ module latin_hypercube_driver_module
 
     ! Local Constants
     real( kind = core_rknd ), parameter :: &
-      prob_thresh = 1.0e-8_core_rknd
+      prob_thresh = 5.0e-3_core_rknd
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -3094,7 +3134,7 @@ module latin_hypercube_driver_module
       vert_decorr_coef = 0.03_dp ! Empirically defined de-correlation constant [-]
 
     logical, parameter :: &
-      l_max_overlap_in_cloud = .false. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
+      l_max_overlap_in_cloud = .true. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
 
     ! Input Variables
     integer, intent(in) :: &

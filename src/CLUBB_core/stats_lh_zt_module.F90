@@ -107,6 +107,9 @@ module stats_lh_zt_module
       ilh_mixt_frac, &
       ilh_m_vol_rad_rain
 
+    use stats_variables, only: &
+      isilhs_variance_category ! Variable
+
     use stats_type_utilities, only: & 
       stat_assign ! Procedure
 
@@ -115,6 +118,10 @@ module stats_lh_zt_module
     ! External
     intrinsic :: trim
 
+    ! Local Constants
+    integer, parameter :: &
+      silhs_num_importance_categories = 8
+
     ! Input Variable
     character(len= * ), dimension(nvarmax_lh_zt), intent(in) :: vars_lh_zt
 
@@ -122,17 +129,32 @@ module stats_lh_zt_module
     logical, intent(inout) :: l_error
 
     ! Local Varables
-    integer :: i, k
+    integer :: i, k, tot_loops, icategory
+
+    character( len = 1 ) :: category_num_as_string
 
     ! ---- Begin Code ----
 
     ! Default initialization for array indices for stats_lh_zt is zero (see module
     ! stats_variables)
 
+    allocate( isilhs_variance_category(silhs_num_importance_categories) )
+    isilhs_variance_category(:) = 0
+
     ! Assign pointers for statistics variables stats_zt
 
+    tot_loops = stats_lh_zt%num_output_fields
+
+    if ( any( vars_lh_zt == "silhs_variance_category" ) ) then
+       ! Correct for number of variables found under "silhs_variance_category".
+       ! Subtract 1 from the loop size for each SILHS importance category.
+       tot_loops = tot_loops - silhs_num_importance_categories
+       ! Add 1 for "silhs_variance_category" to the loop size.
+       tot_loops = tot_loops + 1
+    end if
+
     k = 1
-    do i = 1, stats_lh_zt%num_output_fields
+    do i = 1, tot_loops
 
       select case ( trim( vars_lh_zt(i) ) )
       case ( 'AKm' )           ! Vince Larson 22 May 2005
@@ -613,6 +635,20 @@ module stats_lh_zt_module
              var_description="SILHS est. of rain radius", var_units="m", &
              l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
+
+      case ( 'silhs_variance_category' )
+
+        do icategory=1, silhs_num_importance_categories
+
+          isilhs_variance_category(icategory) = k
+          write(category_num_as_string,'(I1)') icategory
+          call stat_assign( var_index=isilhs_variance_category(icategory), &
+               var_name="silhs_var_cat_"//category_num_as_string, &
+               var_description="Variance of SILHS variable in importance category " // &
+               category_num_as_string, var_units="various", l_silhs=.false., grid_kind=stats_lh_zt )
+          k = k + 1
+
+        end do
 
       case default
 

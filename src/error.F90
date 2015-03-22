@@ -50,7 +50,8 @@ module error
     iflags  = 3    ! Model flags "tuner"
 
   ! Variables
-  integer, public :: ndim ! Size of the simplex
+  integer, public :: &
+    ndim ! Number of variables, e.g. rcm, to be tuned. Dimension of the init simplex
 
   ! 'err_code' is an important integer used by the min_diff to
   ! determine whether CLUBB has become numerically unstable
@@ -131,13 +132,15 @@ module error
     min_err  = -999._core_rknd     ! The lowest the minimization algorithm could go
 
   real( kind = core_rknd ), dimension(nparams), private :: & 
-    params = -999._core_rknd  ! Vector of all possible CLUBB parameters
+    params = -999._core_rknd  ! Vector of all CLUBB tunable parameter values
 
   integer, dimension(nparams), private :: & 
     params_index = 0  ! Index of the params elements that are used in the simplex
 
   real( kind = core_rknd ), allocatable, dimension(:,:), public ::  & 
     param_vals_matrix ! Holds 2D simplex the CLUBB constant parameters
+    ! The first row contains the initial values of the tunable parameters.
+    ! The remaining rows contain random perturbations of those parameter values.
 
   real( kind = core_rknd ), allocatable, dimension(:), public :: & 
     param_vals_spread,  & ! Amount to vary each respec. constant by
@@ -346,7 +349,7 @@ module error
       ! Initialize the CLUBB parameter spread
       param_vals_spread(1:ndim)  = rtmp(params_index(1:ndim))
 
-      ! Copy varying parameters into the first row of the simplex
+      ! Copy tunable parameter values into the first row of the simplex
       param_vals_matrix(1,1:ndim) = params(params_index(1:ndim))
 
       ! Attempt to generate a pseudo-random seed using a file
@@ -359,7 +362,7 @@ module error
 
     if ( tune_type == iamoeba .or. tune_type == iamebsa ) then
       ! Fill in the remaining values of the array by varying the initial
-      ! vector (i.e. the first column of the array) by a small multiple
+      ! vector (i.e. the first row of the array) by a small random perturbation
       do j = 1, ndim
 
         call genrand_real1( rand_vect(1:ndim) )

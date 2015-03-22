@@ -47,3 +47,4 @@
 ../src/parameters_radiation.F90
 ../src/parameters_microphys.F90
 ../src/KK_microphys_module.F90
+../src/silhs_category_variance_module.F90

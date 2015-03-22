@@ -256,6 +256,13 @@ module pdf_closure_module
       cloud_frac_2,    & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
+    real( kind = core_rknd ) :: & ! If l_use_ADG2 == .true., will need
+      small_m,           & ! m                                               [-]
+      small_m_sqd,       & ! M                                               [-]
+      big_m,             & ! M                                               [-]
+      sigma_sqd_w1,      & !                                                 
+      sigma_sqd_w2         !                                                
+
     ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
     !        These are used to calculate the scalar widths
     !        varnce_thl_1, varnce_thl_2, varnce_rt_1, and varnce_rt_2 as in Eq. (34)
@@ -307,6 +314,9 @@ module pdf_closure_module
 
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
+
+    logical, parameter :: &
+      l_use_ADG2 = .false. ! Temp. flag. See Larson et al. (2002) Appendix paragraph e.
 
     integer :: i, hm_idx   ! Indices
 
@@ -409,6 +419,62 @@ module pdf_closure_module
       ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
       ! The variance in both Gaussian "plumes" is defined to be the same.
       varnce_w_2  = sigma_sqd_w*wp2
+
+      if( l_use_ADG2 ) then
+        ! This code is experimental and not wholly consistent with the way CLUBB
+        ! is currently formulated/coded. 
+
+        ! This is the same as ADG1 (above), but uses Luhar et al. (1996) to find 
+        ! the widths and positions of the w Gaussians. ADG2 differs from ADG1 
+        ! in that it allows the widths of both Gaussians to be non-equal.
+
+        ! Since ADG1 assumes the widths of both w gaussians to be constant, a 
+        ! single value of sigma_sqd_w is used throughout the code for the transport 
+        ! terms. See section 2.1 of "Equations for CLUBB" and the references therin to Larson
+        ! and Golaz (2005) for more information. sigma_sqd_w is computed in
+        ! advance_clubb_core and passed into pdf_closure. Therefore, we are
+        ! using sigma_sqd_w from ADG1 for the transport terms and ADG2 for the
+        ! mixture fraction, mean location and variances of w, thl, and rt.
+        ! Hence, this code is currently experimental.
+
+        ! This code was written using the equations and nomenclature 
+        ! of Larson et al. (2002) Appendix section e.
+
+        if ( abs( Skw ) <= 1e-5_core_rknd ) then
+          ! If Skw is very small, then small_m will tend to zero which risks
+          ! divide by zero. To ameliorate this problem, we enforce abs( w_1_n )
+          ! and abs( w_2_n ) > .05
+          small_m = max( 5e-2_core_rknd, &
+                       (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)) 
+
+          small_m_sqd = small_m**2
+
+        else
+
+          small_m = (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)
+
+          small_m_sqd = small_m**2
+
+        endif ! if ( abs( Skw ) >= 1e-5_core_rknd ) then 
+  
+        big_m = (1.0_core_rknd + small_m_sqd)**3 / &
+                   ( (3.0_core_rknd + small_m_sqd)**2 * small_m_sqd)
+
+        mixt_frac = one_half * ( one - Skw * sqrt( one / ( ( 4.0_core_rknd / big_m ) + Skw**2 ) ) )
+     
+        sigma_sqd_w1 = (one - mixt_frac) / ( mixt_frac * ( one + small_m_sqd ) ) 
+
+        varnce_w_1  = sigma_sqd_w1*wp2
+
+        sigma_sqd_w2 = mixt_frac / ( ( one - mixt_frac ) * ( one + small_m_sqd ) )
+
+        varnce_w_2  = sigma_sqd_w2*wp2
+
+        w_1_n = small_m * sqrt( sigma_sqd_w1 )
+
+        w_2_n = -small_m * sqrt( sigma_sqd_w2 )
+
+      endif ! l_use_ADG2
 
 
       ! The normalized variance for thl, rt, and sclr for "plume" 1 is:

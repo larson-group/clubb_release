@@ -151,6 +151,10 @@ module stats_clubb_utilities
 
     implicit none
 
+    ! Local Constants
+    integer, parameter :: &
+      silhs_num_importance_categories = 8
+
     ! Input Variables
     integer, intent(in) :: iunit  ! File unit for fnamelist
 
@@ -803,6 +807,16 @@ module stats_clubb_utilities
         ivar = ivar + 1
       end do
       ntot = ivar - 1
+      if ( any( vars_lh_zt == "silhs_variance_category" ) ) then
+        ! Correct for number of variables found under "silhs_variance_category".
+        ! Subtract "silhs_variance_category" from the number of lh_zt statistical
+        ! variables.
+        ntot = ntot - 1
+        ! Add 1 for each SILHS category to the number of lh_zt statistical variables
+        ntot = ntot + silhs_num_importance_categories
+
+      end if
+
       if ( ntot == nvarmax_lh_zt ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
                          "vars_zt than allowed for by nvarmax_lh_zt."

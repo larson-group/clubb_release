@@ -243,9 +243,10 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api( &
-    nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-    lh_clipped_vars )
+  subroutine clip_transform_silhs_output_api( nz, num_samples, d_variables, &        ! In
+                                              X_mixt_comp_all_levs, X_nl_all_levs, & ! In
+                                              pdf_params, l_use_Ncn_to_Nc, &         ! In
+                                              lh_clipped_vars )                      ! Out
 
     use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
 
@@ -259,6 +260,8 @@ contains
     implicit none
 
     ! Input Variables
+    logical, intent(in) :: l_use_Ncn_to_Nc
+
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
@@ -277,9 +280,10 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    call clip_transform_silhs_output( &
-      nz, num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, pdf_params, &
-      lh_clipped_vars )
+    call clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
+                                      X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
+                                      pdf_params, l_use_Ncn_to_Nc, &          ! In
+                                      lh_clipped_vars )                       ! Out
 
   end subroutine clip_transform_silhs_output_api
 

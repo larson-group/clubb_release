@@ -85,7 +85,7 @@ les_stats_file_nl | character array
  Specifies the name of the LES GrADS files we're reading from.
 
 run_file_nl | character array
- Specifies the filename of file holding the &model_settings, etc. namelists.
+ Specifies the filename of file holding the &model_settings, etc. namelists. This file is created as the tuner runs, and should not be present beforehand.
 
 z_i_nl | integer array
  Specifies the lowest altitude levels to average over, based on where those altitudes
@@ -115,6 +115,7 @@ C1, etc. | real, default precision
  In the case of amoeba and amebsa the formula is 
  Parameter * ( (1 - spread) + rannum * spread * 2 )
  thus a spread of 0 will keep a constant static through the run.
+ We must have 0 <= spread < 1.
 
 In the Siarry, et al. case this is the value of ROSTEP.  Where the initial step vector is defined by the equation:
 STPINI(k) = ( X0MAX(k) - X0MIN(k) ) * ROSTEP(k)

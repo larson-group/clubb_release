@@ -267,10 +267,10 @@ module input_grads
         allocate( grads_file%var(grads_file%nvar) )
 
         do i = 1, grads_file%nvar, 1
-
+          
           read(unit=unit_number,iostat=ierr,fmt='(a256)') line
           read(unit=line,fmt=*) grads_file%var(i)%name, nzmax
-
+          
           if ( nzmax /= grads_file%iz ) then
             write(unit=fstderr,fmt=*) "Error reading ",  & 
               trim( grads_file%var(i)%name )

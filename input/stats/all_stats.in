@@ -107,7 +107,7 @@ vars_lh_zt =
 'lh_Nrm', 'lh_Nim', 'lh_Ncnm', 'lh_Ncm', 'lh_Ngm', 'lh_Nsm',
 'lh_rcm_avg', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap',
 'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrm_src_adj', 'lh_rrm_cond_adj',
-'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac',
+'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac', 'silhs_variance_category',
 ''
 vars_lh_sfc =
 'lh_morr_snow_rate', 'lh_vwp', 'lh_lwp', 'k_lh_start',

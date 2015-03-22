@@ -8,7 +8,7 @@
 #
 #######################################################################
 # Useful on SMP machines with OpenMP
-# The tuner is capable of tuning on case per processor if compiled with
+# The tuner is capable of tuning one case per processor if compiled with
 # OpenMP compiler flags.
 OMP_NUM_THREADS=2
 #######################################################################
@@ -58,9 +58,13 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    #       filename "error_RUN_CASE.in".
 
    # Select a run, comment out the rest.
+   # The selected case will be used in the nightly tuning run
    # RUN_CASE=arm
    # RUN_CASE=atex
    # RUN_CASE=bomex
+   # RUN_CASE=cgils_s6
+   # RUN_CASE=cgils_s11
+   # RUN_CASE=cgils_s12
    # RUN_CASE=dycoms2_rf01
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
@@ -70,7 +74,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
    # RUN_CASE=nov11_altocu
-   # RUN_CASE=rico (Needs an error_rico.in file before running)
+   # RUN_CASE=rico
    # RUN_CASE=wangara 
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -84,9 +88,9 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # example: all
    # all includes all models with LES data, except for Nov. 11 Altocu
    # (and GABLS2, Jun. 25 Altocu, and RICO).
-   RUN_CASE=all
-   MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
-    dycoms2_rf02_ds dycoms2_rf02_nd fire wangara)
+   #RUN_CASE=all
+   #MODEL_MULT=(arm atex bomex dycoms2_rf01 dycoms2_rf02_do\
+   # dycoms2_rf02_ds dycoms2_rf02_nd fire wangara)
 
    # example: BOMEX and FIRE
    # RUN_CASE=bomex_fire
@@ -95,6 +99,10 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
    # example: four cases
    # RUN_CASE=messner_001
    # MODEL_MULT=(arm bomex dycoms2_rf01 dycoms2_rf02_do)
+
+   # example: rico, cgils_s6/11/12, rf02_nd, and arm
+   RUN_CASE=ticket_756
+   MODEL_MULT=(arm rico cgils_s6 cgils_s11 cgils_s12 dycoms2_rf02_nd)
 
 fi
 
@@ -252,15 +260,15 @@ FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into hoc.in
-   cat $PARAMS_FILE $MODEL_FILE $STATS_OPT_IN $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
-   ../bin/clubb_standalone
+   cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+    ../bin/clubb_standalone
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
    for EACH_CASE in "${MODEL_MULT[@]}"; do
 		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
 		# Concatenate *_model.in and *_stats.in into hoc.in
-		cat $PARAMS_FILE $MODEL_FILE $STATS_OPT_IN $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+        cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
 		../bin/clubb_standalone
    done
 

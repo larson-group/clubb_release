@@ -452,7 +452,7 @@ module microphys_driver
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, d_variables, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
-               pdf_params, p_in_Pa, exner, rho, & ! In
+               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
                lh_clipped_vars, & ! In
@@ -558,7 +558,7 @@ module microphys_driver
         call lh_microphys_driver &
              ( dt, gr%nz, lh_num_samples, d_variables, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
-               pdf_params, p_in_Pa, exner, rho, & ! In
+               pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
                hydromet, X_mixt_comp_all_levs,  & !In
                lh_clipped_vars, & ! In

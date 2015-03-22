@@ -268,8 +268,8 @@ module clubb_driver
         rtm_nudge_max_altitude
 
     use corr_varnce_module, only: &
-        corr_array_cloud, & ! Variable(s)
-        corr_array_below, &
+        corr_array_n_cloud, & ! Variable(s)
+        corr_array_n_below, &
         d_variables, &
         cleanup_corr_matrix_arrays, &
         iiPDF_Ncn, &
@@ -350,6 +350,11 @@ module clubb_driver
       l_uv_nudge,     & ! Whether to adjust the winds within the timestep
       l_restart,      & ! Flag for restarting from GrADS file
       l_input_fields    ! Whether to set model variables from a file
+
+    logical :: l_use_Ncn_to_Nc ! Whether to call Ncn_to_Nc (.true.) or not (.false.);
+                               ! Ncn_to_Nc might cause problems with the MG microphysics 
+                               ! since the changes made here (Nc-tendency) are not fed into 
+                               ! the microphysics
 
     character(len=6) :: &
       saturation_formula ! "bolton" approx. or "flatau" approx.
@@ -578,6 +583,8 @@ module clubb_driver
     iiedsclr_CO2 = -1
 
     sclr_tol(1:sclr_max) = 1.e-2_core_rknd
+
+    l_use_Ncn_to_Nc = .true.
 
     ! Pick some default values for stats_setting; other variables are set in
     ! module stats_variables
@@ -1331,7 +1338,7 @@ module clubb_driver
          call setup_pdf_parameters( gr%nz, d_variables, dt_main, rho, &         ! Intent(in)
                                     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
-                                    corr_array_cloud, corr_array_below, &       ! Intent(in)
+                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
                                     rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
                                     l_input_fields, l_input_precip_frac, &      ! Intent(in)
@@ -1375,7 +1382,7 @@ module clubb_driver
 
         call clip_transform_silhs_output &
              ( gr%nz, lh_num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
-               pdf_params, & ! In
+               pdf_params, l_use_Ncn_to_Nc, & ! In
                lh_clipped_vars ) ! Out
 
         call stats_accumulate_lh &

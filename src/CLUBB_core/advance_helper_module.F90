@@ -169,6 +169,9 @@ module advance_helper_module
       use parameters_model, only: &
         T0 ! Variables(s)
 
+      use parameters_tunable, only: &
+        lambda0_stability_coef ! Variable(s)
+
       use constants_clubb, only: &
         zero, & ! Constant(s)
         grav
@@ -193,16 +196,11 @@ module advance_helper_module
       real( kind = core_rknd ), dimension(gr%nz) :: &
         stability_correction
 
-      ! Local Variables
-      real( kind = core_rknd ) :: &
-        lambda0_stability_coef ! []
-
       real( kind = core_rknd ), dimension(gr%nz) :: &
         brunt_vaisala_freq, & !  []
         lambda0_stability
 
       !------------ Begin Code --------------
-      lambda0_stability_coef = 0.03_core_rknd
       brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
       lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
 

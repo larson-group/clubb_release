@@ -152,6 +152,10 @@ l_input_fields = .true.
 microphys_scheme = "khairoutdinov_kogan"
 l_fix_chi_eta_correlations = .false.
 
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
+hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
+Ncnp2_on_Ncnm2                               = 2.2
+
 !!!!!!! COMMENTS FOR RICO MARINE CUMULUS CASE
 !!!!!!! These are K&K microphysics constants updated from Michael Falk's submission, rico0206.
 !!!!!!! These constants are closer to the DYCOMS2 RF02 values and produce more rain. 
