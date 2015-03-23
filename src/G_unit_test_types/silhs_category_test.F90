@@ -15,7 +15,7 @@ module silhs_category_test
   function silhs_category_test_driver()
 
     ! Description:
-    !   This function 
+    !   This function tests the SILHS category picker algorithm.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -23,9 +23,10 @@ module silhs_category_test
     use clubb_precision, only: &
       core_rknd
 
-    use latin_hypercube_driver_module, only: &
+    use silhs_importance_sample_module, only: &
       generate_strat_uniform_variate, & ! Procedure(s)
-      pick_sample_categories
+      pick_sample_categories, &
+      num_importance_categories ! Constant
 
     use constants_clubb, only: &
       fstderr
@@ -34,17 +35,13 @@ module silhs_category_test
 
     ! Local Constants
     integer, parameter :: &
-      num_categories = 8 , &  ! This must be consistent with the definition in
-                              ! latin_hypercube_driver_module for now. Someday,
-                              ! this should be generalized.
-
       num_samples = 100       ! Number of samples for this test
 
     ! Output Variable
     integer :: silhs_category_test_driver ! Returns the exit code of the test
 
     ! Local Variables
-    integer, dimension(num_categories) :: &
+    integer, dimension(num_importance_categories) :: &
       n_sample_points_per_category
 
     integer, dimension(num_samples) :: &
@@ -53,7 +50,7 @@ module silhs_category_test
     real( kind = core_rknd ), dimension(num_samples) :: &
       rand_vect
 
-    real( kind = core_rknd ), dimension(num_categories) :: &
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
       category_prescribed_probs
 
     integer :: isample, icategory
@@ -97,7 +94,7 @@ module silhs_category_test
     end do ! isample=1, num_samples
 
     ! They should all be zero.
-    do icategory=1, num_categories
+    do icategory=1, num_importance_categories
       if ( n_sample_points_per_category(icategory) /= 0 ) then
         silhs_category_test_driver = 1 ! Failure code
       end if

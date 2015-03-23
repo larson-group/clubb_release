@@ -146,7 +146,7 @@ module silhs_category_variance_module
     use constants_clubb, only: &
       zero         ! Constant
 
-    use latin_hypercube_driver_module, only: &
+    use silhs_importance_sample_module, only: &
       num_importance_categories, &       ! Constant
       define_importance_categories, &
       compute_category_real_probs, &
@@ -280,7 +280,7 @@ module silhs_category_variance_module
       zero, &  ! Constant(s)
       zero_dp
 
-    use latin_hypercube_driver_module, only: &
+    use silhs_importance_sample_module, only: &
       num_importance_categories, &     ! Constant
       importance_category_type         ! Type
 
