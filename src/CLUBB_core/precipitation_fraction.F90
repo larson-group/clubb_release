@@ -971,7 +971,7 @@ module precipitation_fraction
       precip_frac_1, & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2    ! Precipitation fraction (2nd PDF component)     [-]
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ), intent(in) :: &
       precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
 
     ! Local Variables
