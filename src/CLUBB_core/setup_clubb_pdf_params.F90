@@ -416,6 +416,10 @@ module setup_clubb_pdf_params
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
 
+       if ( l_input_fields .and. l_input_precip_frac ) then
+          precip_frac = hydromet_pdf_params%precip_frac
+       endif ! l_input_fields .and. l_input_precip_frac
+
        call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
                              ice_supersat_frac, ice_supersat_frac_1, &
                              mixt_frac, l_stats_samp, &

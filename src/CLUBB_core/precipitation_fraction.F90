@@ -160,31 +160,31 @@ module precipitation_fraction
 
        enddo ! Overall precipitation fraction loop: k = nz, 1, -1
 
-       !!! Special checks for overall precipitation fraction
-       do k = 1, nz, 1
+    endif ! ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac )
 
-          if ( any( hydromet(k,:) >= hydromet_tol(:) ) &
-               .and. precip_frac(k) < precip_frac_tol ) then
+    !!! Special checks for overall precipitation fraction
+    do k = 1, nz, 1
 
-             ! In a scenario where we find any hydrometeor at this grid level,
-             ! but no cloud at or above this grid level, set precipitation
-             ! fraction to a minimum threshold value.
-             precip_frac(k) = precip_frac_tol
+       if ( any( hydromet(k,:) >= hydromet_tol(:) ) &
+            .and. precip_frac(k) < precip_frac_tol ) then
 
-          elseif ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
+          ! In a scenario where we find any hydrometeor at this grid level, but
+          ! no cloud at or above this grid level, set precipitation fraction to
+          ! a minimum threshold value.
+          precip_frac(k) = precip_frac_tol
 
-             ! The means (overall) of every precipitating hydrometeor are all
-             ! less than their respective tolerance amounts.  They are all
-             ! considered to have values of 0.  There are not any hydrometeor
-             ! species found at this grid level.  There is also no cloud at or
-             ! above this grid level, so set precipitation fraction to 0.
-             precip_frac(k) = zero
+       elseif ( all( hydromet(k,:) < hydromet_tol(:) ) ) then
 
-          endif
+          ! The means (overall) of every precipitating hydrometeor are all less
+          ! than their respective tolerance amounts.  They are all considered to
+          ! have values of 0.  There are not any hydrometeor species found at
+          ! this grid level.  There is also no cloud at or above this grid
+          ! level, so set precipitation fraction to 0.
+          precip_frac(k) = zero
 
-       enddo ! Special checks for overall precip. fraction loop: k = 1, nz, 1
+       endif
 
-    endif ! ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac ) 
+    enddo ! Special checks for overall precipitation fraction loop: k = 1, nz, 1
 
 
     !!! Find precipitation fraction within each PDF component.
