@@ -92,8 +92,10 @@ module setup_clubb_pdf_params
         l_calc_w_corr
 
     use array_index, only: &
-        hydromet_list, &       ! Variable(s)
-        hydromet_tol
+        hydromet_list, & ! Variable(s)
+        hydromet_tol,  &
+        iirrm,         &
+        iiNrm
 
     use model_flags, only: &
         l_const_Nc_in_cloud    ! Flag(s)
@@ -324,6 +326,8 @@ module setup_clubb_pdf_params
 
     logical :: l_corr_array_scaling
 
+    logical :: l_input_hmp2
+
     ! Flags used for covariance clipping of <w'hm'>.
     logical, parameter :: &
       l_first_clip_ts = .true., & ! First instance of clipping in a timestep.
@@ -469,13 +473,28 @@ module setup_clubb_pdf_params
     !<hm'^2>.
     do i = 1, hydromet_dim, 1
 
+       if ( i == iirrm ) then
+          l_input_hmp2 = l_input_rrp2
+       elseif ( i == iiNrm ) then
+          l_input_hmp2 = l_input_Nrp2
+       else ! default
+          l_input_hmp2 = .false.
+       endif
+
        do k = 1, nz, 1
           if ( hydromet(k,i) >= hydromet_tol(i) ) then
              ! There is some of the hydrometeor species found at level k.
-             ! Calculate the variance (overall) of the hydrometeor.
-             hydrometp2_zt(k,i) &
-             = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(k) - one ) &
-               * hydromet(k,i)**2
+             if ( .not. ( l_input_fields .and. l_input_hmp2 ) ) then
+                ! Calculate the variance (overall) of the hydrometeor.
+                hydrometp2_zt(k,i) &
+                = ( ( hmp2_ip_on_hmm2_ip(i) + one ) / precip_frac(k) - one ) &
+                  * hydromet(k,i)**2
+             else ! l_input_fields .and. l_input_hmp2
+               ! The variance (overall) is being brought in by input fields.
+               ! Interpolate to thermodynamic grid levels.
+               hydrometp2_zt(k,i) = max( zm2zt( hydrometp2(:,i), k ), &
+                                         zero_threshold )
+            endif ! .not. ( l_input_fields .and. l_input_hmp2 )
           else
              hydrometp2_zt(k,i) = zero
           endif
