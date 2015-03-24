@@ -114,7 +114,9 @@ module latin_hypercube_driver_module
       compute_mean_binormal
 
     use silhs_importance_sample_module, only: &
-      importance_sampling_driver
+      importance_sampling_driver, &
+      cloud_weighted_sampling_driver, &
+      in_mixt_comp_1
 
     implicit none
 
@@ -1406,39 +1408,6 @@ module latin_hypercube_driver_module
 
     return
   end subroutine latin_hypercube_2D_close
-!-------------------------------------------------------------------------------
-
-!----------------------------------------------------------------------
-  elemental function in_mixt_comp_1( X_u_dp1_element, frac )
-
-! Description:
-!   Determine if we're in mixture component 1
-
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      dp ! Variable(s)
-
-    implicit none
-
-    real(kind=dp), intent(in) :: &
-      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
-      frac               ! The mixture fraction
-
-    logical :: in_mixt_comp_1
-
-    ! ---- Begin Code ----
-
-    if ( X_u_dp1_element < frac ) then
-      in_mixt_comp_1 = .true.
-    else
-      in_mixt_comp_1 = .false.
-    end if
-
-    return
-  end function in_mixt_comp_1
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------

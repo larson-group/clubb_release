@@ -13,7 +13,8 @@ module silhs_importance_sample_module
   private ! Default scope
 
   public :: importance_category_type, importance_sampling_driver, define_importance_categories, &
-            compute_category_real_probs, generate_strat_uniform_variate, pick_sample_categories
+            compute_category_real_probs, generate_strat_uniform_variate, pick_sample_categories, &
+            choose_X_u_reject, in_mixt_comp_1, cloud_weighted_sampling_driver
 
   type importance_category_type
 
@@ -1351,5 +1352,154 @@ module silhs_importance_sample_module
     return
   end subroutine choose_X_u_scaled
 !----------------------------------------------------------------------
+
+!------------------------------------------------------------------------------- 
+  subroutine choose_X_u_reject & 
+             ( l_cloudy_sample, cloud_frac_1, & 
+               cloud_frac_2, mixt_frac, & 
+               X_u_dp1_element, X_u_chi_element ) 
+ 
+  ! Description: 
+	!   Find a clear or cloudy point for sampling using the rejection method. 
+ 	! 
+ 	! References: 
+ 	!   None 
+ 	!------------------------------------------------------------------------------- 
+ 	    use mt95, only: genrand_real3 ! Procedure 
+ 	 
+ 	    use mt95, only: genrand_real ! Constant 
+ 	 
+ 	    use constants_clubb, only: & 
+   	      fstderr ! Constant 
+	 	 
+ 	    use clubb_precision, only: & 
+	 	      core_rknd, & ! Variable(s) 
+	 	      dp 
+	 	 
+ 	    implicit none 
+	 	 
+ 	    ! External 
+ 	    intrinsic :: ceiling 
+ 	 
+ 	    ! Constant parameters 
+ 	    real( kind = core_rknd), parameter :: & 
+ 	      max_iter_numerator = 100._core_rknd, & 
+	      cloud_frac_thresh  = 0.001_core_rknd 
+	 	 
+ 	    ! Input Variables 
+ 	    logical, intent(in) :: & 
+ 	      l_cloudy_sample ! Whether his is a cloudy or clear air sample point 
+ 	 
+ 	    real( kind = core_rknd ), intent(in) :: & 
+ 	      cloud_frac_1, &    ! Cloud fraction associated with mixture component 1     [-] 
+ 	      cloud_frac_2, &    ! Cloud fraction associated with mixture component 2     [-] 
+ 	      mixt_frac         ! Mixture fraction                                       [-] 
+ 	 
+ 	    ! Output Variables 
+ 	    real(kind=dp), intent(out) :: & 
+ 	      X_u_dp1_element, X_u_chi_element ! Elements from X_u (uniform dist.) 
+ 	 
+ 	    ! Local Variables 
+ 	    real(kind=core_rknd) :: cloud_frac_i 
+ 	 
+ 	    real(kind=genrand_real) :: rand ! Random number 
+ 	 
+ 	    ! Maximum iterations searching for the cloudy/clear part of the gridbox 
+ 	    integer :: itermax 
+ 	 
+ 	    integer :: i 
+ 	 
+    	!   integer :: X_mixt_comp_one_lev ! Whether we're in the first or second mixture component 
+ 	 
+ 	    ! ---- Begin code ---- 
+ 	 
+ 	    ! Maximum iterations searching for the cloudy/clear part of the gridbox 
+ 	    ! This should't appear in a parameter statement because it's set based on 
+ 	    ! a floating-point calculation, and apparently that's not ISO Fortran 
+ 	    itermax = ceiling( max_iter_numerator / cloud_frac_thresh ) 
+ 	 
+ 	    ! Find some new random numbers between (0,1) 
+ 	    call genrand_real3( rand ) 
+ 	    X_u_dp1_element      = real(rand, kind = dp) 
+ 	    call genrand_real3( rand ) 
+ 	    X_u_chi_element = real(rand, kind = dp) 
+ 	    ! Here we use the rejection method to find a value in either the 
+ 	    ! clear or cloudy part of the grid box 
+ 	    do i = 1, itermax 
+ 	 
+ 	      if ( in_mixt_comp_1( X_u_dp1_element, real(mixt_frac, kind = dp) ) ) then 
+ 	        ! Component 1 
+ 	        cloud_frac_i = cloud_frac_1 
+ 	!       X_mixt_comp_one_lev = 1 
+ 	      else 
+ 	        ! Component 2 
+ 	        cloud_frac_i = cloud_frac_2 
+ 	!       X_mixt_comp_one_lev = 2 
+ 	      end if 
+ 	 
+ 	      if ( X_u_chi_element >= 1._dp-real(cloud_frac_i, kind = dp) .and. l_cloudy_sample ) then 
+ 	        ! If we're looking for the cloudy part of the grid box, then exit this loop 
+ 	        exit 
+ 	      else if ( X_u_chi_element < ( 1._dp-real(cloud_frac_i, kind = dp) ) & 
+ 	                .and. .not. l_cloudy_sample ) then 
+ 	        ! If we're looking for the clear part of the grid box, then exit this loop 
+ 	        exit 
+ 	      else 
+ 	        ! To prevent infinite loops we have this check here. 
+ 	        ! Theoretically some seed might result in never picking the 
+ 	        ! point we want after many iterations, but it's highly unlikely 
+ 	        ! given that our current itermax is 100 / cloud_frac_thresh. 
+ 	        ! -dschanen 19 March 2010 
+ 	        if ( i == itermax ) then 
+ 	          write(fstderr,*) "Maximum iteration reached in latin_hypercube driver." 
+ 	          stop "Fatal error" 
+ 	        else 
+ 	          ! Find some new test values within the interval (0,1) 
+ 	          call genrand_real3( rand ) 
+ 	          X_u_dp1_element      = real(rand, kind = dp) 
+ 	          call genrand_real3( rand ) 
+ 	          X_u_chi_element = real(rand, kind = dp) 
+ 	        end if 
+ 	      end if ! Looking for a clear or cloudy point 
+ 	 
+ 	    end do ! Loop until we either find what we want or reach itermax 
+ 	 
+ 	    return 
+	 end subroutine choose_X_u_reject 
+!------------------------------------------------------------------------------- 
+
+!----------------------------------------------------------------------
+  elemental function in_mixt_comp_1( X_u_dp1_element, frac )
+
+! Description:
+!   Determine if we're in mixture component 1
+
+! References:
+!   None
+!----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      dp ! Variable(s)
+
+    implicit none
+
+    real(kind=dp), intent(in) :: &
+      X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
+      frac               ! The mixture fraction
+
+    logical :: in_mixt_comp_1
+
+    ! ---- Begin Code ----
+
+    if ( X_u_dp1_element < frac ) then
+      in_mixt_comp_1 = .true.
+    else
+      in_mixt_comp_1 = .false.
+    end if
+
+    return
+  end function in_mixt_comp_1
+!-------------------------------------------------------------------------------
+
 
 end module silhs_importance_sample_module
