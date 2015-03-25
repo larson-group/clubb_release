@@ -163,7 +163,7 @@ def checkNetcdfBudgets(fileName, iteration):
         
     # Find the timestep
     try:
-        timestep = 60 * (ncFile.variables['time'].getValue(numIterations-1) - \
+        timestep = (ncFile.variables['time'].getValue(numIterations-1) - \
                         ncFile.variables['time'].getValue(numIterations-2))
     except StandardError:
         sys.stderr.write("Error parsing timestep\n")
