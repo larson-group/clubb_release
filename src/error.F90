@@ -458,6 +458,21 @@ module error
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use stats_variables, only: &
+      stats_tout
+
+    use stat_file_module, only: &
+      stat_file ! Type(s)
+
+    use input_netcdf, only: &
+      open_netcdf_read ! Procedure(s)
+
+    use clubb_model_settings, only: &
+      day, &
+      month, &
+      year, &
+      time_initial
+
     implicit none
 
     ! External
@@ -517,6 +532,8 @@ module error
 
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
+
+    type (stat_file) :: netcdf_file ! Data file derived type
 
     integer :: i, j, c_run ! looping variables
 
@@ -674,6 +691,35 @@ module error
         stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
           time(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
+
+        ! Verify that the CLUBB and LES runs start at the same time and
+        ! have the same timestep length
+        call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_error);
+        if ( &
+          day /= netcdf_file%day &
+          .or. month /= netcdf_file%month &
+          .or. year /= netcdf_file%year &
+          .or. time_initial /= netcdf_file%time &
+          .or. stats_tout /= netcdf_file%dtwrite ) then
+            write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
+                &or have different stat output intervals. Here are the currently set &
+                &start times and stat output intervals."
+
+            write(*,*) "CLUBB start day: ", day
+            write(*,*) "CLUBB start month: ", month
+            write(*,*) "CLUBB start year: ", year
+            write(*,*) "CLUBB start time: ", time_initial
+            write(*,*) "CLUBB dtwrite: ", stats_tout
+
+            write(*,*) "LES start day: ", netcdf_file%day
+            write(*,*) "LES start month: ", netcdf_file%month
+            write(*,*) "LES start year: ", netcdf_file%year
+            write(*,*) "LES start time: ", netcdf_file%time
+            write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
+
+            stop "Please modify the models so that they start at the same time and &
+              &have the same stat output interval." 
+        end if
 
         if ( l_error ) then
           if( l_save_tuning_run ) then
