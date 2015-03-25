@@ -127,7 +127,7 @@ module latin_hypercube_driver_module
     logical, parameter :: &
       l_lh_new_importance_sampling  = .true. ! Use the new importance sampling method
                                              ! that places a user prescribed percentage
-                                             ! of points in each category
+                                             ! of points in each category.
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
