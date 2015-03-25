@@ -5,7 +5,7 @@ f_tol               = 1.0,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .false.,
-t_variables         = "wprtp_zt", "WPRTP", "wpthlp_zt", "WPTHLP"
+t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3" 
 weight_var_nl       = 1.0,
 anneal_temp         = 100.,
 anneal_iter         = 100,
@@ -18,17 +18,17 @@ tune_type           = 0
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
-! time_nl is the time interval(s) to tune for, in ordered pair form.
+! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
 ! RICO
-hoc_stats_file_nl(1) = "../output/rico_zt.ctl"
-les_stats_file_nl(1) = "../les_data/RICO_128x128x100_drizzle.nc"
-run_file_nl(1)       = "rico_hoc.in"
-z_i_nl(1)            = 2
-z_f_nl(1)            = 33
-time_nl(1,:)         = 4201, 4320
-weight_case_nl(1)    = 1.0
+hoc_stats_file_nl(1)    = "../output/rico_zt.ctl"
+les_stats_file_nl(1)    = "../les_data/RICO_128x128x100_drizzle.nc"
+run_file_nl(1)          = "rico_hoc.in"
+z_i_nl(1)               = 2
+z_f_nl(1)               = 33
+timestep_intvls_nl(1,:) = 4201, 4320
+weight_case_nl(1)       = 1.0
 /
 
 &initspread

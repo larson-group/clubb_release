@@ -17,98 +17,98 @@ tune_type         = 0
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
-! time_nl is the time interval(s) to tune for, in ordered pair form.
+! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
 !  GCSS BOMEX
-hoc_stats_file_nl(1) = "../output/bomex_zt.ctl"
-les_stats_file_nl(1) = "../les_data/bomex_coamps_sm.ctl"
-run_file_nl(1)       = "bomex_hoc.in"
-z_i_nl(1)            = 3
-z_f_nl(1)            = 73
-time_nl(1,:)         = 120, 240
-weight_case_nl(1)    = 1.0
+hoc_stats_file_nl(1)    = "../output/bomex_zt.ctl"
+les_stats_file_nl(1)    = "../les_data/bomex_coamps_sm.ctl"
+run_file_nl(1)          = "bomex_hoc.in"
+z_i_nl(1)               = 3
+z_f_nl(1)               = 73
+timestep_intvls_nl(1,:) = 120, 240
+weight_case_nl(1)       = 1.0
 
 ! GCSS FIRE
-hoc_stats_file_nl(2) = "../output/fire_zt.ctl"
-les_stats_file_nl(2) = "../les_data/fire_coamps_sm.ctl"
-run_file_nl(2)       = "fire_hoc.in"
-z_i_nl(2)            = 2
-z_f_nl(2)            = 48
-time_nl(2,:)         = 60, 180
-weight_case_nl(2)    = 1.0
+hoc_stats_file_nl(2)    = "../output/fire_zt.ctl"
+les_stats_file_nl(2)    = "../les_data/fire_coamps_sm.ctl"
+run_file_nl(2)          = "fire_hoc.in"
+z_i_nl(2)               = 2
+z_f_nl(2)               = 48
+timestep_intvls_nl(2,:) = 60, 180
+weight_case_nl(2)       = 1.0
 
 ! GCSS ARM
-hoc_stats_file_nl(3) = "../output/arm_zt.ctl"
-les_stats_file_nl(3) = "../les_data/arm_coamps_sm.ctl"
-run_file_nl(3)       = "arm_hoc.in"
-z_i_nl(3)            = 2
-z_f_nl(3)            = 109
-time_nl(3,:)         = 450, 510
-weight_case_nl(3)    = 1.0
+hoc_stats_file_nl(3)    = "../output/arm_zt.ctl"
+les_stats_file_nl(3)    = "../les_data/arm_coamps_sm.ctl"
+run_file_nl(3)          = "arm_hoc.in"
+z_i_nl(3)               = 2
+z_f_nl(3)               = 109
+timestep_intvls_nl(3,:) = 450, 510
+weight_case_nl(3)       = 1.0
 
 ! GCSS ATEX
-hoc_stats_file_nl(4) = "../output/atex_zt.ctl"
-les_stats_file_nl(4) = "../les_data/atex_coamps_sm.ctl"
-run_file_nl(4)       = "atex_hoc.in"
-z_i_nl(4)            = 2
-z_f_nl(4)            = 149
-time_nl(4,:)         = 360, 480
-weight_case_nl(4)    = 1.0
+hoc_stats_file_nl(4)    = "../output/atex_zt.ctl"
+les_stats_file_nl(4)    = "../les_data/atex_coamps_sm.ctl"
+run_file_nl(4)          = "atex_hoc.in"
+z_i_nl(4)               = 2
+z_f_nl(4)               = 149
+timestep_intvls_nl(4,:) = 360, 480
+weight_case_nl(4)       = 1.0
 
 ! GCSS DYCOMS2 RF01
-hoc_stats_file_nl(5) = "../output/dycoms2_rf01_zt.ctl"
-les_stats_file_nl(5) = "../les_data/dycoms2_rf01_coamps_sm.ctl"
-run_file_nl(5)       = "dycoms2_rf01_hoc.in"
-z_i_nl(5)            = 3
-z_f_nl(5)            = 130
-time_nl(5,:)         = 120, 240
-weight_case_nl(5)    = 1.0
+hoc_stats_file_nl(5)    = "../output/dycoms2_rf01_zt.ctl"
+les_stats_file_nl(5)    = "../les_data/dycoms2_rf01_coamps_sm.ctl"
+run_file_nl(5)          = "dycoms2_rf01_hoc.in"
+z_i_nl(5)               = 3
+z_f_nl(5)               = 130
+timestep_intvls_nl(5,:) = 120, 240
+weight_case_nl(5)       = 1.0
 
 ! GCSS DYCOMS II RF02 DO
-hoc_stats_file_nl(6) = "../output/dycoms2_rf02_do_zt.ctl"
-les_stats_file_nl(6) = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
-run_file_nl(6)       = "dycoms2_rf02_do_hoc.in"
-z_i_nl(6)            = 2
-z_f_nl(6)            = 147
-time_nl(6,:)         = 120, 360
-weight_case_nl(6)    = 1.0
+hoc_stats_file_nl(6)    = "../output/dycoms2_rf02_do_zt.ctl"
+les_stats_file_nl(6)    = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
+run_file_nl(6)          = "dycoms2_rf02_do_hoc.in"
+z_i_nl(6)               = 2
+z_f_nl(6)               = 147
+timestep_intvls_nl(6,:) = 120, 360
+weight_case_nl(6)       = 1.0
 
 ! GCSS DYCOMS II RF02 DS
-hoc_stats_file_nl(7) = "../output/dycoms2_rf02_ds_zt.ctl"
-les_stats_file_nl(7) = "../les_data/dycoms2_rf02_ds_coamps_sm.ctl"
-run_file_nl(7)       = "dycoms2_rf02_ds_hoc.in"
-z_i_nl(7)            = 2
-z_f_nl(7)            = 147
-time_nl(7,:)         = 120, 360
-weight_case_nl(7)    = 1.0
+hoc_stats_file_nl(7)    = "../output/dycoms2_rf02_ds_zt.ctl"
+les_stats_file_nl(7)    = "../les_data/dycoms2_rf02_ds_coamps_sm.ctl"
+run_file_nl(7)          = "dycoms2_rf02_ds_hoc.in"
+z_i_nl(7)               = 2
+z_f_nl(7)               = 147
+timestep_intvls_nl(7,:) = 120, 360
+weight_case_nl(7)       = 1.0
 
 ! GCSS DYCOMS II RF02 ND
-hoc_stats_file_nl(8) = "../output/dycoms2_rf02_nd_zt.ctl"
-les_stats_file_nl(8) = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
-run_file_nl(8)       = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(8)            = 2
-z_f_nl(8)            = 37
-time_nl(8,:)         = 120, 360
-weight_case_nl(8)    = 1.0
+hoc_stats_file_nl(8)    = "../output/dycoms2_rf02_nd_zt.ctl"
+les_stats_file_nl(8)    = "../les_data/dycoms2_rf02_nd_coamps_sm.ctl"
+run_file_nl(8)          = "dycoms2_rf02_nd_hoc.in"
+z_i_nl(8)               = 2
+z_f_nl(8)               = 37
+timestep_intvls_nl(8,:) = 120, 360
+weight_case_nl(8)       = 1.0
 
 ! Wangara Day 33      ! Throws an error when tuning cloud_frac (all 0s)
-hoc_stats_file_nl(9) = "../output/wangara_zt.ctl"
-les_stats_file_nl(9) = "../les_data/wangara_rams.ctl"
-run_file_nl(9)       = "wangara_hoc.in"
-z_i_nl(9)            = 1
-z_f_nl(9)            = 50
-time_nl(9,:)         = 60, 97
-weight_case_nl(9)    = 1.0
+hoc_stats_file_nl(9)    = "../output/wangara_zt.ctl"
+les_stats_file_nl(9)    = "../les_data/wangara_rams.ctl"
+run_file_nl(9)          = "wangara_hoc.in"
+z_i_nl(9)               = 1
+z_f_nl(9)               = 50
+timestep_intvls_nl(9,:) = 60, 97
+weight_case_nl(9)       = 1.0
 
 ! Nov 11 Altocumulus
-!hoc_stats_file_nl(10) = "../output/nov11_altocu_zt.ctl"
-!les_stats_file_nl(10) = "../les_data/nov11_altocu_coamps_sm.ctl"
-!run_file_nl(10)       = "nov11_altocu_hoc.in"
-!z_i_nl(10)            = 48
-!z_f_nl(10)            = 143
-!time_nl(10,:)         = 120, 240
-!weight_case_nl(10)    = 1.0
+!hoc_stats_file_nl(10)    = "../output/nov11_altocu_zt.ctl"
+!les_stats_file_nl(10)    = "../les_data/nov11_altocu_coamps_sm.ctl"
+!run_file_nl(10)          = "nov11_altocu_hoc.in"
+!z_i_nl(10)               = 48
+!z_f_nl(10)               = 143
+!timestep_intvls_nl(10,:) = 120, 240
+!weight_case_nl(10)       = 1.0
 
 ! An additional 3 runs can be specified without modifying error.F90
 ! e.g.

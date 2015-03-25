@@ -97,7 +97,7 @@ z_f_nl | integer array
  reside on the CLUBB grid.  The LES variable will be iterpolated to the CLUBB grid
  to compute the difference between the two.
 
-time_nl | integer array
+timestep_intvls_nl | integer array
  Specifies the time periods to average over in ordered pairs.
 
 weight_case_nl | real array, default precision
