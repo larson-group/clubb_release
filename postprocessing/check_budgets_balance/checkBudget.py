@@ -1,4 +1,4 @@
-#! /home/vondeylenc/VirtualEnvironment/bin/python
+#!/home/betlej/Enthought/Canopy_64bit/User/bin/python
 # Author: Cavyn VonDeylen
 # Date: September 2010
 # Larson-Group UWM
@@ -163,8 +163,15 @@ def checkNetcdfBudgets(fileName, iteration):
         
     # Find the timestep
     try:
-        timestep = (ncFile.variables['time'].getValue(numIterations-1) - \
+        if "seconds" in ncFile.variables['time'].units.lower():
+            timestep = (ncFile.variables['time'].getValue(numIterations-1) - \
                         ncFile.variables['time'].getValue(numIterations-2))
+        elif "minutes" in ncFile.variables['time'].units.lower():
+           timestep = 60 * (ncFile.variables['time'].getValue(numIterations-1) - \
+                            ncFile.variables['time'].getValue(numIterations-2))
+        else:
+            sys.stderr.write("Invalid units for timestep\n")
+            sys.exit(1)
     except StandardError:
         sys.stderr.write("Error parsing timestep\n")
         sys.exit(1)
