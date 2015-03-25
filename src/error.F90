@@ -210,6 +210,8 @@ module error
     !-----------------------------------------------------------------------
 
     ! Namelist vars for determining which variable to tune for:
+    ! F95 does not allow allocatable arrays in namelists. These variables are used
+    ! for reading the error file, then assigned to their non-namelist equivalents below.
 
     !  time_nl:   Order pairs of time intervals to analyze
     !  z_i_nl:    initial z-level to begin reading in for tuning
