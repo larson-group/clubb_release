@@ -22,8 +22,8 @@ module KK_upscaled_turbulent_sed
   contains
 
   !=============================================================================
-  subroutine KK_sed_vel_covars( rrm, rr1, rr2, Nrm, &
-                                Nr1, Nr2, KK_mean_vol_rad, &
+  subroutine KK_sed_vel_covars( rrm, rr_1, rr_2, Nrm, &
+                                Nr_1, Nr_2, KK_mean_vol_rad, &
                                 mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
                                 mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
                                 sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
@@ -82,11 +82,11 @@ module KK_upscaled_turbulent_sed
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       rrm,             & ! Mean rain water mixing ratio (overall)        [kg/kg]
-      rr1,             & ! Mean rain water mixing ratio (1st PDF comp.)  [kg/kg]
-      rr2,             & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
+      rr_1,            & ! Mean rain water mixing ratio (1st PDF comp.)  [kg/kg]
+      rr_2,            & ! Mean rain water mixing ratio (2nd PDF comp.)  [kg/kg]
       Nrm,             & ! Mean rain drop concentration (overall)       [num/kg]
-      Nr1,             & ! Mean rain drop concentration (1st PDF comp.) [num/kg]
-      Nr2,             & ! Mean rain drop concentration (2nd PDF comp.) [num/kg]
+      Nr_1,            & ! Mean rain drop concentration (1st PDF comp.) [num/kg]
+      Nr_2,            & ! Mean rain drop concentration (2nd PDF comp.) [num/kg]
       KK_mean_vol_rad, & ! KK mean volume radius of rain drops               [m]
       mu_rr_1,         & ! Mean of rr (1st PDF component) in-precip (ip) [kg/kg]
       mu_rr_2,         & ! Mean of rr (2nd PDF component) ip             [kg/kg]
@@ -155,7 +155,7 @@ module KK_upscaled_turbulent_sed
                                 corr_rr_Nr_2_n, KK_mean_vol_rad, KK_mvr_coef )
 
        rr_KK_mvr_covar_termB  &
-       = covar_rr_KK_mvr_termB( rr1, rr2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+       = covar_rr_KK_mvr_termB( rr_1, rr_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                                 mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                 mu_Nr_2_n, sigma_rr_1, sigma_rr_2, &
                                 sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
@@ -198,7 +198,7 @@ module KK_upscaled_turbulent_sed
                                 corr_rr_Nr_2_n, KK_mean_vol_rad, KK_mvr_coef )
 
        Nr_KK_mvr_covar_termB  &
-       = covar_Nr_KK_mvr_termB( Nr1, Nr2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+       = covar_Nr_KK_mvr_termB( Nr_1, Nr_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                                 mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                 mu_Nr_2_n, sigma_rr_1, sigma_rr_2,  &
                                 sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
@@ -305,7 +305,7 @@ module KK_upscaled_turbulent_sed
     ! < r_r > = a f_p(1) exp{ mu_rr_1_n + (1/2) sigma_rr_1_n^2 }
     !           + ( 1 - a ) f_p(2) exp{ mu_rr_2_n + (1/2) sigma_rr_2_n^2 }
     !         = a f_p(1) mu_rr_1 + ( 1 - a ) f_p(2) mu_rr_2
-    !         = a rr1 + ( 1 - a ) rr2;
+    !         = a rr_1 + ( 1 - a ) rr_2;
     !
     ! the covariance < r_r'R_vr' > can be rewritten in terms of < r_r >:
     !
@@ -322,12 +322,12 @@ module KK_upscaled_turbulent_sed
     !     )
     !     - < R_vr > ) < r_r >
     !   - KK_mvr_coef
-    !     ( a rr1
+    !     ( a rr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_2_n^2 beta^2
     !            + corr_rr_Nr_2_n sigma_rr_2_n ( alpha + 1 ) sigma_Nr_2_n beta }
-    !     + ( 1 - a ) rr2
+    !     + ( 1 - a ) rr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_1_n^2 beta^2
@@ -443,7 +443,7 @@ module KK_upscaled_turbulent_sed
   end function covar_rr_KK_mvr_coefA
 
   !=============================================================================
-  function covar_rr_KK_mvr_termB( rr1, rr2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+  function covar_rr_KK_mvr_termB( rr_1, rr_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                                   mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                   mu_Nr_2_n, sigma_rr_1, sigma_rr_2, &
                                   sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
@@ -482,7 +482,7 @@ module KK_upscaled_turbulent_sed
     ! < r_r > = a f_p(1) exp{ mu_rr_1_n + (1/2) sigma_rr_1_n^2 }
     !           + ( 1 - a ) f_p(2) exp{ mu_rr_2_n + (1/2) sigma_rr_2_n^2 }
     !         = a f_p(1) mu_rr_1 + ( 1 - a ) f_p(2) mu_rr_2
-    !         = a rr1 + ( 1 - a ) rr2;
+    !         = a rr_1 + ( 1 - a ) rr_2;
     !
     ! the covariance < r_r'R_vr' > can be rewritten in terms of < r_r >:
     !
@@ -499,12 +499,12 @@ module KK_upscaled_turbulent_sed
     !     )
     !     - < R_vr > ) < r_r >
     !   - KK_mvr_coef
-    !     ( a rr1
+    !     ( a rr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_2_n^2 beta^2
     !            + corr_rr_Nr_2_n sigma_rr_2_n ( alpha + 1 ) sigma_Nr_2_n beta }
-    !     + ( 1 - a ) rr2
+    !     + ( 1 - a ) rr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_1_n^2 beta^2
@@ -515,12 +515,12 @@ module KK_upscaled_turbulent_sed
     !
     ! term_B
     ! = - KK_mvr_coef
-    !     ( a rr1
+    !     ( a rr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_2_n^2 beta^2
     !            + corr_rr_Nr_2_n sigma_rr_2_n ( alpha + 1 ) sigma_Nr_2_n beta }
-    !     + ( 1 - a ) rr2
+    !     + ( 1 - a ) rr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_1_n^2 beta^2
@@ -555,8 +555,8 @@ module KK_upscaled_turbulent_sed
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      rr1,            & ! Mean rain water mixing ratio (1st PDF comp.)   [kg/kg]
-      rr2,            & ! Mean rain water mixing ratio (2nd PDF comp.)   [kg/kg]
+      rr_1,           & ! Mean rain water mixing ratio (1st PDF comp.)   [kg/kg]
+      rr_2,           & ! Mean rain water mixing ratio (2nd PDF comp.)   [kg/kg]
       mu_rr_1,        & ! Mean of rr (1st PDF component) in-precip (ip)  [kg/kg]
       mu_rr_2,        & ! Mean of rr (2nd PDF component) ip              [kg/kg]
       mu_Nr_1,        & ! Mean of Nr (1st PDF component) ip             [num/kg]
@@ -597,12 +597,12 @@ module KK_upscaled_turbulent_sed
     !
     ! term_B
     ! = - KK_mvr_coef
-    !     ( a rr1
+    !     ( a rr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_2_n^2 beta^2
     !            + corr_rr_Nr_2_n sigma_rr_2_n ( alpha + 1 ) sigma_Nr_2_n beta }
-    !     + ( 1 - a ) rr2
+    !     + ( 1 - a ) rr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 ( alpha^2 + 2 alpha )
     !            + (1/2) sigma_Nr_1_n^2 beta^2
@@ -610,12 +610,12 @@ module KK_upscaled_turbulent_sed
     !     ).
     covar_rr_KK_mvr_termB  &
     = - KK_mvr_coef &
-        * ( mixt_frac * rr1 &
+        * ( mixt_frac * rr_1 &
             * bivar_LL_covar_partial_rr( mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                          mu_Nr_2_n, sigma_rr_2, sigma_Nr_2, &
                                          sigma_rr_2_n, sigma_Nr_2_n, &
                                          corr_rr_Nr_2_n, alpha_exp, beta_exp ) &
-          + ( one - mixt_frac ) * rr2 &
+          + ( one - mixt_frac ) * rr_2 &
             * bivar_LL_covar_partial_rr( mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                          mu_Nr_1_n, sigma_rr_1, sigma_Nr_1, &
                                          sigma_rr_1_n, sigma_Nr_1_n, &
@@ -783,7 +783,7 @@ module KK_upscaled_turbulent_sed
     ! < N_r > = a f_p(1) exp{ mu_Nr_1_n + (1/2) sigma_Nr_1_n^2 }
     !           + ( 1 - a ) f_p(2) exp{ mu_Nr_2_n + (1/2) sigma_Nr_2_n^2 }
     !         = a f_p(1) mu_Nr_1 + ( 1 - a ) f_p(2) mu_Nr_2
-    !         = a Nr1 + ( 1 - a ) Nr2;
+    !         = a Nr_1 + ( 1 - a ) Nr_2;
     !
     ! the covariance < N_r'R_vr' > can be rewritten in terms of < N_r >:
     !
@@ -800,12 +800,12 @@ module KK_upscaled_turbulent_sed
     !     )
     !     - < R_vr > ) < N_r >
     !   - KK_mvr_coef
-    !     ( a Nr1
+    !     ( a Nr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 alpha^2
     !            + (1/2) sigma_Nr_2_n^2 ( beta^2 + 2 beta )
     !            + corr_rr_Nr_2_n sigma_rr_2_n alpha sigma_Nr_2_n ( beta + 1 ) }
-    !     + ( 1 - a ) Nr2
+    !     + ( 1 - a ) Nr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 alpha^2
     !            + (1/2) sigma_Nr_1_n^2 ( beta^2 + 2 beta )
@@ -921,7 +921,7 @@ module KK_upscaled_turbulent_sed
   end function covar_Nr_KK_mvr_coefA
 
   !=============================================================================
-  function covar_Nr_KK_mvr_termB( Nr1, Nr2, mu_rr_1, mu_rr_2, mu_Nr_1, &
+  function covar_Nr_KK_mvr_termB( Nr_1, Nr_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
                                   mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
                                   mu_Nr_2_n, sigma_rr_1, sigma_rr_2,  &
                                   sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
@@ -960,7 +960,7 @@ module KK_upscaled_turbulent_sed
     ! < N_r > = a f_p(1) exp{ mu_Nr_1_n + (1/2) sigma_Nr_1_n^2 }
     !           + ( 1 - a ) f_p(2) exp{ mu_Nr_2_n + (1/2) sigma_Nr_2_n^2 }
     !         = a f_p(1) mu_Nr_1 + ( 1 - a ) f_p(2) mu_Nr_2
-    !         = a Nr1 + ( 1 - a ) Nr2;
+    !         = a Nr_1 + ( 1 - a ) Nr_2;
     !
     ! the covariance < N_r'R_vr' > can be rewritten in terms of < N_r >:
     !
@@ -977,12 +977,12 @@ module KK_upscaled_turbulent_sed
     !     )
     !     - < R_vr > ) < N_r >
     !   - KK_mvr_coef
-    !     ( a Nr1
+    !     ( a Nr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 alpha^2
     !            + (1/2) sigma_Nr_2_n^2 ( beta^2 + 2 beta )
     !            + corr_rr_Nr_2_n sigma_rr_2_n alpha sigma_Nr_2_n ( beta + 1 ) }
-    !     + ( 1 - a ) Nr2
+    !     + ( 1 - a ) Nr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 alpha^2
     !            + (1/2) sigma_Nr_1_n^2 ( beta^2 + 2 beta )
@@ -993,12 +993,12 @@ module KK_upscaled_turbulent_sed
     !
     ! term_B
     ! = - KK_mvr_coef
-    !     ( a Nr1
+    !     ( a Nr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 alpha^2
     !            + (1/2) sigma_Nr_2_n^2 ( beta^2 + 2 beta )
     !            + corr_rr_Nr_2_n sigma_rr_2_n alpha sigma_Nr_2_n ( beta + 1 ) }
-    !     + ( 1 - a ) Nr2
+    !     + ( 1 - a ) Nr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 alpha^2
     !            + (1/2) sigma_Nr_1_n^2 ( beta^2 + 2 beta )
@@ -1033,8 +1033,8 @@ module KK_upscaled_turbulent_sed
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Nr1,            & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
-      Nr2,            & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
+      Nr_1,           & ! Mean rain drop concentration (1st PDF comp.)  [num/kg]
+      Nr_2,           & ! Mean rain drop concentration (2nd PDF comp.)  [num/kg]
       mu_rr_1,        & ! Mean of rr (1st PDF component) in-precip (ip)  [kg/kg]
       mu_rr_2,        & ! Mean of rr (2nd PDF component) ip              [kg/kg]
       mu_Nr_1,        & ! Mean of Nr (1st PDF component) ip             [num/kg]
@@ -1075,12 +1075,12 @@ module KK_upscaled_turbulent_sed
     !
     ! term_B
     ! = - KK_mvr_coef
-    !     ( a Nr1
+    !     ( a Nr_1
     !       exp{ mu_rr_2_n alpha + mu_Nr_2_n beta
     !            + (1/2) sigma_rr_2_n^2 alpha^2
     !            + (1/2) sigma_Nr_2_n^2 ( beta^2 + 2 beta )
     !            + corr_rr_Nr_2_n sigma_rr_2_n alpha sigma_Nr_2_n ( beta + 1 ) }
-    !     + ( 1 - a ) Nr2
+    !     + ( 1 - a ) Nr_2
     !       exp{ mu_rr_1_n alpha + mu_Nr_1_n beta
     !            + (1/2) sigma_rr_1_n^2 alpha^2
     !            + (1/2) sigma_Nr_1_n^2 ( beta^2 + 2 beta )
@@ -1088,12 +1088,12 @@ module KK_upscaled_turbulent_sed
     !     ).
     covar_Nr_KK_mvr_termB  &
     = - KK_mvr_coef &
-        * ( mixt_frac * Nr1 &
+        * ( mixt_frac * Nr_1 &
             * bivar_LL_covar_partial_Nr( mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                          mu_Nr_2_n, sigma_rr_2, sigma_Nr_2, &
                                          sigma_rr_2_n, sigma_Nr_2_n, &
                                          corr_rr_Nr_2_n, alpha_exp, beta_exp ) &
-          + ( one - mixt_frac ) * Nr2 &
+          + ( one - mixt_frac ) * Nr_2 &
             * bivar_LL_covar_partial_Nr( mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                          mu_Nr_1_n, sigma_rr_1, sigma_Nr_1, &
                                          sigma_rr_1_n, sigma_Nr_1_n, &

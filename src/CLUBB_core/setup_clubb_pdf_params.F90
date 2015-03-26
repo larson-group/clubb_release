@@ -250,8 +250,8 @@ module setup_clubb_pdf_params
       wpNcnp_zt    ! Covariance of N_cn and w on t-levs          [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
-      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
-      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)    [units vary]
+      hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)   [units vary]
+      hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)   [units vary]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hydrometp2_zt,  & ! Variance of a hydrometeor (overall); t-lev   [units^2]
@@ -554,14 +554,14 @@ module setup_clubb_pdf_params
                                 pdf_params(k), d_variables,         & ! Intent(in)
                                 mu_x_1, mu_x_2,                     & ! Intent(out)
                                 sigma_x_1, sigma_x_2,               & ! Intent(out)
-                                hm1(k,:), hm2(k,:),                 & ! Intent(out)
+                                hm_1(k,:), hm_2(k,:),               & ! Intent(out)
                                 sigma2_on_mu2_ip_1,                 & ! Intent(out)
                                 sigma2_on_mu2_ip_2                  ) ! Intent(out)
 
        !!! Transform the component means and standard deviations involving
        !!! precipitating hydrometeors (hm in-precip) and N_cn -- ln hm and
        !!! ln N_cn -- to normal space for each PDF component.
-       call norm_transform_mean_stdev( hm1(k,:), hm2(k,:), &
+       call norm_transform_mean_stdev( hm_1(k,:), hm_2(k,:), &
                                        Ncnm(k), d_variables, &
                                        mu_x_1, mu_x_2, &
                                        sigma_x_1, sigma_x_2, &
@@ -620,7 +620,7 @@ module setup_clubb_pdf_params
                                    corr_array_1, corr_array_2 )
 
        !!! Statistics for standard PDF parameters involving hydrometeors.
-       call pdf_param_hm_stats( d_variables, k, hm1(k,:), hm2(k,:), &
+       call pdf_param_hm_stats( d_variables, k, hm_1(k,:), hm_2(k,:), &
                                 mu_x_1, mu_x_2, &
                                 sigma_x_1, sigma_x_2, &
                                 corr_array_1, corr_array_2, &
@@ -633,7 +633,7 @@ module setup_clubb_pdf_params
                                    corr_array_2_n(:,:,k), l_stats_samp )
 
        !!! Pack the PDF parameters
-       call pack_pdf_params( hm1(k,:), hm2(k,:), d_variables, &            ! In
+       call pack_pdf_params( hm_1(k,:), hm_2(k,:), d_variables, &          ! In
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! In
                              corr_array_1, corr_array_2, precip_frac(k), & ! In
                              precip_frac_1(k), precip_frac_2(k), &         ! In
@@ -2390,7 +2390,7 @@ module setup_clubb_pdf_params
   end function component_corr_eta_hm_n_ip
 
   !=============================================================================
-  subroutine norm_transform_mean_stdev( hm1, hm2, &
+  subroutine norm_transform_mean_stdev( hm_1, hm_2, &
                                         Ncnm, d_variables, &
                                         mu_x_1, mu_x_2, &
                                         sigma_x_1, sigma_x_2, &
@@ -2438,8 +2438,8 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)    [units vary]
-      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)    [units vary]
+      hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)   [units vary]
+      hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)   [units vary]
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >               [num/kg]
@@ -2541,7 +2541,7 @@ module setup_clubb_pdf_params
 
        ! Normal space mean of a precipitating hydrometeor, hm, in PDF
        ! component 1.
-       if ( hm1(pdf2hydromet_idx(ivar)) &
+       if ( hm_1(pdf2hydromet_idx(ivar)) &
             >= hydromet_tol(pdf2hydromet_idx(ivar)) ) then
 
           mu_x_1_n(ivar) = mean_L2N( mu_x_1(ivar), sigma2_on_mu2_ip_1(ivar) )
@@ -2565,7 +2565,7 @@ module setup_clubb_pdf_params
 
        ! Normal space mean of a precipitating hydrometeor, hm, in PDF
        ! component 2.
-       if ( hm2(pdf2hydromet_idx(ivar)) &
+       if ( hm_2(pdf2hydromet_idx(ivar)) &
             >= hydromet_tol(pdf2hydromet_idx(ivar)) ) then
 
           mu_x_2_n(ivar) = mean_L2N( mu_x_2(ivar), sigma2_on_mu2_ip_2(ivar) )
@@ -3052,8 +3052,8 @@ module setup_clubb_pdf_params
         stat_update_var_pt  ! Procedure(s)
 
     use stats_variables, only : &
-        ihm1,         & ! Variable(s)
-        ihm2,         &
+        ihm_1,        & ! Variable(s)
+        ihm_2,        &
         imu_hm_1,     &
         imu_hm_2,     &
         imu_Ncn_1,    &
@@ -3124,14 +3124,14 @@ module setup_clubb_pdf_params
 
        do ivar = 1, hydromet_dim, 1
 
-          if ( ihm1(ivar) > 0 ) then
+          if ( ihm_1(ivar) > 0 ) then
              ! Mean of the precipitating hydrometeor in PDF component 1.
-             call stat_update_var_pt( ihm1(ivar), level, hm_1(ivar), stats_zt )
+             call stat_update_var_pt( ihm_1(ivar), level, hm_1(ivar), stats_zt )
           endif
 
-          if ( ihm2(ivar) > 0 ) then
+          if ( ihm_2(ivar) > 0 ) then
              ! Mean of the precipitating hydrometeor in PDF component 2.
-             call stat_update_var_pt( ihm2(ivar), level, hm_2(ivar), stats_zt )
+             call stat_update_var_pt( ihm_2(ivar), level, hm_2(ivar), stats_zt )
           endif
 
        enddo ! ivar = 1, hydromet_dim, 1
@@ -3505,7 +3505,7 @@ module setup_clubb_pdf_params
                 call stat_update_var_pt( imu_hm_1_n(pdf2hydromet_idx(ivar)), &
                                          level, mu_x_1_n(ivar), stats_zt )
              else
-                ! When hm1 is 0 (or below tolerance value), mu_hm_1_n is -inf,
+                ! When hm_1 is 0 (or below tolerance value), mu_hm_1_n is -inf,
                 ! and is set to -huge for the default CLUBB kind.  Some
                 ! compilers have issues outputting to stats files (in single
                 ! precision) when the default CLUBB kind is in double precision.
@@ -3523,7 +3523,7 @@ module setup_clubb_pdf_params
                 call stat_update_var_pt( imu_hm_2_n(pdf2hydromet_idx(ivar)), &
                                          level, mu_x_2_n(ivar), stats_zt )
              else
-                ! When hm2 is 0 (or below tolerance value), mu_hm_2_n is -inf,
+                ! When hm_2 is 0 (or below tolerance value), mu_hm_2_n is -inf,
                 ! and is set to -huge for the default CLUBB kind.  Some
                 ! compilers have issues outputting to stats files (in single
                 ! precision) when the default CLUBB kind is in double precision.
@@ -3747,7 +3747,7 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_ln_hm_stats
 
   !=============================================================================
-  subroutine pack_pdf_params( hm1, hm2, d_variables, &                   ! In
+  subroutine pack_pdf_params( hm_1, hm_2, d_variables, &                 ! In
                               mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &    ! In
                               corr_array_1, corr_array_2, precip_frac, & ! In
                               precip_frac_1, precip_frac_2, &            ! In
@@ -3785,8 +3785,8 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-      hm1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
-      hm2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
+      hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)  [units vary]
+      hm_2    ! Mean of a precip. hydrometeor (2nd PDF component)  [units vary]
 
     integer, intent(in) :: &
       d_variables    ! Number of variables in the mean/stdev arrays
@@ -3819,9 +3819,9 @@ module setup_clubb_pdf_params
     do ivar = 1, hydromet_dim, 1
 
        ! Mean of a hydrometeor (overall) in the 1st PDF component.
-       hydromet_pdf_params%hm1(ivar) = hm1(ivar)
+       hydromet_pdf_params%hm_1(ivar) = hm_1(ivar)
        ! Mean of a hydrometeor (overall) in the 2nd PDF component.
-       hydromet_pdf_params%hm2(ivar) = hm2(ivar)
+       hydromet_pdf_params%hm_2(ivar) = hm_2(ivar)
 
        ! Mean of a hydrometeor (in-precip) in the 1st PDF component.
        hydromet_pdf_params%mu_hm_1(ivar) = mu_x_1(hydromet2pdf_idx(ivar))

@@ -1506,8 +1506,8 @@ contains
       clip_wphydrometp    ! Variables(s)
 
     use stats_variables, only: &
-      ihm1,           & ! Variable(s)
-      ihm2,           &
+      ihm_1,          & ! Variable(s)
+      ihm_2,          &
       iprecip_frac,   &
       iprecip_frac_1, &
       iprecip_frac_2, &
@@ -1554,24 +1554,24 @@ contains
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
-      intent(out) :: &
-      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
-      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
-
     real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
-      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+      intent(out) :: &
+      corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
+      corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
+
+    type(hydromet_pdf_parameter), dimension(nz), intent(out) :: &
+      hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     call setup_pdf_parameters( &
       nz, d_variables, dt, &                      ! Intent(in)

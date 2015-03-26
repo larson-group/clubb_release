@@ -1920,10 +1920,10 @@ module KK_microphys_module
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr_1          = hydromet_pdf_params%hm1(iirrm)
-    rr_2          = hydromet_pdf_params%hm2(iirrm)
-    Nr_1          = hydromet_pdf_params%hm1(iiNrm)
-    Nr_2          = hydromet_pdf_params%hm2(iiNrm)
+    rr_1          = hydromet_pdf_params%hm_1(iirrm)
+    rr_2          = hydromet_pdf_params%hm_2(iirrm)
+    Nr_1          = hydromet_pdf_params%hm_1(iiNrm)
+    Nr_2          = hydromet_pdf_params%hm_2(iiNrm)
     precip_frac   = hydromet_pdf_params%precip_frac
     precip_frac_1 = hydromet_pdf_params%precip_frac_1
     precip_frac_2 = hydromet_pdf_params%precip_frac_2

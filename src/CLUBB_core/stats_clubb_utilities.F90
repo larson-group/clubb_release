@@ -430,9 +430,9 @@ module stats_clubb_utilities
     end do
     ntot = ivar - 1
 
-    if ( any( vars_zt == "hmi" ) ) then
-       ! Correct for number of variables found under "hmi".
-       ! Subtract "hmi" from the number of zt statistical variables.
+    if ( any( vars_zt == "hm_i" ) ) then
+       ! Correct for number of variables found under "hm_i".
+       ! Subtract "hm_i" from the number of zt statistical variables.
        ntot = ntot - 1
        ! Add 2 (1st PDF component and 2nd PDF component) for each hydrometeor
        ! to the number of zt statistical variables.
@@ -2759,8 +2759,8 @@ module stats_clubb_utilities
         iwpedsclrp
 
     use stats_variables, only: &
-        ihm1, &
-        ihm2, &
+        ihm_1, &
+        ihm_2, &
         imu_hm_1, &
         imu_hm_2, &
         imu_hm_1_n, &
@@ -3007,8 +3007,8 @@ module stats_clubb_utilities
       deallocate( iwpedsclrp )
 
       ! De-allocate hyderometeor statistical variables
-      deallocate( ihm1 )
-      deallocate( ihm2 )
+      deallocate( ihm_1 )
+      deallocate( ihm_2 )
       deallocate( imu_hm_1 )
       deallocate( imu_hm_2 )
       deallocate( imu_hm_1_n )

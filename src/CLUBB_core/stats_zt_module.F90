@@ -73,8 +73,8 @@ module stats_zt_module
         iSkw_zt
 
     use stats_variables, only: & 
-        ihm1, & ! Variable(s)
-        ihm2, &
+        ihm_1, & ! Variable(s)
+        ihm_2, &
         iprecip_frac, &
         iprecip_frac_1, &
         iprecip_frac_2, &
@@ -570,8 +570,8 @@ module stats_zt_module
     ! stats_variables)
 
     ! Allocate and initialize hydrometeor statistical variables.
-    allocate( ihm1(1:hydromet_dim) )
-    allocate( ihm2(1:hydromet_dim) )
+    allocate( ihm_1(1:hydromet_dim) )
+    allocate( ihm_2(1:hydromet_dim) )
     allocate( imu_hm_1(1:hydromet_dim) )
     allocate( imu_hm_2(1:hydromet_dim) )
     allocate( imu_hm_1_n(1:hydromet_dim) )
@@ -607,8 +607,8 @@ module stats_zt_module
 
     allocate( iwp2hmp(1:hydromet_dim) )
 
-    ihm1(:) = 0
-    ihm2(:) = 0
+    ihm_1(:) = 0
+    ihm_2(:) = 0
     imu_hm_1(:) = 0
     imu_hm_2(:) = 0
     imu_hm_1_n(:) = 0
@@ -661,12 +661,12 @@ module stats_zt_module
 
     tot_zt_loops = stats_zt%num_output_fields
 
-    if ( any( vars_zt == "hmi" ) ) then
-       ! Correct for number of variables found under "hmi".
+    if ( any( vars_zt == "hm_i" ) ) then
+       ! Correct for number of variables found under "hm_i".
        ! Subtract 2 from the loop size (1st PDF component and 2nd PDF component)
        ! for each hydrometeor.
        tot_zt_loops = tot_zt_loops - 2 * hydromet_dim
-       ! Add 1 for "hmi" to the loop size.
+       ! Add 1 for "hm_i" to the loop size.
        tot_zt_loops = tot_zt_loops + 1
     endif
     if ( any( vars_zt == "mu_hm_i" ) ) then
@@ -3808,19 +3808,19 @@ module stats_zt_module
 
       ! Hydrometeor component mean values for each PDF component and hydrometeor
       ! type.
-      case ( "hmi" )
+      case ( "hm_i" )
 
          do hm_idx = 1, hydromet_dim, 1
 
             hm_type = hydromet_list(hm_idx)
 
             ! The mean of the hydrometeor in the 1st PDF component.
-            ihm1(hm_idx) = k
+            ihm_1(hm_idx) = k
 
             if ( l_mix_rat_hm(hm_idx) ) then
 
-               call stat_assign( var_index=ihm1(hm_idx), &
-                                 var_name=trim( hm_type(1:2) )//"1", &
+               call stat_assign( var_index=ihm_1(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"_1", &
                                  var_description="Mean of " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                                  // " (1st PDF component) [kg/kg]", &
@@ -3829,8 +3829,8 @@ module stats_zt_module
 
             else ! Concentration
 
-               call stat_assign( var_index=ihm1(hm_idx), &
-                                 var_name=trim( hm_type(1:2) )//"1", &
+               call stat_assign( var_index=ihm_1(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"_1", &
                                  var_description="Mean of " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                                  // " (1st PDF component) [num/kg]", &
@@ -3842,12 +3842,12 @@ module stats_zt_module
             k = k + 1
 
             ! The mean of the hydrometeor in the 2nd PDF component.
-            ihm2(hm_idx) = k
+            ihm_2(hm_idx) = k
 
             if ( l_mix_rat_hm(hm_idx) ) then
 
-               call stat_assign( var_index=ihm2(hm_idx), &
-                                 var_name=trim( hm_type(1:2) )//"2", &
+               call stat_assign( var_index=ihm_2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"_2", &
                                  var_description="Mean of " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                                  // " (2nd PDF component) [kg/kg]", &
@@ -3856,8 +3856,8 @@ module stats_zt_module
 
             else ! Concentration
 
-               call stat_assign( var_index=ihm2(hm_idx), &
-                                 var_name=trim( hm_type(1:2) )//"2", &
+               call stat_assign( var_index=ihm_2(hm_idx), &
+                                 var_name=trim( hm_type(1:2) )//"_2", &
                                  var_description="Mean of " &
                                  // hm_type(1:1)//"_"//trim( hm_type(2:2) ) &
                                  // " (2nd PDF component) [num/kg]", &
