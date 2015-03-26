@@ -1255,31 +1255,40 @@ module setup_clubb_pdf_params
                                  corr_w_hm_1_n(jvar), corr_w_hm_2_n(jvar), &
                                  hydromet_tol(pdf2hydromet_idx(jvar)), w_tol )
 
-          call calc_corr_w_hm_n( rtm, rtphmp_zt(pdf2hydromet_idx(jvar)), &
-                                 pdf_params%rt_1, pdf_params%rt_2, &
-                                 mu_x_1(jvar), mu_x_2(jvar), &
-                                 sqrt(pdf_params%varnce_rt_1), &
-                                 sqrt(pdf_params%varnce_rt_2), &
-                                 sigma_x_1(jvar), sigma_x_2(jvar), &
-                                 sigma_x_1_n(jvar), sigma_x_2_n(jvar), &
-                                 mixt_frac, precip_frac_1, precip_frac_2, &
-                                 corr_rt_hm_1_n(jvar), corr_rt_hm_2_n(jvar), &
-                                 hydromet_tol(pdf2hydromet_idx(jvar)), rt_tol )
-
-          call calc_corr_w_hm_n( thlm, thlphmp_zt(pdf2hydromet_idx(jvar)), &
-                                 pdf_params%thl_1, pdf_params%thl_2, &
-                                 mu_x_1(jvar), mu_x_2(jvar), &
-                                 sqrt(pdf_params%varnce_thl_1), &
-                                 sqrt(pdf_params%varnce_thl_2), &
-                                 sigma_x_1(jvar), sigma_x_2(jvar), &
-                                 sigma_x_1_n(jvar), sigma_x_2_n(jvar), &
-                                 mixt_frac, precip_frac_1, precip_frac_2, &
-                                 corr_thl_hm_1_n(jvar), corr_thl_hm_2_n(jvar), &
-                                 hydromet_tol(pdf2hydromet_idx(jvar)), thl_tol )
-
        enddo ! jvar = iiPDF_Ncn+1, d_variables
 
     endif
+
+    do jvar = iiPDF_Ncn+1, d_variables
+
+       ! Calculate the correlation of rt and the natural logarithm of the
+       ! hydrometeor for each PDF component and each hydrometeor type.
+       call calc_corr_w_hm_n( rtm, rtphmp_zt(pdf2hydromet_idx(jvar)), &
+                              pdf_params%rt_1, pdf_params%rt_2, &
+                              mu_x_1(jvar), mu_x_2(jvar), &
+                              sqrt(pdf_params%varnce_rt_1), &
+                              sqrt(pdf_params%varnce_rt_2), &
+                              sigma_x_1(jvar), sigma_x_2(jvar), &
+                              sigma_x_1_n(jvar), sigma_x_2_n(jvar), &
+                              mixt_frac, precip_frac_1, precip_frac_2, &
+                              corr_rt_hm_1_n(jvar), corr_rt_hm_2_n(jvar), &
+                              hydromet_tol(pdf2hydromet_idx(jvar)), rt_tol )
+
+       ! Calculate the correlation of thl and the natural logarithm of the
+       ! hydrometeor for each PDF component and each hydrometeor type.
+       call calc_corr_w_hm_n( thlm, thlphmp_zt(pdf2hydromet_idx(jvar)), &
+                              pdf_params%thl_1, pdf_params%thl_2, &
+                              mu_x_1(jvar), mu_x_2(jvar), &
+                              sqrt(pdf_params%varnce_thl_1), &
+                              sqrt(pdf_params%varnce_thl_2), &
+                              sigma_x_1(jvar), sigma_x_2(jvar), &
+                              sigma_x_1_n(jvar), sigma_x_2_n(jvar), &
+                              mixt_frac, precip_frac_1, precip_frac_2, &
+                              corr_thl_hm_1_n(jvar), corr_thl_hm_2_n(jvar), &
+                              hydromet_tol(pdf2hydromet_idx(jvar)), thl_tol )
+
+    enddo ! jvar = iiPDF_Ncn+1, d_variables
+
 
     ! In order to decompose the normalized correlation matrix,
     ! we must not have a perfect correlation of chi and
