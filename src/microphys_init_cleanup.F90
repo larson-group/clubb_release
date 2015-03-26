@@ -192,7 +192,7 @@ module microphys_init_cleanup
         stdev_L2N    ! Procedure(s)
 
     use setup_clubb_pdf_params, only: &
-        denormalize_corr    ! Procedure(s)
+        denorm_transform_corr    ! Procedure(s)
 
     use parameters_tunable, only: &
         omicron,        & ! Procedure(s)
@@ -958,10 +958,13 @@ module microphys_init_cleanup
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denormalize_corr( d_variables, sigma_x_n_cloud, sigma_x_n_below, &
-                              sigma2_on_mu2_ip_cloud, sigma2_on_mu2_ip_below, &
-                              corr_array_n_cloud, corr_array_n_below, &
-                              corr_array_cloud, corr_array_below )
+       call denorm_transform_corr( d_variables, &
+                                   sigma_x_n_cloud, sigma_x_n_below, &
+                                   sigma2_on_mu2_ip_cloud, &
+                                   sigma2_on_mu2_ip_below, &
+                                   corr_array_n_cloud, &
+                                   corr_array_n_below, &
+                                   corr_array_cloud, corr_array_below )
 
        call mirror_lower_triangular_matrix( d_variables, corr_array_cloud(:,:) )
        call mirror_lower_triangular_matrix( d_variables, corr_array_below(:,:) )

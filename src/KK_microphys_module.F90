@@ -388,9 +388,9 @@ module KK_microphys_module
                                     exner, rho, rcm, Nc_in_cloud,      & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
                                     hydromet,                          & ! In
-                                    mu_x_1, mu_x_2,                    & ! In
-                                    sigma_x_1, sigma_x_2,              & ! In
-                                    corr_array_1, corr_array_2,        & ! In
+                                    mu_x_1_n, mu_x_2_n,                & ! In
+                                    sigma_x_1_n, sigma_x_2_n,          & ! In
+                                    corr_array_1_n, corr_array_2_n,    & ! In
                                     hydromet_mc, hydromet_vel,         & ! Out
                                     rcm_mc, rvm_mc, thlm_mc,           & ! Out
                                     hydromet_vel_covar_zt_impc,        & ! Out
@@ -501,14 +501,15 @@ module KK_microphys_module
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
     real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
-      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
-      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
-      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
-      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    intent(in) :: &
+      corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
@@ -646,10 +647,10 @@ module KK_microphys_module
       corr_rr_Nr_2_n      ! Correlation of ln rr & ln Nr (2nd PDF comp.) ip  [-]
 
     real( kind = core_rknd ) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+      rr_1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr_2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr_1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr_2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     real( kind = core_rknd ) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
@@ -704,9 +705,10 @@ module KK_microphys_module
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params_KK( d_variables, mu_x_1(:,k), mu_x_2(:,k), &
-                                  sigma_x_1(:,k), sigma_x_2(:,k), &
-                                  corr_array_1(:,:,k), corr_array_2(:,:,k), &
+       call unpack_pdf_params_KK( d_variables, mu_x_1_n(:,k), mu_x_2_n(:,k), &
+                                  sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
+                                  corr_array_1_n(:,:,k), &
+                                  corr_array_2_n(:,:,k), &
                                   hydromet_pdf_params(k), &
                                   mu_w_1, mu_w_2, mu_chi_1, mu_chi_2, &
                                   mu_eta_1, mu_eta_2, mu_rr_1, mu_rr_2, &
@@ -731,7 +733,7 @@ module KK_microphys_module
                                   corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
                                   corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
                                   corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
-                                  rr1, rr2, Nr1, Nr2, &
+                                  rr_1, rr_2, Nr_1, Nr_2, &
                                   precip_frac, precip_frac_1, precip_frac_2 )
 
        !!! Calculate the values of the upscaled KK microphysics tendencies.
@@ -760,8 +762,8 @@ module KK_microphys_module
        !!! <V_rr'rr'> and <V_Nr'Nr'>.  Each turbulent sedimentation term has an
        !!! implicit component and an explicit component to be used in the
        !!! predictive equation for the hydrometeor.
-       call KK_sed_vel_covars( rrm(k), rr1, rr2, Nrm(k), &
-                               Nr1, Nr2, KK_mean_vol_rad(k), &
+       call KK_sed_vel_covars( rrm(k), rr_1, rr_2, Nrm(k), &
+                               Nr_1, Nr_2, KK_mean_vol_rad(k), &
                                mu_rr_1, mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, &
                                mu_rr_2_n, mu_Nr_1_n, mu_Nr_2_n, sigma_rr_1, &
                                sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
@@ -1725,9 +1727,10 @@ module KK_microphys_module
   end subroutine KK_microphys_output
 
   !=============================================================================
-  subroutine unpack_pdf_params_KK( d_variables, mu_x_1, mu_x_2, &
-                                   sigma_x_1, sigma_x_2, &
-                                   corr_array_1, corr_array_2, &
+  subroutine unpack_pdf_params_KK( d_variables, mu_x_1_n, mu_x_2_n, &
+                                   sigma_x_1_n, sigma_x_2_n, &
+                                   corr_array_1_n, &
+                                   corr_array_2_n, &
                                    hydromet_pdf_params, &
                                    mu_w_1, mu_w_2, mu_chi_1, mu_chi_2, &
                                    mu_eta_1, mu_eta_2, mu_rr_1, mu_rr_2, &
@@ -1752,7 +1755,7 @@ module KK_microphys_module
                                    corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
                                    corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
                                    corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
-                                   rr1, rr2, Nr1, Nr2, &
+                                   rr_1, rr_2, Nr_1, Nr_2, &
                                    precip_frac, precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -1785,15 +1788,15 @@ module KK_microphys_module
       d_variables    ! Number of variables in the correlation array.
 
     real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
-      mu_x_1,    & ! Mean array (1st PDF component)                 [units vary]
-      mu_x_2,    & ! Mean array (2nd PDF component)                 [units vary]
-      sigma_x_1, & ! Standard deviation array (1st PDF component)   [units vary]
-      sigma_x_2    ! Standard deviation array (2nd PDF component)   [units vary]
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     real( kind = core_rknd ), dimension(d_variables,d_variables), &
     intent(in) :: &
-      corr_array_1, & ! Correlation array for the 1st PDF component   [-]
-      corr_array_2    ! Correlation array for the 2nd PDF component   [-]
+      corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
     type(hydromet_pdf_parameter), intent(in) :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
@@ -1866,10 +1869,10 @@ module KK_microphys_module
       corr_rr_Nr_2_n      ! Correlation of ln rr & ln Nr (2nd PDF comp.) ip  [-]
 
     real( kind = core_rknd ), intent(out) :: &
-      rr1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
-      rr2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
-      Nr1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
-      Nr2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
+      rr_1, & ! Mean rain water mixing ratio (1st PDF component)      [kg/kg]
+      rr_2, & ! Mean rain water mixing ratio (2nd PDF component)      [kg/kg]
+      Nr_1, & ! Mean rain drop concentration (1st PDF component)      [num/kg]
+      Nr_2    ! Mean rain drop concentration (2nd PDF component)      [num/kg]
 
     real( kind = core_rknd ), intent(out) :: &
       precip_frac,   & ! Precipitation fraction (overall)           [-]
@@ -1878,30 +1881,30 @@ module KK_microphys_module
 
 
     ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
-    mu_w_1        = mu_x_1(iiPDF_w)
-    mu_w_2        = mu_x_2(iiPDF_w)
-    mu_chi_1      = mu_x_1(iiPDF_chi)
-    mu_chi_2      = mu_x_2(iiPDF_chi)
-    mu_eta_1      = mu_x_1(iiPDF_eta)
-    mu_eta_2      = mu_x_2(iiPDF_eta)
-    mu_rr_1_n     = mu_x_1(iiPDF_rr)
-    mu_rr_2_n     = mu_x_2(iiPDF_rr)
-    mu_Nr_1_n     = mu_x_1(iiPDF_Nr)
-    mu_Nr_2_n     = mu_x_2(iiPDF_Nr)
-    mu_Ncn_1_n    = mu_x_1(iiPDF_Ncn)
-    mu_Ncn_2_n    = mu_x_2(iiPDF_Ncn)
-    sigma_w_1     = sigma_x_1(iiPDF_w)
-    sigma_w_2     = sigma_x_2(iiPDF_w)
-    sigma_chi_1   = sigma_x_1(iiPDF_chi)
-    sigma_chi_2   = sigma_x_2(iiPDF_chi)
-    sigma_eta_1   = sigma_x_1(iiPDF_eta)
-    sigma_eta_2   = sigma_x_2(iiPDF_eta)
-    sigma_rr_1_n  = sigma_x_1(iiPDF_rr)
-    sigma_rr_2_n  = sigma_x_2(iiPDF_rr)
-    sigma_Nr_1_n  = sigma_x_1(iiPDF_Nr)
-    sigma_Nr_2_n  = sigma_x_2(iiPDF_Nr)
-    sigma_Ncn_1_n = sigma_x_1(iiPDF_Ncn)
-    sigma_Ncn_2_n = sigma_x_2(iiPDF_Ncn)
+    mu_w_1        = mu_x_1_n(iiPDF_w)
+    mu_w_2        = mu_x_2_n(iiPDF_w)
+    mu_chi_1      = mu_x_1_n(iiPDF_chi)
+    mu_chi_2      = mu_x_2_n(iiPDF_chi)
+    mu_eta_1      = mu_x_1_n(iiPDF_eta)
+    mu_eta_2      = mu_x_2_n(iiPDF_eta)
+    mu_rr_1_n     = mu_x_1_n(iiPDF_rr)
+    mu_rr_2_n     = mu_x_2_n(iiPDF_rr)
+    mu_Nr_1_n     = mu_x_1_n(iiPDF_Nr)
+    mu_Nr_2_n     = mu_x_2_n(iiPDF_Nr)
+    mu_Ncn_1_n    = mu_x_1_n(iiPDF_Ncn)
+    mu_Ncn_2_n    = mu_x_2_n(iiPDF_Ncn)
+    sigma_w_1     = sigma_x_1_n(iiPDF_w)
+    sigma_w_2     = sigma_x_2_n(iiPDF_w)
+    sigma_chi_1   = sigma_x_1_n(iiPDF_chi)
+    sigma_chi_2   = sigma_x_2_n(iiPDF_chi)
+    sigma_eta_1   = sigma_x_1_n(iiPDF_eta)
+    sigma_eta_2   = sigma_x_2_n(iiPDF_eta)
+    sigma_rr_1_n  = sigma_x_1_n(iiPDF_rr)
+    sigma_rr_2_n  = sigma_x_2_n(iiPDF_rr)
+    sigma_Nr_1_n  = sigma_x_1_n(iiPDF_Nr)
+    sigma_Nr_2_n  = sigma_x_2_n(iiPDF_Nr)
+    sigma_Ncn_1_n = sigma_x_1_n(iiPDF_Ncn)
+    sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
     mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirrm)
@@ -1917,41 +1920,41 @@ module KK_microphys_module
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr1           = hydromet_pdf_params%hm1(iirrm)
-    rr2           = hydromet_pdf_params%hm2(iirrm)
-    Nr1           = hydromet_pdf_params%hm1(iiNrm)
-    Nr2           = hydromet_pdf_params%hm2(iiNrm)
+    rr_1          = hydromet_pdf_params%hm1(iirrm)
+    rr_2          = hydromet_pdf_params%hm2(iirrm)
+    Nr_1          = hydromet_pdf_params%hm1(iiNrm)
+    Nr_2          = hydromet_pdf_params%hm2(iiNrm)
     precip_frac   = hydromet_pdf_params%precip_frac
     precip_frac_1 = hydromet_pdf_params%precip_frac_1
     precip_frac_2 = hydromet_pdf_params%precip_frac_2
 
-    ! Unpack corr_array_1 into correlations (1st PDF component).
-    corr_chi_eta_1   = corr_array_1(iiPDF_eta, iiPDF_chi)
-    corr_w_chi_1     = corr_array_1(iiPDF_w,iiPDF_chi)
-    corr_chi_rr_1_n  = corr_array_1(iiPDF_rr, iiPDF_chi)
-    corr_chi_Nr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_chi)
-    corr_chi_Ncn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr_1_n  = corr_array_1(iiPDF_rr, iiPDF_eta)
-    corr_eta_Nr_1_n  = corr_array_1(iiPDF_Nr, iiPDF_eta)
-    corr_eta_Ncn_1_n = corr_array_1(iiPDF_Ncn, iiPDF_eta)
-    corr_w_rr_1_n    = corr_array_1(iiPDF_rr, iiPDF_w)
-    corr_w_Nr_1_n    = corr_array_1(iiPDF_Nr, iiPDF_w)
-    corr_w_Ncn_1_n   = corr_array_1(iiPDF_Ncn, iiPDF_w)
-    corr_rr_Nr_1_n   = corr_array_1(iiPDF_Nr, iiPDF_rr)
+    ! Unpack corr_array_1_n into correlations (1st PDF component).
+    corr_chi_eta_1   = corr_array_1_n(iiPDF_eta, iiPDF_chi)
+    corr_w_chi_1     = corr_array_1_n(iiPDF_w,iiPDF_chi)
+    corr_chi_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_chi)
+    corr_chi_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_chi)
+    corr_chi_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_chi)
+    corr_eta_rr_1_n  = corr_array_1_n(iiPDF_rr, iiPDF_eta)
+    corr_eta_Nr_1_n  = corr_array_1_n(iiPDF_Nr, iiPDF_eta)
+    corr_eta_Ncn_1_n = corr_array_1_n(iiPDF_Ncn, iiPDF_eta)
+    corr_w_rr_1_n    = corr_array_1_n(iiPDF_rr, iiPDF_w)
+    corr_w_Nr_1_n    = corr_array_1_n(iiPDF_Nr, iiPDF_w)
+    corr_w_Ncn_1_n   = corr_array_1_n(iiPDF_Ncn, iiPDF_w)
+    corr_rr_Nr_1_n   = corr_array_1_n(iiPDF_Nr, iiPDF_rr)
 
-    ! Unpack corr_array_2 into correlations (2nd PDF component).
-    corr_chi_eta_2   = corr_array_2(iiPDF_eta, iiPDF_chi)
-    corr_w_chi_2     = corr_array_2(iiPDF_w,iiPDF_chi)
-    corr_chi_rr_2_n  = corr_array_2(iiPDF_rr, iiPDF_chi)
-    corr_chi_Nr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_chi)
-    corr_chi_Ncn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr_2_n  = corr_array_2(iiPDF_rr, iiPDF_eta)
-    corr_eta_Nr_2_n  = corr_array_2(iiPDF_Nr, iiPDF_eta)
-    corr_eta_Ncn_2_n = corr_array_2(iiPDF_Ncn, iiPDF_eta)
-    corr_w_rr_2_n    = corr_array_2(iiPDF_rr, iiPDF_w)
-    corr_w_Nr_2_n    = corr_array_2(iiPDF_Nr, iiPDF_w)
-    corr_w_Ncn_2_n   = corr_array_2(iiPDF_Ncn, iiPDF_w)
-    corr_rr_Nr_2_n   = corr_array_2(iiPDF_Nr, iiPDF_rr)
+    ! Unpack corr_array_2_n into correlations (2nd PDF component).
+    corr_chi_eta_2   = corr_array_2_n(iiPDF_eta, iiPDF_chi)
+    corr_w_chi_2     = corr_array_2_n(iiPDF_w,iiPDF_chi)
+    corr_chi_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_chi)
+    corr_chi_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_chi)
+    corr_chi_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_chi)
+    corr_eta_rr_2_n  = corr_array_2_n(iiPDF_rr, iiPDF_eta)
+    corr_eta_Nr_2_n  = corr_array_2_n(iiPDF_Nr, iiPDF_eta)
+    corr_eta_Ncn_2_n = corr_array_2_n(iiPDF_Ncn, iiPDF_eta)
+    corr_w_rr_2_n    = corr_array_2_n(iiPDF_rr, iiPDF_w)
+    corr_w_Nr_2_n    = corr_array_2_n(iiPDF_Nr, iiPDF_w)
+    corr_w_Ncn_2_n   = corr_array_2_n(iiPDF_Ncn, iiPDF_w)
+    corr_rr_Nr_2_n   = corr_array_2_n(iiPDF_Nr, iiPDF_rr)
 
 
     return

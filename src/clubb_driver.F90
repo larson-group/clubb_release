@@ -442,19 +442,19 @@ module clubb_driver
       rrm, & ! Overall mean rain water mixing ratio               [kg/kg]
       Nrm       ! Overall mean rain drop concentration               [num/kg]
 
-    real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
-      corr_array_1, & ! Correlation matrix for the first pdf component    [-]
-      corr_array_2    ! Correlation matrix for the second pdf component   [-]
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(:, :, :), allocatable :: &
-      corr_cholesky_mtx_1, & ! Transposed correlation cholesky matrix, 1st comp.     [-]
-      corr_cholesky_mtx_2    ! Transposed correlation cholesky matrix, 2nd comp.     [-]
+    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
+      corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
-    real( kind = core_rknd ), dimension(:, :), allocatable :: &
-      mu_x_1,    & ! Mean array for the 1st PDF component                 [units vary]
-      mu_x_2,    & ! Mean array for the 2nd PDF component                 [units vary]
-      sigma_x_1, & ! Standard deviation array for the 1st PDF component   [units vary]
-      sigma_x_2    ! Standard deviation array for the 2nd PDF component   [units vary]
+    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
+      corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
+      corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       radht_zm, &
@@ -927,16 +927,16 @@ module clubb_driver
     end do
 
     ! Allocate the correlation arrays
-    allocate(corr_array_1(d_variables, d_variables, gr%nz))
-    allocate(corr_array_2(d_variables, d_variables, gr%nz))
+    allocate(corr_array_1_n(d_variables, d_variables, gr%nz))
+    allocate(corr_array_2_n(d_variables, d_variables, gr%nz))
     allocate(corr_cholesky_mtx_1(d_variables, d_variables, gr%nz))
     allocate(corr_cholesky_mtx_2(d_variables, d_variables, gr%nz))
 
     ! Allocate the mean and stddev arrays
-    allocate(mu_x_1(d_variables, gr%nz))
-    allocate(mu_x_2(d_variables, gr%nz))
-    allocate(sigma_x_1(d_variables, gr%nz))
-    allocate(sigma_x_2(d_variables, gr%nz))
+    allocate(mu_x_1_n(d_variables, gr%nz))
+    allocate(mu_x_2_n(d_variables, gr%nz))
+    allocate(sigma_x_1_n(d_variables, gr%nz))
+    allocate(sigma_x_2_n(d_variables, gr%nz))
 
     ! Initialize to 0.
     rvm_mc  = zero
@@ -1328,17 +1328,17 @@ module clubb_driver
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
                                     hydrometp2, &                               ! Intent(inout)
-                                    mu_x_1, mu_x_2, &                           ! Intent(out)
-                                    sigma_x_1, sigma_x_2, &                     ! Intent(out)
-                                    corr_array_1, corr_array_2, &               ! Intent(out)
+                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
+                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
+                                    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
                                     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! Intent(out)
                                     hydromet_pdf_params )                       ! Intent(out)
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
          call hydrometeor_mixed_moments( gr%nz, d_variables, hydromet, &
-                                         mu_x_1, mu_x_2, &
-                                         sigma_x_1, sigma_x_2, &
-                                         corr_array_1, corr_array_2, &
+                                         mu_x_1_n, mu_x_2_n, &
+                                         sigma_x_1_n, sigma_x_2_n, &
+                                         corr_array_1_n, corr_array_2_n, &
                                          pdf_params, hydromet_pdf_params, &
                                          rtphmp_zt, thlphmp_zt, wp2hmp )
 
@@ -1354,7 +1354,7 @@ module clubb_driver
         call lh_subcolumn_generator &
              ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
-               rho_ds_zt, mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! In
+               rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
                real( corr_cholesky_mtx_1, kind = dp ), & ! In
                real( corr_cholesky_mtx_2, kind = dp ), & ! In
                hydromet_pdf_params, & ! In
@@ -1394,8 +1394,9 @@ module clubb_driver
                               pdf_params, hydromet_pdf_params, &             ! In
                               X_nl_all_levs, X_mixt_comp_all_levs, &         ! In
                               lh_sample_point_weights, &                     ! In
-                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &        ! In
-                              corr_array_1, corr_array_2, &                  ! In
+                              mu_x_1_n, mu_x_2_n, &                          ! In
+                              sigma_x_1_n, sigma_x_2_n, &                    ! In
+                              corr_array_1_n, corr_array_2_n, &              ! In
                               lh_clipped_vars, &                             ! In
                               Nccnm, &                                       ! Inout
                               hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &         ! Out

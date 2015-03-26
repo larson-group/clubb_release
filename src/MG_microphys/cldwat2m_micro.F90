@@ -404,8 +404,8 @@ subroutine mmicro_pcond ( sub_column,           &
 
    ! Upscaled KK for autoconversion and accretion
    use setup_clubb_pdf_params, only: &
-       compute_mean_stdev,   & ! Procedure(s)
-       normalize_mean_stdev, &
+       compute_mean_stdev,        & ! Procedure(s)
+       norm_transform_mean_stdev, &
        comp_corr_norm
 
    use KK_upscaled_means, only: &
@@ -1826,14 +1826,15 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma2_on_mu2_ip_1,                 & ! Intent(out)
                                           sigma2_on_mu2_ip_2                  ) ! Intent(out)
 
-                 call normalize_mean_stdev( hm1, hm2, &
-                                            real( nc(i,k), kind = core_rknd ), &
-                                            d_variables, &
-                                            mu_x_1, mu_x_2, &
-                                            sigma_x_1, sigma_x_2, &
-                                            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
-                                            mu_x_1_n, mu_x_2_n, &
-                                            sigma_x_1_n, sigma_x_2_n )
+                 call norm_transform_mean_stdev( hm1, hm2, &
+                                                 real(nc(i,k),kind=core_rknd), &
+                                                 d_variables, &
+                                                 mu_x_1, mu_x_2, &
+                                                 sigma_x_1, sigma_x_2, &
+                                                 sigma2_on_mu2_ip_1, &
+                                                 sigma2_on_mu2_ip_2, &
+                                                 mu_x_1_n, mu_x_2_n, &
+                                                 sigma_x_1_n, sigma_x_2_n )
 
                  call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( qc(i,k), kind = core_rknd ), & ! Intent(in)
@@ -2366,14 +2367,15 @@ subroutine mmicro_pcond ( sub_column,           &
                                           sigma2_on_mu2_ip_1,                 & ! Intent(out)
                                           sigma2_on_mu2_ip_2                  ) ! Intent(out)
 
-                 call normalize_mean_stdev( hm1, hm2, &
-                                            real( nc(i,k), kind = core_rknd ), &
-                                            d_variables, &
-                                            mu_x_1, mu_x_2, &
-                                            sigma_x_1, sigma_x_2, &
-                                            sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
-                                            mu_x_1_n, mu_x_2_n, &
-                                            sigma_x_1_n, sigma_x_2_n )
+                 call norm_transform_mean_stdev( hm1, hm2, &
+                                                 real(nc(i,k),kind=core_rknd), &
+                                                 d_variables, &
+                                                 mu_x_1, mu_x_2, &
+                                                 sigma_x_1, sigma_x_2, &
+                                                 sigma2_on_mu2_ip_1, &
+                                                 sigma2_on_mu2_ip_2, &
+                                                 mu_x_1_n, mu_x_2_n, &
+                                                 sigma_x_1_n, sigma_x_2_n )
 
                  call comp_corr_norm( zero, real( qc(i,k), kind = core_rknd ), & ! Intent(in)
                                       real( qc(i,k), kind = core_rknd ), & ! Intent(in)

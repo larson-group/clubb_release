@@ -333,7 +333,7 @@ module corr_varnce_module
 
     ! Input/Output Variable(s)
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
-      corr_array_n ! Normalized correlation array
+      corr_array_n ! Normal space correlation array
 
     ! Local Variable(s)
 
@@ -749,7 +749,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array_n ! Normalized correlation array to be checked
+      intent(in) :: corr_array_n ! Normal space correlation array to be checked
 
     ! Local Variables
 
@@ -804,7 +804,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array_n ! Normalized correlation array to be printed
+      intent(in) :: corr_array_n ! Normal space correlation array to be printed
 
     ! Local Variables
     integer :: n, & ! Loop indeces

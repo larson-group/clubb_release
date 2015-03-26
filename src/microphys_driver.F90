@@ -35,8 +35,9 @@ module microphys_driver
                                 pdf_params, hydromet_pdf_params, &        ! In
                                 X_nl_all_levs, X_mixt_comp_all_levs, &    ! In
                                 lh_sample_point_weights, &                ! In
-                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &   ! In
-                                corr_array_1, corr_array_2, &             ! In
+                                mu_x_1_n, mu_x_2_n, &                     ! In
+                                sigma_x_1_n, sigma_x_2_n, &               ! In
+                                corr_array_1_n, corr_array_2_n, &         ! In
                                 lh_clipped_vars, &                        ! In
                                 Nccnm, &                                  ! Inout
                                 hydromet_mc, Ncm_mc, rcm_mc, rvm_mc, &    ! Out
@@ -248,15 +249,15 @@ module microphys_driver
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(n_variables, gr%nz), intent(in) :: &
-      mu_x_1,    & ! Mean array (normalized) of PDF vars. (comp. 1) [un. vary]
-      mu_x_2,    & ! Mean array (normalized) of PDF vars. (comp. 2) [un. vary]
-      sigma_x_1, & ! Std. dev. array (normalized) of PDF vars (comp. 1) [u.v.]
-      sigma_x_2    ! Std. dev. array (normalized) of PDF vars (comp. 2) [u.v.]
+      mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
+      mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
+      sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
+      sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
     real( kind = core_rknd ), dimension(n_variables, n_variables, gr%nz), &
     intent(in) :: &
-      corr_array_1, & ! Corr. array (normalized) of PDF vars. (comp. 1)    [-]
-      corr_array_2    ! Corr. array (normalized) of PDF vars. (comp. 2)    [-]
+      corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
+      corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
     type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples) :: &
       lh_clipped_vars ! SILHS sample variables
@@ -609,9 +610,9 @@ module microphys_driver
                                       exner, rho, rcm, Nc_in_cloud,         & ! In
                                       pdf_params, hydromet_pdf_params,      & ! In
                                       hydromet,                             & ! In
-                                      mu_x_1, mu_x_2,                       & ! In
-                                      sigma_x_1, sigma_x_2,                 & ! In
-                                      corr_array_1, corr_array_2,           & ! In
+                                      mu_x_1_n, mu_x_2_n,                   & ! In
+                                      sigma_x_1_n, sigma_x_2_n,             & ! In
+                                      corr_array_1_n, corr_array_2_n,       & ! In
                                       hydromet_mc, hydromet_vel_zt,         & ! Out
                                       rcm_mc, rvm_mc, thlm_mc,              & ! Out
                                       hydromet_vel_covar_zt_impc,           & ! Out
