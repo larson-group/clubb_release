@@ -17,64 +17,62 @@ tune_type         = 0
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
-! time_nl is the time interval(s) to tune for, in ordered pair form.
+! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
 !  GCSS ARM
-hoc_stats_file_nl(1) = "../output/arm_zt.ctl"
-les_stats_file_nl(1) = "../les_data/GCSSARM_96x96x110_67m_40m_1s.nc"
-run_file_nl(1)       = "arm_hoc.in"
-z_i_nl(1)            = 2
-z_f_nl(1)            = 109
-! time_nl(1,:)         = 450, 510
-time_nl(1,:)         = 481, 541
-weight_case_nl(1)    = 1.0
+hoc_stats_file_nl(1)      = "../output/arm_zt.ctl"
+les_stats_file_nl(1)      = "../les_data/GCSSARM_96x96x110_67m_40m_1s.nc"
+run_file_nl(1)            = "arm_hoc.in"
+z_i_nl(1)                 = 2
+z_f_nl(1)                 = 109
+timestep_intvls_nl(1,:)   = 481, 541
+weight_case_nl(1)         = 1.0
 
 !  RICO
-hoc_stats_file_nl(2) = "../output/rico_zt.ctl"
-les_stats_file_nl(2) = "../les_data/RICO_128x128x100_drizzle.nc"
-run_file_nl(2)       = "rico_hoc.in"
-z_i_nl(2)            = 2
-z_f_nl(2)            = 33
-time_nl(2,:)         = 4201, 4320
-weight_case_nl(2)    = 1.0
+hoc_stats_file_nl(2)    = "../output/rico_zt.ctl"
+les_stats_file_nl(2)    = "../les_data/RICO_128x128x100_drizzle.nc"
+run_file_nl(2)          = "rico_hoc.in"
+z_i_nl(2)               = 2
+z_f_nl(2)               = 33
+timestep_intvls_nl(2,:) = 4201, 4320
+weight_case_nl(2)       = 1.0
 
 !  CGILS_S6
-hoc_stats_file_nl(3) = "../output/cgils_s6_zt.ctl"
-les_stats_file_nl(3) = "../les_data/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc"
-run_file_nl(3)       = "cgils_s6_hoc.in"
-z_i_nl(3)            = 2
-z_f_nl(3)            = 40
-! time_nl(3,:)         = 1, 960
-time_nl(3,:)         = 432, 480
-weight_case_nl(3)    = 1.0
+hoc_stats_file_nl(3)    = "../output/cgils_s6_zt.ctl"
+les_stats_file_nl(3)    = "../les_data/ctl_s6_96x96x128_100m_DRZ_N100_tqndg.nc"
+run_file_nl(3)          = "cgils_s6_hoc.in"
+z_i_nl(3)               = 2
+z_f_nl(3)               = 40
+timestep_intvls_nl(3,:) = 432, 480
+weight_case_nl(3)       = 1.0
 
 !  CGILS_S11
-hoc_stats_file_nl(4) = "../output/cgils_s11_zt.ctl"
-les_stats_file_nl(4) = "../les_data/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc"
-run_file_nl(4)       = "cgils_s11_hoc.in"
-z_i_nl(4)            = 2
-z_f_nl(4)            = 26
-time_nl(4,:)         = 432, 480
-weight_case_nl(4)    = 1.0 
+hoc_stats_file_nl(4)    = "../output/cgils_s11_zt.ctl"
+les_stats_file_nl(4)    = "../les_data/ctl_s11_96x96x320_50m_DRZ_N100_ref.nc"
+run_file_nl(4)          = "cgils_s11_hoc.in"
+z_i_nl(4)               = 2
+z_f_nl(4)               = 26
+timestep_intvls_nl(4,:) = 432, 480
+weight_case_nl(4)       = 1.0 
 
 !  CGILS_S12
-hoc_stats_file_nl(5) = "../output/cgils_s12_zt.ctl"
-les_stats_file_nl(5) = "../les_data/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc"
-run_file_nl(5)       = "cgils_s12_hoc.in"
-z_i_nl(5)            = 2
-z_f_nl(5)            = 18
-time_nl(5,:)         = 432, 480
-weight_case_nl(5)    = 1.0
+hoc_stats_file_nl(5)    = "../output/cgils_s12_zt.ctl"
+les_stats_file_nl(5)    = "../les_data/ctl_s12_96x96x192_25m_DRZ_N100_fixnudge.nc"
+run_file_nl(5)          = "cgils_s12_hoc.in"
+z_i_nl(5)               = 2
+z_f_nl(5)               = 18
+timestep_intvls_nl(5,:) = 432, 480
+weight_case_nl(5)       = 1.0
 
 !  DYCOMS2_RF02_ND
-hoc_stats_file_nl(6) = "../output/dycoms2_rf02_nd_zt.ctl"
-les_stats_file_nl(6) = "../les_data/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
-run_file_nl(6)       = "dycoms2_rf02_nd_hoc.in"
-z_i_nl(6)            = 2
-z_f_nl(6)            = 37
-time_nl(6,:)         = 301, 360
-weight_case_nl(6)    = 1.0                                                  
+hoc_stats_file_nl(6)    = "../output/dycoms2_rf02_nd_zt.ctl"
+les_stats_file_nl(6)    = "../les_data/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
+run_file_nl(6)          = "dycoms2_rf02_nd_hoc.in"
+z_i_nl(6)               = 2
+z_f_nl(6)               = 37
+timestep_intvls_nl(6,:) = 301, 360
+weight_case_nl(6)       = 1.0                                                  
 /
 
 &initspread

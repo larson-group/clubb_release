@@ -246,6 +246,10 @@ module input_netcdf
       read(time( length-6:length-5 ), *) minutes
       read(time( length-3:length - 2 ), *) seconds
 
+      ncf%year = netcdf_year
+      ncf%month = netcdf_month
+      ncf%day = netcdf_day
+
       ! Compute delta_d, the difference in days between the netcdf file's start
       ! date and CLUBB's start date (netcdf_date - clubb_date). This difference
       ! should be added to ncf%time to fix an inconsistency that is caused when

@@ -3881,7 +3881,7 @@ $k_s$, is chosen to begin sampling (this variable is known as
 \texttt{k\_lh\_start} in the code. Next, the vertical correlation $\rho_k$
 (\texttt{vert\_corr} in code) is defined for each vertical level $k$ as:
 \begin{equation}
-\rho_k = \exp\left(\frac{\alpha\ \Delta z_k}{L}\right)
+\rho_k = \exp\left(\frac{-\alpha\ \Delta z_k}{L}\right)
 \end{equation}
 where $L$ is the CLUBB's length scale, $\Delta z_k$ is the vertical spacing
 between grid levels at level $k$, and $\alpha$ is a parameter, known in the code

@@ -18,17 +18,17 @@ tune_type         = 0
 ! z_i and z_f are levels to look at when tuning. This does not need
 !   to be 1 to nzmax if you wish to optimize for particular altitudes.
 !   Note that the first and last z-levels in CLUBB are not prognosed.
-! time_nl is the time interval(s) to tune for, in ordered pair form.
+! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
 ! DYCOMS II RF02 Drizzle
-hoc_stats_file_nl(1) = "../output/dycoms2_rf02_do_zt.ctl"
-les_stats_file_nl(1) = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
-run_file_nl(1)       = "dycoms2_rf02_do_hoc.in"
-z_i_nl(1)            = 2
-z_f_nl(1)            = 147
-time_nl(1,:)         = 120, 360
-weight_case_nl(1)    = 1.0
+hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_do_zt.ctl"
+les_stats_file_nl(1)    = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
+run_file_nl(1)          = "dycoms2_rf02_do_hoc.in"
+z_i_nl(1)               = 2
+z_f_nl(1)               = 147
+timestep_intvls_nl(1,:) = 120, 360
+weight_case_nl(1)       = 1.0
 /
 
 &initspread

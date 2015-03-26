@@ -26,8 +26,8 @@ module hydromet_pdf_parameter_module
   type hydromet_pdf_parameter
 
     real( kind = core_rknd ), dimension(max_hydromet_dim) :: &
-      hm1,           & ! Mean of hydrometeor, hm (1st PDF component)   [un vary]
-      hm2,           & ! Mean of hydrometeor, hm (2nd PDF component)   [un vary]
+      hm_1,          & ! Mean of hydrometeor, hm (1st PDF component)   [un vary]
+      hm_2,          & ! Mean of hydrometeor, hm (2nd PDF component)   [un vary]
       mu_hm_1,       & ! Mean of hm (1st PDF component) in-precip (ip) [un vary]
       mu_hm_2,       & ! Mean of hm (2nd PDF component) ip             [un vary]
       sigma_hm_1,    & ! Standard deviation of hm (1st PDF comp.) ip   [un vary]
@@ -77,8 +77,8 @@ contains
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
 
     ! Initialize hydromet_pdf_params.
-    hydromet_pdf_params%hm1 = zero
-    hydromet_pdf_params%hm2 = zero
+    hydromet_pdf_params%hm_1 = zero
+    hydromet_pdf_params%hm_2 = zero
     hydromet_pdf_params%mu_hm_1 = zero
     hydromet_pdf_params%mu_hm_2 = zero
     hydromet_pdf_params%sigma_hm_1 = zero

@@ -98,7 +98,7 @@ module error
     les_v  ! Variables in LES GrADS files
 
   integer, dimension(:,:), allocatable, private ::  & 
-    time ! Time intervals
+    timestep_intvls ! Time intervals
 
   ! Additions for using imposed weights as scaling factors
   logical :: l_initialize_sigma = .true.
@@ -210,12 +210,14 @@ module error
     !-----------------------------------------------------------------------
 
     ! Namelist vars for determining which variable to tune for:
+    ! F95 does not allow allocatable arrays in namelists. These variables are used
+    ! for reading the error file, then assigned to their non-namelist equivalents below.
 
-    !  time_nl:   Order pairs of time intervals to analyze
+    !  timestep_intvls_nl:   Order pairs of time intervals to analyze
     !  z_i_nl:    initial z-level to begin reading in for tuning
     !  z_f_nl:    final z-level to end reading in for tuning
 
-    integer, dimension(max_run, max_times):: time_nl
+    integer, dimension(max_run, max_times):: timestep_intvls_nl
 
     integer, dimension(max_run) :: z_i_nl, z_f_nl
 
@@ -240,7 +242,7 @@ module error
 
     namelist /cases/  & 
       les_stats_file_nl, hoc_stats_file_nl, & 
-      run_file_nl, z_i_nl, z_f_nl, time_nl, weight_case_nl
+      run_file_nl, z_i_nl, z_f_nl, timestep_intvls_nl, weight_case_nl
 
     ! Reset iteration counter (set by amoeba)
     iter = 0
@@ -252,7 +254,7 @@ module error
     if ( l_read_files ) then
 
       ! Initialize all compile time arrays to zero
-      time_nl = 0
+      timestep_intvls_nl = 0
 
       ! Imposed weights as scaling factors
       weight_case_nl = 0.0_core_rknd
@@ -297,7 +299,7 @@ module error
       end do
 
       allocate( & 
-        z_i(c_total), z_f(c_total), time(c_total, max_times),  & 
+        z_i(c_total), z_f(c_total), timestep_intvls(c_total, max_times),  &
         run_file(c_total),  & 
         les_stats_file(c_total), hoc_stats_file(c_total) )
 
@@ -321,7 +323,7 @@ module error
         les_stats_file(i)   = les_stats_file_nl(i)
         hoc_stats_file(i)   = hoc_stats_file_nl(i)
         run_file(i)         = run_file_nl(i)
-        time(i,1:max_times) = time_nl(i,1:max_times)
+        timestep_intvls(i,1:max_times) = timestep_intvls_nl(i,1:max_times)
       end do
 
       ! Use imposed weights as scaling factors
@@ -458,6 +460,21 @@ module error
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
+    use stats_variables, only: &
+      stats_tout
+
+    use stat_file_module, only: &
+      stat_file ! Type(s)
+
+    use input_netcdf, only: &
+      open_netcdf_read ! Procedure(s)
+
+    use clubb_model_settings, only: &
+      day, &
+      month, &
+      year, &
+      time_initial
+
     implicit none
 
     ! External
@@ -517,6 +534,8 @@ module error
 
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
+
+    type (stat_file) :: netcdf_file ! Data file derived type
 
     integer :: i, j, c_run ! looping variables
 
@@ -673,7 +692,36 @@ module error
         les_zl =  & 
         stat_file_average_interval &
         ( les_stats_file(c_run), clubb_nz,  & 
-          time(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
+          timestep_intvls(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
+
+        ! Verify that the CLUBB and LES runs start at the same time and
+        ! have the same timestep length
+        call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_error);
+        if ( &
+          day /= netcdf_file%day &
+          .or. month /= netcdf_file%month &
+          .or. year /= netcdf_file%year &
+          .or. time_initial /= netcdf_file%time &
+          .or. stats_tout /= netcdf_file%dtwrite ) then
+            write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
+                &or have different stat output intervals. Here are the currently set &
+                &start times and stat output intervals."
+
+            write(*,*) "CLUBB start day: ", day
+            write(*,*) "CLUBB start month: ", month
+            write(*,*) "CLUBB start year: ", year
+            write(*,*) "CLUBB start time: ", time_initial
+            write(*,*) "CLUBB dtwrite: ", stats_tout
+
+            write(*,*) "LES start day: ", netcdf_file%day
+            write(*,*) "LES start month: ", netcdf_file%month
+            write(*,*) "LES start year: ", netcdf_file%year
+            write(*,*) "LES start time: ", netcdf_file%time
+            write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
+
+            stop "Please modify the models so that they start at the same time and &
+              &have the same stat output interval." 
+        end if
 
         if ( l_error ) then
           if( l_save_tuning_run ) then
@@ -704,7 +752,7 @@ module error
         clubb_zl =  & 
         stat_file_average_interval & 
         ( hoc_stats_file(c_run), clubb_nz,  & 
-          time(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
+          timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 1, l_error )
 
         if ( l_error ) then
           stop "The specified CLUBB variable was invalid"
@@ -714,7 +762,7 @@ module error
         clubb2_zl =  & 
         stat_file_average_interval & 
         ( hoc_stats_file(c_run), clubb_nz, & 
-          time(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
+          timestep_intvls(c_run,:), hoc_v(i), clubb_grid_heights, 2, l_error )
 
         if ( l_error ) then
           stop "The specified CLUBB variable was invalid"
@@ -947,7 +995,7 @@ module error
       write(unit=iunit,fmt=*) "z_f_nl("// i_c //")  = " ,  z_f(i)
       write(unit=iunit,fmt=*) "weight_case_nl("// i_c //") = " ,  & 
         weight_case(i)
-      write(unit=iunit,fmt=*) "time_nl("// i_c //",:)  = " , time(i,:)
+      write(unit=iunit,fmt=*) "timestep_intvls_nl("// i_c //",:)  = " , timestep_intvls(i,:)
     end do
     write(unit=iunit,fmt=*) "/"
 

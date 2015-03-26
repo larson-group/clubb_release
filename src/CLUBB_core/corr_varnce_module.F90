@@ -333,7 +333,7 @@ module corr_varnce_module
 
     ! Input/Output Variable(s)
     real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
-      corr_array_n ! Normalized correlation array
+      corr_array_n ! Normal space correlation array
 
     ! Local Variable(s)
 
@@ -632,7 +632,7 @@ module corr_varnce_module
       iunit ! The file unit
 
     ! Local variables
-    logical :: l_warning, corr_file_exist
+    logical :: l_warning, l_corr_file_1_exist, l_corr_file_2_exist
     integer :: i
 
     ! ---- Begin Code ----
@@ -640,12 +640,10 @@ module corr_varnce_module
     allocate( corr_array_n_cloud(d_variables,d_variables) )
     allocate( corr_array_n_below(d_variables,d_variables) )
 
-    ! corr_file_exist is true if the *_corr_array_cloud.in file exists
-    ! Note: It is assumed that if the *_corr_array_cloud.in file exists
-    !       then *_corr_array_below.in also exists
-    inquire( file = input_file_cloud, exist = corr_file_exist )
+    inquire( file = input_file_cloud, exist = l_corr_file_1_exist )
+    inquire( file = input_file_below, exist = l_corr_file_2_exist )
 
-    if ( corr_file_exist ) then
+    if ( l_corr_file_1_exist .and. l_corr_file_2_exist ) then
 
        call read_correlation_matrix( iunit, trim( input_file_cloud ), d_variables, & ! In
                                      corr_array_n_cloud ) ! Out
@@ -751,7 +749,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array_n ! Normalized correlation array to be checked
+      intent(in) :: corr_array_n ! Normal space correlation array to be checked
 
     ! Local Variables
 
@@ -806,7 +804,7 @@ module corr_varnce_module
       d_variables    ! Number of variables in the correlation array
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
-      intent(in) :: corr_array_n ! Normalized correlation array to be printed
+      intent(in) :: corr_array_n ! Normal space correlation array to be printed
 
     ! Local Variables
     integer :: n, & ! Loop indeces
