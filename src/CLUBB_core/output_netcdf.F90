@@ -13,7 +13,7 @@ module output_netcdf
 
   implicit none
 
-  public :: open_netcdf, write_netcdf, close_netcdf
+  public :: open_netcdf_for_writing, write_netcdf, close_netcdf
 
   private :: define_netcdf, write_grid, first_write, format_date
 
@@ -27,7 +27,7 @@ module output_netcdf
 
   contains
 !-------------------------------------------------------------------------------
-  subroutine open_netcdf( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
+  subroutine open_netcdf_for_writing( nlat, nlon, fdir, fname, ia, iz, zgrid,  & 
                           day, month, year, rlat, rlon, & 
                           time, dtwrite, nvar, ncf )
 
@@ -128,7 +128,7 @@ module output_netcdf
         write(fstderr,*) "To override this warning, set l_allow_small_stats_tout = &
                          &.true. in the stats_setting namelist in the &
                          &appropriate *_model.in file."
-        stop "Fatal error in open_netcdf"
+        stop "Fatal error in open_netcdf_for_writing"
       end if
     end if ! dtwrite < sec_per_min
 
@@ -166,7 +166,7 @@ module output_netcdf
                         ncf%LatVarId, ncf%LongVarId, ncf%AltVarId, ncf%TimeVarId ) ! Out
 
     return
-  end subroutine open_netcdf
+  end subroutine open_netcdf_for_writing
 
 !-------------------------------------------------------------------------------
 

@@ -29,7 +29,7 @@ module output_2D_samples_module
 !   None
 !-------------------------------------------------------------------------------
 #ifdef NETCDF
-    use output_netcdf, only: open_netcdf ! Procedure(s)
+    use output_netcdf, only: open_netcdf_for_writing ! Procedure(s)
 #endif
 
     use clubb_precision, only: time_precision, core_rknd ! Constant(s)
@@ -107,7 +107,7 @@ module output_2D_samples_module
     end do
 
 #ifdef NETCDF
-    call open_netcdf( nlat, nlon, fdir, fname, 1, nz, zgrid, &
+    call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, nz, zgrid, &
                       day, month, year, rlat, rlon, &
                       time, dtwrite, n_2D_variables, sample_file )
 #else
