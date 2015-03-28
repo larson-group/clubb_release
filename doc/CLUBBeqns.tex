@@ -3996,7 +3996,7 @@ $P(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
 approximated using the following formulas. To integrate over the entire PDF,
 use:
 \begin{equation}
-\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N}
+\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N_s}
 \sum_{i=1}^{N_s} \omega_i h(\mathbf{x}_i)
 \end{equation}
 where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point and $N_s$ is
@@ -4005,7 +4005,7 @@ $h(\mathbf{x})$ over the entire PDF. To determine the mean over some subset
 $\Omega$ of the PDF, the following formula should be used:
 \begin{equation}
 \int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
-\approx \frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+\approx \frac{1}{N_s}\sum_{i=1}^{N_s} \omega_i
 h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 However, note that this equation will implicitly be scaled by $p_\Omega$. To
@@ -4014,7 +4014,7 @@ instead:
 \begin{equation}
 \frac{1}{p_\Omega}
 \int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
-\approx \frac{1}{p_\Omega}\frac{1}{N}\sum_{i=1}^{N_s} \omega_i
+\approx \frac{1}{p_\Omega}\frac{1}{N_s}\sum_{i=1}^{N_s} \omega_i
 h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
 \end{equation}
 
