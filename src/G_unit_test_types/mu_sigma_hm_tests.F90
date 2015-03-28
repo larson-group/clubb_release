@@ -321,188 +321,191 @@ module mu_sigma_hm_tests
          ! Set the value of omicron.
          omicron = 0.1_core_rknd * real( iter_omicron - 1, kind = core_rknd )
 
-         do iter_zeta_vrnce_rat = 1, num_zeta_vrnce_rat, 1
+          do iter_zeta_vrnce_rat = 1, num_zeta_vrnce_rat, 1
 
-           ! Set the value of zeta_vrnce_rat.
-           if ( iter_zeta_vrnce_rat == 1 ) then
-              zeta_vrnce_rat = zero
-           elseif ( iter_zeta_vrnce_rat == 2 ) then
-              zeta_vrnce_rat = -one_half
-           elseif ( iter_zeta_vrnce_rat == 3 ) then
-              zeta_vrnce_rat = one
-           elseif ( iter_zeta_vrnce_rat == 4 ) then
-              zeta_vrnce_rat = -one_third
-           elseif ( iter_zeta_vrnce_rat == 5 ) then
-              zeta_vrnce_rat = one_half
-           elseif ( iter_zeta_vrnce_rat == 6 ) then
-              zeta_vrnce_rat = -0.2_core_rknd
-           elseif ( iter_zeta_vrnce_rat == 7 ) then
-              zeta_vrnce_rat = one_fourth
-           elseif ( iter_zeta_vrnce_rat == 8 ) then
-              zeta_vrnce_rat = -0.9_core_rknd
-           elseif ( iter_zeta_vrnce_rat == 9 ) then
-              zeta_vrnce_rat = 9.0_core_rknd
-           elseif ( iter_zeta_vrnce_rat == 10 ) then
-              zeta_vrnce_rat = -three_fourths
-           elseif ( iter_zeta_vrnce_rat == 11 ) then
-              zeta_vrnce_rat = three
-           endif
+             ! Set the value of zeta_vrnce_rat.
+             if ( iter_zeta_vrnce_rat == 1 ) then
+                zeta_vrnce_rat = zero
+             elseif ( iter_zeta_vrnce_rat == 2 ) then
+                zeta_vrnce_rat = -one_half
+             elseif ( iter_zeta_vrnce_rat == 3 ) then
+                zeta_vrnce_rat = one
+             elseif ( iter_zeta_vrnce_rat == 4 ) then
+                zeta_vrnce_rat = -one_third
+             elseif ( iter_zeta_vrnce_rat == 5 ) then
+                zeta_vrnce_rat = one_half
+             elseif ( iter_zeta_vrnce_rat == 6 ) then
+                zeta_vrnce_rat = -0.2_core_rknd
+             elseif ( iter_zeta_vrnce_rat == 7 ) then
+                zeta_vrnce_rat = one_fourth
+             elseif ( iter_zeta_vrnce_rat == 8 ) then
+                zeta_vrnce_rat = -0.9_core_rknd
+             elseif ( iter_zeta_vrnce_rat == 9 ) then
+                zeta_vrnce_rat = 9.0_core_rknd
+             elseif ( iter_zeta_vrnce_rat == 10 ) then
+                zeta_vrnce_rat = -three_fourths
+             elseif ( iter_zeta_vrnce_rat == 11 ) then
+                zeta_vrnce_rat = three
+             endif
 
-           ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
-           ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
-           ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-           ! This subroutine is called only when precip_frac_1 > 0 and
-           ! precip_frac_2 > 0 (there is precipitation in both PDF components).
-           call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
-                                       mixt_frac, precip_frac, precip_frac_1, &
-                                       precip_frac_2, hm_tol, &
-                                       precip_frac_tol, &
-                                       omicron, zeta_vrnce_rat, &
-                                       mu_hm_1, mu_hm_2, sigma_hm_1, &
-                                       sigma_hm_2, hm_1, hm_2, &
-                                       sigma_hm_1_sqd_on_mu_hm_1_sqd, &
-                                       sigma_hm_2_sqd_on_mu_hm_2_sqd )
+             ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
+             ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
+             ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
+             ! This subroutine is called only when precip_frac_1 > 0 and
+             ! precip_frac_2 > 0 (there is precipitation in both PDF
+             ! components).
+             call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+                                         hmp2_ip_on_hmm2_ip, &            ! In
+                                         mixt_frac, precip_frac, &        ! In
+                                         precip_frac_1, precip_frac_2, &  ! In
+                                         hm_tol, precip_frac_tol, &       ! In
+                                         omicron, zeta_vrnce_rat, &       ! In
+                                         mu_hm_1, mu_hm_2, &              ! Out
+                                         sigma_hm_1, sigma_hm_2, &        ! Out
+                                         hm_1, hm_2, &                    ! Out
+                                         sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Out
+                                         sigma_hm_2_sqd_on_mu_hm_2_sqd )  ! Out
 
-           ! Recalculate the value of <hm> using the hydrometeor PDF parameters
-           ! output from the subroutine.
-           recalc_hmm = mixt_frac * precip_frac_1 * mu_hm_1 &
-                        + ( one - mixt_frac ) * precip_frac_2 * mu_hm_2
+             ! Recalculate the value of <hm> using the hydrometeor PDF
+             ! parameters that are output from the subroutine.
+             recalc_hmm = mixt_frac * precip_frac_1 * mu_hm_1 &
+                          + ( one - mixt_frac ) * precip_frac_2 * mu_hm_2
 
-           ! Recalculate the value of <hm'^2> using the hydrometeor PDF
-           ! parameters output from the subroutine.
-           recalc_hmp2 = mixt_frac * precip_frac_1 &
-                         * ( mu_hm_1**2 + sigma_hm_1**2 ) &
-                         + ( one - mixt_frac ) * precip_frac_2 &
-                           * ( mu_hm_2**2 + sigma_hm_2**2 ) &
-                         - hmm**2
+             ! Recalculate the value of <hm'^2> using the hydrometeor PDF
+             ! parameters that are output from the subroutine.
+             recalc_hmp2 = mixt_frac * precip_frac_1 &
+                           * ( mu_hm_1**2 + sigma_hm_1**2 ) &
+                           + ( one - mixt_frac ) * precip_frac_2 &
+                             * ( mu_hm_2**2 + sigma_hm_2**2 ) &
+                           - hmm**2
 
-           ! Calculate the "ratio of ratios".
-           ! When omicron > 0, calculate the ratio of ratios:
-           ! sigma_hm_1_sqd_on_mu_hm_1_sqd / sigma_hm_2_sqd_on_mu_hm_2_sqd.
-           if ( omicron > zero ) then
-              calc_rat_rat &
-              = sigma_hm_1_sqd_on_mu_hm_1_sqd / sigma_hm_2_sqd_on_mu_hm_2_sqd
-           endif ! omicron > 0
+             ! Calculate the "ratio of ratios".
+             ! When omicron > 0, calculate the ratio of ratios:
+             ! sigma_hm_1_sqd_on_mu_hm_1_sqd / sigma_hm_2_sqd_on_mu_hm_2_sqd.
+             if ( omicron > zero ) then
+                calc_rat_rat &
+                = sigma_hm_1_sqd_on_mu_hm_1_sqd / sigma_hm_2_sqd_on_mu_hm_2_sqd
+             endif ! omicron > 0
 
-           ! Test 1
-           ! Compare the original hmm to its recalculated value.
-           !    | ( <hm>|_recalc - <hm> ) / <hm> |  <=  tol;
-           ! which can be rewritten as:
-           !    | <hm>|_recalc - <hm> |  <=  | <hm> | * tol;
-           ! and since <hm> is always positive:
-           !    | <hm>|_recalc - <hm> |  <=  <hm> * tol.
-           if ( abs( recalc_hmm - hmm ) <= hmm * tol ) then
-              l_pass_test_1 = .true.
-           else
-              l_pass_test_1 = .false.
-              write(fstderr,*) "Test 1 failed"
-              write(fstderr,*) "hmm = ", hmm
-              write(fstderr,*) "recalc_hmm = ", recalc_hmm
-              write(fstderr,*) ""
-           endif
+             ! Test 1
+             ! Compare the original hmm to its recalculated value.
+             !    | ( <hm>|_recalc - <hm> ) / <hm> |  <=  tol;
+             ! which can be rewritten as:
+             !    | <hm>|_recalc - <hm> |  <=  | <hm> | * tol;
+             ! and since <hm> is always positive:
+             !    | <hm>|_recalc - <hm> |  <=  <hm> * tol.
+             if ( abs( recalc_hmm - hmm ) <= hmm * tol ) then
+                l_pass_test_1 = .true.
+             else
+                l_pass_test_1 = .false.
+                write(fstderr,*) "Test 1 failed"
+                write(fstderr,*) "hmm = ", hmm
+                write(fstderr,*) "recalc_hmm = ", recalc_hmm
+                write(fstderr,*) ""
+             endif
 
-           ! Test 2
-           ! Compare the original hmp2 to its recalculated value.
-           !    | ( <hm'^2>|_recalc - <hm'^2> ) / <hm'^2> |  <=  tol;
-           ! which can be rewritten as:
-           !    | <hm'^2>|_recalc - <hm'^2> |  <=  | <hm'^2> | * tol;
-           ! and since <hm'^2> is always positive:
-           !    | <hm'^2>|_recalc - <hm'^2> |  <=  <hm'^2> * tol.
-           if ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol ) then
-              l_pass_test_2 = .true.
-           else
-              l_pass_test_2 = .false.
-              write(fstderr,*) "Test 2 failed"
-              write(fstderr,*) "hmp2 = ", hmp2
-              write(fstderr,*) "recalc_hp2 = ", recalc_hmp2
-              write(fstderr,*) ""
-           endif
+             ! Test 2
+             ! Compare the original hmp2 to its recalculated value.
+             !    | ( <hm'^2>|_recalc - <hm'^2> ) / <hm'^2> |  <=  tol;
+             ! which can be rewritten as:
+             !    | <hm'^2>|_recalc - <hm'^2> |  <=  | <hm'^2> | * tol;
+             ! and since <hm'^2> is always positive:
+             !    | <hm'^2>|_recalc - <hm'^2> |  <=  <hm'^2> * tol.
+             if ( abs( recalc_hmp2 - hmp2 ) <= hmp2 * tol ) then
+                l_pass_test_2 = .true.
+             else
+                l_pass_test_2 = .false.
+                write(fstderr,*) "Test 2 failed"
+                write(fstderr,*) "hmp2 = ", hmp2
+                write(fstderr,*) "recalc_hp2 = ", recalc_hmp2
+                write(fstderr,*) ""
+             endif
 
-           ! Test 3
-           ! Compare the "ratio of ratios" to 1 + zeta.
-           !    | ( calc_rat_rat - ( 1 + zeta ) ) / ( 1 + zeta ) |  <=  tol;
-           ! which can be rewritten as:
-           !    | calc_rat_rat - ( 1 + zeta ) |  <=  | ( 1 + zeta ) | * tol;
-           ! and since 1 + zeta is always positive:
-           !    | calc_rat_rat - ( 1 + zeta ) |  <=  ( 1 + zeta ) * tol.
-           if ( omicron > zero ) then
-              if ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
-                   <= ( one + zeta_vrnce_rat ) * tol ) then
-                 l_pass_test_3 = .true.
-              else
-                 l_pass_test_3 = .false.
-                 write(fstderr,*) "Test 3 failed"
-                 write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
-                                  // "/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
-                                  calc_rat_rat
-                 write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
-                 write(fstderr,*) ""
-              endif
-           else ! omicron = 0
-              ! When omicron = 0, both ratios, sigma_hm_1_sqd_on_mu_hm_1_sqd and
-              ! sigma_hm_2_sqd_on_mu_hm_2_sqd, have a value of 0.  Their ratio,
-              ! the "ratio of ratios" is undefined.  This test cannot be
-              ! evaluated, so automatically pass it.
-              l_pass_test_3 = .true.
-           endif ! omicron > 0
+             ! Test 3
+             ! Compare the "ratio of ratios" to 1 + zeta.
+             !    | ( calc_rat_rat - ( 1 + zeta ) ) / ( 1 + zeta ) |  <=  tol;
+             ! which can be rewritten as:
+             !    | calc_rat_rat - ( 1 + zeta ) |  <=  | ( 1 + zeta ) | * tol;
+             ! and since 1 + zeta is always positive:
+             !    | calc_rat_rat - ( 1 + zeta ) |  <=  ( 1 + zeta ) * tol.
+             if ( omicron > zero ) then
+                if ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
+                     <= ( one + zeta_vrnce_rat ) * tol ) then
+                   l_pass_test_3 = .true.
+                else
+                   l_pass_test_3 = .false.
+                   write(fstderr,*) "Test 3 failed"
+                   write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
+                                    // "/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
+                                    calc_rat_rat
+                   write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
+                   write(fstderr,*) ""
+                endif
+             else ! omicron = 0
+                ! When omicron = 0, both ratios, sigma_hm_1_sqd_on_mu_hm_1_sqd
+                ! and sigma_hm_2_sqd_on_mu_hm_2_sqd, have a value of 0.  Their
+                ! ratio, the "ratio of ratios" is undefined.  This test cannot
+                ! be evaluated, so automatically pass it.
+                l_pass_test_3 = .true.
+             endif ! omicron > 0
 
-           ! Test 4
-           ! Check that mu_hm_1, mu_hm_2, hm_1, and hm_2 have at least threshold
-           ! values.
-           if ( ( mu_hm_1 >= ( hm_tol / precip_frac_1 ) * (one-tol) ) &
-                .and. ( mu_hm_2 >= ( hm_tol / precip_frac_2 ) * (one-tol) ) &
-                .and. ( hm_1 >= hm_tol ) .and. ( hm_2 >= hm_tol ) ) then
-              l_pass_test_4 = .true.
-           else
-              l_pass_test_4 = .false.
-              write(fstderr,*) "Test 4 failed"
-              write(fstderr,*) "mu_hm_1 = ", mu_hm_1
-              write(fstderr,*) "hm_tol/precip_frac_1 = ", hm_tol / precip_frac_1
-              write(fstderr,*) "mu_hm_2 = ", mu_hm_2
-              write(fstderr,*) "hm_tol/precip_frac_2 = ", hm_tol / precip_frac_2
-              write(fstderr,*) "hm_1 = ", hm_1
-              write(fstderr,*) "hm_2 = ", hm_2
-              write(fstderr,*) "hm_tol = ", hm_tol
-              write(fstderr,*) ""
-           endif
+             ! Test 4
+             ! Check that mu_hm_1, mu_hm_2, hm_1, and hm_2 have at least
+             ! threshold values.
+             if ( ( mu_hm_1 >= ( hm_tol / precip_frac_1 ) * (one-tol) ) &
+                  .and. ( mu_hm_2 >= ( hm_tol / precip_frac_2 ) * (one-tol) ) &
+                  .and. ( hm_1 >= hm_tol ) .and. ( hm_2 >= hm_tol ) ) then
+                l_pass_test_4 = .true.
+             else
+                l_pass_test_4 = .false.
+                write(fstderr,*) "Test 4 failed"
+                write(fstderr,*) "mu_hm_1 = ", mu_hm_1
+                write(fstderr,*) "hm_tol/precip_frac_1 = ", hm_tol/precip_frac_1
+                write(fstderr,*) "mu_hm_2 = ", mu_hm_2
+                write(fstderr,*) "hm_tol/precip_frac_2 = ", hm_tol/precip_frac_2
+                write(fstderr,*) "hm_1 = ", hm_1
+                write(fstderr,*) "hm_2 = ", hm_2
+                write(fstderr,*) "hm_tol = ", hm_tol
+                write(fstderr,*) ""
+             endif
 
-           ! Test 5
-           ! Check that sigma_hm_1, sigma_hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd,
-           ! and sigma_hm_2_sqd_on_mu_hm_2_sqd have a value of at least zero.
-           if ( ( sigma_hm_1 >= zero ) .and. ( sigma_hm_2 >= zero ) &
-                .and. ( sigma_hm_1_sqd_on_mu_hm_1_sqd >= zero ) &
-                .and. ( sigma_hm_2_sqd_on_mu_hm_2_sqd >= zero ) ) then
-              l_pass_test_5 = .true.
-           else
-              l_pass_test_5 = .false.
-              write(fstderr,*) "Test 5 failed"
-              write(fstderr,*) "sigma_hm_1 = ", sigma_hm_1
-              write(fstderr,*) "sigma_hm_2 = ", sigma_hm_2
-              write(fstderr,*) "sigma_hm_1^2 / mu_hm_1^2 = ", &
-                               sigma_hm_1_sqd_on_mu_hm_1_sqd
-              write(fstderr,*) "sigma_hm_2^2 / mu_hm_2^2 = ", &
-                               sigma_hm_2_sqd_on_mu_hm_2_sqd
-              write(fstderr,*) ""
-           endif
-
-
-           if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                .and. l_pass_test_4 .and. l_pass_test_5 ) then
-              ! All tests pass
-              num_failed_sets = num_failed_sets
-           else
-              ! At least one test failed
-              num_failed_sets = num_failed_sets + 1
-              write(fstderr,*) "At least one test or check failed for " &
-                               // "the following parameter set:  "
-              write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-              write(fstderr,*) "omicron = ", omicron
-              write(fstderr,*) "zeta = ", zeta_vrnce_rat
-              write(fstderr,*) ""
-           endif
+             ! Test 5
+             ! Check that sigma_hm_1, sigma_hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd,
+             ! and sigma_hm_2_sqd_on_mu_hm_2_sqd have a value of at least zero.
+             if ( ( sigma_hm_1 >= zero ) .and. ( sigma_hm_2 >= zero ) &
+                  .and. ( sigma_hm_1_sqd_on_mu_hm_1_sqd >= zero ) &
+                  .and. ( sigma_hm_2_sqd_on_mu_hm_2_sqd >= zero ) ) then
+                l_pass_test_5 = .true.
+             else
+                l_pass_test_5 = .false.
+                write(fstderr,*) "Test 5 failed"
+                write(fstderr,*) "sigma_hm_1 = ", sigma_hm_1
+                write(fstderr,*) "sigma_hm_2 = ", sigma_hm_2
+                write(fstderr,*) "sigma_hm_1^2 / mu_hm_1^2 = ", &
+                                 sigma_hm_1_sqd_on_mu_hm_1_sqd
+                write(fstderr,*) "sigma_hm_2^2 / mu_hm_2^2 = ", &
+                                 sigma_hm_2_sqd_on_mu_hm_2_sqd
+                write(fstderr,*) ""
+             endif
 
 
-         enddo ! iter_zeta_vrnce_rat = 1, num_zeta_vrnce_rat, 1
+             if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                  .and. l_pass_test_4 .and. l_pass_test_5 ) then
+                ! All tests pass
+                num_failed_sets = num_failed_sets
+             else
+                ! At least one test failed
+                num_failed_sets = num_failed_sets + 1
+                write(fstderr,*) "At least one test or check failed for " &
+                                 // "the following parameter set:  "
+                write(fstderr,*) "PDF parameter set index = ", iter_param_sets
+                write(fstderr,*) "omicron = ", omicron
+                write(fstderr,*) "zeta = ", zeta_vrnce_rat
+                write(fstderr,*) ""
+             endif
+
+
+          enddo ! iter_zeta_vrnce_rat = 1, num_zeta_vrnce_rat, 1
 
        enddo ! iter_omicron = 1, num_omicron, 1
 
@@ -534,23 +537,25 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
-                                mixt_frac, precip_frac, precip_frac_1, &
-                                precip_frac_2, hm_tol, &
-                                precip_frac_tol, &
-                                omicron, zeta_vrnce_rat, &
-                                mu_hm_1, mu_hm_2, sigma_hm_1, &
-                                sigma_hm_2, hm_1, hm_2, &
-                                sigma_hm_1_sqd_on_mu_hm_1_sqd, &
-                                sigma_hm_2_sqd_on_mu_hm_2_sqd )
+    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+                                hmp2_ip_on_hmm2_ip, &            ! In
+                                mixt_frac, precip_frac, &        ! In
+                                precip_frac_1, precip_frac_2, &  ! In
+                                hm_tol, precip_frac_tol, &       ! In
+                                omicron, zeta_vrnce_rat, &       ! In
+                                mu_hm_1, mu_hm_2, &              ! Out
+                                sigma_hm_1, sigma_hm_2, &        ! Out
+                                hm_1, hm_2, &                    ! Out
+                                sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Out
+                                sigma_hm_2_sqd_on_mu_hm_2_sqd )  ! Out
 
-    ! Recalculate the value of <hm> using the hydrometeor PDF parameters output
-    ! from the subroutine.
+    ! Recalculate the value of <hm> using the hydrometeor PDF parameters that
+    ! are output from the subroutine.
     recalc_hmm = mixt_frac * precip_frac_1 * mu_hm_1 &
                  + ( one - mixt_frac ) * precip_frac_2 * mu_hm_2
 
-    ! Recalculate the value of <hm'^2> using the hydrometeor PDF parameters
-    ! output from the subroutine.
+    ! Recalculate the value of <hm'^2> using the hydrometeor PDF parameters that
+    ! are output from the subroutine.
     recalc_hmp2 = mixt_frac * precip_frac_1 &
                   * ( mu_hm_1**2 + sigma_hm_1**2 ) &
                   + ( one - mixt_frac ) * precip_frac_2 &
@@ -625,23 +630,25 @@ module mu_sigma_hm_tests
     ! Call the subroutine for calculating mu_hm_1, mu_hm_2, sigma_hm_1,
     ! sigma_hm_2, hm_1, hm_2, sigma_hm_1_sqd_on_mu_hm_1_sqd, and
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
-    call calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &
-                                mixt_frac, precip_frac, precip_frac_1, &
-                                precip_frac_2, hm_tol, &
-                                precip_frac_tol, &
-                                omicron, zeta_vrnce_rat, &
-                                mu_hm_1, mu_hm_2, sigma_hm_1, &
-                                sigma_hm_2, hm_1, hm_2, &
-                                sigma_hm_1_sqd_on_mu_hm_1_sqd, &
-                                sigma_hm_2_sqd_on_mu_hm_2_sqd )
+    call calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+                                hmp2_ip_on_hmm2_ip, &            ! In
+                                mixt_frac, precip_frac, &        ! In
+                                precip_frac_1, precip_frac_2, &  ! In
+                                hm_tol, precip_frac_tol, &       ! In
+                                omicron, zeta_vrnce_rat, &       ! In
+                                mu_hm_1, mu_hm_2, &              ! Out
+                                sigma_hm_1, sigma_hm_2, &        ! Out
+                                hm_1, hm_2, &                    ! Out
+                                sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Out
+                                sigma_hm_2_sqd_on_mu_hm_2_sqd )  ! Out
 
-    ! Recalculate the value of <hm> using the hydrometeor PDF parameters output
-    ! from the subroutine.
+    ! Recalculate the value of <hm> using the hydrometeor PDF parameters that
+    ! are output from the subroutine.
     recalc_hmm = mixt_frac * precip_frac_1 * mu_hm_1 &
                  + ( one - mixt_frac ) * precip_frac_2 * mu_hm_2
 
-    ! Recalculate the value of <hm'^2> using the hydrometeor PDF parameters
-    ! output from the subroutine.
+    ! Recalculate the value of <hm'^2> using the hydrometeor PDF parameters that
+    ! are output from the subroutine.
     recalc_hmp2 = mixt_frac * precip_frac_1 &
                   * ( mu_hm_1**2 + sigma_hm_1**2 ) &
                   + ( one - mixt_frac ) * precip_frac_2 &

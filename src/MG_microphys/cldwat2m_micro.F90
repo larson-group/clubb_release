@@ -950,6 +950,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
     real ( kind = core_rknd ), dimension(hydromet_dim) :: &
       hydromet,       &
+      hydrometp2_zt,  &
       hm1,            &
       hm2,            &
       wphydrometp_zt
@@ -1811,10 +1812,13 @@ subroutine mmicro_pcond ( sub_column,           &
                  hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
                  hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
+                 hydrometp2_zt(1) = hydromet(1)**2
+                 hydrometp2_zt(2) = hydromet(2)**2
+
                  wphydrometp_zt(1) = zero
                  wphydrometp_zt(2) = zero
 
-                 call compute_mean_stdev( hydromet,                           & ! Intent(in)
+                 call compute_mean_stdev( hydromet, hydrometp2_zt,            & ! Intent(in)
                                           real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
@@ -2352,10 +2356,18 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  mixt_frac = pdf_params(k)%mixt_frac
 
+                 precip_frac_tol = 0.005_core_rknd
+
                  hydromet(1) = real( qric(i,k) * cldmax(i,k), kind = core_rknd )
                  hydromet(2) = real( nric(i,k) * cldmax(i,k), kind = core_rknd )
 
-                 call compute_mean_stdev( hydromet,                           & ! Intent(in)
+                 hydrometp2_zt(1) = hydromet(1)**2
+                 hydrometp2_zt(2) = hydromet(2)**2
+
+                 wphydrometp_zt(1) = zero
+                 wphydrometp_zt(2) = zero
+
+                 call compute_mean_stdev( hydromet, hydrometp2_zt,            & ! Intent(in)
                                           real( nc(i,k), kind = core_rknd ),  & ! Intent(in)
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
