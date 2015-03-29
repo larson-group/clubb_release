@@ -1,4 +1,4 @@
-#!/home/betlej/Enthought/Canopy_64bit/User/bin/python
+#!/usr/bin/env python
 # Author: Cavyn VonDeylen
 # Date: September 2010
 # Larson-Group UWM

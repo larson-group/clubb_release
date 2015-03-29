@@ -107,7 +107,7 @@ module stats_clubb_utilities
 
 #ifdef NETCDF
     use output_netcdf, only: &
-      open_netcdf     ! Procedure
+      open_netcdf_for_writing     ! Procedure
 #endif
 
     use stats_zm_module, only: &
@@ -773,7 +773,7 @@ module stats_clubb_utilities
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zt%kk, stats_zt%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current, stats_tout, stats_zt%num_output_fields, &  ! In
                         stats_zt%file ) ! InOut
@@ -853,8 +853,8 @@ module stats_clubb_utilities
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, stats_lh_zt%z, &  ! In
-                          day, month, year, rlat, rlon, &  ! In
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_zt%kk, &  ! In
+                          stats_lh_zt%z, day, month, year, rlat, rlon, &  ! In
                           time_current, stats_tout, stats_lh_zt%num_output_fields, &  ! In
                           stats_lh_zt%file ) ! InOut
 #else
@@ -916,8 +916,8 @@ module stats_clubb_utilities
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, stats_lh_sfc%z, &  ! In
-                          day, month, year, rlat, rlon, &  ! In
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_lh_sfc%kk, &  ! In
+                          stats_lh_sfc%z, day, month, year, rlat, rlon, &  ! In
                           time_current, stats_tout, stats_lh_sfc%num_output_fields, &  ! In
                           stats_lh_sfc%file ) ! InOut
 #else
@@ -1171,7 +1171,7 @@ module stats_clubb_utilities
 
     else ! Open NetCDF file
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_zm%kk, stats_zm%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current, stats_tout, stats_zm%num_output_fields, &  ! In
                         stats_zm%file ) ! InOut
@@ -1236,7 +1236,7 @@ module stats_clubb_utilities
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname,  & 
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & 
                           1, stats_rad_zt%kk, stats_rad_zt%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current, stats_tout, & 
@@ -1301,7 +1301,7 @@ module stats_clubb_utilities
 
       else ! Open NetCDF file
 #ifdef NETCDF
-        call open_netcdf( nlat, nlon, fdir, fname,  & 
+        call open_netcdf_for_writing( nlat, nlon, fdir, fname,  & 
                           1, stats_rad_zm%kk, stats_rad_zm%z, & 
                           day, month, year, rlat, rlon, & 
                           time_current, stats_tout, & 
@@ -1368,7 +1368,7 @@ module stats_clubb_utilities
 
     else ! Open NetCDF files
 #ifdef NETCDF
-      call open_netcdf( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, &  ! In
+      call open_netcdf_for_writing( nlat, nlon, fdir, fname, 1, stats_sfc%kk, stats_sfc%z, &  ! In
                         day, month, year, rlat, rlon, &  ! In
                         time_current, stats_tout, stats_sfc%num_output_fields, &  ! In
                         stats_sfc%file ) ! InOut

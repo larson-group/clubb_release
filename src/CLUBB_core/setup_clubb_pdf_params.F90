@@ -601,19 +601,18 @@ module setup_clubb_pdf_params
        !!! Calculate the means and standard deviations involving PDF variables
        !!! -- w, chi, eta, N_cn, and any precipitating hydrometeors (hm
        !!! in-precip) -- for each PDF component.
-       call compute_mean_stdev( hydromet(k,:), Ncnm(k),             & ! Intent(in)
-                                hydrometp2_zt(k,:),                 & ! Intent(in)
-                                mixt_frac(k), precip_frac(k),       & ! Intent(in)
-                                precip_frac_1(k), precip_frac_2(k), & ! Intent(in)
-                                precip_frac_tol,                    & ! Intent(in)
-                                pdf_params(k), d_variables,         & ! Intent(in)
-                                l_input_fields, l_input_rrp2,       & ! Intent(in)
-                                l_input_Nrp2,                       & ! Intent(in)
-                                mu_x_1, mu_x_2,                     & ! Intent(out)
-                                sigma_x_1, sigma_x_2,               & ! Intent(out)
-                                hm_1(k,:), hm_2(k,:),               & ! Intent(out)
-                                sigma2_on_mu2_ip_1,                 & ! Intent(out)
-                                sigma2_on_mu2_ip_2                  ) ! Intent(out)
+       call compute_mean_stdev( hydromet(k,:), hydrometp2_zt(k,:),     & ! In
+                                Ncnm(k), mixt_frac(k), precip_frac(k), & ! In
+                                precip_frac_1(k), precip_frac_2(k),    & ! In
+                                precip_frac_tol,                       & ! In
+                                pdf_params(k), d_variables,            & ! In
+                                l_input_fields, l_input_rrp2,          & ! In
+                                l_input_Nrp2,                          & ! In
+                                mu_x_1, mu_x_2,                        & ! Out
+                                sigma_x_1, sigma_x_2,                  & ! Out
+                                hm_1(k,:), hm_2(k,:),                  & ! Out
+                                sigma2_on_mu2_ip_1,                    & ! Out
+                                sigma2_on_mu2_ip_2                     ) ! Out
 
        !!! Transform the component means and standard deviations involving
        !!! precipitating hydrometeors (hm in-precip) and N_cn -- ln hm and
@@ -739,9 +738,21 @@ module setup_clubb_pdf_params
     ! Interpolate the overall variance of a hydrometeor, <hm'^2>, to its home on
     ! momentum grid levels.
     do i = 1, hydromet_dim, 1
-       hydrometp2(:,i)  = zt2zm( hydrometp2_zt(:,i) )
-       hydrometp2(nz,i) = zero
-    enddo
+
+       if ( i == iirrm ) then
+          l_input_hmp2 = l_input_rrp2
+       elseif ( i == iiNrm ) then
+          l_input_hmp2 = l_input_Nrp2
+       else ! default
+          l_input_hmp2 = .false.
+       endif
+
+       if ( .not. ( l_input_fields .and. l_input_hmp2 ) ) then
+          hydrometp2(:,i)  = zt2zm( hydrometp2_zt(:,i) )
+          hydrometp2(nz,i) = zero
+       endif
+
+    enddo ! i = 1, hydromet_dim, 1
 
     if ( l_stats_samp ) then
        if ( irtp2_from_chi > 0 ) then
@@ -779,9 +790,8 @@ module setup_clubb_pdf_params
   end subroutine setup_pdf_parameters
 
   !=============================================================================
-  subroutine compute_mean_stdev( hydromet, Ncnm,                & ! Intent(in)
-                                 hydrometp2_zt,                 & ! Intent(in)
-                                 mixt_frac, precip_frac,        & ! Intent(in)
+  subroutine compute_mean_stdev( hydromet, hydrometp2_zt,       & ! Intent(in)
+                                 Ncnm, mixt_frac, precip_frac,  & ! Intent(in)
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
                                  precip_frac_tol,               & ! Intent(in)
                                  pdf_params, d_variables,       & ! Intent(in)
@@ -842,8 +852,8 @@ module setup_clubb_pdf_params
 
     ! Input Variables
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
-      hydromet,      & ! Mean of a precipitating hydrometeor (overall) [un. v.]
-      hydrometp2_zt    ! Variance of a hydrometeor (overall); t-lev    [units^2]
+      hydromet,       & ! Mean of a hydrometeor (overall)             [hm units]
+      hydrometp2_zt     ! Variance of a hydrometeor (overall)     [(hm units)^2]
 
     real( kind = core_rknd ), intent(in) :: &
       Ncnm,            & ! Mean simplified cloud nuclei concentration   [num/kg]
@@ -885,6 +895,8 @@ module setup_clubb_pdf_params
 
     ! Local Variables
     integer :: ivar ! Loop iterator
+
+    integer :: hm_idx  ! Hydrometeor array index.
 
     logical :: l_input_hmp2
 
@@ -1010,38 +1022,36 @@ module setup_clubb_pdf_params
           l_input_hmp2 = .false.
        endif
 
+       hm_idx = pdf2hydromet_idx(ivar)
+
        if ( l_input_fields .and. l_input_hmp2 ) then
 
-          if ( hydromet(pdf2hydromet_idx(ivar)) &
-               > hydromet_tol(pdf2hydromet_idx(ivar)) ) then
+          if ( hydromet(hm_idx) >= hydromet_tol(hm_idx) ) then
 
-             hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar)) &
+             hmp2_ip_on_hmm2_ip(hm_idx) &
              = max( precip_frac &
-                    * ( hydrometp2_zt(pdf2hydromet_idx(ivar)) &
-                        + hydromet(pdf2hydromet_idx(ivar))**2 ) &
-                      / hydromet(pdf2hydromet_idx(ivar))**2 &
+                    * ( hydrometp2_zt(hm_idx) + hydromet(hm_idx)**2 ) &
+                      / hydromet(hm_idx)**2 &
                     - one, &
                     zero )
 
           else
 
-             hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar)) = zero
+             hmp2_ip_on_hmm2_ip(hm_idx) = zero
 
           endif
 
        endif ! l_input_fields .and. l_input_hmp2
 
-       call calc_comp_mu_sigma_hm( hydromet(pdf2hydromet_idx(ivar)), &
-                                   hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar)), &
-                                   mixt_frac, precip_frac, precip_frac_1, &
-                                   precip_frac_2, &
-                                   hydromet_tol(pdf2hydromet_idx(ivar)), &
-                                   precip_frac_tol, &
+       call calc_comp_mu_sigma_hm( hydromet(hm_idx), hydrometp2_zt(hm_idx), &
+                                   hmp2_ip_on_hmm2_ip(hm_idx), &
+                                   mixt_frac, precip_frac, &
+                                   precip_frac_1, precip_frac_2, &
+                                   hydromet_tol(hm_idx), precip_frac_tol, &
                                    omicron, zeta_vrnce_rat, &
                                    mu_x_1(ivar), mu_x_2(ivar), &
                                    sigma_x_1(ivar), sigma_x_2(ivar), &
-                                   hm_1(pdf2hydromet_idx(ivar)), &
-                                   hm_2(pdf2hydromet_idx(ivar)), &
+                                   hm_1(hm_idx), hm_2(hm_idx), &
                                    sigma_hm_1_sqd_on_mu_hm_1_sqd(ivar), &
                                    sigma_hm_2_sqd_on_mu_hm_2_sqd(ivar) )
 
@@ -1553,15 +1563,17 @@ module setup_clubb_pdf_params
   end subroutine comp_corr_norm
 
   !=============================================================================
-  subroutine calc_comp_mu_sigma_hm( hmm, hmp2_ip_on_hmm2_ip, &              !In
-                                    mixt_frac, precip_frac, precip_frac_1, &!In
-                                    precip_frac_2, hm_tol, &                !In
-                                    precip_frac_tol, &                      !In
-                                    omicron, zeta_vrnce_rat, &              !In
-                                    mu_hm_1, mu_hm_2, sigma_hm_1, &         !Out
-                                    sigma_hm_2, hm_1, hm_2, &               !Out
-                                    sigma_hm_1_sqd_on_mu_hm_1_sqd, &        !Out
-                                    sigma_hm_2_sqd_on_mu_hm_2_sqd )         !Out
+  subroutine calc_comp_mu_sigma_hm( hmm, hmp2, &                     ! In
+                                    hmp2_ip_on_hmm2_ip, &            ! In
+                                    mixt_frac, precip_frac, &        ! In
+                                    precip_frac_1, precip_frac_2, &  ! In
+                                    hm_tol, precip_frac_tol, &       ! In
+                                    omicron, zeta_vrnce_rat, &       ! In
+                                    mu_hm_1, mu_hm_2, &              ! Out
+                                    sigma_hm_1, sigma_hm_2, &        ! Out
+                                    hm_1, hm_2, &                    ! Out
+                                    sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Out
+                                    sigma_hm_2_sqd_on_mu_hm_2_sqd )  ! Out
 
     ! Description:
     ! When precipitation is found in both PDF components (precip_frac_1 > 0 and
@@ -1590,6 +1602,7 @@ module setup_clubb_pdf_params
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       hmm,                & ! Hydrometeor mean (overall), <hm>        [hm units]
+      hmp2,               & ! Hydrometeor variance (overall), <hm'^2> [hm un.^2]
       hmp2_ip_on_hmm2_ip, & ! Ratio <hm|_ip'^2> / <hm|_ip>^2                 [-]
       mixt_frac,          & ! Mixture fraction                               [-]
       precip_frac,        & ! Precipitation fraction (overall)               [-]
@@ -1616,19 +1629,10 @@ module setup_clubb_pdf_params
       sigma_hm_1_sqd_on_mu_hm_1_sqd, & ! Ratio sigma_hm_1**2 / mu_hm_1**2    [-]
       sigma_hm_2_sqd_on_mu_hm_2_sqd    ! Ratio sigma_hm_2**2 / mu_hm_2**2    [-]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      hmp2,   & ! Hydrometeor variance (overall), <hm'^2>         [(hm units)^2]
-      hmm_ip    ! Hydrometeor mean (in-precip), <hm|_ip>              [hm units]
-
 
     if ( hmm >= hm_tol &
          .and. precip_frac_1 >= precip_frac_tol &
          .and. precip_frac_2 >= precip_frac_tol ) then
-
-       ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
-       hmm_ip = hmm / precip_frac
-       hmp2 = precip_frac * ( hmp2_ip_on_hmm2_ip + one ) * hmm_ip**2 - hmm**2
 
        ! Precipitation is found in both PDF components.
        call calc_mu_sigma_two_comps( hmm, hmp2, hmp2_ip_on_hmm2_ip, &
@@ -1642,10 +1646,6 @@ module setup_clubb_pdf_params
 
 
     elseif ( hmm >= hm_tol .and. precip_frac_1 >= precip_frac_tol ) then
-
-       ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
-       hmm_ip = hmm / precip_frac
-       hmp2 = precip_frac * ( hmp2_ip_on_hmm2_ip + one ) * hmm_ip**2 - hmm**2
 
        ! Precipitation is found in the 1st PDF component, but not in the 2nd
        ! PDF component (precip_frac_2 = 0).
@@ -1667,10 +1667,6 @@ module setup_clubb_pdf_params
 
 
     elseif ( hmm >= hm_tol .and. precip_frac_2 >= precip_frac_tol ) then
-
-       ! Calculate <hm'^2> from the ratio <hm|_ip'^2> / <hm|_ip>^2.
-       hmm_ip = hmm / precip_frac
-       hmp2 = precip_frac * ( hmp2_ip_on_hmm2_ip + one ) * hmm_ip**2 - hmm**2
 
        ! Precipitation is found in the 2nd PDF component, but not in the 1st
        ! PDF component (precip_frac_1 = 0).
@@ -2895,9 +2891,6 @@ module setup_clubb_pdf_params
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
-    use model_flags, only: &
-        l_const_Nc_in_cloud  ! Variable!!
-
     implicit none
 
     ! Input Variables
@@ -2941,59 +2934,43 @@ module setup_clubb_pdf_params
     !!! normal space standard deviation of the variable with the assumed
     !!! lognormal distribution.
 
-    if ( l_const_Nc_in_cloud ) then
+    ! Transform the correlations between chi/eta/w and N_cn to standard space.
 
-      ! Ncn does not vary in the grid box. Consequently, the correlation between
-      ! Ncn and any other variate is not defined. Here, we set the correlations
-      ! between Ncn and chi/eta/w to zero.
-      corr_array_1(iiPDF_Ncn, iiPDF_w) = zero
-      corr_array_2(iiPDF_Ncn, iiPDF_w) = zero
-      corr_array_1(iiPDF_Ncn, iiPDF_chi) = zero
-      corr_array_2(iiPDF_Ncn, iiPDF_chi) = zero
-      corr_array_1(iiPDF_Ncn, iiPDF_eta) = zero
-      corr_array_2(iiPDF_Ncn, iiPDF_eta) = zero
+    ! Transform the correlation of w and N_cn to standard space in PDF
+    ! component 1.
+    corr_array_1(iiPDF_Ncn, iiPDF_w) &
+    = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_w), &
+                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-    else ! .not. l_const_Nc_in_cloud
+    ! Transform the correlation of w and N_cn to standard space in PDF
+    ! component 2.
+    corr_array_2(iiPDF_Ncn, iiPDF_w) &
+    = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_w), &
+                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-      ! Transform the correlations between chi/eta/w and N_cn to standard space.
+    ! Transform the correlation of chi (old s) and N_cn to standard space in
+    ! PDF component 1.
+    corr_array_1(iiPDF_Ncn, iiPDF_chi) &
+    = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_chi), &
+                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-      ! Transform the correlation of w and N_cn to standard space in PDF
-      ! component 1.
-      corr_array_1(iiPDF_Ncn, iiPDF_w) &
-      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_w), &
-                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+    ! Transform the correlation of chi (old s) and N_cn to standard space in
+    ! PDF component 2.
+    corr_array_2(iiPDF_Ncn, iiPDF_chi) &
+    = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_chi), &
+                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-      ! Transform the correlation of w and N_cn to standard space in PDF
-      ! component 2.
-      corr_array_2(iiPDF_Ncn, iiPDF_w) &
-      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_w), &
-                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
+    ! Transform the correlation of eta (old t) and N_cn to standard space in
+    ! PDF component 1.
+    corr_array_1(iiPDF_Ncn, iiPDF_eta) &
+    = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_eta), &
+                  sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
-      ! Transform the correlation of chi (old s) and N_cn to standard space in
-      ! PDF component 1.
-      corr_array_1(iiPDF_Ncn, iiPDF_chi) &
-      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_chi), &
-                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
-      ! Transform the correlation of chi (old s) and N_cn to standard space in
-      ! PDF component 2.
-      corr_array_2(iiPDF_Ncn, iiPDF_chi) &
-      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_chi), &
-                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
-      ! Transform the correlation of eta (old t) and N_cn to standard space in
-      ! PDF component 1.
-      corr_array_1(iiPDF_Ncn, iiPDF_eta) &
-      = corr_NN2NL( corr_array_1_n(iiPDF_Ncn, iiPDF_eta), &
-                    sigma_x_1_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
-      ! Transform the correlation of eta (old t) and N_cn to standard space in
-      ! PDF component 2.
-      corr_array_2(iiPDF_Ncn, iiPDF_eta) &
-      = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_eta), &
-                    sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
-
-    end if ! l_const_Nc_in_cloud
+    ! Transform the correlation of eta (old t) and N_cn to standard space in
+    ! PDF component 2.
+    corr_array_2(iiPDF_Ncn, iiPDF_eta) &
+    = corr_NN2NL( corr_array_2_n(iiPDF_Ncn, iiPDF_eta), &
+                  sigma_x_2_n(iiPDF_Ncn), sigma2_on_mu2_ip_1(iiPDF_Ncn) )
 
     ! Transform the correlations (in-precip) between chi/eta/w and the
     ! precipitating hydrometeors to standard space.
@@ -3026,30 +3003,19 @@ module setup_clubb_pdf_params
     ivar = iiPDF_Ncn
     do jvar = ivar+1, d_variables
 
-       if ( l_const_Nc_in_cloud ) then
+       ! Transform the correlation (in-precip) between N_cn and a precipitating
+       ! hydrometeor, hm, to standard space in PDF component 1.
+       corr_array_1(jvar, ivar) &
+       = corr_NN2LL( corr_array_1_n(jvar, ivar), &
+                     sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
+                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
 
-         ! Ncn does not vary, so these correlations are undefined. Set them to
-         ! zero.
-         corr_array_1(jvar,ivar) = zero
-         corr_array_2(jvar,ivar) = zero
-
-       else ! .not. l_const_Nc_in_cloud
-
-         ! Transform the correlation (in-precip) between N_cn and a
-         ! precipitating hydrometeor, hm, to standard space in PDF component 1.
-         corr_array_1(jvar, ivar) &
-         = corr_NN2LL( corr_array_1_n(jvar, ivar), &
-                       sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
-                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_1(jvar) )
-
-         ! Transform the correlation (in-precip) between N_cn and a
-         ! precipitating hydrometeor, hm, to standard space in PDF component 2.
-         corr_array_2(jvar, ivar) &
-         = corr_NN2LL( corr_array_2_n(jvar, ivar), &
-                       sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
-                       sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
-
-       end if ! l_const_Nc_in_cloud
+       ! Transform the correlation (in-precip) between N_cn and a precipitating
+       ! hydrometeor, hm, to standard space in PDF component 2.
+       corr_array_2(jvar, ivar) &
+       = corr_NN2LL( corr_array_2_n(jvar, ivar), &
+                     sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
+                     sigma2_on_mu2_ip_1(iiPDF_Ncn), sigma2_on_mu2_ip_2(jvar) )
 
     enddo ! jvar = ivar+1, d_variables
 

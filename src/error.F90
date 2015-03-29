@@ -530,7 +530,9 @@ module error
     ! smallest value of all zlvl's (for normalization)
 
     logical ::  & 
-      l_error ! Used to det. if reading the variable failed
+      l_error, & ! Used to det. if reading the variable failed
+      l_file_error ! Determines if reading the .netCDF file fails when checking that
+                   ! The models start at the same time
 
     integer, dimension(c_total) ::  & 
       run_stat ! isValid over each model case
@@ -696,31 +698,37 @@ module error
 
         ! Verify that the CLUBB and LES runs start at the same time and
         ! have the same timestep length
-        call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_error);
-        if ( &
-          day /= netcdf_file%day &
-          .or. month /= netcdf_file%month &
-          .or. year /= netcdf_file%year &
-          .or. time_initial /= netcdf_file%time &
-          .or. stats_tout /= netcdf_file%dtwrite ) then
-            write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
-                &or have different stat output intervals. Here are the currently set &
-                &start times and stat output intervals."
 
-            write(*,*) "CLUBB start day: ", day
-            write(*,*) "CLUBB start month: ", month
-            write(*,*) "CLUBB start year: ", year
-            write(*,*) "CLUBB start time: ", time_initial
-            write(*,*) "CLUBB dtwrite: ", stats_tout
+        call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
+        if ( .not. l_file_error) then
+          ! If the file could not be read, then it is most likely that the file is a GrADS file.
+          ! This assertion check only supports NetCDF files. The case that the file could not
+          ! be found is handled elsewhere in the tuner.
+          if ( &
+            day /= netcdf_file%day &
+            .or. month /= netcdf_file%month &
+            .or. year /= netcdf_file%year &
+            .or. time_initial /= netcdf_file%time &
+            .or. stats_tout /= netcdf_file%dtwrite ) then
+              write(*,*) "Error: The CLUBB run and LES run do not start at the same time &
+                  &or have different stat output intervals. Here are the currently set &
+                  &start times and stat output intervals."
 
-            write(*,*) "LES start day: ", netcdf_file%day
-            write(*,*) "LES start month: ", netcdf_file%month
-            write(*,*) "LES start year: ", netcdf_file%year
-            write(*,*) "LES start time: ", netcdf_file%time
-            write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
+              write(*,*) "CLUBB start day: ", day
+              write(*,*) "CLUBB start month: ", month
+              write(*,*) "CLUBB start year: ", year
+              write(*,*) "CLUBB start time: ", time_initial
+              write(*,*) "CLUBB dtwrite: ", stats_tout
 
-            stop "Please modify the models so that they start at the same time and &
-              &have the same stat output interval." 
+              write(*,*) "LES start day: ", netcdf_file%day
+              write(*,*) "LES start month: ", netcdf_file%month
+              write(*,*) "LES start year: ", netcdf_file%year
+              write(*,*) "LES start time: ", netcdf_file%time
+              write(*,*) "LES dtwrite: ", netcdf_file%dtwrite
+
+              stop "Please modify the models so that they start at the same time and &
+                &have the same stat output interval." 
+          end if
         end if
 
         if ( l_error ) then

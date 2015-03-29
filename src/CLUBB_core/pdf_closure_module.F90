@@ -474,6 +474,12 @@ module pdf_closure_module
 
         w_2_n = -small_m * sqrt( sigma_sqd_w2 )
 
+        ! The mean of w for Gaussian "plume" 1 is w_1.
+        w_1 = wm + sqrt_wp2 * w_1_n
+
+        ! The mean of w for Gaussian "plume" 2 is w_2.
+        w_2 = wm + sqrt_wp2 * w_2_n
+
       endif ! l_use_ADG2
 
 
