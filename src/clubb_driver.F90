@@ -193,9 +193,6 @@ module clubb_driver
       lh_num_samples,    &
       lh_sequence_length
 
-    use parameters_silhs, only: &
-      l_lh_vert_overlap       ! Variable
-
     use latin_hypercube_driver_module, only: &
       lh_subcolumn_generator, & ! Procedure(s)
       stats_accumulate_lh, &

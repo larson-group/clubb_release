@@ -90,8 +90,7 @@ module latin_hypercube_driver_module
       cloud_frac_min
 
     use parameters_silhs, only: &
-      l_lh_vert_overlap, &  ! Variables
-      l_lh_cloud_weighted_sampling, &
+      l_lh_cloud_weighted_sampling, & ! Variable(s)
       l_Lscale_vert_avg
 
     use error_code, only: &
@@ -219,22 +218,17 @@ module latin_hypercube_driver_module
 
     ! ---- Begin Code ----
 
-    if ( l_lh_vert_overlap ) then
-      if ( l_Lscale_vert_avg ) then
-        ! Determine 3pt vertically averaged Lscale
-        do k = 1, nz, 1
-          kp1 = min( k+1, nz )
-          km1 = max( k-1, 1 )
-          Lscale_vert_avg(k) = vertical_avg &
-                               ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                                 Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
-        end do
-      else
-        Lscale_vert_avg = Lscale 
-      end if
+    if ( l_Lscale_vert_avg ) then
+      ! Determine 3pt vertically averaged Lscale
+      do k = 1, nz, 1
+        kp1 = min( k+1, nz )
+        km1 = max( k-1, 1 )
+        Lscale_vert_avg(k) = vertical_avg &
+                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
+      end do
     else
-      ! If vertical overlap is disabled, this calculation won't be needed
-      Lscale_vert_avg = -999._core_rknd
+        Lscale_vert_avg = Lscale 
     end if
 
     l_error = .false.
@@ -290,125 +284,106 @@ module latin_hypercube_driver_module
 
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
 
-    if ( l_lh_vert_overlap ) then
+    ! Choose which rows of LH sample to feed into closure at the k_lh_start level
+    p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
+      height_time_matrix(k_lh_start, &
+      (num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
+      1:(d_variables+d_uniform_extra))
 
-      ! Choose which rows of LH sample to feed into closure at the k_lh_start level
-      p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-        height_time_matrix(k_lh_start, &
-        (num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
-        1:(d_variables+d_uniform_extra))
+    ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
+    call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
+                                  p_matrix, & ! In
+                                  X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-      ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
-      call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
-                                    p_matrix, & ! In
-                                    X_u_all_levs(k_lh_start,:,:) ) ! Out
+    if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_new_importance_sampling ) then
 
-      if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_new_importance_sampling ) then
+        call cloud_weighted_sampling_driver &
+             ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
+               pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
+               pdf_params(k_lh_start)%mixt_frac, & ! In
+               X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+               X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+               lh_sample_point_weights, l_half_in_cloud ) ! Out
 
-          call cloud_weighted_sampling_driver &
-               ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
-                 pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
-                 pdf_params(k_lh_start)%mixt_frac, & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 lh_sample_point_weights, l_half_in_cloud ) ! Out
+    else if ( l_lh_cloud_weighted_sampling .and. l_lh_new_importance_sampling ) then
 
-      else if ( l_lh_cloud_weighted_sampling .and. l_lh_new_importance_sampling ) then
+        call importance_sampling_driver &
+             ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
+               X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+               X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+               X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
+               lh_sample_point_weights ) ! Out
 
-          call importance_sampling_driver &
-               ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
-                 lh_sample_point_weights ) ! Out
+        ! In general, this code no longer guarantees that half of all sample points will reside
+        ! in cloud.
+        l_half_in_cloud = .false.
 
-          ! In general, this code no longer guarantees that half of all sample points will reside
-          ! in cloud.
-          l_half_in_cloud = .false.
+    else
 
-      else
+        ! If we are not doing cloud weighted sampling, we can't expect half of the sample
+        ! points to be in cloud
+        l_half_in_cloud = .false.
+        ! All sample points will have the same weight
+        lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
 
-          ! If we are not doing cloud weighted sampling, we can't expect half of the sample
-          ! points to be in cloud
-          l_half_in_cloud = .false.
-          ! All sample points will have the same weight
-          lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+    end if ! l_lh_cloud_weighted_sampling
 
-      end if ! l_lh_cloud_weighted_sampling
-
-      ! Use a fixed number for the vertical correlation.
+    ! Use a fixed number for the vertical correlation.
 !     X_vert_corr(1:nz) = 0.95_dp
 
-      ! Compute vertical correlation using a formula based on Lscale, the
-      ! the difference in height levels, and an empirical constant
-      X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
+    ! Compute vertical correlation using a formula based on Lscale, the
+    ! the difference in height levels, and an empirical constant
+    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
 
-      ! Assertion check for the vertical correlation
-      if ( clubb_at_least_debug_level( 2 ) ) then
-        if ( any( X_vert_corr > 1.0_dp ) .or. any( X_vert_corr < 0.0_dp ) ) then
-          write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
-            "is not in the correct range"
-          do k = 1, nz
-            write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
-          end do
-          l_error = .true.
-        end if ! Some correlation isn't between [0,1]
-      end if ! clubb_at_least_debug_level 1
+    ! Assertion check for the vertical correlation
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( any( X_vert_corr > 1.0_dp ) .or. any( X_vert_corr < 0.0_dp ) ) then
+        write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
+          "is not in the correct range"
+        do k = 1, nz
+          write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
+        end do
+        l_error = .true.
+      end if ! Some correlation isn't between [0,1]
+    end if ! clubb_at_least_debug_level 1
 
-      do sample = 1, num_samples
-        ! Correlate chi vertically
-        call compute_arb_overlap &
-             ( nz, k_lh_start, &  ! In
-               X_vert_corr, & ! In
-               X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
-        ! Correlate the d+1 variate vertically (used to compute the mixture
-        ! component later)
-        call compute_arb_overlap &
-             ( nz, k_lh_start, &  ! In
-               X_vert_corr, & ! In
-               X_u_all_levs(:,sample,d_variables+1) ) ! Inout
+    do sample = 1, num_samples
+      ! Correlate chi vertically
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
+      ! Correlate the d+1 variate vertically (used to compute the mixture
+      ! component later)
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,d_variables+1) ) ! Inout
 
-        ! Correlate the d+2 variate vertically (used to determine precipitation
-        ! later)
-        call compute_arb_overlap &
-             ( nz, k_lh_start, &  ! In
-               X_vert_corr, & ! In
-               X_u_all_levs(:,sample,d_variables+2) ) ! Inout
+      ! Correlate the d+2 variate vertically (used to determine precipitation
+      ! later)
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,d_variables+2) ) ! Inout
 
-        ! Use these lines to make all variates vertically correlated, using the
-        ! same correlation we used above for chi and the d+1 variate
-        do ivar = 1, d_variables
-          if ( ivar /= iiPDF_chi ) then
-            call compute_arb_overlap &
-                 ( nz, k_lh_start, &  ! In
-                   X_vert_corr, & ! In
-                   X_u_all_levs(:,sample,ivar) ) ! Inout
-          end if
-        end do ! 1..d_variables
-      end do ! 1..num_samples
-      ! %% Debug %%
-      ! Testing what happens when we clip uniformally distributed variates to
-      ! avoid extreme values.
+      ! Use these lines to make all variates vertically correlated, using the
+      ! same correlation we used above for chi and the d+1 variate
+      do ivar = 1, d_variables
+        if ( ivar /= iiPDF_chi ) then
+          call compute_arb_overlap &
+               ( nz, k_lh_start, &  ! In
+                 X_vert_corr, & ! In
+                 X_u_all_levs(:,sample,ivar) ) ! Inout
+        end if
+      end do ! 1..d_variables
+    end do ! 1..num_samples
+    ! %% Debug %%
+    ! Testing what happens when we clip uniformally distributed variates to
+    ! avoid extreme values.
 !     where ( X_u_all_levs (:,:,2:d_variables) > 0.99_core_rknd ) &
 !       X_u_all_levs(:,:,2:d_variables) = 0.99_core_rknd
-      ! %% End Debug %%
-
-    else ! Random overlap
-
-      do k = 1, nz
-        ! Choose which rows of LH sample to feed into closure.
-        p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-          height_time_matrix(k, num_samples*i_rmd+1:num_samples*i_rmd+num_samples, &
-                             1:d_variables+d_uniform_extra)
-
-        ! Generate the uniform distribution using the Mersenne twister
-        !  X_u has one extra dimension for the mixture component.
-        call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, &
-                                      p_matrix, & ! In
-                                      X_u_all_levs(k,:,:) ) ! Out
-      end do ! 1..nz
-
-    end if ! l_lh_vert_overlap
+    ! %% End Debug %%
 
     do k = 1, nz
       ! Determine mixture component for all levels

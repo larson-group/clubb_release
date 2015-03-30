@@ -162,7 +162,6 @@ r_0 = 100.0e-6
 Nc0_in_cloud = 70.e6 ! #/m3 
 
 lh_microphys_type = "disabled",
-l_lh_vert_overlap = .true.,
 l_lh_cloud_weighted_sampling = .true.,
 lh_num_samples = 4,
 lh_sequence_length = 1,
