@@ -108,10 +108,11 @@ sam_thlp3 = pull_profiles(nc, 'THEL3',1.)
 sam_wpthlp = pull_profiles(nc, 'TLFLUX',(rho * 1004.)**-1)
 
 #rt
-sam_rtp2 = pull_profiles(nc, 'QTO2',(1./1000.)**2)
+sam_rtp2 = pull_profiles(nc, 'QT2',(1./1000.)**2)
 # The conversion (1./1000.)**2 to get QTO3 to kg/kg is not a bug. 
 # In SAM's statistics.F90, to convert QTO3 to g/kg, it was multiplied by 1e6.
 sam_rtp3 = pull_profiles(nc, 'QTO3',(1./1000.)**2)
+sam_wprtp = pull_profiles(nc, 'QTFLUX',(rho * 2.5104*10**6)**-1)
 
 #w
 sam_wp2 = pull_profiles(nc, 'W2',1.)
@@ -127,6 +128,9 @@ sam_Skw = return_skewness(sam_wp3,sam_wp2,w_tol)
 sam_Skw_hat = return_nrmlz_skw(sam_Skw,sigma_tilde_w_sqd)
 sam_nrmlz_corr_wthl = return_nrmlz_w_corr(sam_wpthlp,sam_wp2,sam_thlp2,
                                         w_tol,thl_tol,sigma_tilde_w_sqd)
+sam_nrmlz_corr_wrt = return_nrmlz_w_corr(sam_wprtp,sam_wp2,sam_rtp2,
+                                        w_tol,rt_tol,sigma_tilde_w_sqd)
+                                        
 
 # Initialize arrays for the prognosed skewness. The first contains the time,height,
 # and beta coordinates. The second will be the time mean profile.
@@ -135,13 +139,21 @@ prog_Skthl = np.empty( (np.size(sam_Skw,axis=0),
                        num_beta_lines) )
 prog_Skthlm = np.empty( (len(sam_z),num_beta_lines) )
 
+prog_Skrt = np.empty( (np.size(sam_Skw,axis=0),
+                       np.size(sam_Skw,axis=1),
+                       num_beta_lines) )
+prog_Skrtm = np.empty( (len(sam_z),num_beta_lines) )
+
 # Loop through each value of beta.
 for i in np.arange(0,num_beta_lines):
     prog_Skthl[:,:,i] = prognose_skex(sam_Skw_hat,sam_nrmlz_corr_wthl,beta[i])
+    prog_Skrt[:,:,i] = prognose_skex(sam_Skw_hat,sam_nrmlz_corr_wrt,beta[i])
 
 # Time mean of each 'beta-line'.
 for i in np.arange(0,num_beta_lines):
     prog_Skthlm[:,i] = return_mean_profiles(prog_Skthl[:,:,i],
+                                          idx_t0, idx_t1, idx_z0, idx_z1)
+    prog_Skrtm[:,i] = return_mean_profiles(prog_Skrt[:,:,i],
                                           idx_t0, idx_t1, idx_z0, idx_z1)
 
 #----------------------------------------------------------------------------------------
@@ -166,11 +178,12 @@ levels = beta
 CS3 = plt.contourf(Z,levels,cmap=jet)
 plt.clf()
 
+# Thl
+
 idx = np.linspace(0,1,num_beta_lines)
 fig, ax = plt.subplots()
 ax.set_color_cycle(jet(idx))
 
-# Thl
 for i in range(1, num_beta_lines):
     ax.plot(prog_Skthlm[:,i],sam_z)
 ax.plot(sam_Skthl,sam_z,lw=2,c='k',label='Sam')
@@ -181,6 +194,20 @@ plt.grid()
 plt.colorbar(CS3,orientation='horizontal').set_label('$\\beta$')
 plt.savefig(out_dir+out_name+'_prog_Skthl.png')
 plt.close()
+
+# rt
+fig, ax = plt.subplots()
+ax.set_color_cycle(jet(idx))
+
+for i in range(1, num_beta_lines):
+    ax.plot(prog_Skrtm[:,i],sam_z)
+ax.plot(sam_Skrt,sam_z,lw=2,c='k',label='Sam')
+ax.legend()
+ax.set_xlabel('$Sk_{r_{t}}$')
+ax.set_ylabel('m')
+plt.grid()
+plt.colorbar(CS3,orientation='horizontal').set_label('$\\beta$')
+plt.savefig(out_dir+out_name+'_prog_Skrt.png')
 
 # Plot profiles of SAM's skewness
 f, ax1 = plt.subplots(1)
