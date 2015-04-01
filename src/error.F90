@@ -696,9 +696,9 @@ module error
         ( les_stats_file(c_run), clubb_nz,  & 
           timestep_intvls(c_run,:), les_v(i), clubb_grid_heights, 1, l_error )
 
+#ifdef NETCDF
         ! Verify that the CLUBB and LES runs start at the same time and
         ! have the same timestep length
-
         call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
         if ( .not. l_file_error) then
           ! If the file could not be read, then it is most likely that the file is a GrADS file.
@@ -730,6 +730,7 @@ module error
                 &have the same stat output interval." 
           end if
         end if
+#endif /* NETCDF */
 
         if ( l_error ) then
           if( l_save_tuning_run ) then
