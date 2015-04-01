@@ -466,8 +466,10 @@ module error
     use stat_file_module, only: &
       stat_file ! Type(s)
 
+#ifdef NETCDF
     use input_netcdf, only: &
       open_netcdf_read ! Procedure(s)
+#endif /* NETCDF */
 
     use clubb_model_settings, only: &
       day, &
