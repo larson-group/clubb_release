@@ -627,7 +627,10 @@ module silhs_importance_sample_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd
+      core_rknd     ! Constant
+
+    use constants_clubb, only: &
+      zero          ! Constant
 
     implicit none
 
@@ -644,12 +647,11 @@ module silhs_importance_sample_module
 
     ! Output Variable
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
-      category_prescribed_probs ! Probability of each category, scaled such that approximately half
-                                ! of all sample points will appear in cloud
+      category_prescribed_probs ! The prescribed probability for each category
 
     ! Local Variables
     integer :: icategory, jcategory
-
+    real( kind = core_rknd ) :: nonzero_real_prob_sum, presc_prob_difference
     logical :: l_in_cloud, l_in_component_1, l_in_precip
 
   !-----------------------------------------------------------------------
@@ -692,27 +694,51 @@ module silhs_importance_sample_module
 
     end do ! icategory=1, num_importance_categories
 
-    ! The following loop ensures that we do not sample from categories that have
+    !-----------------------------------------------------------------------------
+    ! The following code ensures that we do not sample from categories that have
     ! no PDF weight
+    !-----------------------------------------------------------------------------
+
+    ! This value needs to be computed only once, so if it is needed below, it is computed
+    ! on demand. For now, it is just set to zero.
+    nonzero_real_prob_sum = zero
+
     do icategory=1, num_importance_categories
 
       if ( category_real_probs(icategory) < prob_thresh .and. &
            category_prescribed_probs(icategory) > category_real_probs(icategory) ) then
-        ! Do not perform importance_sampling on this category
-        ! Transfer all prescribed mass of this category the most important one available.
+
+        ! Transfer all prescribed mass of this category (minus its PDF probability) to
+        ! other categories.
+        presc_prob_difference = category_prescribed_probs(icategory) - &
+                                category_real_probs(icategory)
+
+        ! Compute the sum of all categories with non-zero (greater than prob_thresh) PDF
+        ! probability, iff this value is not already computed.
+        if ( nonzero_real_prob_sum == zero ) then
+          do jcategory=1, num_importance_categories
+            if ( category_real_probs(jcategory) >= prob_thresh ) then
+              nonzero_real_prob_sum = nonzero_real_prob_sum + category_real_probs(jcategory)
+            end if
+          end do
+        end if
+
+        ! An amount of prescribed probability equal to presc_prob_difference must be
+        ! transferred to the other categories. We transfer to the other categories
+        ! proportionally to the PDF probabilities of the other categories.
         do jcategory=1, num_importance_categories
 
           if ( category_real_probs(jcategory) >= prob_thresh ) then
             category_prescribed_probs(jcategory) = category_prescribed_probs(jcategory) + &
-                         ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
-            exit
+              ( presc_prob_difference * category_real_probs(jcategory) / nonzero_real_prob_sum )
           end if
 
         end do
 
+        ! Do not perform importance_sampling on this category
         category_prescribed_probs(icategory) = category_real_probs(icategory)
 
-      end if
+      end if ! category_real_probs(icategory) < prob_thresh .and. ...
 
     end do ! icategory=1, num_importance_categories
 
