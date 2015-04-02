@@ -12,16 +12,12 @@ module permute_height_time_module
   contains
 !-----------------------------------------------------------------------
 
-  subroutine permute_height_time( nz, nt_repeat, n_vars,  & 
-                                  height_time_matrix )
+  subroutine permute_height_time( nt_repeat, n_vars, height_time_matrix )
 
 ! Description:
-!   Generates a matrix height_time_matrix, which is a nz x nt_repeat x n_vars
-!   matrix whose 2nd dimension is random permutations of the integer sequence 
-!   (0,...,nt_repeat-1).  from 1 to sequence_length. 
-!   k_order gives vertical ordering
-!   of sample points; generate a new k_order every nt/n time steps.
-!   First timestep must have i == 1
+!   Generates a matrix height_time_matrix, which is a nt_repeat x n_vars
+!   matrix whose 1st dimension is random permutations of the integer sequence 
+!   (0,...,nt_repeat-1).
 
 ! References:
 !   None
@@ -32,31 +28,23 @@ module permute_height_time_module
     ! Input Variables
 
     integer, intent(in) :: &
-      nz,       & ! Total number of vertical levels in the model timestep.
       nt_repeat,  & ! Total number of sample points before sequence repeats.
       n_vars        ! The number of variates in the uniform sample
 
     ! Output Variables
 
-    integer, dimension(nz,nt_repeat,n_vars), intent(out) :: &
-      height_time_matrix ! nz x nt_repeat x n_vars matrix of integers
+    integer, dimension(nt_repeat,n_vars), intent(out) :: &
+      height_time_matrix ! nt_repeat x n_vars matrix of integers
 
     ! Local Variables
 
-    integer :: i, k
+    integer :: i
 
     ! Choose elements of height_time_matrix, with a random integer LH sample
-    ! for each altitude and for each variate
-    do k = 1, nz
-      do i = 1, n_vars
-        call rand_permute( nt_repeat, height_time_matrix(k,1:nt_repeat,i) )
-      end do
+    ! for each variate
+    do i = 1, n_vars
+      call rand_permute( nt_repeat, height_time_matrix(1:nt_repeat,i) )
     end do
-
-    ! Make elements of height_time_matrix in the range [1,nt] inclusive
-    !height_time_matrix = height_time_matrix + 1
-
-    !print*, 'height_time_matrix in permute_height_time=', height_time_matrix
 
     return
   end subroutine permute_height_time

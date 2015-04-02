@@ -239,7 +239,7 @@ module latin_hypercube_driver_module
       ! If this is first time latin_hypercube_driver is called, then allocate
       ! the height_time_matrix and set the prior iteration number for debugging
       ! purposes.
-      allocate( height_time_matrix(1, nt_repeat, d_variables+d_uniform_extra) )
+      allocate( height_time_matrix(nt_repeat, d_variables+d_uniform_extra) )
 
       prior_iter = iter
 
@@ -269,11 +269,11 @@ module latin_hypercube_driver_module
     end if
 
     ! Latin hypercube sample generation
-    ! Generate height_time_matrix, an nz x nt_repeat x d_variables array of random integers
+    ! Generate height_time_matrix, an nt_repeat x d_variables array of random integers
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then
-      call permute_height_time( 1, nt_repeat, d_variables+d_uniform_extra, & ! intent(in)
+      call permute_height_time( nt_repeat, d_variables+d_uniform_extra, &     ! intent(in)
                                 height_time_matrix )                          ! intent(out)
     end if
     ! End Latin hypercube sample generation
@@ -286,8 +286,7 @@ module latin_hypercube_driver_module
 
     ! Choose which rows of LH sample to feed into closure at the k_lh_start level
     p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-      height_time_matrix( 1, &
-      (num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
+      height_time_matrix((num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
       1:(d_variables+d_uniform_extra))
 
     ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level

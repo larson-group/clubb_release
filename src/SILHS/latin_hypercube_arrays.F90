@@ -13,7 +13,7 @@ module latin_hypercube_arrays
 
   private
 
-  integer, allocatable, dimension(:,:,:), public :: & 
+  integer, allocatable, dimension(:,:), public :: & 
     height_time_matrix ! matrix of rand ints
 
 !$omp threadprivate(height_time_matrix)
