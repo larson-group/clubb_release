@@ -460,7 +460,7 @@ subroutine logical_flags_driver( current_date, current_time )
     i8 = selected_int_kind( 15 )
 
   integer, parameter :: &
-    ndim = 9, & ! Temporarily hardwired for a fixed number of flags
+    ndim = 10, & ! Temporarily hardwired for a fixed number of flags
     two_ndim = 2**ndim, &
     iunit = 10
 
@@ -500,7 +500,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                 model_flags_default(6),  &
                                 model_flags_default(7),  &
                                 model_flags_default(8),  &
-                                model_flags_default(9) )
+                                model_flags_default(9),  & 
+                                model_flags_default(10) )
 
   ! This should always be 1.0; it's here as a sanity check
   cost_func_default = real( min_les_clubb_diff( real(param_vals_matrix(1,:)) ), kind = core_rknd )
@@ -612,7 +613,8 @@ subroutine logical_flags_driver( current_date, current_time )
                                    model_flags_array(1,6), &
                                    model_flags_array(1,7), &
                                    model_flags_array(1,8), &
-                                   model_flags_array(1,9) )
+                                   model_flags_array(1,9), & 
+                                   model_flags_array(1,10) )
 
     filename_nml = "../input/tunable_parameters/configurable_model_flags_"//current_date//'_' & 
       //current_time(1:4)//".in"

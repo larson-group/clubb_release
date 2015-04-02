@@ -8,5 +8,6 @@ l_tke_aniso           = .true.,
 l_vert_avg_closure    = .true.,
 l_single_C2_Skw       = .false.,
 l_standard_term_ta    = .false.,
-l_use_cloud_cover     = .true.
+l_use_cloud_cover     = .true.,
+l_use_ADG2            = .false.
 /
