@@ -424,6 +424,7 @@ module model_flags
     l_standard_term_ta_out = l_standard_term_ta
     l_tke_aniso_out = l_tke_aniso
     l_use_cloud_cover_out = l_use_cloud_cover
+    l_use_ADG2_out = l_use_ADG2
 
     return
   end subroutine get_configurable_model_flags
