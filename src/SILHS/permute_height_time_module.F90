@@ -12,10 +12,10 @@ module permute_height_time_module
   contains
 !-----------------------------------------------------------------------
 
-  subroutine permute_height_time( nt_repeat, n_vars, height_time_matrix )
+  subroutine permute_height_time( nt_repeat, n_vars, one_height_time_matrix )
 
 ! Description:
-!   Generates a matrix height_time_matrix, which is a nt_repeat x n_vars
+!   Generates a matrix one_height_time_matrix, which is a nt_repeat x n_vars
 !   matrix whose 1st dimension is random permutations of the integer sequence 
 !   (0,...,nt_repeat-1).
 
@@ -34,16 +34,16 @@ module permute_height_time_module
     ! Output Variables
 
     integer, dimension(nt_repeat,n_vars), intent(out) :: &
-      height_time_matrix ! nt_repeat x n_vars matrix of integers
+      one_height_time_matrix ! nt_repeat x n_vars matrix of integers
 
     ! Local Variables
 
     integer :: i
 
-    ! Choose elements of height_time_matrix, with a random integer LH sample
+    ! Choose elements of one_height_time_matrix, with a random integer LH sample
     ! for each variate
     do i = 1, n_vars
-      call rand_permute( nt_repeat, height_time_matrix(1:nt_repeat,i) )
+      call rand_permute( nt_repeat, one_height_time_matrix(1:nt_repeat,i) )
     end do
 
     return

@@ -14,9 +14,9 @@ module latin_hypercube_arrays
   private
 
   integer, allocatable, dimension(:,:), public :: & 
-    height_time_matrix ! matrix of rand ints
+    one_height_time_matrix ! matrix of rand ints
 
-!$omp threadprivate(height_time_matrix)
+!$omp threadprivate(one_height_time_matrix)
 
   contains
 
@@ -35,8 +35,8 @@ module latin_hypercube_arrays
 
     ! ---- Begin Code ----
 
-    if ( allocated( height_time_matrix ) ) then
-      deallocate( height_time_matrix )
+    if ( allocated( one_height_time_matrix ) ) then
+      deallocate( one_height_time_matrix )
     end if
 
     return
