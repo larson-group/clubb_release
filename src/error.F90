@@ -541,7 +541,12 @@ module error
 
     type (stat_file) :: netcdf_file ! Data file derived type
 
-    integer :: i, j, c_run ! looping variables
+    integer :: &
+#ifdef NETCDF
+      len_file, & ! The length of the currently read in Grads or NetCDF file.
+                  ! Used in a NetCDF assertion check below.
+#endif /* NETCDF */
+      i, j, c_run ! looping variables
 
     !-----------------------------------------------------------------------
 
@@ -701,7 +706,15 @@ module error
 #ifdef NETCDF
         ! Verify that the CLUBB and LES runs start at the same time and
         ! have the same timestep length
-        call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
+
+        ! First, be sure we are dealing with a netCDF file
+        len_file = LEN_TRIM(les_stats_file(c_run))
+        if (les_stats_file(c_run)(len_file-2: len_file) == ".nc") then
+          call open_netcdf_read( 'PRES', les_stats_file(c_run), netcdf_file, l_file_error);
+        else
+          l_file_error = .true. ! This will cause the following assertion check to be skipped
+        end if
+
         if ( .not. l_file_error) then
           ! If the file could not be read, then it is most likely that the file is a GrADS file.
           ! This assertion check only supports NetCDF files. The case that the file could not
