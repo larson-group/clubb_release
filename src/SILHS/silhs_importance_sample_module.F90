@@ -971,11 +971,11 @@ module silhs_importance_sample_module
         ! this cluster will be set equal to the PDF probability of the cluster (that
         ! is, no importance sampling).
         cluster_prescribed_probs_mod(icluster) = cluster_real_probs(icluster)
-        l_cluster_presc_prob_modified = .true.
+        l_cluster_presc_prob_modified(icluster) = .true.
       else
         ! Thresholding is not necessary
         cluster_prescribed_probs_mod(icluster) = cluster_prescribed_probs(icluster)
-        l_cluster_presc_prob_modified = .false.
+        l_cluster_presc_prob_modified(icluster) = .false.
       end if ! cluster_real_probs(icluster) < prob_thresh .and. ...
     end do ! icluster=1, num_clusters
 
@@ -996,7 +996,7 @@ module silhs_importance_sample_module
         if ( l_cluster_presc_prob_modified(icluster) ) then
 
           presc_prob_difference = cluster_prescribed_probs_mod(icluster) - &
-                                  cluster_real_probs(icluster)
+                                  cluster_prescribed_probs(icluster)
 
           do jcluster=1, num_clusters
             if ( .not. l_cluster_presc_prob_modified(jcluster) ) then
@@ -1008,7 +1008,7 @@ module silhs_importance_sample_module
         end if ! l_cluster_presc_prob_modified(icluster)
       end do ! icluster=1, num_clusters
 
-    end if
+    end if ! any( l_cluster_presc_prob_modified )
 
     ! Finally, compute the prescribed probabilities for each category based on the cluster
     ! probabilities.
