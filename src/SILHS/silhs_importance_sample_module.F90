@@ -61,8 +61,8 @@ module silhs_importance_sample_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_prescribed_probs   = .true., &   ! Use prescribed probability importance sampling
-      l_use_clustered_sampling = .false.     ! Use clustered category importance sampling
+      l_use_prescribed_probs   = .false., &  ! Use prescribed probability importance sampling
+      l_use_clustered_sampling = .true.      ! Use clustered category importance sampling
 
     ! Cluster allocation strategies!!!
     integer, parameter :: &
@@ -987,7 +987,7 @@ module silhs_importance_sample_module
       nonzero_real_clust_sum = zero
       do icluster=1, num_clusters
         if ( .not. l_cluster_presc_prob_modified(icluster) ) then
-          nonzero_real_clust_sum = nonzero_real_clust_sum + cluster_prescribed_probs_mod(icluster)
+          nonzero_real_clust_sum = nonzero_real_clust_sum + cluster_real_probs(icluster)
         end if
       end do ! icluster=1, num_clusters
 
@@ -995,8 +995,8 @@ module silhs_importance_sample_module
       do icluster=1, num_clusters
         if ( l_cluster_presc_prob_modified(icluster) ) then
 
-          presc_prob_difference = cluster_prescribed_probs_mod(icluster) - &
-                                  cluster_prescribed_probs(icluster)
+          presc_prob_difference = cluster_prescribed_probs(icluster) - &
+                                  cluster_prescribed_probs_mod(icluster)
 
           do jcluster=1, num_clusters
             if ( .not. l_cluster_presc_prob_modified(jcluster) ) then
@@ -1220,6 +1220,8 @@ module silhs_importance_sample_module
     if ( abs( category_sum - one ) > tolerance ) then
       write(fstderr,*) "The prescribed category probabilities do not sum to one."
       write(fstderr,*) "sum( category_prescribed_probs ) = ", category_sum
+      write(fstderr,*) 'category_real_probs = ', category_real_probs
+      write(fstderr,*) 'category_prescribed_probs = ', category_prescribed_probs
       l_error = .true.
     end if
 
