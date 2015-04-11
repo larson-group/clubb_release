@@ -45,6 +45,9 @@ module silhs_importance_sample_module
       core_rknd, &      ! Constant(s)
       dp
 
+    use constants_clubb, only: &
+      fstderr           ! Constant
+
     use pdf_parameter_module, only: &
       pdf_parameter     ! Type
 
@@ -58,7 +61,19 @@ module silhs_importance_sample_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_prescribed_probs = .true.   ! Use prescribed probability importance sampling
+      l_use_prescribed_probs   = .true., &   ! Use prescribed probability importance sampling
+      l_use_clustered_sampling = .false.     ! Use clustered category importance sampling
+
+    ! Cluster allocation strategies!!!
+    integer, parameter :: &
+      ! All eight categories, effectively no clustering
+      eight_cluster_allocation_opt = 1, &
+      ! Four clusters for the combinations of cloud/no cloud and component 1/2.
+      ! Precipitation fraction is ignored.
+      four_cluster_allocation_opt  = 2
+
+    integer, parameter :: &
+      cluster_allocation_strategy = 1
 
     ! Input Variables
     integer, intent(in) :: &
@@ -114,6 +129,21 @@ module silhs_importance_sample_module
       ! Prescribe the probabilities
       category_prescribed_probs = prescribe_importance_probs &
                                   ( importance_categories, category_real_probs )
+
+    else if ( l_use_clustered_sampling ) then
+
+      ! A cluster allocation strategy is selected based on the value of the
+      ! integer parameter.
+      select case ( cluster_allocation_strategy )
+      case ( eight_cluster_allocation_opt )
+        category_prescribed_probs = eight_cluster_allocation &
+                                    ( importance_categories, category_real_probs )
+      case ( four_cluster_allocation_opt )
+        stop "Not implemented"
+      case default
+        write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
+        stop "Fatal error in importance_sampling_driver"
+      end select
 
     else
 
@@ -744,69 +774,6 @@ module silhs_importance_sample_module
 
     return
   end function prescribe_importance_probs
-!-----------------------------------------------------------------------
-
-!-----------------------------------------------------------------------
-  function clustered_importance_sampling( importance_categories, category_real_probs ) &
-
-  result( category_prescribed_probs )
-
-  ! Description:
-  !   Performs importance sampling by grouping categories into "clusters" and
-  !   prescribing a total sample probability for each cluster.
-
-  ! References:
-  !   clubb:ticket:752
-  !-----------------------------------------------------------------------
-
-    ! Included Modules
-    use clubb_precision, only: &
-      core_rknd     ! Constant
-
-    use constants_clubb, only: &
-      fstderr       ! Constant
-
-    implicit none
-
-    ! Local Constants
-
-    ! Cluster allocation strategies!!!
-    integer, parameter :: &
-      ! All eight categories, effectively no clustering
-      eight_cluster_allocation_opt = 1, &
-      ! Four clusters for the combinations of cloud/no cloud and component 1/2.
-      ! Precipitation fraction is ignored.
-      four_cluster_allocation_opt  = 2
-
-    integer, parameter :: &
-      cluster_allocation_strategy = 1
-
-    ! Input Variables
-    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
-      importance_categories   ! A list of importance categories
-
-    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
-      category_real_probs     ! The real probability for each category
-
-    ! Output Variable
-    real( kind = core_rknd ), dimension(num_importance_categories) :: &
-      category_prescribed_probs ! The prescribed probability for each category
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    select case ( cluster_allocation_strategy )
-    case ( eight_cluster_allocation_opt )
-      category_prescribed_probs = eight_cluster_allocation &
-                                  ( importance_categories, category_real_probs )
-    case default
-      write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
-      stop "Fatal error in clustered_importance_sampling"
-    end select
-
-    return
-  end function clustered_importance_sampling
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
