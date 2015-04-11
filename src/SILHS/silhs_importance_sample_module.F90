@@ -995,8 +995,8 @@ module silhs_importance_sample_module
       do icluster=1, num_clusters
         if ( l_cluster_presc_prob_modified(icluster) ) then
 
-          presc_prob_difference = category_prescribed_probs(icategory) - &
-                                  category_real_probs(icategory)
+          presc_prob_difference = cluster_prescribed_probs_mod(icluster) - &
+                                  cluster_real_probs(icluster)
 
           do jcluster=1, num_clusters
             if ( .not. l_cluster_presc_prob_modified(jcluster) ) then
