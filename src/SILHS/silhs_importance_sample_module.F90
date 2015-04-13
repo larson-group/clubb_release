@@ -61,8 +61,8 @@ module silhs_importance_sample_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_prescribed_probs   = .true., &   ! Use prescribed probability importance sampling
-      l_use_clustered_sampling = .false.     ! Use clustered category importance sampling
+      l_use_prescribed_probs   = .false., &  ! Use prescribed probability importance sampling
+      l_use_clustered_sampling = .true.      ! Use clustered category importance sampling
 
     ! Cluster allocation strategies!!!
     integer, parameter :: &
@@ -1022,8 +1022,8 @@ module silhs_importance_sample_module
         else
 
           ! Scale category probability based on the cluster probability
-          category_prescribed_probs(cat_idx) = category_real_probs(cat_idx) * &
-            ( cluster_prescribed_probs_mod(icluster) / cluster_real_probs(icluster) )
+          category_prescribed_probs(cat_idx) = ( category_real_probs(cat_idx) / &
+            cluster_real_probs(icluster) ) * cluster_prescribed_probs_mod(icluster)
 
         end if ! l_cluster_presc_prob_modified(icluster)
       end do ! icategory=1, num_categories_per_cluster
