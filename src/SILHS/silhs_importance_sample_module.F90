@@ -139,7 +139,8 @@ module silhs_importance_sample_module
         category_prescribed_probs = eight_cluster_allocation &
                                     ( importance_categories, category_real_probs )
       case ( four_cluster_allocation_opt )
-        stop "Not implemented"
+        category_prescribed_probs = four_cluster_no_precip &
+                                    ( importance_categories, category_real_probs )
       case default
         write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
         stop "Fatal error in importance_sampling_driver"
@@ -880,6 +881,128 @@ module silhs_importance_sample_module
 
     return
   end function eight_cluster_allocation
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function four_cluster_no_precip( importance_categories, category_real_probs ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Clusters categories into four clusters for the four combinations of
+  !   cloud/no cloud and comp 1/comp 2. Precip fraction is effectively
+  !   ignored
+
+  ! References:
+  !   clubb:ticket:752
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd     ! Constant
+
+    use constants_clubb, only: &
+      fstderr       ! Constant
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    implicit none
+
+    ! Local Constants
+    integer, parameter :: &
+      num_clusters = 4, &
+      num_categories_per_cluster = 2
+
+    integer, parameter :: &
+      iicld_comp1  = 1, &
+      iicld_comp2  = 2, &
+      iincld_comp1 = 3, &
+      iincld_comp2 = 4
+
+    !!! Prescribed probability definitions
+    real( kind = core_rknd ), parameter :: &
+      cloud_comp1      = 0.30_core_rknd, &
+      cloud_comp2      = 0.30_core_rknd, &
+      nocloud_comp1    = 0.20_core_rknd, &
+      nocloud_comp2    = 0.20_core_rknd
+
+    ! Input Variables
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories   ! A list of importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs     ! The real probability for each category
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs ! The prescribed probability for each category
+
+    ! Local Variables
+    integer, dimension(num_clusters,num_categories_per_cluster) :: &
+      cluster_categories
+
+    integer, dimension(num_clusters) :: &
+      num_categories_in_cluster
+
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_prescribed_probs
+
+    logical :: l_in_cloud, l_in_component_1
+
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    num_categories_in_cluster(:) = 0
+
+    do icategory=1, num_importance_categories
+
+      cluster_categories(icategory,1) = icategory
+
+      l_in_cloud       = importance_categories(icategory)%l_in_cloud
+      l_in_component_1 = importance_categories(icategory)%l_in_component_1
+
+      if ( l_in_cloud .and. l_in_component_1 ) then
+        cluster_prescribed_probs(iicld_comp1) = cloud_comp1
+        num_categories_in_cluster(iicld_comp1) = num_categories_in_cluster(iicld_comp1) + 1
+        cluster_categories(iicld_comp1,num_categories_in_cluster(iicld_comp1)) = icategory
+        
+      else if ( l_in_cloud .and. (.not. l_in_component_1) ) then
+        cluster_prescribed_probs(2) = cloud_comp2
+        num_categories_in_cluster(iicld_comp2) = num_categories_in_cluster(iicld_comp2) + 1
+        cluster_categories(iicld_comp2,num_categories_in_cluster(iicld_comp2)) = icategory
+
+      else if ( (.not. l_in_cloud) .and. l_in_component_1 ) then
+        cluster_prescribed_probs(3) = nocloud_comp1
+        num_categories_in_cluster(iincld_comp1) = num_categories_in_cluster(iincld_comp1) + 1
+        cluster_categories(iincld_comp1,num_categories_in_cluster(iincld_comp1)) = icategory
+
+      else if ( (.not. l_in_cloud) .and. (.not. l_in_component_1) ) then
+        cluster_prescribed_probs(4) = nocloud_comp2
+        num_categories_in_cluster(iincld_comp2) = num_categories_in_cluster(iincld_comp2) + 1
+        cluster_categories(iincld_comp2,num_categories_in_cluster(iincld_comp2)) = icategory
+
+      else
+        stop "Invalid category in four_cluster_no_precip"
+      end if
+
+    end do ! icategory=1, num_importance_categories
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( any( num_categories_in_cluster /= 2 ) ) then
+        write(fstderr,*) "Not all clusters have two categories"
+        stop "Fatal error in four_cluster_no_precip"
+      end if
+    end if
+
+    category_prescribed_probs = compute_clust_category_probs &
+                                ( category_real_probs, num_clusters, num_categories_per_cluster, &
+                                  cluster_categories, cluster_prescribed_probs )
+
+    return
+  end function four_cluster_no_precip
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
