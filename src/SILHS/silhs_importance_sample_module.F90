@@ -73,7 +73,7 @@ module silhs_importance_sample_module
       four_cluster_allocation_opt  = 2
 
     integer, parameter :: &
-      cluster_allocation_strategy = 1
+      cluster_allocation_strategy = eight_cluster_allocation_opt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -959,8 +959,6 @@ module silhs_importance_sample_module
 
     do icategory=1, num_importance_categories
 
-      cluster_categories(icategory,1) = icategory
-
       l_in_cloud       = importance_categories(icategory)%l_in_cloud
       l_in_component_1 = importance_categories(icategory)%l_in_component_1
 
@@ -970,17 +968,17 @@ module silhs_importance_sample_module
         cluster_categories(iicld_comp1,num_categories_in_cluster(iicld_comp1)) = icategory
         
       else if ( l_in_cloud .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(2) = cloud_comp2
+        cluster_prescribed_probs(iicld_comp2) = cloud_comp2
         num_categories_in_cluster(iicld_comp2) = num_categories_in_cluster(iicld_comp2) + 1
         cluster_categories(iicld_comp2,num_categories_in_cluster(iicld_comp2)) = icategory
 
       else if ( (.not. l_in_cloud) .and. l_in_component_1 ) then
-        cluster_prescribed_probs(3) = nocloud_comp1
+        cluster_prescribed_probs(iincld_comp1) = nocloud_comp1
         num_categories_in_cluster(iincld_comp1) = num_categories_in_cluster(iincld_comp1) + 1
         cluster_categories(iincld_comp1,num_categories_in_cluster(iincld_comp1)) = icategory
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(4) = nocloud_comp2
+        cluster_prescribed_probs(iincld_comp2) = nocloud_comp2
         num_categories_in_cluster(iincld_comp2) = num_categories_in_cluster(iincld_comp2) + 1
         cluster_categories(iincld_comp2,num_categories_in_cluster(iincld_comp2)) = icategory
 
