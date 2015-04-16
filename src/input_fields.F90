@@ -48,7 +48,9 @@ module inputfields
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
     l_input_veg_T_in_K = .false., l_input_deep_soil_T_in_K = .false., &
-    l_input_sfc_soil_T_in_K = .false.
+    l_input_sfc_soil_T_in_K = .false., l_input_thlp2_forcing = .false., &
+    l_input_thlprcp = .false., l_input_rcm_mc = .false., l_input_rvm_mc = .false., &
+    l_input_thlm_mc = .false. 
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
@@ -79,7 +81,8 @@ module inputfields
              compute_timestep, &
              inputfields_init, &
              set_filenames, &
-             cleanup_input_fields
+             cleanup_input_fields, &
+             get_clubb_variable_interpolated
 
   private ! Default Scope
 
@@ -227,7 +230,8 @@ module inputfields
         cloud_frac, & 
         up2, & 
         vp2, & 
-        sigma_sqd_w
+        sigma_sqd_w, &
+        thlp2_forcing
 
     use variables_diagnostic_module, only: & 
         hydromet, & ! Variable(s)
@@ -248,7 +252,9 @@ module inputfields
         Nccnm, & 
         sigma_sqd_w_zt, & 
         em, &
-        radht
+        radht, &
+        !Frad, &
+        thlprcp
 
     use variables_prognostic_module, only: & 
         pdf_params ! Variable(s)
@@ -288,6 +294,7 @@ module inputfields
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
+
 
     implicit none
 
@@ -609,6 +616,9 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
+
+
+
 !--------------------------------------------------------
 
       ! Read in the zm file
@@ -719,6 +729,18 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_sigma_sqd_w, stat_files(clubb_zm), "sigma_sqd_w", gr%nz, timestep, &
              gr%zm, sigma_sqd_w, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_thlp2_forcing, stat_files(clubb_zm), "thlp2_forcing", gr%nz, timestep, &
+             gr%zm, thlp2_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_thlprcp, stat_files(clubb_zm), "thlprcp", gr%nz, timestep, &
+             gr%zm, thlprcp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -2922,7 +2944,8 @@ module inputfields
       l_input_Nccnm, l_input_Nim, l_input_Ngm, l_input_Nsm, &
       l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
       l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-      l_input_sfc_soil_T_in_K
+      l_input_sfc_soil_T_in_K, l_input_thlp2_forcing, l_input_thlprcp , &
+      l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc
 
     ! --- Begin Code ---
 
@@ -2993,6 +3016,11 @@ module inputfields
     l_input_veg_T_in_K = .false.
     l_input_deep_soil_T_in_K = .false.
     l_input_sfc_soil_T_in_K  = .false.
+    l_input_thlp2_forcing = .false.
+    l_input_thlprcp = .false.
+    l_input_rcm_mc = .false.
+    l_input_rvm_mc = .false.
+    l_input_thlm_mc = .false.
 
     print *, namelist_filename
     ! Read in our namelist

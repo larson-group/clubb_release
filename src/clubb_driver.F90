@@ -1065,8 +1065,9 @@ module clubb_driver
              restart_path_case, time_restart, &            ! Intent(in)
              upwp, vpwp, wm_zt, wm_zm,        &            ! Intent(inout)
              wpthlp, wprtp,   &                            ! Intent(inout)
+             rcm_mc, rvm_mc, thlm_mc, &
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
-
+ 
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
       ! rho_ds_zm and rho_ds_zt, respectively, which were read in from the input
       ! file during the call to subroutine restart_clubb.
@@ -1119,7 +1120,7 @@ module clubb_driver
                        rad_dummy, 0, rad_dummy, day, month, year, & ! Intent(in)
                        (/rlon/), (/rlat/), time_current, dt_main, l_silhs_out ) ! Intent(in)
     end if
-  
+ 
 
 #ifdef SILHS
     if ( lh_microphys_type /= lh_microphys_disabled ) then
@@ -1180,7 +1181,6 @@ module clubb_driver
 
     do itime = iinit, ifinal, 1
       ! When this time step is over, the time will be time + dt_main
-
       ! We use integer timestep for stats_begin_step
         call stats_begin_timestep( itime, stats_nsamp, stats_nout ) ! Intent(in)
 
@@ -1227,19 +1227,6 @@ module clubb_driver
         end if
         err_code = err_code_forcings
       end if
-
-      if ( l_stats_samp ) then
-        ! Total microphysical tendency of vapor and cloud water mixing ratios
-        call stat_update_var( irvm_mc, rvm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( ircm_mc, rcm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( ithlm_mc, thlm_mc, stats_zt ) ! K/s
-        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm ) ! m*(kg/kg)/s^2
-        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm ) ! K*m/s^2
-        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm ) ! (kg/kg)^2/s
-        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm ) ! K^2/s
-        call stat_update_var( irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
-      endif
 
       ! Add microphysical tendencies to rtm_forcing
       rtm_forcing(:) = rtm_forcing(:) + rcm_mc(:) + rvm_mc(:)
@@ -1422,6 +1409,19 @@ module clubb_driver
              call report_error( err_code_microphys )
          endif
          err_code = err_code_microphys
+      endif
+
+      if ( l_stats_samp ) then
+        ! Total microphysical tendency of vapor and cloud water mixing ratios
+        call stat_update_var( irvm_mc, rvm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( ircm_mc, rcm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt ) ! kg/kg/s
+        call stat_update_var( ithlm_mc, thlm_mc, stats_zt ) ! K/s
+        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm ) ! m*(kg/kg)/s^2
+        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm ) ! K*m/s^2
+        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm ) ! (kg/kg)^2/s
+        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm ) ! K^2/s
+        call stat_update_var( irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
       endif
 
       ! Radiation is always called on the first timestep in order to ensure
@@ -3014,7 +3014,8 @@ module clubb_driver
              ( iunit, runfile, &
                restart_path_case, time_restart, & 
                upwp, vpwp, wm_zt, wm_zm,  & 
-               wpthlp, wprtp, & 
+               wpthlp, wprtp, &
+               rcm_mc, rvm_mc, thlm_mc, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -3042,12 +3043,14 @@ module clubb_driver
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
         l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
         l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-        l_input_sfc_soil_T_in_K, stat_files
+        l_input_sfc_soil_T_in_K, l_input_thlp2_forcing, l_input_thlprcp, &
+        l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc, stat_files
 
     use inputfields, only: &
       compute_timestep,  & ! Procedure(s)
       stat_fields_reader, &
-      set_filenames
+      set_filenames, &
+      get_clubb_variable_interpolated
 
     use grid_class, only: gr ! Variable(s)
 
@@ -3061,8 +3064,11 @@ module clubb_driver
       l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
-      microphys_scheme, &  ! Variable
-      l_predict_Nc
+      microphys_scheme, &  ! Variable(s)
+      l_predict_Nc, &
+      l_ice_microphys, &
+      l_graupel
+
 
     implicit none
 
@@ -3092,10 +3098,15 @@ module clubb_driver
       upwp_sfc,        & ! u'w' at surface           [m^2/s^2] 
       vpwp_sfc           ! v'w' at surface           [m^2/s^2]
 
+    real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
+      rcm_mc, & ! Tendency of liquid water due to microphysics      [kg/kg/s]
+      rvm_mc, & ! Tendency of vapor water due to microphysics       [kg/kg/s]
+      thlm_mc   ! Tendency of liquid pot. temp. due to microphysics [K/s]
+
     ! Local variables
     integer :: timestep
 
-    logical :: l_restart
+    logical :: l_restart, l_read_error, l_fatal_error
 
 
     ! --- Begin Code ---
@@ -3153,17 +3164,28 @@ module clubb_driver
 
     case ( "morrison" )
       l_input_rrm = .true.
-      l_input_rsm = .true.
-      l_input_rim = .true.
-      l_input_rgm = .true.
+      l_input_Nrm = .true.
+      if ( l_ice_microphys ) then
+        l_input_rsm = .true.
+        l_input_rim = .true.
+        l_input_Nim = .true.
+        if ( l_graupel ) then
+          l_input_rgm = .true.
+        else
+          l_input_rgm = .false.
+        end if
+      else
+        l_input_rsm = .false.
+        l_input_rim = .false.
+        l_input_Nim = .false.
+        l_input_rgm = .false.
+      end if
       l_input_Nccnm = .false.
       if ( l_predict_Nc ) then
         l_input_Ncm = .true.
       else
         l_input_Ncm = .false.
       end if
-      l_input_Nrm = .true.
-      l_input_Nim =  .true.
 
     case ( "morrison_gettelman" )
       l_input_rrm = .false.
@@ -3222,6 +3244,11 @@ module clubb_driver
     l_input_sigma_sqd_w = .true.
     l_input_cloud_frac  = .true.
     l_input_sigma_sqd_w_zt = .true.
+    l_input_thlp2_forcing = .true.
+    l_input_thlprcp = .true.
+    l_input_rcm_mc = .true.
+    l_input_rvm_mc = .true.
+    l_input_thlm_mc = .true.
 
     call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
@@ -3242,7 +3269,24 @@ module clubb_driver
     ! Read data from stats files
     call stat_fields_reader( timestep )  ! Intent(in)
 
-    wm_zm = zt2zm( wm_zt )
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rcm_mc, stat_files(1), "rcm_mc", gr%nz, timestep, &
+             gr%zt, rcm_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rvm_mc, stat_files(1), "rvm_mc", gr%nz, timestep, &
+             gr%zt, rvm_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_thlm_mc, stat_files(1), "thlm_mc", gr%nz, timestep, &
+             gr%zt, thlm_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
 
     wpthlp_sfc = wpthlp(1)
     wprtp_sfc  = wprtp(1)
