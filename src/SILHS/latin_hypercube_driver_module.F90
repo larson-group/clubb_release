@@ -91,14 +91,15 @@ module latin_hypercube_driver_module
 
     use parameters_silhs, only: &
       l_lh_cloud_weighted_sampling, & ! Variable(s)
-      l_Lscale_vert_avg
+      l_Lscale_vert_avg, &
+      l_lh_straight_mc
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: genrand_real ! Constants
-
-    use mt95, only: genrand_init ! Procedure
+    use mt95, only: &
+      genrand_real, & ! Constant
+      genrand_real3   ! Procedure
 
     use clubb_precision, only: &
       dp, & ! double precision
@@ -286,46 +287,58 @@ module latin_hypercube_driver_module
 
     ! Choose which rows of LH sample to feed into closure at the k_lh_start level
     p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-      one_height_time_matrix((num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
-      1:(d_variables+d_uniform_extra))
+             one_height_time_matrix((num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
+             1:(d_variables+d_uniform_extra))
 
-    ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
-    call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
-                                  p_matrix, & ! In
-                                  X_u_all_levs(k_lh_start,:,:) ) ! Out
+    if ( l_lh_straight_mc ) then
 
-    if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_new_importance_sampling ) then
+      ! Do a straight Monte Carlo sample without LH or importance sampling.
+      call genrand_real3( X_u_all_levs(k_lh_start,:,:) )
+      l_half_in_cloud = .false.
+      ! Importance sampling is not performed, so all sample points have the same weight!!
+      lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
 
-        call cloud_weighted_sampling_driver &
-             ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
-               pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
-               pdf_params(k_lh_start)%mixt_frac, & ! In
-               X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-               X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-               lh_sample_point_weights, l_half_in_cloud ) ! Out
+    else ! .not. l_lh_straight_mc
 
-    else if ( l_lh_cloud_weighted_sampling .and. l_lh_new_importance_sampling ) then
+      ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
+      call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
+                                    p_matrix, & ! In
+                                    X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-        call importance_sampling_driver &
-             ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
-               X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-               X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-               X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
-               lh_sample_point_weights ) ! Out
+      if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_new_importance_sampling ) then
 
-        ! In general, this code no longer guarantees that half of all sample points will reside
-        ! in cloud.
-        l_half_in_cloud = .false.
+          call cloud_weighted_sampling_driver &
+               ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
+                 pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
+                 pdf_params(k_lh_start)%mixt_frac, & ! In
+                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+                 lh_sample_point_weights, l_half_in_cloud ) ! Out
 
-    else
+      else if ( l_lh_cloud_weighted_sampling .and. l_lh_new_importance_sampling ) then
 
-        ! If we are not doing cloud weighted sampling, we can't expect half of the sample
-        ! points to be in cloud
-        l_half_in_cloud = .false.
-        ! All sample points will have the same weight
-        lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+          call importance_sampling_driver &
+               ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
+                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
+                 X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
+                 lh_sample_point_weights ) ! Out
 
-    end if ! l_lh_cloud_weighted_sampling
+          ! In general, this code no longer guarantees that half of all sample points will reside
+          ! in cloud.
+          l_half_in_cloud = .false.
+
+      else
+
+          ! If we are not doing cloud weighted sampling, we can't expect half of the sample
+          ! points to be in cloud
+          l_half_in_cloud = .false.
+          ! All sample points will have the same weight
+          lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+
+      end if ! l_lh_cloud_weighted_sampling
+
+    end if ! l_lh_straight_mc
 
     ! Use a fixed number for the vertical correlation.
 !     X_vert_corr(1:nz) = 0.95_dp
