@@ -1063,8 +1063,7 @@ module clubb_driver
       call restart_clubb &
            ( iunit, runfile,                  &            ! Intent(in)
              restart_path_case, time_restart, &            ! Intent(in)
-             upwp, vpwp, wm_zt, wm_zm,        &            ! Intent(inout)
-             wpthlp, wprtp,   &                            ! Intent(inout)
+             upwp, vpwp, wpthlp, wprtp,       &            ! Intent(inout)
              rcm_mc, rvm_mc, thlm_mc, &
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
  
@@ -3013,8 +3012,7 @@ module clubb_driver
   subroutine restart_clubb &
              ( iunit, runfile, &
                restart_path_case, time_restart, & 
-               upwp, vpwp, wm_zt, wm_zm,  & 
-               wpthlp, wprtp, &
+               upwp, vpwp, wpthlp, wprtp, &
                rcm_mc, rvm_mc, thlm_mc, & 
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
@@ -3087,7 +3085,6 @@ module clubb_driver
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       upwp,            & ! u'w'                         [m^2/s^2]
       vpwp,            & ! v'w'                         [m^2/s^2]
-      wm_zt, wm_zm,    & ! w wind                       [m/s]
       wpthlp,          & ! w' th_l'                     [(m K)/s]
       wprtp              ! w' r_t'                      [(kg m)(kg s)]
 
