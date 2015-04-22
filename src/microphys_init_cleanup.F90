@@ -62,7 +62,8 @@ module microphys_init_cleanup
         Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
 
     use parameters_silhs, only: &
-        l_lh_cloud_weighted_sampling    ! Sample preferentially within cloud (SILHS)
+        l_lh_cloud_weighted_sampling, & ! Sample preferentially within cloud (SILHS)
+        l_lh_straight_mc                ! Do not apply LH, importance sampling at all (SILHS)
 
     use parameters_microphys, only: &
         lh_num_samples              ! SILHS sample points
@@ -276,7 +277,7 @@ module microphys_init_cleanup
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_cloud_weighted_sampling, &
-      l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, &
+      l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, l_lh_straight_mc, &
       hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
@@ -391,6 +392,7 @@ module microphys_init_cleanup
        call write_text ( "l_silhs_KK_convergence_adj_mean = ", &
                          l_silhs_KK_convergence_adj_mean, &
                          l_write_to_file, iunit )
+       call write_text ( "l_lh_straight_mc = ", l_lh_straight_mc, l_write_to_file, iunit )
        call write_text ( "rrp2_ip_on_rrm2_ip = ", &
                          hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip, &
                          l_write_to_file, iunit )
