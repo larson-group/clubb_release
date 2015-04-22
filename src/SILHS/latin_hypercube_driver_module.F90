@@ -90,7 +90,7 @@ module latin_hypercube_driver_module
       cloud_frac_min
 
     use parameters_silhs, only: &
-      l_lh_cloud_weighted_sampling, & ! Variable(s)
+      l_lh_importance_sampling, & ! Variable(s)
       l_Lscale_vert_avg, &
       l_lh_straight_mc
 
@@ -259,12 +259,12 @@ module latin_hypercube_driver_module
 
     end if ! First call to the driver
 
-    ! Sanity checks for l_lh_cloud_weighted_sampling
-    if ( l_lh_cloud_weighted_sampling .and. mod( num_samples, 2 ) /= 0 ) then
+    ! Sanity checks for l_lh_importance_sampling
+    if ( l_lh_importance_sampling .and. mod( num_samples, 2 ) /= 0 ) then
       write(fstderr,*) "Cloud weighted sampling requires num_samples to be divisible by 2."
       stop "Fatal error."
     end if
-    if ( l_lh_cloud_weighted_sampling .and. sequence_length /= 1 ) then
+    if ( l_lh_importance_sampling .and. sequence_length /= 1 ) then
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
       stop "Fatal error."
     end if
@@ -305,7 +305,7 @@ module latin_hypercube_driver_module
                                     p_matrix, & ! In
                                     X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-      if ( l_lh_cloud_weighted_sampling .and. .not. l_lh_new_importance_sampling ) then
+      if ( l_lh_importance_sampling .and. .not. l_lh_new_importance_sampling ) then
 
           call cloud_weighted_sampling_driver &
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
@@ -315,7 +315,7 @@ module latin_hypercube_driver_module
                  X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
                  lh_sample_point_weights, l_half_in_cloud ) ! Out
 
-      else if ( l_lh_cloud_weighted_sampling .and. l_lh_new_importance_sampling ) then
+      else if ( l_lh_importance_sampling .and. l_lh_new_importance_sampling ) then
 
           call importance_sampling_driver &
                ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
@@ -336,7 +336,7 @@ module latin_hypercube_driver_module
           ! All sample points will have the same weight
           lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
 
-      end if ! l_lh_cloud_weighted_sampling
+      end if ! l_lh_importance_sampling
 
     end if ! l_lh_straight_mc
 
@@ -1863,7 +1863,7 @@ module latin_hypercube_driver_module
 
     if ( l_stats_samp ) then
 
-      ! For all cases where l_lh_cloud_weighted_sampling is false, the weights
+      ! For all cases where l_lh_importance_sampling is false, the weights
       ! will be 1 (all points equally weighted)
 
       if ( ilh_rcm + ilh_rcp2_zt + ilh_lwp > 0 ) then

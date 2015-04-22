@@ -283,7 +283,7 @@ module est_kessler_microphys_module
 !     clubb_at_least_debug_level  ! Procedure(s)
 
     use parameters_silhs, only: &
-      l_lh_cloud_weighted_sampling ! Variable(s)
+      l_lh_importance_sampling ! Variable(s)
 
     use clubb_precision, only: &
       dp, & ! double precision
@@ -409,7 +409,7 @@ module est_kessler_microphys_module
 ! A_K = (1e-3/s)*(rc-0.5g/kg)*H(rc-0.5g/kg)
 ! This is the first of two lines where
 !      a user must add a new microphysics scheme.
-        if ( l_lh_cloud_weighted_sampling ) then
+        if ( l_lh_importance_sampling ) then
           ac_m1 = ac_m1 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp))&
                   * real(lh_sample_point_weights(sample), kind=dp)
         else
@@ -423,7 +423,7 @@ module est_kessler_microphys_module
 ! This is the second and last line where
 !      a user must add a new microphysics scheme.
 
-        if ( l_lh_cloud_weighted_sampling ) then
+        if ( l_lh_importance_sampling ) then
           ac_m2 = ac_m2 + coeff*max(0._dp,rc(sample)-real(r_crit, kind=dp)) &
                   * real(lh_sample_point_weights(sample), kind=dp)
         else

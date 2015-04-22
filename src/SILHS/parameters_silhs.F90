@@ -14,12 +14,12 @@ module parameters_silhs
 
   ! Flags for the SILHS sampling code 
   logical, public :: &
-    l_lh_cloud_weighted_sampling  = .true., & ! Limit noise by sampling in-cloud
-    l_Lscale_vert_avg = .true., &             ! Calculate Lscale_vert_avg in lh_subcolumn_generator
-    l_lh_straight_mc = .false.                ! Use true Monte Carlo sampling with no Latin
+    l_lh_importance_sampling  = .true., &     ! Limit noise by performing importance sampling
+    l_Lscale_vert_avg         = .true., &     ! Calculate Lscale_vert_avg in lh_subcolumn_generator
+    l_lh_straight_mc          = .false.       ! Use true Monte Carlo sampling with no Latin
                                               ! hypercube sampling and no importance sampling.
 
-  !$omp threadprivate( l_lh_cloud_weighted_sampling, l_Lscale_vert_avg, l_lh_straight_mc )
+  !$omp threadprivate( l_lh_importance_sampling, l_Lscale_vert_avg, l_lh_straight_mc )
 
   private ! Default Scope
 

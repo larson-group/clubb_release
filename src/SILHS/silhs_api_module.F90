@@ -19,7 +19,7 @@ module silhs_api_module
 
 #ifdef SILHS
   use parameters_silhs, only: &
-    l_lh_cloud_weighted_sampling, & ! Variable(s)
+    l_lh_importance_sampling, & ! Variable(s)
     l_Lscale_vert_avg
 
   use latin_hypercube_driver_module, only: &
@@ -37,7 +37,7 @@ module silhs_api_module
     lh_subcolumn_generator_api, &
     stats_accumulate_lh_api, &
     est_kessler_microphys_api, &
-    l_lh_cloud_weighted_sampling, &
+    l_lh_importance_sampling, &
     l_Lscale_vert_avg, &
     clip_transform_silhs_output_api, &
     lh_clipped_variables_type
