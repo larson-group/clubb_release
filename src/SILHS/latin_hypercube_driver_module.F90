@@ -125,9 +125,9 @@ module latin_hypercube_driver_module
     ! Parameter Constants
 
     logical, parameter :: &
-      l_lh_new_importance_sampling  = .true. ! Use the new importance sampling method
-                                             ! that places a user prescribed percentage
-                                             ! of points in each category.
+      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
+                                         ! places one point in cloud and one point out of
+                                         ! cloud
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -296,7 +296,7 @@ module latin_hypercube_driver_module
       call genrand_real3( X_u_all_levs(k_lh_start,:,:) )
       l_half_in_cloud = .false.
       ! Importance sampling is not performed, so all sample points have the same weight!!
-      lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+      lh_sample_point_weights(1:num_samples)  =  one
 
     else ! .not. l_lh_straight_mc
 
@@ -305,7 +305,9 @@ module latin_hypercube_driver_module
                                     p_matrix, & ! In
                                     X_u_all_levs(k_lh_start,:,:) ) ! Out
 
-      if ( l_lh_importance_sampling .and. .not. l_lh_new_importance_sampling ) then
+      if ( l_lh_importance_sampling ) then
+
+        if ( l_lh_old_cloud_weighted ) then
 
           call cloud_weighted_sampling_driver &
                ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
@@ -315,7 +317,7 @@ module latin_hypercube_driver_module
                  X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
                  lh_sample_point_weights, l_half_in_cloud ) ! Out
 
-      else if ( l_lh_importance_sampling .and. l_lh_new_importance_sampling ) then
+        else ! .not. l_lh_old_cloud_weighted
 
           call importance_sampling_driver &
                ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
@@ -328,13 +330,14 @@ module latin_hypercube_driver_module
           ! in cloud.
           l_half_in_cloud = .false.
 
+        end if ! l_lh_old_cloud_weighted
+
       else
 
-          ! If we are not doing cloud weighted sampling, we can't expect half of the sample
-          ! points to be in cloud
-          l_half_in_cloud = .false.
-          ! All sample points will have the same weight
-          lh_sample_point_weights(1:num_samples)  = 1.0_core_rknd
+        l_half_in_cloud = .false.
+
+        ! No importance sampling is performed, so all sample points have the same weight.
+        lh_sample_point_weights(1:num_samples) = one
 
       end if ! l_lh_importance_sampling
 
