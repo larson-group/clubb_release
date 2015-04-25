@@ -5,23 +5,69 @@ module permute_height_time_module
 
   implicit none
 
-  public :: permute_height_time, rand_permute
+  public :: permute_height_time, rand_permute, rand_uniform_real
 
   private ! Default Scope
 
   contains
+
+!-----------------------------------------------------------------------
+  function rand_uniform_real( )
+
+  ! Description:
+  !   Generates a uniformly distributed random real number in the range
+  !   (0,1) using the Mersenne Twister random number generator
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd        ! Precision
+
+    use mt95, only: &
+      genrand_real, &  ! Precision
+      genrand_real3    ! Procedure
+
+    use constants_clubb, only: &
+      one              ! Constant
+
+    implicit none
+
+    ! Output Variable
+    real( kind = core_rknd ) :: &
+      rand_uniform_real      ! A randomly distributed real number in the range (0,1)
+
+    ! Local Variable
+    real( kind = genrand_real ) :: &
+      rand_uniform_real_genrand_real
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    call genrand_real3( rand_uniform_real_genrand_real )
+
+    rand_uniform_real = real( rand_uniform_real_genrand_real, kind=core_rknd )
+
+    ! It is theoretically possible that the resulting real number is equal to
+    ! one if core_rknd is not the same as genrand_real. Here, we apply clipping
+    ! to prevent the output real number from being exactly equal to one.
+    rand_uniform_real = min( rand_uniform_real, one - epsilon( rand_uniform_real ) )
+
+    return
+  end function rand_uniform_real
 !-----------------------------------------------------------------------
 
+!-----------------------------------------------------------------------
   subroutine permute_height_time( nt_repeat, n_vars, one_height_time_matrix )
 
-! Description:
-!   Generates a matrix one_height_time_matrix, which is a nt_repeat x n_vars
-!   matrix whose 1st dimension is random permutations of the integer sequence 
-!   (0,...,nt_repeat-1).
+  ! Description:
+  !   Generates a matrix one_height_time_matrix, which is a nt_repeat x n_vars
+  !   matrix whose 1st dimension is random permutations of the integer sequence 
+  !   (0,...,nt_repeat-1).
 
-! References:
-!   None
-!-----------------------------------------------------------------------
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
 
     implicit none
 
@@ -52,15 +98,15 @@ module permute_height_time_module
 
 !------------------------------------------------------------------------
   subroutine rand_permute( n, pvect )
-! Description:
-!   Generates a vector of length n
-!      containing the integers 0, ... , n-1 in random order.
-!   We do not use a new seed.
+  ! Description:
+  !   Generates a vector of length n
+  !      containing the integers 0, ... , n-1 in random order.
+  !   We do not use a new seed.
 
-! References:
-!   Follow `Quasi-Monte Carlo sampling' by Art Owen, Section 1.3
-!   He follows, in turn, Luc Devroye 'Non-uniform random ...' (1986)
-!----------------------------------------------------------------------
+  ! References:
+  !   Follow `Quasi-Monte Carlo sampling' by Art Owen, Section 1.3
+  !   He follows, in turn, Luc Devroye 'Non-uniform random ...' (1986)
+  !----------------------------------------------------------------------
 
     use mt95, only: genrand_real3 ! Procedures
 
