@@ -462,7 +462,7 @@ module clubb_driver
       rtphmp_zt,  & ! Covariance of rt and a hydrometeor  [(kg/kg) <hm units>]
       thlphmp_zt    ! Covariance of thl and a hydrometeor [K <hm units>]
 
-    real( kind = dp ), dimension(:,:,:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:,:), allocatable :: &
       X_nl_all_levs ! Lognormally distributed hydrometeors
 
     integer, dimension(:,:), allocatable :: &
@@ -1339,8 +1339,7 @@ module clubb_driver
              ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
-               real( corr_cholesky_mtx_1, kind = dp ), & ! In
-               real( corr_cholesky_mtx_2, kind = dp ), & ! In
+               corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
                hydromet_pdf_params, & ! In
                X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
                lh_sample_point_weights ) ! Out
