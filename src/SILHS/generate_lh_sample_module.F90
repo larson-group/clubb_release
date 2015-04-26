@@ -471,7 +471,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function ltqnorm( p )
+  function ltqnorm( p_core_rknd )
 ! Description:
 !   This function is ported to Fortran from the same function written in Matlab,
 !    see the following description of this function.  Hongli Jiang, 2/17/2004
