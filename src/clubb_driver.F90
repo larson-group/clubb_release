@@ -1287,20 +1287,6 @@ module clubb_driver
              rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
-
-      if ( clubb_at_least_debug_level( 2 ) ) then
-         do k = 1, gr%nz
-            if ( real(pdf_params(k)%mixt_frac, kind=dp) > one_dp .or. &
-                 real(pdf_params(k)%mixt_frac, kind=dp) < zero_dp ) then
-
-               write(fstderr,*) "Error in gaus_mixt_points:  mixture " &
-                                // "fraction, mixt_frac, does not lie in [0,1]."
-               stop
-
-            endif
-         enddo
-      endif
-
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
       if ( .not. trim( microphys_scheme ) == "none" ) then
@@ -4402,7 +4388,6 @@ module clubb_driver
 
     ! Included Modules
     use clubb_precision, only: &
-      dp, &       ! Constant(s)
       core_rknd
 
     use error_code, only: &
@@ -4439,7 +4424,7 @@ module clubb_driver
       cloud_frac,        & ! Cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac    ! Ice cloud fraction (thermodynamic levels) [-]
 
-    real( kind = dp ), dimension(nz,lh_num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples,d_variables), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
     type(lh_clipped_variables_type), dimension(nz,lh_num_samples), intent(in) :: &

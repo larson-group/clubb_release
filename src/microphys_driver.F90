@@ -185,8 +185,7 @@ module microphys_driver
         lh_microphys_disabled       ! Disable latin hypercube entirely
 
     use clubb_precision, only: &
-        time_precision, & ! Variable(s)
-        dp,             &
+        time_precision, & ! Constant(s)
         core_rknd
 
     use corr_varnce_module, only: &
@@ -238,7 +237,7 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = dp ), dimension(gr%nz,lh_num_samples,d_variables), &
+    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,d_variables), &
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
