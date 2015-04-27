@@ -429,6 +429,19 @@ module latin_hypercube_driver_module
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
                                       lh_sample_point_weights, k_lh_start )
 
+    ! Check to ensure uniform variates are in the appropriate range
+    do sample=1, num_samples
+      do k=1, nz
+        do i=1, d_variables+d_uniform_extra
+          if ( X_u_all_levs(k,sample,i) >= one ) then
+            X_u_all_levs(k,sample,i) = one - epsilon( X_u_all_levs(k,sample,i) )
+          else if ( X_u_all_levs(k,sample,i) <= zero ) then
+            X_u_all_levs(k,sample,i) = epsilon( X_u_all_levs(k,sample,i) )
+          end if
+        end do
+      end do
+    end do
+
     ! Sample loop
     do k = 1, nz
       ! Generate LH sample, represented by X_u and X_nl, for level k

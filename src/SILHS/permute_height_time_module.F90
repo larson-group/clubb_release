@@ -51,7 +51,9 @@ module permute_height_time_module
     ! It is theoretically possible that the resulting real number is equal to
     ! one if core_rknd is not the same as genrand_real. Here, we apply clipping
     ! to prevent the output real number from being exactly equal to one.
-    rand_uniform_real = min( rand_uniform_real, one - epsilon( rand_uniform_real ) )
+    if ( rand_uniform_real >= one ) then
+      rand_uniform_real = one - epsilon( rand_uniform_real )
+    end if
 
     return
   end function rand_uniform_real
