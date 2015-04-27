@@ -216,14 +216,16 @@ module output_2D_samples_module
 
     do sample = 1, num_samples
       do j = 1, dp2
-        uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
+        uniform_sample_file%var(j)%ptr(sample,1,1:nz) = &
+          real( X_u_all_levs(1:nz,sample,j), kind = stat_rknd )
       end do
       uniform_sample_file%var(dp2+1)%ptr(sample,1,1:nz) = &
         real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
         uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
           real( p_matrix_chi_element(sample), kind=stat_rknd )
-        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = lh_sample_point_weights(sample)
+        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = &
+          real( lh_sample_point_weights(sample), kind=stat_rknd )
       end do
     end do
 
