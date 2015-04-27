@@ -194,7 +194,7 @@ module output_2D_samples_module
       num_samples, & ! Number of samples per variable
       dp2            ! Number of variates being sampled + 2
 
-    real(kind=genrand_real), intent(in), dimension(nz,num_samples,dp2) :: &
+    real(kind=core_rknd), intent(in), dimension(nz,num_samples,dp2) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
     integer, intent(in), dimension(nz,num_samples) :: &

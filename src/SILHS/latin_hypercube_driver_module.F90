@@ -86,6 +86,7 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr, & ! Constant(s)
       zero_threshold, &
+      zero, &
       one, &
       cloud_frac_min
 
@@ -1514,10 +1515,11 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only: &
-      fstderr ! Constant
+      fstderr, &       ! Constant(s)
+      one
 
     use clubb_precision, only: &
-      core_rknd   ! Constant
+      core_rknd        ! Constant
 
     implicit none
 

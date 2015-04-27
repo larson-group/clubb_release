@@ -173,11 +173,14 @@ module generate_lh_sample_module
   !   None
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
     use constants_clubb, only: &
-      zero
+      zero           ! Constant
 
     use corr_varnce_module, only: &
-      iiPDF_Ncn ! Variable(s)
+      iiPDF_Ncn      ! Variable
 
     implicit none
 
@@ -304,6 +307,9 @@ module generate_lh_sample_module
 !      a chapter from SIGGRAPH 2003
 !-------------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd
+
     implicit none
 
     ! Input Variables
@@ -347,11 +353,14 @@ module generate_lh_sample_module
 !   None
 !----------------------------------------------------------------------
 
-    use permute_height_time_module, only: &
-      rand_uniform_real
+    use clubb_precision, only: &
+      core_rknd
 
     use constants_clubb, only: &
-      core_rknd
+      one         ! Constant
+
+    use permute_height_time_module, only: &
+      rand_uniform_real
 
     implicit none
 
@@ -371,7 +380,7 @@ module generate_lh_sample_module
 
     rand = rand_uniform_real( )
 
-    choose_permuted_random = (one/real( nt_repeat, kind=core_rknd) ) &
+    choose_permuted_random = (one / real( nt_repeat, kind=core_rknd) ) &
        *( real( p_matrix_element, kind=core_rknd ) + rand )
 
     return
@@ -718,7 +727,7 @@ module generate_lh_sample_module
     else
 
       ! core_rknd is neither single precision nor double precision
-      stop "Cannot call dtrmv or strmv in multiply_Cholesky
+      stop "Cannot call dtrmv or strmv in multiply_Cholesky"
 
     end if
 

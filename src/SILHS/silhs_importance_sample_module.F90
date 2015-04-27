@@ -596,7 +596,7 @@ module silhs_importance_sample_module
     else  ! in component 2
 
       ! Scale and translate X_u_dp1 to lie in (mixt_frac, 1)
-      X_u_dp1 = X_u_dp1 * (one_dp - mixt_frac) + mixt_frac
+      X_u_dp1 = X_u_dp1 * (one - mixt_frac) + mixt_frac
 
       ! Choose appropriate component cloud and precipitation fractions
       cloud_frac_i  = pdf_params%cloud_frac_2
@@ -614,7 +614,7 @@ module silhs_importance_sample_module
       X_u_dp2 = X_u_dp2 * precip_frac_i
     else
       ! Scale and translate X_u_dp2 to lie in (precip_frac_i,1)
-      X_u_dp2 = X_u_dp2 * (one_dp - precip_frac_i) + precip_frac_i
+      X_u_dp2 = X_u_dp2 * (one - precip_frac_i) + precip_frac_i
     end if
 
     !--------------------------------------------------------
@@ -624,10 +624,10 @@ module silhs_importance_sample_module
       ! Samples in cloud have a chi variate that satisfies
       ! (1.0 - cloud_frac_i) < X_u_chi < 1
       ! Scale and translate X_u_chi to lie in ( (1 - cloud_frac_i) , 1 )
-      X_u_chi = X_u_chi * cloud_frac_i + (one_dp - cloud_frac_i)
+      X_u_chi = X_u_chi * cloud_frac_i + (one - cloud_frac_i)
     else
       ! Scale X_u_chi to lie in ( 0, (1 - cloud_frac_i) )
-      X_u_chi = X_u_chi * (one_dp - cloud_frac_i)
+      X_u_chi = X_u_chi * (one - cloud_frac_i)
     end if
 
     return
@@ -1564,7 +1564,7 @@ module silhs_importance_sample_module
 
     else ! .not. l_cloudy_sample
 
-      nocld_comp1_frac = mixt_fracp - cld_comp1_frac
+      nocld_comp1_frac = mixt_frac - cld_comp1_frac
       nocld_comp2_frac = (one - mixt_frac) - cld_comp2_frac
 
       conditional_mixt_frac = nocld_comp1_frac / (nocld_comp1_frac + nocld_comp2_frac)
