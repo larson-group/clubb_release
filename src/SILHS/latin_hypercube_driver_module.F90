@@ -98,9 +98,8 @@ module latin_hypercube_driver_module
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: &
-      genrand_real, & ! Constant
-      genrand_real3   ! Procedure
+    use permute_height_time_module, only: &
+      rand_uniform_real          ! Procedure
 
     use clubb_precision, only: &
       core_rknd, &
@@ -200,7 +199,7 @@ module latin_hypercube_driver_module
     integer :: &
       k_lh_start, & ! Height for preferentially sampling within cloud
       i_rmd, &      ! Remainder of ( iter-1 / sequence_length )
-      k, sample     ! Loop iterators
+      k, sample, i  ! Loop iterators
 
     integer :: ivar ! Loop iterator
 
@@ -293,7 +292,12 @@ module latin_hypercube_driver_module
     if ( l_lh_straight_mc ) then
 
       ! Do a straight Monte Carlo sample without LH or importance sampling.
-      call genrand_real3( X_u_all_levs(k_lh_start,:,:) )
+      do i=1, d_variables+d_uniform_extra
+        do sample=1, num_samples
+          X_u_all_levs(k_lh_start,sample,i) = rand_uniform_real( )
+        end do
+      end do
+
       l_half_in_cloud = .false.
       ! Importance sampling is not performed, so all sample points have the same weight!!
       lh_sample_point_weights(1:num_samples)  =  one
@@ -448,7 +452,7 @@ module latin_hypercube_driver_module
     end if
     if ( l_output_2D_uniform_dist ) then
       call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
-                                        real(X_u_all_levs, kind = genrand_real), &
+                                        X_u_all_levs, &
                                         X_mixt_comp_all_levs, p_matrix, &
                                         lh_sample_point_weights )
     end if
