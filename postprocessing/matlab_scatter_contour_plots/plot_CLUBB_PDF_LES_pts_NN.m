@@ -51,16 +51,16 @@ end
 binranges_x = x;
 [bincounts_x] = histc( var_x_LES, binranges_x );
 % Plot normalized histogram of LES results for x.
-bar( binranges_x, bincounts_x / ( nx_LES_grid * ny_LES_grid ), 1.0, ...
-     'r', 'EdgeColor', 'r' );
+bar( binranges_x, bincounts_x / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
+     1.0, 'r', 'EdgeColor', 'r' );
 hold on
 % Plot normalized PDF of x for CLUBB.
-plot( x, P_x * delta_x, '-b', 'LineWidth', 2 )
+plot( x, P_x, '-b', 'LineWidth', 2 )
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
 xlim( [ min_x max_x ] )
-ylim( [ 0 max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid ), ...
-          max(P_x) * delta_x ) ] );
+ylim( [ 0 max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
+               max(P_x) ) ] );
 %xlabel( var_x_label )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' )
 grid on
@@ -95,16 +95,16 @@ end
 binranges_y = y;
 [bincounts_y] = histc( var_y_LES, binranges_y );
 % Plot normalized histogram of LES results for y.
-bar( binranges_y, bincounts_y / ( nx_LES_grid * ny_LES_grid ), 1.0, ...
-     'r', 'EdgeColor', 'r' );
+bar( binranges_y, bincounts_y / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
+     1.0, 'r', 'EdgeColor', 'r' );
 hold on
 % Plot normalized PDF of y for CLUBB.
-plot( y, P_y * delta_y, '-b', 'LineWidth', 2 )
+plot( y, P_y, '-b', 'LineWidth', 2 )
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
 xlim( [ min_y max_y ] )
-ylim( [ 0 max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid ), ...
-          max(P_y) * delta_y ) ] );
+ylim( [ 0 max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
+               max(P_y) ) ] );
 %xlabel( var_y_label )
 % Reverse the plot and turn the plot 90 degrees clockwise.
 set(gca, 'xdir', 'reverse')
