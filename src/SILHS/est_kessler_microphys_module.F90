@@ -474,10 +474,14 @@ module est_kessler_microphys_module
 !---------------------------------------------------------------
 
     use constants_clubb, only:  &
-        fstderr  ! Constant(s)
+      fstderr      ! Constant(s)
 
     use clubb_precision, only: &
-        core_rknd    ! Core precision
+      core_rknd    ! Core precision
+
+    use constants_clubb, only: &
+      one, &       ! Constant(s)
+      zero
 
 !   use error_code, only:  &
 !       clubb_at_least_debug_level  ! Procedure(s)
@@ -509,52 +513,41 @@ module est_kessler_microphys_module
 
     ! A scalar representing grid box avg specific liquid water;
     ! divide by total cloud fraction to obtain within-cloud liquid water
-    real( kind = dp ), intent(out) :: rc_m
+    real( kind = core_rknd ), intent(out) :: rc_m
 
     ! Local Variables
 
     integer :: sample
     integer :: n1, n2
-    real( kind = dp ) :: rc_m1, rc_m2
-    real( kind = dp ) :: coeff, expn
-!   real( kind = dp ) :: fraction_1
+    real( kind = core_rknd ) :: rc_m1, rc_m2
+    real( kind = core_rknd ) :: coeff, expn
 
     ! ---- Begin Code ----
 
     ! Handle some possible errors re: proper ranges of mixt_frac, C1, C2.
-    if ( mixt_frac > 1.0_dp .or. mixt_frac < 0.0_dp ) then
+    if ( mixt_frac > one .or. mixt_frac < zero ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'mixture fraction, mixt_frac, does not lie in [0,1].'
       stop
     end if
-    if ( C1 > 1.0_dp .or. C1 < 0.0_dp ) then
+    if ( C1 > one .or. C1 < zero ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 1, C1, does not lie in [0,1].'
       stop
     end if
-    if ( C2 > 1.0_dp .or. C2 < 0.0_dp ) then
+    if ( C2 > one .or. C2 < zero ) then
       write(fstderr,*) 'Error in rc_estimate:  ',  &
                        'cloud fraction 2, C2, does not lie in [0,1].'
       stop
     end if
 
-    ! Make sure there is some cloud.
-    ! Disable this for now, so we can loop over the whole domain.
-    ! -dschanen 3 June 2009
-!   if ( mixt_frac*C1 < 0.001__dp .and. (1-mixt_frac)*C2 < 0.001_dp ) then
-!     if ( clubb_at_least_debug_level( 1 ) ) then
-!       write(fstderr,*) 'Error in rc_estimate:  ',  &
-!                        'there is no cloud or almost no cloud!'
-!     end if
-!   end if
-
     ! To compute liquid water, need to set coeff=expn=1.
-    coeff = 1._dp
-    expn  = 1._dp
+    coeff = one
+    expn  = one
 
     ! Initialize liquid in each mixture component
-    rc_m1 = 0._dp
-    rc_m2 = 0._dp
+    rc_m1 = zero
+    rc_m2 = zero
 
     ! Initialize numbers of sample points corresponding
     !    to each mixture component
@@ -585,13 +578,13 @@ module est_kessler_microphys_module
 !! Convert sums to averages.
 !! Old code that underestimates if n1 or n2 = 0.
 !   if ( n1 == 0 ) then
-!     rc_m1 = 0._dp
+!     rc_m1 = zero
 !   else
 !     rc_m1 = rc_m1/n1
 !   end if
 
 !   if ( n2 == 0 ) then
-!     rc_m2 = 0._dp
+!     rc_m2 = zero
 !   else
 !     rc_m2 = rc_m2/n2
 !   end if
@@ -607,11 +600,11 @@ module est_kessler_microphys_module
 
     if ( l_cloud_weighted_averaging ) then
       if ( .not. (n1 == 0) ) then
-        rc_m1 = rc_m1/real( n1, kind=dp )
+        rc_m1 = rc_m1/real( n1, kind=core_rknd )
       end if
 
       if ( .not. (n2 == 0) ) then
-        rc_m2 = rc_m2/real( n2, kind=dp )
+        rc_m2 = rc_m2/real( n2, kind=core_rknd )
       end if
 
       if (n1 == 0) then
@@ -622,12 +615,12 @@ module est_kessler_microphys_module
         rc_m2 = rc_m1
       end if
       ! Grid box average.
-      rc_m = mixt_frac*C1*rc_m1 + (1._dp-mixt_frac)*C2*rc_m2
+      rc_m = mixt_frac*C1*rc_m1 + (one-mixt_frac)*C2*rc_m2
 
     end if ! l_cloud_weighted_averaging
 
     ! Grid box average.
-    rc_m = ( rc_m1 + rc_m2 ) / real(num_samples, kind = dp)
+    rc_m = ( rc_m1 + rc_m2 ) / real(num_samples, kind = core_rknd)
 
     return
   end subroutine rc_estimate
