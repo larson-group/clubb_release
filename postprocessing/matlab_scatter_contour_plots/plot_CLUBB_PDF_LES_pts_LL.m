@@ -82,7 +82,7 @@ if ( precip_frac_x_LES < 1.0 )
 end
 hold on
 % Plot PDF of x for CLUBB, where x > 0.
-plot( x, P_x * delta_x, '-b', 'LineWidth', 2 )
+plot( x, P_x, '-b', 'LineWidth', 2 )
 if ( precip_frac_clubb < 1.0 )
    hold on
    % Plot PDF of x for CLUBB, where x = 0.
