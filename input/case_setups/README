@@ -260,14 +260,8 @@ lh_microphys_type | character
   and the microphysics (K&K).
   Valid values are "interactive", "non-interactive", or "disabled".
 
-l_lh_vert_overlap | logical
-  Use a vertical overlap assumption for generating latin hypercube sample 
-  points rather than random overlap (K&K / Morrison).
-
-l_lh_cloud_weighted_sampling | logical
-  Pick points in and out of cloud Latin Hypercube sampling (K&K).  Note that
-  lh_num_samples must be an even number, and sequence length must be 1 in
-  order to enable this.
+l_lh_importance_sampling | logical
+  Performs importance sampling in SILHS to reduce noise.
 
 lh_num_samples | integer
   Number of latin hypercube samples to call the microphysics with (K&K).

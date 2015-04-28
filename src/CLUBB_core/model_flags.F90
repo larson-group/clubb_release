@@ -175,8 +175,14 @@ module model_flags
   logical, public :: &
     l_const_Nc_in_cloud = .false.,      & ! Use a constant cloud droplet conc. within cloud (K&K)
     l_fix_chi_eta_correlations = .true.   ! Use a fixed correlation for s and t Mellor(chi/eta) 
-
 !$omp threadprivate( l_const_Nc_in_cloud, l_fix_chi_eta_correlations )
+
+  logical, public :: &
+    l_use_ADG2 = .false.    ! Use Luhar et al. (2002) to close the w Gaussians.
+                            ! Allows for each w Gaussian to have a different
+                            ! width
+!$omp threadprivate(l_use_ADG2)
+
 
 #ifdef GFDL
   logical, public :: &
@@ -186,7 +192,7 @@ module model_flags
   namelist /configurable_model_flags/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_use_cloud_cover, l_calc_thlp2_rad
+    l_use_cloud_cover, l_calc_thlp2_rad, l_use_ADG2
 
   contains
 
@@ -326,7 +332,7 @@ module model_flags
                l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
                l_vert_avg_closure_in, &
                l_single_C2_Skw_in, l_standard_term_ta_in, &
-               l_tke_aniso_in, l_use_cloud_cover_in )
+               l_tke_aniso_in, l_use_cloud_cover_in, l_use_ADG2_in )
 
 ! Description:
 !   Set a model flag based on the input arguments for the purposes of trying
@@ -348,7 +354,8 @@ module model_flags
       l_single_C2_Skw_in, &
       l_standard_term_ta_in, &
       l_tke_aniso_in, &
-      l_use_cloud_cover_in
+      l_use_cloud_cover_in, &
+      l_use_ADG2_in
 
     ! ---- Begin Code ----
 
@@ -361,6 +368,7 @@ module model_flags
     l_standard_term_ta = l_standard_term_ta_in
     l_tke_aniso = l_tke_aniso_in
     l_use_cloud_cover = l_use_cloud_cover_in
+    l_use_ADG2 = l_use_ADG2_in
 
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
@@ -381,7 +389,7 @@ module model_flags
                l_upwind_xm_ma_out, l_quintic_poly_interp_out, &
                l_vert_avg_closure_out, &
                l_single_C2_Skw_out, l_standard_term_ta_out, &
-               l_tke_aniso_out, l_use_cloud_cover_out )
+               l_tke_aniso_out, l_use_cloud_cover_out, l_use_ADG2_out )
 
 ! Description:
 !   Get the current model flags.
@@ -402,7 +410,8 @@ module model_flags
       l_single_C2_Skw_out, &
       l_standard_term_ta_out, &
       l_tke_aniso_out, &
-      l_use_cloud_cover_out
+      l_use_cloud_cover_out, &
+      l_use_ADG2_out
 
     ! ---- Begin Code ----
 
@@ -415,6 +424,7 @@ module model_flags
     l_standard_term_ta_out = l_standard_term_ta
     l_tke_aniso_out = l_tke_aniso
     l_use_cloud_cover_out = l_use_cloud_cover
+    l_use_ADG2_out = l_use_ADG2
 
     return
   end subroutine get_configurable_model_flags

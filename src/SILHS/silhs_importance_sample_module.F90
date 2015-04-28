@@ -45,6 +45,9 @@ module silhs_importance_sample_module
       core_rknd, &      ! Constant(s)
       dp
 
+    use constants_clubb, only: &
+      fstderr           ! Constant
+
     use pdf_parameter_module, only: &
       pdf_parameter     ! Type
 
@@ -58,7 +61,18 @@ module silhs_importance_sample_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_prescribed_probs = .true.   ! Use prescribed probability importance sampling
+      l_use_clustered_sampling = .true.      ! Use clustered category importance sampling
+
+    ! Cluster allocation strategies!!!
+    integer, parameter :: &
+      ! All eight categories, effectively no clustering
+      eight_cluster_allocation_opt = 1, &
+      ! Four clusters for the combinations of cloud/no cloud and component 1/2.
+      ! Precipitation fraction is ignored.
+      four_cluster_allocation_opt  = 2
+
+    integer, parameter :: &
+      cluster_allocation_strategy = eight_cluster_allocation_opt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -109,11 +123,21 @@ module silhs_importance_sample_module
     category_real_probs = compute_category_real_probs &
                           ( importance_categories, pdf_params, hydromet_pdf_params )
 
-    if ( l_use_prescribed_probs ) then
+    if ( l_use_clustered_sampling ) then
 
-      ! Prescribe the probabilities
-      category_prescribed_probs = prescribe_importance_probs &
-                                  ( importance_categories, category_real_probs )
+      ! A cluster allocation strategy is selected based on the value of the
+      ! integer parameter.
+      select case ( cluster_allocation_strategy )
+      case ( eight_cluster_allocation_opt )
+        category_prescribed_probs = eight_cluster_allocation &
+                                    ( importance_categories, category_real_probs )
+      case ( four_cluster_allocation_opt )
+        category_prescribed_probs = four_cluster_no_precip &
+                                    ( importance_categories, category_real_probs )
+      case default
+        write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
+        stop "Fatal error in importance_sampling_driver"
+      end select
 
     else
 
@@ -122,7 +146,7 @@ module silhs_importance_sample_module
                                   ( importance_categories, category_real_probs, &
                                     pdf_params )
 
-    end if ! l_use_prescribed_probs
+    end if ! l_use_clustered_sampling
 
     ! Compute weight of each sample category
     category_sample_weights = compute_category_sample_weights &
@@ -614,26 +638,39 @@ module silhs_importance_sample_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function prescribe_importance_probs( importance_categories, category_real_probs ) &
+  function eight_cluster_allocation( importance_categories, category_real_probs ) &
 
   result( category_prescribed_probs )
 
   ! Description:
-  !   Outputs a prescribed value for the probability of each importance category
+  !   Clusters importance categories such that each of the eight importance
+  !   categories has its own cluster. Effectively, there are no clusters.
 
   ! References:
-  !   None
+  !   clubb:ticket:752
   !-----------------------------------------------------------------------
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd
+      core_rknd     ! Constant
 
     implicit none
 
     ! Local Constants
+    integer, parameter :: &
+      num_clusters = 8, &
+      num_categories_per_cluster = 1
+
+    !!! Prescribed probability definitions
     real( kind = core_rknd ), parameter :: &
-      prob_thresh = 5.0e-3_core_rknd
+      cloud_precip_comp1      = 0.15_core_rknd, &
+      cloud_precip_comp2      = 0.15_core_rknd, &
+      nocloud_precip_comp1    = 0.15_core_rknd, &
+      nocloud_precip_comp2    = 0.15_core_rknd, &
+      cloud_noprecip_comp1    = 0.15_core_rknd, &
+      cloud_noprecip_comp2    = 0.15_core_rknd, &
+      nocloud_noprecip_comp1  = 0.05_core_rknd, &
+      nocloud_noprecip_comp2  = 0.05_core_rknd
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -644,80 +681,337 @@ module silhs_importance_sample_module
 
     ! Output Variable
     real( kind = core_rknd ), dimension(num_importance_categories) :: &
-      category_prescribed_probs ! Probability of each category, scaled such that approximately half
-                                ! of all sample points will appear in cloud
+      category_prescribed_probs ! The prescribed probability for each category
 
     ! Local Variables
-    integer :: icategory, jcategory
+    integer, dimension(num_clusters,num_categories_per_cluster) :: &
+      cluster_categories
+
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_prescribed_probs
 
     logical :: l_in_cloud, l_in_component_1, l_in_precip
 
-  !-----------------------------------------------------------------------
+    integer :: icategory
 
+  !-----------------------------------------------------------------------
     !----- Begin Code -----
 
     do icategory=1, num_importance_categories
+
+      cluster_categories(icategory,1) = icategory
 
       l_in_cloud       = importance_categories(icategory)%l_in_cloud
       l_in_component_1 = importance_categories(icategory)%l_in_component_1
       l_in_precip      = importance_categories(icategory)%l_in_precip
 
       if ( l_in_cloud .and. l_in_precip .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
+        cluster_prescribed_probs(icategory) = cloud_precip_comp1
 
       else if ( l_in_cloud .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
-
-      else if ( l_in_cloud .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
-
-      else if ( l_in_cloud .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
+        cluster_prescribed_probs(icategory) = cloud_precip_comp2
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
+        cluster_prescribed_probs(icategory) = nocloud_precip_comp1
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.15_core_rknd
+        cluster_prescribed_probs(icategory) = nocloud_precip_comp2
+
+      else if ( l_in_cloud .and. (.not. l_in_precip) .and. l_in_component_1 ) then
+        cluster_prescribed_probs(icategory) = cloud_noprecip_comp1
+
+      else if ( l_in_cloud .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
+        cluster_prescribed_probs(icategory) = cloud_noprecip_comp2
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        category_prescribed_probs(icategory) = 0.05_core_rknd
+        cluster_prescribed_probs(icategory) = nocloud_noprecip_comp1
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        category_prescribed_probs(icategory) = 0.05_core_rknd
+        cluster_prescribed_probs(icategory) = nocloud_noprecip_comp2
 
       else
-        stop "Invalid category in prescribe_importance_probs"
+        stop "Invalid category in eight_cluster_allocation"
       end if
 
     end do ! icategory=1, num_importance_categories
 
-    ! The following loop ensures that we do not sample from categories that have
-    ! no PDF weight
-    do icategory=1, num_importance_categories
-
-      if ( category_real_probs(icategory) < prob_thresh .and. &
-           category_prescribed_probs(icategory) > category_real_probs(icategory) ) then
-        ! Do not perform importance_sampling on this category
-        ! Transfer all prescribed mass of this category the most important one available.
-        do jcategory=1, num_importance_categories
-
-          if ( category_real_probs(jcategory) >= prob_thresh ) then
-            category_prescribed_probs(jcategory) = category_prescribed_probs(jcategory) + &
-                         ( category_prescribed_probs(icategory) - category_real_probs(icategory) )
-            exit
-          end if
-
-        end do
-
-        category_prescribed_probs(icategory) = category_real_probs(icategory)
-
-      end if
-
-    end do ! icategory=1, num_importance_categories
+    category_prescribed_probs = compute_clust_category_probs &
+                                ( category_real_probs, num_clusters, num_categories_per_cluster, &
+                                  cluster_categories, cluster_prescribed_probs )
 
     return
-  end function prescribe_importance_probs
+  end function eight_cluster_allocation
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function four_cluster_no_precip( importance_categories, category_real_probs ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Clusters categories into four clusters for the four combinations of
+  !   cloud/no cloud and comp 1/comp 2. Precip fraction is effectively
+  !   ignored
+
+  ! References:
+  !   clubb:ticket:752
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd     ! Constant
+
+    use constants_clubb, only: &
+      fstderr       ! Constant
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    implicit none
+
+    ! Local Constants
+    integer, parameter :: &
+      num_clusters = 4, &
+      num_categories_per_cluster = 2
+
+    integer, parameter :: &
+      iicld_comp1  = 1, &
+      iicld_comp2  = 2, &
+      iincld_comp1 = 3, &
+      iincld_comp2 = 4
+
+    !!! Prescribed probability definitions
+    real( kind = core_rknd ), parameter :: &
+      cloud_comp1      = 0.30_core_rknd, &
+      cloud_comp2      = 0.30_core_rknd, &
+      nocloud_comp1    = 0.20_core_rknd, &
+      nocloud_comp2    = 0.20_core_rknd
+
+    ! Input Variables
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories   ! A list of importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs     ! The real probability for each category
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs ! The prescribed probability for each category
+
+    ! Local Variables
+    integer, dimension(num_clusters,num_categories_per_cluster) :: &
+      cluster_categories
+
+    integer, dimension(num_clusters) :: &
+      num_categories_in_cluster
+
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_prescribed_probs
+
+    logical :: l_in_cloud, l_in_component_1
+
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    num_categories_in_cluster(:) = 0
+
+    do icategory=1, num_importance_categories
+
+      l_in_cloud       = importance_categories(icategory)%l_in_cloud
+      l_in_component_1 = importance_categories(icategory)%l_in_component_1
+
+      if ( l_in_cloud .and. l_in_component_1 ) then
+        cluster_prescribed_probs(iicld_comp1) = cloud_comp1
+        num_categories_in_cluster(iicld_comp1) = num_categories_in_cluster(iicld_comp1) + 1
+        cluster_categories(iicld_comp1,num_categories_in_cluster(iicld_comp1)) = icategory
+        
+      else if ( l_in_cloud .and. (.not. l_in_component_1) ) then
+        cluster_prescribed_probs(iicld_comp2) = cloud_comp2
+        num_categories_in_cluster(iicld_comp2) = num_categories_in_cluster(iicld_comp2) + 1
+        cluster_categories(iicld_comp2,num_categories_in_cluster(iicld_comp2)) = icategory
+
+      else if ( (.not. l_in_cloud) .and. l_in_component_1 ) then
+        cluster_prescribed_probs(iincld_comp1) = nocloud_comp1
+        num_categories_in_cluster(iincld_comp1) = num_categories_in_cluster(iincld_comp1) + 1
+        cluster_categories(iincld_comp1,num_categories_in_cluster(iincld_comp1)) = icategory
+
+      else if ( (.not. l_in_cloud) .and. (.not. l_in_component_1) ) then
+        cluster_prescribed_probs(iincld_comp2) = nocloud_comp2
+        num_categories_in_cluster(iincld_comp2) = num_categories_in_cluster(iincld_comp2) + 1
+        cluster_categories(iincld_comp2,num_categories_in_cluster(iincld_comp2)) = icategory
+
+      else
+        stop "Invalid category in four_cluster_no_precip"
+      end if
+
+    end do ! icategory=1, num_importance_categories
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( any( num_categories_in_cluster /= 2 ) ) then
+        write(fstderr,*) "Not all clusters have two categories"
+        stop "Fatal error in four_cluster_no_precip"
+      end if
+    end if
+
+    category_prescribed_probs = compute_clust_category_probs &
+                                ( category_real_probs, num_clusters, num_categories_per_cluster, &
+                                  cluster_categories, cluster_prescribed_probs )
+
+    return
+  end function four_cluster_no_precip
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function compute_clust_category_probs &
+           ( category_real_probs, num_clusters, num_categories_per_cluster, &
+             cluster_categories, cluster_prescribed_probs ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   This is a generalized algorithm that takes as input a set of "clusters"
+  !   of the importance categories and a prescribed probability for each
+  !   cluster, and computes the prescribed probabilities for each category
+  !   such that the sum of the prescribed probabilities of every category
+  !   within a cluster is equal to the prescribed probability of the cluster.
+
+  ! References:
+  !   clubb:ticket:752
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    use constants_clubb, only: &
+      zero            ! Constant
+
+    implicit none
+
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      prob_thresh = 5.0e-3_core_rknd
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs           ! The real probability for each category
+
+    integer, intent(in) :: &
+      num_clusters, &               ! The number of clusters to sample from
+      num_categories_per_cluster    ! The number of categories in each cluster
+
+    integer, dimension(num_clusters,num_categories_per_cluster), intent(in) :: &
+      cluster_categories            ! An integer matrix containing indices corresponding
+                                    ! to the members of the clusters
+
+    real( kind = core_rknd ), dimension(num_clusters), intent(in) :: &
+      cluster_prescribed_probs      ! Prescribed probability sum for each cluster
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs     ! Resulting prescribed probability for each individual category
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_real_probs            ! Total PDF probability for each cluster
+
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_prescribed_probs_mod  ! Prescribed probability sum for each cluster, modified to
+                                    ! take real probability thresholding into account
+
+    logical, dimension(num_clusters) :: &
+      l_cluster_presc_prob_modified ! Whether a given cluster prescribed probability was modified
+                                    ! due to thresholding
+
+    real( kind = core_rknd ) :: &
+      nonzero_real_clust_sum, &     ! Sum of PDF probabilities for each non-modified cluster
+      presc_prob_difference         ! Extra prescribed mass for given cluster to be distributed
+
+    integer :: icluster, jcluster, icategory, cat_idx
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    ! Compute the total PDF probability for each cluster.
+    cluster_real_probs(:) = zero
+    do icluster=1, num_clusters
+      do icategory=1, num_categories_per_cluster
+        cluster_real_probs(icluster) = cluster_real_probs(icluster) + &
+            category_real_probs(cluster_categories(icluster,icategory))
+      end do
+    end do
+
+    ! Apply thresholding to ensure that clusters with extremely small PDF
+    ! probability are not importance sampled.
+    do icluster=1, num_clusters
+      if ( cluster_real_probs(icluster) < prob_thresh .and. &
+           cluster_prescribed_probs(icluster) > cluster_real_probs(icluster) ) then
+        ! Thresholding is necessary for this cluster. The prescribed probability for
+        ! this cluster will be set equal to the PDF probability of the cluster (that
+        ! is, no importance sampling).
+        cluster_prescribed_probs_mod(icluster) = cluster_real_probs(icluster)
+        l_cluster_presc_prob_modified(icluster) = .true.
+      else
+        ! Thresholding is not necessary
+        cluster_prescribed_probs_mod(icluster) = cluster_prescribed_probs(icluster)
+        l_cluster_presc_prob_modified(icluster) = .false.
+      end if ! cluster_real_probs(icluster) < prob_thresh .and. ...
+    end do ! icluster=1, num_clusters
+
+    ! Distribute any "extra" prescribed probability weight from thresholding to
+    ! other clusters.
+    if ( any( l_cluster_presc_prob_modified ) ) then
+
+      ! Compute the sum of prescribed probabilities for all non-modified clusters
+      nonzero_real_clust_sum = zero
+      do icluster=1, num_clusters
+        if ( .not. l_cluster_presc_prob_modified(icluster) ) then
+          nonzero_real_clust_sum = nonzero_real_clust_sum + cluster_real_probs(icluster)
+        end if
+      end do ! icluster=1, num_clusters
+
+      ! Transfer extra prescribed probability mass to other clusters.
+      do icluster=1, num_clusters
+        if ( l_cluster_presc_prob_modified(icluster) ) then
+
+          presc_prob_difference = cluster_prescribed_probs(icluster) - &
+                                  cluster_prescribed_probs_mod(icluster)
+
+          do jcluster=1, num_clusters
+            if ( .not. l_cluster_presc_prob_modified(jcluster) ) then
+              cluster_prescribed_probs_mod(jcluster) = cluster_prescribed_probs_mod(jcluster) + &
+                ( presc_prob_difference * cluster_real_probs(jcluster) / nonzero_real_clust_sum )
+            end if
+          end do
+
+        end if ! l_cluster_presc_prob_modified(icluster)
+      end do ! icluster=1, num_clusters
+
+    end if ! any( l_cluster_presc_prob_modified )
+
+    ! Finally, compute the prescribed probabilities for each category based on the cluster
+    ! probabilities.
+    do icluster=1, num_clusters
+      do icategory=1, num_categories_per_cluster
+        cat_idx = cluster_categories(icluster,icategory)
+        if ( l_cluster_presc_prob_modified(icluster) ) then
+          ! No scaling needs to be done, since the cluster's prescribed probability
+          ! equals its PDF probability.
+          category_prescribed_probs(cat_idx) = category_real_probs(cat_idx)
+        else
+
+          ! Scale category probability based on the cluster probability
+          category_prescribed_probs(cat_idx) = ( category_real_probs(cat_idx) / &
+            cluster_real_probs(icluster) ) * cluster_prescribed_probs_mod(icluster)
+
+        end if ! l_cluster_presc_prob_modified(icluster)
+      end do ! icategory=1, num_categories_per_cluster
+    end do ! icluster=1, num_clusters
+
+    return
+  end function compute_clust_category_probs
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
@@ -736,10 +1030,10 @@ module silhs_importance_sample_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd
+      core_rknd  ! Constant
 
     use pdf_parameter_module, only: &
-      pdf_parameter
+      pdf_parameter  ! Type
 
     use constants_clubb, only: &
       one,  &    ! Constant(s)
@@ -748,7 +1042,7 @@ module silhs_importance_sample_module
       fstderr
 
     use pdf_utilities, only: &
-      compute_mean_binormal
+      compute_mean_binormal ! Procedure
 
     implicit none
 
@@ -907,6 +1201,8 @@ module silhs_importance_sample_module
     if ( abs( category_sum - one ) > tolerance ) then
       write(fstderr,*) "The prescribed category probabilities do not sum to one."
       write(fstderr,*) "sum( category_prescribed_probs ) = ", category_sum
+      write(fstderr,*) 'category_real_probs = ', category_real_probs
+      write(fstderr,*) 'category_prescribed_probs = ', category_prescribed_probs
       l_error = .true.
     end if
 
