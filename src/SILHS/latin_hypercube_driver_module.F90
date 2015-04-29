@@ -709,8 +709,8 @@ module latin_hypercube_driver_module
 
       do isample=1, num_samples
 
-        lh_chi = real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd )
-        lh_eta = real( X_nl_all_levs(k,isample,iiPDF_eta), kind=core_rknd )
+        lh_chi = X_nl_all_levs(k,isample,iiPDF_chi)
+        lh_eta = X_nl_all_levs(k,isample,iiPDF_eta)
 
         ! Compute lh_rt and lh_thl
         call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &                        ! Intent(in)
@@ -726,7 +726,7 @@ module latin_hypercube_driver_module
         end if
 
         ! Compute lh_rc
-        lh_rc(k,isample) = chi_to_rc( real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
+        lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
         ! Clip lh_rc.
         if ( lh_rc(k,isample) > lh_rt(k,isample) - rt_tol ) then
           lh_rc(k,isample) = lh_rt(k,isample) - rt_tol
@@ -737,8 +737,8 @@ module latin_hypercube_driver_module
 
         ! Compute lh_Nc
         if ( l_use_Ncn_to_Nc ) then
-           lh_Nc(k,isample) = Ncn_to_Nc(real(X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd), &
-                                        real(X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd) )
+           lh_Nc(k,isample) = Ncn_to_Nc(X_nl_all_levs(k,isample,iiPDF_Ncn), &
+                                        X_nl_all_levs(k,isample,iiPDF_chi)
         else
            lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
@@ -1814,8 +1814,7 @@ module latin_hypercube_driver_module
       if ( ilh_chi > 0 ) then
         lh_chi(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_chi), &
-                                     kind = core_rknd ) )
+                               X_nl_all_levs(1:nz, 1:num_samples, iiPDF_chi) )
         call stat_update_var( ilh_chi, lh_chi, stats_lh_zt )
       end if
 
@@ -1823,7 +1822,7 @@ module latin_hypercube_driver_module
       if ( ilh_chip2 > 0 ) then
         lh_chip2(1:nz) &
         = compute_sample_variance( nz, num_samples, &
-                                   real( X_nl_all_levs(:,:,iiPDF_chi), kind = core_rknd ), &
+                                   X_nl_all_levs(:,:,iiPDF_chi), &
                                    lh_sample_point_weights, lh_chi(1:nz) )
         call stat_update_var( ilh_chip2, lh_chip2, stats_lh_zt )
       end if
@@ -1832,15 +1831,15 @@ module latin_hypercube_driver_module
       if ( ilh_eta > 0 ) then
         lh_eta(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_eta), &
-                                     kind = core_rknd ) )
+                               X_nl_all_levs(1:nz, 1:num_samples, iiPDF_eta) )
+
         call stat_update_var( ilh_eta, lh_eta, stats_lh_zt )
       end if
 
       if ( ilh_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
         lh_wp2_zt = compute_sample_variance( nz, num_samples, &
-                                             real( X_nl_all_levs(:,:,iiPDF_w), kind = core_rknd ), &
+                                             X_nl_all_levs(:,:,iiPDF_w), &
                                              lh_sample_point_weights, lh_wm )
         call stat_update_var( ilh_wp2_zt, lh_wp2_zt, stats_lh_zt )
       end if
@@ -1857,7 +1856,7 @@ module latin_hypercube_driver_module
         ! Compute the variance of total water
         lh_rtp2_zt = compute_sample_variance &
                      ( nz, num_samples, &
-                       real( lh_clipped_vars%rt, kind = core_rknd ), lh_sample_point_weights, &
+                       lh_clipped_vars%rt, lh_sample_point_weights, &
                        lh_rvm+lh_rcm )
         call stat_update_var( ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
       end if
@@ -1865,7 +1864,7 @@ module latin_hypercube_driver_module
       if ( ilh_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         lh_thlp2_zt = compute_sample_variance( nz, num_samples, &
-                        real( lh_clipped_vars%thl, kind = core_rknd ), lh_sample_point_weights, &
+                        lh_clipped_vars%thl, lh_sample_point_weights, &
                         lh_thlm )
         call stat_update_var( ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
       end if
