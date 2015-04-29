@@ -1271,7 +1271,7 @@ module silhs_importance_sample_module
              ( num_samples, p_matrix_chi, p_matrix_dp1, &
                cloud_frac_1, cloud_frac_2, mixt_frac, &
                X_u_chi, X_u_dp1, &
-               lh_sample_point_weights, l_half_in_cloud )
+               lh_sample_point_weights )
 
   ! Description:
   !   Performs importance sampling such that half of sample points are in cloud
@@ -1326,10 +1326,6 @@ module silhs_importance_sample_module
     real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
       lh_sample_point_weights             ! Weight of SILHS sample points (these must be applied
                                           ! when averaging results from, e.g., calling microphysics
-
-    logical, intent(out) :: &
-      l_half_in_cloud                     ! True if half of sample points are in cloud. Used
-                                          ! for assertion checks later in the code
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -1418,12 +1414,9 @@ module silhs_importance_sample_module
 
       end do ! sample=1, num_samples
 
-      l_half_in_cloud = .true.
-
     else ! cloud_frac < cloud_frac_min_samp .or. cloud_frac >= cloud_frac_max_samp
 
       ! Do not perform cloud weighted sampling.
-      l_half_in_cloud = .false.
       lh_sample_point_weights(:) = one
 
     end if ! cloud_frac >= cloud_frac_min_samp .and. cloud_frac < cloud_frac_max_samp

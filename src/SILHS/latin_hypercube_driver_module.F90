@@ -205,9 +205,6 @@ module latin_hypercube_driver_module
 
     integer :: kp1, km1 
 
-    logical :: &
-      l_half_in_cloud                 ! True if half of all samples should land up in cloud
-
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
 
@@ -298,7 +295,6 @@ module latin_hypercube_driver_module
         end do
       end do
 
-      l_half_in_cloud = .false.
       ! Importance sampling is not performed, so all sample points have the same weight!!
       lh_sample_point_weights(1:num_samples)  =  one
 
@@ -319,7 +315,7 @@ module latin_hypercube_driver_module
                  pdf_params(k_lh_start)%mixt_frac, & ! In
                  X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
                  X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 lh_sample_point_weights, l_half_in_cloud ) ! Out
+                 lh_sample_point_weights ) ! Out
 
         else ! .not. l_lh_old_cloud_weighted
 
@@ -330,15 +326,9 @@ module latin_hypercube_driver_module
                  X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
                  lh_sample_point_weights ) ! Out
 
-          ! In general, this code no longer guarantees that half of all sample points will reside
-          ! in cloud.
-          l_half_in_cloud = .false.
-
         end if ! l_lh_old_cloud_weighted
 
       else
-
-        l_half_in_cloud = .false.
 
         ! No importance sampling is performed, so all sample points have the same weight.
         lh_sample_point_weights(1:num_samples) = one
@@ -479,19 +469,6 @@ module latin_hypercube_driver_module
         write(fstderr,*) "A uniform variate was not in the correct range."
         l_error = .true.
       end if
-
-      ! Assertion check for whether half of sample points are cloudy.
-      if ( l_half_in_cloud ) then
-
-        ! Check for half cloudy points in uniform space
-        call assert_half_cloudy_uniform &
-             ( num_samples, pdf_params(k_lh_start)%cloud_frac_1, &
-               pdf_params(k_lh_start)%cloud_frac_2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiPDF_chi), l_error_in_sub )
-
-        l_error = l_error .or. l_error_in_sub
-
-      end if ! l_half_in_cloud
 
       do k=2, nz
 
@@ -1517,82 +1494,7 @@ module latin_hypercube_driver_module
 
     return
   end subroutine compute_arb_overlap
-
 !-------------------------------------------------------------------------------
-  subroutine assert_half_cloudy_uniform &
-             ( num_samples, cloud_frac_1, &
-               cloud_frac_2, X_mixt_comp_k_lh_start, &
-               X_u_chi_k_lh_start, l_error )
-! Description:
-!   Verify that half the points are in cloud if cloud weighted sampling is
-!   enabled and other conditions are met.
-
-! References:
-!   None.
-!-------------------------------------------------------------------------------
-
-    use constants_clubb, only: &
-      fstderr, &       ! Constant(s)
-      one
-
-    use clubb_precision, only: &
-      core_rknd        ! Constant
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples ! Total calls to the microphysics
-
-    real( kind = core_rknd ), intent(in) :: &
-      cloud_frac_1, cloud_frac_2 ! Cloud fraction associatated with component 1 & 2 [-]
-
-    integer, dimension(num_samples), intent(in) :: &
-      X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
-
-    real(kind=core_rknd), dimension(num_samples), intent(in) :: &
-      X_u_chi_k_lh_start   ! Uniform distribution for chi at k_lh_start [-]
-
-    ! Output Variables
-    logical, intent(out) :: &
-      l_error              ! True if the assertion check failed.
-
-    ! Local Variables
-    real(kind = core_rknd) :: cloud_frac_i
-
-    integer :: number_cloudy_samples
-
-    integer :: sample  ! Loop iterator
-
-    ! ---- Begin Code ----
-    l_error = .false.
-
-    number_cloudy_samples = 0
-
-    do sample = 1, num_samples
-      if ( X_mixt_comp_k_lh_start(sample) == 1 ) then
-        cloud_frac_i = cloud_frac_1
-      else
-        cloud_frac_i = cloud_frac_2
-      end if
-      if ( X_u_chi_k_lh_start(sample) >= one-cloud_frac_i ) then
-        number_cloudy_samples = number_cloudy_samples + 1
-      else
-        ! Do nothing, the air is clear
-      end if
-    end do
-    if ( number_cloudy_samples /= ( num_samples / 2 ) ) then
-      write(fstderr,*) "Error, half of all samples aren't in cloud"
-      write(fstderr,*) "X_u chi random = ", &
-        X_u_chi_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
-        "cloudy samples =", number_cloudy_samples
-      write(fstderr,*) "cloud_frac_1 = ", cloud_frac_1
-      write(fstderr,*) "cloud_frac_2 = ", cloud_frac_2
-      l_error = .true.
-    end if
-
-    return
-  end subroutine assert_half_cloudy_uniform
 
 !-------------------------------------------------------------------------------
   function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm ) result( vert_corr )
