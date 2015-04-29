@@ -66,7 +66,6 @@ contains
       hydromet_pdf_parameter ! Type
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     implicit none
@@ -93,7 +92,7 @@ contains
       Lscale       ! Turbulent Mixing Length  [m]
 
     ! Output Variables
-    real( kind = dp ), intent(out), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(out), dimension(nz,num_samples) :: &
@@ -103,7 +102,7 @@ contains
       lh_sample_point_weights
 
     ! More Input Variables!
-    real( kind = dp ), dimension(d_variables,d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
@@ -139,8 +138,7 @@ contains
     use latin_hypercube_driver_module, only : stats_accumulate_lh, lh_clipped_variables_type
 
     use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      dp
+      core_rknd    ! Constant
 
     implicit none
 
@@ -156,7 +154,7 @@ contains
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights
 
-    real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     type(lh_clipped_variables_type), intent(in), dimension(nz,num_samples) :: &
@@ -186,7 +184,6 @@ contains
       pdf_parameter  ! Type
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     implicit none
@@ -198,7 +195,7 @@ contains
       num_samples, & ! Number of sample points
       d_variables    ! Number of variates
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -249,8 +246,7 @@ contains
     use latin_hypercube_driver_module, only : clip_transform_silhs_output, lh_clipped_variables_type
 
     use clubb_precision, only: &
-      core_rknd, &    ! Our awesome generalized precision (constant)
-      dp
+      core_rknd       ! Our awesome generalized precision (constant)
 
     use pdf_parameter_module, only: &
       pdf_parameter
@@ -268,7 +264,7 @@ contains
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &

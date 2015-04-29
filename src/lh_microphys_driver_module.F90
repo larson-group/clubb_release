@@ -55,7 +55,6 @@ contains
       est_kessler_microphys
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
       
     use error_code, only: &
@@ -82,7 +81,7 @@ contains
       nz               ! Number of vertical model levels
 
     ! Input Variables
-    real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(in), dimension(nz,num_samples) :: &

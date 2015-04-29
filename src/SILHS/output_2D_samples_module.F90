@@ -129,7 +129,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd, core_rknd, dp ! Constant(s)
+    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
 
     implicit none
 
@@ -182,11 +182,9 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use mt95, only: genrand_real ! Constant(s)
-
     use clubb_precision, only: &
-      dp, &      ! Constant(s)
-      core_rknd
+      core_rknd, &          ! Precision(s)
+      stat_rknd
 
     implicit none
 
@@ -196,7 +194,7 @@ module output_2D_samples_module
       num_samples, & ! Number of samples per variable
       dp2            ! Number of variates being sampled + 2
 
-    real(kind=genrand_real), intent(in), dimension(nz,num_samples,dp2) :: &
+    real(kind=core_rknd), intent(in), dimension(nz,num_samples,dp2) :: &
       X_u_all_levs ! Uniformly distributed numbers between (0,1)
 
     integer, intent(in), dimension(nz,num_samples) :: &
@@ -218,14 +216,16 @@ module output_2D_samples_module
 
     do sample = 1, num_samples
       do j = 1, dp2
-        uniform_sample_file%var(j)%ptr(sample,1,1:nz) = X_u_all_levs(1:nz,sample,j)
+        uniform_sample_file%var(j)%ptr(sample,1,1:nz) = &
+          real( X_u_all_levs(1:nz,sample,j), kind = stat_rknd )
       end do
       uniform_sample_file%var(dp2+1)%ptr(sample,1,1:nz) = &
-        real( X_mixt_comp_all_levs(1:nz,sample), kind=dp )
+        real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
         uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
-          real( p_matrix_chi_element(sample), kind=dp )
-        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = lh_sample_point_weights(sample)
+          real( p_matrix_chi_element(sample), kind=stat_rknd )
+        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = &
+          real( lh_sample_point_weights(sample), kind=stat_rknd )
       end do
     end do
 

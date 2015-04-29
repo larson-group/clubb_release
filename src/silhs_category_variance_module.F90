@@ -28,7 +28,6 @@ module silhs_category_variance_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp,        & ! Constant(s)
       core_rknd
 
     use microphys_stats_vars_module, only: &
@@ -59,7 +58,7 @@ module silhs_category_variance_module
       d_variables,     &      ! Number of variates in X_nl
       hydromet_dim            ! Number of elements of hydromet array
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -140,7 +139,6 @@ module silhs_category_variance_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp,        & ! Constant(s)
       core_rknd
 
     use constants_clubb, only: &
@@ -174,7 +172,7 @@ module silhs_category_variance_module
       num_samples,     &      ! Number of SILHS sample points
       d_variables             ! Number of variates in X_nl
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -274,11 +272,10 @@ module silhs_category_variance_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp       ! Constant
+      core_rknd       ! Constant
 
     use constants_clubb, only: &
-      zero, &  ! Constant(s)
-      zero_dp
+      zero     ! Constant(s)
 
     use silhs_importance_sample_module, only: &
       num_importance_categories, &     ! Constant
@@ -295,7 +292,7 @@ module silhs_category_variance_module
       num_samples, &        ! Number of SILHS sample points
       d_variables           ! Number of variates in X_nl
 
-    real( kind = dp ), dimension(num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,d_variables), intent(in) :: &
       X_nl_one_lev          ! SILHS sample vector at one height level
 
     integer, dimension(num_samples), intent(in) :: &
@@ -318,7 +315,7 @@ module silhs_category_variance_module
 
     do isample=1, num_samples
 
-      if ( X_nl_one_lev(isample,iiPDF_chi) < zero_dp ) then
+      if ( X_nl_one_lev(isample,iiPDF_chi) < zero ) then
         sample_category%l_in_cloud = .false.
       else
         sample_category%l_in_cloud = .true.

@@ -213,9 +213,6 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
-    real( kind = dp ), dimension(d_variables,d_variables,nz) :: &
-      corr_cholesky_mtx_1_dp, & ! Used for call to Cholesky_factor, requires dp
-      corr_cholesky_mtx_2_dp
 
     real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
       corr_mtx_approx_1, & ! Approximated corr. matrix (C = LL'), 1st comp. [-]
@@ -272,7 +269,7 @@ module setup_clubb_pdf_params
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = dp ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
       corr_array_scaling
 
     real( kind = core_rknd ), dimension(d_variables) :: &
@@ -656,15 +653,13 @@ module setup_clubb_pdf_params
 
           ! Compute choleksy factorization for the correlation matrix (out of
           ! cloud)
-          call Cholesky_factor( d_variables, real(corr_array_1_n(:,:,k), kind = dp), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
+          call Cholesky_factor( d_variables, corr_array_1_n(:,:,k), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_1(:,:,k), &  ! Out
                                 l_corr_array_scaling ) ! Out
 
-          call Cholesky_factor( d_variables, real(corr_array_2_n(:,:,k), kind = dp), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
+          call Cholesky_factor( d_variables, corr_array_2_n(:,:,k), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_2(:,:,k), &  ! Out
                                 l_corr_array_scaling ) ! Out
-          corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
-          corr_cholesky_mtx_2(:,:,k) = real( corr_cholesky_mtx_2_dp(:,:,k), kind = core_rknd )
        endif
 
        ! For ease of use later in the code, we make the correlation arrays

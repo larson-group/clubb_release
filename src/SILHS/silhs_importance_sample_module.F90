@@ -42,8 +42,7 @@ module silhs_importance_sample_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd, &      ! Constant(s)
-      dp
+      core_rknd         ! Constant(s)
 
     use constants_clubb, only: &
       fstderr           ! Constant
@@ -85,7 +84,7 @@ module silhs_importance_sample_module
       hydromet_pdf_params
 
     ! Input/Output Variables
-    real( kind = dp ), dimension(num_samples), intent(inout) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(inout) :: &
       X_u_chi_one_lev,  & ! These uniform variates are scaled by the importance
       X_u_dp1_one_lev,  & ! sampling process.
       X_u_dp2_one_lev
@@ -423,11 +422,10 @@ module silhs_importance_sample_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp,           &    ! Konstant(s)
-      core_rknd
+      core_rknd      ! Konstant
 
     use constants_clubb, only: &
-      fstderr, &
+      fstderr, &     ! Constant(s)
       one, &
       zero
 
@@ -538,11 +536,10 @@ module silhs_importance_sample_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp,           &    ! Konstant(s)
-      core_rknd
+      core_rknd          ! Konstant
 
     use constants_clubb, only: &
-      one_dp             ! Constant
+      one                ! Constant
 
     use pdf_parameter_module, only: &
       pdf_parameter
@@ -565,13 +562,13 @@ module silhs_importance_sample_module
     ! Input/Output Variable
     ! These uniform samples, upon input, are uniformly distributed in the
     ! range (0,1).
-    real( kind = dp ), intent(inout) :: &
+    real( kind = core_rknd ), intent(inout) :: &
       X_u_chi, & ! Uniform sample of extend cloud water mixing ratio
       X_u_dp1, & ! Uniform sample of the d+1 variate
       X_u_dp2    ! Uniform sample of the d+2 variate
 
     ! Local Variables
-    real( kind = dp ) :: &
+    real( kind = core_rknd ) :: &
       cloud_frac_i, & 
       precip_frac_i, &
       mixt_frac
@@ -580,7 +577,7 @@ module silhs_importance_sample_module
 
     !----- Begin Code -----
 
-    mixt_frac = real( pdf_params%mixt_frac, kind=dp )
+    mixt_frac = pdf_params%mixt_frac
 
     !--------------------------------------------------------
     ! Scale dp1 variate to be in component 1 or 2
@@ -593,17 +590,17 @@ module silhs_importance_sample_module
       X_u_dp1 = X_u_dp1 * mixt_frac
 
       ! Choose appropriate component cloud and precipitation fractions
-      cloud_frac_i  = real( pdf_params%cloud_frac_1, kind=dp )
-      precip_frac_i = real( hydromet_pdf_params%precip_frac_1, kind=dp )
+      cloud_frac_i  = pdf_params%cloud_frac_1
+      precip_frac_i = hydromet_pdf_params%precip_frac_1
 
     else  ! in component 2
 
       ! Scale and translate X_u_dp1 to lie in (mixt_frac, 1)
-      X_u_dp1 = X_u_dp1 * (one_dp - mixt_frac) + mixt_frac
+      X_u_dp1 = X_u_dp1 * (one - mixt_frac) + mixt_frac
 
       ! Choose appropriate component cloud and precipitation fractions
-      cloud_frac_i  = real( pdf_params%cloud_frac_2, kind=dp )
-      precip_frac_i = real( hydromet_pdf_params%precip_frac_2, kind=dp )
+      cloud_frac_i  = pdf_params%cloud_frac_2
+      precip_frac_i = hydromet_pdf_params%precip_frac_2
 
     end if ! category%l_in_component_1
 
@@ -617,7 +614,7 @@ module silhs_importance_sample_module
       X_u_dp2 = X_u_dp2 * precip_frac_i
     else
       ! Scale and translate X_u_dp2 to lie in (precip_frac_i,1)
-      X_u_dp2 = X_u_dp2 * (one_dp - precip_frac_i) + precip_frac_i
+      X_u_dp2 = X_u_dp2 * (one - precip_frac_i) + precip_frac_i
     end if
 
     !--------------------------------------------------------
@@ -627,10 +624,10 @@ module silhs_importance_sample_module
       ! Samples in cloud have a chi variate that satisfies
       ! (1.0 - cloud_frac_i) < X_u_chi < 1
       ! Scale and translate X_u_chi to lie in ( (1 - cloud_frac_i) , 1 )
-      X_u_chi = X_u_chi * cloud_frac_i + (one_dp - cloud_frac_i)
+      X_u_chi = X_u_chi * cloud_frac_i + (one - cloud_frac_i)
     else
       ! Scale X_u_chi to lie in ( 0, (1 - cloud_frac_i) )
-      X_u_chi = X_u_chi * (one_dp - cloud_frac_i)
+      X_u_chi = X_u_chi * (one - cloud_frac_i)
     end if
 
     return
@@ -1122,8 +1119,7 @@ module silhs_importance_sample_module
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd, &          ! Precision(s)
-      dp
+      core_rknd             ! Precision
 
     use constants_clubb, only: &
       zero, &               ! Constant(s)
@@ -1150,7 +1146,7 @@ module silhs_importance_sample_module
       category_prescribed_probs,  &       ! Prescribed probability for each category
       category_sample_weights             ! Sample weight for each category
 
-    real( kind = dp ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       X_u_chi_one_lev, &                  ! Samples of chi in uniform space
       X_u_dp1_one_lev, &                  ! Samples of the dp1 variate
       X_u_dp2_one_lev                     ! Samples of the dp2 variate
@@ -1173,7 +1169,7 @@ module silhs_importance_sample_module
     real( kind = core_rknd ) :: &
       category_sum, tolerance
 
-    real( kind = dp ) :: &
+    real( kind = core_rknd ) :: &
       cloud_frac_i, precip_frac_i
 
     integer :: isample
@@ -1223,19 +1219,19 @@ module silhs_importance_sample_module
 
       ! Verification of component
       if ( category%l_in_component_1 ) then
-        if ( X_u_dp1_one_lev(isample) > real( pdf_params%mixt_frac, kind=dp ) ) then
+        if ( X_u_dp1_one_lev(isample) > pdf_params%mixt_frac ) then
           write(fstderr,*) "The component of a sample is incorrect."
           l_error = .true.
         end if
-        cloud_frac_i = real( pdf_params%cloud_frac_1, kind=dp )
-        precip_frac_i = real( hydromet_pdf_params%precip_frac_1, kind=dp )
+        cloud_frac_i = pdf_params%cloud_frac_1
+        precip_frac_i = hydromet_pdf_params%precip_frac_1
       else ! .not. category%l_in_component_1
-        if ( X_u_dp1_one_lev(isample) < real( pdf_params%mixt_frac, kind=dp ) ) then
+        if ( X_u_dp1_one_lev(isample) < pdf_params%mixt_frac ) then
           write(fstderr,*) "The component of a sample is incorrect."
           l_error = .true.
         end if
-        cloud_frac_i = real( pdf_params%cloud_frac_2, kind=dp )
-        precip_frac_i = real( hydromet_pdf_params%precip_frac_2, kind=dp )
+        cloud_frac_i = pdf_params%cloud_frac_2
+        precip_frac_i = hydromet_pdf_params%precip_frac_2
       end if ! category%l_in_component_1
 
       ! Verification of cloud
@@ -1285,8 +1281,7 @@ module silhs_importance_sample_module
   !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd, &          ! Precision(s)
-      dp
+      core_rknd          ! Precision(s)
 
     use generate_lh_sample_module, only: &
       generate_uniform_sample ! Procedure
@@ -1295,7 +1290,8 @@ module silhs_importance_sample_module
       compute_mean_binormal
 
     use constants_clubb, only: &
-      one
+      one, &
+      two
 
     implicit none
 
@@ -1321,7 +1317,7 @@ module silhs_importance_sample_module
       mixt_frac                           ! Weight of first gaussian component
 
     ! Input/Output Variables
-    real( kind = dp ), dimension(num_samples), intent(inout) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(inout) :: &
       X_u_chi, &                          ! Samples of chi in uniform space
       X_u_dp1                             ! Samples of the dp1 variate for determining mixture
                                           ! component
@@ -1339,13 +1335,13 @@ module silhs_importance_sample_module
     real( kind = core_rknd ) :: &
       cloud_frac                          ! Cloud fraction at k_lh_start
 
-    real( kind = dp ), dimension(num_samples/2,1) :: &
+    real( kind = core_rknd ), dimension(num_samples/2,1) :: &
       mixt_rand_cloud, &                  ! Stratified random variable for determining mixture
                                           ! component in cloud
       mixt_rand_clear                     ! Stratified random variable for determining mixture
                                           ! component in clear air
 
-    real( kind = dp ) :: &
+    real( kind = core_rknd ) :: &
       mixt_rand_element
 
     real( kind = core_rknd ) :: &
@@ -1391,8 +1387,8 @@ module silhs_importance_sample_module
       n_clear_samples  = 0
 
       ! Compute weights for each type of point
-      lh_sample_cloud_weight = 2._core_rknd * cloud_frac
-      lh_sample_clear_weight = 2._core_rknd - lh_sample_cloud_weight
+      lh_sample_cloud_weight = two * cloud_frac
+      lh_sample_clear_weight = two - lh_sample_cloud_weight
 
       do sample=1, num_samples
 
@@ -1513,8 +1509,10 @@ module silhs_importance_sample_module
       choose_permuted_random    ! Procedure
 
     use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      dp
+      core_rknd ! Konstant
+
+    use constants_clubb, only: &
+      one
 
     implicit none
 
@@ -1531,17 +1529,17 @@ module silhs_importance_sample_module
       cloud_frac_2, &    ! Cloud fraction associated with mixture component 2     [-]
       mixt_frac         ! Mixture fraction                                       [-]
 
-    real( kind = dp ), intent(in) :: &
+    real( kind = core_rknd ), intent(in) :: &
       mixt_rand_element ! Random number (0,1) for determining mixture component
 
     ! Output Variables
-    real(kind=dp), intent(out) :: &
+    real(kind=core_rknd), intent(out) :: &
       X_u_dp1_element, X_u_chi_element ! Elements from X_u (uniform dist.)
 
     ! Local Variables
-    real(kind=dp) :: cloud_frac_i, conditional_mixt_frac
+    real(kind=core_rknd) :: cloud_frac_i, conditional_mixt_frac
 
-    real( kind = dp ) :: &
+    real( kind = core_rknd ) :: &
       cld_comp1_frac,    &          ! Fraction of points in component 1 and cloud
       cld_comp2_frac,    &          ! Fraction of points in component 2 and cloud
       nocld_comp1_frac,  &          ! Fraction of points in component 1 and clear air
@@ -1549,14 +1547,12 @@ module silhs_importance_sample_module
 
     integer :: X_mixt_comp_one_lev, p_matrix_element_ranged
 
-    real( kind = dp ) :: mixt_rand_element_scaled, mixt_frac_dp, chi_rand_element
+    real( kind = core_rknd ) :: mixt_rand_element_scaled, chi_rand_element
 
     ! ---- Begin code ----
 
-    mixt_frac_dp = real( mixt_frac, kind=dp )
-
-    cld_comp1_frac = real( mixt_frac*cloud_frac_1, kind=dp )
-    cld_comp2_frac = real( (1._core_rknd-mixt_frac)*cloud_frac_2, kind=dp )
+    cld_comp1_frac = mixt_frac*cloud_frac_1
+    cld_comp2_frac = (one-mixt_frac)*cloud_frac_2
 
     !---------------------------------------------------------------------
     ! Determine the conditional mixture fraction, given whether we are in
@@ -1568,8 +1564,8 @@ module silhs_importance_sample_module
 
     else ! .not. l_cloudy_sample
 
-      nocld_comp1_frac = mixt_frac_dp - cld_comp1_frac
-      nocld_comp2_frac = (1._dp - mixt_frac_dp) - cld_comp2_frac
+      nocld_comp1_frac = mixt_frac - cld_comp1_frac
+      nocld_comp2_frac = (one - mixt_frac) - cld_comp2_frac
 
       conditional_mixt_frac = nocld_comp1_frac / (nocld_comp1_frac + nocld_comp2_frac)
 
@@ -1591,13 +1587,13 @@ module silhs_importance_sample_module
     if ( X_mixt_comp_one_lev == 1 ) then
       ! mixt_rand_element is scaled to give real number stratified in (0,1)
       mixt_rand_element_scaled = mixt_rand_element / conditional_mixt_frac
-      X_u_dp1_element = mixt_rand_element_scaled * mixt_frac_dp
+      X_u_dp1_element = mixt_rand_element_scaled * mixt_frac
 
     else if ( X_mixt_comp_one_lev == 2 ) then
       ! mixt_rand_element is scaled to give real number stratified in (0,1)
       mixt_rand_element_scaled = (mixt_rand_element - conditional_mixt_frac) / &
-                                   (1._dp - conditional_mixt_frac) 
-      X_u_dp1_element = mixt_rand_element_scaled * (1._dp - mixt_frac_dp) + mixt_frac_dp
+                                   (one - conditional_mixt_frac) 
+      X_u_dp1_element = mixt_rand_element_scaled * (one - mixt_frac) + mixt_frac
 
     else
       stop "Should not be here"
@@ -1614,23 +1610,22 @@ module silhs_importance_sample_module
     end if
     
     ! Get a stratified number in (0,1) using the element of p_matrix!
-    chi_rand_element = real( choose_permuted_random( num_samples/2, p_matrix_element_ranged ), &
-                              kind=dp )
+    chi_rand_element = choose_permuted_random( num_samples/2, p_matrix_element_ranged )
 
     ! Determine cloud fraction
     if ( X_mixt_comp_one_lev == 1 ) then
-      cloud_frac_i = real( cloud_frac_1, kind=dp )
+      cloud_frac_i = cloud_frac_1
     else
-      cloud_frac_i = real( cloud_frac_2, kind=dp )
+      cloud_frac_i = cloud_frac_2
     end if
 
     if ( l_cloudy_sample ) then
       ! Scale and translate sample point to reside in cloud
       X_u_chi_element = cloud_frac_i * chi_rand_element + &
-                          (1._dp - cloud_frac_i )
+                          (one - cloud_frac_i )
     else
       ! Scale and translate sample point to reside in clear air (no cloud)
-      X_u_chi_element = (1._dp-cloud_frac_i) * chi_rand_element
+      X_u_chi_element = (one-cloud_frac_i) * chi_rand_element
     end if ! l_cloudy_sample
 
     return
