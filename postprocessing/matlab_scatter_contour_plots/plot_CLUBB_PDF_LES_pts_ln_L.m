@@ -30,6 +30,9 @@ for i = 1:1:nx_LES_grid*ny_LES_grid
       var_lnx_LES_pos(pos_count_lnx) = log( var_x_LES(i) );
    end
 end
+precip_frac_x_LES = pos_count_lnx / ( nx_LES_grid * ny_LES_grid );
+precip_frac_clubb ...
+= mixt_frac * precip_frac_1 + ( 1.0 - mixt_frac ) * precip_frac_2;
 min_lnx = max( min( var_lnx_LES_pos ), lnx_abs_min );
 max_lnx = max( var_lnx_LES_pos );
 num_lnx_divs = num_lnx_pts + 1;
@@ -45,21 +48,22 @@ end
 for i = 1:1:num_lnx_pts
    lnx(i) = 0.5 * ( lnx_divs(i) + lnx_divs(i+1) );
 end
-% CLUBB's PDF marginal for ln x.
+% CLUBB's in-precip PDF marginal for ln x.
 for i = 1:1:num_lnx_pts
    P_lnx(i) ...
-   = mixt_frac * precip_frac_1 ...
+   = mixt_frac * ( precip_frac_1 / precip_frac_clubb ) ...
      * PDF_comp_Normal( lnx(i), mu_x_1_n, sigma_x_1_n ) ...
-     + ( 1.0 - mixt_frac ) * precip_frac_2 ...
+     + ( 1.0 - mixt_frac ) * ( precip_frac_2 / precip_frac_clubb ) ...
        * PDF_comp_Normal( lnx(i), mu_x_2_n, sigma_x_2_n );
 end
 % Centerpoints and counts for each bin (from LES results) for ln x.
 binranges_lnx = lnx;
 [bincounts_lnx] = histc( var_lnx_LES_pos, binranges_lnx );
 % Plot normalized histogram of LES results for ln x.
-bar( binranges_lnx, bincounts_lnx ...
-                    / ( nx_LES_grid * ny_LES_grid * delta_lnx ), 1.0, ...
-     'r', 'EdgeColor', 'r' );
+bar( binranges_lnx, ...
+     bincounts_lnx ...
+     / ( nx_LES_grid * ny_LES_grid * delta_lnx * precip_frac_x_LES ), ...
+     1.0, 'r', 'EdgeColor', 'r' );
 hold on
 % Plot normalized PDF of x for CLUBB.
 plot( lnx, P_lnx, '-b', 'LineWidth', 2 )
@@ -67,10 +71,11 @@ hold off
 % Set the range of the plot on both the x-axis and y-axis.
 xlim( [ min_lnx max_lnx ] )
 ylim( [ 0 max( max(bincounts_lnx) ...
-               / ( nx_LES_grid * ny_LES_grid * delta_lnx ), ...
-          max(P_lnx) ) ] );
+               / ( nx_LES_grid * ny_LES_grid ...
+                   * delta_lnx * precip_frac_x_LES ), ...
+               max(P_lnx) ) ] );
 xlabel( var_lnx_label )
-ylabel( [ 'P(', field_plotted, ')' ] )
+ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ] )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' )
 grid on
 box on

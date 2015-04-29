@@ -38,6 +38,9 @@ for i = 1:1:nx_LES_grid*ny_LES_grid
       zero_count_x = zero_count_x + 1;
    end
 end
+precip_frac_x_LES = pos_count_x / ( nx_LES_grid * ny_LES_grid );
+precip_frac_clubb ...
+= mixt_frac * precip_frac_1 + ( 1.0 - mixt_frac ) * precip_frac_2;
 min_x = min( var_x_LES_pos );
 max_x = max( var_x_LES_pos );
 num_x_divs = num_x_pts + 1;
@@ -61,57 +64,43 @@ for i = 1:1:num_x_pts
      + ( 1.0 - mixt_frac ) * precip_frac_2 ...
        * PDF_comp_Lognormal( x(i), mu_x_2_n, sigma_x_2_n );
 end
-% Normalized height of the x = 0 points.
-height_0_CLUBB_x = ( mixt_frac * ( 1.0 - precip_frac_1 ) ...
-                   + ( 1.0 - mixt_frac ) * ( 1.0 - precip_frac_2 ) );
-height_0_LES_x = zero_count_x / ( nx_LES_grid * ny_LES_grid );
 % Centerpoints and counts for each bin (from LES results) for x, where
 % x > 0.
 binranges_x = x;
 [bincounts_x] = histc( var_x_LES, binranges_x );
-% Greatest normalized height between LES bins and CLUBB's PDF for x > 0.
-pos_height ...
-   = max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid ), ...
-          max(P_x) * delta_x );
-% Greatest normalized height between LES bins and CLUBB's PDF for x > 0.
-zero_height = max( height_0_CLUBB_x, height_0_LES_x );
-% Set the height of plot of x.
-if ( zero_height > 1.2 * pos_height )
-   if ( pos_height > 0.0 )
-      % We don't want to make the plot unreadable where x > 0 due too very
-      % small precipitation fraction.  This code keeps it readable.
-      height = 1.2 * pos_height;
-   else
-      height = zero_height;
-   end
-else
-   height = max( pos_height, zero_height );
+% Plot normalized histogram of LES results for x, where x > 0.
+bar( binranges_x, bincounts_x / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
+     1.0, 'r', 'EdgeColor', 'r' );
+if ( precip_frac_x_LES < 1.0 )
+   hold on
+   % Plot normalized histogram of LES results for x, where x = 0.
+   arrow_vec = get( gca, 'Position' );
+   annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+               [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+               'Color', 'r', 'LineStyle', '-', 'LineWidth', 3, ...
+               'HeadLength', 11, 'HeadWidth', 11 );
 end
-% Include x = 0 in the binranges and bincount (for LES results).
-binranges_x_incl_0 = zeros( num_x_pts+1, 1 );
-bincounts_x_incl_0 = zeros( num_x_pts+1, 1 );
-binranges_x_incl_0(2:num_x_pts+1) = binranges_x(1:num_x_pts);
-bincounts_x_incl_0(2:num_x_pts+1) = bincounts_x(1:num_x_pts);
-binranges_x_incl_0(1) = min_x - 0.5 * delta_x;
-bincounts_x_incl_0(1) = zero_count_x;
-% Plot normalized histogram of LES results for x.
-bar( binranges_x_incl_0, ...
-     bincounts_x_incl_0 / ( nx_LES_grid * ny_LES_grid ), 1.0, ...
-     'r', 'EdgeColor', 'r' );
 hold on
-% Plot normalized PDF of x for CLUBB, where x > 0.
-plot( x, P_x * delta_x, '-b', 'LineWidth', 2 )
-hold on
-% Plot normalized PDF of x for CLUBB, where x = 0.
-plot( [ 0 0 ], [ 0 height_0_CLUBB_x ], '-b', 'LineWidth', 2 );
+% Plot PDF of x for CLUBB, where x > 0.
+plot( x, P_x, '-b', 'LineWidth', 2 )
+if ( precip_frac_clubb < 1.0 )
+   hold on
+   % Plot PDF of x for CLUBB, where x = 0.
+   arrow_vec = get( gca, 'Position' );
+   annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+               [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+               'Color', 'b', 'LineStyle', '-', 'LineWidth', 2, ...
+               'HeadLength', 7, 'HeadWidth', 7 );
+end
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
-if ( height_0_CLUBB_x > 0.0 || height_0_LES_x > 0.0 )
+if ( precip_frac_clubb < 1.0 || precip_frac_x_LES < 1.0 )
    xlim([0 max_x]);
 else
    xlim([min_x max_x])
 end
-ylim([0 height]);
+ylim( [ 0 max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
+               max(P_x) ) ] )
 %xlabel( var_x_label )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' );
 grid on
@@ -132,6 +121,7 @@ for j = 1:1:nx_LES_grid*ny_LES_grid
       zero_count_y = zero_count_y + 1;
    end
 end
+precip_frac_y_LES = pos_count_y / ( nx_LES_grid * ny_LES_grid );
 min_y = min( var_y_LES_pos );
 max_y = max( var_y_LES_pos );
 num_y_divs = num_y_pts + 1;
@@ -155,57 +145,43 @@ for j = 1:1:num_y_pts
      + ( 1.0 - mixt_frac ) * precip_frac_2 ...
        * PDF_comp_Lognormal( y(j), mu_y_2_n, sigma_y_2_n );
 end
-% Normalized height of the y = 0 points.
-height_0_CLUBB_y = ( mixt_frac * ( 1.0 - precip_frac_1 ) ...
-                   + ( 1.0 - mixt_frac ) * ( 1.0 - precip_frac_2 ) );
-height_0_LES_y = zero_count_y / ( nx_LES_grid * ny_LES_grid );
 % Centerpoints and counts for each bin (from LES results) for y, where
 % y > 0.
 binranges_y = y;
 [bincounts_y] = histc( var_y_LES, binranges_y );
-% Greatest normalized height between LES bins and CLUBB's PDF for y > 0.
-pos_height ...
-   = max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid ), ...
-          max(P_y) * delta_y );
-% Greatest normalized height between LES bins and CLUBB's PDF for y > 0.
-zero_height = max( height_0_CLUBB_y, height_0_LES_y );
-% Set the height of plot of y.
-if ( zero_height > 1.2 * pos_height )
-   if ( pos_height > 0.0 )
-      % We don't want to make the plot unreadable where y > 0 due too very
-      % small precipitation fraction.  This code keeps it readable.
-      height = 1.2 * pos_height;
-   else
-      height = zero_height;
-   end
-else
-   height = max( pos_height, zero_height );
+% Plot normalized histogram of LES results for y, where y > 0.
+bar( binranges_y, bincounts_y / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
+     1.0, 'r', 'EdgeColor', 'r' );
+if ( precip_frac_y_LES < 1.0 )
+   hold on
+   % Plot normalized histogram of LES results for y, where y = 0.
+   arrow_vec = get( gca, 'Position' );
+   annotation( 'arrow', [ arrow_vec(1) arrow_vec(1)+arrow_vec(3) ], ...
+               [ arrow_vec(2) arrow_vec(2) ], 'Color', 'r', ...
+               'LineStyle', '-', 'LineWidth', 3, ...
+               'HeadLength', 11, 'HeadWidth', 11 );
 end
-% Include y = 0 in the binranges and bincount (for LES results).
-binranges_y_incl_0 = zeros( num_y_pts+1, 1 );
-bincounts_y_incl_0 = zeros( num_y_pts+1, 1 );
-binranges_y_incl_0(2:num_y_pts+1) = binranges_y(1:num_y_pts);
-bincounts_y_incl_0(2:num_y_pts+1) = bincounts_y(1:num_y_pts);
-binranges_y_incl_0(1) = min_y - 0.5 * delta_y;
-bincounts_y_incl_0(1) = zero_count_y;
-% Plot normalized histogram of LES results for y.
-bar( binranges_y_incl_0, ...
-     bincounts_y_incl_0 / ( nx_LES_grid * ny_LES_grid ), 1.0, ...
-     'r', 'EdgeColor', 'r' );
 hold on
-% Plot normalized PDF of y for CLUBB, where y > 0.
-plot( y, P_y * delta_y, '-b', 'LineWidth', 2 )
-hold on
-% Plot normalized PDF of y for CLUBB, where y = 0.
-plot( [ 0 0 ], [ 0 height_0_CLUBB_y ], '-b', 'LineWidth', 2 );
+% Plot PDF of y for CLUBB, where y > 0.
+plot( y, P_y, '-b', 'LineWidth', 2 );
+if ( precip_frac_clubb < 1.0 )
+   hold on
+   % Plot PDF of y for CLUBB, where y = 0.
+   arrow_vec = get( gca, 'Position' );
+   annotation( 'arrow', [ arrow_vec(1) arrow_vec(1)+arrow_vec(3) ], ...
+               [ arrow_vec(2) arrow_vec(2) ], 'Color', 'b', ...
+               'LineStyle', '-', 'LineWidth', 2, ...
+               'HeadLength', 7, 'HeadWidth', 7 );
+end
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
-if ( height_0_CLUBB_y > 0.0 || height_0_LES_y > 0.0 )
+if ( precip_frac_clubb < 1.0 || precip_frac_y_LES < 1.0 )
    xlim([0 max_y]);
 else
    xlim([min_y max_y])
 end
-ylim([0 height]);
+ylim( [ 0 max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
+               max(P_y) ) ] )
 %xlabel( var_y_label )
 % Reverse the plot and turn the plot 90 degrees clockwise.
 set(gca, 'xdir', 'reverse')
@@ -320,22 +296,22 @@ contour( x, y, P_xy, contours, 'Linewidth', 1.5 )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' )
 hold on
 % Plot of the PDF of x and y for CLUBB, where x = 0.
-if ( height_0_CLUBB_x > 0.0 )
+if ( precip_frac_clubb < 1.0 )
    plot( [ 0 0 ], [ min_y max_y ], '-b', 'LineWidth', 1.5 );
 end
 hold on
 % Plot of the PDF of x and y for CLUBB, where y = 0.
-if ( height_0_CLUBB_y > 0.0 )
+if ( precip_frac_clubb < 1.0 )
    plot( [ min_x max_x ], [ 0 0 ], '-b', 'LineWidth', 1.5 );
 end
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
-if ( height_0_CLUBB_x > 0.0 || height_0_LES_x > 0.0 )
+if ( precip_frac_clubb < 1.0 || precip_frac_x_LES < 1.0 )
    xlim([0 max_x])
 else
    xlim([min_x max_x])
 end
-if ( height_0_CLUBB_y > 0.0 || height_0_LES_y > 0.0 )
+if ( precip_frac_clubb < 1.0 || precip_frac_y_LES < 1.0 )
    ylim([0 max_y]);
 else
    ylim([min_y max_y])
