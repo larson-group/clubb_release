@@ -737,8 +737,8 @@ module latin_hypercube_driver_module
 
         ! Compute lh_Nc
         if ( l_use_Ncn_to_Nc ) then
-           lh_Nc(k,isample) = Ncn_to_Nc(X_nl_all_levs(k,isample,iiPDF_Ncn), &
-                                        X_nl_all_levs(k,isample,iiPDF_chi)
+           lh_Nc(k,isample) = Ncn_to_Nc( X_nl_all_levs(k,isample,iiPDF_Ncn), &
+                                         X_nl_all_levs(k,isample,iiPDF_chi) )
         else
            lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
