@@ -5,9 +5,7 @@ module generate_lh_sample_module
 
   implicit none
 
-  public :: generate_uniform_sample, &
-     ltqnorm, multiply_Cholesky, generate_lh_sample, choose_permuted_random, &
-     chi_eta_2_rtthl
+  public :: ltqnorm, multiply_Cholesky, generate_lh_sample, chi_eta_2_rtthl
 
   private :: sample_points, gaus_mixt_points
 
@@ -293,98 +291,7 @@ module generate_lh_sample_module
 
     return
   end subroutine sample_points
-
 !-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  subroutine generate_uniform_sample( num_samples, nt_repeat, n_vars, p_matrix, X_u_one_lev )
-
-! Description:
-!   Generates a matrix X that contains a Latin Hypercube sample.
-!   The sample is uniformly distributed.
-! References:
-!   See Art B. Owen (2003), ``Quasi-Monte Carlo Sampling,"
-!      a chapter from SIGGRAPH 2003
-!-------------------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples,  & ! `n'  Number of samples generated
-      nt_repeat,    & ! `n_t' Num. random samples before sequence repeats
-      n_vars           ! Number of uniform variables to generate
-
-    integer, intent(in), dimension(num_samples,n_vars) :: &
-      p_matrix    !num_samples x n_vars array of permuted integers
-
-    ! Output Variables
-
-    real(kind=core_rknd), intent(out), dimension(num_samples,n_vars) :: &
-      X_u_one_lev ! num_samples by n_vars matrix, X
-                  ! each row of which is a n_vars-dimensional sample
-
-    ! Local Variables
-
-    integer :: j, k
-
-    ! ---- Begin Code ----
-
-    ! Choose values of sample using permuted vector and random number generator
-    do j = 1,num_samples
-      do k = 1,n_vars
-        X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, p_matrix(j,k) )
-      end do
-    end do
-
-    return
-  end subroutine generate_uniform_sample
-
-!----------------------------------------------------------------------
-  function choose_permuted_random( nt_repeat, p_matrix_element )
-
-! Description:
-!   Chooses a permuted random using the Mersenne Twister algorithm.
-!
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd
-
-    use constants_clubb, only: &
-      one         ! Constant
-
-    use permute_height_time_module, only: &
-      rand_uniform_real
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nt_repeat,        & ! Number of samples before the sequence repeats
-      p_matrix_element    ! Permuted integer
-
-    ! Output Variable
-    real(kind=core_rknd) :: choose_permuted_random
-
-    ! Local Variable
-    real(kind=core_rknd) :: &
-      rand ! Random float with a range of (0,1)
-
-    ! ---- Begin Code ----
-
-    rand = rand_uniform_real( )
-
-    choose_permuted_random = (one / real( nt_repeat, kind=core_rknd) ) &
-       *( real( p_matrix_element, kind=core_rknd ) + rand )
-
-    return
-  end function choose_permuted_random
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, & ! Intent(in)

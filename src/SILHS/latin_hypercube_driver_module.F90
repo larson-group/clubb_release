@@ -10,13 +10,8 @@ module latin_hypercube_driver_module
 
   ! Constant Parameters
   logical, parameter, private :: &
-    l_diagnostic_iter_check      = .true.,  & ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
     l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
-
-  integer, private :: &
-    prior_iter ! Prior iteration number (for diagnostic purposes)
-!$omp threadprivate( prior_iter )
 
   private ! Default scope
 
@@ -63,15 +58,8 @@ module latin_hypercube_driver_module
     use corr_varnce_module, only: &
       iiPDF_chi    ! Variables
 
-    use latin_hypercube_arrays, only: &
-      one_height_time_matrix ! Variables
-
-    use permute_height_time_module, only: &
-      permute_height_time ! Procedure
-
     use generate_lh_sample_module, only: &
-      generate_lh_sample, & ! Procedure
-      generate_uniform_sample
+      generate_lh_sample      ! Procedure
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -91,15 +79,10 @@ module latin_hypercube_driver_module
       cloud_frac_min
 
     use parameters_silhs, only: &
-      l_lh_importance_sampling, & ! Variable(s)
-      l_Lscale_vert_avg, &
-      l_lh_straight_mc
+      l_Lscale_vert_avg
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
-
-    use permute_height_time_module, only: &
-      rand_uniform_real          ! Procedure
 
     use clubb_precision, only: &
       core_rknd, &
@@ -112,9 +95,8 @@ module latin_hypercube_driver_module
     use pdf_utilities, only: &
       compute_mean_binormal
 
-    use silhs_importance_sample_module, only: &
-      importance_sampling_driver, &
-      cloud_weighted_sampling_driver
+    use parameters_silhs, only: &
+      l_lh_importance_sampling
 
     implicit none
 
@@ -122,11 +104,6 @@ module latin_hypercube_driver_module
     intrinsic :: allocated, mod, maxloc, epsilon, transpose
 
     ! Parameter Constants
-
-    logical, parameter :: &
-      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
-                                         ! places one point in cloud and one point out of
-                                         ! cloud
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -193,12 +170,8 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz) :: &
       X_vert_corr ! Vertical correlation of a variate   [-]
 
-    ! Number of random samples before sequence of repeats (normally=10)
-    integer :: nt_repeat
-
     integer :: &
       k_lh_start, & ! Height for preferentially sampling within cloud
-      i_rmd, &      ! Remainder of ( iter-1 / sequence_length )
       k, sample, i  ! Loop iterators
 
     integer :: ivar ! Loop iterator
@@ -230,31 +203,6 @@ module latin_hypercube_driver_module
 
     l_error = .false.
 
-    nt_repeat = num_samples * sequence_length
-
-    if ( .not. allocated( one_height_time_matrix ) ) then
-      ! If this is first time latin_hypercube_driver is called, then allocate
-      ! the one_height_time_matrix and set the prior iteration number for debugging
-      ! purposes.
-      allocate( one_height_time_matrix(nt_repeat, d_variables+d_uniform_extra) )
-
-      prior_iter = iter
-
-      ! Check for a bug where the iteration number isn't incrementing correctly,
-      ! which will lead to improper sampling.
-    else if ( l_diagnostic_iter_check .and. sequence_length > 1 ) then
-
-      if ( prior_iter /= iter-1 ) then
-        write(fstderr,*) "The iteration number in latin_hypercube_driver is"// &
-        " not incrementing properly."
-
-      else
-        prior_iter = iter
-
-      end if
-
-    end if ! First call to the driver
-
     ! Sanity checks for l_lh_importance_sampling
     if ( l_lh_importance_sampling .and. mod( num_samples, 2 ) /= 0 ) then
       write(fstderr,*) "Cloud weighted sampling requires num_samples to be divisible by 2."
@@ -265,77 +213,18 @@ module latin_hypercube_driver_module
       stop "Fatal error."
     end if
 
-    ! Latin hypercube sample generation
-    ! Generate one_height_time_matrix, an nt_repeat x d_variables array of random integers
-    i_rmd = mod( iter-1, sequence_length )
-
-    if ( i_rmd == 0 ) then
-      call permute_height_time( nt_repeat, d_variables+d_uniform_extra, &     ! intent(in)
-                                one_height_time_matrix )                          ! intent(out)
-    end if
-    ! End Latin hypercube sample generation
-
     !--------------------------------------------------------------
     ! Latin hypercube sampling
     !--------------------------------------------------------------
 
+    ! Compute k_lh_start, the starting level for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
 
-    ! Choose which rows of LH sample to feed into closure at the k_lh_start level
-    p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-             one_height_time_matrix((num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
-             1:(d_variables+d_uniform_extra))
-
-    if ( l_lh_straight_mc ) then
-
-      ! Do a straight Monte Carlo sample without LH or importance sampling.
-      do i=1, d_variables+d_uniform_extra
-        do sample=1, num_samples
-          X_u_all_levs(k_lh_start,sample,i) = rand_uniform_real( )
-        end do
-      end do
-
-      ! Importance sampling is not performed, so all sample points have the same weight!!
-      lh_sample_point_weights(1:num_samples)  =  one
-
-    else ! .not. l_lh_straight_mc
-
-      ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
-      call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
-                                    p_matrix, & ! In
-                                    X_u_all_levs(k_lh_start,:,:) ) ! Out
-
-      if ( l_lh_importance_sampling ) then
-
-        if ( l_lh_old_cloud_weighted ) then
-
-          call cloud_weighted_sampling_driver &
-               ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
-                 pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
-                 pdf_params(k_lh_start)%mixt_frac, & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 lh_sample_point_weights ) ! Out
-
-        else ! .not. l_lh_old_cloud_weighted
-
-          call importance_sampling_driver &
-               ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
-                 lh_sample_point_weights ) ! Out
-
-        end if ! l_lh_old_cloud_weighted
-
-      else
-
-        ! No importance sampling is performed, so all sample points have the same weight.
-        lh_sample_point_weights(1:num_samples) = one
-
-      end if ! l_lh_importance_sampling
-
-    end if ! l_lh_straight_mc
+    ! Generate a uniform sample at k_lh_start
+    call generate_uniform_k_lh_start &
+         ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+           pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
+           X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
 
     ! Compute vertical correlation using a formula based on Lscale, the
     ! the difference in height levels, and an empirical constant
@@ -497,7 +386,147 @@ module latin_hypercube_driver_module
   end subroutine lh_subcolumn_generator
 !-------------------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+  subroutine generate_uniform_k_lh_start &
+             ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, &
+               pdf_params, hydromet_pdf_params, &
+               X_u_k_lh_start, lh_sample_point_weights )
+
+  ! Description:
+  !   Generates a uniform sample, X_u, at a single height level, applying Latin
+  !   hypercube and importance sampling where configured.
+
+  ! References:
+  !   V. E. Larson and D. P. Schanen, 2013. The Subgrid Importance Latin
+  !   Hypercube Sampler (SILHS): a multivariate subcolumn generator
+  !----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd                   ! Precision
+
+    use constants_clubb, only: &
+      one                         ! Constant
+
+    use parameters_silhs, only: &
+      l_lh_straight_mc, &         ! Variable(s)
+      l_lh_importance_sampling
+
+    use pdf_parameter_module, only: &
+      pdf_parameter               ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter      ! Type
+
+    use generate_uniform_sample_module, only: &
+      rand_uniform_real, &        ! Procedure(s)
+      generate_uniform_lh_sample
+
+    use silhs_importance_sample_module, only: &
+      importance_sampling_driver, & ! Procedure(s)
+      cloud_weighted_sampling_driver
+
+    use latin_hypercube_arrays, only: &
+      one_height_time_matrix      ! Variable
+
+    use corr_varnce_module, only: &
+      iiPDF_chi                   ! Variable
+
+    implicit none
+
+    ! Local Constants
+    logical, parameter :: &
+      l_lh_old_cloud_weighted  = .true.  ! Use the old method of importance sampling that
+                                         ! places one point in cloud and one point out of
+                                         ! cloud
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iter,              &        ! Model iteration number
+      d_variables,       &        ! Number of variates in CLUBB's PDF
+      d_uniform_extra,   &        ! Uniform variates included in uniform sample but not
+                                  !  in normal/lognormal sample
+      num_samples,       &        ! Number of SILHS sample points
+      sequence_length             ! Number of timesteps before new sample points are picked
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params                  ! The PDF parameters at k_lh_start
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(num_samples,d_variables+d_uniform_extra), intent(out) :: &
+      X_u_k_lh_start              ! Uniform sample at k_lh_start
+
+    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+      lh_sample_point_weights     ! Weight of each sample point (all equal to one if importance
+                                  ! sampling is not used)
+
+    ! Local Variables
+    integer :: &
+      i, sample
+
+  !----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    if ( l_lh_straight_mc ) then
+
+      ! Do a straight Monte Carlo sample without LH or importance sampling.
+      do i=1, d_variables+d_uniform_extra
+        do sample=1, num_samples
+          X_u_k_lh_start(sample,i) = rand_uniform_real( )
+        end do
+      end do
+
+      ! Importance sampling is not performed, so all sample points have the same weight!!
+      lh_sample_point_weights(1:num_samples)  =  one
+
+    else ! .not. l_lh_straight_mc
+
+      ! Generate a uniformly distributed Latin hypercube sample
+      call generate_uniform_lh_sample( iter, num_samples, sequence_length, &  ! Intent(in)
+                                       d_variables+d_uniform_extra, &         ! Intent(in)
+                                       X_u_k_lh_start(:,:) )                  ! Intent(out)
+
+      if ( l_lh_importance_sampling ) then
+
+        if ( l_lh_old_cloud_weighted ) then
+
+          call cloud_weighted_sampling_driver &
+               ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
+                 one_height_time_matrix(:,d_variables+1), & ! In
+                 pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
+                 pdf_params%mixt_frac, & ! In
+                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
+                 lh_sample_point_weights ) ! Out
+
+        else ! .not. l_lh_old_cloud_weighted
+
+          call importance_sampling_driver &
+               ( num_samples, pdf_params, hydromet_pdf_params, & ! In
+                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+2), & ! In/Out
+                 lh_sample_point_weights ) ! Out
+
+        end if ! l_lh_old_cloud_weighted
+
+      else
+
+        ! No importance sampling is performed, so all sample points have the same weight.
+        lh_sample_point_weights(1:num_samples) = one
+
+      end if ! l_lh_importance_sampling
+
+    end if ! l_lh_straight_mc
+
+    return
+  end subroutine generate_uniform_k_lh_start
+!-------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
   function compute_k_lh_start( nz, rcm, pdf_params ) result( k_lh_start )
 
   ! Description:
@@ -595,7 +624,7 @@ module latin_hypercube_driver_module
 
     return
   end function compute_k_lh_start
-  !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
@@ -1398,7 +1427,7 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use permute_height_time_module, only: &
+    use generate_uniform_sample_module, only: &
       rand_uniform_real ! Procedure
 
     use clubb_precision, only: &

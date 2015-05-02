@@ -1283,8 +1283,8 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd          ! Precision(s)
 
-    use generate_lh_sample_module, only: &
-      generate_uniform_sample ! Procedure
+    use generate_uniform_sample_module, only: &
+      choose_permuted_random ! Procedure
 
     use pdf_utilities, only: &
       compute_mean_binormal
@@ -1373,11 +1373,14 @@ module silhs_importance_sample_module
           mixt_permuted_clear(n_clear_samples,1) = p_matrix_dp1(sample) - (num_samples / 2)
         end if ! p_matrix_dp1(sample) < ( num_samples / 2 )
       end do
+
       ! Generate the stratified uniform numbers!
-      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_cloud, & !In
-                                    mixt_rand_cloud ) !Out
-      call generate_uniform_sample( num_samples/2, num_samples/2, 1, mixt_permuted_clear, & !In
-                                    mixt_rand_clear ) !Out
+      do sample = 1, num_samples/2
+        mixt_rand_cloud(sample,1) = &
+          choose_permuted_random( num_samples/2, mixt_permuted_cloud(sample,1) )
+        mixt_rand_clear(sample,1) = &
+          choose_permuted_random( num_samples/2, mixt_permuted_clear(sample,1) )
+      end do
 
       n_cloudy_samples = 0
       n_clear_samples  = 0
@@ -1440,10 +1443,10 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd    ! Constant
 
-    use permute_height_time_module, only: &
+    use generate_uniform_sample_module, only: &
       rand_permute ! Procedure
 
-    use generate_lh_sample_module, only: &
+    use generate_uniform_sample_module, only: &
       choose_permuted_random
 
     implicit none
@@ -1498,7 +1501,7 @@ module silhs_importance_sample_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use generate_lh_sample_module, only: &
+    use generate_uniform_sample_module, only: &
       choose_permuted_random    ! Procedure
 
     use clubb_precision, only: &
