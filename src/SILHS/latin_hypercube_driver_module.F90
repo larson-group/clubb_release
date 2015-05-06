@@ -436,7 +436,7 @@ module latin_hypercube_driver_module
 
     ! Local Constants
     logical, parameter :: &
-      l_lh_old_cloud_weighted  = .true.  ! Use the old method of importance sampling that
+      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
                                          ! places one point in cloud and one point out of
                                          ! cloud
 
