@@ -78,22 +78,12 @@ module latin_hypercube_driver_module
       one, &
       cloud_frac_min
 
-    use parameters_silhs, only: &
-      l_Lscale_vert_avg
-
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
     use clubb_precision, only: &
       core_rknd, &
       stat_rknd
-
-    use fill_holes, only: vertical_avg ! Procedure
-
-    use grid_class, only : gr
-
-    use pdf_utilities, only: &
-      compute_mean_binormal
 
     use parameters_silhs, only: &
       l_lh_importance_sampling
@@ -159,24 +149,12 @@ module latin_hypercube_driver_module
       hydromet_pdf_params
 
     ! Local variables
-    real( kind = core_rknd ), dimension(nz) :: &
-      Lscale_vert_avg    ! 3pt vertical average of Lscale  [m]
-
     real( kind = core_rknd ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
-
-    integer :: p_matrix(num_samples,d_variables+d_uniform_extra)
-
-    real( kind = core_rknd ), dimension(nz) :: &
-      X_vert_corr ! Vertical correlation of a variate   [-]
 
     integer :: &
       k_lh_start, & ! Height for preferentially sampling within cloud
       k, sample, i  ! Loop iterators
-
-    integer :: ivar ! Loop iterator
-
-    integer :: kp1, km1 
 
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
@@ -187,19 +165,6 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(num_samples) :: precip_frac_i
 
     ! ---- Begin Code ----
-
-    if ( l_Lscale_vert_avg ) then
-      ! Determine 3pt vertically averaged Lscale
-      do k = 1, nz, 1
-        kp1 = min( k+1, nz )
-        km1 = max( k-1, 1 )
-        Lscale_vert_avg(k) = vertical_avg &
-                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
-                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
-      end do
-    else
-        Lscale_vert_avg = Lscale 
-    end if
 
     l_error = .false.
 
@@ -226,59 +191,11 @@ module latin_hypercube_driver_module
            pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
            X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
 
-    ! Compute vertical correlation using a formula based on Lscale, the
-    ! the difference in height levels, and an empirical constant
-    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
-
-    ! Assertion check for the vertical correlation
-    if ( clubb_at_least_debug_level( 2 ) ) then
-      if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
-        write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
-          "is not in the correct range"
-        do k = 1, nz
-          write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
-        end do
-        l_error = .true.
-      end if ! Some correlation isn't between [0,1]
-    end if ! clubb_at_least_debug_level 1
-
-    do sample = 1, num_samples
-      ! Correlate chi vertically
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
-      ! Correlate the d+1 variate vertically (used to compute the mixture
-      ! component later)
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,d_variables+1) ) ! Inout
-
-      ! Correlate the d+2 variate vertically (used to determine precipitation
-      ! later)
-      call compute_arb_overlap &
-           ( nz, k_lh_start, &  ! In
-             X_vert_corr, & ! In
-             X_u_all_levs(:,sample,d_variables+2) ) ! Inout
-
-      ! Use these lines to make all variates vertically correlated, using the
-      ! same correlation we used above for chi and the d+1 variate
-      do ivar = 1, d_variables
-        if ( ivar /= iiPDF_chi ) then
-          call compute_arb_overlap &
-               ( nz, k_lh_start, &  ! In
-                 X_vert_corr, & ! In
-                 X_u_all_levs(:,sample,ivar) ) ! Inout
-        end if
-      end do ! 1..d_variables
-    end do ! 1..num_samples
-    ! %% Debug %%
-    ! Testing what happens when we clip uniformally distributed variates to
-    ! avoid extreme values.
-!     where ( X_u_all_levs (:,:,2:d_variables) > 0.99_core_rknd ) &
-!       X_u_all_levs(:,:,2:d_variables) = 0.99_core_rknd
-    ! %% End Debug %%
+    ! Generate uniform sample at other height levels by vertically correlating them
+    call vertical_overlap_driver &
+         ( nz, d_variables, d_uniform_extra, num_samples, &     ! Intent(in)
+           k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+           X_u_all_levs )                                       ! Intent(inout)
 
     do k = 1, nz
       ! Determine mixture component for all levels
@@ -343,10 +260,12 @@ module latin_hypercube_driver_module
                                           real(X_nl_all_levs, kind = stat_rknd) )
     end if
     if ( l_output_2D_uniform_dist ) then
-      call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
-                                        X_u_all_levs, &
-                                        X_mixt_comp_all_levs, p_matrix, &
-                                        lh_sample_point_weights )
+      ! TODO: fix this!!
+      stop "2D output not supported right now"
+      !call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
+      !                                  X_u_all_levs, &
+      !                                  X_mixt_comp_all_levs, p_matrix, &
+      !                                  lh_sample_point_weights )
     end if
 
     ! Various nefarious assertion checks
@@ -524,6 +443,137 @@ module latin_hypercube_driver_module
 
     return
   end subroutine generate_uniform_k_lh_start
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine vertical_overlap_driver &
+             ( nz, d_variables, d_uniform_extra, num_samples, &
+               k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
+               X_u_all_levs )
+
+  ! Description:
+  !   Takes a uniform sample at k_lh_start and correlates it vertically
+  !   to other height levels
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd      ! Precision
+
+    use constants_clubb, only: &
+      fstderr, &     ! Constant(s)
+      one,     &
+      zero
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    use grid_class, only: &
+      gr             ! Variable
+
+    use corr_varnce_module, only: &
+      iiPDF_chi      ! Variable
+
+    use parameters_silhs, only: &
+      l_Lscale_vert_avg  ! Variable
+
+    use fill_holes, only: &
+      vertical_avg  ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,              &
+      d_variables,     &
+      d_uniform_extra, &
+      num_samples,     &
+      k_lh_start
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      delta_zm,        &  ! Difference in altitude between momentum levels    [m]
+      rcm,             &  ! Liquid water mixing ratio                         [kg/kg]
+      Lscale,          &  ! Turbulent mixing length                           [m]
+      rho_ds_zt           ! Dry, static density on thermodynamic levels       [kg/m^3]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables+d_uniform_extra), &
+        intent(inout) :: &
+      X_u_all_levs        ! A full uniform sample
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
+      X_vert_corr         ! Vertical correlations between height levels       [-]
+
+    integer :: k, km1, kp1, sample, ivar
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    if ( l_Lscale_vert_avg ) then
+      ! Determine 3pt vertically averaged Lscale
+      do k = 1, nz, 1
+        kp1 = min( k+1, nz )
+        km1 = max( k-1, 1 )
+        Lscale_vert_avg(k) = vertical_avg &
+                             ( (kp1-km1+1), rho_ds_zt(km1:kp1), &
+                               Lscale(km1:kp1), gr%invrs_dzt(km1:kp1) )
+      end do
+    else
+        Lscale_vert_avg = Lscale 
+    end if
+
+    X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
+
+    ! Assertion check for the vertical correlation
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
+        write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
+          "is not in the correct range"
+        do k = 1, nz
+          write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
+        end do
+        stop "Fatal error in vertical_overlap_driver"
+      end if ! Some correlation isn't between [0,1]
+    end if ! clubb_at_least_debug_level 1
+
+    do sample = 1, num_samples
+      ! Correlate chi vertically
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,iiPDF_chi) ) ! Inout
+      ! Correlate the d+1 variate vertically (used to compute the mixture
+      ! component later)
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,d_variables+1) ) ! Inout
+
+      ! Correlate the d+2 variate vertically (used to determine precipitation
+      ! later)
+      call compute_arb_overlap &
+           ( nz, k_lh_start, &  ! In
+             X_vert_corr, & ! In
+             X_u_all_levs(:,sample,d_variables+2) ) ! Inout
+
+      ! Use these lines to make all variates vertically correlated, using the
+      ! same correlation we used above for chi and the d+1 variate
+      do ivar = 1, d_variables
+        if ( ivar /= iiPDF_chi ) then
+          call compute_arb_overlap &
+               ( nz, k_lh_start, &  ! In
+                 X_vert_corr, & ! In
+                 X_u_all_levs(:,sample,ivar) ) ! Inout
+        end if
+      end do ! 1..d_variables
+    end do ! 1..num_samples
+
+    return
+  end subroutine vertical_overlap_driver
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
