@@ -58,8 +58,8 @@ module latin_hypercube_driver_module
     use corr_varnce_module, only: &
       iiPDF_chi    ! Variables
 
-    use generate_lh_sample_module, only: &
-      generate_lh_sample      ! Procedure
+    use transform_to_pdf_module, only: &
+      transform_uniform_sample_to_pdf      ! Procedure
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -242,7 +242,7 @@ module latin_hypercube_driver_module
     do k = 1, nz
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, num_samples, 1
-        call generate_lh_sample &
+        call transform_uniform_sample_to_pdf &
              ( d_variables, d_uniform_extra, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
                corr_cholesky_mtx_1(:,:,k), & ! In
@@ -706,7 +706,7 @@ module latin_hypercube_driver_module
       iiPDF_eta, &
       iiPDF_Ncn
 
-    use generate_lh_sample_module, only: &
+    use transform_to_pdf_module, only: &
       chi_eta_2_rtthl ! Awesome procedure
 
     implicit none
@@ -943,7 +943,7 @@ module latin_hypercube_driver_module
     use pdf_parameter_module, only: &
       pdf_parameter    ! Type
 
-    use generate_lh_sample_module, only: &
+    use transform_to_pdf_module, only: &
       ltqnorm          ! Procedure
 
     implicit none

@@ -1,11 +1,11 @@
 !-------------------------------------------------------------------------------
 !$Id$
 !===============================================================================
-module generate_lh_sample_module
+module transform_to_pdf_module
 
   implicit none
 
-  public :: ltqnorm, multiply_Cholesky, generate_lh_sample, chi_eta_2_rtthl
+  public :: ltqnorm, multiply_Cholesky, transform_uniform_sample_to_pdf, chi_eta_2_rtthl
 
   private :: sample_points, gaus_mixt_points
 
@@ -14,7 +14,7 @@ module generate_lh_sample_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine generate_lh_sample &
+  subroutine transform_uniform_sample_to_pdf &
              ( d_variables, d_uniform_extra, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_Cholesky_mtx_1, & ! In
@@ -23,7 +23,7 @@ module generate_lh_sample_module
                l_in_precip_one_lev, & ! In
                X_nl_one_lev ) ! Out
 ! Description:
-!   This subroutine generates a Latin Hypercube sample.
+!   This subroutine transforms a uniform sample to a sample from CLUBB's PDF.
 
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
@@ -159,7 +159,7 @@ module generate_lh_sample_module
 
 
     return
-  end subroutine generate_lh_sample
+  end subroutine transform_uniform_sample_to_pdf
 
 !---------------------------------------------------------------------------------------------------
   subroutine zero_precip_hydromets( d_variables, X_nl_one_lev )
@@ -741,4 +741,4 @@ module generate_lh_sample_module
     return
   end subroutine chi_eta_2_rtthl
 
-end module generate_lh_sample_module
+end module transform_to_pdf_module
