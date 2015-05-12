@@ -6142,7 +6142,27 @@ out_cloud_sum(:) = sum_value_xy_domain( nzm,out_cloud_mask(1:nx,1:ny,1:nzm) )
 !=================================================================================
 
 ! These are the indicies in the correlation/covariance matrix for each of the
-! respective variables.  
+! respective variables. 
+
+! If all the hydrometeors are present, the correlation matrix would look like:
+!     |  chi  |  w  |  Nc  |  rr  |  Nr  |  ri  |  Ni  |  rs  |  Ns  |  rg  |  Ng  |
+! chi |   1      #     #      #      #      #      #      #      #      #      #
+! w   |          1     #      #      #      #      #      #      #      #      #
+! Nc  |                1      #      #      #      #      #      #      #      #
+! rr  |                       1      #      #      #      #      #      #      #
+! Nr  |                              1      #      #      #      #      #      #
+! ri  |                                     1      #      #      #      #      #
+! Ni  |                                            1      #      #      #      #
+! rs  |                                                   1      #      #      #
+! Ns  |                                                          1      #      #
+! rg  |                                                                 1      #
+! Ng  |                                                                        1
+
+! SAM does not calculate the corr(chi,eta) since it would be difficult to compare
+! CLUBB's 'two-component' correlation of chi,eta with SAM's domain-wide
+! correlation.
+
+
 idx_s  = 1  ! chi
 idx_w  = 2  ! Vertical velocity
 if(dopredictNc) then
