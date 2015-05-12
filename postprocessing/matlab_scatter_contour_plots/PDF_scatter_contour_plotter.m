@@ -37,6 +37,7 @@ plot_chi_Nr  = true;
 plot_eta_rr  = true;
 plot_eta_Nr  = true;
 plot_rr_Nr   = true;
+plot_w       = true;
 plot_ln_rr   = true;
 plot_ln_Nr   = true;
 
@@ -1305,6 +1306,32 @@ if ( plot_rr_Nr )
    print( '-dpng', output_filename );
 
 end % plot_rr_Nr
+
+% Plot the CLUBB PDF and LES points for w.
+if ( plot_w )
+
+   fprintf( 'Plotting marginal plot for w\n' );
+
+   % The number of ln rr bins/points to plot.
+   num_w_pts = 100;
+
+   plot_CLUBB_PDF_LES_pts_N( sam_var_lev(idx_3D_w,:), ...
+                             nx_sam, ny_sam, ...
+                             num_w_pts, ...
+                             mu_w_1, mu_w_2, ...
+                             sigma_w_1, sigma_w_2, ...
+                             mixt_frac, 'w    [m/s]', ...
+                             [ '\bf ', casename ], 'w', ...
+                             [ 'Time = ', print_time, ' minutes' ], ...
+                             [ 'Altitude = ', print_alt, ' meters' ], ...
+                             print_note )
+
+   output_filename = [ 'output/', casename, '_w_z', ...
+                       print_alt, '_t', print_time ];
+
+   print( '-dpng', output_filename );
+
+end % plot_w
 
 % Plot the CLUBB PDF and LES points for ln rr.
 if ( plot_ln_rr )
