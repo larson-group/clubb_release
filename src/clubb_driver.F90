@@ -1064,7 +1064,9 @@ module clubb_driver
            ( iunit, runfile,                  &            ! Intent(in)
              restart_path_case, time_restart, &            ! Intent(in)
              upwp, vpwp, wpthlp, wprtp,       &            ! Intent(inout)
-             rcm_mc, rvm_mc, thlm_mc, &
+             rcm_mc, rvm_mc, thlm_mc,         &            ! Intent(out)
+             wprtp_mc, wpthlp_mc, rtp2_mc,    &            ! Intent(out)
+             thlp2_mc, rtpthlp_mc,            &            ! Intent(out)
              wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )   ! Intent(out)
  
       ! Calculate invrs_rho_ds_zm and invrs_rho_ds_zt from the values of
@@ -2999,6 +3001,8 @@ module clubb_driver
                restart_path_case, time_restart, & 
                upwp, vpwp, wpthlp, wprtp, &
                rcm_mc, rvm_mc, thlm_mc, & 
+               wprtp_mc, wpthlp_mc, rtp2_mc, &
+               thlp2_mc, rtpthlp_mc, &
                wpthlp_sfc, wprtp_sfc, upwp_sfc, vpwp_sfc )
     ! Description:
     !   Execute the necessary steps for the initialization of the
@@ -3026,8 +3030,11 @@ module clubb_driver
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
         l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
         l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-        l_input_sfc_soil_T_in_K, l_input_thlp2_forcing, l_input_thlprcp, &
-        l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc, stat_files
+        l_input_sfc_soil_T_in_K, l_input_wprtp_forcing, l_input_wpthlp_forcing, &
+        l_input_rtp2_forcing, l_input_thlp2_forcing, l_input_rtpthlp_forcing, l_input_thlprcp, &
+        l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc, l_input_wprtp_mc, &
+        l_input_wpthlp_mc, l_input_rtp2_mc, l_input_thlp2_mc, l_input_rtpthlp_mc, &
+        stat_files
 
     use inputfields, only: &
       compute_timestep,  & ! Procedure(s)
@@ -3081,9 +3088,15 @@ module clubb_driver
       vpwp_sfc           ! v'w' at surface           [m^2/s^2]
 
     real( kind = core_rknd ), dimension(gr%nz), intent(out) :: &
-      rcm_mc, & ! Tendency of liquid water due to microphysics      [kg/kg/s]
-      rvm_mc, & ! Tendency of vapor water due to microphysics       [kg/kg/s]
-      thlm_mc   ! Tendency of liquid pot. temp. due to microphysics [K/s]
+      rcm_mc, &    ! Tendency of liquid water due to microphysics      [kg/kg/s]
+      rvm_mc, &    ! Tendency of vapor water due to microphysics       [kg/kg/s]
+      thlm_mc, &   ! Tendency of liquid pot. temp. due to microphysics [K/s]
+      wprtp_mc, &  ! Microphysics tendency for <w'rt'>   [m*(kg/kg)/s^2]
+      wpthlp_mc, & ! Microphysics tendency for <w'thl'>  [m*K/s^2]
+      rtp2_mc, &   ! Microphysics tendency for <rt'^2>   [(kg/kg)^2/s]
+      thlp2_mc, &  ! Microphysics tendency for <thl'^2>  [K^2/s]
+      rtpthlp_mc   ! Microphysics tendency for <rt'thl'> [K*(kg/kg)/s]
+
 
     ! Local variables
     integer :: timestep
@@ -3226,11 +3239,20 @@ module clubb_driver
     l_input_sigma_sqd_w = .true.
     l_input_cloud_frac  = .true.
     l_input_sigma_sqd_w_zt = .true.
+    l_input_wprtp_forcing = .true.
+    l_input_wpthlp_forcing = .true.
+    l_input_rtp2_forcing = .true.
     l_input_thlp2_forcing = .true.
+    l_input_rtpthlp_forcing = .true.
     l_input_thlprcp = .true.
     l_input_rcm_mc = .true.
     l_input_rvm_mc = .true.
     l_input_thlm_mc = .true.
+    l_input_wprtp_mc = .true.
+    l_input_wpthlp_mc = .true.
+    l_input_rtp2_mc = .true.
+    l_input_thlp2_mc = .true.
+    l_input_rtpthlp_mc = .true.
 
     call set_filenames( "../"//trim( restart_path_case ) )
     ! Determine the nearest timestep in the GRADS file to the
@@ -3269,6 +3291,37 @@ module clubb_driver
              gr%zt, thlm_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wprtp_mc, stat_files(2), "wprtp_mc", gr%nz, timestep, &
+             gr%zt, wprtp_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wpthlp_mc, stat_files(2), "wpthlp_mc", gr%nz, timestep, &
+             gr%zt, wpthlp_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rtp2_mc, stat_files(2), "rtp2_mc", gr%nz, timestep, &
+             gr%zt, rtp2_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_thlp2_mc, stat_files(2), "thlp2_mc", gr%nz, timestep, &
+             gr%zt, thlp2_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rtpthlp_mc, stat_files(2), "rtpthlp_mc", gr%nz, timestep, &
+             gr%zt, rtpthlp_mc, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
     wpthlp_sfc = wpthlp(1)
     wprtp_sfc  = wprtp(1)
