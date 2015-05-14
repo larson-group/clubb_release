@@ -19,6 +19,8 @@ fig_height = 0.9*scr_size(4);
 fig_width  = fig_height;
 figure('Position',[ 0 0 fig_width fig_height ])
 
+subplot( 'Position', [ 0.1 0.1 0.8 0.8 ] )
+
 % Histogram and marginal for ln x, where x > 0 (in-precip), a variable
 % that is distributed normally in each PDF component.
 pos_count_lnx = 0;
