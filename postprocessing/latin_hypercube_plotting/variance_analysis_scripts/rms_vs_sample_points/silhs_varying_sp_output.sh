@@ -6,7 +6,7 @@
 # points.
 
 CLUBB_DIR="../../../.."
-OUTPUT_DIR="../../../../rms_plot_output"
+OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
 MODEL_FILE="$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 
 # The different numbers of sample points to use, separated by spaces
@@ -19,6 +19,8 @@ then
            "variable in the script."
   exit 1
 fi
+
+mkdir -p $OUTPUT_DIR
 
 for num_samples in $SAMPLE_POINT_VALUES
 do
