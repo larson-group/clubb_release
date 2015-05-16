@@ -5,7 +5,7 @@
 # For example, $OUTPUT_DIR/out_16 corresponds to output from SILHS run with 16 sample
 # points.
 
-CLUBB_DIR="../../../.."
+CLUBB_DIR=`readlink -f ../../../..`
 OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
 MODEL_FILE="$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 
