@@ -31,13 +31,13 @@ silhs_var_str  = 'lh_rrm_mc'
 
 silhs_dirs = sys.argv[1:]
 
-clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
-    '/rico_lh_zt.nc').variables[clubb_var_str]
-
 sim_points_all = list()
 for entry in os.listdir(silhs_dirs[0]):
     if (entry[:6] == 'silhs_'):
         sim_points_all.append(int(entry[6:]))
+
+clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
+    '/rico_lh_zt.nc').variables[clubb_var_str]
 
 rms_all = list()
 for i in range(silhs_dirs):
