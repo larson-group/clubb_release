@@ -1,10 +1,10 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import netCDF4
 import numpy as np
 import pylab as pl
 import sys
 import os
-from __future__ import print_function
 
 #######################################################################
 # This script will take several directories output from the scipt
@@ -24,7 +24,7 @@ if len(sys.argv) <= 1:
 
 # Average over all height levels. If false, RMSE will be computed only at
 # k_lh_start
-l_all_height_avg = True
+l_all_height_avg = False
 
 clubb_var_str = 'rrm_mc'
 silhs_var_str  = 'lh_rrm_mc'
@@ -35,15 +35,16 @@ sim_points_all = list()
 for entry in os.listdir(silhs_dirs[0]):
     if (entry[:6] == 'silhs_'):
         sim_points_all.append(int(entry[6:]))
+sim_points_all.sort()
 
 clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
     '/rico_lh_zt.nc').variables[clubb_var_str]
 
 rms_all = list()
-for i in range(silhs_dirs):
+for i in range(len(silhs_dirs)):
     rms_all.append(np.empty(len(sim_points_all)))
 
-time1 = 1000
+time1 = 0
 time2 = 4320
 n_timesteps = time2-time1
 
@@ -82,7 +83,7 @@ for n_i in range(0,len(sim_points_all)):
         rms_val = np.sqrt(rms_val)
         rms_all[d_i][n_i] = rms_val
 
-for d_i in range(0,len(silhs_dirs)):
+for d_i in range(len(silhs_dirs)):
     pl.plot(sim_points_all, rms_all[d_i], label=os.path.basename(silhs_dirs[d_i]))
 
 # Create a 1/N line
