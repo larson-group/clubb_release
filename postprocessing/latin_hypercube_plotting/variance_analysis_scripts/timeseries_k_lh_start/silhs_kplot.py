@@ -14,6 +14,9 @@ import os
 #   silhs_kplot.py dir1 [dir2 [...]]
 #---------------------------------------------------------------------
 
+clubb_var = 'rrm_mc'
+silhs_var = 'lh_rrm_mc'
+
 if len(sys.argv) <= 1:
     print("Usage: ./silhs_rms_plot_mult_sim.py dir1 [dir2 [...]]", file=sys.stderr)
     sys.exit(1)
@@ -28,7 +31,10 @@ silhs_ncs = list()
 for silhs_dir in silhs_dirs:
     silhs_ncs.append(netCDF4.Dataset(silhs_dir + '/rico_lh_lh_zt.nc'))
 
-clubb_var = clubb_nc.variables['rrm_cond']
+clubb_var = clubb_nc.variables[clubb_var]
+silhs_vars = list()
+for silhs_nc in silhs_ncs:
+    silhs_vars.append(silhs_nc.variables[silhs_var])
 
 # In CLUBB (as of the time of writing this script), hydrometeor means such
 # as "rrm" are output one timestep earlier than the corresponding SILHS
@@ -37,9 +43,6 @@ clubb_var = clubb_nc.variables['rrm_cond']
 # True.
 l_time_shift = False
 
-silhs_vars = list()
-for silhs_nc in silhs_ncs:
-    silhs_vars.append(silhs_nc.variables['lh_rrm_evap'])
 k_lh_start = silhs_sfc_nc.variables['k_lh_start']
 
 time1 = 3000
@@ -64,5 +67,5 @@ pl.plot(range(time1,time2), clubb_var_plt[:], label='analytic')
 for u in range(0,len(silhs_vars_plt)):
     pl.plot(range(time1,time2), silhs_vars_plt[u][:], label=os.path.basename(silhs_dirs[u]))
 
-pl.show()
 pl.legend()
+pl.show()
