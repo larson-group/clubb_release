@@ -52,9 +52,12 @@ module inputfields
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
     l_input_veg_T_in_K = .false., l_input_deep_soil_T_in_K = .false., &
-    l_input_sfc_soil_T_in_K = .false., l_input_thlp2_forcing = .false., &
+    l_input_sfc_soil_T_in_K = .false., l_input_wprtp_forcing = .false., &
+    l_input_wpthlp_forcing = .false., l_input_rtp2_forcing = .false., &
+    l_input_thlp2_forcing = .false., l_input_rtpthlp_forcing = .false., &
     l_input_thlprcp = .false., l_input_rcm_mc = .false., l_input_rvm_mc = .false., &
-    l_input_thlm_mc = .false. 
+    l_input_thlm_mc = .false., l_input_wprtp_mc = .false., l_input_wpthlp_mc = .false., &
+    l_input_rtp2_mc = .false., l_input_thlp2_mc = .false., l_input_rtpthlp_mc = .false.
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
@@ -236,7 +239,11 @@ module inputfields
         up2, & 
         vp2, & 
         sigma_sqd_w, &
-        thlp2_forcing
+        wprtp_forcing, &
+        wpthlp_forcing, &
+        rtp2_forcing, &
+        thlp2_forcing, &
+        rtpthlp_forcing
 
     use variables_diagnostic_module, only: & 
         hydromet, & ! Variable(s)
@@ -757,10 +764,38 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
+           ( l_input_wprtp_forcing, stat_files(clubb_zm), "wprtp_forcing", gr%nz, timestep, &
+             gr%zm, wprtp_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wpthlp_forcing, stat_files(clubb_zm), "wpthlp_forcing", gr%nz, timestep, &
+             gr%zm, wpthlp_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rtp2_forcing, stat_files(clubb_zm), "rtp2_forcing", gr%nz, timestep, &
+             gr%zm, rtp2_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+
+      call get_clubb_variable_interpolated &
            ( l_input_thlp2_forcing, stat_files(clubb_zm), "thlp2_forcing", gr%nz, timestep, &
              gr%zm, thlp2_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rtpthlp_forcing, stat_files(clubb_zm), "rtpthlp_forcing", gr%nz, timestep, &
+             gr%zm, rtpthlp_forcing, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
 
       call get_clubb_variable_interpolated &
            ( l_input_thlprcp, stat_files(clubb_zm), "thlprcp", gr%nz, timestep, &
@@ -3067,8 +3102,10 @@ module inputfields
       l_input_Nccnm, l_input_Nim, l_input_Ngm, l_input_Nsm, &
       l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
       l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-      l_input_sfc_soil_T_in_K, l_input_thlp2_forcing, l_input_thlprcp , &
-      l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc
+      l_input_sfc_soil_T_in_K, l_input_wprtp_forcing, l_input_wpthlp_forcing, &
+      l_input_rtp2_forcing, l_input_thlp2_forcing, l_input_rtpthlp_forcing, l_input_thlprcp , &
+      l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc, l_input_wprtp_mc, &
+      l_input_wpthlp_mc, l_input_rtp2_mc, l_input_thlp2_mc, l_input_rtpthlp_mc
 
     ! --- Begin Code ---
 
@@ -3139,11 +3176,20 @@ module inputfields
     l_input_veg_T_in_K = .false.
     l_input_deep_soil_T_in_K = .false.
     l_input_sfc_soil_T_in_K  = .false.
+    l_input_wprtp_forcing = .false.
+    l_input_wpthlp_forcing = .false.
+    l_input_rtp2_forcing = .false.
     l_input_thlp2_forcing = .false.
+    l_input_rtpthlp_forcing = .false.
     l_input_thlprcp = .false.
     l_input_rcm_mc = .false.
     l_input_rvm_mc = .false.
     l_input_thlm_mc = .false.
+    l_input_wprtp_mc = .false.
+    l_input_wpthlp_mc = .false.
+    l_input_rtp2_mc = .false.
+    l_input_thlp2_mc = .false.
+    l_input_rtpthlp_mc = .false.
 
     print *, namelist_filename
     ! Read in our namelist

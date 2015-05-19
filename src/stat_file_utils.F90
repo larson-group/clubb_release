@@ -756,7 +756,7 @@ module stat_file_utils
 
     do j = fread_var%ia, fread_var%iz, 1
 
-      if ( fread_var%z(j) == CLUBB_grid(k) ) then
+      if ( abs( fread_var%z(j) - CLUBB_grid(k) ) < 1e-6_core_rknd ) then
 
         ! There is an LES level altitude at LES level j that is an exact
         ! match to the CLUBB level altitude at CLUBB grid level k.

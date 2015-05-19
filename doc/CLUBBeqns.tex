@@ -3822,44 +3822,60 @@ a desired process are sampled more often than the unimportant categories.
 We want to generate sample points such that the expected fraction of sample
 points in the category $C_j$ is $S_j$ rather than $p_j$. In order to do this,
 we define a new function:
-\begin{equation}
-L(\mathbf{x}) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}\in C_j
-\end{equation}
+\[ L_j(\mathbf{x}) = 
+   \begin{cases} 
+      \frac{p_j}{S_j} & \mathbf{x}\in C_j \\
+      0 & \text{otherwise} 
+   \end{cases}
+\]
 We then rewrite the integral given in \eqref{SILHS integral form} as:
-\begin{equation}
-\int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} =
-\int h(\mathbf{x}) L(\mathbf{x})\left(\frac{P(\mathbf{x})}{L(\mathbf{x})}
-\right)d\mathbf{x} =
-\int h(\mathbf{x}) L(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x}
-\label{SILHS integral rewrite}
-\end{equation}
+\begin{eqnarray}
+ \int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} &=&
+     \sum\limits_{j=1}^{N_c}\int h(\mathbf{x}) L_j(\mathbf{x})\left(\frac{P(\mathbf{x})}{L_j(\mathbf{x})}\right)d\mathbf{x} \\ \nonumber
+ &=& \sum\limits_{j=1}^{N_c}\int h(\mathbf{x}) L_j(\mathbf{x}) Q_j(\mathbf{x}) d\mathbf{x}
+ \label{SILHS integral rewrite}
+\end{eqnarray}
 where
-\begin{equation}
-Q(\mathbf{x}) = \frac{P(\mathbf{x})}{L(\mathbf{x})}
-\end{equation}
+\[Q_j(\mathbf{x}) = 
+   \begin{cases} 
+      \frac{P(\mathbf{x})}{L_j(\mathbf{x})} & \mathbf{x}\in C_j \\
+      0 & \text{otherwise} 
+   \end{cases}
+\]
 
-Here, $Q(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
-probabililties. We can easily verify this:
+Here, $Q_j(\mathbf{x})$ is the new PDF that has been resized to fit our prescribed
+probabililties $S_j$ for $j=1,...,N_c$. We can easily verify this: 
+
 \begin{align}
-\int \mathbf{1}_j(\mathbf{x}) Q(\mathbf{x}) d\mathbf{x} &=
-\int \mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L(\mathbf{x})} d\mathbf{x} \\
+\int \mathbf{1}_j(\mathbf{x}) Q_j(\mathbf{x}) d\mathbf{x} &= \int\mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L_j(\mathbf{x})} d\mathbf{x} \\
  &= \frac{S_j}{p_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
  &= \frac{S_j}{p_j} p_j \\
  &= S_j
 \end{align}
 
 Now, instead of drawing points from the $P(\mathbf{x})$ distribution and
-evaluate the function $h(\mathbf{x})$, we draw points from the $Q(\mathbf{x})$
-distribution and evaluate the function $h(\mathbf{x}) L(\mathbf{x})$.
+evaluate the function $h(\mathbf{x})$, we draw points from the $Q_j(\mathbf{x})$
+distributions and evaluate the function $h(\mathbf{x}) L_j(\mathbf{x})$.
 
 Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
-$h(\mathbf{x}_i)$ needs to be multiplied by $L(\mathbf{x}_i)$. This factor is
+$h(\mathbf{x}_i)$ needs to be multiplied by $L_j(\mathbf{x}_i)$. This factor is
 referred to as the sample point ``weight''. Each sample point has a weight,
 denoted as:
 \begin{equation}
-\omega_i = L(\mathbf{x}_i) = \frac{p_j}{S_j}\ \mathrm{where}\ \mathbf{x}_i\in
-C_j \label{SILHS importance weights def}
+ \omega_{i} = \sum\limits_{j=1}^{N_c} \omega_{ij}
 \end{equation}
+where
+\begin{equation}
+\omega_{ij} = L_j(\mathbf{x}_i) = \frac{p_j}{S_j}\ \mathbf{1}_j(\mathbf{x}_i) 
+\label{SILHS importance weights def}
+\end{equation}
+for $i=1,...,N_s$ and $j=1,...,N_c$.
+
+So if $\mathbf{x}_i \in C_{j'}$ for some category $j'$, then
+\begin{equation}
+ \omega_{i} = \frac{p_{j'}}{S_{j'}}
+\end{equation}
+Thus each sample point $\mathbf{x}_i$ gets associated with the weight $\omega_i$ that corresponds to the category, that $\mathbf{x}_i$ belongs to.
 
 \subsection{Vertical Correlation of Samples}
 
@@ -3991,8 +4007,8 @@ sampling is not used, the sample points are not weighted, or
 \omega_i = 1
 \end{equation}
 
-Given SILHS sample points picked according to the distribution given by the PDF
-$P(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
+Given SILHS sample points picked according to the distributions given by the PDF's
+$Q_j(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
 approximated using the following formulas. To integrate over the entire PDF,
 use:
 \begin{equation}

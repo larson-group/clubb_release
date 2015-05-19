@@ -58,7 +58,7 @@ hold on
 plot( x, P_x, '-b', 'LineWidth', 2 )
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
-xlim( [ min_x max_x ] )
+xlim( [ min_x max_x ] );
 ylim( [ 0 max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
                max(P_x) ) ] );
 %xlabel( var_x_label )
@@ -102,7 +102,7 @@ hold on
 plot( y, P_y, '-b', 'LineWidth', 2 )
 hold off
 % Set the range of the plot on both the x-axis and y-axis.
-xlim( [ min_y max_y ] )
+xlim( [ min_y max_y ] );
 ylim( [ 0 max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
                max(P_y) ) ] );
 %xlabel( var_y_label )

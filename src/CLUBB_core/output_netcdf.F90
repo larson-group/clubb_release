@@ -352,15 +352,15 @@ module output_netcdf
 
     ! Define the initial variables for the dimensions
     ! Longitude = deg_E = X
-    stat = nf90_def_var( ncid, "longitude", NF90_FLOAT, & 
+    stat = nf90_def_var( ncid, "longitude", NF90_DOUBLE, & 
                          (/LongDimId/), LongVarId )
 
     ! Latitude = deg_N = Y
-    stat = nf90_def_var( ncid, "latitude", NF90_FLOAT, & 
+    stat = nf90_def_var( ncid, "latitude", NF90_DOUBLE, & 
                          (/LatDimId/), LatVarId )
 
     ! Altitude = meters above the surface = Z
-    stat = nf90_def_var( ncid, "altitude", NF90_FLOAT, & 
+    stat = nf90_def_var( ncid, "altitude", NF90_DOUBLE, & 
                         (/AltDimId/), AltVarId )
 
     ! grads2nc stores time as a double prec. value, so we follow that

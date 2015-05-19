@@ -241,9 +241,6 @@ module setup_clubb_pdf_params
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     ! Local Variables
-    real( kind = dp ), dimension(d_variables,d_variables,nz) :: &
-      corr_cholesky_mtx_1_dp, & ! Used for call to Cholesky_factor, requires dp
-      corr_cholesky_mtx_2_dp
 
     real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
       corr_mtx_approx_1, & ! Approximated corr. matrix (C = LL'), 1st comp. [-]
@@ -300,7 +297,7 @@ module setup_clubb_pdf_params
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = dp ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
       corr_array_scaling
 
     real( kind = core_rknd ), dimension(d_variables) :: &
@@ -717,15 +714,13 @@ module setup_clubb_pdf_params
 
           ! Compute choleksy factorization for the correlation matrix (out of
           ! cloud)
-          call Cholesky_factor( d_variables, real(corr_array_1_n(:,:,k), kind = dp), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_1_dp(:,:,k), &  ! Out
+          call Cholesky_factor( d_variables, corr_array_1_n(:,:,k), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_1(:,:,k), &  ! Out
                                 l_corr_array_scaling ) ! Out
 
-          call Cholesky_factor( d_variables, real(corr_array_2_n(:,:,k), kind = dp), & ! In
-                                corr_array_scaling, corr_cholesky_mtx_2_dp(:,:,k), &  ! Out
+          call Cholesky_factor( d_variables, corr_array_2_n(:,:,k), & ! In
+                                corr_array_scaling, corr_cholesky_mtx_2(:,:,k), &  ! Out
                                 l_corr_array_scaling ) ! Out
-          corr_cholesky_mtx_1(:,:,k) = real( corr_cholesky_mtx_1_dp(:,:,k), kind = core_rknd )
-          corr_cholesky_mtx_2(:,:,k) = real( corr_cholesky_mtx_2_dp(:,:,k), kind = core_rknd )
        endif
 
        ! For ease of use later in the code, we make the correlation arrays
@@ -1993,16 +1988,14 @@ module setup_clubb_pdf_params
     ! where the value of one of the component means will become negative.  This
     ! is because there is a limit to the amount of in-precip variance that can
     ! be represented by this kind of distribution.  In order to prevent
-    ! out-of-bounds values of mu_hm_1 or mu_hm_2, a lower limit will be
-    ! declared (hm_tol/precip_frac_1 when the 1st component mean goes towards
-    ! negative values or hm_tol/precip_frac_2 when the 2nd component mean goes
-    ! towards negative values).  The value of the hydrometeor in-precip.
-    ! component mean will be limited from going any smaller (or negative) at
-    ! this value.  From there, the value of the other hydrometeor in-precip.
-    ! component mean is easy to calculate.  Then, both values will be entered
-    ! into the calculation of hydrometeor variance, which will be rewritten to
-    ! solve for R.  Then, both the hydrometeor mean and hydrometeor variance
-    ! will be preserved with a valid distribution.
+    ! out-of-bounds values of mu_hm_1 or mu_hm_2, lower limits will be
+    ! declared, called mu_hm_1_min and mu_hm_2_min.  The value of the
+    ! hydrometeor in-precip. component mean will be limited from going any
+    ! smaller (or negative) at this value.  From there, the value of the other
+    ! hydrometeor in-precip. component mean is easy to calculate.  Then, both
+    ! values will be entered into the calculation of hydrometeor variance, which
+    ! will be rewritten to solve for R.  Then, both the hydrometeor mean and
+    ! hydrometeor variance will be preserved with a valid distribution.
     !
     ! In this emergency scenario, the value of R is:
     !
@@ -2010,6 +2003,69 @@ module setup_clubb_pdf_params
     !       - ( 1 - a ) * f_p_2 * mu_hm_2^2 )
     !     / ( a * f_p_1 * ( 1 + zeta ) * mu_hm_1^2
     !         + ( 1 - a ) * f_p_2 * mu_hm_2^2 ).
+    !
+    ! The minimum values of the in-precip. component means are bounded by:
+    !
+    ! mu_hm_1_min >= hm_tol / f_p_1; and
+    ! mu_hm_2_min >= hm_tol / f_p_2.
+    !
+    ! These are set this way because hm_1 ( = mu_hm_1 * f_p_1 ) and
+    ! hm_2 ( = mu_hm_2 * f_p_2 ) need to have values of at least hm_tol when
+    ! precipitation is found in both PDF components.
+    !
+    ! However, an in-precip. component mean value of hm_tol / f_p_1 or
+    ! hm_tol / f_p_2 often produces a distribution where one component centers
+    ! around values that are too small to be a good match with data taken from
+    ! Large Eddy Simulations (LES).  It is desirable to increase the minimum
+    ! threshold of mu_hm_1 and mu_hm_2.
+    !
+    ! As the minimum threshold increases, the value of the in-precip. component
+    ! mean that is from the component that is not being set to the minimum
+    ! threshold decreases.  If the minimum threshold were to be boosted as high
+    ! as <hm> / f_p (in most cases, <hm> / f_p >> hm_tol / f_p_i), both
+    ! components would have a value of <hm> / f_p.  The minimum threshold should
+    ! not be set this high.
+    !
+    ! Additionally, the minimum threshold for one in-precip. component mean
+    ! cannot be set so high as to drive the other in-precip. component mean
+    ! below hm_tol / f_p_i.  (This doesn't come into play unless <hm> is close
+    ! to hm_tol.)  The upper limit for the in-precip. mean values are:
+    !
+    ! mu_hm_1|_(upper. lim.) = ( <hm> - ( 1 - a ) * f_p_2 * ( hm_tol / f_p_2 ) )
+    !                          / ( a * f_p_1 ); and
+    !
+    ! mu_hm_2|_(upper. lim.) = ( <hm> - a * f_p_1 * ( hm_tol / f_p_1 ) )
+    !                          / ( ( 1 - a ) * f_p_2 );
+    !
+    ! which reduces to:
+    !
+    ! mu_hm_1|_(upper. lim.) = ( <hm> - ( 1 - a ) * hm_tol ) / ( a * f_p_1 );
+    ! and
+    ! mu_hm_2|_(upper. lim.) = ( <hm> - a * hm_tol ) / ( ( 1 - a ) * f_p_2 ).
+    !
+    ! An appropriate minimum value for mu_hm_1 can be set by:
+    !
+    ! mu_hm_1_min = | min( hm_tol / f_p_1
+    !               |      + mu_hm_min_coef * ( <hm> / f_p - hm_tol / f_p_1 ),
+    !               |      ( <hm> - ( 1 - a ) * hm_tol ) / ( a * f_p_1 ) );
+    !               |    where <hm> / f_p > hm_tol / f_p_1;
+    !               | hm_tol / f_p_1;
+    !               |    where <hm> / f_p <= hm_tol / f_p_1;
+    !
+    ! and similarly for mu_hm_2:
+    !
+    ! mu_hm_2_min = | min( hm_tol / f_p_2
+    !               |      + mu_hm_min_coef * ( <hm> / f_p - hm_tol / f_p_2 ),
+    !               |      ( <hm> - a * hm_tol ) / ( ( 1 - a ) * f_p_2 ) );
+    !               |    where <hm> / f_p > hm_tol / f_p_2;
+    !               | hm_tol / f_p_2;
+    !               |    where <hm> / f_p <= hm_tol / f_p_2;
+    !
+    ! where mu_hm_min_coef is a coefficient that has a value
+    ! 0 <= mu_hm_min_coef < 1.  When the value of mu_hm_min_coef is 0,
+    ! mu_hm_1_min reverts to hm_tol / f_p_1 and mu_hm_2_min reverts to
+    ! hm_tol / f_p_2.  An appropriate value for mu_hm_min_coef should be small,
+    ! such as 0.01 - 0.05.
     !
     !
     ! Note 3:
@@ -2031,9 +2087,6 @@ module setup_clubb_pdf_params
         one,     &
         zero,    &
         fstderr
-
-    !use error_code, only: &
-    !    clubb_at_least_debug_level  ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2075,6 +2128,13 @@ module setup_clubb_pdf_params
       coef_B,     & ! Coefficient B in A*mu_hm_1^2 + B*mu_hm_1 + C = 0   [hm un]
       coef_C,     & ! Coefficient C in A*mu_hm_1^2 + B*mu_hm_1 + C = 0 [hm un^2]
       Bsqd_m_4AC    ! Value B^2 - 4*A*C in quadratic eqn. for mu_hm_1  [hm un^2]
+
+    real( kind = core_rknd ) :: &
+      mu_hm_1_min, & ! Minimum value of mu_hm_1 (precip. in both comps.) [hm un]
+      mu_hm_2_min    ! Minimum value of mu_hm_2 (precip. in both comps.) [hm un]
+
+    real( kind = core_rknd ), parameter :: &
+      mu_hm_min_coef = 0.01_core_rknd  ! Coef. for mu_hm_1_min and mu_hm_2_min
 
 
     ! Calculate the value of Rmax.
@@ -2140,26 +2200,35 @@ module setup_clubb_pdf_params
     ! sigma_hm_2_sqd_on_mu_hm_2_sqd.
     sigma_hm_2_sqd_on_mu_hm_2_sqd = omicron * Rmax
 
+    ! Calculate minimum allowable values for mu_hm_1 and mu_hm_2.
+    if ( hmm / precip_frac > hm_tol / precip_frac_1 ) then
+       mu_hm_1_min &
+       = min( hm_tol / precip_frac_1 &
+              + mu_hm_min_coef * ( hmm / precip_frac &
+                                   - hm_tol / precip_frac_1 ), &
+              ( hmm - ( one - mixt_frac ) * hm_tol ) &
+              / ( mixt_frac * precip_frac_1 ) )
+    else ! hmm / precip_frac <= hm_tol / precip_frac_1
+       mu_hm_1_min = hm_tol / precip_frac_1
+    endif
+    if ( hmm / precip_frac > hm_tol / precip_frac_2 ) then
+       mu_hm_2_min &
+       = min( hm_tol / precip_frac_2 &
+              + mu_hm_min_coef * ( hmm / precip_frac &
+                                   - hm_tol / precip_frac_2 ), &
+              ( hmm - mixt_frac * hm_tol ) &
+              / ( ( one - mixt_frac ) * precip_frac_2 ) )
+    else ! hmm / precip_frac <= hm_tol / precip_frac_2
+       mu_hm_2_min = hm_tol / precip_frac_2
+    endif
+
     ! Handle the "emergency" situation when the specified value of omicron is
     ! too small for the value of <hm|_ip'^2> / <hm|_ip>^2, resulting in a
     ! component mean that is too small (below tolerance value) or negative.
-    if ( mu_hm_1 < hm_tol / precip_frac_1 ) then
+    if ( mu_hm_1 < mu_hm_1_min ) then
 
-       ! Print warning message informing the user that the value of omicron
-       ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
-       ! decreased.
-      !if ( clubb_at_least_debug_level( 2 ) ) then
-      !   write(fstderr,*) "The value of mu_hm_1 is too small or negative " &
-      !                    // "and is being reset to a minimum positive " & 
-      !                    // "value.  To avoid this problem, please " &
-      !                    // "increase the value of omicron or decrease the " &
-      !                    // "value of the prescribed in-precip. " &
-      !                    // "variance-over-mean-squared."
-      ! endif ! clubb_debug_level_at_least( 2 )
-
-       ! Set the value of mu_hm_1 to the threshold positive value (so that
-       ! hm_1 = hm_tol).
-       mu_hm_1 = hm_tol / precip_frac_1
+       ! Set the value of mu_hm_1 to the threshold positive value.
+       mu_hm_1 = mu_hm_1_min
 
        ! Recalculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
        ! component.
@@ -2185,23 +2254,10 @@ module setup_clubb_pdf_params
           sigma_hm_2_sqd_on_mu_hm_2_sqd = zero
        endif
 
-    elseif ( mu_hm_2 < hm_tol / precip_frac_2 ) then
+    elseif ( mu_hm_2 < mu_hm_2_min ) then
 
-       ! Print warning message informing the user that the value of omicron
-       ! should be increased on the value of hmp2_ip_on_hmm2_ip should be
-       ! decreased.
-      !if ( clubb_at_least_debug_level( 2 ) ) then
-      !   write(fstderr,*) "The value of mu_hm_2 is too small or negative " &
-      !                    // "and is being reset to a minimum positive " &
-      !                    // "value.  To avoid this problem, please " &
-      !                    // "increase the value of omicron or decrease the " &
-      !                    // "value of the prescribed in-precip. " &
-      !                    // "variance-over-mean-squared."
-      !endif ! clubb_debug_level_at_least( 2 )
-
-       ! Set the value of mu_hm_2 to the threshold positive value (so that
-       ! hm_2 = hm_tol).
-       mu_hm_2 = hm_tol / precip_frac_2
+       ! Set the value of mu_hm_2 to the threshold positive value.
+       mu_hm_2 = mu_hm_2_min
 
        ! Recalculate the mean (in-precip.) of the hydrometeor in the 1st PDF
        ! component.

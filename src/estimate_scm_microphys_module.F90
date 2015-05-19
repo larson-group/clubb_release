@@ -52,7 +52,6 @@ module estimate_scm_microphys_module
       clubb_at_least_debug_level ! Procedure
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     use stats_variables, only: &
@@ -118,7 +117,7 @@ module estimate_scm_microphys_module
       num_samples,   & ! Number of calls to microphysics
       d_variables      ! Number of variates
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
 
     integer, dimension(nz,num_samples), intent(in) :: &

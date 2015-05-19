@@ -288,7 +288,7 @@ module pdf_utilities
 
     use constants_clubb, only: &
         max_mag_correlation, & ! Constant(s)
-        zero
+        zero_dp
 
     use clubb_precision, only: &
         dp ! double precision
@@ -310,7 +310,7 @@ module pdf_utilities
     ! When sigma_y = 0 and mu_y > 0, y_sigma2_on_mu2 = 0.  This results in
     ! sigma_y_n = 0.  The resulting corr_x_y_n is undefined.  However, the
     ! divide-by-zero problem needs to be addressed in the code.
-    if ( sigma_y_n > zero ) then
+    if ( sigma_y_n > zero_dp ) then
        corr_x_y_n = corr_x_y * sqrt( y_sigma2_on_mu2 ) / sigma_y_n
     else ! sigma_y_n = 0
        ! The value of sqrt( y_sigma2_on_mu2 ) / sigma_y_n can be rewritten as:
@@ -508,7 +508,7 @@ module pdf_utilities
 
     use constants_clubb, only: &
         one_dp,              & ! Constant(s)
-        zero,                &
+        zero_dp,             &
         max_mag_correlation
 
     use clubb_precision, only: &
@@ -535,7 +535,7 @@ module pdf_utilities
     ! sigma_x_n = 0.  The resulting corr_x_y_n is undefined.  The same holds
     ! true when sigma_y = 0 and mu_y > 0.  However, the divide-by-zero problem
     ! needs to be addressed in the code.
-    if ( sigma_x_n > zero .and. sigma_y_n > zero ) then
+    if ( sigma_x_n > zero_dp .and. sigma_y_n > zero_dp ) then
        corr_x_y_n &
        = log( one_dp + corr_x_y * sqrt( x_sigma2_on_mu2 * y_sigma2_on_mu2 ) ) &
          / ( sigma_x_n * sigma_y_n )

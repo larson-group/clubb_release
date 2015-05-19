@@ -97,10 +97,10 @@ hold off
 if ( precip_frac_clubb < 1.0 || precip_frac_x_LES < 1.0 )
    xlim([0 max_x]);
 else
-   xlim([min_x max_x])
+   xlim([min_x max_x]);
 end
 ylim( [ 0 max( max(bincounts_x) / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
-               max(P_x) ) ] )
+               max(P_x) ) ] );
 %xlabel( var_x_label )
 legend( 'LES', 'CLUBB', 'Location', 'NorthEast' );
 grid on
@@ -178,10 +178,10 @@ hold off
 if ( precip_frac_clubb < 1.0 || precip_frac_y_LES < 1.0 )
    xlim([0 max_y]);
 else
-   xlim([min_y max_y])
+   xlim([min_y max_y]);
 end
 ylim( [ 0 max( max(bincounts_y) / ( nx_LES_grid * ny_LES_grid * delta_y ), ...
-               max(P_y) ) ] )
+               max(P_y) ) ] );
 %xlabel( var_y_label )
 % Reverse the plot and turn the plot 90 degrees clockwise.
 set(gca, 'xdir', 'reverse')

@@ -4,7 +4,6 @@
 module latin_hypercube_arrays
 
   use clubb_precision, only: &
-    dp, & ! double precision
     core_rknd
 
   implicit none

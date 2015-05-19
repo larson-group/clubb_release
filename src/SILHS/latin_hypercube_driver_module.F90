@@ -10,13 +10,8 @@ module latin_hypercube_driver_module
 
   ! Constant Parameters
   logical, parameter, private :: &
-    l_diagnostic_iter_check      = .true.,  & ! Check for a problem in iteration
     l_output_2D_lognormal_dist   = .false., & ! Output a 2D netCDF file of the lognormal variates
     l_output_2D_uniform_dist     = .false.    ! Output a 2D netCDF file of the uniform distribution
-
-  integer, private :: &
-    prior_iter ! Prior iteration number (for diagnostic purposes)
-!$omp threadprivate( prior_iter )
 
   private ! Default scope
 
@@ -63,15 +58,8 @@ module latin_hypercube_driver_module
     use corr_varnce_module, only: &
       iiPDF_chi    ! Variables
 
-    use latin_hypercube_arrays, only: &
-      one_height_time_matrix ! Variables
-
-    use permute_height_time_module, only: &
-      permute_height_time ! Procedure
-
-    use generate_lh_sample_module, only: &
-      generate_lh_sample, & ! Procedure
-      generate_uniform_sample
+    use transform_to_pdf_module, only: &
+      transform_uniform_sample_to_pdf      ! Procedure
 
     use output_2D_samples_module, only: &
       output_2D_lognormal_dist_file, & ! Procedure(s)
@@ -86,36 +74,19 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       fstderr, & ! Constant(s)
       zero_threshold, &
+      zero, &
       one, &
       cloud_frac_min
-
-    use parameters_silhs, only: &
-      l_lh_importance_sampling, & ! Variable(s)
-      l_Lscale_vert_avg, &
-      l_lh_straight_mc
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
 
-    use mt95, only: &
-      genrand_real, & ! Constant
-      genrand_real3   ! Procedure
-
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd, &
       stat_rknd
 
-    use fill_holes, only: vertical_avg ! Procedure
-
-    use grid_class, only : gr
-
-    use pdf_utilities, only: &
-      compute_mean_binormal
-
-    use silhs_importance_sample_module, only: &
-      importance_sampling_driver, &
-      cloud_weighted_sampling_driver
+    use parameters_silhs, only: &
+      l_lh_importance_sampling
 
     implicit none
 
@@ -123,11 +94,6 @@ module latin_hypercube_driver_module
     intrinsic :: allocated, mod, maxloc, epsilon, transpose
 
     ! Parameter Constants
-
-    logical, parameter :: &
-      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
-                                         ! places one point in cloud and one point out of
-                                         ! cloud
 
     integer, parameter :: &
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
@@ -159,7 +125,7 @@ module latin_hypercube_driver_module
 
     
     ! Output Variables
-    real( kind = dp ), intent(out), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(out), dimension(nz,num_samples) :: &
@@ -169,7 +135,7 @@ module latin_hypercube_driver_module
       lh_sample_point_weights
 
     ! More Input Variables!
-    real( kind = dp ), dimension(d_variables,d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
@@ -183,31 +149,12 @@ module latin_hypercube_driver_module
       hydromet_pdf_params
 
     ! Local variables
-    real( kind = core_rknd ), dimension(nz) :: &
-      Lscale_vert_avg    ! 3pt vertical average of Lscale  [m]
-
-    real( kind = dp ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
-
-    integer :: p_matrix(num_samples,d_variables+d_uniform_extra)
-
-    real(kind=dp), dimension(nz) :: &
-      X_vert_corr ! Vertical correlation of a variate   [-]
-
-    ! Number of random samples before sequence of repeats (normally=10)
-    integer :: nt_repeat
 
     integer :: &
       k_lh_start, & ! Height for preferentially sampling within cloud
-      i_rmd, &      ! Remainder of ( iter-1 / sequence_length )
-      k, sample     ! Loop iterators
-
-    integer :: ivar ! Loop iterator
-
-    integer :: kp1, km1 
-
-    logical :: &
-      l_half_in_cloud                 ! True if half of all samples should land up in cloud
+      k, sample, i  ! Loop iterators
 
     logical, dimension(nz,num_samples) :: &
       l_in_precip   ! Whether sample is in precipitation
@@ -215,10 +162,357 @@ module latin_hypercube_driver_module
     logical :: l_error, l_error_in_sub
 
     ! Precipitation fraction in a component of the PDF, for each sample
-    real( kind = dp ), dimension(num_samples) :: precip_frac_i
+    real( kind = core_rknd ), dimension(num_samples) :: precip_frac_i
 
     ! ---- Begin Code ----
 
+    l_error = .false.
+
+    ! Sanity checks for l_lh_importance_sampling
+    if ( l_lh_importance_sampling .and. mod( num_samples, 2 ) /= 0 ) then
+      write(fstderr,*) "Cloud weighted sampling requires num_samples to be divisible by 2."
+      stop "Fatal error."
+    end if
+    if ( l_lh_importance_sampling .and. sequence_length /= 1 ) then
+      write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
+      stop "Fatal error."
+    end if
+
+    !--------------------------------------------------------------
+    ! Latin hypercube sampling
+    !--------------------------------------------------------------
+
+    ! Compute k_lh_start, the starting level for SILHS sampling
+    k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
+
+    ! Generate a uniform sample at k_lh_start
+    call generate_uniform_k_lh_start &
+         ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+           pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
+           X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
+
+    ! Generate uniform sample at other height levels by vertically correlating them
+    call vertical_overlap_driver &
+         ( nz, d_variables, d_uniform_extra, num_samples, &     ! Intent(in)
+           k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+           X_u_all_levs )                                       ! Intent(inout)
+
+    do k = 1, nz
+      ! Determine mixture component for all levels
+      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), pdf_params(k)%mixt_frac ) )
+        X_mixt_comp_all_levs(k,:) = 1
+      else where
+        X_mixt_comp_all_levs(k,:) = 2
+      end where
+
+      ! Determine precipitation fraction
+      where ( X_mixt_comp_all_levs(k,:) == 1 )
+        precip_frac_i(:) = hydromet_pdf_params(k)%precip_frac_1
+      else where
+        precip_frac_i(:) = hydromet_pdf_params(k)%precip_frac_2
+      end where
+
+      ! Determine precipitation for all levels
+      where ( in_precipitation( X_u_all_levs(k,:,d_variables+2), &
+                  precip_frac_i(:) ) )
+        l_in_precip(k,:) = .true.
+      else where
+        l_in_precip(k,:) = .false.
+      end where
+
+    end do ! k = 1 .. nz
+
+    call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
+                                      lh_sample_point_weights, k_lh_start )
+
+    ! Check to ensure uniform variates are in the appropriate range
+    do sample=1, num_samples
+      do k=1, nz
+        do i=1, d_variables+d_uniform_extra
+          if ( X_u_all_levs(k,sample,i) >= one ) then
+            X_u_all_levs(k,sample,i) = one - epsilon( X_u_all_levs(k,sample,i) )
+          else if ( X_u_all_levs(k,sample,i) <= zero ) then
+            X_u_all_levs(k,sample,i) = epsilon( X_u_all_levs(k,sample,i) )
+          end if
+        end do
+      end do
+    end do
+
+    ! Sample loop
+    do k = 1, nz
+      ! Generate LH sample, represented by X_u and X_nl, for level k
+      do sample = 1, num_samples, 1
+        call transform_uniform_sample_to_pdf &
+             ( d_variables, d_uniform_extra, & ! In
+               mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
+               corr_cholesky_mtx_1(:,:,k), & ! In
+               corr_cholesky_mtx_2(:,:,k), & ! In
+               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
+               l_in_precip(k,sample), & ! In
+               X_nl_all_levs(k,sample,:) ) ! Out
+      end do ! sample = 1, num_samples, 1
+    end do ! k = 1, nz
+
+    if ( l_output_2D_lognormal_dist ) then
+      ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
+      ! because they are no longer generated in lh_subcolumn_generator.
+      call output_2D_lognormal_dist_file( nz, num_samples, d_variables, &
+                                          real(X_nl_all_levs, kind = stat_rknd) )
+    end if
+    if ( l_output_2D_uniform_dist ) then
+      ! TODO: fix this!!
+      stop "2D output not supported right now"
+      !call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
+      !                                  X_u_all_levs, &
+      !                                  X_mixt_comp_all_levs, p_matrix, &
+      !                                  lh_sample_point_weights )
+    end if
+
+    ! Various nefarious assertion checks
+    if ( clubb_at_least_debug_level( 2 ) ) then
+
+      ! Simple assertion check to ensure uniform variates are in the appropriate
+      ! range
+      if ( any( X_u_all_levs <= zero .or. X_u_all_levs >= one ) ) then
+        write(fstderr,*) "A uniform variate was not in the correct range."
+        l_error = .true.
+      end if
+
+      do k=2, nz
+
+        call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
+        l_error = l_error .or. l_error_in_sub
+
+        ! Check for correct transformation in normal space
+        call assert_correct_cloud_normal( num_samples, X_u_all_levs(k,:,iiPDF_chi), & ! In
+                                          X_nl_all_levs(k,:,iiPDF_chi), & ! In
+                                          X_mixt_comp_all_levs(k,:), & ! In
+                                          pdf_params(k)%cloud_frac_1, & ! In
+                                          pdf_params(k)%cloud_frac_2, & ! In
+                                          l_error_in_sub ) ! Out
+        l_error = l_error .or. l_error_in_sub
+
+      end do ! k=2, nz
+
+    end if ! clubb_at_least_debug_level( 2 )
+
+    ! Stop the run if an error occurred
+    if ( l_error ) then
+      stop "Fatal error in lh_subcolumn_generator"
+    end if
+
+    return
+  end subroutine lh_subcolumn_generator
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine generate_uniform_k_lh_start &
+             ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, &
+               pdf_params, hydromet_pdf_params, &
+               X_u_k_lh_start, lh_sample_point_weights )
+
+  ! Description:
+  !   Generates a uniform sample, X_u, at a single height level, applying Latin
+  !   hypercube and importance sampling where configured.
+
+  ! References:
+  !   V. E. Larson and D. P. Schanen, 2013. The Subgrid Importance Latin
+  !   Hypercube Sampler (SILHS): a multivariate subcolumn generator
+  !----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd                   ! Precision
+
+    use constants_clubb, only: &
+      one                         ! Constant
+
+    use parameters_silhs, only: &
+      l_lh_straight_mc, &         ! Variable(s)
+      l_lh_importance_sampling
+
+    use pdf_parameter_module, only: &
+      pdf_parameter               ! Type
+
+    use hydromet_pdf_parameter_module, only: &
+      hydromet_pdf_parameter      ! Type
+
+    use generate_uniform_sample_module, only: &
+      rand_uniform_real, &        ! Procedure(s)
+      generate_uniform_lh_sample
+
+    use silhs_importance_sample_module, only: &
+      importance_sampling_driver, & ! Procedure(s)
+      cloud_weighted_sampling_driver
+
+    use latin_hypercube_arrays, only: &
+      one_height_time_matrix      ! Variable
+
+    use corr_varnce_module, only: &
+      iiPDF_chi                   ! Variable
+
+    implicit none
+
+    ! Local Constants
+    logical, parameter :: &
+      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
+                                         ! places one point in cloud and one point out of
+                                         ! cloud
+
+    ! Input Variables
+    integer, intent(in) :: &
+      iter,              &        ! Model iteration number
+      d_variables,       &        ! Number of variates in CLUBB's PDF
+      d_uniform_extra,   &        ! Uniform variates included in uniform sample but not
+                                  !  in normal/lognormal sample
+      num_samples,       &        ! Number of SILHS sample points
+      sequence_length             ! Number of timesteps before new sample points are picked
+
+    type(pdf_parameter), intent(in) :: &
+      pdf_params                  ! The PDF parameters at k_lh_start
+
+    type(hydromet_pdf_parameter), intent(in) :: &
+      hydromet_pdf_params
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(num_samples,d_variables+d_uniform_extra), intent(out) :: &
+      X_u_k_lh_start              ! Uniform sample at k_lh_start
+
+    real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
+      lh_sample_point_weights     ! Weight of each sample point (all equal to one if importance
+                                  ! sampling is not used)
+
+    ! Local Variables
+    integer :: &
+      i, sample
+
+  !----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    if ( l_lh_straight_mc ) then
+
+      ! Do a straight Monte Carlo sample without LH or importance sampling.
+      do i=1, d_variables+d_uniform_extra
+        do sample=1, num_samples
+          X_u_k_lh_start(sample,i) = rand_uniform_real( )
+        end do
+      end do
+
+      ! Importance sampling is not performed, so all sample points have the same weight!!
+      lh_sample_point_weights(1:num_samples)  =  one
+
+    else ! .not. l_lh_straight_mc
+
+      ! Generate a uniformly distributed Latin hypercube sample
+      call generate_uniform_lh_sample( iter, num_samples, sequence_length, &  ! Intent(in)
+                                       d_variables+d_uniform_extra, &         ! Intent(in)
+                                       X_u_k_lh_start(:,:) )                  ! Intent(out)
+
+      if ( l_lh_importance_sampling ) then
+
+        if ( l_lh_old_cloud_weighted ) then
+
+          call cloud_weighted_sampling_driver &
+               ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
+                 one_height_time_matrix(:,d_variables+1), & ! In
+                 pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
+                 pdf_params%mixt_frac, & ! In
+                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
+                 lh_sample_point_weights ) ! Out
+
+        else ! .not. l_lh_old_cloud_weighted
+
+          call importance_sampling_driver &
+               ( num_samples, pdf_params, hydromet_pdf_params, & ! In
+                 X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
+                 X_u_k_lh_start(:,d_variables+2), & ! In/Out
+                 lh_sample_point_weights ) ! Out
+
+        end if ! l_lh_old_cloud_weighted
+
+      else
+
+        ! No importance sampling is performed, so all sample points have the same weight.
+        lh_sample_point_weights(1:num_samples) = one
+
+      end if ! l_lh_importance_sampling
+
+    end if ! l_lh_straight_mc
+
+    return
+  end subroutine generate_uniform_k_lh_start
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine vertical_overlap_driver &
+             ( nz, d_variables, d_uniform_extra, num_samples, &
+               k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
+               X_u_all_levs )
+
+  ! Description:
+  !   Takes a uniform sample at k_lh_start and correlates it vertically
+  !   to other height levels
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd      ! Precision
+
+    use constants_clubb, only: &
+      fstderr, &     ! Constant(s)
+      one,     &
+      zero
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    use grid_class, only: &
+      gr             ! Variable
+
+    use corr_varnce_module, only: &
+      iiPDF_chi      ! Variable
+
+    use parameters_silhs, only: &
+      l_Lscale_vert_avg  ! Variable
+
+    use fill_holes, only: &
+      vertical_avg  ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz,              &
+      d_variables,     &
+      d_uniform_extra, &
+      num_samples,     &
+      k_lh_start
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      delta_zm,        &  ! Difference in altitude between momentum levels    [m]
+      rcm,             &  ! Liquid water mixing ratio                         [kg/kg]
+      Lscale,          &  ! Turbulent mixing length                           [m]
+      rho_ds_zt           ! Dry, static density on thermodynamic levels       [kg/m^3]
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables+d_uniform_extra), &
+        intent(inout) :: &
+      X_u_all_levs        ! A full uniform sample
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(nz) :: &
+      Lscale_vert_avg, &  ! 3pt vertical average of Lscale                    [m]
+      X_vert_corr         ! Vertical correlations between height levels       [-]
+
+    integer :: k, km1, kp1, sample, ivar
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
     if ( l_Lscale_vert_avg ) then
       ! Determine 3pt vertically averaged Lscale
       do k = 1, nz, 1
@@ -232,133 +526,17 @@ module latin_hypercube_driver_module
         Lscale_vert_avg = Lscale 
     end if
 
-    l_error = .false.
-
-    nt_repeat = num_samples * sequence_length
-
-    if ( .not. allocated( one_height_time_matrix ) ) then
-      ! If this is first time latin_hypercube_driver is called, then allocate
-      ! the one_height_time_matrix and set the prior iteration number for debugging
-      ! purposes.
-      allocate( one_height_time_matrix(nt_repeat, d_variables+d_uniform_extra) )
-
-      prior_iter = iter
-
-      ! Check for a bug where the iteration number isn't incrementing correctly,
-      ! which will lead to improper sampling.
-    else if ( l_diagnostic_iter_check .and. sequence_length > 1 ) then
-
-      if ( prior_iter /= iter-1 ) then
-        write(fstderr,*) "The iteration number in latin_hypercube_driver is"// &
-        " not incrementing properly."
-
-      else
-        prior_iter = iter
-
-      end if
-
-    end if ! First call to the driver
-
-    ! Sanity checks for l_lh_importance_sampling
-    if ( l_lh_importance_sampling .and. mod( num_samples, 2 ) /= 0 ) then
-      write(fstderr,*) "Cloud weighted sampling requires num_samples to be divisible by 2."
-      stop "Fatal error."
-    end if
-    if ( l_lh_importance_sampling .and. sequence_length /= 1 ) then
-      write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
-      stop "Fatal error."
-    end if
-
-    ! Latin hypercube sample generation
-    ! Generate one_height_time_matrix, an nt_repeat x d_variables array of random integers
-    i_rmd = mod( iter-1, sequence_length )
-
-    if ( i_rmd == 0 ) then
-      call permute_height_time( nt_repeat, d_variables+d_uniform_extra, &     ! intent(in)
-                                one_height_time_matrix )                          ! intent(out)
-    end if
-    ! End Latin hypercube sample generation
-
-    !--------------------------------------------------------------
-    ! Latin hypercube sampling
-    !--------------------------------------------------------------
-
-    k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
-
-    ! Choose which rows of LH sample to feed into closure at the k_lh_start level
-    p_matrix(1:num_samples,1:(d_variables+d_uniform_extra)) = &
-             one_height_time_matrix((num_samples*i_rmd+1):(num_samples*i_rmd+num_samples), &
-             1:(d_variables+d_uniform_extra))
-
-    if ( l_lh_straight_mc ) then
-
-      ! Do a straight Monte Carlo sample without LH or importance sampling.
-      call genrand_real3( X_u_all_levs(k_lh_start,:,:) )
-      l_half_in_cloud = .false.
-      ! Importance sampling is not performed, so all sample points have the same weight!!
-      lh_sample_point_weights(1:num_samples)  =  one
-
-    else ! .not. l_lh_straight_mc
-
-      ! Generate the uniform distribution using the Mersenne twister at the k_lh_start level
-      call generate_uniform_sample( num_samples, nt_repeat, d_variables+d_uniform_extra, & ! In
-                                    p_matrix, & ! In
-                                    X_u_all_levs(k_lh_start,:,:) ) ! Out
-
-      if ( l_lh_importance_sampling ) then
-
-        if ( l_lh_old_cloud_weighted ) then
-
-          call cloud_weighted_sampling_driver &
-               ( num_samples, p_matrix(:,iiPDF_chi), p_matrix(:,d_variables+1), &
-                 pdf_params(k_lh_start)%cloud_frac_1, pdf_params(k_lh_start)%cloud_frac_2, & ! In
-                 pdf_params(k_lh_start)%mixt_frac, & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 lh_sample_point_weights, l_half_in_cloud ) ! Out
-
-        else ! .not. l_lh_old_cloud_weighted
-
-          call importance_sampling_driver &
-               ( num_samples, pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), & ! In
-                 X_u_all_levs(k_lh_start,:,iiPDF_chi), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+1), & ! In/Out
-                 X_u_all_levs(k_lh_start,:,d_variables+2), & ! In/Out
-                 lh_sample_point_weights ) ! Out
-
-          ! In general, this code no longer guarantees that half of all sample points will reside
-          ! in cloud.
-          l_half_in_cloud = .false.
-
-        end if ! l_lh_old_cloud_weighted
-
-      else
-
-        l_half_in_cloud = .false.
-
-        ! No importance sampling is performed, so all sample points have the same weight.
-        lh_sample_point_weights(1:num_samples) = one
-
-      end if ! l_lh_importance_sampling
-
-    end if ! l_lh_straight_mc
-
-    ! Use a fixed number for the vertical correlation.
-!     X_vert_corr(1:nz) = 0.95_dp
-
-    ! Compute vertical correlation using a formula based on Lscale, the
-    ! the difference in height levels, and an empirical constant
     X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
 
     ! Assertion check for the vertical correlation
     if ( clubb_at_least_debug_level( 2 ) ) then
-      if ( any( X_vert_corr > 1.0_dp ) .or. any( X_vert_corr < 0.0_dp ) ) then
+      if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
         write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
           "is not in the correct range"
         do k = 1, nz
           write(fstderr,*) "k = ", k,  "Vert. correlation = ", X_vert_corr(k)
         end do
-        l_error = .true.
+        stop "Fatal error in vertical_overlap_driver"
       end if ! Some correlation isn't between [0,1]
     end if ! clubb_at_least_debug_level 1
 
@@ -393,125 +571,12 @@ module latin_hypercube_driver_module
         end if
       end do ! 1..d_variables
     end do ! 1..num_samples
-    ! %% Debug %%
-    ! Testing what happens when we clip uniformally distributed variates to
-    ! avoid extreme values.
-!     where ( X_u_all_levs (:,:,2:d_variables) > 0.99_core_rknd ) &
-!       X_u_all_levs(:,:,2:d_variables) = 0.99_core_rknd
-    ! %% End Debug %%
-
-    do k = 1, nz
-      ! Determine mixture component for all levels
-      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), &
-           real(pdf_params(k)%mixt_frac, kind = dp) ) )
-        X_mixt_comp_all_levs(k,:) = 1
-      else where
-        X_mixt_comp_all_levs(k,:) = 2
-      end where
-
-      ! Determine precipitation fraction
-      where ( X_mixt_comp_all_levs(k,:) == 1 )
-        precip_frac_i(:) = real( hydromet_pdf_params(k)%precip_frac_1, kind=dp )
-      else where
-        precip_frac_i(:) = real( hydromet_pdf_params(k)%precip_frac_2, kind=dp )
-      end where
-
-      ! Determine precipitation for all levels
-      where ( in_precipitation( X_u_all_levs(k,:,d_variables+2), &
-                  precip_frac_i(:) ) )
-        l_in_precip(k,:) = .true.
-      else where
-        l_in_precip(k,:) = .false.
-      end where
-
-    end do ! k = 1 .. nz
-
-    call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
-                                      lh_sample_point_weights, k_lh_start )
-
-    ! Sample loop
-    do k = 1, nz
-      ! Generate LH sample, represented by X_u and X_nl, for level k
-      do sample = 1, num_samples, 1
-        call generate_lh_sample &
-             ( d_variables, d_uniform_extra, & ! In
-               mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
-               corr_cholesky_mtx_1(:,:,k), & ! In
-               corr_cholesky_mtx_2(:,:,k), & ! In
-               X_u_all_levs(k,sample,:), X_mixt_comp_all_levs(k,sample), & ! In
-               l_in_precip(k,sample), & ! In
-               X_nl_all_levs(k,sample,:) ) ! Out
-      end do ! sample = 1, num_samples, 1
-    end do ! k = 1, nz
-
-    if ( l_output_2D_lognormal_dist ) then
-      ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
-      ! because they are no longer generated in lh_subcolumn_generator.
-      call output_2D_lognormal_dist_file( nz, num_samples, d_variables, &
-                                          real(X_nl_all_levs, kind = stat_rknd) )
-    end if
-    if ( l_output_2D_uniform_dist ) then
-      call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
-                                        real(X_u_all_levs, kind = genrand_real), &
-                                        X_mixt_comp_all_levs, p_matrix, &
-                                        lh_sample_point_weights )
-    end if
-
-    ! Various nefarious assertion checks
-    if ( clubb_at_least_debug_level( 2 ) ) then
-
-      ! Simple assertion check to ensure uniform variates are in the appropriate
-      ! range
-      if ( any( X_u_all_levs < 0._dp .or. X_u_all_levs > 1._dp ) ) then
-        write(fstderr,*) "A uniform variate was not in the correct range."
-        l_error = .true.
-      end if
-
-      ! Assertion check for whether half of sample points are cloudy.
-      if ( l_half_in_cloud ) then
-
-        ! Check for half cloudy points in uniform space
-        call assert_half_cloudy_uniform &
-             ( num_samples, pdf_params(k_lh_start)%cloud_frac_1, &
-               pdf_params(k_lh_start)%cloud_frac_2, X_mixt_comp_all_levs(k_lh_start,:), &
-               X_u_all_levs(k_lh_start,:,iiPDF_chi), l_error_in_sub )
-
-        l_error = l_error .or. l_error_in_sub
-
-        call assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
-                                          l_error_in_sub )
-        l_error = l_error .or. l_error_in_sub
-
-      end if ! l_half_in_cloud
-
-      do k=2, nz
-
-        call assert_consistent_cloud_frac( pdf_params(k), l_error_in_sub )
-        l_error = l_error .or. l_error_in_sub
-
-        ! Check for correct transformation in normal space
-        call assert_correct_cloud_normal( num_samples, X_u_all_levs(k,:,iiPDF_chi), & ! In
-                                          X_nl_all_levs(k,:,iiPDF_chi), & ! In
-                                          X_mixt_comp_all_levs(k,:), & ! In
-                                          pdf_params(k)%cloud_frac_1, & ! In
-                                          pdf_params(k)%cloud_frac_2, & ! In
-                                          l_error_in_sub ) ! Out
-        l_error = l_error .or. l_error_in_sub
-
-      end do ! k=2, nz
-
-    end if ! clubb_at_least_debug_level( 2 )
-
-    ! Stop the run if an error occurred
-    if ( l_error ) then
-      stop "Fatal error in lh_subcolumn_generator"
-    end if
 
     return
-  end subroutine lh_subcolumn_generator
+  end subroutine vertical_overlap_driver
 !-------------------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
   function compute_k_lh_start( nz, rcm, pdf_params ) result( k_lh_start )
 
   ! Description:
@@ -609,7 +674,7 @@ module latin_hypercube_driver_module
 
     return
   end function compute_k_lh_start
-  !-----------------------------------------------------------------------
+!-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
   subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
@@ -627,7 +692,6 @@ module latin_hypercube_driver_module
 
     ! Included Modules
     use clubb_precision, only: &
-      dp, & ! Constant(s)
       core_rknd
 
     use constants_clubb, only: &
@@ -642,7 +706,7 @@ module latin_hypercube_driver_module
       iiPDF_eta, &
       iiPDF_Ncn
 
-    use generate_lh_sample_module, only: &
+    use transform_to_pdf_module, only: &
       chi_eta_2_rtthl ! Awesome procedure
 
     implicit none
@@ -662,7 +726,7 @@ module latin_hypercube_driver_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -724,8 +788,8 @@ module latin_hypercube_driver_module
 
       do isample=1, num_samples
 
-        lh_chi = real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd )
-        lh_eta = real( X_nl_all_levs(k,isample,iiPDF_eta), kind=core_rknd )
+        lh_chi = X_nl_all_levs(k,isample,iiPDF_chi)
+        lh_eta = X_nl_all_levs(k,isample,iiPDF_eta)
 
         ! Compute lh_rt and lh_thl
         call chi_eta_2_rtthl( rt_1, thl_1, rt_2, thl_2, &                        ! Intent(in)
@@ -741,7 +805,7 @@ module latin_hypercube_driver_module
         end if
 
         ! Compute lh_rc
-        lh_rc(k,isample) = chi_to_rc( real( X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd ) )
+        lh_rc(k,isample) = chi_to_rc( X_nl_all_levs(k,isample,iiPDF_chi) )
         ! Clip lh_rc.
         if ( lh_rc(k,isample) > lh_rt(k,isample) - rt_tol ) then
           lh_rc(k,isample) = lh_rt(k,isample) - rt_tol
@@ -752,8 +816,8 @@ module latin_hypercube_driver_module
 
         ! Compute lh_Nc
         if ( l_use_Ncn_to_Nc ) then
-           lh_Nc(k,isample) = Ncn_to_Nc(real(X_nl_all_levs(k,isample,iiPDF_Ncn), kind=core_rknd), &
-                                        real(X_nl_all_levs(k,isample,iiPDF_chi), kind=core_rknd) )
+           lh_Nc(k,isample) = Ncn_to_Nc( X_nl_all_levs(k,isample,iiPDF_Ncn), &
+                                         X_nl_all_levs(k,isample,iiPDF_chi) )
         else
            lh_Nc(k,isample) = X_nl_all_levs(k,isample,iiPDF_Ncn)
         endif ! l_use_Ncn_to_Nc
@@ -869,17 +933,17 @@ module latin_hypercube_driver_module
 
     ! Included Modules
     use clubb_precision, only: &
-      core_rknd, &     ! Constant(s)
-      dp
+      core_rknd        ! Constant(s)
 
     use constants_clubb, only: &
       fstderr, &       ! Constant(s)
-      zero
+      zero, &
+      one
 
     use pdf_parameter_module, only: &
       pdf_parameter    ! Type
 
-    use generate_lh_sample_module, only: &
+    use transform_to_pdf_module, only: &
       ltqnorm          ! Procedure
 
     implicit none
@@ -912,26 +976,24 @@ module latin_hypercube_driver_module
     ! We need to handle the special cases where cloud_frac_i is either very large or very small.
     if ( cloud_frac_i < cloud_frac_min ) then
       ! Special case #1
-      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - (cloud_frac_min + &
-              epsilon( cloud_frac_min ) ), kind=dp ) ), kind=core_rknd )
+      cloud_boundary_std_normal = ltqnorm( one - (cloud_frac_min + epsilon( cloud_frac_min )) )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
       if ( cloud_boundary > boundary_tol ) then
         l_error = .true.
       end if
-    else if ( cloud_frac_i > ( 1._core_rknd - cloud_frac_min ) ) then
+    else if ( cloud_frac_i > ( one - cloud_frac_min ) ) then
       ! Special case #2
-      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - (1._core_rknd - &
-               ( cloud_frac_min + epsilon( cloud_frac_min ) )), kind=dp ) ), kind=core_rknd )
+      cloud_boundary_std_normal = ltqnorm( one - (one - ( cloud_frac_min + &
+        epsilon( cloud_frac_min ) )) )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
       if ( cloud_boundary < -boundary_tol ) then
         l_error = .true.
       end if
 
     else if ( cloud_frac_i >= cloud_frac_min .and. &
-              cloud_frac_i <= ( 1._core_rknd - cloud_frac_min ) ) then
+              cloud_frac_i <= ( one - cloud_frac_min ) ) then
       ! Most likely case (hopefully)
-      cloud_boundary_std_normal = real( ltqnorm( real( 1._core_rknd - cloud_frac_i, kind=dp ) ), &
-             kind=core_rknd )
+      cloud_boundary_std_normal = ltqnorm( one - cloud_frac_i )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
 
       if ( abs( cloud_boundary ) > boundary_tol ) then
@@ -970,26 +1032,25 @@ module latin_hypercube_driver_module
   
     ! Included Modules
     use clubb_precision, only: &
-      dp, &           ! Constant(s)
       core_rknd
 
     use constants_clubb, only: &
       one,     &
-      zero_dp, &      ! Constant(s)
+      zero, &      ! Constant(s)
       fstderr
 
     implicit none
 
     ! Local Constants
-    real( kind = dp ), parameter :: &
-      error_threshold = 1.0e-8_dp ! A threshold to determine whether a rogue
-                                  ! value triggers the assertion check.
+    real( kind = core_rknd ), parameter :: &
+      error_threshold = 1.0e-8_core_rknd ! A threshold to determine whether a rogue
+                                         ! value triggers the assertion check.
 
     ! Input Variables
     integer, intent(in) :: &
       num_samples            ! Number of SILHS sample points
 
-    real( kind = dp ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       X_u_chi,  &            ! Samples of chi in uniform space
       X_nl_chi               ! Samples of chi in normal space
 
@@ -1005,7 +1066,7 @@ module latin_hypercube_driver_module
       l_error                ! True if the assertion check fails
 
     ! Local Variables
-    real( kind = dp ) :: &
+    real( kind = core_rknd ) :: &
       cloud_frac_i
 
     integer :: sample
@@ -1019,9 +1080,9 @@ module latin_hypercube_driver_module
 
       ! Determine the appropriate cloud fraction
       if ( X_mixt_comp(sample) == 1 ) then
-        cloud_frac_i = real( cloud_frac_1, kind=dp )
+        cloud_frac_i = cloud_frac_1
       else if ( X_mixt_comp(sample) == 2 ) then
-        cloud_frac_i = real( cloud_frac_2, kind=dp )
+        cloud_frac_i = cloud_frac_2
       end if
 
       if ( X_u_chi(sample) < (one - cloud_frac_i) ) then
@@ -1059,76 +1120,6 @@ module latin_hypercube_driver_module
 
     return
   end subroutine assert_correct_cloud_normal
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  subroutine assert_unity_sample_weights( num_samples, lh_sample_point_weights, &
-                                          l_error )
-
-  ! Description:
-  !   Performs an assertion check that the average of all the sample points is one.
-  
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------
-  
-    ! Included Modules
-    use clubb_precision, only: &
-      dp,           & ! Precision(s) are required to be compile-time constant(s)
-      core_rknd
-
-    use constants_clubb, only: &
-      zero_dp, &      ! Constant
-      one_dp, &
-      fstderr
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples      ! Number of SILHS sample points
-
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
-      lh_sample_point_weights ! Weight of each SILHS sample
-
-    ! Output Variables
-    logical, intent(out) :: &
-      l_error          ! True if the assertion check fails
-
-    ! Local Variables
-
-    ! Try to obtain 12 digit accuracy for a diagnostic mean
-    real( kind = dp ) :: mean_weight
-
-    integer :: sample
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-    l_error = .false.
-
-    ! Assertion check to ensure that the sample point weights sum to approximately 1
-    mean_weight = 0._dp
-    do sample = 1, num_samples
-      mean_weight = mean_weight + real( lh_sample_point_weights(sample), kind=dp )
-    end do
-    mean_weight = mean_weight / real( num_samples, kind=dp )
-
-    ! Using more precision for mean_weight should make this work out.
-    ! The formula below could probably be redefined to estimate maximal ulps
-    ! given the precision of lh_sample_point_weights and the number of
-    ! num_samples, but the formula below seems to be an ok approximation
-    ! when we're using 4 or 8 byte precision floats.
-    ! -dschanen 19 Nov 2010
-    if ( abs( mean_weight - 1.0_dp ) > &
-        real( num_samples, kind=dp ) * max( epsilon( mean_weight ), &
-          real( epsilon( lh_sample_point_weights ), kind=dp ) ) ) then
-      write(fstderr,*) "Error in cloud weighted sampling code ", "mean_weight = ", mean_weight
-      l_error = .true.
-    end if
-
-    return
-  end subroutine assert_unity_sample_weights
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -1412,11 +1403,11 @@ module latin_hypercube_driver_module
 !----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp ! Variable(s)
+      core_rknd ! Variable(s)
 
     implicit none
 
-    real(kind=dp), intent(in) :: &
+    real(kind=core_rknd), intent(in) :: &
       X_u_dp1_element, & ! Element of X_u telling us which mixture component we're in
       frac               ! The mixture fraction
 
@@ -1444,12 +1435,12 @@ module latin_hypercube_driver_module
   !   None
   !-----------------------------------------------------------------------------
 
-    use clubb_precision, only: dp
+    use clubb_precision, only: core_rknd
 
     implicit none
 
     ! Input Variables
-    real( kind=dp ), intent(in) :: &
+    real( kind=core_rknd ), intent(in) :: &
       rnd, &         ! Random number between 0 and 1
       precip_frac    ! Precipitation fraction
 
@@ -1485,14 +1476,17 @@ module latin_hypercube_driver_module
 ! References:
 !   None
 !-------------------------------------------------------------------------------
-    use mt95, only: &
-      genrand_real ! Constant
 
-    use mt95, only: &
-      genrand_real3 ! Procedure
+    use generate_uniform_sample_module, only: &
+      rand_uniform_real ! Procedure
 
     use clubb_precision, only: &
-      dp ! Variable(s)
+      core_rknd ! Precision
+
+    use constants_clubb, only: &
+      zero, &   ! Constants
+      one, &
+      two
 
     implicit none
 
@@ -1503,19 +1497,17 @@ module latin_hypercube_driver_module
       nz,      & ! Number of vertical levels [-]
       k_lh_start   ! Starting k level          [-]
 
-    real(kind=dp), dimension(nz), intent(in) :: &
+    real(kind=core_rknd), dimension(nz), intent(in) :: &
       vert_corr ! Vertical correlation between k points in range [0,1]   [-]
 
     ! Output Variables
-    real(kind=dp), dimension(nz), intent(inout) :: &
+    real(kind=core_rknd), dimension(nz), intent(inout) :: &
       X_u_one_var_all_levs ! Uniform distribution of 1 variate at all levels [-]
                            ! The value of this variate at k_lh_start should already be populated
                            ! in this array and will be used to fill in the other levels.
 
     ! Local Variables
-    real(kind=genrand_real) :: rand ! random number in the range (0,1)
-
-    real(kind=dp) :: min_val, half_width, offset, unbounded_point
+    real(kind=core_rknd) :: rand, min_val, half_width, offset, unbounded_point
 
     integer :: k, kp1, km1 ! Loop iterators
 
@@ -1526,23 +1518,23 @@ module latin_hypercube_driver_module
 
       kp1 = k+1 ! This is the level we're computing
 
-      if ( vert_corr(kp1) < 0._dp .or. vert_corr(kp1) > 1._dp ) then
+      if ( vert_corr(kp1) < zero .or. vert_corr(kp1) > one ) then
         stop "vert_corr(kp1) not between 0 and 1"
       end if
 
-      half_width = 1.0_dp - vert_corr(kp1)
+      half_width = one - vert_corr(kp1)
       min_val = X_u_one_var_all_levs(k) - half_width
 
-      call genrand_real3( rand ) ! (0,1)
-      offset = 2.0_dp * half_width * real(rand, kind = dp)
+      rand = rand_uniform_real( )
+      offset = two * half_width * rand
 
       unbounded_point = min_val + offset
 
       ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
-      if ( unbounded_point > 1.0_dp ) then
-        X_u_one_var_all_levs(kp1) = 2.0_dp - unbounded_point
-      else if ( unbounded_point < 0.0_dp ) then
+      if ( unbounded_point > one ) then
+        X_u_one_var_all_levs(kp1) = two - unbounded_point
+      else if ( unbounded_point < zero ) then
         X_u_one_var_all_levs(kp1) = - unbounded_point
       else
         X_u_one_var_all_levs(kp1) = unbounded_point
@@ -1555,23 +1547,23 @@ module latin_hypercube_driver_module
 
       km1 = k-1 ! This is the level we're computing
 
-      if ( vert_corr(km1) < 0._dp .or. vert_corr(km1) > 1._dp ) then
+      if ( vert_corr(km1) < zero .or. vert_corr(km1) > one ) then
         stop "vert_corr(km1) not between 0 and 1"
       end if
 
-      half_width = 1.0_dp - vert_corr(km1)
+      half_width = one - vert_corr(km1)
       min_val = X_u_one_var_all_levs(k) - half_width
 
-      call genrand_real3( rand ) ! (0,1)
-      offset = 2.0_dp * half_width * real(rand, kind = dp)
+      rand = rand_uniform_real( )
+      offset = two * half_width * rand
 
       unbounded_point = min_val + offset
 
       ! If unbounded_point lies outside the range [0,1],
       ! fold it back so that it is between [0,1]
-      if ( unbounded_point > 1.0_dp ) then
-        X_u_one_var_all_levs(km1) = 2.0_dp - unbounded_point
-      else if ( unbounded_point < 0.0_dp ) then
+      if ( unbounded_point > one ) then
+        X_u_one_var_all_levs(km1) = two - unbounded_point
+      else if ( unbounded_point < zero ) then
         X_u_one_var_all_levs(km1) = - unbounded_point
       else
         X_u_one_var_all_levs(km1) = unbounded_point
@@ -1581,82 +1573,7 @@ module latin_hypercube_driver_module
 
     return
   end subroutine compute_arb_overlap
-
 !-------------------------------------------------------------------------------
-  subroutine assert_half_cloudy_uniform &
-             ( num_samples, cloud_frac_1, &
-               cloud_frac_2, X_mixt_comp_k_lh_start, &
-               X_u_chi_k_lh_start, l_error )
-! Description:
-!   Verify that half the points are in cloud if cloud weighted sampling is
-!   enabled and other conditions are met.
-
-! References:
-!   None.
-!-------------------------------------------------------------------------------
-
-    use constants_clubb, only: &
-      fstderr ! Constant
-
-    use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      dp
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples ! Total calls to the microphysics
-
-    real( kind = core_rknd ), intent(in) :: &
-      cloud_frac_1, cloud_frac_2 ! Cloud fraction associatated with component 1 & 2 [-]
-
-    integer, dimension(num_samples), intent(in) :: &
-      X_mixt_comp_k_lh_start ! Mixture components at k_lh_start
-
-    real(kind=dp), dimension(num_samples), intent(in) :: &
-      X_u_chi_k_lh_start   ! Uniform distribution for chi at k_lh_start [-]
-
-    ! Output Variables
-    logical, intent(out) :: &
-      l_error              ! True if the assertion check failed.
-
-    ! Local Variables
-    real(kind = core_rknd) :: cloud_frac_i
-
-    integer :: number_cloudy_samples
-
-    integer :: sample  ! Loop iterator
-
-    ! ---- Begin Code ----
-    l_error = .false.
-
-    number_cloudy_samples = 0
-
-    do sample = 1, num_samples
-      if ( X_mixt_comp_k_lh_start(sample) == 1 ) then
-        cloud_frac_i = cloud_frac_1
-      else
-        cloud_frac_i = cloud_frac_2
-      end if
-      if ( X_u_chi_k_lh_start(sample) >= real(1._core_rknd-cloud_frac_i, kind = dp) ) then
-        number_cloudy_samples = number_cloudy_samples + 1
-      else
-        ! Do nothing, the air is clear
-      end if
-    end do
-    if ( number_cloudy_samples /= ( num_samples / 2 ) ) then
-      write(fstderr,*) "Error, half of all samples aren't in cloud"
-      write(fstderr,*) "X_u chi random = ", &
-        X_u_chi_k_lh_start(:), "X_mixt_comp = ", X_mixt_comp_k_lh_start, &
-        "cloudy samples =", number_cloudy_samples
-      write(fstderr,*) "cloud_frac_1 = ", cloud_frac_1
-      write(fstderr,*) "cloud_frac_2 = ", cloud_frac_2
-      l_error = .true.
-    end if
-
-    return
-  end subroutine assert_half_cloudy_uniform
 
 !-------------------------------------------------------------------------------
   function compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm ) result( vert_corr )
@@ -1669,12 +1586,11 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp, & ! Variable(s)
-      core_rknd
+      core_rknd ! Constant
 
     use constants_clubb, only: &
       rc_tol, &
-      one_dp
+      one
 
     implicit none
 
@@ -1682,8 +1598,8 @@ module latin_hypercube_driver_module
     intrinsic :: exp
 
     ! Parameter Constants
-    real( kind = dp ), parameter :: &
-      vert_decorr_coef = 0.03_dp ! Empirically defined de-correlation constant [-]
+    real( kind = core_rknd ), parameter :: &
+      vert_decorr_coef = 0.03_core_rknd ! Empirically defined de-correlation constant [-]
 
     logical, parameter :: &
       l_max_overlap_in_cloud = .true. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
@@ -1698,16 +1614,16 @@ module latin_hypercube_driver_module
       rcm                ! Cloud water mixing ratio        [kg/kg]
 
     ! Output Variable
-    real( kind = dp ), dimension(nz) :: &
+    real( kind = core_rknd ), dimension(nz) :: &
       vert_corr ! The vertical correlation      [-]
 
     ! ---- Begin Code ----
     vert_corr(1:nz) = exp( -vert_decorr_coef &
-                            * real( delta_zm(1:nz) / Lscale_vert_avg(1:nz), kind=dp ) )
+                            * ( delta_zm(1:nz) / Lscale_vert_avg(1:nz) ) )
 
     if ( l_max_overlap_in_cloud ) then
       where ( rcm > rc_tol )
-        vert_corr = one_dp
+        vert_corr = one
       end where
     end if
 
@@ -1793,11 +1709,12 @@ module latin_hypercube_driver_module
       iiPDF_Ncn
 
     use constants_clubb, only: &
-      zero_threshold    ! Constant(s)
+      zero_threshold, &    ! Constant(s)
+      zero, &
+      one
 
     use clubb_precision, only: & 
-      core_rknd, & ! Variable(s)
-      dp
+      core_rknd    ! Constant
 
    use fill_holes, only: &
      vertical_integral ! Procedure(s)
@@ -1816,7 +1733,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights
 
-    real( kind = dp ), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,d_variables) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
@@ -1948,10 +1865,10 @@ module latin_hypercube_driver_module
 
       ! Latin hypercube estimate of cloud fraction
       if ( ilh_cloud_frac > 0 ) then
-        lh_cloud_frac(:) = 0._core_rknd
+        lh_cloud_frac(:) = zero
         do sample = 1, num_samples
-          where ( X_nl_all_levs(:,sample,iiPDF_chi) > 0._dp )
-            lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0_core_rknd * lh_sample_point_weights(sample)
+          where ( X_nl_all_levs(:,sample,iiPDF_chi) > zero )
+            lh_cloud_frac(:) = lh_cloud_frac(:) + one * lh_sample_point_weights(sample)
           end where
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
@@ -1961,10 +1878,10 @@ module latin_hypercube_driver_module
 
       ! Sample of lh_cloud_frac that is not weighted
       if ( ilh_cloud_frac_unweighted > 0 ) then
-        lh_cloud_frac(:) = 0._core_rknd
+        lh_cloud_frac(:) = zero
         do sample = 1, num_samples
-          where ( X_nl_all_levs(:,sample,iiPDF_chi) > 0._dp )
-            lh_cloud_frac(:) = lh_cloud_frac(:) + 1.0_core_rknd
+          where ( X_nl_all_levs(:,sample,iiPDF_chi) > zero )
+            lh_cloud_frac(:) = lh_cloud_frac(:) + one
           end where
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
@@ -1976,8 +1893,7 @@ module latin_hypercube_driver_module
       if ( ilh_chi > 0 ) then
         lh_chi(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_chi), &
-                                     kind = core_rknd ) )
+                               X_nl_all_levs(1:nz, 1:num_samples, iiPDF_chi) )
         call stat_update_var( ilh_chi, lh_chi, stats_lh_zt )
       end if
 
@@ -1985,7 +1901,7 @@ module latin_hypercube_driver_module
       if ( ilh_chip2 > 0 ) then
         lh_chip2(1:nz) &
         = compute_sample_variance( nz, num_samples, &
-                                   real( X_nl_all_levs(:,:,iiPDF_chi), kind = core_rknd ), &
+                                   X_nl_all_levs(:,:,iiPDF_chi), &
                                    lh_sample_point_weights, lh_chi(1:nz) )
         call stat_update_var( ilh_chip2, lh_chip2, stats_lh_zt )
       end if
@@ -1994,15 +1910,15 @@ module latin_hypercube_driver_module
       if ( ilh_eta > 0 ) then
         lh_eta(1:nz) &
         = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
-                               real( X_nl_all_levs(1:nz, 1:num_samples, iiPDF_eta), &
-                                     kind = core_rknd ) )
+                               X_nl_all_levs(1:nz, 1:num_samples, iiPDF_eta) )
+
         call stat_update_var( ilh_eta, lh_eta, stats_lh_zt )
       end if
 
       if ( ilh_wp2_zt > 0 ) then
         ! Compute the variance of vertical velocity
         lh_wp2_zt = compute_sample_variance( nz, num_samples, &
-                                             real( X_nl_all_levs(:,:,iiPDF_w), kind = core_rknd ), &
+                                             X_nl_all_levs(:,:,iiPDF_w), &
                                              lh_sample_point_weights, lh_wm )
         call stat_update_var( ilh_wp2_zt, lh_wp2_zt, stats_lh_zt )
       end if
@@ -2019,7 +1935,7 @@ module latin_hypercube_driver_module
         ! Compute the variance of total water
         lh_rtp2_zt = compute_sample_variance &
                      ( nz, num_samples, &
-                       real( lh_clipped_vars%rt, kind = core_rknd ), lh_sample_point_weights, &
+                       lh_clipped_vars%rt, lh_sample_point_weights, &
                        lh_rvm+lh_rcm )
         call stat_update_var( ilh_rtp2_zt, lh_rtp2_zt, stats_lh_zt )
       end if
@@ -2027,7 +1943,7 @@ module latin_hypercube_driver_module
       if ( ilh_thlp2_zt > 0 ) then
         ! Compute the variance of liquid potential temperature
         lh_thlp2_zt = compute_sample_variance( nz, num_samples, &
-                        real( lh_clipped_vars%thl, kind = core_rknd ), lh_sample_point_weights, &
+                        lh_clipped_vars%thl, lh_sample_point_weights, &
                         lh_thlm )
         call stat_update_var( ilh_thlp2_zt, lh_thlp2_zt, stats_lh_zt )
       end if
@@ -2267,7 +2183,6 @@ module latin_hypercube_driver_module
       iiPDF_Ni
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     implicit none
@@ -2277,7 +2192,7 @@ module latin_hypercube_driver_module
       d_variables,   & ! Number of variates
       num_samples    ! Number of calls to microphysics
 
-    real( kind = dp ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &

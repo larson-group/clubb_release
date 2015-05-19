@@ -1,16 +1,11 @@
 !-------------------------------------------------------------------------------
 !$Id$
 !===============================================================================
-module generate_lh_sample_module
-
-  use clubb_precision, only: &
-    dp ! double precision
+module transform_to_pdf_module
 
   implicit none
 
-  public :: generate_uniform_sample, &
-     ltqnorm, multiply_Cholesky, generate_lh_sample, choose_permuted_random, &
-     chi_eta_2_rtthl
+  public :: ltqnorm, multiply_Cholesky, transform_uniform_sample_to_pdf, chi_eta_2_rtthl
 
   private :: sample_points, gaus_mixt_points
 
@@ -19,7 +14,7 @@ module generate_lh_sample_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine generate_lh_sample &
+  subroutine transform_uniform_sample_to_pdf &
              ( d_variables, d_uniform_extra, & ! In
                mu1, mu2, sigma1, sigma2, & ! In
                corr_Cholesky_mtx_1, & ! In
@@ -28,7 +23,7 @@ module generate_lh_sample_module
                l_in_precip_one_lev, & ! In
                X_nl_one_lev ) ! Out
 ! Description:
-!   This subroutine generates a Latin Hypercube sample.
+!   This subroutine transforms a uniform sample to a sample from CLUBB's PDF.
 
 ! References:
 !   ``Supplying Local Microphysical Parameterizations with Information about
@@ -44,12 +39,11 @@ module generate_lh_sample_module
     use matrix_operations, only: &
       row_mult_lower_tri_matrix ! Procedures
 
-
     use constants_clubb, only:  &
-      one
+      one, &
+      zero
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     implicit none
@@ -62,7 +56,7 @@ module generate_lh_sample_module
       d_variables, &  ! `d' Number of variates (normally 3 + microphysics specific variables)
       d_uniform_extra ! Number of variates included in uniform sample only (often 2)
 
-    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       corr_Cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_Cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
@@ -72,7 +66,7 @@ module generate_lh_sample_module
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
-    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from a particular grid level
 
     integer, intent(in) :: &
@@ -81,7 +75,7 @@ module generate_lh_sample_module
     logical, intent(in) :: &
       l_in_precip_one_lev ! Whether we are in precipitation (T/F)
 
-    real( kind = dp ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! Local Variables
@@ -89,18 +83,15 @@ module generate_lh_sample_module
     logical, dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given variable in X_nl has a lognormal dist.
 
-    real( kind = dp ), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    real( kind = dp ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
        Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
        Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
     logical :: &
       l_Sigma1_scaling, l_Sigma2_scaling ! Whether we're scaling Sigma1 or Sigma2
-
-!    real( kind = dp ), dimension(3) :: &
-!      temp_3_elements
 
     integer :: i !, ivar1, ivar2
 
@@ -115,16 +106,6 @@ module generate_lh_sample_module
     ! Generate a set of sample points for a microphysics/radiation scheme
     !---------------------------------------------------------------------------
 
-    ! We prognose rt-thl-w,
-    !    but we set means, covariance of hydrometeors (e.g. rr, Ncn) to constants.
-
-
-    ! Standard sample for testing purposes when n=2
-    ! X_u_one_lev(1,1:(d+1)) = ( / 0.0001_dp, 0.46711825945881_dp, &
-    !             0.58015016959859_dp, 0.61894015386778_dp, 0.1_dp, 0.1_dp  / )
-    ! X_u_one_lev(2,1:(d+1)) = ( / 0.999_dp, 0.63222458307464_dp, &
-    !             0.43642762850981_dp, 0.32291562498749_dp, 0.1_dp, 0.1_dp  / )
-
     ! The old code was dealing with Covariance matrices. These were rescaled by
     ! Sigma'(i,j) = 1/sqrt(Sigma(i,i)) * Sigma(i,j) * 1/Sigma(j,j)
     ! to reduce the condition number of the matrices. Sigma' is the correlation
@@ -132,26 +113,26 @@ module generate_lh_sample_module
     ! need any rescaling here.
     l_Sigma1_scaling = .false.
     l_Sigma2_scaling = .false.
-    Sigma1_scaling = real(one, kind=dp)
-    Sigma2_scaling = real(one, kind=dp)
+    Sigma1_scaling = one
+    Sigma2_scaling = one
 
     if ( X_mixt_comp_one_lev == 1 ) then
 
-      Sigma1_Cholesky = 0._dp ! Initialize the variance to zero
+      Sigma1_Cholesky = zero ! Initialize the variance to zero
 
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of chi_1, eta_1, and w1
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma1, kind = dp ), corr_Cholesky_mtx_1, & ! In
+           ( d_variables, sigma1, corr_Cholesky_mtx_1, & ! In
              Sigma1_Cholesky ) ! Out
 
     elseif ( X_mixt_comp_one_lev == 2 ) then
-      Sigma2_Cholesky = 0._dp
+      Sigma2_Cholesky = zero
 
       ! Multiply the first three elements of the variance matrix by the
       ! values of the standard deviation of s2, t2, and w2
       call row_mult_lower_tri_matrix &
-           ( d_variables, real( sigma2, kind = dp ), corr_Cholesky_mtx_2, & ! In
+           ( d_variables, sigma2, corr_Cholesky_mtx_2, & ! In
              Sigma2_Cholesky ) ! Out
 
     end if ! X_mixt_comp_one_lev == 1
@@ -178,7 +159,7 @@ module generate_lh_sample_module
 
 
     return
-  end subroutine generate_lh_sample
+  end subroutine transform_uniform_sample_to_pdf
 
 !---------------------------------------------------------------------------------------------------
   subroutine zero_precip_hydromets( d_variables, X_nl_one_lev )
@@ -190,11 +171,14 @@ module generate_lh_sample_module
   !   None
   !-----------------------------------------------------------------------------
 
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
     use constants_clubb, only: &
-      zero_dp
+      zero           ! Constant
 
     use corr_varnce_module, only: &
-      iiPDF_Ncn ! Variable(s)
+      iiPDF_Ncn      ! Variable
 
     implicit none
 
@@ -205,7 +189,7 @@ module generate_lh_sample_module
 
     ! Input/Output Variables
 
-    real( kind = dp ), intent(inout), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(inout), dimension(d_variables) :: &
       X_nl_one_lev      ! Sample of hydrometeors (normal-lognormal space)          [units vary]
 
     ! Local Variables
@@ -216,7 +200,7 @@ module generate_lh_sample_module
     !----- Begin Code -----
 
     do ivar = iiPDF_Ncn+1, d_variables
-      X_nl_one_lev(ivar) = zero_dp
+      X_nl_one_lev(ivar) = zero
     end do
 
   end subroutine zero_precip_hydromets
@@ -250,8 +234,7 @@ module generate_lh_sample_module
       iiPDF_eta
 
     use clubb_precision, only: &
-      core_rknd, & ! Variable(s)
-      dp
+      core_rknd    ! Constant
 
     implicit none
 
@@ -267,7 +250,7 @@ module generate_lh_sample_module
     logical, intent(in), dimension(d_variables) :: &
       l_d_variable_lognormal ! Whether a given element of X_nl is lognormal
 
-    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev ! Sample drawn from uniform distribution from particular grid level [-]
 
     integer, intent(in) :: &
@@ -275,11 +258,11 @@ module generate_lh_sample_module
 
     ! Columns of Sigma_Cholesky, X_nl_one_lev:  1   2   3   4 ... d_variables
     !                                           chi eta w   hydrometeors
-    real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma1_Cholesky, & ! [units vary]
       Sigma2_Cholesky
 
-    real( kind = dp ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       Sigma1_scaling, Sigma2_scaling ! Scaling factors on Sigma1,2 [units vary]
 
     logical, intent(in) :: &
@@ -287,7 +270,7 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    real( kind = dp ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! Sample that is transformed ultimately to normal-lognormal
 
     ! ---- Begin Code ----
@@ -308,97 +291,7 @@ module generate_lh_sample_module
 
     return
   end subroutine sample_points
-
 !-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-  subroutine generate_uniform_sample( num_samples, nt_repeat, n_vars, p_matrix, X_u_one_lev )
-
-! Description:
-!   Generates a matrix X that contains a Latin Hypercube sample.
-!   The sample is uniformly distributed.
-! References:
-!   See Art B. Owen (2003), ``Quasi-Monte Carlo Sampling,"
-!      a chapter from SIGGRAPH 2003
-!-------------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples,  & ! `n'  Number of samples generated
-      nt_repeat,    & ! `n_t' Num. random samples before sequence repeats
-      n_vars           ! Number of uniform variables to generate
-
-    integer, intent(in), dimension(num_samples,n_vars) :: &
-      p_matrix    !num_samples x n_vars array of permuted integers
-
-    ! Output Variables
-
-    real(kind=dp), intent(out), dimension(num_samples,n_vars) :: &
-      X_u_one_lev ! num_samples by n_vars matrix, X
-                  ! each row of which is a n_vars-dimensional sample
-
-    ! Local Variables
-
-    integer :: j, k
-
-    ! ---- Begin Code ----
-
-!  Compute random permutation row by row
-!       do j=1,dp1
-!       ! Generate a column vector of integers from 0 to n-1,
-!       !    whose order is random.
-!         call rand_permute( n, p_matrix(1:n,j) )
-!       end do
-
-    ! Choose values of sample using permuted vector and random number generator
-    do j = 1,num_samples
-      do k = 1,n_vars
-        X_u_one_lev(j,k) = choose_permuted_random( nt_repeat, p_matrix(j,k) )
-      end do
-    end do
-
-    return
-  end subroutine generate_uniform_sample
-
-!----------------------------------------------------------------------
-  function choose_permuted_random( nt_repeat, p_matrix_element )
-
-! Description:
-!   Chooses a permuted random using the Mersenne Twister algorithm.
-!
-! References:
-!   None
-!----------------------------------------------------------------------
-
-    use mt95, only: genrand_real3 ! Procedure(s)
-
-    use mt95, only: genrand_real ! Constants
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nt_repeat,        & ! Number of samples before the sequence repeats
-      p_matrix_element    ! Permuted integer
-
-    ! Output Variable
-    real(kind=genrand_real) :: choose_permuted_random
-
-    ! Local Variable
-    real(kind=genrand_real) :: &
-      rand ! Random float with a range of (0,1)
-
-    ! ---- Begin Code ----
-
-    call genrand_real3( rand ) ! genrand_real3's range is (0,1)
-
-    choose_permuted_random = (1.0_genrand_real/real( nt_repeat, kind=genrand_real) ) &
-       *( real( p_matrix_element, kind=genrand_real ) + rand )
-
-    return
-  end function choose_permuted_random
 
 !----------------------------------------------------------------------
   subroutine gaus_mixt_points( d_variables, d_uniform_extra, mu1, mu2, & ! Intent(in)
@@ -430,13 +323,13 @@ module generate_lh_sample_module
       mu1, mu2 ! d-dimensional column vector of means of 1st, 2nd Gaussians
 
     ! Latin hypercube sample from uniform distribution from a particular grid level
-    real( kind = dp ), intent(in), dimension(d_variables+d_uniform_extra) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables+d_uniform_extra) :: &
       X_u_one_lev
 
-    real( kind = dp ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
       Sigma1_Cholesky, Sigma2_Cholesky ! Cholesky factorization of Sigma1,2
 
-    real( kind = dp ), dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
       Sigma1_scaling, & ! Scaling factors for Sigma1 for accuracy [units vary]
       Sigma2_scaling    ! Scaling factors for Sigma2 for accuracy [units vary]
 
@@ -448,12 +341,12 @@ module generate_lh_sample_module
 
     ! Output Variables
 
-    real( kind = dp ), intent(out), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(d_variables) :: &
       X_nl_one_lev ! [n by d] matrix, each row of which is a d-dimensional sample
 
     ! Local Variables
 
-    real( kind = dp ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
       std_normal  ! Standard normal multiplied by the factorized Sigma    [-]
 
     integer :: ivar ! Loop iterators
@@ -494,7 +387,7 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function ltqnorm( p )
+  function ltqnorm( p_core_rknd )
 ! Description:
 !   This function is ported to Fortran from the same function written in Matlab,
 !    see the following description of this function.  Hongli Jiang, 2/17/2004
@@ -521,6 +414,7 @@ module generate_lh_sample_module
 !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
+      core_rknd, &    ! Constant(s)
       dp ! double precision
 
     use constants_clubb, only: &
@@ -548,14 +442,14 @@ module generate_lh_sample_module
 
     ! Input Variable(s)
 
-    real( kind = dp ), intent(in) :: p
+    real( kind = core_rknd ), intent(in) :: p_core_rknd
 
     ! Return Variable
 
-    real( kind = dp ) :: ltqnorm
-
+    real( kind = core_rknd ) :: ltqnorm
 
     ! Local Variable(s)
+    real( kind = dp ) :: p
 
     real( kind = dp ) a1, a2, a3, a4, a5, a6, b1, b2, b3, b4, b5, &
                      c1, c2, c3, c4, c5, c6, d1, d2, d3, d4
@@ -588,6 +482,8 @@ module generate_lh_sample_module
                d2 =  3.224671290700398E-01_dp, &
                d3 =  2.445134137142996E+00_dp,  &
                d4 =  3.754408661907416E+00_dp)
+
+    p = real( p_core_rknd, kind=dp )
 
     ! Default initialization
     z = 0.0_dp
@@ -658,7 +554,7 @@ module generate_lh_sample_module
     end if
 
 ! return z as double precision:
-    ltqnorm = z
+    ltqnorm = real( z, kind=core_rknd )
 
     return
   end function ltqnorm
@@ -677,7 +573,6 @@ module generate_lh_sample_module
 !-------------------------------------------------------------------------------
 
     use clubb_precision, only: &
-      dp, & ! double precision
       core_rknd
 
     implicit none
@@ -691,16 +586,16 @@ module generate_lh_sample_module
     ! Input Variables
     integer, intent(in) :: d_variables ! Number of variates (normally=5)
 
-    real( kind = dp ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       std_normal ! vector of d-variate standard normal distribution [-]
 
     real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       mu ! d-dimensional column vector of means of Gaussian     [units vary]
 
-    real( kind = dp ), intent(in), dimension(d_variables,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables,d_variables) :: &
       Sigma_Cholesky ! Cholesky factorization of the Sigma matrix [units vary]
 
-    real( kind = dp ), intent(in), dimension(d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(d_variables) :: &
       Sigma_scaling ! Scaling for Sigma / mu    [units vary]
 
     logical, intent(in) :: l_scaled ! Whether any scaling was done to Sigma
@@ -709,11 +604,11 @@ module generate_lh_sample_module
 
     ! nxd matrix of n samples from d-variate normal distribution
     !   with mean mu and covariance structure Sigma
-    real( kind = dp ), intent(out) :: &
+    real( kind = core_rknd ), intent(out) :: &
       nonstd_normal(d_variables)
 
     ! Local Variables
-    real( kind = dp ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(d_variables) :: &
       Sigma_times_std_normal ! Sigma * std_normal [units vary]
 
     ! --- Begin Code ---
@@ -721,18 +616,36 @@ module generate_lh_sample_module
     Sigma_times_std_normal = std_normal ! Copy std_normal into 'x'
 
     ! Call the level 2 BLAS subroutine to multiply std_normal by Sigma_Cholesky
-    call dtrmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
-                Sigma_times_std_normal, & ! In/out
-                incx ) ! In
+
+    if ( kind( 0.0_core_rknd ) == kind( 0.0D0 ) ) then
+
+      ! core_rknd is double precision
+      call dtrmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
+                  Sigma_times_std_normal, & ! In/out
+                  incx ) ! In
+
+    else if ( kind( 0.0_core_rknd ) == kind( 0.0 ) ) then
+
+      ! core_rknd is single precision
+      call strmv( 'Lower', 'N', 'N', d_variables, Sigma_Cholesky, d_variables, & ! In
+                  Sigma_times_std_normal, & ! In/out
+                  incx ) ! In
+
+    else
+
+      ! core_rknd is neither single precision nor double precision
+      stop "Cannot call dtrmv or strmv in multiply_Cholesky"
+
+    end if
 
     if ( l_scaled ) then
       ! Add mu to Sigma * std_normal (scaled)
-      nonstd_normal = Sigma_times_std_normal + real(mu, kind = dp) * Sigma_scaling
+      nonstd_normal = Sigma_times_std_normal + mu * Sigma_scaling
       ! Determine 'y' vector by removing the scaling factors
       nonstd_normal = nonstd_normal / Sigma_scaling
     else
       ! Add mu to Sigma * std_normal
-      nonstd_normal = Sigma_times_std_normal + real(mu, kind = dp)
+      nonstd_normal = Sigma_times_std_normal + mu
     end if
 
     return
@@ -828,4 +741,4 @@ module generate_lh_sample_module
     return
   end subroutine chi_eta_2_rtthl
 
-end module generate_lh_sample_module
+end module transform_to_pdf_module
