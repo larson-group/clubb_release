@@ -74,6 +74,7 @@ module setup_clubb_pdf_params
         zero,           &
         rc_tol,         &
         Ncn_tol,        &
+        cloud_frac_min, &
         fstderr,        &
         zero_threshold
 
@@ -430,9 +431,10 @@ module setup_clubb_pdf_params
 
     else
 
-       precip_frac   = one
-       precip_frac_1 = one
-       precip_frac_2 = one
+       precip_frac     = one
+       precip_frac_1   = one
+       precip_frac_2   = one
+       precip_frac_tol = cloud_frac_min
 
     endif
 
