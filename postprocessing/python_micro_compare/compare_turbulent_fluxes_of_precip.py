@@ -37,27 +37,55 @@ t0 = 189 # Start time [min]
 t1 = 360 # End time
 
 #----------------------------------------------------------------------------------------
+# Should not have to edit below this line
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# Useful constants
+#----------------------------------------------------------------------------------------
+s_in_min = 60
+
+#----------------------------------------------------------------------------------------
 # Functions
 #----------------------------------------------------------------------------------------
 
 def pull_profiles(nc, varname, conversion):
-    # This function retrieves the profiles from SAM and performs a unit conversion
-    # if nessesary
+    """
+    Input:
+      nc         --  Netcdf file object
+      varname    --  Variable name string
+      conversion --  Conversion factor
+
+    Output:
+      time x height array of the specified variable
+    """
+
     var = nc.variables[varname]
     var = np.squeeze(var)
     var = var*conversion
     return var
 
 def return_mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
-    # This function returns the mean profiles over a specified interval and altitude
+    """
+    Input:
+      var    -- time x height array of some property
+      idx_t0 -- Index corrosponding to the beginning of the averaging interval
+      idx_t1 -- Index corrosponding to the end of the averaging interval
+      idx_z0 -- Index corrosponding to the lowest model level of the averaging interval
+      idx_z1 -- Index corrosponding to the highest model level of the averaging interval
+
+    Output:
+      var    -- time averaged vertical profile of the specified variable
+    """
+
     var = np.mean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
     return var
 
 #----------------------------------------------------------------------------------------
 # Begin code
 #----------------------------------------------------------------------------------------
-t0_in_s = t0*60. # CLUBB's time is in seconds.
-t1_in_s = t1*60.
+t0_in_s = t0*s_in_min # CLUBB's time is in seconds.
+t1_in_s = t1*s_in_min
 
 #----------------------------------------------------------------------------------------
 # Retrieve SAM's altitude, time, and flux profiles
@@ -65,8 +93,6 @@ t1_in_s = t1*60.
 nc = netCDF4.Dataset(sam_file)
 sam_z = pull_profiles(nc, 'z', 1.)
 sam_t = pull_profiles(nc, 'time', 1.)
-sam_rho = pull_profiles(nc, 'RHO', 1.) # For conversions
-sam_nr_conv = (sam_rho*1000.)**-1 
 
 idx_z0 = (np.abs(sam_z[:] - z0)).argmin()
 idx_z1 = (np.abs(sam_z[:] - z1)).argmin()

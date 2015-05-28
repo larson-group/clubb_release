@@ -1,10 +1,12 @@
 # $Id$
 #
-# compare_CLUBB_SAM_warm_rain_budgets
+"""
+ compare_CLUBB_SAM_warm_rain_budgets
 
-# Description:
-#   Compares SAM and CLUBB rrm 'bulk' budgets. That is, turbulent advection,
-#   sedimentation, etc. for Morrison Microphysics. Only plots the major terms.
+ Description:
+   Compares SAM and CLUBB rrm 'bulk' budgets. That is, turbulent advection,
+   sedimentation, etc. for Morrison Microphysics. Only plots the major terms.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import netCDF4
@@ -20,20 +22,60 @@ z1 = 8000
 t0 = 189 # [min]
 t1 = 249
 
-t0_in_s = t0*60. # CLUBB's time is in seconds.
-t1_in_s = t1*60.
-
 out_name = '%s_%dmin_%dmin_warm_rain.png'%(case, t0, t1)
 
+#----------------------------------------------------------------------------------------
+# Should not have to edit below this line
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# Useful constants
+#----------------------------------------------------------------------------------------
+s_in_min = 60
+g_per_day_to_kg_per_s = (1.*10**-3) / 86400
+num_per_cm3_per_day_to_num_per_kg_per_s = (1./sam_rho)*( (1.0*10**6)/86400.0 )
+
+#----------------------------------------------------------------------------------------
+# Functions
+#----------------------------------------------------------------------------------------
 def pull_profiles(nc, varname, conversion):
+    """
+    Input:
+      nc         --  Netcdf file object
+      varname    --  Variable name string
+      conversion --  Conversion factor
+
+    Output:
+      time x height array of the specified variable
+    """
+
     var = nc.variables[varname]
     var = np.squeeze(var)
     var = var*conversion
     return var
 
 def return_mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
+    """
+    Input:
+      var    -- time x height array of some property
+      idx_t0 -- Index corrosponding to the beginning of the averaging interval
+      idx_t1 -- Index corrosponding to the end of the averaging interval
+      idx_z0 -- Index corrosponding to the lowest model level of the averaging interval
+      idx_z1 -- Index corrosponding to the highest model level of the averaging interval
+
+    Output:
+      var    -- time averaged vertical profile of the specified variable
+    """
+
     var = np.mean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
     return var
+
+#----------------------------------------------------------------------------------------
+# Begin code
+#----------------------------------------------------------------------------------------
+
+t0_in_s = t0*s_in_min # CLUBB's time is in seconds.
+t1_in_s = t1*s_in_min
 
 print "Grab SAM's profiles"
 nc = netCDF4.Dataset(sam_file)
@@ -48,23 +90,23 @@ idx_t0 = (np.abs(sam_time[:] - t0)).argmin()
 idx_t1 = (np.abs(sam_time[:] - t1)).argmin()
 sam_rho = pull_profiles(nc, 'RHO',1.)
 
-gdaym1_kgsm1 = (1.*10**-3) / 86400
-sam_nr_conv = (1./sam_rho)*( (1.0*10**6)/86400.0 )
+g_per_day_to_kg_per_s = (1.*10**-3) / 86400
+num_per_cm3_per_day_to_num_per_kg_per_s = (1./sam_rho)*( (1.0*10**6)/86400.0 )
 
 # Rain mass
-sam_adv = return_mean_profiles(pull_profiles(nc, 'QRADV',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_diff = return_mean_profiles(pull_profiles(nc, 'QRDIFF',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_lsadv = return_mean_profiles(pull_profiles(nc, 'QRLSADV',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_mc = return_mean_profiles(pull_profiles(nc, 'QRMPHY',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_sed = return_mean_profiles(pull_profiles(nc, 'QRSED',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_sto = return_mean_profiles(pull_profiles(nc, 'QRSTO',gdaym1_kgsm1),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_adv = return_mean_profiles(pull_profiles(nc, 'QRADV',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_diff = return_mean_profiles(pull_profiles(nc, 'QRDIFF',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_lsadv = return_mean_profiles(pull_profiles(nc, 'QRLSADV',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_mc = return_mean_profiles(pull_profiles(nc, 'QRMPHY',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_sed = return_mean_profiles(pull_profiles(nc, 'QRSED',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_sto = return_mean_profiles(pull_profiles(nc, 'QRSTO',g_per_day_to_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
 
-sam_nadv = return_mean_profiles(pull_profiles(nc, 'NRADV',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_ndiff = return_mean_profiles(pull_profiles(nc, 'NRDIFF',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_nlsadv = return_mean_profiles(pull_profiles(nc, 'NRLSADV',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_nmc = return_mean_profiles(pull_profiles(nc, 'NRMPHY',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_nsed = return_mean_profiles(pull_profiles(nc, 'NRSED',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
-sam_nsto = return_mean_profiles(pull_profiles(nc, 'NRSTO',sam_nr_conv),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_nadv = return_mean_profiles(pull_profiles(nc, 'NRADV',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_ndiff = return_mean_profiles(pull_profiles(nc, 'NRDIFF',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_nlsadv = return_mean_profiles(pull_profiles(nc, 'NRLSADV',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_nmc = return_mean_profiles(pull_profiles(nc, 'NRMPHY',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_nsed = return_mean_profiles(pull_profiles(nc, 'NRSED',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
+sam_nsto = return_mean_profiles(pull_profiles(nc, 'NRSTO',num_per_cm3_per_day_to_num_per_kg_per_s),idx_t0,idx_t1,idx_z0,idx_z1)
 nc.close()
 
 print "Grab CLUBB's profiles"

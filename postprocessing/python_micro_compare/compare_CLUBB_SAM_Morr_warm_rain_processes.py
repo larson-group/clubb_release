@@ -1,10 +1,12 @@
 # $Id$
 
 #----------------------------------------------------------------------------------------
-# compare_CLUBB_SAM_Morr_warm_rain_processes.py
-# 
-# Description:
-#   Plots and compares SAM's and CLUBB's Morrison microphysics warm rain processes
+"""
+ compare_CLUBB_SAM_Morr_warm_rain_processes.py
+ 
+ Description:
+   Plots and compares SAM's and CLUBB's Morrison microphysics warm rain processes
+"""
 
 # Import libraries
 import numpy as np
@@ -25,23 +27,55 @@ z1 = 6000 # Height end
 t0 = 189  # Averaging interval start [min]
 t1 = 249  # Averaging interval end
 
+
 #----------------------------------------------------------------------------------------
 # Should not have to edit below this line. 
 #----------------------------------------------------------------------------------------
-t0_in_s = t0*60. # CLUBB's time is in seconds.
-t1_in_s = t1*60.
 
+#----------------------------------------------------------------------------------------
+# Useful constants 
+#----------------------------------------------------------------------------------------
+s_in_min = 60
+
+#----------------------------------------------------------------------------------------
+# Functions 
+#----------------------------------------------------------------------------------------
 def pull_profiles(nc, varname):
-    # Takes netcdf object and variable name as input. Returns the variable
+    """
+    Input:
+      nc         --  Netcdf file object
+      varname    --  Variable name string
+
+    Output:
+      time x height array of the specified variable
+    """
+
     var = nc.variables[varname]
     var = np.squeeze(var)
     return var
 
 def return_mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
-    # Takes the variable, start and end time index (t0 and t1) and height index (z0 and z1),
-    # and returns a time-averaged mean profile 
+    """
+    Input:
+      var    -- time x height array of some property
+      idx_t0 -- Index corrosponding to the beginning of the averaging interval
+      idx_t1 -- Index corrosponding to the end of the averaging interval
+      idx_z0 -- Index corrosponding to the lowest model level of the averaging interval
+      idx_z1 -- Index corrosponding to the highest model level of the averaging interval
+
+    Output:
+      var    -- time averaged vertical profile of the specified variable
+    """
+
     var = np.mean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
     return var
+
+#----------------------------------------------------------------------------------------
+# Begin code 
+#----------------------------------------------------------------------------------------
+
+t0_in_s = t0*s_in_min # CLUBB's time is in seconds.
+t1_in_s = t1*s_in_min
 
 print "Grab SAM's profiles"
 nc = netCDF4.Dataset(sam_file)
