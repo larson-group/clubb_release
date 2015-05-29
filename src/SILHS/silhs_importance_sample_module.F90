@@ -60,7 +60,7 @@ module silhs_importance_sample_module
 
     ! Local Parameters
     logical, parameter :: &
-      l_use_clustered_sampling = .true.      ! Use clustered category importance sampling
+      l_use_clustered_sampling = .false.      ! Use clustered category importance sampling
 
     ! Cluster allocation strategies!!!
     integer, parameter :: &
