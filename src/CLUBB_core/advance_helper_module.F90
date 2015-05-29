@@ -156,7 +156,7 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( thvm, Lscale, em ) &
+  function calc_stability_correction( thlm, Lscale, em ) &
     result ( stability_correction )
       !
       ! Description:
@@ -190,7 +190,7 @@ module advance_helper_module
       real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
         Lscale,          & ! Turbulent mixing length                   [m]
         em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
-        thvm               ! grid mean virtual potential temperature   [K]
+        thlm               ! th_l (thermo. levels)                     [K]
 
       ! Result
       real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -201,7 +201,7 @@ module advance_helper_module
         lambda0_stability
 
       !------------ Begin Code --------------
-      brunt_vaisala_freq = ( grav / thvm ) * ddzt( thvm )
+      brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
       lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
 
       stability_correction = 1.0_core_rknd &

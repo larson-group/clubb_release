@@ -355,7 +355,7 @@ module latin_hypercube_driver_module
 
     ! Local Constants
     logical, parameter :: &
-      l_lh_old_cloud_weighted  = .true. ! Use the old method of importance sampling that
+      l_lh_old_cloud_weighted  = .false. ! Use the old method of importance sampling that
                                          ! places one point in cloud and one point out of
                                          ! cloud
 
@@ -1602,7 +1602,7 @@ module latin_hypercube_driver_module
       vert_decorr_coef = 0.03_core_rknd ! Empirically defined de-correlation constant [-]
 
     logical, parameter :: &
-      l_max_overlap_in_cloud = .false. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
+      l_max_overlap_in_cloud = .true. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
 
     ! Input Variables
     integer, intent(in) :: &

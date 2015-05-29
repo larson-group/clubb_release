@@ -390,7 +390,7 @@ module advance_clubb_core_module
       chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with respect to ice
                                    ! (zero for liquid)
     logical, parameter :: &
-      l_stability_correct_tau_zm = .false. ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
+      l_stability_correct_tau_zm = .true. ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -1603,7 +1603,7 @@ module advance_clubb_core_module
       ! Determine the static stability corrected version of tau_zm
       ! Create a damping time scale that is more strongly damped at the
       ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
-      tau_N2_zm = tau_zm / calc_stability_correction( thvm, Lscale, em )
+      tau_N2_zm = tau_zm / calc_stability_correction( thlm, Lscale, em )
 
       ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
