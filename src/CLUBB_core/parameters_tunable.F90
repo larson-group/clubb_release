@@ -39,13 +39,13 @@ module parameters_tunable
 
   ! Model constant parameters
   real( kind = core_rknd ), public :: & 
-    C1      = 1.000000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
-    C1b     = 1.000000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
+    C1      = 2.500000_core_rknd,    & ! Low Skewness in C1 Skw. Function    [-]
+    C1b     = 2.500000_core_rknd,    & ! High Skewness in C1 Skw. Function   [-]
     C1c     = 1.000000_core_rknd,    & ! Degree of Slope of C1 Skw. Function [-]
     C2      = 1.300000_core_rknd,    & ! Low Skewness in C2 Skw. Function    [-]
     C2rt    = 1.000000_core_rknd,    & ! C2 coef. for the rtp2_dp1 term      [-]
     C2thl   = 1.000000_core_rknd,    & ! C2 coef. for the thlp2_dp1 term     [-]
-    C2rtthl = 2.000000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
+    C2rtthl = 1.300000_core_rknd,    & ! C2 coef. for the rtpthlp_dp1 term   [-]
     C2b     = 1.300000_core_rknd,    & ! High Skewness in C2 Skw. Function   [-]
     C2c     = 5.000000_core_rknd,    & ! Degree of Slope of C2 Skw. Function [-]
     C4      = 5.200000_core_rknd,    & ! Used only when l_tke_aniso is true  [-]
@@ -95,18 +95,18 @@ module parameters_tunable
     c_K6        = 0.375000_core_rknd, & ! Coef. of Eddy Diffusion: wpxp  [m^2/s]
     c_K8        = 1.250000_core_rknd, & ! Coef. of Eddy Diffusion: wp3   [m^2/s]
     c_K9        = 0.250000_core_rknd, & ! Coef. of Eddy Diff.: up2/vp2   [m^2/s]
-    c_K_hm      = 0.750000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
+    c_K_hm      = 0.200000_core_rknd, & ! Coef. of Eddy Diffusion: hmm   [m^2/s]
     c_K_hmb     = 0.10000_core_rknd,  & ! Coef. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
     K_hm_min_coef = 0.10000_core_rknd,& ! Min. of Non-Local Factor, Eddy Diffusion: hmm   [m^2/s]
-    gamma_coef  = 0.320000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
-    gamma_coefb = 0.320000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
+    gamma_coef  = 0.250000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
+    gamma_coefb = 0.250000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd, & ! Deg. Slope: gamma coef. Skw. Fnct. [-]
 #ifdef CLUBBND_CAM
     mu          = 1.000E-2_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
 #else 
     mu          = 1.000E-3_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
 #endif
-    mult_coef   = 0.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
+    mult_coef   = 1.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd, & ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
     lmin        = 20.00000_core_rknd    ! Min. value for the length scale    [m]
@@ -193,7 +193,7 @@ module parameters_tunable
 #ifdef CLUBBND_CAM
     Skw_denom_coef = 30.0_core_rknd
 #else
-    Skw_denom_coef = 0.0_core_rknd
+    Skw_denom_coef = 4.0_core_rknd
 #endif
 #else
     Skw_denom_coef = 4.0_core_rknd
@@ -203,7 +203,7 @@ module parameters_tunable
 
   ! Coefficient of Kh_zm
   real( kind = core_rknd ), public :: &
-    c_K10 = 1.0_core_rknd
+    c_K10 = 0.6_core_rknd
 
 !$omp threadprivate( c_K10 )
 
