@@ -183,6 +183,10 @@ module model_flags
                             ! width
 !$omp threadprivate(l_use_ADG2)
 
+  logical, public :: &
+    l_use_3D_closure = .false.    ! Use Luhar et al. (2002) to close the w, thl, and rt Gaussians.
+!$omp threadprivate(l_use_3D_closure)
+
 
 #ifdef GFDL
   logical, public :: &
@@ -192,7 +196,7 @@ module model_flags
   namelist /configurable_model_flags/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
-    l_use_cloud_cover, l_calc_thlp2_rad, l_use_ADG2
+    l_use_cloud_cover, l_calc_thlp2_rad, l_use_ADG2, l_use_3D_closure
 
   contains
 
@@ -332,7 +336,8 @@ module model_flags
                l_upwind_xm_ma_in, l_quintic_poly_interp_in, &
                l_vert_avg_closure_in, &
                l_single_C2_Skw_in, l_standard_term_ta_in, &
-               l_tke_aniso_in, l_use_cloud_cover_in, l_use_ADG2_in )
+               l_tke_aniso_in, l_use_cloud_cover_in, l_use_ADG2_in, &
+               l_use_3D_closure_in )
 
 ! Description:
 !   Set a model flag based on the input arguments for the purposes of trying
@@ -355,8 +360,8 @@ module model_flags
       l_standard_term_ta_in, &
       l_tke_aniso_in, &
       l_use_cloud_cover_in, &
-      l_use_ADG2_in
-
+      l_use_ADG2_in, &
+      l_use_3D_closure_in
     ! ---- Begin Code ----
 
     l_upwind_wpxp_ta = l_upwind_wpxp_ta_in
@@ -369,7 +374,7 @@ module model_flags
     l_tke_aniso = l_tke_aniso_in
     l_use_cloud_cover = l_use_cloud_cover_in
     l_use_ADG2 = l_use_ADG2_in
-
+    l_use_3D_closure = l_use_3D_closure_in
     if ( l_vert_avg_closure ) then
       l_trapezoidal_rule_zt    = .true.
       l_trapezoidal_rule_zm    = .true.
@@ -389,7 +394,8 @@ module model_flags
                l_upwind_xm_ma_out, l_quintic_poly_interp_out, &
                l_vert_avg_closure_out, &
                l_single_C2_Skw_out, l_standard_term_ta_out, &
-               l_tke_aniso_out, l_use_cloud_cover_out, l_use_ADG2_out )
+               l_tke_aniso_out, l_use_cloud_cover_out, l_use_ADG2_out, &
+               l_use_3D_closure_out )
 
 ! Description:
 !   Get the current model flags.
@@ -411,8 +417,8 @@ module model_flags
       l_standard_term_ta_out, &
       l_tke_aniso_out, &
       l_use_cloud_cover_out, &
-      l_use_ADG2_out
-
+      l_use_ADG2_out, &
+      l_use_3D_closure_out
     ! ---- Begin Code ----
 
     l_upwind_wpxp_ta_out = l_upwind_wpxp_ta
@@ -425,7 +431,7 @@ module model_flags
     l_tke_aniso_out = l_tke_aniso
     l_use_cloud_cover_out = l_use_cloud_cover
     l_use_ADG2_out = l_use_ADG2
-
+    l_use_3D_closure_out =  l_use_3D_closure
     return
   end subroutine get_configurable_model_flags
 

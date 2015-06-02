@@ -264,9 +264,6 @@ module pdf_closure_module
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
     real( kind = core_rknd ) :: & ! If l_use_ADG2 == .true., will need
-      small_m,           & ! m                                               [-]
-      small_m_sqd,       & ! M                                               [-]
-      big_m,             & ! M                                               [-]
       sigma_sqd_w1,      & !                                                 
       sigma_sqd_w2         !                                                
 
@@ -378,118 +375,18 @@ module pdf_closure_module
 
     else ! Width (standard deviation) parameters are non-zero
 
-    if( .not. l_use_ADG2) then
-      ! The variable "mixt_frac" is the weight of the 1st PDF component.  The
-      ! weight of the 2nd PDF component is "1-mixt_frac".  If there isn't any
-      ! skewness of w (Sk_w = 0 because w'^3 = 0), mixt_frac = 0.5, and both
-      ! PDF components are equally weighted.  If there is positive skewness of
-      ! w (Sk_w > 0 because w'^3 > 0), 0 < mixt_frac < 0.5, and the 2nd PDF
-      ! component has greater weight than does the 1st PDF component.  If there
-      ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
-      ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
-      ! does the 2nd PDF component.
-       if ( abs( Skw ) <= 1e-5_core_rknd ) then
-          mixt_frac = one_half
-       else
-          mixt_frac = one_half * ( one - Skw/ &
-             sqrt( 4.0_core_rknd*( one - sigma_sqd_w )**3 + Skw**2 ) )
-       endif
+    ! To avoid recomputing
+    sqrt_wp2 = sqrt( wp2 )
 
-      ! Determine sqrt( wp2 ) here to avoid re-computing it
-      sqrt_wp2 = sqrt( wp2 )
-
-      ! Clip mixt_frac, 1-mixt_frac, to avoid dividing by zero
-      ! Formula for mixt_frac_max_mag =
-      ! 1 - ( 1/2 * ( 1 - Skw_max/sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) )
-      ! Where sigma_sqd_w is fixed at 0.4.
-      mixt_frac = min( max( mixt_frac, one-mixt_frac_max_mag ), mixt_frac_max_mag )
-
-      ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
-      ! will always be greater than 0.  As an example, a value of 1.0 would
-      ! indicate that the actual mean of w for Gaussian "plume" 1 is found
-      ! 1.0 standard deviation above the overall mean for w.
-      w_1_n = sqrt( ( (one-mixt_frac)/mixt_frac )*(one-sigma_sqd_w) )
-      ! The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
-      ! will always be less than 0.  As an example, a value of -0.5 would
-      ! indicate that the actual mean of w for Gaussian "plume" 2 is found
-      ! 0.5 standard deviations below the overall mean for w.
-      w_2_n = -sqrt( ( mixt_frac/(one-mixt_frac) )*(one-sigma_sqd_w) )
-      ! The mean of w for Gaussian "plume" 1 is w_1.
-      w_1 = wm + sqrt_wp2*w_1_n
-      ! The mean of w for Gaussian "plume" 2 is w_2.
-      w_2 = wm + sqrt_wp2*w_2_n
-
-      ! The variance of w for Gaussian "plume" 1 for varnce_w_1.
-      varnce_w_1  = sigma_sqd_w*wp2
-      ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
-      ! The variance in both Gaussian "plumes" is defined to be the same.
-      varnce_w_2  = sigma_sqd_w*wp2
-
-    else ! l_use_ADG2 .eq. .true.
-      ! This code is experimental and not wholly consistent with the way CLUBB
-      ! is currently formulated/coded. 
-
-      ! This is the same as ADG1 (above), but uses Luhar et al. (1996) to find 
-      ! the widths and positions of the w Gaussians. ADG2 differs from ADG1 
-      ! in that it allows the widths of both Gaussians to be non-equal.
-
-      ! Since ADG1 assumes the widths of both w gaussians to be constant, a 
-      ! single value of sigma_sqd_w is used throughout the code for the transport 
-      ! terms. See section 2.1 of "Equations for CLUBB" and the references therin to Larson
-      ! and Golaz (2005) for more information. sigma_sqd_w is computed in
-      ! advance_clubb_core and passed into pdf_closure. Therefore, we are
-      ! using sigma_sqd_w from ADG1 for the transport terms and ADG2 for the
-      ! mixture fraction, mean location and variances of w, thl, and rt.
-      ! Hence, this code is currently experimental.
-
-      ! This code was written using the equations and nomenclature 
-      ! of Larson et al. (2002) Appendix section e.
-
-      ! Determine sqrt( wp2 ) here to avoid re-computing it
-      sqrt_wp2 = sqrt( wp2 )
-
-      ! If Skw is very small, then small_m will tend to zero which risks
-      ! divide by zero. To ameliorate this problem, we enforce abs( w_1_n )
-      ! and abs( w_2_n ) > .05
-      small_m = max( 5e-2_core_rknd, &
-                     (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd)) 
-
-
-      small_m_sqd &
-      = max( small_m**2, max( wpthlp**2 / ( thlp2 * wp2 ) &
-                              / ( one - wpthlp**2 / ( thlp2 *wp2 ) ), &
-                              wprtp**2 / ( rtp2 * wp2 ) &
-                              / ( one - wprtp**2 / ( rtp2 *wp2 ) ) ) &
-           )
-
-      small_m = sqrt( small_m_sqd )
-  
-      big_m = (1.0_core_rknd + small_m_sqd)**3 / &
-                 ( (3.0_core_rknd + small_m_sqd)**2 * small_m_sqd)
-
-      mixt_frac = one_half * ( one - Skw * sqrt( one / ( ( 4.0_core_rknd / big_m ) + Skw**2 ) ) )
-     
-      sigma_sqd_w1 = (one - mixt_frac) / ( mixt_frac * ( one + small_m_sqd ) ) 
-
-      varnce_w_1  = sigma_sqd_w1*wp2
-
-      sigma_sqd_w2 = mixt_frac / ( ( one - mixt_frac ) * ( one + small_m_sqd ) )
-
-      varnce_w_2  = sigma_sqd_w2*wp2
-
-      w_1_n = small_m * sqrt( sigma_sqd_w1 )
-
-      w_2_n = -small_m * sqrt( sigma_sqd_w2 )
-
-      ! The mean of w for Gaussian "plume" 1 is w_1.
-      w_1 = wm + sqrt_wp2 * w_1_n
-
-      ! The mean of w for Gaussian "plume" 2 is w_2.
-      w_2 = wm + sqrt_wp2 * w_2_n
-
-      ! Overwrite sigma_sqd_w for consistency with ADG2
-      sigma_sqd_w = one / ( one + small_m_sqd )
-
+    if( .not. l_use_ADG2) then ! use ADG1
+      call  ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,& 
+                           mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, w_1, w_2 )
+    else ! use ADG2
+      call ADG2_w_closure( Skw, wm, wp2, sqrt_wp2, thlp2, rtp2, wpthlp, wprtp, &
+                           sigma_sqd_w,&
+                           mixt_frac, sigma_sqd_w1, sigma_sqd_w2,&
+                           varnce_w_1, varnce_w_2, w_1_n, w_2_n, &
+                           w_1, w_2 )
     endif ! l_use_ADG2
 
 
@@ -1438,6 +1335,223 @@ module pdf_closure_module
     return
   end subroutine calc_vert_avg_cf_component
   !-----------------------------------------------------------------------
+
+  elemental subroutine ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,&
+                                      mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, &
+                                      w_1, w_2 )               
+  ! Description:
+  !   The Analytic Double Gaussian 1 closure is used by default in CLUBB. It
+  !   assumes the widths of both w Gaussians to be the same.
+  !
+  ! References:
+  !   Golaz, J-C., V. E. Larson, and W. R. Cotton, 2002a: A PDF-based model for
+  !   boundary layer clouds. Part I: Method and model description. J. Atmos.
+  !   Sci., 59, 3540–3551.
+  !
+  !   Vincent E. Larson and Jean-Christophe Golaz, 2005: Using Probability
+  !   Density Functions to Derive Consistent Closure Relationships among
+  !   Higher-Order Moments. Mon. Wea. Rev., 133, 1023–1042.
+  !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, &
+        one_half         
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      Skw,              & ! Skewness of w                         [-] 
+      wm,               & ! Mean w                                [m / s] 
+      wp2,              & ! w'^2                                  [m^2/s^2]
+      sigma_sqd_w,      & ! Widths of each w Gaussian             [-]
+      sqrt_wp2,         & ! w'                                    [m/s^1]
+      mixt_frac_max_mag   !                                       [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mixt_frac,    & ! Mixture fraction                          [-]
+      varnce_w_1,   & ! Variance of w (1st PDF component)         [m^2/s^2]
+      varnce_w_2,   & ! Variance of w (2nd PDF component)         [m^2/s^2] 
+      w_1_n,        & ! Normalized Mean of w (1st PDF component)  [-]  
+      w_2_n,        & ! Normalized Mean of w (2nd PDF component)  [-]
+      w_1,          & ! Mean of w (1st PDF component)             [m/s] 
+      w_2             ! Mean of w (2nd PDF component)             [m/s]     
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+      ! The variable "mixt_frac" is the weight of the 1st PDF component.  The
+      ! weight of the 2nd PDF component is "1-mixt_frac".  If there isn't any
+      ! skewness of w (Sk_w = 0 because w'^3 = 0), mixt_frac = 0.5, and both
+      ! PDF components are equally weighted.  If there is positive skewness of
+      ! w (Sk_w > 0 because w'^3 > 0), 0 < mixt_frac < 0.5, and the 2nd PDF
+      ! component has greater weight than does the 1st PDF component.  If there
+      ! is negative skewness of w (Sk_w < 0 because w'^3 < 0),
+      ! 0.5 < mixt_frac < 1, and the 1st PDF component has greater weight than
+      ! does the 2nd PDF component.
+       if ( abs( Skw ) <= 1e-5_core_rknd ) then
+          mixt_frac = one_half
+       else
+          mixt_frac = one_half * ( one - Skw/ &
+             sqrt( 4.0_core_rknd*( one - sigma_sqd_w )**3 + Skw**2 ) )
+       endif
+
+      ! Clip mixt_frac, 1-mixt_frac, to avoid dividing by zero
+      ! Formula for mixt_frac_max_mag =
+      ! 1 - ( 1/2 * ( 1 - Skw_max/sqrt( 4*( 1 - sigma_sqd_w )^3 + Skw_max^2 ) ) )
+      ! Where sigma_sqd_w is fixed at 0.4.
+      mixt_frac = min( max( mixt_frac, one-mixt_frac_max_mag ), mixt_frac_max_mag )
+
+      ! The normalized mean of w for Gaussian "plume" 1 is w_1_n.  It's value
+      ! will always be greater than 0.  As an example, a value of 1.0 would
+      ! indicate that the actual mean of w for Gaussian "plume" 1 is found
+      ! 1.0 standard deviation above the overall mean for w.
+      w_1_n = sqrt( ( (one-mixt_frac)/mixt_frac )*(one-sigma_sqd_w) )
+      ! The normalized mean of w for Gaussian "plume" 2 is w_2_n.  It's value
+      ! will always be less than 0.  As an example, a value of -0.5 would
+      ! indicate that the actual mean of w for Gaussian "plume" 2 is found
+      ! 0.5 standard deviations below the overall mean for w.
+      w_2_n = -sqrt( ( mixt_frac/(one-mixt_frac) )*(one-sigma_sqd_w) )
+      ! The mean of w for Gaussian "plume" 1 is w_1.
+      w_1 = wm + sqrt_wp2*w_1_n
+      ! The mean of w for Gaussian "plume" 2 is w_2.
+      w_2 = wm + sqrt_wp2*w_2_n
+
+      ! The variance of w for Gaussian "plume" 1 for varnce_w_1.
+      varnce_w_1  = sigma_sqd_w*wp2
+      ! The variance of w for Gaussian "plume" 2 for varnce_w_2.
+      ! The variance in both Gaussian "plumes" is defined to be the same.
+      varnce_w_2  = sigma_sqd_w*wp2
+
+  end subroutine ADG1_w_closure
+
+
+  !-----------------------------------------------------------------------
+  elemental subroutine ADG2_w_closure(Skw, wm, wp2, sqrt_wp2, thlp2, rtp2, wpthlp, wprtp, & 
+                                      sigma_sqd_w, &
+                                      mixt_frac, sigma_sqd_w1, sigma_sqd_w2,&
+                                      varnce_w_1, varnce_w_2, w_1_n, w_2_n, &
+                                      w_1, w_2 )               
+
+  ! Description:
+  !    This code is experimental and not wholly consistent with the way CLUBB
+  !    is currently formulated/coded. 
+
+  !    This is the same as ADG1 (above), but uses Luhar et al. (1996) to find 
+  !    the widths and positions of the w Gaussians. ADG2 differs from ADG1 
+  !    in that it allows the widths of both Gaussians to be non-equal.
+
+  !    Since ADG1 assumes the widths of both w gaussians to be constant, a 
+  !    single value of sigma_sqd_w is used throughout the code for the
+  !    transport terms. See section 2.1 of "Equations for CLUBB" and 
+  !    the references therin to Larson and Golaz (2005) for more information.
+  !    sigma_sqd_w is computed in advance_clubb_core and passed into pdf_closure. 
+  !    Therefore, we are using sigma_sqd_w from ADG1 for the transport terms 
+  !    and ADG2 for the mixture fraction, mean location and variances of w, thl, and rt.
+  !    Hence, this code is currently experimental.
+
+  !    This code was written using the equations and nomenclature 
+  !    of Larson et al. (2002) Appendix section e. 
+  !
+  ! References:
+  !    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
+  !    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
+  !    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
+  !
+  !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one, &
+        one_half         
+
+    use clubb_precision, only: &
+        core_rknd     ! Precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      Skw,     &     ! Skewness of w                              [-] 
+      wm,      &     ! Mean w                                     [m / s] 
+      wp2,     &     ! w'^2                                       [m^2/s^2]
+      sqrt_wp2,&     ! w'                                         [m/s]
+      thlp2,   &     ! th_l'^2                                    [K^2]
+      rtp2,    &     ! r_t'^2                                     [(kg/kg)^2] 
+      wpthlp,  &     ! w'th_l'                                    [K(m/s)]
+      wprtp          ! w'r_t'                                     [(kg/kg)(m/s)] 
+
+    ! Inout Variables
+    real( kind = core_rknd ), intent(inout) :: &
+      sigma_sqd_w   ! ADG1 assumes both have same width           [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mixt_frac,    & ! Mixture fraction                          [-]
+      sigma_sqd_w1, & ! Width of (1st PDF component) w Gaussian   [-]
+      sigma_sqd_w2, & ! Width of (1st PDF component) w Gaussian   [-] 
+      varnce_w_1,   & ! Variance of w (1st PDF component)         [m^2/s^2]
+      varnce_w_2,   & ! Variance of w (2nd PDF component)         [m^2/s^2] 
+      w_1_n,        & ! Normalized Mean of w (1st PDF component)  [-]  
+      w_2_n,        & ! Normalized Mean of w (2nd PDF component)  [-]
+      w_1,          & ! Mean of w (1st PDF component)             [m/s] 
+      w_2             ! Mean of w (2nd PDF component)             [m/s]     
+
+    ! Local Variables
+    real( kind = core_rknd) :: &
+      small_m,     &
+      small_m_sqd, &
+      big_m       
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+  
+      ! If Skw is very small, then small_m will tend to zero which risks
+      ! divide by zero. To ameliorate this problem, we enforce abs( w_1_n )
+      ! and abs( w_2_n ) > .05
+      small_m = max( 5e-2_core_rknd, &
+                     (2.0_core_rknd/3.0_core_rknd) * abs( Skw )**(1.0_core_rknd/3.0_core_rknd))
+
+
+      small_m_sqd &
+      = max( small_m**2, max( wpthlp**2 / ( thlp2 * wp2 ) &
+                              / ( one - wpthlp**2 / ( thlp2 *wp2 ) ), &
+                              wprtp**2 / ( rtp2 * wp2 ) &
+                              / ( one - wprtp**2 / ( rtp2 *wp2 ) ) ) &
+           )
+
+      small_m = sqrt( small_m_sqd )
+
+      big_m = (1.0_core_rknd + small_m_sqd)**3 / &
+                 ( (3.0_core_rknd + small_m_sqd)**2 * small_m_sqd)
+
+      mixt_frac = one_half * ( one - Skw * sqrt( one / ( ( 4.0_core_rknd / big_m) + Skw**2 ) ) )
+
+            sigma_sqd_w1 = (one - mixt_frac) / ( mixt_frac * ( one + small_m_sqd) )
+
+      varnce_w_1  = sigma_sqd_w1*wp2
+
+      sigma_sqd_w2 = mixt_frac / ( ( one - mixt_frac ) * ( one + small_m_sqd ) )
+
+      varnce_w_2  = sigma_sqd_w2*wp2
+
+      w_1_n = small_m * sqrt( sigma_sqd_w1 )
+
+      w_2_n = -small_m * sqrt( sigma_sqd_w2 )
+
+      ! The mean of w for Gaussian "plume" 1 is w_1.
+      w_1 = wm + sqrt_wp2 * w_1_n
+
+      ! The mean of w for Gaussian "plume" 2 is w_2.
+      w_2 = wm + sqrt_wp2 * w_2_n
+
+      ! Overwrite sigma_sqd_w for consistency with ADG1
+      sigma_sqd_w = one / ( one + small_m_sqd )
+
+  end subroutine ADG2_w_closure
 
   !-----------------------------------------------------------------------
   function interp_var_array( n_points, nz, k, z_vals, var )
