@@ -18,7 +18,7 @@ clubb_var = 'rrm_mc'
 silhs_var = 'lh_rrm_mc'
 
 if len(sys.argv) <= 1:
-    print("Usage: ./silhs_rms_plot_mult_sim.py dir1 [dir2 [...]]", file=sys.stderr)
+    print("Usage: ./silhs_kplot.py dir1 [dir2 [...]]", file=sys.stderr)
     sys.exit(1)
 
 silhs_dirs = sys.argv[1:]
