@@ -141,6 +141,8 @@ integer ::                                                                      
   !Fractions
   idx_cld_frac, idx_rain_frac, idx_cldic_frac, idx_snw_frac, idx_grpl_frac 
 
+! Use SAM's default method for updating liquid/ice static energy
+logical :: l_update_mse_using_state_vars = .false.
 
 ! Default values for the ensemble fractions. 
 logical :: doensemble_fractions = .false.  
@@ -189,6 +191,10 @@ real, allocatable, dimension(:,:,:) :: rain_vel_3D, EFFR_3D
 ! and eta (t_mellor)
 real, allocatable, dimension(:,:,:) :: theta_l, chi, eta
 
+! Store the residual between updating 't' using sedimentation or state
+! variables
+real, allocatable, dimension(:,:,:) :: t_res 
+
 #endif /*UWM_STATS*/
 
 
@@ -215,7 +221,8 @@ subroutine micro_setparm()
                               ! in-'precip' means, variances, etc, use an ensemble of thresholds
       frac_threshold_init, &  ! Initial threshold value
       nfractions         , &  ! Number of fractions to compute
-
+      l_update_mse_using_state_vars, & ! Update liquid/ice static energy using
+                                       ! state variables (like CLUBB). By default, SAM uses sedimentation instead.
 #endif
 
       doicemicro, &         ! use ice species (snow/cloud ice/graupel)
@@ -469,6 +476,10 @@ endif
 ! weberjk(UWM), liquid water potential temperature, chi (s_mellor),
 ! and eta (t_mellor).
       allocate(theta_l(nx,ny,nzm), chi(nx,ny,nzm), eta(nx,ny,nzm), STAT=ierr)
+
+! Store the residual between calculating liquid/ice static energy using
+! sedimentation versus state variables     
+      allocate(t_res(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm), STAT=ierr)
 
 ! weberjk(UWM), store fraction names and units to create them within SAM. Create
 ! 5 elements for the (possibly) 5 prognostic variables (cloud, rain, ice, snow,
@@ -931,6 +942,12 @@ real t_before(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm)
 real qt_before(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) 
 real t_avg(nzm), t_before_avg(nzm) 
 real qt_avg(nzm), qt_avg_before(nzm)
+
+! Compare the difference between updating 't' using sedimentation or state
+! variables
+real t_state(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) 
+real t_sed(dimx1_s:dimx2_s, dimy1_s:dimy2_s, nzm) 
+
 #endif /*UWM_STATS*/
 
 #ifdef PNNL_STATS
@@ -1426,7 +1443,8 @@ do j = 1,ny
 
 #ifdef UWM_STATS
 ! We want the tendencies to be explicity: (before - after) / dt
-! Therefore, we overwrite the output from Morrison
+! Therefore, we overwrite the output from Morrison before the fields are updated
+! below. Note: mtend does not include sedimentation here. 
 if(dostatis) then
 
   mtendqcl(:) = ( tmpqcl(:) - cloudliq(i,j,:) ) / dtn
@@ -1519,12 +1537,39 @@ endif
          reffi(i,j,:) = effi1d(:)  
       end if
 
+#ifdef UWM_STATS
+      ! Compare the difference between updating 't' using sedimentation or state
+      ! variables
+
+      ! update t using state variables
+      t_state(i,j,:) = tmptabs(:) + gamaz(:) &
+                      - fac_cond*( tmpqcl(:) + tmpqr(:) ) &
+                      - fac_sub*( tmpqci(:) + tmpqs(:) + tmpqg(:) )
+
+      ! update liquid-ice static energy due to precipitation
+      t_sed(i,j,:) = t(i,j,:) &
+           - dtn*fac_cond*(stendqcl+stendqr) &
+           - dtn*fac_sub*(stendqci+stendqs+stendqg)
+
+      ! Compute the residual between the two
+      t_res(i,j,:) = t_before(i,j,:) - t_state(i,j,:) &
+                    - dtn*fac_cond*(stendqcl+stendqr) &
+                    - dtn*fac_sub*(stendqci+stendqs+stendqg)
+
+      ! Update t
+      if(l_update_mse_using_state_vars) then
+          t(i,j,:) = t_state(i,j,:)
+      else
+          t(i,j,:) = t_sed(i,j,:)
+      endif
+#else
       !=====================================================
       ! update liquid-ice static energy due to precipitation
       t(i,j,:) = t(i,j,:) &
            - dtn*fac_cond*(stendqcl+stendqr) &
            - dtn*fac_sub*(stendqci+stendqs+stendqg)
       !=====================================================
+#endif /*UWM_STATS*/
       if(dostatis) then
 
 #ifdef PNNL_STATS
@@ -2152,6 +2197,12 @@ character*10 units
 
 microcount = 0
 
+#ifdef UWM_STATS
+name = 'hl_on_Cp_res'
+longname = 'Change in hl over Cp when using state variables instead of precipitation'
+units = 'K'
+call add_to_namelist(count,microcount,name,longname,units,0)
+#endif /*UWM_STATS*/
 name = 'QTFLUX'
 longname = 'Total (resolved + subgrid) total water (vapor+cloud) flux'
 units = 'W/m2'
@@ -5729,7 +5780,7 @@ subroutine micro_statistics()
 
 use vars
 #ifdef UWM_STATS
-use hbuffer, only: hbuf_put, hbuf_put_level
+use hbuffer, only: hbuf_put, hbuf_put_level, hbuf_avg_put
 #else
 use hbuffer, only: hbuf_put
 #endif /*UWM_STATS*/
@@ -6596,6 +6647,8 @@ endif
 
 
 #ifdef UWM_STATS
+call hbuf_avg_put('hl_on_Cp_res',t_res,dimx1_s,dimx2_s,dimy1_s,dimy2_s,nzm,1.)
+
 ! Write out each hydrometeor fraction
 do n = 1,nfrac_fields
   do m = 1,nfractions
