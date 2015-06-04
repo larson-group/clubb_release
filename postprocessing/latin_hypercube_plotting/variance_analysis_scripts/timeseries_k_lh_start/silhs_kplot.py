@@ -13,9 +13,11 @@ import os
 # Usage:
 #   silhs_kplot.py dir1 [dir2 [...]]
 #---------------------------------------------------------------------
-
+case_name = 'rico_lh'
 clubb_var = 'rrm_mc'
 silhs_var = 'lh_rrm_mc'
+time1 = 0
+time2 = 4320
 
 if len(sys.argv) <= 1:
     print("Usage: ./silhs_kplot.py dir1 [dir2 [...]]", file=sys.stderr)
@@ -23,13 +25,13 @@ if len(sys.argv) <= 1:
 
 silhs_dirs = sys.argv[1:]
 
-clubb_nc     = netCDF4.Dataset(silhs_dirs[0] + '/rico_lh_zt.nc')
+clubb_nc     = netCDF4.Dataset(silhs_dirs[0] + '/'+case_name+'_zt.nc')
 
-silhs_sfc_nc = netCDF4.Dataset(silhs_dirs[0] + '/rico_lh_lh_sfc.nc')
+silhs_sfc_nc = netCDF4.Dataset(silhs_dirs[0] + '/'+case_name+'_lh_sfc.nc')
 
 silhs_ncs = list()
 for silhs_dir in silhs_dirs:
-    silhs_ncs.append(netCDF4.Dataset(silhs_dir + '/rico_lh_lh_zt.nc'))
+    silhs_ncs.append(netCDF4.Dataset(silhs_dir + '/'+case_name+'_lh_zt.nc'))
 
 clubb_var = clubb_nc.variables[clubb_var]
 silhs_vars = list()
@@ -44,9 +46,6 @@ for silhs_nc in silhs_ncs:
 l_time_shift = False
 
 k_lh_start = silhs_sfc_nc.variables['k_lh_start']
-
-time1 = 3000
-time2 = 4320
 
 clubb_var_plt = np.empty(time2-time1)
 silhs_vars_plt = list()
