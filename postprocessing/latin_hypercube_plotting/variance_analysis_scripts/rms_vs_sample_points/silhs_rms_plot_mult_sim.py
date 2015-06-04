@@ -15,12 +15,8 @@ import os
 # This script is to be used only with non-interactive SILHS runs.
 #
 # Usage:
-#  ./silhs_rms_plot_mult_sim.py path1 [path2 [...]]
+#  ./silhs_rms_plot_mult_sim.py [options] path1 [path2 [...]]
 #######################################################################
-
-if len(sys.argv) <= 1:
-    print("Usage: ./silhs_rms_plot_mult_sim.py path1 [path2 [...]]", file=sys.stderr)
-    sys.exit(1)
 
 case_name = 'rico_lh'
 time1 = 0
@@ -33,7 +29,42 @@ l_all_height_avg = False
 clubb_var_str = 'rrm_mc'
 silhs_var_str  = 'lh_rrm_mc'
 
-silhs_dirs = sys.argv[1:]
+plot_title = clubb_var_str
+
+#-------------------------------------------------------------------------
+
+silhs_dirs = []
+
+# Read command line arguments
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i] == '--plot_title':
+        i = i + 1
+        plot_title = sys.argv[i]
+    elif sys.argv[i] == '--time1':
+        i = i + 1
+        time1 = int(sys.argv[i])
+    elif sys.argv[i] == '--time2':
+        i = i + 1
+        time2 = int(sys.argv[i])
+    elif sys.argv[i] == '--case_name':
+        i = i + 1
+        case_name = sys.argv[i]
+    elif sys.argv[i] == '--clubb_var_str':
+        i = i + 1
+        clubb_var_str = sys.argv[i]
+    elif sys.argv[i] == '--silhs_var_str':
+        i = i + 1
+        silhs_var_str = sys.argv[i]
+    else:
+        silhs_dirs.append(sys.argv[i])
+
+    i = i + 1
+
+if len(silhs_dirs) == 0:
+    print("Usage: ./silhs_rms_plot_mult_sim.py [options] "
+          "path1 [path2 [...]]", file=sys.stderr)
+    sys.exit(1)
 
 sim_points_all = list()
 for entry in os.listdir(silhs_dirs[0]):
@@ -107,6 +138,7 @@ pl.xlabel('Number of Sample Points')
 pl.ylabel('Root Mean Square of Absolute Error')
 pl.xscale('log')
 pl.yscale('log')
+pl.title(plot_title)
 # This will change the axes so that the plot 'tight'ly hugs the data
 #pl.axis('tight')
 
