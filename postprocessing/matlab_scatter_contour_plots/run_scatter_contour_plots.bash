@@ -65,8 +65,11 @@ else
 
 fi
 
+# Number of CLUBB output files.
+num_CLUBB_files=${#CLUBB_file[@]}
+
 # Get rid of annoying MATLAB warning message about "No protocol specified."
 export DISPLAY=$HOSTNAME:0
 
 # Run the scatter/contour plotter. 
-sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "PDF_scatter_contour_plotter( '$SAM_LES_3D_file', '$CLUBB_file' ), exit"
+sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "PDF_scatter_contour_plotter( '$SAM_LES_3D_file', '${CLUBB_file[*]}', $num_CLUBB_files ), exit"
