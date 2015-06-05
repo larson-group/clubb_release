@@ -11,7 +11,7 @@ import os
 # at k_lh_start, for various SILHS directories.
 #
 # Usage:
-#   silhs_kplot.py dir1 [dir2 [...]]
+#   silhs_kplot.py [options] dir1 [dir2 [...]]
 #---------------------------------------------------------------------
 case_name = 'rico_lh'
 clubb_var = 'rrm_mc'
@@ -19,11 +19,45 @@ silhs_var = 'lh_rrm_mc'
 time1 = 0
 time2 = 4320
 
-if len(sys.argv) <= 1:
-    print("Usage: ./silhs_kplot.py dir1 [dir2 [...]]", file=sys.stderr)
-    sys.exit(1)
+title  = clubb_var
+ylabel = clubb_var
 
-silhs_dirs = sys.argv[1:]
+#------------------------------------------------------------------------
+
+silhs_dirs = []
+
+# Read command line arguments
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i] == '--case_name':
+        i = i + 1
+        case_name = sys.argv[i]
+    elif sys.argv[i] == '--clubb_var':
+        i = i + 1
+        clubb_var = sys.argv[i]
+    elif sys.argv[i] == '--silhs_var':
+        i = i + 1
+        silhs_var = sys.argv[i]
+    elif sys.argv[i] == '--time1':
+        i = i + 1
+        time1 = int(sys.argv[i])
+    elif sys.argv[i] == '--time2':
+        i = i + 1
+        time2 = int(sys.argv[i])
+    elif sys.argv[i] == '--title':
+        i = i + 1
+        title = sys.argv[i]
+    elif sys.argv[i] == '--ylabel':
+        i = i + 1
+        ylabel = sys.argv[i]
+    else:
+        silhs_dirs.append(sys.argv[i])
+
+    i = i + 1
+
+if len(silhs_dirs) == 0:
+    print("Usage: ./silhs_kplot.py [options] dir1 [dir2 [...]]", file=sys.stderr)
+    sys.exit(1)
 
 clubb_nc     = netCDF4.Dataset(silhs_dirs[0] + '/'+case_name+'_zt.nc')
 
@@ -66,5 +100,8 @@ pl.plot(range(time1,time2), clubb_var_plt[:], label='analytic')
 for u in range(0,len(silhs_vars_plt)):
     pl.plot(range(time1,time2), silhs_vars_plt[u][:], label=os.path.basename(silhs_dirs[u]))
 
+pl.xlabel('Time [minutes]')
+pl.ylabel(ylabel);
+pl.title(title);
 pl.legend()
 pl.show()
