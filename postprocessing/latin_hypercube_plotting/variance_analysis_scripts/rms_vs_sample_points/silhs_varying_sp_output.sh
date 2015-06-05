@@ -36,13 +36,6 @@ done
 
 MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
 
-#################
-echo $OUTPUT_DIR
-echo $CASE_NAME
-echo $MODEL_FILE
-exit
-#################
-
 # Sanity checks
 if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.bash ]]
 then
