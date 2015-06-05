@@ -16,10 +16,13 @@ module parameters_silhs
   logical, public :: &
     l_lh_importance_sampling  = .true., &     ! Limit noise by performing importance sampling
     l_Lscale_vert_avg         = .true., &     ! Calculate Lscale_vert_avg in lh_subcolumn_generator
-    l_lh_straight_mc          = .false.       ! Use true Monte Carlo sampling with no Latin
-                                              ! hypercube sampling and no importance sampling.
+    l_lh_straight_mc          = .false.,&     ! Use true Monte Carlo sampling with no Latin
+                                              !  hypercube sampling and no importance sampling.
+    l_lh_clustered_sampling   = .true.        ! Uses the "new" SILHS importance sampling
+                                              ! scheme with prescribed probabilities
 
-  !$omp threadprivate( l_lh_importance_sampling, l_Lscale_vert_avg, l_lh_straight_mc )
+  !$omp threadprivate( l_lh_importance_sampling, l_Lscale_vert_avg, l_lh_straight_mc, &
+  !$omp                l_lh_clustered_sampling )
 
   private ! Default Scope
 

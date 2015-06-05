@@ -56,11 +56,10 @@ module silhs_importance_sample_module
     use error_code, only: &
       clubb_at_least_debug_level  ! Procedure
 
-    implicit none
+    use parameters_silhs, only: &
+      l_lh_clustered_sampling ! Variable
 
-    ! Local Parameters
-    logical, parameter :: &
-      l_use_clustered_sampling = .true.      ! Use clustered category importance sampling
+    implicit none
 
     ! Cluster allocation strategies!!!
     integer, parameter :: &
@@ -122,7 +121,7 @@ module silhs_importance_sample_module
     category_real_probs = compute_category_real_probs &
                           ( importance_categories, pdf_params, hydromet_pdf_params )
 
-    if ( l_use_clustered_sampling ) then
+    if ( l_lh_clustered_sampling ) then
 
       ! A cluster allocation strategy is selected based on the value of the
       ! integer parameter.
@@ -145,7 +144,7 @@ module silhs_importance_sample_module
                                   ( importance_categories, category_real_probs, &
                                     pdf_params )
 
-    end if ! l_use_clustered_sampling
+    end if ! l_lh_clustered_sampling
 
     ! Compute weight of each sample category
     category_sample_weights = compute_category_sample_weights &
