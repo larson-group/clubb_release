@@ -1,0 +1,13 @@
+! This file contains the minimal statistics necessary for
+! plotting various statistics associated with SILHS
+! microphysical tendencies.
+
+&statsnl
+
+vars_zt = 'rrm_mc', 'rrm_auto', 'rrm_accr', 'rrm_cond', ''
+
+vars_lh_zt = 'lh_rrm_mc', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', ''
+
+vars_lh_sfc = 'k_lh_start', ''
+
+/
