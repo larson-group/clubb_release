@@ -30,6 +30,7 @@ do
     "--stats_file")
         shift
         STATS_FILE=$1
+        ;;
     *)
         >&2 echo "Invalid argument: $1"
         exit 1
