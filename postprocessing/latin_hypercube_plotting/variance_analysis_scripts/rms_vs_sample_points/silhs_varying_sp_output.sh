@@ -5,13 +5,43 @@
 # For example, $OUTPUT_DIR/out_16 corresponds to output from SILHS run with 16 sample
 # points.
 
-CLUBB_DIR=`readlink -f ../../../..`
+CLUBB_DIR="`readlink -f \`dirname $0\``/../../../.."
 OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
 CASE_NAME="rico_lh"
-MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
 
 # The different numbers of sample points to use, separated by spaces
 SAMPLE_POINT_VALUES="2 10 20 30 40 50 60 70 80 90 100 110 120 130 140 150 160 170 180 190 200"
+
+#----------------------------------------------------------------------------------------------
+
+# Read command line arguments
+while [[ $# -gt 0 ]]
+do
+    case $1 in
+    "--output_dir")
+        shift
+        OUTPUT_DIR=$1
+        ;;
+    "--case_name")
+        shift
+        CASE_NAME=$1
+        ;;
+    *)
+        >&2 echo "Invalid argument: $1"
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
+
+#################
+echo $OUTPUT_DIR
+echo $CASE_NAME
+echo $MODEL_FILE
+exit
+#################
 
 # Sanity checks
 if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.bash ]]
