@@ -31,6 +31,8 @@ silhs_var_str  = 'lh_rrm_mc'
 
 plot_title = clubb_var_str
 
+output_file = ''
+
 #-------------------------------------------------------------------------
 
 silhs_dirs = []
@@ -56,6 +58,9 @@ while i < len(sys.argv):
     elif sys.argv[i] == '--silhs_var_str':
         i = i + 1
         silhs_var_str = sys.argv[i]
+    elif sys.argv[i] == '--output_file':
+        i = i + 1
+        output_file = sys.argv[i]
     else:
         silhs_dirs.append(sys.argv[i])
 
@@ -135,7 +140,7 @@ for d_i in range(len(silhs_dirs)):
 ## pl.plot(sim_points_all, rms_1_over_sqrt_n, label='1 over sqrt N')
 
 pl.xlabel('Number of Sample Points')
-pl.ylabel('Root Mean Square of Absolute Error')
+pl.ylabel('RMSE of SILHS Estimate')
 pl.xscale('log')
 pl.yscale('log')
 pl.title(plot_title)
@@ -143,4 +148,9 @@ pl.title(plot_title)
 #pl.axis('tight')
 
 pl.legend()
-pl.show()
+
+if output_file == '':
+    pl.show()
+else:
+    # Output to disk
+    pl.savefig(output_file)

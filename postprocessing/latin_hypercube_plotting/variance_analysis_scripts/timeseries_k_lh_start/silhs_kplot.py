@@ -22,6 +22,8 @@ time2 = 4320
 title  = clubb_var
 ylabel = clubb_var
 
+output_file = ''
+
 #------------------------------------------------------------------------
 
 silhs_dirs = []
@@ -50,6 +52,9 @@ while i < len(sys.argv):
     elif sys.argv[i] == '--ylabel':
         i = i + 1
         ylabel = sys.argv[i]
+    elif sys.argv[i] == '--output_file':
+        i = i + 1
+        output_file = sys.argv[i]
     else:
         silhs_dirs.append(sys.argv[i])
 
@@ -104,4 +109,9 @@ pl.xlabel('Time [minutes]')
 pl.ylabel(ylabel);
 pl.title(title);
 pl.legend()
-pl.show()
+
+if output_file == '':
+    pl.show()
+else:
+    # Output to disk
+    pl.savefig(output_file)
