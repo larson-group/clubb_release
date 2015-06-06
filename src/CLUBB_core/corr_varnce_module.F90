@@ -21,11 +21,11 @@ module corr_varnce_module
       rrp2_ip_on_rrm2_ip = 1.0_core_rknd, & ! Ratio <rr|_ip'^2> / <rr|_ip>^2 [-]
       Nrp2_ip_on_Nrm2_ip = 1.0_core_rknd, & ! Ratio <Nr|_ip'^2> / <Nr|_ip>^2 [-]
       rip2_ip_on_rim2_ip = 1.0_core_rknd, & ! Ratio <ri|_ip'^2> / <ri|_ip>^2 [-]
-      Nip2_ip_on_Nim2_ip = 1.0_core_rknd, & ! Ratio <Ni|_ip'^2> / <Ni|_ip>^2 [-]
+      Nip2_ip_on_Nim2_ip = 0.5_core_rknd, & ! Ratio <Ni|_ip'^2> / <Ni|_ip>^2 [-]
       rsp2_ip_on_rsm2_ip = 1.0_core_rknd, & ! Ratio <rs|_ip'^2> / <rs|_ip>^2 [-]
       Nsp2_ip_on_Nsm2_ip = 1.0_core_rknd, & ! Ratio <Ns|_ip'^2> / <Ns|_ip>^2 [-]
       rgp2_ip_on_rgm2_ip = 1.0_core_rknd, & ! Ratio <rg|_ip'^2> / <rg|_ip>^2 [-]
-      Ngp2_ip_on_Ngm2_ip = 1.0_core_rknd    ! Ratio <Ng|_ip'^2> / <Ng|_ip>^2 [-]
+      Ngp2_ip_on_Ngm2_ip = 0.5_core_rknd    ! Ratio <Ng|_ip'^2> / <Ng|_ip>^2 [-]
 
   end type hmp2_ip_on_hmm2_ip_ratios_type
 
