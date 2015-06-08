@@ -650,23 +650,15 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd     ! Constant
 
+    use parameters_silhs, only: &
+      eight_cluster_presc_probs   ! Variable(s)
+
     implicit none
 
     ! Local Constants
     integer, parameter :: &
       num_clusters = 8, &
       num_categories_per_cluster = 1
-
-    !!! Prescribed probability definitions
-    real( kind = core_rknd ), parameter :: &
-      cloud_precip_comp1      = 0.15_core_rknd, &
-      cloud_precip_comp2      = 0.15_core_rknd, &
-      nocloud_precip_comp1    = 0.15_core_rknd, &
-      nocloud_precip_comp2    = 0.15_core_rknd, &
-      cloud_noprecip_comp1    = 0.15_core_rknd, &
-      cloud_noprecip_comp2    = 0.15_core_rknd, &
-      nocloud_noprecip_comp1  = 0.05_core_rknd, &
-      nocloud_noprecip_comp2  = 0.05_core_rknd
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -702,28 +694,28 @@ module silhs_importance_sample_module
       l_in_precip      = importance_categories(icategory)%l_in_precip
 
       if ( l_in_cloud .and. l_in_precip .and. l_in_component_1 ) then
-        cluster_prescribed_probs(icategory) = cloud_precip_comp1
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%cloud_precip_comp1
 
       else if ( l_in_cloud .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(icategory) = cloud_precip_comp2
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%cloud_precip_comp2
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. l_in_component_1 ) then
-        cluster_prescribed_probs(icategory) = nocloud_precip_comp1
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%nocloud_precip_comp1
 
       else if ( (.not. l_in_cloud) .and. l_in_precip .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(icategory) = nocloud_precip_comp2
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%nocloud_precip_comp2
 
       else if ( l_in_cloud .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        cluster_prescribed_probs(icategory) = cloud_noprecip_comp1
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%cloud_noprecip_comp1
 
       else if ( l_in_cloud .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(icategory) = cloud_noprecip_comp2
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%cloud_noprecip_comp2
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. l_in_component_1 ) then
-        cluster_prescribed_probs(icategory) = nocloud_noprecip_comp1
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%nocloud_noprecip_comp1
 
       else if ( (.not. l_in_cloud) .and. (.not. l_in_precip) .and. (.not. l_in_component_1) ) then
-        cluster_prescribed_probs(icategory) = nocloud_noprecip_comp2
+        cluster_prescribed_probs(icategory) = eight_cluster_presc_probs%nocloud_noprecip_comp2
 
       else
         stop "Invalid category in eight_cluster_allocation"

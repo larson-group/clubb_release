@@ -64,7 +64,8 @@ module microphys_init_cleanup
     use parameters_silhs, only: &
         l_lh_importance_sampling, &     ! Do importance sampling (SILHS)
         l_lh_straight_mc,         &     ! Do not apply LH or importance sampling at all (SILHS)
-        l_lh_clustered_sampling         ! Use prescribed probability sampling with clusters (SILHS)
+        l_lh_clustered_sampling,  &     ! Use prescribed probability sampling with clusters (SILHS)
+        eight_cluster_presc_probs
 
     use parameters_microphys, only: &
         lh_num_samples              ! SILHS sample points
@@ -279,7 +280,7 @@ module microphys_init_cleanup
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
       lh_sequence_length, lh_seed, l_lh_importance_sampling, &
       l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, l_lh_straight_mc, &
-      l_lh_clustered_sampling, &
+      l_lh_clustered_sampling, eight_cluster_presc_probs, &
       hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &

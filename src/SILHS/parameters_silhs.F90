@@ -10,7 +10,27 @@ module parameters_silhs
 !   None
 !-------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+    core_rknd     ! Constant
+
   implicit none
+
+  ! The following type defines parameters that control the sample point
+  ! allocation for the clustered sampling scheme
+  ! (l_lh_clustered_sampling = .true.).
+  type eight_cluster_presc_probs_type
+
+    real( kind = core_rknd ) :: &
+      cloud_precip_comp1      = 0.15_core_rknd, &
+      cloud_precip_comp2      = 0.15_core_rknd, &
+      nocloud_precip_comp1    = 0.15_core_rknd, &
+      nocloud_precip_comp2    = 0.15_core_rknd, &
+      cloud_noprecip_comp1    = 0.15_core_rknd, &
+      cloud_noprecip_comp2    = 0.15_core_rknd, &
+      nocloud_noprecip_comp1  = 0.05_core_rknd, &
+      nocloud_noprecip_comp2  = 0.05_core_rknd
+
+  end type eight_cluster_presc_probs_type
 
   ! Flags for the SILHS sampling code 
   logical, public :: &
@@ -24,6 +44,14 @@ module parameters_silhs
   !$omp threadprivate( l_lh_importance_sampling, l_Lscale_vert_avg, l_lh_straight_mc, &
   !$omp                l_lh_clustered_sampling )
 
+  type(eight_cluster_presc_probs_type), public, save :: &
+    eight_cluster_presc_probs                 ! Prescribed probabilities for
+                                              ! l_lh_clustered_sampling = .true.
+
+  !$omp threadprivate( eight_cluster_presc_probs )
+
   private ! Default Scope
+
+  public :: eight_cluster_presc_probs_type
 
 end module parameters_silhs
