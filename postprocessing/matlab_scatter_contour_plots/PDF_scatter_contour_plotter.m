@@ -127,7 +127,7 @@ log_Px_plot = false;
 
 %==========================================================================
 
-% SAM LES 3D file variables
+% SAM LES 3D file variable indices
 global idx_3D_w
 global idx_3D_rt
 global idx_3D_thl
@@ -135,71 +135,135 @@ global idx_3D_chi
 global idx_3D_eta
 global idx_3D_rr
 global idx_3D_Nr
-% CLUBB variables
-global idx_w_1
-global idx_w_2
-global idx_rt_1
-global idx_rt_2
-global idx_thl_1
-global idx_thl_2
-global idx_chi_1
-global idx_chi_2
-global idx_mu_rr_1_n
-global idx_mu_rr_2_n
-global idx_mu_Nr_1_n
-global idx_mu_Nr_2_n
-global idx_varnce_w_1
-global idx_varnce_w_2
-global idx_varnce_rt_1
-global idx_varnce_rt_2
-global idx_varnce_thl_1
-global idx_varnce_thl_2
-global idx_stdev_chi_1
-global idx_stdev_chi_2
-global idx_stdev_eta_1
-global idx_stdev_eta_2
-global idx_sigma_rr_1_n
-global idx_sigma_rr_2_n
-global idx_sigma_Nr_1_n
-global idx_sigma_Nr_2_n
-global idx_corr_rt_thl
-global idx_corr_chi_eta_1_ca
-global idx_corr_chi_eta_2_ca
-global idx_corr_w_rr_1_n
-global idx_corr_w_rr_2_n
-global idx_corr_w_Nr_1_n
-global idx_corr_w_Nr_2_n
-global idx_corr_chi_rr_1_n
-global idx_corr_chi_rr_2_n
-global idx_corr_chi_Nr_1_n
-global idx_corr_chi_Nr_2_n
-global idx_corr_eta_rr_1_n
-global idx_corr_eta_rr_2_n
-global idx_corr_eta_Nr_1_n
-global idx_corr_eta_Nr_2_n
-global idx_corr_rr_Nr_1_n
-global idx_corr_rr_Nr_2_n
-global idx_mixt_frac
-global idx_precip_frac_1
-global idx_precip_frac_2
-global idx_sigma_sqd_w
 
 % Read SAM NetCDF file and obtain variables.
 [ z_sam, time_sam, var_sam, units_corrector_type_sam, ...
   nx_sam, ny_sam, nz_sam, num_t_sam, num_var_sam ] ...
 = read_SAM_3D_file( filename_sam );
 
-% Read CLUBB zt NetCDF file and obtain variables.
-[ z_clubb, time_clubb, var_clubb, units_corrector_type_clubb, ...
-  nz_clubb, num_t_clubb, num_var_clubb ] ...
-= read_CLUBB_file( strtrim( filename_clubb(1,:) ) );
+for clubb_idx = 1:1:num_clubb_files
+
+   % Read CLUBB zt NetCDF files and obtain variables.
+   [ z_clubb_out, time_clubb_out, var_clubb_out,...
+     units_corrector_type_clubb_out, nz_clubb_out, ...
+     num_t_clubb_out, num_var_clubb_out, varid_clubb_out ] ...
+   = read_CLUBB_file( strtrim( filename_clubb(clubb_idx,:) ) );
+
+   % Enter the number of vertical grid levels into an array.
+   nz_clubb_file(clubb_idx) = nz_clubb_out;
+   % Check that all CLUBB files have the same number of vertical grid
+   % levels.
+   if ( num_clubb_files > 1 )
+      if ( nz_clubb_file(clubb_idx) ~= nz_clubb_file(1) )
+         fprintf( [ 'Error:  CLUBB files do not have the same number', ...
+                    ' of vertical grid levels.\n', ...
+                    'File:  %s;  Number of grid levels:  %d\n', ...
+                    'File:  %s;  Number of grid levels:  %d\n' ], ...
+                  strtrim( filename_clubb(1,:) ), nz_clubb_file(1), ...
+                  strtrim( filename_clubb(clubb_idx,:) ), ...
+                  nz_clubb_file(clubb_idx) );
+         fprintf( '\n' );
+         quit force
+      end % nz_clubb_file(clubb_idx) ~= nz_clubb_file(1)
+   end % num_clubb_files > 1
+
+   % Enter the values of altitudes into an array.
+   z_clubb_file(clubb_idx,:) = z_clubb_out;
+   % Check that all CLUBB files have the same values of altitude.
+   if ( num_clubb_files > 1 )
+      if ( any( z_clubb_file(clubb_idx,:) ~= z_clubb_file(1,:) ) )
+         fprintf( [ 'Error:  CLUBB files do not have the same values', ...
+                    ' of altitude.\n' ] );
+         fprintf( '\n' );
+         quit force
+      end % z_clubb_file(clubb_idx,:) ~= z_clubb_file(1,:)
+   end % num_clubb_files > 1
+
+   % Enter the number of statistical output timesteps into an array.
+   num_t_clubb_file(clubb_idx) = num_t_clubb_out;
+   % Check that all CLUBB files have the same number of output timesteps.
+   if ( num_clubb_files > 1 )
+      if ( num_t_clubb_file(clubb_idx) ~= num_t_clubb_file(1) )
+         fprintf( [ 'Error:  CLUBB files do not have the same number', ...
+                    ' of output timesteps.\n', ...
+                    'File:  %s;  Number of output timesteps:  %d\n', ...
+                    'File:  %s;  Number of output timesteps:  %d\n' ], ...
+                  strtrim( filename_clubb(1,:) ), num_t_clubb_file(1), ...
+                  strtrim( filename_clubb(clubb_idx,:) ), ...
+                  num_t_clubb_file(clubb_idx) );
+         fprintf( '\n' );
+         quit force
+      end % num_t_clubb_file(clubb_idx) ~= num_t_clubb_file(1)
+   end % num_clubb_files > 1
+
+   % Enter the values of statistical output times into an array.
+   time_clubb_file(clubb_idx,:) = time_clubb_out;
+   % Check that all CLUBB files have the same statistical output times.
+   if ( num_clubb_files > 1 )
+      if ( any( time_clubb_file(clubb_idx,:) ~= time_clubb_file(1,:) ) )
+         fprintf( [ 'Error:  CLUBB files do not have the same', ...
+                    ' statistical output times.\n' ] );
+         fprintf( '\n' );
+         quit force
+      end % time_clubb_file(clubb_idx,:) ~= time_clubb_file(1,:)
+   end % num_clubb_files > 1
+
+   % Since we define the number of relevant CLUBB variales (num_var_clubb)
+   % in output_vars_clubb, num_var_clubb will be the same for all CLUBB
+   % output files.  However, we can compare variables I.D.s (varid_clubb)
+   % between files to check that the relevant variables have the same
+   % indices.
+   varid_clubb_file(clubb_idx,:) = varid_clubb_out;
+   % Check that all CLUBB files have the same relevant variables listed
+   % in the same order in the output array.
+   if ( num_clubb_files > 1 )
+      if ( any( varid_clubb_file(clubb_idx,:) ~= varid_clubb_file(1,:) ) )
+         fprintf( [ 'Error:  CLUBB files do not have the same', ...
+                    ' variables listed in the same order.\n' ] );
+         fprintf( '\n' );
+         quit force
+      end % varid_clubb_file(clubb_idx,:) ~= varid_clubb_file(1,:)
+   end % num_clubb_files > 1
+
+   % Enter the number of relevant clubb variables into an array.
+   % This will be the same between all CLUBB files.
+   num_var_clubb_file(clubb_idx) = num_var_clubb_out;
+
+   % Enter the values of units_corrector_type into an array.
+   % This will be the same between all CLUBB files.
+   units_corrector_type_clubb_file(clubb_idx,:) ...
+      = units_corrector_type_clubb_out;
+
+   % Enter the values of relevant CLUBB variables into an array.
+   var_clubb(clubb_idx,:,:,:,:,:) = var_clubb_out;
+
+end % clubb_idx = 1:1:num_clubb_files
+
+% The following CLUBB variables are the same between all the CLUBB files.
+% Set them equal to the values found in CLUBB output file 1.
+nz_clubb = nz_clubb_file(1);
+z_clubb = z_clubb_file(1,:);
+num_t_clubb = num_t_clubb_file(1);
+time_clubb = time_clubb_file(1,:);
+num_var_clubb = num_var_clubb_file(1);
+units_corrector_type_clubb = units_corrector_type_clubb_file(1,:);
 
 % Use appropriate units (SI units).
 [ var_sam ] ...
    = unit_corrector( num_var_sam, var_sam, units_corrector_type_sam, -1 );
-[ var_clubb ] ...
-   = unit_corrector( num_var_clubb, var_clubb, ...
+
+for clubb_idx = 1:1:num_clubb_files
+
+   var_clubb_inout = reshape( var_clubb(clubb_idx,:,:,:,:,:), ...
+                              num_var_clubb, 1, 1, nz_clubb, num_t_clubb );
+
+   [ var_clubb_inout ] ...
+   = unit_corrector( num_var_clubb, var_clubb_inout, ...
                      units_corrector_type_clubb, -1 );
+
+   var_clubb(clubb_idx,:,:,:,:,:) = var_clubb_inout;
+
+end % clubb_idx = 1:1:num_clubb_files
 
 % Find the time in the CLUBB zt output file that is equal (or closest) to
 % the SAM LES output time.
@@ -358,104 +422,37 @@ end % z_clubb(clubb_height_idx)
 %==========================================================================
 
 % Unpack CLUBB variables (PDF parameters).
+for clubb_idx = 1:1:num_clubb_files
 
-% PDF component means.
-mu_w_1 = var_clubb( idx_w_1, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_w_2 = var_clubb( idx_w_2, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_rt_1 = var_clubb( idx_rt_1, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_rt_2 = var_clubb( idx_rt_2, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_thl_1 = var_clubb( idx_thl_1, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_thl_2 = var_clubb( idx_thl_2, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_chi_1 = var_clubb( idx_chi_1, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_chi_2 = var_clubb( idx_chi_2, 1, 1, clubb_height_idx, clubb_time_idx );
-mu_eta_1 = 0.0; % The component mean of eta is always defined as 0.
-mu_eta_2 = 0.0; % The component mean of eta is always defined as 0.
-mu_rr_1_n = var_clubb( idx_mu_rr_1_n, 1, 1, ...
-                       clubb_height_idx, clubb_time_idx );
-mu_rr_2_n = var_clubb( idx_mu_rr_2_n, 1, 1, ...
-                       clubb_height_idx, clubb_time_idx );
-mu_Nr_1_n = var_clubb( idx_mu_Nr_1_n, 1, 1, ...
-                       clubb_height_idx, clubb_time_idx );
-mu_Nr_2_n = var_clubb( idx_mu_Nr_2_n, 1, 1, ...
-                       clubb_height_idx, clubb_time_idx );
+   var_clubb_in = reshape( var_clubb(clubb_idx,:,:,:,:,:), ...
+                           num_var_clubb, 1, 1, nz_clubb, num_t_clubb );
 
-% PDF component standard deviations.
-sigma_w_1 = sqrt( var_clubb( idx_varnce_w_1, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx ) );
-sigma_w_2 = sqrt( var_clubb( idx_varnce_w_2, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx ) );
-sigma_rt_1 = sqrt( var_clubb( idx_varnce_rt_1, 1, 1, ...
-                              clubb_height_idx, clubb_time_idx ) );
-sigma_rt_2 = sqrt( var_clubb( idx_varnce_rt_2, 1, 1, ...
-                              clubb_height_idx, clubb_time_idx ) );
-sigma_thl_1 = sqrt( var_clubb( idx_varnce_thl_1, 1, 1, ...
-                               clubb_height_idx, clubb_time_idx ) );
-sigma_thl_2 = sqrt( var_clubb( idx_varnce_thl_2, 1, 1, ...
-                               clubb_height_idx, clubb_time_idx ) );
-sigma_chi_1 = var_clubb( idx_stdev_chi_1, 1, 1, ...
-                         clubb_height_idx, clubb_time_idx );
-sigma_chi_2 = var_clubb( idx_stdev_chi_2, 1, 1, ...
-                         clubb_height_idx, clubb_time_idx );
-sigma_eta_1 = var_clubb( idx_stdev_eta_1, 1, 1, ...
-                         clubb_height_idx, clubb_time_idx );
-sigma_eta_2 = var_clubb( idx_stdev_eta_2, 1, 1, ...
-                         clubb_height_idx, clubb_time_idx );
-sigma_rr_1_n = var_clubb( idx_sigma_rr_1_n, 1, 1, ...
-                          clubb_height_idx, clubb_time_idx );
-sigma_rr_2_n = var_clubb( idx_sigma_rr_2_n, 1, 1, ...
-                          clubb_height_idx, clubb_time_idx );
-sigma_Nr_1_n = var_clubb( idx_sigma_Nr_1_n, 1, 1, ...
-                          clubb_height_idx, clubb_time_idx );
-sigma_Nr_2_n = var_clubb( idx_sigma_Nr_2_n, 1, 1, ...
-                          clubb_height_idx, clubb_time_idx );
-
-% PDF component correlations.
-corr_rt_thl_1 = var_clubb( idx_corr_rt_thl, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-corr_rt_thl_2 = corr_rt_thl_1; % CLUBB sets corr_rt_thl_1 = corr_rt_thl_2.
-corr_chi_eta_1 = var_clubb( idx_corr_chi_eta_1_ca, 1, 1, ...
-                            clubb_height_idx, clubb_time_idx );
-corr_chi_eta_2 = var_clubb( idx_corr_chi_eta_2_ca, 1, 1, ...
-                            clubb_height_idx, clubb_time_idx );
-corr_w_rr_1_n = var_clubb( idx_corr_w_rr_1_n, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-corr_w_rr_2_n = var_clubb( idx_corr_w_rr_2_n, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-corr_w_Nr_1_n = var_clubb( idx_corr_w_Nr_1_n, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-corr_w_Nr_2_n = var_clubb( idx_corr_w_Nr_2_n, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-corr_chi_rr_1_n = var_clubb( idx_corr_chi_rr_1_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_chi_rr_2_n = var_clubb( idx_corr_chi_rr_2_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_chi_Nr_1_n = var_clubb( idx_corr_chi_Nr_1_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_chi_Nr_2_n = var_clubb( idx_corr_chi_Nr_2_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_eta_rr_1_n = var_clubb( idx_corr_eta_rr_1_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_eta_rr_2_n = var_clubb( idx_corr_eta_rr_2_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_eta_Nr_1_n = var_clubb( idx_corr_eta_Nr_1_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_eta_Nr_2_n = var_clubb( idx_corr_eta_Nr_2_n, 1, 1, ...
-                             clubb_height_idx, clubb_time_idx );
-corr_rr_Nr_1_n = var_clubb( idx_corr_rr_Nr_1_n, 1, 1, ...
-                            clubb_height_idx, clubb_time_idx );
-corr_rr_Nr_2_n = var_clubb( idx_corr_rr_Nr_2_n, 1, 1, ...
-                            clubb_height_idx, clubb_time_idx );
-
-% Other variables involved in the PDF.
-mixt_frac = var_clubb( idx_mixt_frac, 1, 1, ...
-                       clubb_height_idx, clubb_time_idx );
-precip_frac_1 = var_clubb( idx_precip_frac_1, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-precip_frac_2 = var_clubb( idx_precip_frac_2, 1, 1, ...
-                           clubb_height_idx, clubb_time_idx );
-
-sigma_sqd_w = var_clubb( idx_sigma_sqd_w, 1, 1, ...
-                         clubb_height_idx, clubb_time_idx );
+   [ mu_w_1(clubb_idx), mu_w_2(clubb_idx), mu_rt_1(clubb_idx), ...
+     mu_rt_2(clubb_idx), mu_thl_1(clubb_idx), mu_thl_2(clubb_idx), ...
+     mu_chi_1(clubb_idx), mu_chi_2(clubb_idx), mu_eta_1(clubb_idx), ...
+     mu_eta_2(clubb_idx), mu_rr_1_n(clubb_idx), mu_rr_2_n(clubb_idx), ...
+     mu_Nr_1_n(clubb_idx), mu_Nr_2_n(clubb_idx), ...
+     sigma_w_1(clubb_idx), sigma_w_2(clubb_idx), ...
+     sigma_rt_1(clubb_idx), sigma_rt_2(clubb_idx), ...
+     sigma_thl_1(clubb_idx), sigma_thl_2(clubb_idx), ...
+     sigma_chi_1(clubb_idx), sigma_chi_2(clubb_idx), ...
+     sigma_eta_1(clubb_idx), sigma_eta_2(clubb_idx), ...
+     sigma_rr_1_n(clubb_idx), sigma_rr_2_n(clubb_idx), ...
+     sigma_Nr_1_n(clubb_idx), sigma_Nr_2_n(clubb_idx), ...
+     corr_rt_thl_1(clubb_idx), corr_rt_thl_2(clubb_idx), ...
+     corr_chi_eta_1(clubb_idx), corr_chi_eta_2(clubb_idx), ...
+     corr_w_rr_1_n(clubb_idx), corr_w_rr_2_n(clubb_idx), ...
+     corr_w_Nr_1_n(clubb_idx), corr_w_Nr_2_n(clubb_idx), ...
+     corr_chi_rr_1_n(clubb_idx), corr_chi_rr_2_n(clubb_idx), ...
+     corr_chi_Nr_1_n(clubb_idx), corr_chi_Nr_2_n(clubb_idx), ...
+     corr_eta_rr_1_n(clubb_idx), corr_eta_rr_2_n(clubb_idx), ...
+     corr_eta_Nr_1_n(clubb_idx), corr_eta_Nr_2_n(clubb_idx), ...
+     corr_rr_Nr_1_n(clubb_idx), corr_rr_Nr_2_n(clubb_idx), ...
+     mixt_frac(clubb_idx), precip_frac_1(clubb_idx), ...
+     precip_frac_2(clubb_idx), sigma_sqd_w(clubb_idx) ] ...
+   = unpack_CLUBB_vars( var_clubb_in, clubb_height_idx, clubb_time_idx );
+   
+end % clubb_idx = 1:1:num_clubb_files
 
 %==========================================================================
 
@@ -1003,6 +1000,7 @@ if ( all( sam_var_lev(idx_3D_rr,:) == 0.0 ) )
    plot_chi_rr = false;
    plot_eta_rr = false;
    plot_rr_Nr  = false;
+   plot_rr     = false;
    plot_ln_rr  = false;
 
 end
@@ -1020,6 +1018,7 @@ if ( all( sam_var_lev(idx_3D_Nr,:) == 0.0 ) )
    plot_chi_Nr = false;
    plot_eta_Nr = false;
    plot_rr_Nr  = false;
+   plot_Nr     = false;
    plot_ln_Nr  = false;
 
 end
