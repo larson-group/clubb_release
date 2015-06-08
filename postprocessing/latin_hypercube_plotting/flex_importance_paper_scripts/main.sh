@@ -37,11 +37,11 @@ plot_rms_two_dir_all()
         time2=360
     fi
     # Total tendency
-    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_mc" --silhs_var_str "lh_rrm_mc" --output_file "$5"/rrm_mc_rms.svg $3 $4
+    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_mc" --silhs_var_str "lh_rrm_mc" --output_file "$5"/rrm_mc_rms.svg "$3" "$4"
     # Autoconversion tendency
-    $script --plot_title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_auto" --silhs_var_str "lh_rrm_auto" --output_file "$5"/rrm_auto_rms.svg $3 $4
+    $script --plot_title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_auto" --silhs_var_str "lh_rrm_auto" --output_file "$5"/rrm_auto_rms.svg "$3" "$4"
     # Accretion tendency
-    $script --plot_title "$ACCR_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_accr" --silhs_var_str "lh_rrm_accr" --output_file "$5"/rrm_accr_rms.svg $3 $4
+    $script --plot_title "$ACCR_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_accr" --silhs_var_str "lh_rrm_accr" --output_file "$5"/rrm_accr_rms.svg "$3" "$4"
     # Evaporation tendency
-    $script --plot_title "$EVAP_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_cond" --silhs_var_str "lh_rrm_evap" --output_file "$5"/rrm_evap_rms.svg $3 $4
+    $script --plot_title "$EVAP_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_cond" --silhs_var_str "lh_rrm_evap" --output_file "$5"/rrm_evap_rms.svg "$3" "$4"
 }
