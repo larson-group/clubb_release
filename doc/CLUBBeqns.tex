@@ -3863,8 +3863,8 @@ fit our prescribed probabililties. Each $Q_j(\mathbf{x})$ has area $S_j$ for
 $j=1,...,N_c$. We can easily verify this:
 
 \begin{align}
-\int \mathbf{1}_j(\mathbf{x}) Q_j(\mathbf{x}) d\mathbf{x} &= \int\mathbf{1}_j(\mathbf{x}) \frac{P(\mathbf{x})}{L_j(\mathbf{x})} d\mathbf{x} \\
- &= \frac{S_j}{p_j} \int \mathbf{1}_j(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \\
+\int Q_j(\mathbf{x}) d\mathbf{x} &= \int_{C_j} \frac{P(\mathbf{x})}{L_j(\mathbf{x})} d\mathbf{x} \\
+ &= \frac{S_j}{p_j} \int_{C_j} P(\mathbf{x}) d\mathbf{x} \\
  &= \frac{S_j}{p_j} p_j \\
  &= S_j
 \end{align}
