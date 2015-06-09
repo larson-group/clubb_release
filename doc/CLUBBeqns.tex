@@ -3807,6 +3807,21 @@ Since the categories $C_j$ span the entire PDF, we have:
 \end{equation}
 where $N_c$ is the number of categories (currently eight in CLUBB).
 
+It can be assumed, without loss of generality, that $p_j > 0$ for all
+categories, because in any category where $p_j = 0$, the corresponding potion of
+the integral in \eqref{SILHS integral form} is zero, so the region of the PDF
+belonging to that category can simply be left out of the integral.
+
+It is worth noting that in general, the PDF masses $p_j$ might not always be
+easy to compute. In the case of SILHS, because of the simple definitions of the
+categories (given above) and the independence of cloud and precipitation, these
+masses can be computed using information already provided to SILHS. For example,
+the mass of category 1, where there is cloud and precipitation in mixture
+component 1, is given simply by
+\begin{equation}
+p_1 = f_{c(1)} f_{p(1)} \zeta_1 .
+\end{equation}
+
 Next, we prescribe for each category another probability, $S_j$, called the
 category's ``prescribed probability''. The probabilities must be prescribed such
 that
@@ -3855,8 +3870,13 @@ $j=1,...,N_c$. We can easily verify this:
 \end{align}
 
 Now, instead of drawing points from the $P(\mathbf{x})$ distribution and
-evaluate the function $h(\mathbf{x})$, we draw points from the $Q_j(\mathbf{x})$
-distributions and evaluate the function $h(\mathbf{x}) L_j(\mathbf{x})$.
+evaluate the function $h(\mathbf{x})$, we draw points from the $Q(\mathbf{x})$
+distribution, where
+\begin{equation}
+Q(\mathbf{x}) = \sum_{j=1}^{N_c} Q_j(\mathbf{x})
+\label{SILHS definition of Q}
+\end{equation}
+and evaluate the function $h(\mathbf{x}) L_j(\mathbf{x})$.
 
 Based on the integral form given in \eqref{SILHS integral rewrite}, each sample
 $h(\mathbf{x}_i)$ needs to be multiplied by $L_j(\mathbf{x}_i)$. This factor is
@@ -4002,38 +4022,42 @@ x_{\mathrm{norm},3} & w \\
 
 \subsection{Integrating over a PDF using SILHS}
 
-When importance sampling is used, the weight of each sample point, denoted as
-$\omega_i$, is given in \eqref{SILHS importance weights def}. When importance
-sampling is not used, the sample points are not weighted, or
+When importance sampling is used, the sample points are picked according to the
+distribution given by the PDF $Q(\mathbf{x})$, as defined in \eqref{SILHS
+definition of Q}. The weight of each sample point, denoted as $\omega_i$, is
+given in \eqref{SILHS importance weights def}. When importance sampling is not
+used, the sample points are not weighted, or
 \begin{equation}
 \omega_i = 1
 \end{equation}
 
-Given SILHS sample points picked according to the distributions given by the PDF's
-$Q_j(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can be
-approximated using the following formulas. To integrate over the entire PDF,
+Given SILHS sample points picked according to the distribution given by the
+PDF $Q(\mathbf{x})$, an integral in the form of \eqref{SILHS integral form} can
+be approximated using the following formulas. To integrate over the entire PDF,
 use:
 \begin{equation}
 \int h(\mathbf{x}) P(\mathbf{x}) d\mathbf{x} \approx \frac{1}{N_s}
-\sum_{i=1}^{N_s} \omega_i h(\mathbf{x}_i)
+\sum_{i=1}^{N_s} \omega_i h(\mathbf{x}_i) \label{SILHS integral estimator}
 \end{equation}
 where $\mathbf{x}_i$ is the $i$\textsuperscript{th} sample point and $N_s$ is
-the total number of sample points. The integral gives the mean of
+the total number of sample points.
+
+The estimator in \eqref{SILHS integral estimator} gives the mean of
 $h(\mathbf{x})$ over the entire PDF. To determine the mean over some subset
-$\Omega$ of the PDF, the following formula should be used:
+$A$ of the PDF, the following formula should be used:
 \begin{equation}
-\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\int h(\mathbf{x})\mathbf{1}_A(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
 \approx \frac{1}{N_s}\sum_{i=1}^{N_s} \omega_i
-h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+h(\mathbf{x}_i) \mathbf{1}_A(\mathbf{x}_i)
 \end{equation}
-However, note that this equation will implicitly be scaled by $p_\Omega$. To
-compute an unscaled version of the integral, the following could be used
+However, note that this equation will implicitly be scaled by $p_A$. To
+compute a normalized version of the integral, the following could be used
 instead:
 \begin{equation}
-\frac{1}{p_\Omega}
-\int h(\mathbf{x})\mathbf{1}_\Omega(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
-\approx \frac{1}{p_\Omega}\frac{1}{N_s}\sum_{i=1}^{N_s} \omega_i
-h(\mathbf{x}_i) \mathbf{1}_\Omega(\mathbf{x}_i)
+\frac{1}{p_A}
+\int h(\mathbf{x})\mathbf{1}_A(\mathbf{x}) P(\mathbf{x}) d\mathbf{x}
+\approx \frac{1}{p_A}\frac{1}{N_s}\sum_{i=1}^{N_s} \omega_i
+h(\mathbf{x}_i) \mathbf{1}_A(\mathbf{x}_i)
 \end{equation}
 
 \subsection{Optimal Allocation of Sample Points}
@@ -4064,11 +4088,11 @@ that \eqref{SILHS importance variance simplified} is minimized. For convenience,
 let $u_j=\int\left[h(\mathbf{x})\right]^2\mathbf{1}_j(\mathbf{x})P(\mathbf{x})\
 d\mathbf{x}$. Then we write \eqref{SILHS importance variance simplified} as
 \begin{equation}
-v = \sum_{j=1}^{N_c} \frac{p_j u_j}{S_j} - \mu^2
+v = \left(\sum_{j=1}^{N_c} \frac{p_j u_j}{S_j}\right) - \mu^2
 \end{equation}
 The probabilities $S_j$ must add to one, so we can write this as:
 \begin{equation}
-v = \sum_{j=1}^{N_c-1} \frac{p_j u_j}{S_j} + \frac{p_{N_c}
+v = \left(\sum_{j=1}^{N_c-1} \frac{p_j u_j}{S_j}\right) + \frac{p_{N_c}
 u_{N_c}}{1 - \sum_{j=1}^{N_c-1} S_j} - \mu^2
 \end{equation}
 
