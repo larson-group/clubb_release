@@ -125,6 +125,9 @@ plot_ln_Nr   = true;
 % single-variable plots only.
 log_Px_plot = false;
 
+% Select the type of output file for MATLAB.
+output_type = '-dpng';
+
 %==========================================================================
 
 % SAM LES 3D file variable indices
@@ -559,7 +562,7 @@ end % clubb_idx = 1:1:num_clubb_files
 % using SAM LES data (and CLUBB output for sigma_sqd_w) based on Larson
 % and Golaz (2005), Eq. 33.
 %fprintf( '\n' )
-%fprintf( 'Backsolve for the parameter beta based largely on SAM LES:\n' ] )
+%fprintf( 'Backsolve for the parameter beta based largely on SAM LES:\n' )
 %for clubb_idx = 1:1:num_clubb_files
 %
 %   if ( num_clubb_files > 1 )
@@ -787,7 +790,7 @@ if ( plot_rt_thl )
    output_filename = [ 'output/', casename, '_rt_thl_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_rt_thl
 
@@ -827,7 +830,7 @@ if ( plot_chi_eta )
    output_filename = [ 'output/', casename, '_chi_eta_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_chi_eta
 
@@ -868,7 +871,7 @@ if ( plot_w_rr )
    output_filename = [ 'output/', casename, '_w_rr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_w_rr
 
@@ -909,7 +912,7 @@ if ( plot_w_Nr )
    output_filename = [ 'output/', casename, '_w_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_w_Nr
 
@@ -950,7 +953,7 @@ if ( plot_chi_rr )
    output_filename = [ 'output/', casename, '_chi_rr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_chi_rr
 
@@ -991,7 +994,7 @@ if ( plot_chi_Nr )
    output_filename = [ 'output/', casename, '_chi_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_chi_Nr
 
@@ -1032,7 +1035,7 @@ if ( plot_eta_rr)
    output_filename = [ 'output/', casename, '_eta_rr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_eta_rr
 
@@ -1073,7 +1076,7 @@ if ( plot_eta_Nr )
    output_filename = [ 'output/', casename, '_eta_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_eta_Nr
 
@@ -1114,7 +1117,7 @@ if ( plot_rr_Nr )
    output_filename = [ 'output/', casename, '_rr_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_rr_Nr
 
@@ -1140,7 +1143,7 @@ if ( plot_w )
    output_filename = [ 'output/', casename, '_w_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_w
 
@@ -1166,7 +1169,7 @@ if ( plot_rt )
    output_filename = [ 'output/', casename, '_rt_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_rt
 
@@ -1192,7 +1195,7 @@ if ( plot_thl )
    output_filename = [ 'output/', casename, '_thl_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_thl
 
@@ -1218,7 +1221,7 @@ if ( plot_chi )
    output_filename = [ 'output/', casename, '_chi_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_chi
 
@@ -1244,7 +1247,7 @@ if ( plot_eta )
    output_filename = [ 'output/', casename, '_eta_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_eta
 
@@ -1271,7 +1274,7 @@ if ( plot_rr )
    output_filename = [ 'output/', casename, '_rr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_rr
 
@@ -1298,7 +1301,7 @@ if ( plot_Nr )
    output_filename = [ 'output/', casename, '_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_Nr
 
@@ -1328,7 +1331,7 @@ if ( plot_ln_rr )
    output_filename = [ 'output/', casename, '_ln_rr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_ln_rr
 
@@ -1358,6 +1361,6 @@ if ( plot_ln_Nr )
    output_filename = [ 'output/', casename, '_ln_Nr_z', ...
                        print_alt, '_t', print_time ];
 
-   print( '-dpng', output_filename );
+   print( output_type, output_filename );
 
 end % plot_ln_Nr
