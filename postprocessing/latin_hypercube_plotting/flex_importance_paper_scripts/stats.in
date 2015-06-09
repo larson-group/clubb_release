@@ -4,7 +4,7 @@
 
 &statsnl
 
-vars_zt = 'rrm_mc', 'rrm_auto', 'rrm_accr', 'rrm_cond', ''
+vars_zt = 'rrm_mc', 'rrm_auto', 'rrm_accr', 'rrm_cond', 'Nrm_auto', 'Nrm_cond', ''
 
 vars_lh_zt = 'lh_rrm_mc', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', ''
 
