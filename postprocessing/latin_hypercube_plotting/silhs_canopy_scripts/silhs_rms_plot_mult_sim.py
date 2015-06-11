@@ -4,12 +4,12 @@ import pylab as pl
 
 l_all_height_avg = True
 
-sim_points_all = [10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200]
+sim_points_all = [2,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190,200]
 
-clubb_var_str = 'rrm_auto'
-silhs_var_str  = 'lh_rrm_auto'
+clubb_var_str = 'rrm_mc'
+silhs_var_str  = 'lh_rrm_mc'
 
-silhs_dirs = ["out_default", "out_prescribed"]
+silhs_dirs = ["out_default", "out_maxov", "out_presc_maxov", "out_presc_maxov_kcld"]
 
 clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+'/rico_lh_zt.nc').variables[clubb_var_str]
 
@@ -17,7 +17,7 @@ rms_all = list()
 for d in silhs_dirs:
     rms_all.append(np.empty(len(sim_points_all)))
 
-time1 = 3000
+time1 = 4200
 time2 = 4320
 n_timesteps = time2-time1
 
@@ -54,6 +54,20 @@ for n_i in range(0,len(sim_points_all)):
 
 for d_i in range(0,len(silhs_dirs)):
     pl.plot(sim_points_all, rms_all[d_i], label=silhs_dirs[d_i])
+
+# Create a 1/N line
+## rms_1_over_n = np.empty(len(sim_points_all))
+## rms_1_over_n[0] = rms_all[2][0]
+## for n_i in range(1,len(sim_points_all)):
+##     rms_1_over_n[n_i] = rms_1_over_n[n_i-1] * sim_points_all[n_i-1] / sim_points_all[n_i]
+## pl.plot(sim_points_all, rms_1_over_n, label='1 over N')
+
+# Create a 1/sqrt(N) line
+## rms_1_over_sqrt_n = np.empty(len(sim_points_all))
+## rms_1_over_sqrt_n[0] = rms_all[2][0]
+## for n_i in range(1,len(sim_points_all)):
+##     rms_1_over_sqrt_n[n_i] = rms_1_over_sqrt_n[n_i-1] * np.sqrt(float(sim_points_all[n_i-1]) / sim_points_all[n_i])
+## pl.plot(sim_points_all, rms_1_over_sqrt_n, label='1 over sqrt N')
 
 pl.xlabel('Number of Sample Points')
 pl.ylabel('Root Mean Square of Absolute Error')

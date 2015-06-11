@@ -13,21 +13,20 @@ pf1 = clubb_nc.variables['precip_frac_1']
 pf2 = clubb_nc.variables['precip_frac_2']
 mxf = clubb_nc.variables['mixt_frac']
 
-k_lh_start = silhs_sfc_nc.variables['k_lh_start']
+k_lh_start = silhs_sfc_nc.variables['k_lh_start'][:]
 
-X_mixt_comp = silhs_2D_u_nc.variables['X_mixt_comp']
-dp1 = silhs_2D_u_nc.variables['dp1']
-weights = silhs_2D_u_nc.variables['lh_sample_point_weights']
-chi_n = silhs_2D_l_nc.variables['chi']
+X_mixt_comp = silhs_2D_u_nc.variables['X_mixt_comp'][:]
+weights = silhs_2D_u_nc.variables['lh_sample_point_weights'][:]
+chi_n = silhs_2D_l_nc.variables['chi'][:]
 
 ###################################################
-clubb_var = clubb_nc.variables['rrm_auto']
-rho = clubb_nc.variables['rho']
+clubb_var = clubb_nc.variables['rrm_auto'][:]
+rho = clubb_nc.variables['rho'][:]
 l_time_shift = False
 ################
-rr_ln   = silhs_2D_l_nc.variables['rr']
-Nr_ln   = silhs_2D_l_nc.variables['Nr']
-Ncn_ln   = silhs_2D_l_nc.variables['Ncn']
+rr_ln   = silhs_2D_l_nc.variables['rr'][:]
+Nr_ln   = silhs_2D_l_nc.variables['Nr'][:]
+Ncn_ln   = silhs_2D_l_nc.variables['Ncn'][:]
 ###################################################
 
 num_samples = rr_ln.shape[2]
@@ -93,11 +92,11 @@ for t in range(time1,time2):
             j = 7
 
         # Autoconversion (KK)
-        #if chi_n[t,k,i,0] > 0.0:
-        #    vars_plt[j][t-time1] = vars_plt[j][t-time1] + (1350.0*(rho[t,k,0,0]/1.0e6)**-1.79) * chi_n[t,k,i,0]**2.47 * Ncn_ln[t,k,i,0]**-1.79 * weights[t,k,i,0]
+        if chi_n[t,k,i,0] > 0.0:
+            vars_plt[j][t-time1] = vars_plt[j][t-time1] + (1350.0*(rho[t,k,0,0]/1.0e6)**-1.79) * chi_n[t,k,i,0]**2.47 * Ncn_ln[t,k,i,0]**-1.79 * weights[t,k,i,0]
 
         # Count
-        vars_plt[j][t-time1] = vars_plt[j][t-time1] + 1
+        #vars_plt[j][t-time1] = vars_plt[j][t-time1] + 1
 
     for i in range(0,8):
         vars_plt[i][t-time1] = vars_plt[i][t-time1] / num_samples
@@ -113,6 +112,14 @@ for u in range(0,len(vars_plt)):
         pl.plot(range(time1,time2), vars_plt[u][:], colors[u], label=category_labels[u])
     else:
         pl.plot(range(time1,time2), vars_plt[u][:], colors[u], label=category_labels[u])
+
+#clusters = [(0,1,2,3),(4,5,6,7)]
+#for u in range(0,len(clusters)):
+#    pl.plot(range(time1,time2), vars_plt[clusters[u][0]] + vars_plt[clusters[u][1]] + vars_plt[clusters[u][2]] + vars_plt[clusters[u][3]], label="Cluster "+str(u))
+
+#clusters = [(0,2),(1,3),(4,6),(5,7)]
+#for u in range(0,len(clusters)):
+#    pl.plot(range(time1,time2), vars_plt[clusters[u][0]] + vars_plt[clusters[u][1]], label="Cluster "+str(u))
 
 pl.legend()
 pl.show()
