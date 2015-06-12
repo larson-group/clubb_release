@@ -29,7 +29,7 @@ l_all_height_avg = False
 clubb_var_str = 'rrm_mc'
 silhs_var_str  = 'lh_rrm_mc'
 
-plot_title = clubb_var_str
+plot_title = ''
 
 output_file = ''
 
@@ -70,6 +70,9 @@ if len(silhs_dirs) == 0:
     print("Usage: ./silhs_rms_plot_mult_sim.py [options] "
           "path1 [path2 [...]]", file=sys.stderr)
     sys.exit(1)
+
+if plot_title == '':
+    plot_title = clubb_var_str
 
 sim_points_all = list()
 for entry in os.listdir(silhs_dirs[0]):

@@ -41,6 +41,9 @@ done
 
 MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
 
+# We need to use absolute paths because of a bug in run_scm.bash.
+OUTPUT_DIR=`readlink -f "$OUTPUT_DIR"`
+
 # Sanity checks
 if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.bash ]]
 then
