@@ -26,6 +26,66 @@ module advance_clubb_core_module
 !   ACM TOMS, Numerical Recipes, et cetera) are the intellectual
 !   property of their respective authors as noted and are also subject
 !   to copyright.
+!
+!
+!
+! Cloud Layers Unified By Binormals (CLUBB) user license 
+! agreement.
+!
+! Thank you for your interest in CLUBB. We work hard to create a
+! code that implements the best software engineering practices,
+! is supported to the extent allowed by our limited resources,
+! and is available without cost to non-commercial users. You may
+! use CLUBB if, in return, you abide by these conditions:
+!
+! 1. Please cite CLUBB in presentations and publications that
+!  contain results obtained using CLUBB.
+!
+! 2. You may not use any part of CLUBB to create or modify
+!  another single-column (1D) model that is not called CLUBB.
+!  However, you may modify or augment CLUBB or parts of CLUBB if
+!  you include "CLUBB" in the name of the resulting single-column
+!  model. For example, a user at MIT might modify CLUBB and call
+!  the modified version "CLUBB-MIT." Or, for example, a user of
+!  the CLM land-surface model might interface CLM to CLUBB and
+!  call it "CLM-CLUBB." This naming convention recognizes the
+!  contributions of both sets of developers.
+!
+! 3. You may implement CLUBB as a parameterization in a large-
+!  scale host model that has 2 or 3 spatial dimensions without 
+!  including "CLUBB" in the combined model name, but please 
+!  acknowledge in presentations and publications that CLUBB has 
+!  been included as a parameterization.
+!
+! 4. You may not provide all or part of CLUBB to anyone without 
+!  prior permission from Vincent Larson (vlarson@uwm.edu). If 
+!  you wish to share CLUBB with your collaborators without 
+!  seeking permission, please ask your collaborators to register 
+!  as CLUBB users at http://clubb.larson-group.com and to 
+!  download CLUBB from there.
+!
+! 5. You may not use CLUBB for commercial purposes unless you 
+!  receive permission from Vincent Larson.
+!
+! 6. You may not re-license all or any part of CLUBB.
+!
+! 7. CLUBB is provided "as is" and without warranty.
+!
+! We hope that CLUBB will develop into a community resource. We 
+! encourage users to contribute their CLUBB modifications or 
+! extensions to the CLUBB development group. We will then 
+! consider them for inclusion in CLUBB. Such contributions will 
+! benefit all CLUBB users. We would be pleased to acknowledge 
+! contributors and list their CLUBB-related papers on our "About 
+! CLUBB" webpage (http://clubb.larson-group.com/about.php) for 
+! those contributors who so desire.
+!
+! Thanks so much and best wishes for your research!
+!
+! The CLUBB Development Group
+! (Present and past contributors to the source code include 
+! Vincent Larson, Chris Golaz, David Schanen, Brian Griffin, 
+! Joshua Fasching, Adam Smith, and Michael Falk).
 !-----------------------------------------------------------------------
 
   implicit none
