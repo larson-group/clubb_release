@@ -22,14 +22,16 @@ run_silhs_sp()
 # Parameters
 # 1: CLUBB directory
 # 2: Case name
-# 3: Simulation directory 1
-# 4: Simulation directory 2
-# 5: Output directory
-plot_rms_two_dir_all()
+# 3: Plot output directory
+# +: Simulation directories
+plot_rms_n_dir_all()
 {
-    script="$1"/postprocessing/latin_hypercube_plotting/variance_analysis_scripts/rms_vs_sample_points/silhs_rms_plot_mult_sim.py
-    mkdir -p "$5"
-    if [[ "$2" == "rico_lh" ]]
+    clubb_dir=$1; shift
+    case_name=$1; shift
+    plot_dir=$1; shift
+    script="$clubb_dir"/postprocessing/latin_hypercube_plotting/variance_analysis_scripts/rms_vs_sample_points/silhs_rms_plot_mult_sim.py
+    mkdir -p "$plot_dir"
+    if [[ "$case_name" == "rico_lh" ]]
     then
         time1=0
         time2=4320
@@ -39,16 +41,16 @@ plot_rms_two_dir_all()
     fi
     # Total tendency
     echo "Total tendency"
-    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_mc" --silhs_var_str "lh_rrm_mc" --output_file "$5"/rrm_mc_rms.svg "$3" "$4"
+    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_mc" --silhs_var_str "lh_rrm_mc" --output_file "$plot_dir"/rrm_mc_rms.svg "$@"
     # Autoconversion tendency
     echo "Autoconversion tendency"
-    $script --plot_title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_auto" --silhs_var_str "lh_rrm_auto" --output_file "$5"/rrm_auto_rms.svg "$3" "$4"
+    $script --plot_title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_auto" --silhs_var_str "lh_rrm_auto" --output_file "$plot_dir"/rrm_auto_rms.svg "$@"
     # Accretion tendency
     echo "Accretion tendency"
-    $script --plot_title "$ACCR_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_accr" --silhs_var_str "lh_rrm_accr" --output_file "$5"/rrm_accr_rms.svg "$3" "$4"
+    $script --plot_title "$ACCR_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_accr" --silhs_var_str "lh_rrm_accr" --output_file "$plot_dir"/rrm_accr_rms.svg "$@"
     # Evaporation tendency
     echo "Evaporation tendency"
-    $script --plot_title "$EVAP_STR" --time1 $time1 --time2 $time2 --case_name "$2" --clubb_var_str "rrm_cond" --silhs_var_str "lh_rrm_evap" --output_file "$5"/rrm_evap_rms.svg "$3" "$4"
+    $script --plot_title "$EVAP_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_cond" --silhs_var_str "lh_rrm_evap" --output_file "$plot_dir"/rrm_evap_rms.svg "$@"
 }
 
 # Parameters
@@ -111,6 +113,20 @@ apply_rico_presc_probs()
     sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp2 = 0.04/g' -i "$1"
     sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp1 = 0.04/g' -i "$1"
     sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp2 = 0.04/g' -i "$1"
+}
+
+# Parameters
+# 1: Case file to write the result to
+apply_dycoms_presc_probs()
+{
+    sed 's/^eight_cluster_presc_probs%cloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp1 = 0.49/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp2 = 0.39/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp1 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp2 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp1 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp2 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp1 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp2 = 0.02/g' -i "$1"
 }
 
 # Parameters

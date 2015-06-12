@@ -30,6 +30,7 @@ run_script_in_place $SCRIPT_DIR/modify_model_in_presc_probs.py "$CLUBB_DIR/input
 run_script_in_place $SCRIPT_DIR/modify_model_in_presc_probs.py "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
 
 apply_rico_presc_probs "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
+apply_dycoms_presc_probs "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
 
 echo -e "\n-----Running rico_lh using prescribed probabilities-----"
 run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/prescribed"
@@ -48,11 +49,11 @@ run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/cloud
 # Plots!!
 echo -e "\n-----Generating rico_lh RMS plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/rico_lh_rms"
-plot_rms_two_dir_all "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/cloud_weighted" "$SIM_OUTPUT_DIR/rico_lh/prescribed" "$PLOTS_OUTPUT_DIR/rico_lh_rms"
+plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/cloud_weighted" "$SIM_OUTPUT_DIR/rico_lh/prescribed" "$PLOTS_OUTPUT_DIR/rico_lh_rms"
 
 echo -e "\n-----Generating dycoms2_rf02_do RMS plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms"
-plot_rms_two_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/cloud_weighted" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed" "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms"
+plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/cloud_weighted" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed" "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms"
 
 echo -e "\n-----Generating rico_lh timeseries plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/rico_lh_timeseries"
@@ -61,6 +62,22 @@ plot_timeseries_two_dir_all "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/cloud_
 echo -e "\n-----Generating dycoms2_rf02_do timeseries plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries"
 plot_timeseries_two_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/cloud_weighted" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed" "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries"
+
+apply_dycoms_presc_probs "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
+apply_rico_presc_probs "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
+
+echo -e "\n-----Running rico_lh using suboptimal prescribed probabilities-----"
+run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/prescribed_subopt"
+echo -e "\n-----Running dycoms2_rf02_do using suboptimal prescribed probabilities-----"
+run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed_subopt"
+
+echo -e "\n-----Generating rico_lh RMS plots-----"
+mkdir "$PLOTS_OUTPUT_DIR/rico_lh_rms_subopt"
+plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/cloud_weighted" "$SIM_OUTPUT_DIR/rico_lh/prescribed" "$SIM_OUTPUT_DIR/rico_lh/prescribed_subopt" "$PLOTS_OUTPUT_DIR/rico_lh_rms_subopt"
+
+echo -e "\n-----Generating dycoms2_rf02_do RMS plots-----"
+mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms_subopt"
+plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/cloud_weighted" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/prescribed_subopt" "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms_subopt"
 
 ##### Restore model files #####
 mv $RICO_LH_MODEL_IN_BACKUP "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
