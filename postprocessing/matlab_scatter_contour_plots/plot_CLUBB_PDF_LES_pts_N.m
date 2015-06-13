@@ -104,7 +104,9 @@ end
 xlabel( var_x_label )
 ylabel( [ 'P( ', field_plotted, ' )' ] )
 legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' )
-grid on
+if ( ~log_Px_plot )
+   grid on
+end
 box on
 
 % Figure title and other important information.

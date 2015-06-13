@@ -137,8 +137,8 @@ if ( log_Px_plot )
          min_pos_bincounts_x = min( min_pos_bincounts_x, bincounts_x(i) );
       end
    end
-   ylim( [ 0.001 * min_pos_bincounts_x ...
-                   / ( nx_LES_grid * ny_LES_grid * delta_x ) ...
+   ylim( [ 0.1 * min_pos_bincounts_x ...
+                 / ( nx_LES_grid * ny_LES_grid * delta_x ) ...
            max( max(bincounts_x) ...
                 / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
                 max(max(P_x)) ) ] );
@@ -150,7 +150,9 @@ end
 xlabel( var_x_label )
 ylabel( [ 'P( ', field_plotted, ' )' ] )
 legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' );
-grid on
+if ( ~log_Px_plot )
+   grid on
+end
 box on
 
 % Figure title and other important information.
