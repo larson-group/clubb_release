@@ -36,56 +36,18 @@ end
 
 % CLUBB zt NetCDF filename.
 if ( strcmp( input_file_clubb, 'default' ) )
-
    % The value in input_file_clubb is 'default'.
    filename_clubb = '../../output/rico_zt.nc';
-
 else
-
    % Filenames (and paths) are found in input_file_clubb.
-
    if ( num_clubb_files > 1 )
-
       % There multiple CLUBB zt files named in input_file_clubb.
-
-      % Loop over all characters in the CLUBB input file string to find
-      % spaces, which are the filename delimiters.
-      string_length = zeros( num_clubb_files, 1 );
-      str_len_idx = 0;
-      delim_idx_prev = 0;
-      for char_idx = 1:1:size( input_file_clubb, 2 )-1
-         if ( isspace( input_file_clubb(1,char_idx) ) )
-            str_len_idx = str_len_idx + 1;
-            string_length(str_len_idx) = char_idx - delim_idx_prev - 1;
-            delim_idx_prev = char_idx;
-         end
-      end % char_idx = 1:1:size( input_file_clubb, 2 )-1
-      string_length(num_clubb_files) ...
-      = size( input_file_clubb, 2 ) - delim_idx_prev;
-
-      % Setup size for filename_clubb by longest string.
-      char_max_len = blanks( max( string_length ) );
-
-      % Initialize filename_clubb.
-      filename_clubb(1,:) = char_max_len;
-
-      % Enter filenames into filename_clubb.
-      remaining_string = input_file_clubb;
-      for clubb_idx = 1:1:num_clubb_files-1
-         [ filename_clubb(clubb_idx,1:string_length(clubb_idx)) ...
-           remain ] = strtok( remaining_string, ' ' );
-         remaining_string = remain;
-      end % clubb_idx = 1:1:num_clubb_files
-      filename_clubb(num_clubb_files,1:string_length(num_clubb_files)) ...
-      = strtok( remaining_string, ' ' );
-
+      filename_clubb ...
+      = parse_input_file_string( input_file_clubb, num_clubb_files );
    else % num_clubb_files = 1
-
       % There is only one CLUBB zt file named in input_file_clubb.
       filename_clubb = input_file_clubb;
-
    end % num_clubb_files > 1
-
 end % strcmp( input_file_clubb, 'default' )
 
 % Declare the CLUBB vertical level index.
