@@ -5,7 +5,7 @@
 # For example, $OUTPUT_DIR/out_16 corresponds to output from SILHS run with 16 sample
 # points.
 
-CLUBB_DIR="`readlink -f \`dirname $0\``/../../../.."
+CLUBB_DIR="`readlink -m \`dirname $0\``/../../../.."
 OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
 CASE_NAME="rico_lh"
 STATS_FILE=""
@@ -42,7 +42,7 @@ done
 MODEL_FILE="$CLUBB_DIR/input/case_setups/""$CASE_NAME""_model.in"
 
 # We need to use absolute paths because of a bug in run_scm.bash.
-OUTPUT_DIR=`readlink -f "$OUTPUT_DIR"`
+OUTPUT_DIR=`readlink -m "$OUTPUT_DIR"`
 
 # Sanity checks
 if [[ ! -f $CLUBB_DIR/run_scripts/run_scm.bash ]]
@@ -67,7 +67,7 @@ then
   exit 1
 fi
 
-mkdir -p $OUTPUT_DIR
+mkdir -p "$OUTPUT_DIR"
 
 # Statistics command line argument string
 STATS_CMD_STRING=""
