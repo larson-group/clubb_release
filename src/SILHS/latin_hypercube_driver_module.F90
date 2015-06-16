@@ -602,14 +602,11 @@ module latin_hypercube_driver_module
     use math_utilities, only: &
       rand_integer_in_range  ! Procedure
 
-    implicit none
+    use parameters_silhs, only: &
+      l_rcm_in_cloud_k_lh_start,  &  ! Variable(s)
+      l_random_k_lh_start
 
-    ! Local Constants
-    logical, parameter :: &
-      l_rcm_in_cloud_k_lh_start = .false., &  ! Compute k_lh_start based on rcm_in_cloud instead
-                                              ! of rcm
-      l_random_k_lh_start = .false.            ! Use a random value of k_lh_start between rcm and
-                                              ! rcm_in_cloud
+    implicit none
 
     ! Input Variables
     integer, intent(in) :: &
