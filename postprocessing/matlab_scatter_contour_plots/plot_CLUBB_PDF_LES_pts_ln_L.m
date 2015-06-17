@@ -97,7 +97,7 @@ ylim( [ 0 max( max(bincounts_lnx) ...
                max(max(P_lnx)) ) ] );
 xlabel( var_lnx_label )
 ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ] )
-legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' )
+legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthWest' )
 grid on
 box on
 % Figure title and other important information.

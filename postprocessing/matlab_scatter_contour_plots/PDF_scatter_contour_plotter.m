@@ -1,6 +1,6 @@
 % $Id$
 function PDF_scatter_contour_plotter( input_file_sam, input_file_clubb, ...
-                                      num_clubb_files )
+                                      num_clubb_files, date_string )
 
 % Input Variables:
 %
@@ -26,6 +26,10 @@ function PDF_scatter_contour_plotter( input_file_sam, input_file_clubb, ...
 %                      (run_scatter_contour_plots.bash), this is
 %                      automatically calculated.  Otherwise, this number
 %                      needs to be passed into this function.
+%
+% 4) date_string:  The current date in YYYYMMDD_hh:mm:ss.  This is used to
+%                  place output from a particular run and can be easily
+%                  renamed after the run.
 
 % SAM LES 3D NetCDF filename.
 if ( strcmp( input_file_sam, 'default' ) )
@@ -61,6 +65,8 @@ clubb_height_idx = 19;
 casename = 'RICO';
 %casename = 'RF02';
 print_note = 'Input fields (predictive fields)';
+% Note:  for filename_addition, add an underscore (_) before any entry.
+filename_addition = '';
 
 % Select the plots that will be plotted.
 plot_rt_thl  = true;
@@ -594,6 +600,9 @@ fprintf( '\n' )
 print_alt = int2str( round( z_clubb(clubb_height_idx) ) );
 print_time = int2str( round( time_clubb(clubb_time_idx) / 60.0 ) );
 
+% The path of the output directory.
+output_dir = [ 'output/', date_string, '/' ];
+
 % When the SAM LES data for rr is 0 everywhere at the level, the plots
 % involving rr will fail, causing an exit with an error.  Since these
 % plots aren't interesting anyway when there's no rr, simply turn them
@@ -666,8 +675,8 @@ if ( plot_rt_thl )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_rt_thl_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_rt_thl_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -709,8 +718,8 @@ if ( plot_chi_eta )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_chi_eta_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_chi_eta_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -753,8 +762,8 @@ if ( plot_w_rr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_w_rr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_w_rr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -797,8 +806,8 @@ if ( plot_w_Nr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_w_Nr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_w_Nr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -841,8 +850,8 @@ if ( plot_chi_rr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_chi_rr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_chi_rr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -885,8 +894,8 @@ if ( plot_chi_Nr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_chi_Nr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_chi_Nr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -929,8 +938,8 @@ if ( plot_eta_rr)
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_eta_rr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_eta_rr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -973,8 +982,8 @@ if ( plot_eta_Nr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_eta_Nr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_eta_Nr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -1017,8 +1026,8 @@ if ( plot_rr_Nr )
                               [ 'Altitude = ', print_alt, ' meters' ], ...
                               print_note )
 
-   output_filename = [ 'output/', casename, '_rr_Nr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_rr_Nr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -1061,11 +1070,11 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_w_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_w_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_w_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_w_z', print_alt, '_t', print_time, '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1099,11 +1108,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_rt_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_rt_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_rt_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_rt_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1137,11 +1147,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_thl_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_thl_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_thl_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_thl_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1175,11 +1186,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_chi_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_chi_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_chi_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_chi_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1213,11 +1225,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_eta_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_eta_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_eta_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_eta_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1252,11 +1265,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_rr_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_rr_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_rr_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_rr_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1291,11 +1305,12 @@ for marginal_plot_type = 1:1:2
                                 print_note )
 
       if ( ~log_Px_plot )
-         output_filename = [ 'output/', casename, '_Nr_z', ...
-                             print_alt, '_t', print_time ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_Nr_z', print_alt, '_t', print_time ];
       else
-         output_filename = [ 'output/', casename, '_Nr_z', ...
-                             print_alt, '_t', print_time, '_log' ];
+         output_filename = [ output_dir, casename, filename_addition, ...
+                             '_Nr_z', print_alt, '_t', print_time, ...
+                             '_log' ];
       end
 
       print( output_type, output_filename );
@@ -1330,8 +1345,8 @@ if ( plot_ln_rr )
                                 [ 'Altitude = ', print_alt, ' meters' ], ...
                                 print_note )
 
-   output_filename = [ 'output/', casename, '_ln_rr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_ln_rr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 
@@ -1363,8 +1378,8 @@ if ( plot_ln_Nr )
                                 [ 'Altitude = ', print_alt, ' meters' ], ...
                                 print_note )
 
-   output_filename = [ 'output/', casename, '_ln_Nr_z', ...
-                       print_alt, '_t', print_time ];
+   output_filename = [ output_dir, casename, filename_addition, ...
+                       '_ln_Nr_z', print_alt, '_t', print_time ];
 
    print( output_type, output_filename );
 

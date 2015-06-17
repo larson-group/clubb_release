@@ -15,6 +15,23 @@ cd $run_dir
 # all users. 
 chmod 777 output
 
+# Change directory to the "output" directory.
+cd output
+
+# Current date in YYYYMMDD_hh:mm:ss.
+date_string=`date +%Y%m%d_%H:%M:%S`
+
+# Make a new directory named after the date string (this can easily be renamed
+# later).
+mkdir $date_string
+
+# Change the permission on the "date" directory so that it is writable by
+# all users.
+chmod 777 $date_string
+
+# Change directory back to the main directory.
+cd ..
+
 # Check for files (and paths) passed in through the command line.  The first one
 # is the SAM LES 3D file (in netCDF format).  Every subsequent file is a CLUBB
 # file (also in netCDF format).  When at least two files aren't present in the
@@ -72,4 +89,4 @@ num_CLUBB_files=${#CLUBB_file[@]}
 export DISPLAY=$HOSTNAME:0
 
 # Run the scatter/contour plotter. 
-sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "PDF_scatter_contour_plotter( '$SAM_LES_3D_file', '${CLUBB_file[*]}', $num_CLUBB_files ), exit"
+sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "PDF_scatter_contour_plotter( '$SAM_LES_3D_file', '${CLUBB_file[*]}', $num_CLUBB_files, '$date_string' ), exit"
