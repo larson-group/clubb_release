@@ -72,8 +72,8 @@ plot_timeseries_two_dir_all()
 
     tmp_dir="tmp_$RANDOM"
     mkdir $tmp_dir
-    ln -s "`readlink -f \"$sim_dir_1/silhs_20\"`" "$tmp_dir/`basename \"$sim_dir_1\"`_20"
-    ln -s "`readlink -f \"$sim_dir_2/silhs_20\"`" "$tmp_dir/`basename \"$sim_dir_2\"`_20"
+    ln -s "`readlink -m \"$sim_dir_1/silhs_20\"`" "$tmp_dir/`basename \"$sim_dir_1\"`_20"
+    ln -s "`readlink -m \"$sim_dir_2/silhs_20\"`" "$tmp_dir/`basename \"$sim_dir_2\"`_20"
 
     if [[ "$case_name" == "rico_lh" ]]
     then
@@ -144,4 +144,11 @@ run_script_in_place()
 turn_off_presc_probs()
 {
     sed 's/^l_lh_clustered_sampling\s*=.*$/l_lh_clustered_sampling = .false./g' -i "$1"
+}
+
+# Parameters
+# 1: Model file
+turn_on_presc_probs()
+{
+    sed 's/^l_lh_clustered_sampling\s*=.*$/l_lh_clustered_sampling = .true./g' -i "$1"
 }
