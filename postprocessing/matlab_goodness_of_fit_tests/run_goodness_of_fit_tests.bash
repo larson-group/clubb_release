@@ -82,5 +82,5 @@ num_CLUBB_files=${#CLUBB_file[@]}
 # Get rid of annoying MATLAB warning message about "No protocol specified."
 export DISPLAY=$HOSTNAME:0
 
-# Run the scatter/contour plotter. 
+# Run the goodness-of-fit_tests. 
 sudo -u matlabuser /usr/local/bin/matlab -nodisplay -nodesktop -nosplash -r "goodness_of_fit_tests( '${SAM_LES_3D_file[*]}', $num_SAM_LES_3D_files, '${CLUBB_file[*]}', $num_CLUBB_files ), exit"

@@ -251,6 +251,62 @@ for sam_idx = sam_start_file_idx:1:sam_stop_file_idx
 
       end % test_eta
 
+      % Run the goodness-of-fit tests for rr.
+      if ( test_rr )
+
+         flag_ip_only = false;
+
+         % The K-S test for rr.
+         KS_number_rr ...
+         = KS_test_lognormal( sam_var_lev(idx_3D_rr,:), mu_rr_1_n, ...
+                              mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, ...
+                              mixt_frac, precip_frac_1, precip_frac_2, ...
+                              flag_ip_only, num_clubb_files )
+
+      end % test_rr
+
+      % Run the goodness-of-fit tests for Nr.
+      if ( test_Nr )
+
+         flag_ip_only = false;
+
+         % The K-S test for Nr.
+         KS_number_Nr ...
+         = KS_test_lognormal( sam_var_lev(idx_3D_Nr,:), mu_Nr_1_n, ...
+                              mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, ...
+                              mixt_frac, precip_frac_1, precip_frac_2, ...
+                              flag_ip_only, num_clubb_files )
+
+      end % test_Nr
+
+      % Run the goodness-of-fit tests for rr in-precip.
+      if ( test_rr_ip )
+
+         flag_ip_only = true;
+
+         % The K-S test for rr in-precip.
+         KS_number_rr_ip ...
+         = KS_test_lognormal( sam_var_lev(idx_3D_rr,:), mu_rr_1_n, ...
+                              mu_rr_2_n, sigma_rr_1_n, sigma_rr_2_n, ...
+                              mixt_frac, precip_frac_1, precip_frac_2, ...
+                              flag_ip_only, num_clubb_files )
+
+      end % test_rr_ip
+
+      % Run the goodness-of-fit tests for Nr in-precip.
+      if ( test_Nr_ip )
+
+         flag_ip_only = true;
+
+         % The K-S test for Nr in-precip.
+         KS_number_Nr_ip ...
+         = KS_test_lognormal( sam_var_lev(idx_3D_Nr,:), mu_Nr_1_n, ...
+                              mu_Nr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, ...
+                              mixt_frac, precip_frac_1, precip_frac_2, ...
+                              flag_ip_only, num_clubb_files )
+
+      end % test_Nr_ip
+
    end % clubb_height_idx = clubb_start_height_idx:1:clubb_stop_height_idx
 
 end % sam_idx = sam_start_file_idx:1:sam_stop_file_idx
