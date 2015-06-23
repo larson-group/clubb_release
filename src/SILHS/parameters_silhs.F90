@@ -54,6 +54,11 @@ module parameters_silhs
 
   !$omp threadprivate( eight_cluster_presc_probs )
 
+  logical, public :: &
+    l_lh_limit_weights = .false.              ! Limit SILHS sample point weights for stability
+
+  !$omp threadprivate( l_lh_limit_weights )
+
   private ! Default Scope
 
   public :: eight_cluster_presc_probs_type

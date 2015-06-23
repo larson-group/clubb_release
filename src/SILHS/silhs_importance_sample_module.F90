@@ -57,7 +57,8 @@ module silhs_importance_sample_module
       clubb_at_least_debug_level  ! Procedure
 
     use parameters_silhs, only: &
-      l_lh_clustered_sampling ! Variable
+      l_lh_clustered_sampling, & ! Variable(s)
+      l_lh_limit_weights
 
     implicit none
 
@@ -137,7 +138,12 @@ module silhs_importance_sample_module
         stop "Fatal error in importance_sampling_driver"
       end select
 
-    else
+      if ( l_lh_limit_weights ) then
+        call limit_category_weights( category_real_probs, & ! In
+                                     category_prescribed_probs ) ! In/Out
+      end if
+
+    else ! .not. l_lh_clustered_sampling
 
       ! Importance sampling strategy that places half of all sample points in cloud!
       category_prescribed_probs = cloud_importance_sampling &
@@ -403,6 +409,146 @@ module silhs_importance_sample_module
 
     return
   end function compute_category_sample_weights
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  subroutine limit_category_weights( category_real_probs, category_prescribed_probs )
+
+  ! Description:
+  !   Modifies the category prescribed probabilities such that an
+  !   invariant maximum weight is achieved. The weight for each category
+  !   j is equal to category_real_probs(j) / category_prescribed_probs(j).
+  !   In this subroutine, category_prescribed_probs(j) is increased in
+  !   each necessary category such that no category has a weight that
+  !   exceeds the maximum.
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
+    use constants_clubb, only: &
+      zero, &        ! Constant(s)
+      fstderr
+
+    use error_code, only: &
+      clubb_at_least_debug_level  ! Procedure
+
+    implicit none
+
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      max_weight                    = 5.0_core_rknd, &
+      real_prob_thresh_for_transfer = 1.0e-8_core_rknd
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs    ! The PDF probability for each importance category
+
+    ! Input/Output Variables
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(inout) :: &
+      category_prescribed_probs  ! Prescribed probability for each category; these will
+                                 ! be modified to ensure the minimum weight.
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      min_presc_probs, &         ! Minimum prescribed probabilities necessary for each category
+      min_presc_prob_diff        ! category_prescribed_probs(:) - min_presc_probs(:)
+
+    real( kind = core_rknd ) :: &
+      total_diff_under, &
+      total_diff_over, &
+      weight
+
+    logical, dimension(num_importance_categories) :: &
+      l_ignore_category          ! Whether to ignore a category due to its
+                                 ! PDF probability being too low
+
+    integer :: icategory
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    l_ignore_category(:) = .false.
+    where ( category_real_probs < real_prob_thresh_for_transfer )
+      l_ignore_category = .true.
+    end where
+
+    total_diff_under = zero
+
+    do icategory=1, num_importance_categories
+      if ( .not. l_ignore_category(icategory) ) then
+        min_presc_probs(icategory) = category_real_probs(icategory) / max_weight
+        min_presc_prob_diff(icategory) = category_prescribed_probs(icategory) - &
+                                         min_presc_probs(icategory)
+        if ( min_presc_prob_diff(icategory) < zero ) then
+          total_diff_under = total_diff_under + abs( min_presc_prob_diff(icategory) )
+        end if
+      else ! l_ignore_category(icategory)
+        min_presc_probs(icategory) = zero
+        min_presc_prob_diff(icategory) = zero
+      end if ! .not. l_ignore_category(icategory)
+    end do ! icategory=1, num_importance_categories
+
+    if ( total_diff_under > zero ) then
+
+      ! Find the sum of the positive differences in categories
+      total_diff_over = zero
+      do icategory=1, num_importance_categories
+        if ( min_presc_prob_diff(icategory) > zero ) then
+          total_diff_over = total_diff_over + min_presc_prob_diff(icategory)
+        end if
+      end do ! icategory=1, num_importance_categories
+
+      if ( total_diff_under > total_diff_over ) then
+        ! The prescribed probabilities cannot be adjusted to achieve the maximum
+        ! weight. This could happen if the maximum weight is too low and/or the
+        ! threshold is too high.
+        write(fstderr,*) "The sample point weights could not be limited to the &
+                         &maximum value."
+        stop "Fatal error in limit_category_weights"
+      end if
+
+      ! Adjust the prescribed probabilities to achieve the minimum.
+      do icategory=1, num_importance_categories
+        if ( .not. l_ignore_category(icategory) .and. &
+             min_presc_prob_diff(icategory) > zero ) then
+          category_prescribed_probs(icategory) = category_prescribed_probs(icategory) - &
+              ( min_presc_prob_diff(icategory) / total_diff_over ) * total_diff_under
+        else if ( .not. l_ignore_category(icategory) .and. &
+                  min_presc_prob_diff(icategory) < zero ) then
+          category_prescribed_probs(icategory) = min_presc_probs(icategory)
+        end if ! .not. l_ignore_category(icategory) .and. min_presc_prob_diff(icategory) > zero
+      end do ! icategory=1, num_importance_categories
+
+    end if ! total_diff_under > zero
+
+    ! As an assertion check, make sure this subroutine actually
+    ! performed its task successfully.
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      do icategory=1, num_importance_categories
+        if ( category_prescribed_probs(icategory) > zero ) then
+          weight = category_real_probs(icategory) / category_prescribed_probs(icategory)
+          if ( weight > max_weight ) then
+            write(fstderr,*) "In limit_category_weights, a weight was not limited."
+            write(fstderr,*) "category_real_prob = ", category_real_probs(icategory)
+            write(fstderr,*) "category_prescribed_prob = ", category_prescribed_probs(icategory)
+            write(fstderr,*) "weight = ", weight
+            write(fstderr,*) "l_ignore_category = ", l_ignore_category(icategory)
+
+            write(fstderr,*) "min_presc_probs = ", min_presc_probs(icategory)
+            write(fstderr,*) "min_presc_prob_diff = ", min_presc_prob_diff(icategory)
+            stop "Fatal error in limit_category_weights"
+          end if
+        end if ! category_prescribed_probs(icategory) > zero
+      end do ! icategory=1, num_importance_categories
+    end if ! clubb_at_least_debug_level( 2 )
+
+    return
+  end subroutine limit_category_weights
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
