@@ -26,6 +26,17 @@ for idx = 1:1:num_sam_pts
    end % sam_var_x_sort(idx) > 0
 end % idx = 1:1:num_sam_pts
 
+% Calculate the total number of SAM LES 3D data points found within
+% precipitation (where x > 0).
+num_test_pts = num_sam_pts - first_sam_x_pt_gt_0_idx + 1;
+
+% If there are an insufficient number of sample points, set the test value
+% to -1 and return.
+if ( num_test_pts < 50 )
+   KS_number_x(1:num_clubb_files) = -1.0;
+   return
+end % num_test_pts < 50
+
 % Calculate CLUBB overall precipitation fraction.
 for clubb_idx = 1:1:num_clubb_files
    precip_frac_clubb(clubb_idx) ...
@@ -45,16 +56,6 @@ else % ~flag_ip_only
    % Calculate the CLUBB CDF at x = 0.
    for clubb_idx = 1:1:num_clubb_files
       clubb_cdf_at_0(clubb_idx) = 1.0 - precip_frac_clubb(clubb_idx);
-   end % clubb_idx = 1:1:num_clubb_files
-
-   % Calculate SAM precipitation fraction.
-   precip_frac_sam = ( num_sam_pts - first_sam_x_pt_gt_0_idx + 1 ) ...
-                     / num_sam_pts;
-
-   % Calculate the K-S statistic at x = 0.
-   for clubb_idx = 1:1:num_clubb_files
-      KS_number_x_at_0(clubb_idx) ...
-      = abs( precip_frac_clubb(clubb_idx) - precip_frac_sam );
    end % clubb_idx = 1:1:num_clubb_files
 
 end % flag_ip_only
@@ -100,11 +101,6 @@ for clubb_idx = 1:1:num_clubb_files
 
    % The K-S statisitic is the maximum difference between the CLUBB CDF and
    % the SAM LES CDF.
-   if ( flag_ip_only )
-      KS_number_x(clubb_idx) = max( diff(clubb_idx,:) );
-   else % ~flag_ip_only
-      KS_number_x(clubb_idx) = max( max( diff(clubb_idx,:) ), ...
-                                    KS_number_x_at_0(clubb_idx) );
-   end % flag_ip_only
+   KS_number_x(clubb_idx) = max( diff(clubb_idx,:) );
 
 end % clubb_idx = 1:1:num_clubb_files

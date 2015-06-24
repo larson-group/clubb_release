@@ -14,6 +14,13 @@ sam_var_x_sort = sort( sam_var_x );
 % Find the number of SAM LES 3D data points.
 num_sam_pts = size( sam_var_x, 2 );
 
+% If there are an insufficient number of sample points, set the test value
+% to -1 and return.
+if ( num_sam_pts < 50 )
+   KS_number_x(1:num_clubb_files) = -1.0;
+   return
+end % num_sam_pts < 50
+
 % Loop over all CLUBB data sets (files).
 for clubb_idx = 1:1:num_clubb_files
    for idx = 1:1:num_sam_pts
