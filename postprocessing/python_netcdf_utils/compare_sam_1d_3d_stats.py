@@ -11,15 +11,18 @@ Description: Reads in 1D statistics and 3D files from SAM and checks for consist
 import numpy as np
 import matplotlib.pyplot as plt
 import netCDF4
+ 
+stat_file = '/home/weberjk/SAM_CLUBB/OUT_STAT/LBA_250m.nc'
+threeD_file = '/home/weberjk/SAM_CLUBB/OUT_3D/LBA_128kmx128kmx128_250m_Morrison_256_0000005100_micro_consist.nc' 
 
-stat_file = '/home/weberjk/SAM_CLUBB/OUT_STAT/DYCOMS_RF02_16x16x32_mpi.nc'
-threeD_file = '/home/weberjk/SAM_CLUBB/OUT_3D/DYCOMS_RF02_16x16x32_mpi_4_0000000600_micro.nc' 
-
-moment = 3 # either 2 or 3
+moment = 2 # either 2 or 3
 threeD_var_name = 'THL'
 oneD_var_name = 'THEL%d'%(moment)
 
-z0 = 775 # [m]
+z0 = 5000 # Planview altitude [m]
+
+z_bot = 0     # Start altitude for profile comparison
+z_top = 12000 #  End altitude for profile comaparison [m]
 
 # Clear plots
 plt.close('all')
@@ -45,17 +48,18 @@ def calc_moment_at_level(slab,order):
 
     # Similar to SAM. Creates a temp variable and continually adds to it.
     moment = 0.
+    mean = 0.
 
     # Find the dimensions of the slab
     ny = np.size(slab,axis=0)
     nx = np.size(slab,axis=1)
     
     # I trust numpy to calculate the mean
-    mean = np.mean(slab)
+    mean = np.mean(slab,dtype='Float64')
     
     # SAM's factor_xy
     factor_xy = 1. / (nx*ny)
-
+    
     # Loop through the slab, finding the deviations^moment
     for i in np.arange(0,nx):
         for j in np.arange(0,ny):
@@ -76,7 +80,11 @@ threeD_var, threeD_var_u = pull_data(nc, threeD_var_name)  # Get variate
 threeD_var = np.swapaxes(threeD_var,1,2)                  # Swap axes so in z,x,y coordinates
 nc.close()                                              # Close file object
 
+idx_z_bot = (np.abs(z[:] - z_bot)).argmin()
+idx_z_top = (np.abs(z[:] - z_top)).argmin()
 
+threeD_var = threeD_var[idx_z_bot:idx_z_top,:,:]
+z = z[idx_z_bot:idx_z_top]
 
 # Grab 1D data
 nc = netCDF4.Dataset(stat_file)                          # Open file object
@@ -89,11 +97,13 @@ days_to_min = 1440
 
 # Find the stat file index the matches the 3D output
 idx_time = np.abs(time_1D_file - (time_3D_file*days_to_min)).argmin()
-oneD_var = oneD_var[idx_time,:]
+oneD_var = oneD_var[idx_time,idx_z_bot:idx_z_top]
+
 
 # Compute the statistic from the 3D file
 threeD_moment = np.empty_like(z)
 for k in np.arange(0,len(z)):
+    print "Computing moments for %d m"%(z[k])
     threeD_moment[k] = calc_moment_at_level(threeD_var[k,:,:],moment)
 
 # Plot profiles
@@ -118,8 +128,8 @@ plt.show()
 
 
 # For visual comparison, create plan view plot
-x = np.arange(0,1600,100)   
-y = np.arange(0,1600,100)  
+x = np.arange(0,128,.25)   
+y = np.arange(0,128,.25)  
     
 idx_z0 = (np.abs(z[:] - z0)).argmin()
 anom = threeD_var[idx_z0,:,:] - np.mean(threeD_var[idx_z0,:,:])
