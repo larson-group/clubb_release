@@ -5,6 +5,12 @@ function goodness_of_fit_tests( input_file_sam, num_sam_files, ...
 % Path to necessary MATLAB utility functions.
 addpath ( '../matlab_scatter_contour_plots', '-end' )
 
+% Note:  In order to set things up properly for this program, make a
+%        directory for the SAM LES 3D output results and place ONLY the
+%        _micro.nc files from the SAME run into that directory.  That
+%        directory is then called, and the files are passed in as
+%        input_file_sam.
+
 % Input Variables:
 %
 % 1) input_file_sam:  A string that contains the path(s)-and-filename(s)
@@ -488,13 +494,21 @@ fprintf( [ 'The averaging includes all CLUBB altitudes from %d meters' ...
 % Print a message about how the value of a test is -1 when no results are
 % found (this is due to missing or insufficient data).
 fprintf( '\n' )
-fprintf( [ 'Note:  A value of -1 denotes a missing field, usually' ...
-           ' because there is insufficient data (e.g. too few sample' ...
-           ' points) for the test.  Levels like this are excluded from' ...
-           ' any average.\n' ] );
+fprintf( 'Note about K-S and C-vM test scores:\n' );
+fprintf( [ 'A value of -1 denotes a missing field, usually because' ...
+           ' there is insufficient data (e.g. too few sample points)' ...
+           ' for the test.  Levels like this are excluded from any' ...
+           ' average.\n' ] );
+fprintf( '\n' )
+fprintf( 'Note about average ranks and winning fractions:\n' );
+fprintf( [ 'A value of -1 denotes that all CLUBB files had the same' ...
+           ' score, so they could not be ranked.\n' ] );
 
 % Calculate and output the average value of the statistics.
 if ( test_w )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for w.
    avg_KS_number_w = average_KS_stat( KS_number_w, num_clubb_files );
@@ -505,6 +519,22 @@ if ( test_w )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_w(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for w.
+   [ avg_rank_KS_w win_frac_KS_w ] ...
+   = avg_rank_and_win_frac( KS_number_w, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for w\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_w(clubb_idx), ...
+               win_frac_KS_w(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for w.
@@ -521,9 +551,28 @@ if ( test_w )
                clubb_idx, avg_nrmlzed_CvM_number_w(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for w.
+   [ avg_rank_CvM_w win_frac_CvM_w ] ...
+   = avg_rank_and_win_frac( CvM_number_w, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for w\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_w(clubb_idx), ...
+               win_frac_CvM_w(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_w
 
 if ( test_rt )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for rt.
    avg_KS_number_rt = average_KS_stat( KS_number_rt, num_clubb_files );
@@ -534,6 +583,22 @@ if ( test_rt )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rt(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for rt.
+   [ avg_rank_KS_rt win_frac_KS_rt ] ...
+   = avg_rank_and_win_frac( KS_number_rt, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for rt\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_rt(clubb_idx), ...
+               win_frac_KS_rt(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for rt.
@@ -550,9 +615,28 @@ if ( test_rt )
                clubb_idx, avg_nrmlzed_CvM_number_rt(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for rt.
+   [ avg_rank_CvM_rt win_frac_CvM_rt ] ...
+   = avg_rank_and_win_frac( CvM_number_rt, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for rt\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_rt(clubb_idx), ...
+               win_frac_CvM_rt(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rt
 
 if ( test_thl )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for thl.
    avg_KS_number_thl = average_KS_stat( KS_number_thl, num_clubb_files );
@@ -563,6 +647,22 @@ if ( test_thl )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_thl(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for thl.
+   [ avg_rank_KS_thl win_frac_KS_thl ] ...
+   = avg_rank_and_win_frac( KS_number_thl, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for thl\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_thl(clubb_idx), ...
+               win_frac_KS_thl(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for thl.
@@ -579,9 +679,28 @@ if ( test_thl )
                clubb_idx, avg_nrmlzed_CvM_number_thl(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for thl.
+   [ avg_rank_CvM_thl win_frac_CvM_thl ] ...
+   = avg_rank_and_win_frac( CvM_number_thl, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for thl\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_thl(clubb_idx), ...
+               win_frac_CvM_thl(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_thl
 
 if ( test_chi )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for chi.
    avg_KS_number_chi = average_KS_stat( KS_number_chi, num_clubb_files );
@@ -592,6 +711,22 @@ if ( test_chi )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_chi(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for chi.
+   [ avg_rank_KS_chi win_frac_KS_chi ] ...
+   = avg_rank_and_win_frac( KS_number_chi, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for chi\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_chi(clubb_idx), ...
+               win_frac_KS_chi(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for chi.
@@ -608,9 +743,28 @@ if ( test_chi )
                clubb_idx, avg_nrmlzed_CvM_number_chi(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for chi.
+   [ avg_rank_CvM_chi win_frac_CvM_chi ] ...
+   = avg_rank_and_win_frac( CvM_number_chi, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for chi\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_chi(clubb_idx), ...
+               win_frac_CvM_chi(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_chi
 
 if ( test_eta )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for eta.
    avg_KS_number_eta = average_KS_stat( KS_number_eta, num_clubb_files );
@@ -621,6 +775,22 @@ if ( test_eta )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_eta(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for eta.
+   [ avg_rank_KS_eta win_frac_KS_eta ] ...
+   = avg_rank_and_win_frac( KS_number_eta, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for eta\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_eta(clubb_idx), ...
+               win_frac_KS_eta(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for eta.
@@ -637,9 +807,28 @@ if ( test_eta )
                clubb_idx, avg_nrmlzed_CvM_number_eta(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for eta.
+   [ avg_rank_CvM_eta win_frac_CvM_eta ] ...
+   = avg_rank_and_win_frac( CvM_number_eta, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for eta\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_eta(clubb_idx), ...
+               win_frac_CvM_eta(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_eta
 
 if ( test_rr )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for rr.
    avg_KS_number_rr = average_KS_stat( KS_number_rr, num_clubb_files );
@@ -650,6 +839,22 @@ if ( test_rr )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for rr.
+   [ avg_rank_KS_rr win_frac_KS_rr ] ...
+   = avg_rank_and_win_frac( KS_number_rr, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for rr\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_rr(clubb_idx), ...
+               win_frac_KS_rr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for rr.
@@ -666,9 +871,28 @@ if ( test_rr )
                clubb_idx, avg_nrmlzed_CvM_number_rr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for rr.
+   [ avg_rank_CvM_rr win_frac_CvM_rr ] ...
+   = avg_rank_and_win_frac( CvM_number_rr, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for rr\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_rr(clubb_idx), ...
+               win_frac_CvM_rr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rr
 
 if ( test_Nr )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for Nr.
    avg_KS_number_Nr = average_KS_stat( KS_number_Nr, num_clubb_files );
@@ -679,6 +903,22 @@ if ( test_Nr )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_Nr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for Nr.
+   [ avg_rank_KS_Nr win_frac_KS_Nr ] ...
+   = avg_rank_and_win_frac( KS_number_Nr, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for Nr\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_Nr(clubb_idx), ...
+               win_frac_KS_Nr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic for Nr.
@@ -695,9 +935,28 @@ if ( test_Nr )
                clubb_idx, avg_nrmlzed_CvM_number_Nr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for Nr.
+   [ avg_rank_CvM_Nr win_frac_CvM_Nr ] ...
+   = avg_rank_and_win_frac( CvM_number_Nr, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for Nr\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_Nr(clubb_idx), ...
+               win_frac_CvM_Nr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_Nr
 
 if ( test_rr_ip )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for rr in-precip.
    avg_KS_number_rr_ip ...
@@ -709,6 +968,22 @@ if ( test_rr_ip )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for rr in-precip.
+   [ avg_rank_KS_rr_ip win_frac_KS_rr_ip ] ...
+   = avg_rank_and_win_frac( KS_number_rr_ip, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for rr in-precip.\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_rr_ip(clubb_idx), ...
+               win_frac_KS_rr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic
@@ -728,9 +1003,28 @@ if ( test_rr_ip )
                clubb_idx, avg_nrmlzed_CvM_number_rr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for rr in-precip.
+   [ avg_rank_CvM_rr_ip win_frac_CvM_rr_ip ] ...
+   = avg_rank_and_win_frac( CvM_number_rr_ip, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for rr in-precip.\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_rr_ip(clubb_idx), ...
+               win_frac_CvM_rr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rr_ip
 
 if ( test_Nr_ip )
+
+   fprintf( '\n' )
+   fprintf( '==================================================\n' )
 
    % Calculate the average value of the K-S statistic for Nr in-precip.
    avg_KS_number_Nr_ip ...
@@ -742,6 +1036,22 @@ if ( test_Nr_ip )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_Nr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the K-S test for Nr in-precip.
+   [ avg_rank_KS_Nr_ip win_frac_KS_Nr_ip ] ...
+   = avg_rank_and_win_frac( KS_number_Nr_ip, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for K-S test results for Nr in-precip.\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_KS_Nr_ip(clubb_idx), ...
+               win_frac_KS_Nr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
    % Calculate the average value of the normalized C-vM statistic
@@ -759,6 +1069,22 @@ if ( test_Nr_ip )
    for clubb_idx = 1:1:num_clubb_files
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_nrmlzed_CvM_number_Nr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
+   % Calculate the average rank and winning fraction for each CLUBB
+   % statistical file from the C-vM test for Nr in-precip.
+   [ avg_rank_CvM_Nr_ip win_frac_CvM_Nr_ip ] ...
+   = avg_rank_and_win_frac( CvM_number_Nr_ip, num_clubb_files );
+
+   % Print the average rank and winning fraction for each CLUBB file.
+   fprintf( '\n' );
+   fprintf( [ 'Average rank and winning fraction for each CLUBB file' ...
+              ' for C-vM test results for Nr in-precip.\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( [ 'CLUBB file %d:  average rank:  %g;' ...
+                 '  winning fraction:  %g\n' ], ...
+               clubb_idx, avg_rank_CvM_Nr_ip(clubb_idx), ...
+               win_frac_CvM_Nr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
 
 end % test_Nr_ip
