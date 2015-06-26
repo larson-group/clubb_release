@@ -463,66 +463,172 @@ for sam_idx = sam_start_file_idx:1:sam_stop_file_idx
 
 end % sam_idx = sam_start_file_idx:1:sam_stop_file_idx
 
-for time_idx_store = 1:1:sam_stop_file_idx-sam_start_file_idx+1
+% Print the names of the CLUBB files.
+fprintf( '\n' );
+fprintf( 'CLUBB filenames\n' );
+for clubb_idx = 1:1:num_clubb_files
+   fprintf( 'CLUBB file %d:  %s\n', ...
+            clubb_idx, strtrim( filename_clubb(clubb_idx,:) ) );
+end % clubb_idx = 1:1:num_clubb_files
+
+% Print the range of times in the averaging period.
+fprintf( '\n' )
+fprintf( [ 'The averaging includes all SAM LES 3D statistical output' ...
+           ' times from %d seconds to %d seconds, inclusive.\n' ], ...
+           time_store(1), ...
+           time_store(sam_stop_file_idx-sam_start_file_idx+1) );
+
+% Print the range of altitudes in the averaging period.
+fprintf( '\n' )
+fprintf( [ 'The averaging includes all CLUBB altitudes from %d meters' ...
+           ' to %d meters, inclusive.\n' ], ...
+           height_store(1), ...
+           height_store(clubb_stop_height_idx-clubb_start_height_idx+1) );
+
+% Print a message about how the value of a test is -1 when no results are
+% found (this is due to missing or insufficient data).
+fprintf( '\n' )
+fprintf( [ 'Note:  A value of -1 denotes a missing field, usually' ...
+           ' because there is insufficient data (e.g. too few sample' ...
+           ' points) for the test.  Levels like this are excluded from' ...
+           ' any average.\n' ] );
+
+% Calculate and output the average value of the statistics.
+if ( test_w )
+
+   % Calculate the average value of the K-S statistic for w.
+   avg_KS_number_w = average_KS_stat( KS_number_w, num_clubb_files );
+
+   % Print the average value of the K-S statistic for w.
    fprintf( '\n' );
-   fprintf( 'Statistics at time = %d seconds\n', ...
-            time_store(time_idx_store) );
-   for height_idx_store = 1:1:clubb_stop_height_idx-clubb_start_height_idx+1
-      fprintf( '\n' );
-      fprintf( 'Height = %d meters\n', height_store(height_idx_store) );
-      if ( test_w )
-         fprintf( 'K-S test results for w\n' );
-         KS_number_w(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for w\n' );
-         CvM_number_w(:,time_idx_store,height_idx_store)
-      end % test_w
-      if ( test_rt )
-         fprintf( 'K-S test results for rt\n' );
-         KS_number_rt(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for rt\n' );
-         CvM_number_rt(:,time_idx_store,height_idx_store)
-      end % test_rt
-      if ( test_thl )
-         fprintf( 'K-S test results for thl\n' );
-         KS_number_thl(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for thl\n' );
-         CvM_number_thl(:,time_idx_store,height_idx_store)
-      end % test_thl
-      if ( test_chi )
-         fprintf( 'K-S test results for chi\n' );
-         KS_number_chi(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for chi\n' );
-         CvM_number_chi(:,time_idx_store,height_idx_store)
-      end % test_chi
-      if ( test_eta )
-         fprintf( 'K-S test results for eta\n' );
-         KS_number_eta(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for eta\n' );
-         CvM_number_eta(:,time_idx_store,height_idx_store)
-      end % test_eta
-      if ( test_rr )
-         fprintf( 'K-S test results for rr\n' );
-         KS_number_rr(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for rr\n' );
-         CvM_number_rr(:,time_idx_store,height_idx_store)
-      end % test_rr
-      if ( test_Nr )
-         fprintf( 'K-S test results for Nr\n' );
-         KS_number_Nr(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for Nr\n' );
-         CvM_number_Nr(:,time_idx_store,height_idx_store)
-      end % test_Nr
-      if ( test_rr_ip )
-         fprintf( 'K-S test results for rr in-precip.\n' );
-         KS_number_rr_ip(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for rr in-precip.\n' );
-         CvM_number_rr_ip(:,time_idx_store,height_idx_store)
-      end % test_rr_ip
-      if ( test_Nr_ip )
-         fprintf( 'K-S test results for Nr in-precip.\n' );
-         KS_number_Nr_ip(:,time_idx_store,height_idx_store)
-         fprintf( 'C-vM test results for Nr in-precip.\n' );
-         CvM_number_Nr_ip(:,time_idx_store,height_idx_store)
-      end % test_Nr_ip
-   end % height_idx_store = 1:1:clubb_stop_height_idx-clubb_start_height_idx+1
-end % time_idx_store = 1:1:sam_stop_file_idx-sam_start_file_idx+1
+   fprintf( 'Average of K-S test results for w\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_w(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_w
+
+if ( test_rt )
+
+   % Calculate the average value of the K-S statistic for rt.
+   avg_KS_number_rt = average_KS_stat( KS_number_rt, num_clubb_files );
+
+   % Print the average value of the K-S statistic for rt.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for rt\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_rt(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_rt
+
+if ( test_thl )
+
+   % Calculate the average value of the K-S statistic for thl.
+   avg_KS_number_thl = average_KS_stat( KS_number_thl, num_clubb_files );
+
+   % Print the average value of the K-S statistic for thl.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for thl\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_thl(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_thl
+
+if ( test_chi )
+
+   % Calculate the average value of the K-S statistic for chi.
+   avg_KS_number_chi = average_KS_stat( KS_number_chi, num_clubb_files );
+
+   % Print the average value of the K-S statistic for chi.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for chi\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_chi(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_chi
+
+if ( test_eta )
+
+   % Calculate the average value of the K-S statistic for eta.
+   avg_KS_number_eta = average_KS_stat( KS_number_eta, num_clubb_files );
+
+   % Print the average value of the K-S statistic for eta.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for eta\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_eta(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_eta
+
+if ( test_rr )
+
+   % Calculate the average value of the K-S statistic for rr.
+   avg_KS_number_rr = average_KS_stat( KS_number_rr, num_clubb_files );
+
+   % Print the average value of the K-S statistic for rr.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for rr\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_rr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_rr
+
+if ( test_Nr )
+
+   % Calculate the average value of the K-S statistic for Nr.
+   avg_KS_number_Nr = average_KS_stat( KS_number_Nr, num_clubb_files );
+
+   % Print the average value of the K-S statistic for Nr.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for Nr\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_Nr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_Nr
+
+if ( test_rr_ip )
+
+   % Calculate the average value of the K-S statistic for rr in-precip.
+   avg_KS_number_rr_ip ...
+   = average_KS_stat( KS_number_rr_ip, num_clubb_files );
+
+   % Print the average value of the K-S statistic for rr in-precip.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for rr in-precip.\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_rr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_rr_ip
+
+if ( test_Nr_ip )
+
+   % Calculate the average value of the K-S statistic for Nr in-precip.
+   avg_KS_number_Nr_ip ...
+   = average_KS_stat( KS_number_Nr_ip, num_clubb_files );
+
+   % Print the average value of the K-S statistic for Nr in-precip.
+   fprintf( '\n' );
+   fprintf( 'Average of K-S test results for Nr in-precip.\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_KS_number_Nr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+   
+end % test_Nr_ip
+
+fprintf( '\n' );
