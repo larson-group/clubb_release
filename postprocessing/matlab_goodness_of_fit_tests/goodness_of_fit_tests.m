@@ -506,7 +506,21 @@ if ( test_w )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_w(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for w.
+   % The normalized C-vM number is CvM_number_w / num_pts_test_w.
+   avg_nrmlzed_CvM_number_w ...
+   = average_normalized_CvM_stat( CvM_number_w, num_pts_test_w, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for w.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for w\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_w(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_w
 
 if ( test_rt )
@@ -521,7 +535,21 @@ if ( test_rt )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rt(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for rt.
+   % The normalized C-vM number is CvM_number_rt / num_pts_test_rt.
+   avg_nrmlzed_CvM_number_rt ...
+   = average_normalized_CvM_stat( CvM_number_rt, num_pts_test_rt, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for rt.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for rt\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_rt(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rt
 
 if ( test_thl )
@@ -536,7 +564,21 @@ if ( test_thl )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_thl(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for thl.
+   % The normalized C-vM number is CvM_number_thl / num_pts_test_thl.
+   avg_nrmlzed_CvM_number_thl ...
+   = average_normalized_CvM_stat( CvM_number_thl, num_pts_test_thl, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for thl.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for thl\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_thl(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_thl
 
 if ( test_chi )
@@ -551,7 +593,21 @@ if ( test_chi )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_chi(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for chi.
+   % The normalized C-vM number is CvM_number_chi / num_pts_test_chi.
+   avg_nrmlzed_CvM_number_chi ...
+   = average_normalized_CvM_stat( CvM_number_chi, num_pts_test_chi, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for chi.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for chi\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_chi(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_chi
 
 if ( test_eta )
@@ -566,7 +622,21 @@ if ( test_eta )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_eta(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for eta.
+   % The normalized C-vM number is CvM_number_eta / num_pts_test_eta.
+   avg_nrmlzed_CvM_number_eta ...
+   = average_normalized_CvM_stat( CvM_number_eta, num_pts_test_eta, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for eta.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for eta\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_eta(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_eta
 
 if ( test_rr )
@@ -581,7 +651,21 @@ if ( test_rr )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for rr.
+   % The normalized C-vM number is CvM_number_rr / num_pts_test_rr.
+   avg_nrmlzed_CvM_number_rr ...
+   = average_normalized_CvM_stat( CvM_number_rr, num_pts_test_rr, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for rr.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for rr\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_rr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rr
 
 if ( test_Nr )
@@ -596,7 +680,21 @@ if ( test_Nr )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_Nr(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic for Nr.
+   % The normalized C-vM number is CvM_number_Nr / num_pts_test_Nr.
+   avg_nrmlzed_CvM_number_Nr ...
+   = average_normalized_CvM_stat( CvM_number_Nr, num_pts_test_Nr, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic for Nr.
+   fprintf( '\n' );
+   fprintf( 'Average of normalized C-vM test results for Nr\n' );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_Nr(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_Nr
 
 if ( test_rr_ip )
@@ -612,7 +710,24 @@ if ( test_rr_ip )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_rr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic
+   % for rr in-precip.
+   % The normalized C-vM number is CvM_number_rr_ip / num_pts_test_rr_ip.
+   avg_nrmlzed_CvM_number_rr_ip ...
+   = average_normalized_CvM_stat( CvM_number_rr_ip, num_pts_test_rr_ip, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic
+   % for rr in-precip.
+   fprintf( '\n' );
+   fprintf( [ 'Average of normalized C-vM test results for' ...
+              ' rr in-precip.\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_rr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_rr_ip
 
 if ( test_Nr_ip )
@@ -628,7 +743,24 @@ if ( test_Nr_ip )
       fprintf( 'CLUBB file %d:  %g\n', ...
                clubb_idx, avg_KS_number_Nr_ip(clubb_idx) );
    end % clubb_idx = 1:1:num_clubb_files
-   
+
+   % Calculate the average value of the normalized C-vM statistic
+   % for Nr in-precip.
+   % The normalized C-vM number is CvM_number_Nr_ip / num_pts_test_Nr_ip.
+   avg_nrmlzed_CvM_number_Nr_ip ...
+   = average_normalized_CvM_stat( CvM_number_Nr_ip, num_pts_test_Nr_ip, ...
+                                  num_clubb_files );
+
+   % Print the average value of the normalized C-vM statistic
+   % for Nr in-precip.
+   fprintf( '\n' );
+   fprintf( [ 'Average of normalized C-vM test results for' ...
+              ' Nr in-precip\n' ] );
+   for clubb_idx = 1:1:num_clubb_files
+      fprintf( 'CLUBB file %d:  %g\n', ...
+               clubb_idx, avg_nrmlzed_CvM_number_Nr_ip(clubb_idx) );
+   end % clubb_idx = 1:1:num_clubb_files
+
 end % test_Nr_ip
 
 fprintf( '\n' );
