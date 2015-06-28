@@ -20,6 +20,13 @@ if ( num_sam_pts < 50 )
    KS_number_x(1:num_clubb_files) = -1.0;
    return
 end % num_sam_pts < 50
+% If all the SAM LES 3D points have the same value, set the test value to
+% -1 and return.
+if ( all( sam_var_x_sort == sam_var_x_sort(1) ) )
+   CvM_number_x(1:num_clubb_files) = -1.0;
+   num_sam_pts = 0;
+   return
+end % all( sam_var_x_sort == sam_var_x_sort(1) )
 
 % Loop over all CLUBB data sets (files).
 for clubb_idx = 1:1:num_clubb_files
@@ -29,12 +36,43 @@ for clubb_idx = 1:1:num_clubb_files
       var_x = sam_var_x_sort(idx);
 
       % Calculate the value of the CLUBB CDF at x.
-      clubb_cdf = mixt_frac(clubb_idx) ...
-                  * CDF_comp_Normal( var_x, mu_x_1(clubb_idx), ...
-                                     sigma_x_1(clubb_idx) ) ...
-                  + ( 1.0 - mixt_frac(clubb_idx) ) ...
-                    * CDF_comp_Normal( var_x, mu_x_2(clubb_idx), ...
-                                       sigma_x_2(clubb_idx) );
+      if ( sigma_x_1(clubb_idx) > 0.0 && sigma_x_2(clubb_idx) > 0.0 )
+
+         % The variable x varies in both PDF components.
+         clubb_cdf = mixt_frac(clubb_idx) ...
+                     * CDF_comp_Normal( var_x, mu_x_1(clubb_idx), ...
+                                        sigma_x_1(clubb_idx) ) ...
+                     + ( 1.0 - mixt_frac(clubb_idx) ) ...
+                       * CDF_comp_Normal( var_x, mu_x_2(clubb_idx), ...
+                                          sigma_x_2(clubb_idx) );
+
+      elseif ( sigma_x_1(clubb_idx) > 0.0 )
+
+         % The variable x varies in only the 1st PDF component.
+         clubb_cdf = mixt_frac(clubb_idx) ...
+                     * CDF_comp_Normal( var_x, mu_x_1(clubb_idx), ...
+                                        sigma_x_1(clubb_idx) ) ...
+                     + ( 1.0 - mixt_frac(clubb_idx) ) ...
+                       * Heaviside( var_x - mu_x_2(clubb_idx) );
+
+      elseif ( sigma_x_2(clubb_idx) > 0.0 )
+
+         % The variable x varies in only the 2nd PDF component.
+         clubb_cdf = mixt_frac(clubb_idx) ...
+                     * Heaviside( var_x - mu_x_1(clubb_idx) ) ...
+                     + ( 1.0 - mixt_frac(clubb_idx) ) ...
+                       * CDF_comp_Normal( var_x, mu_x_2(clubb_idx), ...
+                                          sigma_x_2(clubb_idx) );
+
+      else
+
+         % The variable x is constant in both PDF components.
+         clubb_cdf = mixt_frac(clubb_idx) ...
+                     * Heaviside( var_x - mu_x_1(clubb_idx) ) ...
+                     + ( 1.0 - mixt_frac(clubb_idx) ) ...
+                       * Heaviside( var_x - mu_x_2(clubb_idx) );
+
+      end % sigma_x_1 > 0.0 && sigma_x_2 > 0.0
 
       % Find the difference between the CLUBB CDF and the SAM LES CDF at
       % the index point.
@@ -48,3 +86,14 @@ for clubb_idx = 1:1:num_clubb_files
    KS_number_x(clubb_idx) = max( diff(clubb_idx,:) );
 
 end % clubb_idx = 1:1:num_clubb_files
+
+
+function [ H_x ] = Heaviside( x )
+
+% The Heaviside step function.
+
+if ( x > 0.0 )
+   H_x = 1.0;
+else
+   H_x = 0.0;
+end

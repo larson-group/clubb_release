@@ -1,0 +1,2 @@
+# $Id$
+./run_goodness_of_fit_tests.bash ../../../Brian_special_input_fields_r7465/output/LES_output/RICO/ ../../../Brian_special_input_fields_r7465/output/ddl_o0p4_z0/rico_zt.nc ../../../Brian_special_input_fields_r7465/output/dl/rico_zt.nc ../../../Brian_special_input_fields_r7465/output/sl/rico_zt.nc > goodness_of_fit_tests_output.txt
