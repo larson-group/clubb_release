@@ -1646,16 +1646,16 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_rtm
-      SAM_variables(k)%input_name = "QT"
+      SAM_variables(k)%input_name = "RTM"
       SAM_variables(k)%clubb_var => rtm
-      SAM_variables(k)%adjustment = 1.0e-3_core_rknd
+      SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_thlm
-      SAM_variables(k)%input_name = "THETAL"
+      SAM_variables(k)%input_name = "THLM"
       SAM_variables(k)%clubb_var => thlm
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -1664,7 +1664,7 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_wp2
-      SAM_variables(k)%input_name = "W2"
+      SAM_variables(k)%input_name = "WP2"
       SAM_variables(k)%clubb_var => wp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1684,7 +1684,7 @@ module inputfields
       ! Note that this needs to be adjusted by 1/(RHO * Lv)
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_wprtp
-      SAM_variables(k)%input_name = "QTFLUX"
+      SAM_variables(k)%input_name = "WPRTP"
       SAM_variables(k)%clubb_var => wprtp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1695,7 +1695,7 @@ module inputfields
       ! Note that this needs to be adjusted by 1/(RHO * Cp)
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_wpthlp
-      SAM_variables(k)%input_name = "TLFLUX"
+      SAM_variables(k)%input_name = "WPTHLP"
       SAM_variables(k)%clubb_var => wpthlp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1713,16 +1713,16 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_rtp2
-      SAM_variables(k)%input_name = "QT2"
+      SAM_variables(k)%input_name = "RTP2"
       SAM_variables(k)%clubb_var => rtp2
-      SAM_variables(k)%adjustment = 1.0e-6_core_rknd
+      SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_thlp2
-      SAM_variables(k)%input_name = "THEL2"
+      SAM_variables(k)%input_name = "THLP2"
       SAM_variables(k)%clubb_var => thlp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1948,9 +1948,9 @@ module inputfields
       temp_rrm = 0.0_core_rknd! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrm
-      SAM_variables(k)%input_name = "QPL"
+      SAM_variables(k)%input_name = "RRM"
       SAM_variables(k)%clubb_var => temp_rrm
-      SAM_variables(k)%adjustment = 1.0_core_rknd/g_per_kg
+      SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
@@ -1962,7 +1962,7 @@ module inputfields
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_Nrm
       !SAM_variables(k)%input_name = "NR" ! SAM Morrison microphysics
-      SAM_variables(k)%input_name = "CONP" ! SAM KK microphysics
+      SAM_variables(k)%input_name = "NRM" ! SAM KK microphysics
       SAM_variables(k)%clubb_var => temp_Nrm
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2255,7 +2255,7 @@ module inputfields
 
       SAM_variables(k)%l_input_var = l_input_rtpthlp
       SAM_variables(k)%clubb_name = "rtpthlp"
-      SAM_variables(k)%input_name = "TQ"
+      SAM_variables(k)%input_name = "RTPTHLP"
       SAM_variables(k)%clubb_var => rtpthlp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2276,7 +2276,7 @@ module inputfields
         if(l_input_Nrm) then
           ! Nrm = NR * (1.0e6 / RHO)
           !temp_Nrm(k) = temp_Nrm(k) * (1.0e6_core_rknd / rho(k))
-          temp_Nrm(k) = temp_Nrm(k) * 1.0e6_core_rknd
+          !temp_Nrm(k) = temp_Nrm(k) * 1.0e6_core_rknd
         end if
 
         if(l_input_Ncm) then
@@ -2304,12 +2304,12 @@ module inputfields
       do k=k_lowest_zm(sam_file), k_highest_zm(sam_file)
         if(l_input_wprtp) then
           ! wprtp = QTFLUX / (RHO*Lv)
-          wprtp(k) = wprtp(k) / (rho(k)*Lv)
+          !wprtp(k) = wprtp(k) / (rho(k)*Lv)
         end if
 
         if(l_input_wpthlp) then
           ! wpthlp = TLFLUX / (RHO*Cp)
-          wpthlp(k) = wpthlp(k) / (rho(k)*Cp)
+          !wpthlp(k) = wpthlp(k) / (rho(k)*Cp)
         end if
         
         ! Use linear interpolation to convert up2 and vp2 from the thermodynamic
