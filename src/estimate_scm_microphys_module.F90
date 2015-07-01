@@ -288,6 +288,8 @@ module estimate_scm_microphys_module
     if ( lh_microphys_type /= lh_microphys_non_interactive ) then
       call microphys_stats_accumulate( microphys_stats_zt_avg, l_stats_samp, stats_zt )
       call microphys_stats_accumulate( microphys_stats_sfc_avg, l_stats_samp, stats_sfc )
+    else
+      call silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp )
     end if
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
@@ -405,6 +407,98 @@ module estimate_scm_microphys_module
   end function silhs_microphys_stats_avg
   !-----------------------------------------------------------------------
 
+  !-----------------------------------------------------------------------
+  subroutine silhs_noninteractive_stats( microphys_stats_zt_avg, l_stats_samp )
+
+  ! Description:
+  !   When SILHS is run in non-interactive mode in CLUBB standalone, this
+  !   subroutine outputs some averages from microphysics to the corresponding
+  !   SILHS output variables (e.g., lh_rrm_auto)
+
+  ! References:
+  !   none
+  !-----------------------------------------------------------------------
+
+    use microphys_stats_vars_module, only: &
+      microphys_stats_vars_type, &  ! Type
+      microphys_get_var ! Procedure
+
+    use stats_variables, only: &
+      stats_lh_zt, &  ! Variable(s)
+      irrm_auto, &
+      irrm_accr, &
+      irrm_cond, &
+      iNrm_auto, &
+      iNrm_cond, &
+      ilh_rrm_auto, &
+      ilh_rrm_accr, &
+      ilh_rrm_evap, &
+      ilh_Nrm_auto, &
+      ilh_Nrm_cond, &
+      im_vol_rad_rain, &
+      ilh_m_vol_rad_rain
+
+    use stats_type_utilities, only: &
+      stat_update_var  ! Procedure
+
+    use parameters_microphys, only: &
+      microphys_scheme    ! Variable
+
+    implicit none
+
+    ! Input Variables
+    type(microphys_stats_vars_type), intent(in) :: &
+      microphys_stats_zt_avg  ! Statistics structure from the microphysics scheme
+
+    logical, intent(in) :: &
+      l_stats_samp   ! Whether to sample this timestep
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+
+    ! Statistical sampling
+    if ( l_stats_samp ) then
+
+      if ( ilh_rrm_auto > 0 ) then
+        call stat_update_var( ilh_rrm_auto, microphys_get_var( &
+             irrm_auto, microphys_stats_zt_avg ), stats_lh_zt )
+      end if
+
+      if ( ilh_rrm_accr > 0 ) then
+        call stat_update_var( ilh_rrm_accr, microphys_get_var( &
+             irrm_accr, microphys_stats_zt_avg ), stats_lh_zt )
+      end if
+
+      if ( ilh_rrm_evap > 0 ) then
+        call stat_update_var( ilh_rrm_evap, microphys_get_var( &
+             irrm_cond, microphys_stats_zt_avg ), stats_lh_zt )
+      end if
+
+      if ( ilh_Nrm_auto > 0 ) then
+        call stat_update_var( ilh_Nrm_auto, microphys_get_var( &
+             iNrm_auto, microphys_stats_zt_avg ), stats_lh_zt )
+      end if
+
+      if ( ilh_Nrm_cond > 0 ) then
+        call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
+             iNrm_cond, microphys_stats_zt_avg ), stats_lh_zt )
+      end if
+
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+        ! This variable is output only from KK microphysics.
+        if ( ilh_m_vol_rad_rain > 0 ) then
+          call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
+               im_vol_rad_rain, microphys_stats_zt_avg ), stats_lh_zt )
+        end if
+      end if
+
+    end if ! l_stats_samp
+
+    return
+  end subroutine silhs_noninteractive_stats
+  !-----------------------------------------------------------------------
+
   !-----------------------------------------------------------------------------
   subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm,         &
                                   microphys_stats_zt, l_stats_samp,     &
@@ -444,22 +538,15 @@ module estimate_scm_microphys_module
     use stats_variables, only: &
       stats_zt,        &
       stats_lh_zt,     &
-      irrm_auto, &
-      irrm_accr, &
-      irrm_cond, &
-      iNrm_auto, &
-      iNrm_cond, &
-      ilh_rrm_auto, &
-      ilh_rrm_accr, &
-      ilh_rrm_evap, &
-      ilh_Nrm_auto, &
-      ilh_Nrm_cond, &
+      irrm_auto,       &
+      irrm_accr,       &
+      irrm_cond,       &
+      iNrm_auto,       &
+      iNrm_cond,       &
       ilh_rrm_src_adj, &
       ilh_Nrm_src_adj, &
-      ilh_rrm_cond_adj, &
-      ilh_Nrm_cond_adj, &
-      im_vol_rad_rain, &
-      ilh_m_vol_rad_rain
+      ilh_rrm_cond_adj,&
+      ilh_Nrm_cond_adj
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &     ! Type
@@ -603,36 +690,6 @@ module estimate_scm_microphys_module
 
       if ( ilh_Nrm_cond_adj > 0 ) then
         call stat_update_var( ilh_Nrm_cond_adj, adj_terms%Nrm_cond_adj, stats_lh_zt )
-      end if
-
-      if ( ilh_m_vol_rad_rain > 0 ) then
-        call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
-             im_vol_rad_rain, microphys_stats_zt ), stats_lh_zt )
-      end if
-
-      if ( ilh_rrm_auto > 0 ) then
-        call stat_update_var( ilh_rrm_auto, microphys_get_var( &
-             irrm_auto, microphys_stats_zt ), stats_lh_zt )
-      end if
-
-      if ( ilh_rrm_accr > 0 ) then
-        call stat_update_var( ilh_rrm_accr, microphys_get_var( &
-             irrm_accr, microphys_stats_zt ), stats_lh_zt )
-      end if
-
-      if ( ilh_rrm_evap > 0 ) then
-        call stat_update_var( ilh_rrm_evap, microphys_get_var( &
-             irrm_cond, microphys_stats_zt ), stats_lh_zt )
-      end if
-
-      if ( ilh_Nrm_auto > 0 ) then
-        call stat_update_var( ilh_Nrm_auto, microphys_get_var( &
-             iNrm_auto, microphys_stats_zt ), stats_lh_zt )
-      end if
-
-      if ( ilh_Nrm_cond > 0 ) then
-        call stat_update_var( ilh_Nrm_cond, microphys_get_var( &
-             iNrm_cond, microphys_stats_zt ), stats_lh_zt )
       end if
 
     end if ! l_stats_samp

@@ -349,8 +349,8 @@ varname_clubb(idx_z,1:8) = 'altitude';
 % Elapsed time (minutes)
 idx_count = idx_count + 1;
 global idx_time
-units_corrector_type(idx_time) = 0;
 idx_time = idx_count;
+units_corrector_type(idx_time) = 0;
 varname_clubb(idx_time,1:4) = 'time';
 
 num_tot_var_clubb = idx_count;

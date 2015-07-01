@@ -1722,7 +1722,7 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_thlp2
-      SAM_variables(k)%input_name = "TL2"
+      SAM_variables(k)%input_name = "THEL2"
       SAM_variables(k)%clubb_var => thlp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"

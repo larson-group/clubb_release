@@ -15,12 +15,12 @@ import os
 # This script is to be used only with non-interactive SILHS runs.
 #
 # Usage:
-#  ./silhs_rms_plot_mult_sim.py path1 [path2 [...]]
+#  ./silhs_rms_plot_mult_sim.py [options] path1 [path2 [...]]
 #######################################################################
 
-if len(sys.argv) <= 1:
-    print("Usage: ./silhs_rms_plot_mult_sim.py path1 [path2 [...]]", file=sys.stderr)
-    sys.exit(1)
+case_name = 'rico_lh'
+time1 = 0
+time2 = 4320
 
 # Average over all height levels. If false, RMSE will be computed only at
 # k_lh_start
@@ -29,7 +29,50 @@ l_all_height_avg = False
 clubb_var_str = 'rrm_mc'
 silhs_var_str  = 'lh_rrm_mc'
 
-silhs_dirs = sys.argv[1:]
+plot_title = ''
+
+output_file = ''
+
+#-------------------------------------------------------------------------
+
+silhs_dirs = []
+
+# Read command line arguments
+i = 1
+while i < len(sys.argv):
+    if sys.argv[i] == '--plot_title':
+        i = i + 1
+        plot_title = sys.argv[i]
+    elif sys.argv[i] == '--time1':
+        i = i + 1
+        time1 = int(sys.argv[i])
+    elif sys.argv[i] == '--time2':
+        i = i + 1
+        time2 = int(sys.argv[i])
+    elif sys.argv[i] == '--case_name':
+        i = i + 1
+        case_name = sys.argv[i]
+    elif sys.argv[i] == '--clubb_var_str':
+        i = i + 1
+        clubb_var_str = sys.argv[i]
+    elif sys.argv[i] == '--silhs_var_str':
+        i = i + 1
+        silhs_var_str = sys.argv[i]
+    elif sys.argv[i] == '--output_file':
+        i = i + 1
+        output_file = sys.argv[i]
+    else:
+        silhs_dirs.append(sys.argv[i])
+
+    i = i + 1
+
+if len(silhs_dirs) == 0:
+    print("Usage: ./silhs_rms_plot_mult_sim.py [options] "
+          "path1 [path2 [...]]", file=sys.stderr)
+    sys.exit(1)
+
+if plot_title == '':
+    plot_title = clubb_var_str
 
 sim_points_all = list()
 for entry in os.listdir(silhs_dirs[0]):
@@ -38,19 +81,17 @@ for entry in os.listdir(silhs_dirs[0]):
 sim_points_all.sort()
 
 clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
-    '/rico_lh_zt.nc').variables[clubb_var_str]
+    '/'+case_name+'_zt.nc').variables[clubb_var_str]
 
 rms_all = list()
 for i in range(len(silhs_dirs)):
     rms_all.append(np.empty(len(sim_points_all)))
 
-time1 = 0
-time2 = 4320
 n_timesteps = time2-time1
 
 if not l_all_height_avg:
     k_lh_start = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
-      '/rico_lh_lh_sfc.nc').variables['k_lh_start']
+      '/'+case_name+'_lh_sfc.nc').variables['k_lh_start']
     k_lh_start = k_lh_start[:,0,0,0]
 else:
     n_heights = clubb_var.shape[1]
@@ -64,7 +105,7 @@ for n_i in range(0,len(sim_points_all)):
         silhs_dir = silhs_dirs[d_i]
         rms_val = 0.0
         silhs_var = netCDF4.Dataset(silhs_dir+'/silhs_'+str(num_samples)+ \
-            '/rico_lh_lh_zt.nc').variables[silhs_var_str]
+            '/'+case_name+'_lh_zt.nc').variables[silhs_var_str]
         # Copy to memory for better performance
         silhs_var = silhs_var[:,:,0,0]
 
@@ -102,11 +143,17 @@ for d_i in range(len(silhs_dirs)):
 ## pl.plot(sim_points_all, rms_1_over_sqrt_n, label='1 over sqrt N')
 
 pl.xlabel('Number of Sample Points')
-pl.ylabel('Root Mean Square of Absolute Error')
+pl.ylabel('RMSE of SILHS Estimate')
 pl.xscale('log')
 pl.yscale('log')
+pl.title(plot_title)
 # This will change the axes so that the plot 'tight'ly hugs the data
 #pl.axis('tight')
 
 pl.legend()
-pl.show()
+
+if output_file == '':
+    pl.show()
+else:
+    # Output to disk
+    pl.savefig(output_file)

@@ -260,12 +260,10 @@ module latin_hypercube_driver_module
                                           real(X_nl_all_levs, kind = stat_rknd) )
     end if
     if ( l_output_2D_uniform_dist ) then
-      ! TODO: fix this!!
-      stop "2D output not supported right now"
-      !call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
-      !                                  X_u_all_levs, &
-      !                                  X_mixt_comp_all_levs, p_matrix, &
-      !                                  lh_sample_point_weights )
+      call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
+                                        X_u_all_levs, &
+                                        X_mixt_comp_all_levs, &
+                                        lh_sample_point_weights )
     end if
 
     ! Various nefarious assertion checks
@@ -602,14 +600,11 @@ module latin_hypercube_driver_module
     use math_utilities, only: &
       rand_integer_in_range  ! Procedure
 
-    implicit none
+    use parameters_silhs, only: &
+      l_rcm_in_cloud_k_lh_start,  &  ! Variable(s)
+      l_random_k_lh_start
 
-    ! Local Constants
-    logical, parameter :: &
-      l_rcm_in_cloud_k_lh_start = .false., &  ! Compute k_lh_start based on rcm_in_cloud instead
-                                              ! of rcm
-      l_random_k_lh_start = .false.            ! Use a random value of k_lh_start between rcm and
-                                              ! rcm_in_cloud
+    implicit none
 
     ! Input Variables
     integer, intent(in) :: &
@@ -1262,8 +1257,8 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_uniform_dist ) then
 
-      allocate( variable_names(d_variables+5), variable_descriptions(d_variables+5), &
-                variable_units(d_variables+5) )
+      allocate( variable_names(d_variables+4), variable_descriptions(d_variables+4), &
+                variable_units(d_variables+4) )
 
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
@@ -1338,10 +1333,6 @@ module latin_hypercube_driver_module
       variable_descriptions(i) = "Mixture component (should be 1 or 2)"
 
       i = d_variables + 4
-      variable_names(i) = "p_matrix"
-      variable_descriptions(i) = "P matrix elements at k_lh_start"
-
-      i = d_variables + 5
       variable_names(i) = "lh_sample_point_weights"
       variable_descriptions(i) = "Weight of each sample point"
 

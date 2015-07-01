@@ -172,7 +172,7 @@ module output_2D_samples_module
 !-------------------------------------------------------------------------------
   subroutine output_2D_uniform_dist_file &
              ( nz, num_samples, dp2, X_u_all_levs, X_mixt_comp_all_levs, &
-               p_matrix_chi_element, lh_sample_point_weights )
+               lh_sample_point_weights )
 ! Description:
 !   Output a 2D snapshot of latin hypercube uniform distribution, i.e. (0,1)
 ! References:
@@ -200,9 +200,6 @@ module output_2D_samples_module
     integer, intent(in), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
-    integer, intent(in), dimension(num_samples) :: &
-      p_matrix_chi_element ! P matrix at the chi(s_mellor) column
-
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
 
@@ -210,7 +207,7 @@ module output_2D_samples_module
 
     ! ---- Begin Code ----
 
-    do j = 1, dp2+3
+    do j = 1, dp2+2
       allocate( uniform_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
@@ -223,8 +220,6 @@ module output_2D_samples_module
         real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
         uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
-          real( p_matrix_chi_element(sample), kind=stat_rknd )
-        uniform_sample_file%var(dp2+3)%ptr(sample,1,k) = &
           real( lh_sample_point_weights(sample), kind=stat_rknd )
       end do
     end do
@@ -235,7 +230,7 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, dp2+3
+    do j = 1, dp2+2
       deallocate( uniform_sample_file%var(j)%ptr )
     end do
 
