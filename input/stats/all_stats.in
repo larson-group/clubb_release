@@ -40,7 +40,7 @@ vars_zt =
 'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
 'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_ts', 'rrm_sd_morr',
 'rrm_ta', 'rrm_cond', 'rrm_auto', 'rrm_accr',
-'rrm_cond_adj', 'rrm_src_adj',
+'rrm_cond_adj', 'rrm_src_adj', 'rrm_mc_nonadj',
 'rrm_hf', 'rrm_wvhf', 'rrm_cl', 'rrm_mc',
 'Nrm_bt', 'Nrm_ma', 'Nrm_sd', 'Nrm_ts', 'Nrm_ta', 'Nrm_cond', 'Nrm_auto',
 'Nrm_cond_adj', 'Nrm_src_adj', 'Nrm_cl', 'Nrm_mc',
@@ -92,7 +92,7 @@ vars_zt =
 'SIZEFIX_NS', 'SIZEFIX_NG', 'NEGFIX_NR', 'NEGFIX_NC', 'NEGFIX_NI', 'NEGFIX_NS', 
 'NEGFIX_NG', 'NIM_MORR_CL', 'QC_INST', 'QR_INST', 'QI_INST', 'QS_INST', 'QG_INST', 
 'NC_INST', 'NR_INST', 'NI_INST', 'NS_INST', 'NG_INST', 'T_in_K_mc', 'cloud_frac_refined',
-'rcm_refined', 'hl_on_Cp_residual', 'qto_residual', 
+'rcm_refined', 'hl_on_Cp_residual', 'qto_residual',
 ''
 
 vars_lh_zt =
@@ -107,7 +107,9 @@ vars_lh_zt =
 'lh_rcm_avg', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap',
 'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrm_src_adj', 'lh_rrm_cond_adj',
 'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac', 'silhs_variance_category',
+'lh_rrm_mc_nonadj',
 ''
+
 vars_lh_sfc =
 'lh_morr_snow_rate', 'lh_vwp', 'lh_lwp', 'k_lh_start',
 ''

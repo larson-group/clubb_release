@@ -436,7 +436,9 @@ module estimate_scm_microphys_module
       ilh_Nrm_auto, &
       ilh_Nrm_cond, &
       im_vol_rad_rain, &
-      ilh_m_vol_rad_rain
+      ilh_m_vol_rad_rain, &
+      irrm_mc_nonadj, &
+      ilh_rrm_mc_nonadj
 
     use stats_type_utilities, only: &
       stat_update_var  ! Procedure
@@ -486,12 +488,17 @@ module estimate_scm_microphys_module
       end if
 
       if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
-        ! This variable is output only from KK microphysics.
+        ! These variables are output only from KK microphysics.
         if ( ilh_m_vol_rad_rain > 0 ) then
           call stat_update_var( ilh_m_vol_rad_rain, microphys_get_var( &
                im_vol_rad_rain, microphys_stats_zt_avg ), stats_lh_zt )
         end if
-      end if
+
+        if ( ilh_rrm_mc_nonadj > 0 ) then
+          call stat_update_var( ilh_rrm_mc_nonadj, microphys_get_var( &
+               irrm_mc_nonadj, microphys_stats_zt_avg ), stats_lh_zt )
+        end if
+      end if ! trim( microphys_scheme ) == "khairoutdinov_kogan"
 
     end if ! l_stats_samp
 

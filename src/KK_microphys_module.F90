@@ -101,7 +101,8 @@ module KK_microphys_module
         irrm_auto, &
         irrm_cond, &
         irrm_cond_adj, &
-        irrm_src_adj
+        irrm_src_adj, &
+        irrm_mc_nonadj
 
     implicit none
 
@@ -377,6 +378,8 @@ module KK_microphys_module
       call microphys_put_var( irrm_cond_adj, adj_terms%rrm_cond_adj, microphys_stats_zt )
       call microphys_put_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, microphys_stats_zt )
     end if
+    call microphys_put_var( irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
+                            microphys_stats_zt )
 
     return
 
@@ -462,7 +465,8 @@ module KK_microphys_module
         irrm_src_adj, &
         iNrm_src_adj, &
         irrm_cond_adj, &
-        iNrm_cond_adj
+        iNrm_cond_adj, &
+        irrm_mc_nonadj
 
     implicit none
 
@@ -1029,6 +1033,11 @@ module KK_microphys_module
          call stat_update_var( iNrm_cond_adj, adj_terms%Nrm_cond_adj, stats_zt )
        end if
 
+       if ( irrm_mc_nonadj > 0 ) then
+         call stat_update_var( irrm_mc_nonadj, KK_auto_tndcy+KK_accr_tndcy+KK_evap_tndcy, &
+                               stats_zt )
+       end if
+
     endif ! l_stats_samp
 
 
@@ -1113,7 +1122,6 @@ module KK_microphys_module
     ! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
     l_evap_adj_enabled = .true.
-
 
     return
 

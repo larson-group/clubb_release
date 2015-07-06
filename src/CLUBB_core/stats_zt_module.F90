@@ -236,8 +236,9 @@ module stats_zt_module
         irrm_cond, & 
         irrm_auto, & 
         irrm_accr, & 
-        irrm_cond_adj, & 
-        irrm_src_adj, & 
+        irrm_cond_adj, &
+        irrm_src_adj, &
+        irrm_mc_nonadj, &
         irrm_mc, & 
         irrm_hf
 
@@ -1839,6 +1840,14 @@ module stats_zt_module
         call stat_assign( var_index=irrm_src_adj, var_name="rrm_src_adj", &
              var_description="rrm source term adjustment due to over-depletion &
              &[kg kg^{-1} s^{-1}]", &
+             var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rrm_mc_nonadj')
+        irrm_mc_nonadj = k
+
+        call stat_assign( var_index=irrm_mc_nonadj, var_name="rrm_mc_nonadj", &
+             var_description="Value of rrm_mc tendency before adjustment [kg kg^{-1} s^{-1}]", &
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
