@@ -32,6 +32,11 @@
           {'filename' => 'rico_lh_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_VNr', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'rrm\_mc\_nonadj', 'axisLabel' => 'rrm\_mc\_nonadj', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_mc_nonadj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rrm_mc_nonadj', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
        {'plotTitle' => 'rrm\_mc', 'axisLabel' => 'rrm\_mc', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
