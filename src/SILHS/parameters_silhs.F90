@@ -59,6 +59,12 @@ module parameters_silhs
 
   !$omp threadprivate( l_lh_limit_weights )
 
+  real( kind = core_rknd ), public :: &
+    importance_prob_thresh = 5.0e-3_core_rknd ! Minimum PDF probability of category for importance
+                                              ! sampling
+
+  !$omp threadprivate( importance_prob_thresh )
+
   private ! Default Scope
 
   public :: eight_cluster_presc_probs_type

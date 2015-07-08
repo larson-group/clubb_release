@@ -1022,11 +1022,10 @@ module silhs_importance_sample_module
     use constants_clubb, only: &
       zero            ! Constant
 
-    implicit none
+    use parameters_silhs, only: &
+      importance_prob_thresh  ! Variable
 
-    ! Local Constants
-    real( kind = core_rknd ), parameter :: &
-      prob_thresh = 5.0e-3_core_rknd
+    implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
@@ -1080,7 +1079,7 @@ module silhs_importance_sample_module
     ! Apply thresholding to ensure that clusters with extremely small PDF
     ! probability are not importance sampled.
     do icluster=1, num_clusters
-      if ( cluster_real_probs(icluster) < prob_thresh .and. &
+      if ( cluster_real_probs(icluster) < importance_prob_thresh .and. &
            cluster_prescribed_probs(icluster) > cluster_real_probs(icluster) ) then
         ! Thresholding is necessary for this cluster. The prescribed probability for
         ! this cluster will be set equal to the PDF probability of the cluster (that
@@ -1091,7 +1090,7 @@ module silhs_importance_sample_module
         ! Thresholding is not necessary
         cluster_prescribed_probs_mod(icluster) = cluster_prescribed_probs(icluster)
         l_cluster_presc_prob_modified(icluster) = .false.
-      end if ! cluster_real_probs(icluster) < prob_thresh .and. ...
+      end if ! cluster_real_probs(icluster) < importance_prob_thresh .and. ...
     end do ! icluster=1, num_clusters
 
     ! Distribute any "extra" prescribed probability weight from thresholding to
