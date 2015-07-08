@@ -6,7 +6,7 @@
 vars_zt = 
 'thlm', 'thvm', 'rtm', 'rcm', 'Ncm', 'um', 'vm', 'wm_zt', 'ug', 'vg',
 'cloud_frac', 'ice_supersat_frac', 'cloud_cover', 'rcm_in_layer', 'p_in_Pa', 'exner',
-'rho_ds_zt', 'thv_ds_zt', 'Lscale', 'wp3', 'wpthlp2', 'wp2thlp', 'wprtp2',
+'rho_ds_zt', 'thv_ds_zt', 'Lscale', 'wp3','thlp3','rtp3', 'wpthlp2', 'wp2thlp', 'wprtp2',
 'wp2rtp', 'tau_zt', 'Kh_zt', 'wp2thvp', 'wp2rcp', 'wprtpthlp',
 'sigma_sqd_w_zt', 'rho', 'radht', 'rsat',
 'rrm', 'Nrm', 'rsm', 'Nsm', 'rim', 'Nim', 'rgm',

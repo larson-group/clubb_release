@@ -38,7 +38,9 @@ module stats_zm_module
         irtpthlp, & 
         iwprtp, & 
         iwpthlp, & 
-        iwp3_zm, & 
+        iwp3_zm, &
+        ithlp3_zm, &
+        irtp3_zm, &
         iwp4, & 
         iwpthvp, & 
         irtpthvp, & 
@@ -51,7 +53,9 @@ module stats_zm_module
         ithlprcp, & 
         irtprcp, & 
         ircp2,   &
-        iSkw_zm
+        iSkw_zm, &
+        iSkthl_zm, &
+        iSkrt_zm
 
     use stats_variables, only: &
         iupwp, & 
@@ -533,6 +537,20 @@ module stats_zm_module
         call stat_assign( var_index=iwp3_zm, var_name="wp3_zm", &
              var_description="w'^3 interpolated to moment. levels [m^3/s^3]", &
              var_units="(m^3)/(s^3)", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('thlp3_zm')
+        ithlp3_zm = k
+        call stat_assign( var_index=ithlp3_zm, var_name="thlp3_zm", &
+             var_description="thl'^3 interpolated to moment. levels [K^3]", &
+             var_units="K^3", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('rtp3_zm')
+        irtp3_zm = k
+        call stat_assign( var_index=irtp3_zm, var_name="rtp3_zm", &
+             var_description="rt'^3 interpolated to moment. levels [kg^3/kg^3]", &
+             var_units="(kg^3)/(kg^3)", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ('wp4')
@@ -1961,6 +1979,20 @@ module stats_zm_module
         iSkw_zm = k
         call stat_assign( var_index=iSkw_zm, var_name="Skw_zm", &
              var_description="Skewness of w on momentum levels [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Skthl_zm' )
+        iSkthl_zm = k
+        call stat_assign( var_index=iSkthl_zm, var_name="Skthl_zm", &
+             var_description="Skewness of thl on momentum levels [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Skrt_zm' )
+        iSkrt_zm = k
+        call stat_assign( var_index=iSkrt_zm, var_name="Skrt_zm", &
+             var_description="Skewness of rt on momentum levels [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

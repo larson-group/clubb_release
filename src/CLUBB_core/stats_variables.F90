@@ -84,16 +84,20 @@ module stats_variables
      ithv_ds_zt = 0, &
      iLscale = 0, & 
      iwp3 = 0, & 
+     ithlp3 = 0, &
+     irtp3 = 0, &
      iwpthlp2 = 0, & 
      iwp2thlp = 0, & 
      iwprtp2 = 0, & 
      iwp2rtp = 0, &
-     iSkw_zt = 0
+     iSkw_zt = 0, &
+     iSkthl_zt = 0, &
+     iSkrt_zt = 0
 !$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
 !$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, iice_supersat_frac, ircm_in_layer, &
 !$omp   ircm_in_cloud, icloud_cover, &
-!$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, &
-!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iSkw_zt, iSkw_zm )
+!$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, ithlp3, irtp3, &
+!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iSkw_zt, iSkthl_zt, iSkrt_zt )
 
   integer, public :: & 
      iLscale_up = 0, & 
@@ -898,7 +902,9 @@ module stats_variables
      ircp2 = 0, & 
      iupwp = 0, & 
      ivpwp = 0, &
-     iSkw_zm = 0
+     iSkw_zm = 0, &
+     iSkthl_zm = 0, &
+     iSkrt_zm = 0
 
   integer, public :: &
      irho_zm = 0, & 
@@ -927,6 +933,7 @@ module stats_variables
 !$omp   threadprivate(iwp2, irtp2, ithlp2, irtpthlp, iwprtp, iwpthlp)
 !$omp   threadprivate(iwp4, iwpthvp, irtpthvp, ithlpthvp, itau_zm, iKh_zm)
 !$omp   threadprivate(iwprcp, irc_coef, ithlprcp, irtprcp, ircp2, iupwp, ivpwp)
+!$omp   threadprivate(iSkw_zm, iSkthl_zm, iSkrt_zm)
 !$omp   threadprivate(irho_zm, isigma_sqd_w, irho_ds_zm, ithv_ds_zm, iem, ishear)
 !$omp   threadprivate(imean_w_up, imean_w_down)
 !$omp   threadprivate(iFrad, iFrad_LW, iFrad_SW, iFrad_SW_up, iFrad_SW_down)
@@ -1260,9 +1267,11 @@ module stats_variables
   integer, public :: &
     iSkw_velocity = 0, & ! Skewness velocity
     iwp3_zm = 0, &
+    ithlp3_zm = 0, &
+    irtp3_zm = 0, &
     ia3_coef = 0, &
     ia3_coef_zt = 0
-!$omp threadprivate(iSkw_velocity, iwp3_zm, ia3_coef, ia3_coef_zt)
+!$omp threadprivate(iSkw_velocity, iwp3_zm, ithlp3_zm, irtp3_zm, ia3_coef, ia3_coef_zt)
 
   integer, public :: &
     iwp3_on_wp2 = 0, &  ! w'^3 / w'^2 [m/s]

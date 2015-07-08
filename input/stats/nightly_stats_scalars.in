@@ -1,6 +1,6 @@
 &statsnl
 vars_zt =
-'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3',
+'thlm', 'rtm', 'cloud_frac', 'rcm', 'wp3','thlp3','rtp3',
 'um', 'vm', 'wm_zt', 'rrm', 'Nrm',
 'Ncm', 'rgm', 'rim', 'Nim',
 'sclrm','Lscale'

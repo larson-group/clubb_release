@@ -22,8 +22,9 @@ module inputfields
   logical, public :: &
     l_input_um = .false., l_input_vm = .false., l_input_rtm = .false., l_input_thlm = .false., & 
     l_input_wp2 = .false., l_input_wprtp = .false., l_input_wpthlp = .false.,  & 
-    l_input_wp3 = .false., l_input_rtp2 = .false., l_input_thlp2 = .false.,  & 
-    l_input_rtpthlp = .false., l_input_upwp = .false., l_input_vpwp = .false., & 
+    l_input_wp3 = .false., l_input_rtp2 = .false., l_input_rtp3 = .false., &
+    l_input_thlp2 = .false., l_input_thlp3 = .false., l_input_rtpthlp = .false., &
+    l_input_upwp = .false., l_input_vpwp = .false., &
     l_input_ug = .false., l_input_vg = .false., l_input_rcm = .false.,  & 
     l_input_wm_zt = .false., l_input_exner = .false., l_input_em = .false., & 
     l_input_p = .false., l_input_rho = .false., l_input_rho_zm = .false., & 
@@ -72,7 +73,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 68, & ! The number of input fields for SAM
+    num_sam_inputfields = 70, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -261,7 +262,9 @@ module inputfields
         em, &
         radht, &
         !Frad, &
-        thlprcp
+        thlprcp, &
+        thlp3, &
+        rtp3
 
     use variables_prognostic_module, only: & 
         pdf_params ! Variable(s)
@@ -1622,16 +1625,16 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_rtm
-      SAM_variables(k)%input_name = "QT"
+      SAM_variables(k)%input_name = "RTM"
       SAM_variables(k)%clubb_var => rtm
-      SAM_variables(k)%adjustment = 1.0e-3_core_rknd
+      SAM_variables(k)%adjustment = 1.0_core_rknd !1.0e-3_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_thlm
-      SAM_variables(k)%input_name = "THETAL"
+      SAM_variables(k)%input_name = "THLM"
       SAM_variables(k)%clubb_var => thlm
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -1640,7 +1643,7 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_wp2
-      SAM_variables(k)%input_name = "W2"
+      SAM_variables(k)%input_name = "WP2"
       SAM_variables(k)%clubb_var => wp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1660,7 +1663,7 @@ module inputfields
       ! Note that this needs to be adjusted by 1/(RHO * Lv)
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_wprtp
-      SAM_variables(k)%input_name = "QTFLUX"
+      SAM_variables(k)%input_name = "WPRTP"
       SAM_variables(k)%clubb_var => wprtp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1671,7 +1674,7 @@ module inputfields
       ! Note that this needs to be adjusted by 1/(RHO * Cp)
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_wpthlp
-      SAM_variables(k)%input_name = "TLFLUX"
+      SAM_variables(k)%input_name = "WPTHLP"
       SAM_variables(k)%clubb_var => wpthlp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -1689,19 +1692,37 @@ module inputfields
       k = k + 1
 
       SAM_variables(k)%l_input_var = l_input_rtp2
-      SAM_variables(k)%input_name = "QT2"
+      SAM_variables(k)%input_name = "RTP2"
       SAM_variables(k)%clubb_var => rtp2
-      SAM_variables(k)%adjustment = 1.0e-6_core_rknd
+      SAM_variables(k)%adjustment = 1.0_core_rknd !1.0e-6_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
 
+      SAM_variables(k)%l_input_var = l_input_rtp3
+      SAM_variables(k)%input_name = "QTO3"
+      SAM_variables(k)%clubb_var => rtp3
+      SAM_variables(k)%adjustment = 1.0e-9_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zt"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
       SAM_variables(k)%l_input_var = l_input_thlp2
-      SAM_variables(k)%input_name = "THEL2"
+      SAM_variables(k)%input_name = "THLP2"
       SAM_variables(k)%clubb_var => thlp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      SAM_variables(k)%l_input_var = l_input_thlp3
+      SAM_variables(k)%input_name = "THEL3"
+      SAM_variables(k)%clubb_var => thlp3
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
       k = k + 1
@@ -2039,7 +2060,7 @@ module inputfields
       temp_rrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrp2
-      SAM_variables(k)%input_name = "RRP2"
+      SAM_variables(k)%input_name = "rrp2"
       SAM_variables(k)%clubb_var => temp_rrp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2050,7 +2071,7 @@ module inputfields
       temp_Nrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_Nrp2
-      SAM_variables(k)%input_name = "NRP2"
+      SAM_variables(k)%input_name = "Nrp2"
       SAM_variables(k)%clubb_var => temp_Nrp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2165,7 +2186,7 @@ module inputfields
 
       SAM_variables(k)%l_input_var = l_input_rtpthlp
       SAM_variables(k)%clubb_name = "rtpthlp"
-      SAM_variables(k)%input_name = "TQ"
+      SAM_variables(k)%input_name = "RTPTHLP"
       SAM_variables(k)%clubb_var => rtpthlp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2211,15 +2232,15 @@ module inputfields
       end do
 
       do k=k_lowest_zm(sam_file), k_highest_zm(sam_file)
-        if(l_input_wprtp) then
+        !if(l_input_wprtp) then
           ! wprtp = QTFLUX / (RHO*Lv)
-          wprtp(k) = wprtp(k) / (rho(k)*Lv)
-        end if
+          !wprtp(k) = wprtp(k) / (rho(k)*Lv) weberjk, should not need to convert with new fields
+        !end if
 
-        if(l_input_wpthlp) then
+        !if(l_input_wpthlp) then
           ! wpthlp = TLFLUX / (RHO*Cp)
-          wpthlp(k) = wpthlp(k) / (rho(k)*Cp)
-        end if
+          !wpthlp(k) = wpthlp(k) / (rho(k)*Cp) weberjk, should not need to convert with new fields
+        !end if
         
         ! Use linear interpolation to convert up2 and vp2 from the thermodynamic
         ! grid to the momentum grid. See CLUBB Equations 170 and 171.
@@ -2961,7 +2982,7 @@ module inputfields
     namelist /setfields/ datafile, input_type, & 
       l_input_um, l_input_vm, l_input_rtm, l_input_thlm, & 
       l_input_wp2, l_input_wprtp, l_input_wpthlp,  & 
-      l_input_wp3, l_input_rtp2, l_input_thlp2,  & 
+      l_input_wp3, l_input_rtp2, l_input_rtp3, l_input_thlp2, l_input_thlp3,  &
       l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
       l_input_ug, l_input_vg, l_input_rcm,  & 
       l_input_wm_zt, l_input_exner, l_input_em, & 
@@ -2999,7 +3020,9 @@ module inputfields
     l_input_wpthlp = .false.
     l_input_wp3 = .false.
     l_input_rtp2 = .false.
+    l_input_rtp3 = .false.
     l_input_thlp2 = .false.
+    l_input_thlp3 = .false.
     l_input_rtpthlp = .false.
     l_input_upwp = .false.
     l_input_vpwp = .false.

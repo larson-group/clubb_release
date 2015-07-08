@@ -47,7 +47,7 @@ module clubb_driver
     use parameter_indices, only: nparams ! Variable(s)
 
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
-      thvm, Lscale, Skw_zm, Kh_zm, K_hm, &
+      thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, K_hm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
       hydromet, hydrometp2, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
@@ -1284,7 +1284,7 @@ module clubb_driver
              dummy_dx, dummy_dy, &                                ! Intent(in)
              um, vm, upwp, vpwp, up2, vp2, &                      ! Intent(inout)
              thlm, rtm, wprtp, wpthlp, &                          ! Intent(inout)
-             wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! Intent(inout)
+             wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
              sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
              wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
              rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
@@ -3013,7 +3013,7 @@ module clubb_driver
         input_type, &  ! Variable(s)
         l_input_um, l_input_vm, l_input_rtm, l_input_thlm, & 
         l_input_wp2, l_input_wprtp, l_input_wpthlp,  & 
-        l_input_wp3, l_input_rtp2, l_input_thlp2,  & 
+        l_input_wp3, l_input_rtp2, l_input_rtp3, l_input_thlp2, l_input_thlp3,  &
         l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
         l_input_ug, l_input_vg, l_input_rcm,  & 
         l_input_wm_zt, l_input_exner, l_input_em, & 
@@ -3229,7 +3229,9 @@ module clubb_driver
     l_input_wpthlp = .true.
     l_input_wp3 = .true.
     l_input_rtp2 = .true.
+    l_input_rtp3 = .true.
     l_input_thlp2 = .true.
+    l_input_thlp3 = .true.
     l_input_rtpthlp = .true.
     l_input_upwp = .true.
     l_input_vpwp = .true.

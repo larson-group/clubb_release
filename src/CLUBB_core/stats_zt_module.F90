@@ -58,6 +58,8 @@ module stats_zt_module
  
     use stats_variables, only: & 
         iwp3, & ! Variable(s)
+        ithlp3, &
+        irtp3, &
         iwpthlp2, & 
         iwp2thlp, & 
         iwprtp2, & 
@@ -70,7 +72,9 @@ module stats_zt_module
         iwp2rcp, & 
         iwprtpthlp, & 
         isigma_sqd_w_zt, &
-        iSkw_zt
+        iSkw_zt, &
+        iSkthl_zt, &
+        iSkrt_zt
 
     use stats_variables, only: & 
         ihm_1, & ! Variable(s)
@@ -1210,6 +1214,20 @@ module stats_zt_module
         iwp3 = k
         call stat_assign( var_index=iwp3, var_name="wp3", &
              var_description="w third order moment [m^3/s^3]", var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3')
+        ithlp3 = k
+        call stat_assign( var_index=ithlp3, var_name="thlp3", &
+             var_description="thl third order moment [K^3]", var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3')
+        irtp3 = k
+        call stat_assign( var_index=irtp3, var_name="rtp3", &
+             var_description="rt third order moment [kg^3/kg^3]", var_units="m^3/s^3", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3744,6 +3762,20 @@ module stats_zt_module
         iSkw_zt = k
         call stat_assign( var_index=iSkw_zt, var_name="Skw_zt", &
              var_description="Skewness of w on thermodynamic levels [-]", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('Skthl_zt')
+        iSkthl_zt = k
+        call stat_assign( var_index=iSkthl_zt, var_name="Skthl_zt", &
+             var_description="Skewness of thl on thermodynamic levels [-]", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('Skrt_zt')
+        iSkrt_zt = k
+        call stat_assign( var_index=iSkrt_zt, var_name="Skrt_zt", &
+             var_description="Skewness of rt on thermodynamic levels [-]", &
              var_units="-", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
