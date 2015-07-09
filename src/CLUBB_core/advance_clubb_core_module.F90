@@ -954,7 +954,7 @@ module advance_clubb_core_module
       Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
 
     else
-
+     
       Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
                                         thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
 
@@ -964,7 +964,7 @@ module advance_clubb_core_module
       Skrt_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wprtp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
                                         rtp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), rt_tol )
 
-      Skthl_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
+      Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
                                         rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
 
     endif ! if(l_use_3D_closure)
