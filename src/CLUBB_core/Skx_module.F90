@@ -117,21 +117,15 @@ module Skx_module
     ! ---- Begin Code ----
     ! weberjk, 8-July 2015. Commented this out for now. cgils was failing during some tests.
 
-    !if(wp2 > w_tol_sqd) then
+      nlzd_corr_wx = ( wpxp / ( sqrt(max(wp2,w_tol_sqd)) * sqrt( max(xp2,x_tol**2) ) ) ) &
+                     / sqrt( one - sigma_sqd_w )
 
-    !  nlzd_corr_wx = ( wpxp / ( sqrt(max(wp2,w_tol_sqd)) * sqrt( max(xp2,x_tol**2) ) ) ) &
-    !                 / sqrt( one - sigma_sqd_w )
-
-    !  nlzd_Skw = Skw * ( one - sigma_sqd_w) ** (-3.0_core_rknd / 2.0_core_rknd)
+      nlzd_Skw = Skw * ( one - sigma_sqd_w) ** (-3.0_core_rknd / 2.0_core_rknd)
 
       ! Larson and Golaz (2005) eq. 33
-    !  Skx = nlzd_Skw * nlzd_corr_wx * ( beta + (1 - beta) * nlzd_corr_wx**2 )
-
-    !else
+      Skx = nlzd_Skw * nlzd_corr_wx * ( beta + (one - beta) * nlzd_corr_wx**2 )
 
       Skx = 0._core_rknd
-
-    !endif
 
     return
   end function LG_2005_ansatz
