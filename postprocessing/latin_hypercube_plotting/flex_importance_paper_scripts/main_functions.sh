@@ -41,7 +41,7 @@ plot_rms_n_dir_all()
     fi
     # Total tendency
     echo "Total tendency"
-    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_mc" --silhs_var_str "lh_rrm_mc" --output_file "$plot_dir"/rrm_mc_rms.svg "$@"
+    $script --plot_title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_mc_nonadj" --silhs_var_str "lh_rrm_mc_nonadj" --output_file "$plot_dir"/rrm_mc_rms.svg "$@"
     # Autoconversion tendency
     echo "Autoconversion tendency"
     $script --plot_title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var_str "rrm_auto" --silhs_var_str "lh_rrm_auto" --output_file "$plot_dir"/rrm_auto_rms.svg "$@"
@@ -86,7 +86,7 @@ plot_timeseries_two_dir_all()
 
     # Total tendency
     echo "Total tendency"
-    $script --title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var "rrm_mc" --silhs_var "lh_rrm_mc" --ylabel "$TOTAL_EQ" --output_file "$out_dir/rrm_mc_timeseries.svg" "$tmp_dir/`basename \"$sim_dir_1\"`_20" "$tmp_dir/`basename \"$sim_dir_2\"`_20"
+    $script --title "$TOTAL_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var "rrm_mc_nonadj" --silhs_var "lh_rrm_mc_nonadj" --ylabel "$TOTAL_EQ" --output_file "$out_dir/rrm_mc_timeseries.svg" "$tmp_dir/`basename \"$sim_dir_1\"`_20" "$tmp_dir/`basename \"$sim_dir_2\"`_20"
     echo "Autoconversion tendency"
     # Autoconversion tendency
     $script --title "$AUTOCONV_STR" --time1 $time1 --time2 $time2 --case_name "$case_name" --clubb_var "rrm_auto" --silhs_var "lh_rrm_auto" --ylabel "$AUTOCONV_EQ" --output_file "$out_dir/rrm_auto_timeseries.svg" "$tmp_dir/`basename \"$sim_dir_1\"`_20" "$tmp_dir/`basename \"$sim_dir_2\"`_20"
