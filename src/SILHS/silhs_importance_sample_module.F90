@@ -71,7 +71,7 @@ module silhs_importance_sample_module
       four_cluster_allocation_opt  = 2, &
       ! Two clusters, one containing all categories with either cloud or precip,
       ! and the other containing categories with neither
-      new_scheme_opt               = 3
+      two_cluster_cp_nocp_opt               = 3
 
     integer, parameter :: &
       cluster_allocation_strategy = eight_cluster_allocation_opt
@@ -136,8 +136,9 @@ module silhs_importance_sample_module
       case ( four_cluster_allocation_opt )
         category_prescribed_probs = four_cluster_no_precip &
                                     ( importance_categories, category_real_probs )
-      case ( new_scheme_opt )
-        category_prescribed_probs = new_scheme( importance_categories, category_real_probs )
+      case ( two_cluster_cp_nocp_opt )
+        category_prescribed_probs = two_cluster_cp_nocp &
+                                    ( importance_categories, category_real_probs )
       case default
         write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
         stop "Fatal error in importance_sampling_driver"
@@ -785,7 +786,7 @@ module silhs_importance_sample_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  function new_scheme( importance_categories, category_real_probs ) &
+  function two_cluster_cp_nocp( importance_categories, category_real_probs ) &
 
   result( category_prescribed_probs )
 
@@ -858,7 +859,7 @@ module silhs_importance_sample_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       if ( num_categories_in_cluster(iinocld_precip) /= 2 .or. &
            num_categories_in_cluster(iicld_or_precip) /= 6 ) then
-        stop "Invalid categories in new_scheme"
+        stop "Invalid categories in two_cluster_cp_nocp"
       end if
     end if
 
@@ -870,7 +871,7 @@ module silhs_importance_sample_module
         num_categories_in_cluster, cluster_categories, cluster_prescribed_probs )
 
     return
-  end function new_scheme
+  end function two_cluster_cp_nocp
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
