@@ -942,6 +942,13 @@ module advance_clubb_core_module
     thlp3_zm = zt2zm( thlp3 )
     rtp3_zm = zt2zm( rtp3 )
 
+    ! To calculate Skewness of thl, rt, will need interpolated values. 
+    wpthlp_zt  = zm2zt( wpthlp )
+    wprtp_zt   = zm2zt( wprtp )
+    thlp2_zt   = zm2zt( thlp2 )
+    rtp2_zt   = zm2zt( rtp2 )
+    sigma_sqd_w = zt2zm(sigma_sqd_w_zt)
+
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
@@ -954,7 +961,7 @@ module advance_clubb_core_module
       Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
 
     else
-     
+
       Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
                                         thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
 
