@@ -469,34 +469,24 @@ module silhs_importance_sample_module
       total_diff_over, &
       weight
 
-    logical, dimension(num_importance_categories) :: &
-      l_ignore_category          ! Whether to ignore a category due to its
-                                 ! PDF probability being too low
-
     integer :: icategory
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    l_ignore_category(:) = .false.
-    where ( category_real_probs < real_prob_thresh_for_transfer )
-      l_ignore_category = .true.
-    end where
-
     total_diff_under = zero
 
     do icategory=1, num_importance_categories
-      if ( .not. l_ignore_category(icategory) ) then
+      if ( category_real_probs(icategory) >= real_prob_thresh_for_transfer ) then
         min_presc_probs(icategory) = category_real_probs(icategory) / max_weight
-        min_presc_prob_diff(icategory) = category_prescribed_probs(icategory) - &
-                                         min_presc_probs(icategory)
-        if ( min_presc_prob_diff(icategory) < zero ) then
-          total_diff_under = total_diff_under + abs( min_presc_prob_diff(icategory) )
-        end if
-      else ! l_ignore_category(icategory)
-        min_presc_probs(icategory) = zero
-        min_presc_prob_diff(icategory) = zero
-      end if ! .not. l_ignore_category(icategory)
+      else
+        min_presc_probs(icategory) = category_real_probs(icategory)
+      end if
+
+      min_presc_prob_diff(icategory) = category_prescribed_probs(icategory) - &
+                                       min_presc_probs(icategory)
+      if ( min_presc_prob_diff(icategory) < zero ) then
+        total_diff_under = total_diff_under + abs( min_presc_prob_diff(icategory) )
+      end if
     end do ! icategory=1, num_importance_categories
 
     if ( total_diff_under > zero ) then
@@ -511,8 +501,7 @@ module silhs_importance_sample_module
 
       if ( total_diff_under > total_diff_over ) then
         ! The prescribed probabilities cannot be adjusted to achieve the maximum
-        ! weight. This could happen if the maximum weight is too low and/or the
-        ! threshold is too high.
+        ! weight. This could happen if the maximum weight is too low.
         write(fstderr,*) "The sample point weights could not be limited to the &
                          &maximum value."
         stop "Fatal error in limit_category_weights"
@@ -520,14 +509,12 @@ module silhs_importance_sample_module
 
       ! Adjust the prescribed probabilities to achieve the minimum.
       do icategory=1, num_importance_categories
-        if ( .not. l_ignore_category(icategory) .and. &
-             min_presc_prob_diff(icategory) > zero ) then
+        if ( min_presc_prob_diff(icategory) > zero ) then
           category_prescribed_probs(icategory) = category_prescribed_probs(icategory) - &
               ( min_presc_prob_diff(icategory) / total_diff_over ) * total_diff_under
-        else if ( .not. l_ignore_category(icategory) .and. &
-                  min_presc_prob_diff(icategory) < zero ) then
+        else if ( min_presc_prob_diff(icategory) < zero ) then
           category_prescribed_probs(icategory) = min_presc_probs(icategory)
-        end if ! .not. l_ignore_category(icategory) .and. min_presc_prob_diff(icategory) > zero
+        end if ! min_presc_prob_diff(icategory) > zero
       end do ! icategory=1, num_importance_categories
 
     end if ! total_diff_under > zero
@@ -537,15 +524,13 @@ module silhs_importance_sample_module
     if ( clubb_at_least_debug_level( 2 ) ) then
       do icategory=1, num_importance_categories
         if ( category_prescribed_probs(icategory) > zero .and. &
-             .not. l_ignore_category(icategory) ) then
+             category_real_probs(icategory) >= real_prob_thresh_for_transfer ) then
           weight = category_real_probs(icategory) / category_prescribed_probs(icategory)
           if ( weight > max_weight ) then
             write(fstderr,*) "In limit_category_weights, a weight was not limited."
             write(fstderr,*) "category_real_prob = ", category_real_probs(icategory)
             write(fstderr,*) "category_prescribed_prob = ", category_prescribed_probs(icategory)
             write(fstderr,*) "weight = ", weight
-            write(fstderr,*) "l_ignore_category = ", l_ignore_category(icategory)
-
             write(fstderr,*) "min_presc_probs = ", min_presc_probs(icategory)
             write(fstderr,*) "min_presc_prob_diff = ", min_presc_prob_diff(icategory)
             stop "Fatal error in limit_category_weights"
@@ -1181,8 +1166,7 @@ module silhs_importance_sample_module
     ! Apply thresholding to ensure that clusters with extremely small PDF
     ! probability are not importance sampled.
     do icluster=1, num_clusters
-      if ( cluster_real_probs(icluster) < importance_prob_thresh .and. &
-           cluster_prescribed_probs(icluster) > cluster_real_probs(icluster) ) then
+      if ( cluster_real_probs(icluster) < importance_prob_thresh ) then
         ! Thresholding is necessary for this cluster. The prescribed probability for
         ! this cluster will be set equal to the PDF probability of the cluster (that
         ! is, no importance sampling).
@@ -1211,6 +1195,7 @@ module silhs_importance_sample_module
       do icluster=1, num_clusters
         if ( l_cluster_presc_prob_modified(icluster) ) then
 
+          ! Note that presc_prob_difference may be negative.
           presc_prob_difference = cluster_prescribed_probs(icluster) - &
                                   cluster_prescribed_probs_mod(icluster)
 
