@@ -536,7 +536,8 @@ module silhs_importance_sample_module
     ! performed its task successfully.
     if ( clubb_at_least_debug_level( 2 ) ) then
       do icategory=1, num_importance_categories
-        if ( category_prescribed_probs(icategory) > zero ) then
+        if ( category_prescribed_probs(icategory) > zero .and. &
+             .not. l_ignore_category(icategory) ) then
           weight = category_real_probs(icategory) / category_prescribed_probs(icategory)
           if ( weight > max_weight ) then
             write(fstderr,*) "In limit_category_weights, a weight was not limited."
