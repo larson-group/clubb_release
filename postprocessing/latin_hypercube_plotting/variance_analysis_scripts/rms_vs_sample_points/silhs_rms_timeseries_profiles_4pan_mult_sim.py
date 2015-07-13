@@ -2,7 +2,7 @@
 from __future__ import print_function
 import netCDF4
 import numpy as np
-import pylab as pl
+import matplotlib.pyplot as pl
 import sys
 import os
 
@@ -26,17 +26,21 @@ time2 = 4320
 clubb_var_strs  = [ 'rrm_auto',    'rrm_accr',    'rrm_cond',    'rrm_mc_nonadj' ]
 silhs_var_strs  = [ 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj' ]
 
-l_timeseries = False
+# 0: RMS (default)
+# 1: timeseries
+# 2: profiles
+mode = 0
 
 plot_sup_title = ''
 
 output_file = 'out.svg'
 
 num_pts_for_timeseries = '10'
+num_pts_for_profiles = '10'
 
 #-------------------------------------------------------------------------
 
-pl.rcParams['figure.figsize'] = 10, 8
+pl.rcParams['figure.figsize'] = 10, 10
 
 silhs_dirs = []
 
@@ -59,7 +63,9 @@ while i < len(sys.argv):
         i = i + 1
         output_file = sys.argv[i]
     elif sys.argv[i] == '--timeseries':
-        l_timeseries = True
+        mode = 1
+    elif sys.argv[i] == '--profiles':
+        mode = 2
     else:
         silhs_dirs.append(sys.argv[i])
 
@@ -89,12 +95,13 @@ k_lh_start = k_lh_start[:,0,0,0]
 
 for plot_num in range(4):
 
-    clubb_var = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+ \
-        '/'+case_name+'_zt.nc').variables[clubb_var_strs[plot_num]]
+    clubb_nc = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+\
+        '/'+case_name+'_zt.nc')
+    clubb_var = clubb_nc.variables[clubb_var_strs[plot_num]]
     # Copy to memory for faster access
     clubb_var = clubb_var[:,:,0,0]
 
-    if l_timeseries:
+    if mode == 1:
         silhs_vars = list()
         silhs_vars_plt = list()
         for silhs_dir in silhs_dirs:
@@ -107,7 +114,7 @@ for plot_num in range(4):
             for u in range(len(silhs_vars_plt)):
                 silhs_vars_plt[u][t-time1] = silhs_vars[u][t,k]
 
-    else: # not l_timeseries
+    elif mode == 0:
         rms_all = list()
         for i in range(len(silhs_dirs)):
             rms_all.append(np.empty(len(sim_points_all)))
@@ -133,7 +140,27 @@ for plot_num in range(4):
                 rms_val = np.sqrt(rms_val)
                 rms_all[d_i][n_i] = rms_val
 
+    elif mode == 2:
+        altitude = clubb_nc.variables['altitude'][:]
+        # Exclude lower boundary
+        altlow = 1
+        for althigh in range(2,len(altitude)):
+            if altitude[althigh] > 4000.0:
+                break
+        silhs_vars = list()
+        for silhs_dir in silhs_dirs:
+            silhs_vars.append(netCDF4.Dataset(silhs_dir+'/silhs_'+num_pts_for_profiles+\
+                '/'+case_name+'_lh_zt.nc').variables[silhs_var_strs[plot_num]][:,:,0,0])
+
     pl.subplot(2, 2, plot_num+1)
+
+    # Plot analytic line
+    if mode == 2:
+        line, = pl.plot(np.average(clubb_var[time1:time2,altlow:althigh], axis=0), \
+                    altitude[altlow:althigh], 'k-', linewidth=2)
+        if plot_num == 0:
+            lines.append(line)
+            dir_names.insert(0, 'analytic')
 
     for d_i in range(len(silhs_dirs)):
         format_str = ''
@@ -142,25 +169,31 @@ for plot_num in range(4):
         elif os.path.basename(silhs_dirs[d_i]) == 'prescribed':
             format_str = 'r--'
 
-        if l_timeseries:
+        if mode == 1:
             line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str)
-        else:
-            line, = pl.plot(sim_points_all, rms_all[d_i], format_str, \
-                        label=os.path.basename(silhs_dirs[d_i]))
+        elif mode == 0:
+            line, = pl.plot(sim_points_all, rms_all[d_i], format_str)
+        elif mode == 2:
+            line, = pl.plot(np.average(silhs_vars[d_i][time1:time2,altlow:althigh], axis=0), \
+                altitude[altlow:althigh], format_str)
         if plot_num == 0:
             lines.append(line)
 
     if plot_num >= 2:
-        if l_timeseries:
+        if mode == 1:
             pl.xlabel('Time [min]')
-        else:
+        elif mode == 0:
             pl.xlabel('Number of Sample Points')
+        elif mode == 2:
+            pl.xlabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
     if plot_num == 0 or plot_num == 2:
-        if l_timeseries:
+        if mode == 1:
             pl.ylabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
-        else:
+        elif mode == 0:
             pl.ylabel('RMSE of SILHS estimate')
-    if not l_timeseries:
+        elif mode == 2:
+            pl.ylabel('Height [m]')
+    if mode == 0:
         pl.xscale('log')
         pl.yscale('log')
     if clubb_var_strs[plot_num] == 'rrm_auto':
@@ -176,8 +209,7 @@ for plot_num in range(4):
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)$'
         pl.title('Total rain tendency ' + eq)
 
-pl.tight_layout()
-pl.figlegend( lines, dir_names, 'lower center', ncol=2, fontsize=9 )
+lgd = pl.figlegend( lines, dir_names, 'lower center', ncol=2, fontsize=9 )
 
 # Output to disk
-pl.savefig(output_file)
+pl.savefig(output_file, bbox_extra_artists=(lgd,), bbox_inches='tight')
