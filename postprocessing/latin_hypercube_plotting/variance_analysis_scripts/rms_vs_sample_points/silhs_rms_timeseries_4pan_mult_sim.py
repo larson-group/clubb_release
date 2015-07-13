@@ -36,8 +36,7 @@ num_pts_for_timeseries = '10'
 
 #-------------------------------------------------------------------------
 
-from pylab import rcParams
-rcParams['figure.figsize'] = 13, 8
+pl.rcParams['figure.figsize'] = 10, 8
 
 silhs_dirs = []
 
@@ -96,7 +95,6 @@ for plot_num in range(4):
     clubb_var = clubb_var[:,:,0,0]
 
     if l_timeseries:
-        clubb_var_plt = np.empty(time2-time1)
         silhs_vars = list()
         silhs_vars_plt = list()
         for silhs_dir in silhs_dirs:
@@ -106,7 +104,6 @@ for plot_num in range(4):
 
         for t in range(time1,time2):
             k = int(round(k_lh_start[t])) - 1
-            clubb_var_plt[t-time1] = clubb_var[t,k]
             for u in range(len(silhs_vars_plt)):
                 silhs_vars_plt[u][t-time1] = silhs_vars[u][t,k]
 
@@ -138,20 +135,12 @@ for plot_num in range(4):
 
     pl.subplot(2, 2, plot_num+1)
 
-    if l_timeseries :
-        # Plot the analytic line
-        format_str = 'k-'
-        line, = pl.plot(range(time1+1,time2+1), clubb_var_plt, format_str, linewidth=2)
-        if plot_num == 0:
-            lines.append(line)
-            dir_names.insert(0,'analytic')
-
     for d_i in range(len(silhs_dirs)):
         format_str = ''
         if os.path.basename(silhs_dirs[d_i]) == 'cloud_weighted':
             format_str = 'b-'
         elif os.path.basename(silhs_dirs[d_i]) == 'prescribed':
-            format_str = 'g--'
+            format_str = 'r--'
 
         if l_timeseries:
             line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str)
@@ -168,7 +157,7 @@ for plot_num in range(4):
             pl.xlabel('Number of Sample Points')
     if plot_num == 0 or plot_num == 2:
         if l_timeseries:
-            pl.ylabel('Tendency [kg/kg/s]')
+            pl.ylabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
         else:
             pl.ylabel('RMSE of SILHS estimate')
     if not l_timeseries:
@@ -176,17 +165,18 @@ for plot_num in range(4):
         pl.yscale('log')
     if clubb_var_strs[plot_num] == 'rrm_auto':
         eq = '$\\left(\\frac{\partial r_r}{\\partial t}\\right)_\\mathrm{auto}$'
-        pl.title('Autoconversion tendency ' + eq)
+        pl.title('Autoconversion ' + eq)
     elif clubb_var_strs[plot_num] == 'rrm_accr':
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)_\\mathrm{accr}$'
-        pl.title('Accretion tendency ' + eq)
+        pl.title('Accretion ' + eq)
     elif clubb_var_strs[plot_num] == 'rrm_cond':
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)_\\mathrm{evap}$'
-        pl.title('Evaporation tendency ' + eq)
+        pl.title('Evaporation ' + eq)
     elif clubb_var_strs[plot_num] == 'rrm_mc_nonadj':
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)$'
         pl.title('Total rain tendency ' + eq)
 
+pl.tight_layout()
 pl.figlegend( lines, dir_names, 'lower center', ncol=2, fontsize=9 )
 
 # Output to disk
