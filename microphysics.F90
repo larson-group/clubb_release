@@ -1552,7 +1552,7 @@ endif
            - dtn*fac_sub*(stendqci+stendqs+stendqg)
 
       ! Compute the residual between the two
-      t_res(i,j,:) = t_before(i,j,:) - t_state(i,j,:) &
+      t_res(i,j,:) = t_state(i,j,:) - t_before(i,j,:) &
                     - dtn*fac_cond*(stendqcl+stendqr) &
                     - dtn*fac_sub*(stendqci+stendqs+stendqg)
 
