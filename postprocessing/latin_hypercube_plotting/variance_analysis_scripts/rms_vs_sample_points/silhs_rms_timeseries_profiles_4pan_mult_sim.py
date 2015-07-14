@@ -62,6 +62,8 @@ while i < len(sys.argv):
     elif sys.argv[i] == '--output_file':
         i = i + 1
         output_file = sys.argv[i]
+    elif sys.argv[i] == '--rms':
+        mode = 0
     elif sys.argv[i] == '--timeseries':
         mode = 1
     elif sys.argv[i] == '--profiles':

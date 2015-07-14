@@ -20,6 +20,7 @@ tstart = 0
 tend   = 4320
 
 variance_fractions = np.zeros((num_importance_categories,tend-tstart))
+averages = np.zeros(num_importance_categories)
 
 for t in range(tstart,tend):
 
@@ -34,7 +35,12 @@ for t in range(tstart,tend):
   # Determine variance in each category as a fraction
   if (total_variance > 0.0):
     for i in range(0,num_importance_categories):
-      variance_fractions[i,t-tstart] = silhs_var_cat[i][t,k,0,0] / total_variance
+      f = silhs_var_cat[i][t,k,0,0] / total_variance
+      variance_fractions[i,t-tstart] = f
+      averages[i] = averages[i] + f
+
+averages = np.divide(averages, float(tend-tstart))
+print(averages)
 
 # Plots!!!
 for i in range(0,num_importance_categories):
