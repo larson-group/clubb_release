@@ -15,6 +15,22 @@ module parameters_silhs
 
   implicit none
 
+  ! Cluster allocation strategies!!!
+  integer, parameter, public :: &
+    ! All eight categories, effectively no clustering
+    eight_cluster_allocation_opt = 1, &
+    ! Four clusters for the combinations of cloud/no cloud and component 1/2.
+    ! Precipitation fraction is ignored.
+    four_cluster_allocation_opt  = 2, &
+    ! Two clusters, one containing all categories with either cloud or precip,
+    ! and the other containing categories with neither
+    two_cluster_cp_nocp_opt      = 3
+
+  integer, public :: &
+    cluster_allocation_strategy = eight_cluster_allocation_opt
+
+  !$omp threadprivate( cluster_allocation_strategy )
+
   ! The following type defines parameters that control the sample point
   ! allocation for the clustered sampling scheme
   ! (l_lh_clustered_sampling = .true.).

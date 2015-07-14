@@ -68,10 +68,12 @@ module microphys_init_cleanup
         eight_cluster_presc_probs,&     ! Sampling probabilities for prescribed mode (SILHS)
         l_rcm_in_cloud_k_lh_start,&     ! Determine k_lh_start based on maximum within-cloud rcm
         l_random_k_lh_start,      &     ! k_lh_start found randomly between max rcm and rcm_in_cloud
-        importance_prob_thresh          ! Minimum PDF probability for importance sampling
+        importance_prob_thresh,   &     ! Minimum PDF probability for importance sampling
+        l_lh_limit_weights,       &     ! Ensure weights stay under a given value
+        cluster_allocation_strategy     ! Strategy for distributing sample points
 
     use parameters_microphys, only: &
-        lh_num_samples              ! SILHS sample points
+        lh_num_samples                  ! SILHS sample points
 
     use parameters_microphys, only: &
         lh_microphys_interactive,     & ! Feed the subcolumns into microphysics and allow feedback
@@ -285,6 +287,7 @@ module microphys_init_cleanup
       l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, l_lh_straight_mc, &
       l_lh_clustered_sampling, eight_cluster_presc_probs, &
       l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, importance_prob_thresh, &
+      l_lh_limit_weights, cluster_allocation_strategy, &
       hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
@@ -407,6 +410,9 @@ module microphys_init_cleanup
        call write_text ( "l_random_k_lh_start = ", l_random_k_lh_start, l_write_to_file, iunit )
        call write_text ( "importance_prob_thresh = ", importance_prob_thresh, l_write_to_file, &
                          iunit )
+       call write_text ( "l_lh_limit_weights = ", l_lh_limit_weights, l_write_to_file, iunit )
+       call write_text ( "cluster_allocation_strategy = ", cluster_allocation_strategy, &
+                         l_write_to_file, iunit )
        call write_text ( "rrp2_ip_on_rrm2_ip = ", &
                          hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip, &
                          l_write_to_file, iunit )

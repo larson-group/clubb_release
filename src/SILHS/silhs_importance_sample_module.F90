@@ -57,24 +57,14 @@ module silhs_importance_sample_module
       clubb_at_least_debug_level  ! Procedure
 
     use parameters_silhs, only: &
+      eight_cluster_allocation_opt, & ! Constant(s)
+      four_cluster_allocation_opt, &
+      two_cluster_cp_nocp_opt, &
       l_lh_clustered_sampling, & ! Variable(s)
-      l_lh_limit_weights
+      l_lh_limit_weights, &
+      cluster_allocation_strategy
 
     implicit none
-
-    ! Cluster allocation strategies!!!
-    integer, parameter :: &
-      ! All eight categories, effectively no clustering
-      eight_cluster_allocation_opt = 1, &
-      ! Four clusters for the combinations of cloud/no cloud and component 1/2.
-      ! Precipitation fraction is ignored.
-      four_cluster_allocation_opt  = 2, &
-      ! Two clusters, one containing all categories with either cloud or precip,
-      ! and the other containing categories with neither
-      two_cluster_cp_nocp_opt               = 3
-
-    integer, parameter :: &
-      cluster_allocation_strategy = eight_cluster_allocation_opt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -447,7 +437,7 @@ module silhs_importance_sample_module
 
     ! Local Constants
     real( kind = core_rknd ), parameter :: &
-      max_weight                    = 5.0_core_rknd, &
+      max_weight                    = 2.0_core_rknd, &
       real_prob_thresh_for_transfer = 1.0e-8_core_rknd
 
     ! Input Variables
@@ -801,8 +791,8 @@ module silhs_importance_sample_module
       iinocld_precip = 2
 
     real( kind = core_rknd ), parameter :: &
-      prob_cld_or_precip = 0.99_core_rknd, &
-      prob_nocld_precip  = 0.01_core_rknd
+      prob_cld_or_precip = 1.0_core_rknd, &
+      prob_nocld_precip  = 0.0_core_rknd
 
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
       importance_categories   ! A list of importance categories
