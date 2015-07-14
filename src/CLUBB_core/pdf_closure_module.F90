@@ -414,7 +414,7 @@ module pdf_closure_module
 
       elseif( l_use_ADG2 ) then ! use ADG2
 
-        ! Reproduce ADG2_w_closure using seperate functions
+        ! Reproduce ADG2_w_closure using separate functions
         call calc_Luhar_params( Skw, &                          ! intent( in )
                                 mixt_frac, big_m_w, small_m_w ) ! intent( out )
 
@@ -510,15 +510,15 @@ module pdf_closure_module
         if( ( abs(Skw) >= abs(Skthl)) .and. ( abs(Skw) >= abs(Skrt) ) ) then
           ! Solve for the w PDF
           call calc_Luhar_params( Skw, &                          ! intent(in)
-                                 mixt_frac, big_m_w, small_m_w ) ! intent(out)
+                                  mixt_frac, big_m_w, small_m_w ) ! intent(out)
 
           call close_Luhar_pdf( wm, wp2, mixt_frac, small_m_w, wp2,               &  ! intent(in)
-                               sigma_sqd_w1, sigma_sqd_w2, varnce_w_1, varnce_w_2,&  ! intent(out)
-                               w_1_n, w_2_n, w_1, w_2)                               ! intent(out)
+                                sigma_sqd_w1, sigma_sqd_w2, varnce_w_1, varnce_w_2,&  ! intent(out)
+                                w_1_n, w_2_n, w_1, w_2)                               ! intent(out)
 
           ! Solve for the thl PDF
           call backsolve_Luhar_params( Skw, Skthl, big_m_w, &
-                                                              big_m_thl, small_m_thl )
+                                       big_m_thl, small_m_thl )
 
           call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
                                 small_m_thl, wpthlp,            & !intent(in)
@@ -528,7 +528,7 @@ module pdf_closure_module
 
           ! Solve for the rt PDF
           call backsolve_Luhar_params( Skw, Skrt, big_m_w, &
-                                                           big_m_rt, small_m_rt )
+                                       big_m_rt, small_m_rt )
 
           call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & ! intent(in)
                                 small_m_rt, wprtp,            & ! intent(in)
@@ -549,8 +549,8 @@ module pdf_closure_module
                                 thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
 
           ! Solve for the w PDF
-          call backsolve_Luhar_params( Skthl, Skw, big_m_thl, &                    ! intent(in)
-                                                               big_m_w, small_m_w )! intent(out)
+          call backsolve_Luhar_params( Skthl, Skw, big_m_thl, & ! intent(in)
+                                       big_m_w, small_m_w )     ! intent(out)
 
           call close_Luhar_pdf( wm, wp2, mixt_frac,         & !intent(in)
                                 small_m_w, wp2,             & !intent(in)
@@ -559,8 +559,8 @@ module pdf_closure_module
                                 w_1_n, w_2_n, w_1, w_2)       !intent(out)
 
           ! Solve for the rt PDF
-          call backsolve_Luhar_params( Skthl, Skrt, big_m_thl, &                     ! intent(in)
-                                                               big_m_rt, small_m_rt )! intent(out)
+          call backsolve_Luhar_params( Skthl, Skrt, big_m_thl, & ! intent(in)
+                                       big_m_rt, small_m_rt )    ! intent(out)
 
           call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & !intent(in)
                                 small_m_rt, wprtp,            & !intent(in)
@@ -581,8 +581,8 @@ module pdf_closure_module
                                 rt_1_n, rt_2_n, rt_1, rt_2)    !intent(out)
 
           ! Solve for the w PDF
-          call backsolve_Luhar_params( Skrt, Skw, big_m_rt, &                      ! intent(in)
-                                                               big_m_w, small_m_w )! intent(out)
+          call backsolve_Luhar_params( Skrt, Skw, big_m_rt, & ! intent(in)
+                                       big_m_w, small_m_w )   ! intent(out)
 
           call close_Luhar_pdf( wm, wp2, mixt_frac,        & !intent(in)
                                 small_m_w, wp2,            & !intent(in)
@@ -591,8 +591,8 @@ module pdf_closure_module
                                 w_1_n, w_2_n, w_1, w_2)      !intent(out)
 
           !Solve for the thl PDF
-          call backsolve_Luhar_params( Skrt, Skthl, big_m_rt, &                        ! intent(in)
-                                                             big_m_thl, small_m_thl )! intent(out)
+          call backsolve_Luhar_params( Skrt, Skthl, big_m_rt, & ! intent(in)
+                                       big_m_thl, small_m_thl ) ! intent(out)
 
           call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
                                 small_m_thl,wpthlp,             & !intent(in)
@@ -1525,9 +1525,8 @@ module pdf_closure_module
     return
     
   end function calc_cloud_frac
-  !-----------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
+  !=============================================================================
   subroutine calc_vert_avg_cf_component &
                   ( nz, k, z_vals, chi, stdev_chi, chi_at_sat, &
                     cloud_frac_i, rc_i )
@@ -1592,8 +1591,8 @@ module pdf_closure_module
 
     return
   end subroutine calc_vert_avg_cf_component
-  !-----------------------------------------------------------------------
 
+  !=============================================================================
   elemental subroutine ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,&
                                       mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, &
                                       w_1, w_2 )               
@@ -1687,6 +1686,7 @@ module pdf_closure_module
 
   end subroutine ADG1_w_closure
 
+  !=============================================================================
   elemental subroutine calc_Luhar_params( Skx, mixt_frac, big_m, small_m )
   ! Description:
   !   For the Luhar closure, this subroutine takes Skx as input and outputs
@@ -1741,7 +1741,7 @@ module pdf_closure_module
 
   end subroutine calc_Luhar_params
 
-
+  !=============================================================================
   elemental subroutine close_Luhar_pdf( xm, xp2, mixt_frac, small_m, covarnce, &
                                          sigma_sqd_x1, sigma_sqd_x2, varnce_x_1, varnce_x_2,&
                                          x_1_n, x_2_n, x_1, x_2)
@@ -1822,6 +1822,7 @@ module pdf_closure_module
 
   end subroutine close_Luhar_pdf
 
+  !=============================================================================
   elemental subroutine backsolve_Luhar_params( Sk_max, Skx, big_m_max, &
                                                              big_m_x, small_m_x )
   ! Description:
@@ -1908,8 +1909,7 @@ module pdf_closure_module
 
   end subroutine backsolve_Luhar_params
 
-
-  !-----------------------------------------------------------------------
+  !=============================================================================
   function interp_var_array( n_points, nz, k, z_vals, var )
 
   ! Description:
@@ -1987,9 +1987,8 @@ module pdf_closure_module
 
     return
   end function interp_var_array
-  !-----------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
+  !=============================================================================
   function var_value_integer_height( nz, k, z_vals, var_grid_value ) result( var_value )
 
   ! Description
@@ -2057,9 +2056,8 @@ module pdf_closure_module
     end if ! k > 1 .and. k < nz
     return
   end function var_value_integer_height
-  !-----------------------------------------------------------------------
 
-  !-----------------------------------------------------------------------
+  !=============================================================================
   function var_subgrid_interp( nz, k, z_vals, var, z_interp, l_below ) result( var_value )
 
   ! Description
@@ -2157,7 +2155,9 @@ module pdf_closure_module
                                    var(km1), var(k00), var(kp1), var(kp2) )
 
     return
+
   end function var_subgrid_interp
-  !-----------------------------------------------------------------------
+
+!===============================================================================
 
 end module pdf_closure_module
