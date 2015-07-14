@@ -767,7 +767,9 @@ module silhs_importance_sample_module
   result( category_prescribed_probs )
 
   ! Description:
-  !   Clusters importance categories
+  !   Clusters importance categories into two clusters: categories that contain
+  !   either cloud or precipitation (or both), and clusters that contain
+  !   neither.
 
   ! References:
   !   clubb:ticket:740
