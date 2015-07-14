@@ -35,7 +35,8 @@ module silhs_category_variance_module
       microphys_get_index             ! Procedure
 
     use stats_variables, only: &
-      irrm_auto
+      irrm_auto, &
+      irrm_mc_nonadj
 
     use array_index, only: &
       iirrm
@@ -110,9 +111,17 @@ module silhs_category_variance_module
 
       samples_all = X_nl_all_levs(:,:,iiPDF_chi)
 
-    else ! .true.
+    else if ( .false. ) then
 
       samples_all = lh_hydromet_mc_all(:,:,iirrm) ! Sample rrm_mc
+
+    else ! .true.
+      istat_var = irrm_mc_nonadj
+      structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
+      do isample=1, num_samples
+        samples_all(:,isample) = microphys_stats_vars_all(isample)%output_values &
+                                   (:,structure_index)
+      end do
 
     end if ! .false.
 
