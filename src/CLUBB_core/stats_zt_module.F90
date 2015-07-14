@@ -58,6 +58,8 @@ module stats_zt_module
  
     use stats_variables, only: & 
         iwp3, & ! Variable(s)
+        ithlp3, &
+        irtp3, &
         iwpthlp2, & 
         iwp2thlp, & 
         iwprtp2, & 
@@ -70,7 +72,9 @@ module stats_zt_module
         iwp2rcp, & 
         iwprtpthlp, & 
         isigma_sqd_w_zt, &
-        iSkw_zt
+        iSkw_zt, &
+        iSkthl_zt, &
+        iSkrt_zt
 
     use stats_variables, only: & 
         ihm_1, & ! Variable(s)
@@ -236,8 +240,9 @@ module stats_zt_module
         irrm_cond, & 
         irrm_auto, & 
         irrm_accr, & 
-        irrm_cond_adj, & 
-        irrm_src_adj, & 
+        irrm_cond_adj, &
+        irrm_src_adj, &
+        irrm_mc_nonadj, &
         irrm_mc, & 
         irrm_hf
 
@@ -1212,6 +1217,20 @@ module stats_zt_module
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case ('thlp3')
+        ithlp3 = k
+        call stat_assign( var_index=ithlp3, var_name="thlp3", &
+             var_description="thl third order moment [K^3]", var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3')
+        irtp3 = k
+        call stat_assign( var_index=irtp3, var_name="rtp3", &
+             var_description="rt third order moment [kg^3/kg^3]", var_units="m^3/s^3", &
+             l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
       case ('wpthlp2')
         iwpthlp2 = k
         call stat_assign( var_index=iwpthlp2, var_name="wpthlp2", &
@@ -1839,6 +1858,14 @@ module stats_zt_module
         call stat_assign( var_index=irrm_src_adj, var_name="rrm_src_adj", &
              var_description="rrm source term adjustment due to over-depletion &
              &[kg kg^{-1} s^{-1}]", &
+             var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rrm_mc_nonadj')
+        irrm_mc_nonadj = k
+
+        call stat_assign( var_index=irrm_mc_nonadj, var_name="rrm_mc_nonadj", &
+             var_description="Value of rrm_mc tendency before adjustment [kg kg^{-1} s^{-1}]", &
              var_units="kg kg^{-1} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3735,6 +3762,20 @@ module stats_zt_module
         iSkw_zt = k
         call stat_assign( var_index=iSkw_zt, var_name="Skw_zt", &
              var_description="Skewness of w on thermodynamic levels [-]", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('Skthl_zt')
+        iSkthl_zt = k
+        call stat_assign( var_index=iSkthl_zt, var_name="Skthl_zt", &
+             var_description="Skewness of thl on thermodynamic levels [-]", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('Skrt_zt')
+        iSkrt_zt = k
+        call stat_assign( var_index=iSkrt_zt, var_name="Skrt_zt", &
+             var_description="Skewness of rt on thermodynamic levels [-]", &
              var_units="-", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

@@ -1697,7 +1697,7 @@ module stats_clubb_utilities
   subroutine stats_accumulate & 
                    ( um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
-                     wp2, wp3, rtp2, thlp2, rtpthlp, &
+                     wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
@@ -1823,7 +1823,9 @@ module stats_clubb_utilities
         ivpwp_zt, &
         iwp2, &
         irtp2, &
+        irtp3, &
         ithlp2, &
+        ithlp3, &
         irtpthlp, &
         iwprtp,  &
         iwpthlp, &
@@ -2013,7 +2015,9 @@ module stats_clubb_utilities
       wp2,     & ! w'^2                          [m^2/s^2]
       wp3,     & ! w'^3                          [m^3/s^3]
       rtp2,    & ! rt'^2                         [(kg/kg)^2]
+      rtp3,    & ! rt'^3                         [(kg/kg)^3]
       thlp2,   & ! thl'^2                        [K^2]
+      thlp3,   & ! thl'^3                        [K^3]
       rtpthlp    ! rt'thl'                       [kg/kg K]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
@@ -2166,9 +2170,11 @@ module stats_clubb_utilities
       call stat_update_var( icthl_2, pdf_params%cthl_2, stats_zt )
       call stat_update_var( iwp2_zt, wp2_zt, stats_zt )
       call stat_update_var( ithlp2_zt, thlp2_zt, stats_zt )
+      call stat_update_var( ithlp3, thlp3, stats_zt )
       call stat_update_var( iwpthlp_zt, wpthlp_zt, stats_zt )
       call stat_update_var( iwprtp_zt, wprtp_zt, stats_zt )
       call stat_update_var( irtp2_zt, rtp2_zt, stats_zt )
+      call stat_update_var( irtp3, rtp3, stats_zt )
       call stat_update_var( irtpthlp_zt, rtpthlp_zt, stats_zt )
       call stat_update_var( iup2_zt, up2_zt, stats_zt )
       call stat_update_var( ivp2_zt, vp2_zt, stats_zt )

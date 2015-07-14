@@ -126,7 +126,7 @@ module advance_clubb_core_module
                host_dx, host_dy, &                                  ! intent(in) 
                um, vm, upwp, vpwp, up2, vp2, &                      ! intent(inout)
                thlm, rtm, wprtp, wpthlp, &                          ! intent(inout)
-               wp2, wp3, rtp2, thlp2, rtpthlp, &                    ! intent(inout)
+               wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! intent(inout)
                sclrm,   &
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16            ! intent(inout)
@@ -162,6 +162,7 @@ module advance_clubb_core_module
       em_min, & 
       thl_tol, & 
       rt_tol, &
+      w_tol, &
       w_tol_sqd, &
       ep2, & 
       Cp, & 
@@ -185,7 +186,8 @@ module advance_clubb_core_module
       mu, &
       Lscale_mu_coef, &
       Lscale_pert_coef, &
-      c_K10
+      c_K10, &
+      beta
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -203,7 +205,8 @@ module advance_clubb_core_module
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
       l_use_cloud_cover, &
-      l_rtm_nudge
+      l_rtm_nudge, &
+      l_use_3D_closure
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -218,6 +221,10 @@ module advance_clubb_core_module
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
       Skw_zm, &
+      Skthl_zt, &
+      Skthl_zm, &
+      Skrt_zt, &
+      Skrt_zm, &
       sigma_sqd_w_zt, &
       wp4, &
       thlpthvp, &
@@ -273,6 +280,8 @@ module advance_clubb_core_module
       wpsclrprtp,   & ! w'sclr'rt'
       wpsclrpthlp,  & ! w'sclr'thl'
       wp3_zm,       & ! wp3 interpolated to momentum levels
+      thlp3_zm,     & ! thlp3 interpolated to momentum levels
+      rtp3_zm,      & ! rtp3 interpolated to momentum levels
       Skw_velocity, & ! Skewness velocity       [m/s]
       a3_coef,      & ! The a3 coefficient      [-]
       a3_coef_zt      ! The a3 coefficient interp. to the zt grid [-]
@@ -328,8 +337,9 @@ module advance_clubb_core_module
       report_error, &
       fatal_error
 
-    use Skw_module, only:  & 
-      Skw_func ! Procedure
+    use Skx_module, only:  &
+      Skx_func, &
+      LG_2005_ansatz
 
     use clip_explicit, only: & 
       clip_covars_denom ! Procedure(s)
@@ -370,7 +380,11 @@ module advance_clubb_core_module
       irel_humidity, &
       iwpthlp_zt,    &
       iSkw_zt,       &
-      iSkw_zm
+      iSkw_zm,       &
+      iSkthl_zt,     &
+      iSkthl_zm,     &
+      iSkrt_zt,      &
+      iSkrt_zm
 
     use stats_variables, only: &
       iwprtp_zt,     &
@@ -542,7 +556,9 @@ module advance_clubb_core_module
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
       rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
       thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
       rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
       wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
@@ -923,16 +939,57 @@ module advance_clubb_core_module
 
     wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( wp3 )
+    thlp3_zm = zt2zm( thlp3 )
+    rtp3_zm = zt2zm( rtp3 )
 
-    Skw_zt(1:gr%nz) = Skw_func( wp2_zt(1:gr%nz), wp3(1:gr%nz) )
-    Skw_zm(1:gr%nz) = Skw_func( wp2(1:gr%nz), wp3_zm(1:gr%nz) )
+    ! To calculate Skewness of thl, rt, will need interpolated values. 
+    wpthlp_zt  = zm2zt( wpthlp )
+    wprtp_zt   = zm2zt( wprtp )
+    thlp2_zt   = zm2zt( thlp2 )
+    rtp2_zt   = zm2zt( rtp2 )
+    sigma_sqd_w = zt2zm(sigma_sqd_w_zt)
+
+    Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+    Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
+
+    if(l_use_3D_closure) then
+
+      Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
+      Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
+
+      Skrt_zt(1:gr%nz) = Skx_func( rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
+      Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
+
+    else
+
+      Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
+                                        thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
+
+      Skthl_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wpthlp(1:gr%nz), wp2(1:gr%nz), &
+                                        thlp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz), thl_tol )
+
+      Skrt_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wprtp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
+                                        rtp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), rt_tol )
+
+      Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
+                                        rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
+
+    endif ! if(l_use_3D_closure)
 
     if ( l_stats_samp ) then
       call stat_update_var( iSkw_zt, Skw_zt, & ! In
                             stats_zt ) ! In/Out
       call stat_update_var( iSkw_zm, Skw_zm, &
                             stats_zm ) ! In/Out
-    end if
+      call stat_update_var( iSkthl_zt, Skthl_zt, &
+                            stats_zt ) ! In/Out
+      call stat_update_var( iSkthl_zm, Skthl_zm, &
+                            stats_zm ) ! In/Out
+      call stat_update_var( iSkrt_zt, Skrt_zt, &
+                            stats_zt ) ! In/Out
+      call stat_update_var( iSkrt_zm, Skrt_zm, &
+                            stats_zm ) ! In/Out
+    endif
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
@@ -1036,7 +1093,7 @@ module advance_clubb_core_module
       call pdf_closure & 
         ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k), & ! intent(in)
           wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                       & ! intent(in)
-          Skw_zt(k), rtm(k), rtp2_zt(k),                              & ! intent(in)
+          Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm(k), rtp2_zt(k),     & ! intent(in)
           zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),                    & ! intent(in)
           zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),              & ! intent(in)
           wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),          & ! intent(in)
@@ -1184,7 +1241,7 @@ module advance_clubb_core_module
         call pdf_closure & 
           ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
             wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-            Skw_zm(k), rtm_zm(k), rtp2(k),                                    & ! intent(in)
+            Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm(k), rtp2(k),           & ! intent(in)
             wprtp(k),  thlm_zm(k), thlp2(k),                                  & ! intent(in)
             wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
             wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
@@ -1346,7 +1403,7 @@ module advance_clubb_core_module
         call pdf_closure & 
           ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),           & ! intent(in)
             wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                                 & ! intent(in)
-            Skw_zt(k), rtm_frz(k), rtp2_zt(k),                                    & ! intent(in)
+            Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm_frz(k), rtp2_zt(k),               & ! intent(in)
             zm2zt( wprtp, k ), thlm_frz(k), thlp2_zt(k),                          & ! intent(in)
             zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),                        & ! intent(in)
             wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),                    & ! intent(in)
@@ -1402,7 +1459,7 @@ module advance_clubb_core_module
           call pdf_closure & 
             ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
               wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-              Skw_zm(k), rtm_zm_frz(k), rtp2(k),                                & ! intent(in)
+              Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm_frz(k), rtp2(k),       & ! intent(in)
               wprtp(k),  thlm_zm_frz(k), thlp2(k),                              & ! intent(in)
               wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
               wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
@@ -2027,7 +2084,7 @@ module advance_clubb_core_module
       call stats_accumulate & 
            ( um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
              thlm, rtm, wprtp, wpthlp,                              & ! intent(in)
-             wp2, wp3, rtp2, thlp2, rtpthlp,                        & ! intent(in)
+             wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,           & ! intent(in)
              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
              rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
              thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)

@@ -22,11 +22,11 @@
        ]},
 	{'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp / thflux(s) [K m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '((TLFLUX) ./ (RHO * 1004)) + WPTHLP_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of r_t', 'axisLabel' => 'wprtp / qtflux(s) [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QTFLUX ./ (RHO * 2.5104e+6)) + WPRTP_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Liquid Fraction', 'axisLabel' => '[%/100]', 'type' => 'profile', 'lines' =>
        [
@@ -38,23 +38,23 @@
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 / w2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2 + W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP2_SGS + W2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Third-order Moment of w', 'axisLabel' => 'wp3 / w3 [m^3/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP3 + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WP3_SGS + W3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of \theta_l', 'axisLabel' => 'thlp2 / tl2 [K^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2 + THLP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'TL2 + THLP2_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of r_t', 'axisLabel' => 'rtp2 / qtp2 [(kg/kg)^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QT2 / 1e+6) + RTP2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => '(QT2 / 1e+6) + RTP2_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of r_t & \theta_l', 'axisLabel' => 'rtpthlp [(kg/kg) K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'RTPTHLP_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wobs [m/s]', 'type' => 'profile', 'lines' =>
        [
@@ -70,19 +70,19 @@
        ]},
        {'plotTitle' => 'Covariance of u & w', 'axisLabel' => 'upwp / uw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW + UPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UW + UPWP_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Covariance of v & w', 'axisLabel' => 'vpwp / vw [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW + VPWP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VW + VPWP_SGS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of u wind', 'axisLabel' => 'up2 / u2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UP2 + U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'UP2_SGS + U2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of v wind', 'axisLabel' => 'vp2 / v2 [m^2/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VP2 + V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'TWPICE_uv_hourly.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'VP2_SGS + V2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
       
        # Rain Water Mixing Ratio

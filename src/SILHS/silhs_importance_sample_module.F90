@@ -57,21 +57,14 @@ module silhs_importance_sample_module
       clubb_at_least_debug_level  ! Procedure
 
     use parameters_silhs, only: &
+      eight_cluster_allocation_opt, & ! Constant(s)
+      four_cluster_allocation_opt, &
+      two_cluster_cp_nocp_opt, &
       l_lh_clustered_sampling, & ! Variable(s)
-      l_lh_limit_weights
+      l_lh_limit_weights, &
+      cluster_allocation_strategy
 
     implicit none
-
-    ! Cluster allocation strategies!!!
-    integer, parameter :: &
-      ! All eight categories, effectively no clustering
-      eight_cluster_allocation_opt = 1, &
-      ! Four clusters for the combinations of cloud/no cloud and component 1/2.
-      ! Precipitation fraction is ignored.
-      four_cluster_allocation_opt  = 2
-
-    integer, parameter :: &
-      cluster_allocation_strategy = eight_cluster_allocation_opt
 
     ! Input Variables
     integer, intent(in) :: &
@@ -132,6 +125,9 @@ module silhs_importance_sample_module
                                     ( importance_categories, category_real_probs )
       case ( four_cluster_allocation_opt )
         category_prescribed_probs = four_cluster_no_precip &
+                                    ( importance_categories, category_real_probs )
+      case ( two_cluster_cp_nocp_opt )
+        category_prescribed_probs = two_cluster_cp_nocp &
                                     ( importance_categories, category_real_probs )
       case default
         write(fstderr,*) "Unsupported allocation strategy:", cluster_allocation_strategy
@@ -441,7 +437,7 @@ module silhs_importance_sample_module
 
     ! Local Constants
     real( kind = core_rknd ), parameter :: &
-      max_weight                    = 5.0_core_rknd, &
+      max_weight                    = 2.0_core_rknd, &
       real_prob_thresh_for_transfer = 1.0e-8_core_rknd
 
     ! Input Variables
@@ -463,34 +459,24 @@ module silhs_importance_sample_module
       total_diff_over, &
       weight
 
-    logical, dimension(num_importance_categories) :: &
-      l_ignore_category          ! Whether to ignore a category due to its
-                                 ! PDF probability being too low
-
     integer :: icategory
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
-
-    l_ignore_category(:) = .false.
-    where ( category_real_probs < real_prob_thresh_for_transfer )
-      l_ignore_category = .true.
-    end where
-
     total_diff_under = zero
 
     do icategory=1, num_importance_categories
-      if ( .not. l_ignore_category(icategory) ) then
+      if ( category_real_probs(icategory) >= real_prob_thresh_for_transfer ) then
         min_presc_probs(icategory) = category_real_probs(icategory) / max_weight
-        min_presc_prob_diff(icategory) = category_prescribed_probs(icategory) - &
-                                         min_presc_probs(icategory)
-        if ( min_presc_prob_diff(icategory) < zero ) then
-          total_diff_under = total_diff_under + abs( min_presc_prob_diff(icategory) )
-        end if
-      else ! l_ignore_category(icategory)
-        min_presc_probs(icategory) = zero
-        min_presc_prob_diff(icategory) = zero
-      end if ! .not. l_ignore_category(icategory)
+      else
+        min_presc_probs(icategory) = category_real_probs(icategory)
+      end if
+
+      min_presc_prob_diff(icategory) = category_prescribed_probs(icategory) - &
+                                       min_presc_probs(icategory)
+      if ( min_presc_prob_diff(icategory) < zero ) then
+        total_diff_under = total_diff_under + abs( min_presc_prob_diff(icategory) )
+      end if
     end do ! icategory=1, num_importance_categories
 
     if ( total_diff_under > zero ) then
@@ -505,8 +491,7 @@ module silhs_importance_sample_module
 
       if ( total_diff_under > total_diff_over ) then
         ! The prescribed probabilities cannot be adjusted to achieve the maximum
-        ! weight. This could happen if the maximum weight is too low and/or the
-        ! threshold is too high.
+        ! weight. This could happen if the maximum weight is too low.
         write(fstderr,*) "The sample point weights could not be limited to the &
                          &maximum value."
         stop "Fatal error in limit_category_weights"
@@ -514,14 +499,12 @@ module silhs_importance_sample_module
 
       ! Adjust the prescribed probabilities to achieve the minimum.
       do icategory=1, num_importance_categories
-        if ( .not. l_ignore_category(icategory) .and. &
-             min_presc_prob_diff(icategory) > zero ) then
+        if ( min_presc_prob_diff(icategory) > zero ) then
           category_prescribed_probs(icategory) = category_prescribed_probs(icategory) - &
               ( min_presc_prob_diff(icategory) / total_diff_over ) * total_diff_under
-        else if ( .not. l_ignore_category(icategory) .and. &
-                  min_presc_prob_diff(icategory) < zero ) then
+        else if ( min_presc_prob_diff(icategory) < zero ) then
           category_prescribed_probs(icategory) = min_presc_probs(icategory)
-        end if ! .not. l_ignore_category(icategory) .and. min_presc_prob_diff(icategory) > zero
+        end if ! min_presc_prob_diff(icategory) > zero
       end do ! icategory=1, num_importance_categories
 
     end if ! total_diff_under > zero
@@ -530,15 +513,14 @@ module silhs_importance_sample_module
     ! performed its task successfully.
     if ( clubb_at_least_debug_level( 2 ) ) then
       do icategory=1, num_importance_categories
-        if ( category_prescribed_probs(icategory) > zero ) then
+        if ( category_prescribed_probs(icategory) > zero .and. &
+             category_real_probs(icategory) >= real_prob_thresh_for_transfer ) then
           weight = category_real_probs(icategory) / category_prescribed_probs(icategory)
           if ( weight > max_weight ) then
             write(fstderr,*) "In limit_category_weights, a weight was not limited."
             write(fstderr,*) "category_real_prob = ", category_real_probs(icategory)
             write(fstderr,*) "category_prescribed_prob = ", category_prescribed_probs(icategory)
             write(fstderr,*) "weight = ", weight
-            write(fstderr,*) "l_ignore_category = ", l_ignore_category(icategory)
-
             write(fstderr,*) "min_presc_probs = ", min_presc_probs(icategory)
             write(fstderr,*) "min_presc_prob_diff = ", min_presc_prob_diff(icategory)
             stop "Fatal error in limit_category_weights"
@@ -780,6 +762,97 @@ module silhs_importance_sample_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
+  function two_cluster_cp_nocp( importance_categories, category_real_probs ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Clusters importance categories into two clusters: categories that contain
+  !   either cloud or precipitation (or both), and clusters that contain
+  !   neither.
+
+  ! References:
+  !   clubb:ticket:740
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd      ! Constant
+
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure
+
+    implicit none
+
+    integer, parameter :: &
+      num_clusters = 2, &
+      max_num_categories_in_cluster = 6
+
+    integer, parameter :: &
+      iicld_or_precip = 1, &
+      iinocld_precip = 2
+
+    real( kind = core_rknd ), parameter :: &
+      prob_cld_or_precip = 1.0_core_rknd, &
+      prob_nocld_precip  = 0.0_core_rknd
+
+    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
+      importance_categories   ! A list of importance categories
+
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs     ! The real probability for each category
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs ! The prescribed probability for each category
+
+    ! Local Variables
+    integer, dimension(num_clusters,max_num_categories_in_cluster) :: &
+      cluster_categories
+
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_prescribed_probs
+
+    integer, dimension(num_clusters) :: &
+      num_categories_in_cluster
+
+    integer :: icategory
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    num_categories_in_cluster(:) = 0
+    cluster_categories(:,:) = 0
+    do icategory=1, num_importance_categories
+      if ( importance_categories(icategory)%l_in_cloud .or. &
+           importance_categories(icategory)%l_in_precip ) then
+        num_categories_in_cluster(iicld_or_precip) = &
+          num_categories_in_cluster(iicld_or_precip) + 1
+        cluster_categories(iicld_or_precip,num_categories_in_cluster(iicld_or_precip)) = icategory
+      else
+        num_categories_in_cluster(iinocld_precip) = num_categories_in_cluster(iinocld_precip) + 1
+        cluster_categories(iinocld_precip,num_categories_in_cluster(iinocld_precip)) = icategory
+      end if
+    end do ! icategory=1, num_importance_categories
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( num_categories_in_cluster(iinocld_precip) /= 2 .or. &
+           num_categories_in_cluster(iicld_or_precip) /= 6 ) then
+        stop "Invalid categories in two_cluster_cp_nocp"
+      end if
+    end if
+
+    cluster_prescribed_probs(iicld_or_precip) = prob_cld_or_precip
+    cluster_prescribed_probs(iinocld_precip)  = prob_nocld_precip
+
+    category_prescribed_probs = compute_clust_category_probs &
+      ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+        num_categories_in_cluster, cluster_categories, cluster_prescribed_probs )
+
+    return
+  end function two_cluster_cp_nocp
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
   function eight_cluster_allocation( importance_categories, category_real_probs ) &
 
   result( category_prescribed_probs )
@@ -804,7 +877,10 @@ module silhs_importance_sample_module
     ! Local Constants
     integer, parameter :: &
       num_clusters = 8, &
-      num_categories_per_cluster = 1
+      max_num_categories_in_cluster = 1
+
+    integer, dimension(num_clusters), parameter :: &
+      num_categories_in_cluster = (/ 1, 1, 1, 1, 1, 1, 1, 1 /)
 
     ! Input Variables
     type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
@@ -818,7 +894,7 @@ module silhs_importance_sample_module
       category_prescribed_probs ! The prescribed probability for each category
 
     ! Local Variables
-    integer, dimension(num_clusters,num_categories_per_cluster) :: &
+    integer, dimension(num_clusters,max_num_categories_in_cluster) :: &
       cluster_categories
 
     real( kind = core_rknd ), dimension(num_clusters) :: &
@@ -870,8 +946,8 @@ module silhs_importance_sample_module
     end do ! icategory=1, num_importance_categories
 
     category_prescribed_probs = compute_clust_category_probs &
-                                ( category_real_probs, num_clusters, num_categories_per_cluster, &
-                                  cluster_categories, cluster_prescribed_probs )
+      ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+        num_categories_in_cluster, cluster_categories, cluster_prescribed_probs )
 
     return
   end function eight_cluster_allocation
@@ -906,7 +982,7 @@ module silhs_importance_sample_module
     ! Local Constants
     integer, parameter :: &
       num_clusters = 4, &
-      num_categories_per_cluster = 2
+      max_num_categories_in_cluster = 2
 
     integer, parameter :: &
       iicld_comp1  = 1, &
@@ -933,7 +1009,7 @@ module silhs_importance_sample_module
       category_prescribed_probs ! The prescribed probability for each category
 
     ! Local Variables
-    integer, dimension(num_clusters,num_categories_per_cluster) :: &
+    integer, dimension(num_clusters,max_num_categories_in_cluster) :: &
       cluster_categories
 
     integer, dimension(num_clusters) :: &
@@ -990,8 +1066,8 @@ module silhs_importance_sample_module
     end if
 
     category_prescribed_probs = compute_clust_category_probs &
-                                ( category_real_probs, num_clusters, num_categories_per_cluster, &
-                                  cluster_categories, cluster_prescribed_probs )
+      ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+        num_categories_in_cluster, cluster_categories, cluster_prescribed_probs )
 
     return
   end function four_cluster_no_precip
@@ -999,8 +1075,8 @@ module silhs_importance_sample_module
 
 !-----------------------------------------------------------------------
   function compute_clust_category_probs &
-           ( category_real_probs, num_clusters, num_categories_per_cluster, &
-             cluster_categories, cluster_prescribed_probs ) &
+           ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+             num_categories_in_cluster, cluster_categories, cluster_prescribed_probs ) &
 
   result( category_prescribed_probs )
 
@@ -1022,21 +1098,23 @@ module silhs_importance_sample_module
     use constants_clubb, only: &
       zero            ! Constant
 
-    implicit none
+    use parameters_silhs, only: &
+      importance_prob_thresh  ! Variable
 
-    ! Local Constants
-    real( kind = core_rknd ), parameter :: &
-      prob_thresh = 5.0e-3_core_rknd
+    implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
       category_real_probs           ! The real probability for each category
 
     integer, intent(in) :: &
-      num_clusters, &               ! The number of clusters to sample from
-      num_categories_per_cluster    ! The number of categories in each cluster
+      num_clusters, &                   ! The number of clusters to sample from
+      max_num_categories_in_cluster    ! The max number of categories in each cluster
 
-    integer, dimension(num_clusters,num_categories_per_cluster), intent(in) :: &
+    integer, dimension(num_clusters), intent(in) :: &
+      num_categories_in_cluster        ! The number of categories in each cluster
+
+    integer, dimension(num_clusters,max_num_categories_in_cluster), intent(in) :: &
       cluster_categories            ! An integer matrix containing indices corresponding
                                     ! to the members of the clusters
 
@@ -1071,7 +1149,7 @@ module silhs_importance_sample_module
     ! Compute the total PDF probability for each cluster.
     cluster_real_probs(:) = zero
     do icluster=1, num_clusters
-      do icategory=1, num_categories_per_cluster
+      do icategory=1, num_categories_in_cluster(icluster)
         cluster_real_probs(icluster) = cluster_real_probs(icluster) + &
             category_real_probs(cluster_categories(icluster,icategory))
       end do
@@ -1080,8 +1158,7 @@ module silhs_importance_sample_module
     ! Apply thresholding to ensure that clusters with extremely small PDF
     ! probability are not importance sampled.
     do icluster=1, num_clusters
-      if ( cluster_real_probs(icluster) < prob_thresh .and. &
-           cluster_prescribed_probs(icluster) > cluster_real_probs(icluster) ) then
+      if ( cluster_real_probs(icluster) < importance_prob_thresh ) then
         ! Thresholding is necessary for this cluster. The prescribed probability for
         ! this cluster will be set equal to the PDF probability of the cluster (that
         ! is, no importance sampling).
@@ -1091,7 +1168,7 @@ module silhs_importance_sample_module
         ! Thresholding is not necessary
         cluster_prescribed_probs_mod(icluster) = cluster_prescribed_probs(icluster)
         l_cluster_presc_prob_modified(icluster) = .false.
-      end if ! cluster_real_probs(icluster) < prob_thresh .and. ...
+      end if ! cluster_real_probs(icluster) < importance_prob_thresh .and. ...
     end do ! icluster=1, num_clusters
 
     ! Distribute any "extra" prescribed probability weight from thresholding to
@@ -1110,6 +1187,7 @@ module silhs_importance_sample_module
       do icluster=1, num_clusters
         if ( l_cluster_presc_prob_modified(icluster) ) then
 
+          ! Note that presc_prob_difference may be negative.
           presc_prob_difference = cluster_prescribed_probs(icluster) - &
                                   cluster_prescribed_probs_mod(icluster)
 
@@ -1128,7 +1206,7 @@ module silhs_importance_sample_module
     ! Finally, compute the prescribed probabilities for each category based on the cluster
     ! probabilities.
     do icluster=1, num_clusters
-      do icategory=1, num_categories_per_cluster
+      do icategory=1, num_categories_in_cluster(icluster)
         cat_idx = cluster_categories(icluster,icategory)
         if ( l_cluster_presc_prob_modified(icluster) ) then
           ! No scaling needs to be done, since the cluster's prescribed probability
@@ -1141,7 +1219,7 @@ module silhs_importance_sample_module
             cluster_real_probs(icluster) ) * cluster_prescribed_probs_mod(icluster)
 
         end if ! l_cluster_presc_prob_modified(icluster)
-      end do ! icategory=1, num_categories_per_cluster
+      end do ! icategory=1, num_categories_in_cluster(icluster)
     end do ! icluster=1, num_clusters
 
     return

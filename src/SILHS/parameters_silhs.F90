@@ -15,6 +15,22 @@ module parameters_silhs
 
   implicit none
 
+  ! Cluster allocation strategies!!!
+  integer, parameter, public :: &
+    ! All eight categories, effectively no clustering
+    eight_cluster_allocation_opt = 1, &
+    ! Four clusters for the combinations of cloud/no cloud and component 1/2.
+    ! Precipitation fraction is ignored.
+    four_cluster_allocation_opt  = 2, &
+    ! Two clusters, one containing all categories with either cloud or precip,
+    ! and the other containing categories with neither
+    two_cluster_cp_nocp_opt      = 3
+
+  integer, public :: &
+    cluster_allocation_strategy = eight_cluster_allocation_opt
+
+  !$omp threadprivate( cluster_allocation_strategy )
+
   ! The following type defines parameters that control the sample point
   ! allocation for the clustered sampling scheme
   ! (l_lh_clustered_sampling = .true.).
@@ -58,6 +74,12 @@ module parameters_silhs
     l_lh_limit_weights = .false.              ! Limit SILHS sample point weights for stability
 
   !$omp threadprivate( l_lh_limit_weights )
+
+  real( kind = core_rknd ), public :: &
+    importance_prob_thresh = 5.0e-3_core_rknd ! Minimum PDF probability of category for importance
+                                              ! sampling
+
+  !$omp threadprivate( importance_prob_thresh )
 
   private ! Default Scope
 

@@ -446,7 +446,7 @@ contains
     host_dx, host_dy, &                                     ! intent(in)
     um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
-    wp2, wp3, rtp2, thlp2, rtpthlp, &                       ! intent(inout)
+    wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
     sclrm,   &
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16    ! intent(inout)
@@ -565,7 +565,9 @@ contains
       thlm,    & ! liq. water pot. temp., th_l (thermo. levels)   [K]
       wpthlp,  & ! w' th_l' (momentum levels)                     [(m/s) K]
       rtp2,    & ! r_t'^2 (momentum levels)                       [(kg/kg)^2]
+      rtp3,    & ! r_t'^3 (thermodynamic levels)                  [(kg/kg)^3]
       thlp2,   & ! th_l'^2 (momentum levels)                      [K^2]
+      thlp3,   & ! th_l'^3 (thermodynamic levels)                 [K^3]
       rtpthlp, & ! r_t' th_l' (momentum levels)                   [(kg/kg) K]
       wp2,     & ! w'^2 (momentum levels)                         [m^2/s^2]
       wp3        ! w'^3 (thermodynamic levels)                    [m^3/s^3]
@@ -635,7 +637,7 @@ contains
       host_dx, host_dy, &                                     ! intent(in)
       um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
-      wp2, wp3, rtp2, thlp2, rtpthlp, &                       ! intent(inout)
+      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &          ! intent(inout)
       sclrm,   &
 #ifdef GFDL
                sclrm_trsport_only,  &  ! h1g, 2010-06-16               ! intent(inout)

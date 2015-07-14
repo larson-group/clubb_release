@@ -20,6 +20,8 @@ with open(model_in_file, 'r') as f_in:
                 f_out.write('l_fix_chi_eta_correlations = .true.,\n')
                 f_out.write('l_lh_importance_sampling = .true.,\n')
                 f_out.write('l_lh_clustered_sampling = .true.,\n')
+                f_out.write('l_rcm_in_cloud_k_lh_start = .true.,\n')
+                f_out.write('importance_prob_thresh = 1.0e-8\n')
                 f_out.write('lh_num_samples = 8,\n')
                 f_out.write('lh_sequence_length = 1\n\n')
                 if os.path.basename(model_in_file) == 'rico_lh_model.in':

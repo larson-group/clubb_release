@@ -100,7 +100,8 @@ module stats_lh_zt_module
       ilh_rrm_src_adj,  & ! Variable(s)
       ilh_rrm_cond_adj, &
       ilh_Nrm_src_adj,     &
-      ilh_Nrm_cond_adj
+      ilh_Nrm_cond_adj, &
+      ilh_rrm_mc_nonadj
 
     use stats_variables, only: &
       ilh_precip_frac, &
@@ -633,6 +634,13 @@ module stats_lh_zt_module
         ilh_m_vol_rad_rain = k
         call stat_assign( var_index=ilh_m_vol_rad_rain, var_name="lh_m_vol_rad_rain", &
              var_description="SILHS est. of rain radius", var_units="m", &
+             l_silhs=.true., grid_kind=stats_lh_zt )
+        k = k + 1
+
+      case ( 'lh_rrm_mc_nonadj' )
+        ilh_rrm_mc_nonadj = k
+        call stat_assign( var_index=ilh_rrm_mc_nonadj, var_name="lh_rrm_mc_nonadj", &
+             var_description="SILHS est. of rrm_mc_nonadj [kg/kg/s]", var_units="kg/kg/s", &
              l_silhs=.true., grid_kind=stats_lh_zt )
         k = k + 1
 

@@ -5,11 +5,11 @@
     'name' => 'lba',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'LBA Minutes 301-360',
-    'startTime' => 301,  # [minutes]
+    'headerText' => 'LBA Minutes 300-360',
+    'startTime' => 300,  # [minutes]
     'endTime' => 360,    # [minutes]
     'startHeight' => 0.0,  # [m]
-    'endHeight' => 16000.0, # [m]
+    'endHeight' => 12000.0, # [m]
     'plots' =>
     [
        {'plotTitle' => 'Liquid Water Potential Temperature, \theta_l', 'axisLabel' => 'thlm [K]', 'type' => 'profile', 'lines' =>
