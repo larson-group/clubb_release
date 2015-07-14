@@ -1651,7 +1651,6 @@ module inputfields
       SAM_variables(k)%l_input_var = l_input_rtm
       SAM_variables(k)%input_name = "RTM"
       SAM_variables(k)%clubb_var => rtm
-      SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%adjustment = 1.0_core_rknd !1.0e-3_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
@@ -1719,7 +1718,6 @@ module inputfields
       SAM_variables(k)%l_input_var = l_input_rtp2
       SAM_variables(k)%input_name = "RTP2"
       SAM_variables(k)%clubb_var => rtp2
-      SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%adjustment = 1.0_core_rknd !1.0e-6_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
       SAM_variables(k)%input_file_index = sam_file
@@ -2086,7 +2084,7 @@ module inputfields
       temp_rrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrp2
-      SAM_variables(k)%input_name = "rrp2"
+      SAM_variables(k)%input_name = "RRP2"
       SAM_variables(k)%clubb_var => temp_rrp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2097,7 +2095,7 @@ module inputfields
       temp_Nrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_Nrp2
-      SAM_variables(k)%input_name = "Nrp2"
+      SAM_variables(k)%input_name = "NRP2"
       SAM_variables(k)%clubb_var => temp_Nrp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
