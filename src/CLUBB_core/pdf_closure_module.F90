@@ -517,8 +517,9 @@ module pdf_closure_module
                                 w_1_n, w_2_n, w_1, w_2)                               ! intent(out)
 
           ! Solve for the thl PDF
-          call backsolve_Luhar_params( Skw, Skthl, big_m_w, &
-                                       big_m_thl, small_m_thl )
+          call backsolve_Luhar_params( Skw, Skthl,         &    ! intent(in)
+                                       big_m_w, mixt_frac, &    ! intent(in)
+                                       big_m_thl, small_m_thl ) ! intent(out)
 
           call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
                                 small_m_thl, wpthlp,            & !intent(in)
@@ -527,8 +528,9 @@ module pdf_closure_module
                                 thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
 
           ! Solve for the rt PDF
-          call backsolve_Luhar_params( Skw, Skrt, big_m_w, &
-                                       big_m_rt, small_m_rt )
+          call backsolve_Luhar_params( Skw, Skrt,          &  ! intent(in)
+                                       big_m_w, mixt_frac, &  ! intent(in)
+                                       big_m_rt, small_m_rt ) ! intent(out)
 
           call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & ! intent(in)
                                 small_m_rt, wprtp,            & ! intent(in)
@@ -549,8 +551,9 @@ module pdf_closure_module
                                 thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
 
           ! Solve for the w PDF
-          call backsolve_Luhar_params( Skthl, Skw, big_m_thl, & ! intent(in)
-                                       big_m_w, small_m_w )     ! intent(out)
+          call backsolve_Luhar_params( Skthl, Skw,           & ! intent(in)
+                                       big_m_thl, mixt_frac, & ! intent(in)
+                                       big_m_w, small_m_w )    ! intent(out)
 
           call close_Luhar_pdf( wm, wp2, mixt_frac,         & !intent(in)
                                 small_m_w, wp2,             & !intent(in)
@@ -559,8 +562,9 @@ module pdf_closure_module
                                 w_1_n, w_2_n, w_1, w_2)       !intent(out)
 
           ! Solve for the rt PDF
-          call backsolve_Luhar_params( Skthl, Skrt, big_m_thl, & ! intent(in)
-                                       big_m_rt, small_m_rt )    ! intent(out)
+          call backsolve_Luhar_params( Skthl, Skrt,           & ! intent(in)
+                                       big_m_thl, mixt_frac,  & ! intent(in)
+                                       big_m_rt, small_m_rt )   ! intent(out)
 
           call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & !intent(in)
                                 small_m_rt, wprtp,            & !intent(in)
@@ -581,7 +585,8 @@ module pdf_closure_module
                                 rt_1_n, rt_2_n, rt_1, rt_2)    !intent(out)
 
           ! Solve for the w PDF
-          call backsolve_Luhar_params( Skrt, Skw, big_m_rt, & ! intent(in)
+          call backsolve_Luhar_params( Skrt, Skw,           & ! intent(in)
+                                       big_m_rt, mixt_frac, & ! intent(in)
                                        big_m_w, small_m_w )   ! intent(out)
 
           call close_Luhar_pdf( wm, wp2, mixt_frac,        & !intent(in)
@@ -591,7 +596,8 @@ module pdf_closure_module
                                 w_1_n, w_2_n, w_1, w_2)      !intent(out)
 
           !Solve for the thl PDF
-          call backsolve_Luhar_params( Skrt, Skthl, big_m_rt, & ! intent(in)
+          call backsolve_Luhar_params( Skrt, Skthl,           & ! intent(in)
+                                       big_m_rt, mixt_frac,   & ! intent(in)
                                        big_m_thl, small_m_thl ) ! intent(out)
 
           call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
@@ -1729,7 +1735,7 @@ module pdf_closure_module
       ! If Skx is very small, then small_m will tend to zero which risks
       ! divide by zero. To ameliorate this problem, we enforce abs( x_1_n )
       ! and abs( x_2_n ) > .05
-      small_m = max( .05_core_rknd, &
+      small_m = max( 0.05_core_rknd, &
                      (2.0_core_rknd/3.0_core_rknd) * abs( Skx )**(1.0_core_rknd/3.0_core_rknd))
 
       small_m_sqd = small_m**2
@@ -1823,18 +1829,25 @@ module pdf_closure_module
   end subroutine close_Luhar_pdf
 
   !=============================================================================
-  elemental subroutine backsolve_Luhar_params( Sk_max, Skx, big_m_max, &
-                                                             big_m_x, small_m_x )
-  ! Description:
-  !   This subroutine calculates Luhar's big_m and small_m for the variate 'x' consistent with
-  !   the mixture fraction of the variate with the largest skewness
-  !
-  ! References:
-  !
-  !-----------------------------------------------------------------------
+  elemental subroutine backsolve_Luhar_params( Sk_max, Skx, &
+                                               big_m_max, mixt_frac, &
+                                               big_m_x, small_m_x )
+
+    ! Description:
+    ! This subroutine calculates Luhar's big_m and small_m for the variate 'x'
+    ! consistent with the mixture fraction of the variate with the largest
+    ! skewness.
+    !
+    ! References:
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        eps, &
+        three,    &
+        two,      &
+        one,      &
+        one_half, &
+        zero,     &
+        eps,      &
         fstderr
 
     use clubb_precision, only: &
@@ -1844,15 +1857,15 @@ module pdf_closure_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Sk_max,   & ! Maximum skewness
-      Skx,      & ! Skewness of the variate solving small_m and big_m for
-      big_m_max   ! Luhar's big_m of the variate with maximum skewness
+      Sk_max,    & ! Maximum skewness
+      Skx,       & ! Skewness of the variate solving small_m and big_m for
+      big_m_max, & ! Luhar's big_m of the variate with maximum skewness
+      mixt_frac    ! Mixture fraction                                      [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
       big_m_x,  & ! Luhar's big_m for the variate being solved for
       small_m_x   ! Luhar's small_m for the variate being solved for
-
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -1864,47 +1877,103 @@ module pdf_closure_module
       alpha_low, &
       discrim
 
+    ! Flag to backsolve for m^2 using cubic formula
+    logical, parameter :: &
+      l_use_cubic_backsolve = .false.
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
 
-    alpha = ( Skx**2 / (max(Sk_max**2, eps) * big_m_max) )  ! 1 / big_m_x
+    if ( l_use_cubic_backsolve ) then
 
-    ! This limit keeps the discriminant >= 0
-    alpha_upr = 2.0_core_rknd*sqrt( 13.0_core_rknd ) - 5.0_core_rknd
+       if ( abs( mixt_frac - one_half ) < 0.001_core_rknd ) then
 
-    alpha_low = eps
+          ! When mixture fraction = 0.5 (based on the variable with the largest
+          ! magnitude of skewness), all variables must have a skewness of 0.
+          ! Set m to the minimum threshold of 0.05.
+          small_m_x = 0.05_core_rknd
 
-    ! For this approximation, alpha must be less than 2*sqrt(13) - 5 to get a real ans.
-    alpha = min(alpha, alpha_upr)
+          ! Calculate the corresponding value of big_m_x.
+          big_m_x = ( one + small_m_x**2 )**3 &
+                    / ( ( three + small_m_x**2 )**2 * small_m_x**2 )
 
-    ! For testing, eliminate possibility of divide by zero
-    alpha = max(alpha,alpha_low)
+       elseif ( Skx == zero ) then
 
-    ! Use a piece-wise approximation
-    if(alpha < 1.0_core_rknd) then
-      a = max(3.0_core_rknd * alpha - 6.0_core_rknd, eps) ! Prevent divide by zero
-      b = 3.0_core_rknd * alpha - 9.0_core_rknd
-      c = alpha
+          ! Mixture fraction /= 0.5 because the variable with the largest
+          ! magnitude of skewness has a skewness /= 0.  However, variable x has
+          ! a skewness of 0.  In order to reproduce the correct skewness for
+          ! variable x, set m to 0 (regardless of minimum thresholds used in
+          ! other parts of the code).
+          small_m_x = zero
 
-      discrim = b**2 - 4.0_core_rknd * a * c
-      small_m_x = sqrt( (-b - sqrt(discrim)) / (2.0_core_rknd * a) )
-    else
-      ! For this approximation, alpha must be less than 2*sqrt(13) - 5 to get a real ans.
-      alpha = min(alpha, 2.0_core_rknd)
+          ! The value of big_m_x should be inf.  Set it to huge.  This is not
+          ! used in any calculation, anyway.
+          big_m_x = huge( big_m_x )
 
-      a = max(6.0_core_rknd * alpha - 9.0_core_rknd, eps) ! Prevent divide by zero
-      b = -6.0_core_rknd
-      c = 2.0_core_rknd * alpha - 1.0_core_rknd
+       else  ! mixt_frac /= 0.5 and Skx /= 0
 
-      discrim = b**2 - 4.0_core_rknd * a * c
-      small_m_x = sqrt( (-b - sqrt(discrim)) / (2.0_core_rknd * a) )
-    endif
+          ! Backsolve for m, given mixt_frac and Skx.
 
-    ! Clip consistently with subroutine calc_Luhar_params
-    small_m_x = max( 5e-2_core_rknd, small_m_x)
+          ! alpha = 1/M is given by:
+          ! [ mixt_frac * ( 1 - mixt_frac ) / ( 1 - 2 * mixt_frac )^2 ] * Skx^2.
+          alpha = ( mixt_frac * ( one - mixt_frac ) &
+                    / ( one - two * mixt_frac )**2 ) * Skx**2
 
-    big_m_x = 1.0_core_rknd / alpha
+          ! Calculate big_m_x.
+          big_m_x = one / alpha
+
+          ! Solve the cubic equation for m^2:
+          ! ( alpha - 1 ) * (m^2)^3 + ( 3 * alpha - 6 ) * (m^2)^2
+          ! + ( 3 * alpha - 9 ) * (m^2) + alpha = 0.
+          ! The largest root is preferred.
+          small_m_x &
+          = sqrt( max( max_cubic_root( alpha - one, three * alpha - 6.0_core_rknd, &
+                                       three * alpha - 9.0_core_rknd, alpha ), &
+                       0.05_core_rknd**2 ) )
+
+       endif
+
+    else ! original formualation
+
+       alpha = ( Skx**2 / (max(Sk_max**2, eps) * big_m_max) )  ! 1 / big_m_x
+
+       ! This limit keeps the discriminant >= 0
+       alpha_upr = 2.0_core_rknd*sqrt( 13.0_core_rknd ) - 5.0_core_rknd
+
+       alpha_low = eps
+
+       ! For this approximation, alpha must be less than 2*sqrt(13) - 5 to get a real ans.
+       alpha = min(alpha, alpha_upr)
+
+       ! For testing, eliminate possibility of divide by zero
+       alpha = max(alpha,alpha_low)
+
+       ! Use a piece-wise approximation
+       if(alpha < 1.0_core_rknd) then
+         a = max(3.0_core_rknd * alpha - 6.0_core_rknd, eps) ! Prevent divide by zero
+         b = 3.0_core_rknd * alpha - 9.0_core_rknd
+         c = alpha
+
+         discrim = b**2 - 4.0_core_rknd * a * c
+         small_m_x = sqrt( (-b - sqrt(discrim)) / (2.0_core_rknd * a) )
+       else
+         ! For this approximation, alpha must be less than 2*sqrt(13) - 5 to get a real ans.
+         alpha = min(alpha, 2.0_core_rknd)
+
+         a = max(6.0_core_rknd * alpha - 9.0_core_rknd, eps) ! Prevent divide by zero
+         b = -6.0_core_rknd
+         c = 2.0_core_rknd * alpha - 1.0_core_rknd
+
+         discrim = b**2 - 4.0_core_rknd * a * c
+         small_m_x = sqrt( (-b - sqrt(discrim)) / (2.0_core_rknd * a) )
+       endif
+
+       ! Clip consistently with subroutine calc_Luhar_params
+       small_m_x = max( 5e-2_core_rknd, small_m_x)
+
+       big_m_x = 1.0_core_rknd / alpha
+
+    endif ! l_use_cubic_backsolve
 
 
   end subroutine backsolve_Luhar_params
@@ -2157,6 +2226,106 @@ module pdf_closure_module
     return
 
   end function var_subgrid_interp
+
+  !=============================================================================
+  pure function max_cubic_root( a_coef, b_coef, c_coef, d_coef ) &
+  result( max_root )
+
+    ! Description:
+    ! Calculates the largest root that results from solving a cubic equation of
+    ! the form a*x^3 + b*x^2 + c*x + d = 0.
+    !
+    ! This is done to backsolve for m^2 for the 3-D Luhar closure, given the
+    ! values of mixt_frac and Skx.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    use calc_roots, only: &
+        cubic_solve,     & ! Procedure(s)
+        quadratic_solve
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      a_coef, & ! Coefficient a (of x^3) in a*x^3 + b*x^2 + c^x + d = 0    [-]
+      b_coef, & ! Coefficient b (of x^2) in a*x^3 + b*x^2 + c^x + d = 0    [-]
+      c_coef, & ! Coefficient c (of x) in a*x^3 + b*x^2 + c^x + d = 0      [-]
+      d_coef    ! Coefficient d in a*x^3 + b*x^2 + c^x + d = 0             [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      max_root    ! Maximum root that solves the cubic equation            [-]
+
+    ! Local Variables
+    complex( kind = core_rknd ), dimension(3) :: &
+      cubic_roots    ! Roots of x that satisfy a*x^3 + b*x^2 + c*x + d = 0 [-]
+
+    complex( kind = core_rknd ), dimension(2) :: &
+      quadratic_roots    ! Roots of x that satisfy b*x^2 + c*x + d = 0     [-]
+
+    real( kind = core_rknd ) :: &
+      a_coef_thresh, & ! Minimum threshold of |a| to use cubic solver      [-]
+      b_coef_thresh    ! Minimum threshold of |b| to use quadratic solver  [-]
+
+
+    ! Calculate a minimum threshold for |a| to call this a cubic equation.
+    a_coef_thresh = 0.001_core_rknd &
+                    * max( abs(b_coef), abs(c_coef), abs(d_coef) )
+
+    ! Calculate a minimum threshold for |b| to call this a quadratic equation.
+    ! This only matters when |a| <= a_coef_thresh.
+    b_coef_thresh = 0.001_core_rknd * max( abs(c_coef), abs(d_coef) )
+
+    if ( abs( a_coef ) > a_coef_thresh ) then
+
+       ! The equation is a cubic equation.
+       cubic_roots = cubic_solve( a_coef, b_coef, c_coef, d_coef )
+
+       if ( aimag( cubic_roots(2) ) == zero  &
+            .and. aimag( cubic_roots(3) ) == zero ) then
+
+          ! Find the maximum root of the three roots.
+          max_root = max( real( cubic_roots(1), kind = core_rknd ), &
+                          real( cubic_roots(2), kind = core_rknd ), &
+                          real( cubic_roots(3), kind = core_rknd ) )
+
+       else  ! cubic_roots(2) and cubic_roots(3) are complex.
+
+          max_root = real( cubic_roots(1), kind = core_rknd )
+
+       endif
+
+    elseif ( abs( b_coef ) > b_coef_thresh ) then
+
+       ! The equation is a quadratic equation, since a = 0, but b /= 0.
+       ! This should very rarely occur for 3-D Luhar.  When it does, the result
+       ! will always be two real-valued roots.
+       quadratic_roots = quadratic_solve( b_coef, c_coef, d_coef )
+
+       ! Find the maximum root of the two roots.
+       max_root = max( real( quadratic_roots(1), kind = core_rknd ), &
+                       real( quadratic_roots(2), kind = core_rknd ) )
+
+    else ! |a| = 0 and |b| = 0
+
+       ! The equation is a linear equation.
+       ! This won't happen for 3-D Luhar.
+       max_root = - d_coef / c_coef
+
+    endif ! |a| > 0
+
+
+    return
+
+  end function max_cubic_root
 
 !===============================================================================
 
