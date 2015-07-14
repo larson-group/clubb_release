@@ -53,14 +53,24 @@ run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld"
 echo -e "\n-----Running dycoms2_rf02_do using 2Cat-Cld-----"
 run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld"
 
+# none
+turn_off_importance "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
+turn_off_importance "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
+
+echo -e "\n-----Running rico_lh without importance sampling-----"
+run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/none"
+echo -e "\n-----Running dycoms2_rf02_do without importance sampling-----"
+run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/none"
+
+
 # Plots!!
 echo -e "\n-----Generating rico_lh RMS plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/rico_lh_rms"
-plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_rms" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
+plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_rms" "$SIM_OUTPUT_DIR/rico_lh/none"  "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
 
 echo -e "\n-----Generating dycoms2_rf02_do RMS plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms"
-plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
+plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/none" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
 
 echo -e "\n-----Generating rico_lh timeseries plots-----"
 mkdir "$PLOTS_OUTPUT_DIR/rico_lh_timeseries"

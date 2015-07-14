@@ -132,14 +132,14 @@ apply_rico_presc_probs()
 # 1: Case file to write the result to
 apply_dycoms_presc_probs()
 {
-    sed 's/^eight_cluster_presc_probs%cloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp1 = 0.49/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%cloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp2 = 0.39/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp1 = 0.02/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp2 = 0.02/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp1 = 0.02/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp2 = 0.02/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp1 = 0.02/g' -i "$1"
-    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp2 = 0.02/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp1 = 0.574/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_precip_comp2 = 0.41/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp1 = 0.006/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_precip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_precip_comp2 = 0.002/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp1 = 0.005/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%cloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%cloud_noprecip_comp2 = 0.003/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp1\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp1 = 0.0/g' -i "$1"
+    sed 's/^eight_cluster_presc_probs%nocloud_noprecip_comp2\s*=.*$/eight_cluster_presc_probs%nocloud_noprecip_comp2 = 0.0/g' -i "$1"
 }
 
 # Parameters
@@ -165,6 +165,14 @@ turn_on_presc_probs()
 {
     sed 's/^l_lh_clustered_sampling\s*=.*$/l_lh_clustered_sampling = .true./g' -i "$1"
 }
+
+# Parameters
+# 1: Model file
+turn_off_importance()
+{
+    sed 's/^l_lh_importance_sampling\s*=.*$/l_lh_importance_sampling = .false./g' -i "$1"
+}
+
 
 # Parameters
 # 1: Model file
