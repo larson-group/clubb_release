@@ -16,7 +16,7 @@ import os
 # This script is to be used only with non-interactive SILHS runs.
 #
 # Usage:
-#  ./silhs_rms_timeseries_4pan_mult_sim.py [options] path1 [path2 [...]]
+#  ./silhs_rms_timeseries_profiles_4pan_mult_sim.py [options] path1 [path2 [...]]
 #######################################################################
 
 case_name = 'rico_lh'
@@ -74,7 +74,7 @@ while i < len(sys.argv):
     i = i + 1
 
 if len(silhs_dirs) == 0:
-    print("Usage: silhs_rms_timeseries_4pan_mult_sim.py [options] "
+    print("Usage: silhs_rms_timeseries_profiles_4pan_mult_sim.py [options] "
           "path1 [path2 [...]]", file=sys.stderr)
     sys.exit(1)
 
@@ -166,10 +166,14 @@ for plot_num in range(4):
 
     for d_i in range(len(silhs_dirs)):
         format_str = ''
-        if os.path.basename(silhs_dirs[d_i]) == 'cloud_weighted':
-            format_str = 'b-'
-        elif os.path.basename(silhs_dirs[d_i]) == 'prescribed':
-            format_str = 'r--'
+        if os.path.basename(silhs_dirs[d_i]) == 'none':
+            format_str = 'm-'
+        elif os.path.basename(silhs_dirs[d_i]) == '2Cat-Cld':
+            format_str = 'b--'
+        elif os.path.basename(silhs_dirs[d_i]) == '2Cat-CldPcp':
+            format_str = 'g:'
+        elif os.path.basename(silhs_dirs[d_i]) == '8Cat':
+            format_str = 'cv'
 
         if mode == 1:
             line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str)
