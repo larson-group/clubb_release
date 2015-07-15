@@ -25,6 +25,7 @@ with open(model_in_file, 'r') as f_in:
                 f_out.write('l_lh_limit_weights = .true.,\n')
                 f_out.write('cluster_allocation_strategy = 3,\n')
                 f_out.write('lh_num_samples = 8,\n')
+                f_out.write('lh_seed = 1,\n')
                 f_out.write('lh_sequence_length = 1\n\n')
                 if os.path.basename(model_in_file) == 'rico_lh_model.in':
                     f_out.write('l_silhs_KK_convergence_adj_mean = .true.\n')
