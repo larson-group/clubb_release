@@ -1552,9 +1552,7 @@ endif
            - dtn*fac_sub*(stendqci+stendqs+stendqg)
 
       ! Compute the residual between the two
-      t_res(i,j,:) = t_state(i,j,:) - t_before(i,j,:) &
-                    - dtn*fac_cond*(stendqcl+stendqr) &
-                    - dtn*fac_sub*(stendqci+stendqs+stendqg)
+      t_res(i,j,:) = t_state(i,j,:) - t_sed(i,j,:) 
 
       ! Update t
       if(l_update_mse_using_state_vars) then
