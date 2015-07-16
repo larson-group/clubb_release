@@ -270,12 +270,12 @@ module pdf_closure_module
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
     real( kind = core_rknd ) :: & ! If l_use_ADG2 == .true., or l_use_3D_closure
-      sigma_sqd_w1,       & !
-      sigma_sqd_w2,       & !
-      sigma_sqd_thl1,     & !
-      sigma_sqd_thl2,     & !
-      sigma_sqd_rt1,      & !
-      sigma_sqd_rt2
+      sigma_sqd_w_1,       & !
+      sigma_sqd_w_2,       & !
+      sigma_sqd_thl_1,     & !
+      sigma_sqd_thl_2,     & !
+      sigma_sqd_rt_1,      & !
+      sigma_sqd_rt_2
 
     ! Note:  alpha coefficients = 0.5 * ( 1 - correlations^2 ).
     !        These are used to calculate the scalar widths
@@ -415,15 +415,17 @@ module pdf_closure_module
       elseif( l_use_ADG2 ) then ! use ADG2
 
         ! Reproduce ADG2_w_closure using separate functions
-        call calc_Luhar_params( Skw, &                          ! intent( in )
-                                mixt_frac, big_m_w, small_m_w ) ! intent( out )
+        call calc_Luhar_params( Skw, Skw, &                     ! intent(in)
+                                mixt_frac, big_m_w, small_m_w ) ! intent(out)
 
-        call close_Luhar_pdf( wm, wp2, mixt_frac, small_m_w, wp2,                & ! intent( in )
-                              sigma_sqd_w1, sigma_sqd_w2, varnce_w_1, varnce_w_2,& ! intent( out )
-                              w_1_n, w_2_n, w_1, w_2)                              ! intent( out )
+        call close_Luhar_pdf( wm, wp2, mixt_frac,           & ! intent(in)
+                              small_m_w, Skw, Skw,          & ! intent(in)
+                              sigma_sqd_w_1, sigma_sqd_w_2, & ! intent(out)
+                              varnce_w_1, varnce_w_2,       & ! intent(out)
+                              w_1_n, w_2_n, w_1, w_2 )        ! intent(out)
 
         ! Overwrite sigma_sqd_w for consistency with ADG1
-        sigma_sqd_w = one / ( one + small_m_w**2 )
+        sigma_sqd_w = min( one / ( one + small_m_w**2 ), 0.99_core_rknd )
 
       endif ! l_use_ADG2
 
@@ -507,114 +509,126 @@ module pdf_closure_module
 
       else ! use 3D_Luhar closure
         
-        if( ( abs(Skw) >= abs(Skthl)) .and. ( abs(Skw) >= abs(Skrt) ) ) then
+        if ( ( abs(Skw) >= abs(Skthl)) .and. ( abs(Skw) >= abs(Skrt) ) ) then
+
+          ! w has the greatest magnitude of skewness.
+
           ! Solve for the w PDF
-          call calc_Luhar_params( Skw, &                          ! intent(in)
+          call calc_Luhar_params( Skw, Skw, &                     ! intent(in)
                                   mixt_frac, big_m_w, small_m_w ) ! intent(out)
 
-          call close_Luhar_pdf( wm, wp2, mixt_frac, small_m_w, wp2,               &  ! intent(in)
-                                sigma_sqd_w1, sigma_sqd_w2, varnce_w_1, varnce_w_2,&  ! intent(out)
-                                w_1_n, w_2_n, w_1, w_2)                               ! intent(out)
+          call close_Luhar_pdf( wm, wp2, mixt_frac,           & ! intent(in)
+                                small_m_w, Skw, Skw,          & ! intent(in)
+                                sigma_sqd_w_1, sigma_sqd_w_2, & ! intent(out)
+                                varnce_w_1, varnce_w_2,       & ! intent(out)
+                                w_1_n, w_2_n, w_1, w_2 )        ! intent(out)
 
           ! Solve for the thl PDF
           call backsolve_Luhar_params( Skw, Skthl,         &    ! intent(in)
                                        big_m_w, mixt_frac, &    ! intent(in)
                                        big_m_thl, small_m_thl ) ! intent(out)
 
-          call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
-                                small_m_thl, wpthlp,            & !intent(in)
-                                sigma_sqd_thl1, sigma_sqd_thl2, & !intent(out)
-                                varnce_thl_1, varnce_thl_2,     & !intent(out)
-                                thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
+          call close_Luhar_pdf( thlm, thlp2, mixt_frac,           &! intent(in)
+                                small_m_thl, Skthl, Skw,          &! intent(in)
+                                sigma_sqd_thl_1, sigma_sqd_thl_2, &! intent(out)
+                                varnce_thl_1, varnce_thl_2,       &! intent(out)
+                                thl_1_n, thl_2_n, thl_1, thl_2 )   ! intent(out)
 
           ! Solve for the rt PDF
           call backsolve_Luhar_params( Skw, Skrt,          &  ! intent(in)
                                        big_m_w, mixt_frac, &  ! intent(in)
                                        big_m_rt, small_m_rt ) ! intent(out)
 
-          call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & ! intent(in)
-                                small_m_rt, wprtp,            & ! intent(in)
-                                sigma_sqd_rt1, sigma_sqd_rt2, & ! intent(out)
-                                varnce_rt_1, varnce_rt_2,     & ! intent(out)
-                                rt_1_n, rt_2_n, rt_1, rt_2)     ! intent(out)
+          call close_Luhar_pdf( rtm, rtp2, mixt_frac,           & ! intent(in)
+                                small_m_rt, Skrt, Skw,          & ! intent(in)
+                                sigma_sqd_rt_1, sigma_sqd_rt_2, & ! intent(out)
+                                varnce_rt_1, varnce_rt_2,       & ! intent(out)
+                                rt_1_n, rt_2_n, rt_1, rt_2 )      ! intent(out)
 
-        elseif( ( abs(Skthl) > abs(Skw) ) .and. ( abs(Skthl) >= abs(Skrt) )  ) then
-          ! Solve for the thl PDF
-          call calc_Luhar_params( Skthl*sign(one,wpthlp), &           ! intent(in)
-                                  mixt_frac, big_m_thl, small_m_thl ) ! intent(out)
+        elseif ( ( abs(Skthl) > abs(Skw) ) &
+                   .and. ( abs(Skthl) >= abs(Skrt) )  ) then
+
+          ! theta-l has the greatest magnitude of skewness.
 
           ! Solve for the thl PDF
-          call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
-                                small_m_thl, wpthlp,            & !intent(in)
-                                sigma_sqd_thl1, sigma_sqd_thl2, & !intent(out)
-                                varnce_thl_1, varnce_thl_2,     & !intent(out)
-                                thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
+          call calc_Luhar_params( Skthl, Skw, &                      !intent(in)
+                                  mixt_frac, big_m_thl, small_m_thl )!intent(out)
+
+          ! Solve for the thl PDF
+          call close_Luhar_pdf( thlm, thlp2, mixt_frac,           &! intent(in)
+                                small_m_thl, Skthl, Skw,          &! intent(in)
+                                sigma_sqd_thl_1, sigma_sqd_thl_2, &! intent(out)
+                                varnce_thl_1, varnce_thl_2,       &! intent(out)
+                                thl_1_n, thl_2_n, thl_1, thl_2 )   ! intent(out)
 
           ! Solve for the w PDF
           call backsolve_Luhar_params( Skthl, Skw,           & ! intent(in)
                                        big_m_thl, mixt_frac, & ! intent(in)
                                        big_m_w, small_m_w )    ! intent(out)
 
-          call close_Luhar_pdf( wm, wp2, mixt_frac,         & !intent(in)
-                                small_m_w, wp2,             & !intent(in)
-                                sigma_sqd_w1, sigma_sqd_w2, & !intent(out)
-                                varnce_w_1, varnce_w_2,     & !intent(out)
-                                w_1_n, w_2_n, w_1, w_2)       !intent(out)
+          call close_Luhar_pdf( wm, wp2, mixt_frac,           & ! intent(in)
+                                small_m_w, Skw, Skw,          & ! intent(in)
+                                sigma_sqd_w_1, sigma_sqd_w_2, & ! intent(out)
+                                varnce_w_1, varnce_w_2,       & ! intent(out)
+                                w_1_n, w_2_n, w_1, w_2 )        ! intent(out)
 
           ! Solve for the rt PDF
           call backsolve_Luhar_params( Skthl, Skrt,           & ! intent(in)
                                        big_m_thl, mixt_frac,  & ! intent(in)
                                        big_m_rt, small_m_rt )   ! intent(out)
 
-          call close_Luhar_pdf( rtm, rtp2, mixt_frac,         & !intent(in)
-                                small_m_rt, wprtp,            & !intent(in)
-                                sigma_sqd_rt1, sigma_sqd_rt2, & !intent(out)
-                                varnce_rt_1, varnce_rt_2,     & !intent(out)
-                                rt_1_n, rt_2_n, rt_1, rt_2)     !intent(out)
+          call close_Luhar_pdf( rtm, rtp2, mixt_frac,           & ! intent(in)
+                                small_m_rt, Skrt, Skw,          & ! intent(in)
+                                sigma_sqd_rt_1, sigma_sqd_rt_2, & ! intent(out)
+                                varnce_rt_1, varnce_rt_2,       & ! intent(out)
+                                rt_1_n, rt_2_n, rt_1, rt_2 )      ! intent(out)
 
         else
+
+          ! rt has the greatest magnitude of skewness.
+
           ! Solve for the rt PDF
-          call calc_Luhar_params( Skrt*sign(one,wprtp), &           ! intent(in)
+          call calc_Luhar_params( Skrt, Skw, &                      ! intent(in)
                                   mixt_frac, big_m_rt, small_m_rt ) ! intent(out)
 
           ! Solve for the rt PDF
-          call close_Luhar_pdf( rtm, rtp2, mixt_frac,        & !intent(in)
-                                small_m_rt, wprtp,           & !intent(in)
-                                sigma_sqd_rt1, sigma_sqd_rt2,& !intent(out)
-                                varnce_rt_1, varnce_rt_2,    & !intent(out)
-                                rt_1_n, rt_2_n, rt_1, rt_2)    !intent(out)
+          call close_Luhar_pdf( rtm, rtp2, mixt_frac,           & ! intent(in)
+                                small_m_rt, Skrt, Skw,          & ! intent(in)
+                                sigma_sqd_rt_1, sigma_sqd_rt_2, & ! intent(out)
+                                varnce_rt_1, varnce_rt_2,       & ! intent(out)
+                                rt_1_n, rt_2_n, rt_1, rt_2 )      ! intent(out)
 
           ! Solve for the w PDF
           call backsolve_Luhar_params( Skrt, Skw,           & ! intent(in)
                                        big_m_rt, mixt_frac, & ! intent(in)
                                        big_m_w, small_m_w )   ! intent(out)
 
-          call close_Luhar_pdf( wm, wp2, mixt_frac,        & !intent(in)
-                                small_m_w, wp2,            & !intent(in)
-                                sigma_sqd_w1, sigma_sqd_w2,& !intent(out)
-                                varnce_w_1, varnce_w_2,    & !intent(out)
-                                w_1_n, w_2_n, w_1, w_2)      !intent(out)
+          call close_Luhar_pdf( wm, wp2, mixt_frac,           & ! intent(in)
+                                small_m_w, Skw, Skw,          & ! intent(in)
+                                sigma_sqd_w_1, sigma_sqd_w_2, & ! intent(out)
+                                varnce_w_1, varnce_w_2,       & ! intent(out)
+                                w_1_n, w_2_n, w_1, w_2 )        ! intent(out)
 
-          !Solve for the thl PDF
+          ! Solve for the thl PDF
           call backsolve_Luhar_params( Skrt, Skthl,           & ! intent(in)
                                        big_m_rt, mixt_frac,   & ! intent(in)
                                        big_m_thl, small_m_thl ) ! intent(out)
 
-          call close_Luhar_pdf( thlm, thlp2, mixt_frac,         & !intent(in)
-                                small_m_thl,wpthlp,             & !intent(in)
-                                sigma_sqd_thl1, sigma_sqd_thl2, & !intent(out)
-                                varnce_thl_1, varnce_thl_2,     & !intent(out)
-                                thl_1_n, thl_2_n, thl_1, thl_2)   !intent(out)
+          call close_Luhar_pdf( thlm, thlp2, mixt_frac,           &! intent(in)
+                                small_m_thl, Skthl, Skw,          &! intent(in)
+                                sigma_sqd_thl_1, sigma_sqd_thl_2, &! intent(out)
+                                varnce_thl_1, varnce_thl_2,       &! intent(out)
+                                thl_1_n, thl_2_n, thl_1, thl_2 )   ! intent(out)
 
         endif
 
-      ! CLUBB still uses ADG1 elsewhere in the code. This makes things a little more consistent.
-      sigma_sqd_w = one / ( one + small_m_w**2 )
+        ! CLUBB still uses ADG1 elsewhere in the code. This makes things a
+        ! little more consistent.
+        sigma_sqd_w = min( one / ( one + small_m_w**2 ), 0.99_core_rknd )
 
-      ! Set to default values when using the 3D_Luhar closure
-      alpha_thl    = one_half
-
-      alpha_rt    = one_half
+        ! Set to default values when using the 3D_Luhar closure
+        alpha_thl = one_half
+        alpha_rt = one_half
 
     endif ! if( .not. l_use_3D_closure )
 
@@ -1693,22 +1707,94 @@ module pdf_closure_module
   end subroutine ADG1_w_closure
 
   !=============================================================================
-  elemental subroutine calc_Luhar_params( Skx, mixt_frac, big_m, small_m )
-  ! Description:
-  !   For the Luhar closure, this subroutine takes Skx as input and outputs
-  !   the mixture fraction, big_m, and small_m. This code was written using
-  !   the equations and nomenclature of Larson et al. (2002) Appendix section e.
-  !
-  ! References:
-  !    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
-  !    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
-  !    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
-  !
-  !-----------------------------------------------------------------------
+  elemental subroutine calc_Luhar_params( Skx, Skw, &
+                                          mixt_frac, big_m, small_m )
+
+    ! Description:
+    ! For the Luhar closure, this subroutine takes Skx (and Skw) as input and
+    ! outputs the mixture fraction, big_m, and small_m. This code was written
+    ! using the equations and nomenclature of Larson et al. (2002) Appendix
+    ! section e.
+    !
+    ! The relationship between skewness of x (Skx), mixture fraction (a), and
+    ! Luhar's small m (m) is given by:
+    !
+    ! Skx^2 = ( m^2 * ( m^2 + 3 )^2 / ( m^2 + 1 )^3 )
+    !         * ( 1 - 2*a )^2 / ( a * ( 1 - a ) ).
+    !
+    ! Luhar's large M (M) is used to more easily express the factor involving
+    ! the m's:
+    !
+    ! M = ( m^2 + 1 )^3 / ( m^2 * ( m^2 + 3 )^2 ).
+    !
+    ! The equation involving skewness of x becomes:
+    !
+    ! Skx^2 = ( 1 / M ) * ( 1 - 2*a )^2 / ( a * ( 1 - a ) );
+    !
+    ! or:
+    !
+    ! M * Skx^2 = ( 1 - 2*a )^2 / ( a * ( 1 - a ) ).
+    !
+    ! This equation can be rewritten as:
+    !
+    ! ( a * ( 1 - a ) ) * M * Skx^2 = ( 1 - 2*a )^2;
+    !
+    ! as well as:
+    !
+    ! ( a - a^2 ) * M * Skx^2 = 1 - 4*a + 4*a^2;
+    !
+    ! and eventually as:
+    !
+    ! ( 4 + M * Skx^2 ) * a^2 - ( 4 + M * Skx^2 ) * a + 1 = 0.
+    !
+    ! Solving the quadratic equation for a:
+    !
+    ! a = (1/2) * ( 1 +- Skx * sqrt( 1 / ( 4/M + Skx^2 ) ) ).
+    !
+    ! Since by definition, mu_w_1 >= mu_w_2, a < 0.5 when Skw > 0, the equation
+    ! for mixture fraction is:
+    !
+    ! a = (1/2) * ( 1 - Skx * sqrt( 1 / ( 4/M + Skx^2 ) ) ).
+    !
+    ! For 3-D Luhar, the variable (w, rt, or theta-l) with the greatest
+    ! magnitude of skewness is used to calculate mixture fraction.  Since it is
+    ! desirable to still have a < 0.5 when Skw > 0 and a > 0.5 when Skw < 0, the
+    ! sign function is used.  The value of Skx is replaced by:
+    !
+    ! Skx|_adj = sign(Skw) * sign(Skx) * Skx;
+    !
+    ! where
+    !
+    ! sign(Skx) = | 1 when x >= 0
+    !             | -1 when x < 0.
+    !
+    ! Since Skx|_adj^2 = ( sign(Skw) * sign(Skx) * Skx )^2
+    ! = ( sign(Skw) * sign(Skx) )^2 * Skx^2 = Skx^2, the equation for mixture
+    ! fraction is:
+    !
+    ! a = (1/2)
+    !     * ( 1 - sign(Skw) * sign(Skx) * Skx * sqrt( 1 / ( 4/M + Skx^2 ) ) ).
+    !
+    ! When using the ADG2 closure or when using the 3-D Luhar closure when the
+    ! variable with the greatest magnitude of skewness is w, Skw = Skx and
+    ! sign(Skw) * sign(Skx) is always equal to 1, reducing the equation to its
+    ! previous form.
+
+    ! References:
+    !    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
+    !    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
+    !    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
+    !
+    !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one, &
-        one_half
+        four,       & ! Constant(s)
+        three,      &
+        one,        &
+        two_thirds, &
+        one_half,   &
+        one_third,  &
+        zero
 
     use clubb_precision, only: &
         core_rknd     ! Precision
@@ -1717,55 +1803,87 @@ module pdf_closure_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skx           ! Skewness of w                              [-]
+      Skx, & ! Skewness of x ( <x'^3> / <x'2>^(3/2) )                     [-]
+      Skw    ! Skewness of w ( <w'^3> / <w'2>^(3/2) )                     [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      mixt_frac,    & ! Mixture fraction                         [-]
-      big_m,        & ! Luhar's M                                [-]
-      small_m         ! Luhar's m                                [-]
+      mixt_frac, & ! Mixture fraction                                     [-]
+      big_m,     & ! Luhar's M                                            [-]
+      small_m      ! Luhar's m                                            [-]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      small_m_sqd
+      small_m_sqd, & ! Luhar's m^2                                        [-]
+      sign_Skw,    & ! Sign( Skw ); 1 when Skw >= 0 or -1 when Skw < 0    [-]
+      sign_Skx       ! Sign( Skx ); 1 when Skx >= 0 or -1 when Skx < 0    [-]
 
-  !-----------------------------------------------------------------------
-    !----- Begin Code -----
 
-      ! If Skx is very small, then small_m will tend to zero which risks
-      ! divide by zero. To ameliorate this problem, we enforce abs( x_1_n )
-      ! and abs( x_2_n ) > .05
-      small_m = max( 0.05_core_rknd, &
-                     (2.0_core_rknd/3.0_core_rknd) * abs( Skx )**(1.0_core_rknd/3.0_core_rknd))
+    ! Calculate Luhar's m (small m).
+    ! If Skx is very small, then small_m will tend to zero which risks
+    ! divide-by-zero.  To ameliorate this problem, we enforce abs( x_1_n ) and
+    ! abs( x_2_n ) > 0.05.
+    ! Note:  Luhar's small_m (m) is the only tunable parameter in the Luhar
+    !        closure, so this equation can be changed.  However, the value of m
+    !        should go toward 0 as Skx goes toward 0 so that the double Gaussian
+    !        reduces to a single Gaussian when the distribution is unskewed.
+    small_m = max( two_thirds * abs( Skx )**one_third, 0.05_core_rknd )
 
-      small_m_sqd = small_m**2
+    ! Calculate m^2.
+    small_m_sqd = small_m**2
 
-      big_m = (1.0_core_rknd + small_m_sqd)**3 / &
-                 ( (3.0_core_rknd + small_m_sqd)**2 * small_m_sqd)
+    ! Calculate Luhar's M (big M).
+    big_m = ( one + small_m_sqd )**3 &
+            / ( ( three + small_m_sqd )**2 * small_m_sqd )
 
-      mixt_frac = one_half * ( one - Skx * sqrt( one / ( ( 4.0_core_rknd / big_m) + Skx**2 ) ) )
+    ! Calculate sign( Skw ).
+    if ( Skw >= zero ) then
+       sign_Skw = one
+    else ! Skw < 0
+       sign_Skw = -one
+    endif ! Skw >= 0
+
+    ! Calculate sign( Skx ).
+    if ( Skx >= zero ) then
+       sign_Skx = one
+    else ! Skx < 0
+       sign_Skx = -one
+    endif ! Skx >= 0
+
+    ! Calculate mixture fraction.
+    mixt_frac = one_half &
+                * ( one - sign_Skw * sign_Skx * Skx &
+                          * sqrt( one / ( ( four / big_m ) + Skx**2 ) ) )
+
+
+    return
 
   end subroutine calc_Luhar_params
 
   !=============================================================================
-  elemental subroutine close_Luhar_pdf( xm, xp2, mixt_frac, small_m, covarnce, &
-                                         sigma_sqd_x1, sigma_sqd_x2, varnce_x_1, varnce_x_2,&
-                                         x_1_n, x_2_n, x_1, x_2)
-  ! Description:
-  !   For the Luhar closure, this subroutine takes Skx, xm, xp2, and mixt_frac, big_m,
-  !   and small_m (calculated in calc_Luhar_params) as input and outputs the locations and widths
-  !   of the joint-PDF according to Luhar et al. (1996). This code was written using
-  !   the equations and nomenclature of Larson et al. (2002) Appendix section e.
-  !
-  ! References:
-  !    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
-  !    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
-  !    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
-  !
-  !-----------------------------------------------------------------------
+  elemental subroutine close_Luhar_pdf( xm, xp2, mixt_frac, &
+                                        small_m, Skx, Skw, &
+                                        sigma_sqd_x_1, sigma_sqd_x_2, &
+                                        varnce_x_1, varnce_x_2, &
+                                        x_1_n, x_2_n, x_1, x_2 )
+
+    ! Description:
+    ! For the Luhar closure, this subroutine takes Skx, xm, xp2, and mixt_frac,
+    ! big_m, and small_m (calculated in calc_Luhar_params) as input and outputs
+    ! the PDF component means and variances of a variable x in the joint-PDF
+    ! according to Luhar et al. (1996).  This code was written using the
+    ! equations and nomenclature of Larson et al. (2002) Appendix section e.
+
+    ! References:
+    !    Vincent E. Larson, Jean-Christophe Golaz, and William R. Cotton, 2002:
+    !    Small-Scale and Mesoscale Variability in Cloudy Boundary Layers: Joint
+    !    Probability Density Functions. J. Atmos. Sci., 59, 3519–3539.
+    !-----------------------------------------------------------------------
+
     use constants_clubb, only: &
-        one, &
+        one,      & ! Constant(s)
         one_half, &
+        zero,     &
         eps
 
     use clubb_precision, only: &
@@ -1775,56 +1893,74 @@ module pdf_closure_module
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      xm,           & ! Mean x
-      xp2,          & ! x'^2
-      mixt_frac,    & ! Mixture fraction
-      small_m,      & ! Luhar's small m
-      covarnce
+      xm,        & ! Mean (overall) of x, <x>                      [(x units)]
+      xp2,       & ! Variance (overall) of x, <x'^2>               [(x units)^2]
+      mixt_frac, & ! Mixture fraction                              [-]
+      small_m,   & ! Luhar's small m                               [-]
+      Skx,       & ! Skewness of x ( <x'^3> / <x'2>^(3/2) )        [-]
+      Skw          ! Skewness of w ( <w'^3> / <w'2>^(3/2) )        [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      sigma_sqd_x1, & ! Width of (1st PDF component) x Gaussian
-      sigma_sqd_x2, & ! Width of (1st PDF component) x Gaussian
-      varnce_x_1,   & ! Variance of w (1st PDF component)
-      varnce_x_2,   & ! Variance of w (2nd PDF component)
-      x_1_n,        & ! Normalized Mean of w (1st PDF component)
-      x_2_n,        & ! Normalized Mean of w (2nd PDF component)
-      x_1,          & ! Mean of w (1st PDF component)
-      x_2             ! Mean of w (2nd PDF component)
+      sigma_sqd_x_1, & ! Normalized width parameter of x (1st PDF component) [-]
+      sigma_sqd_x_2, & ! Normalized width parameter of x (1st PDF component) [-]
+      varnce_x_1,    & ! Variance of x (1st PDF component)         [(x units)^2]
+      varnce_x_2,    & ! Variance of x (2nd PDF component)         [(x units)^2]
+      x_1_n,         & ! Normalized mean of x (1st PDF component)            [-]
+      x_2_n,         & ! Normalized mean of x (2nd PDF component)            [-]
+      x_1,           & ! Mean of x (1st PDF component)               [(x units)]
+      x_2              ! Mean of x (2nd PDF component)               [(x units)]
 
     ! Local Variables
     real( kind = core_rknd) :: &
-      sqrt_xp2, &
-      sgn_cov
+      sqrt_xp2, & ! Square root of the variance of x                 [(x units)]
+      sign_Skw, & ! Sign( Skw ); 1 when Skw >= 0 or -1 when Skw < 0  [-]
+      sign_Skx    ! Sign( Skx ); 1 when Skx >= 0 or -1 when Skx < 0  [-]
 
-  !-----------------------------------------------------------------------
-    !----- Begin Code -----
 
-      if( abs(covarnce) > eps) then
-        sgn_cov = covarnce / abs( covarnce )
-      else
-        sgn_cov = 1.0_core_rknd
-      endif
+    ! Calculate sign( Skw ).
+    if ( Skw >= zero ) then
+       sign_Skw = one
+    else ! Skw < 0
+       sign_Skw = -one
+    endif ! Skw >= 0
 
-      sqrt_xp2 = sqrt( xp2 )
+    ! Calculate sign( Skx ).
+    if ( Skx >= zero ) then
+       sign_Skx = one
+    else ! Skx < 0
+       sign_Skx = -one
+    endif ! Skx >= 0
 
-      sigma_sqd_x1 = (one - mixt_frac) / ( mixt_frac * ( one + small_m**2) )
+    ! Calculate the square root of the overall variance of x.
+    sqrt_xp2 = sqrt( xp2 )
 
-      varnce_x_1  = sigma_sqd_x1*xp2
+    ! Normalized width parameter of x in the 1st PDF component.
+    sigma_sqd_x_1 = ( one - mixt_frac ) / ( mixt_frac * ( one + small_m**2 ) )
 
-      sigma_sqd_x2 = mixt_frac / ( ( one - mixt_frac ) * ( one + small_m**2 ) )
+    ! The variance of x in the 1st PDF component.
+    varnce_x_1 = sigma_sqd_x_1 * xp2
 
-      varnce_x_2  = sigma_sqd_x2*xp2
+    ! Normalized width parameter of x in the 2nd PDF component.
+    sigma_sqd_x_2 = mixt_frac / ( ( one - mixt_frac ) * ( one + small_m**2 ) )
 
-      x_1_n = sgn_cov * small_m * sqrt( sigma_sqd_x1 )
+    ! The variance of x in the 2nd PDF component.
+    varnce_x_2 = sigma_sqd_x_2 * xp2
 
-      x_2_n = sgn_cov * (-small_m) * sqrt( sigma_sqd_x2 )
+    ! Normalized mean of x in the 1st PDF component.
+    x_1_n = sign_Skw * sign_Skx * small_m * sqrt( sigma_sqd_x_1 )
 
-      ! The mean of x for Gaussian "plume" 1 is x_1.
-      x_1 = xm + sqrt_xp2 * x_1_n
+    ! Normalized mean of x in the 2nd PDF component.
+    x_2_n = -sign_Skw * sign_Skx * small_m * sqrt( sigma_sqd_x_2 )
 
-      ! The mean of x for Gaussian "plume" 2 is x_2.
-      x_2 = xm + sqrt_xp2 * x_2_n
+    ! The mean of x in the 1st PDF component.
+    x_1 = xm + sqrt_xp2 * x_1_n
+
+    ! The mean of x in the 2nd PDF component.
+    x_2 = xm + sqrt_xp2 * x_2_n
+
+
+    return
 
   end subroutine close_Luhar_pdf
 
@@ -1838,6 +1974,41 @@ module pdf_closure_module
     ! consistent with the mixture fraction of the variate with the largest
     ! skewness.
     !
+    ! The relationship between skewness of x (Skx), mixture fraction (a), and
+    ! Luhar's small m (m) is given by:
+    !
+    ! Skx^2 = ( m^2 * ( m^2 + 3 )^2 / ( m^2 + 1 )^3 )
+    !         * ( 1 - 2*a )^2 / ( a * ( 1 - a ) ).
+    !
+    ! Moving the factor involving mixture fraction to the right-hand side:
+    !
+    ! ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2
+    ! = m^2 * ( m^2 + 3 )^2 / ( m^2 + 1 )^3.
+    !
+    ! This can be rewritten as:
+    !
+    ! ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2
+    ! = ( m^6 + 6*m^4 + 9*m^2 ) / ( m^6 + 3*m^4 + 3*m^2 + 1 ).
+    !
+    ! Setting alpha = ( ( a * ( 1 - a ) ) / ( 1 - 2*a )^2 ) * Skx^2, the
+    ! equation can be rewritten as:
+    !
+    ! ( m^6 + 3*m^4 + 3*m^2 + 1 ) * alpha = m^6 + 6*m^4 + 9*m^2.
+    !
+    ! This can be rearranged and rewritten as:
+    !
+    ! ( alpha - 1 ) * m^6 + ( 3 * alpha - 6 ) * m^4
+    ! + ( 3 * alpha - 9 ) * m^2 + alpha = 0.
+    !
+    ! This can be rewritten again as:
+    !
+    ! ( alpha - 1 ) * (m^2)^3 + ( 3 * alpha - 6 ) * (m^2)^2
+    ! + ( 3 * alpha - 9 ) * (m^2) + alpha = 0.
+    !
+    ! The goal is to solve for m^2, and then take the square root of m^2 to
+    ! solve for m.  This can be accomplished by using the cubic formula (with
+    ! the l_use_cubic_backsolve option), or else by a quadratic approximation.
+
     ! References:
     !-----------------------------------------------------------------------
 
@@ -1869,20 +2040,18 @@ module pdf_closure_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      alpha, &   ! 1 / big_m_x
-      a,     &   ! For readability, quadratic equation
-      b,     &
-      c,     &
+      alpha,     & ! 1 / big_m_x
+      a,         & ! For readability, quadratic equation
+      b,         &
+      c,         &
       alpha_upr, &
       alpha_low, &
       discrim
 
     ! Flag to backsolve for m^2 using cubic formula
     logical, parameter :: &
-      l_use_cubic_backsolve = .false.
+      l_use_cubic_backsolve = .true.
 
-  !-----------------------------------------------------------------------
-    !----- Begin Code -----
 
     if ( l_use_cubic_backsolve ) then
 
