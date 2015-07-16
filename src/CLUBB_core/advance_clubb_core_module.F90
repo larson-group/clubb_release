@@ -945,8 +945,8 @@ module advance_clubb_core_module
     ! To calculate Skewness of thl, rt, will need interpolated values. 
     wpthlp_zt  = zm2zt( wpthlp )
     wprtp_zt   = zm2zt( wprtp )
-    thlp2_zt   = zm2zt( thlp2 )
-    rtp2_zt   = zm2zt( rtp2 )
+    thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive definite quantity
+    rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive definite quantity
     sigma_sqd_w = zt2zm(sigma_sqd_w_zt)
 
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
