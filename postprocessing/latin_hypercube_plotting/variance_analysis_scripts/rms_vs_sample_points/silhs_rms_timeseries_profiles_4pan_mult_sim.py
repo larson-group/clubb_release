@@ -166,22 +166,23 @@ for plot_num in range(4):
 
     for d_i in range(len(silhs_dirs)):
         format_str = ''
-        if os.path.basename(silhs_dirs[d_i]) == 'none':
+        if os.path.basename(silhs_dirs[d_i]) == 'LH-only':
             format_str = 'm-'
         elif os.path.basename(silhs_dirs[d_i]) == '2Cat-Cld':
             format_str = 'b--'
         elif os.path.basename(silhs_dirs[d_i]) == '2Cat-CldPcp':
-            format_str = 'g:'
+            format_str = 'r:'
         elif os.path.basename(silhs_dirs[d_i]) == '8Cat':
-            format_str = 'cv'
-
+            format_str = 'c*-'
+        markerSize = 3
         if mode == 1:
-            line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str)
+            line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str, \
+                            markersize=markerSize)
         elif mode == 0:
-            line, = pl.plot(sim_points_all, rms_all[d_i], format_str)
+            line, = pl.plot(sim_points_all, rms_all[d_i], format_str, markersize=markerSize)
         elif mode == 2:
             line, = pl.plot(np.average(silhs_vars[d_i][time1:time2,altlow:althigh], axis=0), \
-                altitude[altlow:althigh], format_str)
+                altitude[altlow:althigh], format_str, markersize=markerSize)
         if plot_num == 0:
             lines.append(line)
 
