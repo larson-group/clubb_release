@@ -13,7 +13,7 @@ run_silhs_sp()
 # Parameters
 # 1: CLUBB dir
 # 2: Case name
-# 3: Plot output dir
+# 3: Plot output file
 # +: Input directories
 plot_rms_n_dir_all()
 {
@@ -21,7 +21,7 @@ plot_rms_n_dir_all()
     shift
     case_name="$1"
     shift
-    plot_output_dir="$1"
+    plot_output_file="$1"
     shift
 
     if [[ $case_name == "rico_lh" ]]; then
@@ -32,13 +32,13 @@ plot_rms_n_dir_all()
         time2=360
     fi
 
-    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_dir/rms.eps" --rms "$@"
+    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_file" --rms "$@"
 }
 
 # Parameters
 # 1: CLUBB dir
 # 2: Case name
-# 3: Plot output dir
+# 3: Plot output file
 # +: Input directories
 plot_timeseries_n_dir_all()
 {
@@ -46,7 +46,7 @@ plot_timeseries_n_dir_all()
     shift
     case_name="$1"
     shift
-    plot_output_dir="$1"
+    plot_output_file="$1"
     shift
 
     if [[ $case_name == "rico_lh" ]]; then
@@ -57,7 +57,7 @@ plot_timeseries_n_dir_all()
         time2=360
     fi
 
-    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_dir/timeseries.eps" --timeseries "$@"
+    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_file" --timeseries "$@"
 }
 
 # Parameters
@@ -92,7 +92,7 @@ plot_something_n_dir_all()
 # Parameters
 # 1: CLUBB dir
 # 2: Case name
-# 3: Plot output dir
+# 3: Plot output file
 # +: Input directories
 plot_profiles_n_dir_all()
 {
@@ -100,7 +100,7 @@ plot_profiles_n_dir_all()
     shift
     case_name="$1"
     shift
-    plot_output_dir="$1"
+    plot_output_file="$1"
     shift
 
     if [[ $case_name == "rico_lh" ]]; then
@@ -111,7 +111,7 @@ plot_profiles_n_dir_all()
         time2=360
     fi
 
-    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_dir/profiles.eps" --profiles "$@"
+    plot_something_n_dir_all "$clubb_dir" "$case_name" $time1 $time2 "$plot_output_file" --profiles "$@"
 }
 
 

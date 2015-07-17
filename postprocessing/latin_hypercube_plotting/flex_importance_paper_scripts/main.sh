@@ -65,28 +65,22 @@ run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/LH-on
 
 # Plots!!
 echo -e "\n-----Generating rico_lh RMS plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/rico_lh_rms"
-plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_rms" "$SIM_OUTPUT_DIR/rico_lh/LH-only"  "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
+plot_rms_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_rms.pdf" "$SIM_OUTPUT_DIR/rico_lh/LH-only"  "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
 
 echo -e "\n-----Generating dycoms2_rf02_do RMS plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms"
-plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/LH-only" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
+plot_rms_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_rms.pdf" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/LH-only" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
 
 echo -e "\n-----Generating rico_lh timeseries plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/rico_lh_timeseries"
-plot_timeseries_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_timeseries" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp"
+plot_timeseries_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_timeseries.pdf" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp"
 
 echo -e "\n-----Generating dycoms2_rf02_do timeseries plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries"
-plot_timeseries_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp"
+plot_timeseries_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries.pdf" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp"
 
 echo -e "\n-----Generating rico_lh profile plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/rico_lh_profiles"
-plot_profiles_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_profiles" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
+plot_profiles_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_profiles.pdf" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat"
 
 echo -e "\n-----Generating dycoms2_rf02_do profile plots-----"
-mkdir "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles"
-plot_profiles_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
+plot_profiles_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles.pdf" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
 
 ##### Restore model files #####
 mv $RICO_LH_MODEL_IN_BACKUP "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
