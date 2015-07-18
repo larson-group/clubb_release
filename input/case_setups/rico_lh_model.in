@@ -155,6 +155,14 @@ Ncnp2_on_Ncnm2                               = 2.2
 Nc0_in_cloud  = 70.e6 ! num/m^3
 l_const_Nc_in_cloud = .true.
 l_var_covar_src = .true.
+
+! Addition for using SILHS
+lh_microphys_type = "interactive"
+l_local_kk = .true.,
+l_fix_chi_eta_correlations = .true.,
+l_lh_importance_sampling = .true.,
+lh_num_samples = 8  ! A reasonable default
+lh_sequence_length = 1
 /
 
 &radiation_setting
