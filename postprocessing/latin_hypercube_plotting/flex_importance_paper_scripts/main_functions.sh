@@ -26,7 +26,7 @@ plot_rms_n_dir_all()
 
     if [[ $case_name == "rico_lh" ]]; then
         time1=0
-        time2=4320
+        time2=864
     else
         time1=0
         time2=360
@@ -50,8 +50,8 @@ plot_timeseries_n_dir_all()
     shift
 
     if [[ $case_name == "rico_lh" ]]; then
-        time1=4200
-        time2=4320
+        time1=840
+        time2=864
     else
         time1=240
         time2=360
@@ -105,7 +105,7 @@ plot_profiles_n_dir_all()
 
     if [[ $case_name == "rico_lh" ]]; then
         time1=0
-        time2=4320
+        time2=864
     else
         time1=0
         time2=360
