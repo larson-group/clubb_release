@@ -21,8 +21,8 @@ import glob
 #######################################################################
 
 case_name = 'rico_lh'
-time1 = 4200
-time2 = 4320
+time1 = 0
+time2 = 864
 
 clubb_var_strs  = [ 'rrm_auto',    'rrm_accr',    'rrm_cond',    'rrm_mc_nonadj' ]
 silhs_var_strs  = [ 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj' ]
@@ -36,8 +36,8 @@ plot_sup_title = ''
 
 output_file = 'out.svg'
 
-num_pts_for_timeseries = '20'
-num_pts_for_profiles = '20'
+num_pts_for_timeseries = '16'
+num_pts_for_profiles = '16'
 
 #-------------------------------------------------------------------------
 
@@ -151,10 +151,6 @@ for plot_num in range(4):
         for althigh in range(2,len(altitude)):
             if altitude[althigh] > 4000.0:
                 break
-        silhs_vars = list()
-        for silhs_dir in silhs_dirs:
-            silhs_vars.append(netCDF4.Dataset(silhs_dir+'/silhs_'+num_pts_for_profiles+\
-                '/'+case_name+'_lh_zt.nc').variables[silhs_var_strs[plot_num]][:,:,0,0])
 
     pl.subplot(2, 2, plot_num+1)
 
@@ -183,8 +179,10 @@ for plot_num in range(4):
         elif mode == 0:
             line, = pl.plot(sim_points_all, rms_all[d_i], format_str, markersize=markerSize)
         elif mode == 2:
-            line, = pl.plot(np.average(silhs_vars[d_i][time1:time2,altlow:althigh], axis=0), \
-                altitude[altlow:althigh], format_str, markersize=markerSize)
+            for seed_dir in glob.glob(silhs_dirs[d_i]+'/silhs_'+num_pts_for_profiles+'_*'):
+                line, = pl.plot(np.average(netCDF4.Dataset(seed_dir+'/'+case_name+'_lh_zt.nc') \
+                    .variables[silhs_var_strs[plot_num]][time1:time2,altlow:althigh,0,0], axis=0), \
+                    altitude[altlow:althigh], format_str, markersize=markerSize)
         if plot_num == 0:
             lines.append(line)
 
