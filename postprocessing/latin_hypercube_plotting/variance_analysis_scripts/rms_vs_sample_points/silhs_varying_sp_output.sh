@@ -9,14 +9,14 @@ CLUBB_DIR="`readlink -m \`dirname $0\``/../../../.."
 OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
 CASE_NAME="rico_lh"
 STATS_FILE=""
-STARTING_SEED="100"
+STARTING_SEED=""
 
 # The different numbers of sample points to use, separated by spaces
 SAMPLE_POINT_VALUES="2 4 8 16 32 64 128 256"
 
 # Specifices the number of seeds to use to run SILHS with each of the sample point
 # values above.
-RUN_EACH_WITH_SEEDS=12
+RUN_EACH_WITH_SEEDS=1
 
 #----------------------------------------------------------------------------------------------
 
