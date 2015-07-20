@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import sys
 import os
+import glob
 
 #######################################################################
 # This script will take several directories output from the scipt
@@ -20,8 +21,8 @@ import os
 #######################################################################
 
 case_name = 'rico_lh'
-time1 = 4200
-time2 = 4320
+time1 = 0
+time2 = 864
 
 clubb_var_strs  = [ 'rrm_auto',    'rrm_accr',    'rrm_cond',    'rrm_mc_nonadj' ]
 silhs_var_strs  = [ 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj' ]
@@ -35,8 +36,8 @@ plot_sup_title = ''
 
 output_file = 'out.svg'
 
-num_pts_for_timeseries = '20'
-num_pts_for_profiles = '20'
+num_pts_for_timeseries = '16'
+num_pts_for_profiles = '16'
 
 #-------------------------------------------------------------------------
 
@@ -78,11 +79,12 @@ if len(silhs_dirs) == 0:
           "path1 [path2 [...]]", file=sys.stderr)
     sys.exit(1)
 
-sim_points_all = list()
+sim_points_all = set()
 for entry in os.listdir(silhs_dirs[0]):
     if (entry[:6] == 'silhs_'):
-        sim_points_all.append(int(entry[6:]))
-sim_points_all.sort()
+        sim_points_all.add(int(entry[6:].split('_')[0]))
+# Convert set to sorted list
+sim_points_all = sorted(sim_points_all)
 
 dir_names = list()
 for d in silhs_dirs:
@@ -90,14 +92,14 @@ for d in silhs_dirs:
 
 lines = list()
 
-k_lh_start = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+num_pts_for_timeseries+ \
+k_lh_start = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+'_1'+ \
     '/'+case_name+'_lh_sfc.nc').variables['k_lh_start']
 # Copy to memory
 k_lh_start = k_lh_start[:,0,0,0]
 
 for plot_num in range(4):
 
-    clubb_nc = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+\
+    clubb_nc = netCDF4.Dataset(silhs_dirs[0]+'/silhs_'+str(sim_points_all[0])+'_1'+ \
         '/'+case_name+'_zt.nc')
     clubb_var = clubb_nc.variables[clubb_var_strs[plot_num]]
     # Copy to memory for faster access
@@ -107,7 +109,7 @@ for plot_num in range(4):
         silhs_vars = list()
         silhs_vars_plt = list()
         for silhs_dir in silhs_dirs:
-            silhs_vars.append(netCDF4.Dataset(silhs_dir+'/silhs_'+num_pts_for_timeseries+\
+            silhs_vars.append(netCDF4.Dataset(silhs_dir+'/silhs_'+num_pts_for_timeseries+'_1'+\
             '/'+case_name+'_lh_zt.nc').variables[silhs_var_strs[plot_num]][:,:,0,0])
             silhs_vars_plt.append(np.empty(time2-time1))
 
@@ -129,17 +131,17 @@ for plot_num in range(4):
             for d_i in range(0,len(silhs_dirs)):
                 silhs_dir = silhs_dirs[d_i]
                 rms_val = 0.0
-                silhs_var = netCDF4.Dataset(silhs_dir+'/silhs_'+str(num_samples)+ \
-                    '/'+case_name+'_lh_zt.nc').variables[silhs_var_strs[plot_num]]
-                # Copy to memory for better performance
-                silhs_var = silhs_var[:,:,0,0]
+                n_seed_dirs = 0
+                for seed_dir in glob.glob(silhs_dir+'/silhs_'+str(num_samples)+'_*'):
+                    n_seed_dirs += 1
+                    silhs_var = netCDF4.Dataset(seed_dir+'/'+case_name+'_lh_zt.nc') \
+                        .variables[silhs_var_strs[plot_num]][:,:,0,0]
 
-                for t in range(time1,time2):
-                    k = int(round(k_lh_start[t]))-1
-                    rms_val = rms_val + (clubb_var[t,k]-silhs_var[t,k])**2
+                    for t in range(time1,time2):
+                        k = int(round(k_lh_start[t]))-1
+                        rms_val = rms_val + (clubb_var[t,k]-silhs_var[t,k])**2
 
-                rms_val = rms_val / n_timesteps
-                rms_val = np.sqrt(rms_val)
+                rms_val = np.sqrt(rms_val / (n_timesteps*n_seed_dirs))
                 rms_all[d_i][n_i] = rms_val
 
     elif mode == 2:
@@ -149,10 +151,6 @@ for plot_num in range(4):
         for althigh in range(2,len(altitude)):
             if altitude[althigh] > 4000.0:
                 break
-        silhs_vars = list()
-        for silhs_dir in silhs_dirs:
-            silhs_vars.append(netCDF4.Dataset(silhs_dir+'/silhs_'+num_pts_for_profiles+\
-                '/'+case_name+'_lh_zt.nc').variables[silhs_var_strs[plot_num]][:,:,0,0])
 
     pl.subplot(2, 2, plot_num+1)
 
@@ -181,8 +179,10 @@ for plot_num in range(4):
         elif mode == 0:
             line, = pl.plot(sim_points_all, rms_all[d_i], format_str, markersize=markerSize)
         elif mode == 2:
-            line, = pl.plot(np.average(silhs_vars[d_i][time1:time2,altlow:althigh], axis=0), \
-                altitude[altlow:althigh], format_str, markersize=markerSize)
+            for seed_dir in glob.glob(silhs_dirs[d_i]+'/silhs_'+num_pts_for_profiles+'_*'):
+                line, = pl.plot(np.average(netCDF4.Dataset(seed_dir+'/'+case_name+'_lh_zt.nc') \
+                    .variables[silhs_var_strs[plot_num]][time1:time2,altlow:althigh,0,0], axis=0), \
+                    altitude[altlow:althigh], format_str, markersize=markerSize)
         if plot_num == 0:
             lines.append(line)
 
