@@ -29,6 +29,7 @@ run_script_in_place $SCRIPT_DIR/modify_model_in_nonint_silhs.py "$CLUBB_DIR/inpu
 run_script_in_place $SCRIPT_DIR/modify_model_in_presc_probs.py "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 run_script_in_place $SCRIPT_DIR/modify_model_in_presc_probs.py "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
 
+# 2Cat-CldPcp
 echo -e "\n-----Running rico_lh using 2Cat-CldPcp-----"
 run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" 2000
 echo -e "\n-----Running dycoms2_rf02_do using 2Cat-CldPcp-----"
@@ -47,7 +48,6 @@ run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat"
 # 2Cat-Cld
 turn_off_presc_probs "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 turn_off_presc_probs "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
-
 echo -e "\n-----Running rico_lh using 2Cat-Cld-----"
 run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld" 4000
 echo -e "\n-----Running dycoms2_rf02_do using 2Cat-Cld-----"
@@ -56,7 +56,6 @@ run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-
 # LH-only
 turn_off_importance "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 turn_off_importance "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
-
 echo -e "\n-----Running rico_lh without importance sampling-----"
 run_silhs_sp "$CLUBB_DIR" rico_lh "$SIM_OUTPUT_DIR/rico_lh/LH-only" 5000
 echo -e "\n-----Running dycoms2_rf02_do without importance sampling-----"

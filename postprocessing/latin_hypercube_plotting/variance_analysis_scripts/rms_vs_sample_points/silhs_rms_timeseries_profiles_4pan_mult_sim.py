@@ -2,6 +2,8 @@
 from __future__ import print_function
 import netCDF4
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as pl
 import sys
 import os
