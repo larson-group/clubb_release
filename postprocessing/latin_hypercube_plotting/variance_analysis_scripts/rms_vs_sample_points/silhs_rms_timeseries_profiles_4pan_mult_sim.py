@@ -169,9 +169,9 @@ for plot_num in range(4):
         elif os.path.basename(silhs_dirs[d_i]) == '2Cat-Cld':
             format_str = 'b--'
         elif os.path.basename(silhs_dirs[d_i]) == '2Cat-CldPcp':
-            format_str = 'r:'
+            format_str = 'r*-'
         elif os.path.basename(silhs_dirs[d_i]) == '8Cat':
-            format_str = 'c*-'
+            format_str = 'c:'
         markerSize = 3
         if mode == 1:
             line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str, \
@@ -213,8 +213,7 @@ for plot_num in range(4):
         eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)_\\mathrm{evap}$'
         pl.title('Evaporation ' + eq)
     elif clubb_var_strs[plot_num] == 'rrm_mc_nonadj':
-        eq = '$\\left(\\frac{\\partial r_r}{\\partial t}\\right)$'
-        pl.title('Total rain tendency ' + eq)
+        pl.title('Auto + Accr + Evap')
 
 lgd = pl.figlegend( lines, dir_names, 'lower center', ncol=2, fontsize=9 )
 
