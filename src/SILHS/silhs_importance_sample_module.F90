@@ -1076,6 +1076,147 @@ module silhs_importance_sample_module
 !-----------------------------------------------------------------------
   function compute_clust_category_probs &
            ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+             num_categories_in_cluster, cluster_categories, cluster_fractions ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   Calls clust_cat_probs_frm_presc_prb or clust_cat_probs_frm_var_fracs!
+
+  ! References:
+  !   clubb:ticket:740
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    implicit none
+
+    logical, parameter :: &
+      l_var_frac = .false.
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs           ! The real probability for each category
+
+    integer, intent(in) :: &
+      num_clusters, &                   ! The number of clusters to sample from
+      max_num_categories_in_cluster    ! The max number of categories in each cluster
+
+    integer, dimension(num_clusters), intent(in) :: &
+      num_categories_in_cluster        ! The number of categories in each cluster
+
+    integer, dimension(num_clusters,max_num_categories_in_cluster), intent(in) :: &
+      cluster_categories            ! An integer matrix containing indices corresponding
+                                    ! to the members of the clusters
+
+    real( kind = core_rknd ), dimension(num_clusters), intent(in) :: &
+      cluster_fractions             ! Prescribed fraction of some sort for each cluster
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs     ! Resulting prescribed probability for each individual category
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    if ( l_var_frac ) then
+      category_prescribed_probs = clust_cat_probs_frm_var_fracs &
+           ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+             num_categories_in_cluster, cluster_categories, cluster_fractions )
+    else
+      category_prescribed_probs = clust_cat_probs_frm_presc_prb &
+           ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+             num_categories_in_cluster, cluster_categories, cluster_fractions )
+    end if
+
+    return
+  end function compute_clust_category_probs
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function clust_cat_probs_frm_var_fracs &
+           ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
+             num_categories_in_cluster, cluster_categories, cluster_variance_fractions ) &
+
+  result( category_prescribed_probs )
+
+  ! Description:
+  !   This is a generalized algorithm that takes as input a set of "clusters"
+  !   of the importance categories and a variance fraction      for each
+  !   cluster, and computes the prescribed probabilities for each category.
+
+  ! References:
+  !   clubb:ticket:740
+  !-----------------------------------------------------------------------
+
+    ! Included Modules
+    use clubb_precision, only: &
+      core_rknd       ! Constant
+
+    use constants_clubb, only: &
+      zero            ! Constant
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
+      category_real_probs           ! The real probability for each category
+
+    integer, intent(in) :: &
+      num_clusters, &                   ! The number of clusters to sample from
+      max_num_categories_in_cluster    ! The max number of categories in each cluster
+
+    integer, dimension(num_clusters), intent(in) :: &
+      num_categories_in_cluster        ! The number of categories in each cluster
+
+    integer, dimension(num_clusters,max_num_categories_in_cluster), intent(in) :: &
+      cluster_categories            ! An integer matrix containing indices corresponding
+                                    ! to the members of the clusters
+
+    real( kind = core_rknd ), dimension(num_clusters), intent(in) :: &
+      cluster_variance_fractions    ! Prescribed variance fraction for each cluster
+
+    ! Output Variable
+    real( kind = core_rknd ), dimension(num_importance_categories) :: &
+      category_prescribed_probs     ! Resulting prescribed probability for each individual category
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(num_clusters) :: &
+      cluster_real_probs            ! Total PDF probability for each cluster
+
+    real( kind = core_rknd ) :: &
+      pdf_prob_var_frac_prod_sum
+
+    integer :: icluster, icategory
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+
+    ! Compute the total PDF probability for each cluster.
+    cluster_real_probs(:) = zero
+    do icluster=1, num_clusters
+      do icategory=1, num_categories_in_cluster(icluster)
+        cluster_real_probs(icluster) = cluster_real_probs(icluster) + &
+            category_real_probs(cluster_categories(icluster,icategory))
+      end do
+    end do
+
+    ! Compute the sum of p_j * f_j across clusters
+    pdf_prob_var_frac_prod_sum = sum( cluster_real_probs(:) * cluster_variance_fractions(:) )
+
+    ! Compute the prescribed probability for each category!
+    category_prescribed_probs(:) = cluster_real_probs(:) * cluster_variance_fractions(:) / &
+                                   pdf_prob_var_frac_prod_sum
+
+    return
+  end function clust_cat_probs_frm_var_fracs
+!-----------------------------------------------------------------------
+
+!-----------------------------------------------------------------------
+  function clust_cat_probs_frm_presc_prb &
+           ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
              num_categories_in_cluster, cluster_categories, cluster_prescribed_probs ) &
 
   result( category_prescribed_probs )
@@ -1223,7 +1364,7 @@ module silhs_importance_sample_module
     end do ! icluster=1, num_clusters
 
     return
-  end function compute_clust_category_probs
+  end function clust_cat_probs_frm_presc_prb
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
