@@ -1091,10 +1091,10 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd       ! Constant
 
-    implicit none
+    use parameters_silhs, only: &
+      l_lh_var_frac
 
-    logical, parameter :: &
-      l_var_frac = .false.
+    implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(num_importance_categories), intent(in) :: &
@@ -1121,7 +1121,7 @@ module silhs_importance_sample_module
   !-----------------------------------------------------------------------
     !----- Begin Code -----
 
-    if ( l_var_frac ) then
+    if ( l_lh_var_frac ) then
       category_prescribed_probs = clust_cat_probs_frm_var_fracs &
            ( category_real_probs, num_clusters, max_num_categories_in_cluster, &
              num_categories_in_cluster, cluster_categories, cluster_fractions )
