@@ -181,3 +181,17 @@ set_cluster_strategy_to_1()
 {
     sed 's/^cluster_allocation_strategy\s*=.*$/cluster_allocation_strategy = 1/g' -i "$1"
 }
+
+# Parameters
+# 1: Model file
+turn_off_weight_limiter()
+{
+    sed 's/^l_lh_limit_weights\s*=.*$/l_lh_limit_weights = .false.,/g' -i "$1"
+}
+
+# Parameters
+# 1: Model file
+turn_on_var_frac()
+{
+    sed 's/^l_lh_var_frac\s*=.*$/l_lh_var_frac = .true.,/g' -i "$1"
+}
