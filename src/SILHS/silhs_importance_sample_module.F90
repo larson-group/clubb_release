@@ -1207,8 +1207,14 @@ module silhs_importance_sample_module
     pdf_prob_var_frac_prod_sum = sum( cluster_real_probs(:) * cluster_variance_fractions(:) )
 
     ! Compute the prescribed probability for each category!
-    category_prescribed_probs(:) = cluster_real_probs(:) * cluster_variance_fractions(:) / &
-                                   pdf_prob_var_frac_prod_sum
+    if ( pdf_prob_var_frac_prod_sum == zero ) then
+      ! No variance prescribed in categories with non-zero PDF probability!
+      ! Fall back to no importance sampling!
+      category_prescribed_probs(:) = category_real_probs(:)
+    else
+      category_prescribed_probs(:) = cluster_real_probs(:) * cluster_variance_fractions(:) / &
+                                     pdf_prob_var_frac_prod_sum
+    end if
 
     return
   end function clust_cat_probs_frm_var_fracs
