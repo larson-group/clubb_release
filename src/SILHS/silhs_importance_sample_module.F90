@@ -1184,12 +1184,13 @@ module silhs_importance_sample_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(num_clusters) :: &
-      cluster_real_probs            ! Total PDF probability for each cluster
+      cluster_real_probs, &         ! Total PDF probability for each cluster
+      cluster_prescribed_probs      ! Total prescribed probability for each cluster
 
     real( kind = core_rknd ) :: &
       pdf_prob_var_frac_prod_sum
 
-    integer :: icluster, icategory
+    integer :: icluster, icategory, cat_idx
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -1206,15 +1207,30 @@ module silhs_importance_sample_module
     ! Compute the sum of p_j * f_j across clusters
     pdf_prob_var_frac_prod_sum = sum( cluster_real_probs(:) * cluster_variance_fractions(:) )
 
-    ! Compute the prescribed probability for each category!
+    ! Compute the prescribed probability for each cluster!
     if ( pdf_prob_var_frac_prod_sum == zero ) then
-      ! No variance prescribed in categories with non-zero PDF probability!
+      ! No variance prescribed in clusters with non-zero PDF probability!
       ! Fall back to no importance sampling!
-      category_prescribed_probs(:) = category_real_probs(:)
+      cluster_prescribed_probs(:) = cluster_real_probs(:)
     else
-      category_prescribed_probs(:) = cluster_real_probs(:) * cluster_variance_fractions(:) / &
-                                     pdf_prob_var_frac_prod_sum
+      cluster_prescribed_probs(:) = cluster_real_probs(:) * cluster_variance_fractions(:) / &
+                                    pdf_prob_var_frac_prod_sum
     end if
+
+    ! Now, split into categories
+    do icluster=1, num_clusters
+      do icategory=1, num_categories_in_cluster(icluster)
+        cat_idx = cluster_categories(icluster,icategory)
+        ! Scale category probability based on the cluster probability
+        if ( cluster_real_probs(icluster) == zero ) then
+          category_prescribed_probs(cat_idx) = zero
+        else
+          category_prescribed_probs(cat_idx) = ( category_real_probs(cat_idx) / &
+            cluster_real_probs(icluster) ) * cluster_prescribed_probs(icluster)
+        end if
+      end do ! icategory=1, num_categories_in_cluster(icluster)
+    end do ! icluster=1, num_clusters
+
 
     return
   end function clust_cat_probs_frm_var_fracs
