@@ -24,7 +24,8 @@ module precipitation_fraction
 
   !=============================================================================
   subroutine precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
-                              ice_supersat_frac, ice_supersat_frac_1, &
+                              cloud_frac_2, ice_supersat_frac, &
+                              ice_supersat_frac_1, ice_supersat_frac_2, &
                               mixt_frac, l_stats_samp, &
                               precip_frac, precip_frac_1, precip_frac_2, &
                               precip_frac_tol )
@@ -76,8 +77,10 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       cloud_frac,          & ! Cloud fraction (overall)                      [-]
       cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
-      ice_supersat_frac,   & ! Ice supersaturation fraction                  [-]
+      cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
+      ice_supersat_frac,   & ! Ice supersaturation fraction (overall)        [-]
       ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
+      ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
       mixt_frac              ! Mixture fraction                              [-]
 
     logical, intent(in) :: &
@@ -192,9 +195,10 @@ module precipitation_fraction
 
        ! Calculatate precip_frac_1 and precip_frac_2 based on the greatest
        ! weighted cloud_frac_1 at or above a grid level.
-       call component_precip_frac_weighted( nz, hydromet, &
-                                            precip_frac, cloud_frac_1, &
-                                            ice_supersat_frac_1, mixt_frac, &
+       call component_precip_frac_weighted( nz, hydromet, precip_frac, &
+                                            cloud_frac_1, cloud_frac_2, &
+                                            ice_supersat_frac_1, &
+                                            ice_supersat_frac_2, mixt_frac, &
                                             precip_frac_tol, &
                                             precip_frac_1, precip_frac_2 )
 
@@ -363,17 +367,27 @@ module precipitation_fraction
   end subroutine precip_fraction
 
   !=============================================================================
-  subroutine component_precip_frac_weighted( nz, hydromet, &
-                                             precip_frac, cloud_frac_1, &
-                                             ice_supersat_frac_1, mixt_frac, &
+  subroutine component_precip_frac_weighted( nz, hydromet, precip_frac, &
+                                             cloud_frac_1, cloud_frac_2, &
+                                             ice_supersat_frac_1, &
+                                             ice_supersat_frac_2, mixt_frac, &
                                              precip_frac_tol, &
                                              precip_frac_1, precip_frac_2 )
 
     ! Description:
-    ! Set precipitation fraction in each component of the PDF.  Set
-    ! Set precip_frac_1 at a grid level based on the greatest
-    ! mixt_frac * cloud_frac_1 at or above the relevant grid level, divided by
-    ! mixt_frac at the grid level.  Set precip_frac_2 accordingly.
+    ! Set precipitation fraction in each component of the PDF.  The weighted 1st
+    ! PDF component precipitation fraction (weighted_pfrac_1) at a grid level is
+    ! calculated by the greatest value of mixt_frac * cloud_frac_1 at or above
+    ! the relevant grid level.  Likewise, the weighted 2nd PDF component
+    ! precipitation fraction (weighted_pfrac_2) at a grid level is calculated by
+    ! the greatest value of ( 1 - mixt_frac ) * cloud_frac_2 at or above the
+    ! relevant grid level.
+    !
+    ! The fraction weighted_pfrac_1 / ( weighted_pfrac_1 + weighted_pfrac_2 ) is
+    ! the weighted_pfrac_1 fraction.  Multiplying this fraction by overall
+    ! precipitation fraction and then dividing by mixt_frac produces the 1st PDF
+    ! component precipitation fraction (precip_frac_1).  Then, calculate the 2nd
+    ! PDF component precipitation fraction (precip_frac_2) accordingly.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -404,7 +418,9 @@ module precipitation_fraction
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       precip_frac,         & ! Precipitation fraction (overall)              [-]
       cloud_frac_1,        & ! Cloud fraction (1st PDF component)            [-]
+      cloud_frac_2,        & ! Cloud fraction (2nd PDF component)            [-]
       ice_supersat_frac_1, & ! Ice supersaturation fraction (1st PDF comp.)  [-]
+      ice_supersat_frac_2, & ! Ice supersaturation fraction (2nd PDF comp.)  [-]
       mixt_frac              ! Mixture fraction                              [-]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -417,41 +433,88 @@ module precipitation_fraction
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz) :: &
-      weighted_pfrac_1    ! Product of mixt_frac and precip_frac_1      [-]
+      weighted_pfrac_1, & ! Product of mixt_frac and cloud_frac_1           [-]
+      weighted_pfrac_2    ! Product of ( 1 - mixt_frac ) and cloud_frac_2   [-]
 
     integer :: k  ! Loop index
 
 
     !!! Find precipitation fraction within PDF component 1.
     ! The method used to find overall precipitation fraction will also be to
-    ! find precipitation fraction within PDF component 1.  In order to do so, it
-    ! is assumed (poorly) that PDF component 1 overlaps PDF component 1 at every
-    ! vertical level in the vertical profile.
+    ! find precipitation fraction within PDF component 1 and PDF component 2.
+    ! In order to do so, it is assumed (poorly) that PDF component 1 overlaps
+    ! PDF component 1 and that PDF component 2 overlaps PDF component 2 at every
+    ! vertical level in the vertical profile.  
     do k = nz, 1, -1
 
-       ! The weighted precipitation fraction (PDF component 1) is the greatest
-       ! value of the product of mixture fraction and cloud fraction (PDF
-       ! component 1) at or above a vertical level.
+       ! The weighted precipitation fraction in PDF component 1 is the greatest
+       ! value of the product of mixture fraction (mixt_frac) and 1st PDF
+       ! component cloud fraction at or above a vertical level.  Likewise, the
+       ! weighted precipitation fraction in PDF component 2 is the greatest
+       ! value of the product of ( 1 - mixt_frac ) and 2nd PDF component cloud
+       ! fraction at or above a vertical level.
        if ( k < nz ) then
+
           if ( any( l_frozen_hm ) ) then
+
              ! Ice microphysics included.
-             weighted_pfrac_1(k) = max( weighted_pfrac_1(k+1), &
-                                        mixt_frac(k) * cloud_frac_1(k), &
-                                        mixt_frac(k) * ice_supersat_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 1.
+             weighted_pfrac_1(k) &
+             = max( weighted_pfrac_1(k+1), &
+                    mixt_frac(k) * cloud_frac_1(k), &
+                    mixt_frac(k) * ice_supersat_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 2.
+             weighted_pfrac_2(k) &
+             = max( weighted_pfrac_2(k+1), &
+                    ( one - mixt_frac(k) ) * cloud_frac_2(k), &
+                    ( one - mixt_frac(k) ) * ice_supersat_frac_2(k) )
+
           else
+
              ! Warm microphysics.
-             weighted_pfrac_1(k) = max( weighted_pfrac_1(k+1), &
-                                        mixt_frac(k) * cloud_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 1.
+             weighted_pfrac_1(k) &
+             = max( weighted_pfrac_1(k+1), &
+                    mixt_frac(k) * cloud_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 2.
+             weighted_pfrac_2(k) &
+             = max( weighted_pfrac_2(k+1), &
+                    ( one - mixt_frac(k) ) * cloud_frac_2(k) )
+
           endif
+
        else  ! k = nz
+
           if ( any( l_frozen_hm ) ) then
+
              ! Ice microphysics included.
-             weighted_pfrac_1(k) = max( mixt_frac(k) * cloud_frac_1(k), &
-                                        mixt_frac(k) * ice_supersat_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 1.
+             weighted_pfrac_1(k) &
+             = max( mixt_frac(k) * cloud_frac_1(k), &
+                    mixt_frac(k) * ice_supersat_frac_1(k) )
+
+             ! Weighted precipitation fraction in PDF component 2.
+             weighted_pfrac_2(k) &
+             = max( ( one - mixt_frac(k) ) * cloud_frac_2(k), &
+                    ( one - mixt_frac(k) ) * ice_supersat_frac_2(k) )
+
           else
+
              ! Warm microphysics.
+
+             ! Weighted precipitation fraction in PDF component 1.
              weighted_pfrac_1(k) = mixt_frac(k) * cloud_frac_1(k)
+
+             ! Weighted precipitation fraction in PDF component 2.
+             weighted_pfrac_2(k) = ( one - mixt_frac(k) ) * cloud_frac_2(k)
+
           endif
+
        endif
 
     enddo ! Weighted precipitation fraction (1st PDF comp.) loop: k = nz, 1, -1
@@ -460,7 +523,30 @@ module precipitation_fraction
     do k = 1, nz, 1
 
        ! Calculate precipitation fraction in the 1st PDF component.
-       precip_frac_1(k) = weighted_pfrac_1(k) / mixt_frac(k)
+       if ( weighted_pfrac_1(k) + weighted_pfrac_2(k) > zero ) then
+
+          ! Adjust weighted 1st PDF component precipitation fraction by
+          ! multiplying it by a factor.  That factor is overall precipitation
+          ! fraction divided by the sum of the weighted 1st PDF component
+          ! precipitation fraction and the weighted 2nd PDF component
+          ! precipitation fraction.  The 1st PDF component precipitation
+          ! fraction is then found by dividing the adjusted weighted 1st PDF
+          ! component precipitation fraction by mixture fraction.
+          precip_frac_1(k) &
+          = weighted_pfrac_1(k) &
+            * ( precip_frac(k) &
+                / ( weighted_pfrac_1(k) + weighted_pfrac_2(k) ) ) &
+            / mixt_frac(k)
+       else
+
+          ! Usually, the sum of the weighted 1st PDF component precipitation
+          ! fraction and the 2nd PDF component precipitation fraction go to 0
+          ! when overall precipitation fraction goes to 0.  Since 1st PDF
+          ! component weighted precipitation fraction is 0, 1st PDF component
+          ! precipitation fraction also 0.
+          precip_frac_1(k) = zero
+
+       endif
 
        ! Special cases for precip_frac_1.
        if ( any( hydromet(k,:) >= hydromet_tol(:) ) &

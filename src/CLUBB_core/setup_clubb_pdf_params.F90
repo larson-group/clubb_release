@@ -384,11 +384,12 @@ module setup_clubb_pdf_params
     ! Calculate precipitation fraction.
     if ( l_use_precip_frac ) then
 
-       call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
-                             ice_supersat_frac, ice_supersat_frac_1, &
-                             mixt_frac, l_stats_samp, &
-                             precip_frac, precip_frac_1, precip_frac_2, &
-                             precip_frac_tol )
+       call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &    ! In
+                             cloud_frac_2, ice_supersat_frac, &           ! In
+                             ice_supersat_frac_1, ice_supersat_frac_2, &  ! In
+                             mixt_frac, l_stats_samp, &                   ! In
+                             precip_frac, precip_frac_1, precip_frac_2, & ! Out
+                             precip_frac_tol )                            ! Out
 
     else
 
