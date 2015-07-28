@@ -36,6 +36,10 @@ echo -e "\n-----Running dycoms2_rf02_do using 2Cat-CldPcp-----"
 run_silhs_sp "$CLUBB_DIR" dycoms2_rf02_do "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" 2500
 
 # 8Cat
+turn_off_weight_limiter "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
+turn_off_weight_limiter "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
+turn_on_var_frac "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
+turn_on_var_frac "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
 set_cluster_strategy_to_1 "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
 set_cluster_strategy_to_1 "$CLUBB_DIR/input/case_setups/dycoms2_rf02_do_model.in"
 apply_rico_presc_probs "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
