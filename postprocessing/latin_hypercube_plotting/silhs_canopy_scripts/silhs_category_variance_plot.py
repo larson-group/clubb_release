@@ -51,9 +51,11 @@ for t in range(tstart,tend):
 averages = np.divide(averages, n_timesteps)
 print(averages)
 
+colors = ['red', 'cyan', 'magenta', 'yellow', 'black', 'orange', 'brown', 'pink']
+
 # Plots!!!
 for i in range(0,num_importance_categories):
-  pl.plot(range(tstart,tend), variance_fractions[i,:], label=cat_labels[i])
+  pl.plot(range(tstart,tend), variance_fractions[i,:], colors[i], label=cat_labels[i])
 
 pl.legend()
 pl.show()
