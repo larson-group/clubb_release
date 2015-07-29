@@ -39,7 +39,7 @@ plot_sup_title = ''
 output_file = 'out.svg'
 
 num_pts_for_timeseries = '16'
-num_pts_for_profiles = '16'
+num_pts_for_profiles = '32'
 
 #-------------------------------------------------------------------------
 
