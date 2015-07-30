@@ -71,9 +71,10 @@ module parameters_silhs
   !$omp threadprivate( eight_cluster_presc_probs )
 
   logical, public :: &
-    l_lh_limit_weights = .false.              ! Limit SILHS sample point weights for stability
+    l_lh_limit_weights = .false., &           ! Limit SILHS sample point weights for stability
+    l_lh_var_frac      = .false.              ! Prescribe variance fractions
 
-  !$omp threadprivate( l_lh_limit_weights )
+  !$omp threadprivate( l_lh_limit_weights, l_lh_var_frac )
 
   real( kind = core_rknd ), public :: &
     importance_prob_thresh = 5.0e-3_core_rknd ! Minimum PDF probability of category for importance

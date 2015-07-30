@@ -17,9 +17,12 @@ for i in range(1,num_importance_categories+1):
 k_lh_start = sfc_nc.variables['k_lh_start']
 
 tstart = 0
-tend   = 4320
+tend   = 864
 
 variance_fractions = np.zeros((num_importance_categories,tend-tstart))
+averages = np.zeros(num_importance_categories)
+
+n_timesteps = [0] * num_importance_categories
 
 for t in range(tstart,tend):
 
@@ -29,16 +32,30 @@ for t in range(tstart,tend):
   # Find the total variance
   total_variance = 0.0
   for i in range(0,num_importance_categories):
-    total_variance = total_variance + silhs_var_cat[i][t,k,0,0]
+    varnce = silhs_var_cat[i][t,k,0,0]
+    if varnce >= 0.0:
+      total_variance = total_variance + varnce
 
   # Determine variance in each category as a fraction
   if (total_variance > 0.0):
     for i in range(0,num_importance_categories):
-      variance_fractions[i,t-tstart] = silhs_var_cat[i][t,k,0,0] / total_variance
+      varnce = silhs_var_cat[i][t,k,0,0]
+      if varnce >= 0.0:
+        f = varnce / total_variance
+        averages[i] = averages[i] + f
+        n_timesteps[i] += 1
+      else:
+        f = 0.0
+      variance_fractions[i,t-tstart] = f
+
+averages = np.divide(averages, n_timesteps)
+print(averages)
+
+colors = ['red', 'cyan', 'magenta', 'yellow', 'black', 'orange', 'brown', 'pink']
 
 # Plots!!!
 for i in range(0,num_importance_categories):
-  pl.plot(range(tstart,tend), variance_fractions[i,:], label=cat_labels[i])
+  pl.plot(range(tstart,tend), variance_fractions[i,:], colors[i], label=cat_labels[i])
 
 pl.legend()
 pl.show()

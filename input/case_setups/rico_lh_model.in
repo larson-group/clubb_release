@@ -61,7 +61,7 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 60.0   ! Model timestep [s]
+dt_main    = 300.0   ! Model timestep [s]
 dt_rad = 300.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
@@ -99,9 +99,9 @@ uv_sponge_damp_settings%tau_sponge_damp_max = 1800.
 uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
-! Path (from ..) and filename of GrADS control files
+! Path (from ../run_scripts/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
-restart_path_case  = "restart/rico"
+restart_path_case  = "restart/rico_lh"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
@@ -146,6 +146,7 @@ l_calc_w_corr = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "khairoutdinov_kogan"
+l_fix_chi_eta_correlations = .false.
 
 hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
@@ -153,12 +154,11 @@ Ncnp2_on_Ncnm2                               = 2.2
 
 Nc0_in_cloud  = 70.e6 ! num/m^3
 l_const_Nc_in_cloud = .true.
-l_var_covar_src = .false.
+l_var_covar_src = .true.
 
 ! Addition for using SILHS
 lh_microphys_type = "interactive"
 l_local_kk = .true.,
-l_fix_chi_eta_correlations = .true.,
 l_lh_importance_sampling = .true.,
 lh_num_samples = 8  ! A reasonable default
 lh_sequence_length = 1
@@ -174,14 +174,14 @@ l_calc_thlp2_rad = .false.,
 
 ! Statistics Settings
 
-l_stats      = .true.    ! Flag for statistical output.
-fname_prefix = "rico_lh" ! Prefix of output filename.
-stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
-                         ! For most complete sampling, let 
-                         ! stats_tsamp = dt_main
-                         ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 60.       ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
+l_stats      = .true.   ! Flag for statistical output.
+fname_prefix = "rico_lh"   ! Prefix of output filename.
+stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
+                        ! For most complete sampling, let 
+                        ! stats_tsamp = dt_main
+                        ! (stats_tsamp must multiply evenly into stats_tout)
+stats_tout   = 300.     ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
 

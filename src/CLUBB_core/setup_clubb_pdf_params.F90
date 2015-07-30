@@ -422,10 +422,11 @@ module setup_clubb_pdf_params
           precip_frac = hydromet_pdf_params%precip_frac
        endif ! l_input_fields .and. l_input_precip_frac
 
-       call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &
-                             ice_supersat_frac, ice_supersat_frac_1, &
-                             mixt_frac, l_stats_samp, &
-                             l_input_fields, l_input_precip_frac, &
+       call precip_fraction( nz, hydromet, cloud_frac, cloud_frac_1, &    ! In
+                             cloud_frac_2, ice_supersat_frac, &           ! In
+                             ice_supersat_frac_1, ice_supersat_frac_2, &  ! In
+                             mixt_frac, l_stats_samp, &                   ! In
+                             l_input_fields, l_input_precip_frac, &       ! In
                              precip_frac, precip_frac_1, precip_frac_2, &
                              precip_frac_tol )
 
