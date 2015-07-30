@@ -50,10 +50,10 @@ plot_timeseries_n_dir_all()
     shift
 
     if [[ $case_name == "rico_lh" ]]; then
-        time1=840
+        time1=664
         time2=864
     else
-        time1=240
+        time1=160
         time2=360
     fi
 
