@@ -38,7 +38,7 @@ plot_sup_title = ''
 
 output_file = 'out.svg'
 
-num_pts_for_timeseries = '16'
+num_pts_for_timeseries = '32'
 num_pts_for_profiles = '32'
 
 #-------------------------------------------------------------------------
@@ -156,14 +156,6 @@ for plot_num in range(4):
 
     pl.subplot(2, 2, plot_num+1)
 
-    # Plot analytic line
-    if mode == 2:
-        line, = pl.plot(np.average(clubb_var[time1:time2,altlow:althigh], axis=0), \
-                    altitude[altlow:althigh], 'k-', linewidth=2)
-        if plot_num == 0:
-            lines.append(line)
-            dir_names.insert(0, 'analytic')
-
     for d_i in range(len(silhs_dirs)):
         format_str = ''
         if os.path.basename(silhs_dirs[d_i]) == 'LH-only':
@@ -173,7 +165,7 @@ for plot_num in range(4):
         elif os.path.basename(silhs_dirs[d_i]) == '2Cat-CldPcp':
             format_str = 'r*-'
         elif os.path.basename(silhs_dirs[d_i]) == '8Cat':
-            format_str = 'c:'
+            format_str = 'c^-'
         markerSize = 3
         if mode == 1:
             line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str, \
@@ -187,6 +179,30 @@ for plot_num in range(4):
                     altitude[altlow:althigh], format_str, markersize=markerSize)
         if plot_num == 0:
             lines.append(line)
+
+    # Plot analytic line for profile plot only
+    if mode == 2:
+        line, = pl.plot(np.average(clubb_var[time1:time2,altlow:althigh], axis=0), \
+                    altitude[altlow:althigh], 'k-', linewidth=2)
+        if plot_num == 0:
+            lines.append(line)
+            dir_names.append('analytic')
+
+    # For profile plots, make an axis adjustment so that zero is not the minimum
+    # or maximum x limit.
+    if mode == 2:
+        v = pl.axis()
+        xmin = v[0]
+        xmax = v[1]
+        if xmin == 0 or xmax == 0:
+            current_range = abs(xmin-xmax)
+            added_range = 0.1 * current_range
+            if xmin == 0:
+                xmin -= added_range
+            elif xmax == 0:
+                xmax += added_range
+        vn = [xmin, xmax, v[2], v[3]]
+        pl.axis(vn)
 
     if plot_num >= 2:
         if mode == 1:

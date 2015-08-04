@@ -14,150 +14,150 @@
     [
        {'plotTitle' => 'HL 3D SAM Benchmark Budgets', 'axisLabel' => 'HL [K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T\_TNDCY', 'expression' => 'T_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '((HLSTOR/86400) + ((-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND) - T_TNDCY))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLADV', 'expression' => 'HLADV/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLDIFF', 'expression' => 'HLDIFF/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLRAD', 'expression' => 'HLRAD/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLLAT', 'expression' => 'HLLAT/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TTEND', 'expression' => 'TTEND/86400.', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T\_TNDCY', 'expression' => 'T_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HLSTOR', 'expression' => 'HLSTOR/86400', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'HL\_RES', 'expression' => '((HLSTOR/86400) + ((-1/86400.)*(HLADV+HLDIFF+HLRAD+HLLAT+TTEND) - T_TNDCY))', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
        {'plotTitle' => 'QTO 3D SAM Benchmark Budgets', 'axisLabel' => 'QTO [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QV\_TNDCY', 'expression' => 'QV_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QC\_TNDCY', 'expression' => 'QC_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR/(1000.*86400)) + ((-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND) - QV_TNDCY - QC_TNDCY)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOADV', 'expression' => 'QTOADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTODIFF', 'expression' => 'QTODIFF/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOLSADV', 'expression' => 'QTOLSADV/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOMPHY', 'expression' => 'QTOMPHY/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOSED', 'expression' => 'QTOSED/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTEND', 'expression' => 'QTEND/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTSTOR', 'expression' => 'QTSTOR/(1000.*86400)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QV\_TNDCY', 'expression' => 'QV_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QC\_TNDCY', 'expression' => 'QC_TNDCY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTO\_RES', 'expression' => '(QTSTOR/(1000.*86400)) + ((-1/(1000.*86400))*(QTOADV+QTODIFF+QTOLSADV+QTOMPHY+QTOSED+QTEND) - QV_TNDCY - QC_TNDCY)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
       ]},
 
        {'plotTitle' => 'TW SAM 3D Benchmark Budgets', 'axisLabel' => 'TW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWADV', 'expression' => 'TWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWDIFF', 'expression' => 'TWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWB+P', 'expression' => 'TWBUOY + TWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWPREC', 'expression' => 'TWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWRAD', 'expression' => 'TWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWFORC', 'expression' => 'TWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWBT', 'expression' => 'TWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWGRAD', 'expression' => 'TWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWADV', 'expression' => 'TWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWDIFF', 'expression' => 'TWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWB+P', 'expression' => 'TWBUOY + TWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWPREC', 'expression' => 'TWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWRAD', 'expression' => 'TWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWFORC', 'expression' => 'TWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TWBT', 'expression' => 'TWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'TW\_RES', 'expression' => 'TWBT - (TWGRAD + TWADV + TWDIFF + TWBUOY + TWPRES + TWPREC + TWRAD + TWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'THLW SAM 3D Benchmark Budgets', 'axisLabel' => 'THLW [(m K)/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWGRAD', 'expression' => 'THLWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWADV', 'expression' => 'THLWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWDIFF', 'expression' => 'THLWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWB+P', 'expression' => 'THLWBUOY + THLWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWPREC', 'expression' => 'THLWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWRAD', 'expression' => 'THLWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWFORC', 'expression' => 'THLWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWBT', 'expression' => 'THLWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLW\_RES', 'expression' => 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWGRAD', 'expression' => 'THLWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWADV', 'expression' => 'THLWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWDIFF', 'expression' => 'THLWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWB+P', 'expression' => 'THLWBUOY + THLWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWPREC', 'expression' => 'THLWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWRAD', 'expression' => 'THLWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWFORC', 'expression' => 'THLWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLWBT', 'expression' => 'THLWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THLW\_RES', 'expression' => 'THLWBT - (THLWGRAD + THLWADV + THLWDIFF + THLWBUOY + THLWPRES + THLWPREC + THLWRAD + THLWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QW SAM 3D Benchmark Budgets', 'axisLabel' => 'QW [(kg/kg)m/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWFORC', 'expression' => 'QWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWBT', 'expression' => 'QWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWGRAD', 'expression' => 'QWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWADV', 'expression' => 'QWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWDIFF', 'expression' => 'QWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWB+P', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWPREC', 'expression' => 'QWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWFORC', 'expression' => 'QWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QWBT', 'expression' => 'QWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QW\_RES', 'expression' => 'QWBT - (QWGRAD + QWADV + QWDIFF + QWBUOY + QWPRES + QWPREC + QWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTOGW SAM 3D Benchmark Budgets', 'axisLabel' => 'QTOGW [(kg/kg)m/s^2]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWGRAD', 'expression' => 'QTOGWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWADV', 'expression' => 'QTOGWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWDIFF', 'expression' => 'QTOGWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-	  {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWB+P', 'expression' => 'QTOGWBUOY + QTOGWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWPREC', 'expression' => 'QTOGWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWFORC', 'expression' => 'QTOGWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWBT', 'expression' => 'QTOGWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGW\_RES', 'expression' => 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWGRAD', 'expression' => 'QTOGWGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWADV', 'expression' => 'QTOGWADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWDIFF', 'expression' => 'QTOGWDIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWB+P', 'expression' => 'QTOGWBUOY + QTOGWPRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWPREC', 'expression' => 'QTOGWPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWFORC', 'expression' => 'QTOGWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGWBT', 'expression' => 'QTOGWBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOGW\_RES', 'expression' => 'QTOGWBT - (QTOGWGRAD + QTOGWADV + QTOGWDIFF + QTOGWBUOY + QTOGWPRES + QTOGWPREC + QTOGWFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'W2 SAM 3D Benchmark Budgets', 'axisLabel' => 'W2 [m^2/s^3]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2ADV', 'expression' => 'W2ADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2PRES', 'expression' => 'W2PRES', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2REDIS', 'expression' => 'W2REDIS', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2BUOY', 'expression' => 'W2BUOY', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2DIFF', 'expression' => 'W2DIFF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'W2\_RES', 'expression' => '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'T2 3D SAM Benchmark Budgets', 'axisLabel' => 'T2 [K^2/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2ADVTR', 'expression' => 'T2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2GRAD', 'expression' => 'T2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2DISSIP', 'expression' => 'T2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2DIFTR', 'expression' => 'T2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2PREC', 'expression' => 'T2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2RAD', 'expression' => 'T2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2FORC', 'expression' => 'T2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2BT', 'expression' => 'T2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => 'T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2ADVTR', 'expression' => 'T2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2GRAD', 'expression' => 'T2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2DISSIP', 'expression' => 'T2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2DIFTR', 'expression' => 'T2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2PREC', 'expression' => 'T2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2RAD', 'expression' => 'T2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2FORC', 'expression' => 'T2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2BT', 'expression' => 'T2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'T2\_RES', 'expression' => 'T2BT - (T2ADVTR + T2GRAD + T2DISSIP + T2DIFTR + T2PREC + T2RAD + T2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'THL2 3D SAM Benchmark Budgets', 'axisLabel' => 'THL2 [K^2/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2ADVTR', 'expression' => 'THL2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2GRAD', 'expression' => 'THL2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2DISSIP', 'expression' => 'THL2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2DIFTR', 'expression' => 'THL2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2PREC', 'expression' => 'THL2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2RAD', 'expression' => 'THL2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2FORC', 'expression' => 'THL2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2BT', 'expression' => 'THL2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2\_RES', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2ADVTR', 'expression' => 'THL2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2GRAD', 'expression' => 'THL2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2DISSIP', 'expression' => 'THL2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2DIFTR', 'expression' => 'THL2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2PREC', 'expression' => 'THL2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2RAD', 'expression' => 'THL2RAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2FORC', 'expression' => 'THL2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2BT', 'expression' => 'THL2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'THL2\_RES', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'Q2 3D SAM Benchmark Budgets', 'axisLabel' => 'Q2 [(kg/kg)^2/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2ADVTR', 'expression' => 'Q2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2GRAD', 'expression' => 'Q2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2DISSIP', 'expression' => 'Q2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2DIFTR', 'expression' => 'Q2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2PREC', 'expression' => 'Q2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2FORC', 'expression' => 'Q2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2BT', 'expression' => 'Q2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2ADVTR', 'expression' => 'Q2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2GRAD', 'expression' => 'Q2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2DISSIP', 'expression' => 'Q2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2DIFTR', 'expression' => 'Q2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2PREC', 'expression' => 'Q2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2FORC', 'expression' => 'Q2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2BT', 'expression' => 'Q2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'Q2\_RES', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTOG2 3D SAM Benchmark Budgets', 'axisLabel' => 'QTOG2 [(kg/kg)^2/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2ADVTR', 'expression' => 'QTOG2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2GRAD', 'expression' => 'QTOG2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2DISSIP', 'expression' => 'QTOG2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2DIFTR', 'expression' => 'QTOG2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2PREC', 'expression' => 'QTOG2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2FORC', 'expression' => 'QTOG2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2BT', 'expression' => 'QTOG2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2\_RES', 'expression' => 'QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2ADVTR', 'expression' => 'QTOG2ADVTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2GRAD', 'expression' => 'QTOG2GRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2DISSIP', 'expression' => 'QTOG2DISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2DIFTR', 'expression' => 'QTOG2DIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2PREC', 'expression' => 'QTOG2PREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2FORC', 'expression' => 'QTOG2FORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2BT', 'expression' => 'QTOG2BT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTOG2\_RES', 'expression' => 'QTOG2BT - (QTOG2ADVTR + QTOG2GRAD + QTOG2DISSIP + QTOG2DIFTR + QTOG2PREC + QTOG2FORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
 
        {'plotTitle' => 'QTHL 3D SAM Benchmark Budgets', 'axisLabel' => 'QTHL [(kg/kg)K/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLADV', 'expression' => 'QTHLADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLGRAD', 'expression' => 'QTHLGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLDISSIP', 'expression' => 'QTHLDISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLDIFTR', 'expression' => 'QTHLDIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLPREC', 'expression' => 'QTHLPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLRAD', 'expression' => 'QTHLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLFORC', 'expression' => 'QTHLFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLBT', 'expression' => 'QTHLBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'RICO_128x128x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHL\_RES', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLADV', 'expression' => 'QTHLADV', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLGRAD', 'expression' => 'QTHLGRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLDISSIP', 'expression' => 'QTHLDISSIP', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLDIFTR', 'expression' => 'QTHLDIFTR', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLPREC', 'expression' => 'QTHLPREC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLRAD', 'expression' => 'QTHLRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLFORC', 'expression' => 'QTHLFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHLBT', 'expression' => 'QTHLBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'QTHL\_RES', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]}
     ],
     'nightlyOutput' =>
