@@ -249,8 +249,12 @@ module silhs_category_variance_module
       root_weight_mean_sq_cat(k,:) = root_weight_mean_sq_cat(k,:) / &
                                      real( num_samples, kind=core_rknd )
 
-      root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) * &
-                                           category_real_probs(:) )
+      where ( category_real_probs > zero )
+        root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) / &
+                                             category_real_probs(:) )
+      else where
+        root_weight_mean_sq_cat(k,:) = -999._core_rknd
+      end where
 
     end do ! k=2, nz
 
