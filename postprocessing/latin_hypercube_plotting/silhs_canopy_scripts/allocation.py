@@ -18,7 +18,7 @@ for i in range(8):
     samp_frac_var = netCDF4.Dataset(silhs_dir+'/silhs_256_1/rico_lh_lh_zt.nc') \
                     .variables['lh_samp_frac_'+str(i+1)][:,:,0,0]
     for t in range(0,n_timesteps):
-        samp_fracs[t,i] = samp_frac_var[t,k_lh_start[t]]
+        samp_fracs[t,i] = samp_frac_var[t,int(k_lh_start[t])-1]
 
 if not l_plot:
     samp_fracs_time_avg = numpy.average(samp_fracs, axis=0)
