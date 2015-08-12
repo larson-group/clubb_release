@@ -223,6 +223,7 @@ module latin_hypercube_driver_module
     end do ! k = 1 .. nz
 
     call stats_accumulate_uniform_lh( nz, num_samples, l_in_precip, X_mixt_comp_all_levs, &
+                                      X_u_all_levs(:,:,iiPDF_chi), pdf_params, &
                                       lh_sample_point_weights, k_lh_start )
 
     ! Check to ensure uniform variates are in the appropriate range
@@ -2004,7 +2005,7 @@ module latin_hypercube_driver_module
 
   !-----------------------------------------------------------------------
   subroutine stats_accumulate_uniform_lh( nz, num_samples, l_in_precip_all_levs, &
-                                          X_mixt_comp_all_levs, &
+                                          X_mixt_comp_all_levs, X_u_chi_all_levs, pdf_params, &
                                           lh_sample_point_weights, k_lh_start )
 
   ! Description:
@@ -2029,6 +2030,7 @@ module latin_hypercube_driver_module
       ilh_precip_frac_unweighted, &
       ilh_mixt_frac_unweighted, &
       ik_lh_start, &
+      ilh_samp_frac_category, &
       stats_lh_zt, &
       stats_lh_sfc
 
@@ -2036,7 +2038,16 @@ module latin_hypercube_driver_module
       compute_sample_mean ! Procedure
 
     use constants_clubb, only: &
-      one                 ! Constant
+      one, &              ! Constant(s)
+      zero
+
+    use pdf_parameter_module, only: &
+      pdf_parameter       ! Type
+
+    use silhs_importance_sample_module, only: &
+      importance_category_type, &  ! Type
+      num_importance_categories, & ! Constant
+      define_importance_categories
 
     implicit none
 
@@ -2052,7 +2063,13 @@ module latin_hypercube_driver_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Integers indicating which mixture component a
                            ! sample is in at a given height level
-    
+
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      X_u_chi_all_levs     ! Uniform value of chi
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params           ! The official PDF parameters!
+
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       lh_sample_point_weights ! The weight of each sample
 
@@ -2061,6 +2078,9 @@ module latin_hypercube_driver_module
                            ! cloud
 
     ! Local Variables
+    type(importance_category_type), dimension(num_importance_categories) :: &
+      importance_categories
+
     real( kind = core_rknd ), dimension(nz) :: &
       lh_precip_frac, &
       lh_mixt_frac
@@ -2072,6 +2092,20 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(num_samples) :: &
       one_weights
 
+    real( kind = core_rknd ), dimension(nz,num_importance_categories) :: &
+      lh_samp_frac
+
+    real( kind = core_rknd ) :: &
+      cloud_frac_i
+
+    logical :: &
+      l_in_cloud, &
+      l_in_comp_1
+
+    integer, dimension(num_importance_categories) :: &
+      category_counts  ! Count of number of samples in each importance category
+
+    integer :: k, isample, icategory
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
@@ -2130,6 +2164,58 @@ module latin_hypercube_driver_module
       ! as an integer, but as far as I can tell our current sampling
       ! infrastructure mainly supports sampling real numbers.
       call stat_update_var_pt( ik_lh_start, 1, real( k_lh_start, kind=core_rknd ), stats_lh_sfc )
+
+      if ( allocated( ilh_samp_frac_category ) ) then
+        if ( ilh_samp_frac_category(1) > 0 ) then
+
+          importance_categories = define_importance_categories( )
+
+          do k=1, nz
+            category_counts(:) = 0
+
+            do isample=1, num_samples
+
+              if ( X_mixt_comp_all_levs(k,isample) == 1 ) then
+                l_in_comp_1 = .true.
+                cloud_frac_i = pdf_params(k)%cloud_frac_1
+              else
+                l_in_comp_1 = .false.
+                cloud_frac_i = pdf_params(k)%cloud_frac_2
+              end if
+
+              l_in_cloud = X_u_chi_all_levs(k,isample) > (one - cloud_frac_i)
+
+              do icategory=1, num_importance_categories
+                if ( (l_in_cloud .eqv. importance_categories(icategory)%l_in_cloud) .and. &
+                     (l_in_precip_all_levs(k,isample) .eqv. importance_categories(icategory)%&
+                                                           l_in_precip) .and. &
+                     (l_in_comp_1 .eqv. importance_categories(icategory)%l_in_component_1) ) then
+
+                  category_counts(icategory) = category_counts(icategory) + 1
+                  exit
+
+                end if
+              end do
+
+            end do ! isample=1, num_samples
+
+            do icategory=1, num_importance_categories
+              lh_samp_frac(k,icategory) = real( category_counts(icategory), kind=core_rknd ) / &
+                                          real( num_samples, kind=core_rknd )
+            end do
+
+          end do ! k=2, nz
+
+          ! Microphysics is not run at lower level
+          lh_samp_frac(1,:) = zero
+
+          do icategory=1, num_importance_categories
+            call stat_update_var( ilh_samp_frac_category(icategory), lh_samp_frac(:,icategory), &
+                                  stats_lh_zt )
+          end do ! icategory=1, num_importance_categories
+
+        end if ! ilh_samp_frac_category(1) > 0
+      end if ! allocated( ilh_samp_frac_category )
 
     end if ! l_stats_samp
 

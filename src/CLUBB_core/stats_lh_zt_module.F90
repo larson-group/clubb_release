@@ -109,7 +109,8 @@ module stats_lh_zt_module
       ilh_m_vol_rad_rain
 
     use stats_variables, only: &
-      isilhs_variance_category ! Variable
+      isilhs_variance_category, & ! Variable
+      ilh_samp_frac_category
 
     use stats_type_utilities, only: & 
       stat_assign ! Procedure
@@ -139,8 +140,10 @@ module stats_lh_zt_module
     ! Default initialization for array indices for stats_lh_zt is zero (see module
     ! stats_variables)
 
-    allocate( isilhs_variance_category(silhs_num_importance_categories) )
+    allocate( isilhs_variance_category(silhs_num_importance_categories), &
+              ilh_samp_frac_category(silhs_num_importance_categories) )
     isilhs_variance_category(:) = 0
+    ilh_samp_frac_category(:) = 0
 
     ! Assign pointers for statistics variables stats_zt
 
@@ -151,6 +154,14 @@ module stats_lh_zt_module
        ! Subtract 1 from the loop size for each SILHS importance category.
        tot_loops = tot_loops - silhs_num_importance_categories
        ! Add 1 for "silhs_variance_category" to the loop size.
+       tot_loops = tot_loops + 1
+    end if
+
+    if ( any( vars_lh_zt == "lh_samp_frac_category" ) ) then
+       ! Correct for number of variables found under "lh_samp_frac_category".
+       ! Subtract 1 from the loop size for each SILHS importance category.
+       tot_loops = tot_loops - silhs_num_importance_categories
+       ! Add 1 for "lh_samp_frac_category" to the loop size.
        tot_loops = tot_loops + 1
     end if
 
@@ -654,6 +665,21 @@ module stats_lh_zt_module
                var_name="silhs_var_cat_"//category_num_as_string, &
                var_description="Variance of SILHS variable in importance category " // &
                category_num_as_string, var_units="various", l_silhs=.false., grid_kind=stats_lh_zt )
+          k = k + 1
+
+        end do
+
+      case ( 'lh_samp_frac_category' )
+
+        do icategory=1, silhs_num_importance_categories
+
+          ilh_samp_frac_category(icategory) = k
+          write(category_num_as_string,'(I1)') icategory
+          call stat_assign( var_index=ilh_samp_frac_category(icategory), &
+               var_name="lh_samp_frac_"//category_num_as_string, &
+               var_description="Number of samples in importance category " // &
+               category_num_as_string // " [-]", var_units="-", l_silhs=.false., &
+               grid_kind=stats_lh_zt )
           k = k + 1
 
         end do

@@ -806,7 +806,15 @@ module stats_clubb_utilities
         ntot = ntot - 1
         ! Add 1 for each SILHS category to the number of lh_zt statistical variables
         ntot = ntot + silhs_num_importance_categories
+      end if
 
+      if ( any( vars_lh_zt == "lh_samp_frac_category" ) ) then
+        ! Correct for number of variables found under "lh_samp_frac_category".
+        ! Subtract "lh_samp_frac_category" from the number of lh_zt statistical
+        ! variables.
+        ntot = ntot - 1
+        ! Add 1 for each SILHS category to the number of lh_zt statistical variables
+        ntot = ntot + silhs_num_importance_categories
       end if
 
       if ( ntot == nvarmax_lh_zt ) then
