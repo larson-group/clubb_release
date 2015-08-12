@@ -6,7 +6,7 @@
 
 vars_zt = 'rrm_mc', 'rrm_auto', 'rrm_accr', 'rrm_cond', 'Nrm_auto', 'Nrm_cond', 'rrm_mc_nonadj', ''
 
-vars_lh_zt = 'lh_rrm_mc', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj', ''
+vars_lh_zt = 'lh_rrm_mc', 'lh_rrm_auto', 'lh_rrm_accr', 'lh_rrm_evap', 'lh_rrm_mc_nonadj', 'lh_samp_frac_category', ''
 
 vars_lh_sfc = 'k_lh_start', ''
 
