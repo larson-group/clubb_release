@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 
 silhs_dir = sys.argv[1]
 
+l_print = True
 l_plot = True
 
 k_lh_start = netCDF4.Dataset(silhs_dir+'/silhs_256_1/rico_lh_lh_sfc.nc') \
@@ -20,11 +21,11 @@ for i in range(8):
     for t in range(0,n_timesteps):
         samp_fracs[t,i] = samp_frac_var[t,int(k_lh_start[t])-1]
 
-if not l_plot:
+if l_print:
     samp_fracs_time_avg = numpy.average(samp_fracs, axis=0)
     for i in range(8):
-        print(str(i+1) + ": " + str(samp_fracs_time_avg[i]))
-else:
+        print(samp_fracs_time_avg[i])
+if l_plot:
     labels = ['c_p_1', 'c_p_2', 'nc_p_1', 'nc_p_2', 'c_np_1', 'c_np_2', 'nc_np_1', 'nc_np_2']
     colors = ['red', 'cyan', 'magenta', 'yellow', 'black', 'orange', 'brown', 'pink']
     for i in range(8):
