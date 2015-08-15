@@ -1,0 +1,5 @@
+The results of the flexible importance sampling paper can be reproduced by following these steps:
+
+1. Compile CLUBB by running the script compile/compile.bash
+2. Run the plot generating script postprocessing/latin_hypercube_plotting/flex_importance_paper_scripts/main.sh
+3. The plots used for the paper will be in the directory postprocessing/latin_hypercube_plotting/flex_importance_paper_scripts/plots_output. The binary output files from all the simulations will be in the directory postprocessing/latin_hypercube_plotting/flex_importance_paper_scripts/sim_output. The figures are named, e.g., "rico_lh_rms" for the RICO RMS plot.
