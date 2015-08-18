@@ -111,11 +111,11 @@ module silhs_category_variance_module
 
       samples_all = X_nl_all_levs(:,:,iiPDF_chi)
 
-    else if ( .false. ) then
+    else if ( .true. ) then
 
       samples_all = lh_hydromet_mc_all(:,:,iirrm) ! Sample rrm_mc
 
-    else ! .true.
+    else ! .false.
       istat_var = irrm_mc_nonadj
       structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
       do isample=1, num_samples
