@@ -348,7 +348,7 @@ then
 			;;
 		* )
 			case $run_case in 
-				mc3e | rico | astex_a209 | gabls3_night | cgils* )
+				mc3e | rico | rico_lh | astex_a209 | gabls3_night | cgils* )
 					# This was added because RICO uses a 300 s timestep
 					# and cannot be run with stats_tout = 60.
 					cat $parameter_file > $NAMELISTS
