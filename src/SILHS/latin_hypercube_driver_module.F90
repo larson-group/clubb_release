@@ -966,7 +966,7 @@ module latin_hypercube_driver_module
       l_error          ! True if the assertion check fails
 
     ! Local Variables
-    real( kind = core_rknd ) :: cloud_boundary, cloud_boundary_std_normal, one_minus_ltqnorm_arg
+    real( kind = core_rknd ) :: chi, chi_std_normal, one_minus_ltqnorm_arg
 
   !-----------------------------------------------------------------------
 
@@ -983,10 +983,11 @@ module latin_hypercube_driver_module
         one_minus_ltqnorm_arg = one - ltqnorm_min_arg
       end if
 
-      cloud_boundary_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
-      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
-      if ( cloud_boundary <= zero ) then
+      chi_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
+      chi = chi_std_normal * sigma_chi_i + mu_chi_i
+      if ( chi <= zero ) then
         l_error = .true.
+        write(fstderr,*) 'chi (left side of box) = ', chi
       end if
     end if ! one_minus_ltqnorm_arg >= ltqnorm_min_arg
 
@@ -1000,10 +1001,11 @@ module latin_hypercube_driver_module
         one_minus_ltqnorm_arg = ltqnorm_min_arg
       end if
 
-      cloud_boundary_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
-      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
-      if ( cloud_boundary > zero ) then
+      chi_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
+      chi = chi_std_normal * sigma_chi_i + mu_chi_i
+      if ( chi > zero ) then
         l_error = .true.
+        write(fstderr,*) 'chi (right side of box) = ', chi
       end if
     end if ! one_minus_ltqnorm_arg >= ltqnorm_min_arg
 
@@ -1013,7 +1015,6 @@ module latin_hypercube_driver_module
       write(fstderr,*) "mu_chi_i = ", mu_chi_i
       write(fstderr,*) "sigma_chi_i = ", sigma_chi_i
       write(fstderr,*) "cloud_frac_i = ", cloud_frac_i
-      write(fstderr,*) "cloud_boundary = ", cloud_boundary
     end if
 
     return
