@@ -946,7 +946,14 @@ module latin_hypercube_driver_module
 
     ! Local Constants
     real( kind = core_rknd ), parameter :: &
-      cloud_frac_min = 1.0e-5_core_rknd
+      ! Values below ltqnorm_min_arg (or above 1-ltqnorm_min_arg) will not be
+      ! supplied as arguments to the ltqnorm function.
+      ltqnorm_min_arg = 1.0e-5_core_rknd, &
+      ! It will be verified that all values of the chi uniform variate will not
+      ! trigger the in/out of cloud assertion error, except for those values
+      ! within a box with the following half-width, centered around the cloud
+      ! fraction in this component.
+      box_half_width = 5.0e-6_core_rknd
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -959,45 +966,46 @@ module latin_hypercube_driver_module
       l_error          ! True if the assertion check fails
 
     ! Local Variables
-    real( kind = core_rknd ) :: cloud_boundary, cloud_boundary_std_normal, boundary_tol
+    real( kind = core_rknd ) :: cloud_boundary, cloud_boundary_std_normal, one_minus_ltqnorm_arg
 
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
     l_error = .false.
 
-    ! This value of boundary_tol seems to work.
-    boundary_tol = 0.1_core_rknd * sigma_chi_i
+    ! Check left end of box.
+    one_minus_ltqnorm_arg = cloud_frac_i - box_half_width
+    ! Do not bother to check this end of the box if it dips below the minimum
+    ! ltqnorm argument.
+    if ( one_minus_ltqnorm_arg >= ltqnorm_min_arg ) then
 
-    ! We need to handle the special cases where cloud_frac_i is either very large or very small.
-    if ( cloud_frac_i < cloud_frac_min ) then
-      ! Special case #1
-      cloud_boundary_std_normal = ltqnorm( one - (cloud_frac_min + epsilon( cloud_frac_min )) )
-      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
-      if ( cloud_boundary > boundary_tol ) then
-        l_error = .true.
-      end if
-    else if ( cloud_frac_i > ( one - cloud_frac_min ) ) then
-      ! Special case #2
-      cloud_boundary_std_normal = ltqnorm( one - (one - ( cloud_frac_min + &
-        epsilon( cloud_frac_min ) )) )
-      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
-      if ( cloud_boundary < -boundary_tol ) then
-        l_error = .true.
+      if ( one_minus_ltqnorm_arg > (one - ltqnorm_min_arg) ) then
+        one_minus_ltqnorm_arg = one - ltqnorm_min_arg
       end if
 
-    else if ( cloud_frac_i >= cloud_frac_min .and. &
-              cloud_frac_i <= ( one - cloud_frac_min ) ) then
-      ! Most likely case (hopefully)
-      cloud_boundary_std_normal = ltqnorm( one - cloud_frac_i )
+      cloud_boundary_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
       cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
-
-      if ( abs( cloud_boundary ) > boundary_tol ) then
+      if ( cloud_boundary <= zero ) then
         l_error = .true.
       end if
-    else
-      stop "Should not be here in assert_consistent_cf_component"
-    end if  ! cloud_frac_i < cloud_frac_min
+    end if ! one_minus_ltqnorm_arg >= ltqnorm_min_arg
+
+    ! Check right end of box.
+    one_minus_ltqnorm_arg = cloud_frac_i + box_half_width
+    ! Do not bother to check this end of the box if it exceeds the maximum
+    ! ltqnorm argument
+    if ( one_minus_ltqnorm_arg <= one-ltqnorm_min_arg ) then
+
+      if ( one_minus_ltqnorm_arg < ltqnorm_min_arg ) then
+        one_minus_ltqnorm_arg = ltqnorm_min_arg
+      end if
+
+      cloud_boundary_std_normal = ltqnorm( one - one_minus_ltqnorm_arg )
+      cloud_boundary = cloud_boundary_std_normal * sigma_chi_i + mu_chi_i
+      if ( cloud_boundary > zero ) then
+        l_error = .true.
+      end if
+    end if ! one_minus_ltqnorm_arg >= ltqnorm_min_arg
 
     if ( l_error ) then
       write(fstderr,*) "In assert_consistent_cf_component, cloud_frac_i is inconsistent with &
