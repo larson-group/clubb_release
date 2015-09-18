@@ -9,7 +9,7 @@
 runtype = "dycoms2_rf02" ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax = 148       ! Number of vertical levels.  ! For grid_type = 2.
+nzmax = 97        ! Number of vertical levels.  ! For grid_type = 2.
 !nzmax = 97        ! Number of vertical levels.  ! For grid_type = 3.
 
 grid_type = 2     ! Select grid type:
@@ -33,7 +33,7 @@ zm_top = 1600.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = '../input/grid/dycoms2_rf02_sam_zt_grid.grd'
+zt_grid_fname = '../input/grid/dycoms2_rf02_97lev_grid.grd'
 !zt_grid_fname = ''
 
 ! Stretched grid on momentum levels (grid_type = 3).
@@ -174,7 +174,7 @@ stats_tsamp  = 60.          ! Frequency of statistical sampling [s]
                             ! stats_tsamp = dt_main
                             ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.                ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"            ! Type of statistical output file ("grads" or "netcdf").
+stats_fmt    = "netcdf"           ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
@@ -198,6 +198,8 @@ l_input_wp3 = .true.
 l_input_rtp2 = .true.
 l_input_thlp2 = .true.
 l_input_rtpthlp = .true.
+l_input_rtp3 = .false.
+l_input_thlp3 = .false.
 l_input_upwp = .true.
 l_input_vpwp = .true.
 l_input_up2 = .true.
@@ -207,8 +209,8 @@ l_input_rrm = .true.
 l_input_Nrm = .true.
 l_input_rrp2 = .true.
 l_input_Nrp2 = .true.
-l_input_wprrp = .true.
-l_input_wpNrp = .true.
+l_input_wprrp = .false.
+l_input_wpNrp = .false.
 l_input_precip_frac = .true.
 l_input_rtprrp = .true.
 l_input_rtpNrp = .true.

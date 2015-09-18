@@ -113,7 +113,7 @@ time_restart  = 0.0      ! Time of model restart.
 !        1 => Print lightweight debug messages, e.g. print statements
 !        2 => Print debug messages that require extra testing,
 !                e.g. checks for NaNs and spurious negative values.
-debug_level   = 2
+debug_level   = 0
 
 ! Add scalars that are computed using higher-order closure
 ! 0 to shut off all scalar computations
@@ -136,7 +136,7 @@ iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 l_prescribed_avg_deltaz = .false.
 
-l_input_fields = .false.,
+l_input_fields = .true.,
 /
 
 &gfdl_activation_setting
@@ -154,9 +154,9 @@ l_var_covar_src = .true.
 
 lh_microphys_type = "interactive",
 l_lh_importance_sampling = .true.,
-lh_num_samples = 8,
+lh_num_samples = 128,
 lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+l_fix_chi_eta_correlations = .false.,
 
 hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 5.0
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 2.5
@@ -187,13 +187,13 @@ stats_tsamp  = 60.       ! Frequency of statistical sampling [s]
                          ! stats_tsamp = dt_main
                          ! (stats_tsamp must multiply evenly into stats_tout)
 stats_tout   = 60.       ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"   ! Type of statistical output file ("grads" or "netcdf").
+stats_fmt    = "netcdf"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile      = "../les_data/LBA_128x128x128_100m_noprbuoy.nc"
+datafile      = "../output/LBA_r1662/LBA_128kmx128kmx128_1km_Morrison.nc"
 input_type    = "sam"  ! input_type = "clubb" or "coamps_les"
 l_input_um = .true. 
 l_input_vm = .true.
@@ -213,4 +213,26 @@ l_input_em = .true.
 l_input_p = .true.
 l_input_up2 = .true.
 l_input_vp2 = .true.
+l_input_rrm = .true.
+l_input_Nrm = .true.
+l_input_rim = .true.
+l_input_Nim = .true.
+l_input_rsm = .true.
+l_input_Nsm = .true.
+l_input_rgm = .true.
+l_input_Ngm = .true.
+l_input_rrp2 = .true.
+l_input_Nrp2 = .true.
+l_input_rip2 = .true.
+l_input_Nip2 = .true.
+l_input_rsp2 = .true.
+l_input_Nsp2 = .true.
+l_input_rgp2 = .true.
+l_input_Ngp2 = .true.
+l_input_precip_frac = .true.
+l_input_rtprrp = .true.
+l_input_rtpNrp = .true.
+l_input_thlprrp = .true.
+l_input_thlpNrp = .true.
+l_input_rrpNrp = .true.
 /
