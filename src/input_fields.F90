@@ -43,12 +43,6 @@ module inputfields
     l_input_rsm = .false., l_input_rim = .false., &
     l_input_Nsm = .false., l_input_Ngm = .false., &
     l_input_rgm = .false., l_input_Nccnm = .false., l_input_Nim = .false., &
-    l_input_rrp2 = .false., l_input_Nrp2 = .false., &
-    l_input_wprrp = .false., l_input_wpNrp = .false., &
-    l_input_precip_frac = .false., &
-    l_input_rtprrp = .false., l_input_thlprrp = .false., &
-    l_input_rtpNrp = .false., l_input_thlpNrp = .false., &
-    l_input_rrpNrp = .false., &
     l_input_thlm_forcing = .false., l_input_rtm_forcing = .false., & 
     l_input_up2 = .false., l_input_vp2 = .false., l_input_sigma_sqd_w = .false., & 
     l_input_cloud_frac = .false., l_input_sigma_sqd_w_zt = .false., &
@@ -59,6 +53,17 @@ module inputfields
     l_input_thlprcp = .false., l_input_rcm_mc = .false., l_input_rvm_mc = .false., &
     l_input_thlm_mc = .false., l_input_wprtp_mc = .false., l_input_wpthlp_mc = .false., &
     l_input_rtp2_mc = .false., l_input_thlp2_mc = .false., l_input_rtpthlp_mc = .false.
+
+  logical, public :: &
+    l_input_rrp2 = .false., l_input_Nrp2 = .false., &
+    l_input_rip2 = .false., l_input_Nip2 = .false., &
+    l_input_rsp2 = .false., l_input_Nsp2 = .false., &
+    l_input_rgp2 = .false., l_input_Ngp2 = .false., &
+    l_input_wprrp = .false., l_input_wpNrp = .false., &
+    l_input_precip_frac = .false., &
+    l_input_rtprrp = .false., l_input_thlprrp = .false., &
+    l_input_rtpNrp = .false., l_input_thlpNrp = .false., &
+    l_input_rrpNrp = .false.
 
   integer, parameter, private :: &
     coamps_input_type = 1, &
@@ -77,7 +82,7 @@ module inputfields
     rams_file =1
 
   integer, parameter, private :: &
-    num_sam_inputfields = 76, & ! The number of input fields for SAM
+    num_sam_inputfields = 85, & ! The number of input fields for SAM
     num_coamps = 61, & ! The number of input fields for coamps
     num_rams_inputfields =  4 ! The number of input fields for the RAMS LES case
 
@@ -352,9 +357,11 @@ module inputfields
     real( kind = core_rknd), dimension(gr%nz), target :: &
       temp_Nrm, temp_Ncm, temp_rgm, temp_rim, temp_Ngm, temp_Nsm, &
       temp_rrm, temp_rsm, temp_tke, temp_wpup_sgs, temp_wpvp_sgs, &
-      temp_Nim, temp_rrp2, temp_Nrp2, temp_wprrp, temp_wpNrp, &
-      temp_precip_frac, temp_rtprrp, temp_rtpNrp, temp_thlprrp, &
-      temp_thlpNrp, temp_rrpNrp ! temp. variables
+      temp_Nim, temp_rrp2, temp_Nrp2, temp_rip2, temp_Nip2, temp_rsp2, &
+      temp_Nsp2, temp_rgp2, temp_Ngp2, temp_wprrp, temp_wpNrp, &
+      temp_precip_frac, temp_precip_frac_qr, temp_precip_frac_qi, &
+      temp_precip_frac_qs, temp_precip_frac_qg, temp_rtprrp, temp_rtpNrp, &
+      temp_thlprrp, temp_thlpNrp, temp_rrpNrp, temp_dummy ! temp. variables
 
     type (input_field), dimension(:), allocatable :: &
       SAM_variables, & ! A list of SAM variables to read in.
@@ -1969,9 +1976,17 @@ module inputfields
       temp_rrm = 0.0_core_rknd! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrm
-      SAM_variables(k)%input_name = "RRM"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "RRM"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "QR"
+      endif
       SAM_variables(k)%clubb_var => temp_rrm
-      SAM_variables(k)%adjustment = 1.0_core_rknd
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%adjustment = 1.0e-3_core_rknd
+      endif
       SAM_variables(k)%clubb_grid_type = "zt"
       SAM_variables(k)%input_file_index = sam_file
 
@@ -1982,8 +1997,11 @@ module inputfields
       ! Note that this needs to be adjusted by 1e6/RHO
       ! This will need to be adjusted outside of get_sam_variable_interpolated
       SAM_variables(k)%l_input_var = l_input_Nrm
-      !SAM_variables(k)%input_name = "NR" ! SAM Morrison microphysics
-      SAM_variables(k)%input_name = "NRM" ! SAM KK microphysics
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "NRM"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "NR"
+      endif
       SAM_variables(k)%clubb_var => temp_Nrm
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2084,7 +2102,11 @@ module inputfields
       temp_rrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_rrp2
-      SAM_variables(k)%input_name = "RRP2"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "RRP2"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "rrp2"
+      endif
       SAM_variables(k)%clubb_var => temp_rrp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2095,8 +2117,78 @@ module inputfields
       temp_Nrp2 = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_Nrp2
-      SAM_variables(k)%input_name = "NRP2"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "NRP2"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "Nrp2"
+      endif
       SAM_variables(k)%clubb_var => temp_Nrp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_rip2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_rip2
+      SAM_variables(k)%input_name = "rip2"
+      SAM_variables(k)%clubb_var => temp_rip2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_Nip2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_Nip2
+      SAM_variables(k)%input_name = "Nip2"
+      SAM_variables(k)%clubb_var => temp_Nip2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_rsp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_rsp2
+      SAM_variables(k)%input_name = "rsp2"
+      SAM_variables(k)%clubb_var => temp_rsp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_Nsp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_Nsp2
+      SAM_variables(k)%input_name = "Nsp2"
+      SAM_variables(k)%clubb_var => temp_Nsp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_rgp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_rgp2
+      SAM_variables(k)%input_name = "rgp2"
+      SAM_variables(k)%clubb_var => temp_rgp2
+      SAM_variables(k)%adjustment = 1.0_core_rknd
+      SAM_variables(k)%clubb_grid_type = "zm"
+      SAM_variables(k)%input_file_index = sam_file
+
+      k = k + 1
+
+      temp_Ngp2 = 0.0_core_rknd ! initialize to 0.0
+
+      SAM_variables(k)%l_input_var = l_input_Ngp2
+      SAM_variables(k)%input_name = "Ngp2"
+      SAM_variables(k)%clubb_var => temp_Ngp2
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
       SAM_variables(k)%input_file_index = sam_file
@@ -2106,7 +2198,11 @@ module inputfields
       temp_wprrp = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_wprrp
-      SAM_variables(k)%input_name = "WPRRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "WPRRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_w_rr"
+      endif
       SAM_variables(k)%clubb_var => temp_wprrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2117,7 +2213,11 @@ module inputfields
       temp_wpNrp = 0.0_core_rknd ! initialize to 0.0
 
       SAM_variables(k)%l_input_var = l_input_wpNrp
-      SAM_variables(k)%input_name = "WPNRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "WPNRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_w_Nr"
+      endif
       SAM_variables(k)%clubb_var => temp_wpNrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zm"
@@ -2125,21 +2225,103 @@ module inputfields
 
       k = k + 1
 
-      temp_precip_frac = 0.0_core_rknd
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
 
-      SAM_variables(k)%l_input_var = l_input_precip_frac
-      SAM_variables(k)%input_name = "PREC_FRAC"
-      SAM_variables(k)%clubb_var => temp_precip_frac
-      SAM_variables(k)%adjustment = 1.0_core_rknd
-      SAM_variables(k)%clubb_grid_type = "zt"
-      SAM_variables(k)%input_file_index = sam_file
+         temp_precip_frac = 0.0_core_rknd
 
-      k = k + 1
+         SAM_variables(k)%l_input_var = l_input_precip_frac
+         SAM_variables(k)%input_name = "PREC_FRAC"
+         SAM_variables(k)%clubb_var => temp_precip_frac
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         ! Add 3 empty entries to keep the number of SAM variables consistent.
+         SAM_variables(k)%l_input_var = .false.
+         SAM_variables(k)%input_name = "PREC_FRAC"
+         SAM_variables(k)%clubb_var => temp_dummy
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         SAM_variables(k)%l_input_var = .false.
+         SAM_variables(k)%input_name = "PREC_FRAC"
+         SAM_variables(k)%clubb_var => temp_dummy
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         SAM_variables(k)%l_input_var = .false.
+         SAM_variables(k)%input_name = "PREC_FRAC"
+         SAM_variables(k)%clubb_var => temp_dummy
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+
+         temp_precip_frac_qr = 0.0_core_rknd
+
+         SAM_variables(k)%l_input_var = l_input_precip_frac
+         SAM_variables(k)%input_name = "QRFRAC"
+         SAM_variables(k)%clubb_var => temp_precip_frac_qr
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         temp_precip_frac_qi = 0.0_core_rknd
+
+         SAM_variables(k)%l_input_var = l_input_precip_frac
+         SAM_variables(k)%input_name = "QIFRAC"
+         SAM_variables(k)%clubb_var => temp_precip_frac_qi
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         temp_precip_frac_qs = 0.0_core_rknd
+
+         SAM_variables(k)%l_input_var = l_input_precip_frac
+         SAM_variables(k)%input_name = "QSFRAC"
+         SAM_variables(k)%clubb_var => temp_precip_frac_qs
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+         temp_precip_frac_qg = 0.0_core_rknd
+
+         SAM_variables(k)%l_input_var = l_input_precip_frac
+         SAM_variables(k)%input_name = "QGFRAC"
+         SAM_variables(k)%clubb_var => temp_precip_frac_qg
+         SAM_variables(k)%adjustment = 1.0_core_rknd
+         SAM_variables(k)%clubb_grid_type = "zt"
+         SAM_variables(k)%input_file_index = sam_file
+
+         k = k + 1
+
+      endif
 
       temp_rtprrp = 0.0_core_rknd
 
       SAM_variables(k)%l_input_var = l_input_rtprrp
-      SAM_variables(k)%input_name = "RTPRRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "RTPRRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_rt_rr"
+      endif
       SAM_variables(k)%clubb_var => temp_rtprrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2150,7 +2332,11 @@ module inputfields
       temp_rtpNrp = 0.0_core_rknd
 
       SAM_variables(k)%l_input_var = l_input_rtpNrp
-      SAM_variables(k)%input_name = "RTPNRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "RTPNRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_rt_Nr"
+      endif
       SAM_variables(k)%clubb_var => temp_rtpNrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2161,7 +2347,11 @@ module inputfields
       temp_thlprrp = 0.0_core_rknd
 
       SAM_variables(k)%l_input_var = l_input_thlprrp
-      SAM_variables(k)%input_name = "THLPRRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "THLPRRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_thl_rr"
+      endif
       SAM_variables(k)%clubb_var => temp_thlprrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2172,7 +2362,11 @@ module inputfields
       temp_thlpNrp = 0.0_core_rknd
 
       SAM_variables(k)%l_input_var = l_input_thlpNrp
-      SAM_variables(k)%input_name = "THLPNRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "THLPNRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_thl_Nr"
+      endif
       SAM_variables(k)%clubb_var => temp_thlpNrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2183,7 +2377,11 @@ module inputfields
       temp_rrpNrp = 0.0_core_rknd
 
       SAM_variables(k)%l_input_var = l_input_rrpNrp
-      SAM_variables(k)%input_name = "RRPNRP"
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         SAM_variables(k)%input_name = "RRPNRP"
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         SAM_variables(k)%input_name = "covarnce_rr_Nr"
+      endif
       SAM_variables(k)%clubb_var => temp_rrpNrp
       SAM_variables(k)%adjustment = 1.0_core_rknd
       SAM_variables(k)%clubb_grid_type = "zt"
@@ -2295,29 +2493,30 @@ module inputfields
       ! Perform non-constant adjustments
       do k=k_lowest_zt(sam_file), k_highest_zt(sam_file)
         if(l_input_Nrm) then
-          ! Nrm = NR * (1.0e6 / RHO)
-          !temp_Nrm(k) = temp_Nrm(k) * (1.0e6_core_rknd / rho(k))
-          !temp_Nrm(k) = temp_Nrm(k) * 1.0e6_core_rknd
+          if ( trim( microphys_scheme ) == "morrison" ) then
+             ! Nrm = NR * (1.0e6 / RHO)
+             temp_Nrm(k) = temp_Nrm(k) * ( 1.0e6_core_rknd / rho(k) )
+          endif
         end if
 
         if(l_input_Ncm) then
           ! Ncm = NC * (1.0e6 / RHO)
-          temp_Ncm(k) = temp_Ncm(k) * (1.0e6_core_rknd / rho(k))
+          temp_Ncm(k) = temp_Ncm(k) * ( 1.0e6_core_rknd / rho(k) )
         end if
 
         if(l_input_Nim) then
           ! Nim = NI * (1.0e6 / RHO)
-          temp_Nim(k) = temp_Nim(k) * (1.0e7_core_rknd / rho(k))
+          temp_Nim(k) = temp_Nim(k) * ( 1.0e6_core_rknd / rho(k) )
         end if
 
         if(l_input_Nsm) then
           ! Nsm = NI * (1.0e6 / RHO)
-          temp_Nsm(k) = temp_Nsm(k) * (1.0e7_core_rknd / rho(k))
+          temp_Nsm(k) = temp_Nsm(k) * ( 1.0e6_core_rknd / rho(k) )
         end if
 
         if(l_input_Ngm) then
           ! Ngm = NG * (1.0e6 / RHO)
-          temp_Ngm(k) = temp_Ngm(k) * (1.0e7_core_rknd / rho(k))
+          temp_Ngm(k) = temp_Ngm(k) * ( 1.0e6_core_rknd / rho(k) )
         end if
  
       end do
@@ -2414,6 +2613,36 @@ module inputfields
          = temp_Nrp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       endif
 
+      if ( l_input_rip2 .and. iirim > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirim) &
+         = temp_rip2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_Nip2 .and. iiNim > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNim) &
+         = temp_Nip2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_rsp2 .and. iirsm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirsm) &
+         = temp_rsp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_Nsp2 .and. iiNsm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNsm) &
+         = temp_Nsp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_rgp2 .and. iirgm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirgm) &
+         = temp_rgp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
+      if ( l_input_Ngp2 .and. iiNgm > 0 ) then
+         hydrometp2(k_lowest_zt(sam_file):k_highest_zt(sam_file),iiNgm) &
+         = temp_Ngp2(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      endif
+
       if ( l_input_wprrp .and. iirrm > 0 ) then
          wphydrometp(k_lowest_zt(sam_file):k_highest_zt(sam_file),iirrm) &
          = temp_wprrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
@@ -2451,8 +2680,16 @@ module inputfields
          = temp_rrpNrp(k_lowest_zt(sam_file):k_highest_zt(sam_file))
       endif
 
-      hydromet_pdf_params(k_lowest_zt(sam_file):k_highest_zt(sam_file))%precip_frac &
-      = temp_precip_frac(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      if ( trim( microphys_scheme ) == "khairoutdinov_kogan" ) then
+         hydromet_pdf_params(k_lowest_zt(sam_file):k_highest_zt(sam_file))%precip_frac &
+         = temp_precip_frac(k_lowest_zt(sam_file):k_highest_zt(sam_file))
+      elseif ( trim( microphys_scheme ) == "morrison" ) then
+         hydromet_pdf_params(k_lowest_zt(sam_file):k_highest_zt(sam_file))%precip_frac &
+         = max( temp_precip_frac_qr(k_lowest_zt(sam_file):k_highest_zt(sam_file)), &
+                temp_precip_frac_qi(k_lowest_zt(sam_file):k_highest_zt(sam_file)), &
+                temp_precip_frac_qs(k_lowest_zt(sam_file):k_highest_zt(sam_file)), &
+                temp_precip_frac_qg(k_lowest_zt(sam_file):k_highest_zt(sam_file)) )
+      endif
 
       if ( l_fatal_error ) stop "Failed to read inputfields for SAM."
 
@@ -3115,9 +3352,10 @@ module inputfields
       l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc_1, l_input_rc_2, &
       l_input_thvm, l_input_rrm,l_input_Nrm,  & 
       l_input_rsm, l_input_rim, l_input_rgm,  &
-      l_input_rrp2, l_input_Nrp2, l_input_wprrp, l_input_wpNrp, &
-      l_input_precip_frac, l_input_rtprrp, l_input_thlprrp, & 
-      l_input_rtpNrp, l_input_thlpNrp, l_input_rrpNrp, & 
+      l_input_rrp2, l_input_Nrp2, l_input_rip2, l_input_Nip2, &
+      l_input_rsp2, l_input_Nsp2, l_input_rgp2, l_input_Ngp2, &
+      l_input_wprrp, l_input_wpNrp, l_input_precip_frac, l_input_rtprrp, &
+      l_input_thlprrp, l_input_rtpNrp, l_input_thlpNrp, l_input_rrpNrp, & 
       l_input_thlm_forcing, l_input_rtm_forcing, & 
       l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
       l_input_Nccnm, l_input_Nim, l_input_Ngm, l_input_Nsm, &

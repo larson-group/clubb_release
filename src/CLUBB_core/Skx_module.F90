@@ -39,7 +39,7 @@ module Skx_module
     ! Parameter Constants
     ! Whether to apply clipping to the final result
     logical, parameter ::  & 
-      l_clipping_kluge = .false.
+      l_clipping_kluge = .true.
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: & 

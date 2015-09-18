@@ -1835,6 +1835,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                           precip_frac_tol,                    & ! Intent(in)
                                           pdf_params(k), d_variables,         & ! Intent(in)
                                           .false., .false., .false.,          & ! Intent(in)
+                                          .false., .false., .false.,          & ! Intent(in)
+                                          .false., .false., .false.,          & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)
                                           hm1, hm2,                           & ! Intent(out)
@@ -1860,6 +1862,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       one, zero, zero, wphydrometp_zt, &
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
+                                      sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
                                       pdf_params(k), d_variables, & ! Intent(in)
                                       rtphmp_zt, thlphmp_zt, &
@@ -2390,6 +2393,8 @@ subroutine mmicro_pcond ( sub_column,           &
                                           precip_frac_tol,                    & ! Intent(in)
                                           pdf_params(k), d_variables,         & ! Intent(in)
                                           .false., .false., .false.,          & ! Intent(in)
+                                          .false., .false., .false.,          & ! Intent(in)
+                                          .false., .false., .false.,          & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)
                                           hm1, hm2,                           & ! Intent(out)
@@ -2415,6 +2420,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       one, zero, zero, wphydrometp_zt, &
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
+                                      sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
                                       pdf_params(k), d_variables, & ! Intent(in)
                                       rtphmp_zt, thlphmp_zt, &

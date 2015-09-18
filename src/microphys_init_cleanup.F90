@@ -632,7 +632,7 @@ module microphys_init_cleanup
                            // " and ice microphysics."
           write(fstderr,*) "The flag l_ice_microphys must be set" &
                            // " to false to use this option."
-          stop "Fatal error."
+          !stop "Fatal error."
        endif
 
        allocate( l_hydromet_sed(hydromet_dim) )

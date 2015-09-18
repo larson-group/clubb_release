@@ -312,7 +312,8 @@ module constants_clubb
     w_tol_sqd = w_tol**2 ! [m^2/s^2]
 
   real( kind = core_rknd ), parameter, public :: &
-    Skw_max_mag = 4.5_core_rknd  ! Max magnitude of skewness     [-]
+!    Skw_max_mag = 4.5_core_rknd  ! Max magnitude of skewness     [-]
+    Skw_max_mag = 9.0_core_rknd  ! Max magnitude of skewness     [-]
 
   real( kind = core_rknd ), parameter, public :: &
     Skw_max_mag_sqd = Skw_max_mag**2 ! Max mag. of Skw squared [-]

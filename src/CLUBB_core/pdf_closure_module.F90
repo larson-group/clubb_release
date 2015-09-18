@@ -60,6 +60,7 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use constants_clubb, only: &  ! Constants
+        three,          & ! 3
         two,            & ! 2
         one,            & ! 1
         one_half,       & ! 1/2
@@ -452,6 +453,10 @@ module pdf_closure_module
         !   Set 0<beta<3.
         ! beta=1.5_core_rknd recovers Chris Golaz' simplified formula.
         ! 3 Nov 2003
+
+        ! Brian
+        !beta = min( max( 1.5_core_rknd - 0.15_core_rknd * Skw, zero ), three )
+        beta = min( max( 1.5_core_rknd - 0.16_core_rknd * Skw, zero ), three )
 
         width_factor_1 = ( 2.0_core_rknd/3.0_core_rknd )*beta + 2.0_core_rknd&
              *mixt_frac*( one - ( 2.0_core_rknd/3.0_core_rknd )*beta )
@@ -1827,7 +1832,13 @@ module pdf_closure_module
     !        closure, so this equation can be changed.  However, the value of m
     !        should go toward 0 as Skx goes toward 0 so that the double Gaussian
     !        reduces to a single Gaussian when the distribution is unskewed.
-    small_m = max( two_thirds * abs( Skx )**one_third, 0.05_core_rknd )
+    !small_m = max( two_thirds * abs( Skx )**one_third, 0.05_core_rknd )
+    !small_m = max( one_half * abs( Skx )**one_third, 0.05_core_rknd )
+    !small_m = min( max( two_thirds * abs( Skx )**one_third, 0.05_core_rknd ), &
+    !               one )
+    !small_m = min( max( two_thirds * abs( Skx )**one_third, 0.05_core_rknd ), &
+    !               0.75_core_rknd )
+    small_m = 0.75_core_rknd
 
     ! Calculate m^2.
     small_m_sqd = small_m**2

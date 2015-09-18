@@ -18,7 +18,7 @@ module precipitation_fraction
              precip_frac_assert_check
 
   integer, parameter, public :: &
-    precip_frac_calc_type = 1  ! Option used to calculate component precip_frac
+    precip_frac_calc_type = 2  ! Option used to calculate component precip_frac
 
   contains
 
@@ -134,6 +134,8 @@ module precipitation_fraction
        precip_frac_tol = max( precip_frac_tol_coef * maxval( cloud_frac ), &
                               cloud_frac_min )
     endif
+
+    precip_frac_tol = 0.1_core_rknd * precip_frac_tol
 
     if ( ( .not. l_input_fields ) .or. ( .not. l_input_precip_frac ) ) then
 

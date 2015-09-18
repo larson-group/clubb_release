@@ -1484,6 +1484,9 @@ contains
     rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
     l_input_fields, l_input_precip_frac, &      ! Intent(in)
     l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+    l_input_rip2, l_input_Nip2, &               ! Intent(in)
+    l_input_rsp2, l_input_Nsp2, &               ! Intent(in)
+    l_input_rgp2, l_input_Ngp2, &               ! Intent(in)
     l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
     l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
     l_input_rrpNrp, &                           ! Intent(in)
@@ -1570,6 +1573,12 @@ contains
       l_input_precip_frac, & ! Flag to input precip. fraction (overall)
       l_input_rrp2,        & ! Flag to input rrp2
       l_input_Nrp2,        & ! Flag to input Nrp2
+      l_input_rip2,        & ! Flag to input rip2
+      l_input_Nip2,        & ! Flag to input Nip2
+      l_input_rsp2,        & ! Flag to input rsp2
+      l_input_Nsp2,        & ! Flag to input Nsp2
+      l_input_rgp2,        & ! Flag to input rgp2
+      l_input_Ngp2,        & ! Flag to input Ngp2
       l_input_rtprrp,      & ! Flag to input rtprrp
       l_input_rtpNrp,      & ! Flag to input rtpNrp
       l_input_thlprrp,     & ! Flag to input thlprrp
@@ -1609,6 +1618,9 @@ contains
       rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
       l_input_fields, l_input_precip_frac, &      ! Intent(in)
       l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+      l_input_rip2, l_input_Nip2, &               ! Intent(in)
+      l_input_rsp2, l_input_Nsp2, &               ! Intent(in)
+      l_input_rgp2, l_input_Ngp2, &               ! Intent(in)
       l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
       l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
       l_input_rrpNrp, &                           ! Intent(in)

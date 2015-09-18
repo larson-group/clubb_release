@@ -49,6 +49,9 @@ module setup_clubb_pdf_params
                                    rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
                                    l_input_fields, l_input_precip_frac, &      ! Intent(in)
                                    l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+                                   l_input_rip2, l_input_Nip2, &               ! Intent(in)
+                                   l_input_rsp2, l_input_Nsp2, &               ! Intent(in)
+                                   l_input_rgp2, l_input_Ngp2, &               ! Intent(in)
                                    l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
                                    l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
                                    l_input_rrpNrp, &                           ! Intent(in)
@@ -96,7 +99,13 @@ module setup_clubb_pdf_params
         hydromet_list, & ! Variable(s)
         hydromet_tol,  &
         iirrm,         &
-        iiNrm
+        iiNrm,         &
+        iirim,         &
+        iiNim,         &
+        iirsm,         &
+        iiNsm,         &
+        iirgm,         &
+        iiNgm
 
     use model_flags, only: &
         l_const_Nc_in_cloud    ! Flag(s)
@@ -211,6 +220,12 @@ module setup_clubb_pdf_params
       l_input_precip_frac, & ! Flag to input precip. fraction (overall)
       l_input_rrp2,        & ! Flag to input rrp2
       l_input_Nrp2,        & ! Flag to input Nrp2
+      l_input_rip2,        & ! Flag to input rip2
+      l_input_Nip2,        & ! Flag to input Nip2
+      l_input_rsp2,        & ! Flag to input rsp2
+      l_input_Nsp2,        & ! Flag to input Nsp2
+      l_input_rgp2,        & ! Flag to input rgp2
+      l_input_Ngp2,        & ! Flag to input Ngp2
       l_input_rtprrp,      & ! Flag to input rtprrp
       l_input_rtpNrp,      & ! Flag to input rtpNrp
       l_input_thlprrp,     & ! Flag to input thlprrp
@@ -477,6 +492,18 @@ module setup_clubb_pdf_params
           l_input_hmp2 = l_input_rrp2
        elseif ( i == iiNrm ) then
           l_input_hmp2 = l_input_Nrp2
+       elseif ( i == iirim ) then
+          l_input_hmp2 = l_input_rip2
+       elseif ( i == iiNim ) then
+          l_input_hmp2 = l_input_Nip2
+       elseif ( i == iirsm ) then
+          l_input_hmp2 = l_input_rsp2
+       elseif ( i == iiNsm ) then
+          l_input_hmp2 = l_input_Nsp2
+       elseif ( i == iirgm ) then
+          l_input_hmp2 = l_input_rgp2
+       elseif ( i == iiNgm ) then
+          l_input_hmp2 = l_input_Ngp2
        else ! default
           l_input_hmp2 = .false.
        endif
@@ -606,8 +633,11 @@ module setup_clubb_pdf_params
                                 precip_frac_1(k), precip_frac_2(k),    & ! In
                                 precip_frac_tol,                       & ! In
                                 pdf_params(k), d_variables,            & ! In
-                                l_input_fields, l_input_rrp2,          & ! In
-                                l_input_Nrp2,                          & ! In
+                                l_input_fields,                        & ! In
+                                l_input_rrp2, l_input_Nrp2,            & ! In
+                                l_input_rip2, l_input_Nip2,            & ! In
+                                l_input_rsp2, l_input_Nsp2,            & ! In
+                                l_input_rgp2, l_input_Ngp2,            & ! In
                                 mu_x_1, mu_x_2,                        & ! Out
                                 sigma_x_1, sigma_x_2,                  & ! Out
                                 hm_1(k,:), hm_2(k,:),                  & ! Out
@@ -661,6 +691,7 @@ module setup_clubb_pdf_params
                                precip_frac_2(k), rtm(k), thlm(k), wphydrometp_zt(k,:), &
                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
+                               sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                                corr_array_n_cloud, corr_array_n_below, &
                                pdf_params(k), d_variables, &
                                rtphmp_zt(k,:), thlphmp_zt(k,:), &
@@ -741,6 +772,18 @@ module setup_clubb_pdf_params
           l_input_hmp2 = l_input_rrp2
        elseif ( i == iiNrm ) then
           l_input_hmp2 = l_input_Nrp2
+       elseif ( i == iirim ) then
+          l_input_hmp2 = l_input_rip2
+       elseif ( i == iiNim ) then
+          l_input_hmp2 = l_input_Nip2
+       elseif ( i == iirsm ) then
+          l_input_hmp2 = l_input_rsp2
+       elseif ( i == iiNsm ) then
+          l_input_hmp2 = l_input_Nsp2
+       elseif ( i == iirgm ) then
+          l_input_hmp2 = l_input_rgp2
+       elseif ( i == iiNgm ) then
+          l_input_hmp2 = l_input_Ngp2
        else ! default
           l_input_hmp2 = .false.
        endif
@@ -793,8 +836,11 @@ module setup_clubb_pdf_params
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
                                  precip_frac_tol,               & ! Intent(in)
                                  pdf_params, d_variables,       & ! Intent(in)
-                                 l_input_fields, l_input_rrp2,  & ! Intent(in)
-                                 l_input_Nrp2,                  & ! Intent(in)
+                                 l_input_fields,                & ! Intent(in)
+                                 l_input_rrp2, l_input_Nrp2,    & ! Intent(in)
+                                 l_input_rip2, l_input_Nip2,    & ! Intent(in)
+                                 l_input_rsp2, l_input_Nsp2,    & ! Intent(in)
+                                 l_input_rgp2, l_input_Ngp2,    & ! Intent(in)
                                  mu_x_1, mu_x_2,                & ! Intent(out)
                                  sigma_x_1, sigma_x_2,          & ! Intent(out)
                                  hm_1, hm_2,                    & ! Intent(out)
@@ -837,6 +883,12 @@ module setup_clubb_pdf_params
         iiPDF_Ncn,          &
         iiPDF_rr,           &
         iiPDF_Nr,           &
+        iiPDF_ri,           &
+        iiPDF_Ni,           &
+        iiPDF_rs,           &
+        iiPDF_Ns,           &
+        iiPDF_rg,           &
+        iiPDF_Ng,           &
         hmp2_ip_on_hmm2_ip, &
         Ncnp2_on_Ncnm2
 
@@ -870,7 +922,13 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_input_fields, & ! Flag for input fields
       l_input_rrp2,   & ! Flag to input rrp2
-      l_input_Nrp2      ! Flag to input Nrp2
+      l_input_Nrp2,   & ! Flag to input Nrp2
+      l_input_rip2,   & ! Flag to input rip2
+      l_input_Nip2,   & ! Flag to input Nip2
+      l_input_rsp2,   & ! Flag to input rsp2
+      l_input_Nsp2,   & ! Flag to input Nsp2
+      l_input_rgp2,   & ! Flag to input rgp2
+      l_input_Ngp2      ! Flag to input Ngp2
 
     ! Output Variables
     ! Note:  This code assumes to be these arrays in the same order as the
@@ -1016,6 +1074,18 @@ module setup_clubb_pdf_params
           l_input_hmp2 = l_input_rrp2
        elseif ( ivar == iiPDF_Nr ) then
           l_input_hmp2 = l_input_Nrp2
+       elseif ( ivar == iiPDF_ri ) then
+          l_input_hmp2 = l_input_rip2
+       elseif ( ivar == iiPDF_Ni ) then
+          l_input_hmp2 = l_input_Nip2
+       elseif ( ivar == iiPDF_rs ) then
+          l_input_hmp2 = l_input_rsp2
+       elseif ( ivar == iiPDF_Ns ) then
+          l_input_hmp2 = l_input_Nsp2
+       elseif ( ivar == iiPDF_rg ) then
+          l_input_hmp2 = l_input_rgp2
+       elseif ( ivar == iiPDF_Ng ) then
+          l_input_hmp2 = l_input_Ngp2
        else ! default
           l_input_hmp2 = .false.
        endif
@@ -1067,6 +1137,7 @@ module setup_clubb_pdf_params
                              precip_frac_2, rtm, thlm, wphydrometp_zt, &
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                              sigma_x_1_n, sigma_x_2_n, &
+                             sigma2_on_mu2_ip_1, sigma2_on_mu2_ip_2, &
                              corr_array_n_cloud, corr_array_n_below, &
                              pdf_params, d_variables, &
                              rtphmp_zt, thlphmp_zt, &
@@ -1122,7 +1193,8 @@ module setup_clubb_pdf_params
 
     use pdf_utilities, only: &
         calc_corr_chi_x, & ! Procedure(s)
-        calc_corr_eta_x
+        calc_corr_eta_x, &
+        corr_LL2NN
 
     implicit none
 
@@ -1154,6 +1226,10 @@ module setup_clubb_pdf_params
       sigma_x_2,   & ! Standard deviation of x array (2nd PDF comp.)  [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
+
+    real ( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+      sigma2_on_mu2_ip_1, & ! Ratio array sigma_hm_1^2/mu_hm_1^2             [-]
+      sigma2_on_mu2_ip_2    ! Ratio array sigma_hm_2^2/mu_hm_2^2             [-]
 
     real( kind = core_rknd ), dimension(d_variables, d_variables), &
     intent(in) :: &
@@ -1194,6 +1270,10 @@ module setup_clubb_pdf_params
       corr_rt_hm_2_n,  & ! Correlation of rt and ln hm (2nd PDF comp.) ip    [-]
       corr_thl_hm_1_n, & ! Correlation of thl and ln hm (1st PDF comp.) ip   [-]
       corr_thl_hm_2_n    ! Correlation of thl and ln hm (2nd PDF comp.) ip   [-]
+
+    real( kind = core_rknd ) :: &
+      corr_hmx_hmy_1,  & ! Correlation of hmx and hmy (1st PDF comp.) ip     [-]
+      corr_hmx_hmy_2     ! Correlation of hmx and hmy (2nd PDF comp.) ip     [-]
 
     real( kind = core_rknd ) :: &
       chi_m,          & ! Mean of chi (s_mellor)                         [kg/kg]
@@ -1533,10 +1613,19 @@ module setup_clubb_pdf_params
                                      sigma_x_1(ivar), sigma_x_2(ivar), &
                                      sigma_x_1(jvar), sigma_x_2(jvar), &
                                      mixt_frac, precip_frac_1, precip_frac_2, &
-                                     corr_array_1_n(jvar,ivar), &
-                                     corr_array_2_n(jvar,ivar), &
+                                     corr_hmx_hmy_1, corr_hmx_hmy_2, &
                                      hydromet_tol(pdf2hydromet_idx(ivar)), &
                                      hydromet_tol(pdf2hydromet_idx(jvar)) )
+
+             corr_array_1_n(jvar,ivar) &
+             = corr_LL2NN( corr_hmx_hmy_1, &
+                           sigma_x_1_n(ivar), sigma_x_1_n(jvar), &
+                           sigma2_on_mu2_ip_1(ivar), sigma2_on_mu2_ip_1(jvar) )
+
+             corr_array_2_n(jvar,ivar) &
+             = corr_LL2NN( corr_hmx_hmy_2, &
+                           sigma_x_2_n(ivar), sigma_x_2_n(jvar), &
+                           sigma2_on_mu2_ip_2(ivar), sigma2_on_mu2_ip_2(jvar) )
 
           else
 

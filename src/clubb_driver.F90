@@ -81,6 +81,9 @@ module clubb_driver
         l_input_wp3, &                                            ! Variable(s)
         l_input_precip_frac, &
         l_input_rrp2, l_input_Nrp2, &
+        l_input_rip2, l_input_Nip2, &
+        l_input_rsp2, l_input_Nsp2, &
+        l_input_rgp2, l_input_Ngp2, &
         l_input_rtprrp, l_input_rtpNrp, &
         l_input_thlprrp, l_input_thlpNrp, &
         l_input_rrpNrp
@@ -1216,9 +1219,9 @@ module clubb_driver
                                  rtphmp_zt, thlphmp_zt, hmxphmyp_zt ) ! Intent(in)
         ! clip wp3 if it is input from inputfields
         ! this helps restrict the skewness of wp3_on_wp2
-        if( l_input_wp3 ) then
-          call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
-        end if
+        !if( l_input_wp3 ) then
+        !  call clip_skewness_core( sfc_elevation, wp2_zt, wp3 )
+        !end if
       end if
 
       ! Check for NaN values in the model arrays
@@ -1315,6 +1318,9 @@ module clubb_driver
                                     rtphmp_zt, thlphmp_zt, hmxphmyp_zt, &       ! Intent(in)
                                     l_input_fields, l_input_precip_frac, &      ! Intent(in)
                                     l_input_rrp2, l_input_Nrp2, &               ! Intent(in)
+                                    l_input_rip2, l_input_Nip2, &               ! Intent(in)
+                                    l_input_rsp2, l_input_Nsp2, &               ! Intent(in)
+                                    l_input_rgp2, l_input_Ngp2, &               ! Intent(in)
                                     l_input_rtprrp, l_input_rtpNrp, &           ! Intent(in)
                                     l_input_thlprrp, l_input_thlpNrp, &         ! Intent(in)
                                     l_input_rrpNrp, &                           ! Intent(in)
