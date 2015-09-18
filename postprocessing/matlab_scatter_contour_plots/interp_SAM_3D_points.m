@@ -58,10 +58,13 @@ else % z_sam(1) <= z_clubb(clubb_height_idx) <= z_sam(nz_sam)
    upper_lev_idx = -1;
    for k = 1:1:nz_sam
 
-      if ( z_sam(k) == z_clubb(clubb_height_idx) )
+      if ( abs( z_sam(k) - z_clubb(clubb_height_idx) ) <= 0.01 )
 
          % The SAM LES grid level is at the exact same altitude as the
          % requested CLUBB grid level.
+         % Consider the SAM LES grid level to have the exact same altitude
+         % as the requested CLUBB grid level if there altitudes match
+         % within 1 cm.
          exact_lev_idx = k;
          break
 

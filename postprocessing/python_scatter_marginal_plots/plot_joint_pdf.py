@@ -17,26 +17,26 @@ import matplotlib.pyplot as plt
 # User input
 #-------------------------------------------------------------------------------
 #CLUBB's samples
-clb_silhs_filename = '../../output/lba_nl_lh_sample_points_2D.nc'
+clb_silhs_filename = '/home/griffinb/Brian_special_input_fields_r7465/output/rico_nl_lh_sample_points_2D.nc'
 #SAM's standard output
-sam_filename = '../../output/3D_Output/LBA_128kmx1kmx128_1km_Morrison_64_000000????.nc'
+sam_filename = '/home/griffinb/Brian_special_input_fields_r7465/output/LES_output/RICO_256/RICO_256x256x100_drizzle_128_0000??????_micro.nc'
 #Output from Morrison Micro.
-sam_micro_filename = '../../output/3D_Output/LBA_128kmx1kmx128_1km_Morrison_64_000000????_micro.nc'
+sam_micro_filename = sam_filename
 
-analysis_time = 200 #    [min]
-analysis_height = 1000 # [m]
+analysis_time = 4200 #    [min]
+analysis_height = 2780 # [m]
 
-Title = "First iteration of a script, under construction"
+Title = "RICO chi vs. rr; z = 2780 m.; t = 4200 min."
 x_unit = 'kg kg^-1'
-y_unit = 'm s^-1'
+y_unit = 'kg kg^-1'
 
 model1 = 'SAM'
 SAM_VARx = 'CHI'
-SAM_VARy = 'W'
+SAM_VARy = 'RR'
 
 model2 = 'CLUBB'
 CLUBB_VARx = 'chi'
-CLUBB_VARy = 'w'
+CLUBB_VARy = 'rr'
 
 def plot_joint_pdf(x1,x2,x_name,x_unit,
                    y1,y2,y_name,y_unit,

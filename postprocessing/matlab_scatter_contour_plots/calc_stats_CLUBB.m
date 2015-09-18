@@ -114,7 +114,7 @@ else
    % Set values to 0.
    rrm_ip_clubb_pdf = 0.0;
    rrp2_ip_clubb_pdf = 0.0;
-   rrp2_ip_clubb_pdf = 0.0;
+   rrp3_ip_clubb_pdf = 0.0;
    Skrr_ip_clubb_pdf = 0.0;
    voms_ip_rr_clubb_pdf = 0.0;
 end
@@ -131,7 +131,7 @@ else
    % Set values to 0.
    Nrm_ip_clubb_pdf = 0.0;
    Nrp2_ip_clubb_pdf = 0.0;
-   Nrp2_ip_clubb_pdf = 0.0;
+   Nrp3_ip_clubb_pdf = 0.0;
    SkNr_ip_clubb_pdf = 0.0;
    voms_ip_Nr_clubb_pdf = 0.0;
 end

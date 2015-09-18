@@ -12,52 +12,52 @@ import netCDF4
 # User input
 #----------------------------------------------------------------------------------------
 
-case_dir = 'ADG2_best'
+case_dir = 'RICO'
 
 # Directory for SAM's 3D files 
-sam_3D_dir = '/home/weberjk/Plot_CRM/SAM_LBA/Data/3D/1km/'
+sam_3D_dir = '/home/griffinb/Brian_special_input_fields_r7465/output/LES_output/RICO_256/'
 
 # Note: SAM outputs 3D files in NSTEPS, so it is dependent on timestep. Therefore, 
 #   this script must do some gymnastics to ensure we are comparing the correct times.
 #   Only supply 'a' filename upto the NSTEP counter.  
-sam_3D_file = 'LBA_128kmx1kmx128_1km_Morrison_64_'
+sam_3D_file = 'RICO_256x256x100_drizzle_128_'
 # e.g.        LBA_128kmx1kmx128_1km_Morrison_64_0000000150_micro.nc
 
-sam_dt = 6. # [s] SAM's model timestep, not output frequency. 
+sam_dt = 1. # [s] SAM's model timestep, not output frequency. 
 
 # SAM's stat file 
-sam_stat_file = '/home/weberjk/Plot_CRM/SAM_LBA/Data/LBA.nc'
+sam_stat_file = '/home/griffinb/Brian_special_input_fields_r7465/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc'
 
 # Directory for CLUBB's sample points file
-clubb_3D_dir = '/home/weberjk/Ticket764/output/%s/'%(case_dir)
+clubb_3D_dir = '/home/griffinb/Brian_special_input_fields_r7465/output/'
 
 # CLUBB's file names
-clb_nl_file = clubb_3D_dir + 'lba_nl_lh_sample_points_2D.nc'
-clb_u_file = clubb_3D_dir + 'lba_u_lh_sample_points_2D.nc'
-clubb_stat_file = clubb_3D_dir + 'lba_zt.nc' # The statistics file and sample points
+clb_nl_file = clubb_3D_dir + 'rico_nl_lh_sample_points_2D.nc'
+clb_u_file = clubb_3D_dir + 'rico_u_lh_sample_points_2D.nc'
+clubb_stat_file = clubb_3D_dir + 'rico_zt.nc' # The statistics file and sample points
                                            # files are output from CLUBB into the 
                                            # same directory by default
 
 # Variable name, time, and height
-sam_abs_var_name = 'QR'         # SAM's name for abscissa
-sam_abs_file_suffix = '.nc' # SAM outputs 2 different 3D files. One is '.nc' 
+sam_abs_var_name = 'CHI'         # SAM's name for abscissa
+sam_abs_file_suffix = '_micro.nc' # SAM outputs 2 different 3D files. One is '.nc' 
                                  # and the other is written out from Morrison 
                                  # Micro and has a '_micro.nc'
 
 sam_ord_var_name = 'NR'   # SAM's name for ordinate
-sam_ord_file_suffix = '.nc'
+sam_ord_file_suffix = '_micro.nc'
 
-sam_colorby_var = 'NRAGG' # Color SAM's points by anther variable
+sam_colorby_var = 'RR_EVAP' # Color SAM's points by anther variable
 sam_colorby_file_suffix = '_micro.nc'
 
 sam_abs_unit_conversion = 1.
-sam_ord_unit_conversion = 1./1000.
+sam_ord_unit_conversion = 1.
 
-clubb_abs_var_name = 'rr' # CLUBB's name for abscissa
+clubb_abs_var_name = 'chi' # CLUBB's name for abscissa
 clubb_ord_var_name = 'Nr' # CLUBB's name for ordinate
 
 # Figure output directory and name
-out_dir = '/home/weberjk/Ticket764/output/%s/'%(case_dir) 
+out_dir = '/home/griffinb/Brian_special_input_fields_r7465/output/'
 out_name = 'joint_pdf_%s_%s.png'%(clubb_abs_var_name,clubb_ord_var_name) 
 
 abs_name = '$\chi$' # Fancy names for title
@@ -67,8 +67,8 @@ abs_units = '$kg\ kg^{-1}$'  # How the variable looks when it is plotted
 ord_units = '$kg\ kg^{-1}$'  # The plotted units
 
 # Analysis height and time                   
-z0_array = [4000]                # Analysis height [m]
-t0_in_min = 330            # Analysis time [min] 
+z0_array = [2780]                # Analysis height [m]
+t0_in_min = 4200            # Analysis time [min] 
                             # Note: This exact time must exist for SAM's output. 
                             # CLUBB will use the closest available.
 

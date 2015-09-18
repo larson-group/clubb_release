@@ -113,7 +113,7 @@ else
    % Set values to 0.
    mean_rr_ip_sam = 0.0;
    rrp2_ip_sam = 0.0;
-   rrp2_ip_sam = 0.0;
+   rrp3_ip_sam = 0.0;
    Skrr_ip_sam = 0.0;
    voms_ip_rr_sam = 0.0;
 end
@@ -129,7 +129,7 @@ else
    % Set values to 0.
    mean_Nr_ip_sam = 0.0;
    Nrp2_ip_sam = 0.0;
-   Nrp2_ip_sam = 0.0;
+   Nrp3_ip_sam = 0.0;
    SkNr_ip_sam = 0.0;
    voms_ip_Nr_sam = 0.0;
 end
@@ -154,6 +154,11 @@ if ( count_lnrr > 0 )
    lnrrp2_sam = sum_lnrr2 / count_lnrr;
    lnrrp3_sam = sum_lnrr3 / count_lnrr;
    Sk_lnrr_sam = lnrrp3_sam / lnrrp2_sam^1.5;
+else % count_lnrr = 0
+   mean_lnrr_sam = -realmax('single');
+   lnrrp2_sam = 0.0;
+   lnrrp3_sam = 0.0;
+   Sk_lnrr_sam = 0.0;
 end % count_lnrr > 0
 count_lnNr = 0;
 for idx = 1:1:nx_sam*ny_sam
@@ -175,4 +180,9 @@ if ( count_lnNr > 0 )
    lnNrp2_sam = sum_lnNr2 / count_lnNr;
    lnNrp3_sam = sum_lnNr3 / count_lnNr;
    Sk_lnNr_sam = lnNrp3_sam / lnNrp2_sam^1.5;
+else % count_lnNr = 0
+   mean_lnNr_sam = -realmax('single');
+   lnNrp2_sam = 0.0;
+   lnNrp3_sam = 0.0;
+   Sk_lnNr_sam = 0.0;
 end % count_lnNr > 0

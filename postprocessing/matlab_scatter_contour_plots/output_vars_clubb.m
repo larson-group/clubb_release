@@ -1,6 +1,6 @@
 % $Id$
 function [ varname_clubb, units_corrector_type, ...
-           num_var_clubb, num_tot_var_clubb ] = output_vars_clubb
+           num_var_clubb, num_tot_var_clubb ] = output_vars_clubb( casename )
 
 idx_count = 0;
 
@@ -89,6 +89,94 @@ global idx_mu_Nr_2_n
 idx_mu_Nr_2_n = idx_count;
 units_corrector_type(idx_mu_Nr_2_n) = 0;
 varname_clubb(idx_mu_Nr_2_n,1:9) = 'mu_Nr_2_n';
+
+if ( strcmp( casename, 'LBA' ) )
+
+   % mu_ri_1_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_ri_1_n
+   idx_mu_ri_1_n = idx_count;
+   units_corrector_type(idx_mu_ri_1_n) = 0;
+   varname_clubb(idx_mu_ri_1_n,1:9) = 'mu_ri_1_n';
+
+   % mu_ri_2_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_ri_2_n
+   idx_mu_ri_2_n = idx_count;
+   units_corrector_type(idx_mu_ri_2_n) = 0;
+   varname_clubb(idx_mu_ri_2_n,1:9) = 'mu_ri_2_n';
+
+   % mu_Ni_1_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ni_1_n
+   idx_mu_Ni_1_n = idx_count;
+   units_corrector_type(idx_mu_Ni_1_n) = 0;
+   varname_clubb(idx_mu_Ni_1_n,1:9) = 'mu_Ni_1_n';
+
+   % mu_Ni_2_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ni_2_n
+   idx_mu_Ni_2_n = idx_count;
+   units_corrector_type(idx_mu_Ni_2_n) = 0;
+   varname_clubb(idx_mu_Ni_2_n,1:9) = 'mu_Ni_2_n';
+
+   % mu_rs_1_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_rs_1_n
+   idx_mu_rs_1_n = idx_count;
+   units_corrector_type(idx_mu_rs_1_n) = 0;
+   varname_clubb(idx_mu_rs_1_n,1:9) = 'mu_rs_1_n';
+
+   % mu_rs_2_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_rs_2_n
+   idx_mu_rs_2_n = idx_count;
+   units_corrector_type(idx_mu_rs_2_n) = 0;
+   varname_clubb(idx_mu_rs_2_n,1:9) = 'mu_rs_2_n';
+
+   % mu_Ns_1_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ns_1_n
+   idx_mu_Ns_1_n = idx_count;
+   units_corrector_type(idx_mu_Ns_1_n) = 0;
+   varname_clubb(idx_mu_Ns_1_n,1:9) = 'mu_Ns_1_n';
+
+   % mu_Ns_2_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ns_2_n
+   idx_mu_Ns_2_n = idx_count;
+   units_corrector_type(idx_mu_Ns_2_n) = 0;
+   varname_clubb(idx_mu_Ns_2_n,1:9) = 'mu_Ns_2_n';
+
+   % mu_rg_1_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_rg_1_n
+   idx_mu_rg_1_n = idx_count;
+   units_corrector_type(idx_mu_rg_1_n) = 0;
+   varname_clubb(idx_mu_rg_1_n,1:9) = 'mu_rg_1_n';
+
+   % mu_rg_2_n (ln(kg/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_rg_2_n
+   idx_mu_rg_2_n = idx_count;
+   units_corrector_type(idx_mu_rg_2_n) = 0;
+   varname_clubb(idx_mu_rg_2_n,1:9) = 'mu_rg_2_n';
+
+   % mu_Ng_1_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ng_1_n
+   idx_mu_Ng_1_n = idx_count;
+   units_corrector_type(idx_mu_Ng_1_n) = 0;
+   varname_clubb(idx_mu_Ng_1_n,1:9) = 'mu_Ng_1_n';
+
+   % mu_Ng_2_n (ln(num/kg)).
+   idx_count = idx_count + 1;
+   global idx_mu_Ng_2_n
+   idx_mu_Ng_2_n = idx_count;
+   units_corrector_type(idx_mu_Ng_2_n) = 0;
+   varname_clubb(idx_mu_Ng_2_n,1:9) = 'mu_Ng_2_n';
+
+end % strcmp( casename, 'LBA' )
 
 % varnce_w_1 (m^2/s^2).
 idx_count = idx_count + 1;
@@ -187,6 +275,94 @@ global idx_sigma_Nr_2_n
 idx_sigma_Nr_2_n = idx_count;
 units_corrector_type(idx_sigma_Nr_2_n) = 0;
 varname_clubb(idx_sigma_Nr_2_n,1:12) = 'sigma_Nr_2_n';
+
+if ( strcmp( casename, 'LBA' ) )
+
+   % sigma_ri_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_ri_1_n
+   idx_sigma_ri_1_n = idx_count;
+   units_corrector_type(idx_sigma_ri_1_n) = 0;
+   varname_clubb(idx_sigma_ri_1_n,1:12) = 'sigma_ri_1_n';
+
+   % sigma_ri_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_ri_2_n
+   idx_sigma_ri_2_n = idx_count;
+   units_corrector_type(idx_sigma_ri_2_n) = 0;
+   varname_clubb(idx_sigma_ri_2_n,1:12) = 'sigma_ri_2_n';
+
+   % sigma_Ni_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ni_1_n
+   idx_sigma_Ni_1_n = idx_count;
+   units_corrector_type(idx_sigma_Ni_1_n) = 0;
+   varname_clubb(idx_sigma_Ni_1_n,1:12) = 'sigma_Ni_1_n';
+
+   % sigma_Ni_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ni_2_n
+   idx_sigma_Ni_2_n = idx_count;
+   units_corrector_type(idx_sigma_Ni_2_n) = 0;
+   varname_clubb(idx_sigma_Ni_2_n,1:12) = 'sigma_Ni_2_n';
+
+   % sigma_rs_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_rs_1_n
+   idx_sigma_rs_1_n = idx_count;
+   units_corrector_type(idx_sigma_rs_1_n) = 0;
+   varname_clubb(idx_sigma_rs_1_n,1:12) = 'sigma_rs_1_n';
+
+   % sigma_rs_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_rs_2_n
+   idx_sigma_rs_2_n = idx_count;
+   units_corrector_type(idx_sigma_rs_2_n) = 0;
+   varname_clubb(idx_sigma_rs_2_n,1:12) = 'sigma_rs_2_n';
+
+   % sigma_Ns_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ns_1_n
+   idx_sigma_Ns_1_n = idx_count;
+   units_corrector_type(idx_sigma_Ns_1_n) = 0;
+   varname_clubb(idx_sigma_Ns_1_n,1:12) = 'sigma_Ns_1_n';
+
+   % sigma_Ns_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ns_2_n
+   idx_sigma_Ns_2_n = idx_count;
+   units_corrector_type(idx_sigma_Ns_2_n) = 0;
+   varname_clubb(idx_sigma_Ns_2_n,1:12) = 'sigma_Ns_2_n';
+
+   % sigma_rg_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_rg_1_n
+   idx_sigma_rg_1_n = idx_count;
+   units_corrector_type(idx_sigma_rg_1_n) = 0;
+   varname_clubb(idx_sigma_rg_1_n,1:12) = 'sigma_rg_1_n';
+
+   % sigma_rg_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_rg_2_n
+   idx_sigma_rg_2_n = idx_count;
+   units_corrector_type(idx_sigma_rg_2_n) = 0;
+   varname_clubb(idx_sigma_rg_2_n,1:12) = 'sigma_rg_2_n';
+
+   % sigma_Ng_1_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ng_1_n
+   idx_sigma_Ng_1_n = idx_count;
+   units_corrector_type(idx_sigma_Ng_1_n) = 0;
+   varname_clubb(idx_sigma_Ng_1_n,1:12) = 'sigma_Ng_1_n';
+
+   % sigma_Ng_2_n (-).
+   idx_count = idx_count + 1;
+   global idx_sigma_Ng_2_n
+   idx_sigma_Ng_2_n = idx_count;
+   units_corrector_type(idx_sigma_Ng_2_n) = 0;
+   varname_clubb(idx_sigma_Ng_2_n,1:12) = 'sigma_Ng_2_n';
+
+end % strcmp( casename, 'LBA' )
 
 % Correlation (within-component) of rt and thl (both PDF comps.), rrtthl (-).
 idx_count = idx_count + 1;

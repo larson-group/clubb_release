@@ -1,6 +1,6 @@
 % $Id$
 function [ varname_sam, units_corrector_type, ...
-           num_var_sam, num_tot_var_sam ] = output_vars_3D
+           num_var_sam, num_tot_var_sam ] = output_vars_3D( casename )
 
 idx_count = 0;
 
@@ -54,6 +54,52 @@ global idx_3D_Nr
 idx_3D_Nr = idx_count;
 units_corrector_type(idx_3D_Nr) = 0;
 varname_sam(idx_3D_Nr,1:2) = 'NR';
+
+if ( strcmp( casename, 'LBA' ) )
+
+   % ri (kg/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_ri
+   idx_3D_ri = idx_count;
+   units_corrector_type(idx_3D_ri) = 0;
+   varname_sam(idx_3D_ri,1:2) = 'RI';
+
+   % Ni (num/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_Ni
+   idx_3D_Ni = idx_count;
+   units_corrector_type(idx_3D_Ni) = 0;
+   varname_sam(idx_3D_Ni,1:2) = 'NI';
+
+   % rs (kg/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_rs
+   idx_3D_rs = idx_count;
+   units_corrector_type(idx_3D_rs) = 0;
+   varname_sam(idx_3D_rs,1:2) = 'RS';
+
+   % Ns (num/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_Ns
+   idx_3D_Ns = idx_count;
+   units_corrector_type(idx_3D_Ns) = 0;
+   varname_sam(idx_3D_Ns,1:2) = 'NS';
+
+   % rg (kg/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_rg
+   idx_3D_rg = idx_count;
+   units_corrector_type(idx_3D_rg) = 0;
+   varname_sam(idx_3D_rg,1:2) = 'RG';
+
+   % Ng (num/kg)
+   idx_count = idx_count + 1;
+   global idx_3D_Ng
+   idx_3D_Ng = idx_count;
+   units_corrector_type(idx_3D_Ng) = 0;
+   varname_sam(idx_3D_Ng,1:2) = 'NG';
+
+end % strcmp( casename, 'LBA' )
 
 num_var_sam = idx_count;
 

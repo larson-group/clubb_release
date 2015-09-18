@@ -156,5 +156,10 @@ end
 box on
 
 % Figure title and other important information.
-title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
-         altitude_plotted, '; ', note ] );
+if ( strcmp( note, '' ) )
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted ] );
+else
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted, '; ', note ] );
+end

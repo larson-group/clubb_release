@@ -1,7 +1,7 @@
 % $Id$
 function [ z_clubb, time_clubb, var_clubb, units_corrector_type, ...
            nz_clubb, num_t_clubb, num_var_clubb, varid_clubb ] ...
-= read_CLUBB_file( filename_clubb )
+= read_CLUBB_file( filename_clubb, casename )
 
 % Paths to MEXNC and NetCDF Toolbox utilities.
 addpath ( '/usr/share/mexcdf/mexnc' )
@@ -24,7 +24,7 @@ global idx_time
 
 % Read in CLUBB NetCDF output variable names and assign indices.
 [ varname_clubb, units_corrector_type, ...
-  num_var_clubb, num_tot_var_clubb ] = output_vars_clubb;
+  num_var_clubb, num_tot_var_clubb ] = output_vars_clubb( casename );
 
 % Get the variable IDs for the variable in question.
 varid_clubb = zeros(1,num_tot_var_clubb);

@@ -1,7 +1,7 @@
 % $Id$
 function [ z_sam, time_sam, var_sam, units_corrector_type, ...
            nx_sam, ny_sam, nz_sam, num_t_sam, num_var_sam ] ...
-= read_SAM_3D_file( filename_sam )
+= read_SAM_3D_file( filename_sam, casename )
 
 % Paths to MEXNC and NetCDF Toolbox utilities.
 addpath ( '/usr/share/mexcdf/mexnc' )
@@ -25,7 +25,7 @@ global idx_3D_time
 
 % Read in SAM NetCDF output variable names and assign indices.
 [ varname_sam, units_corrector_type, ...
-  num_var_sam, num_tot_var_sam ] = output_vars_3D;
+  num_var_sam, num_tot_var_sam ] = output_vars_3D( casename );
 
 % Get the variable IDs for the variable in question.
 varid_sam = zeros(1,num_tot_var_sam);

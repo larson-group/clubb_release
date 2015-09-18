@@ -1,7 +1,7 @@
 % $Id$
 function [ nz_clubb, z_clubb, num_t_clubb, time_clubb, num_var_clubb, ...
            units_corrector_type_clubb, var_clubb ] ...
-= CLUBB_read_check_files( filename_clubb, num_clubb_files )
+= CLUBB_read_check_files( filename_clubb, num_clubb_files, casename )
 
 for clubb_idx = 1:1:num_clubb_files
 
@@ -9,7 +9,7 @@ for clubb_idx = 1:1:num_clubb_files
    [ z_clubb_out, time_clubb_out, var_clubb_out,...
      units_corrector_type_clubb_out, nz_clubb_out, ...
      num_t_clubb_out, num_var_clubb_out, varid_clubb_out ] ...
-   = read_CLUBB_file( strtrim( filename_clubb(clubb_idx,:) ) );
+   = read_CLUBB_file( strtrim( filename_clubb(clubb_idx,:) ), casename );
 
    % Enter the number of vertical grid levels into an array.
    nz_clubb_file(clubb_idx) = nz_clubb_out;
