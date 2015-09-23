@@ -4582,6 +4582,41 @@ if (doprecip) then
 !---------------------------
 
 !----------------------------
+! theta-l
+!---------------------------
+if (doprecip) then
+    
+  name = 'covarnce_thl_rr'
+  longname = 'Covariance of theta-l and rain water mixing ratio'
+  units = '[(K)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'covarnce_thl_Nr'
+  longname = 'Covariance of theta-l and rain drop concentration'
+  units = '[(K)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doprecip
+
+!----------------------------
+! rt
+!---------------------------
+if (doprecip) then
+    
+  name = 'covarnce_rt_rr'
+  longname = 'Covariance of rt and rain water mixing ratio'
+  units = '[(kg kg^-1)(kg/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+  name = 'covarnce_rt_Nr'
+  longname = 'Covariance of rt and rain drop concentration'
+  units = '[(kg kg^-1)(#/kg^-1)]'
+  call add_to_namelist(count,microcount,name,longname,units,0)
+
+end if ! doprecip
+
+!----------------------------
+!----------------------------
 ! chi(s_mellor)
 !---------------------------
 name = 'covarnce_chi_w'
@@ -5798,6 +5833,8 @@ real, dimension(11,11,nzm) :: micro_correlations ! Magic numbers are the number
                                                  ! of variables in the correlation
 !                                                  and covariance matricies
 real, dimension(11,11,nzm) :: micro_covarnce 
+real, dimension(nzm) :: covarnce_thl_rr, covarnce_thl_Nr, &
+                        covarnce_rt_rr, covarnce_rt_Nr
 
 !Microphysics correlations and covariances matricies in-cloud
 real, dimension(11,11,nzm) :: ic_micro_correlations 
@@ -5806,6 +5843,10 @@ real, dimension(11,11,nzm) :: ic_micro_covarnce
 !Microphysics correlations and covariances matricies out of cloud
 real, dimension(11,11,nzm) :: oc_micro_correlations 
 real, dimension(11,11,nzm) :: oc_micro_covarnce 
+
+! Mean of theta-l and rt
+real, dimension(nzm) :: domain_mean_thl
+real, dimension(nzm) :: domain_mean_rt
 
 ! Mean and variance of chi(s_mellor)
 real, dimension(nzm) :: domain_mean_chi 
@@ -6250,6 +6291,10 @@ endif
     end do
   end do
 
+  !Find the domain wide means and variances of theta-l and rt.
+  domain_mean_thl(:) = mean_xy_domain(nzm, theta_l)
+  domain_mean_rt(:) = mean_xy_domain(nzm, micro_field(1:nx,1:ny,1:nzm,iqv))
+
   !Find the domain wide means and variances of chi and w_zt
   domain_mean_chi(:) = mean_xy_domain(nzm, chi)
   domain_varnce_chi(:) = variance_xy_domain(nzm, chi, domain_mean_chi)
@@ -6391,6 +6436,30 @@ endif
 !-----------------------------------------
 ! Domain-wide covariances and correlations
 !-----------------------------------------
+
+  covarnce_thl_rr(:) = covariance_xy_domain( nzm, &
+                                             theta_l(1:nx,1:ny,1:nzm), &
+                                             micro_field(1:nx,1:ny,1:nzm,iqr), &
+                                             domain_mean_thl(:), &
+                                             domain_mean_micro(iqr,:) )
+
+  covarnce_rt_rr(:) = covariance_xy_domain( nzm, &
+                                            micro_field(1:nx,1:ny,1:nzm,iqv), &
+                                            micro_field(1:nx,1:ny,1:nzm,iqr), &
+                                            domain_mean_rt(:), &
+                                            domain_mean_micro(iqr,:) )
+
+  covarnce_thl_Nr(:) = covariance_xy_domain( nzm, &
+                                             theta_l(1:nx,1:ny,1:nzm), &
+                                             micro_field(1:nx,1:ny,1:nzm,inr), &
+                                             domain_mean_thl(:), &
+                                             domain_mean_micro(inr,:) )
+
+  covarnce_rt_Nr(:) = covariance_xy_domain( nzm, &
+                                            micro_field(1:nx,1:ny,1:nzm,iqv), &
+                                            micro_field(1:nx,1:ny,1:nzm,inr), &
+                                            domain_mean_rt(:), &
+                                            domain_mean_micro(inr,:) )
 
   ! Compute covariances and correlations, first for chi(s_mellor). Manually for
   ! vertical velocity. 
@@ -8072,6 +8141,24 @@ endif
 !--------------------------------
 
 !---------------------------------
+! theta-l
+!--------------------------------
+
+if (doprecip) then
+  call hbuf_put( 'covarnce_thl_rr', covarnce_thl_rr(:), 1. )
+  call hbuf_put( 'covarnce_thl_Nr', covarnce_thl_Nr(:), 1. )
+end if ! doprecip
+
+!---------------------------------
+! rt
+!--------------------------------
+
+if (doprecip) then
+  call hbuf_put( 'covarnce_rt_rr', covarnce_rt_rr(:), 1. )
+  call hbuf_put( 'covarnce_rt_Nr', covarnce_rt_Nr(:), 1. )
+end if ! doprecip
+
+!---------------------------------
 ! chi
 !--------------------------------
 
@@ -8816,7 +8903,7 @@ real, dimension(nx,ny,nzm) :: &
 
 call t_startf('3D_out')
 
-nfields=37 ! number of 3D fields to save
+nfields=43 ! number of 3D fields to save
 nfields1=0 ! assertion check
 
 if(masterproc.or.output_sep) then
@@ -9032,7 +9119,7 @@ if (doprecip) then
   do k = 1, nzm
      do j = 1, ny
         do i = 1, nx
-           tmp(i,j,k) = qpl(i,j,k)
+           tmp(i,j,k) = micro_field(i,j,k,iqr)
         enddo
      enddo
   enddo
@@ -9040,7 +9127,7 @@ if (doprecip) then
   long_name = 'Rain water mixing ratio'
   units = 'kg/kg'
   call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
-                 save3Dbin, dompi, rank, nsubdomains )
+                   save3Dbin, dompi, rank, nsubdomains )
 
   nfields1=nfields1+1
   do k = 1, nzm
@@ -9054,7 +9141,100 @@ if (doprecip) then
   long_name = 'Rain drop concentration'
   units = 'num/kg'
   call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
-                 save3Dbin, dompi, rank, nsubdomains )
+                   save3Dbin, dompi, rank, nsubdomains )
+
+  if ( doicemicro ) then
+
+     nfields1=nfields1+1
+     do k = 1, nzm
+        do j = 1, ny
+           do i = 1, nx
+              tmp(i,j,k) = micro_field(i,j,k,iqci)
+           enddo
+        enddo
+     enddo
+     name = 'RI'
+     long_name = 'Ice mixing ratio'
+     units = 'kg/kg'
+     call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                      save3Dbin, dompi, rank, nsubdomains )
+
+     nfields1=nfields1+1
+     do k = 1, nzm
+        do j = 1, ny
+           do i = 1, nx
+              tmp(i,j,k) = micro_field(i,j,k,inci)
+           enddo
+        enddo
+     enddo
+     name = 'NI'
+     long_name = 'Ice crystal concentration'
+     units = 'num/kg'
+     call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                      save3Dbin, dompi, rank, nsubdomains )
+
+     nfields1=nfields1+1
+     do k = 1, nzm
+        do j = 1, ny
+           do i = 1, nx
+              tmp(i,j,k) = micro_field(i,j,k,iqs)
+           enddo
+        enddo
+     enddo
+     name = 'RS'
+     long_name = 'Snow mixing ratio'
+     units = 'kg/kg'
+     call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                      save3Dbin, dompi, rank, nsubdomains )
+
+     nfields1=nfields1+1
+     do k = 1, nzm
+        do j = 1, ny
+           do i = 1, nx
+              tmp(i,j,k) = micro_field(i,j,k,ins)
+           enddo
+        enddo
+     enddo
+     name = 'NS'
+     long_name = 'Snowflake concentration'
+     units = 'num/kg'
+     call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                      save3Dbin, dompi, rank, nsubdomains )
+
+     if ( dograupel ) then
+
+        nfields1=nfields1+1
+        do k = 1, nzm
+           do j = 1, ny
+              do i = 1, nx
+                 tmp(i,j,k) = micro_field(i,j,k,iqg)
+              enddo
+           enddo
+        enddo
+        name = 'RG'
+        long_name = 'Graupel mixing ratio'
+        units = 'kg/kg'
+        call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                         save3Dbin, dompi, rank, nsubdomains )
+
+        nfields1=nfields1+1
+        do k = 1, nzm
+           do j = 1, ny
+              do i = 1, nx
+                 tmp(i,j,k) = micro_field(i,j,k,ing)
+              enddo
+           enddo
+        enddo
+        name = 'NG'
+        long_name = 'Graupel concentration'
+        units = 'num/kg'
+        call compress3D( tmp, nx, ny, nzm, name, long_name, units, &
+                         save3Dbin, dompi, rank, nsubdomains )
+
+     endif ! dograupel
+
+  endif ! doicemicro
+
 endif ! doprecip
 
   !--------------------------------------
