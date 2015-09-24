@@ -193,7 +193,7 @@ stats_fmt    = "netcdf"  ! Type of statistical output file ("grads" or "netcdf")
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile      = "../output/LBA_r1662/LBA_128kmx128kmx128_1km_Morrison.nc"
+datafile      = "../sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc"
 input_type    = "sam"  ! input_type = "clubb" or "coamps_les"
 l_input_um = .true. 
 l_input_vm = .true.

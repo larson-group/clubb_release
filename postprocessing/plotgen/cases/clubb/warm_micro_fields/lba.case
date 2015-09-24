@@ -14,32 +14,32 @@
     [
        {'plotTitle' => 'Evaporation Rate', 'axisLabel' => 'Evap. Rate [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRE', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRE', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRE', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Accretion Rate', 'axisLabel' => 'Accr. Rate [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRA', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRA', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRA', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Autoconversion Rate', 'axisLabel' => 'Auto. Rate [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Overall r_{r} Microphysics Rate', 'axisLabel' => 'r_{r} Rate [kg/kg/s]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRE+PRA+PRC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PRE+PRA+PRC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'PRE+PRA+PRC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Cloud Fraction', 'axisLabel' => 'cloud\_frac [%]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'CLD * 100', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'cloud_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},       
        {'plotTitle' => 'Cloud Water Mixing Ratio, r_c', 'axisLabel' => 'rcm [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1315_128x128x128_1km_Morrison/LBA.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QCL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'lba_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
     ],
