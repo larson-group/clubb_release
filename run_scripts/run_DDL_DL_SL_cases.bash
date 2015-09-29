@@ -313,6 +313,253 @@ then
 fi # Produce plots of the PDFs.
 
 # Run the goodness-of-fit tests.
+if [ $FIT_TESTS == true ];
+then
+
+   # Change directory to the matlab_goodness_of_fit_tests directory.
+   cd ../postprocessing/matlab_goodness_of_fit_tests
+
+   # Copy goodness_of_fit_tests.m back one directory.
+   cp goodness_of_fit_tests.m ../goodness_of_fit_tests.m
+
+   # Setup the goodness-of-fit tests for the RICO case (rr and Nr).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 2;/clubb_start_height_idx = 2;/g; \
+        s/%clubb_stop_height_idx = 71;/clubb_stop_height_idx = 71;/g; \
+        s/%sam_start_file_idx = 1;/sam_start_file_idx = 1;/g; \
+        s/%sam_stop_file_idx = 3;/sam_stop_file_idx = 3;/g; \
+        1,100 s/test_w     = true/test_w     = false/g; \
+        1,100 s/test_rt    = true/test_rt    = false/g; \
+        1,100 s/test_thl   = true/test_thl   = false/g; \
+        1,100 s/test_chi   = true/test_chi   = false/g; \
+        1,100 s/test_eta   = true/test_eta   = false/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the RICO case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/RICO_256x256x100_drizzle/3D_output/ \
+      ../../output/$date_string/DDL/rico_zt.nc \
+      ../../output/$date_string/DL/rico_zt.nc \
+      ../../output/$date_string/SL/rico_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_rico_rr_Nr.txt
+
+   # Setup the goodness-of-fit tests for the DYCOMS-II RF02 DS case (rr and Nr).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; \
+        1,100 s/casename =/%casename =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 23;/clubb_start_height_idx = 23;/g; \
+        s/%clubb_stop_height_idx = 56;/clubb_stop_height_idx = 56;/g; \
+        s/%sam_start_file_idx = 1;/sam_start_file_idx = 1;/g; \
+        s/%sam_stop_file_idx = 3;/sam_stop_file_idx = 3;/g; \
+        s/%casename = 'RF02'/casename = 'RF02'/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the DYCOMS-II RF02 DS case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/DYCOMS_RF02_128x128x96_dr_sed/3D_output/ \
+      ../../output/$date_string/DDL/dycoms2_rf02_ds_zt.nc \
+      ../../output/$date_string/DL/dycoms2_rf02_ds_zt.nc \
+      ../../output/$date_string/SL/dycoms2_rf02_ds_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_rf02_rr_Nr.txt
+
+   # Setup the goodness-of-fit tests for the LBA case (rr and Nr).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; \
+        1,100 s/casename =/%casename =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 2;/clubb_start_height_idx = 2;/g; \
+        s/%clubb_stop_height_idx = 42;/clubb_stop_height_idx = 42;/g; \
+        s/%sam_start_file_idx = 1;/sam_start_file_idx = 1;/g; \
+        s/%sam_stop_file_idx = 6;/sam_stop_file_idx = 6;/g; \
+        s/%casename = 'LBA'/casename = 'LBA'/g; \
+        1,100 s/test_ri    = true/test_ri    = false/g; \
+        1,100 s/test_Ni    = true/test_Ni    = false/g; \
+        1,100 s/test_ri_ip = true/test_ri_ip = false/g; \
+        1,100 s/test_Ni_ip = true/test_Ni_ip = false/g; \
+        1,100 s/test_rs    = true/test_rs    = false/g; \
+        1,100 s/test_Ns    = true/test_Ns    = false/g; \
+        1,100 s/test_rs_ip = true/test_rs_ip = false/g; \
+        1,100 s/test_Ns_ip = true/test_Ns_ip = false/g; \
+        1,100 s/test_rg    = true/test_rg    = false/g; \
+        1,100 s/test_Ng    = true/test_Ng    = false/g; \
+        1,100 s/test_rg_ip = true/test_rg_ip = false/g; \
+        1,100 s/test_Ng_ip = true/test_Ng_ip = false/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the LBA case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/3D_output/ \
+      ../../output/$date_string/DDL/lba_zt.nc \
+      ../../output/$date_string/DL/lba_zt.nc \
+      ../../output/$date_string/SL/lba_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_lba_rr_Nr.txt
+
+   # Setup the goodness-of-fit tests for the LBA case (rg and Ng).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 34;/clubb_start_height_idx = 34;/g; \
+        s/%clubb_stop_height_idx = 57;/clubb_stop_height_idx = 57;/g; \
+        s/%sam_start_file_idx = 3;/sam_start_file_idx = 3;/g; \
+        s/%sam_stop_file_idx = 6;/sam_stop_file_idx = 6;/g; \
+        s/test_rr    = true/test_rr    = false/g; \
+        s/test_Nr    = true/test_Nr    = false/g; \
+        s/test_rr_ip = true/test_rr_ip = false/g; \
+        s/test_Nr_ip = true/test_Nr_ip = false/g;
+        1,100 s/test_ri    = true/test_ri    = false/g; \
+        1,100 s/test_Ni    = true/test_Ni    = false/g; \
+        1,100 s/test_ri_ip = true/test_ri_ip = false/g; \
+        1,100 s/test_Ni_ip = true/test_Ni_ip = false/g; \
+        1,100 s/test_rs    = true/test_rs    = false/g; \
+        1,100 s/test_Ns    = true/test_Ns    = false/g; \
+        1,100 s/test_rs_ip = true/test_rs_ip = false/g; \
+        1,100 s/test_Ns_ip = true/test_Ns_ip = false/g; \
+        1,100 s/test_rg    = false/test_rg    = true/g; \
+        1,100 s/test_Ng    = false/test_Ng    = true/g; \
+        1,100 s/test_rg_ip = false/test_rg_ip = true/g; \
+        1,100 s/test_Ng_ip = false/test_Ng_ip = true/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the LBA case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/3D_output/ \
+      ../../output/$date_string/DDL/lba_zt.nc \
+      ../../output/$date_string/DL/lba_zt.nc \
+      ../../output/$date_string/SL/lba_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_lba_rg_Ng.txt
+
+   # Setup the goodness-of-fit tests for the LBA case (rs and Ns).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 38;/clubb_start_height_idx = 38;/g; \
+        s/%clubb_stop_height_idx = 54;/clubb_stop_height_idx = 54;/g; \
+        s/%sam_start_file_idx = 5;/sam_start_file_idx = 5;/g; \
+        s/%sam_stop_file_idx = 6;/sam_stop_file_idx = 6;/g; \
+        s/test_rr    = true/test_rr    = false/g; \
+        s/test_Nr    = true/test_Nr    = false/g; \
+        s/test_rr_ip = true/test_rr_ip = false/g; \
+        s/test_Nr_ip = true/test_Nr_ip = false/g; \
+        1,100 s/test_ri    = true/test_ri    = false/g; \
+        1,100 s/test_Ni    = true/test_Ni    = false/g; \
+        1,100 s/test_ri_ip = true/test_ri_ip = false/g; \
+        1,100 s/test_Ni_ip = true/test_Ni_ip = false/g; \
+        1,100 s/test_rs    = false/test_rs    = true/g; \
+        1,100 s/test_Ns    = false/test_Ns    = true/g; \
+        1,100 s/test_rs_ip = false/test_rs_ip = true/g; \
+        1,100 s/test_Ns_ip = false/test_Ns_ip = true/g; \
+        1,100 s/test_rg    = true/test_rg    = false/g; \
+        1,100 s/test_Ng    = true/test_Ng    = false/g; \
+        1,100 s/test_rg_ip = true/test_rg_ip = false/g; \
+        1,100 s/test_Ng_ip = true/test_Ng_ip = false/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the LBA case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/3D_output/ \
+      ../../output/$date_string/DDL/lba_zt.nc \
+      ../../output/$date_string/DL/lba_zt.nc \
+      ../../output/$date_string/SL/lba_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_lba_rs_Ns.txt
+
+   # Setup the goodness-of-fit tests for the LBA case (ri and Ni).
+
+   # Copy goodness_of_fit_tests.m to goodness_of_fit_tests.m.prev.
+   cp goodness_of_fit_tests.m goodness_of_fit_tests.m.prev
+
+   # Edit goodness_of_fit_tests.m.
+   sed "1,100 s/clubb_start_height_idx =/%clubb_start_height_idx =/g; \
+        1,100 s/clubb_stop_height_idx =/%clubb_stop_height_idx =/g; \
+        1,100 s/sam_start_file_idx =/%sam_start_file_idx =/g; \
+        1,100 s/sam_stop_file_idx =/%sam_stop_file_idx =/g; s/%%/%/g; \
+        s/%clubb_start_height_idx = 59;/clubb_start_height_idx = 59;/g; \
+        s/%clubb_stop_height_idx = 65;/clubb_stop_height_idx = 65;/g; \
+        s/%sam_start_file_idx = 6;/sam_start_file_idx = 6;/g; \
+        s/%sam_stop_file_idx = 6;/sam_stop_file_idx = 6;/g; \
+        s/test_rr    = true/test_rr    = false/g; \
+        s/test_Nr    = true/test_Nr    = false/g; \
+        s/test_rr_ip = true/test_rr_ip = false/g; \
+        s/test_Nr_ip = true/test_Nr_ip = false/g; \
+        1,100 s/test_ri    = false/test_ri    = true/g; \
+        1,100 s/test_Ni    = false/test_Ni    = true/g; \
+        1,100 s/test_ri_ip = false/test_ri_ip = true/g; \
+        1,100 s/test_Ni_ip = false/test_Ni_ip = true/g; \
+        1,100 s/test_rs    = true/test_rs    = false/g; \
+        1,100 s/test_Ns    = true/test_Ns    = false/g; \
+        1,100 s/test_rs_ip = true/test_rs_ip = false/g; \
+        1,100 s/test_Ns_ip = true/test_Ns_ip = false/g; \
+        1,100 s/test_rg    = true/test_rg    = false/g; \
+        1,100 s/test_Ng    = true/test_Ng    = false/g; \
+        1,100 s/test_rg_ip = true/test_rg_ip = false/g; \
+        1,100 s/test_Ng_ip = true/test_Ng_ip = false/g;" \
+        goodness_of_fit_tests.m.prev > goodness_of_fit_tests.m
+
+   # Remove goodness_of_fit_tests.m.prev.
+   rm goodness_of_fit_tests.m.prev
+
+   # Run the goodness-of-fit tests for the LBA case.
+   ./run_goodness_of_fit_tests.bash \
+      ../../sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/3D_output/ \
+      ../../output/$date_string/DDL/lba_zt.nc \
+      ../../output/$date_string/DL/lba_zt.nc \
+      ../../output/$date_string/SL/lba_zt.nc \
+      > ../../output/$date_string/goodness_of_fit_tests_lba_ri_Ni.txt
+
+   # Restore original goodness_of_fit_tests.m.
+   mv ../goodness_of_fit_tests.m goodness_of_fit_tests.m
+
+   # Change directories back to the one where the run script is located.
+   cd ../../run_scripts
+
+fi # Run the goodness-of-fit tests.
 
 # Produce profiles of warm microphysics process rates.
 if [ $MICRO_PROFILES == true ];
