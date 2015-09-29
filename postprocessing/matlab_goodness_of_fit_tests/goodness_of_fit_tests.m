@@ -51,11 +51,28 @@ casename = 'RICO';
 % files.
 sam_start_file_idx = 70;
 sam_stop_file_idx = 70;
+%sam_start_file_idx = 1;
+%sam_start_file_idx = 3;
+%sam_start_file_idx = 5;
+%sam_start_file_idx = 6;
+%sam_stop_file_idx = 3;
+%sam_stop_file_idx = 6;
 
 % The output altitudes that are analyzed are based on the CLUBB zt output
 % files.
 clubb_start_height_idx = 39;
 clubb_stop_height_idx = 39;
+%clubb_start_height_idx = 2;
+%clubb_stop_height_idx = 71;
+%clubb_start_height_idx = 23;
+%clubb_stop_height_idx = 56;
+%clubb_stop_height_idx = 42;
+%clubb_start_height_idx = 34;
+%clubb_stop_height_idx = 57;
+%clubb_start_height_idx = 38;
+%clubb_stop_height_idx = 54;
+%clubb_start_height_idx = 59;
+%clubb_stop_height_idx = 65;
 
 % Flags to perform the tests on a field.
 test_w     = true;
