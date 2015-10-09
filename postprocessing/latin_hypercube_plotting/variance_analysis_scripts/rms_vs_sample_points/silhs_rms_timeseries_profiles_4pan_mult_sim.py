@@ -108,6 +108,7 @@ for plot_num in range(4):
     clubb_var = clubb_var[:,:,0,0]
 
     if mode == 1:
+        time_var = clubb_nc.variables['time']
         silhs_vars = list()
         silhs_vars_plt = list()
         for silhs_dir in silhs_dirs:
@@ -168,8 +169,8 @@ for plot_num in range(4):
             format_str = 'c^-'
         markerSize = 3
         if mode == 1:
-            line, = pl.plot(range(time1+1,time2+1), silhs_vars_plt[d_i], format_str, \
-                            markersize=markerSize)
+            line, = pl.plot(np.divide(time_var[time1:time2], 60.0), silhs_vars_plt[d_i], \
+                            format_str, markersize=markerSize)
         elif mode == 0:
             line, = pl.plot(sim_points_all, rms_all[d_i], format_str, markersize=markerSize)
         elif mode == 2:
@@ -215,7 +216,7 @@ for plot_num in range(4):
         if mode == 1:
             pl.ylabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
         elif mode == 0:
-            pl.ylabel('RMSE of SILHS estimate')
+            pl.ylabel('RMSE of SILHS estimate $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
         elif mode == 2:
             pl.ylabel('Height [m]')
     if mode == 0:

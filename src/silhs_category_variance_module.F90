@@ -111,11 +111,11 @@ module silhs_category_variance_module
 
       samples_all = X_nl_all_levs(:,:,iiPDF_chi)
 
-    else if ( .false. ) then
+    else if ( .true. ) then
 
       samples_all = lh_hydromet_mc_all(:,:,iirrm) ! Sample rrm_mc
 
-    else ! .true.
+    else ! .false.
       istat_var = irrm_mc_nonadj
       structure_index = microphys_get_index( istat_var, microphys_stats_vars_all(1) )
       do isample=1, num_samples
@@ -157,7 +157,8 @@ module silhs_category_variance_module
       num_importance_categories, &       ! Constant
       define_importance_categories, &
       compute_category_real_probs, &
-      importance_category_type
+      importance_category_type, &
+      determine_sample_categories
 
     use stats_variables, only: &
       stats_lh_zt, &                  ! Variable(s)
@@ -248,8 +249,12 @@ module silhs_category_variance_module
       root_weight_mean_sq_cat(k,:) = root_weight_mean_sq_cat(k,:) / &
                                      real( num_samples, kind=core_rknd )
 
-      root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) * &
-                                           category_real_probs(:) )
+      where ( category_real_probs > zero )
+        root_weight_mean_sq_cat(k,:) = sqrt( root_weight_mean_sq_cat(k,:) / &
+                                             category_real_probs(:) )
+      else where
+        root_weight_mean_sq_cat(k,:) = -999._core_rknd
+      end where
 
     end do ! k=2, nz
 
@@ -265,113 +270,6 @@ module silhs_category_variance_module
 
     return
   end subroutine silhs_sample_category_variance
-  !-----------------------------------------------------------------------
-
-  !-----------------------------------------------------------------------
-  function determine_sample_categories( num_samples, d_variables, X_nl_one_lev, &
-                                        X_mixt_comp_one_lev, importance_categories ) &
-  result( int_sample_category )
-
-  ! Description:
-  !   Determines the importance category of each sample.
-
-  ! References:
-  !   None
-  !-----------------------------------------------------------------------
-
-    ! Included Modules
-    use clubb_precision, only: &
-      core_rknd       ! Constant
-
-    use constants_clubb, only: &
-      zero     ! Constant(s)
-
-    use silhs_importance_sample_module, only: &
-      num_importance_categories, &     ! Constant
-      importance_category_type         ! Type
-
-    use corr_varnce_module, only: &
-      iiPDF_chi, &
-      iiPDF_rr
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      num_samples, &        ! Number of SILHS sample points
-      d_variables           ! Number of variates in X_nl
-
-    real( kind = core_rknd ), dimension(num_samples,d_variables), intent(in) :: &
-      X_nl_one_lev          ! SILHS sample vector at one height level
-
-    integer, dimension(num_samples), intent(in) :: &
-      X_mixt_comp_one_lev   ! Category of each sample point
-
-    type(importance_category_type), dimension(num_importance_categories), intent(in) :: &
-      importance_categories
-
-    ! Output Variable
-    integer, dimension(num_samples) :: &
-      int_sample_category   ! Category of each sample
-
-    type(importance_category_type) :: sample_category
-
-    integer :: isample, icategory, found_category_index
-
-  !-----------------------------------------------------------------------
-
-    !----- Begin Code -----
-
-    do isample=1, num_samples
-
-      if ( X_nl_one_lev(isample,iiPDF_chi) < zero ) then
-        sample_category%l_in_cloud = .false.
-      else
-        sample_category%l_in_cloud = .true.
-      end if
-
-      if ( iiPDF_rr == -1 ) then
-        stop "iiPDF_rr must be greater than zero for the category sampler to work."
-      end if
-
-      if ( X_nl_one_lev(isample,iiPDF_rr) > zero ) then
-        sample_category%l_in_precip = .true.
-      else
-        sample_category%l_in_precip = .false.
-      end if
-
-      if ( X_mixt_comp_one_lev(isample) == 1 ) then
-        sample_category%l_in_component_1 = .true.
-      else
-        sample_category%l_in_component_1 = .false.
-      end if
-
-      found_category_index = -1
-
-      do icategory=1, num_importance_categories
-
-        if ( (importance_categories(icategory)%l_in_cloud .eqv. sample_category%l_in_cloud) .and. &
-             (importance_categories(icategory)%l_in_precip .eqv. sample_category%l_in_precip) .and.&
-             (importance_categories(icategory)%l_in_component_1 .eqv. &
-              sample_category%l_in_component_1) ) then
-
-          found_category_index = icategory
-          exit
-
-        end if
-
-      end do ! icategory=1, num_importance_categories
-
-      if ( found_category_index == -1 ) then
-        stop "Fatal error determining category in determine_sample_categories"
-      end if
-
-      int_sample_category(isample) = found_category_index
-
-    end do ! isample=1, num_samples
-
-    return
-  end function determine_sample_categories
   !-----------------------------------------------------------------------
 
 end module silhs_category_variance_module

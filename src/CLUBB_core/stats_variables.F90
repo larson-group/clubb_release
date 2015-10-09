@@ -208,7 +208,8 @@ module stats_variables
 !$omp   icorr_chi_Ncn_2_n, icorr_eta_Ncn_1_n, icorr_eta_Ncn_2_n )
 
   integer, dimension(:), allocatable, public :: &
-    isilhs_variance_category
+    isilhs_variance_category, &
+    ilh_samp_frac_category
 
 !$omp threadprivate( isilhs_variance_category )
 
