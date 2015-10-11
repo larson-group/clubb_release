@@ -95,9 +95,9 @@ ylim( [ 0 max( max(bincounts_lnx) ...
                / ( nx_LES_grid * ny_LES_grid ...
                    * delta_lnx * precip_frac_x_LES ), ...
                max(max(P_lnx)) ) ] );
-hx = xlabel( var_x_label, 'FontSize', 20 );
+hx = xlabel( var_lnx_label, 'FontSize', 20 );
 set( hx, 'Units', 'Normalized' );
-set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );`
+set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
 ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ], 'FontSize', 20 );
 legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthWest' );
 grid on
