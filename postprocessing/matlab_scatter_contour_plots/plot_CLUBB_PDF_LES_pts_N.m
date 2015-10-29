@@ -101,14 +101,21 @@ else
                   / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
                   max(max(P_x)) ) ] );
 end
-xlabel( var_x_label )
-ylabel( [ 'P( ', field_plotted, ' )' ] )
-legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' )
+hx = xlabel( var_x_label, 'FontSize', 20 );
+set( hx, 'Units', 'Normalized' );
+set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
+ylabel( [ 'P( ', field_plotted, ' )' ], 'FontSize', 20 );
+legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' );
 if ( ~log_Px_plot )
    grid on
 end
 box on
 
 % Figure title and other important information.
-title( [ case_name, '; ', field_plotted, '; ', time_plotted, '; ', ...
-         altitude_plotted, '; ', note ] );
+if ( strcmp( note, '' ) )
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted ], 'FontSize', 20 );
+else
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted, '; ', note ], 'FontSize', 20 );
+end

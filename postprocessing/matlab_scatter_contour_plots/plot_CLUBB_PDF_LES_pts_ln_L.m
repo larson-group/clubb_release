@@ -95,11 +95,19 @@ ylim( [ 0 max( max(bincounts_lnx) ...
                / ( nx_LES_grid * ny_LES_grid ...
                    * delta_lnx * precip_frac_x_LES ), ...
                max(max(P_lnx)) ) ] );
-xlabel( var_lnx_label )
-ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ] )
-legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthWest' )
+hx = xlabel( var_lnx_label, 'FontSize', 20 );
+set( hx, 'Units', 'Normalized' );
+set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
+ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ], 'FontSize', 20 );
+legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthWest' );
 grid on
 box on
+
 % Figure title and other important information.
-title( [ case_name, '; ', field_plotted, '; ', time_plotted, '; ', ...
-         altitude_plotted, '; ', note ] );
+if ( strcmp( note, '' ) )
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted ], 'FontSize', 20 );
+else
+   title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
+            altitude_plotted, '; ', note ], 'FontSize', 20 );
+end
