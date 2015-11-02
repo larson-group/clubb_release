@@ -1173,7 +1173,7 @@ contains
     deltaz, zm_init, momentum_heights,  &
     thermodynamic_heights )
 
-    use grid_class, only : setup_grid_heights, gr
+    use grid_class, only : setup_grid_heights
 
     implicit none
 
