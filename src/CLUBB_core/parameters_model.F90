@@ -18,6 +18,9 @@ module parameters_model
 
   private ! Default scope
 
+  integer, parameter :: &
+    sp = selected_real_kind(6)  ! 32-bit floating point number
+
   ! Maximum magnitude of PDF parameter 'mixt_frac'. 
   real( kind = core_rknd ), public :: mixt_frac_max_mag
 
@@ -52,7 +55,7 @@ module parameters_model
 
 !$omp threadprivate(sclr_tol)
 
-  real( kind = 4 ), public :: PosInf
+  real( kind = sp ), public :: PosInf
 
 !$omp threadprivate(PosInf)
 
