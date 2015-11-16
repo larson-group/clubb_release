@@ -126,13 +126,16 @@ module clubb_api_module
     l_use_precip_frac, & ! Flag to use precipitation fraction in KK microphysics.
     l_tke_aniso, & ! For anisotropic turbulent kinetic energy
     l_fix_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
-    l_const_Nc_in_cloud   ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_const_Nc_in_cloud, &   ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_diffuse_rtm_and_thlm, &
+    l_stability_correct_Kh_N2_zm
 
   use parameters_model, only : &
     hydromet_dim    ! Number of hydrometeor species
 
   use parameters_tunable, only : &
-    l_prescribed_avg_deltaz ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    l_prescribed_avg_deltaz, & ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
+    mu
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
@@ -220,6 +223,8 @@ module clubb_api_module
         l_tke_aniso, &
         l_fix_chi_eta_correlations, &
         l_const_Nc_in_cloud, &
+        l_diffuse_rtm_and_thlm, &
+        l_stability_correct_Kh_N2_zm, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
         iSkw_denom_coef, &
         ibeta, &
@@ -296,6 +301,9 @@ module clubb_api_module
     l_stats_samp, &
     stats_tsamp, &
     stats_tout
+
+  public :: &
+    calculate_thlp2_rad_api, mu, update_xp2_mc_api, sat_mixrat_liq_api
 
   public :: &
     ! To Convert Between Common CLUBB-related quantities:
@@ -2024,5 +2032,106 @@ contains
     zm2zt_prof_api = zm2zt( azm )
 
   end function zm2zt_prof_api
+
+  !================================================================================================
+  ! calculate_thlp2_rad - Computes the contribution of radiative cooling to thlp2
+  !================================================================================================
+  pure subroutine calculate_thlp2_rad_api &
+                  ( nz, rcm_zm, thlprcp, radht_zm, &      ! Intent(in)
+                    thlp2_forcing )                       ! Intent(inout)
+
+  use clubb_precision, only: &
+    core_rknd                     ! Constant(s)
+
+  use advance_clubb_core_module, only: &
+    calculate_thlp2_rad
+
+  implicit none
+
+  ! Input Variables
+  integer, intent(in) :: &
+    nz                    ! Number of vertical levels                      [-]
+
+  real( kind = core_rknd ), dimension(nz), intent(in) :: &
+    rcm_zm, &             ! Cloud water mixing ratio on momentum grid      [kg/kg]
+    thlprcp, &            ! thl'rc'                                        [K kg/kg]
+    radht_zm              ! SW + LW heating rate (on momentum grid)        [K/s]
+
+  ! Input/Output Variables
+  real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+    thlp2_forcing         ! <th_l'^2> forcing (momentum levels)            [K^2/s]
+  !----------------------------------------------------------------------
+
+    call calculate_thlp2_rad( nz, rcm_zm, thlprcp, radht_zm, &
+                    thlp2_forcing )
+
+    return
+  end subroutine calculate_thlp2_rad_api
+
+  !================================================================================================
+  ! update_xp2_mc - Calculates the effects of rain evaporation on rtp2 and thlp2
+  !================================================================================================
+  subroutine update_xp2_mc_api( nz, dt, cloud_frac, rcm, rvm, thlm,        &
+                            wm, exner, rrm_evap, pdf_params,        &
+                            rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                            rtpthlp_mc )
+
+    use advance_xp2_xpyp_module, only: &
+      update_xp2_mc
+
+    implicit none
+
+    !input parameters
+    integer, intent(in) :: nz ! Points in the Vertical        [-]
+
+    real( kind = core_rknd ), intent(in) :: dt ! Model timestep        [s]
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      cloud_frac, &       !Cloud fraction                        [-]
+      rcm, &              !Cloud water mixing ratio              [kg/kg]
+      rvm, &              !Vapor water mixing ratio              [kg/kg]
+      thlm, &             !Liquid potential temperature          [K]
+      wm, &               !Mean vertical velocity                [m/s]
+      exner, &            !Exner function                        [-]
+      rrm_evap         !Evaporation of rain                   [kg/kg/s]
+                          !It is expected that this variable is negative, as
+                          !that is the convention in Morrison microphysics
+
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params ! PDF parameters
+
+    !input/output variables
+    real( kind = core_rknd ), dimension(nz), intent(inout) :: &
+      rtp2_mc, &    !Tendency of <rt'^2> due to evaporation   [(kg/kg)^2/s]
+      thlp2_mc, &   !Tendency of <thl'^2> due to evaporation  [K^2/s]
+      wprtp_mc, &   !Tendency of <w'rt'> due to evaporation   [m*(kg/kg)/s^2]
+      wpthlp_mc, &  !Tendency of <w'thl'> due to evaporation  [m*K/s^2] 
+      rtpthlp_mc    !Tendency of <rt'thl'> due to evaporation [K*(kg/kg)/s]
+
+    call update_xp2_mc( nz, dt, cloud_frac, rcm, rvm, thlm,        &
+                        wm, exner, rrm_evap, pdf_params,        &
+                        rtp2_mc, thlp2_mc, wprtp_mc, wpthlp_mc,    &
+                        rtpthlp_mc )
+    return
+  end subroutine update_xp2_mc_api
+
+  !================================================================================================
+  ! sat_mixrat_liq - computes the saturation mixing ratio of liquid water
+  !================================================================================================
+  elemental real( kind = core_rknd ) function sat_mixrat_liq_api( p_in_Pa, T_in_K )
+
+    use saturation, only: sat_mixrat_liq
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  & 
+      p_in_Pa,  & ! Pressure    [Pa]
+      T_in_K      ! Temperature [K]
+
+    sat_mixrat_liq_api = sat_mixrat_liq( p_in_Pa, T_in_K )
+    return
+  end function sat_mixrat_liq_api
+
 
 end module clubb_api_module
