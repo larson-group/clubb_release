@@ -168,7 +168,7 @@ box on
 
 % Figure title and other important information.
 if ( use_long_title )
-   title( [ case_name, ' ', long_field_name ], 'FontSize', 20 );
+   title( [ case_name, ': ', long_field_name ], 'FontSize', 20 );
 elseif ( strcmp( note, '' ) )
    title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
             altitude_plotted ], 'FontSize', 20 );

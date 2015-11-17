@@ -11,7 +11,8 @@ function plot_CLUBB_PDF_LES_pts_N( var_x_LES, ...
                                    case_name, field_plotted, ...
                                    time_plotted, ...
                                    altitude_plotted, ...
-                                   note )
+                                   note, use_long_title, ...
+                                   long_field_name )
                                 
 % Path to PDF analysis functions.
 addpath ( '../../utilities/PDF_analysis', '-end' )
@@ -21,7 +22,7 @@ fig_height = 0.9*scr_size(4);
 fig_width  = fig_height;
 figure('Position',[ 0 0 fig_width fig_height ])
 
-subplot( 'Position', [ 0.1 0.1 0.8 0.8 ] )
+subplot( 'Position', [ 0.13 0.15 0.82 0.75 ] )
 
 % Histogram and marginal for x, a variable that is distributed normally in
 % each PDF component.
@@ -101,18 +102,28 @@ else
                   / ( nx_LES_grid * ny_LES_grid * delta_x ), ...
                   max(max(P_x)) ) ] );
 end
+% Resize tick labels.
+set( gca, 'FontSize', 16 );
+% X-axis label.
 hx = xlabel( var_x_label, 'FontSize', 20 );
+% Relocate x-axis label.
 set( hx, 'Units', 'Normalized' );
 set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
-ylabel( [ 'P( ', field_plotted, ' )' ], 'FontSize', 20 );
-legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthEast' );
+% Y-axis label.
+ylabel( [ '\itP( ', field_plotted, ' )' ], 'FontSize', 20 );
+% Legend.
+hleg = legend( legend_text(1:1+num_clubb_files,:), ...
+               'Location', 'NorthEast' );
+set( hleg, 'FontSize', 18 );
 if ( ~log_Px_plot )
    grid on
 end
 box on
 
 % Figure title and other important information.
-if ( strcmp( note, '' ) )
+if ( use_long_title )
+   title( [ case_name, ': ', long_field_name ], 'FontSize', 20 );
+elseif ( strcmp( note, '' ) )
    title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
             altitude_plotted ], 'FontSize', 20 );
 else
