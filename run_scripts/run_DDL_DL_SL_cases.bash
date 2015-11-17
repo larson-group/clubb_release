@@ -583,10 +583,10 @@ then
    cd ../../
 
    # Run plotgen
-   ./plotgen.pl -c -l -e -t ../../output/$date_string/SL \
+   ./plotgen.pl -c -l -e -t ../../output/$date_string/DDL \
                 ../../output/$date_string/DL \
-                ../../output/$date_string/DDL \
-                ../../output/$date_string/plot_SL_DL_DDL_mc_profiles
+                ../../output/$date_string/SL \
+                ../../output/$date_string/plot_DDL_DL_SL_mc_profiles
 
    # Change directory to the one that contains the CLUBB .case files.
    cd cases/clubb
