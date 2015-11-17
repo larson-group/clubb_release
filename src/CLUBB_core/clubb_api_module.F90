@@ -17,10 +17,6 @@
 !
 module clubb_api_module
 
-  use grid_class, only : &
-    zt2zm_api => zt2zm, & ! The interface implementation of these subroutines
-    zm2zt_api => zm2zt    ! requires a use statement "interface" here.
-
   use mt95, only : &
     assignment( = ), &
     genrand_state, & ! Internal representation of the RNG state.
@@ -301,7 +297,7 @@ module clubb_api_module
     stats_tsamp, &
     stats_tout
 
-  public &
+  public :: &
     ! To Convert Between Common CLUBB-related quantities:
     lin_interpolate_two_points_api, & ! OR
     lin_interpolate_on_grid_api, &
@@ -424,6 +420,13 @@ module clubb_api_module
     ztscr16, ztscr17, ztscr18, &
     ztscr19, ztscr20, ztscr21
 
+  interface zt2zm_api
+    module procedure zt2zm_scalar_api, zt2zm_prof_api
+  end interface
+
+  interface zm2zt_api
+    module procedure zm2zt_scalar_api, zm2zt_prof_api
+  end interface
 
 contains
 
@@ -1170,7 +1173,7 @@ contains
     deltaz, zm_init, momentum_heights,  &
     thermodynamic_heights )
 
-    use grid_class, only : setup_grid_heights, gr
+    use grid_class, only : setup_grid_heights
 
     implicit none
 
@@ -1974,5 +1977,95 @@ contains
       integral_forcing, dt )
 
   end function calculate_spurious_source_api
+
+  !================================================================================================
+  ! zm2zt_scalar - Interpolates a variable from zm to zt grid at one height level
+  !================================================================================================
+  function zm2zt_scalar_api( azm, k )
+
+    use grid_class, only: zm2zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    integer, intent(in) :: &
+      k      ! Vertical level index
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      zm2zt_scalar_api   ! Variable when interp. to thermo. levels
+
+    zm2zt_scalar_api = zm2zt( azm, k )
+
+  end function zm2zt_scalar_api
+
+  !================================================================================================
+  ! zt2zm_scalar - Interpolates a variable from zt to zm grid at one height level
+  !================================================================================================
+  function zt2zm_scalar_api( azt, k )
+
+    use grid_class, only: zt2zm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    integer, intent(in) :: &
+      k      ! Vertical level index
+
+    ! Return Variable
+    real( kind = core_rknd ) :: &
+      zt2zm_scalar_api   ! Variable when interp. to momentum levels
+
+    zt2zm_scalar_api = zt2zm( azt, k )
+
+  end function zt2zm_scalar_api
+
+  !================================================================================================
+  ! zt2zm_prof - Interpolates a variable (profile) from zt to zm grid
+  !================================================================================================
+  function zt2zm_prof_api( azt )
+
+    use grid_class, only: zt2zm
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azt    ! Variable on thermodynamic grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zt2zm_prof_api   ! Variable when interp. to momentum levels
+
+    zt2zm_prof_api = zt2zm( azt )
+
+  end function zt2zm_prof_api
+
+  !================================================================================================
+  ! zm2zt_prof - Interpolates a variable (profile) from zm to zt grid
+  !================================================================================================
+  function zm2zt_prof_api( azm )
+
+    use grid_class, only: zm2zt
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      azm    ! Variable on momentum grid levels    [units vary]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      zm2zt_prof_api   ! Variable when interp. to thermo. levels
+
+    zm2zt_prof_api = zm2zt( azm )
+
+  end function zm2zt_prof_api
 
 end module clubb_api_module

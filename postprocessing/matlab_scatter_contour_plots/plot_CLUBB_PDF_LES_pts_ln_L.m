@@ -12,7 +12,8 @@ function plot_CLUBB_PDF_LES_pts_ln_L( var_x_LES, ...
                                       case_name, field_plotted, ...
                                       time_plotted, ...
                                       altitude_plotted, ...
-                                      note )
+                                      note, use_long_title, ...
+                                      long_field_name )
                                 
 % Path to PDF analysis functions.
 addpath ( '../../utilities/PDF_analysis', '-end' )
@@ -22,7 +23,7 @@ fig_height = 0.9*scr_size(4);
 fig_width  = fig_height;
 figure('Position',[ 0 0 fig_width fig_height ])
 
-subplot( 'Position', [ 0.1 0.1 0.8 0.8 ] )
+subplot( 'Position', [ 0.13 0.15 0.82 0.75 ] )
 
 % Histogram and marginal for ln x, where x > 0 (in-precip), a variable
 % that is distributed normally in each PDF component.
@@ -95,16 +96,26 @@ ylim( [ 0 max( max(bincounts_lnx) ...
                / ( nx_LES_grid * ny_LES_grid ...
                    * delta_lnx * precip_frac_x_LES ), ...
                max(max(P_lnx)) ) ] );
+% Resize tick labels.
+set( gca, 'FontSize', 16 );
+% X-axis label.
 hx = xlabel( var_lnx_label, 'FontSize', 20 );
+% Relocate x-axis label.
 set( hx, 'Units', 'Normalized' );
 set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
-ylabel( [ 'P( ', field_plotted, ' |_{ ip} )' ], 'FontSize', 20 );
-legend( legend_text(1:1+num_clubb_files,:), 'Location', 'NorthWest' );
+% Y-axis label.
+ylabel( [ '\itP( ', field_plotted, ' \rm|_{ ip} \it)' ], 'FontSize', 20 );
+% Legend.
+hleg = legend( legend_text(1:1+num_clubb_files,:), ...
+               'Location', 'NorthWest' );
+set( hleg, 'FontSize', 18 );
 grid on
 box on
 
 % Figure title and other important information.
-if ( strcmp( note, '' ) )
+if ( use_long_title )
+   title( [ case_name, ': ', long_field_name ], 'FontSize', 20 );
+elseif ( strcmp( note, '' ) )
    title( [ case_name, '; ', field_plotted, '; ',  time_plotted, '; ', ...
             altitude_plotted ], 'FontSize', 20 );
 else
