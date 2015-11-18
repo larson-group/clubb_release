@@ -47,7 +47,7 @@ else
     echo "Checking out WRF"
     svn co http://carson.math.uwm.edu/repos/wrf/trunk WRF
     echo "Checking out CAM"
-    svn co --username vlarson@uwm.edu https://svn-ccsm-models.cgd.ucar.edu/cam1/branches/subcol_SILHS_UWM CAM
+    svn co https://svn-ccsm-models.cgd.ucar.edu/cam1/branches/subcol_SILHS_UWM CAM
 fi
 
 # Setup the paths to the host models
