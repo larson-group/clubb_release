@@ -142,7 +142,7 @@ my @lineColors = (
     "[ 1.000, 1.000, 0.200 ]"     # yellow
 );
 
-my @lineWidthsNormal = ( 4.5, 3, 2.5, 1.5 );
+my @lineWidthsNormal = ( 3.75, 3, 2.25, 1.5 );
 
 # We apply a constant budget width for budget cases.
 my @lineWidthsBudget = (3);

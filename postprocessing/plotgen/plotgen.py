@@ -67,7 +67,7 @@ lineColors = [
     "[ 0.894, 0.102, 0.110 ]",    # red
     "[ 1.000, 1.000, 0.200 ]"     # yellow
 ]
-lineWidths = [4.5, 3, 2.5, 1.5]
+lineWidths = [3.75, 3, 2.25, 1.5]
 lineStyleCounter = 0
 lineColorCounter = 0
 lineWidthCounter = 0
