@@ -107,7 +107,7 @@ echo "Testing SAM's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $samDir --exclude-dir="CLUBB","SILHS" > sam_modules.txt
 
 echo "Testing CAM's API Commitment"
-python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="clubb","silhs" > cam_modules.txt
+python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="cime","clubb","silhs" > cam_modules.txt
 
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","silhs" > wrf_modules.txt
