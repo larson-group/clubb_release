@@ -223,6 +223,10 @@
           {'filename' => 'rico_zm.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'WPTHVP_CLUBB', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}#Is a reference temp of 300 correct? ./(9.81 * 300)
        ]},
+       {'plotTitle' => 'SWCF', 'axisLabel' => 'SWCF', 'type' => 'timeseries', 'lines' =>
+       [
+          {'filename' => 'rico_cam.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'SWCF', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => 'rico_sfc.nc', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
