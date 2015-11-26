@@ -78,10 +78,14 @@ echo -e "\n-----Generating dycoms2_rf02_do timeseries plots-----"
 plot_timeseries_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_timeseries.pdf" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld"
 
 echo -e "\n-----Generating rico_lh profile plots-----"
-plot_profiles_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_profiles.pdf" "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld"
+plot_profiles_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_profiles_mean.pdf" --profile_mean "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld"
+
+plot_profiles_n_dir_all "$CLUBB_DIR" rico_lh "$PLOTS_OUTPUT_DIR/rico_lh_profiles_rmse.pdf" --profile_rmse "$SIM_OUTPUT_DIR/rico_lh/2Cat-CldPcp" "$SIM_OUTPUT_DIR/rico_lh/8Cat" "$SIM_OUTPUT_DIR/rico_lh/2Cat-Cld"
 
 echo -e "\n-----Generating dycoms2_rf02_do profile plots-----"
-plot_profiles_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles.pdf" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld"
+plot_profiles_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles_mean.pdf" --profile_mean "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld"
+
+plot_profiles_n_dir_all "$CLUBB_DIR" dycoms2_rf02_do "$PLOTS_OUTPUT_DIR/dycoms2_rf02_do_profiles_rmse.pdf" --profile_rmse "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-CldPcp" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/8Cat" "$SIM_OUTPUT_DIR/dycoms2_rf02_do/2Cat-Cld"
 
 ##### Restore model files #####
 mv $RICO_LH_MODEL_IN_BACKUP "$CLUBB_DIR/input/case_setups/rico_lh_model.in"
