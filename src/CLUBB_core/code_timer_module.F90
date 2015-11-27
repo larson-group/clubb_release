@@ -11,8 +11,8 @@ module code_timer_module
 
   ! A timer!!
   type timer_t
-    real :: time_elapsed        ! Time elapsed [sec
-    real :: secstart                    ! Timer starting time
+    real :: time_elapsed        ! Time elapsed [sec]
+    real :: secstart            ! Timer starting time
   end type timer_t
 
   public :: timer_t, timer_start, timer_stop
