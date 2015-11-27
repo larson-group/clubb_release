@@ -9,15 +9,10 @@ module code_timer_module
 
   private ! Set default scope
 
-  ! A large integer kind is used for timing to avoid
-  ! overflow.
-  integer, parameter, public :: &
-    timer_kind = selected_int_kind(16)
-
   ! A timer!!
   type timer_t
-    integer(kind=timer_kind) :: time_elapsed        ! Time elapsed [msec]
-    integer :: secstart, msstart                    ! Timer starting times
+    real :: time_elapsed        ! Time elapsed [sec
+    real :: secstart                    ! Timer starting time
   end type timer_t
 
   public :: timer_t, timer_start, timer_stop
@@ -39,15 +34,9 @@ module code_timer_module
     ! Input/Output Variables
     type(timer_t), intent(inout) :: timer
 
-    ! Local Variables
-    integer, dimension(8) :: values
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-    call date_and_time(VALUES=values)
-
-    timer%secstart = values(7)
-    timer%msstart  = values(8)
-
+    call cpu_time( timer%secstart )
     return
   end subroutine timer_start
   !-----------------------------------------------------------------------
@@ -67,20 +56,15 @@ module code_timer_module
     type(timer_t), intent(inout) :: timer
 
     ! Local Variables
-    integer :: values(8), secend, msend, secdif, msdif
+    real :: secend
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-    call date_and_time(VALUES=values)
+    call cpu_time( secend )
 
-    secend = values(7)
-    msend  = values(8)
 
-    secdif = secend - timer%secstart
-    if (secdif < 0) secdif = secdif + 60
-
-    msdif = msend - timer%msstart
-    timer%time_elapsed = timer%time_elapsed + int( secdif*1000 + msdif, kind=timer_kind )
+    timer%time_elapsed = timer%time_elapsed + (secend - timer%secstart)
+    timer%secstart = 0.0
 
     return
   end subroutine timer_stop
