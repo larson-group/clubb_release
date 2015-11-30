@@ -234,7 +234,10 @@ for plot_num in range(4):
         elif mode == 0:
             pl.xlabel('Number of Sample Points')
         elif mode == 2:
-            pl.xlabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
+            if profile_mode == 0:
+                pl.xlabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
+            else:
+                pl.xlabel('Tendency (RMSE) $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
     if plot_num == 0 or plot_num == 2:
         if mode == 1:
             pl.ylabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
