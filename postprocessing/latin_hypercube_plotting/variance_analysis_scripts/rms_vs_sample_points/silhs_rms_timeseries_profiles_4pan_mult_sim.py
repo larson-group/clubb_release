@@ -183,21 +183,18 @@ for plot_num in range(4):
             line, = pl.plot(sim_points_all, rms_all[d_i], format_str, markersize=markerSize)
         elif mode == 2:
             ens_dirs = glob.glob(silhs_dirs[d_i]+'/silhs_'+num_pts_for_profiles+'_*')
-            ens_profiles = np.empty([althigh-altlow, len(ens_dirs)])
+            ens_profiles = np.empty([time2-time1, althigh-altlow, len(ens_dirs)])
             for i in range(len(ens_dirs)):
-                ens_profiles[:,i] = np.average(netCDF4.Dataset(ens_dirs[i]+'/'+case_name+ \
-                    '_lh_zt.nc').variables[silhs_var_strs[plot_num]][time1:time2, \
-                    altlow:althigh,0,0], axis=0)
+                ens_profiles[:,:,i] = netCDF4.Dataset(ens_dirs[i]+'/'+case_name+'_lh_zt.nc')\
+                    .variables[silhs_var_strs[plot_num]][time1:time2,altlow:althigh,0,0]
             if profile_mode == 0:
-                line, = pl.plot(np.average(ens_profiles, axis=1), altitude[altlow:althigh], \
+                line, = pl.plot(np.average(ens_profiles, axis=(0,2)), altitude[altlow:althigh], \
                             format_str, markersize=markerSize)
             else:
-                clubb_avg = np.average(clubb_var[time1:time2, altlow:althigh], axis=0)
-                ens_rms = np.zeros(althigh-altlow)
+                ens_diffs = np.empty([time2-time1, althigh-altlow, len(ens_dirs)])
                 for i in range(len(ens_dirs)):
-                    ens_rms[:] = ens_rms[:] + (clubb_avg[:] - ens_profiles[:,i])**2
-
-                ens_rms[:] = np.sqrt( ens_rms[:] / len(ens_dirs) )
+                    ens_diffs[:,:,i] = ens_profiles[:,:,i] - clubb_var[time1:time2,altlow:althigh]
+                ens_rms = np.sqrt(np.average(np.square(ens_diffs), axis=(0,2)))
                 line, = pl.plot(ens_rms[:], altitude[altlow:althigh], \
                                 format_str, markersize=markerSize)
             
