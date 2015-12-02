@@ -234,7 +234,7 @@ for plot_num in range(4):
             if profile_mode == 0:
                 pl.xlabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
             else:
-                pl.xlabel('Tendency (RMSE) $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
+                pl.xlabel('RMSE of Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
     if plot_num == 0 or plot_num == 2:
         if mode == 1:
             pl.ylabel('Tendency $[\\rm{kg}\\ \\rm{kg}^{-1}\\ \\rm{s}^{-1}]$')
