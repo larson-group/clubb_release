@@ -140,17 +140,27 @@ set(gcf, 'PaperUnits', 'inches')
 set(gcf, 'PaperPosition', [ 0.0 0.0 6.0 1.5 ])
 
 subplot(1,3,3)
+plot( hm_DDL, P_DDL, '-b', 'LineWidth', 1.5 )
+hold on
 plot( hm_DDL, P_DDL_1, '--k' )
 hold on
 plot( hm_DDL, P_DDL_2, ':k' )
 hold on
-plot( hm_DDL, P_DDL, '-k' )
-hold on
 arrow_vec = get( gca, 'Position' );
 annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
             [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
-            'Color', 'k', 'LineStyle', '-', 'LineWidth', 0.5, ...
+            'Color', 'b', 'LineStyle', '-', 'LineWidth', 1.5, ...
             'HeadLength', 5, 'HeadWidth', 5 );
+hold on
+annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+            [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+            'Color', 'k', 'LineStyle', '--', 'LineWidth', 0.5, ...
+            'HeadLength', 3, 'HeadWidth', 3 );
+hold on
+annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+            [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+            'Color', 'k', 'LineStyle', ':', 'LineWidth', 0.5, ...
+            'HeadLength', 3, 'HeadWidth', 3 );
 hold off
 xlim( [ 0 max( hm_DDL ) ] )
 ylim( [ 0 max( P_SL ) ] )
@@ -161,17 +171,27 @@ set(gca,'YColor',[ 0.625 0.625 0.625 ])
 box off
 
 subplot(1,3,2)
+plot( hm_DL, P_DL, '-g', 'LineWidth', 1.5 )
+hold on
 plot( hm_DL, P_DL_1, '--k' )
 hold on
 plot( hm_DL, P_DL_2, ':k' )
 hold on
-plot( hm_DL, P_DL, '-k' )
-hold on
 arrow_vec = get( gca, 'Position' );
 annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
             [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
-            'Color', 'k', 'LineStyle', '-', 'LineWidth', 0.5, ...
+            'Color', 'g', 'LineStyle', '-', 'LineWidth', 1.5, ...
             'HeadLength', 5, 'HeadWidth', 5 );
+hold on
+annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+            [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+            'Color', 'k', 'LineStyle', '--', 'LineWidth', 0.5, ...
+            'HeadLength', 3, 'HeadWidth', 3 );
+hold on
+annotation( 'arrow', [ arrow_vec(1) arrow_vec(1) ], ...
+            [ arrow_vec(2) arrow_vec(2)+arrow_vec(4) ], ...
+            'Color', 'k', 'LineStyle', ':', 'LineWidth', 0.5, ...
+            'HeadLength', 3, 'HeadWidth', 3 );
 hold off
 xlim( [ 0 max( hm_DL ) ] )
 ylim( [ 0 max( P_SL ) ] )
@@ -182,11 +202,11 @@ set(gca,'YColor',[ 0.625 0.625 0.625 ])
 box off
 
 subplot(1,3,1)
+plot( hm_SL, P_SL, '-m', 'LineWidth', 1.5 )
+hold on
 plot( hm_SL, P_SL_1, '--k' )
 hold on
 plot( hm_SL, P_SL_2, ':k' )
-hold on
-plot( hm_SL, P_SL, '-k' )
 hold off
 xlim( [ 0 max( hm_SL ) ] )
 ylim( [ 0 max( P_SL ) ] )
