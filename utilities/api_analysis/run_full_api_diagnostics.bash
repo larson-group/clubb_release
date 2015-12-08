@@ -47,7 +47,7 @@ else
     echo "Checking out WRF"
     svn co http://carson.math.uwm.edu/repos/wrf/trunk WRF
     echo "Checking out CAM"
-    svn co --username vlarson@uwm.edu https://svn-ccsm-models.cgd.ucar.edu/cam1/branches/subcol_SILHS_UWM CAM
+    svn co https://svn-ccsm-models.cgd.ucar.edu/cam1/branches/subcol_SILHS_UWM CAM
 fi
 
 # Setup the paths to the host models
@@ -107,7 +107,7 @@ echo "Testing SAM's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $samDir --exclude-dir="CLUBB","SILHS" > sam_modules.txt
 
 echo "Testing CAM's API Commitment"
-python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="clubb","silhs" > cam_modules.txt
+python api_commitment_test.py -cpu CLUBB_core $camDir --exclude-dir="cime","clubb","silhs" > cam_modules.txt
 
 echo "Testing WRF's API Commitment"
 python api_commitment_test.py -cpu CLUBB_core $wrfDir --exclude-dir="clubb","silhs" > wrf_modules.txt
