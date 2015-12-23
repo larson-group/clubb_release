@@ -80,8 +80,8 @@ clubb_height_idx = 39; % RICO 1500 m.
 casename = 'RICO';
 %casename = 'RF02';
 %casename = 'LBA';
-print_note = 'Input fields (predictive fields)';
-%print_note = '';
+%print_note = 'Input fields (predictive fields)';
+print_note = '';
 % Use variable name written out, rather than symbol, in the title.
 use_long_title = true;
 
@@ -122,7 +122,7 @@ plot_ln_rg   = true;
 plot_ln_Ng   = true;
 
 % Select the type of output file for MATLAB.
-output_type = '-dpng';
+output_type = '-depsc';
 
 % Text for legends of plots.
 legend_text(1,1:3) = 'LES';
@@ -130,7 +130,7 @@ legend_text(1,1:3) = 'LES';
 % are listed as a generic 'CLUBB 1', 'CLUBB 2', etc., when there are
 % multiple CLUBB files and as 'CLUBB' when there is a single CLUBB file.
 % Otherwise, legend text must be manually entered below.
-auto_legend_text = true;
+auto_legend_text = false;
 if ( auto_legend_text )
    if ( num_clubb_files > 1 )
       for clubb_idx = 1:1:num_clubb_files
