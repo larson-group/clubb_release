@@ -104,7 +104,7 @@ hx = xlabel( var_lnx_label, 'FontSize', 20 );
 set( hx, 'Units', 'Normalized' );
 set( hx, 'Position', get(hx,'Position')-[0.0,0.02,0] );
 % Y-axis label.
-ylabel( [ '\itP( ', field_plotted, ' )\rm|_{ ip}' ], 'FontSize', 20 );
+ylabel( [ '\itP( ', field_plotted, ' ) \rm|_{ ip}' ], 'FontSize', 20 );
 % Legend.
 hleg = legend( legend_text(1:1+num_clubb_files,:), ...
                'Location', 'NorthWest' );
