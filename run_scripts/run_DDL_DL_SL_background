@@ -1,0 +1,2 @@
+# $Id$
+./run_DDL_DL_SL_cases.bash -p -f -m > DDL_DL_SL_output.txt
