@@ -4588,15 +4588,53 @@ if (doprecip) then
     
   name = 'covarnce_thl_rr'
   longname = 'Covariance of theta-l and rain water mixing ratio'
-  units = '[(K)(kg/kg^-1)]'
+  units = '[(K)(kg kg^-1)]'
   call add_to_namelist(count,microcount,name,longname,units,0)
 
   name = 'covarnce_thl_Nr'
   longname = 'Covariance of theta-l and rain drop concentration'
-  units = '[(K)(#/kg^-1)]'
+  units = '[(K)(# kg^-1)]'
   call add_to_namelist(count,microcount,name,longname,units,0)
 
-end if ! doprecip
+  if (doicemicro) then
+
+     name = 'covarnce_thl_ri'
+     longname = 'Covariance of theta-l and ice mixing ratio'
+     units = '[(K)(kg kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_thl_Ni'
+     longname = 'Covariance of theta-l and ice crystal concentration'
+     units = '[(K)(# kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_thl_rs'
+     longname = 'Covariance of theta-l and snow mixing ratio'
+     units = '[(K)(kg kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_thl_Ns'
+     longname = 'Covariance of theta-l and snowflake concentration'
+     units = '[(K)(# kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     if (dograupel) then
+
+        name = 'covarnce_thl_rg'
+        longname = 'Covariance of theta-l and graupel mixing ratio'
+        units = '[(K)(kg kg^-1)]'
+        call add_to_namelist(count,microcount,name,longname,units,0)
+
+        name = 'covarnce_thl_Ng'
+        longname = 'Covariance of theta-l and graupel concentration'
+        units = '[(K)(# kg^-1)]'
+        call add_to_namelist(count,microcount,name,longname,units,0)
+
+     endif ! dograupel
+
+  endif ! doicemicro
+
+endif ! doprecip
 
 !----------------------------
 ! rt
@@ -4605,15 +4643,53 @@ if (doprecip) then
     
   name = 'covarnce_rt_rr'
   longname = 'Covariance of rt and rain water mixing ratio'
-  units = '[(kg kg^-1)(kg/kg^-1)]'
+  units = '[(kg kg^-1)(kg kg^-1)]'
   call add_to_namelist(count,microcount,name,longname,units,0)
 
   name = 'covarnce_rt_Nr'
   longname = 'Covariance of rt and rain drop concentration'
-  units = '[(kg kg^-1)(#/kg^-1)]'
+  units = '[(kg kg^-1)(# kg^-1)]'
   call add_to_namelist(count,microcount,name,longname,units,0)
 
-end if ! doprecip
+  if (doicemicro) then
+
+     name = 'covarnce_rt_ri'
+     longname = 'Covariance of rt and ice mixing ratio'
+     units = '[(kg kg^-1)(kg kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_rt_Ni'
+     longname = 'Covariance of rt and ice crystal concentration'
+     units = '[(kg kg^-1)(# kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_rt_rs'
+     longname = 'Covariance of rt and snow mixing ratio'
+     units = '[(kg kg^-1)(kg kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     name = 'covarnce_rt_Ns'
+     longname = 'Covariance of rt and snowflake concentration'
+     units = '[(kg kg^-1)(# kg^-1)]'
+     call add_to_namelist(count,microcount,name,longname,units,0)
+
+     if (dograupel) then
+
+        name = 'covarnce_rt_rg'
+        longname = 'Covariance of rt and graupel mixing ratio'
+        units = '[(kg kg^-1)(kg kg^-1)]'
+        call add_to_namelist(count,microcount,name,longname,units,0)
+
+        name = 'covarnce_rt_Ng'
+        longname = 'Covariance of rt and graupel concentration'
+        units = '[(kg kg^-1)(# kg^-1)]'
+        call add_to_namelist(count,microcount,name,longname,units,0)
+
+     endif ! dograupel
+
+  endif ! doicemicro
+
+endif ! doprecip
 
 !----------------------------
 !----------------------------
@@ -5833,8 +5909,8 @@ real, dimension(11,11,nzm) :: micro_correlations ! Magic numbers are the number
                                                  ! of variables in the correlation
 !                                                  and covariance matricies
 real, dimension(11,11,nzm) :: micro_covarnce 
-real, dimension(nzm) :: covarnce_thl_rr, covarnce_thl_Nr, &
-                        covarnce_rt_rr, covarnce_rt_Nr
+real, dimension(11,nzm) :: covarnce_thl_hm
+real, dimension(11,nzm) :: covarnce_rt_hm
 
 !Microphysics correlations and covariances matricies in-cloud
 real, dimension(11,11,nzm) :: ic_micro_correlations 
@@ -6437,29 +6513,24 @@ endif
 ! Domain-wide covariances and correlations
 !-----------------------------------------
 
-  covarnce_thl_rr(:) = covariance_xy_domain( nzm, &
-                                             theta_l(1:nx,1:ny,1:nzm), &
-                                             micro_field(1:nx,1:ny,1:nzm,iqr), &
-                                             domain_mean_thl(:), &
-                                             domain_mean_micro(iqr,:) )
+  ! Calculate the covariance of theta-l/rt and each hydrometeor.
+  do n = micro_indx_start, nmicro_fields, 1
 
-  covarnce_rt_rr(:) = covariance_xy_domain( nzm, &
-                                            micro_field(1:nx,1:ny,1:nzm,iqv), &
-                                            micro_field(1:nx,1:ny,1:nzm,iqr), &
-                                            domain_mean_rt(:), &
-                                            domain_mean_micro(iqr,:) )
+     covarnce_thl_hm(n+offset,:) &
+     = covariance_xy_domain( nzm, &
+                             theta_l(1:nx,1:ny,1:nzm), &
+                             micro_field(1:nx,1:ny,1:nzm,n), &
+                             domain_mean_thl(:), &
+                             domain_mean_micro(n,:) )
 
-  covarnce_thl_Nr(:) = covariance_xy_domain( nzm, &
-                                             theta_l(1:nx,1:ny,1:nzm), &
-                                             micro_field(1:nx,1:ny,1:nzm,inr), &
-                                             domain_mean_thl(:), &
-                                             domain_mean_micro(inr,:) )
+     covarnce_rt_hm(n+offset,:) &
+     = covariance_xy_domain( nzm, &
+                             micro_field(1:nx,1:ny,1:nzm,iqv), &
+                             micro_field(1:nx,1:ny,1:nzm,n), &
+                             domain_mean_rt(:), &
+                             domain_mean_micro(n,:) )
 
-  covarnce_rt_Nr(:) = covariance_xy_domain( nzm, &
-                                            micro_field(1:nx,1:ny,1:nzm,iqv), &
-                                            micro_field(1:nx,1:ny,1:nzm,inr), &
-                                            domain_mean_rt(:), &
-                                            domain_mean_micro(inr,:) )
+  enddo ! n = micro_indx_start, nmicro_fields, 1
 
   ! Compute covariances and correlations, first for chi(s_mellor). Manually for
   ! vertical velocity. 
@@ -8145,18 +8216,38 @@ endif
 !--------------------------------
 
 if (doprecip) then
-  call hbuf_put( 'covarnce_thl_rr', covarnce_thl_rr(:), 1. )
-  call hbuf_put( 'covarnce_thl_Nr', covarnce_thl_Nr(:), 1. )
-end if ! doprecip
+   call hbuf_put( 'covarnce_thl_rr', covarnce_thl_hm(idx_rr,:), 1. )
+   call hbuf_put( 'covarnce_thl_Nr', covarnce_thl_hm(idx_Nr,:), 1. )
+   if (doicemicro) then
+      call hbuf_put( 'covarnce_thl_ri', covarnce_thl_hm(idx_ri,:), 1. )
+      call hbuf_put( 'covarnce_thl_Ni', covarnce_thl_hm(idx_Ni,:), 1. )
+      call hbuf_put( 'covarnce_thl_rs', covarnce_thl_hm(idx_rs,:), 1. )
+      call hbuf_put( 'covarnce_thl_Ns', covarnce_thl_hm(idx_Ns,:), 1. )
+      if (dograupel) then
+         call hbuf_put( 'covarnce_thl_rg', covarnce_thl_hm(idx_rg,:), 1. )
+         call hbuf_put( 'covarnce_thl_Ng', covarnce_thl_hm(idx_Ng,:), 1. )
+      endif ! dograupel
+   endif ! doicemicro
+endif ! doprecip
 
 !---------------------------------
 ! rt
 !--------------------------------
 
 if (doprecip) then
-  call hbuf_put( 'covarnce_rt_rr', covarnce_rt_rr(:), 1. )
-  call hbuf_put( 'covarnce_rt_Nr', covarnce_rt_Nr(:), 1. )
-end if ! doprecip
+   call hbuf_put( 'covarnce_rt_rr', covarnce_rt_hm(idx_rr,:), 1. )
+   call hbuf_put( 'covarnce_rt_Nr', covarnce_rt_hm(idx_Nr,:), 1. )
+   if (doicemicro) then
+      call hbuf_put( 'covarnce_rt_ri', covarnce_rt_hm(idx_ri,:), 1. )
+      call hbuf_put( 'covarnce_rt_Ni', covarnce_rt_hm(idx_Ni,:), 1. )
+      call hbuf_put( 'covarnce_rt_rs', covarnce_rt_hm(idx_rs,:), 1. )
+      call hbuf_put( 'covarnce_rt_Ns', covarnce_rt_hm(idx_Ns,:), 1. )
+      if (dograupel) then
+         call hbuf_put( 'covarnce_rt_rg', covarnce_rt_hm(idx_rg,:), 1. )
+         call hbuf_put( 'covarnce_rt_Ng', covarnce_rt_hm(idx_Ng,:), 1. )
+      endif ! dograupel
+   endif ! doicemicro
+endif ! doprecip
 
 !---------------------------------
 ! chi
