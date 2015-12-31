@@ -18,7 +18,7 @@ module precipitation_fraction
              precip_frac_assert_check
 
   integer, parameter, public :: &
-    precip_frac_calc_type = 1  ! Option used to calculate component precip_frac
+    precip_frac_calc_type = 2  ! Option used to calculate component precip_frac
 
   contains
 
