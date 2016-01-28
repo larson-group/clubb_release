@@ -169,10 +169,6 @@ module latin_hypercube_driver_module
     l_error = .false.
 
     ! Sanity checks for l_lh_importance_sampling
-    if ( l_lh_importance_sampling .and. mod( num_samples, 2 ) /= 0 ) then
-      write(fstderr,*) "Cloud weighted sampling requires num_samples to be divisible by 2."
-      stop "Fatal error."
-    end if
     if ( l_lh_importance_sampling .and. sequence_length /= 1 ) then
       write(fstderr,*) "Cloud weighted sampling requires sequence length be equal to 1."
       stop "Fatal error."
@@ -324,7 +320,7 @@ module latin_hypercube_driver_module
       core_rknd                   ! Precision
 
     use constants_clubb, only: &
-      one                         ! Constant
+      one, fstderr                ! Constant(s)
 
     use parameters_silhs, only: &
       l_lh_straight_mc, &         ! Variable(s)
@@ -387,6 +383,12 @@ module latin_hypercube_driver_module
 
   !----------------------------------------------------------------------
     !----- Begin Code -----
+
+    ! Sanity check
+    if ( l_lh_old_cloud_weighted .and. mod( num_samples, 2 ) /= 0 ) then
+      write(fstderr,*) "Old cloud weighted sampling requires num_samples to be divisible by 2."
+      stop "Fatal error."
+    end if
 
     if ( l_lh_straight_mc ) then
 
