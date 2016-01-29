@@ -814,6 +814,11 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
+    ! Sanity check
+    if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+      stop "l_Lscale_plume_centered requires l_avg_Lscale"
+    end if
+
     ! Determine the maximum allowable value for Lscale (in meters).
     call set_Lscale_max( l_implemented, host_dx, host_dy, & ! intent(in)
                          Lscale_max )                       ! intent(out)
