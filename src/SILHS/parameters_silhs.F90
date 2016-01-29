@@ -27,7 +27,7 @@ module parameters_silhs
     two_cluster_cp_nocp_opt      = 3
 
   integer, public :: &
-    cluster_allocation_strategy = eight_cluster_allocation_opt
+    cluster_allocation_strategy = two_cluster_cp_nocp_opt
 
   !$omp threadprivate( cluster_allocation_strategy )
 
@@ -56,7 +56,7 @@ module parameters_silhs
                                               !  hypercube sampling and no importance sampling
     l_lh_clustered_sampling   = .true., &     ! Use the "new" SILHS importance sampling
                                               !  scheme with prescribed probabilities
-    l_rcm_in_cloud_k_lh_start = .false.,&     ! Determine k_lh_start based on maximum within-cloud
+    l_rcm_in_cloud_k_lh_start = .true. ,&     ! Determine k_lh_start based on maximum within-cloud
                                               !  rcm
     l_random_k_lh_start       = .false.       ! Place k_lh_start at a random grid level between
                                               !  maximum rcm and maximum rcm_in_cloud
@@ -71,13 +71,13 @@ module parameters_silhs
   !$omp threadprivate( eight_cluster_presc_probs )
 
   logical, public :: &
-    l_lh_limit_weights = .false., &           ! Limit SILHS sample point weights for stability
+    l_lh_limit_weights = .true. , &           ! Limit SILHS sample point weights for stability
     l_lh_var_frac      = .false.              ! Prescribe variance fractions
 
   !$omp threadprivate( l_lh_limit_weights, l_lh_var_frac )
 
   real( kind = core_rknd ), public :: &
-    importance_prob_thresh = 5.0e-3_core_rknd ! Minimum PDF probability of category for importance
+    importance_prob_thresh = 1.0e-8_core_rknd ! Minimum PDF probability of category for importance
                                               ! sampling
 
   !$omp threadprivate( importance_prob_thresh )
