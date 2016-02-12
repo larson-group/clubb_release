@@ -1048,11 +1048,6 @@ module latin_hypercube_driver_module
 
     implicit none
 
-    ! Local Constants
-    real( kind = core_rknd ), parameter :: &
-      error_threshold = 1.0e-8_core_rknd ! A threshold to determine whether a rogue
-                                         ! value triggers the assertion check.
-
     ! Input Variables
     integer, intent(in) :: &
       num_samples            ! Number of SILHS sample points
@@ -1071,6 +1066,12 @@ module latin_hypercube_driver_module
     ! Output Variables
     logical, intent(out) :: &
       l_error                ! True if the assertion check fails
+
+    ! Local Constants
+    real( kind = core_rknd ), parameter :: &
+      error_threshold = 1000._core_rknd * epsilon( X_nl_chi ) ! A threshold to determine whether a
+                                                              ! rogue value triggers the assertion
+                                                              ! check.
 
     ! Local Variables
     real( kind = core_rknd ) :: &
