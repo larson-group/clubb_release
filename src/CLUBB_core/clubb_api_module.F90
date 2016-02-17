@@ -128,7 +128,8 @@ module clubb_api_module
     l_fix_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
     l_const_Nc_in_cloud, &   ! Use a constant cloud droplet conc. within cloud (K&K)
     l_diffuse_rtm_and_thlm, &
-    l_stability_correct_Kh_N2_zm
+    l_stability_correct_Kh_N2_zm, &
+    l_stability_correct_tau_zm
 
   use parameters_model, only : &
     hydromet_dim    ! Number of hydrometeor species
@@ -226,12 +227,15 @@ module clubb_api_module
         l_const_Nc_in_cloud, &
         l_diffuse_rtm_and_thlm, &
         l_stability_correct_Kh_N2_zm, &
+        l_stability_correct_tau_zm, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
         iSkw_denom_coef, &
         ibeta, &
         iC11, &
         iC11b, &
-        iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
+        iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10
+
+  public &
     advance_clubb_core_api, &
         pdf_parameter, &
         ! A hydromet array is required, and these variables are required for a hydromet array:
