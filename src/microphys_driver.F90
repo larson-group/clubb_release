@@ -258,7 +258,7 @@ module microphys_driver
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
 
-    type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples) :: &
+    type(lh_clipped_variables_type), dimension(gr%nz,lh_num_samples), intent(in) :: &
       lh_clipped_vars ! SILHS sample variables
 
     ! Input/Output Variables
