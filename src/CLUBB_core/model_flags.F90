@@ -184,8 +184,11 @@ module model_flags
 !$omp threadprivate(l_use_ADG2)
 
   logical, public :: &
-    l_use_3D_closure = .false.    ! Use Luhar et al. (2002) to close the w, thl, and rt Gaussians.
-!$omp threadprivate(l_use_3D_closure)
+    l_use_3D_closure = .false., & ! Use Luhar et al. (2002) to close the w, thl, and rt Gaussians.
+    l_stability_correct_tau_zm = .true.    ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
+                                           ! stability correction
+
+!$omp threadprivate(l_use_3D_closure, l_stability_correct_tau_zm)
 
 
 #ifdef GFDL
