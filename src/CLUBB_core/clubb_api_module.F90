@@ -142,7 +142,8 @@ module clubb_api_module
     iSkw_denom_coef, & ! Index of iSkw_denom_coef
     ibeta, & ! index of beta
     iC11, &  ! Index of C11
-    iC11b ! Index of C11b
+    iC11b, & ! Index of C11b
+    iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -230,6 +231,7 @@ module clubb_api_module
         ibeta, &
         iC11, &
         iC11b, &
+        iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
     advance_clubb_core_api, &
         pdf_parameter, &
         ! A hydromet array is required, and these variables are required for a hydromet array:
