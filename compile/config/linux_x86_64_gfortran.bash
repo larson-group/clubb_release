@@ -32,7 +32,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations and divide-by-zero
 
 # == Warnings ==
-WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f95 -pedantic"
+WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2003 -pedantic"
 
 # == Machine specific flags ==
 ARCH="-march=native -msse3 -mfpmath=sse -fopenmp"
