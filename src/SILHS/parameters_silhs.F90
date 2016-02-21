@@ -58,11 +58,14 @@ module parameters_silhs
                                               !  scheme with prescribed probabilities
     l_rcm_in_cloud_k_lh_start = .true. ,&     ! Determine k_lh_start based on maximum within-cloud
                                               !  rcm
-    l_random_k_lh_start       = .false.       ! Place k_lh_start at a random grid level between
+    l_random_k_lh_start       = .false.,&     ! Place k_lh_start at a random grid level between
                                               !  maximum rcm and maximum rcm_in_cloud
+    l_max_overlap_in_cloud    = .true.        ! Assume maximum vertical overlap when grid-box rcm
+                                              !  exceeds cloud threshold
 
   !$omp threadprivate( l_lh_importance_sampling, l_Lscale_vert_avg, l_lh_straight_mc, &
-  !$omp                l_lh_clustered_sampling, l_rcm_in_cloud_k_lh_start, l_random_k_lh_start )
+  !$omp                l_lh_clustered_sampling, l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
+  !$omp                l_max_overlap_in_cloud )
 
   type(eight_cluster_presc_probs_type), public, save :: &
     eight_cluster_presc_probs                 ! Prescribed probabilities for
@@ -77,10 +80,11 @@ module parameters_silhs
   !$omp threadprivate( l_lh_limit_weights, l_lh_var_frac )
 
   real( kind = core_rknd ), public :: &
-    importance_prob_thresh = 1.0e-8_core_rknd ! Minimum PDF probability of category for importance
-                                              ! sampling
+    importance_prob_thresh = 1.0e-8_core_rknd, & ! Minimum PDF probability of category for
+                                                 ! importance sampling
+    vert_decorr_coef       = 0.03_core_rknd      ! Empirically defined de-correlation constant [-]
 
-  !$omp threadprivate( importance_prob_thresh )
+  !$omp threadprivate( importance_prob_thresh, vert_decorr_coef )
 
   private ! Default Scope
 

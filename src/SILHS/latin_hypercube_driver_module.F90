@@ -1596,17 +1596,14 @@ module latin_hypercube_driver_module
       rc_tol, &
       one
 
+    use parameters_silhs, only: &
+      l_max_overlap_in_cloud, & ! Variable(s)
+      vert_decorr_coef
+
     implicit none
 
     ! External
     intrinsic :: exp
-
-    ! Parameter Constants
-    real( kind = core_rknd ), parameter :: &
-      vert_decorr_coef = 0.03_core_rknd ! Empirically defined de-correlation constant [-]
-
-    logical, parameter :: &
-      l_max_overlap_in_cloud = .true. ! Use maximum overlap (correlation of 1) in cloud  [boolean]
 
     ! Input Variables
     integer, intent(in) :: &
