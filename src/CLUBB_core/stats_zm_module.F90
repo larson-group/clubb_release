@@ -259,6 +259,13 @@ module stats_zm_module
     use stats_variables, only: &
         irtp2_from_chi
 
+    use stats_variables, only: &
+        ilh_rtp2_mc, &
+        ilh_thlp2_mc, &
+        ilh_wprtp_mc, &
+        ilh_wpthlp_mc, &
+        ilh_rtpthlp_mc
+
     use stats_type_utilities, only: & 
         stat_assign ! Procedure
 
@@ -2008,6 +2015,41 @@ module stats_zm_module
         call stat_assign( var_index=irtp2_from_chi, var_name="rtp2_from_chi", &
              var_description="Variance of rt, computed from the chi/eta distribution [(kg/kg)^2]", &
              var_units="(kg/kg)^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'lh_rtp2_mc' )
+        ilh_rtp2_mc = k
+        call stat_assign( var_index=ilh_rtp2_mc, var_name="lh_rtp2_mc", &
+             var_description="LH est. of rtp2_mc [(kg/kg)^2/s]", &
+             var_units="(kg/kg)^2/s", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'lh_thlp2_mc' )
+        ilh_thlp2_mc = k
+        call stat_assign( var_index=ilh_thlp2_mc, var_name="lh_thlp2_mc", &
+             var_description="LH est. of thlp2_mc [K^2/s]", &
+             var_units="K^2/s", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'lh_wprtp_mc' )
+        ilh_wprtp_mc = k
+        call stat_assign( var_index=ilh_wprtp_mc, var_name="lh_wprtp_mc", &
+             var_description="LH est. of wprtp_mc [(m kg/kg)/s^2]", &
+             var_units="(m kg/kg)/s^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'lh_wpthlp_mc' )
+        ilh_wpthlp_mc = k
+        call stat_assign( var_index=ilh_wpthlp_mc, var_name="lh_wpthlp_mc", &
+             var_description="LH est. of wpthlp_mc [(m K)/s^2]", &
+             var_units="(m K)/s^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'lh_rtpthlp_mc' )
+        ilh_rtpthlp_mc = k
+        call stat_assign( var_index=ilh_rtpthlp_mc, var_name="lh_rtpthlp_mc", &
+             var_description="LH est. of rtpthlp_mc [(K kg/kg)/s]", &
+             var_units="(K kg/kg)/s", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'sclrprtp' )

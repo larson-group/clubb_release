@@ -758,6 +758,15 @@ module stats_variables
 !$omp threadprivate( ilh_wp2_zt, ilh_Nrp2_zt, ilh_Ncnp2_zt, ilh_Ncp2_zt, &
 !$omp                ilh_rcp2_zt, ilh_rtp2_zt, ilh_thlp2_zt, ilh_rrp2_zt, ilh_chip2 )
 
+  ! SILHS covariance estimate indicies
+  integer, public :: &
+    ilh_rtp2_mc    = 0, &
+    ilh_thlp2_mc   = 0, &
+    ilh_wprtp_mc   = 0, &
+    ilh_wpthlp_mc  = 0, &
+    ilh_rtpthlp_mc = 0
+
+  !$omp threadprivate( ilh_rtp2_mc, ilh_thlp2_mc, ilh_wprtp_mc, ilh_wpthlp_mc, ilh_rtpthlp_mc )
 
   ! Indices for Morrison budgets
   integer, public :: &

@@ -151,6 +151,7 @@ vars_zm =
 'sclrprtp', 'sclrp2', 'sclrpthvp', 'sclrpthlp',  
 'sclrprcp', 'wpsclrp',  'wpsclrp2', 'wp2sclrp', 
 'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp',  'stability_correction',
+'lh_rtp2_mc', 'lh_thlp2_mc', 'lh_wprtp_mc', 'lh_wpthlp_mc', 'lh_rtpthlp_mc',
 ''
 
 vars_rad_zt =

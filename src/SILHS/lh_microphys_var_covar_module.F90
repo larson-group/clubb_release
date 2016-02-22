@@ -30,6 +30,14 @@ module lh_microphys_var_covar_module
     use clubb_precision, only: &
       core_rknd ! Constant
 
+    use stats_variables, only: &
+      l_stats_samp, & ! Variable(s)
+      ilh_rtp2_mc, ilh_thlp2_mc, ilh_wprtp_mc, ilh_wpthlp_mc, ilh_rtpthlp_mc, &
+      stats_zm
+
+    use stats_type_utilities, only: &
+      stat_update_var ! Procedure
+
     implicit none
 
     ! Input Variables!
@@ -95,6 +103,15 @@ module lh_microphys_var_covar_module
     lh_rtp2_mc = ( lh_rtp2_after_microphys - lh_rtp2_before_microphys ) / dt
     lh_thlp2_mc = ( lh_thlp2_after_microphys - lh_thlp2_before_microphys) / dt
     lh_rtpthlp_mc = ( lh_rtpthlp_after_microphys - lh_rtpthlp_before_microphys) / dt
+
+    ! Stats sampling
+    if ( l_stats_samp ) then
+      call stat_update_var( ilh_rtp2_mc, lh_rtp2_mc, stats_zm )
+      call stat_update_var( ilh_thlp2_mc, lh_thlp2_mc, stats_zm )
+      call stat_update_var( ilh_wprtp_mc, lh_wprtp_mc, stats_zm )
+      call stat_update_var( ilh_wpthlp_mc, lh_wpthlp_mc, stats_zm )
+      call stat_update_var( ilh_rtpthlp_mc, lh_rtpthlp_mc, stats_zm )
+    end if
 
     return
   end subroutine lh_microphys_var_covar_driver
