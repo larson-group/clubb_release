@@ -185,11 +185,16 @@ module model_flags
 
   logical, public :: &
     l_use_3D_closure = .false., & ! Use Luhar et al. (2002) to close the w, thl, and rt Gaussians.
-    l_stability_correct_tau_zm = .true.    ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
+    l_stability_correct_tau_zm = .true., & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
                                            ! stability correction
+    l_do_expldiff_rtm_thlm = .false., & ! Diffuse rtm and thlm explicitly
+    l_Lscale_plume_centered = .false., &   ! Alternate that uses the PDF to
+                                           ! compute the perturbed values
+    l_use_ice_latent = .false.             ! Includes the effects of ice latent heating in
+                                           ! turbulence terms
 
-!$omp threadprivate(l_use_3D_closure, l_stability_correct_tau_zm)
-
+!$omp threadprivate( l_use_3D_closure, l_stability_correct_tau_zm, l_do_expldiff_rtm_thlm, &
+!$omp                l_Lscale_plume_centered, l_use_ice_latent )
 
 #ifdef GFDL
   logical, public :: &
