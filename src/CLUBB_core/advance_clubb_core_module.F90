@@ -639,6 +639,9 @@ module advance_clubb_core_module
 
     !!! Local Variables
     integer :: i, k, &
+#ifdef CLUBB_CAM
+      ixind, &
+#endif
       err_code_pdf_closure, err_code_surface
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
