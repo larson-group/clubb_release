@@ -148,7 +148,7 @@ module clubb_api_module
     iC11, &  ! Index of C11
     iC11b, & ! Index of C11b
     iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
-    ilambda0_stability_coef, iC7b, iC8, iC11, iC11b, ilmin_coef, iSkw_denom_coef
+    ilambda0_stability_coef, iC7b, iC8, ilmin_coef
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -241,7 +241,7 @@ module clubb_api_module
         iC11, &
         iC11b, &
         iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
-        ilambda0_stability_coef, iC7b, iC8, iC11, iC11b, ilmin_coef, iSkw_denom_coef
+        ilambda0_stability_coef, iC7b, iC8, ilmin_coef
 
 
   public &
