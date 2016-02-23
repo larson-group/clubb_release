@@ -459,7 +459,11 @@ contains
     p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
-    rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
+    rfrzm, radf, &                                          ! intent(in)
+#ifdef CLUBBND_CAM
+    varmu, &                                                ! intent(in)
+#endif
+    wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
     um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
     thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -480,7 +484,7 @@ contains
     khzm, khzt, &                                           ! intent(out)
 #endif
 #ifdef CLUBB_CAM
-    qclvar, &                                               ! intent(out)
+    qclvar, thlprcp_out, &                                  ! intent(out)
 #endif
     pdf_params )                                            ! intent(out)
 
@@ -535,6 +539,11 @@ contains
 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
+
+#ifdef CLUBBND_CAM 
+    real( kind = core_rknd ), intent(in) :: & 
+      varmu 
+#endif 
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
       wphydrometp, & ! Covariance of w and a hydrometeor   [(m/s) <hm units>]
@@ -627,7 +636,8 @@ contains
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd), intent(out), dimension(gr%nz) :: &
-      qclvar        ! cloud water variance
+      qclvar, &     ! cloud water variance
+      thlprcp_out
 #endif
 
       !!! Output Variable
@@ -650,7 +660,11 @@ contains
       p_in_Pa, rho_zm, rho, exner, &                          ! intent(in)
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
-      rfrzm, radf, wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
+      rfrzm, radf, &                                          ! intent(in)
+#ifdef CLUBBND_CAM
+      varmu, &
+#endif
+      wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)
       um, vm, upwp, vpwp, up2, vp2, &                         ! intent(inout)
       thlm, rtm, wprtp, wpthlp, &                             ! intent(inout)
@@ -671,7 +685,7 @@ contains
                khzm, khzt, &                                           ! intent(out)
 #endif
 #ifdef CLUBB_CAM
-               qclvar, &                                               ! intent(out)
+               qclvar, thlprcp_out, &                                               ! intent(out)
 #endif
       pdf_params )                                            ! intent(out)
   end subroutine advance_clubb_core_api

@@ -34,6 +34,7 @@ module parameters_model
 #ifdef GFDL
  real( kind = core_rknd ), public ::  &   ! h1g, 2010-06-15
     cloud_frac_min    ! minimum cloud fraction for droplet #
+!$omp threadprivate( cloud_frac_min )
 #endif
 
 
@@ -42,6 +43,7 @@ module parameters_model
   real( kind = core_rknd), public :: &
     rtm_min = epsilon( rtm_min ), &             ! Value below which rtm will be nudged [kg/kg]
     rtm_nudge_max_altitude = 10000._core_rknd ! Highest altitude at which to nudge rtm [m]
+!$omp threadprivate( rtm_min, rtm_nudge_max_altitude )
 
   integer, public :: & 
     sclr_dim = 0,        & ! Number of passive scalars

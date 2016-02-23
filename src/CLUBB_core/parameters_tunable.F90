@@ -62,13 +62,8 @@ module parameters_tunable
     C8      = 3.000000_core_rknd,    & ! Coef. #1 in C8 Skewness Equation    [-]
     C8b     = 0.000000_core_rknd,    & ! Coef. #2 in C8 Skewness Equation    [-]
     C10     = 3.300000_core_rknd,    & ! Currently Not Used in the Model     [-]
-#if defined(CLUBB_CAM) && !defined(CLUBBND_CAM)
-    C11     = 0.65000_core_rknd,     & ! Low Skewness in C11 Skw. Function   [-]
-    C11b    = 0.650000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
-#else
     C11     = 0.80000_core_rknd,     & ! Low Skewness in C11 Skw. Function   [-]
     C11b    = 0.350000_core_rknd,    & ! High Skewness in C11 Skw. Function  [-]
-#endif
     C11c    = 0.500000_core_rknd,    & ! Degree of Slope of C11 Skw. Fnct.   [-]
     C12     = 1.000000_core_rknd,    & ! Constant in w'^3 Crank-Nich. diff.  [-]
     C13     = 0.100000_core_rknd,    & ! Not currently used in model         [-]
@@ -101,11 +96,7 @@ module parameters_tunable
     gamma_coef  = 0.320000_core_rknd, & ! Low Skw.: gamma coef. Skw. Fnct.   [-]
     gamma_coefb = 0.320000_core_rknd, & ! High Skw.: gamma coef. Skw. Fnct.  [-]
     gamma_coefc = 5.000000_core_rknd, & ! Deg. Slope: gamma coef. Skw. Fnct. [-]
-#ifdef CLUBBND_CAM
-    mu          = 1.000E-2_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
-#else 
     mu          = 1.000E-3_core_rknd, & ! Fract entrain rate per unit alt  [1/m]
-#endif
     mult_coef   = 0.500000_core_rknd, & ! Coef. applied to log(avg dz/thresh)[-]
     taumin      = 90.00000_core_rknd, & ! Min. allow. value: time-scale tau  [s]
     taumax      = 3600.000_core_rknd, & ! Max. allow. value: time-scale tau  [s]
@@ -150,13 +141,8 @@ module parameters_tunable
   ! Vince Larson added a constant to set plume widths for theta_l and rt
   ! beta should vary between 0 and 3.
 
-#if defined(CLUBB_CAM) && !defined(CLUBBND_CAM)
-  real( kind = core_rknd ), public :: &
-    beta = 1.750000_core_rknd    ! Beta coefficient     [-]
-#else
   real( kind = core_rknd ), public :: &
     beta = 2.400000_core_rknd    ! Beta coefficient     [-]
-#endif
 
 !$omp threadprivate(beta)
 
@@ -189,15 +175,7 @@ module parameters_tunable
 
   ! Factor to decrease sensitivity in the denominator of Skw calculation
   real( kind = core_rknd ), public :: &
-#ifdef CLUBB_CAM
-#ifdef CLUBBND_CAM
-    Skw_denom_coef = 30.0_core_rknd
-#else
-    Skw_denom_coef = 0.0_core_rknd
-#endif
-#else
     Skw_denom_coef = 4.0_core_rknd
-#endif
 
 !$omp threadprivate( Skw_denom_coef )
 

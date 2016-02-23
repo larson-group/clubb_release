@@ -440,7 +440,7 @@ module stats_variables
      irsm_sd_morr_int = 0
 
 !$omp   threadprivate(irsm_bt, irsm_ma, irsm_sd, irsm_sd_morr, irsm_ta)
-!$omp   threadprivate(irsm_mc, irsm_hf, irsm_wvhf, irsm_cl)
+!$omp   threadprivate(irsm_mc, irsm_hf, irsm_wvhf, irsm_cl, irsm_sd_morr_int)
 
   integer, public :: & 
      irgm_bt = 0, & 
@@ -513,7 +513,7 @@ module stats_variables
     iNcm_act = 0
 
 !$omp threadprivate(iNcm_bt, iNcm_ma, iNcm_ta, &
-!$omp   iNcm_mc, iNcm_cl)
+!$omp   iNcm_mc, iNcm_cl, iNcm_act)
 
   ! Covariances between w, r_t, theta_l and KK microphysics tendencies.
   ! Additionally, covariances between r_r and N_r and KK rain drop mean
@@ -656,12 +656,13 @@ module stats_variables
   integer, target, allocatable, dimension(:), public :: & 
     isclrm,   & ! Passive scalar mean (1)
     isclrm_f    ! Passive scalar forcing (1)
+!$omp   threadprivate(isclrm, isclrm_f)
 
 ! Used to calculate clear-sky radiative fluxes.
   integer, public :: &
     ifulwcl = 0, ifdlwcl = 0, ifdswcl = 0, ifuswcl = 0
 
-!$omp   threadprivate(isclrm, isclrm_f)
+!$omp threadprivate( ifulwcl, ifdlwcl, ifdswcl, ifuswcl )
 
   integer, target, allocatable, dimension(:), public :: & 
     iedsclrm,   & ! Eddy-diff. scalar term (1)
@@ -696,7 +697,8 @@ module stats_variables
     ilh_rrm_mc_nonadj = 0
 
 !$omp   threadprivate( ilh_rrm_auto, ilh_rrm_accr, ilh_rrm_evap, &
-!$omp                  ilh_Nrm_auto, ilh_Nrm_cond )
+!$omp                  ilh_Nrm_auto, ilh_Nrm_cond, ilh_m_vol_rad_rain, &
+!$omp                  ilh_rrm_mc_nonadj )
 
   integer, public :: &
     ilh_rrm_src_adj  = 0, & ! Latin hypercube estimate of source adjustment (KK only!)
@@ -1189,6 +1191,7 @@ module stats_variables
 
 !$omp threadprivate( iT_in_K_rad, ircil_rad, io3l_rad, &
 !$omp   irsm_rad, ircm_in_cloud_rad, icloud_frac_rad, &
+!$omp   iice_supersat_frac_rad, &
 !$omp   iradht_rad, iradht_LW_rad, iradht_SW_rad, &
 !$omp   ip_in_mb_rad, isp_humidity_rad )
 

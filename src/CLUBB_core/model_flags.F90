@@ -22,8 +22,6 @@ module model_flags
     l_hole_fill                   = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
     l_clip_semi_implicit          = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
     l_clip_turb_adv               = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
-    l_diffuse_rtm_and_thlm        = .false., & ! Diffuses rtm and thlm
-    l_stability_correct_Kh_N2_zm  = .false., & ! Divides Kh_N2_zm by a stability factor
     l_gmres                       = .false., & ! Use GMRES iterative solver rather than LAPACK
     l_sat_mixrat_lookup           = .false.    ! Use a lookup table for mixing length
                                       ! saturation vapor pressure calculations
@@ -48,6 +46,14 @@ module model_flags
                                  ! is turned off.
 
 !$omp threadprivate( l_use_precip_frac )
+
+  ! These flags determine whether or not we want CLUBB to do diffusion
+  !   on thlm and rtm and if a stability correction is applied
+  logical, public :: &
+    l_diffuse_rtm_and_thlm        = .false., & ! Diffuses rtm and thlm
+    l_stability_correct_Kh_N2_zm  = .false.    ! Divides Kh_N2_zm by a stability factor
+
+!$omp threadprivate( l_diffuse_rtm_and_thlm, l_stability_correct_Kh_N2_zm )
 
   logical, parameter, public :: &
     l_morr_xp2_mc = .false. !Flag to include the effects of rain evaporation
@@ -199,6 +205,7 @@ module model_flags
 #ifdef GFDL
   logical, public :: &
      I_sat_sphum       ! h1g, 2010-06-15
+!$omp threadprivate( I_sat_sphum )
 #endif
 
   namelist /configurable_model_flags/ &
