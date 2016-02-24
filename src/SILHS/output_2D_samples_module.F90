@@ -16,6 +16,8 @@ module output_2D_samples_module
     lognormal_sample_file, &
     uniform_sample_file
 
+  !$omp threadprivate( lognormal_sample_file, uniform_sample_file )
+
   contains
 !-------------------------------------------------------------------------------
   subroutine open_2D_samples_file( nz, num_samples, n_2D_variables, &

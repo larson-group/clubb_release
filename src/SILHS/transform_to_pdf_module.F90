@@ -428,6 +428,18 @@ module transform_to_pdf_module
     use anl_erf, only: &
       dp_erfc               ! Procedure
 
+#ifdef CLUBB_CAM
+    ! Some compilers cannot handle 1.0/0.0, so in CAM we import their
+    ! +Inf and -Inf constants. We REALLY should find a better way to
+    ! do this.
+    ! Eric Raut, 24 Feb 2016
+    use shr_infnan_mod, only: &
+      nan => shr_infnan_nan, &
+      infp => shr_infnan_posinf, &
+      infn => shr_infnan_neginf, &
+      assignment(=)
+#endif
+
     implicit none
 
     ! External
@@ -513,6 +525,27 @@ module transform_to_pdf_module
                   /((((d1*q+d2)*q+d3)*q+d4)*q+1._dp)
     end if
 
+    ! Eric Raut note: In CAM, we use CAM's predefined infinity and nan
+    ! constants to avoid dividing by zero. We don't have similar constants
+    ! in CLUBB or SILHS "cores", so we have to divide by zero. We should
+    ! fix this. --24 Feb 2016
+#ifdef CLUBB_CAM
+! Case when P = 1:, z=+inf
+    if(p == 1._dp)then
+       z = infp
+    end if
+
+!  Case when P = 0: z = -inf
+    if (p == 0._dp) then
+       z = infn
+    end if
+
+!  Cases when output will be NaN:
+!   k = p < 0 | p > 1 | isnan(p);
+    if (p < 0._dp .or. p > 1._dp) then
+       z = nan
+    end if
+#else
 !  Case when P = 0: z = -inf, to create inf z =-1.0.
 !     to create NaN's inf*inf.
     z1 = 0._dp
@@ -531,6 +564,7 @@ module transform_to_pdf_module
     if (p < 0._dp .or. p > 1._dp) then
       z = (1._dp/z1)**2
     end if
+#endif
 
 !  The relative error of the approximation has absolute value less
 !  than 1.15e-9. One iteration of Halley's rational method (third
