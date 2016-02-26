@@ -87,6 +87,21 @@
           {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_mixt_frac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
        ]},
+       {'plotTitle' => 'thlm', 'axisLabel' => 'thlm', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'rtp2\_zt', 'axisLabel' => 'rtp2\_zt', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rtp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_rtp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
+       {'plotTitle' => 'thlp2\_zt', 'axisLabel' => 'thlp2\_zt', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'rico_lh_zt.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'thlp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+          {'filename' => 'rico_lh_lh_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lh_thlp2_zt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
+       ]},
        {'plotTitle' => 'rtp2\_mc', 'axisLabel' => 'rtp2\_mc', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'rico_lh_zm.ctl', 'type' => 'les', 'name' => 'analytic', 'expression' => 'rtp2_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
