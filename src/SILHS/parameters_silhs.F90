@@ -62,7 +62,7 @@ module parameters_silhs
                                               !  maximum rcm and maximum rcm_in_cloud
     l_max_overlap_in_cloud     = .true. ,&    ! Assume maximum vertical overlap when grid-box rcm
                                               !  exceeds cloud threshold
-    l_lh_instant_var_covar_src = .false.      ! Produces "instantaneous" variance-covariance
+    l_lh_instant_var_covar_src = .true.       ! Produces "instantaneous" variance-covariance
                                               !  microphysical source terms, ignoring
                                               !  discretization effects
 
