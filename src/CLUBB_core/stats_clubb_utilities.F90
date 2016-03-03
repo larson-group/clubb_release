@@ -1845,7 +1845,6 @@ module stats_clubb_utilities
         ithlpthvp, & ! Variable(s)
         itau_zm, &
         iKh_zm, &
-        iK_hm, &
         iwprcp, &
         irc_coef, &
         ithlprcp, &
@@ -1954,7 +1953,6 @@ module stats_clubb_utilities
         wpthvp, &
         tau_zm, &
         Kh_zm, & 
-        K_hm,&
         thlprcp, & 
         rtprcp, & 
         rcp2, & 

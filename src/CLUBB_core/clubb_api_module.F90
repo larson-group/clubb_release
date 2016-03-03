@@ -1093,9 +1093,6 @@ contains
       four_thirds,     &
       rho_ice
 
-    use array_index, only: &
-      l_mix_rat_hm ! Variable(s)
-
     implicit none
 
     intrinsic :: trim
@@ -1538,27 +1535,11 @@ contains
     use advance_windm_edsclrm_module, only: &
       xpwp_fnc
 
-    use variables_diagnostic_module, only: &
-      Kh_zm
-
     use parameters_tunable, only: &
       c_K_hm
 
     use clip_explicit, only: &
       clip_wphydrometp    ! Variables(s)
-
-    use stats_variables, only: &
-      ihm_1,          & ! Variable(s)
-      ihm_2,          &
-      iprecip_frac,   &
-      iprecip_frac_1, &
-      iprecip_frac_2, &
-      iNcnm,          &
-      ihmp2_zt,       &
-      stats_zt
-
-    use model_flags, only: &
-      l_diagnose_correlations ! Variable(s)
 
     implicit none
 

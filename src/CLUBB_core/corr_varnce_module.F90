@@ -90,7 +90,7 @@ module corr_varnce_module
             setup_corr_varnce_array, cleanup_corr_matrix_arrays, &
             assert_corr_symmetric, print_corr_matrix
 
-  private :: get_corr_var_index, return_pdf_index, def_corr_idx
+  private :: get_corr_var_index, def_corr_idx
 
 
   contains
@@ -557,41 +557,6 @@ module corr_varnce_module
   end subroutine setup_pdf_indices
   !-----------------------------------------------------------------------
 
-  !-------------------------------------------------------------------------------
-  subroutine return_pdf_index( hydromet_index, pdf_count, pdf_index )
-
-  ! Description:
-  !   Set the Latin hypercube variable index if the hydrometeor exists
-  ! References:
-  !   None
-  !-------------------------------------------------------------------------
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      hydromet_index
-
-    ! Input/Output Variables
-    integer, intent(inout) :: &
-      pdf_count
-
-    ! Output Variables
-    integer, intent(out) :: &
-      pdf_index
-
-    ! ---- Begin Code ----
-
-    if ( hydromet_index > 0 ) then
-      pdf_count = pdf_count + 1
-      pdf_index = pdf_count
-    else
-      pdf_index = -1
-    end if
-
-    return
-  end subroutine return_pdf_index
-
 !===============================================================================
   subroutine setup_corr_varnce_array( input_file_cloud, input_file_below, &
                                       iunit )
@@ -605,8 +570,7 @@ module corr_varnce_module
 !-------------------------------------------------------------------------------
 
     use model_flags, only: &
-      l_fix_chi_eta_correlations, & ! Variable(s)
-      l_const_Nc_in_cloud
+      l_fix_chi_eta_correlations    ! Variable(s)
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 

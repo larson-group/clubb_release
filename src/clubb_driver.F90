@@ -263,8 +263,7 @@ module clubb_driver
         corr_array_n_cloud, & ! Variable(s)
         corr_array_n_below, &
         d_variables, &
-        cleanup_corr_matrix_arrays, &
-        iiPDF_Ncn
+        cleanup_corr_matrix_arrays
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -3106,6 +3105,8 @@ module clubb_driver
 
 
     ! --- Begin Code ---
+
+    l_fatal_error = .false.
 
     ! Inform inputfields module
     input_type = "clubb"

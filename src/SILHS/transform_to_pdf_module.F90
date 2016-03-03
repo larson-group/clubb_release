@@ -229,10 +229,6 @@ module transform_to_pdf_module
 !   None
 !----------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
-      iiPDF_chi, & ! Variables
-      iiPDF_eta
-
     use clubb_precision, only: &
       core_rknd    ! Constant
 

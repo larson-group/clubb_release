@@ -41,9 +41,6 @@ module estimate_scm_microphys_module
     use parameters_microphys, only: &
       l_var_covar_src
 
-    use model_flags, only: &
-      l_const_Nc_in_cloud
-
     use corr_varnce_module, only: &
       iiPDF_chi, &
       iiPDF_w
@@ -58,7 +55,6 @@ module estimate_scm_microphys_module
       stats_zt,           & ! Variable(s)
       stats_sfc,          &
       isilhs_variance_category, &
-      irrm_auto,          &
       l_stats_samp
 
     use microphys_stats_vars_module, only: &
@@ -543,7 +539,6 @@ module estimate_scm_microphys_module
       stat_update_var ! Procedure
 
     use stats_variables, only: &
-      stats_zt,        &
       stats_lh_zt,     &
       irrm_auto,       &
       irrm_accr,       &
