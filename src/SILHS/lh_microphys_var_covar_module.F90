@@ -47,7 +47,11 @@ module lh_microphys_var_covar_module
       zt2zm
 
     use constants_clubb, only: &
-      two    ! Constant
+      zero, &    ! Constant(s)
+      two
+
+    use parameters_silhs, only: &
+      l_lh_instant_var_covar_src   ! Variable
 
     implicit none
 
@@ -125,15 +129,32 @@ module lh_microphys_var_covar_module
     covar_rt_thlmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                 lh_rt_all, mean_rt, lh_thlm_mc_all, mean_thl_mc )
 
-    ! Variances and covariances for time-dependent terms
-    var_rt_mc  = compute_sample_variance( nz, num_samples, lh_rt_mc_all, lh_sample_point_weights, &
-                                          mean_rt_mc  )
-    var_thl_mc = compute_sample_variance &
+    ! Variances and covariances for timestep-dependent terms
+    if ( .not. l_lh_instant_var_covar_src ) then
+
+      ! NOTE: these terms arise in rtp2 and thlp2 when rtm and thlm are
+      ! explicitly integrated forward in time. These terms are not included
+      ! in KK upscaled, so using these terms causes non-convergence with KK
+      ! upscaled.
+
+      var_rt_mc  = compute_sample_variance &
+                                ( nz, num_samples, lh_rt_mc_all, lh_sample_point_weights, &
+                                  mean_rt_mc  )
+      var_thl_mc = compute_sample_variance &
                                 ( nz, num_samples, lh_thlm_mc_all, lh_sample_point_weights, &
                                   mean_thl_mc )
-    covar_rtmc_thlmc = compute_sample_covariance &
-                              ( nz, num_samples, lh_sample_point_weights, &
-                                lh_rt_mc_all, mean_rt_mc, lh_thlm_mc_all, mean_thl_mc )
+      covar_rtmc_thlmc = compute_sample_covariance &
+                                ( nz, num_samples, lh_sample_point_weights, &
+                                  lh_rt_mc_all, mean_rt_mc, lh_thlm_mc_all, mean_thl_mc )
+    else
+
+      ! The timestep-dependent terms are set to zero, and so are not included in
+      ! the tendencies of rtp2 and thlp2
+      var_rt_mc        = zero
+      var_thl_mc       = zero
+      covar_rtmc_thlmc = zero
+
+    end if ! l_lh_instant_var_covar_src
 
     ! Compute the microphysical variance and covariance tendencies
     lh_rtp2_mc    = zt2zm( two*covar_rt_rtmc   + dt*var_rt_mc  )
@@ -141,7 +162,6 @@ module lh_microphys_var_covar_module
     lh_wprtp_mc   = zt2zm( covar_w_rtmc  )
     lh_wpthlp_mc  = zt2zm( covar_w_thlmc )
     lh_rtpthlp_mc = zt2zm( covar_thl_rtmc + covar_rt_thlmc + dt*covar_rtmc_thlmc )
-
 
     ! Stats sampling
     if ( l_stats_samp ) then
