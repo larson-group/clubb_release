@@ -1,0 +1,1 @@
+This script compares a given field in two supplied CLUBB NetCDF output files, and reports whether the difference between the time-integrated fields exceeds the supplied threshold.
