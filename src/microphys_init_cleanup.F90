@@ -303,7 +303,8 @@ module microphys_init_cleanup
 
     namelist /silhs_params_nl/ &
       cluster_allocation_strategy, l_lh_importance_sampling, l_Lscale_vert_avg , &
-      l_lh_straight_mc, l_lh_clustered_sampling, l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
+      l_lh_straight_mc, l_lh_clustered_sampling, eight_cluster_presc_probs, &
+      l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
       l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac, &
       importance_prob_thresh, vert_decorr_coef
 
