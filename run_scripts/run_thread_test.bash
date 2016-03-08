@@ -41,7 +41,7 @@ run_serial()
 		sed -i -e 's/\!.*//' 'clubb.in'
 
 		if [ -e ../bin/clubb_standalone ]; then
-			../bin/clubb_standalone
+			../bin/clubb_standalone &> /dev/null
 		else
 			echo "clubb_standalone not found (did you re-compile?)"
 			exit
@@ -101,7 +101,7 @@ mkdir $SERIAL
 mv ../output/*.??? $SERIAL
 
 # Run in parallel mode
-#run_parallel
+run_parallel
 
 mkdir $PARALLEL
 mv ../output/*.??? $PARALLEL
