@@ -1,0 +1,17 @@
+&silhs_params_nl
+cluster_allocation_strategy = 3
+
+l_lh_importance_sampling = .true.
+l_Lscale_vert_avg = .true.
+l_lh_straight_mc = .false.
+l_lh_clustered_sampling = .true.
+l_rcm_in_cloud_k_lh_start = .true.
+l_random_k_lh_start = .false.
+l_max_overlap_in_cloud = .true.
+l_lh_instant_var_covar_src = .true.
+l_lh_limit_weights = .true.
+l_lh_var_frac = .false.
+
+importance_prob_thresh = 1.0e-8
+vert_decorr_coef = 0.03
+/

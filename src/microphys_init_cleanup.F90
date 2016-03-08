@@ -62,16 +62,20 @@ module microphys_init_cleanup
         Nc0_in_cloud                    ! Initial value for Nc (K&K, l_cloud_sed, Morrison)
 
     use parameters_silhs, only: &
+        cluster_allocation_strategy, &  ! Strategy for distributing sample points
         l_lh_importance_sampling, &     ! Do importance sampling (SILHS)
+        l_Lscale_vert_avg,        &     ! Vertically average Lscale in SILHS
         l_lh_straight_mc,         &     ! Do not apply LH or importance sampling at all (SILHS)
         l_lh_clustered_sampling,  &     ! Use prescribed probability sampling with clusters (SILHS)
         eight_cluster_presc_probs,&     ! Sampling probabilities for prescribed mode (SILHS)
         l_rcm_in_cloud_k_lh_start,&     ! Determine k_lh_start based on maximum within-cloud rcm
         l_random_k_lh_start,      &     ! k_lh_start found randomly between max rcm and rcm_in_cloud
-        importance_prob_thresh,   &     ! Minimum PDF probability for importance sampling
+        l_max_overlap_in_cloud,   &     ! Use maximum vertical overlap in cloud
+        l_lh_instant_var_covar_src, &   ! Produce instantaneous var/covar tendencies
         l_lh_limit_weights,       &     ! Ensure weights stay under a given value
-        cluster_allocation_strategy, &  ! Strategy for distributing sample points
-        l_lh_var_frac                   ! Prescribe variance fractions
+        l_lh_var_frac,            &     ! Prescribe variance fractions
+        importance_prob_thresh,   &     ! Minimum PDF probability for importance sampling
+        vert_decorr_coef                ! Vertical overlap decorrelation coefficient (SILHS)
 
     use parameters_microphys, only: &
         lh_num_samples                  ! SILHS sample points
@@ -284,11 +288,7 @@ module microphys_init_cleanup
       l_seifert_beheng, l_predict_Nc, l_const_Nc_in_cloud, specify_aerosol, &
       l_subgrid_w, l_arctic_nucl, l_cloud_edge_activation, l_fix_pgam, &
       l_in_cloud_Nc_diff, lh_microphys_type, l_local_kk, lh_num_samples, &
-      lh_sequence_length, lh_seed, l_lh_importance_sampling, &
-      l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, l_lh_straight_mc, &
-      l_lh_clustered_sampling, eight_cluster_presc_probs, &
-      l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, importance_prob_thresh, &
-      l_lh_limit_weights, cluster_allocation_strategy, l_lh_var_frac, &
+      lh_sequence_length, lh_seed, l_fix_chi_eta_correlations, l_silhs_KK_convergence_adj_mean, &
       hmp2_ip_on_hmm2_ip_ratios, Ncnp2_on_Ncnm2, &
       C_evap, r_0, microphys_start_time, &
       Nc0_in_cloud, ccnconst, ccnexpnt, aer_rm1, aer_rm2, &
@@ -300,6 +300,13 @@ module microphys_init_cleanup
       highmass2, lowmass3, highmass3,  &
       lowmass4, highmass4, lowmass5, highmass5, &
       lowT2, highT2, aeromass_value, l_gfdl_activation
+
+    namelist /silhs_params_nl/ &
+      cluster_allocation_strategy, l_lh_importance_sampling, l_Lscale_vert_avg , &
+      l_lh_straight_mc, l_lh_clustered_sampling, l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
+      l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac, &
+      importance_prob_thresh, vert_decorr_coef
+
 
     ! ---- Begin Code ----
 
@@ -347,6 +354,13 @@ module microphys_init_cleanup
     open(unit=iunit, file=namelist_file, status='old', action='read')
     read(iunit, nml=microphysics_setting)
     close(unit=iunit)
+
+    ! Read in SILHS parameters, if SILHS is enabled
+    if ( trim( lh_microphys_type ) /= "disabled" ) then
+      open(unit=iunit, file=namelist_file, status='old', action='read')
+      read(iunit, nml=silhs_params_nl)
+      close(unit=iunit)
+    end if ! trim( lh_microphys_type ) /= "disabled"
 
     ! Printing Microphysics inputs
     if ( clubb_at_least_debug_level( 1 ) ) then

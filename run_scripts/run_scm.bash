@@ -25,6 +25,7 @@ OUTPUT_SPECIFIED=false
 OUTPUT_DIR="/usr/nightly_tests/nightly_tests/output"
 NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
+SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 CUSTOM_OUTPUT_DIR=""
 NETCDF=false
 
@@ -286,7 +287,7 @@ fi
 if [ $NIGHTLY == true ]; 
 then
 	cat $parameter_file > $NAMELISTS
-	cat $FLAGS_FILE >> $NAMELISTS
+	cat $FLAGS_FILE $SILHS_PARAMS_FILE >> $NAMELISTS
 	# This is needed because the model file now contains stats_tout.
 	# Here we replace the repository version of stats_tout with an hour output.
 	# We then save the zt and zm files from this run for the profile plots because
@@ -352,13 +353,13 @@ then
 					# This was added because RICO uses a 300 s timestep
 					# and cannot be run with stats_tout = 60.
 					cat $parameter_file > $NAMELISTS
-					cat $FLAGS_FILE >> $NAMELISTS
+					cat $FLAGS_FILE $SILHS_PARAMS_FILE >> $NAMELISTS
 					cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 300\./g' >> $NAMELISTS
 					cat $stats_file >> $NAMELISTS
 					;;
 				* )
 					cat $parameter_file > $NAMELISTS
-					cat $FLAGS_FILE >> $NAMELISTS
+					cat $FLAGS_FILE $SILHS_PARAMS_FILE >> $NAMELISTS
 					cat $model_file | sed 's/stats_tout\s*=\s*.*/stats_tout = 60\./g' >> $NAMELISTS
 					cat $stats_file >> $NAMELISTS
 					;;
@@ -387,7 +388,7 @@ then
 	esac
 else
 	# "cat" the parameter_file and FLAGS_FILE into NAMELISTS for all cases
-	cat $parameter_file $FLAGS_FILE > $NAMELISTS
+	cat $parameter_file $FLAGS_FILE $SILHS_PARAMS_FILE > $NAMELISTS
 	# Create a modified model file that will be edited later
 	MOD_MODEL_FILE="MOD_MODEL_TEMP_$RANDOM"
 	cat $model_file > $MOD_MODEL_FILE

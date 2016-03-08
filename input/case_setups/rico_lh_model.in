@@ -159,7 +159,6 @@ l_var_covar_src = .true.
 ! Addition for using SILHS
 lh_microphys_type = "interactive"
 l_local_kk = .true.,
-l_lh_importance_sampling = .true.,
 lh_num_samples = 8  ! A reasonable default
 lh_sequence_length = 1
 /
