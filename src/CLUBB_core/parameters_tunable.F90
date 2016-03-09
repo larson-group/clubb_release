@@ -203,7 +203,7 @@ module parameters_tunable
 
   ! Since we lack a devious way to do this just once, this namelist
   ! must be changed as well when a new parameter is added.
-  namelist /initvars/  & 
+  namelist /clubb_params_nl/  & 
     C1, C1b, C1c, C2, C2b, C2c,  & 
     C2rt, C2thl, C2rtthl, C4, C5, & 
     C6rt, C6rtb, C6rtc, C6thl, C6thlb, C6thlc, & 
@@ -427,7 +427,7 @@ module parameters_tunable
 
     endif ! lmin < 4.0
 
-!    write(*,nml=initvars) ! %% debug
+!    write(*,nml=clubb_params_nl) ! %% debug
 
 
     return
@@ -691,7 +691,7 @@ module parameters_tunable
       ! Read the namelist
       open(unit=iunit, file=filename, status='old', action='read')
 
-      read(unit=iunit, nml=initvars)
+      read(unit=iunit, nml=clubb_params_nl)
 
       close(unit=iunit)
 
@@ -770,7 +770,7 @@ module parameters_tunable
     logical :: l_error
 
     ! Amount to change each parameter for the initial simplex
-    ! This MUST be changed to match the initvars namelist if parameters are added!
+    ! This MUST be changed to match the clubb_params_nl namelist if parameters are added!
     namelist /initspread/  & 
       C1, C1b, C1c, C2, C2b, C2c,  & 
       C2rt, C2thl, C2rtthl, C4, C5, & 

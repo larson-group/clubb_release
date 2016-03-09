@@ -17,7 +17,7 @@ module parameter_indices
 !   need to have the variable added to their list, but the order
 !   doesn't actually matter, since the i variables in here determine
 !   where in the params vector the number is placed.
-!   Finally, the namelists initvars and initspread will need to
+!   Finally, the namelists clubb_params_nl and initspread will need to
 !   have the parameter added to them.
 !-------------------------------------------------------------------------------
 

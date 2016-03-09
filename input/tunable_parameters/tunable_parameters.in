@@ -4,7 +4,7 @@
 ! C4, C14, and nu9 are only relevant when l_tke_aniso is true.
 ! C2, C2b, & C2c are not used unless l_single_C2_Skw is true.
 
-&initvars 
+&clubb_params_nl 
 C1          = 1.000000 ! Low Skewness in C1 Skewness Function. Units [-]
 C1b         = 1.000000 ! High Skewness in C1 Skewness Function. Units [-]
 C1c         = 1.000000 ! Degree of Slope of C1 Skewness Function. Units [-]

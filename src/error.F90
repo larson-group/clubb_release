@@ -6,7 +6,7 @@ module error
 ! Description:
 
 !   subroutine tuner_init: reads in namelists /stats/, /cases/,
-!   /initvars/, & /variance/ from 'error.in'
+!   /clubb_params_nl/, & /variance/ from 'error.in'
 !   It then uses them to setup the initial param_vals_matrix of independent
 !   variables, i.e. the CLUBB constants, and allocate the runtime arrays
 !   for each of the model runs and each of the variables
@@ -1023,7 +1023,7 @@ module error
     end do
     write(unit=iunit,fmt=*) "/"
 
-    write(unit=iunit,fmt=*) "&initvars"
+    write(unit=iunit,fmt=*) "&clubb_params_nl"
 
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
@@ -1124,7 +1124,7 @@ module error
 
     write(unit=iunit,fmt=*) "! Parameter file " // results_f
 
-    write(unit=iunit,fmt=*) "&initvars"
+    write(unit=iunit,fmt=*) "&clubb_params_nl"
     ! Copy simplex into a vector of all possible CLUBB parameters
     do i=1, nparams, 1
       ! If the variable isn't in the simplex, leave it as is
