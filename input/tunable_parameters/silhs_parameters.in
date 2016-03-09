@@ -1,4 +1,9 @@
 &silhs_params_nl
+importance_prob_thresh = 1.0e-8
+vert_decorr_coef = 0.03
+/
+
+&silhs_flags_nl
 cluster_allocation_strategy = 3
 
 l_lh_importance_sampling = .true.
@@ -11,7 +16,4 @@ l_max_overlap_in_cloud = .true.
 l_lh_instant_var_covar_src = .true.
 l_lh_limit_weights = .true.
 l_lh_var_frac = .false.
-
-importance_prob_thresh = 1.0e-8
-vert_decorr_coef = 0.03
 /

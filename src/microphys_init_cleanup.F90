@@ -302,11 +302,13 @@ module microphys_init_cleanup
       lowT2, highT2, aeromass_value, l_gfdl_activation
 
     namelist /silhs_params_nl/ &
+      eight_cluster_presc_probs, vert_decorr_coef, importance_prob_thresh
+
+    namelist /silhs_flags_nl/ &
       cluster_allocation_strategy, l_lh_importance_sampling, l_Lscale_vert_avg , &
-      l_lh_straight_mc, l_lh_clustered_sampling, eight_cluster_presc_probs, &
+      l_lh_straight_mc, l_lh_clustered_sampling, &
       l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
-      l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac, &
-      importance_prob_thresh, vert_decorr_coef
+      l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac
 
 
     ! ---- Begin Code ----
@@ -360,6 +362,10 @@ module microphys_init_cleanup
     if ( trim( lh_microphys_type ) /= "disabled" ) then
       open(unit=iunit, file=namelist_file, status='old', action='read')
       read(iunit, nml=silhs_params_nl)
+      close(unit=iunit)
+
+      open(unit=iunit, file=namelist_file, status='old', action='read')
+      read(iunit, nml=silhs_flags_nl)
       close(unit=iunit)
     end if ! trim( lh_microphys_type ) /= "disabled"
 
