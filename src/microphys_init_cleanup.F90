@@ -304,7 +304,7 @@ module microphys_init_cleanup
     namelist /silhs_params_nl/ &
       eight_cluster_presc_probs, vert_decorr_coef, importance_prob_thresh
 
-    namelist /silhs_flags_nl/ &
+    namelist /configurable_silhs_flags_nl/ &
       cluster_allocation_strategy, l_lh_importance_sampling, l_Lscale_vert_avg , &
       l_lh_straight_mc, l_lh_clustered_sampling, &
       l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
@@ -365,7 +365,7 @@ module microphys_init_cleanup
       close(unit=iunit)
 
       open(unit=iunit, file=namelist_file, status='old', action='read')
-      read(iunit, nml=silhs_flags_nl)
+      read(iunit, nml=configurable_silhs_flags_nl)
       close(unit=iunit)
     end if ! trim( lh_microphys_type ) /= "disabled"
 

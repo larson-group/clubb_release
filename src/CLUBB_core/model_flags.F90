@@ -208,7 +208,7 @@ module model_flags
 !$omp threadprivate( I_sat_sphum )
 #endif
 
-  namelist /configurable_model_flags/ &
+  namelist /configurable_clubb_flags_nl/ &
     l_upwind_wpxp_ta, l_upwind_xpyp_ta, l_upwind_xm_ma, l_quintic_poly_interp, &
     l_tke_aniso, l_vert_avg_closure, l_single_C2_Skw, l_standard_term_ta, &
     l_use_cloud_cover, l_calc_thlp2_rad, l_use_ADG2, l_use_3D_closure
@@ -301,7 +301,7 @@ module model_flags
    ! Read the namelist
     open(unit=iunit, file=filename, status='old', action='read')
 
-    read(unit=iunit, nml=configurable_model_flags)
+    read(unit=iunit, nml=configurable_clubb_flags_nl)
 
     close(unit=iunit)
 
@@ -339,7 +339,7 @@ module model_flags
    ! Read the namelist
     open(unit=iunit, file=filename, status='unknown', action='write')
 
-    write(unit=iunit, nml=configurable_model_flags)
+    write(unit=iunit, nml=configurable_clubb_flags_nl)
 
     close(unit=iunit)
 

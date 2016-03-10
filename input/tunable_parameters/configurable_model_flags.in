@@ -1,5 +1,5 @@
 !$Id$
-&configurable_model_flags
+&configurable_clubb_flags_nl
 l_upwind_wpxp_ta      = .false.,
 l_upwind_xpyp_ta      = .true.,
 l_upwind_xm_ma        = .true.,
@@ -13,7 +13,7 @@ l_use_ADG2            = .false.,
 l_use_3D_closure      = .false.
 /
 
-&silhs_flags_nl
+&configurable_silhs_flags_nl
 cluster_allocation_strategy = 3
 
 l_lh_importance_sampling = .true.
