@@ -3,8 +3,8 @@
 # compiler
 
 # Fortran 95 compiler and linker
-FC=pgf95
-LD=pgf95
+FC=pgfortran
+LD=pgfortran
 
 # Define path to directories
 dir=`pwd` # dir where this script resides

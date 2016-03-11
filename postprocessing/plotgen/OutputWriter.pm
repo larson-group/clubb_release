@@ -784,7 +784,7 @@ sub writeFooter()
 	<hr noshade size=5 width=70%>
 	<div align="CENTER">
 		<font size="-2">
-		Copyright &#169; 2014 Larson Group. All rights reserved. 
+		Copyright &#169; 2016 Larson Group. All rights reserved. 
 		</font>
 	</div>
 </body>

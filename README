@@ -3,7 +3,7 @@ $Id$
 
 ********************************************************************************
 *                           Copyright Notice
-*                       This code is (C) 2006-2014
+*                       This code is (C) 2006-2016
 *         Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin, 
 *            David P. Schanen, Adam J. Smith, and Michael J. Falk.
 *
@@ -64,7 +64,7 @@ these variables; and the parameters to tune (C1, beta, etc.).
 ***********************************************************************
 *                       CLUBB Quick Start Guide                       *
 ***********************************************************************
-CLUBB is a single-column atmospheric model written in ISO Fortran 95, and
+CLUBB is a single-column atmospheric model written in ISO Fortran 2003, and
 executed using scripts written in the GNU Bash scripting language.
 Some utilities for CLUBB have been implemented in MATLAB, Python, or Perl.
 
@@ -107,7 +107,7 @@ your password will be entered.
 - STEP 2: COMPILING THE CLUBB SOURCE CODE
 -------------------------------------------------------
 Before CLUBB can be run, the source code must first be compiled. CLUBB is known
-to compile properly with various Fortran 95 compilers, including g95 and
+to compile properly with various Fortran compilers, including g95 and
 gfortran, which are both free.  The CLUBB code relies on a script called mkmf 
 which requires your system to have Perl installed.
 
@@ -222,7 +222,7 @@ follow the following steps:
   - svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk
     clubb --username EMAIL
     (all on one line)
-- Compile the CLUBB source code with a Fortran 95 compiler (e.g. gfortran)
+- Compile the CLUBB source code with a Fortran compiler (e.g. gfortran)
   - ./compile.bash config/linux_x86_64_gfortran.bash
     (in the clubb/compile directory)
     (Replace config/linux_x86_64_gfortran.bash to match the desired platform
@@ -253,7 +253,7 @@ follow the following steps:
 - (1.1) Building (i.e. compiling) everything:
 -----------------------------------------------------------------------
 
-The CLUBB code is written in ISO Fortran 95 and executed by scripts written in
+The CLUBB code is written in ISO Fortran 2003 and executed by scripts written in
 the GNU Bash scripting language. 
 The mkmf Makefile generating script and some other optional code checking
 scripts are written in the Perl scripting language.
@@ -290,7 +290,7 @@ IEEE-754 standard style floating-point math.  On x86 compatible computers
 enabling SSE or SSE2 with a compiler flag is usually the best way to do this.
 
 Requirements for compiling and running CLUBB:
-A. A Fortran 95 compiler with a complete implementation of the standard.
+A. A Fortran 2003 compiler with a complete implementation of the standard.
    The compile/config directory contains several scripts for 
    configurations we have tested.
 B. GNU make (we use v3.81).
