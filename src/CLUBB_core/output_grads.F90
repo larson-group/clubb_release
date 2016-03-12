@@ -287,7 +287,7 @@ module output_grads
 
     real( kind = core_rknd ), dimension(:), allocatable :: z_in
 
-    type (variable), dimension(:), pointer :: var_in
+    type (variable), dimension(:), allocatable :: var_in
 
 !-------------------------------------------------------------------------------
 

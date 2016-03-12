@@ -22,7 +22,7 @@ module gmres_cache
 
   private ! Default scope
 
-  real( kind = dp ), public, pointer, dimension(:,:) :: &
+  real( kind = dp ), public, allocatable, dimension(:,:) :: &
     gmres_prev_soln, &    ! Stores the previous solution vectors from earlier
                           ! GMRES solve runs. The first dimension is for the
                           ! actual vector; the second dimension is to determine
@@ -37,7 +37,7 @@ module gmres_cache
 
 !$omp threadprivate( gmres_prev_soln, gmres_prev_precond_a )
 
-  real( kind = dp ), public, pointer, dimension(:) :: &
+  real( kind = dp ), public, allocatable, dimension(:) :: &
     gmres_temp_intlc, &   ! Temporary array that stores GMRES internal values
                           ! for the interlaced matrices (2 x gr%nz grid
                           ! levels)

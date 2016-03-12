@@ -76,14 +76,14 @@ module stat_file_module
 
      integer :: nlat, nlon ! The number of points in the X and Y
 
-     real( kind = core_rknd ), dimension(:), pointer ::  & 
+     real( kind = core_rknd ), dimension(:), allocatable ::  & 
        z ! Height of vertical levels [m]
 
      ! Time information
 
      integer :: day, month, year ! Date of starting time
 
-     real( kind = core_rknd ), dimension(:), pointer :: & 
+     real( kind = core_rknd ), dimension(:), allocatable :: & 
        rlat, & ! Latitude                   [Degrees N]
        rlon    ! Longitude                  [Degrees E]
 
@@ -97,7 +97,7 @@ module stat_file_module
 
      integer :: nvar  ! Number of variables for this file
 
-     type (variable), dimension(:), pointer ::  & 
+     type (variable), dimension(:), allocatable ::  &
        var ! List and variable description
 
    end type stat_file

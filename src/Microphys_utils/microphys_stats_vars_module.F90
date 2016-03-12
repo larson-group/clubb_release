@@ -29,11 +29,11 @@ module microphys_stats_vars_module
       alloc_size  ! Size of allocated stats_indices and output_values arrays
 
     ! An array of statistics indices corresponding to the output variables
-    integer, dimension(:), pointer :: &
+    integer, dimension(:), allocatable :: &
       stats_indices
 
     ! Values of the output variables (over the vertical domain)
-    real( kind = core_rknd ), dimension(:,:), pointer :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       output_values
 
   end type microphys_stats_vars_type

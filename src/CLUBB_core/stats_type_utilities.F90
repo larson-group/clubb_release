@@ -57,7 +57,7 @@ module stats_type_utilities
     ! Input/Output Variable
 
     ! Which grid the variable is located on (e.g., zt, zm, sfc)
-    type(stats), intent(inout) :: grid_kind
+    type(stats), target, intent(inout) :: grid_kind
 
     grid_kind%file%var(var_index)%ptr => grid_kind%accum_field_values(:,:,:,var_index)
     grid_kind%file%var(var_index)%name = var_name

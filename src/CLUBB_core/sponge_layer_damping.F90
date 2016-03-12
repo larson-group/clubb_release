@@ -31,7 +31,7 @@ module sponge_layer_damping
   end type sponge_damp_settings
 
   type sponge_damp_profile
-    real( kind = core_rknd ), pointer, dimension(:) :: &
+    real( kind = core_rknd ), allocatable, dimension(:) :: &
       tau_sponge_damp ! Damping factor
 
     integer :: &
@@ -77,7 +77,7 @@ module sponge_layer_damping
     implicit none
 
     ! External
-    intrinsic :: associated
+    intrinsic :: allocated
 
     ! Input Variable(s)
     real( kind = core_rknd ), intent(in) :: dt ! Model Timestep
@@ -100,7 +100,7 @@ module sponge_layer_damping
 
     ! ---- Begin Code ----
 
-    if ( associated( damping_profile%tau_sponge_damp ) ) then
+    if ( allocated( damping_profile%tau_sponge_damp ) ) then
 
       xm_p = xm
      

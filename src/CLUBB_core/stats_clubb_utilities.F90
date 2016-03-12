@@ -2848,10 +2848,10 @@ module stats_clubb_utilities
       deallocate( stats_zt%file%z )
              
       ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( associated( stats_zt%file%rlat ) ) then
+      if ( allocated( stats_zt%file%rlat ) ) then
         deallocate( stats_zt%file%rlat )
       end if
-      if ( associated( stats_zt%file%rlon ) ) then
+      if ( allocated( stats_zt%file%rlon ) ) then
         deallocate( stats_zt%file%rlon )
       end if
 
@@ -2891,10 +2891,10 @@ module stats_clubb_utilities
         deallocate( stats_lh_zt%file%z )
         
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( associated(stats_lh_zt%file%rlat ) ) then
+        if ( allocated(stats_lh_zt%file%rlat ) ) then
           deallocate( stats_lh_zt%file%rlat )
         end if
-        if ( associated(stats_lh_zt%file%rlon ) ) then
+        if ( allocated(stats_lh_zt%file%rlon ) ) then
           deallocate( stats_lh_zt%file%rlon )
         end if
 
@@ -2911,10 +2911,10 @@ module stats_clubb_utilities
         deallocate( stats_lh_sfc%file%z )
              
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( associated( stats_lh_sfc%file%rlat ) ) then
+        if ( allocated( stats_lh_sfc%file%rlat ) ) then
           deallocate( stats_lh_sfc%file%rlat )
         end if
-        if ( associated( stats_lh_sfc%file%rlon ) ) then
+        if ( allocated( stats_lh_sfc%file%rlon ) ) then
           deallocate( stats_lh_sfc%file%rlon )
         end if
       end if ! l_silhs_out
@@ -2929,10 +2929,10 @@ module stats_clubb_utilities
       deallocate( stats_zm%file%z )
              
       ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( associated( stats_zm%file%rlat ) ) then
+      if ( allocated( stats_zm%file%rlat ) ) then
         deallocate( stats_zm%file%rlat )
       end if
-      if ( associated( stats_zm%file%rlon ) ) then
+      if ( allocated( stats_zm%file%rlon ) ) then
         deallocate( stats_zm%file%rlon )
       end if
       deallocate( stats_zm%l_in_update )
@@ -2966,10 +2966,10 @@ module stats_clubb_utilities
         deallocate( stats_rad_zt%file%z )
              
         ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( associated( stats_rad_zt%file%rlat ) ) then
+        if ( allocated( stats_rad_zt%file%rlat ) ) then
           deallocate( stats_rad_zt%file%rlat )
         end if
-        if ( associated( stats_rad_zt%file%rlon ) ) then
+        if ( allocated( stats_rad_zt%file%rlon ) ) then
           deallocate( stats_rad_zt%file%rlon )
         end if
         deallocate( stats_rad_zt%l_in_update )
@@ -2997,10 +2997,10 @@ module stats_clubb_utilities
       deallocate( stats_sfc%file%z )
              
       ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( associated( stats_sfc%file%rlat ) ) then
+      if ( allocated( stats_sfc%file%rlat ) ) then
         deallocate( stats_sfc%file%rlat )
       end if
-      if ( associated( stats_sfc%file%rlon ) ) then
+      if ( allocated( stats_sfc%file%rlon ) ) then
         deallocate( stats_sfc%file%rlon )
       end if
 

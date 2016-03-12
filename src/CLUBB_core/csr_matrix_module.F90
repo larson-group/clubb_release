@@ -76,7 +76,7 @@ module csr_matrix_module
 
   private ! Default scope
 
-  integer, pointer, dimension(:) :: &
+  integer, allocatable, dimension(:) :: &
     csr_tridiag_ia, & !_ia array description for a tridiagonal matrix
     csr_tridiag_ja, & !_ja array description for a tridiagonal matrix
     csr_banddiag5_135_ia, & !_ia array description for a 5-band matrix

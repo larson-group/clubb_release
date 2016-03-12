@@ -370,7 +370,7 @@ module time_dependent_input
     end do
 
     do i = 1, nCols
-      if ( associated( t_dependent_forcing_data_f_grid(i)%values ) ) then
+      if ( allocated( t_dependent_forcing_data_f_grid(i)%values ) ) then
         deallocate( t_dependent_forcing_data_f_grid(i)%values )
       end if
     end do
