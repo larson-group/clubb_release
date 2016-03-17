@@ -16,8 +16,8 @@ module lh_microphys_var_covar_module
              ( nz, num_samples, dt, lh_sample_point_weights, &
                lh_rt_all, lh_thl_all, lh_w_all, &
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
-               lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc, &
-               lh_wpthlp_mc, lh_rtpthlp_mc )
+               lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
+               lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
 
   ! Description:
   !   Computes the effect of microphysics on gridbox variances and covariances
@@ -30,21 +30,10 @@ module lh_microphys_var_covar_module
     use clubb_precision, only: &
       core_rknd ! Constant
 
-    use stats_variables, only: &
-      l_stats_samp, & ! Variable(s)
-      ilh_rtp2_mc, ilh_thlp2_mc, ilh_wprtp_mc, ilh_wpthlp_mc, ilh_rtpthlp_mc, &
-      stats_zm
-
-    use stats_type_utilities, only: &
-      stat_update_var ! Procedure
-
     use math_utilities, only: &
       compute_sample_mean,        & ! Procedure(s)
       compute_sample_variance,    &
       compute_sample_covariance
-
-    use grid_class, only: &
-      zt2zm
 
     use constants_clubb, only: &
       zero, &    ! Constant(s)
@@ -76,11 +65,11 @@ module lh_microphys_var_covar_module
 
     ! Output Variables
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
-      lh_rtp2_mc,     &                ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
-      lh_thlp2_mc,    &                ! SILHS microphys. est. tendency of <thl'^2>  [K^2/s]
-      lh_wprtp_mc,    &                ! SILHS microphys. est. tendency of <w'rt'>   [m*(kg/kg)/s^2]
-      lh_wpthlp_mc,   &                ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
-      lh_rtpthlp_mc                    ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
+      lh_rtp2_mc_zt,   &               ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
+      lh_thlp2_mc_zt,  &               ! SILHS microphys. est. tendency of <thl'^2>  [K^2/s]
+      lh_wprtp_mc_zt,  &               ! SILHS microphys. est. tendency of <w'rt'>   [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_zt, &               ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
+      lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
 
     ! Local Variables
     real( kind = core_rknd ), dimension(nz,num_samples) :: &
@@ -157,20 +146,11 @@ module lh_microphys_var_covar_module
     end if ! l_lh_instant_var_covar_src
 
     ! Compute the microphysical variance and covariance tendencies
-    lh_rtp2_mc    = zt2zm( two*covar_rt_rtmc   + dt*var_rt_mc  )
-    lh_thlp2_mc   = zt2zm( two*covar_thl_thlmc + dt*var_thl_mc )
-    lh_wprtp_mc   = zt2zm( covar_w_rtmc  )
-    lh_wpthlp_mc  = zt2zm( covar_w_thlmc )
-    lh_rtpthlp_mc = zt2zm( covar_thl_rtmc + covar_rt_thlmc + dt*covar_rtmc_thlmc )
-
-    ! Stats sampling
-    if ( l_stats_samp ) then
-      call stat_update_var( ilh_rtp2_mc, lh_rtp2_mc, stats_zm )
-      call stat_update_var( ilh_thlp2_mc, lh_thlp2_mc, stats_zm )
-      call stat_update_var( ilh_wprtp_mc, lh_wprtp_mc, stats_zm )
-      call stat_update_var( ilh_wpthlp_mc, lh_wpthlp_mc, stats_zm )
-      call stat_update_var( ilh_rtpthlp_mc, lh_rtpthlp_mc, stats_zm )
-    end if
+    lh_rtp2_mc_zt    = two*covar_rt_rtmc   + dt*var_rt_mc
+    lh_thlp2_mc_zt   = two*covar_thl_thlmc + dt*var_thl_mc
+    lh_wprtp_mc_zt   = covar_w_rtmc
+    lh_wpthlp_mc_zt  = covar_w_thlmc
+    lh_rtpthlp_mc_zt = covar_thl_rtmc + covar_rt_thlmc + dt*covar_rtmc_thlmc
 
     return
   end subroutine lh_microphys_var_covar_driver

@@ -51,11 +51,19 @@ module estimate_scm_microphys_module
     use clubb_precision, only: &
       core_rknd
 
+    use grid_class, only: &
+      zt2zm
+
     use stats_variables, only: &
       stats_zt,           & ! Variable(s)
+      stats_zm,           &
       stats_sfc,          &
       isilhs_variance_category, &
-      l_stats_samp
+      l_stats_samp,       &
+      ilh_rtp2_mc, ilh_thlp2_mc, ilh_wprtp_mc, ilh_wpthlp_mc, ilh_rtpthlp_mc
+
+    use stats_type_utilities, only: &
+      stat_update_var ! Procedure
 
     use microphys_stats_vars_module, only: &
       microphys_stats_vars_type, &
@@ -183,6 +191,13 @@ module estimate_scm_microphys_module
       w_all_points,   &    ! Vertical velocity                              [m/s]
       Nc_all_points        ! Cloud droplet concentration                    [#/kg]
 
+    real( kind = core_rknd ), dimension(nz) :: &
+      lh_rtp2_mc_zt,    & ! LH microphysics tendency for <rt'^2>                  [(kg/kg)^2/s]
+      lh_thlp2_mc_zt,   & ! LH microphysics tendency for <thl'^2>                 [K^2/s]
+      lh_wprtp_mc_zt,   & ! LH microphysics tendency for <w'rt'>                  [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_zt,  & ! LH microphysics tendency for <w'thl'>                 [m*K/s^2]
+      lh_rtpthlp_mc_zt    ! LH microphysics tendency for <rt'thl'>                [K*(kg/kg)/s]
+
     ! These parameters are not used by the microphysics scheme when SILHS is
     ! turned on.
     real( kind = core_rknd ), dimension(nz) :: &
@@ -241,11 +256,27 @@ module estimate_scm_microphys_module
     if ( l_var_covar_src ) then
 
       call lh_microphys_var_covar_driver &
-           ( nz, num_samples, dt, lh_sample_point_weights, &   ! Intent(in)
-             rt_all_points, thl_all_points, w_all_points,  &   ! Intent(in)
-             lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &   ! Intent(in)
-             lh_rtp2_mc, lh_thlp2_mc, lh_wprtp_mc,         &   ! Intent(out)
-             lh_wpthlp_mc, lh_rtpthlp_mc )                     ! Intent(out)
+           ( nz, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
+             rt_all_points, thl_all_points, w_all_points,   &  ! Intent(in)
+             lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)
+             lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &  ! Intent(out)
+             lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )               ! Intent(out)
+
+      ! Convert from the zt grid to the zm grid.
+      lh_rtp2_mc    = zt2zm( lh_rtp2_mc_zt )
+      lh_thlp2_mc   = zt2zm( lh_thlp2_mc_zt )
+      lh_wprtp_mc   = zt2zm( lh_wprtp_mc_zt )
+      lh_wpthlp_mc  = zt2zm( lh_wpthlp_mc_zt )
+      lh_rtpthlp_mc = zt2zm( lh_rtpthlp_mc_zt )
+
+      ! Stats sampling
+      if ( l_stats_samp ) then
+        call stat_update_var( ilh_rtp2_mc, lh_rtp2_mc, stats_zm )
+        call stat_update_var( ilh_thlp2_mc, lh_thlp2_mc, stats_zm )
+        call stat_update_var( ilh_wprtp_mc, lh_wprtp_mc, stats_zm )
+        call stat_update_var( ilh_wpthlp_mc, lh_wpthlp_mc, stats_zm )
+        call stat_update_var( ilh_rtpthlp_mc, lh_rtpthlp_mc, stats_zm )
+      end if
 
     else ! .not. l_var_covar_src
 
