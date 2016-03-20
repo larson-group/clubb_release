@@ -100,7 +100,8 @@ module silhs_api_module
     l_lh_importance_sampling, &
     l_Lscale_vert_avg, &
     clip_transform_silhs_output_api, &
-    lh_clipped_variables_type
+    lh_clipped_variables_type, &
+    lh_microphys_var_covar_driver_api
 
 contains
 
@@ -340,6 +341,62 @@ contains
                                       lh_clipped_vars )                       ! Out
 
   end subroutine clip_transform_silhs_output_api
+
+  !-----------------------------------------------------------------
+  ! lh_microphys_var_covar_driver: Computes the effect of microphysics on gridbox covariances
+  !-----------------------------------------------------------------
+
+  subroutine lh_microphys_var_covar_driver_api &
+             ( nz, num_samples, dt, lh_sample_point_weights, &
+               lh_rt_all, lh_thl_all, lh_w_all, &
+               lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
+               lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
+               lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
+
+    use lh_microphys_var_covar_module, only: &
+      lh_microphys_var_covar_driver  ! Procedure
+
+    use clubb_precision, only: &
+      core_rknd   ! Constant
+
+    implicit none
+
+    ! Input Variables!
+    integer, intent(in) :: &
+      nz,           &                  ! Number of vertical levels
+      num_samples                      ! Number of SILHS sample points
+
+    real( kind = core_rknd ), intent(in) :: &
+      dt                               ! Model time step                             [s]
+
+    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+      lh_sample_point_weights          ! Weight of SILHS sample points
+
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
+      lh_rt_all, &                     ! SILHS samples of total water                [kg/kg]
+      lh_thl_all, &                    ! SILHS samples of potential temperature      [K]
+      lh_w_all, &                      ! SILHS samples of vertical velocity          [m/s]
+      lh_rcm_mc_all, &                 ! SILHS microphys. tendency of rcm            [kg/kg/s]
+      lh_rvm_mc_all, &                 ! SILHS microphys. tendency of rvm            [kg/kg/s]
+      lh_thlm_mc_all                   ! SILHS microphys. tendency of thlm           [K/s]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(nz), intent(out) :: &
+      lh_rtp2_mc_zt,   &               ! SILHS microphys. est. tendency of <rt'^2>   [(kg/kg)^2/s]
+      lh_thlp2_mc_zt,  &               ! SILHS microphys. est. tendency of <thl'^2>  [K^2/s]
+      lh_wprtp_mc_zt,  &               ! SILHS microphys. est. tendency of <w'rt'>   [m*(kg/kg)/s^2]
+      lh_wpthlp_mc_zt, &               ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
+      lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
+
+
+    call lh_microphys_var_covar_driver &
+         ( nz, num_samples, dt, lh_sample_point_weights, &
+           lh_rt_all, lh_thl_all, lh_w_all, &
+           lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
+           lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
+           lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
+
+  end subroutine lh_microphys_var_covar_driver_api
 
 #endif
 
