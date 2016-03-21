@@ -476,90 +476,92 @@ module variables_prognostic_module
     implicit none
 
     ! Prognostic variables
+    ! TODO: use a more appropriate condition
+    if (allocated(um)) then
+      deallocate( um )        ! u wind
+      deallocate( vm )        ! v wind
 
-    deallocate( um )        ! u wind
-    deallocate( vm )        ! v wind
+      deallocate( upwp )      ! vertical u momentum flux
+      deallocate( vpwp )      ! vertical v momentum flux
 
-    deallocate( upwp )      ! vertical u momentum flux
-    deallocate( vpwp )      ! vertical v momentum flux
+      deallocate( up2, vp2 )
 
-    deallocate( up2, vp2 )
-
-    deallocate( thlm )      ! liquid potential temperature
+      deallocate( thlm )      ! liquid potential temperature
 
 !---> h1g, 2010-06-16
 #ifdef GFDL
-    deallocate( temp_clubb )
+      deallocate( temp_clubb )
 #endif
 !<--- h1g, 2010-06-16
 
-    deallocate( rtm )       ! total water mixing ratio
-    deallocate( wprtp )     ! w'rt'
-    deallocate( wpthlp )    ! w'thl'
-    deallocate( wprcp )     ! w'rc'
-    deallocate( wp2 )       ! w'^2
-    deallocate( wp3 )       ! w'^3
-    deallocate( rtp2 )      ! rt'^2
-    deallocate( thlp2 )     ! thl'^2
-    deallocate( rtpthlp )   ! rt'thl'
+      deallocate( rtm )       ! total water mixing ratio
+      deallocate( wprtp )     ! w'rt'
+      deallocate( wpthlp )    ! w'thl'
+      deallocate( wprcp )     ! w'rc'
+      deallocate( wp2 )       ! w'^2
+      deallocate( wp3 )       ! w'^3
+      deallocate( rtp2 )      ! rt'^2
+      deallocate( thlp2 )     ! thl'^2
+      deallocate( rtpthlp )   ! rt'thl'
 
-    deallocate( p_in_Pa )         ! pressure
-    deallocate( exner )           ! exner
-    deallocate( rho )             ! density: t points
-    deallocate( rho_zm )          ! density: m points
-    deallocate( rho_ds_zm )       ! dry, static density: m-levs
-    deallocate( rho_ds_zt )       ! dry, static density: t-levs
-    deallocate( invrs_rho_ds_zm ) ! inv. dry, static density: m-levs
-    deallocate( invrs_rho_ds_zt ) ! inv. dry, static density: t-levs
-    deallocate( thv_ds_zm )       ! dry, base-state theta_v: m-levs
-    deallocate( thv_ds_zt )       ! dry, base-state theta_v: t-levs
+      deallocate( p_in_Pa )         ! pressure
+      deallocate( exner )           ! exner
+      deallocate( rho )             ! density: t points
+      deallocate( rho_zm )          ! density: m points
+      deallocate( rho_ds_zm )       ! dry, static density: m-levs
+      deallocate( rho_ds_zt )       ! dry, static density: t-levs
+      deallocate( invrs_rho_ds_zm ) ! inv. dry, static density: m-levs
+      deallocate( invrs_rho_ds_zt ) ! inv. dry, static density: t-levs
+      deallocate( thv_ds_zm )       ! dry, base-state theta_v: m-levs
+      deallocate( thv_ds_zt )       ! dry, base-state theta_v: t-levs
 
-    deallocate( thlm_forcing )    ! thlm large-scale forcing
-    deallocate( rtm_forcing )     ! rtm large-scale forcing
-    deallocate( um_forcing )      ! u forcing
-    deallocate( vm_forcing )      ! v forcing
-    deallocate( wprtp_forcing )   ! <w'r_t'> forcing (microphysics)
-    deallocate( wpthlp_forcing )  ! <w'th_l'> forcing (microphysics)
-    deallocate( rtp2_forcing )    ! <r_t'^2> forcing (microphysics)
-    deallocate( thlp2_forcing )   ! <th_l'^2> forcing (microphysics)
-    deallocate( rtpthlp_forcing ) ! <r_t'th_l'> forcing (microphysics)
+      deallocate( thlm_forcing )    ! thlm large-scale forcing
+      deallocate( rtm_forcing )     ! rtm large-scale forcing
+      deallocate( um_forcing )      ! u forcing
+      deallocate( vm_forcing )      ! v forcing
+      deallocate( wprtp_forcing )   ! <w'r_t'> forcing (microphysics)
+      deallocate( wpthlp_forcing )  ! <w'th_l'> forcing (microphysics)
+      deallocate( rtp2_forcing )    ! <r_t'^2> forcing (microphysics)
+      deallocate( thlp2_forcing )   ! <th_l'^2> forcing (microphysics)
+      deallocate( rtpthlp_forcing ) ! <r_t'th_l'> forcing (microphysics)
 
-    ! Imposed large scale w
+      ! Imposed large scale w
 
-    deallocate( wm_zm )     ! momentum levels
-    deallocate( wm_zt )     ! thermodynamic levels
+      deallocate( wm_zm )     ! momentum levels
+      deallocate( wm_zt )     ! thermodynamic levels
 
-    ! Cloud water variables
+      ! Cloud water variables
 
-    deallocate( rcm )
-    deallocate( cloud_frac )
-    deallocate( ice_supersat_frac )
-    deallocate( rcm_in_layer )
-    deallocate( cloud_cover )
+      deallocate( rcm )
+      deallocate( cloud_frac )
+      deallocate( ice_supersat_frac )
+      deallocate( rcm_in_layer )
+      deallocate( cloud_cover )
 
-    deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
+      deallocate( sigma_sqd_w )    ! PDF width parameter (momentum levels)
 
-    ! Variable for pdf closure scheme
-    deallocate( pdf_params )
-    deallocate( pdf_params_frz )
+      ! Variable for pdf closure scheme
+      deallocate( pdf_params )
+      deallocate( pdf_params_frz )
 
-    ! Passive scalars
-    deallocate( wpsclrp_sfc, wpedsclrp_sfc )
-    deallocate( sclrm )
-    deallocate( sclrp2 )
-    deallocate( sclrprtp )
-    deallocate( sclrpthlp )
-    deallocate( sclrm_forcing )
-    deallocate( wpsclrp )
+      ! Passive scalars
+      deallocate( wpsclrp_sfc, wpedsclrp_sfc )
+      deallocate( sclrm )
+      deallocate( sclrp2 )
+      deallocate( sclrprtp )
+      deallocate( sclrpthlp )
+      deallocate( sclrm_forcing )
+      deallocate( wpsclrp )
 
-    deallocate( edsclrm )
-    deallocate( edsclrm_forcing )
+      deallocate( edsclrm )
+      deallocate( edsclrm_forcing )
 
 !---> h1g, 2010-06-16
 #ifdef GFDL
-    deallocate( RH_crit )
+      deallocate( RH_crit )
 #endif
 ! <--- h1g, 2010-06-16
+    end if
 
     return
   end subroutine cleanup_prognostic_variables

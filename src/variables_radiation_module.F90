@@ -186,35 +186,35 @@ module variables_radiation_module
 
     ! --- Deallocate ---
 
-    deallocate( radht_SW )
-    deallocate( radht_LW )
-    deallocate( Frad_SW )
-    deallocate( Frad_LW )
+    if (allocated(radht_SW)) deallocate( radht_SW )
+    if (allocated(radht_LW)) deallocate( radht_LW )
+    if (allocated(Frad_SW)) deallocate( Frad_SW )
+    if (allocated(Frad_LW)) deallocate( Frad_LW )
 
-    deallocate( T_in_K )
-    deallocate( rcil )
-    deallocate( o3l )
+    if (allocated(T_in_K)) deallocate( T_in_K )
+    if (allocated(rcil)) deallocate( rcil )
+    if (allocated(o3l)) deallocate( o3l )
 
-    deallocate( rsm_2d )
-    deallocate( rcm_in_cloud_2d )
-    deallocate( cloud_frac_2d )
-    deallocate( ice_supersat_frac_2d )
+    if (allocated(rsm_2d)) deallocate( rsm_2d )
+    if (allocated(rcm_in_cloud_2d)) deallocate( rcm_in_cloud_2d )
+    if (allocated(cloud_frac_2d)) deallocate( cloud_frac_2d )
+    if (allocated(ice_supersat_frac_2d)) deallocate( ice_supersat_frac_2d )
 
-    deallocate( p_in_mb )
-    deallocate( sp_humidity )
+    if (allocated(p_in_mb)) deallocate( p_in_mb )
+    if (allocated(sp_humidity)) deallocate( sp_humidity )
 
-    deallocate( radht_SW_2d )
-    deallocate( radht_LW_2d )
+    if (allocated(radht_SW_2d)) deallocate( radht_SW_2d )
+    if (allocated(radht_LW_2d)) deallocate( radht_LW_2d )
 
-    deallocate( Frad_uLW )
-    deallocate( Frad_dLW )
-    deallocate( Frad_uSW )
-    deallocate( Frad_dSW )
+    if (allocated(Frad_uLW)) deallocate( Frad_uLW )
+    if (allocated(Frad_dLW)) deallocate( Frad_dLW )
+    if (allocated(Frad_uSW)) deallocate( Frad_uSW )
+    if (allocated(Frad_dSW)) deallocate( Frad_dSW )
 
-    deallocate( fdswcl )
-    deallocate( fuswcl )
-    deallocate( fdlwcl )
-    deallocate( fulwcl )
+    if (allocated(fdswcl)) deallocate( fdswcl )
+    if (allocated(fuswcl)) deallocate( fuswcl )
+    if (allocated(fdlwcl)) deallocate( fdlwcl )
+    if (allocated(fulwcl)) deallocate( fulwcl )
 
     return
   end subroutine cleanup_radiation_variables

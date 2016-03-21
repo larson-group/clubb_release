@@ -2836,48 +2836,50 @@ module stats_clubb_utilities
 
     if ( l_stats ) then
       ! De-allocate all stats_zt variables
-      deallocate( stats_zt%z )
+      if (allocated(stats_zt%z)) then
+        deallocate( stats_zt%z )
 
-      deallocate( stats_zt%accum_field_values )
+        deallocate( stats_zt%accum_field_values )
 
-      deallocate( stats_zt%accum_num_samples )
-      deallocate( stats_zt%l_in_update )
+        deallocate( stats_zt%accum_num_samples )
+        deallocate( stats_zt%l_in_update )
 
 
-      deallocate( stats_zt%file%var )
-      deallocate( stats_zt%file%z )
-             
-      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( allocated( stats_zt%file%rlat ) ) then
-        deallocate( stats_zt%file%rlat )
+        deallocate( stats_zt%file%var )
+        deallocate( stats_zt%file%z )
+               
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( allocated( stats_zt%file%rlat ) ) then
+          deallocate( stats_zt%file%rlat )
+        end if
+        if ( allocated( stats_zt%file%rlon ) ) then
+          deallocate( stats_zt%file%rlon )
+        end if
+
+        deallocate ( ztscr01 )
+        deallocate ( ztscr02 )
+        deallocate ( ztscr03 )
+        deallocate ( ztscr04 )
+        deallocate ( ztscr05 )
+        deallocate ( ztscr06 )
+        deallocate ( ztscr07 )
+        deallocate ( ztscr08 )
+        deallocate ( ztscr09 )
+        deallocate ( ztscr10 )
+        deallocate ( ztscr11 )
+        deallocate ( ztscr12 )
+        deallocate ( ztscr13 )
+        deallocate ( ztscr14 )
+        deallocate ( ztscr15 )
+        deallocate ( ztscr16 )
+        deallocate ( ztscr17 )
+        deallocate ( ztscr18 )
+        deallocate ( ztscr19 )
+        deallocate ( ztscr20 )
+        deallocate ( ztscr21 )
       end if
-      if ( allocated( stats_zt%file%rlon ) ) then
-        deallocate( stats_zt%file%rlon )
-      end if
 
-      deallocate ( ztscr01 )
-      deallocate ( ztscr02 )
-      deallocate ( ztscr03 )
-      deallocate ( ztscr04 )
-      deallocate ( ztscr05 )
-      deallocate ( ztscr06 )
-      deallocate ( ztscr07 )
-      deallocate ( ztscr08 )
-      deallocate ( ztscr09 )
-      deallocate ( ztscr10 )
-      deallocate ( ztscr11 )
-      deallocate ( ztscr12 )
-      deallocate ( ztscr13 )
-      deallocate ( ztscr14 )
-      deallocate ( ztscr15 )
-      deallocate ( ztscr16 )
-      deallocate ( ztscr17 )
-      deallocate ( ztscr18 )
-      deallocate ( ztscr19 )
-      deallocate ( ztscr20 )
-      deallocate ( ztscr21 )
-
-      if ( l_silhs_out ) then
+      if ( l_silhs_out .and. allocated(stats_lh_zt%z) ) then
         ! De-allocate all stats_lh_zt variables
         deallocate( stats_lh_zt%z )
 
@@ -2920,81 +2922,87 @@ module stats_clubb_utilities
       end if ! l_silhs_out
 
       ! De-allocate all stats_zm variables
-      deallocate( stats_zm%z )
+      if (allocated(stats_zm%z)) then
+        deallocate( stats_zm%z )
 
-      deallocate( stats_zm%accum_field_values )
-      deallocate( stats_zm%accum_num_samples )
+        deallocate( stats_zm%accum_field_values )
+        deallocate( stats_zm%accum_num_samples )
 
-      deallocate( stats_zm%file%var )
-      deallocate( stats_zm%file%z )
+        deallocate( stats_zm%file%var )
+        deallocate( stats_zm%file%z )
              
-      ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-      if ( allocated( stats_zm%file%rlat ) ) then
-        deallocate( stats_zm%file%rlat )
-      end if
-      if ( allocated( stats_zm%file%rlon ) ) then
-        deallocate( stats_zm%file%rlon )
-      end if
-      deallocate( stats_zm%l_in_update )
+        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+        if ( allocated( stats_zm%file%rlat ) ) then
+          deallocate( stats_zm%file%rlat )
+        end if
+        if ( allocated( stats_zm%file%rlon ) ) then
+          deallocate( stats_zm%file%rlon )
+        end if
+        deallocate( stats_zm%l_in_update )
 
-      deallocate ( zmscr01 )
-      deallocate ( zmscr02 )
-      deallocate ( zmscr03 )
-      deallocate ( zmscr04 )
-      deallocate ( zmscr05 )
-      deallocate ( zmscr06 )
-      deallocate ( zmscr07 )
-      deallocate ( zmscr08 )
-      deallocate ( zmscr09 )
-      deallocate ( zmscr10 )
-      deallocate ( zmscr11 )
-      deallocate ( zmscr12 )
-      deallocate ( zmscr13 )
-      deallocate ( zmscr14 )
-      deallocate ( zmscr15 )
-      deallocate ( zmscr16 )
-      deallocate ( zmscr17 )
+        deallocate ( zmscr01 )
+        deallocate ( zmscr02 )
+        deallocate ( zmscr03 )
+        deallocate ( zmscr04 )
+        deallocate ( zmscr05 )
+        deallocate ( zmscr06 )
+        deallocate ( zmscr07 )
+        deallocate ( zmscr08 )
+        deallocate ( zmscr09 )
+        deallocate ( zmscr10 )
+        deallocate ( zmscr11 )
+        deallocate ( zmscr12 )
+        deallocate ( zmscr13 )
+        deallocate ( zmscr14 )
+        deallocate ( zmscr15 )
+        deallocate ( zmscr16 )
+        deallocate ( zmscr17 )
+      end if
 
       if ( l_output_rad_files ) then
         ! De-allocate all stats_rad_zt variables
-        deallocate( stats_rad_zt%z )
+        if (allocated(stats_rad_zt%z)) then
+          deallocate( stats_rad_zt%z )
 
-        deallocate( stats_rad_zt%accum_field_values )
-        deallocate( stats_rad_zt%accum_num_samples )
+          deallocate( stats_rad_zt%accum_field_values )
+          deallocate( stats_rad_zt%accum_num_samples )
 
-        deallocate( stats_rad_zt%file%var )
-        deallocate( stats_rad_zt%file%z )
-             
-        ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
-        if ( allocated( stats_rad_zt%file%rlat ) ) then
-          deallocate( stats_rad_zt%file%rlat )
+          deallocate( stats_rad_zt%file%var )
+          deallocate( stats_rad_zt%file%z )
+               
+          ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
+          if ( allocated( stats_rad_zt%file%rlat ) ) then
+            deallocate( stats_rad_zt%file%rlat )
+          end if
+          if ( allocated( stats_rad_zt%file%rlon ) ) then
+            deallocate( stats_rad_zt%file%rlon )
+          end if
+          deallocate( stats_rad_zt%l_in_update )
+
+          ! De-allocate all stats_rad_zm variables
+          deallocate( stats_rad_zm%z )
+
+          deallocate( stats_rad_zm%accum_field_values )
+          deallocate( stats_rad_zm%accum_num_samples )
+
+          deallocate( stats_rad_zm%file%var )
+          deallocate( stats_rad_zm%file%z )
+          deallocate( stats_rad_zm%l_in_update )
         end if
-        if ( allocated( stats_rad_zt%file%rlon ) ) then
-          deallocate( stats_rad_zt%file%rlon )
-        end if
-        deallocate( stats_rad_zt%l_in_update )
-
-        ! De-allocate all stats_rad_zm variables
-        deallocate( stats_rad_zm%z )
-
-        deallocate( stats_rad_zm%accum_field_values )
-        deallocate( stats_rad_zm%accum_num_samples )
-
-        deallocate( stats_rad_zm%file%var )
-        deallocate( stats_rad_zm%file%z )
-        deallocate( stats_rad_zm%l_in_update )
 
       end if ! l_output_rad_files
 
       ! De-allocate all stats_sfc variables
-      deallocate( stats_sfc%z )
+      if (allocated(stats_sfc%z)) then
+        deallocate( stats_sfc%z )
 
-      deallocate( stats_sfc%accum_field_values )
-      deallocate( stats_sfc %accum_num_samples )
-      deallocate( stats_sfc%l_in_update )
+        deallocate( stats_sfc%accum_field_values )
+        deallocate( stats_sfc %accum_num_samples )
+        deallocate( stats_sfc%l_in_update )
 
-      deallocate( stats_sfc%file%var )
-      deallocate( stats_sfc%file%z )
+        deallocate( stats_sfc%file%var )
+        deallocate( stats_sfc%file%z )
+      end if
              
       ! Check if pointer is allocated to prevent crash in netcdf (ticket 765)
       if ( allocated( stats_sfc%file%rlat ) ) then
@@ -3005,68 +3013,71 @@ module stats_clubb_utilities
       end if
 
       ! De-allocate scalar indices
-      deallocate( isclrm )
-      deallocate( isclrm_f )
-      deallocate( iedsclrm )
-      deallocate( iedsclrm_f )
-      deallocate( isclrprtp )
-      deallocate( isclrp2 )
-      deallocate( isclrpthvp )
-      deallocate( isclrpthlp )
-      deallocate( isclrprcp )
-      deallocate( iwpsclrp )
-      deallocate( iwp2sclrp )
-      deallocate( iwpsclrp2 )
-      deallocate( iwpsclrprtp )
-      deallocate( iwpsclrpthlp )
-      deallocate( iwpedsclrp )
+      if (allocated(isclrm)) then
+        deallocate( isclrm )
+        deallocate( isclrm_f )
+        deallocate( iedsclrm )
+        deallocate( iedsclrm_f )
+        deallocate( isclrprtp )
+        deallocate( isclrp2 )
+        deallocate( isclrpthvp )
+        deallocate( isclrpthlp )
+        deallocate( isclrprcp )
+        deallocate( iwpsclrp )
+        deallocate( iwp2sclrp )
+        deallocate( iwpsclrp2 )
+        deallocate( iwpsclrprtp )
+        deallocate( iwpsclrpthlp )
+        deallocate( iwpedsclrp )
+      end if
 
       ! De-allocate hyderometeor statistical variables
-      deallocate( ihm_1 )
-      deallocate( ihm_2 )
-      deallocate( imu_hm_1 )
-      deallocate( imu_hm_2 )
-      deallocate( imu_hm_1_n )
-      deallocate( imu_hm_2_n )
-      deallocate( isigma_hm_1 )
-      deallocate( isigma_hm_2 )
-      deallocate( isigma_hm_1_n )
-      deallocate( isigma_hm_2_n )
-      deallocate( icorr_w_hm_1 )
-      deallocate( icorr_w_hm_2 )
-      deallocate( icorr_chi_hm_1 )
-      deallocate( icorr_chi_hm_2 )
-      deallocate( icorr_eta_hm_1 )
-      deallocate( icorr_eta_hm_2 )
-      deallocate( icorr_Ncn_hm_1 )
-      deallocate( icorr_Ncn_hm_2 )
-      deallocate( icorr_hmx_hmy_1 )
-      deallocate( icorr_hmx_hmy_2 )
-      deallocate( icorr_w_hm_1_n )
-      deallocate( icorr_w_hm_2_n )
-      deallocate( icorr_chi_hm_1_n )
-      deallocate( icorr_chi_hm_2_n )
-      deallocate( icorr_eta_hm_1_n )
-      deallocate( icorr_eta_hm_2_n )
-      deallocate( icorr_Ncn_hm_1_n )
-      deallocate( icorr_Ncn_hm_2_n )
-      deallocate( icorr_hmx_hmy_1_n )
-      deallocate( icorr_hmx_hmy_2_n )
-      deallocate( ihmp2_zt )
-      deallocate( iwp2hmp )
-      deallocate( ihydrometp2 )
-      deallocate( iwphydrometp )
-      deallocate( irtphmp )
-      deallocate( ithlphmp )
-      deallocate( ihmxphmyp )
-      deallocate( iK_hm )
+      if (allocated(ihm_1)) then
+        deallocate( ihm_1 )
+        deallocate( ihm_2 )
+        deallocate( imu_hm_1 )
+        deallocate( imu_hm_2 )
+        deallocate( imu_hm_1_n )
+        deallocate( imu_hm_2_n )
+        deallocate( isigma_hm_1 )
+        deallocate( isigma_hm_2 )
+        deallocate( isigma_hm_1_n )
+        deallocate( isigma_hm_2_n )
+        deallocate( icorr_w_hm_1 )
+        deallocate( icorr_w_hm_2 )
+        deallocate( icorr_chi_hm_1 )
+        deallocate( icorr_chi_hm_2 )
+        deallocate( icorr_eta_hm_1 )
+        deallocate( icorr_eta_hm_2 )
+        deallocate( icorr_Ncn_hm_1 )
+        deallocate( icorr_Ncn_hm_2 )
+        deallocate( icorr_hmx_hmy_1 )
+        deallocate( icorr_hmx_hmy_2 )
+        deallocate( icorr_w_hm_1_n )
+        deallocate( icorr_w_hm_2_n )
+        deallocate( icorr_chi_hm_1_n )
+        deallocate( icorr_chi_hm_2_n )
+        deallocate( icorr_eta_hm_1_n )
+        deallocate( icorr_eta_hm_2_n )
+        deallocate( icorr_Ncn_hm_1_n )
+        deallocate( icorr_Ncn_hm_2_n )
+        deallocate( icorr_hmx_hmy_1_n )
+        deallocate( icorr_hmx_hmy_2_n )
+        deallocate( ihmp2_zt )
+        deallocate( iwp2hmp )
+        deallocate( ihydrometp2 )
+        deallocate( iwphydrometp )
+        deallocate( irtphmp )
+        deallocate( ithlphmp )
+        deallocate( ihmxphmyp )
+        deallocate( iK_hm )
+      end if
 
       if ( allocated( isilhs_variance_category ) ) then
         deallocate( isilhs_variance_category )
       end if
 
     end if ! l_stats
-
 
     return
   end subroutine stats_finalize

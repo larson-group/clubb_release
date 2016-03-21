@@ -77,7 +77,6 @@ module clubb_driver
 
     use inputfields, only: &
       inputfields_init, compute_timestep, stat_fields_reader, & ! Procedure(s)
-      cleanup_input_fields, &
       l_input_wp3                                                 ! Variable(s)
 
     use inputfields, only: stat_files
@@ -87,7 +86,6 @@ module clubb_driver
 
     use advance_clubb_core_module, only: &
       setup_clubb_core,  & ! Procedure(s)
-      cleanup_clubb_core, &
       advance_clubb_core, &
       calculate_thlp2_rad
 
@@ -119,8 +117,7 @@ module clubb_driver
         advance_microphys  ! Procedure(s)
 
     use microphys_init_cleanup, only: &
-        init_microphys,    & ! Procedure(s)
-        cleanup_microphys
+        init_microphys     ! Procedure
 
     use bugsrad_driver, only: init_radiation ! Subroutine
 
@@ -152,7 +149,7 @@ module clubb_driver
 
     use stats_clubb_utilities, only:  & 
       stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
-      stats_finalize, stats_init
+      stats_init
 
     use stats_type_utilities, only: &
       stat_update_var ! Procedure
@@ -162,8 +159,7 @@ module clubb_driver
     use time_dependent_input, only: &
       l_t_dependent,    & ! Variable(s)
       l_input_xpwp_sfc, &
-      l_ignore_forcings, &
-      finalize_t_dependent_input ! Procedure(s)
+      l_ignore_forcings
 
     use sponge_layer_damping, only: &
       thlm_sponge_damp_settings, & ! Variable(s)
@@ -171,14 +167,12 @@ module clubb_driver
       uv_sponge_damp_settings, &
       thlm_sponge_damp_profile, &
       rtm_sponge_damp_profile, &
-      uv_sponge_damp_profile, &
-      finalize_tau_sponge_damp
+      uv_sponge_damp_profile
 
     use extended_atmosphere_module, only: &
       total_atmos_dim, & ! Variable(s)
       complete_alt, &
-      complete_momentum, &
-      finalize_extended_atm
+      complete_momentum
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
 
@@ -197,7 +191,6 @@ module clubb_driver
       lh_subcolumn_generator, & ! Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
-      latin_hypercube_2D_close, &
       clip_transform_silhs_output, &
       lh_clipped_variables_type ! Type
 
@@ -211,8 +204,7 @@ module clubb_driver
 #endif
 
     use variables_radiation_module, only: &
-      setup_radiation_variables, & ! Procedure(s)
-      cleanup_radiation_variables
+      setup_radiation_variables    ! Procedure(s)
 
     use text_writer, only: write_text, write_date ! Procedure(s)
 
@@ -262,8 +254,7 @@ module clubb_driver
     use corr_varnce_module, only: &
         corr_array_n_cloud, & ! Variable(s)
         corr_array_n_below, &
-        d_variables, &
-        cleanup_corr_matrix_arrays
+        d_variables
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -887,7 +878,11 @@ module clubb_driver
     rtphmp_zt(:,:)  = 0._core_rknd
     thlphmp_zt(:,:) = 0._core_rknd
 
-    if ( fatal_error( err_code ) ) return
+    if ( fatal_error( err_code ) ) then
+      ! At this point, input fields haven't been set up, so don't clean them up.
+      call cleanup_clubb( l_input_fields=.false. )
+      return
+    end if
 
     ! This special purpose code only applies to tuner runs where the tune_type
     ! is setup to try all permutations of our model flags
@@ -1008,7 +1003,11 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                           & ! Intent(inout)
              sclrm, edsclrm, err_code )                           ! Intent(out)
 
-      if ( fatal_error( err_code ) ) return
+      if ( fatal_error( err_code ) ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false. )
+        return
+      end if
 
 #ifdef SILHS
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
@@ -1036,7 +1035,11 @@ module clubb_driver
              Ncm, Nc_in_cloud, Nccnm,                            & ! Intent(inout)
              sclrm, edsclrm, err_code )                            ! Intent(out)
 
-      if ( fatal_error( err_code ) ) return
+      if ( fatal_error( err_code ) ) then
+        ! At this point, input fields haven't been set up, so don't clean them up.
+        call cleanup_clubb( l_input_fields=.false. )
+        return
+      end if
 
       time_current = time_restart
 
@@ -1164,6 +1167,7 @@ module clubb_driver
 
       write(fstderr,*) "The options l_silhs_rad and l_calc_thlp2_rad are incompatible."
       err_code = clubb_var_out_of_bounds
+      call cleanup_clubb( l_input_fields )
       return
 
     end if
@@ -1475,44 +1479,7 @@ module clubb_driver
 !-------------------------------------------------------------------------------
 
     ! Free memory
-    if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
-    end if
-
-    if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
-    end if
-
-    if( uv_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( uv_sponge_damp_profile )
-    end if
-
-    if( l_t_dependent ) then
-      call finalize_t_dependent_input()
-    end if
-
-    call finalize_extended_atm( )
-
-    call cleanup_clubb_core( l_implemented )
-
-    call cleanup_radiation_variables( )
-
-    call cleanup_microphys( )
-
-    call cleanup_corr_matrix_arrays( )
-
-    if( l_input_fields ) then
-      call cleanup_input_fields()
-    end if
-
-    call stats_finalize( )
-
-#ifdef SILHS
-    if ( lh_microphys_type /= lh_microphys_disabled ) then
-      call latin_hypercube_2D_close( )
-      call cleanup_latin_hypercube_arrays( )
-    end if
-#endif
+    call cleanup_clubb( l_input_fields )
 
     deallocate( thlm_mc, rvm_mc, rcm_mc, wprtp_mc, wpthlp_mc, rtp2_mc, &
                 thlp2_mc, rtpthlp_mc, hydromet_mc, Ncm_mc, hydromet_vel_zt, &
@@ -2995,6 +2962,110 @@ module clubb_driver
 
     return
   end subroutine initialize_clubb_variables
+  !-----------------------------------------------------------------------
+
+  subroutine cleanup_clubb( l_input_fields )
+
+    use inputfields, only: &
+      cleanup_input_fields
+
+    use sponge_layer_damping, only: &
+      thlm_sponge_damp_settings, & ! Variable(s)
+      rtm_sponge_damp_settings, &
+      uv_sponge_damp_settings, &
+      thlm_sponge_damp_profile, &
+      rtm_sponge_damp_profile, &
+      uv_sponge_damp_profile, &
+      finalize_tau_sponge_damp
+
+    use time_dependent_input, only: &
+      l_t_dependent,    & ! Variable(s)
+      finalize_t_dependent_input ! Procedure(s)
+
+    use extended_atmosphere_module, only: &
+      finalize_extended_atm
+
+    use advance_clubb_core_module, only: &
+      cleanup_clubb_core
+
+    use variables_radiation_module, only: &
+      cleanup_radiation_variables
+
+    use microphys_init_cleanup, only: &
+      cleanup_microphys
+
+    use corr_varnce_module, only: &
+      cleanup_corr_matrix_arrays
+
+    use stats_clubb_utilities, only:  &
+      stats_finalize
+
+#ifdef SILHS
+    use parameters_microphys, only: &
+      lh_microphys_type,     & ! Variable(s)
+      lh_microphys_disabled
+
+    use latin_hypercube_driver_module, only: &
+      latin_hypercube_2D_close
+
+    use latin_hypercube_arrays, only: &
+      cleanup_latin_hypercube_arrays ! Procedure(s)
+#endif
+
+    implicit none
+
+    logical, parameter :: &
+      l_implemented = .false.
+
+    ! Input Variables
+    logical, intent(in) :: &
+      l_input_fields
+
+    !----- Begin Code -----
+
+    ! Free memory
+    if( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
+    end if
+
+    if( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
+    end if
+
+    if( uv_sponge_damp_settings%l_sponge_damping ) then
+      call finalize_tau_sponge_damp( uv_sponge_damp_profile )
+    end if
+
+    if( l_t_dependent ) then
+      call finalize_t_dependent_input()
+    end if
+
+    call finalize_extended_atm( )
+
+    call cleanup_clubb_core( l_implemented )
+
+    call cleanup_radiation_variables( )
+
+    call cleanup_microphys( )
+
+    call cleanup_corr_matrix_arrays( )
+
+    if( l_input_fields ) then
+      call cleanup_input_fields()
+    end if
+
+    call stats_finalize( )
+
+#ifdef SILHS
+    if ( lh_microphys_type /= lh_microphys_disabled ) then
+      call latin_hypercube_2D_close( )
+      call cleanup_latin_hypercube_arrays( )
+    end if
+#endif
+
+
+  end subroutine cleanup_clubb
+
   !-----------------------------------------------------------------------
   subroutine restart_clubb &
              ( iunit, runfile, &
