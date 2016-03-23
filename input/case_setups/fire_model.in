@@ -142,6 +142,13 @@ l_prescribed_avg_deltaz = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "none"
+
+!! The settings below have no effect unless microphys_scheme != "none"
+l_var_covar_src = .true.
+
+! Addition for using SILHS
+lh_microphys_type = "disabled"
+lh_num_samples = 8
 /
 
 &radiation_setting
