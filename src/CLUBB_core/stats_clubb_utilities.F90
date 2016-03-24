@@ -2811,7 +2811,8 @@ module stats_clubb_utilities
         ihmxphmyp
 
     use stats_variables, only: &
-        isilhs_variance_category ! Variable
+        isilhs_variance_category, & ! Variable(s)
+        ilh_samp_frac_category
 
 #ifdef NETCDF
     use output_netcdf, only:  & 
@@ -3075,6 +3076,7 @@ module stats_clubb_utilities
 
       if ( allocated( isilhs_variance_category ) ) then
         deallocate( isilhs_variance_category )
+        deallocate( ilh_samp_frac_category )
       end if
 
     end if ! l_stats
