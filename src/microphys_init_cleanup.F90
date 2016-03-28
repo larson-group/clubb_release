@@ -368,7 +368,8 @@ module microphys_init_cleanup
       if ( ierr > 0 ) then
         stop "Error reading SILHS namelist &silhs_params_nl."
       else if ( ierr < 0 ) then
-        write(fstderr,*) "Warning: SILHS namelist &silhs_params_nl not found."
+        if ( clubb_at_least_debug_level( 1 ) ) &
+          write(fstderr,*) "Warning: SILHS namelist &silhs_params_nl not found."
       end if
 
       open(unit=iunit, file=namelist_file, status='old', action='read')
