@@ -22,6 +22,21 @@ module lh_microphys_var_covar_module
   ! Description:
   !   Computes the effect of microphysics on gridbox variances and covariances
 
+  ! More description:
+  !   The equations for the (co)variance microphysical tendencies, when
+  !   integrated forward in time explicitly, are:
+  !
+  !   rtp2_mc    = 2*covar(rt,rt_mc) + dt*var(rt_mc)
+  !   thlp2_mc   = 2*covar(thl,thl_mc) + dt*var(thl_mc)
+  !   wprtp_mc   = covar(w,rt_mc)
+  !   wpthlp_mc  = covar(w,thl_mc)
+  !   rtpthlp_mc = covar(thl,rt_mc) + covar(rt,thl_mc) + dt*covar(rt_mc,thl_mc)
+  !
+  !   This code can optionally take the limit of these equations at an
+  !   infinitesimally small time step, such that the terms involving
+  !   dt drop out. This configuration agrees with the KK upscaled analytic
+  !   solution. (See clubb:ticket:753 for more discussion on this.)
+
   ! References:
   !   None
   !-----------------------------------------------------------------------
@@ -78,21 +93,21 @@ module lh_microphys_var_covar_module
     real( kind = core_rknd ), dimension(nz) :: &
       mean_rt,         &
       mean_rt_mc,      &
-      covar_rt_rtmc,   &
+      covar_rt_rt_mc,   &
       mean_thl,        &
       mean_thl_mc,     &
-      covar_thl_thlmc, &
+      covar_thl_thl_mc, &
       mean_w,          &
-      covar_w_rtmc,    &
-      covar_w_thlmc,   &
-      covar_thl_rtmc,  &
-      covar_rt_thlmc
+      covar_w_rt_mc,    &
+      covar_w_thl_mc,   &
+      covar_thl_rt_mc,  &
+      covar_rt_thl_mc
 
     ! For timestep-dependent terms
     real( kind = core_rknd ), dimension(nz) :: &
       var_rt_mc, &
       var_thl_mc, &
-      covar_rtmc_thlmc
+      covar_rt_mc_thl_mc
 
   !-----------------------------------------------------------------------
 
@@ -102,20 +117,20 @@ module lh_microphys_var_covar_module
     ! Calculate means, variances, and covariances needed for the tendency terms
     mean_rt = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rt_all )
     mean_rt_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rt_mc_all )
-    covar_rt_rtmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_rt_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                lh_rt_all, mean_rt, lh_rt_mc_all, mean_rt_mc )
     mean_thl = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thl_all )
     mean_thl_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all )
-    covar_thl_thlmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_thl_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                  lh_thl_all, mean_thl, lh_thlm_mc_all, mean_thl_mc )
     mean_w = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_w_all )
-    covar_w_rtmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_w_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                               lh_w_all, mean_w, lh_rt_mc_all, mean_rt_mc )
-    covar_w_thlmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_w_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                               lh_w_all, mean_w, lh_thlm_mc_all, mean_thl_mc )
-    covar_thl_rtmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_thl_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                 lh_thl_all, mean_thl, lh_rt_mc_all, mean_rt_mc )
-    covar_rt_thlmc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
+    covar_rt_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                 lh_rt_all, mean_rt, lh_thlm_mc_all, mean_thl_mc )
 
     ! Variances and covariances for timestep-dependent terms
@@ -132,25 +147,25 @@ module lh_microphys_var_covar_module
       var_thl_mc = compute_sample_variance &
                                 ( nz, num_samples, lh_thlm_mc_all, lh_sample_point_weights, &
                                   mean_thl_mc )
-      covar_rtmc_thlmc = compute_sample_covariance &
+      covar_rt_mc_thl_mc = compute_sample_covariance &
                                 ( nz, num_samples, lh_sample_point_weights, &
                                   lh_rt_mc_all, mean_rt_mc, lh_thlm_mc_all, mean_thl_mc )
-    else
 
-      ! The timestep-dependent terms are set to zero, and so are not included in
-      ! the tendencies of rtp2 and thlp2
-      var_rt_mc        = zero
-      var_thl_mc       = zero
-      covar_rtmc_thlmc = zero
-
-    end if ! l_lh_instant_var_covar_src
+    end if ! .not. l_lh_instant_var_covar_src
 
     ! Compute the microphysical variance and covariance tendencies
-    lh_rtp2_mc_zt    = two*covar_rt_rtmc   + dt*var_rt_mc
-    lh_thlp2_mc_zt   = two*covar_thl_thlmc + dt*var_thl_mc
-    lh_wprtp_mc_zt   = covar_w_rtmc
-    lh_wpthlp_mc_zt  = covar_w_thlmc
-    lh_rtpthlp_mc_zt = covar_thl_rtmc + covar_rt_thlmc + dt*covar_rtmc_thlmc
+    lh_rtp2_mc_zt    = two*covar_rt_rt_mc
+    lh_thlp2_mc_zt   = two*covar_thl_thl_mc
+    lh_wprtp_mc_zt   = covar_w_rt_mc
+    lh_wpthlp_mc_zt  = covar_w_thl_mc
+    lh_rtpthlp_mc_zt = covar_thl_rt_mc + covar_rt_thl_mc
+
+    if ( .not. l_lh_instant_var_covar_src ) then
+      ! Add timestep-dependent terms
+      lh_rtp2_mc_zt = lh_rtp2_mc_zt + dt*var_rt_mc
+      lh_thlp2_mc_zt = lh_thlp2_mc_zt + dt*var_thl_mc
+      lh_rtpthlp_mc_zt = lh_rtpthlp_mc_zt + dt*covar_rt_mc_thl_mc
+    end if ! .not. l_lh_instant_var_covar_src
 
     return
   end subroutine lh_microphys_var_covar_driver
