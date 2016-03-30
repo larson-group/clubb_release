@@ -1,11 +1,11 @@
 ! $Id$
 
 &stats
-f_tol               = 1.0,
+f_tol               = 0.7,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .false.,
-t_variables       = "cloud_frac", "CLD", "rcm", "QC", "wp3", "W3" 
+t_variables         = "cloud_frac", "CLD", "rrm", "RRM"
 weight_var_nl       = 1.0,
 anneal_temp         = 100.,
 anneal_iter         = 100,
@@ -23,7 +23,7 @@ tune_type           = 0
 &cases
 ! RICO
 hoc_stats_file_nl(1)    = "../output/rico_zt.ctl"
-les_stats_file_nl(1)    = "../les_data/RICO_128x128x100_drizzle.nc"
+les_stats_file_nl(1)    = "../sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
 run_file_nl(1)          = "rico_hoc.in"
 z_i_nl(1)               = 2
 z_f_nl(1)               = 33
@@ -38,9 +38,9 @@ C1c                         = 0.
 C2                          = 0.
 C2b                         = 0.
 C2c                         = 0.
-C2rt                        = 0.
-C2thl                       = 0.
-C2rtthl                     = 0.
+C2rt                        = 0.25
+C2thl                       = 0.25
+C2rtthl                     = 0.25
 C4                          = 0.
 C5                          = 0.
 C6rt                        = 0.25
@@ -78,7 +78,7 @@ nu8                         = 0.
 c_K9                        = 0.
 nu9                         = 0.
 nu10                        = 0.
-c_K_hm                      = 0.
+c_K_hm                      = 0.25
 c_K_hmb                     = 0.
 K_hm_min_coef               = 0.
 nu_hm                       = 0.
@@ -86,7 +86,7 @@ gamma_coef                  = 0.
 gamma_coefb                 = 0.
 gamma_coefc                 = 0.
 mu                          = 0.
-beta                        = 0.
+beta                        = 0.1
 lmin_coef                   = 0.
 omicron                     = 0.
 zeta_vrnce_rat              = 0.

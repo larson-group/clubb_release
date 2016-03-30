@@ -5,11 +5,11 @@
 $statsnl
 
 vars_zt =
-'cloud_frac', 'rcm', 'wp3',
+'cloud_frac', 'rcm', 'rrm',
 ''
 
 vars_zm = 
-'wp2',
+'wpthlp', 'wprtp',
 ''
 
 vars_sfc =

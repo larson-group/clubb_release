@@ -69,12 +69,12 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=dycoms2_rf02_do
    # RUN_CASE=dycoms2_rf02_ds
    # RUN_CASE=dycoms2_rf02_nd
-   RUN_CASE=fire
+   # RUN_CASE=fire
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
    # RUN_CASE=nov11_altocu
-   # RUN_CASE=rico
+   RUN_CASE=rico
    # RUN_CASE=wangara 
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.

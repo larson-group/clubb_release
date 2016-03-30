@@ -26,7 +26,7 @@ grid_type = 2     ! Select grid type:
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
 deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top = 5000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
 
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
@@ -61,8 +61,8 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main    = 300.0   ! Model timestep [s]
-dt_rad = 300.0   ! Radiation timestep [s] 
+dt_main = 180.0   ! Model timestep [s]
+dt_rad = 180.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -148,8 +148,8 @@ l_calc_w_corr = .false.
 microphys_scheme = "khairoutdinov_kogan"
 l_fix_chi_eta_correlations = .false.
 
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 2.25
+hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 4.50
 Ncnp2_on_Ncnm2                               = 2.2
 
 Nc0_in_cloud  = 70.e6 ! num/m^3
@@ -169,11 +169,11 @@ l_calc_thlp2_rad = .false.,
 
 l_stats      = .true.   ! Flag for statistical output.
 fname_prefix = "rico"   ! Prefix of output filename.
-stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
+stats_tsamp  = 180.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main
                         ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 300.     ! Frequency of statistical output.  [s]
+stats_tout   = 180.     ! Frequency of statistical output.  [s]
 stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
