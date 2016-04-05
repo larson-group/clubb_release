@@ -37,9 +37,10 @@ module parameters_tunable
   public :: setup_parameters, read_parameters, read_param_spread, &
             get_parameters, adj_low_res_nu, cleanup_nu
 
-  ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded values
-  !       of some or all of the parameters below have no effect, as the values are
-  !       simply read in using a namelist or set in host model specific code.
+  ! NOTE: In CLUBB standalone, as well as some host models, the hardcoded
+  !       default values of some or all of the parameters below have no effect,
+  !       as the values are simply read in using a namelist or set in host model
+  !       specific code.
 
   ! Model constant parameters
   real( kind = core_rknd ), public :: & 
