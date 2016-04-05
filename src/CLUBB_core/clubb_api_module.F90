@@ -143,12 +143,18 @@ module clubb_api_module
 
   use parameter_indices, only:  &
     nparams, & ! Variable(s)
-    iSkw_denom_coef, & ! Index of iSkw_denom_coef
-    ibeta, & ! index of beta
-    iC11, &  ! Index of C11
-    iC11b, & ! Index of C11b
-    iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
-    ilambda0_stability_coef, iC7b, iC8, ilmin_coef
+    iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
+    iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
+    iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
+    iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
+    iC12, iC13, iC14, iC15, iC6rt_Lscale0, iC6thl_Lscale0, &
+    iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, ic_K2, inu2, &
+    ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, &
+    inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
+    iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
+    ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
+    iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ithlp2_rad_coef, &
+    ithlp2_rad_cloud_frac_thresh
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -236,12 +242,19 @@ module clubb_api_module
         l_Lscale_plume_centered, &
         l_use_ice_latent, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
-        iSkw_denom_coef, &
-        ibeta, &
-        iC11, &
-        iC11b, &
-        iC1, iC1b, iC2rtthl, ic_K_hm, igamma_coef, igamma_coefb, imult_coef, ic_K10, &
-        ilambda0_stability_coef, iC7b, iC8, ilmin_coef
+        iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
+        iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
+        iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
+        iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
+        iC12, iC13, iC14, iC15, iC6rt_Lscale0, iC6thl_Lscale0, &
+        iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, ic_K2, inu2, &
+        ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, &
+        inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
+        iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
+        ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
+        iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ithlp2_rad_coef, &
+        ithlp2_rad_cloud_frac_thresh
+
 
 
   public &
