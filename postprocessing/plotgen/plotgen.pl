@@ -839,7 +839,8 @@ sub buildMatlabStringStd() {
             }
             elsif (( $type eq "les" && $plotLes == 1 )
                 || ( $type eq "dec17" && $plotDec )
-                || ( $type eq "bestever" && $plotBest ) )
+                || ( $type eq "bestever" && $plotBest )
+                || ( $type eq "cust" ) )
             {
                 my $file = "$lines[$lineNum]{'filename'}";
                 unless ( -e $file ) {
