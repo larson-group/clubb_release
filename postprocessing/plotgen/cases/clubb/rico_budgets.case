@@ -187,69 +187,66 @@
 # wprtp budget.
        {'plotTitle' => 'CLUBB r_{t} Flux Budget', 'axisLabel' => 'Budget terms [m kg kg^{-1} s^{-2}]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'TTT', 'expression' => 'wprtp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'ADV', 'expression' => 'wprtp_ma + wprtp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'PROD', 'expression' => 'wprtp_tp + wprtp_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'B+P', 'expression' => 'wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DIFF', 'expression' => 'wprtp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'MC', 'expression' => 'wprtp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'clip', 'expression' => 'wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'resid', 'expression' => 'wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_forcing + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'wprtp_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'wprtp_ma + wprtp_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'wprtp_tp + wprtp_ac', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'buoy+pres', 'expression' => 'wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'wprtp_dp1', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'wprtp_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'wprtp_bt - (wprtp_ma + wprtp_ta + wprtp_tp + wprtp_ac + wprtp_bp + wprtp_pr1 + wprtp_pr2 + wprtp_pr3 + wprtp_dp1 + wprtp_forcing + wprtp_mfl + wprtp_cl + wprtp_sicl + wprtp_pd)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]},
       
 # wpthlp budget.
        {'plotTitle' => 'CLUBB \theta_{l} Flux Budget', 'axisLabel' => 'Budget terms [m K s^{-2}]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'TTT', 'expression' => 'wpthlp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'ADV', 'expression' => 'wpthlp_ma + wpthlp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'PROD', 'expression' => 'wpthlp_tp + wpthlp_ac', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'B+P', 'expression' => 'wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DIFF', 'expression' => 'wpthlp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'MC', 'expression' => 'wpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'clip', 'expression' => 'wpthlp_mfl + wpthlp_cl + wpthlp_sicl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'resid', 'expression' => 'wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_forcing + wpthlp_mfl + wpthlp_cl + wpthlp_sicl)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'wpthlp_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'wpthlp_ma + wpthlp_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'wpthlp_tp + wpthlp_ac', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'buoy+pres', 'expression' => 'wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'wpthlp_dp1', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'wpthlp_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'wpthlp_mfl + wpthlp_cl + wpthlp_sicl', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'wpthlp_bt - (wpthlp_ma + wpthlp_ta + wpthlp_tp + wpthlp_ac + wpthlp_bp + wpthlp_pr1 + wpthlp_pr2 + wpthlp_pr3 + wpthlp_dp1 + wpthlp_forcing + wpthlp_mfl + wpthlp_cl + wpthlp_sicl)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]},
 
 # rtp2 budget.
        {'plotTitle' => 'CLUBB r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'TTT', 'expression' => 'rtp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'ADV', 'expression' => 'rtp2_ma + rtp2_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'PROD', 'expression' => 'rtp2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DISS', 'expression' => 'rtp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DIFF', 'expression' => 'rtp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'MC', 'expression' => 'rtp2_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'clip', 'expression' => 'rtp2_cl + rtp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'sfc', 'expression' => 'rtp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'resid', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_forcing + rtp2_cl + rtp2_pd + rtp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'rtp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'rtp2_ma + rtp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtp2_tp', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtp2_dp1 + rtp2_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtp2_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'rtp2_cl + rtp2_pd', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'rtp2_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_forcing + rtp2_cl + rtp2_pd + rtp2_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]},
 
 # thlp2 budget.
        {'plotTitle' => 'CLUBB \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'TTT', 'expression' => 'thlp2_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'ADV', 'expression' => 'thlp2_ma + thlp2_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'PROD', 'expression' => 'thlp2_tp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DISS', 'expression' => 'thlp2_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DIFF', 'expression' => 'thlp2_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'MC', 'expression' => 'thlp2_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'clip', 'expression' => 'thlp2_cl + thlp2_pd', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'sfc', 'expression' => 'thlp2_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'resid', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_forcing + thlp2_cl + thlp2_pd + thlp2_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'thlp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'thlp2_ma + thlp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'thlp2_tp', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'thlp2_dp1 + thlp2_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'thlp2_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'thlp2_cl + thlp2_pd', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'thlp2_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_forcing + thlp2_cl + thlp2_pd + thlp2_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]},
 
 # rtpthlp budget.
        {'plotTitle' => 'CLUBB r_{t} and \theta_{l} Covariance Budget', 'axisLabel' => 'Budget terms [K kg kg^{-1} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'TTT', 'expression' => 'rtpthlp_bt', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'ADV', 'expression' => 'rtpthlp_ma + rtpthlp_ta', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'PROD', 'expression' => 'rtpthlp_tp1 + rtpthlp_tp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DISS', 'expression' => 'rtpthlp_dp1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'DIFF', 'expression' => 'rtpthlp_dp2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'MC', 'expression' => 'rtpthlp_forcing', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'clip', 'expression' => 'rtpthlp_cl', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'sfc', 'expression' => 'rtpthlp_sf', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'auto', 'name' => 'resid', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_forcing + rtpthlp_cl + rtpthlp_sf)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'rtpthlp_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'rtpthlp_ma + rtpthlp_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtpthlp_tp1 + rtpthlp_tp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtpthlp_dp1 + rtpthlp_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtpthlp_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'rtpthlp_cl', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'rtpthlp_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_forcing + rtpthlp_cl + rtpthlp_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]}
 
     ],
