@@ -1017,7 +1017,7 @@ module stats_zt_module
       case ('cloud_frac')
         icloud_frac = k
         call stat_assign( var_index=icloud_frac, var_name="cloud_frac", &
-             var_description="Cloud fraction (between 0 and 1) [-]", var_units="count", &
+             var_description="Cloud fraction (between 0 and 1) [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
       
@@ -3531,7 +3531,7 @@ module stats_zt_module
       case ('cloud_frac_1')
         icloud_frac_1 = k
         call stat_assign( var_index=icloud_frac_1, var_name="cloud_frac_1", &
-             var_description="pdf parameter cloud_frac_1 [count]", var_units="count", &
+             var_description="pdf parameter cloud_frac_1 [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
@@ -3539,7 +3539,7 @@ module stats_zt_module
         icloud_frac_2 = k
 
         call stat_assign( var_index=icloud_frac_2, var_name="cloud_frac_2", &
-             var_description="pdf parameter cloud_frac_2 [count]", var_units="count", &
+             var_description="pdf parameter cloud_frac_2 [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

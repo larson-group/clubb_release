@@ -1895,7 +1895,7 @@ module stats_zm_module
       case ('cloud_frac_zm')
         icloud_frac_zm = k
         call stat_assign( var_index=icloud_frac_zm, var_name="cloud_frac_zm", &
-          var_description="Cloud fraction", var_units="count", l_silhs=.false., grid_kind=stats_zm)
+          var_description="Cloud fraction [-]", var_units="-", l_silhs=.false., grid_kind=stats_zm)
         k = k + 1
       
       case ('ice_supersat_frac_zm')
