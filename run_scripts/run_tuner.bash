@@ -260,7 +260,7 @@ FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -
 
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
-   # Concatenate *_model.in and *_stats.in into hoc.in
+   # Concatenate *_model.in and *_stats.in into clubb.in
    cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
     ../bin/clubb_standalone
 
@@ -268,7 +268,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
 
    for EACH_CASE in "${MODEL_MULT[@]}"; do
 		MODEL_FILE=$MODEL_DIR$EACH_CASE'_model.in'
-		# Concatenate *_model.in and *_stats.in into hoc.in
+		# Concatenate *_model.in and *_stats.in into clubb.in
         cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
 		../bin/clubb_standalone
    done
