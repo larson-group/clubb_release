@@ -119,6 +119,7 @@ DATE=`date +%F`
 
 # The tunable_parameters.in file
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
 if [ ! -e "$PARAMS_FILE" ] ; then
@@ -173,7 +174,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    fi
 
 	# Concatenate *_model.in and *_stats.in into *_hoc.in
-	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE > $RUN_CASE'_hoc.in'
+	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE $SILHS_PARAMS_FILE > $RUN_CASE'_hoc.in'
 	sed -i -e 's/\!.*//' $RUN_CASE'_hoc.in'
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
@@ -202,7 +203,7 @@ elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.
            fi
 
         # Concatenate *_model.in and *_stats.in into *_hoc.in
-	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE > $EACH_CASE'_hoc.in'
+	cat $MODEL_FILE $STATS_TUNE_IN $FLAGS_FILE $SILHS_PARAMS_FILE > $EACH_CASE'_hoc.in'
 	sed -i -e 's/\!.*//' $EACH_CASE'_hoc.in'
 
    done
@@ -260,7 +261,7 @@ FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -
 if [ $RUN_TYPE = 'single' ] ; then # Single Case.
 
    # Concatenate *_model.in and *_stats.in into hoc.in
-   cat $STATS_OPT_IN $PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
+   cat $STATS_OPT_IN $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $FLAGS_FILE | sed -e 's/\!.*//' > 'clubb.in'
     ../bin/clubb_standalone
 
 elif [ $RUN_TYPE = 'multiple' ] ; then # Multiple Cases.

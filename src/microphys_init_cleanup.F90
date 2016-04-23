@@ -279,8 +279,7 @@ module microphys_init_cleanup
       corr_array_cloud, & ! Correlation array of PDF vars. (in cloud)        [-]
       corr_array_below    ! Correlation array of PDF vars. (below cloud)     [-]
 
-    integer :: ivar, &  ! Loop index
-               ierr     ! I/O status variable
+    integer :: ivar       ! Loop index
 
 
     namelist /microphysics_setting/ &
@@ -362,15 +361,8 @@ module microphys_init_cleanup
     ! Read in SILHS parameters, if SILHS is enabled
     if ( trim( lh_microphys_type ) /= "disabled" ) then
       open(unit=iunit, file=namelist_file, status='old', action='read')
-      read(iunit, nml=silhs_params_nl, iostat=ierr)
+      read(iunit, nml=silhs_params_nl)
       close(unit=iunit)
-
-      if ( ierr > 0 ) then
-        stop "Error reading SILHS namelist &silhs_params_nl."
-      else if ( ierr < 0 ) then
-        if ( clubb_at_least_debug_level( 1 ) ) &
-          write(fstderr,*) "Warning: SILHS namelist &silhs_params_nl not found."
-      end if
 
       open(unit=iunit, file=namelist_file, status='old', action='read')
       read(iunit, nml=configurable_silhs_flags_nl)

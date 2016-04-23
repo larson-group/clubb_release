@@ -22,6 +22,7 @@ else
 fi
 
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 
 #######################################################################
@@ -40,7 +41,7 @@ if [ ! -e "$PARAMS_FILE" ]; then
 fi
 
 
-cat $PARAMS_FILE > 'clubb.in'
+cat $PARAMS_FILE $SILHS_PARAMS_FILE > 'clubb.in'
 cat $FLAGS_FILE >> 'clubb.in'
 #######################################################################
 # The following sed commands set l_stats to .false., debug_level to 0,
