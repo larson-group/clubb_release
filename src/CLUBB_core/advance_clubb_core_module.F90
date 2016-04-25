@@ -1744,11 +1744,6 @@ module advance_clubb_core_module
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
 
-      ! Determine the static stability corrected version of tau_zm
-      ! Create a damping time scale that is more strongly damped at the
-      ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
-      tau_N2_zm = tau_zm / calc_stability_correction( thlm, Lscale, em )
-
       ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
 !    initiating in unstable regions.  7 Jul 2007
@@ -1920,6 +1915,9 @@ module advance_clubb_core_module
       ! that has been stability corrected for stably stratified regions.
       ! -dschanen 7 Nov 2014
       if ( l_stability_correct_tau_zm ) then
+        ! Determine the static stability corrected version of tau_zm
+        ! Create a damping time scale that is more strongly damped at the
+        ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
         tau_N2_zm = tau_zm / stability_correction
         tau_C6_zm = tau_N2_zm
         tau_C1_zm = tau_N2_zm
