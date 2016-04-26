@@ -12,7 +12,8 @@ module advance_helper_module
   public :: &
     set_boundary_conditions_lhs, &
     set_boundary_conditions_rhs, &
-    calc_stability_correction
+    calc_stability_correction,   &
+    calc_brunt_vaisala_freq_sqd
 
   private ! Set Default Scope
 
@@ -166,20 +167,15 @@ module advance_helper_module
   !
   !--------------------------------------------------------------------
 
-    use parameters_model, only: &
-      T0 ! Variables(s)
-
     use parameters_tunable, only: &
       lambda0_stability_coef ! Variable(s)
 
     use constants_clubb, only: &
-      zero, & ! Constant(s)
-      grav
+      zero    ! Constant(s)
 
     use grid_class, only:  &
       gr, & ! Variable(s)
-      zt2zm, & ! Procedure(s)
-      ddzt
+      zt2zm    ! Procedure(s)
 
     use clubb_precision, only:  &
       core_rknd ! Variable(s)
@@ -197,17 +193,57 @@ module advance_helper_module
       stability_correction
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      brunt_vaisala_freq, & !  []
+      brunt_vaisala_freq_sqd, & !  []
       lambda0_stability
 
     !------------ Begin Code --------------
-    brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
-    lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
+    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm )
+    lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
-      + min( lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
+      + min( lambda0_stability * brunt_vaisala_freq_sqd * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
 
     return
   end function calc_stability_correction
+
+  !===============================================================================
+  function calc_brunt_vaisala_freq_sqd( thlm ) &
+    result( brunt_vaisala_freq_sqd )
+
+  ! Description:
+  !   Calculate the Brunt-Vaisala frequency squared, N^2.
+
+  ! References:
+  !   ?
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd ! Konstant
+
+    use constants_clubb, only: &
+      grav ! Constant
+
+    use parameters_model, only: &
+      T0 ! Variable!
+
+    use grid_class, only: &
+      gr, & ! Variable
+      ddzt  ! Procedure
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      thlm      ! th_l (thermo. levels)              [K]
+
+    ! Output Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      brunt_vaisala_freq_sqd ! Brunt-Vaisala frequency squared, N^2 [1/s^2]
+
+  !---------------------------------------------------------------------
+    !----- Begin Code -----
+    brunt_vaisala_freq_sqd = ( grav / T0 ) * ddzt( thlm )
+    return
+  end function calc_brunt_vaisala_freq_sqd
 
 end module advance_helper_module
