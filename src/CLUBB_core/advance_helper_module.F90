@@ -158,56 +158,56 @@ module advance_helper_module
   !===============================================================================
   function calc_stability_correction( thlm, Lscale, em ) &
     result ( stability_correction )
-      !
-      ! Description:
-      !   Stability Factor
-      !
-      ! References:
-      !
-      !--------------------------------------------------------------------
+  !
+  ! Description:
+  !   Stability Factor
+  !
+  ! References:
+  !
+  !--------------------------------------------------------------------
 
-      use parameters_model, only: &
-        T0 ! Variables(s)
+    use parameters_model, only: &
+      T0 ! Variables(s)
 
-      use parameters_tunable, only: &
-        lambda0_stability_coef ! Variable(s)
+    use parameters_tunable, only: &
+      lambda0_stability_coef ! Variable(s)
 
-      use constants_clubb, only: &
-        zero, & ! Constant(s)
-        grav
+    use constants_clubb, only: &
+      zero, & ! Constant(s)
+      grav
 
-      use grid_class, only:  &
-        gr, & ! Variable(s)
-        zt2zm, & ! Procedure(s)
-        ddzt
+    use grid_class, only:  &
+      gr, & ! Variable(s)
+      zt2zm, & ! Procedure(s)
+      ddzt
 
-      use clubb_precision, only:  &
-        core_rknd ! Variable(s)
+    use clubb_precision, only:  &
+      core_rknd ! Variable(s)
 
-      implicit none
+    implicit none
 
-      ! Input Variables
-      real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
-        Lscale,          & ! Turbulent mixing length                   [m]
-        em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
-        thlm               ! th_l (thermo. levels)                     [K]
+    ! Input Variables
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
+      Lscale,          & ! Turbulent mixing length                   [m]
+      em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
+      thlm               ! th_l (thermo. levels)                     [K]
 
-      ! Result
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-        stability_correction
+    ! Result
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      stability_correction
 
-      real( kind = core_rknd ), dimension(gr%nz) :: &
-        brunt_vaisala_freq, & !  []
-        lambda0_stability
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      brunt_vaisala_freq, & !  []
+      lambda0_stability
 
-      !------------ Begin Code --------------
-      brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
-      lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
+    !------------ Begin Code --------------
+    brunt_vaisala_freq = ( grav / T0 ) * ddzt( thlm )
+    lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq > zero )
 
-      stability_correction = 1.0_core_rknd &
-        + min( lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
+    stability_correction = 1.0_core_rknd &
+      + min( lambda0_stability * brunt_vaisala_freq * zt2zm( Lscale )**2 / em, 3.0_core_rknd )
 
-      return
-    end function calc_stability_correction
+    return
+  end function calc_stability_correction
 
 end module advance_helper_module
