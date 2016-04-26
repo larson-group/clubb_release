@@ -40,7 +40,7 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, um, vm, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing, &
                               wprtp_forcing, rtm_ref, thlpthvp, &
@@ -108,7 +108,8 @@ module advance_xm_wpxp_module
         zt2zm
 
     use model_flags, only: &
-        l_clip_semi_implicit ! Variable(s)
+        l_clip_semi_implicit, & ! Variable(s)
+        l_use_C7_Richardson
 
     use mono_flux_limiter, only: &
         calc_turb_adv_range ! Procedure(s)
@@ -163,6 +164,8 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
+      um,              & ! u mean wind component (thermodynamic levels)   [m/s]
+      vm,              & ! v mean wind component (thermodynamic levels)   [m/s]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -300,16 +303,24 @@ module advance_xm_wpxp_module
       C6thl_Skw_fnc(1:gr%nz) = C6thlb
     endif
 
-    if ( C7 /= C7b ) then
-      C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
-        *EXP( -one_half * (Skw_zm(1:gr%nz)/C7c)**2 )
+    ! Compute C7_Skw_fnc
+    if ( l_use_C7_Richardson ) then
+      ! New formulation based on Richardson number
+      C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale )
     else
-      C7_Skw_fnc(1:gr%nz) = C7b
-    endif
+      if ( C7 /= C7b ) then
+        C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
+          *EXP( -one_half * (Skw_zm(1:gr%nz)/C7c)**2 )
+      else
+        C7_Skw_fnc(1:gr%nz) = C7b
+      endif
 
-    ! Damp C6 and C7 as a function of Lscale in stably stratified regions
-    C7_Skw_fnc = damp_coefficient( C7, C7_Skw_fnc, &
-                                   C7_Lscale0, wpxp_L_thresh, Lscale )
+      ! Damp C7 as a function of Lscale in stably stratified regions
+      C7_Skw_fnc = damp_coefficient( C7, C7_Skw_fnc, &
+                                     C7_Lscale0, wpxp_L_thresh, Lscale )
+    end if ! l_use_C7_Richardson
+
+    ! Damp C6 as a function of Lscale in stably stratified regions
     C6rt_Skw_fnc = damp_coefficient( C6rt, C6rt_Skw_fnc, &
                                      C6rt_Lscale0, wpxp_L_thresh, Lscale )
     C6thl_Skw_fnc = damp_coefficient( C6thl, C6thl_Skw_fnc, &
@@ -3281,5 +3292,93 @@ module advance_xm_wpxp_module
 
   end function damp_coefficient
 !===============================================================================
+  function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale ) &
+    result( C7_Skw_fnc )
+
+  ! Description:
+  !   Compute C7 as a function of the Richardson number
+
+  ! References:
+  !   cam:ticket:59
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd  ! Konstant
+
+    use grid_class, only: &
+      gr,   & ! Variable
+      ddzt, & ! Procedure(s)
+      zt2zm
+
+    use advance_helper_module, only: &
+      calc_brunt_vaisala_freq_sqd ! Procedure
+
+    use constants_clubb, only: &
+      one_fourth, &     ! Constant(s)
+      one_third,  &
+      one,        &
+      ten
+
+    use interpolation, only: &
+      linear_interp_factor ! Procedure
+
+    implicit none
+
+    ! Constant Parameters
+    real( kind = core_rknd ), parameter :: &
+      Richardson_no_divisor_threshold = 1.0e-8_core_rknd, &
+      Richardson_no_min = one_fourth, &
+      Richardson_no_max = ten,        &
+      C7_min            = one_third,  &
+      C7_max            = one
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      thlm,    & ! th_l (liquid water potential temperature)      [K]
+      um,      & ! u mean wind component (thermodynamic levels)   [m/s]
+      vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
+      em,      & ! Turbulent Kinetic Energy (TKE)                 [m^2/s^2]
+      Lscale     ! Turbulent mixing length                        [m]
+
+    ! Output Variable
+    real( kind = core_rknd), dimension(gr%nz) :: &
+      C7_Skw_fnc
+
+    ! Local Variables
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      brunt_vaisala_freq_sqd, &
+      Richardson_no, &
+      dum_dz, dvm_dz, &
+      shear_sqd, &
+      turb_freq_sqd, &
+      Richardson_no_divisor_threshz
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
+    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm )
+
+    turb_freq_sqd = em / zt2zm( Lscale )**2
+
+    ! Calculate shear_sqd
+    dum_dz = ddzt( um )
+    dvm_dz = ddzt( vm )
+    shear_sqd = dum_dz**2 + dvm_dz**2
+
+    Richardson_no_divisor_threshz(:) = Richardson_no_divisor_threshold
+    Richardson_no = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
+                                                  Richardson_no_divisor_threshz )
+
+    ! C7_Skw_fnc is interpolated based on the value of Richardson_no
+    where ( Richardson_no <= Richardson_no_min )
+      C7_Skw_fnc = C7_min
+    else where ( Richardson_no >= Richardson_no_max )
+      C7_Skw_fnc = C7_max
+    else where
+      ! Linear interpolation
+      C7_Skw_fnc = linear_interp_factor( (Richardson_no-Richardson_no_min) / &
+                                         (Richardson_no_max-Richardson_no_min), C7_max, C7_min )
+    end where
+
+  end function compute_C7_Skw_fnc_Richardson
 
 end module advance_xm_wpxp_module

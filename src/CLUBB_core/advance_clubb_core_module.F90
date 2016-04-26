@@ -1929,7 +1929,7 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
-      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
+      call advance_xm_wpxp( dt, sigma_sqd_w, um, vm, wm_zm, wm_zt, wp2, & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing,  & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
