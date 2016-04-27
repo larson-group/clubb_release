@@ -190,6 +190,7 @@ module advance_clubb_core_module
       Lscale_mu_coef, &
       Lscale_pert_coef, &
       c_K10, &
+      c_K10b, &
       beta
 
     use parameters_model, only: &
@@ -622,7 +623,7 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm
+      Km_zm, Kmb_zm
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -2035,14 +2036,15 @@ module advance_clubb_core_module
       ! (i.e. edsclrm) by one time step
       !----------------------------------------------------------------i
 
-      Km_zm = Kh_zm * c_K10
+      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+      Kmb_zm = Kh_zm * c_K10b ! Coefficient for thermo
 
       if ( l_do_expldiff_rtm_thlm ) then
         edsclrm(:,edsclr_dim-1)=thlm(:)
         edsclrm(:,edsclr_dim)=rtm(:)
       endif      
 
-      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
+      call advance_windm_edsclrm( dt, wm_zt, Km_zm, Kmb_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,    & ! intent(in)
                                   edsclrm_forcing,                          & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)
