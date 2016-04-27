@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 70 ! Total tunable parameters
+    nparams = 71 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
