@@ -111,7 +111,7 @@ module parameter_indices
     ialpha_corr                  = 66, &
     iSkw_denom_coef              = 67, &
     ic_K10                       = 68, &
-    ic_K10b                      = 69, &
+    ic_K10h                      = 69, &
     ithlp2_rad_coef              = 70, &
     ithlp2_rad_cloud_frac_thresh = 71
 
