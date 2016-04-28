@@ -87,7 +87,8 @@ module advance_wp2_wp3_module
         l_stats_samp
 
     use constants_clubb, only:  & 
-        fstderr    ! Variable(s)
+        fstderr, &   ! Variables
+        one_third
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -98,6 +99,10 @@ module advance_wp2_wp3_module
 
     use error_code, only: &
       clubb_var_out_of_range ! Constant(s)
+
+    use model_flags, only: &
+      l_damp_wp2_using_em  ! Logical
+
 
     implicit none
 
@@ -225,6 +230,13 @@ module advance_wp2_wp3_module
       C1_Skw_fnc(1:gr%nz) = C1b 
     end if
 
+    if ( l_damp_wp2_using_em ) then
+      ! Insert 1/3 here to account for the fact that in the dissipation term, 
+      !   (2/3)*em = (2/3)*(1/2)*(wp2+up2+vp2).  Then we can insert wp2, up2,
+      !   and vp2 directly into the dissipation subroutines without prefixing them by (1/3).
+      C1_Skw_fnc(1:gr%nz) = one_third * C1_Skw_fnc(1:gr%nz)
+    end if
+ 
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
@@ -2460,7 +2472,7 @@ module advance_wp2_wp3_module
       ! RHS dissipation term 1 (dp1).
       rhs(k_wp2) &
       = rhs(k_wp2) &
-      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd )
+      + wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd, up2(k), vp2(k) )
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS dissipation term 1 (dp1).
@@ -2568,7 +2580,7 @@ module advance_wp2_wp3_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on wp2_term_dp1_rhs.
         call stat_begin_update_pt( iwp2_dp1, k, &
-          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd ), stats_zm )
+          -wp2_term_dp1_rhs( C1_Skw_fnc(k), tau_C1_zm(k), w_tol_sqd, up2(k), vp2(k) ), stats_zm )
 
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
@@ -3198,10 +3210,11 @@ module advance_wp2_wp3_module
   end function wp2_terms_bp_pr2_rhs
 
   !=============================================================================
-  pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold ) & 
+  pure function wp2_term_dp1_rhs( C1_Skw_fnc, tau1m, threshold, up2, vp2 ) & 
   result( rhs )
 
     ! Description:
+    ! When l_damp_wp2_using_em == .false., then
     ! Dissipation term 1 for w'^2:  explicit portion of the code.
     !
     ! The d(w'^2)/dt equation contains dissipation term 1:
@@ -3221,11 +3234,21 @@ module advance_wp2_wp3_module
     ! The values of the C_1 skewness function, time-scale tau1m, and the 
     ! threshold are found on the momentum levels.
 
+    ! if l_damp_wp2_using_em == .true., then
+    ! we damp wp2 using a more standard turbulence closure, -(2/3)*em/tau
+    ! This only works if C1=C14 and l_stability_correct_tau_zm =.false.
+    ! A factor of (1/3) is absorbed into C1.
+    ! The threshold is implicitly set to 0.
+
+
     ! References:
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)
+
+    use model_flags, only: &
+      l_damp_wp2_using_em ! Logical
 
     implicit none
 
@@ -3233,13 +3256,25 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), intent(in) :: & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied (k)   [-]
       tau1m,       & ! Time-scale tau at momentum levels (k) [s]
-      threshold      ! Minimum allowable value of w'^2       [m^2/s^2]
+      threshold,   & ! Minimum allowable value of w'^2       [m^2/s^2]
+      up2,         & ! Horizontal (east-west) velocity variance, u'^2 [m^2/s^2]
+      vp2            ! Horizontal (north-south) velocity variance, v'^2 [m^2/s^2]
 
     ! Return Variable
     real( kind = core_rknd ) :: rhs
 
-    rhs & 
-    = + ( C1_Skw_fnc / tau1m ) * threshold
+
+    if ( l_damp_wp2_using_em ) then
+
+      rhs & 
+      = - ( C1_Skw_fnc / tau1m ) * ( up2 + vp2 )
+
+    else
+
+      rhs & 
+      = + ( C1_Skw_fnc / tau1m ) * threshold
+
+    end if
 
     return
   end function wp2_term_dp1_rhs
