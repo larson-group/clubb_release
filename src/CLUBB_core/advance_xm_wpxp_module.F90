@@ -3322,6 +3322,14 @@ module advance_xm_wpxp_module
     use interpolation, only: &
       linear_interp_factor ! Procedure
 
+    use stats_variables, only: &
+      iRichardson_no, &    ! Variable(s)
+      stats_zm,       &
+      l_stats_samp
+
+    use stats_type_utilities, only: &
+      stat_update_var      ! Procedure
+
     implicit none
 
     ! Constant Parameters
@@ -3378,6 +3386,11 @@ module advance_xm_wpxp_module
       C7_Skw_fnc = linear_interp_factor( (Richardson_no-Richardson_no_min) / &
                                          (Richardson_no_max-Richardson_no_min), C7_max, C7_min )
     end where
+
+    ! Stats sampling
+    if ( l_stats_samp ) then
+      call stat_update_var( iRichardson_no, Richardson_no, stats_zm )
+    end if
 
   end function compute_C7_Skw_fnc_Richardson
 

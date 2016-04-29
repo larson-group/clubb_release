@@ -250,6 +250,7 @@ module stats_zm_module
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
+        iRichardson_no, &
         ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
@@ -1965,6 +1966,13 @@ module stats_zm_module
         iC1_Skw_fnc = k
         call stat_assign( var_index=iC1_Skw_fnc, var_name="C1_Skw_fnc", &
              var_description="C_1 parameter with Sk_w applied [-]", var_units="count", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Richardson_no' )
+        iRichardson_no = k
+        call stat_assign( var_index=iRichardson_no, var_name="Richardson_no", &
+             var_description="Richardson number [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
