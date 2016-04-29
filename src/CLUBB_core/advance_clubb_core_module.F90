@@ -1916,7 +1916,8 @@ module advance_clubb_core_module
       end if
 
       ! Determine stability correction factor
-      stability_correction = calc_stability_correction( thlm, Lscale, em ) ! In
+      stability_correction = calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, & ! In
+                                                        p_in_Pa, cloud_frac ) ! In
       if ( l_stats_samp ) then
         call stat_update_var( istability_correction, stability_correction, & ! In
                               stats_zm ) ! In/Out
@@ -1949,7 +1950,8 @@ module advance_clubb_core_module
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                             mixt_frac_zm, l_implemented, em,          & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, & ! intent(in)
+                            p_in_Pa, cloud_frac, &                      ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
                             sclrm, wpsclrp                            ) ! intent(inout)

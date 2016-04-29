@@ -49,7 +49,8 @@ module advance_xm_wpxp_module
                               invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2, &
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, em, &
-                              sclrpthvp, sclrm_forcing, sclrp2, &
+                              sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
+                              p_in_Pa, cloud_frac, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
                               sclrm, wpsclrp )
@@ -210,6 +211,12 @@ module advance_xm_wpxp_module
       sclrpthvp, sclrm_forcing,  & !                           [Units vary]
       sclrp2                       ! For clipping Vince Larson [Units vary]
 
+    real( kind = core_rknd ), intent(in), dimension(gr%nz) ::  &
+      exner,           & ! Exner function                            [-]
+      rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
+      p_in_Pa,         & ! Air pressure                              [Pa]
+      cloud_frac         ! Cloud fraction                            [-]
+
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
       rtm,       & ! r_t  (total water mixing ratio)           [kg/kg]
@@ -306,7 +313,8 @@ module advance_xm_wpxp_module
     ! Compute C7_Skw_fnc
     if ( l_use_C7_Richardson ) then
       ! New formulation based on Richardson number
-      C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale )
+      C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                                  rcm, p_in_Pa, cloud_frac )
     else
       if ( C7 /= C7b ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
@@ -393,7 +401,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -467,7 +475,7 @@ module advance_xm_wpxp_module
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -552,7 +560,7 @@ module advance_xm_wpxp_module
                           C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  &  ! Intent(in)
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &  ! Intent(in)
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                          em, Lscale, thlm, & ! Intent(in)
+                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
                           lhs ) ! Intent(out)
 
         ! Compute the explicit portion of the sclrm and w'sclr' equations.
@@ -614,7 +622,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         dummy_1d, dummy_1d, l_implemented,  & ! Intent(in)
-                        em, Lscale, thlm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -855,7 +863,7 @@ module advance_xm_wpxp_module
                           C6x_Skw_fnc, rho_ds_zm, rho_ds_zt,  &
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented,  &
-                          em, Lscale, thlm, &
+                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, &
                           lhs )
 
     ! Description:
@@ -987,6 +995,11 @@ module advance_xm_wpxp_module
       Lscale,          & ! Turbulent mixing length                   [m]
       em,              & ! Turbulent Kinetic Energy (TKE)            [m^2/s^2]
       thlm,            & ! th_l (thermo. levels)                     [K]
+      exner,           & ! Exner function                            [-]
+      rtm,             & ! total water mixing ratio, r_t             [-]
+      rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
+      p_in_Pa,         & ! Air pressure                              [Pa]
+      cloud_frac,      & ! Cloud fraction                            [-]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
@@ -1036,7 +1049,8 @@ module advance_xm_wpxp_module
     constant_nu = 0.1_core_rknd
 
     if ( l_stability_correct_Kh_N2_zm ) then
-      Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em)
+      Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
+                                                    p_in_Pa, cloud_frac )
     else
       Kh_N2_zm = Kh_zm
     end if
@@ -3292,7 +3306,8 @@ module advance_xm_wpxp_module
 
   end function damp_coefficient
 !===============================================================================
-  function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale ) &
+  function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                          rcm, p_in_Pa, cloud_frac ) &
     result( C7_Skw_fnc )
 
   ! Description:
@@ -3346,7 +3361,13 @@ module advance_xm_wpxp_module
       um,      & ! u mean wind component (thermodynamic levels)   [m/s]
       vm,      & ! v mean wind component (thermodynamic levels)   [m/s]
       em,      & ! Turbulent Kinetic Energy (TKE)                 [m^2/s^2]
-      Lscale     ! Turbulent mixing length                        [m]
+      Lscale,  & ! Turbulent mixing length                        [m]
+      exner,   & ! Exner function                                 [-]
+      rtm,     & ! total water mixing ratio, r_t                  [kg/kg]
+      rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
+      p_in_Pa, & ! Air pressure                                   [Pa]
+      cloud_frac ! Cloud fraction                                 [-]
+
 
     ! Output Variable
     real( kind = core_rknd), dimension(gr%nz) :: &
@@ -3363,7 +3384,8 @@ module advance_xm_wpxp_module
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm )
+    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
+                                                          cloud_frac )
 
     turb_freq_sqd = em / zt2zm( Lscale )**2
 
