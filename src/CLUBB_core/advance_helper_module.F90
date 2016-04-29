@@ -283,9 +283,9 @@ module advance_helper_module
 
         ! This is Eq. (36) of Durran and Klemp (1982)
 
-        brunt_vaisala_freq_sqd = grav * ( ((one + Lv*rsat / (Rd*T_in_K)) / &
-                                  (one + ep*(Lv**2)*rsat/(Cp*Rd*T_in_K**2))) * &
-                                  ( (one/thm_zm * ddzt(thm)) + (Lv/(Cp*T_in_K))*ddzt(rsat)) - &
+        brunt_vaisala_freq_sqd = grav * ( ((one + Lv*rsat / (Rd*T_in_K_zm)) / &
+                                  (one + ep*(Lv**2)*rsat/(Cp*Rd*T_in_K_zm**2))) * &
+                                  ( (one/thm_zm * ddzt(thm)) + (Lv/(Cp*T_in_K_zm))*ddzt(rsat)) - &
                                   ddzt(rtm) )
       end where
     else ! .not. l_brunt_vaisala_freq_moist
