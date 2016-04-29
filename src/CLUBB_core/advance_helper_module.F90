@@ -266,7 +266,7 @@ module advance_helper_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K, T_in_K_zm, rsat, thm, thm_zm
+      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm
 
   !---------------------------------------------------------------------
     !----- Begin Code -----
@@ -278,13 +278,14 @@ module advance_helper_module
         T_in_K = thlm2T_in_K( thlm, exner, rcm )
         T_in_K_zm = zt2zm( T_in_K )
         rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+        rsat_zm = zt2zm( rsat )
         thm = thlm + Lv/(Cp*exner) * rcm
         thm_zm = zt2zm( thm )
 
         ! This is Eq. (36) of Durran and Klemp (1982)
 
-        brunt_vaisala_freq_sqd = grav * ( ((one + Lv*rsat / (Rd*T_in_K_zm)) / &
-                                  (one + ep*(Lv**2)*rsat/(Cp*Rd*T_in_K_zm**2))) * &
+        brunt_vaisala_freq_sqd = grav * ( ((one + Lv*rsat_zm / (Rd*T_in_K_zm)) / &
+                                  (one + ep*(Lv**2)*rsat_zm/(Cp*Rd*T_in_K_zm**2))) * &
                                   ( (one/thm_zm * ddzt(thm)) + (Lv/(Cp*T_in_K_zm))*ddzt(rsat)) - &
                                   ddzt(rtm) )
       end where
