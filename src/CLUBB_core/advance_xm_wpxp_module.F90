@@ -3338,7 +3338,7 @@ module advance_xm_wpxp_module
       linear_interp_factor ! Procedure
 
     use stats_variables, only: &
-      iRichardson_no, &    ! Variable(s)
+      iRichardson_num, &    ! Variable(s)
       stats_zm,       &
       l_stats_samp
 
@@ -3349,9 +3349,9 @@ module advance_xm_wpxp_module
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
-      Richardson_no_divisor_threshold = 1.0e-8_core_rknd, &
-      Richardson_no_min = one_fourth, &
-      Richardson_no_max = ten,        &
+      Richardson_num_divisor_threshold = 1.0e-8_core_rknd, &
+      Richardson_num_min = one_fourth, &
+      Richardson_num_max = ten,        &
       C7_min            = one_third,  &
       C7_max            = one
 
@@ -3376,11 +3376,11 @@ module advance_xm_wpxp_module
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       brunt_vaisala_freq_sqd, &
-      Richardson_no, &
+      Richardson_num, &
       dum_dz, dvm_dz, &
       shear_sqd, &
       turb_freq_sqd, &
-      Richardson_no_divisor_threshz
+      Richardson_num_divisor_threshz
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -3394,24 +3394,24 @@ module advance_xm_wpxp_module
     dvm_dz = ddzt( vm )
     shear_sqd = dum_dz**2 + dvm_dz**2
 
-    Richardson_no_divisor_threshz(:) = Richardson_no_divisor_threshold
-    Richardson_no = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
-                                                  Richardson_no_divisor_threshz )
+    Richardson_num_divisor_threshz(:) = Richardson_num_divisor_threshold
+    Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
+                                                  Richardson_num_divisor_threshz )
 
-    ! C7_Skw_fnc is interpolated based on the value of Richardson_no
-    where ( Richardson_no <= Richardson_no_min )
+    ! C7_Skw_fnc is interpolated based on the value of Richardson_num
+    where ( Richardson_num <= Richardson_num_min )
       C7_Skw_fnc = C7_min
-    else where ( Richardson_no >= Richardson_no_max )
+    else where ( Richardson_num >= Richardson_num_max )
       C7_Skw_fnc = C7_max
     else where
       ! Linear interpolation
-      C7_Skw_fnc = linear_interp_factor( (Richardson_no-Richardson_no_min) / &
-                                         (Richardson_no_max-Richardson_no_min), C7_max, C7_min )
+      C7_Skw_fnc = linear_interp_factor( (Richardson_num-Richardson_num_min) / &
+                                         (Richardson_num_max-Richardson_num_min), C7_max, C7_min )
     end where
 
     ! Stats sampling
     if ( l_stats_samp ) then
-      call stat_update_var( iRichardson_no, Richardson_no, stats_zm )
+      call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
     end if
 
   end function compute_C7_Skw_fnc_Richardson

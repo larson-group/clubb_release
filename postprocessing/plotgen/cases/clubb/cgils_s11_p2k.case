@@ -180,6 +180,22 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11_p2K/p2k_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QPI ./ 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'cgils_s11_p2k_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'C7\_Skw\_fnc', 'axisLabel' => 'C7\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cgils_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C7_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'C6rt\_Skw\_fnc', 'axisLabel' => 'C6rt\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cgils_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6rt_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'C6thl\_Skw\_fnc', 'axisLabel' => 'C6thl\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cgils_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6thl_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Richardson\_num', 'axisLabel' => 'Richardson\_num [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'cgils_s11_p2k_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Richardson_num', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/SAM6.6/CLOUD_FEEDBACK_s11_p2K/p2k_s11_96x96x320_50m_DRZ_N100_ref.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(NS * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},

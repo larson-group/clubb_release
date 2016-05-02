@@ -185,6 +185,22 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'qs', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'twp_ice_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'C7\_Skw\_fnc', 'axisLabel' => 'C7\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C7_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'C6rt\_Skw\_fnc', 'axisLabel' => 'C6rt\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6rt_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'C6thl\_Skw\_fnc', 'axisLabel' => 'C6thl\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6thl_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'Richardson\_num', 'axisLabel' => 'Richardson\_num [-]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'twp_ice_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Richardson_num', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/TWP_ICE_r1315_128x128x128_1km_Morrison/TWP_ICE.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'Ns .* 1000 ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},

@@ -150,7 +150,7 @@ vars_zm =
 'wpthlp_mfl_min', 'wpthlp_mfl_max', 'wprtp_mfl_min', 'wprtp_mfl_max',
 'sclrprtp', 'sclrp2', 'sclrpthvp', 'sclrpthlp',  
 'sclrprcp', 'wpsclrp',  'wpsclrp2', 'wp2sclrp', 
-'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp',  'stability_correction', 'Richardson_no',
+'wpsclrprtp', 'wpsclrpthlp', 'wpedsclrp',  'stability_correction', 'Richardson_num',
 'lh_rtp2_mc', 'lh_thlp2_mc', 'lh_wprtp_mc', 'lh_wpthlp_mc', 'lh_rtpthlp_mc',
 ''
 
