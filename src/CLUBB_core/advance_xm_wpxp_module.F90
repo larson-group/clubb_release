@@ -3339,6 +3339,7 @@ module advance_xm_wpxp_module
 
     use stats_variables, only: &
       iRichardson_num, &    ! Variable(s)
+      ibrunt_vaisala_freq_sqd, &
       stats_zm,       &
       l_stats_samp
 
@@ -3386,6 +3387,18 @@ module advance_xm_wpxp_module
     !----- Begin Code -----
     brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
                                                           cloud_frac )
+
+    ! Statistics sampling
+    if ( l_stats_samp ) then
+
+      ! NOTE: This is a kludgy place to sample brunt_vaisala_freq_sqd, because
+      ! it is used in multiple places, and depending on CLUBB parameters, it
+      ! could be computed in another place and not here. In the future, we
+      ! should compute brunt_vaisala_freq_sqd once, and pass it around
+      ! everywhere. This will save on computational expense as well.
+      call stat_update_var( ibrunt_vaisala_freq_sqd, brunt_vaisala_freq_sqd, stats_zm )
+
+    end if ! l_stats_samp
 
     turb_freq_sqd = em / zt2zm( Lscale )**2
 

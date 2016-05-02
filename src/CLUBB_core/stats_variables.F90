@@ -962,6 +962,7 @@ module stats_variables
     iC6thl_Skw_fnc = 0,  &
     iC7_Skw_fnc = 0,     &
     iC1_Skw_fnc = 0,     &
+    ibrunt_vaisala_freq_sqd = 0, &
     iRichardson_num = 0
 
 !$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
