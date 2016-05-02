@@ -232,22 +232,6 @@
           {'filename' => '/home/matlabuser/plotgen/HOC_20051217/nov11_altocu_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rsm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
           {'filename' => 'nov11_altocu_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'C7\_Skw\_fnc', 'axisLabel' => 'C7\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'nov11_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C7_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'C6rt\_Skw\_fnc', 'axisLabel' => 'C6rt\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'nov11_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6rt_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'C6thl\_Skw\_fnc', 'axisLabel' => 'C6thl\_Skw\_fnc [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'nov11_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'C6thl_Skw_fnc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Richardson\_num', 'axisLabel' => 'Richardson\_num [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'nov11_altocu_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Richardson_num', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Snow Number Concentration', 'axisLabel' => 'Nsm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'nov11_altocu_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nsm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
