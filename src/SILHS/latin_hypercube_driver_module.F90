@@ -1490,7 +1490,8 @@ module latin_hypercube_driver_module
     use constants_clubb, only: &
       zero, &   ! Constants
       one, &
-      two
+      two, &
+      fstderr
 
     implicit none
 
@@ -1523,7 +1524,8 @@ module latin_hypercube_driver_module
       kp1 = k+1 ! This is the level we're computing
 
       if ( vert_corr(kp1) < zero .or. vert_corr(kp1) > one ) then
-        stop "vert_corr(kp1) not between 0 and 1"
+        write(fstderr,*) "vert_corr(kp1) not between 0 and 1"
+        write(fstderr,*) "vert_corr(",kp1,") = ", vert_corr(kp1)
       end if
 
       half_width = one - vert_corr(kp1)
