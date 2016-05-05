@@ -1526,6 +1526,7 @@ module latin_hypercube_driver_module
       if ( vert_corr(kp1) < zero .or. vert_corr(kp1) > one ) then
         write(fstderr,*) "vert_corr(kp1) not between 0 and 1"
         write(fstderr,*) "vert_corr(",kp1,") = ", vert_corr(kp1)
+        stop "Fatal error in compute_arb_overlap (SILHS)"
       end if
 
       half_width = one - vert_corr(kp1)
