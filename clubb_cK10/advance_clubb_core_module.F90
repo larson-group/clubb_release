@@ -623,7 +623,7 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm, Kmh_zm
+      Km_zm, Kmh_zm, RH_postPDF
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1564,9 +1564,21 @@ module advance_clubb_core_module
 
       end if ! l_use_ice_latent = .true.
 
+#ifdef CLUBB_CAM
+      ! +PAB mods, take remaining supersaturation that may exist
+      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+      !   may exist after PDF call due to issues with calling PDF on the
+      !   thermo grid and momentum grid and the interpolation between the two
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
 
-
-
+      RH_postPDF = (rtm - rcm)/rsat  
+      
+      do k = 2, gr%nz
+        if (RH_postPDF(k) > 1.0_core_rknd) then
+          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+	endif 
+      enddo
+#endif 
 
       !----------------------------------------------------------------
       ! Compute thvm
