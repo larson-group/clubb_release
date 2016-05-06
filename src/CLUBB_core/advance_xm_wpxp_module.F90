@@ -3490,7 +3490,7 @@ module advance_xm_wpxp_module
         end if
       end do inner_vert_loop_upward
 
-      inner_vert_loop_downward: do k_inner=k-1, 1
+      inner_vert_loop_downward: do k_inner=k-1, 1, -1
         if ( gr%zm(k) - gr%zm(k_inner) <= Lscale_zm(k) ) then
           ! Include this height level in the average.
           n_avg = n_avg + 1
