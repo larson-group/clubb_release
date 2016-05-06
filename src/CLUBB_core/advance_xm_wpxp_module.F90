@@ -3356,6 +3356,9 @@ module advance_xm_wpxp_module
       C7_min            = one_third,  &
       C7_max            = one
 
+    logical, parameter :: &
+      l_Richardson_num_vert_avg = .false.  ! Vertically average Richardson number
+
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       thlm,    & ! th_l (liquid water potential temperature)      [K]
@@ -3381,7 +3384,8 @@ module advance_xm_wpxp_module
       dum_dz, dvm_dz, &
       shear_sqd, &
       turb_freq_sqd, &
-      Richardson_num_divisor_threshz
+      Richardson_num_divisor_threshz, &
+      Lscale_zm
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
@@ -3400,7 +3404,8 @@ module advance_xm_wpxp_module
 
     end if ! l_stats_samp
 
-    turb_freq_sqd = em / zt2zm( Lscale )**2
+    Lscale_zm = zt2zm( Lscale )
+    turb_freq_sqd = em / Lscale_zm**2
 
     ! Calculate shear_sqd
     dum_dz = ddzt( um )
@@ -3410,6 +3415,10 @@ module advance_xm_wpxp_module
     Richardson_num_divisor_threshz(:) = Richardson_num_divisor_threshold
     Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
                                                   Richardson_num_divisor_threshz )
+
+    if ( l_Richardson_num_vert_avg ) then
+      Richardson_num = Richardson_num_vert_avg( Richardson_num, Lscale_zm )
+    end if
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
@@ -3428,5 +3437,75 @@ module advance_xm_wpxp_module
     end if
 
   end function compute_C7_Skw_fnc_Richardson
+  !----------------------------------------------------------------------
+
+  !----------------------------------------------------------------------
+  function Richardson_num_vert_avg( Richardson_num, Lscale_zm )
+
+  ! Description:
+  !   Averages Richardson_num over vertical levels within Lscale_zm of a given level
+
+  ! References:
+  !   cam:ticket:59
+
+    use clubb_precision, only: &
+      core_rknd ! Precision
+
+    use grid_class, only: &
+      gr ! Variable
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      Richardson_num, &   ! Richardson number (on momentum levels)
+      Lscale_zm           ! Lscale on momentum levels
+
+    ! Result Variable
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Richardson_num_vert_avg ! Vertically averaged Richardson_num (on momentum levels)
+
+    ! Local Variables
+    integer :: k, k_inner, n_avg
+
+  !----------------------------------------------------------------------
+    !----- Begin Code -----
+    outer_vert_loop: do k=1, gr%nz
+
+      n_avg = 1
+      Richardson_num_vert_avg(k) = Richardson_num(k)
+
+      !------------------------------------------------------------
+      ! Hunt down all vertical levels with Lscale_zm(k) of gr%zm(k).
+      !------------------------------------------------------------
+
+      inner_vert_loop_upward: do k_inner=k+1, gr%nz
+        if ( gr%zm(k_inner) - gr%zm(k) <= Lscale_zm(k) ) then
+          ! Include this height level in the average.
+          n_avg = n_avg + 1
+          Richardson_num_vert_avg(k) = Richardson_num_vert_avg(k) + Richardson_num(k_inner)
+        else
+          ! No point in searching further.
+          exit
+        end if
+      end do inner_vert_loop_upward
+
+      inner_vert_loop_downward: do k_inner=k-1, 1
+        if ( gr%zm(k) - gr%zm(k_inner) <= Lscale_zm(k) ) then
+          ! Include this height level in the average.
+          n_avg = n_avg + 1
+          Richardson_num_vert_avg(k) = Richardson_num_vert_avg(k) + Richardson_num(k_inner)
+        else
+          ! No point in searching further.
+          exit
+        end if
+      end do inner_vert_loop_downward
+
+      Richardson_num_vert_avg(k) = Richardson_num_vert_avg(k) / real( n_avg, kind = core_rknd )
+
+    end do outer_vert_loop
+
+    return
+  end function Richardson_num_vert_avg
 
 end module advance_xm_wpxp_module
