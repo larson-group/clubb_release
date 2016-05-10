@@ -266,33 +266,48 @@ module advance_helper_module
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm
+      T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
+      ddzt_thm, ddzt_rsat, ddzt_rtm
+
+    integer :: k
 
   !---------------------------------------------------------------------
     !----- Begin Code -----
+    ddzt_thlm = ddzt( thlm )
+
     if ( l_brunt_vaisala_freq_moist ) then
-      ! Use a different formula for the Brunt-Vaisala frequency in cloud
-      where ( cloud_frac < cloud_frac_min )
-        brunt_vaisala_freq_sqd = ( grav / T0 ) * ddzt( thlm )
-      else where
-        T_in_K = thlm2T_in_K( thlm, exner, rcm )
-        T_in_K_zm = zt2zm( T_in_K )
-        rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
-        rsat_zm = zt2zm( rsat )
-        thm = thlm + Lv/(Cp*exner) * rcm
-        thm_zm = zt2zm( thm )
+      ! These parameters are needed to compute the moist Brunt-Vaisala
+      ! frequency.
+      T_in_K = thlm2T_in_K( thlm, exner, rcm )
+      T_in_K_zm = zt2zm( T_in_K )
+      rsat = sat_mixrat_liq( p_in_Pa, T_in_K )
+      rsat_zm = zt2zm( rsat )
+      ddzt_rsat = ddzt( rsat )
+      thm = thlm + Lv/(Cp*exner) * rcm
+      thm_zm = zt2zm( thm )
+      ddzt_thm = ddzt( thm )
+      ddzt_rtm = ddzt( rtm )
+    end if
 
-        ! This is Eq. (36) of Durran and Klemp (1982)
+    do k=1, gr%nz
 
-        brunt_vaisala_freq_sqd = grav * ( ((one + Lv*rsat_zm / (Rd*T_in_K_zm)) / &
-                                  (one + ep*(Lv**2)*rsat_zm/(Cp*Rd*T_in_K_zm**2))) * &
-                                  ( (one/thm_zm * ddzt(thm)) + (Lv/(Cp*T_in_K_zm))*ddzt(rsat)) - &
-                                  ddzt(rtm) )
-      end where
-    else ! .not. l_brunt_vaisala_freq_moist
-      ! Use the simple formula everywhere.
-      brunt_vaisala_freq_sqd = ( grav / T0 ) * ddzt( thlm )
-    end if ! l_brunt_vaisala_freq_moist
+      if ( .not. l_brunt_vaisala_freq_moist .or. cloud_frac(k) < cloud_frac_min ) then
+
+        ! Dry Brunt-Vaisala frequency
+        brunt_vaisala_freq_sqd(k) = ( grav / T0 ) * ddzt_thlm(k)
+
+      else ! l_brunt_vaisala_freq_moist .and. cloud_frac(k) >= cloud_frac_min
+
+        ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and Klemp (1982)
+        brunt_vaisala_freq_sqd(k) = &
+          grav * ( ((one + Lv*rsat_zm(k) / (Rd*T_in_K_zm(k))) / &
+            (one + ep*(Lv**2)*rsat_zm(k)/(Cp*Rd*T_in_K_zm(k)**2))) * &
+            ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
+            ddzt_rtm(k) )
+
+      end if
+
+    end do ! k=1, gr%nz
 
     return
   end function calc_brunt_vaisala_freq_sqd
