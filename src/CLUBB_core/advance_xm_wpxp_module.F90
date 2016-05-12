@@ -3385,7 +3385,6 @@ module advance_xm_wpxp_module
       dum_dz, dvm_dz, &
       shear_sqd, &
       turb_freq_sqd, &
-      Richardson_num_divisor_threshz, &
       Lscale_zm
 
   !-----------------------------------------------------------------------
@@ -3413,9 +3412,8 @@ module advance_xm_wpxp_module
     dvm_dz = ddzt( vm )
     shear_sqd = dum_dz**2 + dvm_dz**2
 
-    Richardson_num_divisor_threshz(:) = Richardson_num_divisor_threshold
     Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
-                                                  Richardson_num_divisor_threshz )
+                                                  Richardson_num_divisor_threshold )
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
