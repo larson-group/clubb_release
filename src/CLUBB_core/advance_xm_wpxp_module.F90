@@ -3353,8 +3353,9 @@ module advance_xm_wpxp_module
       Richardson_num_divisor_threshold = 1.0e-8_core_rknd, &
       Richardson_num_min = one_fourth, &
       Richardson_num_max = five,       &
-      C7_min            = one_third,  &
-      C7_max            = one
+      C7_min            = one_third,   &
+      C7_max            = one,         &
+      C7_Skw_fnc_below_ground_value = one
 
     logical, parameter :: &
       l_C7_Skw_fnc_vert_avg = .true.   ! Vertically average C7_Skw_fnc over a
@@ -3428,7 +3429,8 @@ module advance_xm_wpxp_module
     end where
 
     if ( l_C7_Skw_fnc_vert_avg ) then
-      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm, rho_ds_zm )
+      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm, rho_ds_zm, &
+                                          C7_Skw_fnc_below_ground_value )
     end if
 
     ! Stats sampling
@@ -3440,7 +3442,7 @@ module advance_xm_wpxp_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm )
+  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )
 
   ! Description:
   !   Averages a profile over vertical levels within Lscale_zm of a given level
@@ -3464,6 +3466,9 @@ module advance_xm_wpxp_module
       var_profile, &      ! Profile on momentum levels
       Lscale_zm, &        ! Lscale on momentum levels
       rho_ds_zm           ! Dry static energy on momentum levels!
+
+    real( kind = core_rknd ), intent(in) :: &
+      var_below_ground_value ! Value to use below ground
 
     ! Result Variable
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -3509,11 +3514,34 @@ module advance_xm_wpxp_module
         end if
       end do inner_vert_loop_downward
 
-      ! Virtual levels (TODO)
-      n_below_ground_levels = 0
+      ! Compute the number of levels below ground to include.
+      if ( k_avg_lower > 1 ) then
+        ! k=1, the lowest "real" level, is not included in the average, so no
+        ! below-ground levels should be included.
+        n_below_ground_levels = 0
+      else
+        ! The number of below-ground levels included is equal to Lscale_zm(1)
+        ! divided by the distance between vertical levels below ground; the
+        ! latter is assumed to be the same as the distance between the first and
+        ! second vertical levels.
+        n_below_ground_levels = int( Lscale_zm(1) / (gr%zm(2)-gr%zm(1)) )
+      end if
+
+      ! Prepare the virtual levels!
       n_virtual_levels = k_avg_upper-k_avg_lower+n_below_ground_levels+1
       allocate( rho_ds_zm_virtual(n_virtual_levels), var_profile_virtual(n_virtual_levels), &
                 invrs_dzm_virtual(n_virtual_levels) )
+
+      ! All vertical levels have rho_ds_zm and invrs_dzm_virtual equal to the
+      ! values at k=1. The value of var_profile at k=1 is given as an argument
+      ! to this function.
+      if ( n_below_ground_levels > 0 ) then
+        rho_ds_zm_virtual(1:n_below_ground_levels) = rho_ds_zm(1)
+        var_profile_virtual(1:n_below_ground_levels) = var_below_ground_value
+        invrs_dzm_virtual(1:n_below_ground_levels) = gr%invrs_dzm(1)
+      end if
+
+      ! Set up the above-ground virtual levels.
       rho_ds_zm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
         rho_ds_zm(k_avg_lower:k_avg_upper)
       var_profile_virtual(n_below_ground_levels+1:n_virtual_levels) = &
@@ -3521,6 +3549,7 @@ module advance_xm_wpxp_module
       invrs_dzm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
         gr%invrs_dzm(k_avg_lower:k_avg_upper)
 
+      ! Finally, compute the average.
       Lscale_width_vert_avg(k) = vertical_avg( n_virtual_levels, rho_ds_zm_virtual, &
                                                var_profile_virtual, invrs_dzm_virtual )
 
