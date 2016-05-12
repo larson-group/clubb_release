@@ -314,7 +314,7 @@ module advance_xm_wpxp_module
     if ( l_use_C7_Richardson ) then
       ! New formulation based on Richardson number
       C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                                  rcm, p_in_Pa, cloud_frac )
+                                                  rcm, p_in_Pa, cloud_frac, rho_ds_zm )
     else
       if ( C7 /= C7b ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
@@ -3307,7 +3307,7 @@ module advance_xm_wpxp_module
   end function damp_coefficient
 !===============================================================================
   function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                          rcm, p_in_Pa, cloud_frac ) &
+                                          rcm, p_in_Pa, cloud_frac, rho_ds_zm ) &
     result( C7_Skw_fnc )
 
   ! Description:
@@ -3371,7 +3371,8 @@ module advance_xm_wpxp_module
       rtm,     & ! total water mixing ratio, r_t                  [kg/kg]
       rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
       p_in_Pa, & ! Air pressure                                   [Pa]
-      cloud_frac ! Cloud fraction                                 [-]
+      cloud_frac, & ! Cloud fraction                              [-]
+      rho_ds_zm  ! Dry static density on momentum levels          [kg/m^3]
 
 
     ! Output Variable
@@ -3427,7 +3428,7 @@ module advance_xm_wpxp_module
     end where
 
     if ( l_C7_Skw_fnc_vert_avg ) then
-      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm )
+      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm, rho_ds_zm )
     end if
 
     ! Stats sampling
@@ -3439,7 +3440,7 @@ module advance_xm_wpxp_module
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------
-  function Lscale_width_vert_avg( var_profile, Lscale_zm )
+  function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm )
 
   ! Description:
   !   Averages a profile over vertical levels within Lscale_zm of a given level
@@ -3453,54 +3454,57 @@ module advance_xm_wpxp_module
     use grid_class, only: &
       gr ! Variable
 
+    use fill_holes, only: &
+      vertical_avg ! Procedure
+
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       var_profile, &      ! Profile on momentum levels
-      Lscale_zm           ! Lscale on momentum levels
+      Lscale_zm, &        ! Lscale on momentum levels
+      rho_ds_zm           ! Dry static energy on momentum levels!
 
     ! Result Variable
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Lscale_width_vert_avg ! Vertically averaged profile (on momentum levels)
 
     ! Local Variables
-    integer :: k, k_inner, n_avg
+    integer :: k, k_avg_lower, k_avg_upper, k_inner_loop
 
   !----------------------------------------------------------------------
     !----- Begin Code -----
     outer_vert_loop: do k=1, gr%nz
 
-      n_avg = 1
-      Lscale_width_vert_avg(k) = var_profile(k)
-
       !------------------------------------------------------------
       ! Hunt down all vertical levels with Lscale_zm(k) of gr%zm(k).
       !------------------------------------------------------------
 
-      inner_vert_loop_upward: do k_inner=k+1, gr%nz
-        if ( gr%zm(k_inner) - gr%zm(k) <= Lscale_zm(k) ) then
+      k_avg_upper = k
+      inner_vert_loop_upward: do k_inner_loop=k+1, gr%nz
+        if ( gr%zm(k_inner_loop) - gr%zm(k) <= Lscale_zm(k) ) then
           ! Include this height level in the average.
-          n_avg = n_avg + 1
-          Lscale_width_vert_avg(k) = Lscale_width_vert_avg(k) + var_profile(k_inner)
+          k_avg_upper = k_inner_loop
         else
-          ! No point in searching further.
+          ! Do not include this level in the average. No point in searching further.
           exit
         end if
       end do inner_vert_loop_upward
 
-      inner_vert_loop_downward: do k_inner=k-1, 1, -1
-        if ( gr%zm(k) - gr%zm(k_inner) <= Lscale_zm(k) ) then
+      k_avg_lower = k
+      inner_vert_loop_downward: do k_inner_loop=k-1, 1, -1
+        if ( gr%zm(k) - gr%zm(k_inner_loop) <= Lscale_zm(k) ) then
           ! Include this height level in the average.
-          n_avg = n_avg + 1
-          Lscale_width_vert_avg(k) = Lscale_width_vert_avg(k) + var_profile(k_inner)
+          k_avg_lower = k_inner_loop
         else
-          ! No point in searching further.
+          ! Do not include this level in the average. No point in searching further.
           exit
         end if
       end do inner_vert_loop_downward
 
-      Lscale_width_vert_avg(k) = Lscale_width_vert_avg(k) / real( n_avg, kind = core_rknd )
+      Lscale_width_vert_avg(k) = &
+        vertical_avg( k_avg_upper-k_avg_lower+1, rho_ds_zm(k_avg_lower:k_avg_upper), &
+                      var_profile(k_avg_lower:k_avg_upper), gr%invrs_dzm(k_avg_lower:k_avg_upper) )
 
     end do outer_vert_loop
 
