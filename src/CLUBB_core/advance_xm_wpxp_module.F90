@@ -3332,7 +3332,7 @@ module advance_xm_wpxp_module
       one_fourth, &     ! Constant(s)
       one_third,  &
       one,        &
-      ten
+      five
 
     use interpolation, only: &
       linear_interp_factor ! Procedure
@@ -3352,12 +3352,13 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-8_core_rknd, &
       Richardson_num_min = one_fourth, &
-      Richardson_num_max = ten,        &
+      Richardson_num_max = five,       &
       C7_min            = one_third,  &
       C7_max            = one
 
     logical, parameter :: &
-      l_Richardson_num_vert_avg = .false.  ! Vertically average Richardson number
+      l_C7_Skw_fnc_vert_avg = .true.   ! Vertically average C7_Skw_fnc over a
+                                       ! distance of Lscale
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -3416,10 +3417,6 @@ module advance_xm_wpxp_module
     Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
                                                   Richardson_num_divisor_threshz )
 
-    if ( l_Richardson_num_vert_avg ) then
-      Richardson_num = Lscale_width_vert_avg( Richardson_num, Lscale_zm )
-    end if
-
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
       C7_Skw_fnc = C7_min
@@ -3430,6 +3427,10 @@ module advance_xm_wpxp_module
       C7_Skw_fnc = linear_interp_factor( (Richardson_num-Richardson_num_min) / &
                                          (Richardson_num_max-Richardson_num_min), C7_max, C7_min )
     end where
+
+    if ( l_C7_Skw_fnc_vert_avg ) then
+      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm )
+    end if
 
     ! Stats sampling
     if ( l_stats_samp ) then
