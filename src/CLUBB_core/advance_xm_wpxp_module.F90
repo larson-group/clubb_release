@@ -3472,6 +3472,13 @@ module advance_xm_wpxp_module
     ! Local Variables
     integer :: k, k_avg_lower, k_avg_upper, k_inner_loop
 
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      rho_ds_zm_virtual, &
+      var_profile_virtual, &
+      invrs_dzm_virtual
+
+    integer :: n_virtual_levels, n_below_ground_levels
+
   !----------------------------------------------------------------------
     !----- Begin Code -----
     outer_vert_loop: do k=1, gr%nz
@@ -3502,9 +3509,22 @@ module advance_xm_wpxp_module
         end if
       end do inner_vert_loop_downward
 
-      Lscale_width_vert_avg(k) = &
-        vertical_avg( k_avg_upper-k_avg_lower+1, rho_ds_zm(k_avg_lower:k_avg_upper), &
-                      var_profile(k_avg_lower:k_avg_upper), gr%invrs_dzm(k_avg_lower:k_avg_upper) )
+      ! Virtual levels (TODO)
+      n_below_ground_levels = 0
+      n_virtual_levels = k_avg_upper-k_avg_lower+n_below_ground_levels+1
+      allocate( rho_ds_zm_virtual(n_virtual_levels), var_profile_virtual(n_virtual_levels), &
+                invrs_dzm_virtual(n_virtual_levels) )
+      rho_ds_zm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
+        rho_ds_zm(k_avg_lower:k_avg_upper)
+      var_profile_virtual(n_below_ground_levels+1:n_virtual_levels) = &
+        var_profile(k_avg_lower:k_avg_upper)
+      invrs_dzm_virtual(n_below_ground_levels+1:n_virtual_levels) = &
+        gr%invrs_dzm(k_avg_lower:k_avg_upper)
+
+      Lscale_width_vert_avg(k) = vertical_avg( n_virtual_levels, rho_ds_zm_virtual, &
+                                               var_profile_virtual, invrs_dzm_virtual )
+
+      deallocate( rho_ds_zm_virtual, var_profile_virtual, invrs_dzm_virtual )
 
     end do outer_vert_loop
 
