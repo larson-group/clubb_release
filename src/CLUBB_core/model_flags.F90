@@ -201,14 +201,15 @@ module model_flags
     l_use_ice_latent = .false., &          ! Includes the effects of ice latent heating in
                                            !  turbulence terms
     l_use_C7_Richardson = .false., &       ! Parameterize C7 based on Richardson number
-    l_brunt_vaisala_freq_moist = .false.   ! Use a different formula for the Brunt-Vaisala 
+    l_brunt_vaisala_freq_moist = .false., &! Use a different formula for the Brunt-Vaisala 
                                            !  frequency in saturated atmospheres
                                            !  (from Durran and Klemp, 1982)
+    l_use_thvm_in_bv_freq = .false.        ! Use thvm in the calculation of Brunt-Vaisala frequency
 
 !$omp threadprivate( l_use_3D_closure, l_stability_correct_tau_zm, l_damp_wp2_using_em, &
 !$omp                l_do_expldiff_rtm_thlm, &
 !$omp                l_Lscale_plume_centered, l_use_ice_latent, l_use_C7_Richardson, &
-!$omp                l_brunt_vaisala_freq_moist )
+!$omp                l_brunt_vaisala_freq_moist, l_use_thvm_in_bv_freq )
 
 #ifdef GFDL
   logical, public :: &

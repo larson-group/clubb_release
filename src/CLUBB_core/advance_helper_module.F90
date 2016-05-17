@@ -157,7 +157,8 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, p_in_Pa, cloud_frac ) &
+  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, p_in_Pa, &
+                                      cloud_frac, thvm ) &
     result ( stability_correction )
   !
   ! Description:
@@ -191,7 +192,8 @@ module advance_helper_module
       rtm,             & ! total water mixing ratio, r_t             [kg/kg]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac         ! Cloud fraction                            [-]
+      cloud_frac,      & ! Cloud fraction                            [-]
+      thvm               ! Virtual potential temperature             [K]
 
     ! Result
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -203,7 +205,7 @@ module advance_helper_module
 
     !------------ Begin Code --------------
     brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac )
+                                                          cloud_frac, thvm )
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
@@ -213,7 +215,7 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  function calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, cloud_frac ) &
+  function calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm ) &
     result( brunt_vaisala_freq_sqd )
 
   ! Description:
@@ -232,8 +234,8 @@ module advance_helper_module
       Lv, Cp, Rd, ep, &
       one
 
-    use parameters_model, only: &
-      T0 ! Variable!
+    use parameters_model, only: & 
+      T0 ! Variable! 
 
     use grid_class, only: &
       gr,     & ! Variable
@@ -247,7 +249,8 @@ module advance_helper_module
       sat_mixrat_liq ! Procedure
 
     use model_flags, only: &
-      l_brunt_vaisala_freq_moist ! Variable
+      l_brunt_vaisala_freq_moist, & ! Variable(s)
+      l_use_thvm_in_bv_freq
 
     implicit none
 
@@ -258,7 +261,8 @@ module advance_helper_module
       rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
       rcm,     &  ! cloud water mixing ratio, r_c      [kg/kg]
       p_in_Pa, &  ! Air pressure                       [Pa]
-      cloud_frac  ! Cloud fraction                     [-]
+      cloud_frac, & ! Cloud fraction                   [-]
+      thvm        ! Virtual potential temperature      [K]
 
     ! Output Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -267,13 +271,15 @@ module advance_helper_module
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
       T_in_K, T_in_K_zm, rsat, rsat_zm, thm, thm_zm, ddzt_thlm, &
-      ddzt_thm, ddzt_rsat, ddzt_rtm
+      ddzt_thm, ddzt_rsat, ddzt_rtm, thvm_zm, ddzt_thvm
 
     integer :: k
 
   !---------------------------------------------------------------------
     !----- Begin Code -----
     ddzt_thlm = ddzt( thlm )
+    thvm_zm = zt2zm( thvm )
+    ddzt_thvm = ddzt( thvm )
 
     if ( l_brunt_vaisala_freq_moist ) then
       ! These parameters are needed to compute the moist Brunt-Vaisala
@@ -294,7 +300,11 @@ module advance_helper_module
       if ( .not. l_brunt_vaisala_freq_moist .or. cloud_frac(k) < cloud_frac_min ) then
 
         ! Dry Brunt-Vaisala frequency
-        brunt_vaisala_freq_sqd(k) = ( grav / T0 ) * ddzt_thlm(k)
+        if ( l_use_thvm_in_bv_freq ) then
+          brunt_vaisala_freq_sqd(k) = ( grav / thvm_zm(k) ) * ddzt_thvm(k)
+        else
+          brunt_vaisala_freq_sqd(k) = ( grav / T0 ) * ddzt_thlm(k)
+        end if
 
       else ! l_brunt_vaisala_freq_moist .and. cloud_frac(k) >= cloud_frac_min
 

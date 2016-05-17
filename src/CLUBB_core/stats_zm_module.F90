@@ -252,6 +252,7 @@ module stats_zm_module
         iC1_Skw_fnc, &
         ibrunt_vaisala_freq_sqd, &
         iRichardson_num, &
+        ishear_sqd, &
         ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
@@ -1981,6 +1982,13 @@ module stats_zm_module
         iRichardson_num = k
         call stat_assign( var_index=iRichardson_num, var_name="Richardson_num", &
              var_description="Richardson number [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'shear_sqd' )
+        ishear_sqd = k
+        call stat_assign( var_index=ishear_sqd, var_name="shear_sqd", &
+             var_description="shear_sqd [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

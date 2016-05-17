@@ -50,7 +50,7 @@ module advance_xm_wpxp_module
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, em, &
                               sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
-                              p_in_Pa, cloud_frac, &
+                              p_in_Pa, cloud_frac, thvm, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
                               sclrm, wpsclrp )
@@ -215,7 +215,8 @@ module advance_xm_wpxp_module
       exner,           & ! Exner function                            [-]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac         ! Cloud fraction                            [-]
+      cloud_frac,      & ! Cloud fraction                            [-]
+      thvm               ! Virutal potential temperature             [K]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -314,7 +315,7 @@ module advance_xm_wpxp_module
     if ( l_use_C7_Richardson ) then
       ! New formulation based on Richardson number
       C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                                  rcm, p_in_Pa, cloud_frac, rho_ds_zm )
+                                                  rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm )
     else
       if ( C7 /= C7b ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
@@ -401,7 +402,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -475,7 +476,7 @@ module advance_xm_wpxp_module
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -561,6 +562,7 @@ module advance_xm_wpxp_module
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &  ! Intent(in)
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
                           em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
+                          thvm, & ! Intent(in)
                           lhs ) ! Intent(out)
 
         ! Compute the explicit portion of the sclrm and w'sclr' equations.
@@ -622,7 +624,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         dummy_1d, dummy_1d, l_implemented,  & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -863,7 +865,7 @@ module advance_xm_wpxp_module
                           C6x_Skw_fnc, rho_ds_zm, rho_ds_zt,  &
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented,  &
-                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, &
+                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, &
                           lhs )
 
     ! Description:
@@ -1000,6 +1002,7 @@ module advance_xm_wpxp_module
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
       cloud_frac,      & ! Cloud fraction                            [-]
+      thvm,            & ! Virtual potential temperature             [K]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
       wp2,             & ! w'^2 (momentum levels)                    [m^2/s^2]
@@ -1050,7 +1053,7 @@ module advance_xm_wpxp_module
 
     if ( l_stability_correct_Kh_N2_zm ) then
       Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                                    p_in_Pa, cloud_frac )
+                                                    p_in_Pa, cloud_frac, thvm )
     else
       Kh_N2_zm = Kh_zm
     end if
@@ -3307,7 +3310,7 @@ module advance_xm_wpxp_module
   end function damp_coefficient
 !===============================================================================
   function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                          rcm, p_in_Pa, cloud_frac, rho_ds_zm ) &
+                                          rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
     result( C7_Skw_fnc )
 
   ! Description:
@@ -3340,6 +3343,7 @@ module advance_xm_wpxp_module
     use stats_variables, only: &
       iRichardson_num, &    ! Variable(s)
       ibrunt_vaisala_freq_sqd, &
+      ishear_sqd, &
       stats_zm,       &
       l_stats_samp
 
@@ -3350,7 +3354,7 @@ module advance_xm_wpxp_module
 
     ! Constant Parameters
     real( kind = core_rknd ), parameter :: &
-      Richardson_num_divisor_threshold = 1.0e-8_core_rknd, &
+      Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Richardson_num_min = one_fourth, &
       Richardson_num_max = five,       &
       C7_min            = one_third,   &
@@ -3373,6 +3377,7 @@ module advance_xm_wpxp_module
       rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
       p_in_Pa, & ! Air pressure                                   [Pa]
       cloud_frac, & ! Cloud fraction                              [-]
+      thvm,    & ! Virtual potential temperature                  [K]
       rho_ds_zm  ! Dry static density on momentum levels          [kg/m^3]
 
 
@@ -3386,13 +3391,13 @@ module advance_xm_wpxp_module
       Richardson_num, &
       dum_dz, dvm_dz, &
       shear_sqd, &
-      turb_freq_sqd, &
+!      turb_freq_sqd, &
       Lscale_zm
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
     brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac )
+                                                          cloud_frac, thvm )
 
     ! Statistics sampling
     if ( l_stats_samp ) then
@@ -3407,15 +3412,15 @@ module advance_xm_wpxp_module
     end if ! l_stats_samp
 
     Lscale_zm = zt2zm( Lscale )
-    turb_freq_sqd = em / Lscale_zm**2
+!    turb_freq_sqd = em / Lscale_zm**2
 
     ! Calculate shear_sqd
     dum_dz = ddzt( um )
     dvm_dz = ddzt( vm )
     shear_sqd = dum_dz**2 + dvm_dz**2
 
-    Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
-                                                  Richardson_num_divisor_threshold )
+    Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, Richardson_num_divisor_threshold )
+    
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
@@ -3436,6 +3441,7 @@ module advance_xm_wpxp_module
     ! Stats sampling
     if ( l_stats_samp ) then
       call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
+      call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     end if
 
   end function compute_C7_Skw_fnc_Richardson
