@@ -190,6 +190,7 @@ module advance_clubb_core_module
       Lscale_mu_coef, &
       Lscale_pert_coef, &
       c_K10, &
+      c_K10h, &
       beta, C1, C14
 
     use parameters_model, only: &
@@ -623,7 +624,7 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm
+      Km_zm, Kmh_zm, RH_postPDF
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1574,9 +1575,21 @@ module advance_clubb_core_module
 
       end if ! l_use_ice_latent = .true.
 
+#ifdef CLUBB_CAM
+      ! +PAB mods, take remaining supersaturation that may exist
+      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+      !   may exist after PDF call due to issues with calling PDF on the
+      !   thermo grid and momentum grid and the interpolation between the two
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
 
-
-
+      RH_postPDF = (rtm - rcm)/rsat  
+      
+      do k = 2, gr%nz
+        if (RH_postPDF(k) > 1.0_core_rknd) then
+          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+        end if 
+      enddo
+#endif 
 
       !----------------------------------------------------------------
       ! Compute thvm
@@ -2048,14 +2061,15 @@ module advance_clubb_core_module
       ! (i.e. edsclrm) by one time step
       !----------------------------------------------------------------i
 
-      Km_zm = Kh_zm * c_K10
+      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+      Kmh_zm = Kh_zm * c_K10h ! Coefficient for thermo
 
       if ( l_do_expldiff_rtm_thlm ) then
         edsclrm(:,edsclr_dim-1)=thlm(:)
         edsclrm(:,edsclr_dim)=rtm(:)
       endif      
 
-      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
+      call advance_windm_edsclrm( dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,    & ! intent(in)
                                   edsclrm_forcing,                          & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)

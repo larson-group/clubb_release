@@ -153,7 +153,7 @@ module clubb_api_module
     inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
     iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
     ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
-    iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ithlp2_rad_coef, &
+    iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
     ithlp2_rad_cloud_frac_thresh
 
   use pdf_parameter_module, only : &
@@ -252,7 +252,7 @@ module clubb_api_module
         inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
         iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
         ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
-        iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ithlp2_rad_coef, &
+        iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
         ithlp2_rad_cloud_frac_thresh
 
 
