@@ -191,7 +191,7 @@ module advance_clubb_core_module
       Lscale_pert_coef, &
       c_K10, &
       c_K10h, &
-      beta
+      beta, C1, C14
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -214,7 +214,8 @@ module advance_clubb_core_module
       l_stability_correct_tau_zm, &
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
-      l_use_ice_latent
+      l_use_ice_latent, &
+      l_damp_wp2_using_em
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -831,9 +832,19 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
-    ! Sanity check
-    if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
-      stop "l_Lscale_plume_centered requires l_avg_Lscale"
+    ! Sanity checks
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+      if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+        write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
+        stop "Fatal error in advance_clubb_core"
+      end if
+
+      if ( l_damp_wp2_using_em .and. (C1 /= C14 .or. l_stability_correct_tau_zm) ) then
+        write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
+        stop "Fatal error in advance_clubb_core"
+      end if
+
     end if
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1918,7 +1929,8 @@ module advance_clubb_core_module
       end if
 
       ! Determine stability correction factor
-      stability_correction = calc_stability_correction( thlm, Lscale, em ) ! In
+      stability_correction = calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, & ! In
+                                                        p_in_Pa, cloud_frac ) ! In
       if ( l_stats_samp ) then
         call stat_update_var( istability_correction, stability_correction, & ! In
                               stats_zm ) ! In/Out
@@ -1951,7 +1963,8 @@ module advance_clubb_core_module
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                             mixt_frac_zm, l_implemented, em,          & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, & ! intent(in)
+                            p_in_Pa, cloud_frac, &                      ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
                             sclrm, wpsclrp                            ) ! intent(inout)

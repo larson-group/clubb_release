@@ -250,6 +250,8 @@ module stats_zm_module
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
+        ibrunt_vaisala_freq_sqd, &
+        iRichardson_num, &
         ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
@@ -1965,6 +1967,20 @@ module stats_zm_module
         iC1_Skw_fnc = k
         call stat_assign( var_index=iC1_Skw_fnc, var_name="C1_Skw_fnc", &
              var_description="C_1 parameter with Sk_w applied [-]", var_units="count", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'brunt_vaisala_freq_sqd' )
+        ibrunt_vaisala_freq_sqd = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="brunt_vaisala_freq_sqd", &
+             var_description="Brunt-Vaisala freqency squared, N^2 [1/s^2]", var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Richardson_num' )
+        iRichardson_num = k
+        call stat_assign( var_index=iRichardson_num, var_name="Richardson_num", &
+             var_description="Richardson number [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

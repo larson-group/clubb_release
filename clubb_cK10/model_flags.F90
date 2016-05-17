@@ -193,15 +193,22 @@ module model_flags
     l_use_3D_closure = .false., & ! Use Luhar et al. (2002) to close the w, thl, and rt Gaussians.
     l_stability_correct_tau_zm = .true., & ! Use tau_N2_zm instead of tau_zm in wpxp_pr1
                                            !  stability correction
+    l_damp_wp2_using_em = .false., & ! In wp2 equation, use a dissipation
+                                     ! formula of -(2/3)*em/tau_zm, as in Bougeault (1981)
     l_do_expldiff_rtm_thlm = .false., & ! Diffuse rtm and thlm explicitly
     l_Lscale_plume_centered = .false., &   ! Alternate that uses the PDF to
                                            !  compute the perturbed values
     l_use_ice_latent = .false., &          ! Includes the effects of ice latent heating in
                                            !  turbulence terms
-    l_use_C7_Richardson = .false.          ! Parameterize C7 based on Richardson number
+    l_use_C7_Richardson = .false., &       ! Parameterize C7 based on Richardson number
+    l_brunt_vaisala_freq_moist = .false.   ! Use a different formula for the Brunt-Vaisala 
+                                           !  frequency in saturated atmospheres
+                                           !  (from Durran and Klemp, 1982)
 
-!$omp threadprivate( l_use_3D_closure, l_stability_correct_tau_zm, l_do_expldiff_rtm_thlm, &
-!$omp                l_Lscale_plume_centered, l_use_ice_latent, l_use_C7_Richardson )
+!$omp threadprivate( l_use_3D_closure, l_stability_correct_tau_zm, l_damp_wp2_using_em, &
+!$omp                l_do_expldiff_rtm_thlm, &
+!$omp                l_Lscale_plume_centered, l_use_ice_latent, l_use_C7_Richardson, &
+!$omp                l_brunt_vaisala_freq_moist )
 
 #ifdef GFDL
   logical, public :: &
