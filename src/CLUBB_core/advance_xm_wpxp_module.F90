@@ -3362,8 +3362,10 @@ module advance_xm_wpxp_module
       C7_Skw_fnc_below_ground_value = one
 
     logical, parameter :: &
-      l_C7_Skw_fnc_vert_avg = .true.   ! Vertically average C7_Skw_fnc over a
-                                       ! distance of Lscale
+      l_C7_Skw_fnc_vert_avg = .true., & ! Vertically average C7_Skw_fnc over a
+                                        !  distance of Lscale
+      l_use_turb_freq_sqd = .false.     ! Use turb_freq_sqd in denominator of
+                                        !  Richardson_num
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -3391,7 +3393,7 @@ module advance_xm_wpxp_module
       Richardson_num, &
       dum_dz, dvm_dz, &
       shear_sqd, &
-!      turb_freq_sqd, &
+      turb_freq_sqd, &
       Lscale_zm
 
   !-----------------------------------------------------------------------
@@ -3412,14 +3414,19 @@ module advance_xm_wpxp_module
     end if ! l_stats_samp
 
     Lscale_zm = zt2zm( Lscale )
-!    turb_freq_sqd = em / Lscale_zm**2
 
     ! Calculate shear_sqd
     dum_dz = ddzt( um )
     dvm_dz = ddzt( vm )
     shear_sqd = dum_dz**2 + dvm_dz**2
 
-    Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, Richardson_num_divisor_threshold )
+    if ( l_use_turb_freq_sqd ) then
+      turb_freq_sqd = em / Lscale_zm**2
+      Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
+                                                     Richardson_num_divisor_threshold )
+    else
+      Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, Richardson_num_divisor_threshold )
+    end if
     
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
