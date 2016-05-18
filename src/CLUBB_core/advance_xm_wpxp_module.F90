@@ -3364,6 +3364,8 @@ module advance_xm_wpxp_module
     logical, parameter :: &
       l_C7_Skw_fnc_vert_avg = .true., & ! Vertically average C7_Skw_fnc over a
                                         !  distance of Lscale
+      l_Richardson_vert_avg = .false., & ! Vertically average Richardson_num over a
+                                         !  distance of Lscale
       l_use_turb_freq_sqd = .false.     ! Use turb_freq_sqd in denominator of
                                         !  Richardson_num
 
@@ -3427,7 +3429,14 @@ module advance_xm_wpxp_module
     else
       Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, Richardson_num_divisor_threshold )
     end if
-    
+
+    if ( l_Richardson_vert_avg ) then
+      ! Clip below-min values of Richardson_num
+      Richardson_num = max( Richardson_num, Richardson_num_min )
+
+      Richardson_num = Lscale_width_vert_avg( Richardson_num, Lscale_zm, rho_ds_zm, &
+                                              Richardson_num_max )
+    end if
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
