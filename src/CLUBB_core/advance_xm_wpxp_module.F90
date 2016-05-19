@@ -3356,7 +3356,7 @@ module advance_xm_wpxp_module
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Richardson_num_min = one_fourth, &
-      Richardson_num_max = five,       &
+      Richardson_num_max = 200._core_rknd,       &
       C7_min            = one_third,   &
       C7_max            = one,         &
       C7_Skw_fnc_below_ground_value = one
@@ -3364,7 +3364,7 @@ module advance_xm_wpxp_module
     logical, parameter :: &
       l_C7_Skw_fnc_vert_avg = .true., & ! Vertically average C7_Skw_fnc over a
                                         !  distance of Lscale
-      l_Richardson_vert_avg = .false., & ! Vertically average Richardson_num over a
+      l_Richardson_vert_avg = .true. , & ! Vertically average Richardson_num over a
                                          !  distance of Lscale
       l_use_turb_freq_sqd = .false.     ! Use turb_freq_sqd in denominator of
                                         !  Richardson_num
@@ -3435,7 +3435,7 @@ module advance_xm_wpxp_module
       Richardson_num = max( Richardson_num, Richardson_num_min )
 
       Richardson_num = Lscale_width_vert_avg( Richardson_num, Lscale_zm, rho_ds_zm, &
-                                              Richardson_num_max )
+                                              (0.5_core_rknd * Richardson_num_max) )
     end if
 
     ! C7_Skw_fnc is interpolated based on the value of Richardson_num
