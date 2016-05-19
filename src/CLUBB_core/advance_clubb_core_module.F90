@@ -624,7 +624,12 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm, Kmh_zm, RH_postPDF
+      Km_zm, Kmh_zm
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      RH_postPDF
+#endif
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
