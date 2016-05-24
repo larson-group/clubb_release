@@ -3551,7 +3551,8 @@ module advance_xm_wpxp_module
         ! below-ground levels should be included.
         n_below_ground_levels = 0
       else
-        ! The number of below-ground levels included is equal to Lscale_zm(1)
+        ! The number of below-ground levels included is equal to the distance
+        ! below the lowest level spanned by one_half_Lscale_zm(k)
         ! divided by the distance between vertical levels below ground; the
         ! latter is assumed to be the same as the distance between the first and
         ! second vertical levels.
