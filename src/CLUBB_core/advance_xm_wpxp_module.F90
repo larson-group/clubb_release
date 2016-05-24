@@ -3467,7 +3467,7 @@ module advance_xm_wpxp_module
   function Lscale_width_vert_avg( var_profile, Lscale_zm, rho_ds_zm, var_below_ground_value )
 
   ! Description:
-  !   Averages a profile over vertical levels within Lscale_zm of a given level
+  !   Averages a profile with a running mean of width Lscale_zm
 
   ! References:
   !   cam:ticket:59
@@ -3480,6 +3480,9 @@ module advance_xm_wpxp_module
 
     use fill_holes, only: &
       vertical_avg ! Procedure
+
+    use constants_clubb, only: &
+      one_half
 
     implicit none
 
@@ -3499,6 +3502,9 @@ module advance_xm_wpxp_module
     ! Local Variables
     integer :: k, k_avg_lower, k_avg_upper, k_inner_loop
 
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      one_half_Lscale_zm
+
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rho_ds_zm_virtual, &
       var_profile_virtual, &
@@ -3508,15 +3514,18 @@ module advance_xm_wpxp_module
 
   !----------------------------------------------------------------------
     !----- Begin Code -----
+    one_half_Lscale_zm = one_half * Lscale_zm
+
     outer_vert_loop: do k=1, gr%nz
 
-      !------------------------------------------------------------
-      ! Hunt down all vertical levels with Lscale_zm(k) of gr%zm(k).
-      !------------------------------------------------------------
+      !-----------------------------------------------------------------------
+      ! Hunt down all vertical levels with one_half_Lscale_zm(k) of gr%zm(k).
+      !-----------------------------------------------------------------------
 
       k_avg_upper = k
+
       inner_vert_loop_upward: do k_inner_loop=k+1, gr%nz
-        if ( gr%zm(k_inner_loop) - gr%zm(k) <= Lscale_zm(k) ) then
+        if ( gr%zm(k_inner_loop) - gr%zm(k) <= one_half_Lscale_zm(k) ) then
           ! Include this height level in the average.
           k_avg_upper = k_inner_loop
         else
@@ -3527,7 +3536,7 @@ module advance_xm_wpxp_module
 
       k_avg_lower = k
       inner_vert_loop_downward: do k_inner_loop=k-1, 1, -1
-        if ( gr%zm(k) - gr%zm(k_inner_loop) <= Lscale_zm(k) ) then
+        if ( gr%zm(k) - gr%zm(k_inner_loop) <= one_half_Lscale_zm(k) ) then
           ! Include this height level in the average.
           k_avg_lower = k_inner_loop
         else
@@ -3546,7 +3555,8 @@ module advance_xm_wpxp_module
         ! divided by the distance between vertical levels below ground; the
         ! latter is assumed to be the same as the distance between the first and
         ! second vertical levels.
-        n_below_ground_levels = int( Lscale_zm(1) / (gr%zm(2)-gr%zm(1)) )
+        n_below_ground_levels = int( ( one_half_Lscale_zm(k)-(gr%zm(k)-gr%zm(1)) ) / &
+                                        ( gr%zm(2)-gr%zm(1) ) )
       end if
 
       ! Prepare the virtual levels!
