@@ -1939,35 +1939,35 @@ module stats_zm_module
       case ( 'gamma_Skw_fnc' )
         igamma_Skw_fnc = k
         call stat_assign( var_index=igamma_Skw_fnc, var_name="gamma_Skw_fnc", &
-             var_description="Gamma as a function of skewness [-]", var_units="count", &
+             var_description="Gamma as a function of skewness [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C6rt_Skw_fnc' )
         iC6rt_Skw_fnc = k
         call stat_assign( var_index=iC6rt_Skw_fnc, var_name="C6rt_Skw_fnc", &
-             var_description="C_6rt parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_6rt parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C6thl_Skw_fnc' )
         iC6thl_Skw_fnc = k
         call stat_assign( var_index=iC6thl_Skw_fnc, var_name="C6thl_Skw_fnc", &
-             var_description="C_6thl parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_6thl parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C7_Skw_fnc' )
         iC7_Skw_fnc = k
         call stat_assign( var_index=iC7_Skw_fnc, var_name="C7_Skw_fnc", &
-             var_description="C_7 parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_7 parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C1_Skw_fnc' )
         iC1_Skw_fnc = k
         call stat_assign( var_index=iC1_Skw_fnc, var_name="C1_Skw_fnc", &
-             var_description="C_1 parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_1 parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
