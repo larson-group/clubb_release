@@ -169,8 +169,9 @@ module advance_wp2_wp3_module
     ! Brian added C1 function.
     real( kind = core_rknd ), dimension(gr%nz) ::  & 
       C1_Skw_fnc,  & ! C_1 parameter with Sk_w applied              [-]
-      C11_Skw_fnc    ! C_11 parameter with Sk_w applied             [-]
+      C11_Skw_fnc, & ! C_11 parameter with Sk_w applied             [-]
     ! End Vince Larson's addition.
+      C16_fnc        ! C_16 parameter                               [-]
 
     integer :: &
       nsub,   & ! Number of subdiagonals in the LHS matrix.
@@ -240,6 +241,10 @@ module advance_wp2_wp3_module
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
+    ! For now, just set C16_fnc to a constant. In the future, this will be
+    ! parameterized based on Richardson_num
+    C16_fnc = 0.5_core_rknd
+
     if ( clubb_at_least_debug_level( 2 ) ) then
       ! Assertion check for C11_Skw_fnc
       if ( any( C11_Skw_fnc(:) > 1._core_rknd ) .or. any( C11_Skw_fnc(:) < 0._core_rknd ) ) then
@@ -281,7 +286,7 @@ module advance_wp2_wp3_module
                      a3, a3_zt, wp3_on_wp2, &  ! Intent(in)
                      wpthvp, wp2thvp, um, vm, upwp, vpwp,    & ! Intent(in)
                      up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau_zm, tauw3t, tau_C1_zm,   & ! Intent(in)
-                     C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
+                     C1_Skw_fnc, C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                      invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm,   & ! Intent(in)
                      thv_ds_zt, nsub, nsup,                         & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt, wp2_wp3_err_code     ) ! Intent(inout)
@@ -336,7 +341,7 @@ module advance_wp2_wp3_module
                          a3, a3_zt, wp3_on_wp2, &
                          wpthvp, wp2thvp, um, vm, upwp, vpwp, &
                          up2, vp2, Kw1, Kw8, Kh_zt, Skw_zt, tau1m, tauw3t, tau_C1_zm, &
-                         C1_Skw_fnc, C11_Skw_fnc, rho_ds_zm, rho_ds_zt, &
+                         C1_Skw_fnc, C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, &
                          invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm, &
                          thv_ds_zt, nsub, nsup, &
                          wp2, wp3, wp3_zm, wp2_zt, err_code )
@@ -479,6 +484,7 @@ module advance_wp2_wp3_module
       tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
+      C16_fnc,         & ! C_16 parameter                            [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
@@ -552,7 +558,7 @@ module advance_wp2_wp3_module
                    a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                    upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt,  & 
                    Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                   C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
+                   C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                    thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
                    rhs )
 
@@ -560,7 +566,7 @@ module advance_wp2_wp3_module
       call wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                        rhs, &
                        solut, err_code )
@@ -570,7 +576,7 @@ module advance_wp2_wp3_module
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
 
@@ -778,7 +784,7 @@ module advance_wp2_wp3_module
   subroutine wp23_gmres( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt, &
                          wp3_on_wp2, &
                          Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                         C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                         C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                          invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                          rhs, &
                          solut, err_code )
@@ -858,6 +864,7 @@ module advance_wp2_wp3_module
       tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
+      C16_fnc,         & ! C_16 parameter                            [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels     [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs. [m^3/kg]
@@ -902,7 +909,7 @@ module advance_wp2_wp3_module
     call wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, & 
                        lhs_a_csr )
 
@@ -910,7 +917,7 @@ module advance_wp2_wp3_module
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
 
@@ -942,7 +949,7 @@ module advance_wp2_wp3_module
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                      wp3_on_wp2, &
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                     C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                     C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                      lhs )
 
@@ -977,7 +984,7 @@ module advance_wp2_wp3_module
     solut(1:gr%nz) = a1_zt
     solut(1:gr%nz) = a3
     solut(1:gr%nz) = a3_zt
-    solut(1:gr%nz) = C11_Skw_fnc
+    solut(1:gr%nz) = C11_Skw_fnc + C16_fnc
     solut(1:gr%nz) = C1_Skw_fnc
     solut(1:gr%nz) = invrs_rho_ds_zm
     solut(1:gr%nz) = invrs_rho_ds_zt
@@ -1006,7 +1013,7 @@ module advance_wp2_wp3_module
   subroutine wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                        wp3_on_wp2, &
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                       C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
                        lhs )
 
@@ -1039,7 +1046,8 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only: & 
-        l_tke_aniso   ! Variable(s)
+        l_tke_aniso, &   ! Variable(s)
+        l_use_wp3_pr3
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -1149,6 +1157,7 @@ module advance_wp2_wp3_module
       tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied            [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied           [-]
+      C16_fnc,         & ! C_16 parameter                             [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels     [kg/m^3]
       rho_ds_zt,       & ! Dry, static density on thermo. levels      [kg/m^3]
       invrs_rho_ds_zm, & ! Inv. dry, static density @ momentum levs.  [m^3/kg]
@@ -1170,7 +1179,9 @@ module advance_wp2_wp3_module
     integer :: k, km1, kp1, k_wp2, k_wp3, k_wp2_low, k_wp2_high, &
                k_wp3_low, k_wp3_high
 
-    real( kind = core_rknd ), dimension(5) :: tmp
+    real( kind = core_rknd ), dimension(5) :: &
+      tmp, &
+      wp3_terms_ta_tp_lhs_result
 
 
     ! Initialize the left-hand side matrix to 0.
@@ -1396,10 +1407,8 @@ module advance_wp2_wp3_module
       !        the terms that gets treated implicitly, and RHS is the portion of
       !        the terms that is always treated explicitly.  A weight of greater
       !        than 1 can be applied to make the terms more numerically stable.
-      lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  & 
-      = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-      + gamma_over_implicit_ts  &
-      * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
+      wp3_terms_ta_tp_lhs_result &
+      = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
                              wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -1407,6 +1416,17 @@ module advance_wp2_wp3_module
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
                              gr%invrs_dzt(k), k )
+      lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  & 
+      = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+      + gamma_over_implicit_ts  &
+      * wp3_terms_ta_tp_lhs_result
+
+      ! LHS pressure term 3 (pr3)
+      if ( l_use_wp3_pr3 ) then
+        lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+        - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+      end if
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs(t_k_tdiag,k_wp3) & 
@@ -1598,7 +1618,7 @@ module advance_wp2_wp3_module
   subroutine wp23_lhs_csr( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
                            wp3_on_wp2, &
                            Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                           C11_Skw_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
+                           C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                            invrs_rho_ds_zt, l_crank_nich_diff, & 
                            lhs_a_csr )
 
@@ -1634,7 +1654,8 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only: & 
-        l_tke_aniso    ! Variable(s)
+        l_tke_aniso, &    ! Variable(s)
+        l_use_wp3_pr3
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -1773,7 +1794,9 @@ module advance_wp2_wp3_module
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3, wp2_cur_row, wp3_cur_row
 
-    real( kind = core_rknd ), dimension(5) :: tmp
+    real( kind = core_rknd ), dimension(5) :: &
+      tmp, &
+      wp3_terms_ta_tp_lhs_result
 
 
     ! Initialize the left-hand side matrix to 0.
@@ -2064,10 +2087,8 @@ module advance_wp2_wp3_module
       !        the terms that gets treated implicitly, and RHS is the portion of
       !        the terms that is always treated explicitly.  A weight of greater
       !        than 1 can be applied to make the terms more numerically stable.
-      lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  & 
-      = lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  &
-      + gamma_over_implicit_ts  &
-      * wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
+      wp3_terms_ta_tp_lhs_result &
+      = wp3_terms_ta_tp_lhs( wp2(k), wp2(km1),  &
                              a1(k), a1_zt(k), a1(km1),  &
                              a3(k), a3_zt(k), a3(km1),  &
                              wp3_on_wp2(k), wp3_on_wp2(km1), &
@@ -2075,6 +2096,17 @@ module advance_wp2_wp3_module
                              invrs_rho_ds_zt(k),  &
                              three_halves,  &
                              gr%invrs_dzt(k), k )
+      lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  & 
+      = lhs_a_csr(t_kp1_tdiag:t_km1_tdiag:-1)  &
+      + gamma_over_implicit_ts  &
+      * wp3_terms_ta_tp_lhs_result
+
+      ! LHS pressure term 3 (pr3)
+      if ( l_use_wp3_pr3 ) then
+        lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
+        - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+      end if
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
       lhs_a_csr(t_k_tdiag) & 
@@ -2296,7 +2328,7 @@ module advance_wp2_wp3_module
                        a3, a3_zt, wp3_on_wp2, wpthvp, wp2thvp, um, vm,  & 
                        upwp, vpwp, up2, vp2, Kw1, Kw8, Kh_zt, & 
                        Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
-                       C11_Skw_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
+                       C11_Skw_fnc, C16_fnc, rho_ds_zm, invrs_rho_ds_zt, radf, &
                        thv_ds_zm, thv_ds_zt, l_crank_nich_diff, &
                        rhs )
 
@@ -2330,7 +2362,8 @@ module advance_wp2_wp3_module
         gamma_over_implicit_ts
 
     use model_flags, only:  & 
-        l_tke_aniso ! Variable
+        l_tke_aniso, & ! Variable(s)
+        l_use_wp3_pr3
 
     use diffusion, only: & 
         diffusion_zm_lhs,  & ! Procedures
@@ -2387,6 +2420,7 @@ module advance_wp2_wp3_module
       tau_C1_zm,       & ! Tau values used for the C1 (dp1) term in wp2 [s]
       C1_Skw_fnc,      & ! C_1 parameter with Sk_w applied           [-]
       C11_Skw_fnc,     & ! C_11 parameter with Sk_w applied          [-]
+      C16_fnc,         & ! C_16 parameter                            [-]
       rho_ds_zm,       & ! Dry, static density on momentum levels    [kg/m^3]
       invrs_rho_ds_zt, & ! Inv. dry, static density @ thermo. levs.  [m^3/kg]
       radf,            & ! Buoyancy production at the CL top         [m^2/s^3]
@@ -2655,6 +2689,18 @@ module advance_wp2_wp3_module
           - lhs_fnc_output(3) * wp3(k)  &
           - lhs_fnc_output(4) * wp2(km1)  &
           - lhs_fnc_output(5) * wp3(km1) )
+
+      ! RHS pressure term 3 (pr3)
+      if ( l_use_wp3_pr3 ) then
+        rhs(k_wp3)  &
+        = rhs(k_wp3)  &
+        - ( 1.0_core_rknd - gamma_over_implicit_ts ) * C16_fnc(k)  &
+        * ( - lhs_fnc_output(1) * wp3(kp1)  &
+            - lhs_fnc_output(2) * wp2(k)  &
+            - lhs_fnc_output(3) * wp3(k)  &
+            - lhs_fnc_output(4) * wp2(km1)  &
+            - lhs_fnc_output(5) * wp3(km1) )
+      end if
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
       rhs(k_wp3) & 
