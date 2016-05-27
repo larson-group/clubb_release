@@ -212,6 +212,7 @@ module stats_zt_module
         iwp3_bp2, & 
         iwp3_pr1, & 
         iwp3_pr2, & 
+        iwp3_pr3, &
         iwp3_dp1, &
         iwp3_cl
 
@@ -1754,6 +1755,14 @@ module stats_zt_module
         iwp3_pr2 = k
         call stat_assign( var_index=iwp3_pr2, var_name="wp3_pr2", &
              var_description="wp3 budget: wp3 pressure term 2 [m^{3} s^{-4}]", &
+             var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+
+        k = k + 1
+
+      case ('wp3_pr3')
+        iwp3_pr3 = k
+        call stat_assign( var_index=iwp3_pr3, var_name="wp3_pr3", &
+             var_description="wp3 budget: wp3 pressure term 3 [m^{3} s^{-4}]", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
 
         k = k + 1

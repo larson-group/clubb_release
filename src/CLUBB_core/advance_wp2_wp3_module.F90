@@ -410,6 +410,7 @@ module advance_wp2_wp3_module
         iwp3_dp1, & 
         iwp3_pr1, &
         iwp3_pr2, &
+        iwp3_pr3, &
         iwp23_matrix_condt_num
 
     use stats_variables, only:  & 
@@ -529,6 +530,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ) ::  & 
       rcond  ! Est. of the reciprocal of the condition #
 
+    real( kind = core_rknd ), dimension(gr%nz,5) :: &
+      wp3_pr3_lhs ! wp3_pr3 (implicit) contribution to lhs
+
     ! Array indices
     integer :: k, km1, kp1, k_wp2, k_wp3
 
@@ -540,6 +544,9 @@ module advance_wp2_wp3_module
     !        almost no effect on the boundary layer cases.  Brian; 1/4/2008.
 !    logical, parameter :: l_crank_nich_diff = .true.
     logical, parameter :: l_crank_nich_diff = .false.
+
+  !-----------------------------------------------------------------------
+    !----- Begin Code -----
 
     ! Define a_1 and a_3 (both are located on momentum levels).
     ! They are variables that are both functions of sigma_sqd_w (where
@@ -569,7 +576,7 @@ module advance_wp2_wp3_module
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                        rhs, &
-                       solut, err_code )
+                       solut, wp3_pr3_lhs, err_code )
     else
       ! Compute the implicit portion of the w'^2 and w'^3 equations.
       ! Build the left-hand side matrix.
@@ -578,7 +585,7 @@ module advance_wp2_wp3_module
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                     lhs )
+                     lhs, wp3_pr3_lhs )
 
       ! Solve the system with LAPACK
       if ( l_stats_samp .and. iwp23_matrix_condt_num > 0 ) then
@@ -718,6 +725,15 @@ module advance_wp2_wp3_module
            ztscr10(k) * wp2(km1) & 
          + ztscr11(k) * wp2(k), stats_zt )
 
+        ! w'^3 pressure term 3 (pr3) has both implicit and explicit components;
+        ! call stat_end_update_pt
+        call stat_end_update_pt( iwp3_pr3, k, &
+         - wp3_pr3_lhs(k,5) * wp3(km1) &
+         - wp3_pr3_lhs(k,4) * wp2(km1) &
+         - wp3_pr3_lhs(k,3) * wp3(k) &
+         - wp3_pr3_lhs(k,2) * wp2(k) &
+         - wp3_pr3_lhs(k,1) * wp3(kp1), stats_zt )
+
         ! w'^3 term ma is completely implicit; call stat_update_var_pt.
         call stat_update_var_pt( iwp3_ma, k, & 
            ztscr12(k) * wp3(km1) & 
@@ -787,7 +803,7 @@ module advance_wp2_wp3_module
                          C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                          invrs_rho_ds_zt, l_crank_nich_diff, nsup, nsub, nrhs, &
                          rhs, &
-                         solut, err_code )
+                         solut, wp3_pr3_lhs, err_code )
     ! Description:
     ! Perform all GMRES-specific matrix generation and solving for the
     ! wp2/wp3 matrices.
@@ -887,6 +903,9 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(2*gr%nz), intent(out) :: &
       solut     ! Solution to band diagonal system
 
+    real( kind = core_rknd ), dimension(gr%nz,5), intent(out) :: &
+      wp3_pr3_lhs ! w'^3 pressure term 3 (pr3) lhs contribution
+
     integer, intent(out) :: err_code ! Have any errors occured?
 
 #ifdef MKL
@@ -911,7 +930,7 @@ module advance_wp2_wp3_module
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, & 
-                       lhs_a_csr )
+                       lhs_a_csr, wp3_pr3_lhs )
 
     if ( .not. l_gmres_soln_ok(gmres_idx_wp2wp3) ) then
       call wp23_lhs( dt, wp2, wm_zm, wm_zt, a1, a1_zt, a3, a3_zt,  &
@@ -919,7 +938,7 @@ module advance_wp2_wp3_module
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                     lhs )
+                     lhs, wp3_pr3_lhs )
 
       ! Solve system with LAPACK to give us our first solution vector
         lhs_cache = lhs
@@ -951,7 +970,7 @@ module advance_wp2_wp3_module
                      Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                      C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                      invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                     lhs )
+                     lhs, wp3_pr3_lhs )
 
       ! Note: The RHS does not need to be re-generated.
 
@@ -1004,6 +1023,7 @@ module advance_wp2_wp3_module
     err_code = nsup
     err_code = nsub
     err_code = nrhs
+    wp3_pr3_lhs = -9999._core_rknd
 
 #endif /* MKL */
 
@@ -1015,7 +1035,7 @@ module advance_wp2_wp3_module
                        Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                        C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                        invrs_rho_ds_zt, l_crank_nich_diff, nsub, nsup,  & 
-                       lhs )
+                       lhs, wp3_pr3_lhs )
 
     ! Description:
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -1043,7 +1063,8 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only:  & 
         three_halves, &
-        gamma_over_implicit_ts
+        gamma_over_implicit_ts, &
+        zero
 
     use model_flags, only: & 
         l_tke_aniso, &   ! Variable(s)
@@ -1172,6 +1193,9 @@ module advance_wp2_wp3_module
     ! Output Variable
     real( kind = core_rknd ), dimension(5-nsup:5+nsub,2*gr%nz), intent(out) ::  & 
       lhs ! Implicit contributions to wp2/wp3 (band diag. matrix)
+
+    real( kind = core_rknd ), dimension(gr%nz,5), intent(out) :: &
+      wp3_pr3_lhs
 
     ! Local Variables
 
@@ -1423,9 +1447,12 @@ module advance_wp2_wp3_module
 
       ! LHS pressure term 3 (pr3)
       if ( l_use_wp3_pr3 ) then
+        wp3_pr3_lhs(k,:) = - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+
         lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-        - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) + wp3_pr3_lhs(k,:)
+      else
+        wp3_pr3_lhs(k,:) = zero
       end if
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
@@ -1620,7 +1647,7 @@ module advance_wp2_wp3_module
                            Kw1, Kw8, Skw_zt, tau1m, tauw3t, tau_C1_zm, C1_Skw_fnc, &
                            C11_Skw_fnc, C16_fnc, rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &
                            invrs_rho_ds_zt, l_crank_nich_diff, & 
-                           lhs_a_csr )
+                           lhs_a_csr, wp3_pr3_lhs )
 
     ! Description:
     ! Compute LHS band diagonal matrix for w'^2 and w'^3.
@@ -1788,6 +1815,9 @@ module advance_wp2_wp3_module
     ! Output Variable
     real( kind = core_rknd ), dimension(intlc_5d_5d_ja_size), intent(out) ::  & 
       lhs_a_csr ! Implicit contributions to wp2/wp3 (band diag. matrix)
+
+    real( kind = core_rknd ), dimension(gr%nz,5), intent(out) :: &
+      wp3_pr3_lhs
 
     ! Local Variables
 
@@ -2103,9 +2133,10 @@ module advance_wp2_wp3_module
 
       ! LHS pressure term 3 (pr3)
       if ( l_use_wp3_pr3 ) then
+        wp3_pr3_lhs(k,:) = - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+
         lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3)  &
-        - ( gamma_over_implicit_ts * C16_fnc(k) * wp3_terms_ta_tp_lhs_result )
+        = lhs(t_kp1_tdiag:t_km1_tdiag,k_wp3) + wp3_pr3_lhs(k,:)
       end if
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
@@ -2358,7 +2389,7 @@ module advance_wp2_wp3_module
 
     use constants_clubb, only: & 
         w_tol_sqd,     & ! Variable(s)
-        three_halves, &
+        three_halves, zero, &
         gamma_over_implicit_ts
 
     use model_flags, only:  & 
@@ -2375,7 +2406,7 @@ module advance_wp2_wp3_module
     use stats_variables, only:  & 
         l_stats_samp, iwp2_dp1, iwp2_dp2, stats_zm, iwp2_bp,   & ! Variable(s)
         iwp2_pr1, iwp2_pr2, iwp2_pr3, iwp3_ta, stats_zt, & 
-        iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2
+        iwp3_tp, iwp3_bp1, iwp3_pr2, iwp3_pr1, iwp3_dp1, iwp3_bp2, iwp3_pr3
 
     use stats_type_utilities, only:  &
         stat_update_var_pt,  & ! Procedure(s)
@@ -2454,8 +2485,7 @@ module advance_wp2_wp3_module
     real( kind = core_rknd ), dimension(3) :: &
       rhs_diff ! For use in Crank-Nicholson eddy diffusion.
 
-    real( kind = core_rknd ) :: temp
-
+    real( kind = core_rknd ) :: temp, wp3_pr3_rhs
 
     ! Initialize the right-hand side vector to 0.
     rhs = 0.0_core_rknd
@@ -2692,14 +2722,16 @@ module advance_wp2_wp3_module
 
       ! RHS pressure term 3 (pr3)
       if ( l_use_wp3_pr3 ) then
-        rhs(k_wp3)  &
-        = rhs(k_wp3)  &
-        - ( 1.0_core_rknd - gamma_over_implicit_ts ) * C16_fnc(k)  &
-        * ( - lhs_fnc_output(1) * wp3(kp1)  &
-            - lhs_fnc_output(2) * wp2(k)  &
-            - lhs_fnc_output(3) * wp3(k)  &
-            - lhs_fnc_output(4) * wp2(km1)  &
-            - lhs_fnc_output(5) * wp3(km1) )
+
+        wp3_pr3_rhs = - ( 1.0_core_rknd - gamma_over_implicit_ts ) * C16_fnc(k)  &
+                      * ( - lhs_fnc_output(1) * wp3(kp1)  &
+                          - lhs_fnc_output(2) * wp2(k)  &
+                          - lhs_fnc_output(3) * wp3(k)  &
+                          - lhs_fnc_output(4) * wp2(km1)  &
+                          - lhs_fnc_output(5) * wp3(km1) )
+
+        rhs(k_wp3) = rhs(k_wp3) + wp3_pr3_rhs
+
       end if
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).
@@ -2831,6 +2863,10 @@ module advance_wp2_wp3_module
                              + ( 1.0_core_rknd - gamma_over_implicit_ts )  &
                              * ( - lhs_fnc_output(2) * wp2(k)  &
                                  - lhs_fnc_output(4) * wp2(km1) ), stats_zt )
+
+        ! w'^3 pressure term 3 (pr3) explicit (rhs) contribution
+        call stat_begin_update_pt( iwp3_pr3, k, zero, stats_zt )
+        call stat_modify_pt( iwp3_pr3, k, +wp3_pr3_rhs, stats_zt )
 
         ! w'^3 term bp is completely explicit; call stat_update_var_pt.
         ! Note:  To find the contribution of w'^3 term bp, substitute 0 for the

@@ -377,6 +377,7 @@ module stats_variables
      iwp3_bp2 = 0, & 
      iwp3_pr1 = 0, & 
      iwp3_pr2 = 0, & 
+     iwp3_pr3 = 0, &
      iwp3_dp1 = 0, &
      iwp3_cl  = 0
 
