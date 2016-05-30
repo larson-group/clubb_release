@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 import netCDF4
 
 # Point to CLUBB's 'output' directory and location of SAM's stat file 
-out_dir = '/home/weberjk/precip_ta/output/'
-sam_file = '/home/weberjk/precip_ta/input/input_fields/LBA.nc'
+out_dir = '/home/nieznan3/clubb/output'
+sam_file = '/home/nieznan3/sam_benchmark_runs/LBA_r1663_128x128x128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc'
 
 # Within CLUBB's 'output' directory, specify the names of each subdirectory
 # containing different simulations. Each subdirectory's data will be overplotted
@@ -123,7 +123,7 @@ nc.close()
 #----------------------------------------------------------------------------------------
 # Retrieve CLUBB's altitude, time, and flux profiles
 #----------------------------------------------------------------------------------------
-clubb_file = '%s/lba_zt.nc'%(out_dir+test[0])
+clubb_file = '%s/lba_zt.nc'%(out_dir)
 nc = netCDF4.Dataset(clubb_file)
 clb_z = pull_profiles(nc, 'altitude', 1.)
 clb_t = pull_profiles(nc, 'time', 1.)
@@ -139,16 +139,16 @@ idx_t1 = (np.abs(clb_t[:] - t1_in_s)).argmin()
 clubb_mean = np.empty( ( len(output_subdirectories),len(clubb_vars),len(clb_z) ) )
 
 # Loop through each subdirectory
-for i in np.arange(0,len(output_subdirectories)):
-    clubb_file = '%s/lba_zt.nc'%(out_dir+test[i])
-    nc = netCDF4.Dataset(clubb_file)
+#for i in np.arange(0,len(output_subdirectories)):
+#    clubb_file = '%s/lba_zt.nc'%(out_dir+test[i])
+#    nc = netCDF4.Dataset(clubb_file)
 
     # Loop through each variable
-    for j in np.arange(0,len(clubb_vars)):
-        print "Pulling CLUBB variable: %s from case:%s"%(clubb_vars[j], test[i])
-        clubb_mean[i,j,:] = ( return_mean_profiles(
-                             pull_profiles(nc, clubb_vars[j],1.),
-                                      idx_t0, idx_t1, idx_z0, idx_z1) )
+for j in np.arange(0,len(clubb_vars)):
+    print "Pulling CLUBB variable: %s from case:"%(clubb_vars[j])
+    clubb_mean[0,j,:] = ( return_mean_profiles(
+                         pull_profiles(nc, clubb_vars[j],1.),
+                                  idx_t0, idx_t1, idx_z0, idx_z1) )
 nc.close()
 
 #----------------------------------------------------------------------------------------
@@ -175,15 +175,15 @@ ax7.grid()
 ax8.plot(sam_mean[7],sam_z,lw=2,c='k')
 ax8.grid()
 
-for i in np.arange(0,len(test)):
-    ax1.plot(clubb_mean[i,0,:],clb_z,label=test[i])
-    ax2.plot(clubb_mean[i,1,:],clb_z)
-    ax3.plot(clubb_mean[i,2,:],clb_z)
-    ax4.plot(clubb_mean[i,3,:],clb_z)
-    ax5.plot(clubb_mean[i,4,:],clb_z)
-    ax6.plot(clubb_mean[i,5,:],clb_z)
-    ax7.plot(clubb_mean[i,6,:],clb_z)
-    ax8.plot(clubb_mean[i,7,:],clb_z) 
+#for i in np.arange(0,len(test)):
+ax1.plot(clubb_mean[0,0,:],clb_z)
+ax2.plot(clubb_mean[0,1,:],clb_z)
+ax3.plot(clubb_mean[0,2,:],clb_z)
+ax4.plot(clubb_mean[0,3,:],clb_z)
+ax5.plot(clubb_mean[0,4,:],clb_z)
+ax6.plot(clubb_mean[0,5,:],clb_z)
+ax7.plot(clubb_mean[0,6,:],clb_z)
+ax8.plot(clubb_mean[0,7,:],clb_z) 
 
 ax1.legend()
 plt.show()

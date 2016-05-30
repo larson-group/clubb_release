@@ -27,7 +27,7 @@ NAMELISTS="clubb.in"
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 CUSTOM_OUTPUT_DIR=""
-NETCDF=false
+NETCDF=true
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
