@@ -14,7 +14,7 @@ module advance_helper_module
     set_boundary_conditions_rhs, &
     calc_stability_correction,   &
     calc_brunt_vaisala_freq_sqd, &
-    compute_C7_Skw_fnc_Richardson
+    compute_Cx_fnc_Richardson
 
   private ! Set Default Scope
 
@@ -324,8 +324,8 @@ module advance_helper_module
   end function calc_brunt_vaisala_freq_sqd
 
 !===============================================================================
-  function compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                          rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
+  function compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                      rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
     result( C7_Skw_fnc )
 
   ! Description:
@@ -472,7 +472,7 @@ module advance_helper_module
       call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     end if
 
-  end function compute_C7_Skw_fnc_Richardson
+  end function compute_Cx_fnc_Richardson
   !----------------------------------------------------------------------
 
   !----------------------------------------------------------------------

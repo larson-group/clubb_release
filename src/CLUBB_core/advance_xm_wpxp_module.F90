@@ -40,7 +40,7 @@ module advance_xm_wpxp_module
   contains
 
   !=============================================================================
-  subroutine advance_xm_wpxp( dt, sigma_sqd_w, um, vm, wm_zm, wm_zt, wp2, &
+  subroutine advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2, &
                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, &
                               tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing, &
                               wprtp_forcing, rtm_ref, thlpthvp, &
@@ -50,7 +50,7 @@ module advance_xm_wpxp_module
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, em, &
                               sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
-                              p_in_Pa, cloud_frac, thvm, &
+                              p_in_Pa, cloud_frac, thvm, Cx_fnc_Richardson, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
                               sclrm, wpsclrp )
@@ -151,7 +151,7 @@ module advance_xm_wpxp_module
         sponge_damp_xm ! Procedure(s)
 
     use advance_helper_module, only: &
-        compute_C7_Skw_fnc_Richardson ! Procedure
+        compute_Cx_fnc_Richardson ! Procedure
 
     implicit none
 
@@ -168,8 +168,6 @@ module advance_xm_wpxp_module
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       sigma_sqd_w,     & ! sigma_sqd_w on momentum levels           [-]
-      um,              & ! u mean wind component (thermodynamic levels)   [m/s]
-      vm,              & ! v mean wind component (thermodynamic levels)   [m/s]
       wm_zm,           & ! w wind component on momentum levels      [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels [m/s]
       wp2,             & ! w'^2 (momentum levels)                   [m^2/s^2]
@@ -219,7 +217,8 @@ module advance_xm_wpxp_module
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
       cloud_frac,      & ! Cloud fraction                            [-]
-      thvm               ! Virutal potential temperature             [K]
+      thvm,            & ! Virutal potential temperature             [K]
+      Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
     ! Input/Output Variables
     real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  & 
@@ -317,8 +316,7 @@ module advance_xm_wpxp_module
     ! Compute C7_Skw_fnc
     if ( l_use_C7_Richardson ) then
       ! New formulation based on Richardson number
-      C7_Skw_fnc = compute_C7_Skw_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                                  rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm )
+      C7_Skw_fnc = Cx_fnc_Richardson
     else
       if ( C7 /= C7b ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 

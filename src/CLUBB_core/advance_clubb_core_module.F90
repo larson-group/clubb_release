@@ -441,7 +441,8 @@ module advance_clubb_core_module
       compute_mean_binormal
 
     use advance_helper_module, only: &
-      calc_stability_correction ! Procedure(s)
+      calc_stability_correction, & ! Procedure(s)
+      compute_Cx_fnc_Richardson
 
     use interpolation, only: &
       pvertinterp
@@ -829,7 +830,8 @@ module advance_clubb_core_module
        stability_correction, & ! Stability correction factor
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
        tau_C6_zm,            & ! Tau values used for the C6 (pr1) term in wpxp [s]
-       tau_C1_zm               ! Tau values used for the C1 (dp1) term in wp2 [s]
+       tau_C1_zm,            & ! Tau values used for the C1 (dp1) term in wp2 [s]
+       Cx_fnc_Richardson       ! Cx_fnc computed from Richardson_num          [-]
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -1959,7 +1961,10 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
-      call advance_xm_wpxp( dt, sigma_sqd_w, um, vm, wm_zm, wm_zt, wp2, & ! intent(in)
+      Cx_fnc_Richardson = compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                                     rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm )
+
+      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,       & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing,  & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
@@ -1969,7 +1974,7 @@ module advance_clubb_core_module
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                             mixt_frac_zm, l_implemented, em,          & ! intent(in)
                             sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, & ! intent(in)
-                            p_in_Pa, cloud_frac, thvm, &                ! intent(in)
+                            p_in_Pa, cloud_frac, thvm, Cx_fnc_Richardson, & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
                             sclrm, wpsclrp                            ) ! intent(inout)
