@@ -44,7 +44,7 @@ module advance_wp2_wp3_module
                               up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, &
                               Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt, &
                               invrs_rho_ds_zm, invrs_rho_ds_zt, radf, &
-                              thv_ds_zm, thv_ds_zt, mixt_frac, &
+                              thv_ds_zm, thv_ds_zt, mixt_frac, Cx_fnc_Richardson, &
                               wp2, wp3, wp3_zm, wp2_zt, err_code )
 
     ! Description:
@@ -144,7 +144,8 @@ module advance_wp2_wp3_module
       radf,            & ! Buoyancy production at the CL top         [m^2/s^3]
       thv_ds_zm,       & ! Dry, base-state theta_v on momentum levs. [K]
       thv_ds_zt,       & ! Dry, base-state theta_v on thermo. levs.  [K]
-      mixt_frac          ! Weight of 1st normal distribution         [-]
+      mixt_frac,       & ! Weight of 1st normal distribution         [-]
+      Cx_fnc_Richardson  ! Cx_fnc from Richardson_num                [-]
 
     ! Input/Output
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
@@ -241,14 +242,19 @@ module advance_wp2_wp3_module
     !C11_Skw_fnc = C11
     !C1_Skw_fnc = C1
 
-    ! For now, just set C16_fnc to a constant. In the future, this will be
-    ! parameterized based on Richardson_num
-    C16_fnc = 0.5_core_rknd
+    ! Set C16_fnc based on Richardson_num
+    C16_fnc = Cx_fnc_Richardson
 
     if ( clubb_at_least_debug_level( 2 ) ) then
       ! Assertion check for C11_Skw_fnc
       if ( any( C11_Skw_fnc(:) > 1._core_rknd ) .or. any( C11_Skw_fnc(:) < 0._core_rknd ) ) then
         write(fstderr,*) "The C11_Skw_fnc is outside the valid range for this variable"
+        err_code = clubb_var_out_of_range
+        return
+      end if
+
+      if ( any( C16_fnc(:) > 1._core_rknd ) .or. any( C16_fnc(:) < 0._core_rknd ) ) then
+        write(fstderr,*) "The C16_fnc is outside the valid range for this variable"
         err_code = clubb_var_out_of_range
         return
       end if

@@ -2046,7 +2046,7 @@ module advance_clubb_core_module
              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, & ! intent(in)
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,              & ! intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, radf,            & ! intent(in)
-             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,        & ! intent(in)
+             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt, err_code               )  ! intent(inout)
 
       !----------------------------------------------------------------
