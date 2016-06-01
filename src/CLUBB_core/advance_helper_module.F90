@@ -466,6 +466,10 @@ module advance_helper_module
                                           C7_Skw_fnc_below_ground_value )
     end if
 
+    ! On some compilers, roundoff error can result in C7_Skw_fnc being
+    ! slightly outside the range [0,1]. Thus, it is clipped here.
+    C7_Skw_fnc = max( 0.0_core_rknd, min( 1.0_core_rknd, C7_Skw_fnc ) )
+
     ! Stats sampling
     if ( l_stats_samp ) then
       call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
