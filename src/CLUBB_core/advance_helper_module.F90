@@ -326,10 +326,10 @@ module advance_helper_module
 !===============================================================================
   function compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
                                       rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
-    result( C7_Skw_fnc )
+    result( Cx_fnc_Richardson )
 
   ! Description:
-  !   Compute C7 as a function of the Richardson number
+  !   Compute Cx as a function of the Richardson number
 
   ! References:
   !   cam:ticket:59
@@ -369,12 +369,12 @@ module advance_helper_module
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Richardson_num_min = one_fourth, &
       Richardson_num_max = 200._core_rknd,       &
-      C7_min            = one_third,   &
-      C7_max            = one,         &
-      C7_Skw_fnc_below_ground_value = one
+      Cx_min            = one_third,   &
+      Cx_max            = one,         &
+      Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
-      l_C7_Skw_fnc_vert_avg = .true., & ! Vertically average C7_Skw_fnc over a
+      l_Cx_fnc_Richardson_vert_avg = .true., & ! Vertically average Cx_fnc_Richardson over a
                                         !  distance of Lscale
       l_Richardson_vert_avg = .true. , & ! Vertically average Richardson_num over a
                                          !  distance of Lscale
@@ -399,7 +399,7 @@ module advance_helper_module
 
     ! Output Variable
     real( kind = core_rknd), dimension(gr%nz) :: &
-      C7_Skw_fnc
+      Cx_fnc_Richardson
 
     ! Local Variables
     real( kind = core_rknd ), dimension(gr%nz) :: &
@@ -450,25 +450,26 @@ module advance_helper_module
                                               (0.5_core_rknd * Richardson_num_max) )
     end if
 
-    ! C7_Skw_fnc is interpolated based on the value of Richardson_num
+    ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
     where ( Richardson_num <= Richardson_num_min )
-      C7_Skw_fnc = C7_min
+      Cx_fnc_Richardson = Cx_min
     else where ( Richardson_num >= Richardson_num_max )
-      C7_Skw_fnc = C7_max
+      Cx_fnc_Richardson = Cx_max
     else where
       ! Linear interpolation
-      C7_Skw_fnc = linear_interp_factor( (Richardson_num-Richardson_num_min) / &
-                                         (Richardson_num_max-Richardson_num_min), C7_max, C7_min )
+      Cx_fnc_Richardson = &
+        linear_interp_factor( (Richardson_num-Richardson_num_min) / &
+                              (Richardson_num_max-Richardson_num_min), Cx_max, Cx_min )
     end where
 
-    if ( l_C7_Skw_fnc_vert_avg ) then
-      C7_Skw_fnc = Lscale_width_vert_avg( C7_Skw_fnc, Lscale_zm, rho_ds_zm, &
-                                          C7_Skw_fnc_below_ground_value )
+    if ( l_Cx_fnc_Richardson_vert_avg ) then
+      Cx_fnc_Richardson = Lscale_width_vert_avg( Cx_fnc_Richardson, Lscale_zm, rho_ds_zm, &
+                                                 Cx_fnc_Richardson_below_ground_value )
     end if
 
-    ! On some compilers, roundoff error can result in C7_Skw_fnc being
+    ! On some compilers, roundoff error can result in Cx_fnc_Richardson being
     ! slightly outside the range [0,1]. Thus, it is clipped here.
-    C7_Skw_fnc = max( 0.0_core_rknd, min( 1.0_core_rknd, C7_Skw_fnc ) )
+    Cx_fnc_Richardson = max( 0.0_core_rknd, min( 1.0_core_rknd, Cx_fnc_Richardson ) )
 
     ! Stats sampling
     if ( l_stats_samp ) then
