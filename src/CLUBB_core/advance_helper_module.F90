@@ -378,8 +378,8 @@ module advance_helper_module
                                         !  distance of Lscale
       l_Richardson_vert_avg = .true. , & ! Vertically average Richardson_num over a
                                          !  distance of Lscale
-      l_use_turb_freq_sqd = .false.     ! Use turb_freq_sqd in denominator of
-                                        !  Richardson_num
+      l_use_shear_turb_freq_sqd = .false.! Use turb_freq_sqd and shear_sqd in denominator of
+                                         !  Richardson_num
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
@@ -429,17 +429,20 @@ module advance_helper_module
 
     Lscale_zm = zt2zm( Lscale )
 
-    ! Calculate shear_sqd
-    dum_dz = ddzt( um )
-    dvm_dz = ddzt( vm )
-    shear_sqd = dum_dz**2 + dvm_dz**2
+    if ( l_use_shear_turb_freq_sqd ) then
+      ! Calculate shear_sqd
+      dum_dz = ddzt( um )
+      dvm_dz = ddzt( vm )
+      shear_sqd = dum_dz**2 + dvm_dz**2
 
-    if ( l_use_turb_freq_sqd ) then
       turb_freq_sqd = em / Lscale_zm**2
       Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, turb_freq_sqd, &
                                                      Richardson_num_divisor_threshold )
+
+      if ( l_stats_samp ) &
+        call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     else
-      Richardson_num = brunt_vaisala_freq_sqd / max( shear_sqd, Richardson_num_divisor_threshold )
+      Richardson_num = brunt_vaisala_freq_sqd / Richardson_num_divisor_threshold
     end if
 
     if ( l_Richardson_vert_avg ) then
@@ -474,7 +477,6 @@ module advance_helper_module
     ! Stats sampling
     if ( l_stats_samp ) then
       call stat_update_var( iRichardson_num, Richardson_num, stats_zm )
-      call stat_update_var( ishear_sqd, shear_sqd, stats_zm )
     end if
 
   end function compute_Cx_fnc_Richardson
