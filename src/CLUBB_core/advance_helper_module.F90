@@ -368,13 +368,13 @@ module advance_helper_module
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Richardson_num_min = one_fourth, &
-      Richardson_num_max = 200._core_rknd,       &
+      Richardson_num_max = 300._core_rknd,       &
       Cx_min            = one_third,   &
-      Cx_max            = one,         &
+      Cx_max            = 0.95_core_rknd,         &
       Cx_fnc_Richardson_below_ground_value = one
 
     logical, parameter :: &
-      l_Cx_fnc_Richardson_vert_avg = .true., & ! Vertically average Cx_fnc_Richardson over a
+      l_Cx_fnc_Richardson_vert_avg = .false.,& ! Vertically average Cx_fnc_Richardson over a
                                         !  distance of Lscale
       l_Richardson_vert_avg = .true. , & ! Vertically average Richardson_num over a
                                          !  distance of Lscale
@@ -450,7 +450,7 @@ module advance_helper_module
       Richardson_num = max( Richardson_num, Richardson_num_min )
 
       Richardson_num = Lscale_width_vert_avg( Richardson_num, Lscale_zm, rho_ds_zm, &
-                                              (0.5_core_rknd * Richardson_num_max) )
+                                              Richardson_num_max )
     end if
 
     ! Cx_fnc_Richardson is interpolated based on the value of Richardson_num
@@ -522,7 +522,7 @@ module advance_helper_module
     integer :: k, k_avg_lower, k_avg_upper, k_inner_loop
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      one_half_Lscale_zm
+      one_half_avg_width
 
     real( kind = core_rknd ), dimension(:), allocatable :: &
       rho_ds_zm_virtual, &
@@ -533,18 +533,18 @@ module advance_helper_module
 
   !----------------------------------------------------------------------
     !----- Begin Code -----
-    one_half_Lscale_zm = one_half * Lscale_zm
+    one_half_avg_width = max( Lscale_zm, 500.0_core_rknd )
 
     outer_vert_loop: do k=1, gr%nz
 
       !-----------------------------------------------------------------------
-      ! Hunt down all vertical levels with one_half_Lscale_zm(k) of gr%zm(k).
+      ! Hunt down all vertical levels with one_half_avg_width(k) of gr%zm(k).
       !-----------------------------------------------------------------------
 
       k_avg_upper = k
 
       inner_vert_loop_upward: do k_inner_loop=k+1, gr%nz
-        if ( gr%zm(k_inner_loop) - gr%zm(k) <= one_half_Lscale_zm(k) ) then
+        if ( gr%zm(k_inner_loop) - gr%zm(k) <= one_half_avg_width(k) ) then
           ! Include this height level in the average.
           k_avg_upper = k_inner_loop
         else
@@ -555,7 +555,7 @@ module advance_helper_module
 
       k_avg_lower = k
       inner_vert_loop_downward: do k_inner_loop=k-1, 1, -1
-        if ( gr%zm(k) - gr%zm(k_inner_loop) <= one_half_Lscale_zm(k) ) then
+        if ( gr%zm(k) - gr%zm(k_inner_loop) <= one_half_avg_width(k) ) then
           ! Include this height level in the average.
           k_avg_lower = k_inner_loop
         else
@@ -571,11 +571,11 @@ module advance_helper_module
         n_below_ground_levels = 0
       else
         ! The number of below-ground levels included is equal to the distance
-        ! below the lowest level spanned by one_half_Lscale_zm(k)
+        ! below the lowest level spanned by one_half_avg_width(k)
         ! divided by the distance between vertical levels below ground; the
         ! latter is assumed to be the same as the distance between the first and
         ! second vertical levels.
-        n_below_ground_levels = int( ( one_half_Lscale_zm(k)-(gr%zm(k)-gr%zm(1)) ) / &
+        n_below_ground_levels = int( ( one_half_avg_width(k)-(gr%zm(k)-gr%zm(1)) ) / &
                                         ( gr%zm(2)-gr%zm(1) ) )
       end if
 
