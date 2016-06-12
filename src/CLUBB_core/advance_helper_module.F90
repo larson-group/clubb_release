@@ -298,7 +298,7 @@ module advance_helper_module
 
     do k=1, gr%nz
 
-      if ( .not. l_brunt_vaisala_freq_moist .or. cloud_frac(k) < cloud_frac_min ) then
+      if ( .not. l_brunt_vaisala_freq_moist ) then
 
         ! Dry Brunt-Vaisala frequency
         if ( l_use_thvm_in_bv_freq ) then
@@ -307,7 +307,7 @@ module advance_helper_module
           brunt_vaisala_freq_sqd(k) = ( grav / T0 ) * ddzt_thlm(k)
         end if
 
-      else ! l_brunt_vaisala_freq_moist .and. cloud_frac(k) >= cloud_frac_min
+      else ! l_brunt_vaisala_freq_moist
 
         ! In-cloud Brunt-Vaisala frequency. This is Eq. (36) of Durran and Klemp (1982)
         brunt_vaisala_freq_sqd(k) = &
@@ -316,7 +316,7 @@ module advance_helper_module
             ( (one/thm_zm(k) * ddzt_thm(k)) + (Lv/(Cp*T_in_K_zm(k)))*ddzt_rsat(k)) - &
             ddzt_rtm(k) )
 
-      end if
+      end if ! .not. l_brunt_vaisala_freq_moist
 
     end do ! k=1, gr%nz
 
@@ -368,7 +368,7 @@ module advance_helper_module
     real( kind = core_rknd ), parameter :: &
       Richardson_num_divisor_threshold = 1.0e-6_core_rknd, &
       Richardson_num_min = one_fourth, &
-      Richardson_num_max = 300._core_rknd,       &
+      Richardson_num_max = 400._core_rknd,       &
       Cx_min            = one_third,   &
       Cx_max            = 0.95_core_rknd,         &
       Cx_fnc_Richardson_below_ground_value = one
