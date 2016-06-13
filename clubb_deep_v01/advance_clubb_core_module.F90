@@ -122,8 +122,8 @@ module advance_clubb_core_module
                rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &             ! intent(in)
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
                rfrzm, radf, &
-#ifdef CLUBBND_CAM
-               varmu, &                                             ! intent(in)
+#ifdef CLUBB_CAM
+               varC2, &                                             ! intent(in)
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in) 
@@ -187,6 +187,7 @@ module advance_clubb_core_module
       taumax, & 
       c_K, &
       mu, &
+      C2rt, &
       Lscale_mu_coef, &
       Lscale_pert_coef, &
       c_K10, &
@@ -517,9 +518,9 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
-#ifdef CLUBBND_CAM
+#ifdef CLUBB_CAM
     real( kind = core_rknd ), intent(in) :: &
-      varmu
+      varC2
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
@@ -834,6 +835,8 @@ module advance_clubb_core_module
        Cx_fnc_Richardson       ! Cx_fnc computed from Richardson_num          [-]
 
     real( kind = core_rknd ) :: Lscale_max
+    
+    real( kind = core_rknd ), dimension(gr%nz) :: newC2
 
     real( kind = core_rknd ) :: newmu
 
@@ -972,10 +975,10 @@ module advance_clubb_core_module
 
     end if ! ~l_host_applies_sfc_fluxes
 
-#ifdef CLUBBND_CAM
-    newmu = varmu
+#ifdef CLUBB_CAM
+    newC2 = varC2
 #else
-    newmu = mu
+    newC2 = C2rt
 #endif   
 
     !---------------------------------------------------------------------------
@@ -1628,19 +1631,19 @@ module advance_clubb_core_module
 
           thlm_pert_1 = thlm_frz + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_1  = rtm_frz  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+          mu_pert_1   = mu / Lscale_mu_coef
 
           thlm_pert_2 = thlm_frz - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_2  = rtm_frz  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
+          mu_pert_2   = mu * Lscale_mu_coef
         else
           thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+          mu_pert_1   = mu / Lscale_mu_coef
 
           thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
+          mu_pert_2   = mu * Lscale_mu_coef
         end if
 
         call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
@@ -1705,8 +1708,8 @@ module advance_clubb_core_module
             !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
           end where
         end if
-        mu_pert_pos_rt  = newmu / Lscale_mu_coef
-        mu_pert_neg_rt  = newmu * Lscale_mu_coef
+        mu_pert_pos_rt  = mu / Lscale_mu_coef
+        mu_pert_neg_rt  = mu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
         call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
@@ -1736,7 +1739,7 @@ module advance_clubb_core_module
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
       call compute_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, newmu, l_implemented, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
                            err_code,                                     & ! intent(inout)
                            Lscale, Lscale_up, Lscale_down )                ! intent(out)
 
@@ -2010,7 +2013,7 @@ module advance_clubb_core_module
                              Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
                              rtpthlp_forcing, rho_ds_zm, rho_ds_zt,   & ! intent(in)
                              invrs_rho_ds_zm, thv_ds_zm,              & ! intent(in)
-                             Lscale, wp3_on_wp2, wp3_on_wp2_zt,       & ! intent(in)
+                             Lscale, wp3_on_wp2, wp3_on_wp2_zt,varC2, & ! intent(in)
                              l_iter_xp2_xpyp, dt,                     & ! intent(in)
                              sclrm, wpsclrp,                          & ! intent(in) 
                              rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)

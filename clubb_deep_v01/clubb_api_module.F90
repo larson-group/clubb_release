@@ -482,8 +482,8 @@ contains
     rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
     rfrzm, radf, &                                          ! intent(in)
-#ifdef CLUBBND_CAM
-    varmu, &                                                ! intent(in)
+#ifdef CLUBB_CAM
+    varC2, &                                                ! intent(in)
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
@@ -562,9 +562,9 @@ contains
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
-#ifdef CLUBBND_CAM 
-    real( kind = core_rknd ), intent(in) :: & 
-      varmu 
+#ifdef CLUBB_CAM 
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
+      varC2 
 #endif 
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
@@ -683,8 +683,8 @@ contains
       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &                ! intent(in)
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
       rfrzm, radf, &                                          ! intent(in)
-#ifdef CLUBBND_CAM
-      varmu, &
+#ifdef CLUBB_CAM
+      varC2, &
 #endif
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)

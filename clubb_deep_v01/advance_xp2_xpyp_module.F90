@@ -50,7 +50,7 @@ module advance_xp2_xpyp_module
                                Kh_zt, rtp2_forcing, thlp2_forcing, &
                                rtpthlp_forcing, rho_ds_zm, rho_ds_zt, &
                                invrs_rho_ds_zm, thv_ds_zm, &
-                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
+                               Lscale, wp3_on_wp2, wp3_on_wp2_zt, varC2, &
                                l_iter, dt, &
                                sclrm, wpsclrp, & 
                                rtp2, thlp2, rtpthlp, up2, vp2,  & 
@@ -184,7 +184,8 @@ module advance_xp2_xpyp_module
       thv_ds_zm,       & ! Dry, base-state theta_v on mom. levs. [K]
       Lscale,          & ! Mixing length                         [m]
       wp3_on_wp2,      & ! Smoothed version of <w'^3>/<w'^2> zm  [m/s]
-      wp3_on_wp2_zt      ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
+      wp3_on_wp2_zt,   & ! Smoothed version of <w'^3>/<w'^2> zt  [m/s]
+      varC2
 
     logical, intent(in) :: l_iter ! Whether variances are prognostic
 
@@ -294,8 +295,8 @@ module advance_xp2_xpyp_module
       C2sclr_1d  = C2rt_1d
     else
       ! Use 3 different values of C2 for rtp2, thlp2, rtpthlp.
-      C2rt_1d(1:gr%nz)    = C2rt
-      C2thl_1d(1:gr%nz)   = C2thl
+      C2rt_1d(1:gr%nz)    = varC2
+      C2thl_1d(1:gr%nz)   = varC2
       C2rtthl_1d(1:gr%nz) = C2rtthl
 
       C2sclr_1d(1:gr%nz)  = C2rt  ! Use rt value for now
