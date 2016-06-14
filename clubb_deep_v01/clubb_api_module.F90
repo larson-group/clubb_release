@@ -483,7 +483,7 @@ contains
     invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
     rfrzm, radf, &                                          ! intent(in)
 #ifdef CLUBB_CAM
-    varC2, &                                                ! intent(in)
+    varC2, varmu, &                                         ! intent(in)
 #endif
     wphydrometp, wp2hmp, rtphmp, thlphmp, &    ! intent(in)
     host_dx, host_dy, &                                     ! intent(in)
@@ -564,7 +564,7 @@ contains
 
 #ifdef CLUBB_CAM 
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: & 
-      varC2 
+      varC2, varmu 
 #endif 
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
@@ -684,7 +684,7 @@ contains
       invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &      ! intent(in)
       rfrzm, radf, &                                          ! intent(in)
 #ifdef CLUBB_CAM
-      varC2, &
+      varC2, varmu, &
 #endif
       wphydrometp, wp2hmp, rtphmp, thlphmp, &                 ! intent(in)
       host_dx, host_dy, &                                     ! intent(in)

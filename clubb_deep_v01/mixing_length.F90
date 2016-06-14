@@ -93,7 +93,7 @@ module mixing_length
     real( kind = core_rknd ), intent(in) :: &
       Lscale_max ! Maximum allowable value for Lscale             [m]
 
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       mu  ! mu Fractional extrainment rate per unit altitude      [1/m]
 
     logical, intent(in) :: &
@@ -154,13 +154,13 @@ module mixing_length
     !   exp(-mu/gr%invrs_dzm) value. In theory, this saves 11 computations of
     !   exp(-mu/gr%invrs_dzm) used below.
     ! ~~EIHoppe//20090615
-    exp_mu_dzm(:)  = exp( -mu/gr%invrs_dzm(:) )
+    exp_mu_dzm(:)  = exp( -mu(:)/gr%invrs_dzm(:) )
 
     ! Initialize invrs_dzm_on_mu -- sets each invrs_dzm_on_mu value to its
     ! corresponding (gr%invrs_dzm/mu) value. This will save computations of
     ! this value below.
     ! ~EIHoppe//20100728
-    invrs_dzm_on_mu(:) = (gr%invrs_dzm(:))/mu
+    invrs_dzm_on_mu(:) = (gr%invrs_dzm(:))/mu(:)
 
     !!!!! Compute Lscale_up for every vertical level.
 
@@ -208,7 +208,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! thl_par remains constant as the parcel ascends.
 
-        if ( mu /= 0.0_core_rknd ) then
+!        if ( mu /= 0.0_core_rknd ) then
 
           ! The ascending parcel is entraining at rate mu.
 
@@ -222,16 +222,16 @@ module mixing_length
                       - ( 1.0_core_rknd - exp_mu_dzm(j-1))  &
                         * ( (thlm(j) - thlm(j-1))  &
                         * invrs_dzm_on_mu(j-1) ) &
-!                               / (mu/gr%invrs_dzm(j-1)) )  &
+!                               / (mu(j-1)/gr%invrs_dzm(j-1)) )  &
                       + thl_par_j_minus_1 * exp_mu_dzm(j-1)
 
-        else
+!        else
 
           ! The ascending parcel is not entraining.
 
-          thl_par_j = thl_par_j_minus_1
+!          thl_par_j = thl_par_j_minus_1
 
-        endif
+!        endif
 
         ! r_t of the parcel at grid level j.
         !
@@ -258,7 +258,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! rt_par remains constant as the parcel ascends.
 
-        if ( mu /= 0.0_core_rknd ) then
+!        if ( mu /= 0.0_core_rknd ) then
 
           ! The ascending parcel is entraining at rate mu.
 
@@ -272,16 +272,16 @@ module mixing_length
                      - ( 1.0_core_rknd - exp_mu_dzm(j-1))  &
                        * ( (rtm(j) - rtm(j-1)) &
                         * invrs_dzm_on_mu(j-1) ) &
-!                          / (mu/gr%invrs_dzm(j-1)) )  &
+!                          / (mu(j-1)/gr%invrs_dzm(j-1)) )  &
                      + rt_par_j_minus_1 * exp_mu_dzm(j-1)
 
-        else
+!        else
 
           ! The ascending parcel is not entraining.
 
-          rt_par_j = rt_par_j_minus_1
+!          rt_par_j = rt_par_j_minus_1
 
-        endif
+!        endif
 
         ! Include effects of latent heating on Lscale_up 6/12/00
         ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416
@@ -495,7 +495,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! thl_par remains constant as the parcel descends.
 
-        if ( mu /= 0.0_core_rknd ) then
+!        if ( mu /= 0.0_core_rknd ) then
 
           ! The descending parcel is entraining at rate mu.
 
@@ -509,16 +509,16 @@ module mixing_length
                       - ( 1.0_core_rknd - exp_mu_dzm(j))  &
                         * ( (thlm(j) - thlm(j+1)) &
                         * invrs_dzm_on_mu(j) ) &
-!                          / (mu/gr%invrs_dzm(j)) )  &
+!                          / (mu(j)/gr%invrs_dzm(j)) )  &
                       + thl_par_j_plus_1 * exp_mu_dzm(j)
 
-        else
+!        else
 
           ! The descending parcel is not entraining.
 
-          thl_par_j = thl_par_j_plus_1
+!          thl_par_j = thl_par_j_plus_1
 
-        endif
+!        endif
 
         ! r_t of the parcel at grid level j.
         !
@@ -555,7 +555,7 @@ module mixing_length
         ! For the special case where entrainment rate, mu, is set to 0,
         ! rt_par remains constant as the parcel descends.
 
-        if ( mu /= 0.0_core_rknd ) then
+!        if ( mu /= 0.0_core_rknd ) then
 
           ! The descending parcel is entraining at rate mu.
 
@@ -568,17 +568,17 @@ module mixing_length
           rt_par_j = rtm(j) - rtm(j+1)*exp_mu_dzm(j)  &
                      - ( 1.0_core_rknd - exp_mu_dzm(j) )  &
                        * ( (rtm(j) - rtm(j+1)) &
-!                         / (mu/gr%invrs_dzm(j)) )  &
+!                         / (mu(j)/gr%invrs_dzm(j)) )  &
                         * invrs_dzm_on_mu(j) ) &
                      + rt_par_j_plus_1 * exp_mu_dzm(j)
 
-        else
+!        else
 
           ! The descending parcel is not entraining.
 
-          rt_par_j = rt_par_j_plus_1
+!          rt_par_j = rt_par_j_plus_1
 
-        endif
+!        endif
 
         ! Include effects of latent heating on Lscale_down
         ! Use thermodynamic formula of Bougeault 1981 JAS Vol. 38, 2416

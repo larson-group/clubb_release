@@ -123,7 +123,7 @@ module advance_clubb_core_module
                invrs_rho_ds_zt, thv_ds_zm, thv_ds_zt, hydromet, &   ! intent(in)
                rfrzm, radf, &
 #ifdef CLUBB_CAM
-               varC2, &                                             ! intent(in)
+               varC2, varmu, &                                      ! intent(in)
 #endif
                wphydrometp, wp2hmp, rtphmp_zt, thlphmp_zt, &        ! intent(in)
                host_dx, host_dy, &                                  ! intent(in) 
@@ -520,7 +520,7 @@ module advance_clubb_core_module
 
 #ifdef CLUBB_CAM
     real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
-      varC2
+      varC2, varmu
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim), intent(in) :: &
@@ -744,15 +744,15 @@ module advance_clubb_core_module
       thlm_integral_forcing, &
       thlm_flux_top, &
       thlm_flux_sfc, &
-      thlm_spur_src, &
-      mu_pert_1, mu_pert_2, & ! For l_avg_Lscale
-      mu_pert_pos_rt, mu_pert_neg_rt ! For l_Lscale_plume_centered
+      thlm_spur_src
 
     !The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
       pdf_params_frz, &
       pdf_params_zm_frz
 
+    real( kind = core_rknd ), dimension(gr%nz) :: & 
+      mu_pert_1, mu_pert_2, mu_pert_pos_rt, mu_pert_neg_rt
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
@@ -836,7 +836,7 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: Lscale_max
     
-    real( kind = core_rknd ), dimension(gr%nz) :: newC2
+    real( kind = core_rknd ), dimension(gr%nz) :: newC2, newmu
 
     real( kind = core_rknd ) :: newmu
 
@@ -977,8 +977,10 @@ module advance_clubb_core_module
 
 #ifdef CLUBB_CAM
     newC2 = varC2
+    newmu = varmu
 #else
     newC2 = C2rt
+    newmu = mu
 #endif   
 
     !---------------------------------------------------------------------------
@@ -1631,19 +1633,19 @@ module advance_clubb_core_module
 
           thlm_pert_1 = thlm_frz + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_1  = rtm_frz  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = mu / Lscale_mu_coef
+          mu_pert_1(:)   = newmu(:) / Lscale_mu_coef
 
           thlm_pert_2 = thlm_frz - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_2  = rtm_frz  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = mu * Lscale_mu_coef
+          mu_pert_2(:)   = newmu(:) * Lscale_mu_coef
         else
           thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = mu / Lscale_mu_coef
+          mu_pert_1(:)   = newmu(:) / Lscale_mu_coef
 
           thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
           rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = mu * Lscale_mu_coef
+          mu_pert_2(:)   = newmu(:) * Lscale_mu_coef
         end if
 
         call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
@@ -1708,8 +1710,8 @@ module advance_clubb_core_module
             !Lscale_weight = 1.0_core_rknd - pdf_params%mixt_frac
           end where
         end if
-        mu_pert_pos_rt  = mu / Lscale_mu_coef
-        mu_pert_neg_rt  = mu * Lscale_mu_coef
+        mu_pert_pos_rt  = newmu(:) / Lscale_mu_coef
+        mu_pert_neg_rt  = newmu(:) * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
         call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
