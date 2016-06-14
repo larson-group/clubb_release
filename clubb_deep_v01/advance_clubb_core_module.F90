@@ -519,7 +519,7 @@ module advance_clubb_core_module
       radf          ! Buoyancy production at the CL top due to LW radiative cooling [m^2/s^3]
 
 #ifdef CLUBB_CAM
-    real( kind = core_rknd ), intent(in) :: &
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
       varC2
 #endif
 
