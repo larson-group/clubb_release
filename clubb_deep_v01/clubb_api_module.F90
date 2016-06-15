@@ -131,6 +131,8 @@ module clubb_api_module
     l_stability_correct_Kh_N2_zm, &
     l_stability_correct_tau_zm, &
     l_do_expldiff_rtm_thlm, &
+    l_use_ADG2, &
+    l_use_3D_closure, &
     l_Lscale_plume_centered, &
     l_use_ice_latent
 
@@ -239,6 +241,8 @@ module clubb_api_module
         l_stability_correct_Kh_N2_zm, &
         l_stability_correct_tau_zm, &
         l_do_expldiff_rtm_thlm, &
+	l_use_ADG2, &
+	l_use_3D_closure, &
         l_Lscale_plume_centered, &
         l_use_ice_latent, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
