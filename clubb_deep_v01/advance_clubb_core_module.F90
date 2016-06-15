@@ -838,8 +838,6 @@ module advance_clubb_core_module
     
     real( kind = core_rknd ), dimension(gr%nz) :: newC2, newmu
 
-    real( kind = core_rknd ) :: newmu
-
     !----- Begin Code -----
 
     ! Sanity checks
@@ -1741,7 +1739,7 @@ module advance_clubb_core_module
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
       call compute_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu, l_implemented, & ! intent(in)
+                           p_in_Pa, exner, thv_ds_zt, newmu, l_implemented, & ! intent(in)
                            err_code,                                     & ! intent(inout)
                            Lscale, Lscale_up, Lscale_down )                ! intent(out)
 
