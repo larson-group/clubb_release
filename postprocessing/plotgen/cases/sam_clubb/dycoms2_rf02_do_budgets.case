@@ -158,7 +158,82 @@
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLFORC', 'expression' => 'QTHLFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHLBT', 'expression' => 'QTHLBT', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'auto', 'name' => 'QTHL\_RES', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+
+# Plots for Figure output.
+
+# wprtp budget.
+        {'plotTitle' => 'RF02 SAM LES r_{t} Flux Budget', 'axisLabel' => 'Budget terms [m kg kg^{-1} s^{-2}]', 'type' => 'profile', 'lines' =>
+        [
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'QWBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'QWADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'QWGRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'QWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'QWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'QWDIFF', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'QWPREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'l.s. forcing', 'expression' => 'QWFORC', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'QWBT - (QWADV + QWGRAD + QWBUOY + QWPRES + QWDIFF + QWPREC + QWFORC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+#           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'QWBT - (QWADV + QWGRAD + QWBUOY + QWPRES + QWDIFF + QWPREC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+        ]},
+
+# wpthlp budget.
+       {'plotTitle' => 'RF02 SAM LES \theta_{l} Flux Budget', 'axisLabel' => 'Budget terms [m K s^{-2}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'THLWBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'THLWADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'THLWGRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'THLWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'THLWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'THLWDIFF', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'THLWPREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'radiation', 'expression' => 'THLWRAD', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'l.s. forcing', 'expression' => 'THLWFORC', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'THLWBT - (THLWADV + THLWGRAD + THLWBUOY + THLWPRES + THLWDIFF + THLWPREC + THLWRAD + THLWFORC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+#          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'THLWBT - (THLWADV + THLWGRAD + THLWBUOY + THLWPRES + THLWDIFF + THLWPREC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+       ]},
+
+# rtp2 budget.
+       {'plotTitle' => 'RF02 SAM LES r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'Q2BT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'Q2ADVTR', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'Q2GRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'Q2DISSIP + Q2DIFTR', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'Q2PREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'l.s. forcing', 'expression' => 'Q2FORC', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC + Q2FORC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+#          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'Q2BT - (Q2ADVTR + Q2GRAD + Q2DISSIP + Q2DIFTR + Q2PREC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+       ]},
+
+# thlp2 budget.
+       {'plotTitle' => 'RF02 SAM LES \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'THL2BT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'THL2ADVTR', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'THL2GRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'THL2DISSIP + THL2DIFTR', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'THL2PREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'radiation', 'expression' => 'THL2RAD', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'l.s. forcing', 'expression' => 'THL2FORC', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC + THL2RAD + THL2FORC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+#          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'THL2BT - (THL2ADVTR + THL2GRAD + THL2DISSIP + THL2DIFTR + THL2PREC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+       ]},
+
+# rtpthlp budget
+       {'plotTitle' => 'RF02 SAM LES r_{t} and \theta_{l} Covariance Budget', 'axisLabel' => 'Budget terms [K kg kg^{-1} s^{-1}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'QTHLBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'QTHLADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'QTHLGRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'QTHLDISSIP + QTHLDIFTR', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'QTHLPREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'radiation', 'expression' => 'QTHLRAD', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'l.s. forcing', 'expression' => 'QTHLFORC', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+#          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'residual', 'expression' => 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]}
+
     ],
     'nightlyOutput' =>
     {
