@@ -13,6 +13,7 @@ module PDF_integrals_covars
             quadrivar_NNLL_covar_const_x1x2, &
             quadrivar_NNLL_covar_const_x1x3, &
             quadrivar_NNLL_covar_const_x2x3, &
+            quadrivar_NNLL_covar_const_x3x4, &
             trivar_NNL_covar, &
             trivar_NNL_covar_const_x1, &
             trivar_NNL_covar_const_x2, &
@@ -580,6 +581,77 @@ module PDF_integrals_covars
     return
 
   end function quadrivar_NNLL_covar_const_x2x3
+
+  !=============================================================================
+  function quadrivar_NNLL_covar_const_x3x4( mu_x1, mu_x2, mu_x3, mu_x4, &
+                                            sigma_x1, sigma_x2, rho_x1x2, &
+                                            x1_mean, &
+                                            x2_alpha_x3_beta_x4_gamma_mean, &
+                                            alpha_exp, beta_exp, gamma_exp )
+
+    ! Description:
+
+    ! References:
+    !  Griffin, B. M. (2016)
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only:  &
+        pi_dp,         &  ! Constant(s)
+        two_dp,        &
+        one_dp,        &
+        one_fourth_dp
+
+    use KK_utilities, only:  &
+        Dv_fnc  ! Procedure(s)
+
+    use parabolic, only:  &
+        gamma  ! Procedure(s)
+
+    use clubb_precision, only: &
+        dp ! double precision
+
+    implicit none
+
+    ! Input Variables
+    real( kind = dp ), intent(in) :: &
+      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
+      mu_x2,    & ! Mean of x2 (ith PDF component)                          [-]
+      mu_x3,    & ! Mean of x3 (ith PDF component)                          [-]
+      mu_x4,    & ! Mean of x4 (ith PDF component)                          [-]
+      sigma_x1, & ! Standard deviation of x1 (ith PDF component)            [-]
+      sigma_x2, & ! Standard deviation of x2 (ith PDF component)            [-]
+      rho_x1x2    ! Correlation between x1 and x2 (ith PDF component)       [-]
+
+    real( kind = dp ), intent(in) :: &
+      x1_mean,                        & ! Mean of x1 (overall)              [-]
+      x2_alpha_x3_beta_x4_gamma_mean    ! Mean of x2^alpha x3^beta x4^gamma [-]
+    
+    real( kind = dp ), intent(in) :: &
+      alpha_exp,  & ! Exponent alpha, corresponding to x2                   [-]
+      beta_exp,   & ! Exponent beta, corresponding to x3                    [-]
+      gamma_exp     ! Exponent gamma, corresponding to x4                   [-]
+
+    ! Return Variable
+    real( kind = dp ) ::  &
+      quadrivar_NNLL_covar_const_x3x4
+
+    quadrivar_NNLL_covar_const_x3x4  &
+    = one_dp / sqrt( two_dp*pi_dp )  &
+      * ( - sigma_x2 )**alpha_exp  &
+      * mu_x3**beta_exp * mu_x4**gamma_exp  &
+      * exp( - one_fourth_dp * ( mu_x2 / sigma_x2 )**2 )  &
+      * ( - rho_x1x2 * sigma_x1 * gamma( alpha_exp + two_dp )  &
+          * Dv_fnc( -(alpha_exp + two_dp), ( mu_x2 / sigma_x2 ) )  &
+        + ( mu_x1 - x1_mean  &
+            - ( mu_x2 / sigma_x2 ) * rho_x1x2 * sigma_x1 )  &
+          * gamma( alpha_exp + one_dp )  &
+          * Dv_fnc( -(alpha_exp + one_dp), ( mu_x2 / sigma_x2 ) )  &
+        )  &
+      - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
+
+    return
+
+  end function quadrivar_NNLL_covar_const_x3x4
 
   !=============================================================================
   function trivar_NNL_covar( mu_x1, mu_x2, mu_x3_n, &
