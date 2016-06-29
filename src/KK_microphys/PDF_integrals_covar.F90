@@ -425,8 +425,8 @@ module PDF_integrals_covars
     if ( mu_x2 <= zero_dp ) then
 
        quadrivar_NNLL_covar_const_x1x2  &
-       = mu_x2**alpha_exp  &
-         * ( mu_x1 - x1_mean )  &
+       = ( mu_x1 - x1_mean )  &
+         * mu_x2**alpha_exp  &
          * exp( mu_x3_n * beta_exp + mu_x4_n * gamma_exp  &
                 + one_half_dp * sigma_x3_n**2 * beta_exp**2  &
                 + one_half_dp * sigma_x4_n**2 * gamma_exp**2  &
@@ -643,7 +643,7 @@ module PDF_integrals_covars
     = one_dp / sqrt( two_dp*pi_dp )  &
       * ( - sigma_x2 )**alpha_exp  &
       * mu_x3**beta_exp * mu_x4**gamma_exp  &
-      * exp( - one_fourth_dp * ( mu_x2 / sigma_x2 )**2 )  &
+      * exp( - one_fourth_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
       * ( - rho_x1x2 * sigma_x1 * gamma( alpha_exp + two_dp )  &
           * Dv_fnc( -(alpha_exp + two_dp), ( mu_x2 / sigma_x2 ) )  &
         + ( mu_x1 - x1_mean  &
@@ -773,7 +773,7 @@ module PDF_integrals_covars
     = ( one_dp / sqrt( two_dp*pi_dp ) ) * ( mu_x1 - x1_mean )  &
       * ( - sigma_x2 )**alpha_exp  &
       * mu_x3**beta_exp * mu_x4**gamma_exp  &
-      * exp( - one_fourth_dp * ( mu_x2 / sigma_x2 )**2 )  &
+      * exp( - one_fourth_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
       * gamma( alpha_exp + one_dp )  &
       * Dv_fnc( -(alpha_exp + one_dp), ( mu_x2 / sigma_x2 ) )  &
       - x2_alpha_x3_beta_x4_gamma_mean * ( mu_x1 - x1_mean )
