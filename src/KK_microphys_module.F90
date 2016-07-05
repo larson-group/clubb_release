@@ -388,7 +388,7 @@ module KK_microphys_module
   !=============================================================================
   subroutine KK_upscaled_microphys( dt, nz, d_variables, l_stats_samp, & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
-                                    exner, rho, rcm, Nc_in_cloud,      & ! In
+                                    exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
                                     hydromet,                          & ! In
                                     mu_x_1_n, mu_x_2_n,                & ! In
@@ -414,9 +414,6 @@ module KK_microphys_module
 
     use constants_clubb, only: &
         zero    ! Constant(s)
-
-    use model_flags, only: &
-        l_const_Nc_in_cloud
 
     use parameters_microphys, only: &
         l_var_covar_src        ! Flag for using variance/covariance src terms
@@ -486,14 +483,13 @@ module KK_microphys_module
       l_stats_samp    ! Flag to sample statistics
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      wm_zt,       & ! Mean vertical velocity on thermodynamic levels  [m/s]
-      rtm,         & ! Mean total water mixing ratio                   [kg/kg]
-      thlm,        & ! Mean liquid water potential temperature         [K]
-      p_in_Pa,     & ! Pressure                                        [Pa]
-      exner,       & ! Exner function                                  [-]
-      rho,         & ! Density                                         [kg/m^3]
-      rcm,         & ! Mean cloud water mixing ratio                   [kg/kg]
-      Nc_in_cloud    ! Constant in-cloud value of cloud droplet conc.  [num/kg]
+      wm_zt,   & ! Mean vertical velocity on thermodynamic levels  [m/s]
+      rtm,     & ! Mean total water mixing ratio                   [kg/kg]
+      thlm,    & ! Mean liquid water potential temperature         [K]
+      p_in_Pa, & ! Pressure                                        [Pa]
+      exner,   & ! Exner function                                  [-]
+      rho,     & ! Density                                         [kg/m^3]
+      rcm        ! Mean cloud water mixing ratio                   [kg/kg]
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params    ! PDF parameters                         [units vary]
@@ -806,12 +802,11 @@ module KK_microphys_module
                                          corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
                                          corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                                          mixt_frac(k), precip_frac_1, &
-                                         precip_frac_2, Nc_in_cloud(k), &
+                                         precip_frac_2, &
                                          KK_evap_coef, KK_auto_coef, &
                                          KK_accr_coef, KK_evap_tndcy(k), &
                                          KK_auto_tndcy(k), KK_accr_tndcy(k), &
-                                         pdf_params(k), k, &
-                                         l_const_Nc_in_cloud, l_stats_samp, &
+                                         pdf_params(k), k, l_stats_samp, &
                                          wprtp_mc_zt(k), &
                                          wpthlp_mc_zt(k), &
                                          rtp2_mc_zt(k), &
