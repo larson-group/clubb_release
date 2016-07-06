@@ -79,7 +79,7 @@ module parameters_silhs
   logical, public :: &
     l_lh_limit_weights = .true. , &           ! Limit SILHS sample point weights for stability
     l_lh_var_frac      = .false., &           ! Prescribe variance fractions
-    l_lh_normalize_weights = .false.          ! Scale sample point weights to sum to num_samples
+    l_lh_normalize_weights = .true.           ! Scale sample point weights to sum to num_samples
                                               ! (the "ratio estimate")
 
   !$omp threadprivate( l_lh_limit_weights, l_lh_var_frac, l_lh_normalize_weights )
