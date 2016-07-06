@@ -1560,7 +1560,7 @@ module silhs_importance_sample_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      category_sum, tolerance, weights_sum, num_samples_real
+      category_sum, tolerance, weights_avg, num_samples_real
 
     real( kind = core_rknd ) :: &
       cloud_frac_i, precip_frac_i
@@ -1603,15 +1603,16 @@ module silhs_importance_sample_module
     end if
 
     !------------------------------------------------------------------
-    ! Assert that sample point weights sum to num_samples (if enabled)
+    ! Assert that sample point weights average to 1.0 (if enabled)
     !------------------------------------------------------------------
     if ( l_lh_normalize_weights ) then
-      weights_sum = sum( lh_sample_point_weights(:) )
       num_samples_real = real( num_samples, kind=core_rknd )
-      if ( abs( weights_sum - num_samples_real ) > num_samples_real*tolerance ) then
-        write(fstderr,*) "The sample point weights do not sum to num_samples."
+      weights_avg = sum( lh_sample_point_weights(:) ) / num_samples_real
+      if ( abs( weights_avg - one ) > num_samples_real*epsilon( weights_avg ) ) then
+        write(fstderr,*) "The sample point weights do not average to one."
         write(fstderr,*) "num_samples = ", num_samples
-        write(fstderr,*) "sum( lh_sample_point_weights(:) ) = ", weights_sum
+        write(fstderr,*) "sum( lh_sample_point_weights(:) ) = ", sum( lh_sample_point_weights(:) )
+        write(fstderr,*) "avg( lh_sample_point_weights(:) ) = ", weights_avg
         l_error = .true.
       end if
     end if
