@@ -17,11 +17,7 @@ srcdir="$dir/../src"  # dir where the source files reside
 # In Sun f95: remove the reference to ftrap, or use -ftrap=common
 # Note: -ftrap=common includes invalid (invalid operations), overflow,
 #       underflow, and division (division by zero).
-# Note:  floating point trapping is not currently enabled for overflow because
-# of the code in l_var_covar_src.  This will be changed once all special cases
-# for that code are complete.
-#DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common -traceback=common"
-DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common,no%overflow -traceback=common" # Disable floating point trapping for overflow
+DEBUG="-C -fns=no -stackvar -xcheck=init_local -ftrap=common -traceback=common"
 
 # == Warnings ==
 # This is the preferred warning level when compiling CLUBB with Sun Studio.
