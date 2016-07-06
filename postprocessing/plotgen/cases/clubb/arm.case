@@ -141,8 +141,7 @@
        {'plotTitle' => 'Buoyancy flux ', 'axisLabel' => 'wpthvp [K m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'TVFLUX ./ (RHO * 1004)', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/arm_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' =
-> 'rsm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/arm_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rsm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpthvp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Contribution of Cloud Water Flux to wpthvp', 'axisLabel' => 'rc\_coef * wprcp   [K m/s]', 'type' => 'profile', 'lines' =>
