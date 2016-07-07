@@ -109,7 +109,7 @@ vars_lh_zt =
 'lh_Nrm_auto', 'lh_Nrm_cond', 'lh_rrm_src_adj', 'lh_rrm_cond_adj',
 'lh_Nrm_src_adj', 'lh_Nrm_cond_adj', 'lh_precip_frac', 'lh_mixt_frac', 'silhs_variance_category',
 'lh_rrm_mc_nonadj', 'lh_samp_frac_category', 'lh_cloud_frac_unweighted', 'lh_mixt_frac_unweighted',
-'lh_precip_frac_unweighted',
+'lh_precip_frac_unweighted', 'lh_m_vol_rad_rain'
 ''
 
 vars_lh_sfc =
