@@ -52,19 +52,12 @@ module mixing_length
     use numerical_check, only:  & 
         length_check ! Procedure(s)
 
-    use saturation, only:  & 
-        sat_mixrat_liq, & ! Procedure(s)
-        sat_mixrat_liq_lookup
-
     use error_code, only:  & 
         clubb_at_least_debug_level, & ! Procedure(s)
         fatal_error
 
     use error_code, only:  & 
         clubb_no_error ! Constant
-
-    use model_flags, only: &
-        l_sat_mixrat_lookup ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -290,11 +283,7 @@ module mixing_length
         ! Calculate r_c of the parcel at grid level j based on the values of
         ! theta_l of the parcel and r_t of the parcel at grid level j.
         tl_par_j = thl_par_j*exner(j)
-        if ( l_sat_mixrat_lookup ) then
-          rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
-        else
-          rsatl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
-        end if
+        rsatl_par_j = compute_rsat_parcel( p_in_Pa(j), tl_par_j )
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -587,11 +576,8 @@ module mixing_length
         ! Calculate r_c of the parcel at grid level j based on the values of
         ! theta_l of the parcel and r_t of the parcel at grid level j.
         tl_par_j = thl_par_j*exner(j)
-        if ( l_sat_mixrat_lookup ) then
-          rsatl_par_j = sat_mixrat_liq_lookup( p_in_Pa(j), tl_par_j )
-        else
-          rsatl_par_j = sat_mixrat_liq( p_in_Pa(j), tl_par_j )
-        end if
+        rsatl_par_j = compute_rsat_parcel( p_in_Pa(j), tl_par_j )
+
         ! SD's beta (eqn. 8)
         beta_par_j = ep*(Lv/(Rd*tl_par_j))*(Lv/(cp*tl_par_j))
         ! s from Lewellen and Yoh 1993 (LY) eqn. 1
@@ -812,6 +798,50 @@ module mixing_length
     return
 
   end subroutine compute_length
+
+!===============================================================================
+
+  function compute_rsat_parcel( p_in_Pa, tl_par ) result( rsatl_par )
+
+  ! Description:
+  !   Computes rsat for a parcel
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+      core_rknd
+
+    use model_flags, only: &
+      l_sat_mixrat_lookup ! Variable(s)
+
+    use saturation, only:  & 
+        sat_mixrat_liq, & ! Procedure(s)
+        sat_mixrat_liq_lookup
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      p_in_Pa, &    ! Pressure at this grid level           [Pa]
+      tl_par        ! tl at this grid level                 [?]
+
+    ! Result variable
+    real( kind = core_rknd ) :: &
+      rsatl_par
+
+  !-----------------------------------------------------------------------
+
+    !----- Begin Code -----
+    if ( l_sat_mixrat_lookup ) then
+      rsatl_par = sat_mixrat_liq_lookup( p_in_Pa, tl_par )
+    else
+      rsatl_par = sat_mixrat_liq( p_in_Pa, tl_par )
+    end if
+
+    return
+  end function compute_rsat_parcel
 
 !===============================================================================
 
