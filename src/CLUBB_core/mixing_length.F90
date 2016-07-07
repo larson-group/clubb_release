@@ -824,7 +824,11 @@ module mixing_length
     use constants_clubb, only: &
       zero, &
       one, &
-      T_freeze_K
+      T_freeze_K, &
+      fstderr
+
+    use error_code, only: &
+      clubb_at_least_debug_level
 
     implicit none
 
@@ -833,7 +837,7 @@ module mixing_length
       l_include_ice = .false. ! Include ice in calculation of rsat_par
 
     real( kind = core_rknd ), parameter :: &
-      T_all_ice = 233.15_core_rknd ! [K]
+      T_all_ice = 233.15_core_rknd ! Temperature at which only ice is included in calculation [K]
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
@@ -865,6 +869,13 @@ module mixing_length
     else
       sat_ice_ratio = zero
     end if ! l_include_ice
+
+    if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( sat_ice_ratio < zero .or. sat_ice_ratio > one ) then
+        write(fstderr,*) 'sat_ice_ratio is outside the range [0,1].'
+        stop "Fatal error in compute_rsat_parcel"
+      end if
+    end if
 
     if ( sat_ice_ratio < one ) then
       ! Include liquid.
