@@ -884,11 +884,15 @@ module mixing_length
       else
         sat_mixrat_liq_res = sat_mixrat_liq( p_in_Pa, tl_par )
       end if
+    else
+      sat_mixrat_liq_res = zero
     end if
 
     if ( sat_ice_ratio > zero ) then
       ! Include ice.
       sat_mixrat_ice_res = sat_mixrat_ice( p_in_Pa, tl_par )
+    else
+      sat_mixrat_ice_res = zero
     end if
 
     rsatl_par = sat_mixrat_liq_res + ( sat_mixrat_ice_res - sat_mixrat_liq_res ) * sat_ice_ratio
