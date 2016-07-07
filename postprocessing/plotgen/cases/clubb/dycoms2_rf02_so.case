@@ -279,7 +279,7 @@
     ],
     'nightlyOutput' =>
     {
-        'subText' => '',
+        'subText' => '** WRF-type stretched (unevenly spaced) grid (grid_type = 3) **',
         'subHtml' => ''
     },
     'additionalOutput' =>
