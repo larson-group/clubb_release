@@ -171,8 +171,8 @@ stats_fmt    = "grads"         ! Type of statistical output file ("grads" or "ne
 /
 
 &setfields
-datafile      = "../les_data/dycoms2_rf01"
-input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
+datafile = "../sam_benchmark_runs/DYCOMS_RF01_96x96x320/DYCOMS_RF01_96x96x320.nc"
+input_type = "SAM"  ! input_type = "clubb", "coamps_les", or "SAM"
 l_input_um = .true. 
 l_input_vm = .true.
 l_input_rtm = .true. 

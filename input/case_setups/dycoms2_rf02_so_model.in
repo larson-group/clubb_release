@@ -99,6 +99,8 @@ restart_path_case  = "restart/dycoms2_rf02_so"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
+l_input_fields = .false.,
+
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
@@ -170,3 +172,27 @@ stats_fmt    = "grads"            ! Type of statistical output file ("grads" or 
 ! The DYCOMS2 RF02 soundings are hardwired in the file ../src/sounding.F   ! Brian
 
 
+! Inputfields Settings
+! You will not need to modify these if l_input_fields is false.
+&setfields
+datafile = "../sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_sed/DYCOMS_RF02_128x128x96_nodr_sed.nc"
+input_type = "SAM"  ! input_type = "clubb", "coamps_les", or "SAM"
+l_input_um = .true. 
+l_input_vm = .true.
+l_input_rtm = .true. 
+l_input_thlm = .true.
+l_input_wp2 = .true.
+l_input_wprtp = .true.
+l_input_wpthlp = .true.
+l_input_wp3 = .true.
+l_input_rtp2 = .true.
+l_input_thlp2 = .true.
+l_input_rtpthlp = .true.
+l_input_upwp = .true.
+l_input_vpwp = .true.
+l_input_rcm = .true.
+l_input_em = .true.
+l_input_p = .true.
+l_input_up2 = .true.
+l_input_vp2 = .true.
+/
