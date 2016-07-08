@@ -107,14 +107,16 @@ module KK_upscaled_means
 
     !!! Calculate the upscaled KK evaporation tendency.
     KK_evap_tndcy  &
-    = KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
-                             mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                             sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             sigma_Nr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
-                             corr_chi_Nr_1_n, corr_chi_Nr_2_n, corr_rr_Nr_1_n, &
-                             corr_rr_Nr_2_n, KK_evap_coef, mixt_frac, &
+    = KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                             mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
+                             mu_Nr_1_n, mu_Nr_2_n, sigma_chi_1, &
+                             sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                             sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                             sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                             corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                             corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                             corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                             KK_evap_coef, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
 
 
@@ -123,8 +125,9 @@ module KK_upscaled_means
     = KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                              mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
                              sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
-                             sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
-                             corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac )
+                             sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                             corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                             KK_auto_coef, mixt_frac )
 
 
     !!! Calculate the upscaled KK accretion tendency.
@@ -153,14 +156,16 @@ module KK_upscaled_means
   end subroutine KK_upscaled_means_driver
 
   !=============================================================================
-  function KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
-                                  mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                  mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                                  sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
-                                  corr_chi_Nr_1_n, corr_chi_Nr_2_n, corr_rr_Nr_1_n, &
-                                  corr_rr_Nr_2_n, KK_evap_coef, mixt_frac, &
+  function KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                                  mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
+                                  mu_Nr_1_n, mu_Nr_2_n, sigma_chi_1, &
+                                  sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                                  sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                                  sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                                  corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                                  corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                                  corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                                  KK_evap_coef, mixt_frac, &
                                   precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -240,14 +245,16 @@ module KK_upscaled_means
           * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                 mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                 sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                corr_rr_Nr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
           * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                 mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                 sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                corr_rr_Nr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
 
@@ -260,8 +267,9 @@ module KK_upscaled_means
   function KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                                   mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
                                   sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                  sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
-                                  corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac )
+                                  sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                  corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                                  KK_auto_coef, mixt_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -514,7 +522,8 @@ module KK_upscaled_means
   function trivar_NLL_mean_eq( mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, &
                                mu_Nr_i_n, sigma_chi_i, sigma_rr_i, &
                                sigma_Nr_i, sigma_rr_i_n, sigma_Nr_i_n, &
-                               corr_chi_rr_i_n, corr_chi_Nr_i_n, corr_rr_Nr_i_n, &
+                               corr_chi_rr_i_n, corr_chi_Nr_i_n, &
+                               corr_rr_Nr_i_n, &
                                alpha_exp_in, beta_exp_in, gamma_exp_in )
 
     ! Description:
