@@ -24,12 +24,8 @@ srcdir="$dir/../src"  # dir where the source files reside
 #  (It works for the FIRE case as of Jan 2014)
 # These are the options for debugging symbols, bounds checking & IEEE-754 
 # floating point arithmetic
-# Note:  floating point trapping is not currently enabled for overflow because
-# of the code in l_var_covar_src.  This will be changed once all special cases
-# for that code are complete.
 #DEBUG="-g -fbounds-check -mieee-fp -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping disabled
-#DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
-DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations and divide-by-zero
+DEBUG="-g -fbounds-check -mieee-fp -ffpe-trap=invalid,zero,overflow -finit-real=nan -finit-integer=-99999 -finit-logical=false -fall-intrinsics -fbacktrace" # Floating point trapping enabled for invalid operations, divide-by-zero, and overflow
 
 # == Warnings ==
 WARNINGS="-Wall -Wextra -Wconversion -Wunderflow -Wcharacter-truncation -std=f2003 -pedantic"

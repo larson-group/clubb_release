@@ -10,7 +10,7 @@ module stats_zm_module
   public :: stats_init_zm
 
   ! Constant parameters
-  integer, parameter, public :: nvarmax_zm = 250  ! Maximum variables allowed
+  integer, parameter, public :: nvarmax_zm = 300  ! Maximum variables allowed
 
   contains
 
@@ -250,6 +250,9 @@ module stats_zm_module
         iC6thl_Skw_fnc, &
         iC7_Skw_fnc, &
         iC1_Skw_fnc, &
+        ibrunt_vaisala_freq_sqd, &
+        iRichardson_num, &
+        ishear_sqd, &
         ihydrometp2, &
         iwphydrometp, &
         irtphmp, &
@@ -1895,7 +1898,7 @@ module stats_zm_module
       case ('cloud_frac_zm')
         icloud_frac_zm = k
         call stat_assign( var_index=icloud_frac_zm, var_name="cloud_frac_zm", &
-          var_description="Cloud fraction", var_units="count", l_silhs=.false., grid_kind=stats_zm)
+          var_description="Cloud fraction [-]", var_units="-", l_silhs=.false., grid_kind=stats_zm)
         k = k + 1
       
       case ('ice_supersat_frac_zm')
@@ -1936,35 +1939,56 @@ module stats_zm_module
       case ( 'gamma_Skw_fnc' )
         igamma_Skw_fnc = k
         call stat_assign( var_index=igamma_Skw_fnc, var_name="gamma_Skw_fnc", &
-             var_description="Gamma as a function of skewness [-]", var_units="count", &
+             var_description="Gamma as a function of skewness [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C6rt_Skw_fnc' )
         iC6rt_Skw_fnc = k
         call stat_assign( var_index=iC6rt_Skw_fnc, var_name="C6rt_Skw_fnc", &
-             var_description="C_6rt parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_6rt parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C6thl_Skw_fnc' )
         iC6thl_Skw_fnc = k
         call stat_assign( var_index=iC6thl_Skw_fnc, var_name="C6thl_Skw_fnc", &
-             var_description="C_6thl parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_6thl parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C7_Skw_fnc' )
         iC7_Skw_fnc = k
         call stat_assign( var_index=iC7_Skw_fnc, var_name="C7_Skw_fnc", &
-             var_description="C_7 parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_7 parameter with Sk_w applied [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'C1_Skw_fnc' )
         iC1_Skw_fnc = k
         call stat_assign( var_index=iC1_Skw_fnc, var_name="C1_Skw_fnc", &
-             var_description="C_1 parameter with Sk_w applied [-]", var_units="count", &
+             var_description="C_1 parameter with Sk_w applied [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'brunt_vaisala_freq_sqd' )
+        ibrunt_vaisala_freq_sqd = k
+        call stat_assign( var_index=ibrunt_vaisala_freq_sqd, var_name="brunt_vaisala_freq_sqd", &
+             var_description="Brunt-Vaisala freqency squared, N^2 [1/s^2]", var_units="1/s^2", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'Richardson_num' )
+        iRichardson_num = k
+        call stat_assign( var_index=iRichardson_num, var_name="Richardson_num", &
+             var_description="Richardson number [-]", var_units="-", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ( 'shear_sqd' )
+        ishear_sqd = k
+        call stat_assign( var_index=ishear_sqd, var_name="shear_sqd", &
+             var_description="shear_sqd [-]", var_units="-", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

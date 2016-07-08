@@ -34,6 +34,8 @@ else
 		PARAMS_FILE=$2
 	fi
 
+    SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
+
 	if [ -z $3 ]; then
 		STATS_FILE="../input/stats/standard_stats.in"
 	else
@@ -72,7 +74,7 @@ if [ ! -e "$FLAGS_FILE" ]; then
         exit 1
 fi
 
-cat $PARAMS_FILE $MODEL_FILE $STATS_FILE $FLAGS_FILE | sed 's/\!.*//' > 'clubb.in'
+cat $PARAMS_FILE $SILHS_PARAMS_FILE $MODEL_FILE $STATS_FILE $FLAGS_FILE | sed 's/\!.*//' > 'clubb.in'
 
 #######################################################################
 # State which case is being run

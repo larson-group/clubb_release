@@ -23,7 +23,8 @@ l_lh_clustered_sampling = .true.
 l_rcm_in_cloud_k_lh_start = .true.
 l_random_k_lh_start = .false.
 l_max_overlap_in_cloud = .true.
-l_lh_instant_var_covar_src = .false.
+l_lh_instant_var_covar_src = .true.
 l_lh_limit_weights = .true.
 l_lh_var_frac = .false.
+l_lh_normalize_weights = .false.
 /

@@ -100,6 +100,7 @@ Lscale_pert_coef            = 0.
 alpha_corr                  = 0.
 Skw_denom_coef              = 0.
 c_K10                       = 0.
+c_K10h                      = 0.
 thlp2_rad_coef              = 0.
 thlp2_rad_cloud_frac_thresh = 0.
 /

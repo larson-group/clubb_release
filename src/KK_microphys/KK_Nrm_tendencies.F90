@@ -178,14 +178,16 @@ module KK_Nrm_tendencies
           * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                 mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                 sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                corr_rr_Nr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
           * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                 mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                 sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                corr_rr_Nr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
 

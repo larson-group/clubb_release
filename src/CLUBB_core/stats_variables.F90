@@ -377,6 +377,7 @@ module stats_variables
      iwp3_bp2 = 0, & 
      iwp3_pr1 = 0, & 
      iwp3_pr2 = 0, & 
+     iwp3_pr3 = 0, &
      iwp3_dp1 = 0, &
      iwp3_cl  = 0
 
@@ -961,7 +962,10 @@ module stats_variables
     iC6rt_Skw_fnc = 0,   &
     iC6thl_Skw_fnc = 0,  &
     iC7_Skw_fnc = 0,     &
-    iC1_Skw_fnc = 0
+    iC1_Skw_fnc = 0,     &
+    ibrunt_vaisala_freq_sqd = 0, &
+    iRichardson_num = 0, &
+    ishear_sqd = 0
 
 !$omp   threadprivate(igamma_Skw_fnc, iC6rt_Skw_fnc, iC6thl_Skw_fnc)
 !$omp   threadprivate(iC7_Skw_fnc, iC1_Skw_fnc)

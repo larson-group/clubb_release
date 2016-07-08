@@ -606,7 +606,7 @@ module microphys_driver
 
           call KK_upscaled_microphys( dt, gr%nz, n_variables, l_stats_samp, & ! In
                                       wm_zt, rtm, thlm, p_in_Pa,            & ! In
-                                      exner, rho, rcm, Nc_in_cloud,         & ! In
+                                      exner, rho, rcm,                      & ! In
                                       pdf_params, hydromet_pdf_params,      & ! In
                                       hydromet,                             & ! In
                                       mu_x_1_n, mu_x_2_n,                   & ! In

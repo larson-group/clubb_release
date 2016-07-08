@@ -190,7 +190,8 @@ module advance_clubb_core_module
       Lscale_mu_coef, &
       Lscale_pert_coef, &
       c_K10, &
-      beta
+      c_K10h, &
+      beta, C1, C14
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -213,7 +214,8 @@ module advance_clubb_core_module
       l_stability_correct_tau_zm, &
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
-      l_use_ice_latent
+      l_use_ice_latent, &
+      l_damp_wp2_using_em
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -439,7 +441,8 @@ module advance_clubb_core_module
       compute_mean_binormal
 
     use advance_helper_module, only: &
-      calc_stability_correction ! Procedure(s)
+      calc_stability_correction, & ! Procedure(s)
+      compute_Cx_fnc_Richardson
 
     use interpolation, only: &
       pvertinterp
@@ -622,7 +625,12 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm
+      Km_zm, Kmh_zm
+
+#ifdef CLUBB_CAM
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      RH_postPDF
+#endif
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -822,7 +830,8 @@ module advance_clubb_core_module
        stability_correction, & ! Stability correction factor
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
        tau_C6_zm,            & ! Tau values used for the C6 (pr1) term in wpxp [s]
-       tau_C1_zm               ! Tau values used for the C1 (dp1) term in wp2 [s]
+       tau_C1_zm,            & ! Tau values used for the C1 (dp1) term in wp2 [s]
+       Cx_fnc_Richardson       ! Cx_fnc computed from Richardson_num          [-]
 
     real( kind = core_rknd ) :: Lscale_max
 
@@ -830,9 +839,19 @@ module advance_clubb_core_module
 
     !----- Begin Code -----
 
-    ! Sanity check
-    if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
-      stop "l_Lscale_plume_centered requires l_avg_Lscale"
+    ! Sanity checks
+    if ( clubb_at_least_debug_level( 1 ) ) then
+
+      if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
+        write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
+        stop "Fatal error in advance_clubb_core"
+      end if
+
+      if ( l_damp_wp2_using_em .and. (C1 /= C14 .or. l_stability_correct_tau_zm) ) then
+        write(fstderr,*) "l_damp_wp2_using_em requires C1=C14 and l_stability_correct_tau_zm = F"
+        stop "Fatal error in advance_clubb_core"
+      end if
+
     end if
 
     ! Determine the maximum allowable value for Lscale (in meters).
@@ -1563,9 +1582,21 @@ module advance_clubb_core_module
 
       end if ! l_use_ice_latent = .true.
 
+#ifdef CLUBB_CAM
+      ! +PAB mods, take remaining supersaturation that may exist
+      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+      !   may exist after PDF call due to issues with calling PDF on the
+      !   thermo grid and momentum grid and the interpolation between the two
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
 
-
-
+      RH_postPDF = (rtm - rcm)/rsat  
+      
+      do k = 2, gr%nz
+        if (RH_postPDF(k) > 1.0_core_rknd) then
+          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+        end if 
+      enddo
+#endif 
 
       !----------------------------------------------------------------
       ! Compute thvm
@@ -1744,11 +1775,6 @@ module advance_clubb_core_module
                      / SQRT( MAX( em_min, em ) ) ), taumax )
 ! End Vince Larson's replacement.
 
-      ! Determine the static stability corrected version of tau_zm
-      ! Create a damping time scale that is more strongly damped at the
-      ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
-      tau_N2_zm = tau_zm / calc_stability_correction( thlm, Lscale, em )
-
       ! Modification to damp noise in stable region
 ! Vince Larson commented out because it may prevent turbulence from
 !    initiating in unstable regions.  7 Jul 2007
@@ -1910,7 +1936,8 @@ module advance_clubb_core_module
       end if
 
       ! Determine stability correction factor
-      stability_correction = calc_stability_correction( thlm, Lscale, em ) ! In
+      stability_correction = calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, & ! In
+                                                        p_in_Pa, cloud_frac, thvm ) ! In
       if ( l_stats_samp ) then
         call stat_update_var( istability_correction, stability_correction, & ! In
                               stats_zm ) ! In/Out
@@ -1920,6 +1947,9 @@ module advance_clubb_core_module
       ! that has been stability corrected for stably stratified regions.
       ! -dschanen 7 Nov 2014
       if ( l_stability_correct_tau_zm ) then
+        ! Determine the static stability corrected version of tau_zm
+        ! Create a damping time scale that is more strongly damped at the
+        ! altitudes where the Brunt-Vaisala frequency (N^2) is large.
         tau_N2_zm = tau_zm / stability_correction
         tau_C6_zm = tau_N2_zm
         tau_C1_zm = tau_N2_zm
@@ -1931,7 +1961,10 @@ module advance_clubb_core_module
 
       end if ! l_stability_correction
 
-      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,     & ! intent(in)
+      Cx_fnc_Richardson = compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
+                                                     rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm )
+
+      call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,       & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing,  & ! intent(in)
                             wprtp_forcing, rtm_ref, thlpthvp,         & ! intent(in)
@@ -1940,7 +1973,8 @@ module advance_clubb_core_module
                             invrs_rho_ds_zt, thv_ds_zm, rtp2, thlp2,  & ! intent(in)
                             w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, & ! intent(in)
                             mixt_frac_zm, l_implemented, em,          & ! intent(in)
-                            sclrpthvp, sclrm_forcing, sclrp2,         & ! intent(in)
+                            sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, & ! intent(in)
+                            p_in_Pa, cloud_frac, thvm, Cx_fnc_Richardson, & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                 & ! intent(inout)
                             err_code,                                 & ! intent(inout)
                             sclrm, wpsclrp                            ) ! intent(inout)
@@ -2012,7 +2046,7 @@ module advance_clubb_core_module
              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, & ! intent(in)
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,              & ! intent(in)
              invrs_rho_ds_zm, invrs_rho_ds_zt, radf,            & ! intent(in)
-             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac,        & ! intent(in)
+             thv_ds_zm, thv_ds_zt, pdf_params%mixt_frac, Cx_fnc_Richardson, & ! intent(in)
              wp2, wp3, wp3_zm, wp2_zt, err_code               )  ! intent(inout)
 
       !----------------------------------------------------------------
@@ -2037,14 +2071,15 @@ module advance_clubb_core_module
       ! (i.e. edsclrm) by one time step
       !----------------------------------------------------------------i
 
-      Km_zm = Kh_zm * c_K10
+      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+      Kmh_zm = Kh_zm * c_K10h ! Coefficient for thermo
 
       if ( l_do_expldiff_rtm_thlm ) then
         edsclrm(:,edsclr_dim-1)=thlm(:)
         edsclrm(:,edsclr_dim)=rtm(:)
       endif      
 
-      call advance_windm_edsclrm( dt, wm_zt, Km_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
+      call advance_windm_edsclrm( dt, wm_zt, Km_zm, Kmh_zm, ug, vg, um_ref, vm_ref, & ! intent(in)
                                   wp2, up2, vp2, um_forcing, vm_forcing,    & ! intent(in)
                                   edsclrm_forcing,                          & ! intent(in)
                                   rho_ds_zm, invrs_rho_ds_zt,               & ! intent(in)

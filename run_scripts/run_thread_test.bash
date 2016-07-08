@@ -19,6 +19,7 @@ RUN_CASES=( fire bomex rico_lh gabls3 )
 NAMELISTS=( 'clubb_1.in' 'clubb_2.in' 'clubb_3.in' 'clubb_4.in' )
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 STATS_FILE="../input/stats/standard_stats.in"
 SERIAL="../output/serial"
 PARALLEL="../output/parallel"
@@ -28,7 +29,7 @@ run_serial()
 	echo -n "Running CLUBB in serial... "
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
-		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $STATS_FILE > 'clubb.in'
+		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $SILHS_PARAMS_FILE $STATS_FILE > 'clubb.in'
  
 
 		# Set debug level to 0
@@ -57,7 +58,7 @@ run_parallel()
 	echo -n "Running CLUBB in parallel... "
 	for (( x=0;  x < "${#RUN_CASES[@]}"; x++ )); do
 		MODEL_FILE='../input/case_setups/'"${RUN_CASES[$x]}"'_model.in'
-		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $STATS_FILE > "${NAMELISTS[$x]}"
+		cat $MODEL_FILE $FLAGS_FILE $PARAMS_FILE $SILHS_PARAMS_FILE $STATS_FILE > "${NAMELISTS[$x]}"
 
 
 		# Set debug level to 0

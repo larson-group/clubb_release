@@ -62,7 +62,8 @@ module silhs_importance_sample_module
       two_cluster_cp_nocp_opt, &
       l_lh_clustered_sampling, & ! Variable(s)
       l_lh_limit_weights, &
-      cluster_allocation_strategy
+      cluster_allocation_strategy, &
+      l_lh_normalize_weights
 
     implicit none
 
@@ -97,6 +98,8 @@ module silhs_importance_sample_module
 
     real( kind = core_rknd ), dimension(num_samples) :: &
       rand_vect
+
+    real( kind = core_rknd ) :: weights_sum
 
     integer, dimension(num_samples) :: &
       int_sample_category  ! An integer for each sample corresponding to the
@@ -174,12 +177,20 @@ module silhs_importance_sample_module
 
     end do ! sample=1, num_samples
 
+    ! Normalize weights (if enabled)
+    if ( l_lh_normalize_weights ) then
+      weights_sum = sum( lh_sample_point_weights(1:num_samples) )
+
+      lh_sample_point_weights(1:num_samples) = &
+        lh_sample_point_weights(1:num_samples) * real( num_samples, kind = core_rknd ) / weights_sum
+    end if
+
     if ( clubb_at_least_debug_level( 2 ) ) then
 
       call importance_sampling_assertions &
            ( num_samples, importance_categories, category_real_probs, & ! In
              category_prescribed_probs, category_sample_weights, X_u_chi_one_lev, & ! In
-             X_u_dp1_one_lev, X_u_dp2_one_lev, int_sample_category, & ! In
+             X_u_dp1_one_lev, X_u_dp2_one_lev, lh_sample_point_weights, int_sample_category, & ! In
              pdf_params, hydromet_pdf_params, & ! In
              l_error ) ! Out
 
@@ -1485,7 +1496,7 @@ module silhs_importance_sample_module
   subroutine importance_sampling_assertions &
              ( num_samples, importance_categories, category_real_probs, &
                category_prescribed_probs, category_sample_weights, X_u_chi_one_lev, &
-               X_u_dp1_one_lev, X_u_dp2_one_lev, int_sample_category, &
+               X_u_dp1_one_lev, X_u_dp2_one_lev, lh_sample_point_weights, int_sample_category, &
                pdf_params, hydromet_pdf_params, &
                l_error )
 
@@ -1510,6 +1521,9 @@ module silhs_importance_sample_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter
 
+    use parameters_silhs, only: &
+      l_lh_normalize_weights
+
     implicit none
 
     ! Input Variables
@@ -1527,7 +1541,8 @@ module silhs_importance_sample_module
     real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
       X_u_chi_one_lev, &                  ! Samples of chi in uniform space
       X_u_dp1_one_lev, &                  ! Samples of the dp1 variate
-      X_u_dp2_one_lev                     ! Samples of the dp2 variate
+      X_u_dp2_one_lev, &                  ! Samples of the dp2 variate
+      lh_sample_point_weights             ! Weights of samples
 
     integer, dimension(num_samples), intent(in) :: &
       int_sample_category                 ! An integer for each sample corresponding to the
@@ -1545,7 +1560,7 @@ module silhs_importance_sample_module
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      category_sum, tolerance
+      category_sum, tolerance, weights_avg, num_samples_real
 
     real( kind = core_rknd ) :: &
       cloud_frac_i, precip_frac_i
@@ -1585,6 +1600,21 @@ module silhs_importance_sample_module
       write(fstderr,*) "The weighted prescribed category probabilities do not sum to one."
       write(fstderr,*) "sum( category_sample_weights * category_prescribed_probs ) = ", category_sum
       l_error = .true.
+    end if
+
+    !------------------------------------------------------------------
+    ! Assert that sample point weights average to 1.0 (if enabled)
+    !------------------------------------------------------------------
+    if ( l_lh_normalize_weights ) then
+      num_samples_real = real( num_samples, kind=core_rknd )
+      weights_avg = sum( lh_sample_point_weights(:) ) / num_samples_real
+      if ( abs( weights_avg - one ) > num_samples_real*epsilon( weights_avg ) ) then
+        write(fstderr,*) "The sample point weights do not average to one."
+        write(fstderr,*) "num_samples = ", num_samples
+        write(fstderr,*) "sum( lh_sample_point_weights(:) ) = ", sum( lh_sample_point_weights(:) )
+        write(fstderr,*) "avg( lh_sample_point_weights(:) ) = ", weights_avg
+        l_error = .true.
+      end if
     end if
 
     !---------------------------------------------------------------------

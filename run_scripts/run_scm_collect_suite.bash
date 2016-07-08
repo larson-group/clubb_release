@@ -89,6 +89,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 
 	MODEL_FILE="../input/case_setups/"${RUN_CASE[$x]}"_model.in"
 	PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"
+    SILHS_PARAMS_FILE="../input/tunable_parameters/silhs_parameters.in"
 	FLAGS_FILE="../input/tunable_parameters/configurable_flags.in"
 
 	if [ ! -e "$MODEL_FILE" ]; then
@@ -106,7 +107,7 @@ for (( x=0; x < "${#RUN_CASE[@]}"; x++ )); do
 		exit 1
 	fi
 
-	cat $PARAMS_FILE > "clubb.in"
+	cat $PARAMS_FILE $SILHS_PARAMS_FILE > "clubb.in"
 	cat $FLAGS_FILE >> "clubb.in"
 
 	# Use sed to set l_stats to .false. and debug_level to 0.

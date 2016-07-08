@@ -99,6 +99,8 @@ restart_path_case  = "restart/dycoms2_rf02_nd"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
+l_input_fields = .false.,
+
 ! Select debug level:
 !        0 => Print no debug messages to the screen
 !        1 => Print lightweight debug messages, e.g. print statements
@@ -170,8 +172,8 @@ stats_fmt    = "grads"            ! Type of statistical output file ("grads" or 
 ! Inputfields Settings
 ! You will not need to modify these if l_input_fields is false.
 &setfields
-datafile      = "../les_data/dycoms2_rf02_nd"
-input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
+datafile = "../sam_benchmark_runs/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc"
+input_type = "SAM"  ! input_type = "clubb", "coamps_les", or "SAM"
 l_input_um = .true. 
 l_input_vm = .true.
 l_input_rtm = .true. 

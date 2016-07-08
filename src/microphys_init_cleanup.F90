@@ -74,6 +74,7 @@ module microphys_init_cleanup
         l_lh_instant_var_covar_src, &   ! Produce instantaneous var/covar tendencies
         l_lh_limit_weights,       &     ! Ensure weights stay under a given value
         l_lh_var_frac,            &     ! Prescribe variance fractions
+        l_lh_normalize_weights,   &     ! Normalize weights to sum to num_samples
         importance_prob_thresh,   &     ! Minimum PDF probability for importance sampling
         vert_decorr_coef                ! Vertical overlap decorrelation coefficient (SILHS)
 
@@ -279,8 +280,7 @@ module microphys_init_cleanup
       corr_array_cloud, & ! Correlation array of PDF vars. (in cloud)        [-]
       corr_array_below    ! Correlation array of PDF vars. (below cloud)     [-]
 
-    integer :: ivar, &  ! Loop index
-               ierr     ! I/O status variable
+    integer :: ivar       ! Loop index
 
 
     namelist /microphysics_setting/ &
@@ -309,7 +309,8 @@ module microphys_init_cleanup
       cluster_allocation_strategy, l_lh_importance_sampling, l_Lscale_vert_avg , &
       l_lh_straight_mc, l_lh_clustered_sampling, &
       l_rcm_in_cloud_k_lh_start, l_random_k_lh_start, &
-      l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac
+      l_max_overlap_in_cloud, l_lh_instant_var_covar_src, l_lh_limit_weights, l_lh_var_frac, &
+      l_lh_normalize_weights
 
 
     ! ---- Begin Code ----
@@ -362,15 +363,8 @@ module microphys_init_cleanup
     ! Read in SILHS parameters, if SILHS is enabled
     if ( trim( lh_microphys_type ) /= "disabled" ) then
       open(unit=iunit, file=namelist_file, status='old', action='read')
-      read(iunit, nml=silhs_params_nl, iostat=ierr)
+      read(iunit, nml=silhs_params_nl)
       close(unit=iunit)
-
-      if ( ierr > 0 ) then
-        stop "Error reading SILHS namelist &silhs_params_nl."
-      else if ( ierr < 0 ) then
-        if ( clubb_at_least_debug_level( 1 ) ) &
-          write(fstderr,*) "Warning: SILHS namelist &silhs_params_nl not found."
-      end if
 
       open(unit=iunit, file=namelist_file, status='old', action='read')
       read(iunit, nml=configurable_silhs_flags_nl)
@@ -444,6 +438,8 @@ module microphys_init_cleanup
        call write_text ( "cluster_allocation_strategy = ", cluster_allocation_strategy, &
                          l_write_to_file, iunit )
        call write_text ( "l_lh_var_frac = ", l_lh_var_frac, l_write_to_file, iunit )
+       call write_text ( "l_lh_normalize_weights = ", l_lh_normalize_weights, l_write_to_file, &
+                         iunit )
        call write_text ( "rrp2_ip_on_rrm2_ip = ", &
                          hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip, &
                          l_write_to_file, iunit )

@@ -13,7 +13,6 @@ module KK_upscaled_means
             KK_mvr_upscaled_mean,     &
             trivar_NLL_mean_eq,       &
             bivar_NL_mean_eq,         &
-            bivar_NL_mean_eq_Nc0,     &
             bivar_LL_mean_eq
 
   contains
@@ -108,14 +107,16 @@ module KK_upscaled_means
 
     !!! Calculate the upscaled KK evaporation tendency.
     KK_evap_tndcy  &
-    = KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
-                             mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                             mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                             sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                             sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                             sigma_Nr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
-                             corr_chi_Nr_1_n, corr_chi_Nr_2_n, corr_rr_Nr_1_n, &
-                             corr_rr_Nr_2_n, KK_evap_coef, mixt_frac, &
+    = KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                             mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
+                             mu_Nr_1_n, mu_Nr_2_n, sigma_chi_1, &
+                             sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                             sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                             sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                             corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                             corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                             corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                             KK_evap_coef, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
 
 
@@ -124,8 +125,9 @@ module KK_upscaled_means
     = KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                              mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
                              sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
-                             sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
-                             corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac )
+                             sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                             corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                             KK_auto_coef, mixt_frac )
 
 
     !!! Calculate the upscaled KK accretion tendency.
@@ -154,14 +156,16 @@ module KK_upscaled_means
   end subroutine KK_upscaled_means_driver
 
   !=============================================================================
-  function KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, mu_Nr_1, &
-                                  mu_Nr_2, mu_rr_1_n, mu_rr_2_n, mu_Nr_1_n, &
-                                  mu_Nr_2_n, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                                  sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
-                                  sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
-                                  sigma_Nr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
-                                  corr_chi_Nr_1_n, corr_chi_Nr_2_n, corr_rr_Nr_1_n, &
-                                  corr_rr_Nr_2_n, KK_evap_coef, mixt_frac, &
+  function KK_evap_upscaled_mean( mu_chi_1, mu_chi_2, mu_rr_1, mu_rr_2, &
+                                  mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
+                                  mu_Nr_1_n, mu_Nr_2_n, sigma_chi_1, &
+                                  sigma_chi_2, sigma_rr_1, sigma_rr_2, &
+                                  sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
+                                  sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
+                                  corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                                  corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                                  corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                                  KK_evap_coef, mixt_frac, &
                                   precip_frac_1, precip_frac_2 )
 
     ! Description:
@@ -241,14 +245,16 @@ module KK_upscaled_means
           * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                 mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                 sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                corr_rr_Nr_1_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         + ( one - mixt_frac ) &
           * precip_frac_2 &
           * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                 mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                 sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                corr_rr_Nr_2_n, &
                                 alpha_exp, beta_exp, gamma_exp ) &
         )
 
@@ -261,8 +267,9 @@ module KK_upscaled_means
   function KK_auto_upscaled_mean( mu_chi_1, mu_chi_2, mu_Ncn_1, mu_Ncn_2, &
                                   mu_Ncn_1_n, mu_Ncn_2_n, sigma_chi_1, &
                                   sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
-                                  sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_Ncn_1_n, &
-                                  corr_chi_Ncn_2_n, KK_auto_coef, mixt_frac )
+                                  sigma_Ncn_1_n, sigma_Ncn_2_n, &
+                                  corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                                  KK_auto_coef, mixt_frac )
 
     ! Description:
     ! This function calculates the mean value of the upscaled KK rain water
@@ -515,7 +522,8 @@ module KK_upscaled_means
   function trivar_NLL_mean_eq( mu_chi_i, mu_rr_i, mu_Nr_i, mu_rr_i_n, &
                                mu_Nr_i_n, sigma_chi_i, sigma_rr_i, &
                                sigma_Nr_i, sigma_rr_i_n, sigma_Nr_i_n, &
-                               corr_chi_rr_i_n, corr_chi_Nr_i_n, corr_rr_Nr_i_n, &
+                               corr_chi_rr_i_n, corr_chi_Nr_i_n, &
+                               corr_rr_Nr_i_n, &
                                alpha_exp_in, beta_exp_in, gamma_exp_in )
 
     ! Description:
@@ -947,145 +955,6 @@ module KK_upscaled_means
     return
 
   end function bivar_NL_mean_eq
-
-  !=============================================================================
-  function bivar_NL_mean_eq_Nc0( mu_chi_i, Nc_in_cloud, sigma_chi_i, &
-                                 alpha_exp_in, beta_exp_in )
-
-    ! Description:
-    ! This function calculates the contribution by the ith PDF component to the
-    ! expression < x1^alpha x2^beta >, where x1 = chi and x2 = N_cn or r_r,
-    ! depending on whether this function is being called for autoconversion or
-    ! accretion, respectively.  The total value of KK mean microphysics tendency
-    ! is given by:
-    !
-    ! < KK_mc > = KK_mc_coef
-    !             * ( mixt_frac < chi^alpha y^beta (1) >
-    !                 + ( 1 - mixt_frac ) < chi^alpha y^beta (2) > );
-    !
-    ! where y stands for either N_cn.  In this special scenario, N_cn has a
-    ! constant value.  One of two functions is called, based on whether x1 (s)
-    ! varies.  Each one of these two functions are the result of an evaluated
-    ! integral based on the specific situation.
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use PDF_integrals_means, only: &
-        bivar_NL_mean_const_all, &
-        bivar_NL_mean_const_x2
-
-    use constants_clubb, only: &
-        chi_tol,        & ! Constant(s)
-        Nc_tol,              &
-        parab_cyl_max_input, &
-        zero
-
-    use clubb_precision, only: &
-        dp,        & ! double precision
-        core_rknd    ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in) :: &
-      mu_chi_i,    & ! Mean of chi (old s) (ith PDF component)          [kg/kg]
-      Nc_in_cloud, & ! Constant in-cloud value of cloud droplet conc.  [num/kg]
-      sigma_chi_i    ! Standard deviation of chi (ith PDF component)    [kg/kg]
-
-    real( kind = core_rknd ), intent(in) :: &
-      alpha_exp_in,  & ! Exponent alpha, corresponding to chi               [-]
-      beta_exp_in      ! Exponent beta, corresponding to y                  [-]
-
-    ! Return Variable
-    real( kind = core_rknd ) :: &
-      bivar_NL_mean_eq_Nc0
-
-    ! Local Variables
-    real( kind = dp ) :: &
-      mu_x1,    & ! Mean of x1 (ith PDF component)                          [-]
-      Nc0,      & ! Constant in-cloud value of cloud droplet conc.     [num/kg]
-      sigma_x1    ! Standard deviation of x1 (ith PDF component)            [-]
-    
-    real( kind = dp ) :: &
-      alpha_exp,  & ! Exponent alpha, corresponding to x1                   [-]
-      beta_exp      ! Exponent beta, corresponding to x2                    [-]
-
-    real( kind = dp ) :: &
-      x1_tol, & ! Tolerance value of x1                                     [-]
-      s_c       ! Parabolic cylinder function input value                   [-]
-
-
-    ! Means for the ith PDF component. 
-    mu_x1 = real( mu_chi_i, kind = dp )
-    if ( beta_exp_in >= zero ) then
-       Nc0 = real( Nc_in_cloud, kind = dp )
-    else ! exponent beta < 0
-       Nc0 = real( max( Nc_in_cloud, Nc_tol ), kind = dp )
-    endif
-
-    ! Standard deviations for the ith PDF component.
-    sigma_x1 = real( sigma_chi_i, kind = dp )
-
-    ! Exponents.
-    alpha_exp = real( alpha_exp_in, kind = dp )
-    beta_exp  = real( beta_exp_in, kind = dp )
-
-    ! Tolerance values.
-    ! When the standard deviation of a variable is below the tolerance values,
-    ! it is considered to be zero, and the variable is considered to have a
-    ! constant value.
-    x1_tol = real( chi_tol, kind = dp )
-
-    ! Determine the value of the parabolic cylinder function input value, s_c.
-    ! The value s_c is being fed into the parabolic cylinder function.  When
-    ! the value of s_c is too large in magnitude (depending on the order of the
-    ! parabolic cylinder function), overflow occurs, and the output of the
-    ! parabolic cylinder function is +/-Inf.  This is primarily due to a large
-    ! ratio of mu_x1 to sigma_x1.  When the value of s_c is very large, the
-    ! distribution of x1 is basically a spike near the mean, so x1 is treated as
-    ! a constant.
-    if ( sigma_x1 > x1_tol ) then
-       s_c = mu_x1 / sigma_x1
-    else  ! sigma_x1 = 0
-       ! Note:  s_c is +inf when mu_x1 > 0 and sigma_x1 = 0, and s_c is -inf
-       !        when mu_x1 < 0 and sigma_x1 = 0.  Furthermore, s_c is undefined
-       !        when mu_x1 = 0 and sigma_x1 = 0.  However, within the context of
-       !        this particular function, only the absolute value of s_c is
-       !        relevant, and furthermore the absolute value of s_c is only
-       !        relevant when sigma_x1 > 0.  Therefore, this statement only
-       !        serves as divide-by-zero and compiler warning prevention.
-       s_c = huge( s_c )
-    endif
-
-
-    ! Based on the value of sigma_x1 (including the value of s_c compared to
-    ! parab_cyl_max_input), find the correct form of the bivariate equation to
-    ! use.
-
-    if ( sigma_x1 <= x1_tol &
-         .or. abs( s_c ) > real( parab_cyl_max_input, kind = dp ) ) then
-
-       ! The ith PDF component variance of chi is 0.
-       bivar_NL_mean_eq_Nc0  &
-       = real( bivar_NL_mean_const_all( mu_x1, Nc0, alpha_exp, beta_exp ), &
-               kind = core_rknd )
-
-
-    else  ! sigma_x1 > 0
-
-       ! All fields vary in the ith PDF component.
-       bivar_NL_mean_eq_Nc0  &
-       = real( bivar_NL_mean_const_x2( mu_x1, Nc0, sigma_x1, &
-                                       alpha_exp, beta_exp ), kind = core_rknd )
-
-
-    endif
-
-
-    return
-
-  end function bivar_NL_mean_eq_Nc0
 
   !=============================================================================
   function bivar_LL_mean_eq( mu_rr_i, mu_Nr_i, mu_rr_i_n, mu_Nr_i_n, &

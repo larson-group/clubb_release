@@ -163,8 +163,8 @@ stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
 &setfields
-datafile      = "../les_data/arm"
-input_type    = "coamps_les"  ! input_type = "clubb" or "coamps_les"
+datafile = "../sam_benchmark_runs/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
+input_type = "SAM"  ! input_type = "clubb", "coamps_les", or "SAM"
 l_input_um = .true. 
 l_input_vm = .true.
 l_input_rtm = .true. 
