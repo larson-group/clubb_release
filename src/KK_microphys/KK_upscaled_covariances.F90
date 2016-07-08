@@ -37,10 +37,11 @@ module KK_upscaled_covariances
                                        sigma_rr_1_n, sigma_rr_2_n, &
                                        sigma_Nr_1_n, sigma_Nr_2_n, &
                                        sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                                       corr_w_chi_1, corr_w_chi_2, corr_w_rr_1_n, &
-                                       corr_w_rr_2_n, corr_w_Nr_1_n, &
-                                       corr_w_Nr_2_n, corr_w_Ncn_1_n, &
-                                       corr_w_Ncn_2_n, corr_chi_eta_1, corr_chi_eta_2, &
+                                       corr_w_chi_1, corr_w_chi_2, &
+                                       corr_w_rr_1_n, corr_w_rr_2_n, &
+                                       corr_w_Nr_1_n, corr_w_Nr_2_n, &
+                                       corr_w_Ncn_1_n, corr_w_Ncn_2_n, &
+                                       corr_chi_eta_1, corr_chi_eta_2, &
                                        corr_chi_rr_1_n, corr_chi_rr_2_n, &
                                        corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
                                        corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
@@ -272,8 +273,9 @@ module KK_upscaled_covariances
                            sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
                            sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
                            corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
-                           corr_eta_rr_2_n, corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
-                           corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n, &
+                           corr_eta_rr_2_n, corr_eta_Nr_1_n, & 
+                           corr_eta_Nr_2_n, corr_chi_rr_1_n, &
+                           corr_chi_rr_2_n, corr_chi_Nr_1_n, &
                            corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                            mixt_frac, precip_frac_1, precip_frac_2, &
                            rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
@@ -293,13 +295,15 @@ module KK_upscaled_covariances
        = covar_thl_KK_evap( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                             mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
                             mu_Nr_1_n, mu_Nr_2_n, sigma_eta_1, sigma_eta_2, &
-                            sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2, &
-                            sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
-                            sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                            corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
-                            corr_eta_rr_2_n, corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
-                            corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n, &
-                            corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                            sigma_chi_1, sigma_chi_2, sigma_rr_1, &
+                            sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
+                            sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                            sigma_Nr_2_n, corr_chi_eta_1, corr_chi_eta_2, &
+                            corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                            corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
+                            corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                            corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                            corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                             mixt_frac, precip_frac_1, precip_frac_2, &
                             thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
                             KK_evap_coef, eta_tol, cthl1, cthl2 )
@@ -327,24 +331,27 @@ module KK_upscaled_covariances
     rt_KK_auto_covar &
     = covar_rt_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, &
                         mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_eta_1, &
-                        sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
-                        sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                        corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n, &
-                        corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                        sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                        sigma_Ncn_1, sigma_Ncn_2, sigma_Ncn_1_n, &
+                        sigma_Ncn_2_n, corr_chi_eta_1, corr_chi_eta_2, &
+                        corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
+                        corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                         rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
                         KK_auto_coef, eta_tol, crt1, crt2, mixt_frac )
 
     ! Calculate the covariance of liquid water potential temperature and
     ! KK autoconversion tendency.
     thl_KK_auto_covar &
-    = covar_thl_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, &
-                         mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_eta_1, &
-                         sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
-                         sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                         corr_chi_eta_1, corr_chi_eta_2, corr_eta_Ncn_1_n, &
-                         corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
-                         thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
-                         KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac )
+    = covar_thl_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, &
+                         mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, &
+                         sigma_eta_1, sigma_eta_2, sigma_chi_1, &
+                         sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
+                         sigma_Ncn_1_n, sigma_Ncn_2_n, corr_chi_eta_1, &
+                         corr_chi_eta_2, corr_eta_Ncn_1_n, &
+                         corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, &
+                         corr_chi_Ncn_2_n, thlm, mu_thl_1, mu_thl_2, &
+                         KK_auto_tndcy, KK_auto_coef, eta_tol, &
+                         cthl1, cthl2, mixt_frac )
 
     ! Calculate the covariance of vertical velocity and KK accretion tendency.
     if ( rrainm > rr_tol ) then
@@ -372,10 +379,11 @@ module KK_upscaled_covariances
        rt_KK_accr_covar &
        = covar_rt_KK_accr( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                            mu_rr_2, mu_rr_1_n, mu_rr_2_n, sigma_eta_1, &
-                           sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                           sigma_rr_2, sigma_rr_1_n, sigma_rr_2_n, &
-                           corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
-                           corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                           sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                           sigma_rr_1, sigma_rr_2, sigma_rr_1_n, &
+                           sigma_rr_2_n, corr_chi_eta_1, corr_chi_eta_2, &
+                           corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                           corr_chi_rr_1_n, corr_chi_rr_2_n, &
                            rtm, mu_rt_1, mu_rt_2, KK_accr_tndcy, &
                            KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, &
                            precip_frac_1, precip_frac_2 )
@@ -393,10 +401,11 @@ module KK_upscaled_covariances
        thl_KK_accr_covar &
        = covar_thl_KK_accr( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                             mu_rr_2, mu_rr_1_n, mu_rr_2_n, sigma_eta_1, &
-                            sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                            sigma_rr_2, sigma_rr_1_n, sigma_rr_2_n, &
-                            corr_chi_eta_1, corr_chi_eta_2, corr_eta_rr_1_n, &
-                            corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                            sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                            sigma_rr_1, sigma_rr_2, sigma_rr_1_n, &
+                            sigma_rr_2_n, corr_chi_eta_1, corr_chi_eta_2, &
+                            corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                            corr_chi_rr_1_n, corr_chi_rr_2_n, &
                             thlm, mu_thl_1, mu_thl_2, KK_accr_tndcy, &
                             KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                             precip_frac_1, precip_frac_2 )
@@ -646,8 +655,9 @@ module KK_upscaled_covariances
                              sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
                              sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
-                             corr_eta_rr_2_n, corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
-                             corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n, &
+                             corr_eta_rr_2_n, corr_eta_Nr_1_n, & 
+                             corr_eta_Nr_2_n, corr_chi_rr_1_n, &
+                             corr_chi_rr_2_n, corr_chi_Nr_1_n, &
                              corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                              mixt_frac, precip_frac_1, precip_frac_2, &
                              rtm, mu_rt_1, mu_rt_2, KK_evap_tndcy, &
@@ -763,14 +773,16 @@ module KK_upscaled_covariances
               + trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                     sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                    corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                    corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                    corr_rr_Nr_1_n, &
                                     alpha_exp + one, beta_exp, gamma_exp )  &
             ) &
           + ( mu_rt_1 - rtm - mu_chi_1 / ( two * crt1 ) )  &
             * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                   mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                   sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                  corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                  corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                  corr_rr_Nr_1_n, &
                                   alpha_exp, beta_exp, gamma_exp )  &
         )
 
@@ -792,14 +804,16 @@ module KK_upscaled_covariances
               + trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                     sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                    corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                    corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                    corr_rr_Nr_2_n, &
                                     alpha_exp + one, beta_exp, gamma_exp )  &
             ) &
           + ( mu_rt_2 - rtm - mu_chi_2 / ( two * crt2 ) )  &
             * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                   mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                   sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                  corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                  corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                  corr_rr_Nr_2_n, &
                                   alpha_exp, beta_exp, gamma_exp )  &
         )
 
@@ -816,13 +830,15 @@ module KK_upscaled_covariances
   function covar_thl_KK_evap( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                               mu_rr_2, mu_Nr_1, mu_Nr_2, mu_rr_1_n, mu_rr_2_n, &
                               mu_Nr_1_n, mu_Nr_2_n, sigma_eta_1, sigma_eta_2, &
-                              sigma_chi_1, sigma_chi_2, sigma_rr_1, sigma_rr_2, &
-                              sigma_Nr_1, sigma_Nr_2, sigma_rr_1_n, &
-                              sigma_rr_2_n, sigma_Nr_1_n, sigma_Nr_2_n, &
-                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
-                              corr_eta_rr_2_n, corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
-                              corr_chi_rr_1_n, corr_chi_rr_2_n, corr_chi_Nr_1_n, &
-                              corr_chi_Nr_2_n, corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
+                              sigma_chi_1, sigma_chi_2, sigma_rr_1, &
+                              sigma_rr_2, sigma_Nr_1, sigma_Nr_2, &
+                              sigma_rr_1_n, sigma_rr_2_n, sigma_Nr_1_n, &
+                              sigma_Nr_2_n, corr_eta_chi_1, corr_eta_chi_2, &
+                              corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                              corr_eta_Nr_1_n, corr_eta_Nr_2_n, &
+                              corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                              corr_chi_Nr_1_n, corr_chi_Nr_2_n, &
+                              corr_rr_Nr_1_n, corr_rr_Nr_2_n, &
                               mixt_frac, precip_frac_1, precip_frac_2, &
                               thlm, mu_thl_1, mu_thl_2, KK_evap_tndcy, &
                               KK_evap_coef, eta_tol, cthl1, cthl2 )
@@ -937,14 +953,16 @@ module KK_upscaled_covariances
               - trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                     mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                     sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                    corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                    corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                    corr_rr_Nr_1_n, &
                                     alpha_exp + one, beta_exp, gamma_exp )  &
             ) &
           + ( mu_thl_1 - thlm + mu_chi_1 / ( two * cthl1 ) ) &
             * trivar_NLL_mean_eq( mu_chi_1, mu_rr_1, mu_Nr_1, mu_rr_1_n, &
                                   mu_Nr_1_n, sigma_chi_1, sigma_rr_1, &
                                   sigma_Nr_1, sigma_rr_1_n, sigma_Nr_1_n, &
-                                  corr_chi_rr_1_n, corr_chi_Nr_1_n, corr_rr_Nr_1_n, &
+                                  corr_chi_rr_1_n, corr_chi_Nr_1_n, &
+                                  corr_rr_Nr_1_n, &
                                   alpha_exp, beta_exp, gamma_exp )  &
         )
 
@@ -966,14 +984,16 @@ module KK_upscaled_covariances
               - trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                     mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                     sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                    corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                    corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                    corr_rr_Nr_2_n, &
                                     alpha_exp + one, beta_exp, gamma_exp )  &
             ) &
           + ( mu_thl_2 - thlm + mu_chi_2 / ( two * cthl2 ) )  &
             * trivar_NLL_mean_eq( mu_chi_2, mu_rr_2, mu_Nr_2, mu_rr_2_n, &
                                   mu_Nr_2_n, sigma_chi_2, sigma_rr_2, &
                                   sigma_Nr_2, sigma_rr_2_n, sigma_Nr_2_n, &
-                                  corr_chi_rr_2_n, corr_chi_Nr_2_n, corr_rr_Nr_2_n, &
+                                  corr_chi_rr_2_n, corr_chi_Nr_2_n, &
+                                  corr_rr_Nr_2_n, &
                                   alpha_exp, beta_exp, gamma_exp )  &
         )
 
@@ -1090,10 +1110,11 @@ module KK_upscaled_covariances
   !=============================================================================
   function covar_rt_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, &
                              mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_eta_1, &
-                             sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
-                             sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                             corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n, &
-                             corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
+                             sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                             sigma_Ncn_1, sigma_Ncn_2, sigma_Ncn_1_n, &
+                             sigma_Ncn_2_n, corr_eta_chi_1, corr_eta_chi_2, &
+                             corr_eta_Ncn_1_n, corr_eta_Ncn_2_n, &
+                             corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
                              rtm, mu_rt_1, mu_rt_2, KK_auto_tndcy, &
                              KK_auto_coef, eta_tol, crt1, crt2, mixt_frac )
 
@@ -1224,14 +1245,16 @@ module KK_upscaled_covariances
   end function covar_rt_KK_auto
 
   !=============================================================================
-  function covar_thl_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_Ncn_1, &
-                              mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, sigma_eta_1, &
-                              sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_Ncn_1, &
-                              sigma_Ncn_2, sigma_Ncn_1_n, sigma_Ncn_2_n, &
-                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_Ncn_1_n, &
-                              corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, corr_chi_Ncn_2_n, &
-                              thlm, mu_thl_1, mu_thl_2, KK_auto_tndcy, &
-                              KK_auto_coef, eta_tol, cthl1, cthl2, mixt_frac )
+  function covar_thl_KK_auto( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, &
+                              mu_Ncn_1, mu_Ncn_2, mu_Ncn_1_n, mu_Ncn_2_n, &
+                              sigma_eta_1, sigma_eta_2, sigma_chi_1, &
+                              sigma_chi_2, sigma_Ncn_1, sigma_Ncn_2, &
+                              sigma_Ncn_1_n, sigma_Ncn_2_n, corr_eta_chi_1, &
+                              corr_eta_chi_2, corr_eta_Ncn_1_n, &
+                              corr_eta_Ncn_2_n, corr_chi_Ncn_1_n, &
+                              corr_chi_Ncn_2_n, thlm, mu_thl_1, mu_thl_2, &
+                              KK_auto_tndcy, KK_auto_coef, eta_tol, &
+                              cthl1, cthl2, mixt_frac )
 
     ! Description:
 
@@ -1469,10 +1492,11 @@ module KK_upscaled_covariances
   !=============================================================================
   function covar_rt_KK_accr( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                              mu_rr_2, mu_rr_1_n, mu_rr_2_n, sigma_eta_1, &
-                             sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                             sigma_rr_2, sigma_rr_1_n, sigma_rr_2_n, &
-                             corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
-                             corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                             sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                             sigma_rr_1, sigma_rr_2, sigma_rr_1_n, &
+                             sigma_rr_2_n, corr_eta_chi_1, corr_eta_chi_2, &
+                             corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                             corr_chi_rr_1_n, corr_chi_rr_2_n, &
                              rtm, mu_rt_1, mu_rt_2, KK_accr_tndcy, &
                              KK_accr_coef, eta_tol, crt1, crt2, mixt_frac, &
                              precip_frac_1, precip_frac_2 )
@@ -1607,10 +1631,11 @@ module KK_upscaled_covariances
   !=============================================================================
   function covar_thl_KK_accr( mu_eta_1, mu_eta_2, mu_chi_1, mu_chi_2, mu_rr_1, &
                               mu_rr_2, mu_rr_1_n, mu_rr_2_n, sigma_eta_1, &
-                              sigma_eta_2, sigma_chi_1, sigma_chi_2, sigma_rr_1, &
-                              sigma_rr_2, sigma_rr_1_n, sigma_rr_2_n, &
-                              corr_eta_chi_1, corr_eta_chi_2, corr_eta_rr_1_n, &
-                              corr_eta_rr_2_n, corr_chi_rr_1_n, corr_chi_rr_2_n, &
+                              sigma_eta_2, sigma_chi_1, sigma_chi_2, &
+                              sigma_rr_1, sigma_rr_2, sigma_rr_1_n, &
+                              sigma_rr_2_n, corr_eta_chi_1, corr_eta_chi_2, &
+                              corr_eta_rr_1_n, corr_eta_rr_2_n, &
+                              corr_chi_rr_1_n, corr_chi_rr_2_n, &
                               thlm, mu_thl_1, mu_thl_2, KK_accr_tndcy, &
                               KK_accr_coef, eta_tol, cthl1, cthl2, mixt_frac, &
                               precip_frac_1, precip_frac_2 )
