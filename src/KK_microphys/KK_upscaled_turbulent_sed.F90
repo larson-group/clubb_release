@@ -1226,7 +1226,7 @@ module KK_upscaled_turbulent_sed
   function bivar_LL_covar_partial_rr( mu_rr_i, mu_Nr_i, mu_rr_i_n, &
                                       mu_Nr_i_n, sigma_rr_i, sigma_Nr_i, &
                                       sigma_rr_i_n, sigma_Nr_i_n, &
-                                      corr_rr_Nr_i_n, alpha_exp_in, beta_exp_in )
+                                      corr_rr_Nr_i_n, alpha_exp_in, beta_exp_in)
 
     ! Description:
 
@@ -1372,7 +1372,7 @@ module KK_upscaled_turbulent_sed
   function bivar_LL_covar_partial_Nr( mu_rr_i, mu_Nr_i, mu_rr_i_n, &
                                       mu_Nr_i_n, sigma_rr_i, sigma_Nr_i, &
                                       sigma_rr_i_n, sigma_Nr_i_n, &
-                                      corr_rr_Nr_i_n, alpha_exp_in, beta_exp_in )
+                                      corr_rr_Nr_i_n, alpha_exp_in, beta_exp_in)
 
     ! Description:
 
