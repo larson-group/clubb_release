@@ -224,6 +224,8 @@ module setup_clubb_pdf_params
       mu_w_2,       & ! Mean of w (2nd PDF component)                    [m/s]
       mu_chi_1,     & ! Mean of chi (old s) (1st PDF component)          [kg/kg]
       mu_chi_2,     & ! Mean of chi (old s) (2nd PDF component)          [kg/kg]
+      mu_thl_1,     & ! Mean of thl (1st PDF component)                  [K]
+      mu_thl_2,     & ! Mean of thl (2nd PDF component)                  [K]
       sigma_w_1,    & ! Standard deviation of w (1st PDF component)      [m/s]
       sigma_w_2,    & ! Standard deviation of w (2nd PDF component)      [m/s]
       sigma_chi_1,  & ! Standard deviation of chi (1st PDF component)    [kg/kg]
@@ -286,8 +288,10 @@ module setup_clubb_pdf_params
       wphydrometp_chnge    ! Change in wphydrometp_zt: covar. clip. [(m/s)units]
 
     real( kind = core_rknd ), dimension(nz) :: &
-      wm_zt,  & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
-      wp2_zt    ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
+      wm_zt,     & ! Mean vertical velocity, <w>, on thermo. levels  [m/s]
+      wp2_zt,    & ! Variance of w, <w'^2> (interp. to t-levs.)      [m^2/s^2]
+      thlm,      & ! Mean liquid water potential temperature, <thl>  [K]
+      wpthlp_zt    ! Covariance of w and thl                         [m/s K]
 
     real( kind = core_rknd ), dimension(nz) :: &
       rtp2_zt_from_chi
@@ -334,6 +338,8 @@ module setup_clubb_pdf_params
     ! Setup some of the PDF parameters
     mu_w_1       = pdf_params%w_1
     mu_w_2       = pdf_params%w_2
+    mu_thl_1     = pdf_params%thl_1
+    mu_thl_2     = pdf_params%thl_2
     mu_chi_1     = pdf_params%chi_1
     mu_chi_2     = pdf_params%chi_2
     sigma_w_1    = sqrt( pdf_params%varnce_w_1 )
@@ -367,6 +373,13 @@ module setup_clubb_pdf_params
        wp2_zt(k) = compute_variance_binormal( wm_zt(k), mu_w_1(k), mu_w_2(k), &
                                               sigma_w_1(k), sigma_w_2(k), &
                                               mixt_frac(k) )
+
+       thlm(k) = compute_mean_binormal( mu_thl_1(k), mu_thl_2(k), mixt_frac(k) )
+
+       wpthlp_zt(k) = mixt_frac(k) &
+                      * ( mu_w_1(k) - wm_zt(k) ) * ( mu_thl_1(k) - thlm(k) ) &
+                      + ( one - mixt_frac(k) ) &
+                        * ( mu_w_2(k) - wm_zt(k) ) * ( mu_thl_2(k) - thlm(k) )
 
     enddo
 
@@ -550,6 +563,7 @@ module setup_clubb_pdf_params
        call compute_mean_stdev( hydromet(k,:), hydrometp2_zt(k,:),     & ! In
                                 Ncnm(k), mixt_frac(k), precip_frac(k), & ! In
                                 precip_frac_1(k), precip_frac_2(k),    & ! In
+                                wpthlp_zt(k),                          & ! In
                                 precip_frac_tol,                       & ! In
                                 pdf_params(k), d_variables,            & ! In
                                 mu_x_1, mu_x_2,                        & ! Out
@@ -718,6 +732,7 @@ module setup_clubb_pdf_params
   subroutine compute_mean_stdev( hydromet, hydrometp2_zt,       & ! Intent(in)
                                  Ncnm, mixt_frac, precip_frac,  & ! Intent(in)
                                  precip_frac_1, precip_frac_2,  & ! Intent(in)
+                                 wpthlp_zt,                     & ! Intent(in)
                                  precip_frac_tol,               & ! Intent(in)
                                  pdf_params, d_variables,       & ! Intent(in)
                                  mu_x_1, mu_x_2,                & ! Intent(out)
@@ -782,7 +797,8 @@ module setup_clubb_pdf_params
       precip_frac,     & ! Precipitation fraction (overall)                  [-]
       precip_frac_1,   & ! Precipitation fraction (1st PDF component)        [-]
       precip_frac_2,   & ! Precipitation fraction (2nd PDF component)        [-]
-      precip_frac_tol    ! Minimum precip. frac. when hydromet. are present  [-]
+      precip_frac_tol, & ! Minimum precip. frac. when hydromet. are present  [-]
+      wpthlp_zt          ! Covariance of w and thl                       [m/s K]
 
     type(pdf_parameter), intent(in) :: &
       pdf_params    ! PDF parameters                                [units vary]
@@ -935,6 +951,7 @@ module setup_clubb_pdf_params
                                    hmp2_ip_on_hmm2_ip(hm_idx), &
                                    mixt_frac, precip_frac, &
                                    precip_frac_1, precip_frac_2, &
+                                   wpthlp_zt, &
                                    hydromet_tol(hm_idx), precip_frac_tol, &
                                    omicron, zeta_vrnce_rat, &
                                    mu_x_1(ivar), mu_x_2(ivar), &
@@ -1290,6 +1307,7 @@ module setup_clubb_pdf_params
                                     hmp2_ip_on_hmm2_ip, &            ! In
                                     mixt_frac, precip_frac, &        ! In
                                     precip_frac_1, precip_frac_2, &  ! In
+                                    wpthlp_zt, &                     ! In
                                     hm_tol, precip_frac_tol, &       ! In
                                     omicron, zeta_vrnce_rat, &       ! In
                                     mu_hm_1, mu_hm_2, &              ! Out
@@ -1331,6 +1349,7 @@ module setup_clubb_pdf_params
       precip_frac,        & ! Precipitation fraction (overall)               [-]
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
+      wpthlp_zt,          & ! Covariance of w and thl                    [m/s K]
       hm_tol,             & ! Tolerance value of hydrometeor          [hm units]
       precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
 
@@ -1360,7 +1379,7 @@ module setup_clubb_pdf_params
        ! Precipitation is found in both PDF components.
        call calc_mu_sigma_two_comps( hmm, hmp2, hmp2_ip_on_hmm2_ip, &
                                      mixt_frac, precip_frac, precip_frac_1, &
-                                     precip_frac_2, hm_tol, &
+                                     precip_frac_2, wpthlp_zt, hm_tol, &
                                      omicron, zeta_vrnce_rat, &
                                      mu_hm_1, mu_hm_2, sigma_hm_1, &
                                      sigma_hm_2, hm_1, hm_2, &
@@ -1440,7 +1459,7 @@ module setup_clubb_pdf_params
   !=============================================================================
   subroutine calc_mu_sigma_two_comps( hmm, hmp2, hmp2_ip_on_hmm2_ip, &
                                       mixt_frac, precip_frac, precip_frac_1, &
-                                      precip_frac_2, hm_tol, &
+                                      precip_frac_2, wpthlp_zt, hm_tol, &
                                       omicron, zeta_vrnce_rat, &
                                       mu_hm_1, mu_hm_2, sigma_hm_1, &
                                       sigma_hm_2, hm_1, hm_2, &
@@ -1830,6 +1849,7 @@ module setup_clubb_pdf_params
       precip_frac,        & ! Precipitation fraction (overall)               [-]
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
+      wpthlp_zt,          & ! Covariance w and thl                       [m/s K]
       hm_tol                ! Tolerance value of hydrometeor             [hm un]
 
     real( kind = core_rknd ), intent(in) :: &
@@ -1912,7 +1932,12 @@ module setup_clubb_pdf_params
 
     ! Calculate the mean (in-precip.) of the hydrometeor in the 1st PDF
     ! component.
-    if ( zeta_vrnce_rat >= zero ) then
+!    if ( zeta_vrnce_rat >= zero ) then
+!       mu_hm_1 = ( -coef_B + sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
+!    else
+!       mu_hm_1 = ( -coef_B - sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
+!    endif
+    if ( wpthlp_zt <= zero ) then
        mu_hm_1 = ( -coef_B + sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
     else
        mu_hm_1 = ( -coef_B - sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )

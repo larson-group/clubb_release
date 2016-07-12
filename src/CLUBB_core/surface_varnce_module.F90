@@ -90,7 +90,8 @@ module surface_varnce_module
       ! End Vince Larson's change
       ! Vince Larson reduced surface spike in scalar variances associated
       ! w/ Andre et al. 1978 scheme
-      reduce_coef   = 0.2_core_rknd
+      !reduce_coef   = 0.2_core_rknd
+      reduce_coef   = 1.0_core_rknd
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) ::  & 
@@ -345,12 +346,17 @@ module surface_varnce_module
        !         2) The surface correlation of rt & thl is 0.5.
        ! Brian Griffin; February 2, 2008.
 
-       thlp2_sfc = 0.4_core_rknd * a_const * ( wpthlp_sfc / uf )**2
+!       thlp2_sfc = 0.4_core_rknd * a_const * ( wpthlp_sfc / uf )**2
+!       thlp2_sfc = a_const * ( wpthlp_sfc / uf )**2
+       thlp2_sfc = 2.0_core_rknd * a_const * ( wpthlp_sfc / uf )**2
 
-       rtp2_sfc = 0.4_core_rknd * a_const * ( wprtp_sfc / uf )**2
+!       rtp2_sfc = 0.4_core_rknd * a_const * ( wprtp_sfc / uf )**2
+!       rtp2_sfc = a_const * ( wprtp_sfc / uf )**2
+       rtp2_sfc = 2.0_core_rknd * a_const * ( wprtp_sfc / uf )**2
 
-       rtpthlp_sfc = 0.2_core_rknd * a_const &
-                     * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+!       rtpthlp_sfc = 0.2_core_rknd * a_const &
+!                     * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
+       rtpthlp_sfc = a_const * ( wpthlp_sfc / uf ) * ( wprtp_sfc / uf )
 
        ! End Vince Larson's change.
 

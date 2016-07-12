@@ -146,9 +146,10 @@ l_calc_w_corr = .false.
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
 microphys_scheme = "khairoutdinov_kogan"
-l_fix_chi_eta_correlations = .false.
+l_fix_chi_eta_correlations = .true.
 
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 2.25
+!hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 2.25
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 3.25
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 4.50
 Ncnp2_on_Ncnm2                               = 2.2
 

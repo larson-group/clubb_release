@@ -358,6 +358,7 @@ module mu_sigma_hm_tests
                                          hmp2_ip_on_hmm2_ip, &            ! In
                                          mixt_frac, precip_frac, &        ! In
                                          precip_frac_1, precip_frac_2, &  ! In
+                                         zero, &                          ! In
                                          hm_tol, precip_frac_tol, &       ! In
                                          omicron, zeta_vrnce_rat, &       ! In
                                          mu_hm_1, mu_hm_2, &              ! Out
@@ -541,6 +542,7 @@ module mu_sigma_hm_tests
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
+                                zero, &                          ! In
                                 hm_tol, precip_frac_tol, &       ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
@@ -634,6 +636,7 @@ module mu_sigma_hm_tests
                                 hmp2_ip_on_hmm2_ip, &            ! In
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
+                                zero, &                          ! In
                                 hm_tol, precip_frac_tol, &       ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
