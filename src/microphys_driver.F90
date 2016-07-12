@@ -527,13 +527,12 @@ module microphys_driver
 
         endif
 
-
-        ! Output rain sedimentation velocity
-        if ( l_stats_samp ) then
-          call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
-        endif
-
       endif ! lh_microphys_type /= interactive
+
+      ! Output rain sedimentation velocity
+      if ( l_stats_samp ) then
+        call stat_update_var(iVrr, zt2zm( hydromet_vel_zt(:,iirrm) ), stats_zm)
+      endif
 
     case ( "morrison_gettelman" )
 
