@@ -189,7 +189,7 @@ module setup_clubb_pdf_params
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
 
-    ! Input/Output Variables
+    ! Output Variables
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
