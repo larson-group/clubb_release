@@ -45,7 +45,7 @@ module setup_clubb_pdf_params
                                    ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                    corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                    pdf_params, l_stats_samp, &                 ! Intent(in)
-                                   hydrometp2, &                               ! Intent(inout)
+                                   hydrometp2, &                               ! Intent(out)
                                    mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                    sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
                                    corr_array_1_n, corr_array_2_n, &           ! Intent(out)
@@ -190,7 +190,7 @@ module setup_clubb_pdf_params
       l_stats_samp    ! Flag to sample statistics
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(inout) :: &
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(out) :: &
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables

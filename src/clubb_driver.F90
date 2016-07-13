@@ -1303,7 +1303,7 @@ module clubb_driver
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
                                     pdf_params, l_stats_samp, &                 ! Intent(in)
-                                    hydrometp2, &                               ! Intent(inout)
+                                    hydrometp2, &                               ! Intent(out)
                                     mu_x_1_n, mu_x_2_n, &                       ! Intent(out)
                                     sigma_x_1_n, sigma_x_2_n, &                 ! Intent(out)
                                     corr_array_1_n, corr_array_2_n, &           ! Intent(out)
