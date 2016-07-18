@@ -5,10 +5,10 @@ l_upwind_xpyp_ta      = .true.,
 l_upwind_xm_ma        = .true.,
 l_quintic_poly_interp = .false.,
 l_tke_aniso           = .true.,
-l_vert_avg_closure    = .true.,
+l_vert_avg_closure    = .false.,
 l_single_C2_Skw       = .false.,
 l_standard_term_ta    = .false.,
-l_use_cloud_cover     = .true.,
+l_use_cloud_cover     = .false.,
 l_use_ADG2            = .false.,
 l_use_3D_closure      = .false.
 /

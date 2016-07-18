@@ -120,18 +120,18 @@ module model_flags
   ! Use 2 calls to pdf_closure and the trapezoidal rule to  compute the 
   ! varibles that are output from high order closure
   logical, private :: &
-    l_vert_avg_closure  = .true.
+    l_vert_avg_closure  = .false.
 !$omp threadprivate(l_vert_avg_closure)
 
   ! These are currently set based on l_vert_avg_closure
   logical, public :: &
-    l_trapezoidal_rule_zt = .true., & ! If true, the trapezoidal rule is called for
+    l_trapezoidal_rule_zt = .false.,& ! If true, the trapezoidal rule is called for
                                          ! the thermodynamic-level variables output 
                                          ! from pdf_closure.  
-    l_trapezoidal_rule_zm = .true., & ! If true, the trapezoidal rule is called for
+    l_trapezoidal_rule_zm = .false.,& ! If true, the trapezoidal rule is called for
                                          ! three momentum-level variables - wpthvp,
                                        ! thlpthvp, and rtpthvp - output from pdf_closure.
-    l_call_pdf_closure_twice = .true., & ! This logical flag determines whether or not to
+    l_call_pdf_closure_twice = .false.,& ! This logical flag determines whether or not to
     ! call subroutine pdf_closure twice.  If true,
     ! pdf_closure is called first on thermodynamic levels
     ! and then on momentum levels so that each variable is
@@ -161,7 +161,7 @@ module model_flags
   ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help increase cloudiness
   ! at coarser grid resolutions.
   logical, public :: &
-    l_use_cloud_cover = .true.
+    l_use_cloud_cover = .false.
 !$omp threadprivate(l_use_cloud_cover)
 
   integer, public :: &
