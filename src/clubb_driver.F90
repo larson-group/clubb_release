@@ -898,7 +898,8 @@ module clubb_driver
              l_tke_aniso_in=model_flags_array(8), &
              l_use_cloud_cover_in=model_flags_array(9) , &
              l_use_ADG2_in=model_flags_array(10), &
-             l_use_3D_closure_in = model_flags_array(11) )
+             l_use_3D_closure_in = model_flags_array(11), &
+             l_rcm_supersat_adj_in = model_flags_array(12) )
     end if
 
     ! Deallocate stretched grid altitude arrays

@@ -216,7 +216,8 @@ module advance_clubb_core_module
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
       l_use_ice_latent, &
-      l_damp_wp2_using_em
+      l_damp_wp2_using_em, &
+      l_rcm_supersat_adj
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -628,10 +629,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Km_zm, Kmh_zm
 
-#ifdef CLUBB_CAM
     real( kind = core_rknd ), dimension(gr%nz) :: &
       RH_postPDF
-#endif
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1590,21 +1589,21 @@ module advance_clubb_core_module
 
       end if ! l_use_ice_latent = .true.
 
-#ifdef CLUBB_CAM
-      ! +PAB mods, take remaining supersaturation that may exist
-      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
-      !   may exist after PDF call due to issues with calling PDF on the
-      !   thermo grid and momentum grid and the interpolation between the two
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-
       RH_postPDF = (rtm - rcm)/rsat  
-      
-      do k = 2, gr%nz
-        if (RH_postPDF(k) > 1.0_core_rknd) then
-          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
-        end if 
-      enddo
-#endif 
+
+      if ( l_rcm_supersat_adj ) then
+        ! +PAB mods, take remaining supersaturation that may exist
+        !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+        !   may exist after PDF call due to issues with calling PDF on the
+        !   thermo grid and momentum grid and the interpolation between the two
+        do k = 2, gr%nz
+          if (RH_postPDF(k) > 1.0_core_rknd) then
+            rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+          end if
+        enddo
+
+      end if
 
       !----------------------------------------------------------------
       ! Compute thvm
@@ -1926,13 +1925,6 @@ module advance_clubb_core_module
       !#######################################################################
       !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
       !#######################################################################
-
-      ! Store the saturation mixing ratio for output purposes.  Brian
-      ! Compute rsat if either rsat or rel_humidity is to be saved.  ldgrant
-      if ( ( irsat > 0 ) .or. ( irel_humidity > 0 ) ) then
-        rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-      end if
-
 
       if ( l_stats_samp ) then
         call stat_update_var( irvm, rtm - rcm, & !intent(in)

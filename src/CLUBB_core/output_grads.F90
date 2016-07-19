@@ -545,6 +545,7 @@ module output_grads
 
     if ( grads_file%ia <= grads_file%iz ) then
       do ivar=1,grads_file%nvar
+        print *, grads_file%var(ivar)%name
         write(grads_file%iounit,rec=grads_file%nrecord)  &
           real( grads_file%var(ivar)%ptr(1:grads_file%nlon, &
                                          1:grads_file%nlat,grads_file%ia:grads_file%iz), kind=r4)
