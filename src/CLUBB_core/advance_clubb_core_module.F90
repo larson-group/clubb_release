@@ -824,7 +824,8 @@ module advance_clubb_core_module
       thlm700
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrm                 ! Rain water mixing ratio
+      rrm, &              ! Rain water mixing ratio
+      rcm_supersat_adj    ! Adjustment to rcm due to spurious supersaturation
     
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction, & ! Stability correction factor
@@ -1592,6 +1593,7 @@ module advance_clubb_core_module
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
       RH_postPDF = (rtm - rcm)/rsat  
 
+      rcm_supersat_adj = zero
       if ( l_rcm_supersat_adj ) then
         ! +PAB mods, take remaining supersaturation that may exist
         !   after CLUBB PDF call and add it to rcm.  Supersaturation 
@@ -1599,10 +1601,10 @@ module advance_clubb_core_module
         !   thermo grid and momentum grid and the interpolation between the two
         do k = 2, gr%nz
           if (RH_postPDF(k) > 1.0_core_rknd) then
-            rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+            rcm_supersat_adj(k) = (rtm(k) - rcm(k)) - rsat(k)
+            rcm(k) = rcm(k) + rcm_supersat_adj(k)
           end if
         enddo
-
       end if
 
       !----------------------------------------------------------------
@@ -2197,7 +2199,7 @@ module advance_clubb_core_module
              thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
-             cloud_cover, sigma_sqd_w, pdf_params,                  & ! intent(in)
+             cloud_cover, rcm_supersat_adj, sigma_sqd_w, pdf_params,& ! intent(in)
              sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,     & ! intent(in)
              wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
 

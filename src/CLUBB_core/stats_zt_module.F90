@@ -74,7 +74,8 @@ module stats_zt_module
         isigma_sqd_w_zt, &
         iSkw_zt, &
         iSkthl_zt, &
-        iSkrt_zt
+        iSkrt_zt, &
+        ircm_supersat_adj
 
     use stats_variables, only: & 
         ihm_1, & ! Variable(s)
@@ -3786,6 +3787,13 @@ module stats_zt_module
         call stat_assign( var_index=iSkrt_zt, var_name="Skrt_zt", &
              var_description="Skewness of rt on thermodynamic levels [-]", &
              var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rcm_supersat_adj')
+        ircm_supersat_adj = k
+        call stat_assign( var_index=ircm_supersat_adj, var_name="rcm_supersat_adj", &
+             var_description="rcm adjustment due to spurious supersaturation [kg/kg]", &
+             var_units="kg/kg", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       ! Hydrometeor overall variances for each hydrometeor type.
