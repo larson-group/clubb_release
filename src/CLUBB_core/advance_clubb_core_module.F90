@@ -177,6 +177,7 @@ module advance_clubb_core_module
       fstderr, &
       zero_threshold, &
       three_halves, &
+      one, &
       zero, &
       unused_var
 
@@ -1618,7 +1619,7 @@ module advance_clubb_core_module
 
       if ( .not. l_tke_aniso ) then
         ! tke is assumed to be 3/2 of wp2
-        em = three_halves * wp2 ! Known magic number
+        em = three_halves * wp2
       else
         em = 0.5_core_rknd * ( wp2 + vp2 + up2 )
       end if
@@ -1628,37 +1629,59 @@ module advance_clubb_core_module
       !----------------------------------------------------------------
 
       if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
-        ! Call compute length two additional times with perturbed values
-        ! of rtm and thlm so that an average value of Lscale may be calculated.
-        if ( l_use_ice_latent ) then
-          !Include the effects of ice in the length scale calculation
 
-          thlm_pert_1 = thlm_frz + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_1  = rtm_frz  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+         ! Call compute length two additional times with perturbed values
+         ! of rtm and thlm so that an average value of Lscale may be calculated.
 
-          thlm_pert_2 = thlm_frz - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_2  = rtm_frz  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
-        else
-          thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+         do k = 1, gr%nz, 1
+            sign_rtpthlp(k) = sign( one, rtpthlp(k) )
+         enddo
 
-          thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
-        end if
+         if ( l_use_ice_latent ) then
 
-        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
-                             p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
-                             err_code,                                            & ! intent(inout)
-                             Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
+            ! Include the effects of ice in the length scale calculation
 
-        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
-                             p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
-                             err_code,                                            & ! intent(inout)
-                             Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
+            rtm_pert_1  = rtm_frz &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm_frz &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm_frz &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm_frz &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         else
+
+            rtm_pert_1  = rtm &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         endif
+
+         call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
+                              p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
+                              err_code,                                            & ! intent(inout)
+                              Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
+
+         call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
+                              p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
+                              err_code,                                            & ! intent(inout)
+                              Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
 
       else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
         ! Take the values of thl and rt based one 1st or 2nd plume
