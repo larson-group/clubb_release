@@ -629,9 +629,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Km_zm, Kmh_zm
 
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      RH_postPDF
-
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
@@ -825,7 +822,8 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rrm, &              ! Rain water mixing ratio
-      rcm_supersat_adj    ! Adjustment to rcm due to spurious supersaturation
+      rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
+      rel_humidity        ! Relative humidity after PDF closure [-]
     
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction, & ! Stability correction factor
@@ -1591,7 +1589,7 @@ module advance_clubb_core_module
       end if ! l_use_ice_latent = .true.
 
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-      RH_postPDF = (rtm - rcm)/rsat  
+      rel_humidity = (rtm - rcm)/rsat  
 
       rcm_supersat_adj = zero
       if ( l_rcm_supersat_adj ) then
@@ -1600,9 +1598,10 @@ module advance_clubb_core_module
         !   may exist after PDF call due to issues with calling PDF on the
         !   thermo grid and momentum grid and the interpolation between the two
         do k = 2, gr%nz
-          if (RH_postPDF(k) > 1.0_core_rknd) then
+          if (rel_humidity(k) > 1.0_core_rknd) then
             rcm_supersat_adj(k) = (rtm(k) - rcm(k)) - rsat(k)
             rcm(k) = rcm(k) + rcm_supersat_adj(k)
+            rel_humidity(k) = 1.0_core_rknd
           end if
         enddo
       end if
