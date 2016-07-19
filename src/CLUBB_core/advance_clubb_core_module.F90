@@ -1367,6 +1367,8 @@ module advance_clubb_core_module
       cloud_frac_zm   = 0.0_core_rknd
       ice_supersat_frac_zm = 0.0_core_rknd
       rcm_zm = 0.0_core_rknd
+      rtm_zm = 0.0_core_rknd
+      thlm_zm = 0.0_core_rknd
 
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
