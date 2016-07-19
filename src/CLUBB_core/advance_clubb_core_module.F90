@@ -1363,6 +1363,11 @@ module advance_clubb_core_module
       thlprcp           = zt2zm( thlprcp_zt )
       thlprcp(gr%nz)  = 0.0_core_rknd
 
+      ! Initialize variables to avoid uninitialized variables.
+      cloud_frac_zm   = 0.0_core_rknd
+      ice_supersat_frac_zm = 0.0_core_rknd
+      rcm_zm = 0.0_core_rknd
+
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
         sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
