@@ -92,12 +92,13 @@ module stats_variables
      iwp2rtp = 0, &
      iSkw_zt = 0, &
      iSkthl_zt = 0, &
-     iSkrt_zt = 0
+     iSkrt_zt = 0, &
+     ircm_supersat_adj = 0
 !$omp threadprivate(ithlm, ithvm, irtm, ircm, irvm, ium, ivm, ium_ref, ivm_ref, &
 !$omp   iwm_zt, iwm_zm, iug, ivg, icloud_frac, iice_supersat_frac, ircm_in_layer, &
 !$omp   ircm_in_cloud, icloud_cover, &
 !$omp   ip_in_Pa, iexner, irho_ds_zt, ithv_ds_zt, iLscale, iwp3, ithlp3, irtp3, &
-!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iSkw_zt, iSkthl_zt, iSkrt_zt )
+!$omp   iwpthlp2, iwp2thlp, iwprtp2, iwp2rtp, iSkw_zt, iSkthl_zt, iSkrt_zt, ircm_supersat_adj )
 
   integer, public :: & 
      iLscale_up = 0, & 
@@ -382,7 +383,7 @@ module stats_variables
      iwp3_cl  = 0
 
 !$omp   threadprivate(iwp3_bt, iwp3_ma, iwp3_ta, iwp3_tp, iwp3_ac, iwp3_bp1)
-!$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_dp1, iwp3_cl)
+!$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_pr3, iwp3_dp1, iwp3_cl)
 
   ! Rain mixing ratio budgets
   integer, public :: & 

@@ -38,7 +38,7 @@ vars_zt =
 'um_bt', 'um_ma', 'um_gf', 'um_cf', 'um_ta', 'um_f', 'um_sdmp', 'um_ndg',
 'vm_bt', 'vm_ma', 'vm_gf', 'vm_cf', 'vm_ta', 'vm_f', 'vm_sdmp', 'vm_ndg',
 'wp3_bt', 'wp3_ma', 'wp3_ta', 'wp3_tp', 'wp3_ac', 'wp3_bp1', 'wp3_bp2',
-'wp3_pr1', 'wp3_pr2', 'wp3_dp1', 'wp3_cl',
+'wp3_pr1', 'wp3_pr2', 'wp3_pr3', 'wp3_dp1', 'wp3_cl',
 'rrm_bt', 'rrm_ma', 'rrm_sd', 'rrm_ts', 'rrm_sd_morr',
 'rrm_ta', 'rrm_cond', 'rrm_auto', 'rrm_accr',
 'rrm_cond_adj', 'rrm_src_adj',

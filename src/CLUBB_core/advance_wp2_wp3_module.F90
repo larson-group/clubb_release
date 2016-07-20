@@ -2738,6 +2738,10 @@ module advance_wp2_wp3_module
 
         rhs(k_wp3) = rhs(k_wp3) + wp3_pr3_rhs
 
+      else
+
+        wp3_pr3_rhs = zero
+
       end if
 
       ! RHS buoyancy production (bp) term and pressure term 2 (pr2).

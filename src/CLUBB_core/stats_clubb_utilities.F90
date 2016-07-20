@@ -1711,7 +1711,7 @@ module stats_clubb_utilities
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
                      rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
-                     cloud_cover, sigma_sqd_w, pdf_params, &
+                     cloud_cover, rcm_supersat_adj, sigma_sqd_w, pdf_params, &
                      sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
@@ -1750,7 +1750,8 @@ module stats_clubb_utilities
         icloud_frac, &
         iice_supersat_frac, & 
         ircm_in_layer, &
-        icloud_cover
+        icloud_cover, &
+        ircm_supersat_adj
 
     use stats_variables, only: &
         ip_in_Pa, & 
@@ -2050,7 +2051,8 @@ module stats_clubb_utilities
       cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
       ice_supersat_frac_zm, & ! Ice cloud fraction on zm levels          [-]
       rcm_in_layer,         & ! Cloud water mixing ratio in cloud layer  [kg/kg]
-      cloud_cover             ! Cloud cover                              [-]
+      cloud_cover,          & ! Cloud cover                              [-]
+      rcm_supersat_adj        ! rcm adjustment due to supersaturation    [kg/kg]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: &
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
@@ -2115,6 +2117,7 @@ module stats_clubb_utilities
       call stat_update_var( iice_supersat_frac, ice_supersat_frac, stats_zt)
       call stat_update_var( ircm_in_layer, rcm_in_layer, stats_zt )
       call stat_update_var( icloud_cover, cloud_cover, stats_zt )
+      call stat_update_var( ircm_supersat_adj, rcm_supersat_adj, stats_zt )
       call stat_update_var( ip_in_Pa, p_in_Pa, stats_zt )
       call stat_update_var( iexner, exner, stats_zt )
       call stat_update_var( irho_ds_zt, rho_ds_zt, stats_zt )

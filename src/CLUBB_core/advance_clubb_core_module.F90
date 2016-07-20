@@ -177,6 +177,7 @@ module advance_clubb_core_module
       fstderr, &
       zero_threshold, &
       three_halves, &
+      one, &
       zero, &
       unused_var
 
@@ -215,7 +216,8 @@ module advance_clubb_core_module
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
       l_use_ice_latent, &
-      l_damp_wp2_using_em
+      l_damp_wp2_using_em, &
+      l_rcm_supersat_adj
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -343,6 +345,7 @@ module advance_clubb_core_module
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
+      clubb_debug,  &
       report_error, &
       fatal_error
 
@@ -627,11 +630,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       Km_zm, Kmh_zm
 
-#ifdef CLUBB_CAM
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      RH_postPDF
-#endif
-
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
@@ -824,8 +822,10 @@ module advance_clubb_core_module
       thlm700
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrm                 ! Rain water mixing ratio
-    
+      rrm, &              ! Rain water mixing ratio
+      rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
+      rel_humidity        ! Relative humidity after PDF closure [-]
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction, & ! Stability correction factor
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
@@ -836,6 +836,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: Lscale_max
 
     real( kind = core_rknd ) :: newmu
+
+    logical :: l_spur_supersat   ! Spurious supersaturation?
 
     !----- Begin Code -----
 
@@ -1363,6 +1365,13 @@ module advance_clubb_core_module
       thlprcp           = zt2zm( thlprcp_zt )
       thlprcp(gr%nz)  = 0.0_core_rknd
 
+      ! Initialize variables to avoid uninitialized variables.
+      cloud_frac_zm   = 0.0_core_rknd
+      ice_supersat_frac_zm = 0.0_core_rknd
+      rcm_zm = 0.0_core_rknd
+      rtm_zm = 0.0_core_rknd
+      thlm_zm = 0.0_core_rknd
+
       ! Interpolate passive scalars back onto the m grid
       do i = 1, sclr_dim
         sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
@@ -1582,21 +1591,29 @@ module advance_clubb_core_module
 
       end if ! l_use_ice_latent = .true.
 
-#ifdef CLUBB_CAM
-      ! +PAB mods, take remaining supersaturation that may exist
-      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
-      !   may exist after PDF call due to issues with calling PDF on the
-      !   thermo grid and momentum grid and the interpolation between the two
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
+      rel_humidity = (rtm - rcm) / rsat  
 
-      RH_postPDF = (rtm - rcm)/rsat  
-      
-      do k = 2, gr%nz
-        if (RH_postPDF(k) > 1.0_core_rknd) then
-          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
-        end if 
-      enddo
-#endif 
+      rcm_supersat_adj = zero
+      if ( l_rcm_supersat_adj ) then
+        ! +PAB mods, take remaining supersaturation that may exist
+        !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+        !   may exist after PDF call due to issues with calling PDF on the
+        !   thermo grid and momentum grid and the interpolation between the two
+        l_spur_supersat = .false.
+        do k = 2, gr%nz
+          if (rel_humidity(k) > 1.0_core_rknd) then
+            rcm_supersat_adj(k) = (rtm(k) - rcm(k)) - rsat(k)
+            rcm(k) = rcm(k) + rcm_supersat_adj(k)
+            l_spur_supersat = .true.
+          end if
+        enddo
+
+        if ( l_spur_supersat ) then
+          call clubb_debug( 1, 'Warning: spurious supersaturation was removed after pdf_closure!' )
+        end if
+
+      end if ! l_rcm_supersat_adj
 
       !----------------------------------------------------------------
       ! Compute thvm
@@ -1611,7 +1628,7 @@ module advance_clubb_core_module
 
       if ( .not. l_tke_aniso ) then
         ! tke is assumed to be 3/2 of wp2
-        em = three_halves * wp2 ! Known magic number
+        em = three_halves * wp2
       else
         em = 0.5_core_rknd * ( wp2 + vp2 + up2 )
       end if
@@ -1621,37 +1638,59 @@ module advance_clubb_core_module
       !----------------------------------------------------------------
 
       if ( l_avg_Lscale .and. .not. l_Lscale_plume_centered ) then
-        ! Call compute length two additional times with perturbed values
-        ! of rtm and thlm so that an average value of Lscale may be calculated.
-        if ( l_use_ice_latent ) then
-          !Include the effects of ice in the length scale calculation
 
-          thlm_pert_1 = thlm_frz + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_1  = rtm_frz  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+         ! Call compute length two additional times with perturbed values
+         ! of rtm and thlm so that an average value of Lscale may be calculated.
 
-          thlm_pert_2 = thlm_frz - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_2  = rtm_frz  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
-        else
-          thlm_pert_1 = thlm + Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_1  = rtm  + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_1   = newmu / Lscale_mu_coef
+         do k = 1, gr%nz, 1
+            sign_rtpthlp(k) = sign( one, rtpthlp(k) )
+         enddo
 
-          thlm_pert_2 = thlm - Lscale_pert_coef * sqrt( max( thlp2, thl_tol**2 ) )
-          rtm_pert_2  = rtm  - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
-          mu_pert_2   = newmu * Lscale_mu_coef
-        end if
+         if ( l_use_ice_latent ) then
 
-        call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
-                             p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
-                             err_code,                                            & ! intent(inout)
-                             Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
+            ! Include the effects of ice in the length scale calculation
 
-        call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
-                             p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
-                             err_code,                                            & ! intent(inout)
-                             Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
+            rtm_pert_1  = rtm_frz &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm_frz &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm_frz &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm_frz &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         else
+
+            rtm_pert_1  = rtm &
+                          + Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_1 = thlm &
+                          + sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_1   = newmu / Lscale_mu_coef
+
+            rtm_pert_2  = rtm &
+                          - Lscale_pert_coef * sqrt( max( rtp2, rt_tol**2 ) )
+            thlm_pert_2 = thlm &
+                          - sign_rtpthlp * Lscale_pert_coef &
+                            * sqrt( max( thlp2, thl_tol**2 ) )
+            mu_pert_2   = newmu * Lscale_mu_coef
+
+         endif
+
+         call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
+                              p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
+                              err_code,                                            & ! intent(inout)
+                              Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
+
+         call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
+                              p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
+                              err_code,                                            & ! intent(inout)
+                              Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
 
       else if ( l_avg_Lscale .and. l_Lscale_plume_centered ) then
         ! Take the values of thl and rt based one 1st or 2nd plume
@@ -1897,13 +1936,6 @@ module advance_clubb_core_module
       !############## ADVANCE PROGNOSTIC VARIABLES ONE TIMESTEP ##############
       !#######################################################################
 
-      ! Store the saturation mixing ratio for output purposes.  Brian
-      ! Compute rsat if either rsat or rel_humidity is to be saved.  ldgrant
-      if ( ( irsat > 0 ) .or. ( irel_humidity > 0 ) ) then
-        rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-      end if
-
-
       if ( l_stats_samp ) then
         call stat_update_var( irvm, rtm - rcm, & !intent(in)
                               stats_zt )               !intent(inout)
@@ -1913,8 +1945,12 @@ module advance_clubb_core_module
         ! irel_humidity = 0, rsat is not computed, leading to a floating-point exception
         ! when stat_update_var is called for rel_humidity.  ldgrant
         if ( irel_humidity > 0 ) then
-          call stat_update_var( irel_humidity, (rtm - rcm) / rsat, & !intent(in)
-                                stats_zt)                                  !intent(inout)
+          ! Recompute rsat and rel_humidity. They might have changed.
+          rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
+          rel_humidity = (rtm - rcm) / rsat
+
+          call stat_update_var( irel_humidity, rel_humidity, &             ! intent(in)
+                                stats_zt)                                  ! intent(inout)
         end if ! irel_humidity > 0
       end if ! l_stats_samp
 
@@ -2175,7 +2211,7 @@ module advance_clubb_core_module
              thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
-             cloud_cover, sigma_sqd_w, pdf_params,                  & ! intent(in)
+             cloud_cover, rcm_supersat_adj, sigma_sqd_w, pdf_params,& ! intent(in)
              sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,     & ! intent(in)
              wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
 
