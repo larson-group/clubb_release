@@ -3378,6 +3378,9 @@ module advance_xp2_xpyp_module
       pf_const              ! ( 1 - pf )/( pf )                    [-]
 
     integer :: k
+    real( kind = core_rknd ), dimension(nz) :: temp1_sqrt, temp2_sqrt, &
+                                               temp3_sqrt, temp4_sqrt, &
+                                               temp1_recp
 
     ! ---- Begin Code ----
 
@@ -3399,15 +3402,18 @@ module advance_xp2_xpyp_module
     else where
       pf_const = 0.0_core_rknd
     end where
-
+    !Replacing repeated operations with copies
+    temp1_sqrt = sqrt(pf_const)
+    temp1_recp = 1.0_core_rknd / (Cp * exner)
     ! Include effects of rain evaporation on rtp2
     temp_rtp2 = pdf_params%mixt_frac &
                     * ( ( pdf_params%rt_1 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_1 ) &
                 + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%rt_2 - ( rcm + rvm ) )**2 + pdf_params%varnce_rt_2 )
 
+    temp2_sqrt = sqrt(temp_rtp2)
     rtp2_mc_zt = rrm_evap**2 * pf_const * dt &
-                       + 2.0_core_rknd * abs(rrm_evap) * sqrt(temp_rtp2 * pf_const)
+                       + 2.0_core_rknd * abs(rrm_evap) * temp1_sqrt * temp2_sqrt
                        !use absolute value of evaporation, as evaporation will add
                        !to rt_1
     rtp2_mc = zt2zm( rtp2_mc_zt )
@@ -3417,11 +3423,12 @@ module advance_xp2_xpyp_module
                     * ( ( pdf_params%thl_1 - thlm )**2 + pdf_params%varnce_thl_1 ) &
                  + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                     * ( ( pdf_params%thl_2 - thlm )**2 + pdf_params%varnce_thl_2 )
+    temp3_sqrt = sqrt(temp_thlp2)
 
-    thlp2_mc_zt = ( rrm_evap * Lv / ( Cp * exner) )**2 &
+    thlp2_mc_zt = ( rrm_evap * Lv * temp1_recp )**2 &
                        * pf_const * dt &
                        + 2.0_core_rknd * abs(rrm_evap) * Lv / ( Cp * exner ) &
-                       * sqrt(temp_thlp2 * pf_const)
+                       * temp1_sqrt * temp3_sqrt
     
     thlp2_mc = zt2zm( thlp2_mc_zt )
 
@@ -3432,16 +3439,16 @@ module advance_xp2_xpyp_module
                   * ( ( pdf_params%w_1 - wm )**2 + pdf_params%varnce_w_1 ) &
                + ( 1.0_core_rknd - pdf_params%mixt_frac ) &
                   * ( ( pdf_params%w_2 - wm )**2 + pdf_params%varnce_w_2 )
+    temp4_sqrt = sqrt(temp_wp2)
+    wprtp_mc_zt = abs(rrm_evap) * temp1_sqrt * temp4_sqrt
 
-    wprtp_mc_zt = abs(rrm_evap) * sqrt(pf_const) * sqrt(temp_wp2)
+    wpthlp_mc_zt = -1.0_core_rknd * Lv * temp1_recp * abs(rrm_evap) &
+                                * temp1_sqrt * temp4_sqrt
 
-    wpthlp_mc_zt = -1.0_core_rknd * Lv / ( Cp * exner) * abs(rrm_evap) &
-                                * sqrt(pf_const) * sqrt(temp_wp2)
-
-    rtpthlp_mc_zt = -1.0_core_rknd * abs(rrm_evap) * sqrt( pf_const ) &
-                              * ( ( Lv / (cp * exner ) ) * sqrt( temp_rtp2 ) &
-                                + sqrt( temp_thlp2 ) ) &
-                            - ( Lv / (cp * exner ) ) * pf_const &
+    rtpthlp_mc_zt = -1.0_core_rknd * abs(rrm_evap) * temp1_sqrt &
+                              * ( ( Lv * temp1_recp ) * temp2_sqrt &
+                                + temp3_sqrt ) &
+                            - ( Lv * temp1_recp ) * pf_const &
                                 * ( rrm_evap )**2 * dt
 
     wprtp_mc = zt2zm( wprtp_mc_zt )

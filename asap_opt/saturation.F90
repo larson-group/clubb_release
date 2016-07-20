@@ -21,7 +21,7 @@ module saturation
   private  ! Change default so all items private
 
   public   :: sat_mixrat_liq, sat_mixrat_liq_lookup, sat_mixrat_ice, rcm_sat_adj, &
-              sat_vapor_press_liq
+              sat_vapor_press_liq, sat_mixrat_liq_vec
 
   private  :: sat_vapor_press_liq_flatau, sat_vapor_press_liq_bolton
   private  :: sat_vapor_press_ice_flatau, sat_vapor_press_ice_bolton
@@ -75,6 +75,57 @@ module saturation
 
   contains
 
+  subroutine  sat_mixrat_liq_vec( levels, p_in_Pa, T_in_K, sat_mixrat_liq_result)
+
+! Description:
+!   Used to compute the saturation mixing ratio of liquid water.
+
+! References:
+!   Formula from Emanuel 1994, 4.4.14
+!-------------------------------------------------------------------------
+
+      USE constants_clubb, ONLY: ep 
+
+      USE clubb_precision, ONLY: core_rknd 
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: levels 
+    real( kind = core_rknd ), dimension(levels), intent(in) ::  & 
+      p_in_Pa,  & ! Pressure    [Pa]
+      T_in_K      ! Temperature [K]
+    real( kind = core_rknd ), dimension(levels), intent(out) ::  & 
+      sat_mixrat_liq_result
+   ! Local Variables
+    real( kind = core_rknd ), dimension(levels) :: esatv
+    integer :: k
+
+    ! --- Begin Code ---
+    !$dir vector always
+    do k=1, levels
+       ! Calculate the SVP for water vapor.
+       esatv(k) = sat_vapor_press_liq( T_in_K(k) )
+    enddo
+    !$dir nofusion
+    !$dir vector always
+    do k=1, levels
+       ! If esatv exceeds the air pressure, then assume esatv~=0.5*pressure 
+       !   and set rsat = ep = 0.622
+       if ( p_in_Pa(k)-esatv(k) < 1.0_core_rknd ) then
+         sat_mixrat_liq_result(k) = ep
+       else
+
+       ! Formula for Saturation Mixing Ratio:
+       !
+       ! rs = (epsilon) * [ esat / ( p - esat ) ];
+       ! where epsilon = R_d / R_v
+          sat_mixrat_liq_result(k) = ep * ( esatv(k) / ( p_in_Pa(k) - esatv(k) ) )
+
+
+       end if
+    enddo
+  end subroutine sat_mixrat_liq_vec
 !-------------------------------------------------------------------------
   elemental real( kind = core_rknd ) function sat_mixrat_liq( p_in_Pa, T_in_K )
 

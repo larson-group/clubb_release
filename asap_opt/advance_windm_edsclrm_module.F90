@@ -1707,46 +1707,45 @@ module advance_windm_edsclrm_module
 
     ! Initialize the RHS vector.
     rhs = 0.0_core_rknd
+    !Moving the if condition outside the do loop to enhance vectorization
+    if ( l_stats_samp .and. ixm_ta > 0) then
+      do k = 2, gr%nz-1, 1
 
-    do k = 2, gr%nz-1, 1
+        ! Define indices
+        km1 = max( k-1, 1 )
+        kp1 = min( k+1, gr%nz )
 
-      ! Define indices
-      km1 = max( k-1, 1 )
-      kp1 = min( k+1, gr%nz )
-
-      ! RHS turbulent advection term (solved as an eddy-diffusion term).
-      if ( k == 2 ) then
-        ! The lower boundary condition needs to be applied here at level 2.
-        ! The lower boundary condition is a "fixed flux" boundary condition.
-        ! The coding is the same as for a zero-flux boundary condition, but with
-        ! an extra term added on the right-hand side at the boundary level.  For
-        ! the rest of the model code, a zero-flux boundary condition is applied
-        ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
-        ! In order to apply the same boundary condition code here at level 2, an
-        ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at
-        ! level 2 that it normally uses at level 1.
-        diff_k_in = 1
-      else
+        ! RHS turbulent advection term (solved as an eddy-diffusion term).
         diff_k_in = k
-      endif
-      rhs_diff(1:3)  & 
-      = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
-      * diffusion_zt_lhs( rho_ds_zm(k) * Km_zm(k),  &
-                          rho_ds_zm(km1) * Km_zm(km1), nu,  &
-                          gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
-                          gr%invrs_dzt(k), diff_k_in )
-      rhs(k)   =   rhs(k) & 
-                 - rhs_diff(3) * xm(km1) &
-                 - rhs_diff(2) * xm(k)   &
-                 - rhs_diff(1) * xm(kp1)
+        if ( k == 2 ) then
+          ! The lower boundary condition needs to be applied here at level 2.
+          ! The lower boundary condition is a "fixed flux" boundary condition.
+          ! The coding is the same as for a zero-flux boundary condition, but with
+          ! an extra term added on the right-hand side at the boundary level.  For
+          ! the rest of the model code, a zero-flux boundary condition is applied
+          ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
+          ! In order to apply the same boundary condition code here at level 2, an
+          ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at
+          ! level 2 that it normally uses at level 1.
+          diff_k_in = 1
+        endif
+        rhs_diff(1:3)  & 
+        = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
+        * diffusion_zt_lhs( rho_ds_zm(k) * Km_zm(k),  &
+                            rho_ds_zm(km1) * Km_zm(km1), nu,  &
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                            gr%invrs_dzt(k), diff_k_in )
+        rhs(k)   =   rhs(k) & 
+                   - rhs_diff(3) * xm(km1) &
+                   - rhs_diff(2) * xm(k)   &
+                   - rhs_diff(1) * xm(kp1)
 
-      ! RHS forcings.
-      rhs(k) = rhs(k) + xm_tndcy(k)
+        ! RHS forcings.
+        rhs(k) = rhs(k) + xm_tndcy(k)
 
-      ! RHS time tendency
-      rhs(k) = rhs(k) + 1.0_core_rknd / dt * xm(k)
+        ! RHS time tendency
+        rhs(k) = rhs(k) + 1.0_core_rknd / dt * xm(k)
 
-      if ( l_stats_samp ) then
 
         ! Statistics:  explicit contributions for um or vm.
 
@@ -1754,17 +1753,60 @@ module advance_windm_edsclrm_module
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
         ! subtracts the value sent in, reverse the sign on right-hand side
         ! turbulent advection component.
-        if ( ixm_ta > 0 ) then
           call stat_begin_update_pt( ixm_ta, k, & 
                  rhs_diff(3) * xm(km1) &
                + rhs_diff(2) * xm(k)   &
                + rhs_diff(1) * xm(kp1), stats_zt )
+
+
+      enddo ! 2..gr%nz-1
+    else
+      do k = 2, gr%nz-1, 1
+
+        ! Define indices
+        km1 = max( k-1, 1 )
+        kp1 = min( k+1, gr%nz )
+
+        ! RHS turbulent advection term (solved as an eddy-diffusion term).
+        diff_k_in = k
+        if ( k == 2 ) then
+          ! The lower boundary condition needs to be applied here at level 2.
+          ! The lower boundary condition is a "fixed flux" boundary condition.
+          ! The coding is the same as for a zero-flux boundary condition, but with
+          ! an extra term added on the right-hand side at the boundary level.  For
+          ! the rest of the model code, a zero-flux boundary condition is applied
+          ! at level 1, and thus subroutine diffusion_zt_lhs is set-up to do that.
+          ! In order to apply the same boundary condition code here at level 2, an
+          ! adjuster needs to be used to tell diffusion_zt_lhs to use the code at
+          ! level 2 that it normally uses at level 1.
+          diff_k_in = 1
         endif
+        rhs_diff(1:3)  & 
+        = 0.5_core_rknd * invrs_rho_ds_zt(k)  &
+        * diffusion_zt_lhs( rho_ds_zm(k) * Km_zm(k),  &
+                            rho_ds_zm(km1) * Km_zm(km1), nu,  &
+                            gr%invrs_dzm(km1), gr%invrs_dzm(k),  &
+                            gr%invrs_dzt(k), diff_k_in )
+        rhs(k)   =   rhs(k) & 
+                   - rhs_diff(3) * xm(km1) &
+                   - rhs_diff(2) * xm(k)   &
+                   - rhs_diff(1) * xm(kp1)
 
-      endif  ! l_stats_samp
+        ! RHS forcings.
+        rhs(k) = rhs(k) + xm_tndcy(k)
+  
+        ! RHS time tendency
+        rhs(k) = rhs(k) + 1.0_core_rknd / dt * xm(k)
 
-    enddo ! 2..gr%nz-1
 
+        ! Statistics:  explicit contributions for um or vm.
+
+        ! xm term ta has both implicit and explicit components; call
+        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+        ! subtracts the value sent in, reverse the sign on right-hand side
+        ! turbulent advection component.
+      enddo ! 2..gr%nz-1
+    endif 
 
     ! Boundary Conditions
 
