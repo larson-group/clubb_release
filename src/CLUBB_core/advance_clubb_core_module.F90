@@ -1589,7 +1589,7 @@ module advance_clubb_core_module
       end if ! l_use_ice_latent = .true.
 
       rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-      rel_humidity = (rtm - rcm)/rsat  
+      rel_humidity = (rtm - rcm) / rsat  
 
       rcm_supersat_adj = zero
       if ( l_rcm_supersat_adj ) then
@@ -1936,6 +1936,9 @@ module advance_clubb_core_module
         ! irel_humidity = 0, rsat is not computed, leading to a floating-point exception
         ! when stat_update_var is called for rel_humidity.  ldgrant
         if ( irel_humidity > 0 ) then
+          ! Recompute rsat
+          rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
+
           call stat_update_var( irel_humidity, (rtm - rcm) / rsat, & !intent(in)
                                 stats_zt)                                  !intent(inout)
         end if ! irel_humidity > 0
