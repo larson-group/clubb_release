@@ -345,6 +345,7 @@ module advance_clubb_core_module
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
+      clubb_debug,  &
       report_error, &
       fatal_error
 
@@ -824,7 +825,7 @@ module advance_clubb_core_module
       rrm, &              ! Rain water mixing ratio
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
       rel_humidity        ! Relative humidity after PDF closure [-]
-    
+
     real( kind = core_rknd ), dimension(gr%nz) :: &
        stability_correction, & ! Stability correction factor
        tau_N2_zm,            & ! Tau with a static stability correction applied to it [s]
@@ -835,6 +836,8 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: Lscale_max
 
     real( kind = core_rknd ) :: newmu
+
+    logical :: l_spur_supersat   ! Spurious supersaturation?
 
     !----- Begin Code -----
 
@@ -1597,12 +1600,19 @@ module advance_clubb_core_module
         !   after CLUBB PDF call and add it to rcm.  Supersaturation 
         !   may exist after PDF call due to issues with calling PDF on the
         !   thermo grid and momentum grid and the interpolation between the two
+        l_spur_supersat = .false.
         do k = 2, gr%nz
           if (rel_humidity(k) > 1.0_core_rknd) then
             rcm_supersat_adj(k) = (rtm(k) - rcm(k)) - rsat(k)
             rcm(k) = rcm(k) + rcm_supersat_adj(k)
+            l_spur_supersat = .true.
           end if
         enddo
+
+        if ( l_spur_supersat ) then
+          call clubb_debug( 1, 'Warning: spurious supersaturation was removed after pdf_closure!' )
+        end if
+
       end if
 
       !----------------------------------------------------------------
