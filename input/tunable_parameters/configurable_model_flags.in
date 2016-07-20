@@ -11,7 +11,7 @@ l_standard_term_ta    = .false.,
 l_use_cloud_cover     = .false.,
 l_use_ADG2            = .false.,
 l_use_3D_closure      = .false.,
-l_rcm_supersat_adj    = .false.
+l_rcm_supersat_adj    = .true.
 /
 
 &configurable_silhs_flags_nl
