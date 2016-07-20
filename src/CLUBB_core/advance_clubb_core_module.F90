@@ -1613,7 +1613,7 @@ module advance_clubb_core_module
           call clubb_debug( 1, 'Warning: spurious supersaturation was removed after pdf_closure!' )
         end if
 
-      end if
+      end if ! l_rcm_supersat_adj
 
       !----------------------------------------------------------------
       ! Compute thvm
