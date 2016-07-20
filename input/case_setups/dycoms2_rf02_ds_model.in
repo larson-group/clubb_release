@@ -146,6 +146,7 @@ l_cloud_sed    = .true.  ! Flag for cloud water sedimentation.
 microphys_scheme = "khairoutdinov_kogan"
 Nc0_in_cloud  = 55.e6 ! num/m^3
 l_var_covar_src = .true.
+l_fix_chi_eta_correlations = .true.
 
 hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.0
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.0
