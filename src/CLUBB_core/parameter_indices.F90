@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 71 ! Total tunable parameters
+    nparams = 72 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -113,7 +113,8 @@ module parameter_indices
     ic_K10                       = 68, &
     ic_K10h                      = 69, &
     ithlp2_rad_coef              = 70, &
-    ithlp2_rad_cloud_frac_thresh = 71
+    ithlp2_rad_cloud_frac_thresh = 71, &
+    iup2_vp2_factor              = 72
 
 
 end module parameter_indices

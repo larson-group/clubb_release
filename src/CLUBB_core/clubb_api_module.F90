@@ -132,7 +132,12 @@ module clubb_api_module
     l_stability_correct_tau_zm, &
     l_do_expldiff_rtm_thlm, &
     l_Lscale_plume_centered, &
-    l_use_ice_latent
+    l_use_ice_latent, &
+    l_use_C7_Richardson, &
+    l_use_C11_Richardson, &
+    l_brunt_vaisala_freq_moist, &
+    l_use_thvm_in_bv_freq, &
+    l_rcm_supersat_adj
 
   use parameters_model, only : &
     hydromet_dim    ! Number of hydrometeor species
@@ -154,7 +159,7 @@ module clubb_api_module
     iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
     ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
     iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
-    ithlp2_rad_cloud_frac_thresh
+    ithlp2_rad_cloud_frac_thresh, iup2_vp2_factor
 
   use pdf_parameter_module, only : &
 #ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
@@ -241,6 +246,11 @@ module clubb_api_module
         l_do_expldiff_rtm_thlm, &
         l_Lscale_plume_centered, &
         l_use_ice_latent, &
+        l_use_C7_Richardson, &
+        l_use_C11_Richardson, &
+        l_brunt_vaisala_freq_moist, &
+        l_use_thvm_in_bv_freq, &
+        l_rcm_supersat_adj, &
         ! The parameters of CLUBB can be retrieved and tuned using these indices:
         iC1, iC1b, iC1c, iC2, iC2b, iC2c,  &
         iC2rt, iC2thl, iC2rtthl, iC4, iC5, &
@@ -253,7 +263,7 @@ module clubb_api_module
         iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
         ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
         iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
-        ithlp2_rad_cloud_frac_thresh
+        ithlp2_rad_cloud_frac_thresh, iup2_vp2_factor
 
 
 

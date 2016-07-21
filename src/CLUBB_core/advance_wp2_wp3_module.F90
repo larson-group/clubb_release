@@ -101,8 +101,8 @@ module advance_wp2_wp3_module
       clubb_var_out_of_range ! Constant(s)
 
     use model_flags, only: &
-      l_damp_wp2_using_em  ! Logical
-
+      l_damp_wp2_using_em, &  ! Logical(s)
+      l_use_C11_Richardson
 
     implicit none
 
@@ -215,14 +215,18 @@ module advance_wp2_wp3_module
     ! If this code is used, C11 is no longer relevant, i.e. constants
     !    are hardwired.
 
-    ! Calculate C_{1} and C_{11} as functions of skewness of w.
-    ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-    if ( C11 /= C11b ) then
-      C11_Skw_fnc(1:gr%nz) =  & 
-        C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
+    if ( l_use_C11_Richardson ) then
+      C11_Skw_fnc = Cx_fnc_Richardson
     else
-      C11_Skw_fnc(1:gr%nz) = C11b
-    end if
+      ! Calculate C_{1} and C_{11} as functions of skewness of w.
+      ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+      if ( C11 /= C11b ) then
+        C11_Skw_fnc(1:gr%nz) =  & 
+          C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
+      else
+        C11_Skw_fnc(1:gr%nz) = C11b
+      end if
+    end if ! l_use_C11_Richardson
 
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C1 /= C1b ) then

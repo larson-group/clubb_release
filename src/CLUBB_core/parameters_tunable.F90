@@ -203,6 +203,11 @@ module parameters_tunable
 
 !$omp threadprivate( thlp2_rad_coef, thlp2_rad_cloud_frac_thresh )
 
+  real( kind = core_rknd ), public :: &
+    up2_vp2_factor = 2.0_core_rknd               ! Coefficients of up2 and vp2    [-]
+
+!$omp threadprivate( up2_vp2_factor )
+
   ! used in adj_low_res_nu. If .true., avg_deltaz = deltaz
 #ifdef GFDL
   logical, public :: l_prescribed_avg_deltaz = .true.
@@ -226,7 +231,7 @@ module parameters_tunable
     omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
     lambda0_stability_coef, mult_coef, taumin, taumax, mu, Lscale_mu_coef, &
     Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-    thlp2_rad_cloud_frac_thresh
+    thlp2_rad_cloud_frac_thresh, up2_vp2_factor
 
   ! These are referenced together often enough that it made sense to
   ! make a list of them.  Note that lmin_coef is the input parameter,
@@ -275,7 +280,7 @@ module parameters_tunable
        "Lscale_pert_coef           ", "alpha_corr                 ", &
        "Skw_denom_coef             ", "c_K10                      ", &
        "c_K10h                     ", "thlp2_rad_coef             ", &
-       "thlp2_rad_cloud_frac_thresh"  /)
+       "thlp2_rad_cloud_frac_thresh", "up2_vp2_factor             "  /)
 
   real( kind = core_rknd ), parameter, private :: &
     init_value = -999._core_rknd ! Initial value for the parameters, used to detect missing values
@@ -365,7 +370,7 @@ module parameters_tunable
                             upsilon_precip_frac_rat, lambda0_stability_coef, &
                             mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                             alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                            thlp2_rad_cloud_frac_thresh )
+                            thlp2_rad_cloud_frac_thresh, up2_vp2_factor )
 
 
     ! It was decided after some experimentation, that the best
@@ -722,7 +727,7 @@ module parameters_tunable
                           upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                          thlp2_rad_cloud_frac_thresh, params )
+                          thlp2_rad_cloud_frac_thresh, up2_vp2_factor, params )
 
     l_error = .false.
 
@@ -795,7 +800,7 @@ module parameters_tunable
       lmin_coef, omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, mu, &
       Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, &
-      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
+      thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor
 
     ! Initialize values to -999.
     call init_parameters_999( )
@@ -820,7 +825,7 @@ module parameters_tunable
                           upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                          thlp2_rad_cloud_frac_thresh, param_spread )
+                          thlp2_rad_cloud_frac_thresh, up2_vp2_factor, param_spread )
 
     l_error = .false.
 
@@ -866,7 +871,7 @@ module parameters_tunable
                upsilon_precip_frac_rat, lambda0_stability_coef, &
                mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh, params )
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor, params )
 
     ! Description:
     ! Takes the list of scalar variables and puts them into a 1D vector.
@@ -953,6 +958,7 @@ module parameters_tunable
       ic_K10h, &
       ithlp2_rad_coef, &
       ithlp2_rad_cloud_frac_thresh, &
+      iup2_vp2_factor, &
       nparams
 
     implicit none
@@ -970,7 +976,7 @@ module parameters_tunable
       omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, taumax, Lscale_mu_coef, &
       Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-      thlp2_rad_cloud_frac_thresh
+      thlp2_rad_cloud_frac_thresh, up2_vp2_factor
 
     ! Output variables
     real( kind = core_rknd ), intent(out), dimension(nparams) :: params
@@ -1056,6 +1062,7 @@ module parameters_tunable
     params(ic_K10h) = c_K10h
     params(ithlp2_rad_coef) = thlp2_rad_coef
     params(ithlp2_rad_cloud_frac_thresh) = thlp2_rad_cloud_frac_thresh
+    params(iup2_vp2_factor) = up2_vp2_factor
 
     return
   end subroutine pack_parameters
@@ -1075,7 +1082,7 @@ module parameters_tunable
                upsilon_precip_frac_rat, lambda0_stability_coef, &
                mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-               thlp2_rad_cloud_frac_thresh )
+               thlp2_rad_cloud_frac_thresh, up2_vp2_factor )
 
     ! Description:
     ! Takes the 1D vector and returns the list of scalar variables.
@@ -1162,6 +1169,7 @@ module parameters_tunable
       ic_K10h, & 
       ithlp2_rad_coef, &
       ithlp2_rad_cloud_frac_thresh, &
+      iup2_vp2_factor, &
       nparams
 
     implicit none
@@ -1182,7 +1190,7 @@ module parameters_tunable
       mu, beta, lmin_coef, omicron, zeta_vrnce_rat, upsilon_precip_frac_rat, &
       lambda0_stability_coef, mult_coef, taumin, &
       taumax, Lscale_mu_coef, Lscale_pert_coef, alpha_corr, Skw_denom_coef, c_K10, &
-      c_K10h, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh
+      c_K10h, thlp2_rad_coef, thlp2_rad_cloud_frac_thresh, up2_vp2_factor
 
     C1      = params(iC1)
     C1b     = params(iC1b)
@@ -1266,6 +1274,7 @@ module parameters_tunable
 
     thlp2_rad_coef = params(ithlp2_rad_coef)
     thlp2_rad_cloud_frac_thresh = params(ithlp2_rad_cloud_frac_thresh)
+    up2_vp2_factor = params(iup2_vp2_factor)
 
     return
   end subroutine unpack_parameters
@@ -1297,7 +1306,7 @@ module parameters_tunable
                           upsilon_precip_frac_rat, lambda0_stability_coef, &
                           mult_coef, taumin, taumax, Lscale_mu_coef, Lscale_pert_coef, &
                           alpha_corr, Skw_denom_coef, c_K10, c_K10h, thlp2_rad_coef, &
-                          thlp2_rad_cloud_frac_thresh, params )
+                          thlp2_rad_cloud_frac_thresh, up2_vp2_factor, params )
 
     return
 
@@ -1388,6 +1397,7 @@ module parameters_tunable
     c_K10h                      = init_value
     thlp2_rad_coef              = init_value
     thlp2_rad_cloud_frac_thresh = init_value
+    up2_vp2_factor              = init_value
 
     return
 
