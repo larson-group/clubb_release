@@ -638,11 +638,12 @@ module advance_clubb_core_module
 #endif
 
     !!! Local Variables
+    integer, dimension(gr%nz) :: err_code_pdf_closure
     integer :: i, k, &
 #ifdef CLUBB_CAM
       ixind, &
 #endif
-      err_code_pdf_closure, err_code_surface
+      err_code_surface
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
