@@ -848,8 +848,10 @@ use vars, only: t2leprec, q2leprec, qwleprec, twleprec, prespot, qsatw
 use grid, only: nsave3D, nsave3dstart, nsave3dend
 use module_mp_GRAUPEL, only: Nc0
 use compute_chi_module, only: compute_chi_eta
-use calc_vars_util, only: t2thetal
 #endif /*UWM_STATS*/
+#if defined( UWM_STATS ) || defined( PNNL_STATS )
+use calc_vars_util, only: t2thetal
+#endif /*UWM_STATS .or. PNNL_STATS*/
 
 #ifdef PNNL_STATS
 !MWSWong: budget for THL, QTOG, and QTHL
@@ -1481,8 +1483,10 @@ end if !doprecip is false
     endif
 
   endif
+
+endif ! dostatis
 #endif /*UWM_STATS*/
-endif
+
 
      ! update microphysical quantities in this grid column
       if(doprecip) then
@@ -1825,10 +1829,10 @@ enddo ! j = 1, ny
 call compute_chi_eta( theta_l, micro_field(1:nx,1:ny,1:nzm,iqv), pres, prespot,&
                       chi, eta )
 
-#endif /*UWM_STATS*/
 if(mod(nstep,nsave3D).eq.0.and.nstep.ge.nsave3Dstart.and.nstep.le.nsave3Dend) then
   call write_3d_micro_fields()
 endif
+#endif /*UWM_STATS*/
 
 #ifdef UWM_STATS      
 if(dostatis) then
