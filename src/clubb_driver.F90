@@ -1758,20 +1758,23 @@ module clubb_driver
     end select
 
     ! Initialize damping
-    if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, thlm_sponge_damp_settings, & ! Intent(in)
-                                       thlm_sponge_damp_profile )       ! Intent(out)
-    end if
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,            & ! Intent(in)
+                                       thlm_sponge_damp_settings, & ! Intent(in)
+                                       thlm_sponge_damp_profile )  ! Intent(out)
+    endif
 
-    if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, rtm_sponge_damp_settings, & ! Intent(in)
-                                       rtm_sponge_damp_profile )       ! Intent(out)
-    end if
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,           & ! Intent(in)
+                                       rtm_sponge_damp_settings, & ! Intent(in)
+                                       rtm_sponge_damp_profile )   ! Intent(out)
+    endif
 
-    if(uv_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt_main, uv_sponge_damp_settings, &  ! Intent(in)
-                                       uv_sponge_damp_profile )        ! Intent(out)
-    end if
+    if ( uv_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,          & ! Intent(in)
+                                       uv_sponge_damp_settings, & ! Intent(in)
+                                       uv_sponge_damp_profile )   ! Intent(out)
+    endif
 
 
 

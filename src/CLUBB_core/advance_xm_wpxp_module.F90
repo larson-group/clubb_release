@@ -124,7 +124,7 @@ module advance_xm_wpxp_module
         fatal_error
 
     use error_code, only:  & 
-      clubb_var_out_of_range ! Constant(s)
+        clubb_var_out_of_range ! Constant(s)
 
     use stats_type_utilities, only: &
         stat_begin_update, & ! Procedure(s)
@@ -832,28 +832,35 @@ module advance_xm_wpxp_module
     end if ! Fatal error and debug_level >= 1
 
     if ( rtm_sponge_damp_settings%l_sponge_damping ) then
-      if( l_stats_samp ) then
-        call stat_begin_update( irtm_sdmp, rtm / dt, stats_zt )
-      end if
 
-      rtm(1:gr%nz) = sponge_damp_xm( dt, rtm_ref(1:gr%nz), rtm(1:gr%nz), &
-                                       rtm_sponge_damp_profile )
+       if ( l_stats_samp ) then
+          call stat_begin_update( irtm_sdmp, rtm / dt, stats_zt )
+       endif
 
-      if( l_stats_samp ) then
-        call stat_end_update( irtm_sdmp, rtm / dt, stats_zt )
-      end if
-    endif
+       rtm(1:gr%nz) = sponge_damp_xm( dt, gr%zt, rtm_ref(1:gr%nz), &
+                                      rtm(1:gr%nz), rtm_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( irtm_sdmp, rtm / dt, stats_zt )
+       endif
+
+    endif ! rtm_sponge_damp_settings%l_sponge_damping
 
     if ( thlm_sponge_damp_settings%l_sponge_damping ) then
-      if( l_stats_samp ) then
-        call stat_begin_update( ithlm_sdmp, thlm / dt, stats_zt )
-      end if
-      thlm(1:gr%nz) = sponge_damp_xm( dt, thlm_ref(1:gr%nz), thlm(1:gr%nz), &
-                                        thlm_sponge_damp_profile )
-      if( l_stats_samp ) then
-        call stat_end_update( ithlm_sdmp, thlm / dt, stats_zt )
-      end if
-    endif
+
+       if ( l_stats_samp ) then
+          call stat_begin_update( ithlm_sdmp, thlm / dt, stats_zt )
+       endif
+
+       thlm(1:gr%nz) = sponge_damp_xm( dt, gr%zt, thlm_ref(1:gr%nz), &
+                                       thlm(1:gr%nz), thlm_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( ithlm_sdmp, thlm / dt, stats_zt )
+       endif
+
+    endif ! thlm_sponge_damp_settings%l_sponge_damping
+
 
     return
 
