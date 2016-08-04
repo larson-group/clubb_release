@@ -72,76 +72,84 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: & 
-      w_tol_sqd,  & ! Constant(s)
-      rt_tol, & 
-      thl_tol, & 
-      w_tol_sqd, & 
-      fstderr, &
-      one, &
-      two_thirds, &
-      one_half, &
-      one_third, &
-      zero, &
-      zero_threshold
+        w_tol_sqd,  & ! Constant(s)
+        rt_tol, & 
+        thl_tol, & 
+        fstderr, &
+        one, &
+        two_thirds, &
+        one_half, &
+        one_third, &
+        zero, &
+        zero_threshold
 
     use model_flags, only: & 
-      l_hole_fill, &    ! logical constants
-      l_single_C2_Skw
+        l_hole_fill, &    ! logical constants
+        l_single_C2_Skw
 
     use parameters_tunable, only: &
-      C2rt,     & ! Variable(s)
-      C2thl,    &
-      C2rtthl,  &
-      c_K2,     &
-      nu2_vert_res_dep, &
-      c_K9,     &
-      nu9_vert_res_dep, &
-      beta,     &
-      C4,       &
-      C14,      &
-      C5,       &
-      C2,       &
-      C2b,      &
-      C2c
+        C2rt,     & ! Variable(s)
+        C2thl,    &
+        C2rtthl,  &
+        c_K2,     &
+        nu2_vert_res_dep, &
+        c_K9,     &
+        nu9_vert_res_dep, &
+        beta,     &
+        C4,       &
+        C14,      &
+        C5,       &
+        C2,       &
+        C2b,      &
+        C2c
 
     use parameters_model, only: &
-      sclr_dim, & ! Variable(s)
-      sclr_tol
+        sclr_dim, & ! Variable(s)
+        sclr_tol
 
     use grid_class, only: & 
-      gr,  & ! Variable(s)
-      zm2zt ! Procedure(s)
+        gr,  & ! Variable(s)
+        zm2zt ! Procedure(s)
 
     use clubb_precision, only:  & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use clip_explicit, only: & 
-      clip_covar,  & ! Procedure(s)
-      clip_variance, &
-      clip_sclrp2, &
-      clip_sclrprtp, &
-      clip_sclrpthlp
+        clip_covar,  & ! Procedure(s)
+        clip_variance, &
+        clip_sclrp2, &
+        clip_sclrprtp, &
+        clip_sclrpthlp
+
+    use sponge_layer_damping, only: &
+        up2_vp2_sponge_damp_settings, & ! Variable(s)
+        up2_vp2_sponge_damp_profile,  &
+        sponge_damp_xp2                 ! Procedure(s)
       
-    use stats_type_utilities, only: & 
-      stat_modify
+    use stats_type_utilities, only: &
+        stat_begin_update, & ! Procedure(s)
+        stat_end_update, &
+        stat_modify
 
     use error_code, only:  & 
-      clubb_no_error,  & ! Variable(s)
-      clubb_var_out_of_range, &
-      clubb_singular_matrix
+        clubb_no_error,  & ! Variable(s)
+        clubb_var_out_of_range, &
+        clubb_singular_matrix
 
     use error_code, only:  & 
-      fatal_error,    & ! Procedure(s)
-      clubb_at_least_debug_level
+        fatal_error,    & ! Procedure(s)
+        clubb_at_least_debug_level
 
     use stats_variables, only: & 
-      stats_zm, &
-      irtp2_cl, & 
-      l_stats_samp
+        stats_zm,     & ! Variable(s)
+        irtp2_cl,     &
+        iup2_sdmp,    &
+        ivp2_sdmp,    &
+        l_stats_samp
 
     use array_index, only: &
-      iisclr_rt, &
-      iisclr_thl
+        iisclr_rt, &
+        iisclr_thl
 
     implicit none
 
@@ -560,6 +568,27 @@ module advance_xp2_xpyp_module
 
     call clip_variance( xp2_xpyp_vp2, dt, threshold, & ! Intent(in)
                         vp2 )                          ! Intent(inout)
+
+    ! When selected, apply sponge damping after up2 and vp2 have been advanced.
+    if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+
+       if ( l_stats_samp ) then
+          call stat_begin_update( iup2_sdmp, up2 / dt, stats_zm )
+          call stat_begin_update( ivp2_sdmp, vp2 / dt, stats_zm )
+       endif
+
+       up2 = sponge_damp_xp2( dt, gr%zm, up2, w_tol_sqd, &
+                              up2_vp2_sponge_damp_profile )
+
+       vp2 = sponge_damp_xp2( dt, gr%zm, vp2, w_tol_sqd, &
+                              up2_vp2_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( iup2_sdmp, up2 / dt, stats_zm )
+          call stat_end_update( ivp2_sdmp, vp2 / dt, stats_zm )
+       endif
+
+    endif ! up2_vp2_sponge_damp_settings%l_sponge_damping
 
 
     ! Clipping for r_t'th_l'

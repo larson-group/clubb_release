@@ -215,6 +215,7 @@ module stats_zt_module
         iwp3_pr2, & 
         iwp3_pr3, &
         iwp3_dp1, &
+        iwp3_sdmp, &
         iwp3_cl
 
     ! Monotonic flux limiter diagnostic variables
@@ -1772,6 +1773,13 @@ module stats_zt_module
         iwp3_dp1 = k
         call stat_assign( var_index=iwp3_dp1, var_name="wp3_dp1", &
              var_description="wp3 budget: wp3 dissipation term 1 [m^{3} s^{-4}]", &
+             var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('wp3_sdmp')
+        iwp3_sdmp = k
+        call stat_assign( var_index=iwp3_sdmp, var_name="wp3_sdmp", &
+             var_description="wp3 budget: wp3 sponge damping term [m^{3} s^{-4}]", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
