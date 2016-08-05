@@ -98,6 +98,21 @@ uv_sponge_damp_settings%tau_sponge_damp_min = 60.
 uv_sponge_damp_settings%tau_sponge_damp_max = 1800. 
 uv_sponge_damp_settings%sponge_damp_depth = 0.25
 
+wp2_sponge_damp_settings%l_sponge_damping = .true.
+wp2_sponge_damp_settings%tau_sponge_damp_min = 360. 
+wp2_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+wp2_sponge_damp_settings%sponge_damp_depth = 0.25
+
+wp3_sponge_damp_settings%l_sponge_damping = .true.
+wp3_sponge_damp_settings%tau_sponge_damp_min = 360. 
+wp3_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+wp3_sponge_damp_settings%sponge_damp_depth = 0.25
+
+up2_vp2_sponge_damp_settings%l_sponge_damping = .true.
+up2_vp2_sponge_damp_settings%tau_sponge_damp_min = 360. 
+up2_vp2_sponge_damp_settings%tau_sponge_damp_max = 1800. 
+up2_vp2_sponge_damp_settings%sponge_damp_depth = 0.25
+
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../run_scripts/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
