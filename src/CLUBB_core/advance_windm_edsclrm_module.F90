@@ -55,56 +55,56 @@ module advance_windm_edsclrm_module
     !-----------------------------------------------------------------------
 
     use grid_class, only:  &
-      gr  ! Variables(s)
+        gr  ! Variables(s)
 
     use parameters_model, only:  &
-      ts_nudge,  & ! Variable(s)
-      edsclr_dim
+        ts_nudge,  & ! Variable(s)
+        edsclr_dim
 
     use parameters_tunable, only: &
-      nu10_vert_res_dep ! Constant
+        nu10_vert_res_dep ! Constant
 
     use model_flags, only:  &
-      l_uv_nudge,  & ! Variable(s)
-      l_tke_aniso
+        l_uv_nudge,  & ! Variable(s)
+        l_tke_aniso
 
     use clubb_precision, only:  &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use stats_type_utilities, only: &
-      stat_begin_update, & ! Subroutines
-      stat_end_update, &
-      stat_update_var
+        stat_begin_update, & ! Subroutines
+        stat_end_update, &
+        stat_update_var
 
     use stats_variables, only: &
-      ium_ref, & ! Variables
-      ivm_ref, &
-      ium_sdmp, &
-      ivm_sdmp, &
-      ium_ndg, &
-      ivm_ndg, &
-      iwindm_matrix_condt_num, &
-      stats_zt,     &
-      l_stats_samp
+        ium_ref, & ! Variables
+        ivm_ref, &
+        ium_sdmp, &
+        ivm_sdmp, &
+        ium_ndg, &
+        ivm_ndg, &
+        iwindm_matrix_condt_num, &
+        stats_zt,     &
+        l_stats_samp
 
     use clip_explicit, only:  &
-      clip_covar  ! Procedure(s)
+        clip_covar  ! Procedure(s)
 
     use error_code, only:  & 
-      clubb_at_least_debug_level, & ! Procedure(s)
-      fatal_error
+        clubb_at_least_debug_level, & ! Procedure(s)
+        fatal_error
 
     use error_code, only:  & 
-      clubb_no_error     ! Constant(s)
+        clubb_no_error     ! Constant(s)
 
     use constants_clubb, only:  & 
         fstderr, &  ! Constant(s)
         eps
 
     use sponge_layer_damping, only: &
-      uv_sponge_damp_settings, &  
-      uv_sponge_damp_profile, &  
-      sponge_damp_xm ! Procedure(s)
+        uv_sponge_damp_settings, &
+        uv_sponge_damp_profile, &
+        sponge_damp_xm     ! Procedure(s)
 
     implicit none
 
@@ -315,21 +315,24 @@ module advance_windm_edsclrm_module
 
 
     if ( uv_sponge_damp_settings%l_sponge_damping ) then
-      if( l_stats_samp ) then
-        call stat_begin_update( ium_sdmp, um/dt, stats_zt )
-        call stat_begin_update( ivm_sdmp, vm/dt, stats_zt )
-      endif
 
-      um(1:gr%nz) = sponge_damp_xm( dt, um_ref(1:gr%nz), um(1:gr%nz), &
-                                      uv_sponge_damp_profile )
-      vm(1:gr%nz) = sponge_damp_xm( dt, vm_ref(1:gr%nz), vm(1:gr%nz), &
-                                      uv_sponge_damp_profile )
-      if( l_stats_samp ) then
-        call stat_end_update( ium_sdmp, um/dt, stats_zt )
-        call stat_end_update( ivm_sdmp, vm/dt, stats_zt )
-      endif
+       if ( l_stats_samp ) then
+          call stat_begin_update( ium_sdmp, um/dt, stats_zt )
+          call stat_begin_update( ivm_sdmp, vm/dt, stats_zt )
+       endif
 
-    endif
+       um(1:gr%nz) = sponge_damp_xm( dt, gr%zt, um_ref(1:gr%nz), um(1:gr%nz), &
+                                     uv_sponge_damp_profile )
+
+       vm(1:gr%nz) = sponge_damp_xm( dt, gr%zt, vm_ref(1:gr%nz), vm(1:gr%nz), &
+                                     uv_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( ium_sdmp, um/dt, stats_zt )
+          call stat_end_update( ivm_sdmp, vm/dt, stats_zt )
+       endif
+
+    endif ! uv_sponge_damp_settings%l_sponge_damping
 
     ! Second part of momentum (implicit component)
 

@@ -107,4 +107,5 @@ thlp2_rad_coef              = 0.
 thlp2_rad_cloud_frac_thresh = 0.
 c_K_hmb                     = 0.
 K_hm_min_coef               = 0.
+up2_vp2_factor              = 0.
 /

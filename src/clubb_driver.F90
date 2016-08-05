@@ -148,31 +148,37 @@ module clubb_driver
         l_allow_small_stats_tout
 
     use stats_clubb_utilities, only:  & 
-      stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
-      stats_init
+        stats_begin_timestep, stats_end_timestep,  & ! Procedure(s)
+        stats_init
 
     use stats_type_utilities, only: &
-      stat_update_var ! Procedure
+        stat_update_var ! Procedure
 
     use sounding, only: sclr_max ! Variable(s)
 
     use time_dependent_input, only: &
-      l_t_dependent,    & ! Variable(s)
-      l_input_xpwp_sfc, &
-      l_ignore_forcings
+        l_t_dependent,    & ! Variable(s)
+        l_input_xpwp_sfc, &
+        l_ignore_forcings
 
     use sponge_layer_damping, only: &
-      thlm_sponge_damp_settings, & ! Variable(s)
-      rtm_sponge_damp_settings, &
-      uv_sponge_damp_settings, &
-      thlm_sponge_damp_profile, &
-      rtm_sponge_damp_profile, &
-      uv_sponge_damp_profile
+        thlm_sponge_damp_settings,    & ! Variable(s)
+        rtm_sponge_damp_settings,     &
+        uv_sponge_damp_settings,      &
+        wp2_sponge_damp_settings,     &
+        wp3_sponge_damp_settings,     &
+        up2_vp2_sponge_damp_settings, &
+        thlm_sponge_damp_profile,     &
+        rtm_sponge_damp_profile,      &
+        uv_sponge_damp_profile,       &
+        wp2_sponge_damp_profile,      &
+        wp3_sponge_damp_profile,      &
+        up2_vp2_sponge_damp_profile
 
     use extended_atmosphere_module, only: &
-      total_atmos_dim, & ! Variable(s)
-      complete_alt, &
-      complete_momentum
+        total_atmos_dim, & ! Variable(s)
+        complete_alt, &
+        complete_momentum
 
     use parameters_radiation, only: rad_scheme ! Variable(s)
 
@@ -485,7 +491,9 @@ module clubb_driver
       sfctype, T_sfc, p_sfc, sens_ht, latent_ht, fcor, T0, ts_nudge, &
       forcings_file_path, l_t_dependent, l_input_xpwp_sfc, &
       l_ignore_forcings, saturation_formula, &
-      thlm_sponge_damp_settings, rtm_sponge_damp_settings, uv_sponge_damp_settings, &
+      thlm_sponge_damp_settings, rtm_sponge_damp_settings, &
+      uv_sponge_damp_settings, wp2_sponge_damp_settings, &
+      wp3_sponge_damp_settings, up2_vp2_sponge_damp_settings, &
       l_soil_veg, l_uv_nudge, l_restart, restart_path_case, &
       time_restart, l_input_fields, debug_level, &
       sclr_tol, sclr_dim, iisclr_thl, iisclr_rt, iisclr_CO2, &
@@ -522,6 +530,9 @@ module clubb_driver
     thlm_sponge_damp_settings%l_sponge_damping = .false.
     rtm_sponge_damp_settings%l_sponge_damping = .false.
     uv_sponge_damp_settings%l_sponge_damping = .false.
+    wp2_sponge_damp_settings%l_sponge_damping = .false.
+    wp3_sponge_damp_settings%l_sponge_damping = .false.
+    up2_vp2_sponge_damp_settings%l_sponge_damping = .false.
 
     thlm_sponge_damp_settings%tau_sponge_damp_min = 60._core_rknd
     thlm_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
@@ -534,6 +545,18 @@ module clubb_driver
     uv_sponge_damp_settings%tau_sponge_damp_min = 60._core_rknd
     uv_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
     uv_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
+
+    wp2_sponge_damp_settings%tau_sponge_damp_min = 60._core_rknd
+    wp2_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
+    wp2_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
+
+    wp3_sponge_damp_settings%tau_sponge_damp_min = 60._core_rknd
+    wp3_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
+    wp3_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
+
+    up2_vp2_sponge_damp_settings%tau_sponge_damp_min = 60._core_rknd
+    up2_vp2_sponge_damp_settings%tau_sponge_damp_max = 1800._core_rknd
+    up2_vp2_sponge_damp_settings%sponge_damp_depth = 0.25_core_rknd
 
     l_uv_nudge     = .false.
     l_restart      = .false.
@@ -737,11 +760,21 @@ module clubb_driver
 
       call write_text( "thlm_sponge_damp_settings%l_sponge_damping = ", & 
         thlm_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
+
       call write_text( "rtm_sponge_damp_settings%l_sponge_damping = ", &
         rtm_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
 
       call write_text( "uv_sponge_damp_settings%l_sponge_damping = ", &
         uv_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
+
+      call write_text( "wp2_sponge_damp_settings%l_sponge_damping = ", & 
+        wp2_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
+
+      call write_text( "wp3_sponge_damp_settings%l_sponge_damping = ", & 
+        wp3_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
+
+      call write_text( "up2_vp2_sponge_damp_settings%l_sponge_damping = ", & 
+        up2_vp2_sponge_damp_settings%l_sponge_damping, l_write_to_file, iunit )
 
       call write_text( "thlm_sponge_damp_settings%tau_sponge_damp_min = ", &
         thlm_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
@@ -769,6 +802,35 @@ module clubb_driver
 
       call write_text( "uv_sponge_damp_settings%sponge_damp_depth = ", &
         uv_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
+
+      call write_text( "wp2_sponge_damp_settings%tau_sponge_damp_min = ", &
+        wp2_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
+
+      call write_text( "wp2_sponge_damp_settings%tau_sponge_damp_max = ", &
+        wp2_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, iunit )
+
+      call write_text( "wp2_sponge_damp_settings%sponge_damp_depth = ", &
+        wp2_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
+
+      call write_text( "wp3_sponge_damp_settings%tau_sponge_damp_min = ", &
+        wp3_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, iunit )
+
+      call write_text( "wp3_sponge_damp_settings%tau_sponge_damp_max = ", &
+        wp3_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, iunit )
+
+      call write_text( "wp3_sponge_damp_settings%sponge_damp_depth = ", &
+        wp3_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
+
+      call write_text( "up2_vp2_sponge_damp_settings%tau_sponge_damp_min = ", &
+        up2_vp2_sponge_damp_settings%tau_sponge_damp_min, l_write_to_file, &
+        iunit )
+
+      call write_text( "up2_vp2_sponge_damp_settings%tau_sponge_damp_max = ", &
+        up2_vp2_sponge_damp_settings%tau_sponge_damp_max, l_write_to_file, &
+        iunit )
+
+      call write_text( "up2_vp2_sponge_damp_settings%sponge_damp_depth = ", &
+        up2_vp2_sponge_damp_settings%sponge_damp_depth, l_write_to_file, iunit )
 
       call write_text( "l_soil_veg = ", l_soil_veg, l_write_to_file, iunit )
       call write_text( "l_uv_nudge = ", l_uv_nudge, l_write_to_file, iunit )
@@ -1560,13 +1622,19 @@ module clubb_driver
       veg_T_in_K
 
     use sponge_layer_damping, only: &
-      thlm_sponge_damp_settings, & ! Procedure(s)
-      rtm_sponge_damp_settings, &
-      uv_sponge_damp_settings, &
-      thlm_sponge_damp_profile, &
-      rtm_sponge_damp_profile, &
-      uv_sponge_damp_profile, &
-      initialize_tau_sponge_damp 
+        thlm_sponge_damp_settings,    & ! Variable(s)
+        rtm_sponge_damp_settings,     &
+        uv_sponge_damp_settings,      &
+        wp2_sponge_damp_settings,     &
+        wp3_sponge_damp_settings,     &
+        up2_vp2_sponge_damp_settings, &
+        thlm_sponge_damp_profile,     &
+        rtm_sponge_damp_profile,      &
+        uv_sponge_damp_profile,       &
+        wp2_sponge_damp_profile,      &
+        wp3_sponge_damp_profile,      &
+        up2_vp2_sponge_damp_profile,  &
+        initialize_tau_sponge_damp      ! Procedure(s)
 
     use input_names, only: &
       wm_name, &
@@ -1758,20 +1826,41 @@ module clubb_driver
     end select
 
     ! Initialize damping
-    if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, thlm_sponge_damp_settings, & ! Intent(in)
-                                       thlm_sponge_damp_profile )       ! Intent(out)
-    end if
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,            & ! Intent(in)
+                                       thlm_sponge_damp_settings, & ! Intent(in)
+                                       thlm_sponge_damp_profile )  ! Intent(out)
+    endif
 
-    if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call initialize_tau_sponge_damp( dt_main, rtm_sponge_damp_settings, & ! Intent(in)
-                                       rtm_sponge_damp_profile )       ! Intent(out)
-    end if
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,           & ! Intent(in)
+                                       rtm_sponge_damp_settings, & ! Intent(in)
+                                       rtm_sponge_damp_profile )   ! Intent(out)
+    endif
 
-    if(uv_sponge_damp_settings%l_sponge_damping) then
-      call initialize_tau_sponge_damp( dt_main, uv_sponge_damp_settings, &  ! Intent(in)
-                                       uv_sponge_damp_profile )        ! Intent(out)
-    end if
+    if ( uv_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,          & ! Intent(in)
+                                       uv_sponge_damp_settings, & ! Intent(in)
+                                       uv_sponge_damp_profile )   ! Intent(out)
+    endif
+
+    if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zm,           & ! Intent(in)
+                                       wp2_sponge_damp_settings, & ! Intent(in)
+                                       wp2_sponge_damp_profile )   ! Intent(out)
+    endif
+
+    if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zt,           & ! Intent(in)
+                                       wp3_sponge_damp_settings, & ! Intent(in)
+                                       wp3_sponge_damp_profile )   ! Intent(out)
+    endif
+
+    if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+      call initialize_tau_sponge_damp( dt_main, gr%zm,           & ! Intent(in)
+                                   up2_vp2_sponge_damp_settings, & ! Intent(in)
+                                   up2_vp2_sponge_damp_profile )   ! Intent(out)
+    endif
 
 
 
@@ -2968,49 +3057,55 @@ module clubb_driver
   subroutine cleanup_clubb( l_input_fields )
 
     use inputfields, only: &
-      cleanup_input_fields
+        cleanup_input_fields
 
     use sponge_layer_damping, only: &
-      thlm_sponge_damp_settings, & ! Variable(s)
-      rtm_sponge_damp_settings, &
-      uv_sponge_damp_settings, &
-      thlm_sponge_damp_profile, &
-      rtm_sponge_damp_profile, &
-      uv_sponge_damp_profile, &
-      finalize_tau_sponge_damp
+        thlm_sponge_damp_settings,    & ! Variable(s)
+        rtm_sponge_damp_settings,     &
+        uv_sponge_damp_settings,      &
+        wp2_sponge_damp_settings,     &
+        wp3_sponge_damp_settings,     &
+        up2_vp2_sponge_damp_settings, &
+        thlm_sponge_damp_profile,     &
+        rtm_sponge_damp_profile,      &
+        uv_sponge_damp_profile,       &
+        wp2_sponge_damp_profile,      &
+        wp3_sponge_damp_profile,      &
+        up2_vp2_sponge_damp_profile,  &
+        finalize_tau_sponge_damp        ! Procedure(s)
 
     use time_dependent_input, only: &
-      l_t_dependent,    & ! Variable(s)
-      finalize_t_dependent_input ! Procedure(s)
+        l_t_dependent,    & ! Variable(s)
+        finalize_t_dependent_input ! Procedure(s)
 
     use extended_atmosphere_module, only: &
-      finalize_extended_atm
+        finalize_extended_atm
 
     use advance_clubb_core_module, only: &
-      cleanup_clubb_core
+        cleanup_clubb_core
 
     use variables_radiation_module, only: &
-      cleanup_radiation_variables
+        cleanup_radiation_variables
 
     use microphys_init_cleanup, only: &
-      cleanup_microphys
+        cleanup_microphys
 
     use corr_varnce_module, only: &
-      cleanup_corr_matrix_arrays
+        cleanup_corr_matrix_arrays
 
     use stats_clubb_utilities, only:  &
-      stats_finalize
+        stats_finalize
 
 #ifdef SILHS
     use parameters_microphys, only: &
-      lh_microphys_type,     & ! Variable(s)
-      lh_microphys_disabled
+        lh_microphys_type,     & ! Variable(s)
+        lh_microphys_disabled
 
     use latin_hypercube_driver_module, only: &
-      latin_hypercube_2D_close
+        latin_hypercube_2D_close
 
     use latin_hypercube_arrays, only: &
-      cleanup_latin_hypercube_arrays ! Procedure(s)
+        cleanup_latin_hypercube_arrays ! Procedure(s)
 #endif
 
     implicit none
@@ -3025,20 +3120,32 @@ module clubb_driver
     !----- Begin Code -----
 
     ! Free memory
-    if( thlm_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
-    end if
+    if ( thlm_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( thlm_sponge_damp_profile )
+    endif
 
-    if( rtm_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
-    end if
+    if ( rtm_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( rtm_sponge_damp_profile )
+    endif
 
-    if( uv_sponge_damp_settings%l_sponge_damping ) then
-      call finalize_tau_sponge_damp( uv_sponge_damp_profile )
-    end if
+    if ( uv_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( uv_sponge_damp_profile )
+    endif
+
+    if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( wp2_sponge_damp_profile )
+    endif
+
+    if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( wp3_sponge_damp_profile )
+    endif
+
+    if ( up2_vp2_sponge_damp_settings%l_sponge_damping ) then
+       call finalize_tau_sponge_damp( up2_vp2_sponge_damp_profile )
+    endif
 
     if( l_t_dependent ) then
-      call finalize_t_dependent_input()
+       call finalize_t_dependent_input()
     end if
 
     call finalize_extended_atm( )

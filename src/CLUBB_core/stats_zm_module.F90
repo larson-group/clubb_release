@@ -90,8 +90,9 @@ module stats_zm_module
         iup2_dp2, & 
         iup2_pr1, & 
         iup2_pr2, & 
-        iup2_cl, & 
+        iup2_sdmp, & 
         iup2_pd, &
+        iup2_cl, & 
         iup2_sf, &
         ivp2_bt, & 
         ivp2_ta, & 
@@ -101,8 +102,9 @@ module stats_zm_module
         ivp2_dp2, & 
         ivp2_pr1, & 
         ivp2_pr2, & 
-        ivp2_cl, & 
+        ivp2_sdmp, & 
         ivp2_pd, & 
+        ivp2_cl, & 
         ivp2_sf
 
     use stats_variables, only: & 
@@ -134,8 +136,9 @@ module stats_zm_module
         iwp2_pr3, & 
         iwp2_dp1, & 
         iwp2_dp2, &
-        iwp2_cl, & 
+        iwp2_sdmp, & 
         iwp2_pd, &
+        iwp2_cl, & 
         iwp2_sf
 
     use stats_variables, only: & 
@@ -1181,6 +1184,13 @@ module stats_zm_module
 
         k = k + 1
 
+      case ('wp2_sdmp')
+        iwp2_sdmp = k
+        call stat_assign( var_index=iwp2_sdmp, var_name="wp2_sdmp", &
+             var_description="wp2 budget: wp2 sponge damping term [m^2/s^3]", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('wp2_cl')
         iwp2_cl = k
 
@@ -1734,6 +1744,13 @@ module stats_zm_module
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
+      case ('up2_sdmp')
+        iup2_sdmp = k
+        call stat_assign( var_index=iup2_sdmp, var_name="up2_sdmp", &
+             var_description="up2 budget: up2 sponge damping term [m^2/s^3]", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
       case ('up2_cl')
         iup2_cl = k
         call stat_assign( var_index=iup2_cl, var_name="up2_cl", &
@@ -1808,6 +1825,13 @@ module stats_zm_module
         ivp2_pr2 = k
         call stat_assign( var_index=ivp2_pr2, var_name="vp2_pr2", &
              var_description="vp2 budget: vp2 pressure term 2 [m^2/s^3]", var_units="m^2/s^3", &
+             l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('vp2_sdmp')
+        ivp2_sdmp = k
+        call stat_assign( var_index=ivp2_sdmp, var_name="vp2_sdmp", &
+             var_description="vp2 budget: vp2 sponge damping term [m^2/s^3]", var_units="m^2/s^3", &
              l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 

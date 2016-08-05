@@ -76,19 +76,32 @@ module advance_wp2_wp3_module
         c_K1,  & 
         c_K8
 
-    use stats_type_utilities, only: & 
+    use sponge_layer_damping, only: &
+        wp2_sponge_damp_settings, & ! Variable(s)
+        wp3_sponge_damp_settings, &
+        wp2_sponge_damp_profile,  &
+        wp3_sponge_damp_profile,  &
+        sponge_damp_xp2, & ! Procedure(s)
+        sponge_damp_xp3
+
+    use stats_type_utilities, only: &
+        stat_begin_update, & ! Procedure(s)
+        stat_end_update, &
         stat_update_var
 
     use stats_variables, only: &
-        iC1_Skw_fnc, &
+        iC1_Skw_fnc, &  ! Variable(s)
         iC11_Skw_fnc, &
+        iwp2_sdmp, &
+        iwp3_sdmp, &
         stats_zm, &
         stats_zt, &
         l_stats_samp
 
     use constants_clubb, only:  & 
-        fstderr, &   ! Variables
-        one_third
+        fstderr,   & ! Variables
+        one_third, &
+        w_tol_sqd
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -98,11 +111,11 @@ module advance_wp2_wp3_module
         clubb_at_least_debug_level
 
     use error_code, only: &
-      clubb_var_out_of_range ! Constant(s)
+        clubb_var_out_of_range ! Constant(s)
 
     use model_flags, only: &
-      l_damp_wp2_using_em  ! Logical
-
+        l_damp_wp2_using_em, &  ! Logical(s)
+        l_use_C11_Richardson
 
     implicit none
 
@@ -215,14 +228,18 @@ module advance_wp2_wp3_module
     ! If this code is used, C11 is no longer relevant, i.e. constants
     !    are hardwired.
 
-    ! Calculate C_{1} and C_{11} as functions of skewness of w.
-    ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-    if ( C11 /= C11b ) then
-      C11_Skw_fnc(1:gr%nz) =  & 
-        C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
+    if ( l_use_C11_Richardson ) then
+      C11_Skw_fnc = Cx_fnc_Richardson
     else
-      C11_Skw_fnc(1:gr%nz) = C11b
-    end if
+      ! Calculate C_{1} and C_{11} as functions of skewness of w.
+      ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
+      if ( C11 /= C11b ) then
+        C11_Skw_fnc(1:gr%nz) =  & 
+          C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
+      else
+        C11_Skw_fnc(1:gr%nz) = C11b
+      end if
+    end if ! l_use_C11_Richardson
 
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
     if ( C1 /= C1b ) then
@@ -296,6 +313,36 @@ module advance_wp2_wp3_module
                      invrs_rho_ds_zm, invrs_rho_ds_zt, radf, thv_ds_zm,   & ! Intent(in)
                      thv_ds_zt, nsub, nsup,                         & ! Intent(in)
                      wp2, wp3, wp3_zm, wp2_zt, wp2_wp3_err_code     ) ! Intent(inout)
+
+    ! When selected, apply sponge damping after wp2 and wp3 have been advanced.
+    if ( wp2_sponge_damp_settings%l_sponge_damping ) then
+
+       if ( l_stats_samp ) then
+          call stat_begin_update( iwp2_sdmp, wp2 / dt, stats_zm )
+       endif
+
+       wp2 = sponge_damp_xp2( dt, gr%zm, wp2, w_tol_sqd, &
+                              wp2_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( iwp2_sdmp, wp2 / dt, stats_zm )
+       endif
+
+    endif ! wp2_sponge_damp_settings%l_sponge_damping
+
+    if ( wp3_sponge_damp_settings%l_sponge_damping ) then
+
+       if ( l_stats_samp ) then
+          call stat_begin_update( iwp3_sdmp, wp3 / dt, stats_zt )
+       endif
+
+       wp3 = sponge_damp_xp3( dt, gr%zt, wp3, wp3_sponge_damp_profile )
+
+       if ( l_stats_samp ) then
+          call stat_end_update( iwp3_sdmp, wp3 / dt, stats_zt )
+       endif
+
+    endif ! wp3_sponge_damp_settings%l_sponge_damping
 
 !       Error output
 !       Joshua Fasching Feb 2008
