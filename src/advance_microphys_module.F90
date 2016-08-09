@@ -76,6 +76,9 @@ module advance_microphys_module
         microphys_scheme,         & ! The microphysical scheme in use
         microphys_start_time    ! When to start the microphysics [s]
 
+    use KK_utilities, only: &
+        get_cloud_top_level    ! Procedure(s)
+
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
         core_rknd
@@ -195,12 +198,15 @@ module advance_microphys_module
     ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
     ! on multiple factors.
     real( kind = core_rknd ), dimension(gr%nz, hydromet_dim) :: &
-      K_gamma ! Non-local factor of diffusion (turb. adv.) for hydrometeors [m^2/s]
+      K_gamma ! Non-local factor of diffusion (t. adv.) for hydrometeors [m^2/s]
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc                [m^2/s]
+      K_Nc    ! Coefficient of diffusion (turb. adv.) for Nc             [m^2/s]
 
     integer :: k, kp1, i    ! Loop indices
+
+    integer :: &
+      cloud_top_level    ! Vertical level index of cloud top    [-]
 
     integer, dimension(hydromet_dim) :: &
       err_code_hydromet    ! Exit code (used to check for errors) for hydromet
@@ -209,8 +215,14 @@ module advance_microphys_module
       err_code_Ncm    ! Exit code (used to check for errors) for Ncm
 
     logical, parameter :: &
-      l_use_non_local_diff_fac = .false. ! Use a non-local factor for eddy-diffusivity 
-                                         ! applied to hydrometeors 
+      l_use_non_local_diff_fac = .false. ! Use a non-local factor for
+                                         ! eddy-diffusivity applied to
+                                         ! hydrometeors
+
+    logical, parameter :: &
+      l_prevent_ta_above_cloud = .false. ! Set K_hm to 0 above cloud top to
+                                         ! prevent turbulent advection of
+                                         ! hydrometeors to those levels.
 
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
@@ -258,8 +270,8 @@ module advance_microphys_module
 
              if ( abs( gr%invrs_dzm(k) &
                        * ( hydromet(kp1,i) - hydromet(k,i) ) ) > eps ) then
-                ! Ensure the abs( correlation ) between w and hydromet does not have
-                ! a value greater than one.
+                ! Ensure the abs( correlation ) between w and hydromet does not
+                ! have a value greater than one.
                 K_hm(k,i) &
                 = min( K_hm(k,i), &
                        ( sqrt( wp2(k) ) * sqrt( hydrometp2(k,i) ) ) &
@@ -270,6 +282,23 @@ module advance_microphys_module
 
           enddo ! k = 1, gr%nz, 1
        enddo ! i = hydromet_dim, 1
+
+       ! Prevent the turbulent advection of hydrometeors to altitudes above
+       ! cloud top.
+       if ( l_prevent_ta_above_cloud ) then
+
+          ! Find the vertical level index of cloud top.
+          cloud_top_level = get_cloud_top_level( gr%nz, rcm )
+
+          ! Set K_hm to 0 above cloud top.  Since K_hm is a momentum-level
+          ! variable, and since momentum grid levels are located above their
+          ! corresponding thermodynamic grid levels, set K_hm to 0 starting at
+          ! the vertical-level index of cloud_top_level.
+          if ( cloud_top_level > 1 ) then
+             K_hm(cloud_top_level:gr%nz,:) = zero
+          endif ! cloud_top_level > 1
+             
+       endif ! l_prevent_ta_above_cloud
 
     endif ! hydromet_dim > 0
 
