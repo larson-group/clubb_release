@@ -3756,7 +3756,7 @@ module clubb_driver
                          sclrm_forcing, edsclrm_forcing )! Intent(out)
 
       case ( "bomex" ) ! BOMEX Cu case
-        call bomex_tndcy( rtm, &                    ! Intent(in)
+        call bomex_tndcy( rtm, &                           ! Intent(in)
                           thlm_forcing, rtm_forcing, &     ! Intent(out)
                           sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
@@ -3799,7 +3799,7 @@ module clubb_driver
                             wm_zt, wm_zm, thlm_forcing, rtm_forcing, & ! Intent(out)
                             sclrm_forcing, edsclrm_forcing )           ! Intent(out)
       case ( "rico" ) ! RICO case
-        call rico_tndcy( exner, &                         ! Intent(in)
+        call rico_tndcy( rtm, exner, &                    ! Intent(in)
                          thlm_forcing, rtm_forcing, &     ! Intent(out)   
                          sclrm_forcing, edsclrm_forcing ) ! Intent(out)
 
