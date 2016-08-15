@@ -220,7 +220,7 @@ module advance_microphys_module
                                          ! hydrometeors
 
     logical, parameter :: &
-      l_prevent_ta_above_cloud = .false. ! Set K_hm to 0 above cloud top to
+      l_prevent_ta_above_cloud = .true.  ! Set K_hm to 0 above cloud top to
                                          ! prevent turbulent advection of
                                          ! hydrometeors to those levels.
 

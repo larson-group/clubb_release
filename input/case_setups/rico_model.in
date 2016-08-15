@@ -61,7 +61,7 @@ time_initial = 0.0       ! Model start time [seconds since midnight on start dat
 time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
 
 
-dt_main = 180.0   ! Model timestep [s]
+dt_main = 180.0  ! Model timestep [s]
 dt_rad = 180.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
@@ -101,17 +101,17 @@ uv_sponge_damp_settings%sponge_damp_depth = 0.25
 wp2_sponge_damp_settings%l_sponge_damping = .true.
 wp2_sponge_damp_settings%tau_sponge_damp_min = 360. 
 wp2_sponge_damp_settings%tau_sponge_damp_max = 1800. 
-wp2_sponge_damp_settings%sponge_damp_depth = 0.25
+wp2_sponge_damp_settings%sponge_damp_depth = 0.425
 
 wp3_sponge_damp_settings%l_sponge_damping = .true.
 wp3_sponge_damp_settings%tau_sponge_damp_min = 360. 
 wp3_sponge_damp_settings%tau_sponge_damp_max = 1800. 
-wp3_sponge_damp_settings%sponge_damp_depth = 0.25
+wp3_sponge_damp_settings%sponge_damp_depth = 0.425
 
 up2_vp2_sponge_damp_settings%l_sponge_damping = .true.
 up2_vp2_sponge_damp_settings%tau_sponge_damp_min = 360. 
 up2_vp2_sponge_damp_settings%tau_sponge_damp_max = 1800. 
-up2_vp2_sponge_damp_settings%sponge_damp_depth = 0.25
+up2_vp2_sponge_damp_settings%sponge_damp_depth = 0.425
 
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../run_scripts/) and filename of GrADS control files
@@ -164,8 +164,8 @@ microphys_scheme = "khairoutdinov_kogan"
 l_fix_chi_eta_correlations = .true.
 
 !hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 2.25
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 3.25
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 4.50
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 5.00
+hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 4.00
 Ncnp2_on_Ncnm2                               = 2.2
 
 Nc0_in_cloud  = 70.e6 ! num/m^3
