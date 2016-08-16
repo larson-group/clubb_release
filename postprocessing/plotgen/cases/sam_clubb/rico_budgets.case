@@ -5,8 +5,10 @@
     'name' => 'RICO_BUDGETS',
     'enabled' => 'true',
     'type' => 'budget',
-    'headerText' => 'RICO Budgets Minutes 4201-4320',
-    'startTime' => 4201.0,  # [minutes]
+    #'headerText' => 'RICO Budgets Minutes 4201-4320',
+    'headerText' => 'RICO Budgets Minutes 3501-4320',
+    #'startTime' => 4201.0,  # [minutes]
+    'startTime' => 3501.0,  # [minutes]
     'endTime' => 4320.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 4000.0, # [m]
@@ -168,8 +170,9 @@
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'QWBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'QWADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'QWGRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
-	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'QWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
-	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'QWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+#	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'QWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+#	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'QWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+	  {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy+pres', 'expression' => 'QWBUOY + QWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'QWDIFF', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'QWPREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
 #          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'forcing', 'expression' => 'QWFORC', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
@@ -183,8 +186,9 @@
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'THLWBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'THLWADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'production', 'expression' => 'THLWGRAD', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'THLWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
-          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'THLWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+#          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'pres', 'expression' => 'THLWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
+#          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy', 'expression' => 'THLWBUOY', 'lineWidth' => '3', 'lineType' => '-.', 'lineColor' => '[ 0.0, 0.0, 0.0 ]'},
+          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'buoy+pres', 'expression' => 'THLWBUOY + THLWPRES', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.894, 0.102, 0.110 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'diffusion', 'expression' => 'THLWDIFF', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'THLWPREC', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
 #          {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'auto', 'name' => 'rad', 'expression' => 'THLWRAD', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},

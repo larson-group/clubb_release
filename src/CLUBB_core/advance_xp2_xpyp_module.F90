@@ -1886,6 +1886,9 @@ module advance_xp2_xpyp_module
       rhs     ! Explicit contributions to x variance/covariance terms
 
     ! Local Variables
+    real( kind = core_rknd ) :: &
+      tp_term,            & ! Turbulent production term [{x_am un}*{x_bm un}/s]
+      xapxbp_forcing_lim    ! <x_a'x_b'> forcing term (limited if necessary)
 
     ! Array indices
     integer :: k, kp1, km1, k_low, k_high
@@ -1996,10 +1999,11 @@ module advance_xp2_xpyp_module
           - lhs_fnc_output(3) * xapxbp(km1) )
 
       ! RHS turbulent production (tp) term.
-      rhs(k,1)  & 
-      = rhs(k,1)  & 
-      + term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
+      tp_term &
+      = term_tp( xam(kp1), xam(k), xbm(kp1), xbm(k), & 
                  wpxbp(k), wpxap(k), gr%invrs_dzm(k) )
+
+      rhs(k,1) = rhs(k,1) + tp_term
 
       ! RHS dissipation term 1 (dp1)
       rhs(k,1) &
@@ -2023,7 +2027,26 @@ module advance_xp2_xpyp_module
 
       ! RHS <x'y'> forcing.
       ! Note: <x'y'> forcing includes the effects of microphysics on <x'y'>.
-      rhs(k,1) = rhs(k,1) + xapxbp_forcing(k)
+      if ( solve_type == xp2_xpyp_rtp2 .or. solve_type == xp2_xpyp_thlp2 ) then
+
+         ! Limit the magnitude of the xapxbp_forcing term (when negative) so
+         ! that it doesn't drive <x'^2> to negative values.
+         if ( tp_term > zero ) then
+            xapxbp_forcing_lim = max( xapxbp_forcing(k), &
+                                      - ( xapxbp(k) - threshold ) / dt &
+                                      - tp_term )
+         else ! tp_term <= 0
+            xapxbp_forcing_lim = max( xapxbp_forcing(k), &
+                                      - ( xapxbp(k) - threshold ) / dt )
+         endif ! tp_term > 0
+
+      else ! solve_type /= xp2_xpyp_rtp or xp2_xpyp_thlp
+
+         xapxbp_forcing_lim = xapxbp_forcing(k)
+
+      endif ! solve_type = xp2_xpyp_rtp2 or xp2_xpyp_thlp2
+
+      rhs(k,1) = rhs(k,1) + xapxbp_forcing_lim
 
 
       if ( l_stats_samp ) then
@@ -2108,7 +2131,7 @@ module advance_xp2_xpyp_module
                                  stats_zm )                 ! Intent(inout)
 
         ! x'y' forcing term is completely explicit; call stat_update_var_pt.
-        call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing(k), stats_zm )
+        call stat_update_var_pt( ixapxbp_f, k, xapxbp_forcing_lim, stats_zm )
 
       endif ! l_stats_samp
 

@@ -5,8 +5,10 @@
     'name' => 'rico',
     'enabled' => 'true',
     'type' => 'standard',
-    'headerText' => 'RICO Minutes 4201-4320',
-    'startTime' => 4201.0,  # [minutes]
+#    'headerText' => 'RICO Minutes 4201-4320',
+    'headerText' => 'RICO Minutes 3501-4320',
+#    'startTime' => 4201.0,  # [minutes]
+    'startTime' => 3501.0,  # [minutes]
     'endTime' => 4320.0,    # [minutes]
     'startHeight' => 0.0,  # [m]
     'endHeight' => 4000.0, # [m]
