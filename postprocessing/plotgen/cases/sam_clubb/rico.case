@@ -6,9 +6,9 @@
     'enabled' => 'true',
     'type' => 'standard',
     #'headerText' => 'RICO Hours 70-72',
-    'headerText' => 'RICO Hours 61-72',
+    'headerText' => 'RICO Hours 37-72',
     #'startTime' => 4140.0,  # [minutes]
-    'startTime' => 3601.0,  # [minutes]
+    'startTime' => 2161.0,  # [minutes]
     'endTime' => 4320.0,    # [minutes]
     'startHeight' => 0.0,   # [m]
     'endHeight' => 4000.0, # [m]
