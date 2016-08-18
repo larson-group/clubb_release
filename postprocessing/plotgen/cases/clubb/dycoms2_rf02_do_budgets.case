@@ -181,6 +181,37 @@
           {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_mc', 'expression' => 'Nrm_mc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_do_zt.ctl', 'type' => 'auto', 'name' => 'Nrm\_residual', 'expression' => 'Nrm_bt - (Nrm_ma + Nrm_sd + Nrm_ta + Nrm_ts + Nrm_cl + Nrm_mc)', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
 
+       ]},
+
+       # rtp2 budget.
+       {'plotTitle' => 'DYCOMS-II RF02 CLUBB r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'rtp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'rtp2_ma + rtp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtp2_tp', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtp2_dp1 + rtp2_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtp2_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'rtp2_cl + rtp2_pd', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'rtp2_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_forcing + rtp2_cl + rtp2_pd + rtp2_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtp2_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtp2_bt - (rtp2_ma + rtp2_ta + rtp2_tp + rtp2_dp1 + rtp2_dp2 + rtp2_forcing)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+       ]},
+
+       # thlp2 budget.
+       {'plotTitle' => 'DYCOMS-II RF02 CLUBB \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'thlp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'thlp2_ma + thlp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'thlp2_tp', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'thlp2_dp1 + thlp2_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'thlp2_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'thlp2_cl + thlp2_pd', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'thlp2_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+#          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_forcing + thlp2_cl + thlp2_pd + thlp2_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'thlp2_mc', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'radiation', 'expression' => 'thlp2_forcing - thlp2_mc', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
+          {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'thlp2_bt - (thlp2_ma + thlp2_ta + thlp2_tp + thlp2_dp1 + thlp2_dp2 + thlp2_forcing)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]}
 
     ],

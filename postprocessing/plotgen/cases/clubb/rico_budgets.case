@@ -164,16 +164,14 @@
        [
           {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'rtpthlp_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'rtpthlp_ma + rtpthlp_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
-#          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtpthlp_tp1 + rtpthlp_tp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
-#          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtpthlp_dp1 + rtpthlp_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtpthlp_tp1 + rtpthlp_tp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtpthlp_dp1 + rtpthlp_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
 #          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtpthlp_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
 #          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'clip', 'expression' => 'rtpthlp_cl', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 0.969, 0.506, 0.749 ]'},
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'max( rtpthlp_forcing + rtpthlp_cl, 0.0 )', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
 #          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'sfc', 'expression' => 'rtpthlp_sf', 'lineWidth' => '3', 'lineType' => ':', 'lineColor' => '[ 1.000, 1.000, 0.200 ]'},
 #          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_forcing + rtpthlp_cl + rtpthlp_sf)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
-          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'production', 'expression' => 'rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_cl', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.596, 0.306, 0.639 ]'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'diss+diff', 'expression' => 'rtpthlp_dp1 + rtpthlp_dp2', 'lineWidth' => '3', 'lineType' => '--', 'lineColor' => '[ 0.471, 0.471, 0.471 ]'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'microphys', 'expression' => 'rtpthlp_forcing', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.216, 0.494, 0.722 ]'},
-          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + rtpthlp_forcing + rtpthlp_cl)', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
+          {'filename' => 'rico_zm.ctl', 'type' => 'cust', 'name' => 'residual', 'expression' => 'rtpthlp_bt - (rtpthlp_ma + rtpthlp_ta + rtpthlp_tp1 + rtpthlp_tp2 + rtpthlp_dp1 + rtpthlp_dp2 + max( rtpthlp_forcing + rtpthlp_cl, 0.0 ) )', 'lineWidth' => '2', 'lineType' => '-.', 'lineColor' => '[ 0.651, 0.337, 0.157 ]'}
        ]}
 
     ],

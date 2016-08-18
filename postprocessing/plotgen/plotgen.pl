@@ -129,8 +129,8 @@ my @lineStyles = ( "--", "-", "-.", "-" );
 
 # These colors were stolen from http://www.colorbrewer2.org/
 my @lineColors = (
-    "[ 1.000, 0.498, 0.000 ]",    # orange
-    "[ 0.216, 0.494, 0.722 ]",    # blue
+    "[ 1.000, 0.000, 1.000 ]",    # magenta
+    "[ 0.000, 0.000, 1.000 ]",    # blue
     "[ 0.596, 0.306, 0.639 ]",    # purple
     "[ 0.471, 0.471, 0.471 ]",    # gray
     "[ 0.969, 0.506, 0.749 ]",    # pink
@@ -140,7 +140,7 @@ my @lineColors = (
     "[ 1.000, 1.000, 0.200 ]"     # yellow
 );
 
-my @lineWidthsNormal = ( 4.5, 3, 2.5, 1.5 );
+my @lineWidthsNormal = ( 3, 3, 2.5, 1.5 );
 
 # We apply a constant budget width for budget cases.
 my @lineWidthsBudget = (3);
