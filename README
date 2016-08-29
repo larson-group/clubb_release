@@ -156,12 +156,12 @@ checkout.
 - STEP 4: VIEWING THE RESULTS WITH PLOTGEN
 -------------------------------------------------------
 After a case has been run, the resulting output (whether it be in either GrADS 
-or netCDF format) can
-be used to create graphs.  There are many programs available that can be used to
-do this, but one way is to use an included perl script called plotgen. 
-Plotgen interfaces with MATLAB to produce high-quality plots that allow 
-CLUBB's output to be easily visualized.  Other options for plotting the output 
-can be found at http://www.unidata.ucar.edu/software/netcdf/software.html.
+or netCDF format) can be used to create graphs.  One way is to use an 
+included perl script called plotgen. Plotgen interfaces with MATLAB to 
+produce high-quality plots that allow CLUBB's output to be easily visualized.  
+Another option for plotting the output is to use GrADS, described below.
+Other options for plotting the output can be found at 
+http://www.unidata.ucar.edu/software/netcdf/software.html.
 
 **************************************************************************
                                   NOTE:
@@ -720,6 +720,7 @@ See postprocessing/plotgen/README for more information on plotgen.pl.
 
 Otherwise, you can view the raw CLUBB output files in GrADS or netCDF
 format using a plotting program such as GrADS (http://www.iges.org/grads/).
+To open a GrADS session, type "grads" at a Linux prompt.
 
 --------------------------------------------------------------------------
 - (2.4) Determining whether two CLUBB simulations produce different output:
