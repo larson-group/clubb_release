@@ -70,7 +70,7 @@ module KK_microphys_module
         KK_Nrm_evap_local_mean, & ! Procedure(s)
         KK_Nrm_auto_mean
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -352,7 +352,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -431,7 +431,7 @@ module KK_microphys_module
     use KK_upscaled_covariances, only: &
         KK_upscaled_covar_driver    ! Procedure(s)
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -942,7 +942,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &

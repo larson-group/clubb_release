@@ -322,7 +322,7 @@ module estimate_scm_microphys_module
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
       call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrm),           & ! intent(in)
-                                hydromet(:,iiNrm),                               & ! intent(in)
+                                hydromet(:,iiNrm), hydromet,                     & ! intent(in)
                                 microphys_stats_zt_avg, l_stats_samp,            & ! intent(in)
                                 lh_hydromet_vel(:,iirrm),                        & ! intent(inout)
                                 lh_hydromet_vel(:,iiNrm),                        & ! intent(inout)
@@ -534,10 +534,10 @@ module estimate_scm_microphys_module
   !-----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------------
-  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm,         &
-                                  microphys_stats_zt, l_stats_samp,     &
-                                  lh_Vrr, lh_VNr,                       &
-                                  rrm_mc, Nrm_mc,                       &
+  subroutine adjust_KK_src_means( dt, nz, exner, rcm, rrm, Nrm, hydromet, &
+                                  microphys_stats_zt, l_stats_samp,       &
+                                  lh_Vrr, lh_VNr,                         &
+                                  rrm_mc, Nrm_mc,                         &
                                   rvm_mc, rcm_mc, thlm_mc )
 
   ! Description:
@@ -547,43 +547,47 @@ module estimate_scm_microphys_module
   ! References:
   !   clubb:ticket:558
   !-----------------------------------------------------------------------------
+
     use KK_Nrm_tendencies, only: &
-      KK_Nrm_auto_mean, & ! Procedure(s)
-      KK_Nrm_evap_local_mean
+        KK_Nrm_auto_mean, & ! Procedure(s)
+        KK_Nrm_evap_local_mean
 
     use KK_microphys_module, only: &
-      KK_microphys_adjust, &      ! Procedure
-      KK_microphys_adj_terms_type ! Type
+        KK_microphys_adjust, &      ! Procedure
+        KK_microphys_adj_terms_type ! Type
 
-    use KK_utilities, only: &
-      get_cloud_top_level         ! Procedure
+    use advance_microphys_module, only: &
+        get_cloud_top_level    ! Procedure
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-      rr_tol, & ! Constant(s)
-      Nr_tol, &
-      zero
+        rr_tol, & ! Constant(s)
+        Nr_tol, &
+        zero
+
+    use parameters_model, only: &
+        hydromet_dim    ! Variable(s)
 
     use stats_type_utilities, only: &
-      stat_update_var ! Procedure
+        stat_update_var ! Procedure
 
     use stats_variables, only: &
-      stats_lh_zt,     &
-      irrm_auto,       &
-      irrm_accr,       &
-      irrm_cond,       &
-      iNrm_auto,       &
-      iNrm_cond,       &
-      ilh_rrm_src_adj, &
-      ilh_Nrm_src_adj, &
-      ilh_rrm_cond_adj,&
-      ilh_Nrm_cond_adj
+        stats_lh_zt,     &
+        irrm_auto,       &
+        irrm_accr,       &
+        irrm_cond,       &
+        iNrm_auto,       &
+        iNrm_cond,       &
+        ilh_rrm_src_adj, &
+        ilh_Nrm_src_adj, &
+        ilh_rrm_cond_adj,&
+        ilh_Nrm_cond_adj
 
     use microphys_stats_vars_module, only: &
-      microphys_stats_vars_type, &     ! Type
-      microphys_get_var                ! Procedure
+        microphys_stats_vars_type, &     ! Type
+        microphys_get_var                ! Procedure
 
     implicit none
 
@@ -602,13 +606,16 @@ module estimate_scm_microphys_module
       nz   ! Number of vertical grid levels
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      exner,       & ! Exner function                            [-]
-      rcm,         & ! Mean liquid water mixing ratio            [kg/kg]
-      rrm,      & ! Rain water mixing ration                  [kg/kg]
-      Nrm            ! Rain drop concentration                   [num/kg]
+      exner, & ! Exner function                            [-]
+      rcm,   & ! Mean liquid water mixing ratio            [kg/kg]
+      rrm,   & ! Rain water mixing ration                  [kg/kg]
+      Nrm      ! Rain drop concentration                   [num/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Mean value of hydrometeor              [units vary]
 
     type(microphys_stats_vars_type), intent(in) :: &
-      microphys_stats_zt ! Statistics variables                  [units vary]
+      microphys_stats_zt     ! Statistics variables        [units vary]
 
     logical, intent(in) :: &
       l_stats_samp   ! Whether to sample this timestep
@@ -682,7 +689,7 @@ module estimate_scm_microphys_module
 
     end do
 
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Mean sedimentation above cloud top should have a value of 0.
     if ( cloud_top_level > 1 ) then
