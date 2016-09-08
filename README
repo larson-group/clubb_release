@@ -1348,8 +1348,8 @@ source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
   Kh, and time-scale, tau. Both are based on one thermodynamic-level variable,
   Lscale, and one momentum-level variable, em.
 
-  When a homeless variable is at it's cardboard box on momentum levels, a "_zm"
-  extension is tacked onto it, and when it is at it's cardboard box on
+  When a homeless variable is at its cardboard box on momentum levels, a "_zm"
+  extension is tacked onto it, and when it is at its cardboard box on
   thermodynamic levels, a "_zt" extension is tacked onto it. Thus, skewness of w
   is called Skw_zt at thermodynamic levels and Skw_zm at momentum levels.
   Likewise, eddy diffusivity and time-scale are Kh_zt and tau_zt, respectively,
