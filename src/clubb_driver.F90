@@ -494,7 +494,7 @@ module clubb_driver
       time_total                ! control timer for the overall time spent in the main loop [s]
       
     ! allowed tolerance for the timing budget check
-    real( kind = core_rknd ) , parameter ::  timing_tol = 0.01 
+    real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
     ! Definition of namelists
     namelist /model_setting/  &
@@ -1259,16 +1259,16 @@ module clubb_driver
     stats_nout = nint( stats_tout / dt_main )
 
     !initialize timers    
-    time_loop_init = 0.0
-    time_clubb_advance = 0.0
-    time_clubb_pdf = 0.0
-    time_SILHS = 0.0
-    time_microphys_advance = 0.0
-    time_microphys_scheme = 0.0
-    time_loop_end = 0.0
-    time_total = 0.0
-    time_stop = 0.0
-    time_start = 0.0
+    time_loop_init = 0.0_core_rknd
+    time_clubb_advance = 0.0_core_rknd
+    time_clubb_pdf = 0.0_core_rknd
+    time_SILHS = 0.0_core_rknd
+    time_microphys_advance = 0.0_core_rknd
+    time_microphys_scheme = 0.0_core_rknd
+    time_loop_end = 0.0_core_rknd
+    time_total = 0.0_core_rknd
+    time_stop = 0.0_core_rknd
+    time_start = 0.0_core_rknd
     
     ! Save time before main loop starts
     call cpu_time( time_start )
