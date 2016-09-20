@@ -90,7 +90,7 @@ module clubb_driver
       calculate_thlp2_rad
 
     use constants_clubb, only: &
-      fstdout, fstderr, zero, zero_dp, one, one_dp, & ! Constant(s)
+      fstdout, fstderr, zero, one, & ! Constant(s)
       rt_tol, thl_tol, w_tol, w_tol_sqd
 
     use error_code, only: &
@@ -104,7 +104,7 @@ module clubb_driver
       set_clubb_debug_level, &
       report_error
 
-    use clubb_precision, only: time_precision, core_rknd, dp ! Constants
+    use clubb_precision, only: time_precision, core_rknd ! Constants
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
@@ -167,13 +167,7 @@ module clubb_driver
         uv_sponge_damp_settings,      &
         wp2_sponge_damp_settings,     &
         wp3_sponge_damp_settings,     &
-        up2_vp2_sponge_damp_settings, &
-        thlm_sponge_damp_profile,     &
-        rtm_sponge_damp_profile,      &
-        uv_sponge_damp_profile,       &
-        wp2_sponge_damp_profile,      &
-        wp3_sponge_damp_profile,      &
-        up2_vp2_sponge_damp_profile
+        up2_vp2_sponge_damp_settings
 
     use extended_atmosphere_module, only: &
         total_atmos_dim, & ! Variable(s)
@@ -3688,7 +3682,7 @@ module clubb_driver
       wpsclrp_sfc,  &
       wpedsclrp_sfc
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &
