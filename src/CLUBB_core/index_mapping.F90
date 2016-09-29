@@ -7,6 +7,47 @@ module index_mapping
   ! Functions to map back and forth between the PDF arrays and the hydrometeor
   ! arrays.
 
+  ! The “iiPDF” indices are used to index all PDF variates, including all
+  ! hydrometeor variates.  
+  ! The “ii” indices are used to index hydrometeor arrays.  
+  ! The “ii” variates are a subset of the “iiPDF” variates.  
+  ! Conversions between the two sets of indices are done by the 
+  ! functions pdf2hydromet_idx and hydromet2pdf_idx below.
+  ! 
+  ! ------------------------------------------------------------------------
+  ! 
+  ! iiPDF indices:
+  ! 
+  ! Included indices:  
+  ! iiPDF_chi, iiPDF_eta, iiPDF_w, iiPDF_Ncn, iiPDF_rr, & all other hydrometeors
+  ! 
+  ! Number of indices:  d_variables
+  ! 
+  ! Examples of arrays dimensioned by d_variables:
+  ! mu_x_1_n, corr_array_n_cloud, . . .
+  ! 
+  ! Declared as module variables in module corr_varnce_module
+  ! 
+  ! Initialized in subroutine setup_pdf_indices
+  ! 
+  ! ----------------------------------------------------------------------
+  ! 
+  ! ii indices:
+  ! 
+  ! Included indices:  
+  ! iirrm, iiNrm, iirim, iiNim, iirsm, iiNsm, iirgm, iiNgm
+  ! 
+  ! Number of indices:  hydromet_dim
+  ! 
+  ! Examples of arrays dimensioned by hydromet_dim: 
+  ! hydromet, wphydrometp, . . .
+  ! 
+  ! Declared as module variables in module array_index.
+  ! 
+  ! Initialized in subroutine init_microphys
+  ! 
+  ! -----------------------------------------------------------------------
+  !
   ! References:
   !   None
   !-------------------------------------------------------------------------
