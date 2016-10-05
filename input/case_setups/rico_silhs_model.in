@@ -1,16 +1,17 @@
-! $Id: mpace_b_model.in 4930 2010-12-20 21:13:56Z dschanen@uwm.edu $
-! Parameter file for MPACE-B case
+! $Id$
+! Parameter file for GCSS RICO case
+! Edited by Michael Falk, 12 December 2006
 
 &model_setting
 
 ! Model Settings
 
-runtype = "mpace_b" ! Case name.
+runtype = "rico"  ! Case name.
 
 ! For grid_type = 1 nzmax can be any nunber
-nzmax = 56        ! Number of vertical levels.
+nzmax = 128       ! Number of vertical levels.
 
-grid_type = 1     ! Select grid type:
+grid_type = 2     ! Select grid type:
                   ! 1 ==> evenly-spaced grid levels.
                   ! 2 ==> stretched (unevenly-spaced) grid
                   !       entered on thermodynamic grid levels;
@@ -23,15 +24,16 @@ grid_type = 1     ! Select grid type:
 
 ! Evenly-spaced grid (grid_type = 1).
 ! Note:  For this option, both zt_grid_fname and zm_grid_fname must be ''.
-deltaz  = 50.0    ! Distance between grid levels on evenly-spaced grid.      [m]
+deltaz  = 40.0    ! Distance between grid levels on evenly-spaced grid.      [m]
 zm_init = 0.0 ! Minimum Altitude of lowest momentum level on any grid. [m]
-zm_top = 3750.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+zm_top = 10000.0 ! Maximum Altitude of highest momentum level on any grid. [m]
+
 
 ! Stretched grid on thermodynamic levels (grid_type = 2).
 ! Path (from ../run_scripts/) and filename of data file that contains
 ! thermodynamic level altitudes (in meters).
 ! Note:  For this option, zm_grid_fname must be ''.
-zt_grid_fname = ''
+zt_grid_fname = '../input/grid/deep_convection_128lev_27km_zt_grid.grd'
 
 ! Stretched grid on momentum levels (grid_type = 3).
 ! Path (from ../run_scripts/) and filename to data file that contains
@@ -39,27 +41,28 @@ zt_grid_fname = ''
 ! Note:  For this option, zt_grid_fname must be ''.
 zm_grid_fname = ''
 
-day   = 9     ! Day of model start (1 to 31).
-month = 10    ! Month of model start (1 to 12).
+day   = 16    ! Day of model start (1 to 31).
+month = 12    ! Month of model start (1 to 12).
 year  = 2004  ! Year of model start.
 
-rlat = 71.75   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
-rlon = -151.0  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
+rlat = 18.0   ! Latitude (0 to 90 for north lat.; 0 to -90 for south lat.) [degrees]
+rlon = -61.5  ! Longitude (0 to 180 for east long.; 0 to -180 for west long.) [degrees]
 
 sfc_elevation = 0.0     ! Elevation of ground level [meters above mean sea level]
 
-time_initial = 61200.0   ! Model start time [seconds since midnight on start date]
-time_final   = 104400.0  ! Model end time [seconds since midnight on start date]
-!time_final   = 61320.0   ! Model end time [seconds since midnight on start date]
-
-
-l_t_dependent = .true. ! Read values from _surface.in file. Also read 
-                       ! _forcings.in file if l_ignore_forcings = .false.
-l_ignore_forcings = .true. ! Do not read values from _forcings.in file, 
+l_t_dependent = .true. ! Read values from _surface.in file. Also read
+                       ! _forcings.in file if l_ignore_forcings
+l_ignore_forcings = .true. ! Do not read values from _forcings.in file,
                            ! even if l_t_dependent = .true.
 
-dt_main    = 60.0   ! Model timestep [s]
-dt_rad = 60.0   ! Radiation timestep [s] 
+time_initial = 0.0       ! Model start time [seconds since midnight on start date]
+!time_final   = 60.0      ! Model end time [seconds since midnight on start date]
+!time_final   = 86400.0   ! Model end time [seconds since midnight on start date]
+time_final   = 259200.0  ! Model end time [seconds since midnight on start date]
+
+
+dt_main    = 300.0   ! Model timestep [s]
+dt_rad = 300.0   ! Radiation timestep [s] 
 
 sfctype = 0      ! Select surface scheme (cases without specified surface fluxes).
                  ! 0 ==> fixed surface sensible and latent heat fluxes,
@@ -68,15 +71,11 @@ sfctype = 0      ! Select surface scheme (cases without specified surface fluxes
                  !       through a bulk formula that uses the given surface
                  !       temperature (T_sfc) and assumes over ocean.
 
-p_sfc = 1010.e2    ! Pressure at model base              [Pa]
+p_sfc = 1015.4e2     ! Pressure at model base              [Pa]
 
-fcor = 1.e-4      ! Coriolis parameter                  [s^-1]
-T0   = 300.       ! Reference temperature (usually 300) [K]
+fcor = 4.506704e-5  ! Coriolis parameter                  [s^-1]
+T0   = 300.         ! Reference temperature (usually 300) [K]
 
-
-ts_nudge = 3600.  ! Timescale of u/v nudging            [s]
-
-l_uv_nudge     = .true.   ! Flag for horizontal wind speed nudging.
 
 ! Sponge Damping
 !
@@ -102,7 +101,7 @@ uv_sponge_damp_settings%sponge_damp_depth = 0.25
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../run_scripts/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
-restart_path_case  = "restart/mpace_b"
+restart_path_case  = "restart/rico_silhs"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
@@ -135,6 +134,8 @@ iiedsclr_rt     = -1 ! Location in the edsclrm array to place total water
 iiedsclr_thl    = -2 ! Location in the edsclrm array to place a scalar like thetal
 l_prescribed_avg_deltaz = .false.
 
+l_diagnose_correlations = .false.
+l_calc_w_corr = .false.
 /
 
 &gfdl_activation_setting
@@ -144,67 +145,66 @@ l_prescribed_avg_deltaz = .false.
 &microphysics_setting
 ! The schemes are: "khairoutdinov_kogan", "morrison", "morrison_gettelman",
 ! "coamps", "simplified_ice", "none"
-microphys_scheme = "morrison"
-l_ice_microphys = .true.
-l_graupel = .false.
-l_arctic_nucl = .true. ! Use MPACE observations for ice nucleation.
-l_predict_Nc = .true.
+microphys_scheme = "khairoutdinov_kogan"
+l_fix_chi_eta_correlations = .false.
 
-! Addition for using latin hypercube sampling
-hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.0
-hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 0.6
-hmp2_ip_on_hmm2_ip_ratios%rsp2_ip_on_rsm2_ip = 1.0
-hmp2_ip_on_hmm2_ip_ratios%Nsp2_ip_on_Nsm2_ip = 0.6
-
+hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 1.25
+hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 1.25
 Ncnp2_on_Ncnm2                               = 2.2
 
-lh_microphys_type = "interactive",
-l_local_kk = .true.,
-lh_num_samples = 2,
-lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+Nc0_in_cloud  = 70.e6 ! num/m^3
+l_const_Nc_in_cloud = .true.
+l_var_covar_src = .true.
 
-! two aerosol mode defaults from MPACE (from Hugh)
-aer_rm1 = 0.052e-6
-aer_sig1 = 2.04
-aer_n1 = 72.2e6
-aer_rm2 = 1.3e-6
-aer_sig2 = 2.5
-aer_n2 = 1.8e6
+! Addition for using SILHS
+lh_microphys_type = "interactive"
+l_local_kk = .true.,
+lh_num_samples = 8  ! A reasonable default
+lh_sequence_length = 1
 /
 
 &radiation_setting
 ! The schemes are: "bugsrad", simplified", "simplified_bomex", or "none"
-rad_scheme = "simplified",
-F0 = 70.0,   ! Coefficient for cloud top heating (see Stevens) [W/m^2] 
-F1 = 22.0,    ! Coefficient for cloud base heating (see Stevens)[W/m^2] 
-kappa = 85., ! A constant (Duynkerke eqn. 5)                   [m^2/kg]
-eff_drop_radius = 1.0e-5, ! Effective droplet radius		[m]
-alvdr = 0.1,   ! Visible direct surface albedo        		[-]
-gc    = 0.86,  ! Asymmetry parameter, "g" in Duynkerke          [-]
-omega = 0.9965,! Single-scattering albedo                       [-] 
-Fs_values = 1212.75,
-l_sw_radiation = .true.,
-
-! Flag indicating if U.S. Std Atmosphere should 
-! be used to extend the grid in radiation.
-! If false, sounding data will be used.
-l_use_default_std_atmosphere = .true. 
-
+rad_scheme = "none",
+l_calc_thlp2_rad = .false.,
 /
 
 &stats_setting
 
 ! Statistics Settings
 
-l_stats       = .true.    ! Flag for statistical output.
-fname_prefix = "mpace_b_lh"  ! Prefix of output filename.
-stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
-                          ! For most complete sampling, let 
-                          ! stats_tsamp = dt_main
-                          ! (stats_tsamp must multiply evenly into stats_tout)
-stats_tout   = 60.        ! Frequency of statistical output.  [s]
-stats_fmt    = "grads"    ! Type of statistical output file ("grads" or "netcdf").
+l_stats      = .true.   ! Flag for statistical output.
+fname_prefix = "rico_silhs"   ! Prefix of output filename.
+stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
+                        ! For most complete sampling, let 
+                        ! stats_tsamp = dt_main
+                        ! (stats_tsamp must multiply evenly into stats_tout)
+stats_tout   = 300.     ! Frequency of statistical output.  [s]
+stats_fmt    = "grads"  ! Type of statistical output file ("grads" or "netcdf").
 /
 
 
+!theta = 297.900, 297.900, 312.664, 317.000, 335.210, 348.098, 352.784, 362.812, 392.084, 470.365
+
+&setfields
+datafile = "../sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc"
+input_type = "SAM"  
+l_input_um = .true. 
+l_input_vm = .true.
+l_input_rtm = .true. 
+l_input_thlm = .true.
+l_input_wp2 = .true.
+l_input_wprtp = .true.
+l_input_wpthlp = .true.
+l_input_wp3 = .true.
+l_input_rtp2 = .true.
+l_input_thlp2 = .true.
+l_input_rtpthlp = .true.
+l_input_upwp = .true.
+l_input_vpwp = .true.
+l_input_rcm = .true.
+l_input_em = .true.
+l_input_p = .true.
+l_input_up2 = .true.
+l_input_vp2 = .true.
+/

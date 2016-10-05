@@ -15,7 +15,7 @@
 # Set the number of threads to
 export OMP_NUM_THREADS=8
 
-RUN_CASES=( fire bomex rico_lh gabls3 )
+RUN_CASES=( fire bomex rico_silhs gabls3 )
 NAMELISTS=( 'clubb_1.in' 'clubb_2.in' 'clubb_3.in' 'clubb_4.in' )
 FLAGS_FILE="../input/tunable_parameters/configurable_model_flags.in"
 PARAMS_FILE="../input/tunable_parameters/tunable_parameters.in"

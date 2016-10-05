@@ -2,10 +2,10 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-silhs_files = [ 'rcm/rico_lh_lh_sfc.nc', 'rcm_in_cloud/rico_lh_lh_sfc.nc' ]
+silhs_files = [ 'rcm/rico_silhs_lh_sfc.nc', 'rcm_in_cloud/rico_silhs_lh_sfc.nc' ]
 silhs_labels = [ 'rcm', 'rcm_in_cloud' ]
 
-clubb_nc = netCDF4.Dataset('rcm/rico_lh_zt.nc')
+clubb_nc = netCDF4.Dataset('rcm/rico_silhs_zt.nc')
 altitude = clubb_nc.variables['altitude']
 
 silhs_ncs = list()
