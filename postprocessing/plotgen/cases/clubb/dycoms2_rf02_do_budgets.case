@@ -184,7 +184,7 @@
        ]},
 
        # rtp2 budget.
-       {'plotTitle' => 'DYCOMS-II RF02 CLUBB r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'RF02 CLUBB r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'rtp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'rtp2_ma + rtp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
@@ -199,7 +199,7 @@
        ]},
 
        # thlp2 budget.
-       {'plotTitle' => 'DYCOMS-II RF02 CLUBB \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'RF02 CLUBB \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'thlp2_bt', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'dycoms2_rf02_do_zm.ctl', 'type' => 'cust', 'name' => 'advection', 'expression' => 'thlp2_ma + thlp2_ta', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},

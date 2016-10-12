@@ -9,7 +9,7 @@ module clip_explicit
 
   public :: clip_covars_denom, &
             clip_covar, & 
-            clip_covar_level, & 
+            clip_covar_level, &
             clip_variance, & 
             clip_skewness, &
             clip_skewness_core
@@ -456,6 +456,9 @@ module clip_explicit
     use clubb_precision, only: & 
         core_rknd ! Variable(s)
 
+    use variables_prognostic_module, only: &
+        rtpthlp_forcing    ! Variable(s)
+
     use stats_type_utilities, only: & 
         stat_begin_update,  & ! Procedure(s)
         stat_modify, & 
@@ -567,6 +570,10 @@ module clip_explicit
       else
         call stat_modify( ixpyp_cl, xpyp / dt, stats_zm )
       endif
+    endif
+
+    if ( solve_type == clip_rtpthlp ) then
+       call update_covar_forc_clip_stats( rtpthlp_forcing, xpyp_chnge / dt )
     endif
 
 
@@ -735,6 +742,115 @@ module clip_explicit
 
     return
   end subroutine clip_covar_level
+
+  !=============================================================================
+  subroutine update_covar_forc_clip_stats( xpyp_forcing, xpyp_cl )
+
+    ! Description:
+    ! In a scenario where a large forcing term results in clipping of rtpthlp,
+    ! the clipping is budgeted back into the forcing term.
+
+    ! References:  none
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    use grid_class, only: &
+        gr    ! Variable(s)
+
+    use stats_type_utilities, only: &
+        stat_modify_pt    ! Procedure(s)
+
+    use stats_variables, only: &
+        irtpthlp_forcing, & ! Variable(s)
+        irtpthlp_cl,      &
+        stats_zm
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), dimension(gr%nz), intent(in) :: &
+      xpyp_forcing, & ! Rate of change of xpyp from forcing
+      xpyp_cl         ! Rate of change of xpyp from covariance clipping
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      xpyp_sum_forcing_cl    ! Sum of xpyp_forcing and xpyp_cl
+
+    integer :: k    ! Loop index
+
+
+    do k = 1, gr%nz, 1
+
+       if ( xpyp_forcing(k) > zero .and. xpyp_cl(k) < zero ) then
+
+          ! xpyp_forcing is greater than 0 while xpyp_cl is less than 0.
+
+          ! Sum of forcing and clipping rates.
+          xpyp_sum_forcing_cl = xpyp_forcing(k) + xpyp_cl(k)
+
+          if ( xpyp_sum_forcing_cl > zero ) then
+
+             ! xpyp_forcing change = xpyp_cl
+             ! (xpyp_forcing_new result is xpyp_forcing_orig + xpyp_cl > 0)
+             ! xpyp_cl change = -xpyp_cl (xpyp_cl_new result is 0)
+             call stat_modify_pt( irtpthlp_forcing, k, xpyp_cl(k), stats_zm )
+             call stat_modify_pt( irtpthlp_cl, k, -xpyp_cl(k), stats_zm )
+
+          else ! xpyp_sum_forcing_cl <= 0
+
+             ! xpyp_forcing change = -xpyp_forcing
+             ! (xpyp_forcing_new result is 0)
+             ! xpyp_cl change = xpyp_forcing
+             ! (xpyp_cl_new result is xpyp_cl_orig + xpyp_forcing < 0)
+             call stat_modify_pt( irtpthlp_forcing, k, -xpyp_forcing(k), &
+                                  stats_zm )
+             call stat_modify_pt( irtpthlp_cl, k, xpyp_forcing(k), stats_zm )
+
+          endif ! xpyp_sum_forcing_cl > 0
+
+       elseif ( xpyp_forcing(k) < zero .and. xpyp_cl(k) > zero ) then
+
+          ! xpyp_forcing is less than 0 while xpyp_cl is greater than 0.
+
+          ! Sum of forcing and clipping rates.
+          xpyp_sum_forcing_cl = xpyp_forcing(k) + xpyp_cl(k)
+
+          if ( xpyp_sum_forcing_cl < zero ) then
+
+             ! xpyp_forcing change = xpyp_cl
+             ! (xpyp_forcing_new result is xpyp_forcing_orig + xpyp_cl > 0)
+             ! xpyp_cl change = -xpyp_cl (xpyp_cl_new result is 0)
+             call stat_modify_pt( irtpthlp_forcing, k, xpyp_cl(k), stats_zm )
+             call stat_modify_pt( irtpthlp_cl, k, -xpyp_cl(k), stats_zm )
+
+          else ! xpyp_sum_forcing_cl <= 0
+
+             ! xpyp_forcing change = -xpyp_forcing
+             ! (xpyp_forcing_new result is 0)
+             ! xpyp_cl change = xpyp_forcing
+             ! (xpyp_cl_new result is xpyp_cl_orig + xpyp_forcing > 0)
+             call stat_modify_pt( irtpthlp_forcing, k, -xpyp_forcing(k), &
+                                  stats_zm )
+             call stat_modify_pt( irtpthlp_cl, k, xpyp_forcing(k), stats_zm )
+
+          endif ! xpyp_sum_forcing_cl > 0
+
+       ! else ( xpyp_forcing > 0 and xpyp_cl > 0 ) or
+       ! ( xpyp_forcing < 0 and xpyp_cl < 0 ) --- don't change anything.
+
+       endif
+
+    enddo ! k = 1, gr%nz, 1
+
+
+    return
+
+  end subroutine update_covar_forc_clip_stats
 
   !=============================================================================
   subroutine clip_variance( solve_type, dt, threshold, &

@@ -16,12 +16,12 @@
     [
        {'plotTitle' => 'RICO Mean Liquid Water Potential Temp.', 'axisLabel' => '\theta_l [K]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THLM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'THLM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'RICO Mean Total Water Mixing Ratio', 'axisLabel' => 'r_t [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RTM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RTM', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Turbulent Flux of \theta_l', 'axisLabel' => 'wpthlp [K m/s]', 'type' => 'profile', 'lines' =>
@@ -41,7 +41,7 @@
        ]},       
        {'plotTitle' => 'RICO Mean Cloud Water Mixing Ratio', 'axisLabel' => 'r_c [kg/kg]', 'type' => 'profile', 'lines' =>
        [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QCL /1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/RICO_256x256x100_drizzle/RICO_256x256x100_drizzle.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QCL /1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 1.00, 0.00, 0.00 ]'},
           {'filename' => 'rico_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rcm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Variance of w', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'profile', 'lines' =>

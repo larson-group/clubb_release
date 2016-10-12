@@ -225,7 +225,7 @@
        ]},
 
 # rtpthlp budget
-       {'plotTitle' => 'RICO SAM LES r_{t} and \theta_{l} Covariance Budget', 'axisLabel' => 'Budget terms [K kg kg^{-1} s^{-1}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'RICO SAM LES r_{t} & \theta_{l} Covariance Budget', 'axisLabel' => 'Budget terms [K kg kg^{-1} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'QTHLBT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
           {'filename' => 'RICO_256x256x100_drizzle.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'QTHLADV', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},

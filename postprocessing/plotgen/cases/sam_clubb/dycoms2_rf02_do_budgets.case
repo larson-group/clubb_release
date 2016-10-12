@@ -194,7 +194,7 @@
        ]},
 
 # rtp2 budget.
-       {'plotTitle' => 'DYCOMS-II RF02 SAM LES r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'RF02 SAM LES r_{t} Variance Budget', 'axisLabel' => 'Budget terms [kg^{2} kg^{-2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'Q2BT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
 #          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'Q2ADVTR', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
@@ -208,7 +208,7 @@
        ]},
 
 # thlp2 budget.
-       {'plotTitle' => 'DYCOMS-II RF02 SAM LES \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
+       {'plotTitle' => 'RF02 SAM LES \theta_{l} Variance Budget', 'axisLabel' => 'Budget terms [K^{2} s^{-1}]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'time tend', 'expression' => 'THL2BT', 'lineWidth' => '4', 'lineType' => '-.', 'lineColor' => '[ 1.000, 0.498, 0.000 ]'},
 #          {'filename' => 'DYCOMS_RF02_128x128x96_dr_nosed.nc', 'type' => 'cust', 'name' => 'advection', 'expression' => 'THL2ADVTR', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.302, 0.686, 0.290 ]'},
