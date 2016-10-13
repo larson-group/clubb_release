@@ -57,7 +57,7 @@ thinLines = False
 # Line style, etc, arrays
 lineStyles = ["--", "-", "-.", "-"]
 lineColors = [
-    "[ 1.000, 0.000, 1.000 ]",    # magenta
+    "[ 0.000, 1.000, 0.000 ]",    # green
     "[ 0.000, 0.000, 1.000 ]",    # blue
     "[ 0.596, 0.306, 0.639 ]",    # purple
     "[ 0.471, 0.471, 0.471 ]",    # gray
