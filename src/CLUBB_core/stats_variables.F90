@@ -1308,8 +1308,10 @@ module stats_variables
 
   integer, public :: & 
     ilh_vwp = 0, &
-    ilh_lwp = 0
-!$omp threadprivate( ilh_vwp, ilh_lwp )
+    ilh_lwp = 0, &
+    ilh_sample_weights_sum = 0, &
+    ilh_sample_weights_avg = 0
+!$omp threadprivate( ilh_vwp, ilh_lwp, ilh_sample_weights_sum, ilh_sample_weights_avg)
 
 
   integer, public :: &
