@@ -301,14 +301,17 @@ module parameters_tunable
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  & 
-      fstderr ! Variable(s)
+        fstderr ! Variable(s)
+
+    use model_flags, only: &
+        l_clip_semi_implicit  ! Variable(s)
 
     use error_code, only:  & 
-      clubb_var_out_of_bounds,  & ! Variable(s)
-      clubb_no_error
+        clubb_var_out_of_bounds,  & ! Variable(s)
+        clubb_no_error
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
@@ -443,6 +446,47 @@ module parameters_tunable
        err_code = clubb_var_out_of_bounds
 
     endif ! lmin < 4.0
+
+    if ( .not. l_clip_semi_implicit ) then
+
+       ! When l_clip_semi_implicit is set to false (the current default),
+       ! the C6rt parameters must be set equal to the C6thl parameters.
+       ! Otherwise, the wpthlp pr1 term will be calculated inconsistently.
+
+       if ( C6rt /= C6thl ) then
+          write(fstderr,*) "C6rt = ", C6rt
+          write(fstderr,*) "C6thl = ", C6thl
+          write(fstderr,*) "C6rt and C6thl must be equal when" &
+                           // " l_clip_semi_implicit is turned off (default)."
+          err_code = clubb_var_out_of_bounds
+       endif ! C6rt /= C6thl
+
+       if ( C6rtb /= C6thlb ) then
+          write(fstderr,*) "C6rtb = ", C6rtb
+          write(fstderr,*) "C6thlb = ", C6thlb
+          write(fstderr,*) "C6rtb and C6thlb must be equal when" &
+                           // " l_clip_semi_implicit is turned off (default)."
+          err_code = clubb_var_out_of_bounds
+       endif ! C6rtb /= C6thlb
+
+       if ( C6rtc /= C6thlc ) then
+          write(fstderr,*) "C6rtc = ", C6rtc
+          write(fstderr,*) "C6thlc = ", C6thlc
+          write(fstderr,*) "C6rtc and C6thlc must be equal when" &
+                           // " l_clip_semi_implicit is turned off (default)."
+          err_code = clubb_var_out_of_bounds
+       endif ! C6rtc /= C6thlc
+
+       if ( C6rt_Lscale0 /= C6thl_Lscale0 ) then
+          write(fstderr,*) "C6rt_Lscale0 = ", C6rt_Lscale0
+          write(fstderr,*) "C6thl_Lscale0 = ", C6thl_Lscale0
+          write(fstderr,*) "C6rt_Lscale0 and C6thl_Lscale0 must be equal" &
+                           // " when l_clip_semi_implicit is turned off" &
+                           // " (default)."
+          err_code = clubb_var_out_of_bounds
+       endif ! C6rt_Lscale0 /= C6thl_Lscale0
+
+    endif ! .not. l_clip_semi_implicit
 
 !    write(*,nml=clubb_params_nl) ! %% debug
 
