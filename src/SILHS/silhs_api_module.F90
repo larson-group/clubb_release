@@ -346,12 +346,12 @@ contains
   ! lh_microphys_var_covar_driver: Computes the effect of microphysics on gridbox covariances
   !-----------------------------------------------------------------
 
-  subroutine lh_microphys_var_covar_driver_api &
-             ( nz, num_samples, dt, lh_sample_point_weights, &
-               lh_rt_all, lh_thl_all, lh_w_all, &
-               lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
-               lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
-               lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
+  subroutine lh_microphys_var_covar_driver_api &                ! In
+             ( nz, num_samples, dt, lh_sample_point_weights, &  ! In
+               pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &   ! In
+               lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &  ! In
+               lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, & ! Out
+               lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )              ! Out
 
     use lh_microphys_var_covar_module, only: &
       lh_microphys_var_covar_driver  ! Procedure
@@ -359,6 +359,9 @@ contains
     use clubb_precision, only: &
       core_rknd   ! Constant
 
+    use pdf_parameter_module, only: &
+      pdf_parameter
+      
     implicit none
 
     ! Input Variables!
@@ -388,10 +391,12 @@ contains
       lh_wpthlp_mc_zt, &               ! SILHS microphys. est. tendency of <w'thl'>  [m*K/s^2]
       lh_rtpthlp_mc_zt                 ! SILHS microphys. est. tendency of <rt'thl'> [K*(kg/kg)/s]
 
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! The PDF parameters_silhs
 
     call lh_microphys_var_covar_driver &
          ( nz, num_samples, dt, lh_sample_point_weights, &
-           lh_rt_all, lh_thl_all, lh_w_all, &
+           pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
            lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
            lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
            lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )

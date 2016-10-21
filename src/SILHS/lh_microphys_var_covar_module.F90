@@ -14,7 +14,7 @@ module lh_microphys_var_covar_module
   !-----------------------------------------------------------------------
   subroutine lh_microphys_var_covar_driver &
              ( nz, num_samples, dt, lh_sample_point_weights, &
-               lh_rt_all, lh_thl_all, lh_w_all, &
+               pdf_params, lh_rt_all, lh_thl_all, lh_w_all, &
                lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all, &
                lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &
                lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )
@@ -51,12 +51,17 @@ module lh_microphys_var_covar_module
       compute_sample_covariance
 
     use constants_clubb, only: &
-      zero, &    ! Constant(s)
-      two
+      zero, one, two    ! Constant(s)
 
     use parameters_silhs, only: &
       l_lh_instant_var_covar_src   ! Variable
 
+    use pdf_parameter_module, only: &
+      pdf_parameter
+      
+    use grid_class, only: &
+      zt2zm
+      
     implicit none
 
     ! Input Variables!
@@ -109,21 +114,36 @@ module lh_microphys_var_covar_module
       var_thl_mc, &
       covar_rt_mc_thl_mc
 
+    type(pdf_parameter), dimension(nz), intent(in) :: &
+      pdf_params    ! The PDF parameters_silhs
+      
   !-----------------------------------------------------------------------
 
     !----- Begin Code -----
     lh_rt_mc_all = lh_rcm_mc_all + lh_rvm_mc_all
 
     ! Calculate means, variances, and covariances needed for the tendency terms
-    mean_rt = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rt_all )
+    mean_rt = pdf_params%mixt_frac * pdf_params%rt_1 &
+      + (one - pdf_params%mixt_frac) * pdf_params%rt_2
+    mean_rt(1) = zero
+    
+    mean_thl = pdf_params%mixt_frac * pdf_params%thl_1 &
+      + (one - pdf_params%mixt_frac) * pdf_params%thl_2
+    mean_thl(1) = zero
+    
+    mean_w = pdf_params%mixt_frac * pdf_params%w_1 &
+      + (one - pdf_params%mixt_frac) * pdf_params%w_2
+    mean_w(1) = zero
+    
+    ! Calculate means, variances, and covariances needed for the tendency terms
     mean_rt_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_rt_mc_all )
     covar_rt_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                lh_rt_all, mean_rt, lh_rt_mc_all, mean_rt_mc )
-    mean_thl = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thl_all )
+                                         
     mean_thl_mc = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_thlm_mc_all )
     covar_thl_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                                  lh_thl_all, mean_thl, lh_thlm_mc_all, mean_thl_mc )
-    mean_w = compute_sample_mean( nz, num_samples, lh_sample_point_weights, lh_w_all )
+                                                 
     covar_w_rt_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &
                                               lh_w_all, mean_w, lh_rt_mc_all, mean_rt_mc )
     covar_w_thl_mc = compute_sample_covariance( nz, num_samples, lh_sample_point_weights, &

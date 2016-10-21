@@ -257,7 +257,7 @@ module estimate_scm_microphys_module
 
       call lh_microphys_var_covar_driver &
            ( nz, num_samples, dt, lh_sample_point_weights,  &  ! Intent(in)
-             rt_all_points, thl_all_points, w_all_points,   &  ! Intent(in)
+             pdf_params, rt_all_points, thl_all_points, w_all_points,  &  ! Intent(in)
              lh_rcm_mc_all, lh_rvm_mc_all, lh_thlm_mc_all,  &  ! Intent(in)
              lh_rtp2_mc_zt, lh_thlp2_mc_zt, lh_wprtp_mc_zt, &  ! Intent(out)
              lh_wpthlp_mc_zt, lh_rtpthlp_mc_zt )               ! Intent(out)
