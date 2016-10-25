@@ -136,7 +136,7 @@ module precipitation_fraction
        if ( k < nz ) then
           if ( any( l_frozen_hm ) ) then
              ! Ice microphysics included.
-             precip_frac(k) = max( precip_frac(k+1), cloud_frac(k), &
+             precip_frac(k) = max( cloud_frac(k), &
                                    ice_supersat_frac(k) )
           else
              ! Warm microphysics.
