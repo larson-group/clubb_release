@@ -1319,7 +1319,7 @@ source file ../src/CLUBB_core/grid_class.F90 and doc/CLUBBeqns.pdf.
   sigma_sqd_w, which is diagnosed based purely on momentum-level variables
   wpthlp, wp2, thlp2, wprtp, and rtp2.  Another example of this, as referenced
   above in the section on "Thermodynamic-level variables", is em, which is
-  diagnosed based purely on momentum-level variables wp2, up2, and vp2.
+  diagnosed based purely on momentum-level variables wp2, up2, and vp2. 
 
   When momentum-level variables are at their "home" momentum levels, they simply
   use their "base" name (wprtp, up2, sigma_sqd_w, rtpthlp, etc.). However, when
