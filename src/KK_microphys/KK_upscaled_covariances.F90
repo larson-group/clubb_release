@@ -64,6 +64,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Parameterizing microphysical
+    ! effects on variances and covariances of moisture and heat content using a
+    ! multivariate probability density function: a study with CLUBB (tag MVCS).
+    ! Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -532,6 +537,11 @@ module KK_upscaled_covariances
     ! simply as < x'KK_evap' >.
 
     ! References:
+    !
+    ! Eq. (A28) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -666,6 +676,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A31) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -846,6 +861,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A34) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1022,6 +1042,11 @@ module KK_upscaled_covariances
     ! simply as < x'KK_auto' >.
 
     ! References:
+    !
+    ! Eq. (A9) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1121,6 +1146,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A12) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1259,6 +1289,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A15) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1398,6 +1433,11 @@ module KK_upscaled_covariances
     ! simply as < x'KK_accr' >.
 
     ! References:
+    !
+    ! Eq. (A18) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1504,6 +1544,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A21) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1643,6 +1688,11 @@ module KK_upscaled_covariances
     ! Description:
 
     ! References:
+    !
+    ! Eq. (A24) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1795,6 +1845,11 @@ module KK_upscaled_covariances
     ! integral based on the specific situation.
 
     ! References:
+    !
+    ! Section S5 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use PDF_integrals_covars, only: &
@@ -2247,6 +2302,11 @@ module KK_upscaled_covariances
     ! integral based on the specific situation.
 
     ! References:
+    !
+    ! Section S6 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use PDF_integrals_covars, only: &
