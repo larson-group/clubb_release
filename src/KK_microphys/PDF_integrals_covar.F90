@@ -969,6 +969,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S25) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1050,6 +1055,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S26) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1120,6 +1130,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S27) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1183,6 +1198,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S28) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1249,6 +1269,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S29) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1308,6 +1333,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S30) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1367,6 +1397,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S31) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -1421,6 +1456,11 @@ module PDF_integrals_covars
 
     ! References:
     !  Griffin, B. M. (2016)
+    !
+    ! Eq. (S32) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! Parameterizing microphysical effects on variances and covariances of
+    ! moisture and heat content using a multivariate probability density
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
