@@ -28,7 +28,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I1) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -108,11 +112,12 @@ module PDF_integrals_all_mixed_moments
     do p = 0, a_exp/2, 1
        do r = 0, (a_exp-2*p), 1
           do q = 0, b_exp, 1
+
              q_dp = real( q, kind=dp )
              r_dp = real( r, kind=dp )
              s_cc = ( mu_x2 / sigma_x2 )  &
                     + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp  &
-                    + rho_x2x4_n * sigma_x4_n * beta_exp * q_dp
+                    + rho_x2x4_n * sigma_x4_n * gamma_exp * q_dp
 
              sigma_sum  &
              = sigma_sum  &
@@ -144,8 +149,8 @@ module PDF_integrals_all_mixed_moments
                     )  &
                * exp( one_fourth_dp * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
                       + one_half_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
-               * gamma( alpha_exp*q_dp + r_dp + 1._dp )  &
-               * Dv_fnc( -(alpha_exp*q_dp + r_dp + 1._dp), s_cc )
+               * gamma( alpha_exp*q_dp + r_dp + one_dp )  &
+               * Dv_fnc( -(alpha_exp*q_dp + r_dp + one_dp), s_cc )
 
           enddo
        enddo
@@ -169,7 +174,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I2) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -235,6 +244,7 @@ module PDF_integrals_all_mixed_moments
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
+
        q_dp = real( q, kind=dp )
        s_cc = ( mu_x2 / sigma_x2 )  &
               + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp  &
@@ -259,8 +269,8 @@ module PDF_integrals_all_mixed_moments
               )  &
          * exp( one_fourth_dp * s_cc**2 - ( mu_x2 / sigma_x2 ) * s_cc  &
                 + one_half_dp * ( mu_x2**2 / sigma_x2**2 ) )  &
-         * gamma( alpha_exp*q_dp + 1._dp )  &
-         * Dv_fnc( -(alpha_exp*q_dp + 1._dp), s_cc )
+         * gamma( alpha_exp*q_dp + one_dp )  &
+         * Dv_fnc( -(alpha_exp*q_dp + one_dp), s_cc )
 
     enddo
 
@@ -282,7 +292,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I3) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -341,7 +355,9 @@ module PDF_integrals_all_mixed_moments
 
     do p = 0, a_exp/2, 1
        do q = 0, b_exp, 1
+
           q_dp = real( q, kind=dp )
+
           sigma_sum  &
           = sigma_sum  &
           +   factorial( a_exp )  &
@@ -383,7 +399,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I6) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -439,7 +459,9 @@ module PDF_integrals_all_mixed_moments
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
+
        q_dp = real( q, kind=dp )
+
        sigma_sum  &
        = sigma_sum  &
        + ( mu_x1 - x1_mean )**a_exp  &
@@ -472,7 +494,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I22) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -532,6 +558,7 @@ module PDF_integrals_all_mixed_moments
     real( kind = dp ) ::  &
       sigma_sum, & !
       s_c,       & !
+      r_dp,      & 
       q_dp
 
     ! Initialize sigma_sum
@@ -540,6 +567,8 @@ module PDF_integrals_all_mixed_moments
     do p = 0, a_exp/2, 1
        do r = 0, (a_exp-2*p), 1
           do q = 0, b_exp, 1
+
+             r_dp = real( r, kind=dp )
              q_dp = real( q, kind=dp )
              s_c = ( mu_x2 / sigma_x2 )  &
                    + rho_x2x3_n * sigma_x3_n * beta_exp * q_dp
@@ -564,8 +593,8 @@ module PDF_integrals_all_mixed_moments
                * exp( mu_x3_n * beta_exp * q_dp  &
                       + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                       - one_fourth_dp * s_c**2 )  &
-               * gamma( alpha_exp*q_dp + real( r + 1, kind=dp ) )  &
-               * Dv_fnc( -( alpha_exp*q_dp + real( r + 1, kind=dp ) ), -s_c )
+               * gamma( alpha_exp*q_dp + r_dp + one_dp )  &
+               * Dv_fnc( -( alpha_exp*q_dp + r_dp + one_dp ), -s_c )
 
           enddo
        enddo
@@ -586,7 +615,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I23) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -649,6 +682,7 @@ module PDF_integrals_all_mixed_moments
     sigma_sum = zero_dp
 
     do q = 0, b_exp, 1
+
        q_dp = real( q, kind=dp )
 
        s_c = ( mu_x2 / sigma_x2 )  &
@@ -665,8 +699,8 @@ module PDF_integrals_all_mixed_moments
          * exp( mu_x3_n * beta_exp * q_dp  &
                 + one_half_dp * sigma_x3_n**2 * beta_exp**2 * q_dp**2  &
                 - one_fourth_dp * s_c**2 )  &
-         * gamma( alpha_exp*q_dp + 1._dp )  &
-         * Dv_fnc( -(alpha_exp*q_dp + 1._dp), -s_c )
+         * gamma( alpha_exp*q_dp + one_dp )  &
+         * Dv_fnc( -(alpha_exp*q_dp + one_dp), -s_c )
 
     enddo
 
@@ -685,7 +719,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I24) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -776,7 +814,11 @@ module PDF_integrals_all_mixed_moments
     ! Description:
 
     ! References:
-    !  Griffin, B. M. (2011)
+    ! Eq. (I26) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &

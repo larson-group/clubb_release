@@ -33,6 +33,12 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
+    ! Eq. (J25) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
     ! Eq. (S33) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
@@ -114,6 +120,12 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
+    ! Eq. (J26) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
     ! Eq. (S34) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
@@ -174,6 +186,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J27) and Eq. (J28) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S35) and Eq. (S36) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of Parameterizing microphysical effects on variances and
@@ -242,6 +259,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J29) and Eq. (J30) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S37) and Eq. (S38) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of Parameterizing microphysical effects on variances and
@@ -298,6 +320,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J31) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S39) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -356,6 +383,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J32) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S40) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -409,6 +441,12 @@ module PDF_integrals_means
 
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
+    !
+    ! Eq. (J33) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S41) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -477,6 +515,12 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
+    ! Eq. (J34) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
     ! Eq. (S42) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
@@ -530,6 +574,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J35) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S43) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -586,6 +635,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (J36) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S44) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -636,6 +690,12 @@ module PDF_integrals_means
 
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
+    !
+    ! Eq. (C39) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -679,6 +739,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (C40) and Eq. (C41) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -717,6 +782,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
+    ! Eq. (C42) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
