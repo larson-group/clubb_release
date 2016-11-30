@@ -545,7 +545,7 @@ module KK_upscaled_means
     ! Section C.3 and Section J.3 of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
     ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Section S7 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
@@ -813,7 +813,7 @@ module KK_upscaled_means
     ! Improving the Subgrid-Scale Representation of Hydrometeors and
     ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
     ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
-    ! Paper 1144, 165 pp. URL
+    ! Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Section S8 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
@@ -999,7 +999,7 @@ module KK_upscaled_means
     ! Section C.4 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 

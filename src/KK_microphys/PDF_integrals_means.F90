@@ -36,13 +36,19 @@ module PDF_integrals_means
     ! Eq. (J25) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S24) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S33) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -123,13 +129,19 @@ module PDF_integrals_means
     ! Eq. (J26) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S29) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S34) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -189,13 +201,19 @@ module PDF_integrals_means
     ! Eq. (J27) and Eq. (J28) of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
     ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S26) and Eq. (S27) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S35) and Eq. (S36) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of Parameterizing microphysical effects on variances and
     ! covariances of moisture and heat content using a multivariate probability
-    ! density function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! density function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9,
+    ! 11, doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -262,13 +280,19 @@ module PDF_integrals_means
     ! Eq. (J29) and Eq. (J30) of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
     ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S30) and Eq. (S31) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S37) and Eq. (S38) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of Parameterizing microphysical effects on variances and
     ! covariances of moisture and heat content using a multivariate probability
-    ! density function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! density function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9,
+    ! 11, doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -323,13 +347,19 @@ module PDF_integrals_means
     ! Eq. (J31) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S28) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S39) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -386,13 +416,19 @@ module PDF_integrals_means
     ! Eq. (J32) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S32) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S40) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -445,13 +481,19 @@ module PDF_integrals_means
     ! Eq. (J33) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S4) and Eq. (S14) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S41) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -518,13 +560,19 @@ module PDF_integrals_means
     ! Eq. (J34) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S9) and Eq. (S16) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S42) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -577,13 +625,19 @@ module PDF_integrals_means
     ! Eq. (J35) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S8) and Eq. (S15) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S43) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -638,13 +692,19 @@ module PDF_integrals_means
     ! Eq. (J36) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S10) and Eq. (S17) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Eq. (S44) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &  
@@ -694,8 +754,13 @@ module PDF_integrals_means
     ! Eq. (C39) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S39) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -742,8 +807,13 @@ module PDF_integrals_means
     ! Eq. (C40) and Eq. (C41) of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
     ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S40) and Eq. (S41) of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -785,8 +855,13 @@ module PDF_integrals_means
     ! Eq. (C42) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S42) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &

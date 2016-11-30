@@ -67,13 +67,14 @@ module KK_upscaled_covariances
     ! Griffin, B. M., 2016:  Improving the Subgrid-Scale Representation of
     !    Hydrometeors and Microphysical Feedback Effects Using a Multivariate
     !    PDF.  Doctoral dissertation, University of Wisconsin -- Milwaukee,
-    !    Milwaukee, WI, Paper 1144, 165 pp. URL
+    !    Milwaukee, WI, Paper 1144, 165 pp., URL
     !    http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Griffin, B. M. and V. E. Larson, 2016:  Parameterizing microphysical
     !    effects on variances and covariances of moisture and heat content using
     !    a multivariate probability density function: a study with CLUBB (tag
-    !    MVCS).  Geosci. Model Dev., 9.
+    !    MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
@@ -545,13 +546,14 @@ module KK_upscaled_covariances
     ! Eq. (E21) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A28) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -689,13 +691,14 @@ module KK_upscaled_covariances
     ! Eq. (E24) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A31) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -879,13 +882,14 @@ module KK_upscaled_covariances
     ! Eq. (E27) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A34) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1065,13 +1069,14 @@ module KK_upscaled_covariances
     ! Eq. (E3) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A9) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1174,13 +1179,14 @@ module KK_upscaled_covariances
     ! Eq. (E6) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A12) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1322,13 +1328,14 @@ module KK_upscaled_covariances
     ! Eq. (E9) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A15) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1471,13 +1478,14 @@ module KK_upscaled_covariances
     ! Eq. (E12) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A18) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1587,13 +1595,14 @@ module KK_upscaled_covariances
     ! Eq. (E15) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A21) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1736,13 +1745,14 @@ module KK_upscaled_covariances
     ! Eq. (E18) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (A24) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
     ! microphysical effects on variances and covariances of moisture and heat
     ! content using a multivariate probability density function: a study with
-    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -1898,13 +1908,14 @@ module KK_upscaled_covariances
     ! Section J.1 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Section S5 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use PDF_integrals_covars, only: &
@@ -2360,13 +2371,14 @@ module KK_upscaled_covariances
     ! Section J.2 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Section S6 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
     ! moisture and heat content using a multivariate probability density
-    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9.
+    ! function: a study with CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016-supplement.
     !-----------------------------------------------------------------------
 
     use PDF_integrals_covars, only: &

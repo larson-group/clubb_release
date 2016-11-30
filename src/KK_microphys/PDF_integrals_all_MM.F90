@@ -31,7 +31,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I1) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -177,7 +177,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I2) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -295,7 +295,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I3) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -402,7 +402,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I6) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -497,7 +497,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I22) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -618,7 +618,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I23) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -722,7 +722,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I24) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
@@ -817,7 +817,7 @@ module PDF_integrals_all_mixed_moments
     ! Eq. (I26) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp. URL
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !-----------------------------------------------------------------------
 
