@@ -170,15 +170,11 @@ module advance_clubb_core_module
       ep2, & 
       Cp, & 
       Lv, & 
-      Ls, &
       ep1, & 
-      p0, &
-      kappa, &
       fstderr, &
       zero_threshold, &
       three_halves, &
       one, &
-      zero, &
       unused_var
 
     use parameters_tunable, only: & 
@@ -196,21 +192,13 @@ module advance_clubb_core_module
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
-      edsclr_dim, &
-      sclr_tol, &
-      ts_nudge, &
-      rtm_min, &
-      rtm_nudge_max_altitude
+      edsclr_dim
 
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
-      l_gamma_Skw, &
-      l_trapezoidal_rule_zt, &
-      l_trapezoidal_rule_zm, &
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
       l_use_cloud_cover, &
-      l_rtm_nudge, &
       l_use_3D_closure, &
       l_stability_correct_tau_zm, &
       l_do_expldiff_rtm_thlm, &
@@ -232,7 +220,6 @@ module advance_clubb_core_module
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
       Skw_zm, &
-      sigma_sqd_w_zt, &
       wp4, &
       thlpthvp, &
       rtpthvp, &
@@ -379,14 +366,9 @@ module advance_clubb_core_module
       ithlm_bt,      &
       ivm_bt,        &
       ium_bt,        &
-      ircp2,         &
-      iwp4,          &
-      irsat,         &
       irvm,          &
       irel_humidity, &
-      iwpthlp_zt,    &
-      iSkw_zt,       &
-      iSkw_zm
+      iwpthlp_zt
 
     use stats_variables, only: &
       iwprtp_zt,     &
@@ -402,21 +384,18 @@ module advance_clubb_core_module
       iwp2_sf,       &
       l_stats_samp,  &
       l_stats,       &
-      stats_zt,            &
-      stats_zm,            &
-      stats_sfc,           &
+      stats_zt,      &
+      stats_zm,      &
+      stats_sfc,     &
       irtm_spur_src, &
       ithlm_spur_src
 
     use stats_variables, only: &
       irfrzm, & ! Variable(s)
-      icloud_frac_refined, &
-      istability_correction, &
-      ircm_refined
+      istability_correction
 
     use stats_variables, only: &
-      iSkw_velocity, & ! Variable(s)
-      iLscale_pert_1, &
+      iLscale_pert_1, & ! Variable(s)
       iLscale_pert_2
 
     use fill_holes, only: &
@@ -425,9 +404,6 @@ module advance_clubb_core_module
 
     use sigma_sqd_w_module, only: &
       compute_sigma_sqd_w ! Procedure(s)
-
-    use array_index, only: &
-      iirrm            ! Variable
 
     use pdf_utilities, only: &
       compute_mean_binormal
