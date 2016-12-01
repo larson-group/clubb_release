@@ -178,17 +178,14 @@ module advance_clubb_core_module
       unused_var
 
     use parameters_tunable, only: & 
-      gamma_coefc,  & ! Variable(s)
-      gamma_coefb, & 
-      gamma_coef, & 
-      taumax, & 
+      taumax, & ! Variable(s)
       c_K, &
       mu, &
       Lscale_mu_coef, &
       Lscale_pert_coef, &
       c_K10, &
       c_K10h, &
-      beta, C1, C14
+      C1, C14
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
@@ -198,14 +195,11 @@ module advance_clubb_core_module
       l_tke_aniso, &  ! Variable(s)
       l_call_pdf_closure_twice, &
       l_host_applies_sfc_fluxes, &
-      l_use_cloud_cover, &
-      l_use_3D_closure, &
       l_stability_correct_tau_zm, &
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
       l_use_ice_latent, &
-      l_damp_wp2_using_em, &
-      l_rcm_supersat_adj
+      l_damp_wp2_using_em
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -303,11 +297,6 @@ module advance_clubb_core_module
     use surface_varnce_module, only:  & 
       surface_varnce ! Procedure
 
-    use pdf_closure_module, only:  & 
-      ! Procedure 
-      pdf_closure, &  ! Prob. density function
-      calc_vert_avg_cf_component
-
     use mixing_length, only: & 
       compute_length ! Procedure
 
@@ -326,13 +315,11 @@ module advance_clubb_core_module
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
-      clubb_debug,  &
       report_error, &
       fatal_error
 
     use Skx_module, only:  &
-      Skx_func, &
-      LG_2005_ansatz
+      Skx_func    ! Procedure(s)
 
     use clip_explicit, only: & 
       clip_covars_denom ! Procedure(s)
@@ -401,12 +388,6 @@ module advance_clubb_core_module
     use fill_holes, only: &
       vertical_integral, & ! Procedure(s)
       fill_holes_vertical
-
-    use sigma_sqd_w_module, only: &
-      compute_sigma_sqd_w ! Procedure(s)
-
-    use pdf_utilities, only: &
-      compute_mean_binormal
 
     use advance_helper_module, only: &
       calc_stability_correction, & ! Procedure(s)
