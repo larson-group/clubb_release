@@ -2322,16 +2322,18 @@ module advance_clubb_core_module
                                   rtpthvp, thlpthvp,             & ! Intent(out)
                                   rcm_in_layer, cloud_cover,     & ! Intent(out)
                                   rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
-                                  sclrpthvp, wp4, wp2rtp,        & ! Intent(out)
-                                  wprtp2, wp2thlp, wpthlp2,      & ! Intent(out)
-                                  wprtpthlp, wp2rcp, rtprcp,     & ! Intent(out)
-                                  rcp2, Skw_velocity,            & ! Intent(out)
+                                  rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                  wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                  rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
                                   cloud_frac_zm,                 & ! Intent(out)
                                   ice_supersat_frac_zm,          & ! Intent(out)
                                   rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                  rcm_supersat_adj,              & ! Intent(out)
                                   wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
                                   wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
-                                  pdf_params, pdf_params_zm,     & ! Intent(out)
+                                  pdf_params, pdf_params_frz,    & ! Intent(out)
+                                  pdf_params_zm,                 & ! Intent(out)
                                   err_code                       ) ! Intent(i/o)
 
     use grid_class, only: &
@@ -2525,7 +2527,9 @@ module advance_clubb_core_module
       cloud_cover,       & ! cloud cover                            [-]
       rcp2_zt,           & ! r_c'^2 (on thermo. grid)               [kg^2/kg^2]
       thlprcp,           & ! < th_l' r_c' > (momentum levels)       [K kg/kg]
-      rc_coef              ! Coefficient of X' R_l' in Eq. (34)     [-]
+      rc_coef,           & ! Coefficient of X' R_l' in Eq. (34)     [-]
+      rtm_frz,           & ! rtm adjusted to include hydrometeors   [kg/kg] 
+      thlm_frz             ! thlm adjusted to include hydrometeors  [K]
 
     ! Variable being passed back to and out of advance_clubb_core.
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(out) :: &
@@ -2550,7 +2554,8 @@ module advance_clubb_core_module
       ice_supersat_frac_zm, & ! Ice supersat. frac. on momentum levels   [-]
       rtm_zm,               & ! Total water mixing ratio at mom. levs.   [kg/kg]
       thlm_zm,              & ! Liquid water pot. temp. at mom. levs.    [K]
-      rcm_zm                  ! rcm at momentum levels                   [kg/kg]
+      rcm_zm,               & ! rcm at momentum levels                   [kg/kg]
+      rcm_supersat_adj        ! Adjust. to rcm due to spurious supersat. [kg/kg]
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
       wp2sclrp,    & ! < w'^2 sclr' > (thermodynamic levels)      [units vary]
@@ -2561,7 +2566,8 @@ module advance_clubb_core_module
 
     ! Variable being passed back to and out of advance_clubb_core.
     type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
-      pdf_params      ! PDF parameters   [units vary]
+      pdf_params,     & ! PDF parameters                          [units vary]
+      pdf_params_frz    ! Output for use in pert. Lscale calc.
 
     ! Variable being passed back to only advance_clubb_core.
     type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
@@ -2641,12 +2647,9 @@ module advance_clubb_core_module
 
     ! The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
-      pdf_params_frz, &
       pdf_params_zm_frz
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
-      rtm_frz, &
-      thlm_frz, &
       wp4_zt_frz, &
       wprtp2_frz, &
       wp2rtp_frz, &
@@ -2714,7 +2717,6 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       rrm,              & ! Rain water mixing ratio
-      rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
       rsat,             & ! Saturation mixing ratio from mean rt and thl.
       rel_humidity        ! Relative humidity after PDF closure [-]
 
