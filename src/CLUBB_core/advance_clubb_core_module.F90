@@ -2557,7 +2557,7 @@ module advance_clubb_core_module
       rcm_zm,               & ! rcm at momentum levels                   [kg/kg]
       rcm_supersat_adj        ! Adjust. to rcm due to spurious supersat. [kg/kg]
 
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim), intent(out) :: &
       wp2sclrp,    & ! < w'^2 sclr' > (thermodynamic levels)      [units vary]
       wpsclrp2,    & ! < w' sclr'^2 > (thermodynamic levels)      [units vary]
       sclrprcp,    & ! < sclr' r_c' > (momentum levels)           [units vary]
