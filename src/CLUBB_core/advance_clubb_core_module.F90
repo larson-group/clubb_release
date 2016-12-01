@@ -232,10 +232,6 @@ module advance_clubb_core_module
     use variables_diagnostic_module, only: &
       Skw_zt,  & ! Variable(s)
       Skw_zm, &
-      Skthl_zt, &
-      Skthl_zm, &
-      Skrt_zt, &
-      Skrt_zm, &
       sigma_sqd_w_zt, &
       wp4, &
       thlpthvp, &
@@ -291,8 +287,6 @@ module advance_clubb_core_module
       wpsclrprtp,   & ! w'sclr'rt'
       wpsclrpthlp,  & ! w'sclr'thl'
       wp3_zm,       & ! wp3 interpolated to momentum levels
-      thlp3_zm,     & ! thlp3 interpolated to momentum levels
-      rtp3_zm,      & ! rtp3 interpolated to momentum levels
       Skw_velocity, & ! Skewness velocity       [m/s]
       a3_coef,      & ! The a3 coefficient      [-]
       a3_coef_zt      ! The a3 coefficient interp. to the zt grid [-]
@@ -392,11 +386,7 @@ module advance_clubb_core_module
       irel_humidity, &
       iwpthlp_zt,    &
       iSkw_zt,       &
-      iSkw_zm,       &
-      iSkthl_zt,     &
-      iSkthl_zm,     &
-      iSkrt_zt,      &
-      iSkrt_zm
+      iSkw_zm
 
     use stats_variables, only: &
       iwprtp_zt,     &
@@ -426,7 +416,6 @@ module advance_clubb_core_module
 
     use stats_variables, only: &
       iSkw_velocity, & ! Variable(s)
-      igamma_Skw_fnc, &
       iLscale_pert_1, &
       iLscale_pert_2
 
@@ -466,15 +455,6 @@ module advance_clubb_core_module
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
-    logical, parameter :: &
-      l_refine_grid_in_cloud = .false., & ! Compute cloud_frac and rcm on a refined grid
-
-      l_interactive_refined  = .false.    ! Should the refined grid code feed into the model?
-                                          ! Only has meaning if l_refined_grid_in_cloud is .true.
-
-    real( kind = core_rknd ), parameter :: &
-      chi_at_liq_sat = 0._core_rknd  ! Value of chi(s) at saturation with respect to ice
-                                   ! (zero for liquid)
     !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -648,12 +628,11 @@ module advance_clubb_core_module
 #ifdef CLUBB_CAM
       ixind, &
 #endif
-      err_code_pdf_closure, err_code_surface
+      err_code_surface
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
       sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
-      gamma_Skw_fnc, & ! Gamma as a function of skewness          [???]
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
       rtm_pert_1, rtm_pert_2,   &     ! For avg. calculation of Lscale  [kg/kg]
@@ -661,27 +640,12 @@ module advance_clubb_core_module
       rtm_pert_pos_rt, rtm_pert_neg_rt          ! For avg. calculation of Lscale  [kg/kg]
     !Lscale_weight Uncomment this if you need to use this vairable at some point.
 
-    ! For pdf_closure
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
-      wpsclrp_zt,  & ! w' sclr' on thermo. levels
-      sclrp2_zt,   & ! sclr'^2 on thermo. levels
-      sclrprtp_zt, & ! sclr' r_t' on thermo. levels
-      sclrpthlp_zt   ! sclr' th_l' on thermo. levels
-
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      p_in_Pa_zm,   & ! Pressure interpolated to momentum levels  [Pa]
-      exner_zm,     & ! Exner interpolated to momentum levels     [-]
       w_1_zm,        & ! Mean w (1st PDF component)                   [m/s]
       w_2_zm,        & ! Mean w (2nd PDF component)                   [m/s]
       varnce_w_1_zm, & ! Variance of w (1st PDF component)            [m^2/s^2]
       varnce_w_2_zm, & ! Variance of w (2nd PDF component)            [m^2/s^2]
       mixt_frac_zm    ! Weight of 1st PDF component (Sk_w dependent) [-]
-
-    real( kind = core_rknd ), dimension(gr%nz,hydromet_dim) :: & 
-      wphydrometp_zt, & ! Covariance of w and hm (on t-levs.) [(m/s) <hm units>]
-      wp2hmp_zm,      & ! Moment <w'^2 hm'> (on m-levs.)    [(m/s)^2 <hm units>]
-      rtphmp,         & ! Covariance of rt and hm           [(kg/kg) <hm units>]
-      thlphmp           ! Covariance of thl and hm                [K <hm units>]
 
     integer :: &
       wprtp_cl_num,   & ! Instance of w'r_t' clipping (1st or 3rd).
@@ -690,44 +654,14 @@ module advance_clubb_core_module
       upwp_cl_num,    & ! Instance of u'w' clipping (1st or 2nd).
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
-    ! These local variables are declared because they originally belong on the momentum
-    ! grid levels, but pdf_closure outputs them on the thermodynamic grid levels.
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      wp4_zt,      & ! w'^4 (on thermo. grid)           [m^4/s^4] 
-      wpthvp_zt,   & ! Buoyancy flux (on thermo. grid)  [(K m)/s]
-      rtpthvp_zt,  & ! r_t' th_v' (on thermo. grid)     [(kg K)/kg]
-      thlpthvp_zt, & ! th_l' th_v' (on thermo. grid)    [K^2]
-      wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
-      rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
-      thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
-      rcp2_zt,     & ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
-      rc_coef_zt     ! X'R_l' coef. (on thermo. grid)   [-]
-
-    real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
-      sclrpthvp_zt, & ! sclr'th_v' (on thermo. grid) 
-      sclrprcp_zt     ! sclr'rc' (on thermo. grid)
-
-    real( kind = core_rknd ), dimension(gr%nz) :: &
-      wprtp2_zm,            & ! w'rt'^2 on momentum grid                   [m kg^2/kg^2]
-      wp2rtp_zm,            & ! w'^2 rt' on momentum grid                  [m^2 kg/kg]
-      wpthlp2_zm,           & ! w'thl'^2 on momentum grid                  [m K^2/s]
-      wp2thlp_zm,           & ! w'^2 thl' on momentum grid                 [m^2 K/s^2]
-      wprtpthlp_zm,         & ! w'rt'thl' on momentum grid                 [m kg K/kg s]
+      rcp2_zt,              & ! r_c'^2 (on thermo. grid)                   [kg^2/kg^2]
       cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
       ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
       rtm_zm,               & ! Total water mixing ratio                   [kg/kg]
       thlm_zm,              & ! Liquid potential temperature               [kg/kg]
       rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      wp2thvp_zm,           & ! w'^2 th_v' on momentum grid                [m^2 K/s^2]
-      wp2rcp_zm,            & ! w'^2 rc' on momentum grid                  [m^2 kg/kg s^2]
       sign_rtpthlp            ! sign of the covariance rtpthlp             [-]
-
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: & 
-      wpsclrprtp_zm,  & ! w'sclr'rt' on momentum grid 
-      wpsclrp2_zm,    & ! w'sclr'^2 on momentum grid 
-      wpsclrpthlp_zm, & ! w'sclr'thl' on momentum grid 
-      wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
-      sclrm_zm          ! Passive scalar mean on momentum grid
 
     real( kind = core_rknd ) :: &
       rtm_integral_before, &
@@ -747,82 +681,17 @@ module advance_clubb_core_module
 
     !The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
-      pdf_params_frz, &
-      pdf_params_zm_frz
-
+      pdf_params_frz
 
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
-      thlm_frz, &
-      wp4_zt_frz, &
-      wprtp2_frz, &
-      wp2rtp_frz, &
-      wpthlp2_frz, &
-      wp2thlp_frz, &
-      wprtpthlp_frz, &
-      cloud_frac_frz, &
-      ice_supersat_frac_frz, &
-      rcm_frz, &
-      wpthvp_frz, &
-      wpthvp_zt_frz, &
-      wp2thvp_frz, &
-      wp2thvp_zm_frz, &
-      rtpthvp_frz, &
-      rtpthvp_zt_frz, &
-      thlpthvp_frz, &
-      thlpthvp_zt_frz, &
-      wprcp_zt_frz, &
-      wp2rcp_frz
-
-    real( kind = core_rknd ), dimension(gr%nz)  :: &
-      rtprcp_zt_frz, &
-      thlprcp_zt_frz, &
-      rcp2_zt_frz, &
-      rc_coef_zt_frz, &
-      wp4_frz, &
-      wprtp2_zm_frz, &
-      wp2rtp_zm_frz, &
-      wpthlp2_zm_frz, &
-      wp2thlp_zm_frz, &
-      wprtpthlp_zm_frz, &
-      cloud_frac_zm_frz, &
-      ice_supersat_frac_zm_frz, &
-      rcm_zm_frz, &
-      wprcp_frz, &
-      wp2rcp_zm_frz, &
-      rtprcp_frz, &
-      thlprcp_frz, &
-      rcp2_frz, &
-      rtm_zm_frz, &
-      thlm_zm_frz, &
-      rc_coef_frz
-
-    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
-      wpsclrprtp_frz, &
-      wpsclrp2_frz, &
-      sclrpthvp_zt_frz, &
-      wpsclrpthlp_frz, &
-      sclrprcp_zt_frz, &
-      wp2sclrp_frz, &
-      wpsclrprtp_zm_frz, &
-      wpsclrp2_zm_frz, &
-      sclrpthvp_frz, &
-      wpsclrpthlp_zm_frz, &
-      sclrprcp_frz, &
-      wp2sclrp_zm_frz
+      thlm_frz
 
     real( kind = core_rknd ) :: &
-      cloud_frac_1_refined, & ! cloud_frac_1 computed on refined grid
-      cloud_frac_2_refined, & ! cloud_frac_2 computed on refined grid
-      rc_1_refined, &         ! rc_1 computed on refined grid
-      rc_2_refined, &         ! rc_2 computed on refined grid
-      cloud_frac_refined, &  ! cloud_frac gridbox mean on refined grid
-      rcm_refined, &         ! rcm gridbox mean on refined grid
       thlm1000, &
       thlm700
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rrm, &              ! Rain water mixing ratio
       rcm_supersat_adj, & ! Adjustment to rcm due to spurious supersaturation
       rel_humidity        ! Relative humidity after PDF closure [-]
 
@@ -836,8 +705,6 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: Lscale_max
 
     real( kind = core_rknd ) :: newmu
-
-    logical :: l_spur_supersat   ! Spurious supersaturation?
 
     !----- Begin Code -----
 
@@ -980,94 +847,52 @@ module advance_clubb_core_module
     newmu = mu
 #endif   
 
-    !---------------------------------------------------------------------------
-    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
-    ! and then compute Skw for m & t grid
-    !---------------------------------------------------------------------------
+       !########################################################################
+       !#######                     CALL CLUBB's PDF                     #######
+       !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
+       !########################################################################
+       !call generate_pdf_params( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
+       call generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
+                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
+                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
+                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
+                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
+                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
+                                 sclrprtp, sclrpthlp,           & ! Intent(in)
+                                 rtm,                           & ! Intent(i/o)
+#ifdef GFDL
+                                 RH_crit(k, : , :),             & ! Intent(i/o)
+                                 do_liquid_only_in_clubb,       & ! Intent(in)
+#endif
+                                 rcm, cloud_frac,               & ! Intent(out)
+                                 ice_supersat_frac, wprcp,      & ! Intent(out)
+                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
+                                 rtpthvp, thlpthvp,             & ! Intent(out)
+                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
+                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                 cloud_frac_zm,                 & ! Intent(out)
+                                 ice_supersat_frac_zm,          & ! Intent(out)
+                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                 rcm_supersat_adj,              & ! Intent(out)
+                                 wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
+                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
+                                 pdf_params, pdf_params_frz,    & ! Intent(out)
+                                 pdf_params_zm,                 & ! Intent(out)
+                                 err_code                       ) ! Intent(i/o)
 
+    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
+    ! and then compute Skw for m & t grid.
     wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
     wp3_zm = zt2zm( wp3 )
-    thlp3_zm = zt2zm( thlp3 )
-    rtp3_zm = zt2zm( rtp3 )
-
-    ! To calculate Skewness of thl, rt, will need interpolated values. 
-    wpthlp_zt  = zm2zt( wpthlp )
-    wprtp_zt   = zm2zt( wprtp )
-    thlp2_zt   = zm2zt( thlp2 )
-    rtp2_zt   = zm2zt( rtp2 )
-    sigma_sqd_w = zt2zm(sigma_sqd_w_zt)
 
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
-
-    if(l_use_3D_closure) then
-
-      Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
-      Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
-
-      Skrt_zt(1:gr%nz) = Skx_func( rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
-      Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
-
-    else
-
-      Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
-                                        thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
-
-      Skthl_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wpthlp(1:gr%nz), wp2(1:gr%nz), &
-                                        thlp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz), thl_tol )
-
-      Skrt_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wprtp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
-                                        rtp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), rt_tol )
-
-      Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
-                                        rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
-
-    endif ! if(l_use_3D_closure)
-
-    if ( l_stats_samp ) then
-      call stat_update_var( iSkw_zt, Skw_zt, & ! In
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkw_zm, Skw_zm, &
-                            stats_zm ) ! In/Out
-      call stat_update_var( iSkthl_zt, Skthl_zt, &
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkthl_zm, Skthl_zm, &
-                            stats_zm ) ! In/Out
-      call stat_update_var( iSkrt_zt, Skrt_zt, &
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkrt_zm, Skrt_zm, &
-                            stats_zm ) ! In/Out
-    endif
-
-    ! The right hand side of this conjunction is only for reducing cpu time,
-    ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
-      !----------------------------------------------------------------
-      ! Compute gamma as a function of Skw  - 14 April 06 dschanen
-      !----------------------------------------------------------------
-
-      gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
-            *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm/gamma_coefc)**2 )
-
-    else
-
-      gamma_Skw_fnc = gamma_coef
-
-    end if
-
-    ! Compute sigma_sqd_w (dimensionless PDF width parameter)
-    sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
-
-    if ( l_stats_samp ) then
-      call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
-                            stats_zm )                       ! intent(inout)
-    endif
-
-    ! Smooth in the vertical using interpolation
-    sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
-
-    ! Interpolate the the stats_zt grid
-    sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )  ! Pos. def. quantity
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
 !   a3_coef = 3.0_core_rknd * sigma_sqd_w*sigma_sqd_w  &
@@ -1084,20 +909,10 @@ module advance_clubb_core_module
 
     a3_coef_zt = zm2zt( a3_coef )
 
-    !---------------------------------------------------------------------------
-    ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels,
-    !---------------------------------------------------------------------------
-
-    ! Interpolate variances to the stats_zt grid (statistics and closure)
+    ! Interpolate thlp2, rtp2, and rtpthlp to thermodynamic levels.
     thlp2_zt   = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
     rtp2_zt    = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
     rtpthlp_zt = zm2zt( rtpthlp )
-
-    ! Compute skewness velocity for stats output purposes
-    if ( iSkw_velocity > 0 ) then
-      Skw_velocity = ( 1.0_core_rknd / ( 1.0_core_rknd - sigma_sqd_w(1:gr%nz) ) ) & 
-                   * ( wp3_zm(1:gr%nz) / max( wp2(1:gr%nz), w_tol_sqd ) )
-    end if
 
     ! Compute wp3 / wp2 on zt levels.  Always use the interpolated value in the
     ! denominator since it's less likely to create spikes
@@ -1117,503 +932,6 @@ module advance_clubb_core_module
 
     ! Smooth again as above
     wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
-
-    !----------------------------------------------------------------
-    ! Call closure scheme
-    !----------------------------------------------------------------
-
-    ! Put passive scalar input on the t grid for the PDF
-    do i = 1, sclr_dim, 1
-      wpsclrp_zt(:,i)   = zm2zt( wpsclrp(:,i) )
-      sclrp2_zt(:,i)    = max( zm2zt( sclrp2(:,i) ), zero_threshold ) ! Pos. def. quantity
-      sclrprtp_zt(:,i)  = zm2zt( sclrprtp(:,i) )
-      sclrpthlp_zt(:,i) = zm2zt( sclrpthlp(:,i) )
-    end do ! i = 1, sclr_dim, 1
-
-    ! Interpolate hydrometeor mixed moments to momentum levels.
-    do i = 1, hydromet_dim, 1
-       wphydrometp_zt(:,i) = zm2zt( wphydrometp(:,i) )
-    enddo ! i = 1, hydromet_dim, 1
-
-
-    do k = 1, gr%nz, 1
-
-      call pdf_closure & 
-        ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k), & ! intent(in)
-          wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                       & ! intent(in)
-          Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm(k), rtp2_zt(k),     & ! intent(in)
-          zm2zt( wprtp, k ), thlm(k), thlp2_zt(k),                    & ! intent(in)
-          zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),              & ! intent(in)
-          wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),          & ! intent(in)
-          sclrpthlp_zt(k,:), k,                                       & ! intent(in)
-#ifdef GFDL
-          RH_crit(k, : , :),   do_liquid_only_in_clubb,               & ! intent(in)
-#endif
-          wphydrometp_zt(k,:), wp2hmp(k,:),                           & ! intent(in)
-          rtphmp_zt(k,:), thlphmp_zt(k,:),                            & ! intent(in)
-          wp4_zt(k), wprtp2(k), wp2rtp(k),                            & ! intent(out)
-          wpthlp2(k), wp2thlp(k), wprtpthlp(k),                       & ! intent(out)
-          cloud_frac(k), ice_supersat_frac(k),                        & ! intent(out)
-          rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),            & ! intent(out)
-          thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),       & ! intent(out)
-          thlprcp_zt(k), rcp2_zt(k), pdf_params(k),                   & ! intent(out)
-          err_code_pdf_closure,                                       & ! intent(out)
-          wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
-          wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
-          rc_coef_zt(k)                                               ) ! intent(out)
-
-      ! Subroutine may produce NaN values, and if so, exit
-      ! gracefully.
-      ! Joshua Fasching March 2008
-
-      if ( fatal_error( err_code_pdf_closure ) ) then
-
-        if ( clubb_at_least_debug_level( 1 ) ) then
-          write(fstderr,*) "At grid level = ",k
-        end if
-
-        err_code = err_code_pdf_closure
-      end if
-
-    end do ! k = 1, gr%nz, 1
-
-    if ( l_refine_grid_in_cloud ) then
-
-      ! Compute cloud_frac and rcm on a refined grid to improve parameterization
-      ! of subgrid clouds
-      do k=1, gr%nz
-
-        if ( pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd ) then
-
-          ! Recalculate cloud_frac and r_c for each PDF component
-
-          call calc_vert_avg_cf_component &
-               ( gr%nz, k, gr%zt, pdf_params%chi_1, &                    ! Intent(in)
-                 pdf_params%stdev_chi_1, (/(chi_at_liq_sat,i=1,gr%nz)/), & ! Intent(in)
-                 cloud_frac_1_refined, rc_1_refined )                   ! Intent(out)
-
-          call calc_vert_avg_cf_component & 
-               ( gr%nz, k, gr%zt, pdf_params%chi_2, &                     ! Intent(in)
-                 pdf_params%stdev_chi_2, (/(chi_at_liq_sat,i=1,gr%nz)/), &  ! Intent(in)
-                 cloud_frac_2_refined, rc_2_refined )                    ! Intent(out)
-
-          cloud_frac_refined = compute_mean_binormal &
-                               ( cloud_frac_1_refined, cloud_frac_2_refined, &
-                                 pdf_params(k)%mixt_frac )
-
-          rcm_refined = compute_mean_binormal &
-                        ( rc_1_refined, rc_2_refined, pdf_params(k)%mixt_frac )
-
-          if ( l_interactive_refined ) then
-            ! I commented out the lines that modify the values in pdf_params, as it seems that
-            ! these values need to remain consistent with the rest of the PDF.
-            ! Eric Raut Jun 2014
-            ! Replace pdf_closure estimates with refined estimates
-            ! pdf_params(k)%rc_1 = rc_1_refined
-            ! pdf_params(k)%rc_2 = rc_2_refined
-            rcm(k) = rcm_refined
-
-            ! pdf_params(k)%cloud_frac_1 = cloud_frac_1_refined
-            ! pdf_params(k)%cloud_frac_2 = cloud_frac_2_refined
-            cloud_frac(k) = cloud_frac_refined
-          end if
-
-        else
-          ! Set these equal to the non-refined values so we have something to
-          ! output to stats!
-          cloud_frac_refined = cloud_frac(k)
-          rcm_refined = rcm(k)
-        end if ! pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd
-
-        ! Stats output
-        if ( l_stats_samp ) then
-          call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, stats_zt )
-          call stat_update_var_pt( ircm_refined, k, rcm_refined, stats_zt )
-        end if
-
-      end do ! k=1, gr%nz
-
-    end if ! l_refine_grid_in_cloud
-
-    if( l_rtm_nudge ) then
-      ! Nudge rtm to prevent excessive drying
-      where( rtm < rtm_min .and. gr%zt < rtm_nudge_max_altitude )
-        rtm = rtm + (rtm_ref - rtm) * ( dt / ts_nudge )
-      end where
-    end if
-
-
-    if ( l_call_pdf_closure_twice ) then
-      ! Call pdf_closure a second time on momentum levels, to
-      ! output (rather than interpolate) the variables which
-      ! belong on the momentum levels.
-
-      ! Interpolate sclrm to the momentum level for use in
-      ! the second call to pdf_closure
-      do i = 1, sclr_dim
-        sclrm_zm(:,i) = zt2zm( sclrm(:,i) )
-        ! Clip if extrap. causes sclrm_zm to be less than sclr_tol
-        sclrm_zm(gr%nz,i) = max( sclrm_zm(gr%nz,i), sclr_tol(i) )
-      end do ! i = 1, sclr_dim
-
-      ! Interpolate pressure, p_in_Pa, to momentum levels.
-      ! The pressure at thermodynamic level k = 1 has been set to be the surface
-      ! (or model lower boundary) pressure.  Since the surface (or model lower
-      ! boundary) is located at momentum level k = 1, the pressure there is
-      ! p_sfc, which is p_in_Pa(1).  Thus, p_in_Pa_zm(1) = p_in_Pa(1).
-      p_in_Pa_zm(:) = zt2zm( p_in_Pa )
-      p_in_Pa_zm(1) = p_in_Pa(1)
-
-      ! Clip pressure if the extrapolation leads to a negative value of pressure
-      p_in_Pa_zm(gr%nz) = max( p_in_Pa_zm(gr%nz), 0.5_core_rknd*p_in_Pa(gr%nz) )
-      ! Set exner at momentum levels, exner_zm, based on p_in_Pa_zm.
-      exner_zm(:) = (p_in_Pa_zm(:)/p0)**kappa
-
-      rtm_zm = zt2zm( rtm )
-      ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
-      rtm_zm(gr%nz) = max( rtm_zm(gr%nz), rt_tol )
-      thlm_zm = zt2zm( thlm )
-      ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
-      thlm_zm(gr%nz) = max( thlm_zm(gr%nz), thl_tol )
-
-      ! Interpolate hydrometeor mixed moments to momentum levels.
-      do i = 1, hydromet_dim, 1
-         rtphmp(:,i)    = zt2zm( rtphmp_zt(:,i) )
-         thlphmp(:,i)   = zt2zm( thlphmp_zt(:,i) )
-         wp2hmp_zm(:,i) = zt2zm( wp2hmp(:,i) )
-      enddo ! i = 1, hydromet_dim, 1
-
-      ! Call pdf_closure to output the variables which belong on the momentum grid.
-      do k = 1, gr%nz, 1
-
-        call pdf_closure & 
-          ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
-            wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-            Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm(k), rtp2(k),           & ! intent(in)
-            wprtp(k),  thlm_zm(k), thlp2(k),                                  & ! intent(in)
-            wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
-            wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
-            sclrpthlp(k,:), k,                                                & ! intent(in)
-#ifdef GFDL
-            RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
-#endif
-            wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
-            rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
-            wp4(k), wprtp2_zm(k), wp2rtp_zm(k),                               & ! intent(out)
-            wpthlp2_zm(k), wp2thlp_zm(k), wprtpthlp_zm(k),                    & ! intent(out)
-            cloud_frac_zm(k), ice_supersat_frac_zm(k),                        & ! intent(out) 
-            rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),                  & ! intent(out)
-            thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),                   & ! intent(out)
-            thlprcp(k), rcp2(k), pdf_params_zm(k),                            & ! intent(out)
-            err_code_pdf_closure,                                             & ! intent(out)
-            wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
-            wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
-            rc_coef(k)                                                        ) ! intent(out)
-
-        ! Subroutine may produce NaN values, and if so, exit
-        ! gracefully.
-        ! Joshua Fasching March 2008
-
-
-        if ( fatal_error( err_code_pdf_closure ) ) then
-
-          if ( clubb_at_least_debug_level( 1 ) ) then
-            write(fstderr,*) "At grid level = ",k
-          end if
-
-          err_code = err_code_pdf_closure
-        end if
-
-      end do ! k = 1, gr%nz, 1
-
-    else ! l_call_pdf_closure_twice is false
-
-      ! Interpolate momentum variables output from the first call to
-      ! pdf_closure back to momentum grid.
-      ! Since top momentum level is higher than top thermo level,
-      ! Set variables at top momentum level to 0.
-
-      ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
-      ! used elsewhere in the parameterization
-      if ( iwp4 > 0 ) then
-        wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
-        wp4(gr%nz)  = 0.0_core_rknd
-      end if
-
-#ifndef CLUBB_CAM
-      ! CAM-CLUBB needs cloud water variance thus always compute this
-      if ( ircp2 > 0 ) then
-#endif
-        rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
-#ifndef CLUBB_CAM
-        rcp2(gr%nz) = 0.0_core_rknd
-      end if
-#endif
-
-      wpthvp            = zt2zm( wpthvp_zt )
-      wpthvp(gr%nz)   = 0.0_core_rknd
-      thlpthvp          = zt2zm( thlpthvp_zt )
-      thlpthvp(gr%nz) = 0.0_core_rknd
-      rtpthvp           = zt2zm( rtpthvp_zt )
-      rtpthvp(gr%nz)  = 0.0_core_rknd
-      wprcp             = zt2zm( wprcp_zt )
-      wprcp(gr%nz)    = 0.0_core_rknd
-      rc_coef           = zt2zm( rc_coef_zt )
-      rc_coef(gr%nz)  = 0.0_core_rknd
-      rtprcp            = zt2zm( rtprcp_zt )
-      rtprcp(gr%nz)   = 0.0_core_rknd
-      thlprcp           = zt2zm( thlprcp_zt )
-      thlprcp(gr%nz)  = 0.0_core_rknd
-
-      ! Initialize variables to avoid uninitialized variables.
-      cloud_frac_zm   = 0.0_core_rknd
-      ice_supersat_frac_zm = 0.0_core_rknd
-      rcm_zm = 0.0_core_rknd
-      rtm_zm = 0.0_core_rknd
-      thlm_zm = 0.0_core_rknd
-
-      ! Interpolate passive scalars back onto the m grid
-      do i = 1, sclr_dim
-        sclrpthvp(:,i)       = zt2zm( sclrpthvp_zt(:,i) )
-        sclrpthvp(gr%nz,i) = 0.0_core_rknd
-        sclrprcp(:,i)        = zt2zm( sclrprcp_zt(:,i) )
-        sclrprcp(gr%nz,i)  = 0.0_core_rknd
-      end do ! i=1, sclr_dim
-
-    end if ! l_call_pdf_closure_twice
-
-    ! If l_trapezoidal_rule_zt is true, call trapezoidal_rule_zt for
-    ! thermodynamic-level variables output from pdf_closure.
-    ! ldgrant June 2009
-    if ( l_trapezoidal_rule_zt ) then
-      call trapezoidal_rule_zt &
-           ( l_call_pdf_closure_twice,                    & ! intent(in)
-             wprtp2, wpthlp2,                             & ! intent(inout)
-             wprtpthlp, cloud_frac, ice_supersat_frac,    & ! intent(inout)
-             rcm, wp2thvp, wpsclrprtp, wpsclrp2,          & ! intent(inout)
-             wpsclrpthlp, pdf_params,                     & ! intent(inout)
-             wprtp2_zm, wpthlp2_zm,                       & ! intent(inout)
-             wprtpthlp_zm, cloud_frac_zm,                 & ! intent(inout)
-             ice_supersat_frac_zm, rcm_zm, wp2thvp_zm,    & ! intent(inout)
-             wpsclrprtp_zm, wpsclrp2_zm, wpsclrpthlp_zm,  & ! intent(inout)
-             pdf_params_zm )                                ! intent(inout)
-    end if ! l_trapezoidal_rule_zt
-
-    ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
-    ! the important momentum-level variabes output from pdf_closure.
-    ! ldgrant Feb. 2010
-    if ( l_trapezoidal_rule_zm ) then
-      call trapezoidal_rule_zm &
-         ( wpthvp_zt, thlpthvp_zt, rtpthvp_zt, & ! intent(in)
-           wpthvp, thlpthvp, rtpthvp )           ! intent(inout)
-    end if ! l_trapezoidal_rule_zm
-
-    ! Vince Larson clipped rcm in order to prevent rvm < 0.  5 Apr 2008.
-    ! This code won't work unless rtm >= 0 !!!
-    ! We do not clip rcm_in_layer because rcm_in_layer only influences
-    ! radiation, and we do not want to bother recomputing it.
-    ! Code is duplicated from below to ensure that relative humidity
-    ! is calculated properly.  3 Sep 2009
-    call clip_rcm( rtm, 'rtm < rcm after pdf_closure', & ! intent (in)
-                   rcm )                                 ! intent (inout)
-
-    ! Compute variables cloud_cover and rcm_in_layer.
-    ! Added July 2009
-    call compute_cloud_cover &
-       ( pdf_params, cloud_frac, rcm, & ! intent(in)
-         cloud_cover, rcm_in_layer )    ! intent(out)
-
-    ! Use cloud_cover and rcm_in_layer to help boost cloud_frac and rcm to help
-    ! increase cloudiness at coarser grid resolutions.
-    if ( l_use_cloud_cover ) then
-      cloud_frac = cloud_cover
-      rcm = rcm_in_layer
-    end if
-
-    ! Clip cloud fraction here if it still exceeds 1.0 due to round off
-    cloud_frac = min( 1.0_core_rknd, cloud_frac )
-    ! Ditto with ice cloud fraction
-    ice_supersat_frac = min( 1.0_core_rknd, ice_supersat_frac )
-
-    if (l_use_ice_latent) then
-      !A third call to pdf_closure, with terms modified to include the effects
-      !of latent heating due to ice.  Thlm and rtm add the effects of ice, and
-      !the terms are all renamed with "_frz" appended. The modified terms will
-      !be fed into the calculations of the turbulence terms. storer-3/14/13
-      
-      !Also added rain for completeness. storer-3/4/14
-
-      if ( iirrm > 0 ) then
-        rrm = hydromet(:,iirrm)
-      else
-        rrm = zero
-      end if
-
-      thlm_frz = thlm - (Lv / (Cp*exner) ) * rrm - (Ls / (Cp*exner) ) * rfrzm 
-      rtm_frz = rtm + rrm + rfrzm
-
-
-      do k = 1, gr%nz, 1
-
-        call pdf_closure & 
-          ( hydromet_dim, p_in_Pa(k), exner(k), thv_ds_zt(k), wm_zt(k),           & ! intent(in)
-            wp2_zt(k), wp3(k), sigma_sqd_w_zt(k),                                 & ! intent(in)
-            Skw_zt(k), Skthl_zt(k), Skrt_zt(k), rtm_frz(k), rtp2_zt(k),               & ! intent(in)
-            zm2zt( wprtp, k ), thlm_frz(k), thlp2_zt(k),                          & ! intent(in)
-            zm2zt( wpthlp, k ), rtpthlp_zt(k), sclrm(k,:),                        & ! intent(in)
-            wpsclrp_zt(k,:), sclrp2_zt(k,:), sclrprtp_zt(k,:),                    & ! intent(in)
-            sclrpthlp_zt(k,:), k,                                                 & ! intent(in)
-#ifdef GFDL
-            RH_crit(k, : , :),   do_liquid_only_in_clubb,                         & ! intent(in)
-#endif
-            wphydrometp_zt(k,:), wp2hmp(k,:),                                     & ! intent(in)
-            rtphmp_zt(k,:), thlphmp_zt(k,:),                                      & ! intent(in)
-            wp4_zt_frz(k), wprtp2_frz(k), wp2rtp_frz(k),                          & ! intent(out)
-            wpthlp2_frz(k), wp2thlp_frz(k), wprtpthlp_frz(k),                     & ! intent(out)
-            cloud_frac_frz(k), ice_supersat_frac_frz(k),                          & ! intent(out)
-            rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),      & ! intent(out)
-            thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k), & ! intent(out)
-            thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),                 & ! intent(out)
-            err_code_pdf_closure,                                                 & ! intent(out)
-            wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
-            wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
-            rc_coef_zt_frz(k)                                                     ) ! intent(out)
-
-        ! Subroutine may produce NaN values, and if so, exit gracefully.
-        ! Joshua Fasching March 2008
-
-        if ( fatal_error( err_code_pdf_closure ) ) then
-
-          if ( clubb_at_least_debug_level ( 1 ) )then
-            write(fstderr,*) "At grid level = ", k
-          end if
-
-          err_code = err_code_pdf_closure
-        end if
-
-      end do !k=1, gr%nz, 1
-
-
-      if( l_rtm_nudge ) then
-        ! Nudge rtm to prevent excessive drying
-        where( rtm < rtm_min .and. gr%zt < rtm_nudge_max_altitude )
-          rtm = rtm + (rtm_ref - rtm) * ( dt / ts_nudge )
-        end where
-      end if
-
-      rtm_zm_frz = zt2zm( rtm_frz )
-      ! Clip if extrapolation at the top level causes rtm_zm to be < rt_tol
-      rtm_zm_frz(gr%nz) = max( rtm_zm_frz(gr%nz), rt_tol )
-      thlm_zm_frz = zt2zm( thlm_frz )
-      ! Clip if extrapolation at the top level causes thlm_zm to be < thl_tol
-      thlm_zm_frz(gr%nz) = max( thlm_zm_frz(gr%nz), thl_tol )
-
-      if ( l_call_pdf_closure_twice ) then
-        ! Call pdf_closure again to output the variables which belong on the momentum grid.
-        do k=1, gr%nz, 1
-          call pdf_closure & 
-            ( hydromet_dim, p_in_Pa_zm(k), exner_zm(k), thv_ds_zm(k), wm_zm(k), & ! intent(in)
-              wp2(k), wp3_zm(k), sigma_sqd_w(k),                                & ! intent(in)
-              Skw_zm(k), Skthl_zm(k), Skrt_zm(k), rtm_zm_frz(k), rtp2(k),       & ! intent(in)
-              wprtp(k),  thlm_zm_frz(k), thlp2(k),                              & ! intent(in)
-              wpthlp(k), rtpthlp(k), sclrm_zm(k,:),                             & ! intent(in)
-              wpsclrp(k,:), sclrp2(k,:), sclrprtp(k,:),                         & ! intent(in)
-              sclrpthlp(k,:), k,                                                & ! intent(in)
-#ifdef GFDL
-              RH_crit(k, : , :),  do_liquid_only_in_clubb,                      & ! intent(in)
-#endif
-              wphydrometp(k,:), wp2hmp_zm(k,:),                                 & ! intent(in)
-              rtphmp(k,:), thlphmp(k,:),                                        & ! intent(in)
-              wp4_frz(k), wprtp2_zm_frz(k), wp2rtp_zm_frz(k),                   & ! intent(out)
-              wpthlp2_zm_frz(k), wp2thlp_zm_frz(k), wprtpthlp_zm_frz(k),        & ! intent(out)
-              cloud_frac_zm_frz(k), ice_supersat_frac_zm_frz(k),                & ! intent(out) 
-              rcm_zm_frz(k), wpthvp_frz(k), wp2thvp_zm_frz(k), rtpthvp_frz(k),  & ! intent(out)
-              thlpthvp_frz(k), wprcp_frz(k), wp2rcp_zm_frz(k), rtprcp_frz(k),   & ! intent(out)
-              thlprcp_frz(k), rcp2_frz(k), pdf_params_zm_frz(k),                & ! intent(out)
-              err_code_pdf_closure,                                             & ! intent(out)
-              wpsclrprtp_zm_frz(k,:), wpsclrp2_zm_frz(k,:), sclrpthvp_frz(k,:), & ! intent(out)
-              wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)
-              rc_coef_frz(k)                                                    ) ! intent(out)
-
-          ! Subroutine may produce NaN values, and if so, exit
-          ! gracefully.
-          ! Joshua Fasching March 2008
-
-
-          if ( fatal_error( err_code_pdf_closure ) ) then
-
-            if ( clubb_at_least_debug_level( 1 ) ) then
-              write(fstderr,*) "At grid level = ",k
-            end if
-
-            err_code = err_code_pdf_closure
-          end if
-
-        end do ! k = 1, gr%nz, 1
-      else ! l_call_pdf_closure_twice is false
-
-        wpthvp_frz            = zt2zm( wpthvp_zt_frz )
-        wpthvp_frz(gr%nz)   = 0.0_core_rknd
-        thlpthvp_frz          = zt2zm( thlpthvp_zt_frz )
-        thlpthvp_frz(gr%nz) = 0.0_core_rknd
-        rtpthvp_frz           = zt2zm( rtpthvp_zt_frz )
-        rtpthvp_frz(gr%nz)  = 0.0_core_rknd
-
-      end if ! l_call_pdf_closure_twice
-
-      if ( l_trapezoidal_rule_zt ) then
-        call trapezoidal_rule_zt &
-           ( l_call_pdf_closure_twice,                                & ! intent(in)
-             wprtp2_frz, wpthlp2_frz,                                 & ! intent(inout)
-             wprtpthlp_frz, cloud_frac_frz, ice_supersat_frac_frz,    & ! intent(inout)
-             rcm_frz, wp2thvp_frz, wpsclrprtp_frz, wpsclrp2_frz,      & ! intent(inout)
-             wpsclrpthlp_frz, pdf_params_frz,                         & ! intent(inout)
-             wprtp2_zm_frz, wpthlp2_zm_frz,                           & ! intent(inout)
-             wprtpthlp_zm_frz, cloud_frac_zm_frz,                     & ! intent(inout)
-             ice_supersat_frac_zm_frz, rcm_zm_frz, wp2thvp_zm_frz,    & ! intent(inout)
-             wpsclrprtp_zm_frz, wpsclrp2_zm_frz, wpsclrpthlp_zm_frz,  & ! intent(inout)
-             pdf_params_zm_frz                                        ) ! intent(inout)
-      end if ! l_trapezoidal_rule_zt
-
-        ! If l_trapezoidal_rule_zm is true, call trapezoidal_rule_zm for
-        ! the important momentum-level variabes output from pdf_closure.
-        ! ldgrant Feb. 2010
-        if ( l_trapezoidal_rule_zm ) then
-          call trapezoidal_rule_zm &
-             ( wpthvp_zt_frz, thlpthvp_zt_frz, rtpthvp_zt_frz, & ! intent(in)
-               wpthvp_frz, thlpthvp_frz, rtpthvp_frz )           ! intent(inout)
-        end if ! l_trapezoidal_rule_zm
-
-        wpthvp = wpthvp_frz
-        wp2thvp = wp2thvp_frz
-        thlpthvp = thlpthvp_frz
-        rtpthvp = rtpthvp_frz
-
-      end if ! l_use_ice_latent = .true.
-
-      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
-      rel_humidity = (rtm - rcm) / rsat  
-
-      rcm_supersat_adj = zero
-      if ( l_rcm_supersat_adj ) then
-        ! +PAB mods, take remaining supersaturation that may exist
-        !   after CLUBB PDF call and add it to rcm.  Supersaturation 
-        !   may exist after PDF call due to issues with calling PDF on the
-        !   thermo grid and momentum grid and the interpolation between the two
-        l_spur_supersat = .false.
-        do k = 2, gr%nz
-          if (rel_humidity(k) > 1.0_core_rknd) then
-            rcm_supersat_adj(k) = (rtm(k) - rcm(k)) - rsat(k)
-            rcm(k) = rcm(k) + rcm_supersat_adj(k)
-            l_spur_supersat = .true.
-          end if
-        enddo
-
-        if ( l_spur_supersat ) then
-          call clubb_debug( 1, 'Warning: spurious supersaturation was removed after pdf_closure!' )
-        end if
-
-      end if ! l_rcm_supersat_adj
 
       !----------------------------------------------------------------
       ! Compute thvm
