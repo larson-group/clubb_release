@@ -2321,11 +2321,12 @@ module advance_clubb_core_module
                                   sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
                                   rtpthvp, thlpthvp,             & ! Intent(out)
                                   rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                  rc_coef, sclrpthvp,            & ! Intent(out)
-                                  wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
-                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                  rtprcp, thlprcp, rcp2,         & ! Intent(out)
-                                  Skw_velocity, cloud_frac_zm,   & ! Intent(out)
+                                  rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                  sclrpthvp, wp4, wp2rtp,        & ! Intent(out)
+                                  wprtp2, wp2thlp, wpthlp2,      & ! Intent(out)
+                                  wprtpthlp, wp2rcp, rtprcp,     & ! Intent(out)
+                                  rcp2, Skw_velocity,            & ! Intent(out)
+                                  cloud_frac_zm,                 & ! Intent(out)
                                   ice_supersat_frac_zm,          & ! Intent(out)
                                   rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
                                   wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
@@ -2522,6 +2523,8 @@ module advance_clubb_core_module
       thlpthvp,          & ! < th_l' th_v' > (momentum levels)      [K^2]
       rcm_in_layer,      & ! rcm in cloud layer                     [kg/kg]
       cloud_cover,       & ! cloud cover                            [-]
+      rcp2_zt,           & ! r_c'^2 (on thermo. grid)               [kg^2/kg^2]
+      thlprcp,           & ! < th_l' r_c' > (momentum levels)       [K kg/kg]
       rc_coef              ! Coefficient of X' R_l' in Eq. (34)     [-]
 
     ! Variable being passed back to and out of advance_clubb_core.
@@ -2538,7 +2541,6 @@ module advance_clubb_core_module
       wprtpthlp, & ! < w' r_t' th_l' > (thermodynamic levels) [m/s kg/kg K]
       wp2rcp,    & ! < w'^2 r_c' > (thermodynamic levels)     [m^2/s^2 kg/kg]
       rtprcp,    & ! < r_t' r_c' > (momentum levels)          [kg^2/kg^2]
-      thlprcp,   & ! < th_l' r_c' > (momentum levels)         [K kg/kg]
       rcp2         ! Variance of r_c (momentum levels)        [kg^2/kg^2]
 
     ! Variables being passed back to only advance_clubb_core (for statistics).
@@ -2615,7 +2617,6 @@ module advance_clubb_core_module
       wprcp_zt,    & ! w' r_c' (on thermo. grid)        [(m kg)/(s kg)] 
       rtprcp_zt,   & ! r_t' r_c' (on thermo. grid)      [(kg^2)/(kg^2)] 
       thlprcp_zt,  & ! th_l' r_c' (on thermo. grid)     [(K kg)/kg] 
-      rcp2_zt,     & ! r_c'^2 (on thermo. grid)         [(kg^2)/(kg^2)]
       rc_coef_zt     ! X'R_l' coef. (on thermo. grid)   [-]
 
     real( kind = core_rknd ), dimension(gr%nz, sclr_dim) :: &       
