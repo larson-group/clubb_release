@@ -183,6 +183,9 @@ module advance_clubb_core_module
       mu, &
       Lscale_mu_coef, &
       Lscale_pert_coef, &
+      gamma_coef,  &
+      gamma_coefb, &
+      gamma_coefc, &
       c_K10, &
       c_K10h, &
       C1, C14
@@ -199,6 +202,7 @@ module advance_clubb_core_module
       l_do_expldiff_rtm_thlm, &
       l_Lscale_plume_centered, &
       l_use_ice_latent, &
+      l_gamma_Skw, &
       l_damp_wp2_using_em
 
     use grid_class, only: & 
@@ -327,6 +331,9 @@ module advance_clubb_core_module
     use T_in_K_module, only: &
       ! Read values from namelist
       thlm2T_in_K ! Procedure
+
+    use sigma_sqd_w_module, only: &
+        compute_sigma_sqd_w    ! Procedure(s)
 
     use stats_clubb_utilities, only: & 
       stats_accumulate ! Procedure
@@ -601,6 +608,7 @@ module advance_clubb_core_module
       err_code_surface
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
+      gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
       sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
@@ -900,6 +908,26 @@ module advance_clubb_core_module
 
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
+
+    if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+
+       ! Calculate sigma_sqd_w here in order to avoid having to pass it in
+       ! and out of subroutine advance_clubb_core.
+       if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
+          gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
+                *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm/gamma_coefc)**2 )
+       else
+          gamma_Skw_fnc = gamma_coef
+       endif
+
+       ! Compute sigma_sqd_w (dimensionless PDF width parameter)
+       sigma_sqd_w &
+       = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
+
+       ! Smooth in the vertical using interpolation
+       sigma_sqd_w = zt2zm( zm2zt( sigma_sqd_w ) )
+
+    endif ! ipdf_call_placement == ipdf_post_advance_fields
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
 !   a3_coef = 3.0_core_rknd * sigma_sqd_w*sigma_sqd_w  &
