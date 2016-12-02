@@ -818,7 +818,7 @@ module advance_clubb_core_module
 #endif   
 
     ! Temporarily place this here.  Brian Griffin; Dec. 2016.
-    if ( ipdf_call placement < ipdf_pre_advance_fields &
+    if ( ipdf_call_placement < ipdf_pre_advance_fields &
          .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
        write(fstderr,*) "Invalid option selected for ipdf_call_placement"
        stop
@@ -832,6 +832,20 @@ module advance_clubb_core_module
     ! ipdf_call_placement = ipdf_post_advance_fields.
     ! Temporarily place this here.  Brian Griffin; Dec. 2016.
     if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+       if ( l_use_ice_latent ) then
+          write(fstderr,*) "The l_use_ice_latent option is incompatible" &
+                           // " with the ipdf_post_advance_fields option."
+          stop
+       endif ! l_use_ice_latent
+       if ( l_call_pdf_closure_twice ) then
+          write(fstderr,*) "The l_call_pdf_closure_twice option is" &
+                           // " incompatible with the" &
+                           // " ipdf_post_advance_fields option.  Please" &
+                           // " note that the l_call_pdf_closure_twice" &
+                           // " option may depend on the l_vert_avg_closure" &
+                           // " option."
+          stop
+       endif ! l_call_pdf_closure_twice
     endif ! ipdf_call_placement == ipdf_post_advance_fields
 
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
