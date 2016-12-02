@@ -1151,11 +1151,6 @@ module advance_clubb_core_module
       khzm(:) = Kh_zm(:)
 #endif
 
-#ifdef CLUBB_CAM
-      qclvar(:) = rcp2_zt(:)
-      thlprcp_out(:) = thlprcp(:)
-#endif
-
       !----------------------------------------------------------------
       ! Set Surface variances
       !----------------------------------------------------------------
@@ -1496,6 +1491,11 @@ module advance_clubb_core_module
 
     endif ! ipdf_call_placement == ipdf_post_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
+
+#ifdef CLUBB_CAM
+      qclvar(:) = rcp2_zt(:)
+      thlprcp_out(:) = thlprcp(:)
+#endif
 
 
       !#######################################################################
