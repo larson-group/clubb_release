@@ -49,6 +49,8 @@ module clubb_driver
     use variables_diagnostic_module, only: ug, vg, em,  & ! Variable(s)
       thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, K_hm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
+      wpthvp, wp2thvp, rtpthvp, thlpthvp, &
+      sclrpthvp, &
       hydromet, hydrometp2, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
@@ -1386,8 +1388,12 @@ module clubb_driver
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &       ! Intent(inout)
              sclrm, sclrp2, sclrprtp, sclrpthlp, &                ! Intent(inout)
              wpsclrp, edsclrm, err_code, &                        ! Intent(inout)
-             rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
-             rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
+             rcm, cloud_frac, &                                   ! Intent(inout)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
+             sclrpthvp, &                                         ! Intent(inout)
+             pdf_params, &                                        ! Intent(inout)
+             wprcp, ice_supersat_frac, &                          ! Intent(out)
+             rcm_in_layer, cloud_cover )                          ! Intent(out)
 
       ! Measure time in advance_clubb_core
       call cpu_time(time_stop)
