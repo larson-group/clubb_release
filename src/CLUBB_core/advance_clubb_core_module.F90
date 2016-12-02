@@ -412,6 +412,19 @@ module advance_clubb_core_module
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
 
+    ! Options for the placement of the call to CLUBB's PDF.
+    ! Place these here temporarily.  Brian Griffin; Dec. 2016.
+    integer, parameter :: &
+      ipdf_pre_advance_fields   = 1, & ! Call before advancing predictive fields
+      ipdf_post_advance_fields  = 2, & ! Call after advancing predictive fields
+      ipdf_pre_post_advance_fields = 3 ! Call both before and after advancing
+                                       ! predictive fields
+
+    ! Select the placement of the call to CLUBB's PDF.
+    ! Place this here temporarily.  Brian Griffin; Dec. 2016.
+    integer, parameter :: &
+      ipdf_call_placement = ipdf_pre_advance_fields
+
     !!! Input Variables
     logical, intent(in) ::  & 
       l_implemented ! Is this part of a larger host model (T/F) ?
@@ -804,6 +817,26 @@ module advance_clubb_core_module
     newmu = mu
 #endif   
 
+    ! Temporarily place this here.  Brian Griffin; Dec. 2016.
+    if ( ipdf_call placement < ipdf_pre_advance_fields &
+         .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
+       write(fstderr,*) "Invalid option selected for ipdf_call_placement"
+       stop
+    endif
+
+    ! When ipdf_call_placement = ipdf_post_advance_fields, additional variables
+    ! need to be passed out of advance_clubb_core, saved, and passed in again
+    ! during the next model timestep.  In order to keep from needing to pass
+    ! out and save variables that are not normally used in CLUBB, some options
+    ! (that are typically turned off anyway) will be disallowed when
+    ! ipdf_call_placement = ipdf_post_advance_fields.
+    ! Temporarily place this here.  Brian Griffin; Dec. 2016.
+    if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+    endif ! ipdf_call_placement == ipdf_post_advance_fields
+
+    if ( ipdf_call_placement == ipdf_pre_advance_fields &
+         .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+
        !########################################################################
        !#######                     CALL CLUBB's PDF                     #######
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
@@ -842,6 +875,9 @@ module advance_clubb_core_module
                                  pdf_params, pdf_params_frz,    & ! Intent(out)
                                  pdf_params_zm,                 & ! Intent(out)
                                  err_code                       ) ! Intent(i/o)
+
+    endif ! ipdf_call_placement == ipdf_pre_advance_fields
+          ! or ipdf_call_placement == ipdf_pre_post_advance_fields
 
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
     ! and then compute Skw for m & t grid.
@@ -1415,6 +1451,52 @@ module advance_clubb_core_module
         call fill_holes_vertical(2,0.0_core_rknd,"zt",rho_ds_zt,rho_ds_zm,edsclrm(:,ixind))
       enddo
 #endif
+
+    if ( ipdf_call_placement == ipdf_post_advance_fields &
+         .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+
+       !########################################################################
+       !#######                     CALL CLUBB's PDF                     #######
+       !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
+       !########################################################################
+       !call generate_pdf_params( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
+       call generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
+                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
+                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
+                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
+                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
+                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
+                                 sclrprtp, sclrpthlp,           & ! Intent(in)
+                                 rtm,                           & ! Intent(i/o)
+#ifdef GFDL
+                                 RH_crit(k, : , :),             & ! Intent(i/o)
+                                 do_liquid_only_in_clubb,       & ! Intent(in)
+#endif
+                                 rcm, cloud_frac,               & ! Intent(out)
+                                 ice_supersat_frac, wprcp,      & ! Intent(out)
+                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
+                                 rtpthvp, thlpthvp,             & ! Intent(out)
+                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
+                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                 cloud_frac_zm,                 & ! Intent(out)
+                                 ice_supersat_frac_zm,          & ! Intent(out)
+                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                 rcm_supersat_adj,              & ! Intent(out)
+                                 wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
+                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
+                                 pdf_params, pdf_params_frz,    & ! Intent(out)
+                                 pdf_params_zm,                 & ! Intent(out)
+                                 err_code                       ) ! Intent(i/o)
+
+    endif ! ipdf_call_placement == ipdf_post_advance_fields
+          ! or ipdf_call_placement == ipdf_pre_post_advance_fields
+
 
       !#######################################################################
       !#############            ACCUMULATE STATISTICS            #############
