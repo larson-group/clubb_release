@@ -691,6 +691,10 @@ module advance_clubb_core_module
 
     real( kind = core_rknd ) :: newmu
 
+    ! Flag to sample stats in a particular call to subroutine
+    ! generate_pdf_params.
+    logical :: l_samp_stats_in_pdf_call
+
     !----- Begin Code -----
 
     ! Sanity checks
@@ -866,6 +870,15 @@ module advance_clubb_core_module
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
+       ! Sample stats in this call to subroutine generate_pdf_params for
+       ! both of these options (ipdf_pre_advance_fields and
+       ! ipdf_pre_post_advance_fields).
+       if ( ipdf_call_placement == ipdf_pre_advance_fields ) then
+          l_samp_stats_in_pdf_call = .true.
+       elseif ( ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+          l_samp_stats_in_pdf_call = .true.
+       endif
+
        !########################################################################
        !#######                     CALL CLUBB's PDF                     #######
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
@@ -880,6 +893,7 @@ module advance_clubb_core_module
                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp,           & ! Intent(in)
+                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
                                  rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                  RH_crit(k, : , :),             & ! Intent(i/o)
@@ -1499,6 +1513,16 @@ module advance_clubb_core_module
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
+       ! Sample stats in this call to subroutine generate_pdf_params for
+       ! ipdf_post_advance_fields, but not for ipdf_pre_post_advance_fields
+       ! because stats were sampled during the first call to subroutine
+       ! generate_pdf_params.
+       if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+          l_samp_stats_in_pdf_call = .true.
+       elseif ( ipdf_call_placement == ipdf_pre_post_advance_fields ) then
+          l_samp_stats_in_pdf_call = .false.
+       endif
+
        !########################################################################
        !#######                     CALL CLUBB's PDF                     #######
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
@@ -1513,6 +1537,7 @@ module advance_clubb_core_module
                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                  sclrprtp, sclrpthlp,           & ! Intent(in)
+                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
                                  rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                  RH_crit(k, : , :),             & ! Intent(i/o)
@@ -1717,6 +1742,7 @@ module advance_clubb_core_module
                                   wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
                                   sclrm, wpsclrp, sclrp2,        & ! Intent(in)
                                   sclrprtp, sclrpthlp,           & ! Intent(in)
+                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
                                   rtm,                           & ! Intent(i/o)
 #ifdef GFDL
                                   RH_crit(k, : , :),             & ! Intent(i/o)
@@ -1904,6 +1930,9 @@ module advance_clubb_core_module
       sclrp2,    & ! sclr'^2 (momentum levels)            [{units vary}^2]
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
+
+    logical, intent(in) :: &
+      l_samp_stats_in_pdf_call    ! Sample stats in this call to this subroutine
 
     real( kind = core_rknd ), dimension(gr%nz), intent(inout) ::  & 
       rtm    ! total water mixing ratio, r_t (thermo. levels) [kg/kg]
@@ -2175,7 +2204,7 @@ module advance_clubb_core_module
 
     endif ! if(l_use_3D_closure)
 
-    if ( l_stats_samp ) then
+    if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( iSkw_zt, Skw_zt, & ! In
                             stats_zt ) ! In/Out
       call stat_update_var( iSkw_zm, Skw_zm, &
@@ -2209,7 +2238,7 @@ module advance_clubb_core_module
     ! Compute sigma_sqd_w (dimensionless PDF width parameter)
     sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, rtp2, wpthlp, wprtp )
 
-    if ( l_stats_samp ) then
+    if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( igamma_Skw_fnc, gamma_Skw_fnc, & ! intent(in)
                             stats_zm )                       ! intent(inout)
     endif
@@ -2343,7 +2372,7 @@ module advance_clubb_core_module
         end if ! pdf_params(k)%chi_1/pdf_params(k)%stdev_chi_1 > -1._core_rknd
 
         ! Stats output
-        if ( l_stats_samp ) then
+        if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
           call stat_update_var_pt( icloud_frac_refined, k, cloud_frac_refined, stats_zt )
           call stat_update_var_pt( ircm_refined, k, rcm_refined, stats_zt )
         end if
