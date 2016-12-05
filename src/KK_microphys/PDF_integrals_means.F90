@@ -33,9 +33,9 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
-    ! Eq. (J25) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Eq. (C24) and Eq. (J25) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
@@ -126,9 +126,9 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
-    ! Eq. (J26) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Eq. (C29) and Eq. (J26) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
@@ -198,10 +198,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J27) and Eq. (J28) of Griffin, B. M., 2016:  Improving the
-    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
-    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! Eq. (C26), Eq. (C27), Eq. (J27) and Eq. (J28) of Griffin, B. M., 2016:
+    ! Improving the Subgrid-Scale Representation of Hydrometeors and
+    ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
+    ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
+    ! Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S26) and Eq. (S27) of Griffin, B. M. and V. E. Larson, 2016:
@@ -277,10 +278,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J29) and Eq. (J30) of Griffin, B. M., 2016:  Improving the
-    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
-    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! Eq. (C30), Eq. (C31), Eq. (J29) and Eq. (J30) of Griffin, B. M., 2016:
+    ! Improving the Subgrid-Scale Representation of Hydrometeors and
+    ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
+    ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
+    ! Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S30) and Eq. (S31) of Griffin, B. M. and V. E. Larson, 2016:
@@ -344,9 +346,9 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J31) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Eq. (C28) and Eq. (J31) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
@@ -413,9 +415,9 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J32) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Eq. (C32) and Eq. (J32) of Griffin, B. M., 2016:  Improving the
+    ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
+    ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
@@ -478,11 +480,11 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
-    ! Eq. (J33) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
-    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    ! Eq. (C4), Eq. (C14), and Eq. (J33) of Griffin, B. M., 2016:  Improving
+    ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
+    ! Feedback Effects Using a Multivariate PDF.  Doctoral dissertation,
+    ! University of Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp.,
+    ! URL http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S4) and Eq. (S14) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of A new subgrid-scale representation of hydrometeor fields
@@ -557,11 +559,11 @@ module PDF_integrals_means
     ! References:
     !  Larson, V. E. and B. M. Griffin (2012)
     !
-    ! Eq. (J34) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
-    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    ! Eq. (C9), Eq. (C16), and Eq. (J34) of Griffin, B. M., 2016:  Improving
+    ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
+    ! Feedback Effects Using a Multivariate PDF.  Doctoral dissertation,
+    ! University of Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp.,
+    ! URL http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S9) and Eq. (S16) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of A new subgrid-scale representation of hydrometeor fields
@@ -622,11 +624,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J35) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
-    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    ! Eq. (C8), Eq. (C15), and Eq. (J35) of Griffin, B. M., 2016:  Improving
+    ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
+    ! Feedback Effects Using a Multivariate PDF.  Doctoral dissertation,
+    ! University of Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp.,
+    ! URL http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S8) and Eq. (S15) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of A new subgrid-scale representation of hydrometeor fields
@@ -689,11 +691,11 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (J36) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
-    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
-    ! Multivariate PDF.  Doctoral dissertation, University of
-    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
-    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    ! Eq. (C10), Eq. (C17), and Eq. (J36) of Griffin, B. M., 2016:  Improving
+    ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
+    ! Feedback Effects Using a Multivariate PDF.  Doctoral dissertation,
+    ! University of Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp.,
+    ! URL http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
     !
     ! Eq. (S10) and Eq. (S17) of Griffin, B. M. and V. E. Larson, 2016:
     ! Supplement of A new subgrid-scale representation of hydrometeor fields
