@@ -42,6 +42,14 @@ module KK_upscaled_means
     ! Description:
 
     ! References:
+    ! Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of a local
+    !    microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol. Soc.,
+    !    139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Supplement of A new subgrid-scale
+    !    representation of hydrometeor fields using a multivariate PDF.
+    !    Geosci. Model Dev., 9, 6,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -173,6 +181,20 @@ module KK_upscaled_means
     ! evaporation tendency.
 
     ! References:
+    ! Section 7 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Section C.3 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.3 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -280,6 +302,20 @@ module KK_upscaled_means
     !        concentration, N_c, in CLUBB's PDF.
 
     ! References:
+    ! Section 5 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Section C.2 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.2 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -359,6 +395,20 @@ module KK_upscaled_means
     ! accretion tendency.
 
     ! References:
+    ! Section 6 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Section C.1 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.1 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -443,6 +493,20 @@ module KK_upscaled_means
     ! volume radius.
 
     ! References:
+    ! Section 4 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Section C.4 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.4 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -542,11 +606,20 @@ module KK_upscaled_means
     ! specific situation.
 
     ! References:
+    ! Section 7 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
     ! Section C.3 and Section J.3 of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
     ! Effects Using a Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.3 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Section S7 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -809,12 +882,22 @@ module KK_upscaled_means
     ! integral based on the specific situation.
 
     ! References:
+    ! Section 5 and Section 6 of Larson, V. E. and B. M. Griffin, 2013:
+    ! Analytic upscaling of a local microphysics scheme. Part I: Derivation.
+    ! Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
+    !
     ! Section C.1, Section C.2, and Section J.4 of Griffin, B. M., 2016:
     ! Improving the Subgrid-Scale Representation of Hydrometeors and
     ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
     ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
     ! Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.1 and Section S1.2 of Griffin, B. M. and V. E. Larson, 2016:
+    ! Supplement of A new subgrid-scale representation of hydrometeor fields
+    ! using a multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !
     ! Section S8 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
     ! Parameterizing microphysical effects on variances and covariances of
@@ -996,11 +1079,20 @@ module KK_upscaled_means
     ! result of an evaluated integral based on the specific situation.
 
     ! References:
+    ! Section 4 of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
     ! Section C.4 of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
     ! Multivariate PDF.  Doctoral dissertation, University of
     ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
     ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Section S1.4 of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use PDF_integrals_means, only: &
