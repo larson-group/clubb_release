@@ -32,18 +32,7 @@ def isFunction(value):
         isFunc = True
     else:
         isFunc = False
-    #logger.debug(str(value) + " is function? " + str(isFunc))
     return isFunc
-
-def evalFunction(function, variable_names, variables, place):
-    logger.info('evalFunction')
-    value = 0
-    if function != "":        
-        for j in range(len(variable_names)):
-            function = function.replace(variable_names[j], "variables["+str(j)+"][" + str(place) + "]")
-        logger.debug(function)
-        value = eval(function)
-    return value
 
 #-------------------------------------------------------------------------------
 #    M A I N
@@ -78,41 +67,53 @@ if __name__ == "__main__":
     n = len(level)
     t = len(time)
     
+    imageName = cf.out_dir + 'jpg/'
+    imageNames = []
+    
     # grap the data
-    budgets_data = []
-    for plot in bv.plotNames:
-        logger.debug("plot: %s", str(plot[1]))
+    for i in range(len(bv.lines)):
+        budget = bv.lines[i]
+        plot = bv.plotNames[i]
         functions = []
         func_names = []
-        for i in range(len(bv.lines)):
-            if bv.lines[i][0] == plot[0] and not isFunction(bv.lines[i][3]):
-                logger.info("Grap data of: %s", bv.lines[i][1])
-                value = pb.mean_profiles(pb.get_budgets_from_nc(nc, bv.lines[i][1], bv.lines[i][4], n, t), idx_t0, idx_t1, idx_z0, idx_z1)
+        budgets_data = []
+        logger.debug("plot: %s", str(bv.sortPlots[i]))
+        for j in range(len(budget)):
+            if not isFunction(budget[j][2]):
+            # grap data of each variable that is not a function
+                logger.info("Grap data of: %s", budget[j][0])
+                value = pb.mean_profiles(pb.get_budgets_from_nc(nc, budget[j][0], budget[j][3], n, t), idx_t0, idx_t1, idx_z0, idx_z1)
                 if np.any(value < -100000):
+                # if there are no values for the variable
                     value = np.zeros(n)
-                budgets_data.append([bv.lines[i][0], bv.lines[i][1], bv.lines[i][2], bv.lines[i][3], value])
-            elif bv.lines[i][0] == plot[0] and isFunction(bv.lines[i][3]):
-                functions.append(bv.lines[i][3])
-                func_names.append(bv.lines[i][1])
+                    logger.warning("Could not find the variable %s of %s", budget[j][0], bv.sortPlots[i])
+                budgets_data.append([budget[j][0], budget[j][1], budget[j][2], value])
+            else:
+            # save a function for an evaluation
+                functions.append(budget[j][2])
+                func_names.append(budget[j][0])
         for k in range(len(functions)):
+        # evaluate all functions
             function = functions[k]
             logger.debug(func_names[k])
             logger.debug(function)
-            for j in range(len(budgets_data)):
-                if budgets_data[j][0] == plot[0]:
-                    logger.info("Calculate %s", budgets_data[j][1])
-                    function = function.replace(budgets_data[j][1], "budgets_data["+str(j)+"][4]")
+            for l in range(len(budgets_data)):
+                logger.info("Calculate %s", budgets_data[l][0])
+                function = function.replace(budgets_data[l][0], "budgets_data["+str(l)+"][3]")
             if function != "":
                 logger.debug(function)
                 res = eval(function)
                 logger.debug(res)
-            budgets_data.append([plot[0], func_names[k], True, func_names[k], res])
-    
-    pb.plot_many_budgets(budgets_data, bv.plotNames, level, cf.yLabel, cf.out_dir + 'jpg/' + cf.plot_case_name, cf.lineWidth)
-    
+            budgets_data.append([func_names[k], True, func_names[k], res])
+        # plot the budget
+        name = cf.plot_case_name + bv.sortPlots[i] + '.jpg'
+        imageNames.append(name)
+        pb.plot_budgets(budgets_data, level, plot[1], cf.yLabel, plot[0], imageName + name, linewidth = cf.lineWidth, color = cf.color)
+        
+    # write html page
     logger.info("Write HTML page")
     index = cf.out_dir + 'index.html'
     mode = 'Splotgen'    
     ow.writeNavPage(cf.out_dir, cf.headerText)
-    ow.writePlotsPage(cf.out_dir, cf.headerText, mode)
+    ow.writePlotsPage(cf.out_dir, cf.headerText, mode, imageNames)
     ow.writeIndex(index, mode)

@@ -19,4 +19,5 @@ plot_case_name = '%s_'%(case)
 # G E N E R E L   P L O T   S E T T I N G S
 #-------------------------------------------------------------------------------
 lineWidth = 2
+color = 'nipy_spectral'
 yLabel = 'Height [m]'

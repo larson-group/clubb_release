@@ -1,22 +1,13 @@
 """
- plotNC
+ plot_budgets
 
  Description:
-   plots the QTADV and QTDIFF budgets of Sam
+   help module to grap the data of an .nc file and to plot budgets
 """
 
-from netCDF4 import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
-
-#-------------------------------------------------------------------------------
-#   C O N S T A N T S
-#-------------------------------------------------------------------------------
-DAY = 24
-HOUR = 3600
-KG = 1000
-FACTOR = 1. / (DAY * HOUR * KG)
 
 #-------------------------------------------------------------------------------
 #   L O G G E R
@@ -27,53 +18,52 @@ logger = logging.getLogger('plot_budgets')
 #-------------------------------------------------------------------------------
 #   F U N C T I O N S
 #-------------------------------------------------------------------------------
-def plot_many_budgets(budgets_data, plot_data, level, yLabel, plot_name, linewidth):
-    logger.info('plot_many_budgets')
-    
-    for plot in plot_data:
-        data = []
-        names = []
-        for i in range(len(budgets_data)):
-            if plot[0] == budgets_data[i][0] and budgets_data[i][2]:
-                data.append(budgets_data[i][4])
-                names.append(budgets_data[i][1])
-        plot_budgets(data, level, plot[2], yLabel, names, plot[1], plot_name + str(plot[0]) + ".jpg", linewidth)
-
-def plot_budgets(budgets_data, level, xLabel, yLabel, budgets_name, title, name, linewidth):
+def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, linewidth = 2, color = 'nipy_spectral'):
     logger.info('plot_budgets')
     """
     Plots a plot with budgets
     Input:
-      budgets_data   --  list of budgets
+      budgets_data   --  list of budgets (names (index 0) and values (index 3))
       level          --  levels
       xLabel         --  label of the x axis
       yLabel         --  label of the y axis
-      budgets_name   --  list of names for the legend
       title          --  title of the plot
       name           --  name of the file
+      linewidth      --  linewidth of the budgets
+      color          --  name of colormap
     """
+    # clear the plot
     plt.clf()
     fig = plt.figure()
     ax = fig.add_subplot(111)
     
+    # set axis labels and title
     ax.set_xlabel(xLabel)
     ax.set_ylabel(yLabel)
     ax.set_title(title, fontsize=18)
     
+    # show grid
     ax.grid(True, which='both')
     ax.axhline(y=0, color='k')
     ax.axvline(x=0, color='k')
     
-    cmap = plt.get_cmap('jet')
-    colors = cmap(np.linspace(0, 1.0, len(budgets_name)))
+    # color of lines
+    cmap = plt.get_cmap(color)
+    colors = cmap(np.linspace(0, 1.0, len(budgets_data)))
     
+    # plot each variable
     for i in range(len(budgets_data)):
-        logger.debug('dimension of %s: %s', budgets_name[i], len(budgets_data[i]))
-        ax.plot(budgets_data[i], level, label=budgets_name[i], color=colors[i], linewidth=linewidth)
-        xlimits = ax.get_xlim()
-        limit = max(abs(xlimits[0]), abs(xlimits[1]))
-        ax.set_xlim(-limit, limit)
+        logger.debug('dimension of %s: %s', budgets_data[i][0], len(budgets_data[i]))
+        if budgets_data[i][1]:
+        # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
+            ax.plot(budgets_data[i][3], level, label=budgets_data[i][0], color=colors[i], linewidth=linewidth)
     
+    # x axis should be symmetric
+    xlimits = ax.get_xlim()
+    limit = max(abs(xlimits[0]), abs(xlimits[1]))
+    ax.set_xlim(-limit, limit)
+    
+    # plot the graphs
     plt.legend(loc=1,prop={'size':8})
     plt.savefig(name)
 
@@ -84,6 +74,9 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
       nc         --  Netcdf file object
       varname    --  Variable name string
       conversion --  Conversion factor
+      n          --  amount of level
+      t          --  amount of timesteps
+      n and t are used, if the variable cannot be found
 
     Output:
       time x height array of the specified variable
@@ -96,13 +89,8 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
         var = np.squeeze(var)
         var = var*conversion
     else:
-        logger.warning("Could not find the variable %s", varname)
         var = np.zeros(shape=(n,t)) - 10000000.
         
-    
-    #var = nc.variables[varname]        
-    #var = np.squeeze(var)
-    #var = var*conversion
     return var
                 
 def mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
@@ -121,11 +109,3 @@ def mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
 
     var = np.mean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
     return var
-
-def get_all_budgets_mean(nc, varnames, conversions, idx_t0, idx_t1, idx_z0, idx_z1):
-    logger.info('get_all_budgets_mean')
-    n = len(varnames)
-    budgets_data = []
-    for i in range(n):
-        budgets_data.append(mean_profiles(get_budgets_from_nc(nc, varnames[i], conversions[i]), idx_t0, idx_t1, idx_z0, idx_z1))
-    return budgets_data
