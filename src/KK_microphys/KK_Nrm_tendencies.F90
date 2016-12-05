@@ -93,10 +93,16 @@ module KK_Nrm_tendencies
     ! (dN_r/dt)|_evap = KK_evap_coef chi^alpha r_r^(beta - 1) N_r^(gamma + 1).
 
     ! References:
-    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
-    !    Parameterization in a Large-Eddy Simulation Model of Marine
-    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
-    !  -- Eq. 23.
+    ! Eq. (C35) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S35) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -247,10 +253,9 @@ module KK_Nrm_tendencies
     ! (dN_r/dt)|_evap = ( N_r / r_r ) (dr_r/dt)|_evap.
 
     ! References:
-    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
-    !    Parameterization in a Large-Eddy Simulation Model of Marine
-    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
-    !  -- Eq. 23.
+    ! Eq. (23) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -309,10 +314,9 @@ module KK_Nrm_tendencies
     ! CLUBB uses N_r specified in terms of num/kg.
 
     ! References:
-    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
-    !    Parameterization in a Large-Eddy Simulation Model of Marine
-    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
-    !  -- Eq. 32.
+    ! Eq. (32) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: & 

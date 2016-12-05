@@ -162,13 +162,12 @@ module KK_utilities
     ! taken from Rogers and Yau (1989).
 
     ! References:
-    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
-    !    Parameterization in a Large-Eddy Simulation Model of Marine
-    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
-    !  -- Eq. 22.
-    !  Rogers, R. R. and M. K. Yau, 1989:  A Short Course in Cloud Physics. 3rd
-    !    edition, Butterworth-Heinemann, 290 pp.
-    !  -- Eq. 7.17 and 7.18.
+    ! Eq. (22) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
+    !
+    ! Eq. (7.17) and Eq. (7.18) of Rogers, R. R. and M. K. Yau, 1989:  A Short
+    ! Course in Cloud Physics. 3rd edition, Butterworth-Heinemann, 290 pp.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
