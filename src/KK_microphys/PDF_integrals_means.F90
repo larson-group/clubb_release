@@ -31,7 +31,10 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    !  Larson, V. E. and B. M. Griffin (2012)
+    ! Eq. (60) and Eq. (61) of Larson, V. E. and B. M. Griffin, 2013:  Analytic
+    ! upscaling of a local microphysics scheme. Part I: Derivation.
+    ! Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
     !
     ! Eq. (C24) and Eq. (J25) of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
@@ -124,7 +127,10 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    !  Larson, V. E. and B. M. Griffin (2012)
+    ! Eq. (62) and Eq. (63) of Larson, V. E. and B. M. Griffin, 2013:  Analytic
+    ! upscaling of a local microphysics scheme. Part I: Derivation.
+    ! Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
     !
     ! Eq. (C29) and Eq. (J26) of Griffin, B. M., 2016:  Improving the
     ! Subgrid-Scale Representation of Hydrometeors and Microphysical Feedback
@@ -198,7 +204,7 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (C26), Eq. (C27), Eq. (J27) and Eq. (J28) of Griffin, B. M., 2016:
+    ! Eq. (C26), Eq. (C27), Eq. (J27), and Eq. (J28) of Griffin, B. M., 2016:
     ! Improving the Subgrid-Scale Representation of Hydrometeors and
     ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
     ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
@@ -278,7 +284,7 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    ! Eq. (C30), Eq. (C31), Eq. (J29) and Eq. (J30) of Griffin, B. M., 2016:
+    ! Eq. (C30), Eq. (C31), Eq. (J29), and Eq. (J30) of Griffin, B. M., 2016:
     ! Improving the Subgrid-Scale Representation of Hydrometeors and
     ! Microphysical Feedback Effects Using a Multivariate PDF.  Doctoral
     ! dissertation, University of Wisconsin -- Milwaukee, Milwaukee, WI,
@@ -478,7 +484,10 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    !  Larson, V. E. and B. M. Griffin (2012)
+    ! Eq. (33), Eq. (34), Eq. (41), and Eq. (42) of Larson, V. E. and
+    ! B. M. Griffin, 2013:  Analytic upscaling of a local microphysics scheme.
+    ! Part I: Derivation.  Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
     !
     ! Eq. (C4), Eq. (C14), and Eq. (J33) of Griffin, B. M., 2016:  Improving
     ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
@@ -557,7 +566,10 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    !  Larson, V. E. and B. M. Griffin (2012)
+    ! Eq. (35), Eq. (36), Eq. (43), and Eq. (44) of Larson, V. E. and
+    ! B. M. Griffin, 2013:  Analytic upscaling of a local microphysics scheme.
+    ! Part I: Derivation.  Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
     !
     ! Eq. (C9), Eq. (C16), and Eq. (J34) of Griffin, B. M., 2016:  Improving
     ! the Subgrid-Scale Representation of Hydrometeors and Microphysical
@@ -751,7 +763,9 @@ module PDF_integrals_means
     ! Description:
 
     ! References:
-    !  Larson, V. E. and B. M. Griffin (2012)
+    ! Eq. (26) of Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of
+    ! a local microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol.
+    ! Soc., 139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
     !
     ! Eq. (C39) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
     ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
