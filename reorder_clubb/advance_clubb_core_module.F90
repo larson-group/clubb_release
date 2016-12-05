@@ -592,7 +592,7 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm, Kmh_zm
+      Km_zm, Kmh_zm, RH_postPDF
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
