@@ -989,6 +989,24 @@ module advance_clubb_core_module
     ! Smooth again as above
     wp3_on_wp2_zt = zm2zt( wp3_on_wp2 )
 
+#ifdef CLUBB_CAM
+    if (ipdf_call_placement == ipdf_pre_advance_fields) then
+      ! +PAB mods, take remaining supersaturation that may exist
+      !   after CLUBB PDF call and add it to rcm.  Supersaturation 
+      !   may exist after PDF call due to issues with calling PDF on the
+      !   thermo grid and momentum grid and the interpolation between the two
+      rsat = sat_mixrat_liq( p_in_Pa, thlm2T_in_K( thlm, exner, rcm ) )
+
+      RH_postPDF = (rtm - rcm)/rsat  
+      
+      do k = 2, gr%nz
+        if (RH_postPDF(k) > 1.0_core_rknd) then
+          rcm(k) = rcm(k) + ((rtm(k) - rcm(k)) - rsat(k))
+        end if 
+      enddo
+    endif
+#endif 
+
       !----------------------------------------------------------------
       ! Compute thvm
       !----------------------------------------------------------------
