@@ -1,4 +1,4 @@
-! $Id: mpace_b_model.in 4930 2010-12-20 21:13:56Z dschanen@uwm.edu $
+! $Id: mpace_b_silhs_model.in 4930 2010-12-20 21:13:56Z dschanen@uwm.edu $
 ! Parameter file for MPACE-B case
 
 &model_setting
@@ -198,7 +198,7 @@ l_use_default_std_atmosphere = .true.
 ! Statistics Settings
 
 l_stats       = .true.    ! Flag for statistical output.
-fname_prefix = "mpace_b_lh"  ! Prefix of output filename.
+fname_prefix = "mpace_b_silhs"  ! Prefix of output filename.
 stats_tsamp  = 60.        ! Frequency of statistical sampling [s]
                           ! For most complete sampling, let 
                           ! stats_tsamp = dt_main

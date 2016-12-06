@@ -2,10 +2,10 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-clubb_nc       = netCDF4.Dataset('rico_lh_zt.nc')
-silhs_sfc_nc   = netCDF4.Dataset('rico_lh_lh_sfc.nc')
-silhs_2D_u_nc  = netCDF4.Dataset('rico_lh_u_lh_sample_points_2D.nc')
-silhs_2D_l_nc  = netCDF4.Dataset('rico_lh_nl_lh_sample_points_2D.nc')
+clubb_nc       = netCDF4.Dataset('rico_silhs_zt.nc')
+silhs_sfc_nc   = netCDF4.Dataset('rico_silhs_lh_sfc.nc')
+silhs_2D_u_nc  = netCDF4.Dataset('rico_silhs_u_lh_sample_points_2D.nc')
+silhs_2D_l_nc  = netCDF4.Dataset('rico_silhs_nl_lh_sample_points_2D.nc')
 
 k_lh_start = silhs_sfc_nc.variables['k_lh_start'][:]
 

@@ -52,6 +52,9 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    !    Parameterization in a Large-Eddy Simulation Model of Marine
+    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
@@ -70,7 +73,7 @@ module KK_microphys_module
         KK_Nrm_evap_local_mean, & ! Procedure(s)
         KK_Nrm_auto_mean
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -352,7 +355,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -407,6 +410,30 @@ module KK_microphys_module
     ! functional form of the PDF.
 
     ! References:
+    ! Larson, V. E. and B. M. Griffin, 2013:  Analytic upscaling of a local
+    !    microphysics scheme. Part I: Derivation.  Q. J. Roy. Meteorol. Soc.,
+    !    139, 670, 46--57, doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2013:  Analytic upscaling of a local
+    !    microphysics scheme. Part II: Simulations.  Q. J. Roy. Meteorol. Soc.,
+    !    139, 670, 58--69, doi:http://dx.doi.org/10.1002/qj.1966.
+    !
+    ! Griffin, B. M., 2016:  Improving the Subgrid-Scale Representation of
+    !    Hydrometeors and Microphysical Feedback Effects Using a Multivariate
+    !    PDF.  Doctoral dissertation, University of Wisconsin -- Milwaukee,
+    !    Milwaukee, WI, Paper 1144, 165 pp., URL
+    !    http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Supplement of A new subgrid-scale
+    !    representation of hydrometeor fields using a multivariate PDF.
+    !    Geosci. Model Dev., 9, 6,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
+    !
+    ! Griffin, B. M. and V. E. Larson, 2016:  Parameterizing microphysical
+    !    effects on variances and covariances of moisture and heat content using
+    !    a multivariate probability density function: a study with CLUBB (tag
+    !    MVCS).  Geosci. Model Dev., 9, 11, 4273--4295,
+    !    doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use grid_class, only: &
@@ -431,7 +458,7 @@ module KK_microphys_module
     use KK_upscaled_covariances, only: &
         KK_upscaled_covar_driver    ! Procedure(s)
 
-    use KK_utilities, only: &
+    use advance_microphys_module, only: &
         get_cloud_top_level    ! Procedure(s)
 
     use pdf_parameter_module, only: &
@@ -942,7 +969,7 @@ module KK_microphys_module
     thlm_mc(nz) = zero
 
     ! Find the vertical level index of cloud top.
-    cloud_top_level = get_cloud_top_level( nz, rcm )
+    cloud_top_level = get_cloud_top_level( nz, rcm, hydromet )
 
     !!! Microphysics sedimentation velocities.
     call KK_sedimentation( nz, cloud_top_level, KK_mean_vol_rad, Vrr, VNr, &
@@ -1131,6 +1158,31 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Eq. (3), Eq. (22), Eq. (29), and Eq. (33) of Khairoutdinov, M. and
+    ! Y. Kogan, 2000:  A New Cloud Physics Parameterization in a Large-Eddy
+    ! Simulation Model of Marine Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
+    !
+    ! Eq. (22), Eq. (28), Eq. (38), and Eq. (51) of Larson, V. E. and
+    ! B. M. Griffin, 2013:  Analytic upscaling of a local microphysics scheme.
+    ! Part I: Derivation.  Q. J. Roy. Meteorol. Soc., 139, 670, 46--57,
+    ! doi:http://dx.doi.org/10.1002/qj.1967.
+    !
+    ! Eq. (C21) of Griffin, B. M., 2016:  Improving the Subgrid-Scale
+    ! Representation of Hydrometeors and Microphysical Feedback Effects Using a
+    ! Multivariate PDF.  Doctoral dissertation, University of
+    ! Wisconsin -- Milwaukee, Milwaukee, WI, Paper 1144, 165 pp., URL
+    ! http://dc.uwm.edu/cgi/viewcontent.cgi?article=2149&context=etd.
+    !
+    ! Eq. (S21) of Griffin, B. M. and V. E. Larson, 2016:  Supplement of
+    ! A new subgrid-scale representation of hydrometeor fields using a
+    ! multivariate PDF.  Geosci. Model Dev., 9, 6,
+    ! doi:http://dx.doi.org/10.5194/gmd-9-2031-2016-supplement.
+    !
+    ! Eq. (A27) of Griffin, B. M. and V. E. Larson, 2016:  Parameterizing
+    ! microphysical effects on variances and covariances of moisture and heat
+    ! content using a multivariate probability density function: a study with
+    ! CLUBB (tag MVCS).  Geosci. Model Dev., 9, 11, 4273--4295, 
+    ! doi:http://dx.doi.org/10.5194/gmd-9-4273-2016.
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
@@ -1595,6 +1647,9 @@ module KK_microphys_module
     ! Description:
 
     ! References:
+    ! Eq. (37) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &

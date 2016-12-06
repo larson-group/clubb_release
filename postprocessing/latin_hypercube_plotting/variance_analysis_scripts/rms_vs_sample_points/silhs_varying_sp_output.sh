@@ -7,7 +7,7 @@
 
 CLUBB_DIR="`readlink -m \`dirname $0\``/../../../.."
 OUTPUT_DIR="$CLUBB_DIR/rms_plot_output"
-CASE_NAME="rico_lh"
+CASE_NAME="rico_silhs"
 STATS_FILE=""
 STARTING_SEED=""
 

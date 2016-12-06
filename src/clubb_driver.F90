@@ -90,7 +90,7 @@ module clubb_driver
       calculate_thlp2_rad
 
     use constants_clubb, only: &
-      fstdout, fstderr, zero, zero_dp, one_dp, & ! Constant(s)
+      fstdout, fstderr, zero, one, & ! Constant(s)
       rt_tol, thl_tol, w_tol, w_tol_sqd
 
     use error_code, only: &
@@ -104,7 +104,7 @@ module clubb_driver
       set_clubb_debug_level, &
       report_error
 
-    use clubb_precision, only: time_precision, core_rknd, dp ! Constants
+    use clubb_precision, only: time_precision, core_rknd ! Constants
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
@@ -167,13 +167,7 @@ module clubb_driver
         uv_sponge_damp_settings,      &
         wp2_sponge_damp_settings,     &
         wp3_sponge_damp_settings,     &
-        up2_vp2_sponge_damp_settings, &
-        thlm_sponge_damp_profile,     &
-        rtm_sponge_damp_profile,      &
-        uv_sponge_damp_profile,       &
-        wp2_sponge_damp_profile,      &
-        wp3_sponge_damp_profile,      &
-        up2_vp2_sponge_damp_profile
+        up2_vp2_sponge_damp_settings
 
     use extended_atmosphere_module, only: &
         total_atmos_dim, & ! Variable(s)
@@ -480,6 +474,21 @@ module clubb_driver
 
     type(hydromet_pdf_parameter), dimension(:), allocatable :: &
       hydromet_pdf_params    ! Hydrometeor PDF parameters      [units vary]
+      
+    ! coarse-grained timing budget of main time stepping loop
+    real( kind = core_rknd ) :: & 
+      time_loop_init,  &	  ! time spent in the beginning part of the main loop [s]
+      time_loop_end, &      ! time spent in the end part of the main loop [s]
+      time_clubb_advance, & ! time spent in advance_clubb_core [s]
+      time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
+      time_SILHS,    &  ! time needed to compute subcolumns [s]
+      time_microphys_scheme, &     ! time needed for microphys_schemes [s]
+      time_microphys_advance, &    ! time needed for advance_microphys [s]
+      time_stop, time_start,  &    ! help variables to measure the time [s]
+      time_total                ! control timer for the overall time spent in the main loop [s]
+      
+    ! allowed tolerance for the timing budget check
+    real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
     ! Definition of namelists
     namelist /model_setting/  &
@@ -1243,11 +1252,29 @@ module clubb_driver
     stats_nsamp = nint( stats_tsamp / dt_main )
     stats_nout = nint( stats_tout / dt_main )
 
+    !initialize timers    
+    time_loop_init = 0.0_core_rknd
+    time_clubb_advance = 0.0_core_rknd
+    time_clubb_pdf = 0.0_core_rknd
+    time_SILHS = 0.0_core_rknd
+    time_microphys_advance = 0.0_core_rknd
+    time_microphys_scheme = 0.0_core_rknd
+    time_loop_end = 0.0_core_rknd
+    time_total = 0.0_core_rknd
+    time_stop = 0.0_core_rknd
+    time_start = 0.0_core_rknd
+    
+    ! Save time before main loop starts
+    call cpu_time( time_start )
+    time_total = time_start
 !-------------------------------------------------------------------------------
 !                         Main Time Stepping Loop
 !-------------------------------------------------------------------------------
 
     do itime = iinit, ifinal, 1
+      
+      call cpu_time( time_start ) ! start timer for initial part of main loop
+      
       ! When this time step is over, the time will be time + dt_main
       ! We use integer timestep for stats_begin_step
         call stats_begin_timestep( itime, stats_nsamp, stats_nout ) ! Intent(in)
@@ -1333,6 +1360,12 @@ module clubb_driver
 
       end if
 
+      
+      ! Measure time in the beginning part of the main loop
+      call cpu_time(time_stop)      
+      time_loop_init = time_loop_init + time_stop - time_start      
+      call cpu_time(time_start) ! initialize timer for advance_clubb_core
+      
       ! Call the parameterization one timestep
       call advance_clubb_core &
            ( l_implemented, dt_main, fcor, sfc_elevation, hydromet_dim, &! Intent(in)
@@ -1356,8 +1389,14 @@ module clubb_driver
              rcm, wprcp, cloud_frac, ice_supersat_frac, &         ! Intent(out)
              rcm_in_layer, cloud_cover, pdf_params )              ! Intent(out)
 
+      ! Measure time in advance_clubb_core
+      call cpu_time(time_stop)
+      time_clubb_advance = time_clubb_advance + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for setup_pdf_parameters
+      
       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
 
+      
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
@@ -1383,6 +1422,12 @@ module clubb_driver
 
       endif ! not microphys_scheme == "none"
 
+      
+      ! Measure time in setup_pdf_parameters and hydrometeor_mixed_moments
+      call cpu_time(time_stop)
+      time_clubb_pdf = time_clubb_pdf + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for SILHS
+      
 #ifdef SILHS
       !----------------------------------------------------------------
       ! Compute subcolumns if enabled
@@ -1420,6 +1465,13 @@ module clubb_driver
       if ( .false. .or. Lscale(1) < 0._core_rknd ) print *, ""
 #endif /* SILHS */
 
+
+      
+      ! Measure time in SILHS
+      call cpu_time(time_stop)
+      time_SILHS = time_SILHS + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for microphys_schemes
+      
       !----------------------------------------------------------------
       ! Compute Microphysics
       !----------------------------------------------------------------
@@ -1444,6 +1496,11 @@ module clubb_driver
                               wprtp_mc, wpthlp_mc, rtp2_mc, &                ! Out
                               thlp2_mc, rtpthlp_mc )                         ! Out
 
+      ! Measure time in microphys_schemes
+      call cpu_time(time_stop)
+      time_microphys_scheme = time_microphys_scheme + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for advance_microphys
+      
       ! Advance predictive microphysics fields one model timestep.
       call advance_microphys( dt_main, time_current, wm_zt, wp2, &       ! In
                               exner, rho, rho_zm, rcm, &                 ! In
@@ -1456,6 +1513,12 @@ module clubb_driver
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                               wphydrometp, wpNcp, err_code_microphys )   ! Out
 
+      ! Measure time in microphys_schemes
+      call cpu_time(time_stop)
+      time_microphys_advance = time_microphys_advance + time_stop - time_start
+      call cpu_time(time_start) ! initialize timer for the end part of the main loop
+      
+      
       if ( fatal_error( err_code_microphys ) ) then
          if ( clubb_at_least_debug_level( 1 ) ) then
              write(fstderr,*) "Fatal error in advance_microphys:"
@@ -1533,9 +1596,33 @@ module clubb_driver
           itime, '; time = ', time_current
       end if
 
+      ! Measure time in the end part
+      call cpu_time(time_stop)
+      time_loop_end = time_loop_end + time_stop - time_start
+      
       if ( fatal_error( err_code ) ) exit
 
     end do ! itime=1, ifinal
+    
+    ! Measure overall time in the main loop
+    call cpu_time(time_stop)
+    time_total = time_stop - time_total ! subtract previously saved start time 
+    
+    ! Check if time budgets sum up
+    if ((time_total * (one + timing_tol) < (time_loop_init + time_clubb_advance +  &
+      time_clubb_pdf + time_SILHS + time_microphys_scheme +    &
+      time_microphys_advance + time_loop_end)) .or.                  &
+      (time_total * (one - timing_tol) > (time_loop_init + time_clubb_advance +    &
+      time_clubb_pdf + time_SILHS + time_microphys_scheme +    &
+      time_microphys_advance + time_loop_end))) then
+      
+      ! print warning to stderror and stdout 
+      write(unit=fstderr, fmt='(a)') 'WARNING! Main loop timing budget has errors &
+        & in excess of 1 per cent!'
+      write(unit=fstdout, fmt='(a)') 'WARNING! Main loop timing budget has errors &
+        & in excess of 1 per cent!'
+      
+    endif
 
 !-------------------------------------------------------------------------------
 !                       End Main Time Stepping Loop
@@ -3576,7 +3663,7 @@ module clubb_driver
       wpsclrp_sfc,  &
       wpedsclrp_sfc
 
-    use clubb_precision, only: time_precision, core_rknd ! Variable(s)
+    use clubb_precision, only: core_rknd ! Variable(s)
 
     use time_dependent_input, only: &
       apply_time_dependent_forcings, &

@@ -8,7 +8,7 @@ time2 = 864
 clubb_var_str = 'rrm_accr'
 silhs_var_str = 'lh_rrm_accr'
 
-clubb_nc = netCDF4.Dataset('2Cat-Cld/silhs_1/rico_lh_zt.nc')
+clubb_nc = netCDF4.Dataset('2Cat-Cld/silhs_1/rico_silhs_zt.nc')
 
 altitude = clubb_nc.variables['altitude']
 altlow = 1
@@ -19,9 +19,9 @@ for althigh in range(2,len(altitude)):
 clubb_var_profile = np.average(clubb_nc.variables[clubb_var_str][:,altlow:althigh,0,0], axis=0)
 
 for i in range(1,11): # Integers 1-10, inclusive
-    silhs_nc_1 = netCDF4.Dataset('2Cat-Cld/silhs_'+str(i)+'/rico_lh_lh_zt.nc')
-    silhs_nc_2 = netCDF4.Dataset('2Cat-CldPcp/silhs_'+str(i)+'/rico_lh_lh_zt.nc')
-    silhs_nc_3 = netCDF4.Dataset('old-old/silhs_'+str(i)+'/rico_lh_lh_zt.nc')
+    silhs_nc_1 = netCDF4.Dataset('2Cat-Cld/silhs_'+str(i)+'/rico_silhs_lh_zt.nc')
+    silhs_nc_2 = netCDF4.Dataset('2Cat-CldPcp/silhs_'+str(i)+'/rico_silhs_lh_zt.nc')
+    silhs_nc_3 = netCDF4.Dataset('old-old/silhs_'+str(i)+'/rico_silhs_lh_zt.nc')
     silhs_var_profile_1 = np.average(silhs_nc_1.variables[silhs_var_str][:,altlow:althigh,0,0], axis=0)
     silhs_var_profile_2 = np.average(silhs_nc_2.variables[silhs_var_str][:,altlow:althigh,0,0], axis=0)
     silhs_var_profile_3 = np.average(silhs_nc_3.variables[silhs_var_str][:,altlow:althigh,0,0], axis=0)

@@ -101,7 +101,7 @@ uv_sponge_damp_settings%sponge_damp_depth = 0.25
 l_restart      = .false.  ! Flag for whether this is a restart run.
 ! Path (from ../run_scripts/) and filename of GrADS control files
 ! (without '_zt.ctl' or '_zm.ctl').
-restart_path_case  = "restart/rico_lh"
+restart_path_case  = "restart/rico_silhs"
 time_restart  = 0.0      ! Time of model restart.
                          ! [seconds since start time listed in GrADS control file]
 
@@ -174,7 +174,7 @@ l_calc_thlp2_rad = .false.,
 ! Statistics Settings
 
 l_stats      = .true.   ! Flag for statistical output.
-fname_prefix = "rico_lh"   ! Prefix of output filename.
+fname_prefix = "rico_silhs"   ! Prefix of output filename.
 stats_tsamp  = 300.     ! Frequency of statistical sampling [s]
                         ! For most complete sampling, let 
                         ! stats_tsamp = dt_main

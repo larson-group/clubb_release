@@ -2,8 +2,8 @@ import netCDF4
 import numpy as np
 import pylab as pl
 
-silhs_sfc_nc = netCDF4.Dataset('rico_lh_lh_sfc.nc')
-silhs_2D_nl_nc = netCDF4.Dataset('rico_lh_nl_lh_sample_points_2D.nc')
+silhs_sfc_nc = netCDF4.Dataset('rico_silhs_lh_sfc.nc')
+silhs_2D_nl_nc = netCDF4.Dataset('rico_silhs_nl_lh_sample_points_2D.nc')
 
 num_samps = num_samps = len(silhs_2D_nl_nc.dimensions['latitude'])
 

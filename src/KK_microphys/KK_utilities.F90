@@ -8,7 +8,6 @@ module KK_utilities
 
   public :: factorial,           &
             Dv_fnc,              & ! Parabolic Cylinder Function, D.
-            get_cloud_top_level, &
             G_T_p
 
   contains
@@ -155,70 +154,6 @@ module KK_utilities
   end function Dv_fnc
 
   !=============================================================================
-  function get_cloud_top_level( nz, mean_rc ) &
-  result( cloud_top_level )
-
-    ! Description:
-    ! Find cloud top at a given model time step.  This function can be used to
-    ! find overall cloud top or the cloud top within a given PDF component.
-    ! This function finds cloud top by looping downward from the top of the
-    ! model and returning the index of the first vertical level that has a mean
-    ! cloud water mixing ratio greater than the tolerance amount.  In a scenario
-    ! that there is not any cloud found, the function returns a value of 1 (for
-    ! vertical level 1, which is below the model surface).
-
-    ! References:
-    !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        rc_tol    ! Constant(s)
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      mean_rc    ! Mean cloud water mixing ratio                [kg/kg]
- 
-    ! Return Variable
-    integer :: &
-      cloud_top_level    ! Vertical level index of cloud top
-
-    ! Local Variable
-    integer :: k    ! Vertical level index
-
-
-    ! Start at the model upper boundary and loop downwards until cloud top is
-    ! found or the model lower boundary is reached.
-    k = nz
-    do
-       if ( mean_rc(k) > rc_tol ) then
-          ! A level with mean cloud water mixing ratio greater than the
-          ! tolerance amount has been found.  Cloud top has been found.
-          cloud_top_level = k
-          exit
-       elseif ( k == 1 ) then
-          ! There was not any cloud found in the model vertical domain.
-          ! Return a value of 1.
-          cloud_top_level = 1
-          exit
-       else
-          ! Continue down another vertical level.
-          k = k - 1
-       endif
-    enddo
-
-
-    return
-
-  end function get_cloud_top_level
-
-  !=============================================================================
   function G_T_p( T_in_K, p_in_Pa )
 
     ! Description:
@@ -227,13 +162,12 @@ module KK_utilities
     ! taken from Rogers and Yau (1989).
 
     ! References:
-    !  Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
-    !    Parameterization in a Large-Eddy Simulation Model of Marine
-    !    Stratocumulus.  Mon. Wea. Rev., 128, 229--243.
-    !  -- Eq. 22.
-    !  Rogers, R. R. and M. K. Yau, 1989:  A Short Course in Cloud Physics. 3rd
-    !    edition, Butterworth-Heinemann, 290 pp.
-    !  -- Eq. 7.17 and 7.18.
+    ! Eq. (22) of Khairoutdinov, M. and Y. Kogan, 2000:  A New Cloud Physics
+    ! Parameterization in a Large-Eddy Simulation Model of Marine Stratocumulus.
+    ! Mon. Wea. Rev., 128, 229--243.
+    !
+    ! Eq. (7.17) and Eq. (7.18) of Rogers, R. R. and M. K. Yau, 1989:  A Short
+    ! Course in Cloud Physics. 3rd edition, Butterworth-Heinemann, 290 pp.
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &

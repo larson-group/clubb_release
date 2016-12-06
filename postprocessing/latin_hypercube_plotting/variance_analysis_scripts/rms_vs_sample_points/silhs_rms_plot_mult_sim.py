@@ -18,7 +18,7 @@ import os
 #  ./silhs_rms_plot_mult_sim.py [options] path1 [path2 [...]]
 #######################################################################
 
-case_name = 'rico_lh'
+case_name = 'rico_silhs'
 time1 = 0
 time2 = 4320
 

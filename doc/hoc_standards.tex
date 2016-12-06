@@ -20,6 +20,7 @@
 
 \maketitle
 
+\sloppy
 
 The following rules apply only to the parts of CLUBB that we have written.  We try not to modify
 code from external contributors such as BUGSrad, 
@@ -735,11 +736,80 @@ derived types that contain allocatable pointer components. E.g. \\
   end function func
 \end{verbatim}
 
-\item  Append a grid label to a variable name when the variable has been 
-interpolated to a different grid.  For instance, wp2 is natively on the zm 
-grid.  When it is interpolated to the zt grid, we call it ``wp2\_zt."  
-However, when wp2 is kept on the zm, we simply call it ``wp2" without 
-appending ``\_zm."
+\item Variable locations in CLUBB:
+
+  {\bf A. Thermodynamic-level Variables}
+
+  CLUBB generally defines mean fields (thlm, rtm, rcm, um, vm, etc.) and
+  third-order moments (wp3, wp2thlp, wprtp2, etc.) to be thermodynamic-level
+  variables. Furthermore, pressure variables (p\_in\_Pa and exner) are
+  thermodynamic-level variables. Their ``home" is on thermodynamic levels.
+
+  Furthermore, most variables that are diagnosed based purely on
+  thermodynamic-level variables are thermodynamic-level variables themselves.  A
+  good example of this is Lscale. Lscale is computed in subroutine
+  compute\_length based on the following thermodynamic-level inputs:  thvm,
+  thlm, rtm, rcm, p\_in\_Pa, and exner.  There is only one momentum-level
+  variable input into compute\_length, and that is em (as a side note, em is a
+  rare exception to the ``mean field" rule because it is diagnosed based purely
+  on three momentum-level variables, wp2, up2, and vp2).  Thus, em is
+  interpolated to thermodynamic-levels within compute\_length. Another good
+  example of this rule is thvm, which is diagnosed based on thermodynamic-level
+  variables thlm, rtm, exner, and rcm.
+
+  When thermodynamic-level variables are at their ``home" thermodynamic levels,
+  they simply use their ``base" name (thlm, wp2rcp, wp3, Lscale, etc.). However,
+  when thermodynamic-level variables are interpolated to momentum levels (or
+  computed on momentum levels in some instances), the general naming convention
+  is to tack a ``\_zm" onto the end of their ``base" name. For example, thlm is
+  thlm at thermodynamic levels and thlm\_zm when interpolated to momentum
+  levels.
+
+  {\bf B. Momentum-level Variables}
+
+  CLUBB generally defines second-order moments (wpthlp, rtp2, wp2, sclrpthlp,
+  etc.) and fourth-order moments (wp4) to be momentum-level variables.  Their
+  ``home" is on momentum levels.
+
+  Furthermore, most variables that are diagnosed based purely on momentum-level
+  variables are momentum-level variables themselves.  A good example of this is
+  sigma\_sqd\_w, which is diagnosed based purely on momentum-level variables
+  wpthlp, wp2, thlp2, wprtp, and rtp2.  Another example of this, as referenced
+  above in the section on ``Thermodynamic-level variables", is em, which is
+  diagnosed based purely on momentum-level variables wp2, up2, and vp2.
+
+  When momentum-level variables are at their ``home" momentum levels, they
+  simply use their ``base" name (wprtp, up2, sigma\_sqd\_w, rtpthlp, etc.).
+  However, when momentum-level variables are interpolated to thermodynamic
+  levels (or computed on thermodynamic levels in some instances), the general
+  naming convention is to tack a ``\_zt" onto the end of their ``base" name.
+  For example, rtp2 is rtp2 at momentum levels and rtp2\_zt when interpolated to
+  thermodynamic levels.  Likewise, sigma\_sqd\_w is sigma\_sqd\_w at momentum
+  levels and sigma\_sqd\_w\_zt when interpolated to thermodynamic levels.
+
+  {\bf C. Homeless Variables}
+
+  There are some variables in the CLUBB code that don't have a definitive
+  ``home". Rather, they just have numerous cardboard boxes scattered amongst the
+  various different vertical levels.
+ 
+  Generally, these are variables that are diagnosed based on nearly equal
+  contributions from momentum-level variables and thermodynamic-level variables.
+  A great example of this is Skewness of w. The skewness of w, Skw, equals
+  \verb|wp3 / wp2^1.5|.  It is based on one thermodynamic-level variable, wp3,
+  and one momentum-level variable, wp2. Thus, when calculating Skw on
+  thermodynamic levels, \verb|Skw = wp3 / wp2_zt^1.5|, and when calculating Skw
+  on momentum levels, \verb|Skw = wp3_zm / wp2^1.5|.  Two more great examples of
+  this are eddy diffusivity, Kh, and time-scale, tau. Both are based on one
+  thermodynamic-level variable, Lscale, and one momentum-level variable, em.
+
+  When a homeless variable is at its cardboard box on momentum levels, a ``\_zm"
+  extension is tacked onto it, and when it is at its cardboard box on
+  thermodynamic levels, a ``\_zt" extension is tacked onto it. Thus, skewness of
+  w is called Skw\_zt at thermodynamic levels and Skw\_zm at momentum levels.
+  Likewise, eddy diffusivity and time-scale are Kh\_zt and tau\_zt,
+  respectively, at thermodynamic levels, and Kh\_zm and tau\_zm, respectively,
+  at momentum levels. 
 
 \item  When using find/replace to make changes to the code, such as renaming a function or variable, mistakes can be made and overlooked. In particular, unwanted changes to comments frequently occur. To alleviate this, whenever using find/replace to make changes to the code, you must check all changes made to comments.
 

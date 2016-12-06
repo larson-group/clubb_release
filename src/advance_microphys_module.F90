@@ -12,7 +12,8 @@ module advance_microphys_module
   implicit none
 
   ! Subroutines
-  public :: advance_microphys
+  public :: advance_microphys,   &
+            get_cloud_top_level
 
   private :: advance_hydrometeor, &
              advance_Ncm, &
@@ -76,9 +77,6 @@ module advance_microphys_module
         microphys_scheme,         & ! The microphysical scheme in use
         microphys_start_time    ! When to start the microphysics [s]
 
-    use KK_utilities, only: &
-        get_cloud_top_level    ! Procedure(s)
-
     use clubb_precision, only:  & 
         time_precision, & ! Variable(s)
         core_rknd
@@ -91,7 +89,9 @@ module advance_microphys_module
     use array_index, only:  & 
         hydromet_list, & ! Names of the hydrometeor species
         hydromet_tol,  & ! Tolerance values for hydrometeor species
-        iirrm            ! Variable(s)
+        iirrm,         & ! Variable(s)
+        iirim,         &
+        iiNim
 
     use stats_variables, only: & 
         stats_zt,  & ! Variable(s)
@@ -220,9 +220,9 @@ module advance_microphys_module
                                          ! hydrometeors
 
     logical, parameter :: &
-      l_prevent_ta_above_cloud = .true.  ! Set K_hm to 0 above cloud top to
-                                         ! prevent turbulent advection of
-                                         ! hydrometeors to those levels.
+      l_prevent_hm_ta_above_cloud = .true.  ! Set K_hm to 0 above cloud top to
+                                            ! prevent turbulent advection of
+                                            ! hydrometeors to those levels.
 
     ! Initialize intent(out) variables -- covariances <w'hm'> (for any
     ! hydrometeor, hm) and <w'Nc'>.
@@ -245,6 +245,15 @@ module advance_microphys_module
     ! where the coefficients of diffusion, K_hm and K_Nc are variable and depend
     ! on multiple factors.
     if ( hydromet_dim > 0 ) then
+
+       ! Prevent the turbulent advection of hydrometeors to altitudes above
+       ! cloud top.
+       if ( l_prevent_hm_ta_above_cloud ) then
+
+          ! Find the vertical level index of cloud top.
+          cloud_top_level = get_cloud_top_level( gr%nz, rcm, hydromet )
+
+       endif ! l_prevent_hm_ta_above_cloud
 
        ! Solve for the value of K_hm, the coefficient of diffusion for
        ! hydrometeors.
@@ -281,24 +290,23 @@ module advance_microphys_module
              endif ! | d<hm>/dz | > 0
 
           enddo ! k = 1, gr%nz, 1
-       enddo ! i = hydromet_dim, 1
 
-       ! Prevent the turbulent advection of hydrometeors to altitudes above
-       ! cloud top.
-       if ( l_prevent_ta_above_cloud ) then
+          ! Prevent the turbulent advection of hydrometeors to altitudes above
+          ! cloud top.
+          if ( l_prevent_hm_ta_above_cloud ) then
 
-          ! Find the vertical level index of cloud top.
-          cloud_top_level = get_cloud_top_level( gr%nz, rcm )
-
-          ! Set K_hm to 0 above cloud top.  Since K_hm is a momentum-level
-          ! variable, and since momentum grid levels are located above their
-          ! corresponding thermodynamic grid levels, set K_hm to 0 starting at
-          ! the vertical-level index of cloud_top_level.
-          if ( cloud_top_level > 1 ) then
-             K_hm(cloud_top_level:gr%nz,:) = zero
-          endif ! cloud_top_level > 1
+             ! Set K_hm to 0 above cloud top.  Since K_hm is a momentum-level
+             ! variable, and since momentum grid levels are located above their
+             ! corresponding thermodynamic grid levels, set K_hm to 0 starting
+             ! at the vertical-level index of cloud_top_level.
+             if ( cloud_top_level > 1 &
+                  .and. i /= iirim .and. i /= iiNim ) then
+                K_hm(cloud_top_level:gr%nz,i) = zero
+             endif ! cloud_top_level > 1
              
-       endif ! l_prevent_ta_above_cloud
+          endif ! l_prevent_hm_ta_above_cloud
+
+       enddo ! i = 1, hydromet_dim, 1
 
     endif ! hydromet_dim > 0
 
@@ -3190,6 +3198,93 @@ module advance_microphys_module
     return
 
   end function term_turb_sed_rhs
+
+  !=============================================================================
+  function get_cloud_top_level( nz, rcm, hydromet ) &
+  result( cloud_top_level )
+
+    ! Description:
+    ! Find cloud top at a given model time step.  This function finds cloud top
+    ! by looping downward from the top of the model and returning the index of
+    ! the first vertical level that has a mean cloud water mixing ratio (or a
+    ! mean cloud ice mixing ratio, when ice is included in the microphysics
+    ! scheme) that is greater than the tolerance amount.  In a scenario that
+    ! there is not any cloud found, the function returns a value of 1 (for
+    ! vertical level 1, which is below the model surface).
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        rc_tol, & ! Constant(s)
+        ri_tol, &
+        zero
+
+    use parameters_model, only: & 
+        hydromet_dim    ! Variable(s)
+
+    use array_index, only:  & 
+        iirim    ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    integer, intent(in) :: &
+      nz    ! Number of model vertical grid levels
+
+    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+      rcm    ! Mean cloud water mixing ratio                [kg/kg]
+
+    real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
+      hydromet    ! Hydrometeor mean, <h_m> (thermo. levels)    [units vary]
+
+    ! Return Variable
+    integer :: &
+      cloud_top_level    ! Vertical level index of cloud top
+
+    ! Local Variable
+    real( kind = core_rknd ), dimension(nz) :: &
+      rim    ! Mean cloud ice mixing ratio                [kg/kg]
+
+    integer :: k    ! Vertical level index
+
+
+    ! Include cloud ice when the microphysics scheme includes ice mixing ratio.
+    if ( iirim > 0 ) then
+       rim = hydromet(:, iirim)
+    else
+       rim = zero
+    endif ! iirim > 0
+
+    ! Start at the model upper boundary and loop downwards until cloud top is
+    ! found or the model lower boundary is reached.
+    k = nz
+    do
+       if ( rcm(k) > rc_tol .or. rim(k) > ri_tol ) then
+          ! A level with mean cloud water mixing ratio (or mean cloud ice mixing
+          ! ratio, when it is included in the microphysics scheme) that is
+          ! greater than the tolerance amount has been found.  Cloud top has
+          ! been found.
+          cloud_top_level = k
+          exit
+       elseif ( k == 1 ) then
+          ! There was not any cloud found in the model vertical domain.
+          ! Return a value of 1.
+          cloud_top_level = 1
+          exit
+       else
+          ! Continue down another vertical level.
+          k = k - 1
+       endif
+    enddo
+
+
+    return
+
+  end function get_cloud_top_level
 
 !===============================================================================
 

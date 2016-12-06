@@ -3,9 +3,9 @@ import numpy as np
 import pylab as pl
 import random
 
-clubb_nc     = netCDF4.Dataset('rico_lh_zt.nc')
-silhs_nc     = netCDF4.Dataset('rico_lh_lh_zt.nc')
-silhs_sfc_nc = netCDF4.Dataset('rico_lh_lh_sfc.nc')
+clubb_nc     = netCDF4.Dataset('rico_silhs_zt.nc')
+silhs_nc     = netCDF4.Dataset('rico_silhs_lh_zt.nc')
+silhs_sfc_nc = netCDF4.Dataset('rico_silhs_lh_sfc.nc')
 
 clubb_var = clubb_nc.variables['mixt_frac']
 silhs_var = silhs_nc.variables['lh_mixt_frac']

@@ -13,7 +13,7 @@ import os
 # Usage:
 #   silhs_kplot.py [options] dir1 [dir2 [...]]
 #---------------------------------------------------------------------
-case_name = 'rico_lh'
+case_name = 'rico_silhs'
 clubb_var = 'rrm_mc'
 silhs_var = 'lh_rrm_mc'
 time1 = 0

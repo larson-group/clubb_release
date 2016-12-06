@@ -1685,6 +1685,8 @@ module latin_hypercube_driver_module
       ilh_rrp2_zt, &
       ilh_vwp, &
       ilh_lwp, &
+      ilh_sample_weights_sum, &
+      ilh_sample_weights_avg, &
       stats_lh_zt, &
       stats_lh_sfc
 
@@ -1805,6 +1807,16 @@ module latin_hypercube_driver_module
         end if
       end if
 
+      if ( ilh_sample_weights_sum > 0 ) then
+          xtmp = sum(lh_sample_point_weights(:))
+          call stat_update_var_pt( ilh_sample_weights_sum, 1, xtmp, stats_lh_sfc )
+      end if
+      
+      if ( ilh_sample_weights_avg > 0 ) then
+          xtmp = sum(lh_sample_point_weights(:)) / real( num_samples, kind = core_rknd )
+          call stat_update_var_pt( ilh_sample_weights_avg, 1, xtmp, stats_lh_sfc )
+      end if
+        
       if ( ilh_thlm + ilh_thlp2_zt > 0 ) then
         lh_thlm = compute_sample_mean( nz, num_samples, lh_sample_point_weights, &
                                        real( lh_clipped_vars%thl, kind = core_rknd ) )
