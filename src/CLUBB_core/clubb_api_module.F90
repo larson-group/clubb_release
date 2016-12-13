@@ -509,7 +509,7 @@ contains
     rcm, cloud_frac, &                                      ! intent(inout)
     wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
     sclrpthvp, &                                            ! intent(inout)
-    pdf_params, &                                           ! intent(inout)
+    pdf_params, pdf_params_zm, &                            ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
                do_liquid_only_in_clubb, &                   ! intent(in)
@@ -653,7 +653,8 @@ contains
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
     type(pdf_parameter), dimension(gr%nz), intent(inout) :: &
-      pdf_params      ! PDF parameters   [units vary] 
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
@@ -722,7 +723,7 @@ contains
       rcm, cloud_frac, &                                      ! intent(inout)
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
       sclrpthvp, &                                            ! intent(inout)
-      pdf_params, &                                           ! intent(inout)
+      pdf_params, pdf_params_zm, &                            ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                             ! intent(inout)
                do_liquid_only_in_clubb, &                              ! intent(in)

@@ -50,7 +50,7 @@ module clubb_driver
       thvm, Lscale, Skw_zm, thlp3, rtp3, Kh_zm, K_hm, &
       um_ref, vm_ref, Nccnm, wp2_zt, &
       wpthvp, wp2thvp, rtpthvp, thlpthvp, &
-      sclrpthvp, &
+      sclrpthvp, pdf_params_zm, &
       hydromet, hydrometp2, wphydrometp, Ncm, wpNcp, thlm_ref, rtm_ref, &
       Frad, radht, Frad_SW_up, &
       Frad_LW_up, Frad_SW_down, Frad_LW_down, thlprcp
@@ -1391,7 +1391,7 @@ module clubb_driver
              rcm, cloud_frac, &                                   ! Intent(inout)
              wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! Intent(inout)
              sclrpthvp, &                                         ! Intent(inout)
-             pdf_params, &                                        ! Intent(inout)
+             pdf_params, pdf_params_zm, &                         ! Intent(inout)
              wprcp, ice_supersat_frac, &                          ! Intent(out)
              rcm_in_layer, cloud_cover )                          ! Intent(out)
 

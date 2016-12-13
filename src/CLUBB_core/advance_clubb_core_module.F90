@@ -139,7 +139,7 @@ module advance_clubb_core_module
                rcm, cloud_frac, &                                   ! intent(inout)
                wpthvp, wp2thvp, rtpthvp, thlpthvp, &                ! intent(inout)
                sclrpthvp, &                                         ! intent(inout)
-               pdf_params, &                                        ! intent(inout)
+               pdf_params, pdf_params_zm, &                         ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                          ! intent(inout)
                do_liquid_only_in_clubb, &                           ! intent(in)
@@ -226,7 +226,6 @@ module advance_clubb_core_module
       thlprcp, &
       rcp2, &
       rsat, &
-      pdf_params_zm, &
       wprtp2, &
       wp2rtp, &
       wpthlp2, &
@@ -551,8 +550,9 @@ module advance_clubb_core_module
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
       sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
 
-    type(pdf_parameter), dimension(gr%nz), intent(inout) :: & 
-      pdf_params      ! PDF parameters   [units vary]
+    type(pdf_parameter), dimension(gr%nz), intent(inout) :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
@@ -856,15 +856,6 @@ module advance_clubb_core_module
                            // " with the ipdf_post_advance_fields option."
           stop
        endif ! l_use_ice_latent
-       if ( l_call_pdf_closure_twice ) then
-          write(fstderr,*) "The l_call_pdf_closure_twice option is" &
-                           // " incompatible with the" &
-                           // " ipdf_post_advance_fields option.  Please" &
-                           // " note that the l_call_pdf_closure_twice" &
-                           // " option may depend on the l_vert_avg_closure" &
-                           // " option."
-          stop
-       endif ! l_call_pdf_closure_twice
     endif ! ipdf_call_placement == ipdf_post_advance_fields
 
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
