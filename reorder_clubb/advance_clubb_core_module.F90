@@ -427,7 +427,7 @@ module advance_clubb_core_module
     ! Select the placement of the call to CLUBB's PDF.
     ! Place this here temporarily.  Brian Griffin; Dec. 2016.
     integer, parameter :: &
-      ipdf_call_placement = ipdf_pre_advance_fields
+      ipdf_call_placement = ipdf_post_advance_fields
 
     !!! Input Variables
     logical, intent(in) ::  & 
