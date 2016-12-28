@@ -82,7 +82,7 @@ run_scm.bash:
   To specify a custom stats file, use the --stats (or -s) option. For example, to use
   the nightly stats, ./run_scm.bash --stats ../input/stats/nightly_stats.in
 
-  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a paramter
+  To specify a custom parameter file, use the --parameter_file (or -p) option followed by a parameter
   file.
 
   To run a performance test, use the --performance_test (or -r) option.  This will disable
@@ -131,3 +131,7 @@ run_timestep_tests.bash:
 
 run_tuner.bash: 
   Runs the CLUBB tuning program. More info can be found in input_misc/tuner/README.
+
+run_scm_debug.bash:
+  Runs CLUBB standalone using either the gfortran (gdb), Oracle (dbx), or PGI (pgdbg) compiler.
+
