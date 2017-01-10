@@ -26,7 +26,7 @@ ARCH="-fp-model precise" # This should work on carson/steele (AMD Opteron)
 #ARCH="-mssse3 -fp-model precise"# Core2 Duo (overlie)
 
 # == Optimization ==
-OPTIMIZE="-O3 -vec-report0"
+OPTIMIZE="-O3"
 
 # == NetCDF Location ==
 NETCDF="/sharedapps/LS/vlarson_group/local/netcdf-intel64"

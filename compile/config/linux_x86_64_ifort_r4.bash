@@ -28,7 +28,7 @@ ARCH="-xHost" # This should work on most modern AMD/Intel computers
 DOUBLE_PRECISION="-real-size 64"
 
 # == Optimization ==
-OPTIMIZE="-O3 -vec-report0"
+OPTIMIZE="-O3"
 
 # == NetCDF Location ==
 NETCDF="/usr/local/netcdf-intel64"
