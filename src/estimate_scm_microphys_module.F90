@@ -39,11 +39,7 @@ module estimate_scm_microphys_module
       hydromet_dim ! Variable
 
     use parameters_microphys, only: &
-      l_var_covar_src
-
-    use corr_varnce_module, only: &
-      iiPDF_chi, &
-      iiPDF_w
+      l_var_covar_src   
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
@@ -87,7 +83,9 @@ module estimate_scm_microphys_module
 
     use array_index, only: &
       iiNrm, & ! Variable(s)
-      iirrm
+      iirrm, &
+      iiPDF_chi, &
+      iiPDF_w
 
     use lh_microphys_var_covar_module, only: &
       lh_microphys_var_covar_driver   ! Procedure

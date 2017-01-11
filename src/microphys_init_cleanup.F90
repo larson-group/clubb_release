@@ -125,7 +125,8 @@ module microphys_init_cleanup
         iirgm, &
         iiNsm, & 
         iiNim, &
-        iiNgm
+        iiNgm, &
+        iiPDF_Ncn
 
     use constants_clubb, only: &
         cm3_per_m3, &
@@ -195,7 +196,6 @@ module microphys_init_cleanup
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
         Ncnp2_on_Ncnm2,                 &
         d_variables,                    &
-        iiPDF_Ncn,                      &
         corr_array_n_cloud,             &
         corr_array_n_below,             &
         setup_pdf_indices,              & ! Procedure(s)

@@ -6,6 +6,20 @@ module corr_varnce_module
   use clubb_precision, only: &
       core_rknd
 
+  use array_index, only: &
+      iiPDF_chi, &
+      iiPDF_eta, &
+      iiPDF_w, &
+      iiPDF_rr, &
+      iiPDF_rs, &
+      iiPDF_ri, &
+      iiPDF_rg, &
+      iiPDF_Nr, &
+      iiPDF_Ns, &
+      iiPDF_Ni, &
+      iiPDF_Ng, &
+      iiPDF_Ncn
+
   implicit none
 
   type hmp2_ip_on_hmm2_ip_ratios_type
@@ -37,28 +51,6 @@ module corr_varnce_module
     Ncnp2_on_Ncnm2 = 1.0_core_rknd   ! Prescribed ratio <N_cn'^2> / <N_cn>^2 [-]
 
 !$omp threadprivate(Ncnp2_on_Ncnm2)
-
-  ! Latin hypercube indices / Correlation array indices
-  integer, public :: &
-    iiPDF_chi = -1, &
-    iiPDF_eta = -1, &
-    iiPDF_w   = -1
-!$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
-
-  integer, public :: &
-   iiPDF_rr = -1, &
-   iiPDF_rs = -1, &
-   iiPDF_ri = -1, &
-   iiPDF_rg = -1
-!$omp threadprivate(iiPDF_rr, iiPDF_rs, iiPDF_ri, iiPDF_rg)
-
-  integer, public :: &
-   iiPDF_Nr  = -1, &
-   iiPDF_Ns  = -1, &
-   iiPDF_Ni  = -1, &
-   iiPDF_Ng  = -1, &
-   iiPDF_Ncn = -1
-!$omp threadprivate(iiPDF_Nr, iiPDF_Ns, iiPDF_Ni, iiPDF_Ng, iiPDF_Ncn)
 
   integer, parameter, public :: &
     d_var_total = 12 ! Size of the default correlation arrays

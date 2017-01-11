@@ -1823,19 +1823,17 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use hydromet_pdf_parameter_module, only: &
-        hydromet_pdf_parameter  ! Variable(s)
-
-    use corr_varnce_module, only: &
-        iiPDF_w,        & ! Variable(s)
-        iiPDF_chi, &
-        iiPDF_eta, &
-        iiPDF_rr,    &
-        iiPDF_Nr,       &
-        iiPDF_Ncn
+        hydromet_pdf_parameter  ! Variable(s)      
 
     use array_index, only: &
-        iirrm, & ! Variable(s)
-        iiNrm
+        iirrm,     & ! Variable(s)
+        iiNrm,     & 
+        iiPDF_w,   & 
+        iiPDF_chi, &
+        iiPDF_eta, &
+        iiPDF_rr,  &
+        iiPDF_Nr,  &
+        iiPDF_Ncn
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)

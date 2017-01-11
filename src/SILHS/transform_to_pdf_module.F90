@@ -31,7 +31,7 @@ module transform_to_pdf_module
 !     p. 4010--4026, Larson, et al. 2005
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, & ! Variable(s)
       iiPDF_eta, &
       iiPDF_w
@@ -177,7 +177,7 @@ module transform_to_pdf_module
     use constants_clubb, only: &
       zero           ! Constant
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_Ncn      ! Variable
 
     implicit none

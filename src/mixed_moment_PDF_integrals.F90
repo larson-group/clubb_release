@@ -59,15 +59,13 @@ module mixed_moment_PDF_integrals
         calc_corr_thl_x
 
     use array_index, only: &
-        hydromet_tol   ! Variable(s)
-
-    use parameters_model, only: &
-        hydromet_dim   ! Variable(s)
-
-    use corr_varnce_module, only: &
+        hydromet_tol, &   ! Variable(s)
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w
+
+    use parameters_model, only: &
+        hydromet_dim   ! Variable(s)       
 
     use stats_type_utilities, only: &
         stat_update_var    ! Procedure(s)

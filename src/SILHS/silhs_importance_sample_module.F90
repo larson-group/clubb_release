@@ -2055,7 +2055,7 @@ module silhs_importance_sample_module
     use constants_clubb, only: &
       zero     ! Constant(s)
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, &
       iiPDF_rr
 

@@ -87,7 +87,10 @@ module setup_clubb_pdf_params
 
     use array_index, only: &
         hydromet_list, &       ! Variable(s)
-        hydromet_tol
+        hydromet_tol,  &
+        iiPDF_Ncn,     & 
+        iiPDF_chi,     &
+        iiPDF_eta
 
     use model_flags, only: &
         l_const_Nc_in_cloud    ! Flag(s)
@@ -149,10 +152,7 @@ module setup_clubb_pdf_params
 
     use corr_varnce_module, only: &
         assert_corr_symmetric, & ! Procedure(s)
-        iiPDF_Ncn,             & ! Variable(s)
-        iiPDF_chi,             &
-        iiPDF_eta,             &
-        hmp2_ip_on_hmm2_ip,    &
+        hmp2_ip_on_hmm2_ip,    & ! Variable(s)
         Ncnp2_on_Ncnm2
 
     use error_code, only : &
@@ -740,7 +740,11 @@ module setup_clubb_pdf_params
         zero
 
     use array_index, only: &
-        hydromet_tol
+        hydromet_tol, &
+        iiPDF_chi,    & 
+        iiPDF_eta,    &
+        iiPDF_w,      &
+        iiPDF_Ncn
 
     use model_flags, only: &
         l_const_Nc_in_cloud ! Variable(s)
@@ -756,11 +760,7 @@ module setup_clubb_pdf_params
         zeta_vrnce_rat
 
     use corr_varnce_module, only: &
-        iiPDF_chi,          & ! Variable(s)
-        iiPDF_eta,          &
-        iiPDF_w,            &
-        iiPDF_Ncn,          &
-        hmp2_ip_on_hmm2_ip, &
+        hmp2_ip_on_hmm2_ip, & ! Variable(s)
         Ncnp2_on_Ncnm2
 
     use parameters_model, only: &
@@ -992,13 +992,11 @@ module setup_clubb_pdf_params
     use pdf_parameter_module, only: &
         pdf_parameter  ! Variable(s) type
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
-        iiPDF_w,        &
-        iiPDF_Ncn
-
-    use array_index, only: &
+        iiPDF_w,   &
+        iiPDF_Ncn, &
         hydromet_tol
 
     implicit none
@@ -2467,10 +2465,8 @@ module setup_clubb_pdf_params
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
 
-    use corr_varnce_module, only: &
-        iiPDF_Ncn  ! Variable(s)
-
     use array_index, only: &
+        iiPDF_Ncn, &  ! Variable(s)
         hydromet_tol  ! Variable(s)
 
     use parameters_model, only: &
@@ -2666,7 +2662,7 @@ module setup_clubb_pdf_params
         corr_NN2NL, & ! Procedure(s)
         corr_NN2LL
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
         iiPDF_chi, & ! Variable(s)
         iiPDF_eta, &
         iiPDF_w,   &
@@ -3057,7 +3053,7 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
@@ -3444,7 +3440,7 @@ module setup_clubb_pdf_params
     use index_mapping, only: &
         pdf2hydromet_idx  ! Procedure(s)
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &
@@ -3790,7 +3786,7 @@ module setup_clubb_pdf_params
     use parameters_model, only: &
         hydromet_dim  ! Variable(s)
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
         iiPDF_w,   & ! Variable(s)
         iiPDF_chi, &
         iiPDF_eta, &

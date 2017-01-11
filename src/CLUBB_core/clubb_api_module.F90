@@ -35,6 +35,17 @@ module clubb_api_module
     iirim, & ! Hydrometeor array index for ice mixing ratio, ri
     iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
     iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
+    iiPDF_chi, &
+    iiPDF_rr,  &
+    iiPDF_w,   &
+    iiPDF_Nr,  &
+    iiPDF_ri,  &
+    iiPDF_Ni,  &
+    iiPDF_Ncn, &
+    iiPDF_rs,  &
+    iiPDF_Ns,  &
+    iiPDF_rg,  &
+    iiPDF_Ng,  &
     iisclr_rt, &
     iisclr_thl, &
     iisclr_CO2, &
@@ -94,17 +105,6 @@ module clubb_api_module
       corr_array_n_cloud, & ! Variable(s)
       corr_array_n_below, &
       d_variables,        &
-      iiPDF_chi,          &
-      iiPDF_rr,           &
-      iiPDF_w,            &
-      iiPDF_Nr,           &
-      iiPDF_ri,           &
-      iiPDF_Ni,           &
-      iiPDF_Ncn,          &
-      iiPDF_rs,           &
-      iiPDF_Ns,           &
-      iiPDF_rg,           &
-      iiPDF_Ng,           &
       hmp2_ip_on_hmm2_ip, &
       Ncnp2_on_Ncnm2,     &
       hmp2_ip_on_hmm2_ip_ratios_type

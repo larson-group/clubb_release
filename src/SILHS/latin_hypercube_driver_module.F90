@@ -55,7 +55,7 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi    ! Variables
 
     use transform_to_pdf_module, only: &
@@ -343,7 +343,7 @@ module latin_hypercube_driver_module
     use latin_hypercube_arrays, only: &
       one_height_time_matrix      ! Variable
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi                   ! Variable
 
     implicit none
@@ -475,7 +475,7 @@ module latin_hypercube_driver_module
     use grid_class, only: &
       gr             ! Variable
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi      ! Variable
 
     use parameters_silhs, only: &
@@ -699,7 +699,7 @@ module latin_hypercube_driver_module
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, &  ! Variable(s)
       iiPDF_eta, &
       iiPDF_Ncn
@@ -1136,7 +1136,7 @@ module latin_hypercube_driver_module
                stats_zt, time_initial, num_samples )
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, & ! Variables
       iiPDF_eta, &
       iiPDF_w, &
@@ -1699,19 +1699,17 @@ module latin_hypercube_driver_module
       stat_update_var_pt
 
     use array_index, only: &
-      iirrm, & ! Variables
+      iirrm, & ! Variables(s)
       iirsm, & 
       iirim, & 
       iirgm, & 
       iiNrm, &
       iiNsm, &
       iiNim, &
-      iiNgm
-
-    use corr_varnce_module, only: &
-      iiPDF_chi, & ! Variable(s)
+      iiNgm, &
+      iiPDF_chi, &
       iiPDF_eta, &
-      iiPDF_w, &
+      iiPDF_w,   &
       iiPDF_Ncn
 
     use constants_clubb, only: &
@@ -2270,9 +2268,7 @@ module latin_hypercube_driver_module
       iiNrm, &
       iiNsm, &
       iiNim, &
-      iiNgm
-
-    use corr_varnce_module, only: &
+      iiNgm, &
       iiPDF_rr, &
       iiPDF_rs, &
       iiPDF_ri, &

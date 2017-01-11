@@ -435,8 +435,10 @@ subroutine mmicro_pcond ( sub_column,           &
    use corr_varnce_module, only: &
        d_variables, &
        corr_array_n_cloud, &
-       corr_array_n_below, &
-       iiPDF_chi, &
+       corr_array_n_below
+
+   use array_index, only: & 
+       iiPDF_chi, & ! Variable(s)
        iiPDF_eta, &
        iiPDF_w, &
        iiPDF_Ncn, &

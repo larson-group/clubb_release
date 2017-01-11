@@ -39,7 +39,8 @@ module silhs_category_variance_module
       irrm_mc_nonadj
 
     use array_index, only: &
-      iirrm
+      iirrm, &
+      iiPDF_chi
 
     use pdf_parameter_module, only: &
       pdf_parameter     ! Type
@@ -47,8 +48,6 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter
 
-    use corr_varnce_module, only: &
-      iiPDF_chi
 
     implicit none
 

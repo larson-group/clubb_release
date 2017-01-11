@@ -57,6 +57,28 @@ module array_index
 
 !$omp threadprivate( hydromet_tol )   
 
+  ! Latin hypercube indices / Correlation array indices
+  integer, public :: &
+    iiPDF_chi = -1, &
+    iiPDF_eta = -1, &
+    iiPDF_w   = -1
+!$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
+
+  integer, public :: &
+   iiPDF_rr = -1, &
+   iiPDF_rs = -1, &
+   iiPDF_ri = -1, &
+   iiPDF_rg = -1
+!$omp threadprivate(iiPDF_rr, iiPDF_rs, iiPDF_ri, iiPDF_rg)
+
+  integer, public :: &
+   iiPDF_Nr  = -1, &
+   iiPDF_Ns  = -1, &
+   iiPDF_Ni  = -1, &
+   iiPDF_Ng  = -1, &
+   iiPDF_Ncn = -1
+!$omp threadprivate(iiPDF_Nr, iiPDF_Ns, iiPDF_Ni, iiPDF_Ng, iiPDF_Ncn)
+
   private ! Default Scope
 
 !===============================================================================
