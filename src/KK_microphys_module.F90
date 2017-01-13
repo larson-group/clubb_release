@@ -389,7 +389,7 @@ module KK_microphys_module
   end subroutine KK_local_microphys
 
   !=============================================================================
-  subroutine KK_upscaled_microphys( dt, nz, d_variables, l_stats_samp, & ! In
+  subroutine KK_upscaled_microphys( dt, nz, pdf_dim, l_stats_samp, & ! In
                                     wm_zt, rtm, thlm, p_in_Pa,         & ! In
                                     exner, rho, rcm,                   & ! In
                                     pdf_params, hydromet_pdf_params,   & ! In
@@ -504,7 +504,7 @@ module KK_microphys_module
 
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
-      d_variables    ! Number of variables in the correlation arrays
+      pdf_dim   ! Number of variables in the correlation arrays
 
     logical, intent(in) :: &
       l_stats_samp    ! Flag to sample statistics
@@ -527,13 +527,13 @@ module KK_microphys_module
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &
       hydromet       ! Hydrometeor mean, < h_m > (thermodynamic levels)  [units]
 
-    real( kind = core_rknd ), dimension(d_variables, nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]
@@ -732,7 +732,7 @@ module KK_microphys_module
 
 
        !!! Unpack the PDF parameters.
-       call unpack_pdf_params_KK( d_variables, mu_x_1_n(:,k), mu_x_2_n(:,k), &
+       call unpack_pdf_params_KK( pdf_dim, mu_x_1_n(:,k), mu_x_2_n(:,k), &
                                   sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
                                   corr_array_1_n(:,:,k), &
                                   corr_array_2_n(:,:,k), &
@@ -1786,7 +1786,7 @@ module KK_microphys_module
   end subroutine KK_microphys_output
 
   !=============================================================================
-  subroutine unpack_pdf_params_KK( d_variables, mu_x_1_n, mu_x_2_n, &
+  subroutine unpack_pdf_params_KK( pdf_dim, mu_x_1_n, mu_x_2_n, &
                                    sigma_x_1_n, sigma_x_2_n, &
                                    corr_array_1_n, &
                                    corr_array_2_n, &
@@ -1842,15 +1842,15 @@ module KK_microphys_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array.
+      pdf_dim   ! Number of variables in the correlation array.
 
-    real( kind = core_rknd ), dimension(d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim), intent(in) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
     intent(in) :: &
       corr_array_1_n, & ! Corr. array (normal space) of PDF vars. (comp. 1)  [-]
       corr_array_2_n    ! Corr. array (normal space) of PDF vars. (comp. 2)  [-]

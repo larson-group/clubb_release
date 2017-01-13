@@ -195,7 +195,7 @@ module microphys_init_cleanup
         hmp2_ip_on_hmm2_ip_ratios_type, & ! Type(s)
         hmp2_ip_on_hmm2_ip,             & ! Variable(s)
         Ncnp2_on_Ncnm2,                 &
-        d_variables,                    &
+        pdf_dim,                    &
         corr_array_n_cloud,             &
         corr_array_n_below,             &
         setup_pdf_indices,              & ! Procedure(s)
@@ -957,16 +957,16 @@ module microphys_init_cleanup
          .and. trim( microphys_scheme ) /= "none" ) then
 
        ! Allocate variables.
-       allocate( sigma2_on_mu2_ip_cloud(d_variables) )
-       allocate( sigma2_on_mu2_ip_below(d_variables) )
-       allocate( sigma_x_n_cloud(d_variables) )
-       allocate( sigma_x_n_below(d_variables) )
-       allocate( corr_array_cloud(d_variables,d_variables) )
-       allocate( corr_array_below(d_variables,d_variables) )
+       allocate( sigma2_on_mu2_ip_cloud(pdf_dim) )
+       allocate( sigma2_on_mu2_ip_below(pdf_dim) )
+       allocate( sigma_x_n_cloud(pdf_dim) )
+       allocate( sigma_x_n_below(pdf_dim) )
+       allocate( corr_array_cloud(pdf_dim,pdf_dim) )
+       allocate( corr_array_below(pdf_dim,pdf_dim) )
 
        ! Initialize variables.
-       sigma2_on_mu2_ip_cloud(d_variables) = zero
-       sigma2_on_mu2_ip_below(d_variables) = zero
+       sigma2_on_mu2_ip_cloud(pdf_dim) = zero
+       sigma2_on_mu2_ip_below(pdf_dim) = zero
        sigma_x_n_cloud = zero
        sigma_x_n_below = zero
        corr_array_cloud = zero
@@ -986,7 +986,7 @@ module microphys_init_cleanup
        sigma_x_n_below(iiPDF_Ncn) = sigma_x_n_cloud(iiPDF_Ncn)
 
        ! Loop over all hydrometeors.
-       do ivar = iiPDF_Ncn+1, d_variables, 1
+       do ivar = iiPDF_Ncn+1, pdf_dim, 1
           ! Hydrometeor sigma_hm_i^2/mu_hm_i^2
           sigma2_on_mu2_ip_cloud(ivar) &
           = omicron * hmp2_ip_on_hmm2_ip(pdf2hydromet_idx(ivar))
@@ -997,7 +997,7 @@ module microphys_init_cleanup
        enddo ! i = 1, hydromet_dim, 1
 
        ! Calculate the correlations given the normal space correlations.
-       call denorm_transform_corr( d_variables, &
+       call denorm_transform_corr( pdf_dim, &
                                    sigma_x_n_cloud, sigma_x_n_below, &
                                    sigma2_on_mu2_ip_cloud, &
                                    sigma2_on_mu2_ip_below, &
@@ -1005,19 +1005,19 @@ module microphys_init_cleanup
                                    corr_array_n_below, &
                                    corr_array_cloud, corr_array_below )
 
-       call mirror_lower_triangular_matrix( d_variables, corr_array_cloud(:,:) )
-       call mirror_lower_triangular_matrix( d_variables, corr_array_below(:,:) )
+       call mirror_lower_triangular_matrix( pdf_dim, corr_array_cloud(:,:) )
+       call mirror_lower_triangular_matrix( pdf_dim, corr_array_below(:,:) )
 
        ! Print the correlation arrays to the screen.
        write(fstdout,'(1x,A)') "Correlation array (approximate); in cloud:"
-       do ivar = 1, d_variables, 1
+       do ivar = 1, pdf_dim, 1
           write(fstdout,'(12F7.3)') corr_array_cloud(ivar,:)
-       enddo ! ivar = 1, d_variables, 1
+       enddo ! ivar = 1, pdf_dim, 1
 
        write(fstdout,'(1x,A)') "Correlation array (approximate); below cloud:"
-       do ivar = 1, d_variables, 1
+       do ivar = 1, pdf_dim, 1
           write(fstdout,'(12F7.3)') corr_array_below(ivar,:)
-       enddo ! ivar = 1, d_variables, 1
+       enddo ! ivar = 1, pdf_dim, 1
 
        ! This will open the cases setup.txt file and append it to include the
        ! parameters in the microphysics_setting namelist. This file was created
@@ -1028,14 +1028,14 @@ module microphys_init_cleanup
                 position='append' )
 
           write(iunit,'(1x,A)') "Correlation array (approximate); in cloud:"
-          do ivar = 1, d_variables, 1
+          do ivar = 1, pdf_dim, 1
              write(iunit,'(12F7.3)') corr_array_cloud(ivar,:)
-          enddo ! ivar = 1, d_variables, 1
+          enddo ! ivar = 1, pdf_dim, 1
 
           write(iunit,'(1x,A)') "Correlation array (approximate); below cloud:"
-          do ivar = 1, d_variables, 1
+          do ivar = 1, pdf_dim, 1
              write(iunit,'(12F7.3)') corr_array_below(ivar,:)
-          enddo ! ivar = 1, d_variables, 1
+          enddo ! ivar = 1, pdf_dim, 1
 
           close( unit=iunit )
 

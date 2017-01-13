@@ -110,7 +110,7 @@ contains
   !================================================================================================
 
   subroutine lh_subcolumn_generator_api( &
-    iter, d_variables, num_samples, sequence_length, nz, & ! In
+    iter, pdf_dim, num_samples, sequence_length, nz, & ! In
     pdf_params, delta_zm, rcm, Lscale, & ! In
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -134,7 +134,7 @@ contains
     ! Input Variables
     integer, intent(in) :: &
       iter,            & ! Model iteration number
-      d_variables,     & ! Number of variables to sample
+      pdf_dim,     & ! Number of variables to sample
       num_samples,     & ! Number of samples per variable
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
       nz                 ! Number of vertical model levels
@@ -153,7 +153,7 @@ contains
       Lscale       ! Turbulent Mixing Length  [m]
 
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(out), dimension(nz,num_samples) :: &
@@ -163,11 +163,11 @@ contains
       lh_sample_point_weights
 
     ! More Input Variables!
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
-    real( kind = core_rknd ), dimension(d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
       mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
       mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
@@ -177,7 +177,7 @@ contains
       hydromet_pdf_params
 
     call lh_subcolumn_generator( &
-      iter, d_variables, num_samples, sequence_length, nz, & ! In
+      iter, pdf_dim, num_samples, sequence_length, nz, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -192,7 +192,7 @@ contains
   !================================================================================================
 
   subroutine stats_accumulate_lh_api( &
-    nz, num_samples, d_variables, rho_ds_zt, &
+    nz, num_samples, pdf_dim, rho_ds_zt, &
     lh_sample_point_weights, X_nl_all_levs, &
     lh_clipped_vars )
 
@@ -205,7 +205,7 @@ contains
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables,     & ! Number of variables to sample
+      pdf_dim,     & ! Number of variables to sample
       num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
       nz                 ! Number of vertical model levels
 
@@ -215,14 +215,14 @@ contains
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     type(lh_clipped_variables_type), intent(in), dimension(nz,num_samples) :: &
       lh_clipped_vars
 
     call stats_accumulate_lh( &
-      nz, num_samples, d_variables, rho_ds_zt, &
+      nz, num_samples, pdf_dim, rho_ds_zt, &
       lh_sample_point_weights, X_nl_all_levs, &
       lh_clipped_vars )
 
@@ -233,7 +233,7 @@ contains
   !================================================================================================
 
   subroutine est_kessler_microphys_api( &
-    nz, num_samples, d_variables, &
+    nz, num_samples, pdf_dim, &
     X_nl_all_levs, pdf_params, rcm, cloud_frac, &
     X_mixt_comp_all_levs, lh_sample_point_weights, &
     lh_AKm, AKm, AKstd, AKstd_cld, &
@@ -254,9 +254,9 @@ contains
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
       num_samples, & ! Number of sample points
-      d_variables    ! Number of variates
+      pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -287,7 +287,7 @@ contains
       lh_rcm_avg ! lh estimate of grid box avg liquid water [kg/kg]
 
     call est_kessler_microphys( &
-      nz, num_samples, d_variables, &
+      nz, num_samples, pdf_dim, &
       X_nl_all_levs, pdf_params, rcm, cloud_frac, &
       X_mixt_comp_all_levs, lh_sample_point_weights, &
       lh_AKm, AKm, AKstd, AKstd_cld, &
@@ -299,7 +299,7 @@ contains
   ! clip_transform_silhs_output - Computes extra SILHS sample variables, such as rt and thl.
   !================================================================================================
 
-  subroutine clip_transform_silhs_output_api( nz, num_samples, d_variables, &        ! In
+  subroutine clip_transform_silhs_output_api( nz, num_samples, pdf_dim, &        ! In
                                               X_mixt_comp_all_levs, X_nl_all_levs, & ! In
                                               pdf_params, l_use_Ncn_to_Nc, &         ! In
                                               lh_clipped_vars )                      ! Out
@@ -320,12 +320,12 @@ contains
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
-      d_variables            ! Number of variates in X_nl_one_lev
+      pdf_dim           ! Number of variates in X_nl_one_lev
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -335,7 +335,7 @@ contains
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(out) :: &
       lh_clipped_vars        ! SILHS clipped and transformed variables
 
-    call clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
+    call clip_transform_silhs_output( nz, num_samples, pdf_dim, &         ! In
                                       X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
                                       pdf_params, l_use_Ncn_to_Nc, &          ! In
                                       lh_clipped_vars )                       ! Out

@@ -13,7 +13,7 @@ module estimate_scm_microphys_module
 
 !-------------------------------------------------------------------------------
   subroutine est_single_column_tndcy &
-             ( dt, nz, num_samples, d_variables, &
+             ( dt, nz, num_samples, pdf_dim, &
                X_nl_all_levs, X_mixt_comp_all_levs, lh_sample_point_weights, &
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, &
                dzq, hydromet, rcm, &
@@ -117,9 +117,9 @@ module estimate_scm_microphys_module
     integer, intent(in) :: &
       nz,            & ! Number of vertical levels
       num_samples,   & ! Number of calls to microphysics
-      d_variables      ! Number of variates
+      pdf_dim     ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs    ! Sample that is transformed ultimately to normal-lognormal
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -218,7 +218,7 @@ module estimate_scm_microphys_module
     chi_all_points = real( X_nl_all_levs(:,:,iiPDF_chi), kind=core_rknd )
 
     call copy_X_nl_into_hydromet_all_pts &
-         ( nz, d_variables, num_samples, & ! Intent(in)
+         ( nz, pdf_dim, num_samples, & ! Intent(in)
            X_nl_all_levs,                & ! Intent(in)
            hydromet,                     & ! Intent(in)
            hydromet_all_points,          & ! Intent(out)
@@ -336,7 +336,7 @@ module estimate_scm_microphys_module
 
         if( isilhs_variance_category(1) > 0 ) then
           call silhs_category_variance_driver &
-               ( nz, num_samples, d_variables, hydromet_dim, X_nl_all_levs, & ! Intent(in)
+               ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, & ! Intent(in)
                  X_mixt_comp_all_levs, microphys_stats_zt_all,              & ! Intent(in)
                  lh_hydromet_mc_all, lh_sample_point_weights, pdf_params,   & ! Intent(in)
                  hydromet_pdf_params )                                        ! Intent(in)

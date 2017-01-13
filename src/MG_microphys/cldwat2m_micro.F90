@@ -433,7 +433,7 @@ subroutine mmicro_pcond ( sub_column,           &
        core_rknd  ! Variable(s)
 
    use corr_varnce_module, only: &
-       d_variables, &
+       pdf_dim, &
        corr_array_n_cloud, &
        corr_array_n_below
 
@@ -957,7 +957,7 @@ subroutine mmicro_pcond ( sub_column,           &
       hm2,            &
       wphydrometp_zt
 
-    real ( kind = core_rknd ), dimension( d_variables ) :: &
+    real ( kind = core_rknd ), dimension( pdf_dim) :: &
       mu_x_1,             &
       mu_x_2,             &
       sigma_x_1,          &
@@ -965,13 +965,13 @@ subroutine mmicro_pcond ( sub_column,           &
       sigma2_on_mu2_ip_1, &
       sigma2_on_mu2_ip_2
 
-    real ( kind = core_rknd ), dimension( d_variables ) :: &
+    real ( kind = core_rknd ), dimension( pdf_dim) :: &
       mu_x_1_n,    &
       mu_x_2_n,    &
       sigma_x_1_n, &
       sigma_x_2_n
 
-    real ( kind = core_rknd ), dimension( d_variables, d_variables ) :: &
+    real ( kind = core_rknd ), dimension( pdf_dim, pdf_dim) :: &
       corr_array_1, &
       corr_array_2, &
       corr_array_1_n, &
@@ -1825,7 +1825,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
                                           precip_frac_tol,                    & ! Intent(in)
-                                          pdf_params(k), d_variables,         & ! Intent(in)
+                                          pdf_params(k), pdf_dim,         & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)
                                           hm1, hm2,                           & ! Intent(out)
@@ -1834,7 +1834,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  call norm_transform_mean_stdev( hm1, hm2, &
                                                  real(nc(i,k),kind=core_rknd), &
-                                                 d_variables, &
+                                                 pdf_dim, &
                                                  mu_x_1, mu_x_2, &
                                                  sigma_x_1, sigma_x_2, &
                                                  sigma2_on_mu2_ip_1, &
@@ -1852,7 +1852,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
-                                      pdf_params(k), d_variables, & ! Intent(in)
+                                      pdf_params(k), pdf_dim, & ! Intent(in)
                                       corr_array_1_n, corr_array_2_n ) ! Intent(out)
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.
@@ -2374,7 +2374,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                           mixt_frac, one,                     & ! Intent(in)
                                           one, one,                           & ! Intent(in)
                                           precip_frac_tol,                    & ! Intent(in)
-                                          pdf_params(k), d_variables,         & ! Intent(in)
+                                          pdf_params(k), pdf_dim,         & ! Intent(in)
                                           mu_x_1, mu_x_2,                     & ! Intent(out)
                                           sigma_x_1, sigma_x_2,               & ! Intent(out)
                                           hm1, hm2,                           & ! Intent(out)
@@ -2383,7 +2383,7 @@ subroutine mmicro_pcond ( sub_column,           &
 
                  call norm_transform_mean_stdev( hm1, hm2, &
                                                  real(nc(i,k),kind=core_rknd), &
-                                                 d_variables, &
+                                                 pdf_dim, &
                                                  mu_x_1, mu_x_2, &
                                                  sigma_x_1, sigma_x_2, &
                                                  sigma2_on_mu2_ip_1, &
@@ -2401,7 +2401,7 @@ subroutine mmicro_pcond ( sub_column,           &
                                       mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, & ! Intent(in)
                                       sigma_x_1_n, sigma_x_2_n, & ! Intent(in)
                                       corr_array_n_cloud, corr_array_n_below, & ! Intent(in)
-                                      pdf_params(k), d_variables, & ! Intent(in)
+                                      pdf_params(k), pdf_dim, & ! Intent(in)
                                       corr_array_1_n, corr_array_2_n ) ! Intent(out)
 
                  ! Unpack mu_x_i and sigma_x_i into Means and Standard Deviations.

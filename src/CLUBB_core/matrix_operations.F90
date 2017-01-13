@@ -409,7 +409,7 @@ module matrix_operations
     return
   end subroutine Symm_matrix_eigenvalues
 !-------------------------------------------------------------------------------
-  subroutine set_lower_triangular_matrix( d_variables, index1, index2, xpyp, &
+  subroutine set_lower_triangular_matrix( pdf_dim, index1, index2, xpyp, &
                                           matrix )
 ! Description:
 !   Set a value for the lower triangular portion of a matrix.
@@ -427,14 +427,14 @@ module matrix_operations
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! Number of variates
+      pdf_dim, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     real( kind = core_rknd ), intent(in) :: &
       xpyp ! Value for the matrix (usually a correlation or covariance) [units vary]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(inout) :: &
       matrix ! The lower triangular matrix
 
     integer :: i,j
@@ -454,7 +454,7 @@ module matrix_operations
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine get_lower_triangular_matrix( d_variables, index1, index2, matrix, &
+  subroutine get_lower_triangular_matrix( pdf_dim, index1, index2, matrix, &
                                           xpyp )
 ! Description:
 !   Returns a value from the lower triangular portion of a matrix.
@@ -472,11 +472,11 @@ module matrix_operations
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! Number of variates
+      pdf_dim, & ! Number of variates
       index1, index2 ! Indices for 2 variates (the order doesn't matter)
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
       matrix ! The covariance matrix
 
     real( kind = core_rknd ), intent(out) :: &

@@ -2037,7 +2037,7 @@ module silhs_importance_sample_module
 !----------------------------------------------------------------------
 
   !-----------------------------------------------------------------------
-  function determine_sample_categories( num_samples, d_variables, X_nl_one_lev, &
+  function determine_sample_categories( num_samples, pdf_dim, X_nl_one_lev, &
                                         X_mixt_comp_one_lev, importance_categories ) &
   result( int_sample_category )
 
@@ -2064,9 +2064,9 @@ module silhs_importance_sample_module
     ! Input Variables
     integer, intent(in) :: &
       num_samples, &        ! Number of SILHS sample points
-      d_variables           ! Number of variates in X_nl
+      pdf_dim          ! Number of variates in X_nl
 
-    real( kind = core_rknd ), dimension(num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(num_samples,pdf_dim), intent(in) :: &
       X_nl_one_lev          ! SILHS sample vector at one height level
 
     integer, dimension(num_samples), intent(in) :: &

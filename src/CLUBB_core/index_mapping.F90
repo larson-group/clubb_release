@@ -21,9 +21,9 @@ module index_mapping
   ! Included indices:  
   ! iiPDF_chi, iiPDF_eta, iiPDF_w, iiPDF_Ncn, iiPDF_rr, & all other hydrometeors
   ! 
-  ! Number of indices:  d_variables
+  ! Number of indices:  pdf_dim
   ! 
-  ! Examples of arrays dimensioned by d_variables:
+  ! Examples of arrays dimensioned by pdf_dim:
   ! mu_x_1_n, corr_array_n_cloud, . . .
   ! 
   ! Declared as module variables in module array_index

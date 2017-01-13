@@ -189,7 +189,7 @@ module microphys_driver
         core_rknd
 
     use corr_varnce_module, only: &
-        d_variables ! Variable(s)
+        pdf_dim! Variable(s)
 
     use microphys_stats_vars_module, only: &
         microphys_stats_vars_type,  & ! Type
@@ -237,7 +237,7 @@ module microphys_driver
     type(hydromet_pdf_parameter), dimension(gr%nz), intent(in) :: &
       hydromet_pdf_params     ! PDF parameters
 
-    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,d_variables), &
+    real( kind = core_rknd ), dimension(gr%nz,lh_num_samples,pdf_dim), &
     intent(in) :: &
       X_nl_all_levs ! Normally and lognormally distributed hydrometeors and other variables
 
@@ -450,7 +450,7 @@ module microphys_driver
       if ( lh_microphys_type /= lh_microphys_disabled ) then
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In
@@ -555,7 +555,7 @@ module microphys_driver
 
 #ifdef SILHS
         call lh_microphys_driver &
-             ( dt, gr%nz, lh_num_samples, d_variables, & ! In
+             ( dt, gr%nz, lh_num_samples, pdf_dim, & ! In
                X_nl_all_levs, lh_sample_point_weights, & ! In
                pdf_params, hydromet_pdf_params, p_in_Pa, exner, rho, & ! In
                rcm, delta_zt, cloud_frac, & ! In

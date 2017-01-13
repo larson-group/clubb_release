@@ -121,7 +121,7 @@ module output_2D_samples_module
 
 !-------------------------------------------------------------------------------
   subroutine output_2D_lognormal_dist_file &
-             ( nz, num_samples, d_variables, X_nl_all_levs )
+             ( nz, num_samples, pdf_dim, X_nl_all_levs )
 ! Description:
 !   Output a 2D snapshot of latin hypercube samples
 ! References:
@@ -139,21 +139,21 @@ module output_2D_samples_module
     integer, intent(in) :: &
       nz,          & ! Number of vertical levels
       num_samples, & ! Number of samples per variable
-      d_variables    ! Number variates being sampled
+      pdf_dim   ! Number variates being sampled
 
-    real(kind=stat_rknd), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real(kind=stat_rknd), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer :: sample, j
 
     ! ---- Begin Code ----
 
-    do j = 1, d_variables
+    do j = 1, pdf_dim
       allocate( lognormal_sample_file%var(j)%ptr(num_samples,1,nz) )
     end do
 
     do sample = 1, num_samples
-      do j = 1, d_variables
+      do j = 1, pdf_dim
         lognormal_sample_file%var(j)%ptr(sample,1,1:nz) = X_nl_all_levs(1:nz,sample,j)
       end do
     end do
@@ -164,7 +164,7 @@ module output_2D_samples_module
     stop "This version of CLUBB was not compiled for netCDF output"
 #endif
 
-    do j = 1, d_variables
+    do j = 1, pdf_dim
       deallocate( lognormal_sample_file%var(j)%ptr )
     end do
 

@@ -104,7 +104,7 @@ module clubb_api_module
   use corr_varnce_module, only : &
       corr_array_n_cloud, & ! Variable(s)
       corr_array_n_below, &
-      d_variables,        &
+      pdf_dim,        &
       hmp2_ip_on_hmm2_ip, &
       Ncnp2_on_Ncnm2,     &
       hmp2_ip_on_hmm2_ip_ratios_type
@@ -306,7 +306,7 @@ module clubb_api_module
     ! To use the results, you will need these variables:
     corr_array_n_cloud, &
     corr_array_n_below, &
-    d_variables,        &
+    pdf_dim,        &
     iiPDF_chi,          &
     iiPDF_rr,           &
     iiPDF_w,            &
@@ -1536,7 +1536,7 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_parameters_api( &
-    nz, d_variables, dt, &                      ! Intent(in)
+    nz, pdf_dim, dt, &                      ! Intent(in)
     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -1569,7 +1569,7 @@ contains
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
-      d_variables    ! Number of variables in the correlation array
+      pdf_dim   ! Number of variables in the correlation array
 
     real( kind = core_rknd ), intent(in) ::  &
       dt    ! Model timestep                                           [s]
@@ -1584,7 +1584,7 @@ contains
       hydromet,    & ! Mean of hydrometeor, hm (overall) (t-levs.) [units]
       wphydrometp    ! Covariance < w'h_m' > (momentum levels)     [(m/s)units]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
       intent(in) :: &
       corr_array_n_cloud, & ! Prescribed norm. space corr. array in cloud    [-]
       corr_array_n_below    ! Prescribed norm. space corr. array below cloud [-]
@@ -1600,18 +1600,18 @@ contains
       hydrometp2    ! Variance of a hydrometeor (overall) (m-levs.)   [units^2]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables, nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, nz), intent(out) :: &
       mu_x_1_n,    & ! Mean array (normal space): PDF vars. (comp. 1) [un. vary]
       mu_x_2_n,    & ! Mean array (normal space): PDF vars. (comp. 2) [un. vary]
       sigma_x_1_n, & ! Std. dev. array (normal space): PDF vars (comp. 1) [u.v.]
       sigma_x_2_n    ! Std. dev. array (normal space): PDF vars (comp. 2) [u.v.]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
       intent(out) :: &
       corr_array_1_n, & ! Corr. array (normal space):  PDF vars. (comp. 1)   [-]
       corr_array_2_n    ! Corr. array (normal space):  PDF vars. (comp. 2)   [-]
 
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), &
       intent(out) :: &
       corr_cholesky_mtx_1, & ! Transposed corr. cholesky matrix, 1st comp. [-]
       corr_cholesky_mtx_2    ! Transposed corr. cholesky matrix, 2nd comp. [-]
@@ -1620,7 +1620,7 @@ contains
       hydromet_pdf_params    ! Hydrometeor PDF parameters        [units vary]
 
     call setup_pdf_parameters( &
-      nz, d_variables, dt, &                      ! Intent(in)
+      nz, pdf_dim, dt, &                      ! Intent(in)
       Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
       ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
       corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)

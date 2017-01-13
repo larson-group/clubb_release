@@ -17,7 +17,7 @@ module est_kessler_microphys_module
 !------------------------------------------------------------------------
 
   subroutine est_kessler_microphys &
-             ( nz, num_samples, d_variables, &
+             ( nz, num_samples, pdf_dim, &
                X_nl_all_levs, pdf_params, rcm, cloud_frac, &
                X_mixt_comp_all_levs, lh_sample_point_weights, &
                lh_AKm, AKm, AKstd, AKstd_cld, &
@@ -52,9 +52,9 @@ module est_kessler_microphys_module
     integer, intent(in) :: &
       nz, &          ! Number of vertical levels
       num_samples, & ! Number of sample points
-      d_variables    ! Number of variates
+      pdf_dim   ! Number of variates
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
@@ -373,7 +373,7 @@ module est_kessler_microphys_module
 !          print*, 'fraction_1= ', fraction_1
 
 ! V. Larson change to try to fix sampling
-!          if ( in_mixt_frac_1( X_u_one_lev(sample,d_variables+1), fraction_1 ) ) then
+!          if ( in_mixt_frac_1( X_u_one_lev(sample,pdf_dim+1), fraction_1 ) ) then
 !          print*, '-1+2*int((sample+1)/2)= ', -1+2*int((sample+1)/2)
 !          print*, '-1+2*int((sample+1)/2)= ', int(sample)
       if ( X_mixt_comp_one_lev(sample) == 1 ) then

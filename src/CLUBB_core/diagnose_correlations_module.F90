@@ -21,7 +21,7 @@ module diagnose_correlations_module
   contains 
 
 !-----------------------------------------------------------------------
-  subroutine diagnose_correlations( d_variables, corr_array_pre, & ! Intent(in)
+  subroutine diagnose_correlations( pdf_dim, corr_array_pre, & ! Intent(in)
                                     corr_array )                   ! Intent(out)
     ! Description:
     !   This subroutine diagnoses the correlation matrix in order to feed it
@@ -50,22 +50,22 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables   ! number of diagnosed correlations
+      pdf_dim  ! number of diagnosed correlations
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array_pre   ! Prescribed correlations
 
     ! Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
       corr_array
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim) :: &
       corr_array_pre_swapped, &
       corr_array_swapped
 
     ! We actually don't need this right now
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
       sigma2_on_mu2_ip_array  ! Ratios: sigma_x^2/mu_x^2 (ith PDF comp.) ip [-]
 
     integer :: i ! Loop iterator
@@ -73,12 +73,12 @@ module diagnose_correlations_module
     !-------------------- Begin code --------------------
 
     ! Initialize sigma2_on_mu2_ip_array
-    do i = 1, d_variables
+    do i = 1, pdf_dim
        sigma2_on_mu2_ip_array(i) = zero
     end do 
 
     ! Swap the w-correlations to the first row for the prescribed correlations
-    call rearrange_corr_array( d_variables, corr_array_pre, & ! Intent(in)
+    call rearrange_corr_array( pdf_dim, corr_array_pre, & ! Intent(in)
                                corr_array_pre_swapped)        ! Intent(inout)
 
     ! diagnose correlations
@@ -87,12 +87,12 @@ module diagnose_correlations_module
        corr_array_swapped = corr_array_pre_swapped
     endif
 
-    call diagnose_corr( d_variables, sqrt(sigma2_on_mu2_ip_array), &
+    call diagnose_corr( pdf_dim, sqrt(sigma2_on_mu2_ip_array), &
                         corr_array_pre_swapped, &
                         corr_array_swapped )
 
     ! Swap rows back
-    call rearrange_corr_array( d_variables, corr_array_swapped, & ! Intent(in)
+    call rearrange_corr_array( pdf_dim, corr_array_swapped, & ! Intent(in)
                                corr_array)        ! Intent(out)
 
   end subroutine diagnose_correlations
@@ -205,7 +205,7 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine approx_w_corr( nz, d_variables, pdf_params, & ! Intent(in)
+  subroutine approx_w_corr( nz, pdf_dim, pdf_params, & ! Intent(in)
                             rrm, Nrm, Ncnm, &
                             stdev_w, sigma_rr_1, &
                             sigma_Nr_1, sigma_Ncn_1, &
@@ -235,7 +235,7 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables, & ! Number of diagnosed correlations
+      pdf_dim, & ! Number of diagnosed correlations
       nz             ! Number of model vertical grid levels
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -253,7 +253,7 @@ module diagnose_correlations_module
       sigma_rr_1       ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), intent(out) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), intent(out) :: &
       corr_array
 
     ! Local Variables
@@ -310,7 +310,7 @@ module diagnose_correlations_module
 
     enddo
 
-    call set_w_corr( nz, d_variables, & ! Intent(in)
+    call set_w_corr( nz, pdf_dim, & ! Intent(in)
                          corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
                          corr_array ) ! Intent(inout)
 
@@ -854,7 +854,7 @@ module diagnose_correlations_module
 
 
 !-----------------------------------------------------------------------
-  subroutine rearrange_corr_array( d_variables, corr_array, & ! Intent(in)
+  subroutine rearrange_corr_array( pdf_dim, corr_array, & ! Intent(in)
                                    corr_array_swapped)        ! Intent(out)
     ! Description:
     !   This subroutine swaps the w-correlations to the first row if the input
@@ -878,17 +878,17 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables   ! number of diagnosed correlations
+      pdf_dim  ! number of diagnosed correlations
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array   ! Correlation matrix
 
     ! Output variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(out) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(out) :: &
       corr_array_swapped   ! Swapped correlation matrix
 
     ! Local Variables
-    real( kind = core_rknd ), dimension(d_variables) :: &
+    real( kind = core_rknd ), dimension(pdf_dim) :: &
       swap_array
 
     !-------------------- Begin code --------------------
@@ -898,10 +898,10 @@ module diagnose_correlations_module
     corr_array_swapped = corr_array
     swap_array = corr_array_swapped (:,1)
     corr_array_swapped(1:iiPDF_w, 1) = corr_array_swapped(iiPDF_w, iiPDF_w:1:-1)
-    corr_array_swapped((iiPDF_w+1):d_variables, 1) = corr_array_swapped( &
-                                                    (iiPDF_w+1):d_variables, iiPDF_w)
+    corr_array_swapped((iiPDF_w+1):pdf_dim, 1) = corr_array_swapped( &
+                                                    (iiPDF_w+1):pdf_dim, iiPDF_w)
     corr_array_swapped(iiPDF_w, 1:iiPDF_w) = swap_array(iiPDF_w:1:-1)
-    corr_array_swapped((iiPDF_w+1):d_variables, iiPDF_w) = swap_array((iiPDF_w+1):d_variables)
+    corr_array_swapped((iiPDF_w+1):pdf_dim, iiPDF_w) = swap_array((iiPDF_w+1):pdf_dim)
 
     return
 
@@ -910,7 +910,7 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine set_w_corr( nz, d_variables, & ! Intent(in)
+  subroutine set_w_corr( nz, pdf_dim, & ! Intent(in)
                          corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
                          corr_array ) ! Intent(inout)
 
@@ -936,7 +936,7 @@ module diagnose_correlations_module
     ! Input Variables
     integer, intent(in) :: &
       nz,          & ! Number of model vertical grid levels
-      d_variables    ! Number of Variables to be diagnosed
+      pdf_dim   ! Number of Variables to be diagnosed
 
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       corr_chi_w,       & ! Correlation between chi (s) & w (both components)         [-]
@@ -945,7 +945,7 @@ module diagnose_correlations_module
       corr_wNcn        ! Correlation between Ncn & w (both components)       [-]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(d_variables, d_variables, nz), &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), &
     intent(inout) :: &
       corr_array
 
@@ -959,7 +959,7 @@ module diagnose_correlations_module
   end subroutine set_w_corr
 
   !=============================================================================
-  subroutine unpack_correlations( d_variables, corr_array, & ! Intent(in)
+  subroutine unpack_correlations( pdf_dim, corr_array, & ! Intent(in)
                                   corr_w_chi, corr_wrr, corr_wNr, corr_wNcn, &
                                   corr_chi_eta, corr_chi_rr, corr_chi_Nr, corr_chi_Ncn, &
                                   corr_eta_rr, corr_eta_Nr, corr_eta_Ncn, corr_rrNr )  
@@ -986,9 +986,9 @@ module diagnose_correlations_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables   ! number of diagnosed correlations
+      pdf_dim  ! number of diagnosed correlations
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
       corr_array   ! Prescribed correlations
 
     ! Output variables
