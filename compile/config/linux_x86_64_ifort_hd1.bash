@@ -22,7 +22,7 @@ DEBUG=""
 WARNINGS="-warn -warn notruncated_source"
 
 # == Machine specific options ==
-ARCH="-fp-model precise" # This should work on carson/steele (AMD Opteron)
+ARCH="-fp-model strict" # This should work on carson/steele (AMD Opteron)
 #ARCH="-mssse3 -fp-model precise"# Core2 Duo (overlie)
 
 # == Optimization ==

@@ -37,7 +37,11 @@ ARCH="-march=native -msse3 -mfpmath=sse"
 DOUBLE_PRECISION="-fdefault-real-8"
 
 # == Optimization ==
-OPTIMIZE="-O3"
+# Optimization was decreased from -O3 to -O2 in response to an issue with -O3
+# optimization in version 4.8.5 of gfortran. Please see CAM Trac ticket 87 and
+# Other Trac ticket 459 for more details. When new versions of gfortran become
+# available, the -O3 optimization should be tried again.
+OPTIMIZE="-O2"
 
 # == NetCDF Location ==
 #NETCDF="/usr" # Ubuntu / Fedora
