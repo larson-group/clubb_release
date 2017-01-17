@@ -43,7 +43,7 @@ LAPACK="-lacml"
 # == Linking Flags ==
 LDFLAGS="$ARCH -L$NETCDF/lib -lnetcdf $LAPACK"
 
-FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash"
+FFLAGS="$ARCH $OPTIMIZE $DEBUG -Mbackslash -Kieee"
 
 # Preprocessing Directives:
 #   -DNETCDF enables netCDF output
