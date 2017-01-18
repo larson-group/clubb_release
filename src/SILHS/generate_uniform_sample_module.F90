@@ -134,7 +134,7 @@ module generate_uniform_sample_module
     end if ! First call to the driver
 
     ! Latin hypercube sample generation
-    ! Generate one_height_time_matrix, an nt_repeat x d_variables array of random integers
+    ! Generate one_height_time_matrix, an nt_repeat x pdf_dimarray of random integers
     i_rmd = mod( iter-1, sequence_length )
 
     if ( i_rmd == 0 ) then

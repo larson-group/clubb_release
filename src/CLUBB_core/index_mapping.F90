@@ -21,12 +21,12 @@ module index_mapping
   ! Included indices:  
   ! iiPDF_chi, iiPDF_eta, iiPDF_w, iiPDF_Ncn, iiPDF_rr, & all other hydrometeors
   ! 
-  ! Number of indices:  d_variables
+  ! Number of indices:  pdf_dim
   ! 
-  ! Examples of arrays dimensioned by d_variables:
+  ! Examples of arrays dimensioned by pdf_dim:
   ! mu_x_1_n, corr_array_n_cloud, . . .
   ! 
-  ! Declared as module variables in module corr_varnce_module
+  ! Declared as module variables in module array_index
   ! 
   ! Initialized in subroutine setup_pdf_indices
   ! 
@@ -61,10 +61,8 @@ module index_mapping
       iiNrm, & ! Hydrometeor array index for rain drop concentration, Nr
       iiNsm, & ! Hydrometeor array index for snow concentration, Ns
       iiNim, & ! Hydrometeor array index for ice concentration, Ni
-      iiNgm    ! Hydrometeor array index for graupel concentration, Ng
-
+      iiNgm, &    ! Hydrometeor array index for graupel concentration, Ng
   ! PDF array indices
-  use corr_varnce_module, only: &
       iiPDF_rr, & ! PDF array index for rain water mixing ratio, rr
       iiPDF_rs, & ! PDF array index for snow mixing ratio, rs
       iiPDF_ri, & ! PDF array index for ice mixing ratio, ri

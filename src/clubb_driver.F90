@@ -256,7 +256,7 @@ module clubb_driver
     use corr_varnce_module, only: &
         corr_array_n_cloud, & ! Variable(s)
         corr_array_n_below, &
-        d_variables
+        pdf_dim
 
     use setup_clubb_pdf_params, only: &
         setup_pdf_parameters    ! Procedure(s)
@@ -994,16 +994,16 @@ module clubb_driver
     end do
 
     ! Allocate the correlation arrays
-    allocate(corr_array_1_n(d_variables, d_variables, gr%nz))
-    allocate(corr_array_2_n(d_variables, d_variables, gr%nz))
-    allocate(corr_cholesky_mtx_1(d_variables, d_variables, gr%nz))
-    allocate(corr_cholesky_mtx_2(d_variables, d_variables, gr%nz))
+    allocate(corr_array_1_n(pdf_dim, pdf_dim, gr%nz))
+    allocate(corr_array_2_n(pdf_dim, pdf_dim, gr%nz))
+    allocate(corr_cholesky_mtx_1(pdf_dim, pdf_dim, gr%nz))
+    allocate(corr_cholesky_mtx_2(pdf_dim, pdf_dim, gr%nz))
 
     ! Allocate the mean and stddev arrays
-    allocate(mu_x_1_n(d_variables, gr%nz))
-    allocate(mu_x_2_n(d_variables, gr%nz))
-    allocate(sigma_x_1_n(d_variables, gr%nz))
-    allocate(sigma_x_2_n(d_variables, gr%nz))
+    allocate(mu_x_1_n(pdf_dim, gr%nz))
+    allocate(mu_x_2_n(pdf_dim, gr%nz))
+    allocate(sigma_x_1_n(pdf_dim, gr%nz))
+    allocate(sigma_x_2_n(pdf_dim, gr%nz))
 
     ! Initialize to 0.
     rvm_mc  = zero
@@ -1053,7 +1053,7 @@ module clubb_driver
 
     allocate( rcm_zm(gr%nz), radht_zm(gr%nz) )
 
-    allocate( X_nl_all_levs(gr%nz,lh_num_samples,d_variables), &
+    allocate( X_nl_all_levs(gr%nz,lh_num_samples,pdf_dim), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
               lh_clipped_vars(gr%nz,lh_num_samples), &
               lh_sample_point_weights(lh_num_samples), &
@@ -1406,7 +1406,7 @@ module clubb_driver
       if ( .not. trim( microphys_scheme ) == "none" ) then
 
          !!! Setup the PDF parameters.
-         call setup_pdf_parameters( gr%nz, d_variables, dt_main, &              ! Intent(in)
+         call setup_pdf_parameters( gr%nz, pdf_dim, dt_main, &              ! Intent(in)
                                     Nc_in_cloud, rcm, cloud_frac, &             ! Intent(in)
                                     ice_supersat_frac, hydromet, wphydrometp, & ! Intent(in)
                                     corr_array_n_cloud, corr_array_n_below, &   ! Intent(in)
@@ -1419,7 +1419,7 @@ module clubb_driver
                                     hydromet_pdf_params )                       ! Intent(out)
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-         call hydrometeor_mixed_moments( gr%nz, d_variables, hydromet, &
+         call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet, &
                                          mu_x_1_n, mu_x_2_n, &
                                          sigma_x_1_n, sigma_x_2_n, &
                                          corr_array_1_n, corr_array_2_n, &
@@ -1442,7 +1442,7 @@ module clubb_driver
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
 
         call lh_subcolumn_generator &
-             ( itime, d_variables, lh_num_samples, lh_sequence_length, gr%nz, & ! In
+             ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -1451,12 +1451,12 @@ module clubb_driver
                lh_sample_point_weights ) ! Out
 
         call clip_transform_silhs_output &
-             ( gr%nz, lh_num_samples, d_variables, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
+             ( gr%nz, lh_num_samples, pdf_dim, X_mixt_comp_all_levs, X_nl_all_levs, & ! In
                pdf_params, l_use_Ncn_to_Nc, & ! In
                lh_clipped_vars ) ! Out
 
         call stats_accumulate_lh &
-             ( gr%nz, lh_num_samples, d_variables, rho_ds_zt, & ! In
+             ( gr%nz, lh_num_samples, pdf_dim, rho_ds_zt, & ! In
                lh_sample_point_weights,  X_nl_all_levs, & ! In
                lh_clipped_vars ) ! In
 
@@ -1483,7 +1483,7 @@ module clubb_driver
       !----------------------------------------------------------------
 
       ! Call microphysics scheme and produce microphysics tendencies.
-      call microphys_schemes( dt_main, time_current, d_variables, runtype, & ! In
+      call microphys_schemes( dt_main, time_current, pdf_dim, runtype, & ! In
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, &      ! In
                               rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &       ! In
                               hydromet, Nc_in_cloud, &                       ! In
@@ -1560,7 +1560,7 @@ module clubb_driver
         if ( l_silhs_rad ) then
 
           call silhs_radiation_driver &
-               ( gr%nz, lh_num_samples, d_variables, hydromet_dim, & !In
+               ( gr%nz, lh_num_samples, pdf_dim, hydromet_dim, & !In
                  time_current, time_initial, rho, rho_zm, & !In
                  p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
                  lh_clipped_vars, lh_sample_point_weights, hydromet, & !In
@@ -4719,7 +4719,7 @@ module clubb_driver
 
   !-----------------------------------------------------------------------
   subroutine silhs_radiation_driver &
-             ( nz, lh_num_samples, d_variables, hydromet_dim, time_current, &
+             ( nz, lh_num_samples, pdf_dim, hydromet_dim, time_current, &
                time_initial, rho, rho_zm, p_in_Pa, exner, &
                cloud_frac, ice_supersat_frac, X_nl_all_levs, &
                lh_clipped_vars, lh_sample_point_weights, hydromet, &
@@ -4757,7 +4757,7 @@ module clubb_driver
     integer, intent(in) :: &
       nz, &                 ! Number of vertical levels
       lh_num_samples, & ! Number of SILHS sample points
-      d_variables, &        ! Number of lognormal variates
+      pdf_dim, &        ! Number of lognormal variates
       hydromet_dim          ! Number of hydrometeor species
 
     real( kind = time_precision ), intent(in) :: &
@@ -4772,7 +4772,7 @@ module clubb_driver
       cloud_frac,        & ! Cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac    ! Ice cloud fraction (thermodynamic levels) [-]
 
-    real( kind = core_rknd ), dimension(nz,lh_num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,lh_num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs        ! Normal-lognormal samples                  [units vary]
 
     type(lh_clipped_variables_type), dimension(nz,lh_num_samples), intent(in) :: &
@@ -4824,7 +4824,7 @@ module clubb_driver
     err_code_samp(:) = clubb_no_error
 
     call copy_X_nl_into_hydromet_all_pts &
-         ( nz, d_variables, lh_num_samples, &         ! Intent(in)
+         ( nz, pdf_dim, lh_num_samples, &         ! Intent(in)
            X_nl_all_levs, &                               ! Intent(in)
            hydromet, &                                    ! Intent(in)
            hydromet_all_pts, &                            ! Intent(out)

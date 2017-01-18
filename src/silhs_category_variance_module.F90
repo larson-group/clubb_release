@@ -13,7 +13,7 @@ module silhs_category_variance_module
 
   !-----------------------------------------------------------------------
   subroutine silhs_category_variance_driver &
-             ( nz, num_samples, d_variables, hydromet_dim, X_nl_all_levs, &
+             ( nz, num_samples, pdf_dim, hydromet_dim, X_nl_all_levs, &
                X_mixt_comp_all_levs, microphys_stats_vars_all, &
                lh_hydromet_mc_all, lh_sample_point_weights, pdf_params, &
                hydromet_pdf_params )
@@ -39,7 +39,8 @@ module silhs_category_variance_module
       irrm_mc_nonadj
 
     use array_index, only: &
-      iirrm
+      iirrm, &
+      iiPDF_chi
 
     use pdf_parameter_module, only: &
       pdf_parameter     ! Type
@@ -47,8 +48,6 @@ module silhs_category_variance_module
     use hydromet_pdf_parameter_module, only: &
       hydromet_pdf_parameter
 
-    use corr_varnce_module, only: &
-      iiPDF_chi
 
     implicit none
 
@@ -56,10 +55,10 @@ module silhs_category_variance_module
     integer, intent(in) :: &
       nz,              &      ! Number of height levels
       num_samples,     &      ! Number of SILHS sample points
-      d_variables,     &      ! Number of variates in X_nl
+      pdf_dim,     &      ! Number of variates in X_nl
       hydromet_dim            ! Number of elements of hydromet array
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -126,7 +125,7 @@ module silhs_category_variance_module
     end if ! .false.
 
     call silhs_sample_category_variance &
-         ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs, &
+         ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
            samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
 
     return
@@ -135,7 +134,7 @@ module silhs_category_variance_module
 
   !-----------------------------------------------------------------------
   subroutine silhs_sample_category_variance &
-             ( nz, num_samples, d_variables, X_nl_all_levs, X_mixt_comp_all_levs, &
+             ( nz, num_samples, pdf_dim, X_nl_all_levs, X_mixt_comp_all_levs, &
                samples_all, lh_sample_point_weights, pdf_params, hydromet_pdf_params )
 
   ! Description:
@@ -180,9 +179,9 @@ module silhs_category_variance_module
     integer, intent(in) :: &
       nz,              &      ! Number of height levels
       num_samples,     &      ! Number of SILHS sample points
-      d_variables             ! Number of variates in X_nl
+      pdf_dim            ! Number of variates in X_nl
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs           ! SILHS samples at all height levels
 
     integer, dimension(nz,num_samples), intent(in) :: &
@@ -230,7 +229,7 @@ module silhs_category_variance_module
     do k=2, nz
 
       int_sample_category = determine_sample_categories &
-                            ( num_samples, d_variables, X_nl_all_levs(k,:,:), &
+                            ( num_samples, pdf_dim, X_nl_all_levs(k,:,:), &
                               X_mixt_comp_all_levs(k,:), importance_categories )
 
       category_real_probs = &

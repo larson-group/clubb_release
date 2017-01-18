@@ -39,7 +39,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine lh_subcolumn_generator &
-             ( iter, d_variables, num_samples, sequence_length, nz, & ! In
+             ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
                pdf_params, delta_zm, rcm, Lscale, & ! In
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -55,7 +55,7 @@ module latin_hypercube_driver_module
 !   None
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi    ! Variables
 
     use transform_to_pdf_module, only: &
@@ -99,13 +99,13 @@ module latin_hypercube_driver_module
       d_uniform_extra = 2   ! Number of variables that are included in the uniform sample but not in
                             ! the lognormal sample. Currently:
                             !
-                            ! d_variables+1: Mixture component, for choosing PDF component
-                            ! d_variables+2: Precipitation fraction, for determining precipitation
+                            ! pdf_dim+1: Mixture component, for choosing PDF component
+                            ! pdf_dim+2: Precipitation fraction, for determining precipitation
 
     ! Input Variables
     integer, intent(in) :: &
       iter,            & ! Model iteration number
-      d_variables,     & ! Number of variables to sample
+      pdf_dim,     & ! Number of variables to sample
       num_samples,     & ! Number of samples per variable
       sequence_length, & ! nt_repeat/num_samples; number of timesteps before sequence repeats.
       nz                 ! Number of vertical model levels
@@ -125,7 +125,7 @@ module latin_hypercube_driver_module
 
     
     ! Output Variables
-    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     integer, intent(out), dimension(nz,num_samples) :: &
@@ -135,11 +135,11 @@ module latin_hypercube_driver_module
       lh_sample_point_weights
 
     ! More Input Variables!
-    real( kind = core_rknd ), dimension(d_variables,d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim,nz), intent(in) :: &
       corr_cholesky_mtx_1, & ! Correlations Cholesky matrix (1st comp.)  [-]
       corr_cholesky_mtx_2    ! Correlations Cholesky matrix (2nd comp.)  [-]
 
-    real( kind = core_rknd ), dimension(d_variables,nz), intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,nz), intent(in) :: &
       mu1,    & ! Means of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>)  [units vary]
       mu2,    & ! Means of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>)  [units vary]
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
@@ -149,7 +149,7 @@ module latin_hypercube_driver_module
       hydromet_pdf_params
 
     ! Local variables
-    real( kind = core_rknd ), dimension(nz,num_samples,(d_variables+d_uniform_extra)) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,(pdf_dim+d_uniform_extra)) :: &
       X_u_all_levs ! Sample drawn from uniform distribution
 
     integer :: &
@@ -183,19 +183,19 @@ module latin_hypercube_driver_module
 
     ! Generate a uniform sample at k_lh_start
     call generate_uniform_k_lh_start &
-         ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+         ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
            pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
            X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
 
     ! Generate uniform sample at other height levels by vertically correlating them
     call vertical_overlap_driver &
-         ( nz, d_variables, d_uniform_extra, num_samples, &     ! Intent(in)
+         ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
            k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
            X_u_all_levs )                                       ! Intent(inout)
 
     do k = 1, nz
       ! Determine mixture component for all levels
-      where ( in_mixt_comp_1( X_u_all_levs(k,:,d_variables+1), pdf_params(k)%mixt_frac ) )
+      where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params(k)%mixt_frac ) )
         X_mixt_comp_all_levs(k,:) = 1
       else where
         X_mixt_comp_all_levs(k,:) = 2
@@ -209,7 +209,7 @@ module latin_hypercube_driver_module
       end where
 
       ! Determine precipitation for all levels
-      where ( in_precipitation( X_u_all_levs(k,:,d_variables+2), &
+      where ( in_precipitation( X_u_all_levs(k,:,pdf_dim+2), &
                   precip_frac_i(:) ) )
         l_in_precip(k,:) = .true.
       else where
@@ -225,7 +225,7 @@ module latin_hypercube_driver_module
     ! Check to ensure uniform variates are in the appropriate range
     do sample=1, num_samples
       do k=1, nz
-        do i=1, d_variables+d_uniform_extra
+        do i=1, pdf_dim+d_uniform_extra
           if ( X_u_all_levs(k,sample,i) >= one ) then
             X_u_all_levs(k,sample,i) = one - epsilon( X_u_all_levs(k,sample,i) )
           else if ( X_u_all_levs(k,sample,i) <= zero ) then
@@ -240,7 +240,7 @@ module latin_hypercube_driver_module
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, num_samples, 1
         call transform_uniform_sample_to_pdf &
-             ( d_variables, d_uniform_extra, & ! In
+             ( pdf_dim, d_uniform_extra, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
                corr_cholesky_mtx_1(:,:,k), & ! In
                corr_cholesky_mtx_2(:,:,k), & ! In
@@ -253,11 +253,11 @@ module latin_hypercube_driver_module
     if ( l_output_2D_lognormal_dist ) then
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
       ! because they are no longer generated in lh_subcolumn_generator.
-      call output_2D_lognormal_dist_file( nz, num_samples, d_variables, &
+      call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                           real(X_nl_all_levs, kind = stat_rknd) )
     end if
     if ( l_output_2D_uniform_dist ) then
-      call output_2D_uniform_dist_file( nz, num_samples, d_variables+2, &
+      call output_2D_uniform_dist_file( nz, num_samples, pdf_dim+2, &
                                         X_u_all_levs, &
                                         X_mixt_comp_all_levs, &
                                         lh_sample_point_weights )
@@ -302,7 +302,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine generate_uniform_k_lh_start &
-             ( iter, d_variables, d_uniform_extra, num_samples, sequence_length, &
+             ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
                pdf_params, hydromet_pdf_params, &
                X_u_k_lh_start, lh_sample_point_weights )
 
@@ -343,7 +343,7 @@ module latin_hypercube_driver_module
     use latin_hypercube_arrays, only: &
       one_height_time_matrix      ! Variable
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi                   ! Variable
 
     implicit none
@@ -357,7 +357,7 @@ module latin_hypercube_driver_module
     ! Input Variables
     integer, intent(in) :: &
       iter,              &        ! Model iteration number
-      d_variables,       &        ! Number of variates in CLUBB's PDF
+      pdf_dim,       &        ! Number of variates in CLUBB's PDF
       d_uniform_extra,   &        ! Uniform variates included in uniform sample but not
                                   !  in normal/lognormal sample
       num_samples,       &        ! Number of SILHS sample points
@@ -370,7 +370,7 @@ module latin_hypercube_driver_module
       hydromet_pdf_params
 
     ! Output Variables
-    real( kind = core_rknd ), dimension(num_samples,d_variables+d_uniform_extra), intent(out) :: &
+    real( kind = core_rknd ), dimension(num_samples,pdf_dim+d_uniform_extra), intent(out) :: &
       X_u_k_lh_start              ! Uniform sample at k_lh_start
 
     real( kind = core_rknd ), dimension(num_samples), intent(out) :: &
@@ -393,7 +393,7 @@ module latin_hypercube_driver_module
     if ( l_lh_straight_mc ) then
 
       ! Do a straight Monte Carlo sample without LH or importance sampling.
-      do i=1, d_variables+d_uniform_extra
+      do i=1, pdf_dim+d_uniform_extra
         do sample=1, num_samples
           X_u_k_lh_start(sample,i) = rand_uniform_real( )
         end do
@@ -406,7 +406,7 @@ module latin_hypercube_driver_module
 
       ! Generate a uniformly distributed Latin hypercube sample
       call generate_uniform_lh_sample( iter, num_samples, sequence_length, &  ! Intent(in)
-                                       d_variables+d_uniform_extra, &         ! Intent(in)
+                                       pdf_dim+d_uniform_extra, &         ! Intent(in)
                                        X_u_k_lh_start(:,:) )                  ! Intent(out)
 
       if ( l_lh_importance_sampling ) then
@@ -415,11 +415,11 @@ module latin_hypercube_driver_module
 
           call cloud_weighted_sampling_driver &
                ( num_samples, one_height_time_matrix(:,iiPDF_chi), & ! In
-                 one_height_time_matrix(:,d_variables+1), & ! In
+                 one_height_time_matrix(:,pdf_dim+1), & ! In
                  pdf_params%cloud_frac_1, pdf_params%cloud_frac_2, & ! In
                  pdf_params%mixt_frac, & ! In
                  X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
-                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+1), & ! In/Out
                  lh_sample_point_weights ) ! Out
 
         else ! .not. l_lh_old_cloud_weighted
@@ -427,8 +427,8 @@ module latin_hypercube_driver_module
           call importance_sampling_driver &
                ( num_samples, pdf_params, hydromet_pdf_params, & ! In
                  X_u_k_lh_start(:,iiPDF_chi), & ! In/Out
-                 X_u_k_lh_start(:,d_variables+1), & ! In/Out
-                 X_u_k_lh_start(:,d_variables+2), & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+1), & ! In/Out
+                 X_u_k_lh_start(:,pdf_dim+2), & ! In/Out
                  lh_sample_point_weights ) ! Out
 
         end if ! l_lh_old_cloud_weighted
@@ -448,7 +448,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine vertical_overlap_driver &
-             ( nz, d_variables, d_uniform_extra, num_samples, &
+             ( nz, pdf_dim, d_uniform_extra, num_samples, &
                k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &
                X_u_all_levs )
 
@@ -475,7 +475,7 @@ module latin_hypercube_driver_module
     use grid_class, only: &
       gr             ! Variable
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi      ! Variable
 
     use parameters_silhs, only: &
@@ -489,7 +489,7 @@ module latin_hypercube_driver_module
     ! Input Variables
     integer, intent(in) :: &
       nz,              &
-      d_variables,     &
+      pdf_dim,     &
       d_uniform_extra, &
       num_samples,     &
       k_lh_start
@@ -501,7 +501,7 @@ module latin_hypercube_driver_module
       rho_ds_zt           ! Dry, static density on thermodynamic levels       [kg/m^3]
 
     ! Input/Output Variables
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables+d_uniform_extra), &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim+d_uniform_extra), &
         intent(inout) :: &
       X_u_all_levs        ! A full uniform sample
 
@@ -552,25 +552,25 @@ module latin_hypercube_driver_module
       call compute_arb_overlap &
            ( nz, k_lh_start, &  ! In
              X_vert_corr, & ! In
-             X_u_all_levs(:,sample,d_variables+1) ) ! Inout
+             X_u_all_levs(:,sample,pdf_dim+1) ) ! Inout
 
       ! Correlate the d+2 variate vertically (used to determine precipitation
       ! later)
       call compute_arb_overlap &
            ( nz, k_lh_start, &  ! In
              X_vert_corr, & ! In
-             X_u_all_levs(:,sample,d_variables+2) ) ! Inout
+             X_u_all_levs(:,sample,pdf_dim+2) ) ! Inout
 
       ! Use these lines to make all variates vertically correlated, using the
       ! same correlation we used above for chi and the d+1 variate
-      do ivar = 1, d_variables
+      do ivar = 1, pdf_dim
         if ( ivar /= iiPDF_chi ) then
           call compute_arb_overlap &
                ( nz, k_lh_start, &  ! In
                  X_vert_corr, & ! In
                  X_u_all_levs(:,sample,ivar) ) ! Inout
         end if
-      end do ! 1..d_variables
+      end do ! 1..pdf_dim
     end do ! 1..num_samples
 
     return
@@ -675,7 +675,7 @@ module latin_hypercube_driver_module
 !-----------------------------------------------------------------------
 
 !-----------------------------------------------------------------------
-  subroutine clip_transform_silhs_output( nz, num_samples, d_variables, &         ! In
+  subroutine clip_transform_silhs_output( nz, num_samples, pdf_dim, &         ! In
                                           X_mixt_comp_all_levs, X_nl_all_levs, &  ! In
                                           pdf_params, l_use_Ncn_to_Nc, &          ! In
                                           lh_clipped_vars )                       ! Out
@@ -699,7 +699,7 @@ module latin_hypercube_driver_module
     use pdf_parameter_module, only: &
       pdf_parameter ! Type
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, &  ! Variable(s)
       iiPDF_eta, &
       iiPDF_Ncn
@@ -719,12 +719,12 @@ module latin_hypercube_driver_module
     integer, intent(in) :: &
       nz,          &         ! Number of vertical levels
       num_samples, &         ! Number of SILHS sample points
-      d_variables            ! Number of variates in X_nl
+      pdf_dim           ! Number of variates in X_nl
 
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs   ! Which component this sample is in (1 or 2)
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs          ! A SILHS sample
 
     type(pdf_parameter), dimension(nz), intent(in) :: &
@@ -1136,7 +1136,7 @@ module latin_hypercube_driver_module
                stats_zt, time_initial, num_samples )
 !-------------------------------------------------------------------------------
 
-    use corr_varnce_module, only: &
+    use array_index, only: &
       iiPDF_chi, & ! Variables
       iiPDF_eta, &
       iiPDF_w, &
@@ -1162,7 +1162,7 @@ module latin_hypercube_driver_module
       uniform_sample_file
 
     use corr_varnce_module, only: &
-      d_variables ! Variable
+      pdf_dim! Variable
 
 
     implicit none
@@ -1196,8 +1196,8 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_lognormal_dist ) then
 
-      allocate( variable_names(d_variables), variable_descriptions(d_variables), &
-                variable_units(d_variables) )
+      allocate( variable_names(pdf_dim), variable_descriptions(pdf_dim), &
+                variable_units(pdf_dim) )
 
       variable_names(iiPDF_chi)        = "chi"
       variable_descriptions(iiPDF_chi) = "The variable 's' from Mellor 1977"
@@ -1258,7 +1258,7 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ng)        = "count/kg"
       end if
 
-      call open_2D_samples_file( nz, num_samples, d_variables, & ! In
+      call open_2D_samples_file( nz, num_samples, pdf_dim, & ! In
                                  trim( fname_prefix )//"_nl", fdir, & ! In
                                  time_initial, stats_tout, stats_zt, variable_names, & ! In
                                  variable_descriptions, variable_units, & ! In
@@ -1270,8 +1270,8 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_uniform_dist ) then
 
-      allocate( variable_names(d_variables+4), variable_descriptions(d_variables+4), &
-                variable_units(d_variables+4) )
+      allocate( variable_names(pdf_dim+4), variable_descriptions(pdf_dim+4), &
+                variable_units(pdf_dim+4) )
 
       ! The uniform distribution corresponds to all the same variables as X_nl,
       ! except the d+1 component is the mixture component.
@@ -1333,19 +1333,19 @@ module latin_hypercube_driver_module
         variable_units(iiPDF_Ng)        = "count/kg"
       end if
 
-      i = d_variables + 1
+      i = pdf_dim+ 1
       variable_names(i) = "dp1"
       variable_descriptions(i) = "Uniform distribution for the mixture component"
 
-      i = d_variables + 2
+      i = pdf_dim+ 2
       variable_names(i) = "dp2"
       variable_descriptions(i) = "Uniform variate used to determine precipitation!"
 
-      i = d_variables + 3
+      i = pdf_dim+ 3
       variable_names(i) = "X_mixt_comp"
       variable_descriptions(i) = "Mixture component (should be 1 or 2)"
 
-      i = d_variables + 4
+      i = pdf_dim+ 4
       variable_names(i) = "lh_sample_point_weights"
       variable_descriptions(i) = "Weight of each sample point"
 
@@ -1636,7 +1636,7 @@ module latin_hypercube_driver_module
 
 !-------------------------------------------------------------------------------
   subroutine stats_accumulate_lh &
-             ( nz, num_samples, d_variables, rho_ds_zt, &
+             ( nz, num_samples, pdf_dim, rho_ds_zt, &
                lh_sample_point_weights, X_nl_all_levs, &
                lh_clipped_vars )
 
@@ -1699,19 +1699,17 @@ module latin_hypercube_driver_module
       stat_update_var_pt
 
     use array_index, only: &
-      iirrm, & ! Variables
+      iirrm, & ! Variables(s)
       iirsm, & 
       iirim, & 
       iirgm, & 
       iiNrm, &
       iiNsm, &
       iiNim, &
-      iiNgm
-
-    use corr_varnce_module, only: &
-      iiPDF_chi, & ! Variable(s)
+      iiNgm, &
+      iiPDF_chi, &
       iiPDF_eta, &
-      iiPDF_w, &
+      iiPDF_w,   &
       iiPDF_Ncn
 
     use constants_clubb, only: &
@@ -1729,7 +1727,7 @@ module latin_hypercube_driver_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables,     & ! Number of variables to sample
+      pdf_dim,     & ! Number of variables to sample
       num_samples,   & ! Number of calls to microphysics per timestep (normally=2)
       nz                 ! Number of vertical model levels
 
@@ -1739,7 +1737,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
       lh_sample_point_weights
 
-    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,d_variables) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     type(lh_clipped_variables_type), dimension(nz,num_samples), intent(in) :: &
@@ -1848,7 +1846,7 @@ module latin_hypercube_driver_module
            ilh_rgm + ilh_Ngm + ilh_Ncnm + ilh_Ncm > 0 ) then
 
         lh_hydromet = 0._core_rknd
-        call copy_X_nl_into_hydromet_all_pts( nz, d_variables, num_samples, & ! In
+        call copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples, & ! In
                                       X_nl_all_levs, &  ! In
                                       lh_hydromet, & ! In
                                       hydromet_all_points, &  ! Out
@@ -2247,7 +2245,7 @@ module latin_hypercube_driver_module
   end subroutine stats_accumulate_uniform_lh
 
   !-----------------------------------------------------------------------------
-  subroutine copy_X_nl_into_hydromet_all_pts( nz, d_variables, num_samples, &
+  subroutine copy_X_nl_into_hydromet_all_pts( nz, pdf_dim, num_samples, &
                                       X_nl_all_levs, &
                                       hydromet, &
                                       hydromet_all_points, &
@@ -2270,9 +2268,7 @@ module latin_hypercube_driver_module
       iiNrm, &
       iiNsm, &
       iiNim, &
-      iiNgm
-
-    use corr_varnce_module, only: &
+      iiNgm, &
       iiPDF_rr, &
       iiPDF_rs, &
       iiPDF_ri, &
@@ -2290,10 +2286,10 @@ module latin_hypercube_driver_module
 
     integer, intent(in) :: &
       nz,            & ! Number of vertical levels
-      d_variables,   & ! Number of variates
+      pdf_dim,   & ! Number of variates
       num_samples    ! Number of calls to microphysics
 
-    real( kind = core_rknd ), dimension(nz,num_samples,d_variables), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples,pdf_dim), intent(in) :: &
       X_nl_all_levs ! Sample that is transformed ultimately to normal-lognormal
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim), intent(in) :: &

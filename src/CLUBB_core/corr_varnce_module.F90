@@ -6,6 +6,20 @@ module corr_varnce_module
   use clubb_precision, only: &
       core_rknd
 
+  use array_index, only: &
+      iiPDF_chi, &
+      iiPDF_eta, &
+      iiPDF_w, &
+      iiPDF_rr, &
+      iiPDF_rs, &
+      iiPDF_ri, &
+      iiPDF_rg, &
+      iiPDF_Nr, &
+      iiPDF_Ns, &
+      iiPDF_Ni, &
+      iiPDF_Ng, &
+      iiPDF_Ncn
+
   implicit none
 
   type hmp2_ip_on_hmm2_ip_ratios_type
@@ -38,34 +52,12 @@ module corr_varnce_module
 
 !$omp threadprivate(Ncnp2_on_Ncnm2)
 
-  ! Latin hypercube indices / Correlation array indices
-  integer, public :: &
-    iiPDF_chi = -1, &
-    iiPDF_eta = -1, &
-    iiPDF_w   = -1
-!$omp threadprivate(iiPDF_chi, iiPDF_eta, iiPDF_w)
-
-  integer, public :: &
-   iiPDF_rr = -1, &
-   iiPDF_rs = -1, &
-   iiPDF_ri = -1, &
-   iiPDF_rg = -1
-!$omp threadprivate(iiPDF_rr, iiPDF_rs, iiPDF_ri, iiPDF_rg)
-
-  integer, public :: &
-   iiPDF_Nr  = -1, &
-   iiPDF_Ns  = -1, &
-   iiPDF_Ni  = -1, &
-   iiPDF_Ng  = -1, &
-   iiPDF_Ncn = -1
-!$omp threadprivate(iiPDF_Nr, iiPDF_Ns, iiPDF_Ni, iiPDF_Ng, iiPDF_Ncn)
-
   integer, parameter, public :: &
     d_var_total = 12 ! Size of the default correlation arrays
 
   integer, public :: &
-    d_variables
-!$omp threadprivate(d_variables)
+    pdf_dim
+!$omp threadprivate(pdf_dim)
 
   real( kind = core_rknd ), dimension(:), allocatable, public :: &
      hmp2_ip_on_hmm2_ip
@@ -283,13 +275,13 @@ module corr_varnce_module
     corr_array_n_cloud = zero
     corr_array_n_below = zero
 
-    do i = 1, d_variables
+    do i = 1, pdf_dim
        corr_array_n_cloud(i,i) = one
        corr_array_n_below(i,i) = one
     enddo
 
-    do i = 1, d_variables-1
-       do j = i+1, d_variables
+    do i = 1, pdf_dim-1
+       do j = i+1, pdf_dim
           if ( def_corr_idx(i) > def_corr_idx(j) ) then
              corr_array_n_cloud(j, i) = corr_array_n_cloud_def(def_corr_idx(j), def_corr_idx(i))
              corr_array_n_below(j, i) = corr_array_n_below_def(def_corr_idx(j), def_corr_idx(i))
@@ -304,7 +296,7 @@ module corr_varnce_module
 
 
   !-----------------------------------------------------------------------------
-  subroutine read_correlation_matrix( iunit, input_file, d_variables, &
+  subroutine read_correlation_matrix( iunit, input_file, pdf_dim, &
                                       corr_array_n )
 
     ! Description:
@@ -327,12 +319,12 @@ module corr_varnce_module
     ! Input Variable(s)
     integer, intent(in) :: &
       iunit, &    ! File I/O unit
-      d_variables ! number of variables in the array
+      pdf_dim! number of variables in the array
 
     character(len=*), intent(in) :: input_file ! Path to the file
 
     ! Input/Output Variable(s)
-    real( kind = core_rknd ), dimension(d_variables,d_variables), intent(inout) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(inout) :: &
       corr_array_n ! Normal space correlation array
 
     ! Local Variable(s)
@@ -351,14 +343,14 @@ module corr_varnce_module
 
     nCols = count_columns( iunit, input_file )
 
-    ! Allocate all arrays based on d_variables
+    ! Allocate all arrays based on pdf_dim
     allocate( retVars(1:nCols) )
 
     ! Initializing to zero means that correlations we don't have are assumed to be 0.
     corr_array_n(:,:) = 0.0_core_rknd
 
     ! Set main diagonal to 1
-    do i=1, d_variables
+    do i=1, pdf_dim
       corr_array_n(i,i) = 1.0_core_rknd
     end do
 
@@ -380,7 +372,7 @@ module corr_varnce_module
           var_index2 = get_corr_var_index( retVars(j)%name )
           if( var_index2 > -1 ) then
             call set_lower_triangular_matrix &
-                 ( d_variables, var_index1, var_index2, retVars(i)%values(j), &
+                 ( pdf_dim, var_index1, var_index2, retVars(i)%values(j), &
                    corr_array_n )
           end if
         end do
@@ -549,7 +541,7 @@ module corr_varnce_module
 
     endif ! hydromet_dim > 0
 
-    d_variables = pdf_count
+    pdf_dim= pdf_count
 
 
     return
@@ -601,18 +593,18 @@ module corr_varnce_module
 
     ! ---- Begin Code ----
 
-    allocate( corr_array_n_cloud(d_variables,d_variables) )
-    allocate( corr_array_n_below(d_variables,d_variables) )
+    allocate( corr_array_n_cloud(pdf_dim,pdf_dim) )
+    allocate( corr_array_n_below(pdf_dim,pdf_dim) )
 
     inquire( file = input_file_cloud, exist = l_corr_file_1_exist )
     inquire( file = input_file_below, exist = l_corr_file_2_exist )
 
     if ( l_corr_file_1_exist .and. l_corr_file_2_exist ) then
 
-       call read_correlation_matrix( iunit, trim( input_file_cloud ), d_variables, & ! In
+       call read_correlation_matrix( iunit, trim( input_file_cloud ), pdf_dim, & ! In
                                      corr_array_n_cloud ) ! Out
 
-       call read_correlation_matrix( iunit, trim( input_file_below ), d_variables, & ! In
+       call read_correlation_matrix( iunit, trim( input_file_below ), pdf_dim, & ! In
                                      corr_array_n_below ) ! Out
 
     else ! Read in default correlation matrices
@@ -627,21 +619,21 @@ module corr_varnce_module
     endif
 
     ! Mirror the correlation matrices
-    call mirror_lower_triangular_matrix( d_variables, corr_array_n_cloud )
-    call mirror_lower_triangular_matrix( d_variables, corr_array_n_below )
+    call mirror_lower_triangular_matrix( pdf_dim, corr_array_n_cloud )
+    call mirror_lower_triangular_matrix( pdf_dim, corr_array_n_below )
 
     ! Sanity check to avoid confusing non-convergence results.
     if ( clubb_at_least_debug_level( 2 ) ) then
 
       if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
         l_warning = .false.
-        do i = 1, d_variables
+        do i = 1, pdf_dim
           if ( ( corr_array_n_cloud(i,iiPDF_Ncn) /= zero .or.  &
                  corr_array_n_below(i,iiPDF_Ncn) /= zero ) .and. &
                i /= iiPDF_Ncn ) then
             l_warning = .true.
           end if
-        end do ! 1..d_variables
+        end do ! 1..pdf_dim
         if ( l_warning ) then
           write(fstderr,*) "Warning: the specified correlations for chi" &
                            // " (old s) and Ncn are non-zero."
@@ -695,7 +687,7 @@ module corr_varnce_module
 
   !-----------------------------------------------------------------------------
   subroutine assert_corr_symmetric( corr_array_n, & ! intent(in)
-                                    d_variables ) ! intent(in)
+                                    pdf_dim) ! intent(in)
 
     ! Description:
     !   Asserts that corr_matrix(i,j) == corr_matrix(j,i) for all indeces
@@ -710,9 +702,9 @@ module corr_varnce_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array
+      pdf_dim   ! Number of variables in the correlation array
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
       intent(in) :: corr_array_n ! Normal space correlation array to be checked
 
     ! Local Variables
@@ -729,8 +721,8 @@ module corr_varnce_module
     l_error = .false.
 
     !Do the check
-    do n_col = 1, d_variables
-      do n_row = 1, d_variables
+    do n_col = 1, pdf_dim
+      do n_row = 1, pdf_dim
         if (abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol) then
           l_error = .true.
         end if
@@ -750,7 +742,7 @@ module corr_varnce_module
   end subroutine assert_corr_symmetric
 
   !-----------------------------------------------------------------------------
-  subroutine print_corr_matrix( d_variables, & ! intent(in)
+  subroutine print_corr_matrix( pdf_dim, & ! intent(in)
                                 corr_array_n ) ! intent(in)
 
     ! Description:
@@ -765,9 +757,9 @@ module corr_varnce_module
 
     ! Input Variables
     integer, intent(in) :: &
-      d_variables    ! Number of variables in the correlation array
+      pdf_dim   ! Number of variables in the correlation array
 
-    real( kind = core_rknd ), dimension(d_variables, d_variables), &
+    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), &
       intent(in) :: corr_array_n ! Normal space correlation array to be printed
 
     ! Local Variables
@@ -782,8 +774,8 @@ module corr_varnce_module
 
     current_character_index = 0
 
-    do n = 1, d_variables
-      do m = 1, d_variables
+    do n = 1, pdf_dim
+      do m = 1, pdf_dim
         write(str_array_value,'(F5.2)') corr_array_n(m,n)
         current_line = current_line(1:current_character_index)//str_array_value
         current_character_index = current_character_index + 6

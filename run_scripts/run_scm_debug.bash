@@ -3,21 +3,27 @@
 # $Id$
 #
 # Description:
-# Script to run the standalone CLUBB program with a debugger.  
+# Script to run the standalone CLUBB executable with a debugger.  
+# Use with gfortran, Oracle, or PGI compiler, or valgrind, by setting
+#    the variable DEBUG below.
 # Tested with GNU Bash v2 & 3.  Might work with Ksh.
 #
 #######################################################################
+
+# Executable for the debugging program
+# GNU fortran debugger, for use with config/linux_x86_64_gfortran.bash:
+#DEBUG=gdb
+# For use with the Oracle (Sun) compiler:
+#DEBUG=dbx
+# Portland Group (PGI) debugger:
+DEBUG=pgdbg
+#DEBUG="valgrind --leak-check=full --show-reachable=yes"
 
 # Figure out the directory where the script is located
 scriptPath=`dirname $0`
 
 # Store the current directory location so it can be restored
 restoreDir=`pwd`
-
-# Executable for the debugging program
-#DEBUG=dbx
-DEBUG=pgdbg
-#DEBUG="valgrind --leak-check=full --show-reachable=yes"
 
 # Change directories to the one the script is located in
 cd $scriptPath
