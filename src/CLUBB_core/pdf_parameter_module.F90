@@ -66,13 +66,15 @@ module pdf_parameter_module
 
   end type pdf_parameter
 
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
   public :: pack_pdf_params, unpack_pdf_params
 
   integer, public, parameter :: num_pdf_params = 38
 
-#endif /* CLUBB_CAM */
+!#endif /* CLUBB_CAM */
 
   contains
 
@@ -146,7 +148,9 @@ module pdf_parameter_module
 
   !=============================================================================
 
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
   subroutine pack_pdf_params(pdf_params, nz, r_param_array)
     implicit none
@@ -375,6 +379,6 @@ module pdf_parameter_module
 
   end subroutine set_param_at_ind
 
-#endif /* CLUBB_CAM */
+!#endif /* CLUBB_CAM */
 
 end module pdf_parameter_module
