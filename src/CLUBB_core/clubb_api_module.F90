@@ -162,9 +162,11 @@ module clubb_api_module
     ithlp2_rad_cloud_frac_thresh, iup2_vp2_factor
 
   use pdf_parameter_module, only : &
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     num_pdf_params, &
-#endif
+!#endif
     pdf_parameter
 
   use stat_file_module, only : &
@@ -409,11 +411,13 @@ module clubb_api_module
 
   public &
     ! Attempt to Not Use the Following:
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
     pack_pdf_params_api, &
     unpack_pdf_params_api, &
     num_pdf_params, &
-#endif
+!#endif
     adj_low_res_nu_api, &
     assignment( = ), &
     clubb_i, &
@@ -1480,7 +1484,9 @@ contains
       momentum_heights, thermodynamic_heights )  ! Intent(in)
   end subroutine adj_low_res_nu_api
 
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
   !================================================================================================
   ! pack_pdf_params - Returns a two dimensional real array with all values.
   !================================================================================================
@@ -1529,7 +1535,7 @@ contains
     call unpack_pdf_params( &
       r_param_array, nz, pdf_params)
   end subroutine unpack_pdf_params_api
-#endif
+!#endif
 
   !================================================================================================
   ! setup_pdf_parameters
