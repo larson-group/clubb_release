@@ -3,8 +3,8 @@
 # Tested with version 12.3
 
 # Fortran 95 compiler and linker
-FC=f95 # Sun/Oracle Fortran
-LD=f95
+FC=sunf95 # Sun/Oracle Fortran
+LD=sunf95
 
 # Define path to directories
 dir=`pwd` # dir where this script resides

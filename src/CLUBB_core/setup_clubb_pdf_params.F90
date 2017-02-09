@@ -24,7 +24,7 @@ module setup_clubb_pdf_params
              calc_corr_w_hm_n,            &
              pdf_param_hm_stats,          &
              pdf_param_ln_hm_stats,       &
-             pack_pdf_params,             &
+             pack_hydromet_pdf_params,    &
              compute_rtp2_from_chi
 
   ! Prescribed parameters are set to in-cloud or outside-cloud (below-cloud)
@@ -633,11 +633,12 @@ module setup_clubb_pdf_params
                                    corr_array_2_n(:,:,k), l_stats_samp )
 
        !!! Pack the PDF parameters
-       call pack_pdf_params( hm_1(k,:), hm_2(k,:), pdf_dim, &          ! In
-                             mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &       ! In
-                             corr_array_1, corr_array_2, precip_frac(k), & ! In
-                             precip_frac_1(k), precip_frac_2(k), &         ! In
-                             hydromet_pdf_params(k) )                      ! Out
+       call pack_hydromet_pdf_params( hm_1(k,:), hm_2(k,:), pdf_dim, mu_x_1, & ! In
+                                      mu_x_2, sigma_x_1, sigma_x_2, &          ! In
+                                      corr_array_1, corr_array_2, &            ! In
+                                      precip_frac(k), precip_frac_1(k), &      ! In
+                                      precip_frac_2(k), &                      ! In
+                                      hydromet_pdf_params(k) )                 ! Out
 
        if ( l_diagnose_correlations ) then
 
@@ -3761,11 +3762,12 @@ module setup_clubb_pdf_params
   end subroutine pdf_param_ln_hm_stats
 
   !=============================================================================
-  subroutine pack_pdf_params( hm_1, hm_2, pdf_dim, &                 ! In
-                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &    ! In
-                              corr_array_1, corr_array_2, precip_frac, & ! In
-                              precip_frac_1, precip_frac_2, &            ! In
-                              hydromet_pdf_params )                      ! Out
+  subroutine pack_hydromet_pdf_params( hm_1, hm_2, pdf_dim, mu_x_1, &     ! In
+                                       mu_x_2, sigma_x_1, sigma_x_2, &    ! In
+                                       corr_array_1, corr_array_2, &      ! In
+                                       precip_frac, precip_frac_1, &      ! In
+                                       precip_frac_2, &                   ! In
+                                       hydromet_pdf_params )              ! Out
 
     ! Description:
     ! Pack the standard means and variances involving hydrometeors, as well as a
@@ -3811,8 +3813,7 @@ module setup_clubb_pdf_params
       sigma_x_1, & ! Standard deviation array of PDF vars (comp. 1) [units vary]
       sigma_x_2    ! Standard deviation array of PDF vars (comp. 2) [units vary]
 
-    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), &
-    intent(in) :: &
+    real( kind = core_rknd ), dimension(pdf_dim,pdf_dim), intent(in) :: &
       corr_array_1, & ! Correlation array of PDF vars. (comp. 1)    [-]
       corr_array_2    ! Correlation array of PDF vars. (comp. 2)    [-]
 
@@ -3929,7 +3930,7 @@ module setup_clubb_pdf_params
 
     return
 
-  end subroutine pack_pdf_params
+  end subroutine pack_hydromet_pdf_params
 
   !=============================================================================
   elemental function compute_rtp2_from_chi( pdf_params, corr_chi_eta_1, &

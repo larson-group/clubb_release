@@ -2,20 +2,23 @@
 ! $Id$
 !===============================================================================
 module pdf_parameter_module
-! Description:
-!   This module defines the derived type pdf_parameter.
-! References:
-!   None
-!-------------------------------------------------------------------------------
+
+  ! Description:
+  ! This module defines the derived type pdf_parameter.
+
+  ! References:
+  !   None
+  !-----------------------------------------------------------------------
 
   use clubb_precision, only: &
-    core_rknd
+      core_rknd
 
   implicit none
 
   private ! Default scope
 
-  public :: pdf_parameter
+  public :: pdf_parameter,   & ! Variable Type
+            init_pdf_params    ! Procedure(s)
 
   type pdf_parameter
 
@@ -63,15 +66,91 @@ module pdf_parameter_module
 
   end type pdf_parameter
 
-#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
   public :: pack_pdf_params, unpack_pdf_params
 
   integer, public, parameter :: num_pdf_params = 38
 
-  !-------
+!#endif /* CLUBB_CAM */
+
   contains
-  !-------
+
+  !=============================================================================
+  subroutine init_pdf_params( nz, pdf_params )
+
+    ! Description:
+    ! Initializes all PDF parameters in the variable type pdf_parameter.
+
+    ! References:
+    !--------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Constant(s)
+
+    implicit none
+
+    ! Input Variable(s)
+    integer, intent(in) :: &
+      nz    ! Number of vertical grid levels    [-]
+
+    ! Output Variable(s)
+    type(pdf_parameter), dimension(nz), intent(out) :: &
+      pdf_params    ! PDF parameters            [units vary]
+
+
+    ! Initialize all PDF parameters in variable type pdf_parameter.
+    pdf_params(:)%w_1 = zero
+    pdf_params(:)%w_2 = zero
+    pdf_params(:)%varnce_w_1 = zero
+    pdf_params(:)%varnce_w_2 = zero
+    pdf_params(:)%rt_1 = zero
+    pdf_params(:)%rt_2 = zero
+    pdf_params(:)%varnce_rt_1 = zero
+    pdf_params(:)%varnce_rt_2 = zero
+    pdf_params(:)%thl_1 = zero
+    pdf_params(:)%thl_2 = zero
+    pdf_params(:)%varnce_thl_1 = zero
+    pdf_params(:)%varnce_thl_2 = zero
+    pdf_params(:)%rrtthl = zero
+    pdf_params(:)%alpha_thl = zero
+    pdf_params(:)%alpha_rt = zero
+    pdf_params(:)%crt_1 = zero
+    pdf_params(:)%crt_2 = zero
+    pdf_params(:)%cthl_1 = zero
+    pdf_params(:)%cthl_2 = zero
+    pdf_params(:)%chi_1 = zero
+    pdf_params(:)%chi_2 = zero
+    pdf_params(:)%stdev_chi_1 = zero
+    pdf_params(:)%stdev_chi_2 = zero
+    pdf_params(:)%stdev_eta_1 = zero
+    pdf_params(:)%stdev_eta_2 = zero
+    pdf_params(:)%covar_chi_eta_1 = zero
+    pdf_params(:)%covar_chi_eta_2 = zero
+    pdf_params(:)%corr_chi_eta_1 = zero 
+    pdf_params(:)%corr_chi_eta_2 = zero 
+    pdf_params(:)%rsatl_1 = zero
+    pdf_params(:)%rsatl_2 = zero
+    pdf_params(:)%rc_1 = zero
+    pdf_params(:)%rc_2 = zero
+    pdf_params(:)%cloud_frac_1 = zero
+    pdf_params(:)%cloud_frac_2 = zero
+    pdf_params(:)%mixt_frac = zero
+    pdf_params(:)%ice_supersat_frac_1 = zero
+    pdf_params(:)%ice_supersat_frac_2 = zero
+
+
+    return
+
+  end subroutine init_pdf_params
+
+  !=============================================================================
+
+! The CLUBB_CAM preprocessor directives are being commented out because this
+! code is now also used for WRF-CLUBB.
+!#ifdef CLUBB_CAM /* Code for storing pdf_parameter structs in pbuf as array */
 
   subroutine pack_pdf_params(pdf_params, nz, r_param_array)
     implicit none
@@ -89,7 +168,7 @@ module pdf_parameter_module
     do k = 1,nz
        do p = 1,num_pdf_params
  
- r_param_array(k,p) = get_param_at_ind(pdf_params(k), p)
+          r_param_array(k,p) = get_param_at_ind(pdf_params(k), p)
        
        end do ! p
     end do ! k
@@ -300,6 +379,6 @@ module pdf_parameter_module
 
   end subroutine set_param_at_ind
 
-#endif
+!#endif /* CLUBB_CAM */
 
 end module pdf_parameter_module
