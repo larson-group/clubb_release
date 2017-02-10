@@ -456,7 +456,7 @@ module advance_microphys_module
 
        if ( fatal_error( err_code_hydromet(i) ) ) then
 
-          if ( clubb_at_least_debug_level(1) ) then
+          if ( clubb_at_least_debug_level(0) ) then
 
              write(fstderr,*) "Error in hydrometeor field " &
                               // trim( hydromet_list(i) )
@@ -476,7 +476,7 @@ module advance_microphys_module
 
        if ( fatal_error( err_code_Ncm ) ) then
 
-          if ( clubb_at_least_debug_level(1) ) then
+          if ( clubb_at_least_debug_level(0) ) then
 
              write(fstderr,*) "Error in Ncm"
 
@@ -494,7 +494,7 @@ module advance_microphys_module
 !       Joshua Fasching Feb 2008
 
     if ( fatal_error( err_code ) .and.  &
-         clubb_at_least_debug_level( 1 ) ) then
+         clubb_at_least_debug_level( 0 ) ) then
 
        write(fstderr,*) "Error in advance_microphys"
 

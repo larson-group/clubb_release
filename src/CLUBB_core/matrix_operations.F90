@@ -279,11 +279,11 @@ module matrix_operations
 
         if ( iter == itermax ) then
           write(fstderr,*) "iteration =", iter, "itermax =", itermax
-          stop "Fatal error in Cholesky_factor"
+          write(fstderr,*) "Fatal error in Cholesky_factor"
         else if ( clubb_at_least_debug_level( 1 ) ) then
           ! Adding a STOP statement to prevent this problem from slipping under
           ! the rug.
-          stop "Fatal error in Cholesky_factor"
+          write(fstderr,*) "Fatal error in Cholesky_factor"
           write(fstderr,*) "Attempting to modify matrix to allow factorization."
         end if
 
@@ -397,13 +397,11 @@ module matrix_operations
     case( :-1 )
       write(fstderr,*) "Symm_matrix_eigenvalues:" // & 
         " illegal value for argument ", -info
-      stop
     case( 0 )
       ! Success!
 
     case( 1: )
       write(fstderr,*) "Symm_matrix_eigenvalues: Algorithm failed to converge."
-      stop
     end select
 
     return

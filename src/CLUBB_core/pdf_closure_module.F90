@@ -1120,7 +1120,7 @@ module pdf_closure_module
     pdf_params%ice_supersat_frac_1 = ice_supersat_frac_1
     pdf_params%ice_supersat_frac_2 = ice_supersat_frac_2
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
 
       call pdf_closure_check & 
            ( wp4, wprtp2, wp2rtp, wpthlp2, & 

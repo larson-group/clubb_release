@@ -1303,10 +1303,10 @@ module clubb_driver
       end if
 
       ! Check for NaN values in the model arrays
-      if ( clubb_at_least_debug_level( 2 ) ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
         if ( invalid_model_arrays( ) ) then
           err_code = clubb_var_equals_NaN
-          write(fstderr,*) "a CLUBB variable is NaN in main time stepping loop."
+          write(fstderr,*) "Fatal error: a CLUBB variable is NaN in main time stepping loop."
         end if
       end if
 
@@ -1316,7 +1316,7 @@ module clubb_driver
                                    err_code_forcings ) ! Intent(inout)
 
       if ( fatal_error( err_code_forcings ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,*) "Fatal error in prescribe_forcings:"
           call report_error( err_code_forcings )
         end if
@@ -1520,7 +1520,7 @@ module clubb_driver
       
       
       if ( fatal_error( err_code_microphys ) ) then
-         if ( clubb_at_least_debug_level( 1 ) ) then
+         if ( clubb_at_least_debug_level( 0 ) ) then
              write(fstderr,*) "Fatal error in advance_microphys:"
              call report_error( err_code_microphys )
          endif
@@ -4551,7 +4551,7 @@ module clubb_driver
     end select ! Radiation scheme
 
     if ( fatal_error( err_code_radiation ) ) then
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
         write(fstderr,*) "Fatal error in advance_clubb_radiation:"
         call report_error( err_code_radiation )
       end if
@@ -4859,7 +4859,7 @@ module clubb_driver
     do isample=1, lh_num_samples
       if ( fatal_error( err_code_samp(isample) ) ) then
 
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
 
           write(fstderr,*) "Fatal error in silhs_radiation_driver:"
           call report_error( err_code_samp(isample) )
