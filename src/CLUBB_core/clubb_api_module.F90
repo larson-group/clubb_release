@@ -510,19 +510,22 @@ contains
 #endif
     sclrp2, sclrprtp, sclrpthlp, &                          ! intent(inout)
     wpsclrp, edsclrm, err_code, &                           ! intent(inout)
+    rcm, cloud_frac, &                                      ! intent(inout)
+    wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+    sclrpthvp, &                                            ! intent(inout)
+    pdf_params, pdf_params_zm, &                            ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                  ! intent(inout)
                do_liquid_only_in_clubb, &                   ! intent(in)
 #endif
-    rcm, wprcp, cloud_frac, ice_supersat_frac, &            ! intent(out)
-    rcm_in_layer, cloud_cover, &                            ! intent(out)
 #if defined(CLUBB_CAM) || defined(GFDL)
     khzm, khzt, &                                           ! intent(out)
 #endif
 #ifdef CLUBB_CAM
     qclvar, thlprcp_out, &                                  ! intent(out)
 #endif
-    pdf_params )                                            ! intent(out)
+    wprcp, ice_supersat_frac, &                             ! intent(out)
+    rcm_in_layer, cloud_cover )                             ! intent(out)
 
     use advance_clubb_core_module, only : advance_clubb_core
 
@@ -642,6 +645,21 @@ contains
       sclrprtp,  & ! sclr'rt' (momentum levels)           [{units vary} (kg/kg)]
       sclrpthlp    ! sclr'thl' (momentum levels)          [{units vary} K]
 
+   real( kind = core_rknd ), intent(inout), dimension(gr%nz) ::  &
+      rcm,        & ! cloud water mixing ratio, r_c (thermo. levels) [kg/kg]
+      cloud_frac, & ! cloud fraction (thermodynamic levels)          [-]
+      wpthvp,     & ! < w' th_v' > (momentum levels)                 [kg/kg K]
+      wp2thvp,    & ! < w'^2 th_v' > (thermodynamic levels)          [m^2/s^2 K]
+      rtpthvp,    & ! < r_t' th_v' > (momentum levels)               [kg/kg K]
+      thlpthvp      ! < th_l' th_v' > (momentum levels)              [K^2]
+
+    real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &
+      sclrpthvp    ! < sclr' th_v' > (momentum levels)   [units vary]
+
+    type(pdf_parameter), dimension(gr%nz), intent(inout) :: &
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
+
 #ifdef GFDL
     real( kind = core_rknd ), intent(inout), dimension(gr%nz,sclr_dim) :: &  ! h1g, 2010-06-16
       sclrm_trsport_only  ! Passive scalar concentration due to pure transport [{units vary}/s]
@@ -651,17 +669,12 @@ contains
       edsclrm   ! Eddy passive scalar mean (thermo. levels)   [units vary]
 
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
-      rcm,          & ! cloud water mixing ratio, r_c (thermo. levels)  [kg/kg]
       rcm_in_layer, & ! rcm in cloud layer                              [kg/kg]
       cloud_cover     ! cloud cover                                     [-]
-
-    type(pdf_parameter), dimension(gr%nz), intent(out) :: &
-      pdf_params      ! PDF parameters   [units vary]
 
     ! Variables that need to be output for use in host models
     real( kind = core_rknd ), intent(out), dimension(gr%nz) ::  &
       wprcp,            & ! w'r_c' (momentum levels)                  [(kg/kg) m/s]
-      cloud_frac,       & ! cloud fraction (thermodynamic levels)     [-]
       ice_supersat_frac   ! ice cloud fraction (thermodynamic levels) [-]
 
 #if defined(CLUBB_CAM) || defined(GFDL)
@@ -711,19 +724,22 @@ contains
 #endif
       sclrp2, sclrprtp, sclrpthlp, &                          ! intent(inout)
       wpsclrp, edsclrm, err_code, &                           ! intent(inout)
+      rcm, cloud_frac, &                                      ! intent(inout)
+      wpthvp, wp2thvp, rtpthvp, thlpthvp, &                   ! intent(inout)
+      sclrpthvp, &                                            ! intent(inout)
+      pdf_params, pdf_params_zm, &                            ! intent(inout)
 #ifdef GFDL
                RH_crit, & !h1g, 2010-06-16                             ! intent(inout)
                do_liquid_only_in_clubb, &                              ! intent(in)
 #endif
-      rcm, wprcp, cloud_frac, ice_supersat_frac, &            ! intent(out)
-      rcm_in_layer, cloud_cover, &                            ! intent(out)
 #if defined(CLUBB_CAM) || defined(GFDL)
                khzm, khzt, &                                           ! intent(out)
 #endif
 #ifdef CLUBB_CAM
                qclvar, thlprcp_out, &                                               ! intent(out)
 #endif
-      pdf_params )                                            ! intent(out)
+      wprcp, ice_supersat_frac, &                             ! intent(out)
+      rcm_in_layer, cloud_cover )                             ! intent(out)
   end subroutine advance_clubb_core_api
 
   !================================================================================================
