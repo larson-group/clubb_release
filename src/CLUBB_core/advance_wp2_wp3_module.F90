@@ -348,7 +348,7 @@ module advance_wp2_wp3_module
 !       Joshua Fasching Feb 2008
     if ( fatal_error( wp2_wp3_err_code ) ) then  
      
-      if ( clubb_at_least_debug_level( 1 ) ) then
+      if ( clubb_at_least_debug_level( 0 ) ) then
         write(fstderr,*) "Errors in advance_wp2_wp3"
 
         write(fstderr,*) "Intent(in)"

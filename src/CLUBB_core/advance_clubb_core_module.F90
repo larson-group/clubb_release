@@ -700,7 +700,7 @@ module advance_clubb_core_module
     !----- Begin Code -----
 
     ! Sanity checks
-    if ( clubb_at_least_debug_level( 1 ) ) then
+    if ( clubb_at_least_debug_level( 0 ) ) then
 
       if ( l_Lscale_plume_centered .and. .not. l_avg_Lscale ) then
         write(fstderr,*) "l_Lscale_plume_centered requires l_avg_Lscale"
@@ -2307,7 +2307,7 @@ module advance_clubb_core_module
 
       if ( fatal_error( err_code_pdf_closure ) ) then
 
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,*) "At grid level = ",k
         end if
 
@@ -2456,7 +2456,7 @@ module advance_clubb_core_module
 
         if ( fatal_error( err_code_pdf_closure ) ) then
 
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 0 ) ) then
             write(fstderr,*) "At grid level = ",k
           end if
 
@@ -2623,7 +2623,7 @@ module advance_clubb_core_module
 
         if ( fatal_error( err_code_pdf_closure ) ) then
 
-          if ( clubb_at_least_debug_level ( 1 ) )then
+          if ( clubb_at_least_debug_level ( 0 ) )then
             write(fstderr,*) "At grid level = ", k
           end if
 
@@ -2681,7 +2681,7 @@ module advance_clubb_core_module
 
           if ( fatal_error( err_code_pdf_closure ) ) then
 
-            if ( clubb_at_least_debug_level( 1 ) ) then
+            if ( clubb_at_least_debug_level( 0 ) ) then
               write(fstderr,*) "At grid level = ",k
             end if
 

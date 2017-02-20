@@ -530,7 +530,7 @@ module latin_hypercube_driver_module
     X_vert_corr(1:nz) = compute_vert_corr( nz, delta_zm, Lscale_vert_avg, rcm )
 
     ! Assertion check for the vertical correlation
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       if ( any( X_vert_corr > one ) .or. any( X_vert_corr < zero ) ) then
         write(fstderr,*) "The vertical correlation in latin_hypercube_driver"// &
           "is not in the correct range"

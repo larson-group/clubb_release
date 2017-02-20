@@ -791,7 +791,7 @@ module advance_xp2_xpyp_module
     end if
 
     if ( fatal_error( err_code ) .and.  & 
-         clubb_at_least_debug_level( 1 ) ) then
+         clubb_at_least_debug_level( 0 ) ) then
 
       write(fstderr,*) "Error in advance_xp2_xpyp"
 

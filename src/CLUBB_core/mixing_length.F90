@@ -760,7 +760,7 @@ module mixing_length
     !Lscale = min( Lscale, 1e5 )
     Lscale = min( Lscale, Lscale_max )
 
-    if( clubb_at_least_debug_level( 2 ) ) then
+    if( clubb_at_least_debug_level( 0 ) ) then
 
       ! Ensure that the output from this subroutine is valid.
       call length_check( Lscale, Lscale_up, Lscale_down, err_code_Lscale )
@@ -870,10 +870,10 @@ module mixing_length
       sat_ice_ratio = zero
     end if ! l_include_ice
 
-    if ( clubb_at_least_debug_level( 2 ) ) then
+    if ( clubb_at_least_debug_level( 1 ) ) then
       if ( sat_ice_ratio < zero .or. sat_ice_ratio > one ) then
         write(fstderr,*) 'sat_ice_ratio is outside the range [0,1].'
-        stop "Fatal error in compute_rsat_parcel"
+        write(fstderr,*) "Fatal error in compute_rsat_parcel"
       end if
     end if
 

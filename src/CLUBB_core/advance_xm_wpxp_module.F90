@@ -428,7 +428,7 @@ module advance_xm_wpxp_module
       endif
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "Mean total water & total water flux LU decomp. failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -449,7 +449,7 @@ module advance_xm_wpxp_module
              err_code_xm_wpxp )  ! Intent(out)
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -502,7 +502,7 @@ module advance_xm_wpxp_module
       endif
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "Liquid pot. temp & thetal flux LU decomp. failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -523,7 +523,7 @@ module advance_xm_wpxp_module
              err_code_xm_wpxp ) ! Intent(out)
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -582,7 +582,7 @@ module advance_xm_wpxp_module
                             solution, err_code_xm_wpxp ) ! Intent(out)
 
         if ( fatal_error( err_code_xm_wpxp ) ) then
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 0 ) ) then
             write(fstderr,*) "Passive scalar # ", i, " LU decomp. failed."
             call report_error( err_code_xm_wpxp )
           end if
@@ -604,7 +604,7 @@ module advance_xm_wpxp_module
                err_code_xm_wpxp ) ! Intent(out)
 
        if ( fatal_error( err_code_xm_wpxp ) ) then
-         if ( clubb_at_least_debug_level( 1 ) ) then
+         if ( clubb_at_least_debug_level( 0 ) ) then
            write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
            call report_error( err_code_xm_wpxp )
          end if
@@ -680,7 +680,7 @@ module advance_xm_wpxp_module
       endif
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "xm_wpxp matrix LU decomp. failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -701,7 +701,7 @@ module advance_xm_wpxp_module
              err_code_xm_wpxp ) ! Intent(out)
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "rtm monotonic flux limiter:  tridag failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -722,7 +722,7 @@ module advance_xm_wpxp_module
              err_code_xm_wpxp ) ! Intent(out)
 
       if ( fatal_error( err_code_xm_wpxp ) ) then
-        if ( clubb_at_least_debug_level( 1 ) ) then
+        if ( clubb_at_least_debug_level( 0 ) ) then
           write(fstderr,'(a)') "thlm monotonic flux limiter:  tridag failed"
           call report_error( err_code_xm_wpxp )
         end if
@@ -754,7 +754,7 @@ module advance_xm_wpxp_module
                err_code_xm_wpxp ) ! Intent(out)
 
         if ( fatal_error( err_code_xm_wpxp ) ) then
-          if ( clubb_at_least_debug_level( 1 ) ) then
+          if ( clubb_at_least_debug_level( 0 ) ) then
             write(fstderr,*) "sclrm # ", i, "monotonic flux limiter: tridag failed"
             call report_error( err_code_xm_wpxp )
           end if
@@ -773,7 +773,7 @@ module advance_xm_wpxp_module
 
     ! Error Report
     ! Joshua Fasching Feb 2008
-    if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 1 ) ) then
+    if ( fatal_error( err_code ) .and. clubb_at_least_debug_level( 0 ) ) then
 
       write(fstderr,*) "Error in advance_xm_wpxp"
 
