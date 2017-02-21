@@ -1630,6 +1630,7 @@ module advance_clubb_core_module
            ( um, vm, upwp, vpwp, up2, vp2,                          & ! intent(in)
              thlm, rtm, wprtp, wpthlp,                              & ! intent(in)
              wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp,           & ! intent(in)
+             wpthvp, wp2thvp, rtpthvp, thlpthvp,                    & ! intent(in)
              p_in_Pa, exner, rho, rho_zm,                           & ! intent(in)
              rho_ds_zm, rho_ds_zt, thv_ds_zm,                       & ! intent(in)
              thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)

@@ -1706,6 +1706,7 @@ module stats_clubb_utilities
                    ( um, vm, upwp, vpwp, up2, vp2, &
                      thlm, rtm, wprtp, wpthlp, &
                      wp2, wp3, rtp2, rtp3, thlp2, thlp3, rtpthlp, &
+                     wpthvp, wp2thvp, rtpthvp, thlpthvp, &
                      p_in_Pa, exner, rho, rho_zm, &
                      rho_ds_zm, rho_ds_zt, thv_ds_zm, &
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
@@ -1754,7 +1755,7 @@ module stats_clubb_utilities
         ircm_supersat_adj
 
     use stats_variables, only: &
-        ip_in_Pa, & 
+        ip_in_Pa, & ! Variable(s)
         iexner, & 
         irho_ds_zt, &
         ithv_ds_zt, &
@@ -1931,7 +1932,6 @@ module stats_clubb_utilities
         Lscale_down, & 
         tau_zt, &
         Kh_zt, & 
-        wp2thvp, & 
         wp2rcp, & 
         wprtpthlp, & 
         sigma_sqd_w_zt, & 
@@ -1949,9 +1949,6 @@ module stats_clubb_utilities
         upwp_zt, &
         vpwp_zt, & 
         wp4, & 
-        rtpthvp, & 
-        thlpthvp, & 
-        wpthvp, &
         tau_zm, &
         Kh_zm, & 
         thlprcp, & 
@@ -1976,7 +1973,7 @@ module stats_clubb_utilities
       Skw_velocity
 
     use pdf_parameter_module, only: & 
-      pdf_parameter ! Type
+        pdf_parameter ! Type
 
     use T_in_K_module, only: & 
         thlm2T_in_K ! Procedure
@@ -2000,38 +1997,42 @@ module stats_clubb_utilities
         lin_interpolate_two_points             ! Procedure
 
     use saturation, only: &
-      sat_mixrat_ice ! Procedure
+        sat_mixrat_ice ! Procedure
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     implicit none
 
     ! Input Variable(s)
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
-      um,      & ! u wind                        [m/s]
-      vm,      & ! v wind                        [m/s]
-      upwp,    & ! vertical u momentum flux      [m^2/s^2]
-      vpwp,    & ! vertical v momentum flux      [m^2/s^2]
-      up2,     & ! u'^2                          [m^2/s^2]
-      vp2,     & ! v'^2                          [m^2/s^2]
-      thlm,    & ! liquid potential temperature  [K]
-      rtm,     & ! total water mixing ratio      [kg/kg]
-      wprtp,   & ! w'rt'                         [(kg/kg) m/s]
-      wpthlp,  & ! w'thl'                        [m K /s]
-      wp2,     & ! w'^2                          [m^2/s^2]
-      wp3,     & ! w'^3                          [m^3/s^3]
-      rtp2,    & ! rt'^2                         [(kg/kg)^2]
-      rtp3,    & ! rt'^3                         [(kg/kg)^3]
-      thlp2,   & ! thl'^2                        [K^2]
-      thlp3,   & ! thl'^3                        [K^3]
-      rtpthlp    ! rt'thl'                       [kg/kg K]
+      um,       & ! u wind (thermodynamic levels)          [m/s]
+      vm,       & ! v wind (thermodynamic levels)          [m/s]
+      upwp,     & ! vertical u momentum flux (m levs.)     [m^2/s^2]
+      vpwp,     & ! vertical v momentum flux (m levs.)     [m^2/s^2]
+      up2,      & ! < u'^2 > (momentum levels)             [m^2/s^2]
+      vp2,      & ! < v'^2 > (momentum levels)             [m^2/s^2]
+      thlm,     & ! liquid potential temperature (t levs.) [K]
+      rtm,      & ! total water mixing ratio (t levs.)     [kg/kg]
+      wprtp,    & ! < w' r_t' > (momentum levels)          [m/s kg/kg]
+      wpthlp,   & ! < w' th_l' > (momentum levels)         [m/s K]
+      wp2,      & ! < w'^2 > (momentum levels)             [m^2/s^2]
+      wp3,      & ! < w'^3 > (thermodynamic levels)        [m^3/s^3]
+      rtp2,     & ! < r_t'^2 > (momentum levels)           [(kg/kg)^2]
+      rtp3,     & ! < r_t'^3 > (thermodynamic levels)      [(kg/kg)^3]
+      thlp2,    & ! < th_l'^2 > (momentum levels)          [K^2]
+      thlp3,    & ! < th_l'^3 > (thermodynamic levels)     [K^3]
+      rtpthlp,  & ! < r_t' th_l' > (momentum levels)       [kg/kg K]
+      wpthvp,   & ! < w' th_v' > (momentum levels)         [kg/kg K]
+      wp2thvp,  & ! < w'^2 th_v' > (thermodynamic levels)  [m^2/s^2 K]
+      rtpthvp,  & ! < r_t' th_v' > (momentum levels)       [kg/kg K]
+      thlpthvp    ! < th_l' th_v' > (momentum levels)      [K^2]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
       p_in_Pa,      & ! Pressure (Pa) on thermodynamic points    [Pa]
       exner,        & ! Exner function = ( p / p0 ) ** kappa     [-]
-      rho,          & ! Density                                  [kg/m^3]
-      rho_zm,       & ! Density                                  [kg/m^3]
+      rho,          & ! Density (thermodynamic levels)           [kg/m^3]
+      rho_zm,       & ! Density on momentum levels               [kg/m^3]
       rho_ds_zm,    & ! Dry, static density (momentum levels)    [kg/m^3]
       rho_ds_zt,    & ! Dry, static density (thermo. levs.)      [kg/m^3]
       thv_ds_zm,    & ! Dry, base-state theta_v (momentum levs.) [K]
@@ -2040,14 +2041,14 @@ module stats_clubb_utilities
       wm_zm           ! w on momentum levels                     [m/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz) :: & 
-      rcm_zm,               & ! Total water mixing ratio                 [kg/kg]
-      rtm_zm,               & ! Total water mixing ratio                 [kg/kg]
-      thlm_zm,              & ! Liquid potential temperature             [K]
-      rcm,                  & ! Cloud water mixing ratio                 [kg/kg]
-      wprcp,                & ! w'rc'                                    [(kg/kg) m/s]
+      rcm_zm,               & ! Cloud water mixing ratio on m levs.      [kg/kg]
+      rtm_zm,               & ! Total water mixing ratio on m levs.      [kg/kg]
+      thlm_zm,              & ! Liquid potential temperature on m levs.  [K]
+      rcm,                  & ! Cloud water mixing ratio (t levs.)       [kg/kg]
+      wprcp,                & ! < w' r_c' > (momentum levels)            [m/s kg/kg]
       rc_coef,              & ! Coefficient of X' R_l' in Eq. (34)       [-]
-      cloud_frac,           & ! Cloud fraction                           [-]
-      ice_supersat_frac,    & ! Ice cloud fracion                        [-]
+      cloud_frac,           & ! Cloud fraction (thermodynamic levels)    [-]
+      ice_supersat_frac,    & ! Ice cloud fracion (thermodynamic levels) [-]
       cloud_frac_zm,        & ! Cloud fraction on zm levels              [-]
       ice_supersat_frac_zm, & ! Ice cloud fraction on zm levels          [-]
       rcm_in_layer,         & ! Cloud water mixing ratio in cloud layer  [kg/kg]
@@ -2058,7 +2059,7 @@ module stats_clubb_utilities
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
-      pdf_params ! PDF parameters [units vary]
+      pdf_params    ! PDF parameters    [units vary]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar            [units vary]
