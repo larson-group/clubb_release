@@ -88,10 +88,11 @@ download the CLUBB code.
 
 With a valid CLUBB account, the CLUBB code can be checked out from its
 repository using subversion (a.k.a. svn).  If you have not already downloaded CLUBB,
-then at a bash prompt, type in the following command, all on one line:
+then at a bash prompt, type in the following command from the directory where
+you want the clubb folder to be placed, all on one line:
 user@computer ~$ svn co http://carson.math.uwm.edu/repos/clubb_repos/trunk 
           clubb --username EMAIL
-(EMAIL is the e-mail address used to register for a CLUBB account)
+(EMAIL is the e-mail address used to register for a CLUBB account. )
 
 After entering this command, svn will prompt for a password. The password will
 have been sent via e-mail after signing up for a CLUBB account. After the
@@ -110,8 +111,10 @@ to compile properly with various Fortran compilers, including g95 and
 gfortran, which are both free.  The CLUBB code relies on a script called mkmf 
 which requires your system to have Perl installed.
 
-To compile, change directories to the CLUBB source directory (e.g. "clubb"),
-and then to the compile directory within the CLUBB source directory.
+To compile, change directories to the CLUBB directory (e.g. "clubb"),
+and then to the compile directory within the CLUBB directory:
+
+user@computer ~$ cd clubb/compile
 
 Once in the compile directory, run the compile.bash script, using the config
 file corresponding to the target platform to run CLUBB on.
@@ -121,7 +124,7 @@ user@computer compile$ ./compile.bash config/linux_x86_64_gfortran.bash
 
 To run this on a Mac OS X machine, you should use the following command:
 
-$ ./compile.bash config/macosx_x86_64_gfortran.bash
+user@computer compile$ ./compile.bash config/macosx_x86_64_gfortran.bash
 
 (If you want a primer on using the command line shell on Macs, see
 https://developer.apple.com/library/mac/documentation/OpenSource/Conceptual/ShellScripting/CommandLInePrimer/CommandLine.html .)
@@ -130,7 +133,7 @@ The command line will output information relating to the compilation of CLUBB.
 
 If you change something in the configuration and need to remove the old 
 executables and object files you can type:
-$ ./clean_all.bash
+user@computer compile$ ./clean_all.bash
 
 Then recompile the code.
 
@@ -174,7 +177,7 @@ plots output directory. This must be called from the postprocessing/plotgen
 directory inside the CLUBB checkout.
 
 Mac users in W434, at the terminal, type in the following command:
-$ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
+user@computer$ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
 
 Then, to generate a webpage containing plots, type (if your output 
 is in ~/clubb/output and you want the plots to go in directory ~/plots):
@@ -183,29 +186,36 @@ user@computer$ cd  ~/clubb/postprocessing/plotgen
 
 user@computer$ ./plotgen.pl ~/clubb/output ~/plots
 
+(Here the tilde, ~, tells the OS to look in the user's home directory.)
 The above line will use plotgen to create plots from the simulation output
 in ~/clubb/output, and place the resulting plots in the ~/plots directory.  
-(Here the tilde, ~, tells the OS to look in the user's home directory.)
+plotgen will create the ~/plots directory if it does not exist,
+and if it does exist, instead use 
+
+user@computer$ ./plotgen.pl -r ~/clubb/output ~/plots
+
+in order to overwrite what's in the ~\plots directory.
 If you want to overplot two simulations, move each set of output files to 
 its own directory, e.g. ~/clubb/output/sim1 and ~/clubb/output/sim2, and
 type the command
 
 user@computer$ cd  ~/clubb/postprocessing/plotgen
-user@computer$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
+user@computer plotgen$ ./plotgen.pl ~/clubb/output/sim1 ~/clubb/output/sim2 ~/plots
 
 To view the plots, use a web browser to view index.html in the plots directory.
 user@computer ~$ firefox ~/plots/index.html
 
+Alternatively, one can use the command "pwd" in order to find the directory path
+to the index.html file.  Then go to a web browser URL bar, type "file://" then the path,
+and then "/index.html".
+
 MAC Users in W434 use the following command
-$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
+user@computer$ /Applications/Firefox.app/Contents/MacOS/firefox-bin ~/plots/index.html
 assuming that the index.html file is in the plots directory.
 
 Plotgen will plot only the test cases that have output; therefore, if only
 the BOMEX case has been run, for example, the resulting plotgen plots will
 only have BOMEX included.
-
-Nota bene: If "./plotgen.pl " is replaced by "./plotgen.pl -r ", then 
-the contents of the plotgen output folder will be replaced.
 
 -------------------------------------------------------
 - SUMMARY FOR LINUX
