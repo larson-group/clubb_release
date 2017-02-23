@@ -1636,8 +1636,9 @@ module advance_clubb_core_module
              thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef,          & ! intent(in)
              rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac,& ! intent(in)
              cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer,     & ! intent(in)
-             cloud_cover, rcm_supersat_adj, sigma_sqd_w, pdf_params,& ! intent(in)
-             sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing,     & ! intent(in)
+             cloud_cover, rcm_supersat_adj, sigma_sqd_w,            & ! intent(in)
+             pdf_params, pdf_params_zm, sclrm, sclrp2,              & ! intent(in)
+             sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp,         & ! intent(in)
              wpsclrp, edsclrm, edsclrm_forcing                  )     ! intent(in)
 
 

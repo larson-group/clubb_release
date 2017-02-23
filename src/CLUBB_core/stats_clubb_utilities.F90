@@ -1712,8 +1712,9 @@ module stats_clubb_utilities
                      thv_ds_zt, wm_zt, wm_zm, rcm, wprcp, rc_coef, &
                      rcm_zm, rtm_zm, thlm_zm, cloud_frac, ice_supersat_frac, &
                      cloud_frac_zm, ice_supersat_frac_zm, rcm_in_layer, &
-                     cloud_cover, rcm_supersat_adj, sigma_sqd_w, pdf_params, &
-                     sclrm, sclrp2, sclrprtp, sclrpthlp, sclrm_forcing, &
+                     cloud_cover, rcm_supersat_adj, sigma_sqd_w, &
+                     pdf_params, pdf_params_zm, sclrm, sclrp2, &
+                     sclrprtp, sclrpthlp, sclrm_forcing, sclrpthvp, &
                      wpsclrp, edsclrm, edsclrm_forcing )
 
     ! Description:
@@ -1897,27 +1898,34 @@ module stats_clubb_utilities
         iwpedsclrp
 
     use stats_variables, only: &
-      icloud_frac_zm, &
-      iice_supersat_frac_zm, &
-      ircm_zm, &
-      irtm_zm, &
-      ithlm_zm
+        icloud_frac_zm, &
+        iice_supersat_frac_zm, &
+        ircm_zm, &
+        irtm_zm, &
+        ithlm_zm
 
     use stats_variables, only: &
-      iwp3_on_wp2, &
-      iwp3_on_wp2_zt, &
-      iSkw_velocity
+        iw_1_zm, & ! Variable(s)
+        iw_2_zm, &
+        ivarnce_w_1_zm, &
+        ivarnce_w_2_zm, &
+        imixt_frac_zm
 
     use stats_variables, only: &
-      ia3_coef, & ! Variables
-      ia3_coef_zt, &
-      ircm_in_cloud
+        iwp3_on_wp2, &
+        iwp3_on_wp2_zt, &
+        iSkw_velocity
+
+    use stats_variables, only: &
+        ia3_coef, & ! Variables
+        ia3_coef_zt, &
+        ircm_in_cloud
 
     use grid_class, only: & 
         gr ! Variable
 
     use grid_class, only: & 
-      zt2zm ! Procedure(s)
+        zt2zm ! Procedure(s)
 
     use variables_diagnostic_module, only: & 
         thvm, & ! Variable(s)
@@ -1956,7 +1964,6 @@ module stats_clubb_utilities
         rcp2, & 
         em, & 
         Frad, & 
-        sclrpthvp, & 
         sclrprcp, & 
         wp2sclrp, & 
         wpsclrp2, & 
@@ -1965,12 +1972,12 @@ module stats_clubb_utilities
         wpedsclrp
 
     use variables_diagnostic_module, only: & 
-      a3_coef, & ! Variable(s)
-      a3_coef_zt, &
-      wp3_zm, &
-      wp3_on_wp2, &
-      wp3_on_wp2_zt, &
-      Skw_velocity
+        a3_coef, & ! Variable(s)
+        a3_coef_zt, &
+        wp3_zm, &
+        wp3_on_wp2, &
+        wp3_on_wp2_zt, &
+        Skw_velocity
 
     use pdf_parameter_module, only: & 
         pdf_parameter ! Type
@@ -2059,7 +2066,8 @@ module stats_clubb_utilities
       sigma_sqd_w    ! PDF width parameter (momentum levels)    [-]
 
     type(pdf_parameter), dimension(gr%nz), intent(in) :: & 
-      pdf_params    ! PDF parameters    [units vary]
+      pdf_params,    & ! PDF parameters (thermodynamic levels)    [units vary]
+      pdf_params_zm    ! PDF parameters on momentum levels        [units vary]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz,sclr_dim) :: & 
       sclrm,           & ! High-order passive scalar            [units vary]
@@ -2067,6 +2075,7 @@ module stats_clubb_utilities
       sclrprtp,        & ! High-order passive scalar covariance [units kg/kg]
       sclrpthlp,       & ! High-order passive scalar covariance [units K]
       sclrm_forcing,   & ! Large-scale forcing of scalar        [units/s]
+      sclrpthvp,       & ! High-order passive scalar covariance [units K]
       wpsclrp            ! w'sclr'                              [units m/s]
 
     real( kind = core_rknd ), intent(in), dimension(gr%nz,edsclr_dim) :: & 
@@ -2273,6 +2282,11 @@ module stats_clubb_utilities
       call stat_update_var( ircm_zm, rcm_zm, stats_zm )
       call stat_update_var( irtm_zm, rtm_zm, stats_zm )
       call stat_update_var( ithlm_zm, thlm_zm, stats_zm )
+      call stat_update_var( iw_1_zm, pdf_params_zm%w_1, stats_zm )
+      call stat_update_var( iw_2_zm, pdf_params_zm%w_2, stats_zm )
+      call stat_update_var( ivarnce_w_1_zm, pdf_params_zm%varnce_w_1, stats_zm )
+      call stat_update_var( ivarnce_w_2_zm, pdf_params_zm%varnce_w_2, stats_zm )
+      call stat_update_var( imixt_frac_zm, pdf_params_zm%mixt_frac, stats_zm )
 
       if ( sclr_dim > 0 ) then
         do isclr=1, sclr_dim

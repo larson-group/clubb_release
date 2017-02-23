@@ -3303,8 +3303,8 @@ module clubb_driver
         input_type, &  ! Variable(s)
         l_input_um, l_input_vm, l_input_rtm, l_input_thlm, & 
         l_input_wp2, l_input_wprtp, l_input_wpthlp,  & 
-        l_input_wp3, l_input_rtp2, l_input_rtp3, l_input_thlp2, l_input_thlp3,  &
-        l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
+        l_input_wp3, l_input_rtp2, l_input_rtp3, l_input_thlp2, &
+        l_input_thlp3, l_input_rtpthlp, l_input_upwp, l_input_vpwp, & 
         l_input_ug, l_input_vg, l_input_rcm,  & 
         l_input_wm_zt, l_input_exner, l_input_em, & 
         l_input_p, l_input_rho, l_input_rho_zm, &
@@ -3312,26 +3312,33 @@ module clubb_driver
         l_input_thv_ds_zm, l_input_thv_ds_zt, &
         l_input_Lscale, l_input_Lscale_up, l_input_Lscale_down, & 
         l_input_Kh_zt, l_input_Kh_zm, l_input_tau_zm, l_input_tau_zt, & 
-        l_input_wpthvp, l_input_radht, &
-        l_input_thl_1, l_input_thl_2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
+        l_input_wpthvp, l_input_wp2thvp, l_input_rtpthvp, l_input_thlpthvp, &
+        l_input_radht, &
+        l_input_w_1, l_input_w_2, l_input_varnce_w_1, l_input_varnce_w_2, &
+        l_input_rt_1, l_input_rt_2, l_input_varnce_rt_1, l_input_varnce_rt_2, &
+        l_input_thl_1, l_input_thl_2, l_input_varnce_thl_1, &
+        l_input_varnce_thl_2, l_input_mixt_frac, l_input_chi_1, l_input_chi_2, &
         l_input_stdev_chi_1, l_input_stdev_chi_2, l_input_rc_1, l_input_rc_2, &
-        l_input_thvm, l_input_rrm,l_input_Nrm,  & 
+        l_input_w_1_zm, l_input_w_2_zm, l_input_varnce_w_1_zm, &
+        l_input_varnce_w_2_zm, l_input_mixt_frac_zm, &
+        l_input_thvm, l_input_rrm, l_input_Nrm,  & 
         l_input_rsm, l_input_rim, l_input_rgm,  & 
         l_input_thlm_forcing, l_input_rtm_forcing, & 
         l_input_up2, l_input_vp2, l_input_sigma_sqd_w, l_input_Ncm,  & 
-        l_input_Nccnm, l_input_Nim, l_input_cloud_frac, l_input_sigma_sqd_w_zt, &
-        l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
-        l_input_sfc_soil_T_in_K, l_input_wprtp_forcing, l_input_wpthlp_forcing, &
-        l_input_rtp2_forcing, l_input_thlp2_forcing, l_input_rtpthlp_forcing, l_input_thlprcp, &
-        l_input_rcm_mc, l_input_rvm_mc, l_input_thlm_mc, l_input_wprtp_mc, &
-        l_input_wpthlp_mc, l_input_rtp2_mc, l_input_thlp2_mc, l_input_rtpthlp_mc, &
+        l_input_Nccnm, l_input_Nim, l_input_cloud_frac, &
+        l_input_sigma_sqd_w_zt, l_input_veg_T_in_K, l_input_deep_soil_T_in_K, &
+        l_input_sfc_soil_T_in_K, l_input_wprtp_forcing, &
+        l_input_wpthlp_forcing, l_input_rtp2_forcing, l_input_thlp2_forcing, &
+        l_input_rtpthlp_forcing, l_input_thlprcp, l_input_rcm_mc, &
+        l_input_rvm_mc, l_input_thlm_mc, l_input_wprtp_mc, l_input_wpthlp_mc, &
+        l_input_rtp2_mc, l_input_thlp2_mc, l_input_rtpthlp_mc, &
         stat_files
 
     use inputfields, only: &
-      compute_timestep,  & ! Procedure(s)
-      stat_fields_reader, &
-      set_filenames, &
-      get_clubb_variable_interpolated
+        compute_timestep,  & ! Procedure(s)
+        stat_fields_reader, &
+        set_filenames, &
+        get_clubb_variable_interpolated
 
     use grid_class, only: gr ! Variable(s)
 
@@ -3342,13 +3349,13 @@ module clubb_driver
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
     use soil_vegetation, only: &
-      l_soil_veg ! Variable(s)
+        l_soil_veg ! Variable(s)
 
     use parameters_microphys, only : &
-      microphys_scheme, &  ! Variable(s)
-      l_predict_Nc, &
-      l_ice_microphys, &
-      l_graupel
+        microphys_scheme, &  ! Variable(s)
+        l_predict_Nc, &
+        l_ice_microphys, &
+        l_graupel
 
 
     implicit none
@@ -3428,8 +3435,21 @@ module clubb_driver
     l_input_tau_zt = .true.
     l_input_thvm = .true.
     l_input_wpthvp = .true.
+    l_input_wp2thvp = .true.
+    l_input_rtpthvp = .true.
+    l_input_thlpthvp = .true.
+    l_input_w_1 = .true.
+    l_input_w_2 = .true.
+    l_input_varnce_w_1 = .true.
+    l_input_varnce_w_2 = .true.
+    l_input_rt_1 = .true.
+    l_input_rt_2 = .true.
+    l_input_varnce_rt_1 = .true.
+    l_input_varnce_rt_2 = .true.
     l_input_thl_1 = .true.
     l_input_thl_2 = .true.
+    l_input_varnce_thl_1 = .true.
+    l_input_varnce_thl_2 = .true.
     l_input_mixt_frac = .true.
     l_input_chi_1   = .true.
     l_input_chi_2   = .true.
@@ -3437,6 +3457,11 @@ module clubb_driver
     l_input_stdev_chi_2  = .true.
     l_input_rc_1  = .true.
     l_input_rc_2  = .true.
+    l_input_w_1_zm = .true.
+    l_input_w_2_zm = .true.
+    l_input_varnce_w_1_zm = .true.
+    l_input_varnce_w_2_zm = .true.
+    l_input_mixt_frac_zm = .true.
     l_input_radht = .true.
 
     select case ( trim( microphys_scheme ) )

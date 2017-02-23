@@ -268,6 +268,16 @@ module stats_variables
 !$omp threadprivate(icloud_frac_zm, iice_supersat_frac_zm, ircm_zm, irtm_zm, ithlm_zm)
 
   integer, public :: &
+    iw_1_zm = 0, &
+    iw_2_zm = 0, &
+    ivarnce_w_1_zm = 0, &
+    ivarnce_w_2_zm = 0, &
+    imixt_frac_zm = 0
+
+!$omp threadprivate(iw_1_zm, iw_2_zm, ivarnce_w_1_zm, ivarnce_w_2_zm, &
+!$omp               imixt_frac_zm)
+
+  integer, public :: &
     ilh_rcm_avg = 0, &
     ik_lh_start = 0
 

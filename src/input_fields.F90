@@ -1,4 +1,4 @@
-!-----------------------------------------------------------------------
+!----------------------------------------------------------------------
 ! $Id$
 
 module inputfields
@@ -33,11 +33,22 @@ module inputfields
     l_input_Lscale = .false., l_input_Lscale_up = .false., l_input_Lscale_down = .false., & 
     l_input_Kh_zt = .false., l_input_Kh_zm = .false., &
     l_input_tau_zm = .false., l_input_tau_zt = .false., & 
-    l_input_wpthvp = .false., l_input_radht = .false., &
-    l_input_thl_1 = .false., l_input_thl_2 = .false., l_input_mixt_frac = .false., &
+    l_input_wpthvp = .false., l_input_wp2thvp = .false., &
+    l_input_rtpthvp = .false., l_input_thlpthvp = .false., &
+    l_input_radht = .false., &
+    l_input_w_1 = .false., l_input_w_2 = .false., &
+    l_input_varnce_w_1 = .false., l_input_varnce_w_2 = .false., &
+    l_input_rt_1 = .false., l_input_rt_2 = .false., &
+    l_input_varnce_rt_1 = .false., l_input_varnce_rt_2 = .false., &
+    l_input_thl_1 = .false., l_input_thl_2 = .false., &
+    l_input_varnce_thl_1 = .false., l_input_varnce_thl_2 = .false., &
+    l_input_mixt_frac = .false., &
     l_input_chi_1 = .false., l_input_chi_2 = .false., &
     l_input_stdev_chi_1 = .false., l_input_stdev_chi_2 = .false., &
     l_input_rc_1 = .false., l_input_rc_2 = .false., &
+    l_input_w_1_zm = .false., l_input_w_2_zm = .false., &
+    l_input_varnce_w_1_zm = .false., l_input_varnce_w_2_zm = .false., &
+    l_input_mixt_frac_zm = .false., &
     l_input_thvm = .false., l_input_rrm = .false., &
     l_input_Nrm = .false.,  l_input_Ncm = .false.,  & 
     l_input_rsm = .false., l_input_rim = .false., &
@@ -257,6 +268,9 @@ module inputfields
         Kh_zt, &
         thvm, &
         wpthvp, &
+        wp2thvp, &
+        rtpthvp, &
+        thlpthvp, &
         Nccnm, & 
         sigma_sqd_w_zt, & 
         em, &
@@ -267,7 +281,10 @@ module inputfields
         rtp3
 
     use variables_prognostic_module, only: & 
-        pdf_params ! Variable(s)
+        pdf_params    ! Variable(s)
+
+    use variables_diagnostic_module, only: & 
+        pdf_params_zm    ! Variable(s)
 
     use grid_class, only: & 
         gr,  & ! Variable(s)
@@ -279,8 +296,6 @@ module inputfields
         w_tol_sqd, &
         em_min,     &
         fstderr, &
-        Cp, &
-        Lv, &
         pascal_per_mb, &
         g_per_kg, &
         sec_per_day
@@ -560,8 +575,14 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_sigma_sqd_w_zt, stat_files(clubb_zt), "sigma_sqd_w_zt", gr%nz, timestep, &
-             gr%zt, sigma_sqd_w_zt, l_read_error )
+           ( l_input_sigma_sqd_w_zt, stat_files(clubb_zt), "sigma_sqd_w_zt", &
+             gr%nz, timestep, gr%zt, sigma_sqd_w_zt, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_wp2thvp, stat_files(clubb_zt), "wp2thvp", gr%nz, &
+             timestep, gr%zt, wp2thvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -571,7 +592,55 @@ module inputfields
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
-      ! PDF Parameters (needed for K&K microphysics)
+      ! PDF Parameters (needed for CLUBB restarts)
+      call get_clubb_variable_interpolated &
+           ( l_input_w_1, stat_files(clubb_zt), "w_1", gr%nz, timestep, &
+             gr%zt, pdf_params%w_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_w_2, stat_files(clubb_zt), "w_2", gr%nz, timestep, &
+             gr%zt, pdf_params%w_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_w_1, stat_files(clubb_zt), "varnce_w_1", gr%nz, &
+             timestep, gr%zt, pdf_params%varnce_w_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_w_2, stat_files(clubb_zt), "varnce_w_2", gr%nz, &
+             timestep, gr%zt, pdf_params%varnce_w_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rt_1, stat_files(clubb_zt), "rt_1", gr%nz, timestep, &
+             gr%zt, pdf_params%rt_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rt_2, stat_files(clubb_zt), "rt_2", gr%nz, timestep, &
+             gr%zt, pdf_params%rt_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_rt_1, stat_files(clubb_zt), "varnce_rt_1", gr%nz, &
+             timestep, gr%zt, pdf_params%varnce_rt_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_rt_2, stat_files(clubb_zt), "varnce_rt_2", gr%nz, &
+             timestep, gr%zt, pdf_params%varnce_rt_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
       call get_clubb_variable_interpolated &
            ( l_input_thl_1, stat_files(clubb_zt), "thl_1", gr%nz, timestep, &
              gr%zt, pdf_params%thl_1, l_read_error )
@@ -585,8 +654,20 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_mixt_frac, stat_files(clubb_zt), "mixt_frac", gr%nz, timestep, &
-             gr%zt, pdf_params%mixt_frac, l_read_error )
+           ( l_input_varnce_thl_1, stat_files(clubb_zt), "varnce_thl_1", &
+             gr%nz, timestep, gr%zt, pdf_params%varnce_thl_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_thl_2, stat_files(clubb_zt), "varnce_thl_2", &
+             gr%nz, timestep, gr%zt, pdf_params%varnce_thl_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_mixt_frac, stat_files(clubb_zt), "mixt_frac", gr%nz, &
+             timestep, gr%zt, pdf_params%mixt_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -603,14 +684,14 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_stdev_chi_1, stat_files(clubb_zt), "stdev_chi_1", gr%nz, timestep, &
-             gr%zt, pdf_params%stdev_chi_1, l_read_error )
+           ( l_input_stdev_chi_1, stat_files(clubb_zt), "stdev_chi_1", gr%nz, &
+             timestep, gr%zt, pdf_params%stdev_chi_1, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_stdev_chi_2, stat_files(clubb_zt), "stdev_chi_2", gr%nz, timestep, &
-             gr%zt, pdf_params%stdev_chi_2, l_read_error )
+           ( l_input_stdev_chi_2, stat_files(clubb_zt), "stdev_chi_2", gr%nz, &
+             timestep, gr%zt, pdf_params%stdev_chi_2, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -654,6 +735,18 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_wpthvp, stat_files(clubb_zm), "wpthvp", gr%nz, timestep, &
              gr%zm, wpthvp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_rtpthvp, stat_files(clubb_zm), "rtpthvp", gr%nz, &
+             timestep, gr%zm, rtpthvp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_thlpthvp, stat_files(clubb_zm), "thlpthvp", gr%nz, &
+             timestep, gr%zm, thlpthvp, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -743,35 +836,35 @@ module inputfields
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_wprtp_forcing, stat_files(clubb_zm), "wprtp_forcing", gr%nz, timestep, &
-             gr%zm, wprtp_forcing, l_read_error )
+           ( l_input_wprtp_forcing, stat_files(clubb_zm), "wprtp_forcing", &
+             gr%nz, timestep, gr%zm, wprtp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( l_input_wpthlp_forcing, stat_files(clubb_zm), "wpthlp_forcing", gr%nz, timestep, &
-             gr%zm, wpthlp_forcing, l_read_error )
+           ( l_input_wpthlp_forcing, stat_files(clubb_zm), "wpthlp_forcing", &
+             gr%nz, timestep, gr%zm, wpthlp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtp2_forcing, stat_files(clubb_zm), "rtp2_forcing", gr%nz, timestep, &
-             gr%zm, rtp2_forcing, l_read_error )
+           ( l_input_rtp2_forcing, stat_files(clubb_zm), "rtp2_forcing", &
+             gr%nz, timestep, gr%zm, rtp2_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
 
       call get_clubb_variable_interpolated &
-           ( l_input_thlp2_forcing, stat_files(clubb_zm), "thlp2_forcing", gr%nz, timestep, &
-             gr%zm, thlp2_forcing, l_read_error )
+           ( l_input_thlp2_forcing, stat_files(clubb_zm), "thlp2_forcing", &
+             gr%nz, timestep, gr%zm, thlp2_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
-           ( l_input_rtpthlp_forcing, stat_files(clubb_zm), "rtpthlp_forcing", gr%nz, timestep, &
-             gr%zm, rtpthlp_forcing, l_read_error )
+           ( l_input_rtpthlp_forcing, stat_files(clubb_zm), "rtpthlp_forcing", &
+             gr%nz, timestep, gr%zm, rtpthlp_forcing, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
@@ -779,6 +872,37 @@ module inputfields
       call get_clubb_variable_interpolated &
            ( l_input_thlprcp, stat_files(clubb_zm), "thlprcp", gr%nz, timestep, &
              gr%zm, thlprcp, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      ! PDF Parameters (needed for CLUBB restarts)
+      call get_clubb_variable_interpolated &
+           ( l_input_w_1_zm, stat_files(clubb_zm), "w_1_zm", gr%nz, timestep, &
+             gr%zm, pdf_params_zm%w_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_w_2_zm, stat_files(clubb_zm), "w_2_zm", gr%nz, timestep, &
+             gr%zm, pdf_params_zm%w_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_w_1_zm, stat_files(clubb_zm), "varnce_w_1_zm", &
+             gr%nz, timestep, gr%zm, pdf_params_zm%varnce_w_1, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_varnce_w_2_zm, stat_files(clubb_zm), "varnce_w_2_zm", &
+             gr%nz, timestep, gr%zm, pdf_params_zm%varnce_w_2, l_read_error )
+
+      l_fatal_error = l_fatal_error .or. l_read_error
+
+      call get_clubb_variable_interpolated &
+           ( l_input_mixt_frac_zm, stat_files(clubb_zm), "mixt_frac_zm", &
+             gr%nz, timestep, gr%zm, pdf_params_zm%mixt_frac, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 

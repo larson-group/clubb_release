@@ -231,6 +231,13 @@ module stats_zm_module
         irtm_zm, &
         ithlm_zm
 
+    use stats_variables, only: &
+        iw_1_zm, & ! Variable(s)
+        iw_2_zm, &
+        ivarnce_w_1_zm, &
+        ivarnce_w_2_zm, &
+        imixt_frac_zm
+
     use stats_variables, only: & 
         isclrprtp, & 
         isclrp2, & 
@@ -1951,6 +1958,41 @@ module stats_zm_module
         call stat_assign( var_index=ithlm_zm, var_name="thlm_zm", &
              var_description="Liquid potential temperature [K]", var_units="K", l_silhs=.false., &
              grid_kind=stats_zm )
+        k = k + 1
+
+      case ('w_1_zm')
+        iw_1_zm = k
+        call stat_assign( var_index=iw_1_zm, var_name="w_1_zm", &
+             var_description="pdf parameter zm: mean w of component 1 [m/s]", &
+             var_units="m/s", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('w_2_zm')
+        iw_2_zm = k
+        call stat_assign( var_index=iw_2_zm, var_name="w_2_zm", &
+             var_description="pdf parameter zm: mean w of component 2 [m/s]", &
+             var_units="m/s", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('varnce_w_1_zm')
+        ivarnce_w_1_zm = k
+        call stat_assign( var_index=ivarnce_w_1_zm, var_name="varnce_w_1_zm", &
+             var_description="pdf parameter zm: w variance of component 1 [m^2/s^2]", &
+             var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('varnce_w_2_zm')
+        ivarnce_w_2_zm = k
+        call stat_assign( var_index=ivarnce_w_2_zm, var_name="varnce_w_2_zm", &
+             var_description="pdf parameter zm: w variance of component 2 [m^2/s^2]", &
+             var_units="m^2/s^2", l_silhs=.false., grid_kind=stats_zm )
+        k = k + 1
+
+      case ('mixt_frac_zm')
+        imixt_frac_zm = k
+        call stat_assign( var_index=imixt_frac_zm, var_name="mixt_frac_zm", &
+             var_description="pdf parameter zm: mixture fraction [-]", &
+             var_units="-", l_silhs=.false., grid_kind=stats_zm )
         k = k + 1
 
       case ( 'Skw_velocity' )
