@@ -10,7 +10,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 #-------------------------------------------------------------------------------
 # P L O T S
 #-------------------------------------------------------------------------------
-sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL']
+sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL', 'TKE', 'TKES']
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
@@ -27,6 +27,8 @@ plotNames = [\
                 ['Q2 3D SAM Benchmark Budgets', 'Q2 [(kg/kg)^2/s]'],\
                 ['QTOG2 3D SAM Benchmark Budgets', 'QTOG2 [(kg/kg)^2/s]'],\
                 ['QTHL 3D SAM Benchmark Budgets', 'QTHL [(kg/kg)K/s]'],\
+                ['TKE 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
+                ['TKE (SGS) 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
             ]
 
 # lines of each plot:
@@ -200,5 +202,29 @@ QTHL = [\
          ['QTHLBT', True, 'QTHLBT', 1],\
          ['QTHL_Res', True, 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 1],\
         ]
+        
+TKE = [\
+        #['TKE', True, 'TKE', 1],\
+        #['TKES', True, 'TKES', 1],\
+        ['ADVTR', True, 'ADVTR', 1],\
+        ['SHEAR', True, 'SHEAR', 1],\
+        ['BUOYA', True, 'BUOYA', 1],\
+        ['PRESSTR', True, 'PRESSTR', 1],\
+        ['DIFTR', False, 'DIFTR', 1],\
+        ['SDMP', True, 'SDMP', 1],\
+        ['DISSIP', False, 'DISSIP', 1],\
+        ['DIFTR+DISS', True, 'DISSIP + DIFTR', 1],\
+        ['TKE_RES', True, '-(SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1],\
+       ]
+         
+TKES = [\
+        #['TKE', True, 'TKE', 1],\
+        #['TKES', True, 'TKES', 1],\
+        ['ADVTRS', True, 'ADVTRS', 1],\
+        ['SHEARS', True, 'SHEARS', 1],\
+        ['BUOYAS', True, 'BUOYAS', 1],\
+        ['DISSIPS', True, 'DISSIPS', -1.],\
+        ['TKE_RES', True, '-(SHEARS + BUOYAS + ADVTRS + DISSIPS)', 1],\
+       ]
 
-lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL]
+lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES]
