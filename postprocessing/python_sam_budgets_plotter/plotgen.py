@@ -1,6 +1,7 @@
 from help import plot_budgets as pb
 from help import OutputWriter as ow
 from cases import rico_budgets_case as cf
+#from cases import dycoms2_rf02_ds_budgets_case as cf
 from cases import general_budget_variables as bv
 import numpy as np
 import os
@@ -34,14 +35,21 @@ def isFunction(value):
         isFunc = False
     return isFunc
 
+def makeDirectory(pathToFile):
+    if not os.path.exists(pathToFile):
+        os.makedirs(pathToFile)
+
 #-------------------------------------------------------------------------------
 #    M A I N
 #-------------------------------------------------------------------------------
 if __name__ == "__main__":
     logger.info('plotgen.py')
 
-    if not os.path.exists(cf.out_dir):
-        os.makedirs(cf.out_dir)
+    makeDirectory(cf.out_dir)
+    
+    imageName = cf.out_dir + 'jpg/'
+    imageNames = []
+    makeDirectory(imageName)
     
     if not os.path.exists(cf.sam_file):
         logger.error('The .nc file does not exist.')
@@ -66,10 +74,7 @@ if __name__ == "__main__":
 
     n = len(level)
     t = len(time)
-    
-    imageName = cf.out_dir + 'jpg/'
-    imageNames = []
-    
+        
     # grap the data
     for i in range(len(bv.lines)):
         budget = bv.lines[i]
@@ -77,13 +82,12 @@ if __name__ == "__main__":
         functions = []
         func_names = []
         budgets_data = []
-        logger.debug("plot: %s", str(bv.sortPlots[i]))
         for j in range(len(budget)):
             if not isFunction(budget[j][2]):
             # grap data of each variable that is not a function
                 logger.info("Grap data of: %s", budget[j][0])
                 value = pb.mean_profiles(pb.get_budgets_from_nc(nc, budget[j][0], budget[j][3], n, t), idx_t0, idx_t1, idx_z0, idx_z1)
-                if np.any(value < -100000):
+                if np.any(np.isnan(value)) or np.any(value <= -10):
                 # if there are no values for the variable
                     value = np.zeros(n)
                     logger.warning("Could not find the variable %s of %s", budget[j][0], bv.sortPlots[i])

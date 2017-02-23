@@ -10,7 +10,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 #-------------------------------------------------------------------------------
 # P L O T S
 #-------------------------------------------------------------------------------
-sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL']
+sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL']
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
@@ -21,11 +21,12 @@ plotNames = [\
                 ['QW SAM 3D Benchmark Budgets', 'QW [(kg/kg)m/s^2]'],\
                 ['QTOGW SAM 3D Benchmark Budgets', 'QTOGW [(kg/kg)m/s^2]'],\
                 ['W2 SAM 3D Benchmark Budgets', 'W2 [m^2/s^3]'],\
+                ['W3 SAM 3D Benchmark Budgets', 'W3 [m^3/s^4]'],\
                 ['T2 3D SAM Benchmark Budgets', 'T2 [K^2/s]'],\
                 ['THL2 3D SAM Benchmark Budgets', 'THL2 [K^2/s]'],\
                 ['Q2 3D SAM Benchmark Budgets', 'Q2 [(kg/kg)^2/s]'],\
                 ['QTOG2 3D SAM Benchmark Budgets', 'QTOG2 [(kg/kg)^2/s]'],\
-                ['QTHL 3D SAM Benchmark Budgets', 'QTHL [(kg/kg)K/s]']\
+                ['QTHL 3D SAM Benchmark Budgets', 'QTHL [(kg/kg)K/s]'],\
             ]
 
 # lines of each plot:
@@ -122,9 +123,21 @@ W2 = [\
          ['W2REDIS', True, 'W2REDIS', 1],\
          ['W2BUOY', True, 'W2BUOY', 1],\
          ['W2DIFF', True, 'W2DIFF', 1],\
-         ['W2_Res', True, '-1*(W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 1],\
+         ['W2BT', True, 'W2BT', 1],\
+         ['W2_Res', True, 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 1],\
         ]
-         
+
+W3 = [\
+        # variables of W3
+         ['W3ADV', True, 'W3ADV', 1],\
+         ['W3PRES', True, 'W3PRES', 1],\
+         ['W3REDIS', True, 'W3REDIS', 1],\
+         ['W3BUOY', True, 'W3BUOY', 1],\
+         ['W3DIFF', True, 'W3DIFF', 1],\
+         ['W3BT', True, 'W3BT', 1],\
+         ['W3_Res', True, 'W3BT - (W3ADV + W3PRES + W3REDIS + W3BUOY + W3DIFF)', 1],\
+       ]
+                
 T2 = [\
          # variables of T2
          ['T2ADVTR', True, 'T2ADVTR', 1],\
@@ -188,4 +201,4 @@ QTHL = [\
          ['QTHL_Res', True, 'QTHLBT - (QTHLADV + QTHLGRAD + QTHLDISSIP + QTHLDIFTR + QTHLPREC + QTHLRAD + QTHLFORC)', 1],\
         ]
 
-lines = [HL, QT, TW, THLW, QW, QTOGW, W2, T2, THL2, Q2, QTOG2, QTHL]
+lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL]

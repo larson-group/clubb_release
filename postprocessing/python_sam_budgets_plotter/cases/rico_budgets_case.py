@@ -4,15 +4,15 @@
 name = 'RICO_BUDGETS'
 enabled = True
 type = 'budget'
-headerText = 'RICO Budgets Hours 1-3, 100m-2500m'
 startTime = 0.0      # [minutes]
-endTime = 270.0      # [minutes]
+endTime = 180.0      # [minutes]
 startHeight = 100.0    # [m]
 endHeight = 2500.0   # [m]
+headerText = 'RICO Budgets Minutes ' + str(startTime) + '-' + str(endTime) + ', 100m-2500m'
 
 case = 'RICO'
-out_dir = './clubb/plotsSam4/%s/'%(case)
-sam_file = '/home/ckrome/clubb/outputSam3/RICO_256x256x100_drizzle.nc'
+out_dir = './clubb/plotsSam/%s/'%(case)
+sam_file = '/home/ckrome/clubb/outputSam/RICO_256x256x100_drizzle.nc'
 plot_case_name = '%s_'%(case)
 
 #-------------------------------------------------------------------------------

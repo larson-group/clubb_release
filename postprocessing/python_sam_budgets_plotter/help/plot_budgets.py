@@ -68,7 +68,7 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, linewidth = 2
     plt.savefig(name)
 
 def get_budgets_from_nc(nc, varname, conversion, n, t):
-    logger.info('get_budgets_from_nc')
+    logger.info('get_budgets_from_nc:%s', varname)
     """
     Input:
       nc         --  Netcdf file object
@@ -84,12 +84,13 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
     
     keys = nc.variables.keys()
     if varname in keys:
-        logger.debug(varname)
+        logger.debug('%s is in keys', varname)
         var = nc.variables[varname]        
         var = np.squeeze(var)
         var = var*conversion
     else:
-        var = np.zeros(shape=(n,t)) - 10000000.
+        logger.debug('%s is not in keys', varname)
+        var = np.zeros(shape=(n,t)) - 10.
         
     return var
                 
@@ -106,6 +107,6 @@ def mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
     Output:
       var    -- time averaged vertical profile of the specified variable
     """
-
-    var = np.mean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
-    return var
+    
+    var2 = np.nanmean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
+    return var2
