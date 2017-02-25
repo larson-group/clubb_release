@@ -1783,7 +1783,8 @@ module advance_clubb_core_module
         zero_threshold
 
     use pdf_parameter_module, only: &
-        pdf_parameter    ! Type
+        pdf_parameter,   & ! Type
+        init_pdf_params    ! Procedure(s)
 
     use parameters_model, only: &
         sclr_dim,               & ! Variable(s)
@@ -2154,6 +2155,10 @@ module advance_clubb_core_module
 
     integer :: i, k, err_code_pdf_closure
 
+
+    ! Initialize Variables
+    call init_pdf_params( gr%nz, pdf_params_zm )
+    call init_pdf_params( gr%nz, pdf_params_frz )
 
     !---------------------------------------------------------------------------
     ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
