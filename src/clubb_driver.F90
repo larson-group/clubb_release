@@ -3614,31 +3614,31 @@ module clubb_driver
 
       call get_clubb_variable_interpolated &
            ( l_input_wprtp_mc, stat_files(2), "wprtp_mc", gr%nz, timestep, &
-             gr%zt, wprtp_mc, l_read_error )
+             gr%zm, wprtp_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_wpthlp_mc, stat_files(2), "wpthlp_mc", gr%nz, timestep, &
-             gr%zt, wpthlp_mc, l_read_error )
+             gr%zm, wpthlp_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtp2_mc, stat_files(2), "rtp2_mc", gr%nz, timestep, &
-             gr%zt, rtp2_mc, l_read_error )
+             gr%zm, rtp2_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_thlp2_mc, stat_files(2), "thlp2_mc", gr%nz, timestep, &
-             gr%zt, thlp2_mc, l_read_error )
+             gr%zm, thlp2_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
       call get_clubb_variable_interpolated &
            ( l_input_rtpthlp_mc, stat_files(2), "rtpthlp_mc", gr%nz, timestep, &
-             gr%zt, rtpthlp_mc, l_read_error )
+             gr%zm, rtpthlp_mc, l_read_error )
 
       l_fatal_error = l_fatal_error .or. l_read_error
 
