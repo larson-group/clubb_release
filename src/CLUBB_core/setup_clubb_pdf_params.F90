@@ -937,6 +937,7 @@ module setup_clubb_pdf_params
                                    mixt_frac, precip_frac, &
                                    precip_frac_1, precip_frac_2, &
                                    hydromet_tol(hm_idx), precip_frac_tol, &
+                                   pdf_params%thl_1, pdf_params%thl_2, &
                                    omicron, zeta_vrnce_rat, &
                                    mu_x_1(ivar), mu_x_2(ivar), &
                                    sigma_x_1(ivar), sigma_x_2(ivar), &
@@ -1290,6 +1291,7 @@ module setup_clubb_pdf_params
                                     mixt_frac, precip_frac, &        ! In
                                     precip_frac_1, precip_frac_2, &  ! In
                                     hm_tol, precip_frac_tol, &       ! In
+                                    mu_thl_1, mu_thl_2, &            ! In
                                     omicron, zeta_vrnce_rat, &       ! In
                                     mu_hm_1, mu_hm_2, &              ! Out
                                     sigma_hm_1, sigma_hm_2, &        ! Out
@@ -1331,7 +1333,9 @@ module setup_clubb_pdf_params
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
       hm_tol,             & ! Tolerance value of hydrometeor          [hm units]
-      precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
+      precip_frac_tol,    & ! Min. precip. frac. when hydromet. are present  [-]
+      mu_thl_1,           & ! Mean of th_l (1st PDF component)               [K]
+      mu_thl_2              ! Mean of th_l (2nd PDF component)               [K]
 
     real( kind = core_rknd ), intent(in) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
@@ -1360,6 +1364,7 @@ module setup_clubb_pdf_params
        call calc_mu_sigma_two_comps( hmm, hmp2, hmp2_ip_on_hmm2_ip, &
                                      mixt_frac, precip_frac, precip_frac_1, &
                                      precip_frac_2, hm_tol, &
+                                     mu_thl_1, mu_thl_2, &
                                      omicron, zeta_vrnce_rat, &
                                      mu_hm_1, mu_hm_2, sigma_hm_1, &
                                      sigma_hm_2, hm_1, hm_2, &
@@ -1440,7 +1445,8 @@ module setup_clubb_pdf_params
   subroutine calc_mu_sigma_two_comps( hmm, hmp2, hmp2_ip_on_hmm2_ip, &
                                       mixt_frac, precip_frac, precip_frac_1, &
                                       precip_frac_2, hm_tol, &
-                                      omicron, zeta_vrnce_rat, &
+                                      mu_thl_1, mu_thl_2, &
+                                      omicron, zeta_vrnce_rat_in, &
                                       mu_hm_1, mu_hm_2, sigma_hm_1, &
                                       sigma_hm_2, hm_1, hm_2, &
                                       sigma_hm_1_sqd_on_mu_hm_1_sqd, &
@@ -1804,6 +1810,66 @@ module setup_clubb_pdf_params
     ! advantageous to have the larger in-precip. component mean of the
     ! hydrometeor also found in PDF component 1.  The recommended value of zeta
     ! is a value greater than or equal to 0.
+    !
+    !
+    ! Update:
+    !
+    ! In order to better represent the increase in <th_l'^2> near the ground
+    ! from the evaporation of rain, the code is modified to tend towards a
+    ! negative correlation of th_l and hm.  When mu_thl_1 <= mu_thl_2,
+    ! mu_hm_1 >= mu_hm_2; otherwise, when mu_thl_1 > mu_thl_2,
+    ! mu_hm_1 <= mu_hm_2.
+    !
+    ! In the original derivation, mu_hm_1 >= mu_hm_2 when zeta >= 0, and
+    ! mu_hm_1 < mu_hm_2 when zeta < 0, where zeta is a tunable or adjustable
+    ! parameter.  In order to allow the relationship of mu_hm_1 to mu_hm_2 to
+    ! depend on the relationship of mu_thl_1 to mu_thl_2, the value of zeta must
+    ! also depend on the relationship of mu_thl_1 to mu_thl_2.
+    !
+    ! When mu_thl_1 <= mu_thl_2:
+    !
+    ! The relationship of mu_hm_1 to mu_hm_2 is mu_hm_1 >= mu_hm_2, so
+    ! zeta >= 0.  The tunable value of zeta is referred to as zeta_in.  When
+    ! zeta_in is already greater than 0 (meaning sigma_hm_1^2 / mu_hm_1^2 is
+    ! greater than sigma_hm_2^2 / mu_hm_2^2), zeta is simply set to zeta_in.  In
+    ! other words, the component with the greater mean value of the hydrometeor
+    ! also has the greater value of component variance to the square of the
+    ! component mean.  However, when zeta_in is less than 0, zeta must be
+    ! adjusted to be greater than 0.  The following equation is used to set the
+    ! value of zeta:
+    !
+    !        | zeta_in; when zeta_in >= 0
+    ! zeta = |
+    !        | ( 1 / ( 1 + zeta_in ) ) - 1; when zeta_in < 0.
+    !
+    ! Previously, when zeta_in < 0, mu_hm_1 < mu_hm_2, and
+    ! sigma_hm_1^2 / mu_hm_1^2 < sigma_hm_2^2 / mu_hm_2^2.  Now that zeta has to
+    ! be greater than 0, sigma_hm_1^2 / mu_hm_1^2 > sigma_hm_2^2 / mu_hm_2^2.
+    ! The ratio of the greater variance-over-mean-squared to the smaller
+    ! variance-over-mean-squared remains the same when using the equation for
+    ! zeta listed above.
+    !
+    ! When mu_thl_1 > mu_thl_2:
+    !
+    ! The relationship of mu_hm_1 to mu_hm_2 is mu_hm_1 <= mu_hm_2, so
+    ! zeta <= 0.  When zeta_in is already less than 0 (meaning
+    ! sigma_hm_1^2 / mu_hm_1^2 is less than sigma_hm_2^2 / mu_hm_2^2), zeta is
+    ! simply set to zeta_in.  In other words, the component with the greater
+    ! mean value of the hydrometeor also has the greater value of component
+    ! variance to the square of the component mean.  However, when zeta_in is
+    ! greater than 0, zeta must be adjusted to be less than 0.  The following
+    ! equation is used to set the value of zeta:
+    !
+    !        | zeta_in; when zeta_in <= 0
+    ! zeta = |
+    !        | ( 1 / ( 1 + zeta_in ) ) - 1; when zeta_in > 0.
+    !
+    ! Previously, when zeta_in > 0, mu_hm_1 > mu_hm_2, and
+    ! sigma_hm_1^2 / mu_hm_1^2 > sigma_hm_2^2 / mu_hm_2^2.  Now that zeta has to
+    ! be less than 0, sigma_hm_1^2 / mu_hm_1^2 < sigma_hm_2^2 / mu_hm_2^2.
+    ! The ratio of the greater variance-over-mean-squared to the smaller
+    ! variance-over-mean-squared remains the same when using the equation for
+    ! zeta listed above.
 
     ! References:
     !----------------------------------------------------------------------- 
@@ -1829,11 +1895,13 @@ module setup_clubb_pdf_params
       precip_frac,        & ! Precipitation fraction (overall)               [-]
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
-      hm_tol                ! Tolerance value of hydrometeor             [hm un]
+      hm_tol,             & ! Tolerance value of hydrometeor             [hm un]
+      mu_thl_1,           & ! Mean of th_l (1st PDF component)               [K]
+      mu_thl_2              ! Mean of th_l (2nd PDF component)               [K]
 
     real( kind = core_rknd ), intent(in) :: &
-      omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
-      zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2       [-]
+      omicron,           & ! Relative width parameter, omicron = R / Rmax    [-]
+      zeta_vrnce_rat_in    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2    [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -1856,6 +1924,9 @@ module setup_clubb_pdf_params
       coef_C,     & ! Coefficient C in A*mu_hm_1^2 + B*mu_hm_1 + C = 0 [hm un^2]
       Bsqd_m_4AC    ! Value B^2 - 4*A*C in quadratic eqn. for mu_hm_1  [hm un^2]
 
+    real( kind = core_rknd ) &
+      zeta_vrnce_rat    ! Width parameter for sigma_hm_1^2 / mu_hm_1^2       [-]
+
     real( kind = core_rknd ) :: &
       mu_hm_1_min, & ! Minimum value of mu_hm_1 (precip. in both comps.) [hm un]
       mu_hm_2_min    ! Minimum value of mu_hm_2 (precip. in both comps.) [hm un]
@@ -1863,6 +1934,22 @@ module setup_clubb_pdf_params
     real( kind = core_rknd ), parameter :: &
       mu_hm_min_coef = 0.01_core_rknd  ! Coef. for mu_hm_1_min and mu_hm_2_min
 
+
+    ! Adjust the value of zeta based on the relationship of mu_thl_1 to
+    ! mu_thl_2.
+    if ( mu_thl_1 <= mu_thl_2 ) then
+       if ( zeta_vrnce_rat_in >= zero ) then
+          zeta_vrnce_rat = zeta_vrnce_rat_in
+       else ! zeta_vrnce_rat_in < 0
+          zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+       endif ! zeta_vrnce_rat_in >= 0
+    else ! mu_thl_1 > mu_thl_2
+       if ( zeta_vrnce_rat_in <= zero ) then
+          zeta_vrnce_rat = zeta_vrnce_rat_in
+       else ! zeta_vrnce_rat_in > 0
+          zeta_vrnce_rat = ( one / ( one + zeta_vrnce_rat_in ) ) - one
+       endif ! zeta_vrnce_rat_in <= 0
+    endif ! mu_thl_1 <= mu_thl_2
 
     ! Calculate the value of Rmax.
     ! Rmax = ( f_p / ( a * f_p_1 * ( 1 + zeta ) + ( 1 - a ) * f_p_2 ) )
@@ -1911,11 +1998,11 @@ module setup_clubb_pdf_params
 
     ! Calculate the mean (in-precip.) of the hydrometeor in the 1st PDF
     ! component.
-    if ( zeta_vrnce_rat >= zero ) then
+    if ( mu_thl_1 <= mu_thl_2 ) then
        mu_hm_1 = ( -coef_B + sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
-    else
+    else ! mu_thl_1 > mu_thl_2
        mu_hm_1 = ( -coef_B - sqrt( Bsqd_m_4AC ) ) / ( two * coef_A )
-    endif
+    endif ! mu_thl_1 <= mu_thl_2
 
     ! Calculate the mean (in-precip.) of the hydrometeor in the 2nd PDF
     ! component.

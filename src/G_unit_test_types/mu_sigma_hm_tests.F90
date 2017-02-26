@@ -96,7 +96,9 @@ module mu_sigma_hm_tests
       precip_frac_1,      & ! Precipitation fraction (1st PDF component)     [-]
       precip_frac_2,      & ! Precipitation fraction (2nd PDF component)     [-]
       hm_tol,             & ! Tolerance value of hydrometeor             [hm un]
-      precip_frac_tol       ! Min. precip. frac. when hydromet. are present  [-]
+      precip_frac_tol,    & ! Min. precip. frac. when hydromet. are present  [-]
+      mu_thl_1,           & ! Mean of th_l (1st PDF component)               [K]
+      mu_thl_2              ! Mean of th_l (2nd PDF component)               [K]
 
     real( kind = core_rknd ) :: &
       omicron,        & ! Relative width parameter, omicron = R / Rmax       [-]
@@ -148,7 +150,9 @@ module mu_sigma_hm_tests
       rand2,             & ! Random number 2 used for PDF parameter set 10
       rand3,             & ! Random number 3 used for PDF parameter set 10
       rand4,             & ! Random number 4 used for PDF parameter set 10
-      rand5                ! Random number 5 used for PDF parameter set 10
+      rand5,             & ! Random number 5 used for PDF parameter set 10
+      rand6,             & ! Random number 6 used for PDF parameter set 10
+      rand7                ! Random number 7 used for PDF parameter set 10
 
     integer, parameter :: &
       num_param_sets = 10,     & ! Number of different PDF parameter sets used
@@ -181,6 +185,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 1.0_core_rknd
           hmp2_ip_on_hmm2_ip = 3.6_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 2 ) then
           write(fstdout,*) "PDF parameter set 2:"
           hmm = 5.0e-6_core_rknd
@@ -189,6 +195,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.5_core_rknd
           hmp2_ip_on_hmm2_ip = 1.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 3 ) then
           write(fstdout,*) "PDF parameter set 3:"
           hmm = 1.0e-10_core_rknd
@@ -197,6 +205,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.75_core_rknd
           hmp2_ip_on_hmm2_ip = 0.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 4 ) then
           write(fstdout,*) "PDF parameter set 4:"
           hmm = 4.0e-5_core_rknd
@@ -205,6 +215,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.01_core_rknd
           hmp2_ip_on_hmm2_ip = 2.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 5 ) then
           write(fstdout,*) "PDF parameter set 5:"
           hmm = 4.0e-5_core_rknd
@@ -213,6 +225,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = ( precip_frac - 0.0001_core_rknd ) / mixt_frac
           hmp2_ip_on_hmm2_ip = 2.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 6 ) then
           write(fstdout,*) "PDF parameter set 6:"
           hmm = 1.0e-5_core_rknd
@@ -221,6 +235,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 1.0_core_rknd
           hmp2_ip_on_hmm2_ip = 1.5_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 7 ) then
           write(fstdout,*) "PDF parameter set 7:"
           hmm = 6.0e-5_core_rknd
@@ -229,6 +245,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.9_core_rknd
           hmp2_ip_on_hmm2_ip = 5.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 299.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 8 ) then
           write(fstdout,*) "PDF parameter set 8:"
           hmm = 8.0e-7_core_rknd
@@ -237,6 +255,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.1_core_rknd
           hmp2_ip_on_hmm2_ip = 0.75_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 299.0_core_rknd
        elseif ( iter_param_sets == 9 ) then
           write(fstdout,*) "PDF parameter set 9:"
           hmm = 1.35e-5_core_rknd
@@ -245,6 +265,8 @@ module mu_sigma_hm_tests
           precip_frac_1 = 0.5_core_rknd
           hmp2_ip_on_hmm2_ip = 2.0_core_rknd
           hm_tol = 1.0e-10_core_rknd
+          mu_thl_1 = 300.0_core_rknd
+          mu_thl_2 = 300.0_core_rknd
        elseif ( iter_param_sets == 10 ) then
           write(fstdout,*) "PDF parameter set 10 (randomly generated):"
           call random_seed( size=seed_size )
@@ -258,6 +280,8 @@ module mu_sigma_hm_tests
           call random_number( rand3 )
           call random_number( rand4 )
           call random_number( rand5 )
+          call random_number( rand6 )
+          call random_number( rand7 )
           ! The value of hmm can range from 1.0 x 10^-6 to 5.1 x 10^-5.
           hmm = 5.0e-5_core_rknd * rand1 + 1.0e-6_core_rknd
           ! The value of mixt_frac can range from 0.01 to 0.99.
@@ -280,6 +304,9 @@ module mu_sigma_hm_tests
           hmp2_ip_on_hmm2_ip = 0.2_core_rknd + rand5 * 4.8_core_rknd
           ! The value of hm_tol remains constant.
           hm_tol = 1.0e-10_core_rknd
+          ! Set the mean value of theta-l in each PDF component.
+          mu_thl_1 = 299.0_core_rknd + rand6
+          mu_thl_2 = 299.0_core_rknd + rand7
        endif ! iter_param_sets == index
 
        ! Calculate precip_frac_2.
@@ -359,6 +386,7 @@ module mu_sigma_hm_tests
                                          mixt_frac, precip_frac, &        ! In
                                          precip_frac_1, precip_frac_2, &  ! In
                                          hm_tol, precip_frac_tol, &       ! In
+                                         mu_thl_1, mu_thl_2, &            ! In
                                          omicron, zeta_vrnce_rat, &       ! In
                                          mu_hm_1, mu_hm_2, &              ! Out
                                          sigma_hm_1, sigma_hm_2, &        ! Out
@@ -428,18 +456,44 @@ module mu_sigma_hm_tests
              !    | calc_rat_rat - ( 1 + zeta ) |  <=  | ( 1 + zeta ) | * tol;
              ! and since 1 + zeta is always positive:
              !    | calc_rat_rat - ( 1 + zeta ) |  <=  ( 1 + zeta ) * tol.
+             ! Update:
+             ! When mu_thl_1 <= mu_thl_2:
+             ! zeta = zeta_in, when zeta_in >= 0; and 
+             ! zeta = ( 1 / ( 1 + zeta_in ) ) - 1, when zeta_in < 0.
+             ! When mu_thl_1 > mu_thl_2:
+             ! zeta = zeta_in, when zeta_in <= 0; and 
+             ! zeta = ( 1 / ( 1 + zeta_in ) ) - 1, when zeta_in > 0.
              if ( omicron > zero ) then
-                if ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
-                     <= ( one + zeta_vrnce_rat ) * tol ) then
-                   l_pass_test_3 = .true.
+                if ( ( mu_thl_1 <= mu_thl_2 .and. zeta_vrnce_rat >= zero ) &
+                     .or. ( mu_thl_1 > mu_thl_2 .and. zeta_vrnce_rat <= zero ) &
+                   ) then
+                   if ( abs( calc_rat_rat - ( one + zeta_vrnce_rat ) ) &
+                        <= ( one + zeta_vrnce_rat ) * tol ) then
+                      l_pass_test_3 = .true.
+                   else
+                      l_pass_test_3 = .false.
+                      write(fstderr,*) "Test 3 failed"
+                      write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
+                                       //"/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
+                                       calc_rat_rat
+                      write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
+                      write(fstderr,*) ""
+                   endif
                 else
-                   l_pass_test_3 = .false.
-                   write(fstderr,*) "Test 3 failed"
-                   write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
-                                    // "/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
-                                    calc_rat_rat
-                   write(fstderr,*) "1 + zeta = ", one + zeta_vrnce_rat
-                   write(fstderr,*) ""
+                   if ( abs( calc_rat_rat &
+                             - ( one / ( one + zeta_vrnce_rat ) ) ) &
+                        <= ( one / ( one + zeta_vrnce_rat ) ) * tol ) then
+                      l_pass_test_3 = .true.
+                   else
+                      l_pass_test_3 = .false.
+                      write(fstderr,*) "Test 3 failed"
+                      write(fstderr,*) "sigma_hm_1_sqd_on_mu_hm_1_sqd " &
+                                       //"/ sigma_hm_2_sqd_on_mu_hm_2_sqd = ", &
+                                       calc_rat_rat
+                      write(fstderr,*) "1 / ( 1 + zeta ) = ", &
+                                       one / ( one + zeta_vrnce_rat )
+                      write(fstderr,*) ""
+                   endif
                 endif
              else ! omicron = 0
                 ! When omicron = 0, both ratios, sigma_hm_1_sqd_on_mu_hm_1_sqd
@@ -527,6 +581,8 @@ module mu_sigma_hm_tests
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
     precip_frac_tol = 0.01_core_rknd
+    mu_thl_1 = 299.0_core_rknd
+    mu_thl_2 = 300.0_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -542,6 +598,7 @@ module mu_sigma_hm_tests
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
+                                mu_thl_1, mu_thl_2, &            ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out
@@ -620,6 +677,8 @@ module mu_sigma_hm_tests
     hmp2_ip_on_hmm2_ip = 3.2_core_rknd
     hm_tol = 1.0e-10_core_rknd
     precip_frac_tol = 0.01_core_rknd
+    mu_thl_1 = 299.0_core_rknd
+    mu_thl_2 = 300.0_core_rknd
 
     ! Calculate <hm|_ip>.
     hmm_ip = hmm / precip_frac
@@ -635,6 +694,7 @@ module mu_sigma_hm_tests
                                 mixt_frac, precip_frac, &        ! In
                                 precip_frac_1, precip_frac_2, &  ! In
                                 hm_tol, precip_frac_tol, &       ! In
+                                mu_thl_1, mu_thl_2, &            ! In
                                 omicron, zeta_vrnce_rat, &       ! In
                                 mu_hm_1, mu_hm_2, &              ! Out
                                 sigma_hm_1, sigma_hm_2, &        ! Out

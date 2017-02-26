@@ -54,7 +54,7 @@ module KK_integrals_tests
 
     ! Declare the tolerance value, which is the maximum acceptable percent
     ! difference between the results.
-    tol = 1.0e-12_dp
+    tol = 1.5e-12_dp
 
     ! Initialize total number of mismatches.
     total_mismatches = 0
