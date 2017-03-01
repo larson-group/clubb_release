@@ -2,7 +2,6 @@
 ! $Id$
 !-----------------------------------------------------------------------
 
-
 module advance_clubb_core_module
 
 ! Description:
