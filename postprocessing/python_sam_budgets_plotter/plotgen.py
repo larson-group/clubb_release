@@ -1,7 +1,7 @@
 from help import plot_budgets as pb
 from help import OutputWriter as ow
-from cases import rico_budgets_case as cf
-#from cases import dycoms2_rf02_ds_budgets_case as cf
+#from cases import rico_budgets_case as cf
+from cases import dycoms2_rf02_ds_budgets_case as cf
 from cases import general_budget_variables as bv
 import numpy as np
 import os
@@ -86,8 +86,8 @@ if __name__ == "__main__":
             if not isFunction(budget[j][2]):
             # grap data of each variable that is not a function
                 logger.info("Grap data of: %s", budget[j][0])
-                value = pb.mean_profiles(pb.get_budgets_from_nc(nc, budget[j][0], budget[j][3], n, t), idx_t0, idx_t1, idx_z0, idx_z1)
-                if np.any(np.isnan(value)) or np.any(value <= -10):
+                value = pb.mean_profiles(pb.get_budgets_from_nc(nc, budget[j][2], budget[j][3], n, t), idx_t0, idx_t1, idx_z0, idx_z1)
+                if np.any(np.isnan(value)) or np.any(value <= -1000):
                 # if there are no values for the variable
                     value = np.zeros(n)
                     logger.warning("Could not find the variable %s of %s", budget[j][0], bv.sortPlots[i])

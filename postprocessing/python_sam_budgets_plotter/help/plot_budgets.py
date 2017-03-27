@@ -49,14 +49,21 @@ def plot_budgets(budgets_data, level, xLabel, yLabel, title, name, linewidth = 2
     
     # color of lines
     cmap = plt.get_cmap(color)
-    colors = cmap(np.linspace(0, 1.0, len(budgets_data)))
+    # getting as much colors as lines to plot
+    counter_colors = 0
+    for budget in budgets_data:
+        if budget[1]:
+            counter_colors += 1
+    colors = cmap(np.linspace(0, 1.0, counter_colors))
     
     # plot each variable
+    j = 0
     for i in range(len(budgets_data)):
         logger.debug('dimension of %s: %s', budgets_data[i][0], len(budgets_data[i]))
         if budgets_data[i][1]:
         # if it is a help variable, like BUOY e.g., the variable should not be plotted. It is included in B+P variables
-            ax.plot(budgets_data[i][3], level, label=budgets_data[i][0], color=colors[i], linewidth=linewidth)
+            ax.plot(budgets_data[i][3], level, label=budgets_data[i][0], color=colors[j], linewidth=linewidth)
+            j += 1
     
     # x axis should be symmetric
     xlimits = ax.get_xlim()
@@ -90,7 +97,7 @@ def get_budgets_from_nc(nc, varname, conversion, n, t):
         var = var*conversion
     else:
         logger.debug('%s is not in keys', varname)
-        var = np.zeros(shape=(n,t)) - 10.
+        var = np.zeros(shape=(n,t)) - 1000.
         
     return var
                 

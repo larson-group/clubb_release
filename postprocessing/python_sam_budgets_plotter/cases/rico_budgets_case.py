@@ -4,11 +4,11 @@
 name = 'RICO_BUDGETS'
 enabled = True
 type = 'budget'
-startTime = 0.0      # [minutes]
-endTime = 180.0      # [minutes]
-startHeight = 100.0    # [m]
+startTime = 120.0      # [minutes]
+endTime = 360.0      # [minutes]
+startHeight = 0.0    # [m]
 endHeight = 2500.0   # [m]
-headerText = 'RICO Budgets Minutes ' + str(startTime) + '-' + str(endTime) + ', 100m-2500m'
+headerText = 'RICO Budgets Minutes ' + str(startTime) + '-' + str(endTime) + ', ' + str(startHeight) + 'm-' + str(endHeight) + 'm'
 
 case = 'RICO'
 out_dir = './clubb/plotsSam/%s/'%(case)

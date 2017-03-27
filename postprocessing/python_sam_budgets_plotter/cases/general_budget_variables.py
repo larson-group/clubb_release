@@ -10,7 +10,7 @@ kg_per_second_to_kg_per_day = 1. / (DAY * HOUR)
 #-------------------------------------------------------------------------------
 # P L O T S
 #-------------------------------------------------------------------------------
-sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL', 'TKE', 'TKES']
+sortPlots = ['HL', 'QT', 'TW', 'THLW', 'QW', 'QTOGW', 'W2', 'W3', 'T2', 'THL2', 'Q2', 'QTOG2', 'QTHL', 'TKE', 'TKES', 'U2V2']
 # settings of each plot:
 # plot number, plot title, axis label
 plotNames = [\
@@ -29,10 +29,11 @@ plotNames = [\
                 ['QTHL 3D SAM Benchmark Budgets', 'QTHL [(kg/kg)K/s]'],\
                 ['TKE 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
                 ['TKE (SGS) 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
+                ['U2+V2 3D SAM Benchmark Budgets', 'U2+V2 [m^2/s^3]'],\
             ]
 
 # lines of each plot:
-# plot number, variable name, plot?, computation, conversion
+# variable name within python, shall this variable be plotted?, variable name in SAM output, conversion
 
 HL = [\
          # variables of HL
@@ -50,7 +51,6 @@ QT = [\
          # variables of QTO
          ['QTADV', True, 'QTADV', g_per_second_to_kg_per_day],\
          ['QTDIFF', True, 'QTDIFF', g_per_second_to_kg_per_day],\
-         #['QTLSADV', True, 'QTLSADV', g_per_second_to_kg_per_day],\
          ['QTSRC', True, 'QTSRC', g_per_second_to_kg_per_day],\
          ['QTSINK', True, 'QTSINK', g_per_second_to_kg_per_day],\
          ['QTEND', True, 'QTEND', g_per_second_to_kg_per_day],\
@@ -125,8 +125,9 @@ W2 = [\
          ['W2REDIS', True, 'W2REDIS', 1],\
          ['W2BUOY', True, 'W2BUOY', 1],\
          ['W2DIFF', True, 'W2DIFF', 1],\
+         ['W2SDMP', True, 'W2SDMP',1],\
          ['W2BT', True, 'W2BT', 1],\
-         ['W2_Res', True, 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF)', 1],\
+         ['W2_Res', True, 'W2BT - (W2ADV + W2PRES + W2REDIS + W2BUOY + W2DIFF + W2SDMP)', 1],\
         ]
 
 W3 = [\
@@ -204,8 +205,7 @@ QTHL = [\
         ]
         
 TKE = [\
-        #['TKE', True, 'TKE', 1],\
-        #['TKES', True, 'TKES', 1],\
+        # variables of TKE resolved
         ['ADVTR', True, 'ADVTR', 1],\
         ['SHEAR', True, 'SHEAR', 1],\
         ['BUOYA', True, 'BUOYA', 1],\
@@ -218,13 +218,39 @@ TKE = [\
        ]
          
 TKES = [\
-        #['TKE', True, 'TKE', 1],\
-        #['TKES', True, 'TKES', 1],\
+        # variables of TKE SGS
         ['ADVTRS', True, 'ADVTRS', 1],\
         ['SHEARS', True, 'SHEARS', 1],\
         ['BUOYAS', True, 'BUOYAS', 1],\
         ['DISSIPS', True, 'DISSIPS', -1.],\
         ['TKE_RES', True, '-(SHEARS + BUOYAS + ADVTRS + DISSIPS)', 1],\
        ]
+       
+U2V2 = [\
+        # variables of U2 + V2 = 2 * TKE - W2
+        ['W2ADV', False, 'W2ADV', 1],\
+        ['W2PRES', False, 'W2PRES', 1],\
+        ['W2BUOY', False, 'W2BUOY', 1],\
+        ['W2DIFF', False, 'W2DIFF', 1],\
+        ['W2SDMP', False, 'W2SDMP', 1],\
+        ['W2REDIS', False, 'W2REDIS', 1],\
+        ['TKEADVTR', False, 'ADVTR', 1],\
+        ['TKESHEAR', False, 'SHEAR', 1],\
+        ['TKEBUOYA', False, 'BUOYA', 1],\
+        ['TKEPRESSTR', False, 'PRESSTR', 1],\
+        ['TKEDIFTR', False, 'DIFTR', 1],\
+        ['TKEDISSIP', False, 'DISSIP', 1],\
+        ['TKESDMP', False, 'SDMP', 1],\
+        ['TKESHEAR', False, 'SHEAR', 1],\
+        ['U2V2ADV', True, '2. * TKEADVTR - W2ADV', 1.],\
+        ['U2V2BUOY', True, '2. * TKEBUOYA - W2BUOY', 1.],\
+        ['U2V2PRESS', True, '2. * TKEPRESSTR - W2PRES', 1.],\
+        ['U2V2REDIS', True, '- W2REDIS', 1],\
+        ['U2V2DIFF', True, '2. * TKEDIFTR - W2DIFF', 1.],\
+        ['U2V2DISSIP', True, '2. * TKEDISSIP', 1],\
+        ['U2V2SDMP', True, '2. * TKESDMP - W2SDMP', 1.],\
+        ['U2V2SHEAR', True, '2. * TKESHEAR', 1],\
+        ['U2V2_RES', True, '-(U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2SDMP + U2V2REDIS + U2V2DISSIP + U2V2SHEAR)', 1.],\
+       ]
 
-lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES]
+lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES, U2V2]
