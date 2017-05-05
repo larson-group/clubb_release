@@ -1140,6 +1140,8 @@ module advance_clubb_core_module
       ! This call to compute_length must be last.  Otherwise, the values of
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
+  
+      ! Diagnose CLUBB's turbulent mixing length scale.
       call compute_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, newmu, l_implemented, & ! intent(in)
                            err_code,                                     & ! intent(inout)
@@ -1175,6 +1177,8 @@ module advance_clubb_core_module
 !                       Thus, em_min can replace w_tol_sqd here.
       sqrt_em_zt = SQRT( MAX( em_min, zm2zt( em ) ) )
 
+      ! Calculate CLUBB's turbulent eddy-turnover time scale as 
+      !   CLUBB's length scale divided by a velocity scale.
       tau_zt = MIN( Lscale / sqrt_em_zt, taumax )
       tau_zm = MIN( ( MAX( zt2zm( Lscale ), zero_threshold )  & 
                      / SQRT( MAX( em_min, em ) ) ), taumax )
@@ -1197,6 +1201,8 @@ module advance_clubb_core_module
       ! c_K is 0.548 usually (Duynkerke and Driedonks 1987)
       ! CLUBB uses a smaller value to better fit empirical data.
 
+      ! Calculate CLUBB's eddy diffusivity as  
+      !   CLUBB's length scale times a velocity scale.
       Kh_zt = c_K * Lscale * sqrt_em_zt
       Kh_zm = c_K * max( zt2zm( Lscale ), zero_threshold )  & 
                   * sqrt( max( em, em_min ) )
@@ -1238,6 +1244,7 @@ module advance_clubb_core_module
                                      stats_zm )                      ! intent(inout)
         end if
 
+        ! Diagnose surface variances based on surface fluxes.
         call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,   &      ! intent(in)
                              wp2(1), up2(1), vp2(1),                    &      ! intent(out)
@@ -1361,6 +1368,10 @@ module advance_clubb_core_module
       Cx_fnc_Richardson = compute_Cx_Fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
                                                      rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm )
 
+      ! Advance the prognostic equations for 
+      !   the scalar grid means (rtm, thlm, sclrm) and 
+      !   scalar turbulent fluxes (wprtp, wpthlp, and wpsclrp) 
+      !   by one time step. 
       call advance_xm_wpxp( dt, sigma_sqd_w, wm_zm, wm_zt, wp2,       & ! intent(in)
                             Lscale, wp3_on_wp2, wp3_on_wp2_zt, Kh_zt, Kh_zm, & ! intent(in)
                             tau_C6_zm, Skw_zm, rtpthvp, rtm_forcing,  & ! intent(in)
@@ -1392,7 +1403,7 @@ module advance_clubb_core_module
 
       !----------------------------------------------------------------
       ! Compute some of the variances and covariances.  These include the variance of
-      ! total water (rtp2), liquid potential termperature (thlp2), their
+      ! total water (rtp2), liquid water potential temperature (thlp2), their
       ! covariance (rtpthlp), and the variance of horizontal wind (up2 and vp2).
       ! The variance of vertical velocity is computed later.
       !----------------------------------------------------------------
@@ -1401,6 +1412,10 @@ module advance_clubb_core_module
       ! at shorter timesteps so these are prognosed now.
 
       ! We found that if we call advance_xp2_xpyp first, we can use a longer timestep.
+
+      ! Advance the prognostic equations 
+      !   for scalar variances and covariances,
+      !   plus the horizontal wind variances by one time step, by one time step.
       call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
                              wpthlp, wpthvp, um, vm, wp2, wp2_zt,     & ! intent(in)
                              wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
@@ -1432,8 +1447,8 @@ module advance_clubb_core_module
 
 
       !----------------------------------------------------------------
-      ! Advance 2nd and 3rd order moment of vertical velocity (wp2 / wp3)
-      ! by one timestep
+      ! Advance the 2nd- and 3rd-order moments 
+      !   of vertical velocity (wp2, wp3) by one timestep.
       !----------------------------------------------------------------
 
       call advance_wp2_wp3 &
@@ -1463,9 +1478,9 @@ module advance_clubb_core_module
                               wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
       !----------------------------------------------------------------
-      ! Advance the horizontal mean of the wind in the x-y directions
-      ! (i.e. um, vm) and the mean of the eddy-diffusivity scalars
-      ! (i.e. edsclrm) by one time step
+      ! Advance the horizontal mean winds (um, vm),
+      !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
+      !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
       !----------------------------------------------------------------i
 
       Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
@@ -1519,7 +1534,9 @@ module advance_clubb_core_module
        !#######                     CALL CLUBB's PDF                     #######
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
        !########################################################################
-       !call generate_pdf_params( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
+       ! Given CLUBB's prognosed moments, diagnose CLUBB's PDF parameters
+       !   and quantities integrated over that PDF, including
+       !   quantities related to clouds, buoyancy, and turbulent advection. 
        call generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)

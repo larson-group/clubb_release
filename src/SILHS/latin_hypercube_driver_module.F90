@@ -178,16 +178,18 @@ module latin_hypercube_driver_module
     ! Latin hypercube sampling
     !--------------------------------------------------------------
 
-    ! Compute k_lh_start, the starting level for SILHS sampling
+    ! Compute k_lh_start, the starting vertical grid level 
+    !   for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
 
-    ! Generate a uniform sample at k_lh_start
+    ! Generate a uniformly distributed sample at k_lh_start
     call generate_uniform_k_lh_start &
          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
            pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
            X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
 
-    ! Generate uniform sample at other height levels by vertically correlating them
+    ! Generate uniform sample at other grid levels 
+    !   by vertically correlating them
     call vertical_overlap_driver &
          ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
            k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
@@ -239,6 +241,8 @@ module latin_hypercube_driver_module
     do k = 1, nz
       ! Generate LH sample, represented by X_u and X_nl, for level k
       do sample = 1, num_samples, 1
+        ! Transform the uniformly distributed samples to
+        !   ones distributed according to CLUBB's PDF.
         call transform_uniform_sample_to_pdf &
              ( pdf_dim, d_uniform_extra, & ! In
                mu1(:,k), mu2(:,k), sigma1(:,k), sigma2(:,k), & ! In
