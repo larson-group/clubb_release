@@ -159,7 +159,7 @@ contains
     integer, intent(out), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     ! More Input Variables!
@@ -212,7 +212,7 @@ contains
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
 
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
@@ -271,7 +271,7 @@ contains
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -372,7 +372,7 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &

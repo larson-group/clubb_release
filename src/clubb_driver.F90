@@ -466,7 +466,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
     integer :: &
@@ -1056,7 +1056,7 @@ module clubb_driver
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,pdf_dim), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
               lh_clipped_vars(gr%nz,lh_num_samples), &
-              lh_sample_point_weights(lh_num_samples), &
+              lh_sample_point_weights(gr%nz,lh_num_samples), &
               Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then

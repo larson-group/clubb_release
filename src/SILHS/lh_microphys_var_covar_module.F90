@@ -72,7 +72,7 @@ module lh_microphys_var_covar_module
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
