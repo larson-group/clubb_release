@@ -40,6 +40,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine lh_subcolumn_generator &
              ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
+               l_calc_weights_all_levs, &
                pdf_params, delta_zm, rcm, Lscale, & ! In
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -123,6 +124,9 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
+    logical, intent(in) :: &
+      l_calc_weights_all_levs ! determines if vertically correlated sample points are needed
+    
     
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
@@ -181,30 +185,37 @@ module latin_hypercube_driver_module
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
+    if ( .not. l_calc_weights_all_levs ) then
     
-    ! is now done for each layer in the loop below
-    ! Generate a uniformly distributed sample at k_lh_start
-    ! call generate_uniform_k_lh_start &
-    !     ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-    !       pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
-    !       X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
-    !
-    ! (it looks like there is) no need for vertical correlation as long as radiation is not applied
-    ! Generate uniform sample at other grid levels 
-    !   by vertically correlating them
-    !call vertical_overlap_driver &
-    !     ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
-    !       k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
-    !       X_u_all_levs )                                       ! Intent(inout)
-    !
+      ! Generate a uniformly distributed sample at k_lh_start
+      call generate_uniform_k_lh_start &
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+             pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )             ! Intent(out)
+                          
+      forall ( k = 2:nz )
+        lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
+      end forall
+      
+      ! Generate uniform sample at other grid levels 
+      !   by vertically correlating them
+      call vertical_overlap_driver &
+           ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
+             k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+             X_u_all_levs )                                       ! Intent(inout)
+    
+    end if
     
     do k = 1, nz
-      ! moved inside the loop to apply importance sampling for each layer
-      ! 
-      call generate_uniform_k_lh_start &
-         ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-           pdf_params(k), hydromet_pdf_params(k), &          ! Intent(in)
-           X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+    
+      if ( l_calc_weights_all_levs ) then
+        ! moved inside the loop to apply importance sampling for each layer
+        ! 
+        call generate_uniform_k_lh_start &
+          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+            pdf_params(k), hydromet_pdf_params(k), &          ! Intent(in)
+            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+      end if
            
       ! Determine mixture component for all levels
       where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params(k)%mixt_frac ) )

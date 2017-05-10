@@ -492,6 +492,10 @@ module clubb_driver
     ! allowed tolerance for the timing budget check
     real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
+    !
+    logical :: &
+      l_calc_weights_all_levs ! defines if the current time step computes radiation
+    
     ! Definition of namelists
     namelist /model_setting/  &
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, &
@@ -1312,6 +1316,8 @@ module clubb_driver
         end if
       end if
 
+      l_calc_weights_all_levs = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
+      
       ! Set large-scale tendencies and subsidence profiles
       err_code_forcings = clubb_no_error
       call prescribe_forcings( dt_main, &  ! Intent(in)
@@ -1443,6 +1449,7 @@ module clubb_driver
 
         call lh_subcolumn_generator &
              ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
+               l_calc_weights_all_levs, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -1549,7 +1556,7 @@ module clubb_driver
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
-      if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
+      if ( l_calc_weights_all_levs ) then
 
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be
