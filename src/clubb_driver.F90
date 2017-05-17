@@ -492,9 +492,14 @@ module clubb_driver
     ! allowed tolerance for the timing budget check
     real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
-    !
+    logical, parameter :: &
+      l_calc_weights_all_levs = .true. ! .false. if all time steps use the same weights at all grid
+                                       ! levels
+    
     logical :: &
-      l_calc_weights_all_levs ! defines if the current time step computes radiation
+      l_calc_weights_all_levs_itime, & ! .true. if we calculate sample weights separately at all 
+                                       ! grid levels at the current time step
+      l_rad_itime ! .true. if we calculate radiation at the current time step
     
     ! Definition of namelists
     namelist /model_setting/  &
@@ -1316,7 +1321,12 @@ module clubb_driver
         end if
       end if
 
-      l_calc_weights_all_levs = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
+      ! Calculate radiation only once in a while
+      l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
+      
+      ! Calculate sample weights separately at all grid levels when radiation is not called
+      l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
+                                        
       
       ! Set large-scale tendencies and subsidence profiles
       err_code_forcings = clubb_no_error
@@ -1449,7 +1459,7 @@ module clubb_driver
 
         call lh_subcolumn_generator &
              ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
-               l_calc_weights_all_levs, & ! In
+               l_calc_weights_all_levs_itime, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -1556,7 +1566,7 @@ module clubb_driver
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
-      if ( l_calc_weights_all_levs ) then
+      if ( l_rad_itime ) then
 
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be
