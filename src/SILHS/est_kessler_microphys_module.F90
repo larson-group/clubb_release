@@ -69,7 +69,7 @@ module est_kessler_microphys_module
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -181,7 +181,7 @@ module est_kessler_microphys_module
              cloud_frac_1, cloud_frac_2, &
              rcm_sample, & 
              !X_nl(1:n,3), X_nl(1:n,4), X_nl(1:n,5),
-             X_mixt_comp_all_levs(level,:), lh_sample_point_weights, lh_AKm(level) )
+             X_mixt_comp_all_levs(level,:), lh_sample_point_weights(level,:), lh_AKm(level) )
 
       ! Compute Monte Carlo estimate of liquid for test purposes.
       call rc_estimate &

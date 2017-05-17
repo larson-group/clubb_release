@@ -466,7 +466,7 @@ module clubb_driver
     real( kind = core_rknd ), dimension(:), allocatable :: &
       Nc_in_cloud        ! Mean (in-cloud) cloud droplet concentration  [num/kg]
 
-    real( kind = core_rknd ), dimension(:), allocatable :: &
+    real( kind = core_rknd ), dimension(:,:), allocatable :: &
       lh_sample_point_weights ! Weights for cloud weighted sampling
 
     integer :: &
@@ -492,6 +492,15 @@ module clubb_driver
     ! allowed tolerance for the timing budget check
     real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
+    logical, parameter :: &
+      l_calc_weights_all_levs = .true. ! .false. if all time steps use the same weights at all grid
+                                       ! levels
+    
+    logical :: &
+      l_calc_weights_all_levs_itime, & ! .true. if we calculate sample weights separately at all 
+                                       ! grid levels at the current time step
+      l_rad_itime ! .true. if we calculate radiation at the current time step
+    
     ! Definition of namelists
     namelist /model_setting/  &
       runtype, nzmax, grid_type, deltaz, zm_init, zm_top, &
@@ -1056,7 +1065,7 @@ module clubb_driver
     allocate( X_nl_all_levs(gr%nz,lh_num_samples,pdf_dim), &
               X_mixt_comp_all_levs(gr%nz,lh_num_samples), &
               lh_clipped_vars(gr%nz,lh_num_samples), &
-              lh_sample_point_weights(lh_num_samples), &
+              lh_sample_point_weights(gr%nz,lh_num_samples), &
               Nc_in_cloud(gr%nz) )
 
     if ( .not. l_restart ) then
@@ -1312,6 +1321,13 @@ module clubb_driver
         end if
       end if
 
+      ! Calculate radiation only once in a while
+      l_rad_itime = (mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1)
+      
+      ! Calculate sample weights separately at all grid levels when radiation is not called
+      l_calc_weights_all_levs_itime = l_calc_weights_all_levs .and. .not. l_rad_itime
+                                        
+      
       ! Set large-scale tendencies and subsidence profiles
       err_code_forcings = clubb_no_error
       call prescribe_forcings( dt_main, &  ! Intent(in)
@@ -1443,6 +1459,7 @@ module clubb_driver
 
         call lh_subcolumn_generator &
              ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
+               l_calc_weights_all_levs_itime, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
                rho_ds_zt, mu_x_1_n, mu_x_2_n, sigma_x_1_n, sigma_x_2_n, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -1549,7 +1566,7 @@ module clubb_driver
       ! Radiation is always called on the first timestep in order to ensure
       ! that the simulation is subject to radiative heating and cooling from
       ! the first timestep.
-      if ( mod( itime, floor(dt_rad/dt_main) ) == 0 .or. itime == 1 ) then
+      if ( l_rad_itime ) then
 
         ! Advance a radiation scheme
         ! With this call ordering, snow and ice water mixing ratio will be

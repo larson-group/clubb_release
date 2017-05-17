@@ -111,6 +111,7 @@ contains
 
   subroutine lh_subcolumn_generator_api( &
     iter, pdf_dim, num_samples, sequence_length, nz, & ! In
+    l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -159,7 +160,7 @@ contains
     integer, intent(out), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     ! More Input Variables!
@@ -173,11 +174,15 @@ contains
       sigma1, & ! Stdevs of the hydrometeors, 1st comp. (chi, eta, w, <hydrometeors>) [units vary]
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
+    logical, intent(in) :: &
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
+      
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
     call lh_subcolumn_generator( &
       iter, pdf_dim, num_samples, sequence_length, nz, & ! In
+      l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -212,7 +217,7 @@ contains
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
 
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
@@ -271,7 +276,7 @@ contains
     integer, dimension(nz,num_samples), intent(in) :: &
       X_mixt_comp_all_levs ! Whether we're in mixture component 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight for cloud weighted sampling
 
     real( kind = core_rknd ), dimension(nz), intent(out) :: &
@@ -372,7 +377,7 @@ contains
     real( kind = core_rknd ), intent(in) :: &
       dt                               ! Model time step                             [s]
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights          ! Weight of SILHS sample points
 
     real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &

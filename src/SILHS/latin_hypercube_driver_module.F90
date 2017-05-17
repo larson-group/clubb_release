@@ -40,6 +40,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine lh_subcolumn_generator &
              ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
+               l_calc_weights_all_levs_itime, &
                pdf_params, delta_zm, rcm, Lscale, & ! In
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -123,6 +124,9 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), dimension(nz), intent(in) :: &
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
+    logical, intent(in) :: &
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
+    
     
     ! Output Variables
     real( kind = core_rknd ), intent(out), dimension(nz,num_samples,pdf_dim) :: &
@@ -131,7 +135,7 @@ module latin_hypercube_driver_module
     integer, intent(out), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Which mixture component we're in
 
-    real( kind = core_rknd ), intent(out), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(out), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     ! More Input Variables!
@@ -181,21 +185,38 @@ module latin_hypercube_driver_module
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
-
-    ! Generate a uniformly distributed sample at k_lh_start
-    call generate_uniform_k_lh_start &
-         ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
-           pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
-           X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights )             ! Intent(out)
-
-    ! Generate uniform sample at other grid levels 
-    !   by vertically correlating them
-    call vertical_overlap_driver &
-         ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
-           k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
-           X_u_all_levs )                                       ! Intent(inout)
-
+    if ( .not. l_calc_weights_all_levs_itime ) then
+    
+      ! Generate a uniformly distributed sample at k_lh_start
+      call generate_uniform_k_lh_start &
+           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+             pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
+             X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )             ! Intent(out)
+                          
+      forall ( k = 2:nz )
+        lh_sample_point_weights(k,:) = lh_sample_point_weights(1,:)
+      end forall
+      
+      ! Generate uniform sample at other grid levels 
+      !   by vertically correlating them
+      call vertical_overlap_driver &
+           ( nz, pdf_dim, d_uniform_extra, num_samples, &     ! Intent(in)
+             k_lh_start, delta_zm, rcm, Lscale, rho_ds_zt, &      ! Intent(in)
+             X_u_all_levs )                                       ! Intent(inout)
+    
+    end if
+    
     do k = 1, nz
+    
+      if ( l_calc_weights_all_levs_itime ) then
+        ! moved inside the loop to apply importance sampling for each layer
+        ! 
+        call generate_uniform_k_lh_start &
+          ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
+            pdf_params(k), hydromet_pdf_params(k), &          ! Intent(in)
+            X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
+      end if
+           
       ! Determine mixture component for all levels
       where ( in_mixt_comp_1( X_u_all_levs(k,:,pdf_dim+1), pdf_params(k)%mixt_frac ) )
         X_mixt_comp_all_levs(k,:) = 1
@@ -1738,7 +1759,7 @@ module latin_hypercube_driver_module
     real( kind = core_rknd ), intent(in), dimension(nz) :: &
       rho_ds_zt  ! Dry, static density (thermo. levs.) [kg/m^3]
 
-    real( kind = core_rknd ), intent(in), dimension(num_samples) :: &
+    real( kind = core_rknd ), intent(in), dimension(nz,num_samples) :: &
       lh_sample_point_weights
 
     real( kind = core_rknd ), intent(in), dimension(nz,num_samples,pdf_dim) :: &
@@ -1810,12 +1831,12 @@ module latin_hypercube_driver_module
       end if
 
       if ( ilh_sample_weights_sum > 0 ) then
-          xtmp = sum(lh_sample_point_weights(:))
+          xtmp = sum(lh_sample_point_weights(:,:))
           call stat_update_var_pt( ilh_sample_weights_sum, 1, xtmp, stats_lh_sfc )
       end if
       
       if ( ilh_sample_weights_avg > 0 ) then
-          xtmp = sum(lh_sample_point_weights(:)) / real( num_samples, kind = core_rknd )
+          xtmp = sum(lh_sample_point_weights(:,:)) / real( num_samples*nz, kind = core_rknd )
           call stat_update_var_pt( ilh_sample_weights_avg, 1, xtmp, stats_lh_sfc )
       end if
         
@@ -1886,7 +1907,7 @@ module latin_hypercube_driver_module
         lh_cloud_frac(:) = zero
         do sample = 1, num_samples
           where ( X_nl_all_levs(:,sample,iiPDF_chi) > zero )
-            lh_cloud_frac(:) = lh_cloud_frac(:) + one * lh_sample_point_weights(sample)
+            lh_cloud_frac(:) = lh_cloud_frac(:) + one * lh_sample_point_weights(:,sample)
           end where
         end do
         lh_cloud_frac(:) = lh_cloud_frac(:) / real( num_samples, kind = core_rknd )
@@ -2096,7 +2117,7 @@ module latin_hypercube_driver_module
     type(pdf_parameter), dimension(nz), intent(in) :: &
       pdf_params           ! The official PDF parameters!
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! The weight of each sample
 
     integer, intent(in) :: &
