@@ -1,8 +1,23 @@
 from help import plot_budgets as pb
 from help import OutputWriter as ow
+
+# budget plots
+#from cases import lba_budgets as cf
 #from cases import rico_budgets_case as cf
 from cases import dycoms2_rf02_ds_budgets_case as cf
 from cases import general_budget_variables as bv
+
+# corr and covars plots
+#from cases import lba_corrs_covars as cf
+#from cases import dycoms2_rf02_corrs_covars as cf
+#from cases import general_corr_covars_variables as bv
+
+# standalone
+#from cases import lba_standalone as cf
+#from cases import dycoms2_rf02_standalone as cf
+#from cases import rico_standalone as cf
+#from cases import general_standalone_variables as bv
+
 import numpy as np
 import os
 import sys
@@ -78,7 +93,9 @@ if __name__ == "__main__":
     # grap the data
     for i in range(len(bv.lines)):
         budget = bv.lines[i]
-        plot = bv.plotNames[i]
+        # default title and units for plots
+        title = bv.plotNames[i][0]
+        units = bv.plotNames[i][1]
         functions = []
         func_names = []
         budgets_data = []
@@ -112,12 +129,19 @@ if __name__ == "__main__":
         # plot the budget
         name = cf.plot_case_name + bv.sortPlots[i] + '.jpg'
         imageNames.append(name)
-        pb.plot_budgets(budgets_data, level, plot[1], cf.yLabel, plot[0], imageName + name, linewidth = cf.lineWidth, color = cf.color)
+        # get title and units from nc-file
+        tmp = pb.get_long_name(nc, bv.sortPlots[i])
+        if tmp != "nm":
+            title = tmp
+        tmp = pb.get_units(nc, bv.sortPlots[i])
+        if tmp != "nm":
+            units = tmp
+        pb.plot_budgets(budgets_data, level, units, cf.yLabel, title, imageName + name, linewidth = cf.lineWidth, color = cf.color)
         
     # write html page
     logger.info("Write HTML page")
     index = cf.out_dir + 'index.html'
-    mode = 'Splotgen'    
+    mode = 'Splotgen'
     ow.writeNavPage(cf.out_dir, cf.headerText)
     ow.writePlotsPage(cf.out_dir, cf.headerText, mode, imageNames)
     ow.writeIndex(index, mode)

@@ -4,11 +4,11 @@
 name = 'DYCOMS2_RF02_BUDGETS'
 enabled = True
 type = 'budget'
-startTime = 120.0      # [minutes]
-endTime = 360.0      # [minutes]
-startHeight = 0.0    # [m]
+startTime = 61.0      # [minutes]
+endTime = 180.0      # [minutes]
+startHeight = 20.0    # [m]
 endHeight = 1200.0   # [m]
-headerText = 'DYCOMS II RF02 BUDGETS Budgets Minutes ' + str(startTime) + '-' + str(endTime) + ', ' + str(startHeight) + 'm-' + str(endHeight) + 'm'
+headerText = 'DYCOMS II RF02 BUDGETS DO Budgets Minutes ' + str(startTime) + '-' + str(endTime) + ', ' + str(startHeight) + 'm-' + str(endHeight) + 'm'
 
 case = 'DYCOMS2_RF02'
 out_dir = './clubb/plotsSam/%s/'%(case)
