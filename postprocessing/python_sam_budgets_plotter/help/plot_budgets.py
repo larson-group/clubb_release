@@ -117,3 +117,45 @@ def mean_profiles(var, idx_t0, idx_t1, idx_z0, idx_z1):
     
     var2 = np.nanmean(var[idx_t0:idx_t1,idx_z0:idx_z1],axis=0)
     return var2
+    
+def get_units(nc, varname):
+    logger.info('get_units:%s', varname)
+    """
+    Input:
+      nc         --  Netcdf file object
+      varname    --  Variable name string
+    Output:
+      unit as string
+    """
+    
+    keys = nc.variables.keys()
+    if varname in keys:
+        logger.debug('%s is in keys', varname)
+        unit = nc.variables[varname].units
+    else:
+        logger.debug('%s is not in keys', varname)
+        unit = "nm"
+    
+    return unit
+    
+def get_long_name(nc, varname):
+    logger.info('get_long_name:%s', varname)
+    """
+    Input:
+      nc         --  Netcdf file object
+      varname    --  Variable name string
+    Output:
+      long_name as string
+    """
+    
+    keys = nc.variables.keys()
+    if varname in keys:
+        logger.debug('%s is in keys', varname)
+        long_name = nc.variables[varname].long_name
+    else:
+        logger.debug('%s is not in keys', varname)
+        long_name = "nm"
+    
+    return long_name
+    
+    
