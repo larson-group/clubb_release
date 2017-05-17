@@ -2195,7 +2195,7 @@ real curr_frac
 character*8 name
 #endif /*UWM_STATS*/
 character*80 longname
-character*10 units
+character*24 units
 
 microcount = 0
 
