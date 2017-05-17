@@ -111,7 +111,7 @@ contains
 
   subroutine lh_subcolumn_generator_api( &
     iter, pdf_dim, num_samples, sequence_length, nz, & ! In
-    l_calc_weights_all_levs, &
+    l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
     rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
     corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -175,14 +175,14 @@ contains
       sigma2    ! Stdevs of the hydrometeors, 2nd comp. (chi, eta, w, <hydrometeors>) [units vary]
 
     logical, intent(in) :: &
-      l_calc_weights_all_levs ! determines if vertically correlated sample points are needed
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
       
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
     call lh_subcolumn_generator( &
       iter, pdf_dim, num_samples, sequence_length, nz, & ! In
-      l_calc_weights_all_levs, & ! In
+      l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
       rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
       corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In

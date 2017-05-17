@@ -40,7 +40,7 @@ module latin_hypercube_driver_module
 !-------------------------------------------------------------------------------
   subroutine lh_subcolumn_generator &
              ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
-               l_calc_weights_all_levs, &
+               l_calc_weights_all_levs_itime, &
                pdf_params, delta_zm, rcm, Lscale, & ! In
                rho_ds_zt, mu1, mu2, sigma1, sigma2, & ! In
                corr_cholesky_mtx_1, corr_cholesky_mtx_2, & ! In
@@ -125,7 +125,7 @@ module latin_hypercube_driver_module
       rho_ds_zt    ! Dry, static density on thermo. levels    [kg/m^3]
 
     logical, intent(in) :: &
-      l_calc_weights_all_levs ! determines if vertically correlated sample points are needed
+      l_calc_weights_all_levs_itime ! determines if vertically correlated sample points are needed
     
     
     ! Output Variables
@@ -185,7 +185,7 @@ module latin_hypercube_driver_module
     ! Compute k_lh_start, the starting vertical grid level 
     !   for SILHS sampling
     k_lh_start = compute_k_lh_start( nz, rcm, pdf_params )
-    if ( .not. l_calc_weights_all_levs ) then
+    if ( .not. l_calc_weights_all_levs_itime ) then
     
       ! Generate a uniformly distributed sample at k_lh_start
       call generate_uniform_k_lh_start &
@@ -208,7 +208,7 @@ module latin_hypercube_driver_module
     
     do k = 1, nz
     
-      if ( l_calc_weights_all_levs ) then
+      if ( l_calc_weights_all_levs_itime ) then
         ! moved inside the loop to apply importance sampling for each layer
         ! 
         call generate_uniform_k_lh_start &
