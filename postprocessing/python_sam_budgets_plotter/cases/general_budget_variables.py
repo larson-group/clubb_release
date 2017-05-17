@@ -29,7 +29,7 @@ plotNames = [\
                 ['QTHL 3D SAM Benchmark Budgets', 'QTHL [(kg/kg)K/s]'],\
                 ['TKE 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
                 ['TKE (SGS) 3D SAM Benchmark Budgets', 'TKE [m^2/s^3]'],\
-                ['U2+V2 3D SAM Benchmark Budgets', 'U2+V2 [m^2/s^3]'],\
+                ['U2+V2 3D SAM Benchmark Budgets', 'U2+V2 [m^2/s^2]'],\
             ]
 
 # lines of each plot:
@@ -214,7 +214,8 @@ TKE = [\
         ['SDMP', True, 'SDMP', 1],\
         ['DISSIP', False, 'DISSIP', 1],\
         ['DIFTR+DISS', True, 'DISSIP + DIFTR', 1],\
-        ['TKE_RES', True, '-(SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1],\
+        ['TKEBT', True, 'BT', 1.],\
+        ['TKE_RES', True, 'TKEBT - (SHEAR + BUOYA + ADVTR + PRESSTR + DIFTR + SDMP + DISSIP)', 1],\
        ]
          
 TKES = [\
@@ -234,6 +235,7 @@ U2V2 = [\
         ['W2DIFF', False, 'W2DIFF', 1],\
         ['W2SDMP', False, 'W2SDMP', 1],\
         ['W2REDIS', False, 'W2REDIS', 1],\
+        ['W2BT', False, 'W2BT', 1],\
         ['TKEADVTR', False, 'ADVTR', 1],\
         ['TKESHEAR', False, 'SHEAR', 1],\
         ['TKEBUOYA', False, 'BUOYA', 1],\
@@ -242,6 +244,7 @@ U2V2 = [\
         ['TKEDISSIP', False, 'DISSIP', 1],\
         ['TKESDMP', False, 'SDMP', 1],\
         ['TKESHEAR', False, 'SHEAR', 1],\
+        ['TKEBT', False, 'BT', 1.],\
         ['U2V2ADV', True, '2. * TKEADVTR - W2ADV', 1.],\
         ['U2V2BUOY', True, '2. * TKEBUOYA - W2BUOY', 1.],\
         ['U2V2PRESS', True, '2. * TKEPRESSTR - W2PRES', 1.],\
@@ -250,7 +253,8 @@ U2V2 = [\
         ['U2V2DISSIP', True, '2. * TKEDISSIP', 1],\
         ['U2V2SDMP', True, '2. * TKESDMP - W2SDMP', 1.],\
         ['U2V2SHEAR', True, '2. * TKESHEAR', 1],\
-        ['U2V2_RES', True, '-(U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2SDMP + U2V2REDIS + U2V2DISSIP + U2V2SHEAR)', 1.],\
+        ['U2V2BT', True, '2. * TKEBT - W2BT', 1],\
+        ['U2V2_RES', True, 'U2V2BT - (U2V2ADV + U2V2BUOY + U2V2PRESS + U2V2DIFF + U2V2DISSIP + U2V2SDMP + U2V2REDIS + U2V2SHEAR)', 1.],\
        ]
 
 lines = [HL, QT, TW, THLW, QW, QTOGW, W2, W3, T2, THL2, Q2, QTOG2, QTHL, TKE, TKES, U2V2]
