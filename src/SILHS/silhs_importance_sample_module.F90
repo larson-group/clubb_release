@@ -640,7 +640,9 @@ module silhs_importance_sample_module
           ! If the random number is greater than category_cumulative_probs(num_imp_categories-1)
           ! and less than 1, then it belongs in the last category
           if ( rand_vect(sample) >= category_cumulative_probs(category) .and. &
-               rand_vect(sample) < one ) then
+               rand_vect(sample) <= one ) then ! Sometimes rand num == 1 (?!), 
+                                               ! triggering the Invalid rand_vect num error below.
+                                               ! See clubb:ticket:805. 
             int_sample_category(sample) = category
           end if
 

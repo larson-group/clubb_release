@@ -202,7 +202,7 @@ module output_2D_samples_module
     integer, intent(in), dimension(nz,num_samples) :: &
       X_mixt_comp_all_levs ! Either 1 or 2
 
-    real( kind = core_rknd ), dimension(num_samples), intent(in) :: &
+    real( kind = core_rknd ), dimension(nz,num_samples), intent(in) :: &
       lh_sample_point_weights ! Weight of each sample
 
     integer :: sample, j, k
@@ -222,7 +222,7 @@ module output_2D_samples_module
         real( X_mixt_comp_all_levs(1:nz,sample), kind=stat_rknd )
       do k = 1, nz 
         uniform_sample_file%var(dp2+2)%ptr(sample,1,k) = &
-          real( lh_sample_point_weights(sample), kind=stat_rknd )
+          real( lh_sample_point_weights(k,sample), kind=stat_rknd )
       end do
     end do
 
