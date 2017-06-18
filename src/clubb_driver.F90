@@ -493,7 +493,7 @@ module clubb_driver
     real( kind = core_rknd ) , parameter ::  timing_tol = 0.01_core_rknd
 
     logical, parameter :: &
-      l_calc_weights_all_levs = .true. ! .false. if all time steps use the same weights at all grid
+      l_calc_weights_all_levs = .false. ! .false. if all time steps use the same weights at all grid
                                        ! levels
     
     logical :: &
