@@ -36,6 +36,7 @@ module pdf_parameter_module
       varnce_thl_1,    & ! Variance of th_l (1st PDF component)            [K^2]
       varnce_thl_2,    & ! Variance of th_l (2nd PDF component)            [K^2]
       corr_rt_thl_1,   & ! Correlation of r_t and th_l (1st PDF component)   [-]
+      corr_rt_thl_2,   & ! Correlation of r_t and th_l (2nd PDF component)   [-]
       alpha_thl,       & ! Factor relating to normalized variance for th_l   [-]
       alpha_rt,        & ! Factor relating to normalized variance for r_t    [-]
       crt_1,           & ! r_t coef. in chi/eta eqns. (1st PDF comp.)        [-]
@@ -72,7 +73,7 @@ module pdf_parameter_module
 
   public :: pack_pdf_params, unpack_pdf_params
 
-  integer, public, parameter :: num_pdf_params = 38
+  integer, public, parameter :: num_pdf_params = 39
 
 !#endif /* CLUBB_CAM */
 
@@ -115,6 +116,7 @@ module pdf_parameter_module
     pdf_params(:)%varnce_thl_1 = zero
     pdf_params(:)%varnce_thl_2 = zero
     pdf_params(:)%corr_rt_thl_1 = zero
+    pdf_params(:)%corr_rt_thl_2 = zero
     pdf_params(:)%alpha_thl = zero
     pdf_params(:)%alpha_rt = zero
     pdf_params(:)%crt_1 = zero
@@ -234,54 +236,56 @@ module pdf_parameter_module
       CASE (13)
           get_param_at_ind = pp_struct%corr_rt_thl_1
       CASE (14)
-          get_param_at_ind = pp_struct%alpha_thl
+          get_param_at_ind = pp_struct%corr_rt_thl_2
       CASE (15)
-          get_param_at_ind = pp_struct%alpha_rt
+          get_param_at_ind = pp_struct%alpha_thl
       CASE (16)
-          get_param_at_ind = pp_struct%crt_1
+          get_param_at_ind = pp_struct%alpha_rt
       CASE (17)
-          get_param_at_ind = pp_struct%crt_2
+          get_param_at_ind = pp_struct%crt_1
       CASE (18)
-          get_param_at_ind = pp_struct%cthl_1
+          get_param_at_ind = pp_struct%crt_2
       CASE (19)
-          get_param_at_ind = pp_struct%cthl_2
+          get_param_at_ind = pp_struct%cthl_1
       CASE (20)
-          get_param_at_ind = pp_struct%chi_1
+          get_param_at_ind = pp_struct%cthl_2
       CASE (21)
-          get_param_at_ind = pp_struct%chi_2
+          get_param_at_ind = pp_struct%chi_1
       CASE (22)
-          get_param_at_ind = pp_struct%stdev_chi_1
+          get_param_at_ind = pp_struct%chi_2
       CASE (23)
-          get_param_at_ind = pp_struct%stdev_chi_2
+          get_param_at_ind = pp_struct%stdev_chi_1
       CASE (24)
-          get_param_at_ind = pp_struct%stdev_eta_1
+          get_param_at_ind = pp_struct%stdev_chi_2
       CASE (25)
-          get_param_at_ind = pp_struct%stdev_eta_2
+          get_param_at_ind = pp_struct%stdev_eta_1
       CASE (26)
-          get_param_at_ind = pp_struct%covar_chi_eta_1
+          get_param_at_ind = pp_struct%stdev_eta_2
       CASE (27)
-          get_param_at_ind = pp_struct%covar_chi_eta_2
+          get_param_at_ind = pp_struct%covar_chi_eta_1
       CASE (28)
-          get_param_at_ind = pp_struct%corr_chi_eta_1
+          get_param_at_ind = pp_struct%covar_chi_eta_2
       CASE (29)
-          get_param_at_ind = pp_struct%corr_chi_eta_2
+          get_param_at_ind = pp_struct%corr_chi_eta_1
       CASE (30)
-          get_param_at_ind = pp_struct%rsatl_1
+          get_param_at_ind = pp_struct%corr_chi_eta_2
       CASE (31)
-          get_param_at_ind = pp_struct%rsatl_2
+          get_param_at_ind = pp_struct%rsatl_1
       CASE (32)
-          get_param_at_ind = pp_struct%rc_1
+          get_param_at_ind = pp_struct%rsatl_2
       CASE (33)
-          get_param_at_ind = pp_struct%rc_2
+          get_param_at_ind = pp_struct%rc_1
       CASE (34)
-          get_param_at_ind = pp_struct%cloud_frac_1
+          get_param_at_ind = pp_struct%rc_2
       CASE (35)
-          get_param_at_ind = pp_struct%cloud_frac_2
+          get_param_at_ind = pp_struct%cloud_frac_1
       CASE (36)
-          get_param_at_ind = pp_struct%mixt_frac
+          get_param_at_ind = pp_struct%cloud_frac_2
       CASE (37)
-          get_param_at_ind = pp_struct%ice_supersat_frac_1
+          get_param_at_ind = pp_struct%mixt_frac
       CASE (38)
+          get_param_at_ind = pp_struct%ice_supersat_frac_1
+      CASE (39)
           get_param_at_ind = pp_struct%ice_supersat_frac_2
       CASE DEFAULT
           stop "Invalid index in get_param_at_ind"
@@ -324,54 +328,56 @@ module pdf_parameter_module
       CASE (13)
           pp_struct%corr_rt_thl_1 = val
       CASE (14)
-          pp_struct%alpha_thl = val
+          pp_struct%corr_rt_thl_2 = val
       CASE (15)
-          pp_struct%alpha_rt = val
+          pp_struct%alpha_thl = val
       CASE (16)
-          pp_struct%crt_1 = val
+          pp_struct%alpha_rt = val
       CASE (17)
-          pp_struct%crt_2 = val
+          pp_struct%crt_1 = val
       CASE (18)
-          pp_struct%cthl_1 = val
+          pp_struct%crt_2 = val
       CASE (19)
-          pp_struct%cthl_2 = val
+          pp_struct%cthl_1 = val
       CASE (20)
-          pp_struct%chi_1 = val
+          pp_struct%cthl_2 = val
       CASE (21)
-          pp_struct%chi_2 = val
+          pp_struct%chi_1 = val
       CASE (22)
-          pp_struct%stdev_chi_1 = val
+          pp_struct%chi_2 = val
       CASE (23)
-          pp_struct%stdev_chi_2 = val
+          pp_struct%stdev_chi_1 = val
       CASE (24)
-          pp_struct%stdev_eta_1 = val
+          pp_struct%stdev_chi_2 = val
       CASE (25)
-          pp_struct%stdev_eta_2 = val
+          pp_struct%stdev_eta_1 = val
       CASE (26)
-          pp_struct%covar_chi_eta_1 = val
+          pp_struct%stdev_eta_2 = val
       CASE (27)
-          pp_struct%covar_chi_eta_2 = val
+          pp_struct%covar_chi_eta_1 = val
       CASE (28)
-          pp_struct%corr_chi_eta_1 = val
+          pp_struct%covar_chi_eta_2 = val
       CASE (29)
-          pp_struct%corr_chi_eta_2 = val
+          pp_struct%corr_chi_eta_1 = val
       CASE (30)
-          pp_struct%rsatl_1 = val
+          pp_struct%corr_chi_eta_2 = val
       CASE (31)
-          pp_struct%rsatl_2 = val
+          pp_struct%rsatl_1 = val
       CASE (32)
-          pp_struct%rc_1 = val
+          pp_struct%rsatl_2 = val
       CASE (33)
-          pp_struct%rc_2 = val
+          pp_struct%rc_1 = val
       CASE (34)
-          pp_struct%cloud_frac_1 = val
+          pp_struct%rc_2 = val
       CASE (35)
-          pp_struct%cloud_frac_2 = val
+          pp_struct%cloud_frac_1 = val
       CASE (36)
-          pp_struct%mixt_frac = val
+          pp_struct%cloud_frac_2 = val
       CASE (37)
-          pp_struct%ice_supersat_frac_1 = val
+          pp_struct%mixt_frac = val
       CASE (38)
+          pp_struct%ice_supersat_frac_1 = val
+      CASE (39)
           pp_struct%ice_supersat_frac_2 = val
       CASE DEFAULT
           ! do nothing !

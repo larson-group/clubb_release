@@ -616,14 +616,15 @@ module stats_variables
      icorr_chi_eta_1 = 0, &
      icorr_chi_eta_2 = 0, &
      icorr_rt_thl_1 = 0, &
+     icorr_rt_thl_2 = 0, &
      icrt_1 = 0, &
      icrt_2 = 0, &
      icthl_1 = 0, &
      icthl_2 = 0
 !$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, ichip2, &
 !$omp    istdev_eta_1, istdev_eta_2, icovar_chi_eta_1, icovar_chi_eta_2, &
-!$omp    icorr_chi_eta_1, icorr_chi_eta_2, icorr_rt_thl_1, icrt_1, icrt_2, &
-!$omp    icthl_1, icthl_2 )
+!$omp    icorr_chi_eta_1, icorr_chi_eta_2, icorr_rt_thl_1, icorr_rt_thl_2, &
+!$omp    icrt_1, icrt_2, icthl_1, icthl_2 )
 
   integer, public :: & 
     iwp2_zt = 0, & 
