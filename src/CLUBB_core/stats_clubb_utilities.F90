@@ -1818,7 +1818,7 @@ module stats_clubb_utilities
         icrt_2, &
         icthl_1, &
         icthl_2, &
-        irrtthl, &
+        icorr_rt_thl_1, &
         ichi
 
     use stats_variables, only: &
@@ -2182,7 +2182,7 @@ module stats_clubb_utilities
       call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, stats_zt )
       call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, stats_zt )
       call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, stats_zt )
-      call stat_update_var( irrtthl, pdf_params%rrtthl, stats_zt )
+      call stat_update_var( icorr_rt_thl_1, pdf_params%corr_rt_thl_1, stats_zt )
       call stat_update_var( icrt_1, pdf_params%crt_1, stats_zt )
       call stat_update_var( icrt_2, pdf_params%crt_2, stats_zt )
       call stat_update_var( icthl_1, pdf_params%cthl_1, stats_zt )

@@ -346,7 +346,7 @@ module stats_zt_module
         icovar_chi_eta_2, &
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
-        irrtthl, &
+        icorr_rt_thl_1, &
         icrt_1, &
         icrt_2, &
         icthl_1, &
@@ -3654,12 +3654,12 @@ module stats_zt_module
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('rrtthl')
-        irrtthl = k
+      case ('corr_rt_thl_1')
+        icorr_rt_thl_1 = k
 
-        call stat_assign( var_index=irrtthl, var_name="rrtthl", &
+        call stat_assign( var_index=icorr_rt_thl_1, var_name="corr_rt_thl_1", &
                           var_description="Correlation of rt and thl" &
-                          // " (both PDF components) [-]", var_units="-", &
+                          // " (1st PDF component) [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

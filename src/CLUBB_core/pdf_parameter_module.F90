@@ -35,7 +35,7 @@ module pdf_parameter_module
       thl_2,           & ! Mean of th_l (2nd PDF component)                  [K]
       varnce_thl_1,    & ! Variance of th_l (1st PDF component)            [K^2]
       varnce_thl_2,    & ! Variance of th_l (2nd PDF component)            [K^2]
-      rrtthl,          & ! Correlation of r_t and th_l (both components)     [-]
+      corr_rt_thl_1,   & ! Correlation of r_t and th_l (1st PDF component)   [-]
       alpha_thl,       & ! Factor relating to normalized variance for th_l   [-]
       alpha_rt,        & ! Factor relating to normalized variance for r_t    [-]
       crt_1,           & ! r_t coef. in chi/eta eqns. (1st PDF comp.)        [-]
@@ -114,7 +114,7 @@ module pdf_parameter_module
     pdf_params(:)%thl_2 = zero
     pdf_params(:)%varnce_thl_1 = zero
     pdf_params(:)%varnce_thl_2 = zero
-    pdf_params(:)%rrtthl = zero
+    pdf_params(:)%corr_rt_thl_1 = zero
     pdf_params(:)%alpha_thl = zero
     pdf_params(:)%alpha_rt = zero
     pdf_params(:)%crt_1 = zero
@@ -232,7 +232,7 @@ module pdf_parameter_module
       CASE (12)
           get_param_at_ind = pp_struct%varnce_thl_2
       CASE (13)
-          get_param_at_ind = pp_struct%rrtthl
+          get_param_at_ind = pp_struct%corr_rt_thl_1
       CASE (14)
           get_param_at_ind = pp_struct%alpha_thl
       CASE (15)
@@ -322,7 +322,7 @@ module pdf_parameter_module
       CASE (12)
           pp_struct%varnce_thl_2 = val
       CASE (13)
-          pp_struct%rrtthl = val
+          pp_struct%corr_rt_thl_1 = val
       CASE (14)
           pp_struct%alpha_thl = val
       CASE (15)

@@ -3283,8 +3283,8 @@ module advance_clubb_core_module
         stdev_eta_1_zt,    & ! Standard deviation of eta(t) for 1st normal distribution [kg/kg]
         stdev_eta_2_zm,    & ! Standard deviation of eta(t) for 2nd normal distribution [kg/kg]
         stdev_eta_2_zt,    & ! Standard deviation of eta(t) for 2nd normal distribution [kg/kg]
-        rrtthl_zm,      & ! Within-a-normal correlation of r_t and th_l             [-]
-        rrtthl_zt,      & ! Within-a-normal correlation of r_t and th_l             [-]
+        corr_rt_thl_1_zm,  & ! Within-a-normal correlation of r_t and th_l             [-]
+        corr_rt_thl_1_zt,  & ! Within-a-normal correlation of r_t and th_l             [-]
         alpha_thl_zm,   & ! Factor relating to normalized variance for th_l         [-]
         alpha_thl_zt,   & ! Factor relating to normalized variance for th_l         [-]
         alpha_rt_zm,    & ! Factor relating to normalized variance for r_t          [-]
@@ -3333,7 +3333,7 @@ module advance_clubb_core_module
         stdev_chi_2_zt    = pdf_params%stdev_chi_2
         stdev_eta_1_zt    = pdf_params%stdev_eta_1
         stdev_eta_2_zt    = pdf_params%stdev_eta_2
-        rrtthl_zt      = pdf_params%rrtthl
+        corr_rt_thl_1_zt  = pdf_params%corr_rt_thl_1
         alpha_thl_zt   = pdf_params%alpha_thl
         alpha_rt_zt    = pdf_params%alpha_rt
       end if
@@ -3375,7 +3375,7 @@ module advance_clubb_core_module
           stdev_chi_2_zm    = pdf_params_zm%stdev_chi_2
           stdev_eta_1_zm    = pdf_params_zm%stdev_eta_1
           stdev_eta_2_zm    = pdf_params_zm%stdev_eta_2
-          rrtthl_zm      = pdf_params_zm%rrtthl
+          corr_rt_thl_1_zm  = pdf_params_zm%corr_rt_thl_1
           alpha_thl_zm   = pdf_params_zm%alpha_thl
           alpha_rt_zm    = pdf_params_zm%alpha_rt
         end if
@@ -3468,8 +3468,8 @@ module advance_clubb_core_module
           stdev_eta_1_zm(gr%nz)    = 0.0_core_rknd
           stdev_eta_2_zm           = zt2zm( pdf_params%stdev_eta_2 )
           stdev_eta_2_zm(gr%nz)    = 0.0_core_rknd
-          rrtthl_zm             = zt2zm( pdf_params%rrtthl )
-          rrtthl_zm(gr%nz)      = 0.0_core_rknd
+          corr_rt_thl_1_zm         = zt2zm( pdf_params%corr_rt_thl_1 )
+          corr_rt_thl_1_zm(gr%nz)  = 0.0_core_rknd
           alpha_thl_zm          = zt2zm( pdf_params%alpha_thl )
           alpha_thl_zm(gr%nz)   = 0.0_core_rknd
           alpha_rt_zm           = zt2zm( pdf_params%alpha_rt )
@@ -3544,7 +3544,7 @@ module advance_clubb_core_module
         pdf_params%cloud_frac_2 = trapezoid_zt( cloud_frac_2_zt, cloud_frac_2_zm )
         pdf_params%chi_1          = trapezoid_zt( chi_1_zt, chi_1_zm )
         pdf_params%chi_2          = trapezoid_zt( chi_2_zt, chi_2_zm )
-        pdf_params%rrtthl      = trapezoid_zt( rrtthl_zt, rrtthl_zm )
+        pdf_params%corr_rt_thl_1  = trapezoid_zt( corr_rt_thl_1_zt, corr_rt_thl_1_zm )
         pdf_params%alpha_thl   = trapezoid_zt( alpha_thl_zt, alpha_thl_zm )
         pdf_params%alpha_rt    = trapezoid_zt( alpha_rt_zt, alpha_rt_zm )
         pdf_params%stdev_chi_1    = trapezoid_zt( stdev_chi_1_zt, stdev_chi_1_zm )
