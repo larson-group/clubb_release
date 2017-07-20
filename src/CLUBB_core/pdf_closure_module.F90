@@ -242,6 +242,10 @@ module pdf_closure_module
       thl_2,         & ! Mean of th_l (2nd PDF component)                    [K]
       varnce_thl_1,  & ! Variance of th_l (1st PDF component)              [K^2]
       varnce_thl_2,  & ! Variance of th_l (2nd PDF component)              [K^2]
+      corr_w_rt_1,   & ! Correlation of w and r_t (1st PDF component)        [-]
+      corr_w_rt_2,   & ! Correlation of w and r_t (2nd PDF component)        [-]
+      corr_w_thl_1,  & ! Correlation of w and th_l (1st PDF component)       [-]
+      corr_w_thl_2,  & ! Correlation of w and th_l (2nd PDF component)       [-]
       corr_rt_thl_1, & ! Correlation of r_t and th_l (1st PDF component)     [-]
       corr_rt_thl_2, & ! Correlation of r_t and th_l (2nd PDF component)     [-]
       alpha_thl,     & ! Factor relating to normalized variance for th_l     [-]
@@ -390,6 +394,10 @@ module pdf_closure_module
       alpha_thl     = one_half
       varnce_thl_1  = 0._core_rknd
       varnce_thl_2  = 0._core_rknd
+      corr_w_rt_1   = 0._core_rknd
+      corr_w_rt_2   = 0._core_rknd
+      corr_w_thl_1  = 0._core_rknd
+      corr_w_thl_2  = 0._core_rknd
       corr_rt_thl_1 = 0._core_rknd
       corr_rt_thl_2 = 0._core_rknd
 
@@ -692,6 +700,13 @@ module pdf_closure_module
       ! The PDF component correlation of rt and theta-l in PDF component 2 is
       ! set equal to the same correlation in PDF component 1.
       corr_rt_thl_2 = corr_rt_thl_1
+
+      ! ADG1 (and ADG2) defines corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
+      ! corr_w_thl_2 to all have a value of 0.
+      corr_w_rt_1 = zero
+      corr_w_rt_2 = zero
+      corr_w_thl_1 = zero
+      corr_w_thl_2 = zero
 
       ! Sub-plume correlation, rsclrthl, of passive scalar and theta_l.
       if ( l_scalar_calc ) then
@@ -1099,6 +1114,10 @@ module pdf_closure_module
     pdf_params%thl_2           = thl_2
     pdf_params%varnce_thl_1    = varnce_thl_1
     pdf_params%varnce_thl_2    = varnce_thl_2
+    pdf_params%corr_w_rt_1     = corr_w_rt_1
+    pdf_params%corr_w_rt_2     = corr_w_rt_2
+    pdf_params%corr_w_thl_1    = corr_w_thl_1
+    pdf_params%corr_w_thl_2    = corr_w_thl_2
     pdf_params%corr_rt_thl_1   = corr_rt_thl_1
     pdf_params%corr_rt_thl_2   = corr_rt_thl_2
     pdf_params%alpha_thl       = alpha_thl
@@ -1205,6 +1224,10 @@ module pdf_closure_module
         write(fstderr,*) "pdf_params%thl_2 = ", pdf_params%thl_2
         write(fstderr,*) "pdf_params%varnce_thl_1 = ", pdf_params%varnce_thl_1
         write(fstderr,*) "pdf_params%varnce_thl_2 = ", pdf_params%varnce_thl_2
+        write(fstderr,*) "pdf_params%corr_w_rt_1 = ", pdf_params%corr_w_rt_1
+        write(fstderr,*) "pdf_params%corr_w_rt_2 = ", pdf_params%corr_w_rt_2
+        write(fstderr,*) "pdf_params%corr_w_thl_1 = ", pdf_params%corr_w_thl_1
+        write(fstderr,*) "pdf_params%corr_w_thl_2 = ", pdf_params%corr_w_thl_2
         write(fstderr,*) "pdf_params%corr_rt_thl_1 = ", pdf_params%corr_rt_thl_1
         write(fstderr,*) "pdf_params%corr_rt_thl_2 = ", pdf_params%corr_rt_thl_2
         write(fstderr,*) "pdf_params%alpha_thl = ", pdf_params%alpha_thl
