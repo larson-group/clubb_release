@@ -1818,6 +1818,10 @@ module stats_clubb_utilities
         icrt_2, &
         icthl_1, &
         icthl_2, &
+        icorr_w_rt_1, &
+        icorr_w_rt_2, &
+        icorr_w_thl_1, &
+        icorr_w_thl_2, &
         icorr_rt_thl_1, &
         icorr_rt_thl_2, &
         ichi
@@ -2183,6 +2187,10 @@ module stats_clubb_utilities
       call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, stats_zt )
       call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, stats_zt )
       call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, stats_zt )
+      call stat_update_var( icorr_w_rt_1, pdf_params%corr_w_rt_1, stats_zt )
+      call stat_update_var( icorr_w_rt_2, pdf_params%corr_w_rt_2, stats_zt )
+      call stat_update_var( icorr_w_thl_1, pdf_params%corr_w_thl_1, stats_zt )
+      call stat_update_var( icorr_w_thl_2, pdf_params%corr_w_thl_2, stats_zt )
       call stat_update_var( icorr_rt_thl_1, pdf_params%corr_rt_thl_1, stats_zt )
       call stat_update_var( icorr_rt_thl_2, pdf_params%corr_rt_thl_2, stats_zt )
       call stat_update_var( icrt_1, pdf_params%crt_1, stats_zt )
