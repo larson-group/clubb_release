@@ -703,10 +703,47 @@ module pdf_closure_module
 
       ! ADG1 (and ADG2) defines corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
       ! corr_w_thl_2 to all have a value of 0.
-      corr_w_rt_1 = zero
-      corr_w_rt_2 = zero
-      corr_w_thl_1 = zero
-      corr_w_thl_2 = zero
+      if ( varnce_w_1 * varnce_rt_1 > zero &
+           .or. varnce_w_2 * varnce_rt_2 > zero ) then
+
+         corr_w_rt_1 &
+         = ( wprtp &
+             - mixt_frac * ( w_1 - wm ) * ( rt_1 - rtm ) &
+             - ( one - mixt_frac ) * ( w_2 - wm ) * ( rt_2 - rtm ) ) &
+           / ( mixt_frac * sqrt( varnce_w_1 * varnce_rt_1 ) &
+               + ( one - mixt_frac ) * sqrt( varnce_w_2 * varnce_rt_2 ) )
+
+         if ( corr_w_rt_1 > one ) then
+            corr_w_rt_1 = one
+         elseif ( corr_w_rt_1 < -one ) then
+            corr_w_rt_1 = -one
+         endif
+
+      else
+         corr_w_rt_1 = zero
+      endif
+      corr_w_rt_2 = corr_w_rt_1
+
+      if ( varnce_w_1 * varnce_thl_1 > zero &
+           .or. varnce_w_2 * varnce_thl_2 > zero ) then
+
+         corr_w_thl_1 &
+         = ( wpthlp &
+             - mixt_frac * ( w_1 - wm ) * ( thl_1 - thlm ) &
+             - ( one - mixt_frac ) * ( w_2 - wm ) * ( thl_2 - thlm ) ) &
+           / ( mixt_frac * sqrt( varnce_w_1 * varnce_thl_1 ) &
+               + ( one - mixt_frac ) * sqrt( varnce_w_2 * varnce_thl_2 ) )
+
+         if ( corr_w_thl_1 > one ) then
+            corr_w_thl_1 = one
+         elseif ( corr_w_thl_1 < -one ) then
+            corr_w_thl_1 = -one
+         endif
+
+      else
+         corr_w_thl_1 = zero
+      endif
+      corr_w_thl_2 = corr_w_thl_1
 
       ! Sub-plume correlation, rsclrthl, of passive scalar and theta_l.
       if ( l_scalar_calc ) then
@@ -751,11 +788,23 @@ module pdf_closure_module
     end if  ! Widths non-zero
 
     ! Compute higher order moments (these are interactive)
-    wp2rtp  = mixt_frac * ( (w_1-wm)**2+varnce_w_1 ) * ( rt_1-rtm ) & 
-            + (one-mixt_frac) * ( (w_2-wm)**2+varnce_w_2 ) * ( rt_2-rtm )
+    wp2rtp  = mixt_frac &
+              * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( rt_1 - rtm ) &
+                  + two * corr_w_rt_1 * sqrt( varnce_w_1 * varnce_rt_1 ) &
+                    * ( w_1 - wm ) ) &
+              + ( one - mixt_frac ) &
+                * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( rt_2 - rtm ) &
+                    + two * corr_w_rt_2 * sqrt( varnce_w_2 * varnce_rt_2 ) &
+                      * ( w_2 - wm ) )
 
-    wp2thlp = mixt_frac * ( (w_1-wm)**2+varnce_w_1 ) * ( thl_1-thlm ) & 
-            + (one-mixt_frac) * ( (w_2-wm)**2+varnce_w_2 ) * ( thl_2-thlm )
+    wp2thlp = mixt_frac &
+              * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( thl_1 - thlm ) &
+                  + two * corr_w_thl_1 * sqrt( varnce_w_1 * varnce_thl_1 ) &
+                    * ( w_1 - wm ) ) &
+              + ( one - mixt_frac ) &
+                * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( thl_2 - thlm ) &
+                    + two * corr_w_thl_2 * sqrt( varnce_w_2 * varnce_thl_2 ) &
+                      * ( w_2 - wm ) )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
     if ( iwp4 > 0 ) then
@@ -766,13 +815,25 @@ module pdf_closure_module
     end if
 
     if ( iwprtp2 > 0 ) then
-      wprtp2  = mixt_frac * ( w_1-wm )*( (rt_1-rtm)**2 + varnce_rt_1 )  & 
-              + (one-mixt_frac) * ( w_2-wm )*( (rt_2-rtm)**2 + varnce_rt_2)
+      wprtp2  = mixt_frac &
+                * ( ( w_1 - wm ) * ( ( rt_1 - rtm )**2 + varnce_rt_1 ) &
+                    + two * corr_w_rt_1 * sqrt( varnce_w_1 * varnce_rt_1 ) &
+                      * ( rt_1 - rtm ) ) &
+                + ( one - mixt_frac ) &
+                  * ( ( w_2 - wm ) * ( ( rt_2 - rtm )**2 + varnce_rt_2 ) &
+                      + two * corr_w_rt_2 * sqrt( varnce_w_2 * varnce_rt_2 ) &
+                        * ( rt_2 - rtm ) )
     end if
 
     if ( iwpthlp2 > 0 ) then
-      wpthlp2 = mixt_frac * ( w_1-wm )*( (thl_1-thlm)**2 + varnce_thl_1 )  & 
-              + (one-mixt_frac) * ( w_2-wm )*( (thl_2-thlm)**2+varnce_thl_2 )
+      wpthlp2 = mixt_frac &
+                * ( ( w_1 - wm ) * ( ( thl_1 - thlm )**2 + varnce_thl_1 ) &
+                    + two * corr_w_thl_1 * sqrt( varnce_w_1 * varnce_thl_1 ) &
+                      * ( thl_1 - thlm ) ) &
+                + ( one - mixt_frac ) &
+                  * ( ( w_2 - wm ) * ( ( thl_2 - thlm )**2 + varnce_thl_2 ) &
+                      + two * corr_w_thl_2 * sqrt( varnce_w_2 * varnce_thl_2 ) &
+                        * ( thl_2 - thlm ) )
     end if
 
     if ( iwprtpthlp > 0 ) then
