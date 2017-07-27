@@ -93,6 +93,10 @@ module pdf_closure_module
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
 
+    use pdf_utilities, only: &
+        calc_corr_chi_x, & ! Procedure(s)
+        calc_corr_eta_x
+
     use array_index, only: &
         l_mix_rat_hm  ! Variable(s)
 
@@ -264,6 +268,10 @@ module pdf_closure_module
       stdev_eta_2,     & ! Standard dev. of eta (old t) (2nd PDF comp.)  [kg/kg]
       covar_chi_eta_1, & ! Covariance of chi and eta (1st PDF comp.) [kg^2/kg^2]
       covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
+      corr_w_chi_1,    & ! Correlation of w and chi (1st PDF component)      [-]
+      corr_w_chi_2,    & ! Correlation of w and chi (2nd PDF component)      [-]
+      corr_w_eta_1,    & ! Correlation of w and eta (1st PDF component)      [-]
+      corr_w_eta_2,    & ! Correlation of w and eta (2nd PDF component)      [-]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
       rsatl_1,         & ! Mean of r_sl (1st PDF component)              [kg/kg]
@@ -999,7 +1007,25 @@ module pdf_closure_module
     else
       corr_chi_eta_2 = zero
     endif
-    
+
+    ! Correlation of w and chi for each component.
+    corr_w_chi_1 &
+    = calc_corr_chi_x( crt_1, cthl_1, sqrt(varnce_rt_1), sqrt(varnce_thl_1), &
+                       stdev_chi_1, corr_w_rt_1, corr_w_thl_1 )
+
+    corr_w_chi_2 &
+    = calc_corr_chi_x( crt_2, cthl_2, sqrt(varnce_rt_2), sqrt(varnce_thl_2), &
+                       stdev_chi_2, corr_w_rt_2, corr_w_thl_2 )
+
+    ! Correlation of w and eta for each component.
+    corr_w_eta_1 &
+    = calc_corr_eta_x( crt_1, cthl_1, sqrt(varnce_rt_1), sqrt(varnce_thl_1), &
+                       stdev_eta_1, corr_w_rt_1, corr_w_thl_1 )
+
+    corr_w_eta_2 &
+    = calc_corr_eta_x( crt_2, cthl_2, sqrt(varnce_rt_2), sqrt(varnce_thl_2),  &
+                       stdev_eta_2, corr_w_rt_2, corr_w_thl_2 )
+
     ! Determine whether to compute ice_supersat_frac. We do not compute
     ! ice_supersat_frac for GFDL (unless do_liquid_only_in_clubb is true),
     ! because liquid and ice are both fed into rtm, ruining the calculation.
