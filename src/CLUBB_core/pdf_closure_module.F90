@@ -1221,6 +1221,10 @@ module pdf_closure_module
     pdf_params%stdev_eta_2     = stdev_eta_2
     pdf_params%covar_chi_eta_1 = covar_chi_eta_1
     pdf_params%covar_chi_eta_2 = covar_chi_eta_2
+    pdf_params%corr_w_chi_1    = corr_w_chi_1
+    pdf_params%corr_w_chi_2    = corr_w_chi_2
+    pdf_params%corr_w_eta_1    = corr_w_eta_1
+    pdf_params%corr_w_eta_2    = corr_w_eta_2
     pdf_params%corr_chi_eta_1  = corr_chi_eta_1
     pdf_params%corr_chi_eta_2  = corr_chi_eta_2
     pdf_params%rsatl_1         = rsatl_1
@@ -1333,6 +1337,10 @@ module pdf_closure_module
                          pdf_params%covar_chi_eta_1
         write(fstderr,*) "pdf_params%covar_chi_eta_2 = ", &
                          pdf_params%covar_chi_eta_2
+        write(fstderr,*) "pdf_params%corr_w_chi_1 = ", pdf_params%corr_w_chi_1
+        write(fstderr,*) "pdf_params%corr_w_chi_2 = ", pdf_params%corr_w_chi_2
+        write(fstderr,*) "pdf_params%corr_w_eta_1 = ", pdf_params%corr_w_eta_1
+        write(fstderr,*) "pdf_params%corr_w_eta_2 = ", pdf_params%corr_w_eta_2
         write(fstderr,*) "pdf_params%corr_chi_eta_1 = ", &
                          pdf_params%corr_chi_eta_1
         write(fstderr,*) "pdf_params%corr_chi_eta_2 = ", &

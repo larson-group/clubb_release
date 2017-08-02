@@ -183,35 +183,80 @@ module numerical_check
     ! Check each PDF parameter at the grid level sent in.
     call check_nan( pdf_params%w_1, "pdf_params%w_1", proc_name, err_code )
     call check_nan( pdf_params%w_2, "pdf_params%w_2", proc_name, err_code )
-    call check_nan( pdf_params%varnce_w_1, "pdf_params%varnce_w_1", proc_name, err_code )
-    call check_nan( pdf_params%varnce_w_2, "pdf_params%varnce_w_2", proc_name, err_code )
+    call check_nan( pdf_params%varnce_w_1, "pdf_params%varnce_w_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%varnce_w_2, "pdf_params%varnce_w_2", &
+                    proc_name, err_code )
     call check_nan( pdf_params%rt_1, "pdf_params%rt_1", proc_name, err_code )
     call check_nan( pdf_params%rt_2, "pdf_params%rt_2", proc_name, err_code )
-    call check_nan( pdf_params%varnce_rt_1, "pdf_params%varnce_rt_1", proc_name, err_code )
-    call check_nan( pdf_params%varnce_rt_2, "pdf_params%varnce_rt_2", proc_name, err_code )
+    call check_nan( pdf_params%varnce_rt_1, "pdf_params%varnce_rt_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%varnce_rt_2, "pdf_params%varnce_rt_2", &
+                    proc_name, err_code )
     call check_nan( pdf_params%thl_1, "pdf_params%thl_1", proc_name, err_code )
     call check_nan( pdf_params%thl_2, "pdf_params%thl_2", proc_name, err_code )
-    call check_nan( pdf_params%varnce_thl_1, "pdf_params%varnce_thl_1", proc_name, err_code )
-    call check_nan( pdf_params%varnce_thl_2, "pdf_params%varnce_thl_2", proc_name, err_code )
-    call check_nan( pdf_params%mixt_frac, "pdf_params%mixt_frac", proc_name, err_code )
-    call check_nan( pdf_params%corr_w_rt_1, "pdf_params%corr_w_rt_1", proc_name, err_code )
-    call check_nan( pdf_params%corr_w_rt_2, "pdf_params%corr_w_rt_2", proc_name, err_code )
-    call check_nan( pdf_params%corr_w_thl_1, "pdf_params%corr_w_thl_1", proc_name, err_code )
-    call check_nan( pdf_params%corr_w_thl_2, "pdf_params%corr_w_thl_2", proc_name, err_code )
-    call check_nan( pdf_params%corr_rt_thl_1, "pdf_params%corr_rt_thl_1", proc_name, err_code )
-    call check_nan( pdf_params%corr_rt_thl_2, "pdf_params%corr_rt_thl_2", proc_name, err_code )
+    call check_nan( pdf_params%varnce_thl_1, "pdf_params%varnce_thl_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%varnce_thl_2, "pdf_params%varnce_thl_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%mixt_frac, "pdf_params%mixt_frac", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_rt_1, "pdf_params%corr_w_rt_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_rt_2, "pdf_params%corr_w_rt_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_thl_1, "pdf_params%corr_w_thl_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_thl_2, "pdf_params%corr_w_thl_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_rt_thl_1, "pdf_params%corr_rt_thl_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_rt_thl_2, "pdf_params%corr_rt_thl_2", &
+                    proc_name, err_code )
     call check_nan( pdf_params%rc_1, "pdf_params%rc_1", proc_name, err_code )
     call check_nan( pdf_params%rc_2, "pdf_params%rc_2", proc_name, err_code )
-    call check_nan( pdf_params%rsatl_1, "pdf_params%rsatl_1", proc_name, err_code )
-    call check_nan( pdf_params%rsatl_2, "pdf_params%rsatl_2", proc_name, err_code )
-    call check_nan( pdf_params%cloud_frac_1, "pdf_params%cloud_frac_1", proc_name, err_code )
-    call check_nan( pdf_params%cloud_frac_2, "pdf_params%cloud_frac_2", proc_name, err_code )
+    call check_nan( pdf_params%rsatl_1, "pdf_params%rsatl_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%rsatl_2, "pdf_params%rsatl_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%cloud_frac_1, "pdf_params%cloud_frac_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%cloud_frac_2, "pdf_params%cloud_frac_2", &
+                    proc_name, err_code )
     call check_nan( pdf_params%chi_1, "pdf_params%chi_1", proc_name, err_code )
     call check_nan( pdf_params%chi_2, "pdf_params%chi_2", proc_name, err_code )
-    call check_nan( pdf_params%stdev_chi_1, "pdf_params%stdev_chi_1", proc_name, err_code )
-    call check_nan( pdf_params%stdev_chi_2, "pdf_params%stdev_chi_2", proc_name, err_code )
-    call check_nan( pdf_params%alpha_thl, "pdf_params%alpha_thl", proc_name, err_code )
-    call check_nan( pdf_params%alpha_rt, "pdf_params%alpha_rt", proc_name, err_code )
+    call check_nan( pdf_params%stdev_chi_1, "pdf_params%stdev_chi_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%stdev_chi_2, "pdf_params%stdev_chi_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%stdev_eta_1, "pdf_params%stdev_eta_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%stdev_eta_2, "pdf_params%stdev_eta_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%covar_chi_eta_1, "pdf_params%covar_chi_eta_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%covar_chi_eta_2, "pdf_params%covar_chi_eta_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_chi_1, "pdf_params%corr_w_chi_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_chi_2, "pdf_params%corr_w_chi_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_eta_1, "pdf_params%corr_w_eta_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_w_eta_2, "pdf_params%corr_w_eta_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_chi_eta_1, "pdf_params%corr_chi_eta_1", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%corr_chi_eta_2, "pdf_params%corr_chi_eta_2", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%alpha_thl, "pdf_params%alpha_thl", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%alpha_rt, "pdf_params%alpha_rt", &
+                    proc_name, err_code )
+    call check_nan( pdf_params%ice_supersat_frac_1, &
+                    "pdf_params%ice_supersat_frac_1", proc_name, err_code )
+    call check_nan( pdf_params%ice_supersat_frac_2, &
+                    "pdf_params%ice_supersat_frac_2", proc_name, err_code )
 
     if ( sclr_dim > 0 ) then
       call check_nan( sclrpthvp,"sclrpthvp", & 

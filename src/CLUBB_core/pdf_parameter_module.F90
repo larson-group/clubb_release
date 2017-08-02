@@ -55,6 +55,10 @@ module pdf_parameter_module
       stdev_eta_2,     & ! Standard dev. of eta (old t) (2nd PDF comp.)  [kg/kg]
       covar_chi_eta_1, & ! Covariance of chi and eta (1st PDF comp.) [kg^2/kg^2]
       covar_chi_eta_2, & ! Covariance of chi and eta (2nd PDF comp.) [kg^2/kg^2]
+      corr_w_chi_1,    & ! Correlation of w and chi (1st PDF component)      [-]
+      corr_w_chi_2,    & ! Correlation of w and chi (2nd PDF component)      [-]
+      corr_w_eta_1,    & ! Correlation of w and eta (1st PDF component)      [-]
+      corr_w_eta_2,    & ! Correlation of w and eta (2nd PDF component)      [-]
       corr_chi_eta_1,  & ! Correlation of chi and eta (1st PDF component)    [-]
       corr_chi_eta_2,  & ! Correlation of chi and eta (2nd PDF component)    [-]
       rsatl_1,         & ! Saturation mixing ratio r_sat(mu_Tl_1,p)      [kg/kg]
@@ -77,7 +81,7 @@ module pdf_parameter_module
 
   public :: pack_pdf_params, unpack_pdf_params
 
-  integer, public, parameter :: num_pdf_params = 43
+  integer, public, parameter :: num_pdf_params = 47
 
 !#endif /* CLUBB_CAM */
 
@@ -139,6 +143,10 @@ module pdf_parameter_module
     pdf_params(:)%stdev_eta_2 = zero
     pdf_params(:)%covar_chi_eta_1 = zero
     pdf_params(:)%covar_chi_eta_2 = zero
+    pdf_params(:)%corr_w_chi_1 = zero 
+    pdf_params(:)%corr_w_chi_2 = zero 
+    pdf_params(:)%corr_w_eta_1 = zero 
+    pdf_params(:)%corr_w_eta_2 = zero 
     pdf_params(:)%corr_chi_eta_1 = zero 
     pdf_params(:)%corr_chi_eta_2 = zero 
     pdf_params(:)%rsatl_1 = zero
@@ -282,26 +290,34 @@ module pdf_parameter_module
       CASE (32)
           get_param_at_ind = pp_struct%covar_chi_eta_2
       CASE (33)
-          get_param_at_ind = pp_struct%corr_chi_eta_1
+          get_param_at_ind = pp_struct%corr_w_chi_1
       CASE (34)
-          get_param_at_ind = pp_struct%corr_chi_eta_2
+          get_param_at_ind = pp_struct%corr_w_chi_2
       CASE (35)
-          get_param_at_ind = pp_struct%rsatl_1
+          get_param_at_ind = pp_struct%corr_w_eta_1
       CASE (36)
-          get_param_at_ind = pp_struct%rsatl_2
+          get_param_at_ind = pp_struct%corr_w_eta_2
       CASE (37)
-          get_param_at_ind = pp_struct%rc_1
+          get_param_at_ind = pp_struct%corr_chi_eta_1
       CASE (38)
-          get_param_at_ind = pp_struct%rc_2
+          get_param_at_ind = pp_struct%corr_chi_eta_2
       CASE (39)
-          get_param_at_ind = pp_struct%cloud_frac_1
+          get_param_at_ind = pp_struct%rsatl_1
       CASE (40)
-          get_param_at_ind = pp_struct%cloud_frac_2
+          get_param_at_ind = pp_struct%rsatl_2
       CASE (41)
-          get_param_at_ind = pp_struct%mixt_frac
+          get_param_at_ind = pp_struct%rc_1
       CASE (42)
-          get_param_at_ind = pp_struct%ice_supersat_frac_1
+          get_param_at_ind = pp_struct%rc_2
       CASE (43)
+          get_param_at_ind = pp_struct%cloud_frac_1
+      CASE (44)
+          get_param_at_ind = pp_struct%cloud_frac_2
+      CASE (45)
+          get_param_at_ind = pp_struct%mixt_frac
+      CASE (46)
+          get_param_at_ind = pp_struct%ice_supersat_frac_1
+      CASE (47)
           get_param_at_ind = pp_struct%ice_supersat_frac_2
       CASE DEFAULT
           stop "Invalid index in get_param_at_ind"
@@ -382,26 +398,34 @@ module pdf_parameter_module
       CASE (32)
           pp_struct%covar_chi_eta_2 = val
       CASE (33)
-          pp_struct%corr_chi_eta_1 = val
+          pp_struct%corr_w_chi_1 = val
       CASE (34)
-          pp_struct%corr_chi_eta_2 = val
+          pp_struct%corr_w_chi_2 = val
       CASE (35)
-          pp_struct%rsatl_1 = val
+          pp_struct%corr_w_eta_1 = val
       CASE (36)
-          pp_struct%rsatl_2 = val
+          pp_struct%corr_w_eta_2 = val
       CASE (37)
-          pp_struct%rc_1 = val
+          pp_struct%corr_chi_eta_1 = val
       CASE (38)
-          pp_struct%rc_2 = val
+          pp_struct%corr_chi_eta_2 = val
       CASE (39)
-          pp_struct%cloud_frac_1 = val
+          pp_struct%rsatl_1 = val
       CASE (40)
-          pp_struct%cloud_frac_2 = val
+          pp_struct%rsatl_2 = val
       CASE (41)
-          pp_struct%mixt_frac = val
+          pp_struct%rc_1 = val
       CASE (42)
-          pp_struct%ice_supersat_frac_1 = val
+          pp_struct%rc_2 = val
       CASE (43)
+          pp_struct%cloud_frac_1 = val
+      CASE (44)
+          pp_struct%cloud_frac_2 = val
+      CASE (45)
+          pp_struct%mixt_frac = val
+      CASE (46)
+          pp_struct%ice_supersat_frac_1 = val
+      CASE (47)
           pp_struct%ice_supersat_frac_2 = val
       CASE DEFAULT
           ! do nothing !
