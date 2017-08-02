@@ -104,10 +104,10 @@ module stats_zt_module
         isigma_Ncn_2_n
 
     use stats_variables, only: &
-        icorr_w_chi_1,     & ! Variable(s)
-        icorr_w_chi_2,     &
-        icorr_w_eta_1,     &
-        icorr_w_eta_2,     &
+        icorr_w_chi_1_ca,  & ! Variable(s)
+        icorr_w_chi_2_ca,  &
+        icorr_w_eta_1_ca,  &
+        icorr_w_eta_2_ca,  &
         icorr_w_hm_1,    &
         icorr_w_hm_2,    &
         icorr_w_Ncn_1,   &
@@ -4348,43 +4348,47 @@ module stats_zt_module
 
          k = k + 1
 
-      case ('corr_w_chi_1')
-        icorr_w_chi_1 = k
+      case ('corr_w_chi_1_ca')
+        icorr_w_chi_1_ca = k
 
-        call stat_assign( var_index=icorr_w_chi_1, var_name="corr_w_chi_1", &
+        call stat_assign( var_index=icorr_w_chi_1_ca, &
+                          var_name="corr_w_chi_1_ca", &
                           var_description="Correlation of w and chi" &
-                          // " (1st PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (1st PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_chi_2')
-        icorr_w_chi_2 = k
+      case ('corr_w_chi_2_ca')
+        icorr_w_chi_2_ca = k
 
-        call stat_assign( var_index=icorr_w_chi_2, var_name="corr_w_chi_2", &
+        call stat_assign( var_index=icorr_w_chi_2_ca, &
+                          var_name="corr_w_chi_2_ca", &
                           var_description="Correlation of w and chi" &
-                          // " (2nd PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (2nd PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_eta_1')
-        icorr_w_eta_1 = k
+      case ('corr_w_eta_1_ca')
+        icorr_w_eta_1_ca = k
 
-        call stat_assign( var_index=icorr_w_eta_1, var_name="corr_w_eta_1", &
+        call stat_assign( var_index=icorr_w_eta_1_ca, &
+                          var_name="corr_w_eta_1_ca", &
                           var_description="Correlation of w and eta" &
-                          // " (1st PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (1st PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
-      case ('corr_w_eta_2')
-        icorr_w_eta_2 = k
+      case ('corr_w_eta_2_ca')
+        icorr_w_eta_2_ca = k
 
-        call stat_assign( var_index=icorr_w_eta_2, var_name="corr_w_eta_2", &
+        call stat_assign( var_index=icorr_w_eta_2_ca, &
+                          var_name="corr_w_eta_2_ca", &
                           var_description="Correlation of w and eta" &
-                          // " (2nd PDF component) -- should be 0 by" &
-                          // " CLUBB standards [-]", var_units="-", &
+                          // " (2nd PDF component) found in the correlation" &
+                          // " array [-]", var_units="-", &
                           l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 

@@ -181,10 +181,10 @@ module stats_variables
 !$omp   isigma_Ncn_1, isigma_Ncn_2, isigma_Ncn_1_n, isigma_Ncn_2_n )
 
   integer, public :: &
-     icorr_w_chi_1 = 0,    &
-     icorr_w_chi_2 = 0,    &
-     icorr_w_eta_1 = 0,    &
-     icorr_w_eta_2 = 0,    &
+     icorr_w_chi_1_ca = 0, &
+     icorr_w_chi_2_ca = 0, &
+     icorr_w_eta_1_ca = 0, &
+     icorr_w_eta_2_ca = 0, &
      icorr_w_Ncn_1 = 0,  &
      icorr_w_Ncn_2 = 0,  &
      icorr_chi_eta_1_ca = 0, &
@@ -193,8 +193,8 @@ module stats_variables
      icorr_chi_Ncn_2 = 0,  &
      icorr_eta_Ncn_1 = 0,  &
      icorr_eta_Ncn_2 = 0
-!$omp threadprivate( icorr_w_chi_1, icorr_w_chi_2, icorr_w_eta_1, &
-!$omp   icorr_w_eta_2, icorr_w_Ncn_1, icorr_w_Ncn_2, icorr_chi_eta_1_ca, &
+!$omp threadprivate( icorr_w_chi_1_ca, icorr_w_chi_2_ca, icorr_w_eta_1_ca, &
+!$omp   icorr_w_eta_2_ca, icorr_w_Ncn_1, icorr_w_Ncn_2, icorr_chi_eta_1_ca, &
 !$omp   icorr_chi_eta_2_ca, icorr_chi_Ncn_1, icorr_chi_Ncn_2, icorr_eta_Ncn_1, &
 !$omp   icorr_eta_Ncn_2 )
 

@@ -3166,10 +3166,10 @@ module setup_clubb_pdf_params
         isigma_Ncn_2
 
     use stats_variables, only : &
-        icorr_w_chi_1,      & ! Variable(s)
-        icorr_w_chi_2,      &
-        icorr_w_eta_1,      &
-        icorr_w_eta_2,      &
+        icorr_w_chi_1_ca,   & ! Variable(s)
+        icorr_w_chi_2_ca,   &
+        icorr_w_eta_1_ca,   &
+        icorr_w_eta_2_ca,   &
         icorr_w_hm_1,       &
         icorr_w_hm_2,       &
         icorr_w_Ncn_1,      &
@@ -3298,39 +3298,63 @@ module setup_clubb_pdf_params
                                    sigma_x_2(iiPDF_Ncn), stats_zt )
        endif
 
-       ! Correlation of w and chi (old s) in PDF component 1.
-       ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation of w and theta-l within each
-       ! PDF component are defined to be 0 by CLUBB standards.
-       if ( icorr_w_chi_1 > 0 ) then
-          call stat_update_var_pt( icorr_w_chi_1, level, &
+       ! Correlation of w and chi (old s) in PDF component 1 found in the
+       ! correlation array.
+       ! The true correlation of w and chi in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of w and chi to a constant, prescribed value
+       ! because of SILHS.  The correlation of w and chi in PDF component 1
+       ! that is calculated by an equation is stored in stats as "corr_w_chi_1".
+       ! Here, "corr_w_chi_1_ca" outputs whatever value is found in the
+       ! correlation array, whether or not it matches "corr_w_chi_1".
+       if ( icorr_w_chi_1_ca > 0 ) then
+          call stat_update_var_pt( icorr_w_chi_1_ca, level, &
                                    corr_array_1(iiPDF_w,iiPDF_chi), stats_zt )
        endif
 
-       ! Correlation of w and chi (old s) in PDF component 2.
-       ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation of w and theta-l within each
-       ! PDF component are defined to be 0 by CLUBB standards.
-       if ( icorr_w_chi_2 > 0 ) then
-          call stat_update_var_pt( icorr_w_chi_2, level, &
+       ! Correlation of w and chi (old s) in PDF component 2 found in the
+       ! correlation array.
+       ! The true correlation of w and chi in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of w and chi to a constant, prescribed value
+       ! because of SILHS.  The correlation of w and chi in PDF component 2
+       ! that is calculated by an equation is stored in stats as "corr_w_chi_2".
+       ! Here, "corr_w_chi_2_ca" outputs whatever value is found in the
+       ! correlation array, whether or not it matches "corr_w_chi_2".
+       if ( icorr_w_chi_2_ca > 0 ) then
+          call stat_update_var_pt( icorr_w_chi_2_ca, level, &
                                    corr_array_2(iiPDF_w,iiPDF_chi), stats_zt )
        endif
 
-       ! Correlation of w and eta (old t) in PDF component 1.
-       ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation of w and theta-l within each
-       ! PDF component are defined to be 0 by CLUBB standards.
-       if ( icorr_w_eta_1 > 0 ) then
-          call stat_update_var_pt( icorr_w_eta_1, level, &
+       ! Correlation of w and eta (old t) in PDF component 1 found in the
+       ! correlation array.
+       ! The true correlation of w and eta in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of w and eta to a constant, prescribed value
+       ! because of SILHS.  The correlation of w and eta in PDF component 1
+       ! that is calculated by an equation is stored in stats as "corr_w_eta_1".
+       ! Here, "corr_w_eta_1_ca" outputs whatever value is found in the
+       ! correlation array, whether or not it matches "corr_w_eta_1".
+       if ( icorr_w_eta_1_ca > 0 ) then
+          call stat_update_var_pt( icorr_w_eta_1_ca, level, &
                                    corr_array_1(iiPDF_w,iiPDF_eta), stats_zt )
        endif
 
-       ! Correlation of w and eta (old t) in PDF component 2.
-       ! This correlation should always be 0 because both the correlation
-       ! between w and rt and the correlation of w and theta-l within each
-       ! PDF component are defined to be 0 by CLUBB standards.
-       if ( icorr_w_eta_2 > 0 ) then
-          call stat_update_var_pt( icorr_w_eta_2, level, &
+       ! Correlation of w and eta (old t) in PDF component 2 found in the
+       ! correlation array.
+       ! The true correlation of w and eta in each PDF component is solved for
+       ! by an equation and is part of CLUBB's PDF parameters.  However, there
+       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! component correlation of w and eta to a constant, prescribed value
+       ! because of SILHS.  The correlation of w and eta in PDF component 2
+       ! that is calculated by an equation is stored in stats as "corr_w_eta_2".
+       ! Here, "corr_w_eta_2_ca" outputs whatever value is found in the
+       ! correlation array, whether or not it matches "corr_w_eta_2".
+       if ( icorr_w_eta_2_ca > 0 ) then
+          call stat_update_var_pt( icorr_w_eta_2_ca, level, &
                                    corr_array_2(iiPDF_w,iiPDF_eta), stats_zt )
        endif
 
