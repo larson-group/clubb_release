@@ -344,6 +344,10 @@ module stats_zt_module
         istdev_eta_2, &
         icovar_chi_eta_1, &
         icovar_chi_eta_2, &
+        icorr_w_chi_1, &
+        icorr_w_chi_2, &
+        icorr_w_eta_1, &
+        icorr_w_eta_2, &
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
         icorr_w_rt_1, &
@@ -3635,6 +3639,42 @@ module stats_zt_module
         call stat_assign( var_index=icovar_chi_eta_2, var_name="covar_chi_eta_2", &
              var_description="Covariance of chi(s) and eta(t) (2nd PDF component) [kg^2/kg^2]", &
              var_units="kg^2/kg^2", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_chi_1')
+        icorr_w_chi_1 = k
+
+        call stat_assign( var_index=icorr_w_chi_1, var_name="corr_w_chi_1", &
+                          var_description="Correlation of w and chi (s)" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_chi_2')
+        icorr_w_chi_2 = k
+
+        call stat_assign( var_index=icorr_w_chi_2, var_name="corr_w_chi_2", &
+                          var_description="Correlation of w and chi (s)" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_eta_1')
+        icorr_w_eta_1 = k
+
+        call stat_assign( var_index=icorr_w_eta_1, var_name="corr_w_eta_1", &
+                          var_description="Correlation of w and eta (t)" &
+                          // " (1st PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('corr_w_eta_2')
+        icorr_w_eta_2 = k
+
+        call stat_assign( var_index=icorr_w_eta_2, var_name="corr_w_eta_2", &
+                          var_description="Correlation of w and eta (t)" &
+                          // " (2nd PDF component) [-]", var_units="-", &
+                          l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('corr_chi_eta_1')

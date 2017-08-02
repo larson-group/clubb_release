@@ -613,6 +613,10 @@ module stats_variables
      istdev_eta_2 = 0, &
      icovar_chi_eta_1 = 0, &
      icovar_chi_eta_2 = 0, &
+     icorr_w_chi_1 = 0, &
+     icorr_w_chi_2 = 0, &
+     icorr_w_eta_1 = 0, &
+     icorr_w_eta_2 = 0, &
      icorr_chi_eta_1 = 0, &
      icorr_chi_eta_2 = 0, &
      icorr_w_rt_1 = 0, &
@@ -627,6 +631,7 @@ module stats_variables
      icthl_2 = 0
 !$omp  threadprivate( ichi_1, ichi_2, istdev_chi_1, istdev_chi_2, ichip2, &
 !$omp    istdev_eta_1, istdev_eta_2, icovar_chi_eta_1, icovar_chi_eta_2, &
+!$omp    icorr_w_chi_1, icorr_w_chi_2, icorr_w_eta_1, icorr_w_eta_2, &
 !$omp    icorr_chi_eta_1, icorr_chi_eta_2, icorr_w_rt_1, icorr_w_rt_2, &
 !$omp    icorr_w_thl_1, icorr_w_thl_2, icorr_rt_thl_1, icorr_rt_thl_2, &
 !$omp    icrt_1, icrt_2, icthl_1, icthl_2 )

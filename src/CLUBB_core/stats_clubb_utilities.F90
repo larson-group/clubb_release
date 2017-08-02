@@ -1812,6 +1812,10 @@ module stats_clubb_utilities
         istdev_eta_2, &
         icovar_chi_eta_1, &
         icovar_chi_eta_2, &
+        icorr_w_chi_1, &
+        icorr_w_chi_2, &
+        icorr_w_eta_1, &
+        icorr_w_eta_2, &
         icorr_chi_eta_1, &
         icorr_chi_eta_2, &
         icrt_1, &
@@ -2185,6 +2189,10 @@ module stats_clubb_utilities
       call stat_update_var( istdev_eta_2, pdf_params%stdev_eta_2, stats_zt )
       call stat_update_var( icovar_chi_eta_1, pdf_params%covar_chi_eta_1, stats_zt )
       call stat_update_var( icovar_chi_eta_2, pdf_params%covar_chi_eta_2, stats_zt )
+      call stat_update_var( icorr_w_chi_1, pdf_params%corr_w_chi_1, stats_zt )
+      call stat_update_var( icorr_w_chi_2, pdf_params%corr_w_chi_2, stats_zt )
+      call stat_update_var( icorr_w_eta_1, pdf_params%corr_w_eta_1, stats_zt )
+      call stat_update_var( icorr_w_eta_2, pdf_params%corr_w_eta_2, stats_zt )
       call stat_update_var( icorr_chi_eta_1, pdf_params%corr_chi_eta_1, stats_zt )
       call stat_update_var( icorr_chi_eta_2, pdf_params%corr_chi_eta_2, stats_zt )
       call stat_update_var( icorr_w_rt_1, pdf_params%corr_w_rt_1, stats_zt )
