@@ -125,7 +125,7 @@ module clubb_api_module
     l_use_cloud_cover, & ! helps to increase cloudiness at coarser grid resolutions.
     l_use_precip_frac, & ! Flag to use precipitation fraction in KK microphysics.
     l_tke_aniso, & ! For anisotropic turbulent kinetic energy
-    l_fix_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
+    l_fix_w_chi_eta_correlations, & ! Use a fixed correlation for s and t Mellor(chi/eta)
     l_const_Nc_in_cloud, &   ! Use a constant cloud droplet conc. within cloud (K&K)
     l_diffuse_rtm_and_thlm, &
     l_stability_correct_Kh_N2_zm, &
@@ -240,7 +240,7 @@ module clubb_api_module
         l_use_cloud_cover, &
         l_use_precip_frac, &
         l_tke_aniso, &
-        l_fix_chi_eta_correlations, &
+        l_fix_w_chi_eta_correlations, &
         l_const_Nc_in_cloud, &
         l_diffuse_rtm_and_thlm, &
         l_stability_correct_Kh_N2_zm, &

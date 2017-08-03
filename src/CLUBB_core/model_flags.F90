@@ -179,9 +179,9 @@ module model_flags
     l_silhs_rad = .false.    ! Resolve radiation over subcolumns using SILHS
 
   logical, public :: &
-    l_const_Nc_in_cloud = .false.,      & ! Use a constant cloud droplet conc. within cloud (K&K)
-    l_fix_chi_eta_correlations = .true.   ! Use a fixed correlation for s and t Mellor(chi/eta) 
-!$omp threadprivate( l_const_Nc_in_cloud, l_fix_chi_eta_correlations )
+    l_const_Nc_in_cloud = .false.,        & ! Use a constant cloud droplet conc. within cloud (K&K)
+    l_fix_w_chi_eta_correlations = .true.   ! Use a fixed correlation for s and t Mellor(chi/eta)
+!$omp threadprivate( l_const_Nc_in_cloud, l_fix_w_chi_eta_correlations )
 
   logical, public :: &
     l_use_ADG2 = .false.    ! Use Luhar et al. (2002) to close the w Gaussians.

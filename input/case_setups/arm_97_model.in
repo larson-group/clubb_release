@@ -146,7 +146,7 @@ l_var_covar_src = .true.
 lh_microphys_type = "interactive",
 lh_num_samples = 8,
 lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+l_fix_w_chi_eta_correlations = .true.,
 
 hmp2_ip_on_hmm2_ip_ratios%rrp2_ip_on_rrm2_ip = 5.0
 hmp2_ip_on_hmm2_ip_ratios%Nrp2_ip_on_Nrm2_ip = 2.5

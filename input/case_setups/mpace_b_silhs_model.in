@@ -162,7 +162,7 @@ lh_microphys_type = "interactive",
 l_local_kk = .true.,
 lh_num_samples = 2,
 lh_sequence_length = 1,
-l_fix_chi_eta_correlations = .true.,
+l_fix_w_chi_eta_correlations = .true.,
 
 ! two aerosol mode defaults from MPACE (from Hugh)
 aer_rm1 = 0.052e-6

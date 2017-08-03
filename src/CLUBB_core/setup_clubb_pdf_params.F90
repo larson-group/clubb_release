@@ -2241,7 +2241,7 @@ module setup_clubb_pdf_params
         max_mag_correlation
 
     use model_flags, only: &
-        l_fix_chi_eta_correlations  ! Variable(s)
+        l_fix_w_chi_eta_correlations  ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd  ! Constant
@@ -2278,7 +2278,7 @@ module setup_clubb_pdf_params
     ! theta_l, and other factors.  The correlation of chi and eta is subject to
     ! change at every vertical level and model time step, and is calculated as
     ! part of the CLUBB PDF parameters.
-    if ( .not. l_fix_chi_eta_correlations ) then
+    if ( .not. l_fix_w_chi_eta_correlations ) then
 
        ! Preferred, more accurate version.
        corr_chi_eta_i = pdf_corr_chi_eta_i
@@ -3302,7 +3302,7 @@ module setup_clubb_pdf_params
        ! correlation array.
        ! The true correlation of w and chi in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of w and chi to a constant, prescribed value
        ! because of SILHS.  The correlation of w and chi in PDF component 1
        ! that is calculated by an equation is stored in stats as "corr_w_chi_1".
@@ -3317,7 +3317,7 @@ module setup_clubb_pdf_params
        ! correlation array.
        ! The true correlation of w and chi in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of w and chi to a constant, prescribed value
        ! because of SILHS.  The correlation of w and chi in PDF component 2
        ! that is calculated by an equation is stored in stats as "corr_w_chi_2".
@@ -3332,7 +3332,7 @@ module setup_clubb_pdf_params
        ! correlation array.
        ! The true correlation of w and eta in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of w and eta to a constant, prescribed value
        ! because of SILHS.  The correlation of w and eta in PDF component 1
        ! that is calculated by an equation is stored in stats as "corr_w_eta_1".
@@ -3347,7 +3347,7 @@ module setup_clubb_pdf_params
        ! correlation array.
        ! The true correlation of w and eta in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of w and eta to a constant, prescribed value
        ! because of SILHS.  The correlation of w and eta in PDF component 2
        ! that is calculated by an equation is stored in stats as "corr_w_eta_2".
@@ -3394,7 +3394,7 @@ module setup_clubb_pdf_params
        ! the correlation array.
        ! The true correlation of chi and eta in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of chi and eta to a constant, prescribed value
        ! because of SILHS.  The correlation of chi and eta in PDF component 1
        ! that is calculated by an equation is stored in stats as
@@ -3410,7 +3410,7 @@ module setup_clubb_pdf_params
        ! the correlation array.
        ! The true correlation of chi and eta in each PDF component is solved for
        ! by an equation and is part of CLUBB's PDF parameters.  However, there
-       ! is an option in CLUBB, l_fix_chi_eta_correlations, that sets the
+       ! is an option in CLUBB, l_fix_w_chi_eta_correlations, that sets the
        ! component correlation of chi and eta to a constant, prescribed value
        ! because of SILHS.  The correlation of chi and eta in PDF component 2
        ! that is calculated by an equation is stored in stats as
@@ -4051,7 +4051,7 @@ module setup_clubb_pdf_params
     ! Description:
     ! Compute the variance of rt from the distribution of chi and eta. The
     ! resulting variance will be consistent with CLUBB's extended PDF
-    ! involving chi and eta, including if l_fix_chi_eta_correlations = .true. .
+    ! involving chi and eta, including if l_fix_w_chi_eta_correlations = .true..
 
     ! References:
     !   None

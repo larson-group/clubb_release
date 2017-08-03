@@ -562,7 +562,7 @@ module corr_varnce_module
 !-------------------------------------------------------------------------------
 
     use model_flags, only: &
-      l_fix_chi_eta_correlations    ! Variable(s)
+      l_fix_w_chi_eta_correlations    ! Variable(s)
 
     use matrix_operations, only: mirror_lower_triangular_matrix ! Procedure
 
@@ -625,7 +625,7 @@ module corr_varnce_module
     ! Sanity check to avoid confusing non-convergence results.
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-      if ( .not. l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
+      if ( .not. l_fix_w_chi_eta_correlations .and. iiPDF_Ncn > 0 ) then
         l_warning = .false.
         do i = 1, pdf_dim
           if ( ( corr_array_n_cloud(i,iiPDF_Ncn) /= zero .or.  &
@@ -640,7 +640,7 @@ module corr_varnce_module
           write(fstderr,*) "The latin hypercube code will not converge to" &
                            // " the analytic solution using these settings."
         end if
-       end if ! l_fix_chi_eta_correlations .and. iiPDF_Ncn > 0
+       end if ! l_fix_w_chi_eta_correlations .and. iiPDF_Ncn > 0
 
     end if ! clubb_at_least_debug_level( 2 )
 
