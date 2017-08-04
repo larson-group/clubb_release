@@ -98,6 +98,17 @@ module advance_clubb_core_module
     set_Lscale_max, &
     calculate_thlp2_rad
 
+  ! Options for the placement of the call to CLUBB's PDF.
+  integer, parameter :: &
+    ipdf_pre_advance_fields   = 1,   & ! Call before advancing predictive fields
+    ipdf_post_advance_fields  = 2,   & ! Call after advancing predictive fields
+    ipdf_pre_post_advance_fields = 3   ! Call both before and after advancing
+                                       ! predictive fields
+
+  ! Select the placement of the call to CLUBB's PDF.
+  integer, parameter :: &
+    ipdf_call_placement = ipdf_pre_advance_fields
+
   private ! Default Scope
 
   contains
@@ -416,19 +427,6 @@ module advance_clubb_core_module
 
     logical, parameter :: &
       l_iter_xp2_xpyp = .true. ! Set to true when rtp2/thlp2/rtpthlp, et cetera are prognostic
-
-    ! Options for the placement of the call to CLUBB's PDF.
-    ! Place these here temporarily.  Brian Griffin; Dec. 2016.
-    integer, parameter :: &
-      ipdf_pre_advance_fields   = 1, & ! Call before advancing predictive fields
-      ipdf_post_advance_fields  = 2, & ! Call after advancing predictive fields
-      ipdf_pre_post_advance_fields = 3 ! Call both before and after advancing
-                                       ! predictive fields
-
-    ! Select the placement of the call to CLUBB's PDF.
-    ! Place this here temporarily.  Brian Griffin; Dec. 2016.
-    integer, parameter :: &
-      ipdf_call_placement = ipdf_pre_advance_fields
 
     !!! Input Variables
     logical, intent(in) ::  & 
@@ -836,28 +834,6 @@ module advance_clubb_core_module
 #else
     newmu = mu
 #endif   
-
-    ! Temporarily place this here.  Brian Griffin; Dec. 2016.
-    if ( ipdf_call_placement < ipdf_pre_advance_fields &
-         .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
-       write(fstderr,*) "Invalid option selected for ipdf_call_placement"
-       stop
-    endif
-
-    ! When ipdf_call_placement = ipdf_post_advance_fields, additional variables
-    ! need to be passed out of advance_clubb_core, saved, and passed in again
-    ! during the next model timestep.  In order to keep from needing to pass
-    ! out and save variables that are not normally used in CLUBB, some options
-    ! (that are typically turned off anyway) will be disallowed when
-    ! ipdf_call_placement = ipdf_post_advance_fields.
-    ! Temporarily place this here.  Brian Griffin; Dec. 2016.
-    if ( ipdf_call_placement == ipdf_post_advance_fields ) then
-       if ( l_use_ice_latent ) then
-          write(fstderr,*) "The l_use_ice_latent option is incompatible" &
-                           // " with the ipdf_post_advance_fields option."
-          stop
-       endif ! l_use_ice_latent
-    endif ! ipdf_call_placement == ipdf_post_advance_fields
 
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
@@ -2835,9 +2811,9 @@ module advance_clubb_core_module
       use error_code, only:  & 
           clubb_no_error ! Constant(s)
 
-
       use model_flags, only: & 
-          setup_model_flags    ! Subroutine
+          setup_model_flags, & ! Subroutine
+          l_use_ice_latent     ! Variable(s)
 
       use pdf_closure_module, only: &
           iiPDF_ADG2,     & ! Variable(s)
@@ -3005,6 +2981,27 @@ module advance_clubb_core_module
             stop
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_3D_Luhar
+
+      ! Check the option for the placement of the call to CLUBB's PDF.
+      if ( ipdf_call_placement < ipdf_pre_advance_fields &
+           .or. ipdf_call_placement > ipdf_pre_post_advance_fields ) then
+         write(fstderr,*) "Invalid option selected for ipdf_call_placement"
+         stop
+      endif
+
+      ! When ipdf_call_placement = ipdf_post_advance_fields, additional
+      ! variables need to be passed out of advance_clubb_core, saved, and passed
+      ! in again during the next model timestep.  In order to keep from needing
+      ! to pass out and save variables that are not normally used in CLUBB, some
+      ! options (that are typically turned off anyway) will be disallowed when
+      ! ipdf_call_placement = ipdf_post_advance_fields.
+      if ( ipdf_call_placement == ipdf_post_advance_fields ) then
+         if ( l_use_ice_latent ) then
+            write(fstderr,*) "The l_use_ice_latent option is incompatible" &
+                             // " with the ipdf_post_advance_fields option."
+            stop
+         endif ! l_use_ice_latent
+      endif ! ipdf_call_placement == ipdf_post_advance_fields
 
       ! Setup grid
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)
