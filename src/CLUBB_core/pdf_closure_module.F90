@@ -7,6 +7,18 @@ module pdf_closure_module
 
   public :: pdf_closure, calc_vert_avg_cf_component
 
+  ! Options for the two component normal (double Gaussian) PDF type to use for
+  ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,
+  ! two-component PDF.
+  integer, parameter, public :: &
+    iiPDF_ADG1 = 1,     & ! ADG1 PDF
+    iiPDF_ADG2 = 2,     & ! ADG2 PDF
+    iiPDF_3D_Luhar = 3    ! 3D Luhar PDF
+
+  ! The selected two component normal PDF for w, rt, and theta-l.
+  integer, parameter, public :: &
+    iiPDF_type = iiPDF_ADG1
+
   private ! Set Default Scope
 
   contains
@@ -128,10 +140,6 @@ module pdf_closure_module
     use clubb_precision, only: &
         core_rknd ! Variable(s)
 
-    use model_flags, only:&
-        l_use_ADG2, &
-        l_use_3D_closure
-
     implicit none
 
     intrinsic :: sqrt, exp, min, max, abs, present
@@ -184,8 +192,8 @@ module pdf_closure_module
       thlphmp        ! Covariance of thl and a hydrometeor  [K <hm units>]
 
     real( kind = core_rknd ), intent(inout) :: &
-      ! If l_use_ADG2, this gets overwritten. Therefore, intent(inout).
-      ! otherwise it should be intent(in)
+      ! If iiPDF_type == iiPDF_ADG2, this gets overwritten. Therefore,
+      ! intent(inout). Otherwise it should be intent(in)
       sigma_sqd_w   ! Width of individual w plumes               [-]
 
     ! Output Variables
@@ -282,7 +290,7 @@ module pdf_closure_module
       cloud_frac_2,    & ! Cloud fraction (2nd PDF component)                [-]
       mixt_frac          ! Weight of 1st PDF component (Sk_w dependent)      [-]
 
-    real( kind = core_rknd ) :: & ! If l_use_ADG2 == .true., or l_use_3D_closure
+    real( kind = core_rknd ) :: & ! If ADG2 or 3D Luhar
       sigma_sqd_w_1,       & !
       sigma_sqd_w_2,       & !
       sigma_sqd_thl_1,     & !
@@ -385,7 +393,8 @@ module pdf_closure_module
     ! If there is no variance in vertical velocity, then treat rt and theta-l as
     ! constant, as well.  Otherwise width parameters (e.g. varnce_w_1,
     ! varnce_w_2, etc.) are non-zero.
-    if ( (wp2 <= w_tol_sqd) .and. (.not. l_use_3D_closure) )  then
+    if ( ( wp2 <= w_tol_sqd ) &
+         .and. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) ) then
 
       mixt_frac     = one_half
       w_1           = wm
@@ -426,11 +435,12 @@ module pdf_closure_module
       ! To avoid recomputing
       sqrt_wp2 = sqrt( wp2 )
 
-      if( (.not. l_use_ADG2) .and. (.not. l_use_3D_closure) ) then ! use ADG1
+      if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
+
         call  ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,& 
                              mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, w_1, w_2 )
 
-      elseif( l_use_ADG2 ) then ! use ADG2
+      elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
         ! Reproduce ADG2_w_closure using separate functions
         call calc_Luhar_params( Skw, Skw, &                     ! intent(in)
@@ -445,9 +455,12 @@ module pdf_closure_module
         ! Overwrite sigma_sqd_w for consistency with ADG1
         sigma_sqd_w = min( one / ( one + small_m_w**2 ), 0.99_core_rknd )
 
-      endif ! l_use_ADG2
+      endif ! iiPDF_type
 
-      if( .not. l_use_3D_closure ) then ! proceed as usual
+      if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+
+        ! proceed as usual
+
         ! The normalized variance for thl, rt, and sclr for "plume" 1 is:
         !
         ! { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / mixt_frac }
@@ -525,7 +538,7 @@ module pdf_closure_module
 
         end if ! rtp2 <= rt_tol**2
 
-      else ! use 3D_Luhar closure
+      elseif ( iiPDF_type == iiPDF_3D_Luhar ) then
         
         if ( ( abs(Skw) >= abs(Skthl)) .and. ( abs(Skw) >= abs(Skrt) ) ) then
 
@@ -648,7 +661,7 @@ module pdf_closure_module
         alpha_thl = one_half
         alpha_rt = one_half
 
-    endif ! if( .not. l_use_3D_closure )
+    endif ! iiPDF_type
 
       ! Compute pdf parameters for passive scalars
       if ( l_scalar_calc ) then
@@ -1369,7 +1382,7 @@ module pdf_closure_module
       end if ! Fatal error
 
       ! Error check pdf parameters and moments to ensure consistency
-      if(l_use_3D_closure) then
+      if ( iiPDF_type == iiPDF_3D_Luhar ) then
 
         ! Means
         wm_clubb_pdf = mixt_frac * w_1   + ( one - mixt_frac ) * w_2
@@ -1479,7 +1492,7 @@ module pdf_closure_module
           endif
         endif
 
-      end if !l_use_3D_closure
+      end if ! iiPDF_type == iiPDF_3D_Luhar
 
     end if ! clubb_at_least_debug_level
 

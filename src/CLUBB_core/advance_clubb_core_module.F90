@@ -1817,7 +1817,9 @@ module advance_clubb_core_module
 
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
-        calc_vert_avg_cf_component
+        calc_vert_avg_cf_component, &
+        iiPDF_3D_Luhar, & ! Variable(s)
+        iiPDF_type
 
     use Skx_module, only: &
         Skx_func,       & ! Procedure(s)
@@ -1840,7 +1842,6 @@ module advance_clubb_core_module
 
     use model_flags, only: &
         l_gamma_Skw,              & ! Variable(s)
-        l_use_3D_closure,         &
         l_call_pdf_closure_twice, &
         l_trapezoidal_rule_zm,    &
         l_trapezoidal_rule_zt,    &
@@ -2196,7 +2197,7 @@ module advance_clubb_core_module
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
-    if(l_use_3D_closure) then
+    if ( iiPDF_type == iiPDF_3D_Luhar ) then
 
       Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
       Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
@@ -2218,7 +2219,7 @@ module advance_clubb_core_module
       Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
                                         rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
 
-    endif ! if(l_use_3D_closure)
+    endif ! iiPDF_type == iiPDF_3D_Luhar
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( iSkw_zt, Skw_zt, & ! In
@@ -2784,71 +2785,80 @@ module advance_clubb_core_module
 
   !=============================================================================
     subroutine setup_clubb_core & 
-               ( nzmax, T0_in, ts_nudge_in,              & ! intent(in)
-                 hydromet_dim_in, sclr_dim_in,           & ! intent(in)
-                 sclr_tol_in, edsclr_dim_in, params,     & ! intent(in)
-                 l_host_applies_sfc_fluxes,              & ! intent(in)
-                 l_uv_nudge, saturation_formula,         & ! intent(in)
+               ( nzmax, T0_in, ts_nudge_in,               & ! intent(in)
+                 hydromet_dim_in, sclr_dim_in,            & ! intent(in)
+                 sclr_tol_in, edsclr_dim_in, params,      & ! intent(in)
+                 l_host_applies_sfc_fluxes,               & ! intent(in)
+                 l_uv_nudge, saturation_formula,          & ! intent(in)
+                 l_input_fields,                          & ! intent(in)
 #ifdef GFDL
-      I_sat_sphum,                                       & ! intent(in)  h1g, 2010-06-16
+                 I_sat_sphum,                             & ! intent(in)  h1g, 2010-06-16
 #endif
-      l_implemented, grid_type, deltaz, zm_init, zm_top, & ! intent(in)
-      momentum_heights, thermodynamic_heights,           & ! intent(in)
-      sfc_elevation,                                     & ! intent(in)
+                 l_implemented, grid_type, deltaz,        & ! intent(in)
+                 zm_init, zm_top,                         & ! intent(in)
+                 momentum_heights, thermodynamic_heights, & ! intent(in)
+                 sfc_elevation,                           & ! intent(in)
 #ifdef GFDL
-      cloud_frac_min ,                                   & ! intent(in)  h1g, 2010-06-16
+                 cloud_frac_min,                          & ! intent(in)  h1g, 2010-06-16
 #endif
-      err_code )                                           ! intent(out)
-      !
+                 err_code )                                 ! intent(out)
+
       ! Description:
       !   Subroutine to set up the model for execution.
       !
       ! References:
       !   None
-      !-------------------------------------------------------------------------
+      !---------------------------------------------------------------------
+
       use grid_class, only: & 
-        setup_grid, & ! Procedure
-        gr ! Variable(s)
+          setup_grid, & ! Procedure
+          gr ! Variable(s)
 
       use parameter_indices, only:  & 
-        nparams ! Variable(s)
+          nparams ! Variable(s)
 
       use parameters_tunable, only: & 
-        setup_parameters ! Procedure
+          setup_parameters ! Procedure
 
       use parameters_model, only: & 
-        setup_parameters_model ! Procedure
+          setup_parameters_model ! Procedure
 
       use variables_diagnostic_module, only: & 
-        setup_diagnostic_variables ! Procedure
+          setup_diagnostic_variables ! Procedure
 
       use variables_prognostic_module, only: & 
-        setup_prognostic_variables ! Procedure
+          setup_prognostic_variables ! Procedure
 
       use constants_clubb, only:  & 
-        fstderr  ! Variable(s)
+          fstderr  ! Variable(s)
 
       use error_code, only:  & 
-        clubb_no_error ! Constant(s)
+          clubb_no_error ! Constant(s)
+
 
       use model_flags, only: & 
-        setup_model_flags    ! Subroutine
+          setup_model_flags    ! Subroutine
+
+      use pdf_closure_module, only: &
+          iiPDF_ADG2,     & ! Variable(s)
+          iiPDF_3D_Luhar, &
+          iiPDF_type
 
 #ifdef MKL
       use csr_matrix_module, only: &
-        initialize_csr_matrix, & ! Subroutine
-        intlc_5d_5d_ja_size     ! Variable
+          initialize_csr_matrix, & ! Subroutine
+          intlc_5d_5d_ja_size      ! Variable
 
       use gmres_wrap, only: &
-        gmres_init              ! Subroutine
+          gmres_init              ! Subroutine
 
       use gmres_cache, only: &
-        gmres_cache_temp_init, &! Subroutine
-        gmres_idx_wp2wp3        ! Variable
+          gmres_cache_temp_init, & ! Subroutine
+          gmres_idx_wp2wp3         ! Variable
 #endif /* MKL */
 
       use clubb_precision, only: &
-        core_rknd ! Variable(s)
+          core_rknd ! Variable(s)
 
       implicit none
 
@@ -2917,12 +2927,15 @@ module advance_clubb_core_module
         params  ! Including C1, nu1, nu2, etc.
 
       ! Flags
-      logical, intent(in) ::  & 
+      logical, intent(in) ::  &
         l_uv_nudge,             & ! Wind nudging
         l_host_applies_sfc_fluxes ! Whether to apply for the surface flux
 
       character(len=*), intent(in) :: &
         saturation_formula ! Approximation for saturation vapor pressure
+
+      logical, intent(in) ::  &
+        l_input_fields    ! Flag for whether LES input fields are being used
 
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
@@ -2960,6 +2973,38 @@ module advance_clubb_core_module
           trim( saturation_formula )
         stop
       end select
+
+      ! Check for the type of two component normal (double Gaussian) PDF being
+      ! used for w, rt, and theta-l (or w, chi, and eta).
+      if ( iiPDF_type < 1 .or. iiPDF_type > 3 ) then
+         write(fstderr,*) "Error in setup_clubb_core."
+         write(fstderr,*) "Unknown type of double Gaussian PDF selected."
+         write(fstderr,*) "iiPDF_type = ", iiPDF_type
+         stop
+      endif ! iiPDF_type < 1 or iiPDF_type > 3
+
+      ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
+      if ( iiPDF_type == iiPDF_ADG2 ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr,*) "Error in setup_clubb_core."
+            write(fstderr,*) "The ADG2 PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            stop
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_ADG2
+
+      if ( iiPDF_type == iiPDF_3D_Luhar ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr,*) "Error in setup_clubb_core."
+            write(fstderr,*) "The 3D Luhar PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            stop
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_3D_Luhar
 
       ! Setup grid
       call setup_grid( nzmax, sfc_elevation, l_implemented,     & ! intent(in)

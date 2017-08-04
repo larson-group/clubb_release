@@ -752,6 +752,7 @@ contains
     sclr_tol_in, edsclr_dim_in, params,     & ! intent(in)
     l_host_applies_sfc_fluxes,              & ! intent(in)
     l_uv_nudge, saturation_formula,         & ! intent(in)
+    l_input_fields,                         & ! intent(in)
 #ifdef GFDL
       I_sat_sphum,                                       & ! intent(in)  h1g, 2010-06-16
 #endif
@@ -847,6 +848,9 @@ contains
     character(len=*), intent(in) :: &
       saturation_formula ! Approximation for saturation vapor pressure
 
+    logical, intent(in) ::  &
+      l_input_fields    ! Flag for whether LES input fields are used
+
 #ifdef GFDL
       logical, intent(in) :: &  ! h1g, 2010-06-16 begin mod
          I_sat_sphum
@@ -865,6 +869,7 @@ contains
       sclr_tol_in, edsclr_dim_in, params,     & ! intent(in)
       l_host_applies_sfc_fluxes,              & ! intent(in)
       l_uv_nudge, saturation_formula,         & ! intent(in)
+      l_input_fields,                         & ! intent(in)
 #ifdef GFDL
       I_sat_sphum,                                       & ! intent(in)  h1g, 2010-06-16
 #endif

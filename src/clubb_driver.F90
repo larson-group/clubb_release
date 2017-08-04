@@ -943,10 +943,12 @@ module clubb_driver
            sclr_tol(1:sclr_dim), edsclr_dim, params,          & ! Intent(in)
            l_host_applies_sfc_fluxes,                         & ! Intent(in)
            l_uv_nudge, saturation_formula,                    & ! Intent(in)
+           l_input_fields,                                    & ! Intent(in)
            l_implemented, grid_type, deltaz, zm_init, zm_top, & ! Intent(in)
            momentum_heights, thermodynamic_heights,           & ! Intent(in)
            sfc_elevation,                                     & ! Intent(in)
            err_code )                                           ! Intent(out)
+
     ! Allocate a correctly-sized array for radf and zero it
     allocate( radf(gr%nz) )
 
@@ -979,9 +981,7 @@ module clubb_driver
              l_standard_term_ta_in=model_flags_array(7), &
              l_tke_aniso_in=model_flags_array(8), &
              l_use_cloud_cover_in=model_flags_array(9) , &
-             l_use_ADG2_in=model_flags_array(10), &
-             l_use_3D_closure_in = model_flags_array(11), &
-             l_rcm_supersat_adj_in = model_flags_array(12) )
+             l_rcm_supersat_adj_in = model_flags_array(10) )
     end if
 
     ! Deallocate stretched grid altitude arrays
