@@ -242,10 +242,8 @@ module setup_clubb_pdf_params
       Ncnm    ! Mean cloud nuclei concentration, < N_cn >        [num/kg]
 
     real( kind = core_rknd ), dimension(nz) ::  &
-      wpchip_zm, & ! Covariance of chi and w (momentum levels)   [(m/s)(kg/kg)]
       wpNcnp_zm, & ! Covariance of N_cn and w (momentum levs.)   [(m/s)(num/kg)]
-      wpchip_zt, & ! Covariance of chi and w on t-levs           [(m/s)(kg/kg)]
-      wpNcnp_zt    ! Covariance of N_cn and w on t-levs          [(m/s)(num/kg)]
+      wpNcnp_zt    ! Covariance of N_cn and w on thermo. levels  [(m/s)(num/kg)]
 
     real( kind = core_rknd ), dimension(nz,hydromet_dim) :: &
       hm_1, & ! Mean of a precip. hydrometeor (1st PDF component)   [units vary]
@@ -479,17 +477,9 @@ module setup_clubb_pdf_params
 
     enddo ! i = 1, hydromet_dim, 1
 
-    ! Calculate correlations involving w by first calculating total covariances
-    ! involving w (<w'r_r'>, etc.) using the down-gradient approximation.
+    ! Calculate correlations involving w and Ncn by first calculating the
+    ! overall covariance of w and Ncn using the down-gradient approximation.
     if ( l_calc_w_corr ) then
-
-       ! Calculate the covariances of w with the hydrometeors
-       do k = 1, nz
-          wpchip_zm(k) = pdf_params(k)%mixt_frac &
-                       * ( one - pdf_params(k)%mixt_frac ) &
-                       * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
-                       * ( pdf_params(k)%w_1 - pdf_params(k)%w_2 )
-       enddo
 
        wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
                                      Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
@@ -498,7 +488,6 @@ module setup_clubb_pdf_params
        wpNcnp_zm(nz) = zero
 
        ! Interpolate the covariances to thermodynamic grid levels.
-       wpchip_zt = zm2zt( wpchip_zm )
        wpNcnp_zt = zm2zt( wpNcnp_zm )
 
        ! When the mean value of Ncn is below tolerance value, it is considered
@@ -600,9 +589,9 @@ module setup_clubb_pdf_params
        else ! if .not. l_diagnose_correlations
 
           call comp_corr_norm( wm_zt(k), rc_1(k), rc_2(k), cloud_frac_1(k), &
-                               cloud_frac_2(k), wpchip_zt(k), wpNcnp_zt(k), &
-                               sqrt(wp2_zt(k)), mixt_frac(k), precip_frac_1(k),&
-                               precip_frac_2(k), wphydrometp_zt(k,:), &
+                               cloud_frac_2(k), mixt_frac(k), &
+                               precip_frac_1(k), precip_frac_2(k), &
+                               wpNcnp_zt(k), wphydrometp_zt(k,:), &
                                mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                                sigma_x_1_n(:,k), sigma_x_2_n(:,k), &
                                corr_array_n_cloud, corr_array_n_below, &
@@ -954,9 +943,9 @@ module setup_clubb_pdf_params
 
   !=============================================================================
   subroutine comp_corr_norm( wm_zt, rc_1, rc_2, cloud_frac_1, &
-                             cloud_frac_2, wpchip, wpNcnp, &
-                             stdev_w, mixt_frac, precip_frac_1, &
-                             precip_frac_2, wphydrometp_zt, &
+                             cloud_frac_2, mixt_frac, &
+                             precip_frac_1, precip_frac_2, &
+                             wpNcnp_zt, wphydrometp_zt, &
                              mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, &
                              sigma_x_1_n, sigma_x_2_n, &
                              corr_array_n_cloud, corr_array_n_below, &
@@ -1012,12 +1001,10 @@ module setup_clubb_pdf_params
       rc_2,          & ! Mean of r_c (2nd PDF component)                 [kg/kg]
       cloud_frac_1,  & ! Cloud fraction (1st PDF component)                  [-]
       cloud_frac_2,  & ! Cloud fraction (2nd PDF component)                  [-]
-      wpchip,        & ! Covariance of w and chi (old s)            [(m/s)kg/kg]
-      wpNcnp,        & ! Covariance of w and N_cn (overall)       [(m/s) num/kg]
-      stdev_w,       & ! Standard deviation of w                           [m/s]
       mixt_frac,     & ! Mixture fraction                                    [-]
       precip_frac_1, & ! Precipitation fraction (1st PDF component)          [-]
-      precip_frac_2    ! Precipitation fraction (2nd PDF component)          [-]
+      precip_frac_2, & ! Precipitation fraction (2nd PDF component)          [-]
+      wpNcnp_zt        ! Covariance of w and N_cn on t-levs.      [(m/s) num/kg]
 
     real( kind = core_rknd ), dimension(hydromet_dim), intent(in) :: &
       wphydrometp_zt    ! Covariance of w and hm interp. to t-levs.  [(m/s)u.v.]
@@ -1050,9 +1037,6 @@ module setup_clubb_pdf_params
       corr_w_hm_2_n    ! Correlation of w and ln hm (2nd PDF component) ip   [-]
 
     real( kind = core_rknd ) :: &
-      chi_m,          & ! Mean of chi (s_mellor)                         [kg/kg]
-      stdev_chi,      & ! Standard deviation of chi (s_mellor)           [kg/kg]
-      corr_w_chi,     & ! Correlation of w and chi (overall)                 [-]
       corr_w_Ncn_1_n, & ! Correlation of w and ln Ncn (1st PDF component)    [-]
       corr_w_Ncn_2_n    ! Correlation of w and ln Ncn (2nd PDF component)    [-]
 
@@ -1074,27 +1058,11 @@ module setup_clubb_pdf_params
     ! approximation.
     if ( l_calc_w_corr ) then
 
-       ! Approximate the correlation between w and chi.
-       chi_m &
-       = calc_mean( pdf_params%mixt_frac, pdf_params%chi_1, pdf_params%chi_2 )
-
-       stdev_chi &
-       = sqrt( pdf_params%mixt_frac &
-               * ( ( pdf_params%chi_1 - chi_m )**2 &
-                   + pdf_params%stdev_chi_1**2 ) &
-             + ( one - pdf_params%mixt_frac ) &
-               * ( ( pdf_params%chi_2 - chi_m )**2 &
-                   + pdf_params%stdev_chi_2**2 ) &
-             )
-
-       corr_w_chi &
-       = calc_w_corr( wpchip, stdev_w, stdev_chi, w_tol, chi_tol )
-
        ! Calculate the correlation of w and ln Ncn in each PDF component.
        ! The subroutine calc_corr_w_hm_n can be used to do this as long as a
        ! value of 1 is sent in for precip_frac_1 and precip_frac_2.
        jvar = iiPDF_Ncn
-       call calc_corr_w_hm_n( wm_zt, wpNcnp, &
+       call calc_corr_w_hm_n( wm_zt, wpNcnp_zt, &
                               mu_x_1(iiPDF_w), mu_x_2(iiPDF_w), &
                               mu_x_1(jvar), mu_x_2(jvar), &
                               sigma_x_1(iiPDF_w), sigma_x_2(iiPDF_w), &
@@ -1120,7 +1088,7 @@ module setup_clubb_pdf_params
 
        enddo ! jvar = iiPDF_Ncn+1, pdf_dim
 
-    endif
+    endif ! l_calc_w_corr
 
     ! In order to decompose the normal space correlation matrix,
     ! we must not have a perfect correlation of chi and
@@ -1159,12 +1127,12 @@ module setup_clubb_pdf_params
 
     ! Correlation of chi (old s) and w
     corr_array_1_n(iiPDF_w, iiPDF_chi) &
-    = component_corr_w_x( corr_w_chi, rc_1, cloud_frac_1, &
+    = component_corr_w_x( pdf_params%corr_w_chi_1, rc_1, cloud_frac_1, &
                           corr_array_n_cloud(iiPDF_w, iiPDF_chi), &
                           corr_array_n_below(iiPDF_w, iiPDF_chi) )
 
     corr_array_2_n(iiPDF_w, iiPDF_chi) &
-    = component_corr_w_x( corr_w_chi, rc_2, cloud_frac_2, &
+    = component_corr_w_x( pdf_params%corr_w_chi_2, rc_2, cloud_frac_2, &
                           corr_array_n_cloud(iiPDF_w, iiPDF_chi), &
                           corr_array_n_below(iiPDF_w, iiPDF_chi) )
 
@@ -1195,8 +1163,16 @@ module setup_clubb_pdf_params
     enddo
 
     ! Correlation of eta (old t) and w
-    corr_array_1_n(iiPDF_w, iiPDF_eta) = zero
-    corr_array_2_n(iiPDF_w, iiPDF_eta) = zero
+    corr_array_1_n(iiPDF_w, iiPDF_eta) &
+    = component_corr_w_x( pdf_params%corr_w_eta_1, rc_1, cloud_frac_1, &
+                          corr_array_n_cloud(iiPDF_w, iiPDF_eta), &
+                          corr_array_n_below(iiPDF_w, iiPDF_eta) )
+
+    corr_array_2_n(iiPDF_w, iiPDF_eta) &
+    = component_corr_w_x( pdf_params%corr_w_eta_2, rc_2, cloud_frac_2, &
+                          corr_array_n_cloud(iiPDF_w, iiPDF_eta), &
+                          corr_array_n_below(iiPDF_w, iiPDF_eta) )
+
 
     ! Correlation of eta (old t) and ln Ncn
     corr_array_1_n(iiPDF_Ncn, iiPDF_eta) &
@@ -2127,7 +2103,7 @@ module setup_clubb_pdf_params
   end subroutine calc_mu_sigma_two_comps
 
   !=============================================================================
-  function component_corr_w_x( corr_w_x, rc_i, cloud_frac_i, &
+  function component_corr_w_x( pdf_corr_w_x_i, rc_i, cloud_frac_i, &
                                corr_w_x_NN_cloud, corr_w_x_NN_below ) &
   result( corr_w_x_i )
 
@@ -2144,19 +2120,24 @@ module setup_clubb_pdf_params
         zero,   &
         rc_tol
 
+    use pdf_closure_module, only: &
+        iiPDF_ADG1, & ! Variable(s)
+        iiPDF_ADG2, &
+        iiPDF_type
+
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
     use model_flags, only: &
-        l_calc_w_corr
+        l_fix_w_chi_eta_correlations  ! Variable(s)
 
     implicit none
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      corr_w_x,     & ! Correlation of w and x (overall)               [-]
-      rc_i,         & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
-      cloud_frac_i    ! Cloud fraction (ith PDF component)             [-]
+      pdf_corr_w_x_i, & ! Correlation of w and x (ith PDF component)     [-]
+      rc_i,           & ! Mean cloud water mixing ratio (ith PDF comp.)  [kg/kg]
+      cloud_frac_i      ! Cloud fraction (ith PDF component)             [-]
 
     real( kind = core_rknd ), intent(in) :: &
       corr_w_x_NN_cloud, & ! Corr. of w and x (ith PDF comp.); cloudy levs [-]
@@ -2169,38 +2150,51 @@ module setup_clubb_pdf_params
     ! Local Variables
 
     ! The component correlations of w and r_t and the component correlations of
-    ! w and theta_l are both set to be 0 within the CLUBB model code.  In other
-    ! words, w and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'),
-    ! but the single component covariance and correlation are defined to be 0.
+    ! w and theta_l must both be 0 when using the ADG1 PDF.  In other words, w
+    ! and r_t (theta_l) have overall covariance w'r_t' (w'theta_l'), but the
+    ! individual component covariance and correlation are defined to be 0.
     ! Since the component covariances (or correlations) of w and chi (old s) and
     ! of w and eta (old t) are based on the covariances (or correlations) of w
-    ! and r_t and of w and theta_l, the single component correlation and
+    ! and r_t and of w and theta_l, the individual component correlation and
     ! covariance of w and chi, as well of as w and eta, are defined to be 0.
+    !
+    ! The PDF component correlation of w and x, calculated as part of the PDF
+    ! parameters, comes out to be 0 (within numerical roundoff) when the ADG1
+    ! PDF is used.  However, when l_fix_w_chi_eta_correlations is enabled, the
+    ! component correlations of PDF variables are specified, and the values
+    ! that were calculated as part of the PDF parameters are ignored in the
+    ! correlation array.  When this happens, and when the ADG1 PDF is selected,
+    ! the l_follow_ADG1_PDF_standards flag can be used to force the component
+    ! correlations of w and x to have a value of 0, following the ADG1 standard,
+    ! rather than whatever value might be specified in the correlation array.
+    !
+    ! Note:  the ADG2 PDF follows the same standards as the ADG1 PDF.
     logical, parameter :: &
-      l_follow_CLUBB_PDF_standards = .true.
+      l_follow_ADG1_PDF_standards = .true.
 
 
     ! Correlation of w and x in the ith PDF component.
-    if ( l_follow_CLUBB_PDF_standards ) then
 
-       ! The component correlations of w and r_t and the component correlations
-       ! of w and theta_l are both set to be 0 within the CLUBB model code.  In
-       ! other words, w and r_t (theta_l) have overall covariance w'r_t'
-       ! (w'theta_l'), but the single component covariance and correlation are
-       ! defined to be 0.  Since the component covariances (or correlations)
-       ! of w and chi (old s) and of w and eta (old t) are based on the
-       ! covariances (or correlations) of w and r_t and of w and theta_l, the
-       ! single component correlation and covariance of w and chi, as well as of
-       ! w and eta, are defined to be 0.
-       corr_w_x_i = zero
+    ! The PDF variables chi and eta result from a transformation of the PDF
+    ! involving r_t and theta_l.  The correlation of w and x (whether x is chi
+    ! or eta) depends on the correlation of w and r_t, the correlation of w and
+    ! theta_l, as well as the variances of r_t and theta_l, and other factors.
+    ! The correlation of w and x is subject to change at every vertical level
+    ! and model time step, and is calculated as part of the CLUBB PDF
+    ! parameters.
+    if ( .not. l_fix_w_chi_eta_correlations ) then
 
-    else ! not following CLUBB PDF standards
+       ! Preferred, more accurate version.
+       corr_w_x_i = pdf_corr_w_x_i
 
-       ! WARNING:  the standards used in the generation of the two-component
-       !           CLUBB PDF are not being obeyed.  The use of this code is
-       !           inconsistent with the rest of CLUBB's PDF.
-       if ( l_calc_w_corr ) then
-          corr_w_x_i = corr_w_x
+    else ! fix the correlation of w and x (chi or eta).
+
+       ! The ADG1 PDF fixes the correlation of w and rt and the correlation of
+       ! w and theta_l to be 0, which means the correlation of w and chi and the
+       ! correlation of w and eta must also be 0.
+       if ( ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) &
+            .and. l_follow_ADG1_PDF_standards ) then
+          corr_w_x_i = zero
        else ! use prescribed parameter values
           if ( l_interp_prescribed_params ) then
              corr_w_x_i = cloud_frac_i * corr_w_x_NN_cloud &
@@ -2212,9 +2206,9 @@ module setup_clubb_pdf_params
                 corr_w_x_i = corr_w_x_NN_below
              endif
           endif ! l_interp_prescribed_params
-       endif ! l_calc_w_corr
+       endif ! iiPDF_type == iiPDF_ADG1
 
-    endif ! l_follow_CLUBB_PDF_standards
+    endif ! l_fix_w_chi_eta_correlations
 
 
     return
