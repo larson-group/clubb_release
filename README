@@ -177,7 +177,7 @@ plots output directory. This must be called from the postprocessing/plotgen
 directory inside the CLUBB checkout.
 
 Mac users in W434, at the terminal, type in the following command:
-user@computer$ export DYLD_LIBRARY_PATH=/usr/local/ImageMagick/lib/
+user@computer$ export PATH="/opt/ImageMagick/bin:$PATH"
 
 Then, to generate a webpage containing plots, type (if your output 
 is in ~/clubb/output and you want the plots to go in directory ~/plots):
