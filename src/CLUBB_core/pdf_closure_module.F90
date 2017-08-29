@@ -93,7 +93,6 @@ module pdf_closure_module
         eps, &
         w_tol
 
-
     use parameters_model, only: &
         sclr_tol,          & ! Array of passive scalar tolerances  [units vary]
         sclr_dim,          & ! Number of passive scalar variables
@@ -105,6 +104,9 @@ module pdf_closure_module
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
+
+    use new_pdf, only: &
+        new_pdf_driver    ! Procedure(s)
 
     use pdf_utilities, only: &
         calc_corr_chi_x, & ! Procedure(s)
@@ -674,7 +676,20 @@ module pdf_closure_module
         alpha_thl = one_half
         alpha_rt = one_half
 
-    endif ! iiPDF_type
+      endif ! iiPDF_type
+
+      if ( iiPDF_type == iiPDF_new ) then
+
+         call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                              Skw, Skrt, Skthl, wprtp, wpthlp, & ! In
+                              w_1, w_2, rt_1, rt_2,            & ! Out
+                              thl_1, thl_2, varnce_w_1,        & ! Out
+                              varnce_w_2, varnce_rt_1,         & ! Out
+                              varnce_rt_2, varnce_thl_1,       & ! Out
+                              varnce_thl_2, mixt_frac          ) ! Out
+
+      endif ! iiPDF_type == iiPDF_new
+
 
       ! Compute pdf parameters for passive scalars
       if ( l_scalar_calc ) then
