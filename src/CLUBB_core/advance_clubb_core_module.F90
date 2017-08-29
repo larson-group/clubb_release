@@ -2816,8 +2816,10 @@ module advance_clubb_core_module
           l_use_ice_latent     ! Variable(s)
 
       use pdf_closure_module, only: &
-          iiPDF_ADG2,     & ! Variable(s)
+          iiPDF_ADG1,     & ! Variable(s)
+          iiPDF_ADG2,     &
           iiPDF_3D_Luhar, &
+          iiPDF_new,      &
           iiPDF_type
 
 #ifdef MKL
@@ -2952,12 +2954,12 @@ module advance_clubb_core_module
 
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
-      if ( iiPDF_type < 1 .or. iiPDF_type > 3 ) then
+      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_new ) then
          write(fstderr,*) "Error in setup_clubb_core."
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
          stop
-      endif ! iiPDF_type < 1 or iiPDF_type > 3
+      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_new
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
       if ( iiPDF_type == iiPDF_ADG2 ) then
@@ -2981,6 +2983,19 @@ module advance_clubb_core_module
             stop
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_3D_Luhar
+
+      ! This also currently applies to the new PDF until it has been fully
+      ! implemented.
+      if ( iiPDF_type == iiPDF_new ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr,*) "Error in setup_clubb_core."
+            write(fstderr,*) "The new PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            stop
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_new
 
       ! Check the option for the placement of the call to CLUBB's PDF.
       if ( ipdf_call_placement < ipdf_pre_advance_fields &
