@@ -16,19 +16,23 @@ module new_pdf
   public :: new_pdf_driver,        & ! Procedure(s)
             calc_mixture_fraction
 
-  private :: calc_setter_var_params, & ! Procedure(s)
-             calc_responder_params
+  private :: calc_setter_var_params,    & ! Procedure(s)
+             calc_responder_params,     &
+             calc_limits_F_x_responder, &
+             sort_roots
+
+  private
 
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,   & ! In
-                             Skw, Skrt, Skthl, wprtp, wpthlp,   & ! In
-                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
-                             mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
-                             sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
-                             sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                             sigma_thl_2_sqd, mixt_frac         ) ! Out
+  subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,          & ! In
+                             Skw_in, Skrt_in, Skthl_in, wprtp, wpthlp, & ! In
+                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,         & ! Out
+                             mu_thl_1, mu_thl_2, sigma_w_1_sqd,        & ! Out
+                             sigma_w_2_sqd, sigma_rt_1_sqd,            & ! Out
+                             sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
+                             sigma_thl_2_sqd, mixt_frac                ) ! Out
                              
 
     ! Description:
@@ -42,7 +46,9 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        one,  & ! Variable(s)
+        four, & ! Variable(s)
+        two,  &
+        one,  &
         zero
 
     use clubb_precision, only: &
@@ -52,17 +58,17 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      wm,     & ! Mean of w (overall)                [m/s]
-      rtm,    & ! Mean of rt (overall)               [kg/kg]
-      thlm,   & ! Mean of thl (overall)              [K]
-      wp2,    & ! Variance of w (overall)            [m^2/s^2]
-      rtp2,   & ! Variance of rt (overall)           [kg^2/kg^2]
-      thlp2,  & ! Variance of thl (overall)          [K^2]
-      Skw,    & ! Skewness of w (overall)            [-]
-      Skrt,   & ! Skewness of rt (overall)           [-]
-      Skthl,  & ! Skewness of thl (overall)          [-]
-      wprtp,  & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
-      wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
+      wm,       & ! Mean of w (overall)                [m/s]
+      rtm,      & ! Mean of rt (overall)               [kg/kg]
+      thlm,     & ! Mean of thl (overall)              [K]
+      wp2,      & ! Variance of w (overall)            [m^2/s^2]
+      rtp2,     & ! Variance of rt (overall)           [kg^2/kg^2]
+      thlp2,    & ! Variance of thl (overall)          [K^2]
+      Skw_in,   & ! Skewness of w (overall)            [-]
+      Skrt_in,  & ! Skewness of rt (overall)           [-]
+      Skthl_in, & ! Skewness of thl (overall)          [-]
+      wprtp,    & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
+      wpthlp      ! Covariance of w and thl (overall)  [(m/s)K]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -84,8 +90,21 @@ module new_pdf
     real( kind = core_rknd ) :: &
       sigma_w_1,  & ! Standard deviation of w (1st PDF component)  [m/s]
       sigma_w_2,  & ! Standard deviation of w (2nd PDF component)  [m/s]
-      sgn_wprtp,  & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
-      sgn_wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
+      Skw,        & ! Skewness of w (overall)            [-]
+      Skrt,       & ! Skewness of rt (overall)           [-]
+      Skthl,      & ! Skewness of thl (overall)          [-]
+      sgn_wprtp,  & ! Sign of covariance of w and rt (overall)     [-]
+      sgn_wpthlp    ! Sign of covariance of w and thl (overall)    [-]
+
+    real( kind = core_rknd ) :: &
+      max_Skx2_pos_Skx_sgn_wpxp, &
+      max_Skx2_neg_Skx_sgn_wpxp
+
+    real( kind = core_rknd ) :: &
+      min_F_rt,  & !
+      max_F_rt,  & !
+      min_F_thl, & !
+      max_F_thl    !
 
     real( kind = core_rknd ) :: &
       F_w,    & !
@@ -93,6 +112,10 @@ module new_pdf
       F_rt,   & !
       F_thl     !
 
+
+    Skw = Skw_in
+    Skrt = Skrt_in
+    Skthl = Skthl_in
 
     if ( wprtp >= zero ) then
        sgn_wprtp = one
@@ -118,10 +141,63 @@ module new_pdf
     sigma_w_1_sqd = sigma_w_1**2
     sigma_w_2_sqd = sigma_w_2**2
 
+    ! Calculate the upper limit on the magnitude of skewness for responding
+    ! variables.
+    max_Skx2_pos_Skx_sgn_wpxp = four * ( one - mixt_frac )**2 &
+                                / ( mixt_frac * ( two - mixt_frac ) )
+
+    max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
+
+    if ( Skrt * sgn_wprtp >= zero ) then
+       if ( Skrt**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
+          if ( Skrt >= zero ) then
+             Skrt = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          else
+             Skrt = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          endif
+       endif ! Skrt^2 >= max_Skx2_pos_Skx_sgn_wpxp
+    else ! Skrt * sgn( <w'rt'> ) < 0
+       if ( Skrt**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
+          if ( Skrt >= zero ) then
+             Skrt = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          else
+             Skrt = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          endif
+       endif ! Skrt^2 >= max_Skx2_neg_Skx_sgn_wpxp
+    endif ! Skrt * sgn( <w'rt'> ) >= 0
+
+    call calc_limits_F_x_responder( mixt_frac, Skrt, sgn_wprtp, & ! In
+                                    max_Skx2_pos_Skx_sgn_wpxp,  & ! In
+                                    max_Skx2_neg_Skx_sgn_wpxp,  & ! In
+                                    min_F_rt, max_F_rt )          ! Out
+
     call calc_responder_params( rtm, rtp2, Skrt, sgn_wprtp,       & ! In
                                 F_rt, mixt_frac,                  & ! In
                                 mu_rt_1, mu_rt_2,                 & ! In
                                 sigma_rt_1_sqd, sigma_rt_2_sqd )    ! Out
+
+    if ( Skthl * sgn_wpthlp >= zero ) then
+       if ( Skthl**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
+          if ( Skthl >= zero ) then
+             Skthl = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          else
+             Skthl = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          endif
+       endif ! Skthl^2 >= max_Skx2_pos_Skx_sgn_wpxp
+    else ! Skthl * sgn( <w'thl'> ) < 0
+       if ( Skthl**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
+          if ( Skthl >= zero ) then
+             Skthl = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          else
+             Skthl = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          endif
+       endif ! Skthl^2 >= max_Skx2_neg_Skx_sgn_wpxp
+    endif ! Skthl * sgn( <w'thl'> ) >= 0
+
+    call calc_limits_F_x_responder( mixt_frac, Skthl, sgn_wpthlp, & ! In
+                                    max_Skx2_pos_Skx_sgn_wpxp,    & ! In
+                                    max_Skx2_neg_Skx_sgn_wpxp,    & ! In
+                                    min_F_thl, max_F_thl )          ! Out
 
     call calc_responder_params( thlm, thlp2, Skthl, sgn_wpthlp,     & ! In
                                 F_thl, mixt_frac,                   & ! In
@@ -501,6 +577,244 @@ module new_pdf
     return
 
   end subroutine calc_responder_params
+
+  !=============================================================================
+  subroutine calc_limits_F_x_responder( mixt_frac, Skx, sgn_wpxp,  & ! In
+                                        max_Skx2_pos_Skx_sgn_wpxp, & ! In
+                                        max_Skx2_neg_Skx_sgn_wpxp, & ! In
+                                        min_F, max_F )               ! Out
+
+    ! Description:
+    ! Calculates the minimum and maximum allowable values for F_x for a
+    ! responding variable.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        three, & ! Variable(s)
+        two,   &
+        one,   &
+        zero
+
+    use calc_roots, only: &
+        cubic_solve    ! Procedure(s)
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      mixt_frac, & ! Mixture fraction                 [-]
+      Skx,       & ! Skewness of x                    [-]
+      sgn_wpxp     ! Sign of covariance of w and x    [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      max_Skx2_pos_Skx_sgn_wpxp, &
+      max_Skx2_neg_Skx_sgn_wpxp
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      min_F, &
+      max_F
+
+    ! Local Variables
+    real( kind = core_rknd ) &
+      coef_A_1, & 
+      coef_B_1, & 
+      coef_C_1, & 
+      coef_D_1, & 
+      coef_A_2, & 
+      coef_B_2, & 
+      coef_C_2, & 
+      coef_D_2
+
+    complex( kind = core_rknd ), dimension(3) :: &
+      sqrt_F_roots_1, & ! Roots of sqrt(F) for sigma_x_1 term    [-]
+      sqrt_F_roots_2    ! Roots of sqrt(F) for sigma_x_2 term    [-]
+
+    real( kind = core_rknd ), dimension(3) :: &
+      sqrt_F_roots_1_sorted, & ! Sorted roots of sqrt(F) for sigma_x_1 term  [-]
+      sqrt_F_roots_2_sorted    ! Sorted roots of sqrt(F) for sigma_x_2 term  [-]
+
+    real( kind = core_rknd ) :: &
+      min_sqrt_F, &
+      max_sqrt_F
+
+ 
+    coef_A_1 = -( one + mixt_frac )
+    coef_B_1 = zero
+    coef_C_1 = three * mixt_frac
+    coef_D_1 = sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
+
+    sqrt_F_roots_1 = cubic_solve( coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
+
+    coef_A_2 = -( two - mixt_frac )
+    coef_B_2 = zero
+    coef_C_2 = three * ( one - mixt_frac )
+    coef_D_2 = -sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
+
+    sqrt_F_roots_2 = cubic_solve( coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
+
+
+    if ( Skx * sgn_wpxp >= zero ) then
+
+       if ( Skx**2 > max_Skx2_neg_Skx_sgn_wpxp ) then
+
+          sqrt_F_roots_2_sorted &
+          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+
+          min_sqrt_F = sqrt_F_roots_2_sorted(2)
+          max_sqrt_F = min( real( sqrt_F_roots_1(1), kind = core_rknd ), &
+                            sqrt_F_roots_2_sorted(3) )
+
+       else ! Skx^2 <= max_Skx2_neg_Skx_sgn_wpxp
+
+          sqrt_F_roots_1_sorted &
+          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
+          sqrt_F_roots_2_sorted &
+          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+
+          min_sqrt_F = sqrt_F_roots_2_sorted(2)
+          max_sqrt_F = min( sqrt_F_roots_1_sorted(3), sqrt_F_roots_2_sorted(3) )
+
+       endif ! Skx**2 > max_Skx2_neg_Skx_sgn_wpxp
+
+    else ! Skx * sgn( <w'x'> ) < 0 
+
+       if ( Skx**2 > max_Skx2_pos_Skx_sgn_wpxp ) then
+
+          sqrt_F_roots_1_sorted &
+          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
+
+          min_sqrt_F = sqrt_F_roots_1_sorted(2)
+          max_sqrt_F = min( real( sqrt_F_roots_2(1), kind = core_rknd ), &
+                            sqrt_F_roots_1_sorted(3) )
+
+       else ! Skx^2 <= max_Skx2_pos_Skx_sgn_wpxp
+
+          sqrt_F_roots_1_sorted &
+          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
+          sqrt_F_roots_2_sorted &
+          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+
+          min_sqrt_F = sqrt_F_roots_1_sorted(2)
+          max_sqrt_F = min( sqrt_F_roots_1_sorted(3), sqrt_F_roots_2_sorted(3) )
+
+       endif ! Skx**2 > max_Skx2_pos_Skx_sgn_wpxp
+
+    endif ! Skx * sgn( <w'x'> ) >= 0
+
+
+    ! The minimum and maximum are also limited by 0 and 1, respectively.
+    min_sqrt_F = max( min_sqrt_F, zero )
+    max_sqrt_F = min( max_sqrt_F, one )
+
+    ! The minimum and maximum allowable values for F are the squares of the
+    ! minimum and maximum allowable values for sqrt(F).
+    min_F = min_sqrt_F**2
+    max_F = max_sqrt_F**2
+
+
+    return
+
+  end subroutine calc_limits_F_x_responder
+
+  !=============================================================================
+  function sort_roots( roots ) &
+  result ( roots_sorted )
+
+    ! Description:
+    ! Sorts roots from smallest to largest.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variable
+    real( kind = core_rknd ), dimension(3), intent(in) :: &
+      roots    ! Roots    [-]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(3) :: &
+      roots_sorted    ! Roots sorted from smallest to largest    [-]
+
+
+    if ( roots(1) <= roots(2) .and. roots(1) <= roots(3) ) then
+
+       ! The value of roots(1) is the smallest root.
+       roots_sorted(1) = roots(1)
+
+       if ( roots(2) <= roots(3) ) then
+
+          ! The value of roots(2) is the middle-valued root and the value of
+          ! roots(3) is the largest root.
+          roots_sorted(2) = roots(2)
+          roots_sorted(3) = roots(3)
+
+       else ! roots(3) < roots(2)
+
+          ! The value of roots(3) is the middle-valued root and the value of
+          ! roots(2) is the largest root.
+          roots_sorted(2) = roots(3)
+          roots_sorted(3) = roots(2)
+
+       endif ! roots(2) <= roots(3)
+
+    elseif ( roots(2) < roots(1) .and. roots(2) <= roots(3) ) then
+
+       ! The value of roots(2) is the smallest root.
+       roots_sorted(1) = roots(2)
+
+       if ( roots(1) <= roots(3) ) then
+
+          ! The value of roots(1) is the middle-valued root and the value of
+          ! roots(3) is the largest root.
+          roots_sorted(2) = roots(1)
+          roots_sorted(3) = roots(3)
+
+       else ! roots(3) < roots(1)
+
+          ! The value of roots(3) is the middle-valued root and the value of
+          ! roots(1) is the largest root.
+          roots_sorted(2) = roots(3)
+          roots_sorted(3) = roots(1)
+
+       endif ! roots(1) <= roots(3)
+
+    else ! roots(3) < roots(1) .and. roots(3) < roots(2)
+
+       ! The value of roots(3) is the smallest root.
+       roots_sorted(1) = roots(3)
+
+       if ( roots(1) <= roots(2) ) then
+
+          ! The value of roots(1) is the middle-valued root and the value of
+          ! roots(2) is the largest root.
+          roots_sorted(2) = roots(1)
+          roots_sorted(3) = roots(2)
+
+       else ! roots(2) < roots(1)
+
+          ! The value of roots(2) is the middle-valued root and the value of
+          ! roots(1) is the largest root.
+          roots_sorted(2) = roots(2)
+          roots_sorted(3) = roots(1)
+
+       endif ! roots(1) <= roots(2)
+
+    endif ! roots(1) <= roots(2) .and. roots(1) <= roots(3)
+
+
+    return
+
+  end function sort_roots
 
   !=============================================================================
 
