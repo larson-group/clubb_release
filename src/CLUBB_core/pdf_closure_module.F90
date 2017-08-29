@@ -13,7 +13,8 @@ module pdf_closure_module
   integer, parameter, public :: &
     iiPDF_ADG1 = 1,     & ! ADG1 PDF
     iiPDF_ADG2 = 2,     & ! ADG2 PDF
-    iiPDF_3D_Luhar = 3    ! 3D Luhar PDF
+    iiPDF_3D_Luhar = 3, & ! 3D Luhar PDF
+    iiPDF_new = 4         ! new PDF
 
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
@@ -437,8 +438,10 @@ module pdf_closure_module
 
       if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-        call  ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,& 
-                             mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, w_1, w_2 )
+        call ADG1_w_closure( Skw, wm, wp2, sigma_sqd_w, &         ! In
+                             sqrt_wp2, mixt_frac_max_mag,&        ! In
+                             mixt_frac, varnce_w_1, varnce_w_2, & ! Out
+                             w_1_n, w_2_n, w_1, w_2 )             ! Out
 
       elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
@@ -466,16 +469,18 @@ module pdf_closure_module
         ! { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / mixt_frac }
         ! * { (1/3)*beta + mixt_frac*( 1 - (2/3)*beta ) };
         !
-        ! where "x" stands for thl, rt, or sclr; "mixt_frac" is the weight of Gaussian
-        ! "plume" 1, and 0 <= beta <= 3.
+        ! where "x" stands for thl, rt, or sclr; "mixt_frac" is the weight of
+        ! Gaussian "plume" 1, and 0 <= beta <= 3.
         !
-        ! The factor { (1/3)*beta + mixt_frac*( 1 - (2/3)*beta ) } does not depend on
-        ! which varable "x" stands for.  The factor is multiplied by 2 and defined
-        ! as width_factor_1.
+        ! The factor { (1/3)*beta + mixt_frac*( 1 - (2/3)*beta ) } does not
+        ! depend on which varable "x" stands for.  The factor is multiplied by
+        ! 2 and defined as width_factor_1.
         !
-        ! The factor { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / mixt_frac }
-        ! depends on which variable "x" stands for.  It is multiplied by one_half and
-        ! defined as alpha_x, where "x" stands for thl, rt, or sclr.
+        ! The factor
+        ! { 1 - [1/(1-sigma_sqd_w)]*[ (w'x')^2 / (w'^2 * x'^2) ] / mixt_frac }
+        ! depends on which variable "x" stands for.  It is multiplied by
+        ! one_half and defined as alpha_x, where "x" stands for thl, rt, or
+        ! sclr.
 
         ! Vince Larson added a dimensionless factor so that the
         ! width of plumes in theta_l, rt can vary.
@@ -484,17 +489,20 @@ module pdf_closure_module
         ! beta=1.5_core_rknd recovers Chris Golaz' simplified formula.
         ! 3 Nov 2003
 
-        width_factor_1 = ( 2.0_core_rknd/3.0_core_rknd )*beta + 2.0_core_rknd&
+        width_factor_1 = ( 2.0_core_rknd/3.0_core_rknd )*beta + 2.0_core_rknd &
              *mixt_frac*( one - ( 2.0_core_rknd/3.0_core_rknd )*beta )
         width_factor_2 = 2.0_core_rknd - width_factor_1
 
         if ( thlp2 <= thl_tol**2 ) then
+
           thl_1        = thlm
           thl_2        = thlm
           varnce_thl_1 = 0.0_core_rknd
           varnce_thl_2 = 0.0_core_rknd
           alpha_thl    = one_half
+
         else
+
 !         thl_1_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w_2_n
 !         thl_2_n = - (wpthlp/(sqrt( wp2 )*sqrt( thlp2 )))/w_1_n
 
@@ -502,24 +510,28 @@ module pdf_closure_module
           thl_2 = thlm - ( wpthlp/sqrt_wp2 )/w_1_n
 
           alpha_thl = one_half * ( one - wpthlp*wpthlp / &
-             ((one-sigma_sqd_w)*wp2*thlp2) )
+                                         ((one-sigma_sqd_w)*wp2*thlp2) )
 
           alpha_thl = max( min( alpha_thl, one ), zero_threshold )
 
           ! Vince Larson multiplied original expressions by width_factor_1,2
           !   to generalize scalar skewnesses.  05 Nov 03
           varnce_thl_1 = ( alpha_thl / mixt_frac * thlp2 ) * width_factor_1
-          varnce_thl_2 = ( alpha_thl / (one-mixt_frac) * thlp2 ) * width_factor_2
+          varnce_thl_2 = ( alpha_thl / ( one - mixt_frac ) * thlp2 ) &
+                         * width_factor_2
 
         end if ! thlp2 <= thl_tol**2
 
         if ( rtp2 <= rt_tol**2 ) then
+
           rt_1        = rtm
           rt_2        = rtm
           varnce_rt_1 = 0.0_core_rknd
           varnce_rt_2 = 0.0_core_rknd
           alpha_rt    = one_half
+
         else
+
 !         rt_1_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w_2_n
 !         rt_2_n = -( wprtp / ( sqrt( wp2 )*sqrt( rtp2 ) ) ) / w_1_n
 
@@ -534,7 +546,8 @@ module pdf_closure_module
           ! Vince Larson multiplied original expressions by width_factor_1,2
           !   to generalize scalar skewnesses.  05 Nov 03
           varnce_rt_1 = ( alpha_rt / mixt_frac * rtp2 ) * width_factor_1
-          varnce_rt_2 = ( alpha_rt / (one-mixt_frac) * rtp2 ) * width_factor_2
+          varnce_rt_2 = ( alpha_rt / ( one - mixt_frac ) * rtp2 ) &
+                        * width_factor_2
 
         end if ! rtp2 <= rt_tol**2
 
@@ -1753,9 +1766,11 @@ module pdf_closure_module
   end subroutine calc_vert_avg_cf_component
 
   !=============================================================================
-  elemental subroutine ADG1_w_closure(Skw, wm, wp2, sigma_sqd_w, sqrt_wp2, mixt_frac_max_mag,&
-                                      mixt_frac, varnce_w_1, varnce_w_2, w_1_n, w_2_n, &
-                                      w_1, w_2 )               
+  elemental subroutine ADG1_w_closure( Skw, wm, wp2, sigma_sqd_w, &        ! In
+                                       sqrt_wp2, mixt_frac_max_mag,&       ! In
+                                       mixt_frac, varnce_w_1, varnce_w_2, &! Out
+                                       w_1_n, w_2_n, w_1, w_2 )            ! Out
+
   ! Description:
   !   The Analytic Double Gaussian 1 closure is used by default in CLUBB. It
   !   assumes the widths of both w Gaussians to be the same.
