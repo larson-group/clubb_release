@@ -688,6 +688,12 @@ module pdf_closure_module
                               varnce_rt_2, varnce_thl_1,       & ! Out
                               varnce_thl_2, mixt_frac          ) ! Out
 
+         ! The variables alpha_rt and alpha_thl aren't used by the new PDF.
+         ! However, they need to be set to a value to avoid being set to NaN and
+         ! causing a runtime error.  They are set to their default values here.
+         alpha_rt = one_half
+         alpha_thl = one_half
+
       endif ! iiPDF_type == iiPDF_new
 
 

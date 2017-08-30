@@ -1795,6 +1795,7 @@ module advance_clubb_core_module
         pdf_closure,                & ! Procedure(s)
         calc_vert_avg_cf_component, &
         iiPDF_3D_Luhar, & ! Variable(s)
+        iiPDF_new, &
         iiPDF_type
 
     use Skx_module, only: &
@@ -2173,7 +2174,7 @@ module advance_clubb_core_module
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
-    if ( iiPDF_type == iiPDF_3D_Luhar ) then
+    if ( iiPDF_type == iiPDF_3D_Luhar .or. iiPDF_type == iiPDF_new ) then
 
       Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
       Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
@@ -2181,7 +2182,7 @@ module advance_clubb_core_module
       Skrt_zt(1:gr%nz) = Skx_func( rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
       Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
 
-    else
+    else ! ADG1 or ADG2
 
       Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
                                         thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
@@ -2195,7 +2196,7 @@ module advance_clubb_core_module
       Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
                                         rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
 
-    endif ! iiPDF_type == iiPDF_3D_Luhar
+    endif ! iiPDF_type == iiPDF_3D_Luhar or iiPDF_type == iiPDF_new
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( iSkw_zt, Skw_zt, & ! In
