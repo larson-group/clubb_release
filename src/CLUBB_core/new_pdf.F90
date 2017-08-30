@@ -423,6 +423,7 @@ module new_pdf
     coef_sigma_w_2 = sqrt( ( one - F_w ) &
                            / ( ( zeta_w + two ) * ( one - mixt_frac ) ) )
 
+
     return
 
   end subroutine calc_setter_var_params
@@ -515,7 +516,8 @@ module new_pdf
 
     use constants_clubb, only: &
         three, & ! Variable(s)
-        one
+        one,   &
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -544,34 +546,47 @@ module new_pdf
       coef_sigma_x_2    !
 
 
-    mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
-                  * sgn_wpxp
+    if ( abs( Skx ) > zero .or. F_x > zero ) then
 
-    mu_x_2 = xm - ( mixt_frac / ( one - mixt_frac ) ) * ( mu_x_1 - xm )
+       mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
+                     * sgn_wpxp
 
-    sigma_x_1_sqd &
-    = ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
-                - ( one + mixt_frac ) * F_x**1.5 &
-                + three * mixt_frac * sqrt( F_x ) ) &
-        / ( three * mixt_frac * sqrt( F_x ) ) ) &
-      * xp2
+       mu_x_2 = xm - ( mixt_frac / ( one - mixt_frac ) ) * ( mu_x_1 - xm )
 
-    sigma_x_2_sqd = ( ( one - F_x ) / ( one - mixt_frac ) ) * xp2 &
-                    - ( mixt_frac / ( one - mixt_frac ) ) * sigma_x_1_sqd
+       sigma_x_1_sqd &
+       = ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
+                   - ( one + mixt_frac ) * F_x**1.5 &
+                   + three * mixt_frac * sqrt( F_x ) ) &
+           / ( three * mixt_frac * sqrt( F_x ) ) ) &
+         * xp2
 
-    coef_sigma_x_1 &
-    = sqrt( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
-              / ( three * mixt_frac * sqrt( F_x ) ) ) &
-            - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
-            + one )
+       sigma_x_2_sqd = ( ( one - F_x ) / ( one - mixt_frac ) ) * xp2 &
+                       - ( mixt_frac / ( one - mixt_frac ) ) * sigma_x_1_sqd
 
-    coef_sigma_x_2 &
-    = sqrt( ( one - F_x ) / ( one - mixt_frac ) &
-            - mixt_frac / ( one - mixt_frac ) &
-              * ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
-                    / ( three * mixt_frac * sqrt( F_x ) ) ) &
-                  - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
-                  + one ) )
+       coef_sigma_x_1 &
+       = sqrt( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
+                 / ( three * mixt_frac * sqrt( F_x ) ) ) &
+               - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
+               + one )
+
+       coef_sigma_x_2 &
+       = sqrt( ( one - F_x ) / ( one - mixt_frac ) &
+               - mixt_frac / ( one - mixt_frac ) &
+                 * ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp&
+                       / ( three * mixt_frac * sqrt( F_x ) ) ) &
+                     - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
+                     + one ) )
+
+    else ! Skx = 0 and F_x = 0
+
+       mu_x_1 = xm
+       mu_x_2 = xm
+       sigma_x_1_sqd = xp2
+       sigma_x_2_sqd = xp2
+       coef_sigma_x_1 = one
+       coef_sigma_x_2 = one
+
+    endif ! abs( Skx ) > 0 or F_x > 0
 
 
     return
