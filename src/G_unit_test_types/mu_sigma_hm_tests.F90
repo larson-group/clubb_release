@@ -4,9 +4,8 @@ module mu_sigma_hm_tests
 
   implicit none
 
-  public :: mu_sigma_hm_unit_tests
-
-  private :: produce_seed
+  public :: mu_sigma_hm_unit_tests, &
+            produce_seed
 
   private  ! default scope
 

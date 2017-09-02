@@ -14,10 +14,10 @@ module new_pdf
   implicit none
 
   public :: new_pdf_driver,        & ! Procedure(s)
-            calc_mixture_fraction
+            calc_mixture_fraction, &
+            calc_setter_var_params
 
-  private :: calc_setter_var_params,    & ! Procedure(s)
-             calc_responder_params,     &
+  private :: calc_responder_params,     & ! Procedure(s)
              calc_limits_F_x_responder, &
              sort_roots
 
