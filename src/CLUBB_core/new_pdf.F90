@@ -129,10 +129,8 @@ module new_pdf
        sgn_wpthlp = -one
     endif ! wpthlp >= 0
 
-    F_w = 0.25_core_rknd
+    F_w = one - exp( -Skw**2 / 200.0_core_rknd )
     zeta_w = zero
-    F_rt = 0.2_core_rknd
-    F_thl = 0.2_core_rknd
 
     call calc_setter_var_params( wm, wp2, Skw, F_w, zeta_w, & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
@@ -148,6 +146,7 @@ module new_pdf
 
     max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
+    ! Calculate the upper limit of the magnitude of Skrt.
     if ( Skrt * sgn_wprtp >= zero ) then
        if ( Skrt**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
           if ( Skrt >= zero ) then
@@ -171,11 +170,16 @@ module new_pdf
                                     max_Skx2_neg_Skx_sgn_wpxp,  & ! In
                                     min_F_rt, max_F_rt )          ! Out
 
+    ! F_rt must have a value between min_F_rt and max_F_rt.
+    F_rt = max_F_rt &
+           + ( min_F_rt - max_F_rt ) * exp( -Skrt**2 / 200.0_core_rknd )
+
     call calc_responder_params( rtm, rtp2, Skrt, sgn_wprtp,       & ! In
                                 F_rt, mixt_frac,                  & ! In
                                 mu_rt_1, mu_rt_2,                 & ! In
                                 sigma_rt_1_sqd, sigma_rt_2_sqd )    ! Out
 
+    ! Calculate the upper limit of the magnitude of Skthl.
     if ( Skthl * sgn_wpthlp >= zero ) then
        if ( Skthl**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
           if ( Skthl >= zero ) then
@@ -198,6 +202,10 @@ module new_pdf
                                     max_Skx2_pos_Skx_sgn_wpxp,    & ! In
                                     max_Skx2_neg_Skx_sgn_wpxp,    & ! In
                                     min_F_thl, max_F_thl )          ! Out
+
+    ! F_thl must have a value between min_F_thl and max_F_thl.
+    F_thl = max_F_thl &
+            + ( min_F_thl - max_F_thl ) * exp( -Skthl**2 / 200.0_core_rknd )
 
     call calc_responder_params( thlm, thlp2, Skthl, sgn_wpthlp,     & ! In
                                 F_thl, mixt_frac,                   & ! In
