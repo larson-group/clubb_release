@@ -5,7 +5,9 @@ module pdf_closure_module
 
   implicit none
 
-  public :: pdf_closure, calc_vert_avg_cf_component
+  public :: pdf_closure, &
+            calc_vert_avg_cf_component, &
+            ADG1_w_closure
 
   ! Options for the two component normal (double Gaussian) PDF type to use for
   ! the w, rt, and theta-l (or w, chi, and eta) portion of CLUBB's multivariate,

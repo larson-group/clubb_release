@@ -4,21 +4,25 @@ module pdf_parameter_tests
 
   implicit none
 
-  public :: pdf_parameter_unit_tests
+  public :: pdf_parameter_unit_tests    ! Procedure(s)
 
-  private :: recalc_single_var
+  private :: setter_var_tests,  & ! Procedure(s)
+             recalc_single_var
 
   private  ! default scope
 
   contains
 
   !=============================================================================
-  function pdf_parameter_unit_tests( )
+  function pdf_parameter_unit_tests( test_PDF_type )
 
     ! Description:
     ! Unit testing framework for the code that calculates the mixture fraction,
     ! the PDF component means, and the PDF component standard deviations for the
     ! trivariate PDF of w, rt, and theta-l.
+    !
+    !
+    ! Description of tests for the new PDF:
     !
     ! There are 10 different input parameter sets specified.  The 10th input
     ! parameter set is a randomized set.  There are two different sets of tests.
@@ -62,6 +66,21 @@ module pdf_parameter_tests
     !
     ! Test 5
     ! Check that sigma_w_1 >= 0, sigma_w_2 >= 0, and 0 < mixt_frac < 1.
+    !
+    ! In the second set of tests, the full PDF is called for each of the 10
+    ! aforementioned input parameter sets.  The values of parameters F and zeta
+    ! are set internally.  Each subroutine call produces values of mu_w_1,
+    ! mu_w_2, mu_rt_1, mu_rt_2, mu_thl_1, mu_thl_2, sigma_w_1^2, sigma_w_2^2,
+    ! sigma_rt_1^2, sigma_rt_2^2, sigma_thl_1^2, sigma_thl_2^2, and mixt_frac.
+    ! These values are evaluated by 13 tests.
+    !
+    ! Test 6, Test 10, and Test 14 are analogous to Test 1 for w, rt, and
+    ! theta-l respectively.  Test 7, Test 11, and Test 15 are analogous to
+    ! Test 2 for w, rt, and theta-l respectively.  Test 8, Test 12, and Test 16
+    ! are analogous to Test 3 for w, rt, and theta-l, respectively.  Test 9,
+    ! Test 13, and Test 17 are analogous to Test 4 for w, rt, and theta-l,
+    ! respectively.  Test 18 is analogous to Test 5, but also checks that
+    ! sigma_rt_1 >= 0, sigma_rt_2 >= 0, sigma_thl_1 >= 0, and sigma_thl_2 >= 0.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -85,6 +104,11 @@ module pdf_parameter_tests
         calc_setter_var_params, & ! Procedure(s)
         new_pdf_driver
 
+    use pdf_closure_module, only: &
+        iiPDF_new,      & ! Variable(s)
+        iiPDF_ADG1,     &
+        ADG1_w_closure    ! Procedure(s)
+
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
 
@@ -93,6 +117,15 @@ module pdf_parameter_tests
 
     implicit none
 
+    ! Input Variable
+    integer, intent(in) :: &
+      test_pdf_type    ! The PDF type being tested
+
+    ! Return Variable
+    integer :: &
+      pdf_parameter_unit_tests  ! Returns pass or fail
+
+    ! Local Variables
     real( kind = core_rknd ) :: &
       wm,     & ! Mean of w (overall)                [m/s]
       rtm,    & ! Mean of rt (overall)               [kg/kg]
@@ -173,9 +206,6 @@ module pdf_parameter_tests
       l_pass_test_18    ! Flag for passing test 18
 
     integer :: &
-      pdf_parameter_unit_tests  ! Returns pass or fail
-
-    integer :: &
       num_failed_sets    ! Records the number of failed parameter sets
 
     integer :: &
@@ -207,11 +237,43 @@ module pdf_parameter_tests
       iter_F_w,        & ! Loop index for value of F_w
       iter_zeta_w        ! Loop index for value of zeta_w
 
+    ! Variables for ADG1
+    real( kind = core_rknd ) :: &
+      sqrt_wp2,          & ! Square root of w (ADG1)                       [m/s]
+      mixt_frac_max_mag, & ! Maximum magnitude of mixture fraction (ADG1)  [-]
+      w_1_n,             & ! Normalized mean of w (1st PDF comp.) (ADG1)   [-]
+      w_2_n,             & ! Normalized mean of w (2nd PDF comp.) (ADG1)   [-]
+      sigma_sqd_w          ! Width of individual w plumes (ADG1)           [-]
+
+    integer, parameter :: &
+      num_sigma_sqd_w = 11  ! Number of diff. values of sigma_sqd_w used (ADG1)
+
+    integer :: &
+      iter_sigma_sqd_w    ! Loop index for value of sigma_sqd_w (ADG1)
+
 
     write(fstdout,*) ""
     write(fstdout,*) "Performing PDF parameter values unit test"
     write(fstdout,*) "========================================="
     write(fstdout,*) ""
+
+
+    if ( test_PDF_type == iiPDF_new ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for the new PDF"
+       write(fstdout,*) ""
+    elseif ( test_PDF_type == iiPDF_ADG1 ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for ADG1"
+       write(fstdout,*) ""
+    else ! test_PDF_type /= iiPDF_new .and. test_PDF_type /= iiPDF_ADG1
+       write(fstderr,*) "The PDF parameter unit tests cannot be run for the " &
+                        // "selected type of PDF."
+       write(fstderr,*) "Selected type of PDF: ", test_PDF_type
+       write(fstderr,*) "See src/CLUBB_core/pdf_parameter_module.F90 for an" &
+                        // "index of PDF types."
+       write(fstderr,*) ""
+       pdf_parameter_unit_tests = 1 ! Exit Code = 1, Fail
+       return
+    endif
 
     ! Initialize number of failed parameter sets.
     num_failed_sets = 0
@@ -445,149 +507,146 @@ module pdf_parameter_tests
        ! Here, w will be used as the setting variable.
        !====================================================================
 
-       write(fstdout,*) "Running tests for the above parameter set for all " &
-                        // "combinations of F_w and zeta_w for the setting " &
-                        // "variable.  F_w values are 0 (or 1.0 x 10^-5), " &
-                        // "0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, " &
-                        // "and 1.  Zeta_w values are 0, -1/2, 1, -1/3, 1/2, " &
-                        // "-1/5, 1/4, -9/10, 9, -3/4, and 3."
-       write(fstdout,*) ""
+       if ( test_PDF_type == iiPDF_new ) then
 
-       do iter_F_w = 1, num_F_w, 1
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "all combinations of F_w and zeta_w for the " &
+                           // "setting variable.  F_w values are 0 (or " &
+                           // "1.0 x 10^-5), 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, " &
+                           // "0.7, 0.8, 0.9, and 1.  Zeta_w values are 0, " &
+                           // "-1/2, 1, -1/3, 1/2, -1/5, 1/4, -9/10, 9, " &
+                           // "-3/4, and 3."
+          write(fstdout,*) ""
 
-          ! Set the value of F_w.
-          if ( iter_F_w == 1 ) then
-             if ( abs( Skw ) > zero ) then
-                ! The value of F_w needs to be greater than 0 when | Skw | > 0
-                ! in order for the PDF to be valid.
-                F_w = 1.0e-5_core_rknd
-             else ! Skw = 0
-                ! F_w can have a value of 0 when Skw = 0.
-                F_w = zero
-             endif ! | Skw | > 0
-          else ! iter_F_w > 1
-             ! F_w ranges from 0 to 1.
-             F_w = 0.1_core_rknd * real( iter_F_w - 1, kind = core_rknd )
-          endif ! iter_F_w
+          do iter_F_w = 1, num_F_w, 1
 
-          do iter_zeta_w = 1, num_zeta_w, 1
+             ! Set the value of F_w.
+             if ( iter_F_w == 1 ) then
+                if ( abs( Skw ) > zero ) then
+                   ! The value of F_w needs to be greater than 0 when
+                   ! | Skw | > 0 in order for the PDF to be valid.
+                   F_w = 1.0e-5_core_rknd
+                else ! Skw = 0
+                   ! F_w can have a value of 0 when Skw = 0.
+                   F_w = zero
+                endif ! | Skw | > 0
+             else ! iter_F_w > 1
+                ! F_w ranges from 0 to 1.
+                F_w = 0.1_core_rknd * real( iter_F_w - 1, kind = core_rknd )
+             endif ! iter_F_w
 
-             ! Set the value of zeta_w.
-             if ( iter_zeta_w == 1 ) then
-                zeta_w = zero
-             elseif ( iter_zeta_w == 2 ) then
-                zeta_w = -one_half
-             elseif ( iter_zeta_w == 3 ) then
-                zeta_w = one
-             elseif ( iter_zeta_w == 4 ) then
-                zeta_w = -one_third
-             elseif ( iter_zeta_w == 5 ) then
-                zeta_w = one_half
-             elseif ( iter_zeta_w == 6 ) then
-                zeta_w = -0.2_core_rknd
-             elseif ( iter_zeta_w == 7 ) then
-                zeta_w = one_fourth
-             elseif ( iter_zeta_w == 8 ) then
-                zeta_w = -0.9_core_rknd
-             elseif ( iter_zeta_w == 9 ) then
-                zeta_w = 9.0_core_rknd
-             elseif ( iter_zeta_w == 10 ) then
-                zeta_w = -three_fourths
-             elseif ( iter_zeta_w == 11 ) then
-                zeta_w = three
-             endif
+             do iter_zeta_w = 1, num_zeta_w, 1
 
-             ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
-             ! sigma_w_2, and mixt_frac.
-             call calc_setter_var_params( wm, wp2, Skw, F_w, zeta_w, & ! In
-                                          mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                          sigma_w_2, mixt_frac )       ! Out
+                ! Set the value of zeta_w.
+                if ( iter_zeta_w == 1 ) then
+                   zeta_w = zero
+                elseif ( iter_zeta_w == 2 ) then
+                   zeta_w = -one_half
+                elseif ( iter_zeta_w == 3 ) then
+                   zeta_w = one
+                elseif ( iter_zeta_w == 4 ) then
+                   zeta_w = -one_third
+                elseif ( iter_zeta_w == 5 ) then
+                   zeta_w = one_half
+                elseif ( iter_zeta_w == 6 ) then
+                   zeta_w = -0.2_core_rknd
+                elseif ( iter_zeta_w == 7 ) then
+                   zeta_w = one_fourth
+                elseif ( iter_zeta_w == 8 ) then
+                   zeta_w = -0.9_core_rknd
+                elseif ( iter_zeta_w == 9 ) then
+                   zeta_w = 9.0_core_rknd
+                elseif ( iter_zeta_w == 10 ) then
+                   zeta_w = -three_fourths
+                elseif ( iter_zeta_w == 11 ) then
+                   zeta_w = three
+                endif
 
-             ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the
-             ! PDF parameters that are output from the subroutine.
-             call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                                     sigma_w_2, mixt_frac, w_tol,   & ! In
-                                     recalc_wm, recalc_wp2,         & ! Out
-                                     recalc_wp3, recalc_Skw         ) ! Out
+                ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
+                ! sigma_w_2, and mixt_frac.
+                call calc_setter_var_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                                             mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                                             sigma_w_2, mixt_frac )       ! Out
 
-             ! Test 1
-             ! Compare the original wm to its recalculated value.
-             !    | ( <w>|_recalc - <w> ) / <w> |  <=  tol;
-             ! which can be rewritten as:
-             !    | <w>|_recalc - <w> |  <=  | <w> | * tol.
-             if ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol ) then
-                l_pass_test_1 = .true.
-             else
-                l_pass_test_1 = .false.
-                write(fstderr,*) "Test 1 failed"
-                write(fstderr,*) "wm = ", wm
-                write(fstderr,*) "recalc_wm = ", recalc_wm
-                write(fstderr,*) ""
-             endif
+                ! Perform the tests for the "setter" variable, which is the
+                ! variable that is used to set the mixture fraction.
+                call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                                       mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                       sigma_w_2, mixt_frac, tol,    & ! In
+                                       l_pass_test_1, l_pass_test_2, & ! Out
+                                       l_pass_test_3, l_pass_test_4, & ! Out
+                                       l_pass_test_5 )                 ! Out
 
-             ! Test 2
-             ! Compare the original wp2 to its recalculated value.
-             !    | ( <w'^2>|_recalc - <w'^2> ) / <w'^2> |  <=  tol;
-             ! which can be rewritten as:
-             !    | <w'^2>|_recalc - <w'^2> |  <=  | <w'^2> | * tol;
-             ! and since <w'^2> is always positive:
-             !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
-             if ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol ) then
-                l_pass_test_2 = .true.
-             else
-                l_pass_test_2 = .false.
-                write(fstderr,*) "Test 2 failed"
-                write(fstderr,*) "wp2 = ", wp2
-                write(fstderr,*) "recalc_wp2 = ", recalc_wp2
-                write(fstderr,*) ""
-             endif
 
-             ! Test 3
-             ! Compare the original wp3 to its recalculated value.
-             !    | ( <w'^3>|_recalc - <w'^3> ) / <w'^3> |  <=  tol;
-             ! which can be rewritten as:
-             !    | <w'^3>|_recalc - <w'^3> |  <=  | <w'^3> | * tol.
-             if ( abs( recalc_wp3 - wp3 ) &
-                  <= max( abs( wp3 ), w_tol**3 ) * tol ) then
-                l_pass_test_3 = .true.
-             else
-                l_pass_test_3 = .false.
-                write(fstderr,*) "Test 3 failed"
-                write(fstderr,*) "wp3 = ", wp3
-                write(fstderr,*) "recalc_wp3 = ", recalc_wp3
-                write(fstderr,*) ""
-             endif
+                if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                     .and. l_pass_test_4 .and. l_pass_test_5 ) then
+                   ! All tests pass
+                   num_failed_sets = num_failed_sets
+                else
+                   ! At least one test failed
+                   num_failed_sets = num_failed_sets + 1
+                   write(fstderr,*) "At least one test or check for the " &
+                                    // "setting variable PDF failed for the " &
+                                    // "following parameter set:  "
+                   write(fstderr,*) "PDF parameter set index = ", &
+                                    iter_param_sets
+                   write(fstderr,*) "F_w = ", F_w
+                   write(fstderr,*) "zeta_w = ", zeta_w
+                   write(fstderr,*) ""
+                endif
 
-             ! Test 4
-             ! Compare the original Skw to its recalculated value.
-             !    | ( Skw|_recalc - Skw ) / Skw |  <=  tol;
-             ! which can be rewritten as:
-             !    | Skw|_recalc - Skw |  <=  | Skw | * tol.
-             if ( abs( recalc_Skw - Skw ) &
-                  <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol ) then
-                l_pass_test_4 = .true.
-             else
-                l_pass_test_4 = .false.
-                write(fstderr,*) "Test 4 failed"
-                write(fstderr,*) "Skw = ", Skw
-                write(fstderr,*) "recalc_Skw = ", recalc_Skw
-                write(fstderr,*) ""
-             endif
 
-             ! Test 5
-             ! Check that sigma_w_1 and sigma_w_2 have a value of at least zero,
-             ! and that mixture fraction has a value between 0 and 1.
-             if ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
-                  .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
-                l_pass_test_5 = .true.
-             else
-                l_pass_test_5 = .false.
-                write(fstderr,*) "Test 5 failed"
-                write(fstderr,*) "sigma_w_1 = ", sigma_w_1
-                write(fstderr,*) "sigma_w_2 = ", sigma_w_2
-                write(fstderr,*) "mixt_frac = ", mixt_frac
-                write(fstderr,*) ""
-             endif
+             enddo ! iter_zeta_w = 1, num_zeta_w, 1
+
+          enddo ! iter_F_w = 1, num_F_w, 1
+
+       elseif ( test_PDF_type == iiPDF_ADG1 ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "various values of sigma_sqd_w for the setting " &
+                           // "variable (w).  Values of sigma_sqd_w are 0, " &
+                           // "0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, " &
+                           // "and 1 (or 0.99)."
+          write(fstdout,*) ""
+
+          sqrt_wp2 = sqrt( wp2 )
+          mixt_frac_max_mag = 1.0_core_rknd
+
+          do iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
+
+             ! Set the value of sigma_sqd_w.
+             if ( iter_sigma_sqd_w == num_sigma_sqd_w ) then
+                if ( abs( Skw ) > zero ) then
+                   ! The value of sigma_sqd_w needs to be less than than 1 when
+                   ! | Skw | > 0 in order for the PDF to be valid.
+                   sigma_sqd_w = 0.99_core_rknd
+                else ! Skw = 0
+                   ! sigma_sqd_w can have a value of 0 when Skw = 0.
+                   sigma_sqd_w = one
+                endif ! | Skw | > 0
+             else ! iter_sigma_sqd_w > 1
+                ! sigma_sqd_w ranges from 0 to 1.
+                sigma_sqd_w = 0.1_core_rknd * real( iter_sigma_sqd_w - 1, &
+                                                    kind = core_rknd )
+             endif ! iter_sigma_sqd_w
+ 
+             call ADG1_w_closure( Skw, wm, wp2, sigma_sqd_w, &   ! In
+                                  sqrt_wp2, mixt_frac_max_mag, & ! In
+                                  mixt_frac, sigma_w_1_sqd, sigma_w_2_sqd,&! Out
+                                  w_1_n, w_2_n, mu_w_1, mu_w_2 )           ! Out
+
+             sigma_w_1 = sqrt( sigma_w_1_sqd )
+             sigma_w_2 = sqrt( sigma_w_2_sqd )
+
+             ! Perform the tests for the "setter" variable, which is the
+             ! variable that is used to set the mixture fraction.  This is
+             ! always w for ADG1.
+             call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                                    mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                    sigma_w_2, mixt_frac, tol,    & ! In
+                                    l_pass_test_1, l_pass_test_2, & ! Out
+                                    l_pass_test_3, l_pass_test_4, & ! Out
+                                    l_pass_test_5 )                 ! Out
 
 
              if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
@@ -601,32 +660,39 @@ module pdf_parameter_tests
                                  // "setting variable PDF failed for the " &
                                  // "following parameter set:  "
                 write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-                write(fstderr,*) "F_w = ", F_w
-                write(fstderr,*) "zeta_w = ", zeta_w
+                write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
                 write(fstderr,*) ""
              endif
 
+          enddo ! iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
 
-          enddo ! iter_zeta_w = 1, num_zeta_w, 1
-
-       enddo ! iter_F_w = 1, num_F_w, 1
+       endif ! test_PDF_type
 
        !====================================================================
        ! Perform the second set of tests for the full PDF.
        !====================================================================
 
-       write(fstdout,*) "Running tests for the above parameter set for the " &
-                        // "full PDF (the setting of F and zeta values is " &
-                        // "handled internally)."
-       write(fstdout,*) ""
+       if ( test_PDF_type == iiPDF_new ) then
 
-       call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,   & ! In
-                            Skw, Skrt, Skthl, wprtp, wpthlp,   & ! In
-                            mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
-                            mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
-                            sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
-                            sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                            sigma_thl_2_sqd, mixt_frac         ) ! Out
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the full PDF (the setting of F and zeta " &
+                           // "values is handled internally)."
+          write(fstdout,*) ""
+
+          call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,   & ! In
+                               Skw, Skrt, Skthl, wprtp, wpthlp,   & ! In
+                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
+                               mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
+                               sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
+                               sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
+                               sigma_thl_2_sqd, mixt_frac         ) ! Out
+
+       elseif ( test_PDF_type == iiPDF_ADG1 ) then
+
+          ! Temporarily skip this step.
+          cycle
+
+       endif ! test_PDF_type
 
        sigma_w_1 = sqrt( sigma_w_1_sqd )
        sigma_w_2 = sqrt( sigma_w_2_sqd )
@@ -912,6 +978,153 @@ module pdf_parameter_tests
     return
 
   end function pdf_parameter_unit_tests
+
+  !=============================================================================
+  subroutine setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                               mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                               sigma_w_2, mixt_frac, tol,    & ! In
+                               l_pass_test_1, l_pass_test_2, & ! Out
+                               l_pass_test_3, l_pass_test_4, & ! Out
+                               l_pass_test_5 )                 ! Out
+
+    ! Description:
+    ! Tests 1 through 5 as described above.  These tests are all applied to the
+    ! "setter" variable, which is the variable that is used to set the mixture
+    ! fraction.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,       & ! Variable(s)
+        zero,      &
+        w_tol,     &
+        w_tol_sqd, &
+        fstderr
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wm,        & ! Mean of w (overall)                              [m/s]
+      wp2,       & ! Variance of w (overall)                          [m^2/s^2]
+      wp3,       & ! <w'^3>                                           [m^3/s^3]
+      Skw,       & ! Skewness of w (overall)                          [-]
+      mu_w_1,    & ! Mean of w (1st PDF component)                    [m/s]
+      mu_w_2,    & ! Mean of w (2nd PDF component)                    [m/s]
+      sigma_w_1, & ! Standard deviation of w (1st PDF component)      [m/s]
+      sigma_w_2, & ! Standard deviation of w (2nd PDF component)      [m/s]
+      mixt_frac, & ! Mixture fraction                                 [-]
+      tol          ! Tolerance for acceptable numerical difference    [-]
+
+    ! Output Variables
+    logical, intent(out) :: &
+      l_pass_test_1, & ! Flag for passing test 1
+      l_pass_test_2, & ! Flag for passing test 2
+      l_pass_test_3, & ! Flag for passing test 3
+      l_pass_test_4, & ! Flag for passing test 4
+      l_pass_test_5    ! Flag for passing test 5
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      recalc_wm,  & ! Recalculation of <w> using PDF parameters          [m/s]
+      recalc_wp2, & ! Recalculation of <w'^2> using PDF parameters   [m^2/s^2]
+      recalc_wp3, & ! Recalculation of <w'^3> using PDF parameters   [m^3/s^3]
+      recalc_Skw    ! Recalculation of Skw using PDF parameters            [-]
+
+
+    ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the PDF
+    ! parameters that are output from the subroutine.
+    call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
+                            sigma_w_2, mixt_frac, w_tol,   & ! In
+                            recalc_wm, recalc_wp2,         & ! Out
+                            recalc_wp3, recalc_Skw         ) ! Out
+
+    ! Test 1
+    ! Compare the original wm to its recalculated value.
+    !    | ( <w>|_recalc - <w> ) / <w> |  <=  tol;
+    ! which can be rewritten as:
+    !    | <w>|_recalc - <w> |  <=  | <w> | * tol.
+    if ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol ) then
+       l_pass_test_1 = .true.
+    else
+       l_pass_test_1 = .false.
+       write(fstderr,*) "Test 1 failed"
+       write(fstderr,*) "wm = ", wm
+       write(fstderr,*) "recalc_wm = ", recalc_wm
+       write(fstderr,*) ""
+    endif
+
+    ! Test 2
+    ! Compare the original wp2 to its recalculated value.
+    !    | ( <w'^2>|_recalc - <w'^2> ) / <w'^2> |  <=  tol;
+    ! which can be rewritten as:
+    !    | <w'^2>|_recalc - <w'^2> |  <=  | <w'^2> | * tol;
+    ! and since <w'^2> is always positive:
+    !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
+    if ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol ) then
+       l_pass_test_2 = .true.
+    else
+       l_pass_test_2 = .false.
+       write(fstderr,*) "Test 2 failed"
+       write(fstderr,*) "wp2 = ", wp2
+       write(fstderr,*) "recalc_wp2 = ", recalc_wp2
+       write(fstderr,*) ""
+    endif
+
+    ! Test 3
+    ! Compare the original wp3 to its recalculated value.
+    !    | ( <w'^3>|_recalc - <w'^3> ) / <w'^3> |  <=  tol;
+    ! which can be rewritten as:
+    !    | <w'^3>|_recalc - <w'^3> |  <=  | <w'^3> | * tol.
+    if ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol ) then
+       l_pass_test_3 = .true.
+    else
+       l_pass_test_3 = .false.
+       write(fstderr,*) "Test 3 failed"
+       write(fstderr,*) "wp3 = ", wp3
+       write(fstderr,*) "recalc_wp3 = ", recalc_wp3
+       write(fstderr,*) ""
+    endif
+
+    ! Test 4
+    ! Compare the original Skw to its recalculated value.
+    !    | ( Skw|_recalc - Skw ) / Skw |  <=  tol;
+    ! which can be rewritten as:
+    !    | Skw|_recalc - Skw |  <=  | Skw | * tol.
+    if ( abs( recalc_Skw - Skw ) &
+         <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol ) then
+       l_pass_test_4 = .true.
+    else
+       l_pass_test_4 = .false.
+       write(fstderr,*) "Test 4 failed"
+       write(fstderr,*) "Skw = ", Skw
+       write(fstderr,*) "recalc_Skw = ", recalc_Skw
+       write(fstderr,*) ""
+    endif
+
+    ! Test 5
+    ! Check that sigma_w_1 and sigma_w_2 have a value of at least zero, and that
+    ! mixture fraction has a value between 0 and 1.
+    if ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
+         .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
+       l_pass_test_5 = .true.
+    else
+       l_pass_test_5 = .false.
+        write(fstderr,*) "Test 5 failed"
+        write(fstderr,*) "sigma_w_1 = ", sigma_w_1
+        write(fstderr,*) "sigma_w_2 = ", sigma_w_2
+        write(fstderr,*) "mixt_frac = ", mixt_frac
+        write(fstderr,*) ""
+    endif
+
+
+    return
+
+  end subroutine setter_var_tests
 
   !=============================================================================
   subroutine recalc_single_var( xm, mu_x_1, mu_x_2, sigma_x_1, & ! In
