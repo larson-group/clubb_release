@@ -88,13 +88,16 @@ module new_pdf
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      sigma_w_1,  & ! Standard deviation of w (1st PDF component)  [m/s]
-      sigma_w_2,  & ! Standard deviation of w (2nd PDF component)  [m/s]
-      Skw,        & ! Skewness of w (overall)            [-]
-      Skrt,       & ! Skewness of rt (overall)           [-]
-      Skthl,      & ! Skewness of thl (overall)          [-]
-      sgn_wprtp,  & ! Sign of covariance of w and rt (overall)     [-]
-      sgn_wpthlp    ! Sign of covariance of w and thl (overall)    [-]
+      sigma_w_1,  & ! Standard deviation of w (1st PDF component)      [m/s]
+      sigma_w_2,  & ! Standard deviation of w (2nd PDF component)      [m/s]
+      Skw,        & ! Skewness of w (overall)                          [-]
+      Skrt,       & ! Skewness of rt (overall)                         [-]
+      Skthl,      & ! Skewness of thl (overall)                        [-]
+      sgn_wprtp,  & ! Sign of the covariance of w and rt (overall)     [-]
+      sgn_wpthlp    ! Sign of the covariance of w and thl (overall)    [-]
+
+    real( kind = core_rknd ), parameter :: &
+      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
 
     real( kind = core_rknd ) :: &
       max_Skx2_pos_Skx_sgn_wpxp, &
@@ -107,10 +110,10 @@ module new_pdf
       max_F_thl    !
 
     real( kind = core_rknd ) :: &
-      F_w,    & !
-      zeta_w, & !
-      F_rt,   & !
-      F_thl     !
+      F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
+      zeta_w, & ! Parameter for the PDF component variances of w             [-]
+      F_rt,   & ! Parameter for the spread of the PDF component means of rt  [-]
+      F_thl     ! Parameter for the spread of the PDF component means of thl [-]
 
 
     Skw = Skw_in
@@ -132,7 +135,8 @@ module new_pdf
     F_w = one - exp( -Skw**2 / 200.0_core_rknd )
     zeta_w = zero
 
-    call calc_setter_var_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+    call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
+                                 F_w, zeta_w,               & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                  sigma_w_2, mixt_frac )       ! Out
 
@@ -242,7 +246,7 @@ module new_pdf
   !                              * ( ( mu_x_2 - <x> )^2 + 3 * sigma_x_2^2 );
   !
   ! mu_x_1 - <x> = sqrt(F_x) * ( sqrt( 1 - mixt_frac ) / sqrt( mixt_frac ) )
-  !                * sqrt( <x'^2> );
+  !                * sqrt( <x'^2> ) * sgn( <w'x'> );
   !
   ! where 0 <= F_x <= 1; and
   !
@@ -265,7 +269,8 @@ module new_pdf
   !                   + Skx^2 ) )
   !   / ( 2 * F_x * ( F_x - 3 )^2 + 2 * Skx^2 );
   !
-  ! mu_x_1 = <x> + sqrt( F_x * ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> );
+  ! mu_x_1 = <x> + sqrt( F_x * ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> )
+  !                * sgn( <w'x'> );
   !
   ! mu_x_2 = <x> - ( mixt_frac / ( 1 - mixt_frac ) ) * ( mu_x_1 - <x> );
   !
@@ -328,9 +333,9 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skx,    & ! Skewness of x                                          [-]
-      F_x,    & ! Parameter for the spread of the PDF component means    [-]
-      zeta_x    ! Parameter for the PDF component variances              [-]
+      Skx,    & ! Skewness of x                                              [-]
+      F_x,    & ! Parameter for the spread of the PDF component means of x   [-]
+      zeta_x    ! Parameter for the PDF component variances of x             [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -367,7 +372,8 @@ module new_pdf
   end function calc_mixture_fraction
 
   !=============================================================================
-  subroutine calc_setter_var_params( xm, xp2, Skx, F_x, zeta_x, & ! In
+  subroutine calc_setter_var_params( xm, xp2, Skx, sgn_wpxp,    & ! In
+                                     F_x, zeta_x,               & ! In
                                      mu_x_1, mu_x_2, sigma_x_1, & ! Out
                                      sigma_x_2, mixt_frac )       ! Out
 
@@ -390,11 +396,12 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      xm,     & ! Mean of x (overall)                               [units vary]
-      xp2,    & ! Variance of x (overall)                       [(units vary)^2]
-      Skx,    & ! Skewness of x                                              [-]
-      F_x,    & ! Parameter for the spread of the PDF component means        [-]
-      zeta_x    ! Parameter for the PDF component variances                  [-]
+      xm,       & ! Mean of x (overall)                             [units vary]
+      xp2,      & ! Variance of x (overall)                     [(units vary)^2]
+      Skx,      & ! Skewness of x                                            [-]
+      sgn_wpxp, & ! Sign of the covariance of w and x (overall)              [-]
+      F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+      zeta_x      ! Parameter for the PDF component variances of x           [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -413,7 +420,8 @@ module new_pdf
     ! Calculate mixture fraction.
     mixt_frac = calc_mixture_fraction( Skx, F_x, zeta_x )
 
-    mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 )
+    mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
+                  * sgn_wpxp
 
     mu_x_2 = xm - ( mixt_frac / ( one - mixt_frac ) ) * ( mu_x_1 - xm )
 

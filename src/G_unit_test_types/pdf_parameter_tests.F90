@@ -143,8 +143,11 @@ module pdf_parameter_tests
       wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
 
     real( kind = core_rknd ) :: &
-      F_w,    & !
-      zeta_w
+      F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
+      zeta_w    ! Parameter for the PDF component variances of w             [-]
+
+    real( kind = core_rknd ), parameter :: &
+      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
 
     real( kind = core_rknd ) :: &
       mu_w_1,          & ! Mean of w (1st PDF component)             [m/s]
@@ -564,7 +567,8 @@ module pdf_parameter_tests
 
                 ! Call the subroutine for calculating mu_w_1, mu_w_2, sigma_w_1,
                 ! sigma_w_2, and mixt_frac.
-                call calc_setter_var_params( wm, wp2, Skw, F_w, zeta_w, & ! In
+                call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
+                                             F_w, zeta_w,               & ! In
                                              mu_w_1, mu_w_2, sigma_w_1, & ! Out
                                              sigma_w_2, mixt_frac )       ! Out
 
