@@ -287,11 +287,57 @@ module new_pdf
   !
   ! Special case:
   !
-  ! When Skx = 0 and F_x = 0, the equation for mixt_frac is undefined.  The PDF
-  ! component means (mu_x_1 and mu_x_2) are already equal when F_x = 0,
-  ! regardless of the value of mixt_frac.  In order to allow for sigma_x_1 to
-  ! equal sigma_x_2 when zeta_x = 0 in this special case (allowing the PDF to
-  ! return to a single Gaussian), the value of mixt_frac is simply set to 1/2.
+  ! When Skx = 0 and F_x = 0, the equation for mixt_frac is undefined.  The
+  ! equation for mixture fraction in this scenario can be derived by using the
+  ! above equation for mixture fraction and then setting Skx = 0.  The resulting
+  ! equation becomes:
+  !
+  ! mixt_frac
+  ! = ( 4 * F_x^3
+  !     + 18 * F_x * ( zeta_x + 1 ) * ( 1 - F_x ) / ( zeta_x + 2 )
+  !     + 6 * F_x^2 * ( 1 - F_x ) / ( zeta_x + 2 ) )
+  !   / ( 2 * F_x * ( F_x - 3 )^2 ).
+  !
+  ! All of the terms in the numerator and denominator contain an F_x, so this
+  ! equation can be rewritten as:
+  !
+  ! mixt_frac
+  ! = ( 4 * F_x^2
+  !     + 18 * ( zeta_x + 1 ) * ( 1 - F_x ) / ( zeta_x + 2 )
+  !     + 6 * F_x * ( 1 - F_x ) / ( zeta_x + 2 ) )
+  !   / ( 2 * ( F_x - 3 )^2 ).
+  !
+  ! Now setting F_x = 0, the equation becomes:
+  !
+  ! mixt_frac = ( 18 * ( zeta_x + 1 ) / ( zeta_x + 2 ) ) / 18;
+  !
+  ! which can be rewritten as:
+  !
+  ! mixt_frac = ( zeta_x + 1 ) / ( zeta_x + 2 ).
+  !
+  ! When F_x = 0, Skx must have a value of 0 in order for the PDF to function
+  ! correctly.  When F_x = 0, mu_x_1 = mu_x_2.  When the two PDF component means
+  ! are equal to each other (and to the overall mean, <x>), the only value of
+  ! Skx that can be represented is a value of 0.  In the equation for mixture
+  ! fraction, when F_x is set to 0, but | Skx | > 0, mixt_frac will either have
+  ! a value of 0 or 1, depending on whether Skx is positive or negative,
+  ! respectively.
+  !
+  ! The value of F_x should be set as a function of Skx.  The value F_x should
+  ! go toward 0 as | Skx | (or Skx^2) goes toward 0.  The value of F_x should
+  ! go toward 1 as | Skx | (or Skx^2) goes to infinity.
+  !
+  ! Notes:
+  !
+  ! When F_x = 0 (which can only happen when Skx = 0), mu_x_1 = mu_x_2, and
+  ! mixt_frac = ( zeta_x + 1 ) / ( zeta_x + 2 ).  When these equations are
+  ! substituted into the equations for sigma_x_1 and sigma_x_2, the result is
+  ! sigma_x_1 = sigma_x_2 = sqrt( <x'^2> ).  This means that the distribution
+  ! becomes a single Gaussian when F_x = 0 (and Skx = 0).  This happens
+  ! regardless of the value of zeta_x.
+  !
+  ! Symmetry
+  !
   !
   !
   ! The equations for the PDF component standard deviations can also be
@@ -324,7 +370,8 @@ module new_pdf
         two,      &
         one,      &
         one_half, &
-        zero
+        zero,     &
+        fstderr
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -343,8 +390,8 @@ module new_pdf
 
 
     ! Calculate mixture fraction, which is the weight of the 1st PDF component.
-    ! The 2nd PDF component has weight 1 - mixt_frac.
-    if ( abs( Skx ) > zero .or. F_x > zero ) then
+    ! The 2nd PDF component has a weight of 1 - mixt_frac.
+    if ( F_x > zero ) then
 
        mixt_frac &
        = ( four * F_x**3 &
@@ -360,11 +407,23 @@ module new_pdf
                          + Skx**2 ) ) &
          / ( two * F_x * ( F_x - three )**2 + two * Skx**2 )
 
-    else ! Skx = 0 and F_x = 0
+    else ! F_x = 0
 
-       mixt_frac = one_half
+       if ( abs( Skx ) > zero ) then
 
-    endif ! abs( Skx ) > 0 or F_x > 0 
+          write(fstderr,*) "The value of F_x must be greater than 0 when " &
+                           // "| Skx | > 0."
+          write(fstderr,*) "F_x = ", F_x
+          write(fstderr,*) "Skx = ", Skx
+          stop
+
+       else ! Skx = 0
+
+          mixt_frac = ( zeta_x + one ) / ( zeta_x + two )
+
+       endif ! | Skx | > 0
+
+    endif ! F_x > 0 
 
 
     return
@@ -542,19 +601,19 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      xm,       & !
-      xp2,      & !
-      Skx,      & !
-      sgn_wpxp, & !
+      xm,       & ! Mean of x (overall)
+      xp2,      & ! Variance of x (overall)
+      Skx,      & ! Skewness of x
+      sgn_wpxp, & ! Sign of the covariance of w and x (overall)
       F_x,      & !
-      mixt_frac   !
+      mixt_frac   ! Mixture fraction
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      mu_x_1,        & !
-      mu_x_2,        & !
-      sigma_x_1_sqd, & !
-      sigma_x_2_sqd    !
+      mu_x_1,        & ! Mean of x (1st PDF component)
+      mu_x_2,        & ! Mean of x (2nd PDF component)
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)
+      sigma_x_2_sqd    ! Variance of x (2nd PDF component)
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -562,7 +621,7 @@ module new_pdf
       coef_sigma_x_2    !
 
 
-    if ( abs( Skx ) > zero .or. F_x > zero ) then
+    if ( F_x > zero ) then
 
        mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
                      * sgn_wpxp
@@ -593,7 +652,7 @@ module new_pdf
                      - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
                      + one ) )
 
-    else ! Skx = 0 and F_x = 0
+    else ! F_x = 0
 
        mu_x_1 = xm
        mu_x_2 = xm
@@ -602,7 +661,7 @@ module new_pdf
        coef_sigma_x_1 = one
        coef_sigma_x_2 = one
 
-    endif ! abs( Skx ) > 0 or F_x > 0
+    endif ! F_x > 0
 
 
     return
