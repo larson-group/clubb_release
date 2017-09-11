@@ -601,19 +601,19 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      xm,       & ! Mean of x (overall)
-      xp2,      & ! Variance of x (overall)
-      Skx,      & ! Skewness of x
-      sgn_wpxp, & ! Sign of the covariance of w and x (overall)
-      F_x,      & !
-      mixt_frac   ! Mixture fraction
+      xm,       & ! Mean of x (overall)                             [units vary]
+      xp2,      & ! Variance of x (overall)                     [(units vary)^2]
+      Skx,      & ! Skewness of x                                            [-]
+      sgn_wpxp, & ! Sign of the covariance of w and x (overall)              [-]
+      F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+      mixt_frac   ! Mixture fraction                                         [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      mu_x_1,        & ! Mean of x (1st PDF component)
-      mu_x_2,        & ! Mean of x (2nd PDF component)
-      sigma_x_1_sqd, & ! Variance of x (1st PDF component)
-      sigma_x_2_sqd    ! Variance of x (2nd PDF component)
+      mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
+      sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -707,19 +707,19 @@ module new_pdf
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      min_F, &
-      max_F
+      min_F, & ! Minimum allowable value of F    [-]
+      max_F    ! Maximum allowable value of F    [-]
 
     ! Local Variables
     real( kind = core_rknd ) &
-      coef_A_1, & 
-      coef_B_1, & 
-      coef_C_1, & 
-      coef_D_1, & 
-      coef_A_2, & 
-      coef_B_2, & 
-      coef_C_2, & 
-      coef_D_2
+      coef_A_1, & ! Coef. A in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
+      coef_B_1, & ! Coef. B in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
+      coef_C_1, & ! Coef. C in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
+      coef_D_1, & ! Coef. D in Ax^3 + Bx^2 + Cx + D = 0 (1st PDF comp. lim.) [-]
+      coef_A_2, & ! Coef. A in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
+      coef_B_2, & ! Coef. B in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
+      coef_C_2, & ! Coef. C in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
+      coef_D_2    ! Coef. D in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
 
     complex( kind = core_rknd ), dimension(3) :: &
       sqrt_F_roots_1, & ! Roots of sqrt(F) for sigma_x_1 term    [-]
@@ -730,25 +730,37 @@ module new_pdf
       sqrt_F_roots_2_sorted    ! Sorted roots of sqrt(F) for sigma_x_2 term  [-]
 
     real( kind = core_rknd ) :: &
-      min_sqrt_F, &
-      max_sqrt_F
+      min_sqrt_F, & ! Minimum allowable value of sqrt(F)    [-]
+      max_sqrt_F    ! Maximum allowable value of sqrt(F)    [-]
 
  
+    ! Set up the coefficients in the equation for the limit of sqrt(F) based on
+    ! the 1st PDF component standard deviation (sigma_x_1) being greater than or
+    ! equal to 0.  This equation has the form:
+    ! A * sqrt(F)^3 + B * sqrt(F)^2 + C * sqrt(F) + D = 0.
     coef_A_1 = -( one + mixt_frac )
     coef_B_1 = zero
     coef_C_1 = three * mixt_frac
     coef_D_1 = sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
 
+    ! Solve for the roots (values of sqrt(F)) that satisfy the above equation.
     sqrt_F_roots_1 = cubic_solve( coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
 
+    ! Set up the coefficients in the equation for the limit of sqrt(F) based on
+    ! the 2nd PDF component standard deviation (sigma_x_2) being greater than or
+    ! equal to 0.  This equation has the form:
+    ! A * sqrt(F)^3 + B * sqrt(F)^2 + C * sqrt(F) + D = 0.
     coef_A_2 = -( two - mixt_frac )
     coef_B_2 = zero
     coef_C_2 = three * ( one - mixt_frac )
     coef_D_2 = -sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
 
+    ! Solve for the roots (values of sqrt(F)) that satisfy the above equation.
     sqrt_F_roots_2 = cubic_solve( coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
 
 
+    ! Find the minimum and maximum allowable values of sqrt(F) based on Skx
+    ! and sgn( <w'x'> ).
     if ( Skx * sgn_wpxp >= zero ) then
 
        if ( Skx**2 > max_Skx2_neg_Skx_sgn_wpxp ) then
