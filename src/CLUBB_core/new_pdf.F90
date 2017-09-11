@@ -365,12 +365,16 @@ module new_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        four,     & ! Variable(s)
-        three,    &
-        two,      &
-        one,      &
-        one_half, &
-        zero,     &
+        thirty_six, & ! Constant(s)
+        eighteen,   &
+        twelve,     &
+        six,        &
+        four,       &
+        three,      &
+        two,        &
+        one,        &
+        one_half,   &
+        zero,       &
         fstderr
 
     use clubb_precision, only: &
@@ -395,13 +399,13 @@ module new_pdf
 
        mixt_frac &
        = ( four * F_x**3 &
-           + 18.0_core_rknd * F_x &
+           + eighteen * F_x &
              * ( zeta_x + one ) * ( one - F_x ) / ( zeta_x + two ) &
-           + 6.0_core_rknd * F_x**2 * ( one - F_x ) / ( zeta_x + two ) &
+           + six * F_x**2 * ( one - F_x ) / ( zeta_x + two ) &
            + Skx**2 &
            - Skx * sqrt( four * F_x**3 &
-                         + 12.0_core_rknd * F_x**2 * ( one - F_x ) &
-                         + 36.0_core_rknd * F_x &
+                         + twelve * F_x**2 * ( one - F_x ) &
+                         + thirty_six * F_x &
                            * ( zeta_x + one ) * ( one - F_x )**2 &
                            / ( zeta_x + two )**2 &
                          + Skx**2 ) ) &

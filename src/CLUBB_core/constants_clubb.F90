@@ -153,8 +153,15 @@ module constants_clubb
   real( kind = core_rknd ), parameter, public :: &
     one_hundred   = 100.0_core_rknd,             & ! 100
     fifty         = 50.0_core_rknd,              & ! 50
+    thirty_six    = 36.0_core_rknd,              & ! 36
     twenty        = 20.0_core_rknd,              & ! 20
+    eighteen      = 18.0_core_rknd,              & ! 18
+    twelve        = 12.0_core_rknd,              & ! 12
     ten           = 10.0_core_rknd,              & ! 10
+    nine          = 9.0_core_rknd,               & ! 9
+    eight         = 8.0_core_rknd,               & ! 8
+    seven         = 7.0_core_rknd,               & ! 7
+    six           = 6.0_core_rknd,               & ! 6
     five          = 5.0_core_rknd,               & ! 5
     four          = 4.0_core_rknd,               & ! 4
     three         = 3.0_core_rknd,               & ! 3

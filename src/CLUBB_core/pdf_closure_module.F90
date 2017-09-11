@@ -75,6 +75,8 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use constants_clubb, only: &  ! Constants
+        six,            & ! 6
+        three,          & ! 3
         two,            & ! 2
         one,            & ! 1
         one_half,       & ! 1/2
@@ -370,7 +372,7 @@ module pdf_closure_module
     Skthl_clubb_pdf
 
     real( kind = core_rknd ), parameter :: &
-      chi_at_liq_sat  = 0.0_core_rknd    ! Always zero
+      chi_at_liq_sat  = zero    ! Always zero
 
     logical, parameter :: &
       l_liq_ice_loading_test = .false. ! Temp. flag liq./ice water loading test
@@ -404,34 +406,34 @@ module pdf_closure_module
       mixt_frac     = one_half
       w_1           = wm
       w_2           = wm
-      varnce_w_1    = 0._core_rknd
-      varnce_w_2    = 0._core_rknd
+      varnce_w_1    = zero
+      varnce_w_2    = zero
       rt_1          = rtm
       rt_2          = rtm
       alpha_rt      = one_half
-      varnce_rt_1   = 0._core_rknd
-      varnce_rt_2   = 0._core_rknd
+      varnce_rt_1   = zero
+      varnce_rt_2   = zero
       thl_1         = thlm
       thl_2         = thlm
       alpha_thl     = one_half
-      varnce_thl_1  = 0._core_rknd
-      varnce_thl_2  = 0._core_rknd
-      corr_w_rt_1   = 0._core_rknd
-      corr_w_rt_2   = 0._core_rknd
-      corr_w_thl_1  = 0._core_rknd
-      corr_w_thl_2  = 0._core_rknd
-      corr_rt_thl_1 = 0._core_rknd
-      corr_rt_thl_2 = 0._core_rknd
+      varnce_thl_1  = zero
+      varnce_thl_2  = zero
+      corr_w_rt_1   = zero
+      corr_w_rt_2   = zero
+      corr_w_thl_1  = zero
+      corr_w_thl_2  = zero
+      corr_rt_thl_1 = zero
+      corr_rt_thl_2 = zero
 
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim, 1
           sclr1(i)        = sclrm(i)
           sclr2(i)        = sclrm(i)
-          varnce_sclr1(i) = 0.0_core_rknd
-          varnce_sclr2(i) = 0.0_core_rknd
+          varnce_sclr1(i) = zero
+          varnce_sclr2(i) = zero
           alpha_sclr(i)   = one_half
-          rsclrrt(i)      = 0.0_core_rknd
-          rsclrthl(i)     = 0.0_core_rknd
+          rsclrrt(i)      = zero
+          rsclrthl(i)     = zero
         end do ! 1..sclr_dim
       end if
 
@@ -865,11 +867,13 @@ module pdf_closure_module
 
     ! Compute higher order moments (these are non-interactive diagnostics)
     if ( iwp4 > 0 ) then
-      wp4 = mixt_frac * ( 3._core_rknd*varnce_w_1**2 + &
-          6._core_rknd*((w_1-wm)**2)*varnce_w_1 + (w_1-wm)**4 ) & 
-          + (one-mixt_frac) * ( 3._core_rknd*varnce_w_2**2 + &
-          6._core_rknd*((w_2-wm)**2)*varnce_w_2 + (w_2-wm)**4 )
-    end if
+       wp4 = mixt_frac * ( three * varnce_w_1**2 &
+                           + six * ( ( w_1 - wm )**2 ) * varnce_w_1 &
+                           + ( w_1 - wm )**4 ) & 
+             + ( one - mixt_frac ) * ( three * varnce_w_2**2 &
+                                       + six * ( (w_2 - wm )**2 )*varnce_w_2 &
+                                       + ( w_2 - wm )**4 )
+    endif
 
     if ( iwprtp2 > 0 ) then
       wprtp2  = mixt_frac &
@@ -1481,21 +1485,21 @@ module pdf_closure_module
         ! Third order moments
         wp3_clubb_pdf &
         = mixt_frac * ( w_1 - wm ) &
-                    * ( ( w_1 - wm )**2 + 3.0_core_rknd*varnce_w_1 ) &
+                    * ( ( w_1 - wm )**2 + three * varnce_w_1 ) &
           + ( one - mixt_frac ) * ( w_2 - wm ) &
-                          * ( ( w_2 - wm )**2 + 3.0_core_rknd*varnce_w_2 )
+                                * ( ( w_2 - wm )**2 + three * varnce_w_2 )
 
         rtp3_clubb_pdf &
         = mixt_frac * ( rt_1 - rtm ) &
-                    * ( ( rt_1 - rtm )**2 + 3.0_core_rknd*varnce_rt_1 ) &
+                    * ( ( rt_1 - rtm )**2 + three * varnce_rt_1 ) &
           + ( one - mixt_frac ) * ( rt_2 - rtm ) &
-                                * ( ( rt_2 - rtm )**2 + 3.0_core_rknd*varnce_rt_2 )
+                                * ( ( rt_2 - rtm )**2 + three * varnce_rt_2 )
 
         thlp3_clubb_pdf &
         = mixt_frac * ( thl_1 - thlm ) &
-                    * ( ( thl_1 - thlm )**2 + 3.0_core_rknd*varnce_thl_1 ) &
+                    * ( ( thl_1 - thlm )**2 + three * varnce_thl_1 ) &
           + ( one - mixt_frac ) * ( thl_2 - thlm ) &
-                                * ( ( thl_2 - thlm )**2 + 3.0_core_rknd*varnce_thl_2 )
+                                * ( ( thl_2 - thlm )**2 + three * varnce_thl_2 )
 
         ! Skewness
         Skw_clubb_pdf = wp3_clubb_pdf / &
