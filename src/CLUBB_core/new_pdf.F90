@@ -298,7 +298,7 @@ module new_pdf
   !     + 6 * F_x^2 * ( 1 - F_x ) / ( zeta_x + 2 ) )
   !   / ( 2 * F_x * ( F_x - 3 )^2 ).
   !
-  ! All of the terms in the numerator and denominator contain an F_x, so this
+  ! All of the terms in the numerator and denominator contain a F_x, so this
   ! equation can be rewritten as:
   !
   ! mixt_frac
@@ -551,11 +551,183 @@ module new_pdf
   ! sigma_x_2^2 = ( ( 1 - F_x ) / ( 1 - mixt_frac ) ) * <x'^2>
   !               - ( mixt_frac / ( 1 - mixt_frac ) ) * sigma_x_1^2.
   !
-  ! Since the PDF parmeters for this variable need to work with the mixture
+  ! Special case:
+  !
+  ! When Skx = 0 and F_x = 0, the equations for sigma_x_1^2 and sigma_x_2^2 are
+  ! both undefined.  The equations for sigma_x_1^2 and sigma_x_2^2 in this
+  ! scenario can be derived by using the above equations for sigma_x_1^2 and
+  ! sigma_x_2^2 and then setting Skx = 0.  The resulting equation for
+  ! sigma_x_1^2 becomes:
+  !
+  ! sigma_x_1^2
+  ! = ( ( - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
+  !     / ( 3 * mixt_frac * sqrt( F_x ) ) )
+  !   * <x'^2>.
+  !
+  ! All of the terms in the numerator and denominator contain a sqrt( F_x ),
+  ! so this equation can be rewritten as:
+  !
+  ! sigma_x_1^2
+  ! = ( ( - ( 1 + mixt_frac ) * F_x + 3 * mixt_frac ) / ( 3 * mixt_frac ) )
+  !   * <x'^2>.
+  !
+  ! Now setting F_x = 0, the equation becomes:
+  !
+  ! sigma_x_1^2 = ( ( 3 * mixt_frac ) / ( 3 * mixt_frac ) ) * <x'^2>;
+  !
+  ! which can be rewritten as:
+  !
+  ! sigma_x_1^2 = <x'^2>.
+  !
+  ! Substituting the equation for sigma_x_1^2 into the equation for sigma_x_2^2,
+  ! and also setting F_x = 0, the equation for sigma_x_2^2 becomes:
+  !
+  ! sigma_x_2^2 = ( 1 / ( 1 - mixt_frac ) ) * <x'^2>
+  !               - ( mixt_frac / ( 1 - mixt_frac ) ) * <x'^2>;
+  !
+  ! which can be rewritten as:
+  !
+  ! sigma_x_2^2
+  ! = ( ( 1 / ( 1 - mixt_frac ) ) - ( mixt_frac / ( 1 - mixt_frac ) ) )
+  !   * <x'^2>.
+  !
+  ! This equation becomes:
+  !
+  ! sigma_x_2^2 = ( ( 1 - mixt_frac ) / ( 1 - mixt_frac ) ) * <x'^2>;
+  !
+  ! which can be rewritten as:
+  !
+  ! sigma_x_2^2 = <x'^2>.
+  !
+  ! When F_x = 0, Skx must have a value of 0 in order for the PDF to function
+  ! correctly.  When F_x = 0, mu_x_1 = mu_x_2.  When the two PDF component means
+  ! are equal to each other (and to the overall mean, <x>), the only value of
+  ! Skx that can be represented is a value of 0.  The equations that place
+  ! limits on F_x for a responding variable (below) calculate the minimum
+  ! allowable value of F_x to be greater than 0 when | Skx | > 0.
+  !
+  ! The value of F_x should be set as a function of Skx.  The value F_x should
+  ! go toward 0 as | Skx | (or Skx^2) goes toward 0.  The value of F_x should
+  ! go toward 1 as | Skx | (or Skx^2) goes to infinity.  However, the value of
+  ! F_x must also be between the minimum and maximum allowable values of F_x for
+  ! a responding variable (below).
+  !
+  ! Limits on F_x:
+  !
+  ! Since the PDF parameters for this variable need to work with the mixture
   ! fraction that has been provided by the setting variable, the method does
   ! not work for all values of F_x and Skx.  However, the limits of Skx and F_x
-  ! can always be calculated.  For Skx, the magnitude of Skx can be limited.
-  ! For F_x, a value can be chosen that is inside the limits.
+  ! can always be calculated.  The limits are based on keeping the values of
+  ! sigma_x_1 and sigma_x_2 greater than or equal to 0.  The equation for
+  ! keeping the value of sigma_x_1 greater than or equal to 0 is:
+  !
+  ! - ( 1 + mixt_frac ) * sqrt( F_x )^3 + 3 * mixt_frac * sqrt( F_x )
+  ! + sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ) >= 0.
+  !
+  ! The roots of sqrt( F_x ) can be solved by an equation of the form:
+  !
+  ! A * sqrt( F_x )^3 + B * sqrt( F_x )^2 + C * sqrt( F_x ) + D = 0;
+  !
+  ! where:
+  !
+  ! A = - ( 1 + mixt_frac );
+  ! B = 0;
+  ! C = 3 * mixt_frac; and
+  ! D = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ).
+  !
+  ! The equation for keeping the value of sigma_x_2 greater than or equal to 0
+  ! is:
+  !
+  ! - ( 2 - mixt_frac ) * sqrt( F_x )^3 + 3 * ( 1 - mixt_frac ) * sqrt( F_x )
+  ! - sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ) >= 0.
+  !
+  ! The roots of sqrt( F_x ) can be solved by an equation of the form:
+  !
+  ! A * sqrt( F_x )^3 + B * sqrt( F_x )^2 + C * sqrt( F_x ) + D = 0;
+  !
+  ! where:
+  !
+  ! A = - ( 2 - mixt_frac );
+  ! B = 0;
+  ! C = 3 * ( 1 - mixt_frac ); and
+  ! D = - sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> ).
+  !
+  ! After careful analysis of the above equations, the following properties
+  ! emerge:
+  !
+  ! When Skx * sgn( <w'x'> ) >= 0,
+  !    Skx^2 < 4 * ( 1 - mixt_frac )^2 / ( mixt_frac * ( 2 - mixt_frac ) )
+  !    is required; and
+  ! when Skx * sgn( <w'x'> ) < 0,
+  !    Skx^2 < 4 * mixt_frac^2 / ( 1 - mixt_frac^2 ) is required.
+  !
+  ! Whenever Skx^2 exceeds these limits, Skx must be limited (preserving its
+  ! sign) in order to have any value of F_x that will work in the equation set.
+  !
+  ! When Skx is found to be within the above limits (or after it has been
+  ! limited to fall within its limits), the range of valid values of F_x can be
+  ! found according to the following:
+  !
+  ! When Skx * sgn( <w'x'> ) >= 0:
+  !
+  !     When  4 * mixt_frac^2 / ( 1 - mixt_frac^2 )  <  Skx^2
+  !           <  4 * ( 1 - mixt_frac )^2 / ( mixt_frac * ( 2 - mixt_frac ) ):
+  !
+  !          Minimum sqrt( F_x ):  2nd root (middle-valued root; also smallest
+  !                                positive) of the second equation (sigma_x_2
+  !                                based).
+  !
+  !          Maximum sqrt( F_x ):  Minimum of the largest root of the second
+  !                                equation (sigma_x_2 based) and the only* root
+  !                                of the first equation (sigma_x_1 based).
+  !
+  !     When  Skx^2  <=  4 * mixt_frac^2 / ( 1 - mixt_frac^2 ):
+  !
+  !          Minimum sqrt( F_x ):  2nd root (middle-valued root; also smallest
+  !                                positive) of the second equation (sigma_x_2
+  !                                based).
+  !
+  !          Maximum sqrt( F_x ):  Minimum of the largest root of the second
+  !                                equation (sigma_x_2 based) and the largest
+  !                                root of the first equation (sigma_x_1 based).
+  !
+  ! When Skx * sgn( <w'x'> ) < 0:
+  !
+  !     When  4 * ( 1 - mixt_frac )^2 / ( mixt_frac * ( 2 - mixt_frac ) )
+  !           <  Skx^2  <  4 * mixt_frac^2 / ( 1 - mixt_frac^2 ):
+  !
+  !          Minimum sqrt( F_x ):  2nd root (middle-valued root; also smallest
+  !                                positive) of the first equation (sigma_x_1
+  !                                based).
+  !
+  !          Maximum sqrt( F_x ):  Minimum of the largest root of the first
+  !                                equation (sigma_x_1 based) and the only* root
+  !                                of the second equation (sigma_x_2 based).
+  !
+  !     When  Skx^2
+  !           <=  4 * ( 1 - mixt_frac )^2 / ( mixt_frac * ( 2 - mixt_frac ) ):
+  !
+  !          Minimum sqrt( F_x ):  2nd root (middle-valued root; also smallest
+  !                                positive) of the first equation (sigma_x_1
+  !                                based).
+  !
+  !          Maximum sqrt( F_x ):  Minimum of the largest root of the first
+  !                                equation (sigma_x_1 based) and the largest
+  !                                root of the second equation (sigma_x_2
+  !                                based).
+  !
+  ! Here, "only* root" means the the only root that isn't a complex root.
+  !
+  ! The value of sqrt( F_x ) is also limited with a minimum of 0 and a maximum
+  ! of 1.  The minimum and maximum allowable values of F_x are found by taking
+  ! the square of the minimum and maximum allowable values of sqrt( F_x ),
+  ! respectively.
+  !
+  ! Notes:
+  !
+  ! When F_x = 0 (which can only happen when Skx = 0), mu_x_1 = mu_x_2, and
+  ! sigma_x_1 = sigma_x_2 = sqrt( <x'^2> ).  This means that the distribution
+  ! becomes a single Gaussian when F_x = 0 (and Skx = 0).
   !
   ! The equations for the PDF component standard deviations can also be
   ! written as:
