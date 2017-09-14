@@ -104,10 +104,12 @@ module pdf_parameter_tests
         calc_setter_var_params, & ! Procedure(s)
         new_pdf_driver
 
-    use pdf_closure_module, only: &
-        iiPDF_new,      & ! Variable(s)
-        iiPDF_ADG1,     &
+    use original_pdf, only: &
         ADG1_w_closure    ! Procedure(s)
+
+    use pdf_closure_module, only: &
+        iiPDF_new,  & ! Variable(s)
+        iiPDF_ADG1
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
@@ -634,10 +636,10 @@ module pdf_parameter_tests
                                                     kind = core_rknd )
              endif ! iter_sigma_sqd_w
  
-             call ADG1_w_closure( Skw, wm, wp2, sigma_sqd_w, &   ! In
-                                  sqrt_wp2, mixt_frac_max_mag, & ! In
-                                  mixt_frac, sigma_w_1_sqd, sigma_w_2_sqd,&! Out
-                                  w_1_n, w_2_n, mu_w_1, mu_w_2 )           ! Out
+             call ADG1_w_closure( wm, wp2, Skw, sigma_sqd_w,              &! In
+                                  sqrt_wp2, mixt_frac_max_mag,            &! In
+                                  mu_w_1, mu_w_2, w_1_n, w_2_n,           &! Out
+                                  sigma_w_1_sqd, sigma_w_2_sqd, mixt_frac )! Out
 
              sigma_w_1 = sqrt( sigma_w_1_sqd )
              sigma_w_2 = sqrt( sigma_w_2_sqd )

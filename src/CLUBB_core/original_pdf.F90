@@ -31,10 +31,13 @@ module original_pdf
   !=============================================================================
   subroutine ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
                               wprtp, wpthlp, sqrt_wp2, sigma_sqd_w,    & ! In
+                              sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
                               w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
                               varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
                               varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
-                              mixt_frac, alpha_rt, alpha_thl )           ! Out
+                              mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                              sclr_1, sclr_2, varnce_sclr_1,           & ! Out
+                              varnce_sclr_2, alpha_sclr )                ! Out
 
     ! Calculates the PDF parameters using the Analytic Double Gaussian 1 (ADG1)
     ! PDF closure.
@@ -47,7 +50,9 @@ module original_pdf
         thl_tol
 
     use parameters_model, only: &
-        mixt_frac_max_mag    ! Variable(s)
+        mixt_frac_max_mag, & ! Variable(s)
+        sclr_dim,          &
+        sclr_tol
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -55,7 +60,7 @@ module original_pdf
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) ::  & 
+    real( kind = core_rknd ), intent(in) ::  &
       wm,          & ! Mean of w-wind component (vertical vel.)   [m/s] 
       rtm,         & ! Mean of total water mixing ratio           [kg/kg]
       thlm,        & ! Mean of liquid water potential temperature [K]
@@ -67,6 +72,14 @@ module original_pdf
       wpthlp,      & ! Covariance of w and th_l                   [K(m/s)]
       sqrt_wp2,    & ! Square root of variance of w               [m/s]
       sigma_sqd_w    ! Width of individual w plumes               [-]
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) ::  &
+      sclrm,   & ! Mean of passive scalar (overall)           [units vary]
+      sclrp2,  & ! Variance of passive scalar (overall)       [(units vary)^2]
+      wpsclrp    ! Covariance of w and passive scalar         [m/s (units vary)]
+
+    logical, intent(in) :: &
+      l_scalar_calc    ! Flag to perform calculations for passive scalars
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  &
@@ -86,10 +99,19 @@ module original_pdf
       alpha_thl,    & ! Factor relating to normalized variance for th_l      [-]
       alpha_rt        ! Factor relating to normalized variance for r_t       [-]
 
+    real( kind = core_rknd ), dimension(sclr_dim), intent(out) ::  &
+      sclr_1,        & ! Mean of passive scalar (1st PDF component) [units vary]
+      sclr_2,        & ! Mean of passive scalar (2nd PDF component) [units vary]
+      varnce_sclr_1, & ! Variance of pass. sclr (1st PDF comp.) [(units vary)^2]
+      varnce_sclr_2, & ! Variance of pass. sclr (2nd PDF comp.) [(units vary)^2]
+      alpha_sclr       ! Factor relating to normalized variance for sclr     [-]
+
     ! Local Variables
     real( kind = core_rknd ) ::  &
       w_1_n, & ! Normalized mean of w (1st PDF component)     [-]
       w_2_n    ! Normalized mean of w (2nd PDF component)     [-]
+
+    integer :: i  ! Loop index
 
 
     ! Calculate the mixture fraction and the PDF component means and variances
@@ -113,6 +135,21 @@ module original_pdf
                                      thl_1, thl_2, varnce_thl_1, &      ! Out
                                      varnce_thl_2, alpha_thl )          ! Out
 
+    ! Calculate the PDF component means and variances of passive scalars.
+    if ( l_scalar_calc ) then
+       do i = 1, sclr_dim
+          call ADG1_ADG2_responder_params( sclrm(i), sclrp2(i), wp2,    & ! In
+                                           sqrt_wp2, wpsclrp(i), w_1_n, & ! In
+                                           w_2_n, mixt_frac,            & ! In
+                                           sigma_sqd_w, sclr_tol(i),    & ! In
+                                           sclr_1(i), sclr_2(i),        & ! Out
+                                           varnce_sclr_1(i),            & ! Out
+                                           varnce_sclr_2(i),            & ! Out
+                                           alpha_sclr(i) )                ! Out
+       enddo ! i=1, sclr_dim
+    endif ! l_scalar_calc
+
+
     return
 
   end subroutine ADG1_pdf_driver
@@ -120,11 +157,13 @@ module original_pdf
   !=============================================================================
   subroutine ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
                               Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
+                              sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
                               w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
                               varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
                               varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
                               mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                              sigma_sqd_w )                              ! Out
+                              sigma_sqd_w, sclr_1, sclr_2,             & ! Out
+                              varnce_sclr_1, varnce_sclr_2, alpha_sclr ) ! Out
 
     ! Calculates the PDF parameters using the Analytic Double Gaussian 2 (ADG2)
     ! PDF closure.
@@ -136,6 +175,10 @@ module original_pdf
         one,     & ! Constant(s)
         rt_tol,  &
         thl_tol
+
+    use parameters_model, only: &
+        sclr_dim, & ! Variable(s)
+        sclr_tol
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -154,6 +197,14 @@ module original_pdf
       wprtp,    & ! Covariance of w and r_t                       [(kg/kg)(m/s)]
       wpthlp,   & ! Covariance of w and th_l                      [K(m/s)]
       sqrt_wp2    ! Square root of variance of w                  [m/s]
+
+    real( kind = core_rknd ), dimension(sclr_dim), intent(in) ::  &
+      sclrm,   & ! Mean of passive scalar (overall)           [units vary]
+      sclrp2,  & ! Variance of passive scalar (overall)       [(units vary)^2]
+      wpsclrp    ! Covariance of w and passive scalar         [m/s (units vary)]
+
+    logical, intent(in) :: &
+      l_scalar_calc    ! Flag to perform calculations for passive scalars
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) ::  &
@@ -174,6 +225,13 @@ module original_pdf
       alpha_rt,     & ! Factor relating to normalized variance for r_t       [-]
       sigma_sqd_w     ! Width of individual w plumes (ADG1 parameter)        [-]
 
+    real( kind = core_rknd ), dimension(sclr_dim), intent(out) ::  &
+      sclr_1,        & ! Mean of passive scalar (1st PDF component) [units vary]
+      sclr_2,        & ! Mean of passive scalar (2nd PDF component) [units vary]
+      varnce_sclr_1, & ! Variance of pass. sclr (1st PDF comp.) [(units vary)^2]
+      varnce_sclr_2, & ! Variance of pass. sclr (2nd PDF comp.) [(units vary)^2]
+      alpha_sclr       ! Factor relating to normalized variance for sclr     [-]
+
     ! Local Variables
     real( kind = core_rknd ) ::  &
       w_1_n,         & ! Normalized mean of w (1st PDF component)            [-]
@@ -182,6 +240,8 @@ module original_pdf
       big_m_w,       & ! Luhar's M (a function of Luhar's m)                 [-]
       sigma_sqd_w_1, & ! Normalized width parameter of w (1st PDF component) [-]
       sigma_sqd_w_2    ! Normalized width parameter of w (2nd PDF component) [-]
+
+    integer :: i  ! Loop index
 
 
     ! Calculate the mixture fraction and the PDF component means and variances
@@ -212,6 +272,20 @@ module original_pdf
                                      sigma_sqd_w, thl_tol, &            ! In
                                      thl_1, thl_2, varnce_thl_1, &      ! Out
                                      varnce_thl_2, alpha_thl )          ! Out
+
+    ! Calculate the PDF component means and variances of passive scalars.
+    if ( l_scalar_calc ) then
+       do i = 1, sclr_dim
+          call ADG1_ADG2_responder_params( sclrm(i), sclrp2(i), wp2,    & ! In
+                                           sqrt_wp2, wpsclrp(i), w_1_n, & ! In
+                                           w_2_n, mixt_frac,            & ! In
+                                           sigma_sqd_w, sclr_tol(i),    & ! In
+                                           sclr_1(i), sclr_2(i),        & ! Out
+                                           varnce_sclr_1(i),            & ! Out
+                                           varnce_sclr_2(i),            & ! Out
+                                           alpha_sclr(i) )                ! Out
+       enddo ! i=1, sclr_dim
+    endif ! l_scalar_calc
 
 
     return
