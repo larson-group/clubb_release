@@ -226,14 +226,94 @@ module new_pdf
   ! DESCRIPTION OF THE METHOD FOR THE VARIABLE THAT SETS THE MIXTURE FRACTION
   ! =========================================================================
   !
-  ! In order to find equations for the five PDF parameters for the setting
-  ! variable, which are mu_x_1, mu_x_2, sigma_x_1, sigma_x_2, and mixt_frac,
-  ! five equations are needed.  These five equations are the equations for <x>,
-  ! <x'^2>, and <x'^3> as found by integrating over the PDF.  Additionally,
-  ! two more equations, which involve tunable parameters F_x and zeta_x, and
-  ! which are used to help control the spread of the PDF component means and
-  ! the size of the PDF component standard deviations compared to each other,
-  ! are used in this equation set.  The five equations are:
+  ! Many times, w has been used as the variable that sets the mixture fraction
+  ! for the PDF.  There are five PDF parameters that need to be calculated,
+  ! which are mu_w_1 (the mean of w is the 1st PDF component), mu_w_2 (the mean
+  ! of w in the 2nd PDF component), sigma_w_1 (the standard deviation of w in
+  ! the 1st PDF component), sigma_w_2 (the standard deviation of w in the 2nd
+  ! PDF component), and mixt_frac (the mixture fraction, which is the weight of
+  ! the 1st PDF component).  In order to solve for these five parameters, five
+  ! equations are needed.  These five equations are the equations for <w>,
+  ! <w'^2>, and <w'^3> as found by integrating over the PDF.  Additionally, two
+  ! more equations, which involve tunable parameters F_w and zeta_w, and which
+  ! are used to help control the spread of the PDF component means and the size
+  ! of the PDF component standard deviations compared to each other,
+  ! respectively, are used in this equation set.  The five equations are:
+  !
+  ! <w> = mixt_frac * mu_w_1 + ( 1 - mixt_frac ) * mu_w_2;
+  !
+  ! <w'^2> = mixt_frac * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
+  !          + ( 1 - mixt_frac ) * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 );
+  !
+  ! <w'^3> = mixt_frac * ( mu_w_1 - <w> )
+  !                    * ( ( mu_w_1 - <w> )^2 + 3 * sigma_w_1^2 )
+  !          + ( 1 - mixt_frac ) * ( mu_w_2 - <w> )
+  !                              * ( ( mu_w_2 - <w> )^2 + 3 * sigma_w_2^2 );
+  !
+  ! mu_w_1 - <w> = sqrt(F_w) * ( sqrt( 1 - mixt_frac ) / sqrt( mixt_frac ) )
+  !                * sqrt( <w'^2> );
+  !
+  ! where 0 <= F_w <= 1; and
+  !
+  ! 1 + zeta_w = ( mixt_frac * sigma_w_1^2 )
+  !              / ( ( 1 - mixt_frac ) * sigma_w_2^2 );
+  !
+  ! where zeta_w > -1.
+  !
+  ! Following convention for w, mu_w_1 is defined to be greater than or equal to
+  ! mu_w_2 (and is also greater than or equal to <w>, while mu_w_2 is less than
+  ! or equal to <w>).  This is relationship is found in the mu_w_1 - <w>
+  ! equation above.
+  !
+  ! The resulting equations for the five PDF parameters are:
+  !
+  ! mixt_frac
+  ! = ( 4 * F_w^3
+  !     + 18 * F_w * ( zeta_w + 1 ) * ( 1 - F_w ) / ( zeta_w + 2 )
+  !     + 6 * F_w^2 * ( 1 - F_w ) / ( zeta_w + 2 )
+  !     + Skw^2
+  !     - Skw * sqrt( 4 * F_w^3
+  !                   + 12 * F_w^2 * ( 1 - F_w )
+  !                   + 36 * F_w * ( zeta_w + 1 ) * ( 1 - F_w )^2
+  !                     / ( zeta_w + 2 )^2
+  !                   + Skw^2 ) )
+  !   / ( 2 * F_w * ( F_w - 3 )^2 + 2 * Skw^2 );
+  !
+  ! mu_w_1 = <w> + sqrt( F_w * ( ( 1 - mixt_frac ) / mixt_frac ) * <w'^2> );
+  !
+  ! mu_w_2 = <w> - ( mixt_frac / ( 1 - mixt_frac ) ) * ( mu_w_1 - <w> );
+  !
+  ! sigma_w_1
+  ! = sqrt( ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+  !         / ( ( zeta_w + 2 ) * mixt_frac ) * <w'^2> ); and
+  !
+  ! sigma_w_2
+  ! = sqrt( ( mixt_frac * sigma_w_1^2 )
+  !         / ( ( 1 - mixt_frac ) * ( 1 + zeta_w ) ) ).
+  !
+  ! This method works for all values of F_w (where 0 <= F_w <= 1) and zeta_w
+  ! (where zeta_w > -1).
+  !
+  !
+  ! Generalized equations for any variable, x, that sets the mixture fraction:
+  !
+  ! A slight alteration is made to the above equations in order to have any
+  ! variable, x, set the mixture fraction.  The same five PDF parameters need to
+  ! be calculated for the setting variable, which are mu_x_1 (the mean of x in
+  ! the 1st PDF component), mu_x_2 (the mean of x in the 2nd PDF component),
+  ! sigma_x_1 (the standard deviation of x in the 1st PDF component), sigma_x_2
+  ! (the standard deviation of x in the 2nd PDF component), and mixt_frac (the
+  ! mixture fraction).  Again, five equations are needed, and they are the
+  ! equations for <x>, <x'^2>, and <x'^3> as found by integrating over the PDF,
+  ! as well as the equations that involve tunable parameters F_x and zeta_x.
+  ! However, the equation for F_x is multiplied by a new variable,
+  ! sgn( <w'x'> ), where <w'x'> is the covariance of w and x, and sgn( <w'x'> )
+  ! is given by:
+  !
+  ! sgn( <w'x'> ) = |  1, when <w'x'> >= 0;
+  !                 | -1, when <w'x'> < 0.
+  !
+  ! The five equations are:
   !
   ! <x> = mixt_frac * mu_x_1 + ( 1 - mixt_frac ) * mu_x_2;
   !
@@ -255,14 +335,19 @@ module new_pdf
   !
   ! where zeta_x > -1.
   !
-  ! The resulting equations for the five PDF parameters are:
+  ! The only equations that are altered are the equation for mu_x_1 and the
+  ! equation for mixt_frac, which now both contain a sgn( <w'x'> ).  The mu_x_2
+  ! equation is not altered, but the sign of mu_x_2 - <x> will be the opposite
+  ! of the sign of mu_x_1 - <x>.  The resulting equations for the five PDF
+  ! parameters are:
   !
   ! mixt_frac
   ! = ( 4 * F_x^3
   !     + 18 * F_x * ( zeta_x + 1 ) * ( 1 - F_x ) / ( zeta_x + 2 )
   !     + 6 * F_x^2 * ( 1 - F_x ) / ( zeta_x + 2 )
   !     + Skx^2
-  !     - Skx * sqrt( 4 * F_x^3
+  !     - Skx * sgn( <w'x'> )
+  !           * sqrt( 4 * F_x^3
   !                   + 12 * F_x^2 * ( 1 - F_x )
   !                   + 36 * F_x * ( zeta_x + 1 ) * ( 1 - F_x )^2
   !                     / ( zeta_x + 2 )^2
@@ -284,6 +369,10 @@ module new_pdf
   !
   ! This method works for all values of F_x (where 0 <= F_x <= 1) and zeta_x
   ! (where zeta_x > -1).
+  !
+  ! When the generalized form is solved for w (x = w), sgn( <w'^2> ) = 1, and
+  ! the equations are unaltered from the equations listed above for w.
+  !
   !
   ! Special case:
   !
@@ -327,6 +416,7 @@ module new_pdf
   ! go toward 0 as | Skx | (or Skx^2) goes toward 0.  The value of F_x should
   ! go toward 1 as | Skx | (or Skx^2) goes to infinity.
   !
+  !
   ! Notes:
   !
   ! When F_x = 0 (which can only happen when Skx = 0), mu_x_1 = mu_x_2, and
@@ -354,7 +444,7 @@ module new_pdf
   !                        / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) ).
   !
   !=============================================================================
-  function calc_mixture_fraction( Skx, F_x, zeta_x ) &
+  function calc_mixture_fraction( Skx, F_x, zeta_x, sgn_wpxp ) &
   result( mixt_frac )
 
     ! Description:
@@ -384,9 +474,10 @@ module new_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skx,    & ! Skewness of x                                              [-]
-      F_x,    & ! Parameter for the spread of the PDF component means of x   [-]
-      zeta_x    ! Parameter for the PDF component variances of x             [-]
+      Skx,      & ! Skewness of x                                            [-]
+      F_x,      & ! Parameter for the spread of the PDF component means of x [-]
+      zeta_x,   & ! Parameter for the PDF component variances of x           [-]
+      sgn_wpxp    ! Sign of the covariance of w and x                        [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -403,12 +494,12 @@ module new_pdf
              * ( zeta_x + one ) * ( one - F_x ) / ( zeta_x + two ) &
            + six * F_x**2 * ( one - F_x ) / ( zeta_x + two ) &
            + Skx**2 &
-           - Skx * sqrt( four * F_x**3 &
-                         + twelve * F_x**2 * ( one - F_x ) &
-                         + thirty_six * F_x &
-                           * ( zeta_x + one ) * ( one - F_x )**2 &
-                           / ( zeta_x + two )**2 &
-                         + Skx**2 ) ) &
+           - Skx * sgn_wpxp * sqrt( four * F_x**3 &
+                                    + twelve * F_x**2 * ( one - F_x ) &
+                                    + thirty_six * F_x &
+                                      * ( zeta_x + one ) * ( one - F_x )**2 &
+                                      / ( zeta_x + two )**2 &
+                                    + Skx**2 ) ) &
          / ( two * F_x * ( F_x - three )**2 + two * Skx**2 )
 
     else ! F_x = 0
@@ -481,7 +572,7 @@ module new_pdf
 
 
     ! Calculate mixture fraction.
-    mixt_frac = calc_mixture_fraction( Skx, F_x, zeta_x )
+    mixt_frac = calc_mixture_fraction( Skx, F_x, zeta_x, sgn_wpxp )
 
     mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
                   * sgn_wpxp
