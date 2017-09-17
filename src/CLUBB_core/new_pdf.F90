@@ -289,7 +289,9 @@ module new_pdf
   !
   ! sigma_w_2
   ! = sqrt( ( mixt_frac * sigma_w_1^2 )
-  !         / ( ( 1 - mixt_frac ) * ( 1 + zeta_w ) ) ).
+  !         / ( ( 1 - mixt_frac ) * ( 1 + zeta_w ) ) );
+  !
+  ! where Skw is the skewness of w, and Skw = <w'^3> / <w'^2>^(3/2).
   !
   ! This method works for all values of F_w (where 0 <= F_w <= 1) and zeta_w
   ! (where zeta_w > -1).
@@ -365,7 +367,9 @@ module new_pdf
   !
   ! sigma_x_2
   ! = sqrt( ( mixt_frac * sigma_x_1^2 )
-  !         / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) ).
+  !         / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) );
+  !
+  ! where Skx is the skewness of x, and Skx = <x'^3> / <x'^2>^(3/2).
   !
   ! This method works for all values of F_x (where 0 <= F_x <= 1) and zeta_x
   ! (where zeta_x > -1).
