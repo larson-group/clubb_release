@@ -115,7 +115,8 @@ module pdf_closure_module
         Luhar_3D_pdf_driver
 
     use pdf_utilities, only: &
-        calc_corr_chi_x, & ! Procedure(s)
+        calc_comp_corrs_binormal, & ! Procedure(s)
+        calc_corr_chi_x,          &
         calc_corr_eta_x
 
     use array_index, only: &
@@ -305,8 +306,8 @@ module pdf_closure_module
       sclr1, sclr2,  &
       varnce_sclr1, varnce_sclr2, & 
       alpha_sclr,  & 
-      rsclrthl, rsclrrt
-!     sclr1_n, sclr2_n,
+      corr_sclr_thl_1, corr_sclr_thl_2, &
+      corr_sclr_rt_1, corr_sclr_rt_2
 
     logical :: &
       l_scalar_calc, &  ! True if sclr_dim > 0
@@ -407,13 +408,15 @@ module pdf_closure_module
 
       if ( l_scalar_calc ) then
         do i = 1, sclr_dim, 1
-          sclr1(i)        = sclrm(i)
-          sclr2(i)        = sclrm(i)
-          varnce_sclr1(i) = zero
-          varnce_sclr2(i) = zero
-          alpha_sclr(i)   = one_half
-          rsclrrt(i)      = zero
-          rsclrthl(i)     = zero
+          sclr1(i)           = sclrm(i)
+          sclr2(i)           = sclrm(i)
+          varnce_sclr1(i)    = zero
+          varnce_sclr2(i)    = zero
+          alpha_sclr(i)      = one_half
+          corr_sclr_rt_1(i)  = zero
+          corr_sclr_rt_2(i)  = zero
+          corr_sclr_thl_1(i) = zero
+          corr_sclr_thl_2(i) = zero
         end do ! 1..sclr_dim
       end if
 
@@ -478,112 +481,51 @@ module pdf_closure_module
       endif ! iiPDF_type
 
       ! We include sub-plume correlation with corr_rt_thl_1 and corr_rt_thl_2.
-
-      if ( varnce_rt_1*varnce_thl_1 > 0._core_rknd .and. &
-             varnce_rt_2*varnce_thl_2 > 0._core_rknd ) then
-        corr_rt_thl_1 = ( rtpthlp - mixt_frac * ( rt_1-rtm ) * ( thl_1-thlm ) & 
-                          - (one-mixt_frac) * ( rt_2-rtm ) * ( thl_2-thlm ) ) & 
-                       / ( mixt_frac*sqrt( varnce_rt_1*varnce_thl_1 ) &
-                          + (one-mixt_frac)*sqrt( varnce_rt_2*varnce_thl_2 ) )
-        if ( corr_rt_thl_1 < -one ) then
-          corr_rt_thl_1 = -one
-        end if
-        if ( corr_rt_thl_1 > one ) then
-          corr_rt_thl_1 = one
-        end if
-      else
-        corr_rt_thl_1 = 0.0_core_rknd
-      end if ! varnce_rt_1*varnce_thl_1 > 0 .and. varnce_rt_2*varnce_thl_2 > 0
-
-      ! The PDF component correlation of rt and theta-l in PDF component 2 is
-      ! set equal to the same correlation in PDF component 1.
-      corr_rt_thl_2 = corr_rt_thl_1
+      call calc_comp_corrs_binormal( rtpthlp, rtm, thlm, rt_1, rt_2, & ! In
+                                     thl_1, thl_2, varnce_rt_1,      & ! In
+                                     varnce_rt_2, varnce_thl_1,      & ! In
+                                     varnce_thl_2, mixt_frac,        & ! In
+                                     corr_rt_thl_1, corr_rt_thl_2    ) ! Out
 
       ! ADG1 (and ADG2) defines corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
       ! corr_w_thl_2 to all have a value of 0.
-      if ( varnce_w_1 * varnce_rt_1 > zero &
-           .or. varnce_w_2 * varnce_rt_2 > zero ) then
+      call calc_comp_corrs_binormal( wprtp, wm, rtm, w_1, w_2, & ! In
+                                     rt_1, rt_2, varnce_w_1,   & ! In
+                                     varnce_w_2, varnce_rt_1,  & ! In
+                                     varnce_rt_2, mixt_frac,   & ! In
+                                     corr_w_rt_1, corr_w_rt_2  ) ! Out
 
-         corr_w_rt_1 &
-         = ( wprtp &
-             - mixt_frac * ( w_1 - wm ) * ( rt_1 - rtm ) &
-             - ( one - mixt_frac ) * ( w_2 - wm ) * ( rt_2 - rtm ) ) &
-           / ( mixt_frac * sqrt( varnce_w_1 * varnce_rt_1 ) &
-               + ( one - mixt_frac ) * sqrt( varnce_w_2 * varnce_rt_2 ) )
+      call calc_comp_corrs_binormal( wpthlp, wm, thlm, w_1, w_2, & ! In
+                                     thl_1, thl_2, varnce_w_1,   & ! In
+                                     varnce_w_2, varnce_thl_1,   & ! In
+                                     varnce_thl_2, mixt_frac,    & ! In
+                                     corr_w_thl_1, corr_w_thl_2  ) ! Out
 
-         if ( corr_w_rt_1 > one ) then
-            corr_w_rt_1 = one
-         elseif ( corr_w_rt_1 < -one ) then
-            corr_w_rt_1 = -one
-         endif
-
-      else
-         corr_w_rt_1 = zero
-      endif
-      corr_w_rt_2 = corr_w_rt_1
-
-      if ( varnce_w_1 * varnce_thl_1 > zero &
-           .or. varnce_w_2 * varnce_thl_2 > zero ) then
-
-         corr_w_thl_1 &
-         = ( wpthlp &
-             - mixt_frac * ( w_1 - wm ) * ( thl_1 - thlm ) &
-             - ( one - mixt_frac ) * ( w_2 - wm ) * ( thl_2 - thlm ) ) &
-           / ( mixt_frac * sqrt( varnce_w_1 * varnce_thl_1 ) &
-               + ( one - mixt_frac ) * sqrt( varnce_w_2 * varnce_thl_2 ) )
-
-         if ( corr_w_thl_1 > one ) then
-            corr_w_thl_1 = one
-         elseif ( corr_w_thl_1 < -one ) then
-            corr_w_thl_1 = -one
-         endif
-
-      else
-         corr_w_thl_1 = zero
-      endif
-      corr_w_thl_2 = corr_w_thl_1
-
-      ! Sub-plume correlation, rsclrthl, of passive scalar and theta_l.
       if ( l_scalar_calc ) then
-        do i=1, sclr_dim
-          if ( varnce_sclr1(i)*varnce_thl_1 > 0._core_rknd .and. &
-               varnce_sclr2(i)*varnce_thl_2 > 0._core_rknd ) then
-            rsclrthl(i) = ( sclrpthlp(i)  & 
-            - mixt_frac * ( sclr1(i)-sclrm(i) ) * ( thl_1-thlm ) & 
-            - (one-mixt_frac) * ( sclr2(i)-sclrm(i) ) * ( thl_2-thlm ) ) & 
-                / ( mixt_frac*sqrt( varnce_sclr1(i)*varnce_thl_1 )  & 
-                         + (one-mixt_frac)*sqrt( varnce_sclr2(i)*varnce_thl_2 ) )
-            if ( rsclrthl(i) < -one ) then
-              rsclrthl(i) = -one
-            end if
-            if ( rsclrthl(i) > one ) then
-              rsclrthl(i) = one
-            end if
-          else
-            rsclrthl(i) = 0.0_core_rknd
-          end if
+         do i = 1, sclr_dim
 
-          ! Sub-plume correlation, rsclrrt, of passive scalar and total water.
+            ! Sub-plume correlation of passive scalar and theta_l.
+            call calc_comp_corrs_binormal( sclrpthlp(i), sclrm(i), thlm,  &! In
+                                           sclr1(i), sclr2(i),            &! In
+                                           thl_1, thl_2, varnce_sclr1(i), &! In
+                                           varnce_sclr2(i), varnce_thl_1, &! In
+                                           varnce_thl_2, mixt_frac,       &! In
+                                           corr_sclr_thl_1(i),            &! Out
+                                           corr_sclr_thl_2(i)  )           ! Out
 
-          if ( varnce_sclr1(i)*varnce_rt_1 > 0._core_rknd .and. &
-               varnce_sclr2(i)*varnce_rt_2 > 0._core_rknd ) then
-            rsclrrt(i) = ( sclrprtp(i) - mixt_frac * ( sclr1(i)-sclrm(i) ) * ( rt_1-rtm )&
-                         - (one-mixt_frac) * ( sclr2(i)-sclrm(i) ) * ( rt_2-rtm ) ) & 
-                       / ( mixt_frac*sqrt( varnce_sclr1(i)*varnce_rt_1 ) &
-                         + (one-mixt_frac)*sqrt( varnce_sclr2(i)*varnce_rt_2 ) )
-            if ( rsclrrt(i) < -one ) then
-              rsclrrt(i) = -one
-            end if
-            if ( rsclrrt(i) > one ) then
-              rsclrrt(i) = one
-            end if
-          else
-            rsclrrt(i) = 0.0_core_rknd
-          end if
-        end do ! i=1, sclr_dim
-      end if ! l_scalar_calc
+            ! Sub-plume correlation of passive scalar and total water.
+            call calc_comp_corrs_binormal( sclrprtp(i), sclrm(i), rtm,   & ! In
+                                           sclr1(i), sclr2(i),           & ! In
+                                           rt_1, rt_2, varnce_sclr1(i),  & ! In
+                                           varnce_sclr2(i), varnce_rt_1, & ! In
+                                           varnce_rt_2, mixt_frac,       & ! In
+                                           corr_sclr_rt_1(i),            & ! Out
+                                           corr_sclr_rt_2(i)  )            ! Out
 
-    end if  ! Widths non-zero
+         enddo ! i=1, sclr_dim
+      endif ! l_scalar_calc
+
+    endif  ! Widths non-zero
 
     ! Compute higher order moments (these are interactive)
     wp2rtp  = mixt_frac &
@@ -656,15 +598,16 @@ module pdf_closure_module
                     ( (sclr2(i)-sclrm(i))**2 + varnce_sclr2(i) )
 
         wpsclrprtp(i) = mixt_frac * ( w_1-wm ) * ( ( rt_1-rtm )*( sclr1(i)-sclrm(i) )  & 
-          + rsclrrt(i)*sqrt( varnce_rt_1*varnce_sclr1(i) ) ) &
+          + corr_sclr_rt_1(i)*sqrt( varnce_rt_1*varnce_sclr1(i) ) ) &
           + ( one-mixt_frac )*( w_2-wm ) *  &
-            ( ( rt_2-rtm )*( sclr2(i)-sclrm(i) ) + rsclrrt(i)*sqrt( varnce_rt_2*varnce_sclr2(i) ) )
+            ( ( rt_2-rtm )*( sclr2(i)-sclrm(i) ) &
+              + corr_sclr_rt_2(i)*sqrt( varnce_rt_2*varnce_sclr2(i) ) )
 
         wpsclrpthlp(i) = mixt_frac * ( w_1-wm ) * ( ( sclr1(i)-sclrm(i) )*( thl_1-thlm )  & 
-          + rsclrthl(i)*sqrt( varnce_sclr1(i)*varnce_thl_1 ) ) & 
+          + corr_sclr_thl_1(i)*sqrt( varnce_sclr1(i)*varnce_thl_1 ) ) & 
           + ( one-mixt_frac ) * ( w_2-wm ) * &
             ( ( sclr2(i)-sclrm(i) )*( thl_2-thlm ) &
-              + rsclrthl(i)*sqrt( varnce_sclr2(i)*varnce_thl_2 ) )
+              + corr_sclr_thl_2(i)*sqrt( varnce_sclr2(i)*varnce_thl_2 ) )
 
       end do ! i=1, sclr_dim
     end if ! l_scalar_calc
@@ -931,13 +874,13 @@ module pdf_closure_module
         sclrprcp(i) &
         = mixt_frac * ( ( sclr1(i)-sclrm(i) ) * rc_1 ) &
           + (one-mixt_frac) * ( ( sclr2(i)-sclrm(i) ) * rc_2 ) & 
-          + mixt_frac*rsclrrt(i) * crt_1 &
+          + mixt_frac*corr_sclr_rt_1(i) * crt_1 &
             * sqrt( varnce_sclr1(i) * varnce_rt_1 ) * cloud_frac_1 & 
-          + (one-mixt_frac) * rsclrrt(i) * crt_2 &
+          + (one-mixt_frac) * corr_sclr_rt_2(i) * crt_2 &
             * sqrt( varnce_sclr2(i) * varnce_rt_2 ) * cloud_frac_2 & 
-          - mixt_frac * rsclrthl(i) * cthl_1 &
+          - mixt_frac * corr_sclr_thl_1(i) * cthl_1 &
             * sqrt( varnce_sclr1(i) * varnce_thl_1 ) * cloud_frac_1 & 
-          - (one-mixt_frac) * rsclrthl(i) * cthl_2 &
+          - (one-mixt_frac) * corr_sclr_thl_2(i) * cthl_2 &
             * sqrt( varnce_sclr2(i) * varnce_thl_2 ) * cloud_frac_2
 
         sclrpthvp(i) = sclrpthlp(i) + ep1*thv_ds*sclrprtp(i) + rc_coef*sclrprcp(i)

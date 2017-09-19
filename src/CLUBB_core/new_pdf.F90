@@ -467,7 +467,6 @@ module new_pdf
         three,      &
         two,        &
         one,        &
-        one_half,   &
         zero,       &
         fstderr
 

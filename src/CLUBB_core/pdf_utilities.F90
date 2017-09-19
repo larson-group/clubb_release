@@ -19,6 +19,7 @@ module pdf_utilities
             corr_NN2LL,                &
             compute_mean_binormal,     &
             compute_variance_binormal, &
+            calc_comp_corrs_binormal,  &
             calc_corr_chi_x,           &
             calc_corr_eta_x,           &
             calc_corr_rt_x,            &
@@ -719,6 +720,134 @@ module pdf_utilities
     return
 
   end function compute_variance_binormal
+
+  !=============================================================================
+  subroutine calc_comp_corrs_binormal( xpyp, xm, ym, mu_x_1, mu_x_2,  & ! In
+                                       mu_y_1, mu_y_2, sigma_x_1_sqd, & ! In
+                                       sigma_x_2_sqd, sigma_y_1_sqd,  & ! In
+                                       sigma_y_2_sqd, mixt_frac,      & ! In
+                                       corr_x_y_1, corr_x_y_2         ) ! Out
+
+    ! Description:
+    ! Calculates the PDF component correlations of variables x and y, where
+    ! x and y are both distributed as two-component normals (or binormals).
+    ! The PDF component correlations are set equal to each other.
+    !
+    ! The overall covariance of x and y, <x'y'>, can be expressed in terms of
+    ! PDF parameters by integrating over the PDF:
+    !
+    ! <x'y'> = INT(-inf:inf) INT(-inf:inf) ( x - <x> ) ( y - <y> ) P(x,y) dy dx;
+    !
+    ! where <x> is the overall mean of x, <y> is the overall mean of y, and
+    ! P(x,y) is the equation for the two-component normal PDF of x and y.
+    !
+    ! The integral is evaluated, and the equation for <x'y'> is:
+    !
+    ! <x'y'> = mixt_frac * ( ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+    !                        + corr_x_y_1 * sigma_x_1 * sigma_y_1 )
+    !          + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+    !                                  + corr_x_y_2 * sigma_x_2 * sigma_y_2 );
+    !
+    ! where mu_x_1 is the mean of x in the 1st PDF component, mu_x_2 is the mean
+    ! of x in the 2nd PDF component, mu_y_1 is the mean of y in the 1st PDF
+    ! component, mu_y_2 is the mean of y in the 2nd PDF component, sigma_x_1 is
+    ! the standard deviation of x in the 1st PDF component, sigma_x_2 is the
+    ! standard deviation of x in the 2nd PDF component, sigma_y_1 is the
+    ! standard deviation of y in the 1st PDF component, sigma_y_2 is the
+    ! standard deviation of y in the 2nd PDF component, corr_x_y_1 is the
+    ! correlation of x and y in the 1st PDF component, corr_x_y_2 is the
+    ! correlation of x and y in the 2nd PDF component, and mixt_frac is the
+    ! mixture fraction (weight of the 1st PDF component).
+    !
+    ! This equation can be rewritten as:
+    !
+    ! <x'y'> = mixt_frac * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+    !          + mixt_frac * corr_x_y_1 * sigma_x_1 * sigma_y_1
+    !          + ( 1 - mixt_frac ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+    !          + ( 1 - mixt_frac ) * corr_x_y_2 * sigma_x_2 * sigma_y_2.
+    !
+    ! Setting the two PDF component correlations equal to each other
+    ! (corr_x_y_1 = corr_x_y_2), the equation can be solved for the PDF
+    ! component correlations:
+    !
+    ! corr_x_y_1 = corr_x_y_2
+    ! = ( <x'y'> - mixt_frac * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+    !            - ( 1 - mixt_frac ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> ) )
+    !   / ( mixt_frac * sigma_x_1 * sigma_y_1
+    !       + ( 1 - mixt_frac ) * sigma_x_2 * sigma_y_2 );
+    !
+    ! where -1 <= corr_x_y_1 = corr_x_y_2 <= 1.
+    !
+    ! When sigma_x_1 * sigma_y_1 = 0 and sigma_x_2 * sigma_y_2 = 0, at least one
+    ! of x or y are constant within each PDF component, and both PDF component
+    ! correlations are undefined.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,  & ! Variable(s)
+        zero
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real ( kind = core_rknd ), intent(in) :: &
+      xpyp,          & ! Covariance of x and y (overall)    [(x units)(y units)]
+      xm,            & ! Mean of x (overall)                [x units]
+      ym,            & ! Mean of y (overall)                [y units]
+      mu_x_1,        & ! Mean of x (1st PDF component)      [x units]
+      mu_x_2,        & ! Mean of x (2nd PDF component)      [x units]
+      mu_y_1,        & ! Mean of y (1st PDF component)      [y units]
+      mu_y_2,        & ! Mean of y (2nd PDF component)      [y units]
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)  [(x units)^2]
+      sigma_x_2_sqd, & ! Variance of x (2nd PDF component)  [(x units)^2]
+      sigma_y_1_sqd, & ! Variance of y (1st PDF component)  [(y units)^2]
+      sigma_y_2_sqd, & ! Variance of y (2nd PDF component)  [(y units)^2]
+      mixt_frac        ! Mixture fraction                   [-]
+
+    ! Output Variables
+    real ( kind = core_rknd ), intent(out) :: &
+      corr_x_y_1, & ! Correlation of x and y (1st PDF component)    [-]
+      corr_x_y_2    ! Correlation of x and y (2nd PDF component)    [-]
+
+
+    if ( sigma_x_1_sqd * sigma_y_1_sqd > zero &
+         .or. sigma_x_2_sqd * sigma_y_2_sqd > zero ) then
+
+       ! Calculate corr_x_y_1 (which also equals corr_x_y_2).
+       corr_x_y_1 &
+       = ( xpyp &
+           - mixt_frac * ( mu_x_1 - xm ) * ( mu_y_1 - ym ) &
+           - ( one - mixt_frac ) * ( mu_x_2 - xm ) * ( mu_y_2 - ym ) ) &
+         / ( mixt_frac * sqrt( sigma_x_1_sqd * sigma_y_1_sqd ) &
+             + ( one - mixt_frac ) * sqrt( sigma_x_2_sqd * sigma_y_2_sqd ) )
+
+       ! The correlation must fall within the bounds of
+       ! -1 <= corr_x_y_1 (= corr_x_y_2) <= 1.
+       if ( corr_x_y_1 > one ) then
+          corr_x_y_1 = one
+       elseif ( corr_x_y_1 < -one ) then
+          corr_x_y_1 = -one
+       endif
+
+    else ! sigma_x_1^2 * sigma_y_1^2 = 0 and sigma_x_2^2 * sigma_y_2^2 = 0.
+
+       ! The correlation is undefined (output as 0).
+       corr_x_y_1 = zero
+
+    endif
+
+    ! Set corr_x_y_2 equal to corr_x_y_1.
+    corr_x_y_2 = corr_x_y_1
+
+
+    return
+
+  end subroutine calc_comp_corrs_binormal
 
   !=============================================================================
   pure function calc_corr_chi_x( crt_i, cthl_i, sigma_rt_i, sigma_thl_i,  &
