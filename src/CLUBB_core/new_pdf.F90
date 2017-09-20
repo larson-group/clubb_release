@@ -19,7 +19,8 @@ module new_pdf
 
   private :: calc_responder_params,     & ! Procedure(s)
              calc_limits_F_x_responder, &
-             sort_roots
+             sort_roots,                &
+             calc_wp4_implicit
 
   private
 
@@ -421,6 +422,86 @@ module new_pdf
   ! go toward 1 as | Skx | (or Skx^2) goes to infinity.
   !
   !
+  ! Tunable parameters:
+  !
+  ! 1) F_x:  This parameter controls the spread of the PDF component means.  The
+  !          range of this parameter is 0 <= F_x <= 1.  When F_x = 0, the two
+  !          PDF component means (mu_x_1 and mu_x_2) are equal to each other
+  !          (and Skx must equal 0).  All of the variance of x is accounted for
+  !          by the PDF component standard deviations (sigma_x_1 and sigma_x_2).
+  !          When F_x = 1, mu_x_1 and mu_x_2 are spread as far apart as they can
+  !          be.  Both PDF component standard deviations (sigma_x_1 and
+  !          sigma_x_2) are equal to 0, and all of the variance of x is
+  !          accounted for by the spread of the PDF component means.
+  !
+  !          When sigma_x_1 = sigma_x_2 = 0, the equation for <x'^2> becomes:
+  !
+  !          <x'^2> = mixt_frac * ( mu_x_1 - <x> )^2
+  !                   + ( 1 - mixt_frac ) * ( mu_x_2 - <x> )^2.
+  !
+  !          Substituting the equation for <x> into the above equation for
+  !          mu_x_2 - <x>, the above equation becomes:
+  !
+  !          <x'^2> = ( mixt_frac / ( 1 - mixt_frac ) ) * ( mu_x_1 - <x> )^2;
+  !
+  !          which can be rewritten as:
+  !
+  !          ( mu_x_1 - <x> )^2 = ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2>.
+  !
+  !          Taking the square root of the above equation:
+  !
+  !          mu_x_1 - <x> = +/- ( sqrt( 1 - mixt_frac ) / sqrt(mixt_frac) )
+  !                             * sqrt( <x'^2> ).
+  !
+  !          This equation can be compared to the equation for mu_x_1 - <x> in
+  !          the set of 5 equations, which is:
+  !
+  !          mu_x_1 - <x>
+  !          = sqrt(F_x) * ( sqrt( 1 - mixt_frac ) / sqrt( mixt_frac ) )
+  !            * sqrt( <x'^2> ) * sgn( <w'x'> ).
+  !
+  !          The above equations give another example of the meaning of F_x.
+  !          The value of sqrt(F_x) is ratio of mu_x_1 - <x> to its maximum
+  !          value (or minimum value, depending on sgn( <w'x'> )), which is:
+  !
+  !          sqrt( ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> ) * sgn( <w'x'> ).
+  !
+  !
+  ! 2) zeta_x:  This parameter controls the size of the PDF component standard
+  !             deviations compared to each other.  The equation for zeta_x is:
+  !
+  !             1 + zeta_x = ( mixt_frac * sigma_x_1^2 )
+  !                          / ( ( 1 - mixt_frac ) * sigma_x_2^2 ).
+  !
+  !             When zeta_x > 0, mixt_frac * sigma_x_1^2 increases at the
+  !             expense of ( 1 - mixt_frac ) * sigma_x_2^2, which decreases in
+  !             this variance-preserving equation set.  When zeta_x = 0, then
+  !             mixt_frac * sigma_x_1^2 = ( 1 - mixt_frac ) * sigma_x_2^2.
+  !             When -1 < zeta_x < 0, ( 1 - mixt_frac ) * sigma_x_2^2 increases
+  !             at the expense of mixt_frac * sigma_x_1^2, which decreases.  As
+  !             a result, greater values of zeta_x cause the 1st PDF component
+  !             to become broader while the 2nd PDF component becomes narrower,
+  !             and smaller values of zeta_x cause the 1st PDF component to
+  !             become narrower while the 2nd PDF component becomes broader.
+  !
+  !             Symmetry
+  !
+  !             When zeta_x = 0, the PDF is always symmetric.  In other words,
+  !             the PDF at any positive value of Skx (for example, Skx = 2.5)
+  !             will look like a mirror-image (reflection across the y-axis)
+  !             of the PDF at a negative value of Skx of the same magnitude (in
+  !             this example, Skx = -2.5).  However, when zeta_x /= 0, the PDF
+  !             loses this quality and is not symmetric.
+  !
+  !             When symmetry is desired at values of zeta_x besides zeta_x = 0,
+  !             the solution is to turn zeta_x into a function of Skx.  A basic
+  !             example of a zeta_x skewness equation that produces a symmetric
+  !             PDF for values of zeta_x other than 0 is:
+  !
+  !             zeta_x = | zeta_x_in,                      when Skx >= 0;
+  !                      | ( 1 / ( 1 + zeta_x_in ) ) - 1,  when Skx < 0.
+  !
+  !
   ! Notes:
   !
   ! When F_x = 0 (which can only happen when Skx = 0), mu_x_1 = mu_x_2, and
@@ -429,10 +510,6 @@ module new_pdf
   ! sigma_x_1 = sigma_x_2 = sqrt( <x'^2> ).  This means that the distribution
   ! becomes a single Gaussian when F_x = 0 (and Skx = 0).  This happens
   ! regardless of the value of zeta_x.
-  !
-  ! Symmetry
-  !
-  !
   !
   ! The equations for the PDF component standard deviations can also be
   ! written as:
@@ -627,7 +704,10 @@ module new_pdf
   ! mu_x_1 - <x> = sqrt(F_x) * ( sqrt( 1 - mixt_frac ) / sqrt( mixt_frac ) )
   !                * sqrt( <x'^2> ) * sgn( <w'x'> );
   !
-  ! where 0 <= F_x <= 1.
+  ! where 0 <= F_x <= 1, and where sgn( <w'x'> ) is given by:
+  !
+  ! sgn( <w'x'> ) = |  1, when <w'x'> >= 0;
+  !                 | -1, when <w'x'> < 0.
   !
   ! The resulting equations for the four PDF parameters are:
   !
@@ -643,7 +723,10 @@ module new_pdf
   !   * <x'^2>; and
   !
   ! sigma_x_2^2 = ( ( 1 - F_x ) / ( 1 - mixt_frac ) ) * <x'^2>
-  !               - ( mixt_frac / ( 1 - mixt_frac ) ) * sigma_x_1^2.
+  !               - ( mixt_frac / ( 1 - mixt_frac ) ) * sigma_x_1^2;
+  !
+  ! where Skx is the skewness of x, and Skx = <x'^3> / <x'^2>^(3/2).
+  !
   !
   ! Special case:
   !
@@ -705,6 +788,20 @@ module new_pdf
   ! go toward 1 as | Skx | (or Skx^2) goes to infinity.  However, the value of
   ! F_x must also be between the minimum and maximum allowable values of F_x for
   ! a responding variable (below).
+  !
+  !
+  ! Tunable parameter:
+  !
+  ! F_x:  This parameter controls the spread of the PDF component means.  The
+  !       range of this parameter is 0 <= F_x <= 1.  When F_x = 0, the two PDF
+  !       component means (mu_x_1 and mu_x_2) are equal to each other (and Skx
+  !       must equal 0).  All of the variance of x is accounted for by the PDF
+  !       component standard deviations (sigma_x_1 and sigma_x_2).  When
+  !       F_x = 1, mu_x_1 and mu_x_2 are spread as far apart as they can be.
+  !       Both PDF component standard deviations (sigma_x_1 and sigma_x_2) are
+  !       equal to 0, and all of the variance of x is accounted for by the
+  !       spread of the PDF component means.
+  !
   !
   ! Limits on F_x:
   !
@@ -816,6 +913,7 @@ module new_pdf
   ! of 1.  The minimum and maximum allowable values of F_x are found by taking
   ! the square of the minimum and maximum allowable values of sqrt( F_x ),
   ! respectively.
+  !
   !
   ! Notes:
   !
@@ -1188,6 +1286,139 @@ module new_pdf
 
   end function sort_roots
 
+  !=============================================================================
+  function calc_wp4_implicit( mixt_frac, F_w, coef_sigma_w_1, coef_sigma_w_2 ) &
+  result( coef_wp4_implicit )
+
+    ! Description:
+    ! The predictive equation for <w'^3> contains a turbulent advection term of
+    ! the form:
+    !
+    ! - ( 1 / rho_ds ) * d ( rho_ds * <w'^4> ) / dz;
+    !
+    ! where z is height, rho_ds is the dry, base-state density, and <w'^4> is
+    ! calculated by integrating over the PDF.  The equation for <w'^4> is:
+    !
+    ! <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
+    !                        + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
+    !                        + ( mu_w_1 - <w> )^4 )
+    !          + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
+    !                                  + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
+    !                                  + ( mu_w_2 - <w> )^4 ).
+    !
+    ! The following substitutions are made into the above equation:
+    !
+    ! mu_w_1 - <w> = sqrt(F_w) * sqrt( ( 1 - mixt_frac ) / mixt_frac )
+    !                * sqrt( <w'^2> );
+    !
+    ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
+    !                  * sqrt( <w'^2> );
+    !
+    ! sigma_w_1 = coef_sigma_w_1 * sqrt( <w'^2> ); and
+    !
+    ! sigma_w_2 = coef_sigma_w_2 * sqrt( <w'^2> ).
+    !
+    ! When w is the setting variable, coef_sigma_w_1 and coef_sigma_w_2 are
+    ! given by:
+    !
+    ! coef_sigma_w_1 = sqrt( ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+    !                        / ( ( zeta_w + 2 ) * mixt_frac ) ); and
+    !
+    ! coef_sigma_w_2 = sqrt( ( 1 - F_w )
+    !                        / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ) ).
+    !
+    ! When w is a responding variable, coef_sigma_w_1 and coef_sigma_w_2 are
+    ! given by:
+    !
+    ! coef_sigma_w_1
+    ! = sqrt( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+    !           / ( 3 * mixt_frac * sqrt( F_w ) ) )
+    !         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+    !         + 1 ); and
+    !
+    ! coef_sigma_w_2
+    ! = sqrt( ( 1 - F_w ) / ( 1 - mixt_frac )
+    !         - mixt_frac / ( 1 - mixt_frac )
+    !           * ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+    !                 / ( 3 * mixt_frac * sqrt( F_w ) ) )
+    !               - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+    !               + 1 ) ).
+    !
+    ! The equation for <w'4> becomes:
+    !
+    ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1^4
+    !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1^2
+    !            + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+    !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2^4
+    !            + 6 * F_w * mixt_frac * coef_sigma_w_2^2
+    !            + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
+    !
+    ! This equation is of the form:
+    !
+    ! <w'^4> = coef_wp4_implicit * <w'^2>^2;
+    !
+    ! where:
+    !
+    ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1^4
+    !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1^2
+    !                     + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
+    !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2^4
+    !                     + 6 * F_w * mixt_frac * coef_sigma_w_2^2
+    !                     + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
+    !
+    ! While the <w'^4> term is found in the <w'^3> predictive equation and not
+    ! the <w'^2> predictive equation, the <w'^3> and <w'^2> predictive equations
+    ! are solved together.  This allows the term containing <w'^4> to be solved
+    ! implicitly.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        six,   & ! Procedure(s)
+        three, &
+        one
+
+    use clubb_precision, only: &
+        core_rknd    ! Procedure(s)
+
+    implicit none
+
+    ! Input Variables
+    real ( kind = core_rknd ), intent(in) :: &
+      mixt_frac,      & ! Mixture fraction                                   [-]
+      F_w,            & ! Parameter: spread of the PDF comp. means of w      [-]
+      coef_sigma_w_1, & ! Coef.: sigma_w_1 = coef_sigma_w_1 * sqrt( <w'^2> ) [-]
+      coef_sigma_w_2    ! Coef.: sigma_w_2 = coef_sigma_w_2 * sqrt( <w'^2> ) [-]
+
+    ! Return Variable
+    real ( kind = core_rknd ) :: &
+      coef_wp4_implicit    ! Coef.: <w'^4> = coef_wp4_implicit * <w'^2>^2    [-]
+
+
+    ! Calculate coef_wp4_implicit.
+    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1**4 &
+                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1**2 &
+                        + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
+                        + three * ( one - mixt_frac ) * coef_sigma_w_2**4 &
+                        + six * F_w * mixt_frac * coef_sigma_w_2**2 &
+                        + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
+
+
+    return
+
+  end function calc_wp4_implicit
+
+  !=============================================================================
+  !function calc_wpxp2_implicit
+
+    
+
+
+  !end function calc_wpxp2_implicit
+
+  !=============================================================================
+  !=============================================================================
   !=============================================================================
 
 end module new_pdf
