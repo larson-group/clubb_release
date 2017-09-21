@@ -100,7 +100,7 @@ module new_pdf
     real( kind = core_rknd ), parameter :: &
       sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
 
-    real( kind = core_rknd ), intent(out) :: &
+    real( kind = core_rknd ) :: &
       coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
       coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
