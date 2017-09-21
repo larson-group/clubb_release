@@ -173,6 +173,10 @@ module pdf_parameter_tests
       mixt_frac          ! Mixture fraction                          [-]
 
     real( kind = core_rknd ) :: &
+      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+
+    real( kind = core_rknd ) :: &
       recalc_wm,    & ! Recalculation of <w> using PDF parameters          [m/s]
       recalc_wp2,   & ! Recalculation of <w'^2> using PDF parameters   [m^2/s^2]
       recalc_wp3,   & ! Recalculation of <w'^3> using PDF parameters   [m^3/s^3]
@@ -572,7 +576,9 @@ module pdf_parameter_tests
                 call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
                                              F_w, zeta_w,               & ! In
                                              mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                             sigma_w_2, mixt_frac )       ! Out
+                                             sigma_w_2, mixt_frac,      & ! Out
+                                             coef_sigma_w_1_sqd,        & ! Out
+                                             coef_sigma_w_2_sqd         ) ! Out
 
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.

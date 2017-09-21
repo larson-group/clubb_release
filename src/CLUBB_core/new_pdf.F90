@@ -100,6 +100,10 @@ module new_pdf
     real( kind = core_rknd ), parameter :: &
       sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
 
+    real( kind = core_rknd ), intent(out) :: &
+      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+
     real( kind = core_rknd ) :: &
       max_Skx2_pos_Skx_sgn_wpxp, &
       max_Skx2_neg_Skx_sgn_wpxp
@@ -139,7 +143,9 @@ module new_pdf
     call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
                                  F_w, zeta_w,               & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                 sigma_w_2, mixt_frac )       ! Out
+                                 sigma_w_2, mixt_frac,      & ! Out
+                                 coef_sigma_w_1_sqd,        & ! Out
+                                 coef_sigma_w_2_sqd         ) ! Out
 
     sigma_w_1_sqd = sigma_w_1**2
     sigma_w_2_sqd = sigma_w_2**2
@@ -609,7 +615,9 @@ module new_pdf
   subroutine calc_setter_var_params( xm, xp2, Skx, sgn_wpxp,    & ! In
                                      F_x, zeta_x,               & ! In
                                      mu_x_1, mu_x_2, sigma_x_1, & ! Out
-                                     sigma_x_2, mixt_frac )       ! Out
+                                     sigma_x_2, mixt_frac,      & ! Out
+                                     coef_sigma_x_1_sqd,        & ! Out
+                                     coef_sigma_x_2_sqd         ) ! Out
 
     ! Description:
     ! Calculates the PDF component means, the PDF component standard deviations,
@@ -645,33 +653,38 @@ module new_pdf
       sigma_x_2, & ! Standard deviation of x (2nd PDF component)    [units vary]
       mixt_frac    ! Mixture fraction                                        [-]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      coef_sigma_x_1, & !
-      coef_sigma_x_2    !
+    real( kind = core_rknd ), intent(out) :: &
+      coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+      coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
 
-    ! Calculate mixture fraction.
+    ! Calculate the mixture fraction.
     mixt_frac = calc_mixture_fraction( Skx, F_x, zeta_x, sgn_wpxp )
 
+    ! Calculate the mean of x in the 1st PDF component.
     mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
                   * sgn_wpxp
 
+    ! Calculate the mean of x in the 2nd PDF component.
     mu_x_2 = xm - ( mixt_frac / ( one - mixt_frac ) ) * ( mu_x_1 - xm )
 
-    sigma_x_1 &
-    = sqrt( ( ( zeta_x + one ) * ( one - F_x ) ) &
-            / ( ( zeta_x + two ) * mixt_frac ) * xp2 )
+    ! Calculate the standard deviation of x in the 1st PDF component.
+    ! sigma_x_1 = sqrt( ( ( zeta_x + 1 ) * ( 1 - F_x ) )
+    !                   / ( ( zeta_x + 2 ) * mixt_frac ) * xp2 )
+    coef_sigma_x_1_sqd = ( ( zeta_x + one ) * ( one - F_x ) ) &
+                         / ( ( zeta_x + two ) * mixt_frac )
 
-    sigma_x_2 &
-    = sqrt( ( mixt_frac * sigma_x_1**2 ) &
-            / ( ( one - mixt_frac ) * ( one + zeta_x ) ) )
+    sigma_x_1 = sqrt( coef_sigma_x_1_sqd * xp2 )
 
-    coef_sigma_x_1 = sqrt( ( zeta_x + one ) * ( one - F_x ) &
-                           / ( ( zeta_x + two ) * mixt_frac ) )
+    ! Calculate the standard deviation of x in the 2nd PDF component.
+    ! sigma_x_2 = sqrt( ( mixt_frac * sigma_x_1^2 )
+    !                   / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) )
+    !           = sqrt( ( 1 - F_x )
+    !                   / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) * xp2 )
+    coef_sigma_x_2_sqd = ( one - F_x ) &
+                         / ( ( zeta_x + two ) * ( one - mixt_frac ) )
 
-    coef_sigma_x_2 = sqrt( ( one - F_x ) &
-                           / ( ( zeta_x + two ) * ( one - mixt_frac ) ) )
+    sigma_x_2 = sqrt( coef_sigma_x_2_sqd * xp2 )
 
 
     return
@@ -1287,7 +1300,8 @@ module new_pdf
   end function sort_roots
 
   !=============================================================================
-  function calc_wp4_implicit( mixt_frac, F_w, coef_sigma_w_1, coef_sigma_w_2 ) &
+  function calc_wp4_implicit( mixt_frac, F_w, &
+                              coef_sigma_w_1_sqd, coef_sigma_w_2_sqd ) &
   result( coef_wp4_implicit )
 
     ! Description:
@@ -1314,43 +1328,40 @@ module new_pdf
     ! mu_w_2 - <w> = - sqrt(F_w) * sqrt( mixt_frac / ( 1 - mixt_frac ) )
     !                  * sqrt( <w'^2> );
     !
-    ! sigma_w_1 = coef_sigma_w_1 * sqrt( <w'^2> ); and
+    ! sigma_w_1 = sqrt( coef_sigma_w_1_sqd * <w'^2> ); and
     !
-    ! sigma_w_2 = coef_sigma_w_2 * sqrt( <w'^2> ).
+    ! sigma_w_2 = sqrt( coef_sigma_w_2_sqd * <w'^2> ).
     !
-    ! When w is the setting variable, coef_sigma_w_1 and coef_sigma_w_2 are
-    ! given by:
+    ! When w is the setting variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    ! are given by:
     !
-    ! coef_sigma_w_1 = sqrt( ( ( zeta_w + 1 ) * ( 1 - F_w ) )
-    !                        / ( ( zeta_w + 2 ) * mixt_frac ) ); and
+    ! coef_sigma_w_1_sqd = ( ( zeta_w + 1 ) * ( 1 - F_w ) )
+    !                      / ( ( zeta_w + 2 ) * mixt_frac ); and
     !
-    ! coef_sigma_w_2 = sqrt( ( 1 - F_w )
-    !                        / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ) ).
+    ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( ( zeta_w + 2 ) * ( 1 - mixt_frac ) ).
     !
-    ! When w is a responding variable, coef_sigma_w_1 and coef_sigma_w_2 are
-    ! given by:
+    ! When w is a responding variable, coef_sigma_w_1_sqd and coef_sigma_w_2_sqd
+    ! are given by:
     !
-    ! coef_sigma_w_1
-    ! = sqrt( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
-    !           / ( 3 * mixt_frac * sqrt( F_w ) ) )
-    !         - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
-    !         + 1 ); and
+    ! coef_sigma_w_1_sqd = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+    !                      / ( 3 * mixt_frac * sqrt( F_w ) )
+    !                      - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+    !                      + 1; and
     !
-    ! coef_sigma_w_2
-    ! = sqrt( ( 1 - F_w ) / ( 1 - mixt_frac )
-    !         - mixt_frac / ( 1 - mixt_frac )
-    !           * ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
-    !                 / ( 3 * mixt_frac * sqrt( F_w ) ) )
-    !               - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
-    !               + 1 ) ).
+    ! coef_sigma_w_2_sqd = ( 1 - F_w ) / ( 1 - mixt_frac )
+    !                      - mixt_frac / ( 1 - mixt_frac )
+    !                        * ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skw
+    !                            / ( 3 * mixt_frac * sqrt( F_w ) ) )
+    !                            - ( 1 + mixt_frac ) * F_w / ( 3 * mixt_frac )
+    !                            + 1 ).
     !
     ! The equation for <w'4> becomes:
     !
-    ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1^4
-    !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1^2
+    ! <w'^4> = ( 3 * mixt_frac * coef_sigma_w_1_sqd^2
+    !            + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
     !            + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2^4
-    !            + 6 * F_w * mixt_frac * coef_sigma_w_2^2
+    !            + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+    !            + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
     !            + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ) ) * <w'^2>^2.
     !
     ! This equation is of the form:
@@ -1359,11 +1370,11 @@ module new_pdf
     !
     ! where:
     !
-    ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1^4
-    !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1^2
+    ! coef_wp4_implicit = 3 * mixt_frac * coef_sigma_w_1_sqd^2
+    !                     + 6 * F_w * ( 1 - mixt_frac ) * coef_sigma_w_1_sqd
     !                     + F_w^2 * ( 1 - mixt_frac )^2 / mixt_frac
-    !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2^4
-    !                     + 6 * F_w * mixt_frac * coef_sigma_w_2^2
+    !                     + 3 * ( 1 - mixt_frac ) * coef_sigma_w_2_sqd^2
+    !                     + 6 * F_w * mixt_frac * coef_sigma_w_2_sqd
     !                     + F_w^2 * mixt_frac^2 / ( 1 - mixt_frac ).
     !
     ! While the <w'^4> term is found in the <w'^3> predictive equation and not
@@ -1386,10 +1397,10 @@ module new_pdf
 
     ! Input Variables
     real ( kind = core_rknd ), intent(in) :: &
-      mixt_frac,      & ! Mixture fraction                                   [-]
-      F_w,            & ! Parameter: spread of the PDF comp. means of w      [-]
-      coef_sigma_w_1, & ! Coef.: sigma_w_1 = coef_sigma_w_1 * sqrt( <w'^2> ) [-]
-      coef_sigma_w_2    ! Coef.: sigma_w_2 = coef_sigma_w_2 * sqrt( <w'^2> ) [-]
+      mixt_frac,          & ! Mixture fraction                               [-]
+      F_w,                & ! Parameter: spread of the PDF comp. means of w  [-]
+      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
+      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
 
     ! Return Variable
     real ( kind = core_rknd ) :: &
@@ -1397,11 +1408,11 @@ module new_pdf
 
 
     ! Calculate coef_wp4_implicit.
-    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1**4 &
-                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1**2 &
+    coef_wp4_implicit = three * mixt_frac * coef_sigma_w_1_sqd**2 &
+                        + six * F_w * ( one - mixt_frac ) * coef_sigma_w_1_sqd &
                         + F_w**2 * ( one - mixt_frac )**2 / mixt_frac &
-                        + three * ( one - mixt_frac ) * coef_sigma_w_2**4 &
-                        + six * F_w * mixt_frac * coef_sigma_w_2**2 &
+                        + three * ( one - mixt_frac ) * coef_sigma_w_2_sqd**2 &
+                        + six * F_w * mixt_frac * coef_sigma_w_2_sqd &
                         + F_w**2 * mixt_frac**2 / ( one - mixt_frac )
 
 
