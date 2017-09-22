@@ -6,6 +6,9 @@ module pdf_closure_module
   implicit none
 
   public :: pdf_closure, &
+            calc_wp4_pdf, &
+            calc_wp2xp_pdf, &
+            calc_wpxp2_pdf, &
             calc_vert_avg_cf_component
 
   ! Options for the two component normal (double Gaussian) PDF type to use for
@@ -74,7 +77,6 @@ module pdf_closure_module
     !----------------------------------------------------------------------
 
     use constants_clubb, only: &  ! Constants
-        six,            & ! 6
         three,          & ! 3
         two,            & ! 2
         one,            & ! 1
@@ -528,55 +530,30 @@ module pdf_closure_module
     endif  ! Widths non-zero
 
     ! Compute higher order moments (these are interactive)
-    wp2rtp  = mixt_frac &
-              * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( rt_1 - rtm ) &
-                  + two * corr_w_rt_1 * sqrt( varnce_w_1 * varnce_rt_1 ) &
-                    * ( w_1 - wm ) ) &
-              + ( one - mixt_frac ) &
-                * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( rt_2 - rtm ) &
-                    + two * corr_w_rt_2 * sqrt( varnce_w_2 * varnce_rt_2 ) &
-                      * ( w_2 - wm ) )
+    wp2rtp = calc_wp2xp_pdf( wm, rtm, w_1, w_2, rt_1, rt_2, varnce_w_1, &
+                             varnce_w_2, varnce_rt_1, varnce_rt_2, &
+                             corr_w_rt_1, corr_w_rt_2, mixt_frac )
 
-    wp2thlp = mixt_frac &
-              * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( thl_1 - thlm ) &
-                  + two * corr_w_thl_1 * sqrt( varnce_w_1 * varnce_thl_1 ) &
-                    * ( w_1 - wm ) ) &
-              + ( one - mixt_frac ) &
-                * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( thl_2 - thlm ) &
-                    + two * corr_w_thl_2 * sqrt( varnce_w_2 * varnce_thl_2 ) &
-                      * ( w_2 - wm ) )
+    wp2thlp = calc_wp2xp_pdf( wm, thlm, w_1, w_2, thl_1, thl_2, varnce_w_1, &
+                              varnce_w_2, varnce_thl_1, varnce_thl_2, &
+                              corr_w_thl_1, corr_w_thl_2, mixt_frac )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
     if ( iwp4 > 0 ) then
-       wp4 = mixt_frac * ( three * varnce_w_1**2 &
-                           + six * ( ( w_1 - wm )**2 ) * varnce_w_1 &
-                           + ( w_1 - wm )**4 ) & 
-             + ( one - mixt_frac ) * ( three * varnce_w_2**2 &
-                                       + six * ( (w_2 - wm )**2 )*varnce_w_2 &
-                                       + ( w_2 - wm )**4 )
+       wp4 = calc_wp4_pdf( wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac )
     endif
 
     if ( iwprtp2 > 0 ) then
-      wprtp2  = mixt_frac &
-                * ( ( w_1 - wm ) * ( ( rt_1 - rtm )**2 + varnce_rt_1 ) &
-                    + two * corr_w_rt_1 * sqrt( varnce_w_1 * varnce_rt_1 ) &
-                      * ( rt_1 - rtm ) ) &
-                + ( one - mixt_frac ) &
-                  * ( ( w_2 - wm ) * ( ( rt_2 - rtm )**2 + varnce_rt_2 ) &
-                      + two * corr_w_rt_2 * sqrt( varnce_w_2 * varnce_rt_2 ) &
-                        * ( rt_2 - rtm ) )
-    end if
+       wprtp2 = calc_wpxp2_pdf( wm, rtm, w_1, w_2, rt_1, rt_2, varnce_w_1, &
+                                varnce_w_2, varnce_rt_1, varnce_rt_2, &
+                                corr_w_rt_1, corr_w_rt_2, mixt_frac )
+    endif
 
     if ( iwpthlp2 > 0 ) then
-      wpthlp2 = mixt_frac &
-                * ( ( w_1 - wm ) * ( ( thl_1 - thlm )**2 + varnce_thl_1 ) &
-                    + two * corr_w_thl_1 * sqrt( varnce_w_1 * varnce_thl_1 ) &
-                      * ( thl_1 - thlm ) ) &
-                + ( one - mixt_frac ) &
-                  * ( ( w_2 - wm ) * ( ( thl_2 - thlm )**2 + varnce_thl_2 ) &
-                      + two * corr_w_thl_2 * sqrt( varnce_w_2 * varnce_thl_2 ) &
-                        * ( thl_2 - thlm ) )
-    end if
+       wpthlp2 = calc_wpxp2_pdf( wm, thlm, w_1, w_2, thl_1, thl_2, varnce_w_1, &
+                                 varnce_w_2, varnce_thl_1, varnce_thl_2, &
+                                 corr_w_thl_1, corr_w_thl_2, mixt_frac )
+    endif
 
     if ( iwprtpthlp > 0 ) then
       wprtpthlp = mixt_frac * ( w_1-wm )*( (rt_1-rtm)*(thl_1-thlm)  & 
@@ -1221,6 +1198,242 @@ module pdf_closure_module
     return
   end subroutine pdf_closure
   
+  !=============================================================================
+  function calc_wp4_pdf( wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac ) &
+  result( wp4 )
+
+    ! Description:
+    ! Calculates <w'^4> by integrating over the PDF of w.  The integral is:
+    !
+    ! <w'^4> = INT(-inf:inf) ( w - <w> )^4 P(w) dw;
+    !
+    ! where <w> is the overall mean of w and P(w) is a two-component normal
+    ! distribution of w.  The integrated equation is:
+    !
+    ! <w'^4> = mixt_frac * ( 3 * sigma_w_1^4
+    !                        + 6 * ( mu_w_1 - <w> )^2 * sigma_w_1^2
+    !                        + ( mu_w_1 - <w> )^4 )
+    !          + ( 1 - mixt_frac ) * ( 3 * sigma_w_2^4
+    !                                  + 6 * ( mu_w_2 - <w> )^2 * sigma_w_2^2
+    !                                  + ( mu_w_2 - <w> )^4 );
+    !
+    ! where mu_w_1 is the mean of w in the 1st PDF component, mu_w_2 is the mean
+    ! of w in the 2nd PDF component, sigma_w_1 is the standard deviation of w in
+    ! the 1st PDF component, sigma_w_2 is the standard deviation of w in the 2nd
+    ! PDF component, and mixt_frac is the mixture fraction, which is the weight
+    ! of the 1st PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        six,   & ! Variable(s)
+        three, &
+        one
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      wm,         & ! Mean of w (overall)                           [m/s]
+      w_1,        & ! Mean of w (1st PDF component)                 [m/s]
+      w_2,        & ! Mean of w (2nd PDF component)                 [m/s]
+      varnce_w_1, & ! Variance of w (1st PDF component)             [m^2/s^2]
+      varnce_w_2, & ! Variance of w (2nd PDF component)             [m^2/s^2]
+      mixt_frac     ! Mixture fraction                              [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  & 
+      wp4    ! <w'^4>                   [m^4/s^4]
+
+
+    ! Calculate <w'^4> by integrating over the PDF.
+    wp4 = mixt_frac * ( three * varnce_w_1**2 &
+                        + six * ( ( w_1 - wm )**2 ) * varnce_w_1 &
+                        + ( w_1 - wm )**4 ) & 
+          + ( one - mixt_frac ) * ( three * varnce_w_2**2 &
+                                    + six * ( (w_2 - wm )**2 )*varnce_w_2 &
+                                    + ( w_2 - wm )**4 )
+
+
+    return
+
+  end function calc_wp4_pdf
+
+  !=============================================================================
+  function calc_wp2xp_pdf( wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, &
+                           varnce_w_2, varnce_x_1, varnce_x_2, &
+                           corr_w_x_1, corr_w_x_2, mixt_frac ) &
+  result( wp2xp )
+
+    ! Description:
+    ! Calculates <w'^2 x'> by integrating over the PDF of w and x.  The integral
+    ! is:
+    !
+    ! <w'^2 x'>
+    ! = INT(-inf:inf) INT(-inf:inf) ( w - <w> )^2 ( x - <x> ) P(w,x) dx dw;
+    !
+    ! where <w> is the overall mean of w, <x> is the overall mean of x, and
+    ! P(w,x) is a two-component bivariate normal distribution of w and x.  The
+    ! integrated equation is:
+    !
+    ! <w'^2 x'>
+    ! = mixt_frac * ( ( mu_x_1 - <x> ) * ( ( mu_w_1 - <w> )^2 + sigma_w_1^2 )
+    !                 + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
+    !                   * ( mu_w_1 - <w> ) )
+    !   + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )
+    !                           * ( ( mu_w_2 - <w> )^2 + sigma_w_2^2 )
+    !                           + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
+    !                             * ( mu_w_2 - <w> ) );
+    !
+    ! where mu_w_1 is the mean of w in the 1st PDF component, mu_w_2 is the mean
+    ! of w in the 2nd PDF component, mu_x_1 is the mean of x in the 1st PDF
+    ! component, mu_x_2 is the mean of x in the 2nd PDF component, sigma_w_1 is
+    ! the standard deviation of w in the 1st PDF component, sigma_w_2 is the
+    ! standard deviation of w in the 2nd PDF component, sigma_x_1 is the
+    ! standard deviation of x in the 1st PDF component, sigma_x_2 is the
+    ! standard deviation of x in the 2nd PDF component, corr_w_x_1 is the
+    ! correlation of w and x in the 1st PDF component, corr_w_x_2 is the
+    ! correlation of w and x in the 2nd PDF component, and mixt_frac is the
+    ! mixture fraction, which is the weight of the 1st PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        two,   & ! Variable(s)
+        one
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      wm,         & ! Mean of w (overall)                       [m/s]
+      xm,         & ! Mean of x (overall)                       [units vary]
+      w_1,        & ! Mean of w (1st PDF component)             [m/s]
+      w_2,        & ! Mean of w (2nd PDF component)             [m/s]
+      x_1,        & ! Mean of x (1st PDF component)             [units vary]
+      x_2,        & ! Mean of x (2nd PDF component)             [units vary]
+      varnce_w_1, & ! Variance of w (1st PDF component)         [m^2/s^2]
+      varnce_w_2, & ! Variance of w (2nd PDF component)         [m^2/s^2]
+      varnce_x_1, & ! Variance of x (1st PDF component)         [(units vary)^2]
+      varnce_x_2, & ! Variance of x (2nd PDF component)         [(units vary)^2]
+      corr_w_x_1, & ! Correlation of w and x (1st PDF comp.)    [-]
+      corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
+      mixt_frac     ! Mixture fraction                          [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  & 
+      wp2xp    ! <w'^2 x'>                   [m^2/s^2 (units vary)]
+
+
+    ! Calculate <w'^2 x'> by integrating over the PDF.
+    wp2xp  = mixt_frac &
+             * ( ( ( w_1 - wm )**2 + varnce_w_1 ) * ( x_1 - xm ) &
+                 + two * corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) &
+                   * ( w_1 - wm ) ) &
+             + ( one - mixt_frac ) &
+               * ( ( ( w_2 - wm )**2 + varnce_w_2 ) * ( x_2 - xm ) &
+                   + two * corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) &
+                     * ( w_2 - wm ) )
+
+
+    return
+
+  end function calc_wp2xp_pdf
+
+  !=============================================================================
+  function calc_wpxp2_pdf( wm, xm, w_1, w_2, x_1, x_2, varnce_w_1, &
+                           varnce_w_2, varnce_x_1, varnce_x_2, &
+                           corr_w_x_1, corr_w_x_2, mixt_frac ) &
+  result( wpxp2 )
+
+    ! Description:
+    ! Calculates <w'x'^2> by integrating over the PDF of w and x.  The integral
+    ! is:
+    !
+    ! <w'x'^2>
+    ! = INT(-inf:inf) INT(-inf:inf) ( w - <w> ) ( x - <x> )^2 P(w,x) dx dw;
+    !
+    ! where <w> is the overall mean of w, <x> is the overall mean of x, and
+    ! P(w,x) is a two-component bivariate normal distribution of w and x.  The
+    ! integrated equation is:
+    !
+    ! <w'x'^2>
+    ! = mixt_frac * ( ( mu_w_1 - <w> ) * ( ( mu_x_1 - <x> )^2 + sigma_x_1^2 )
+    !                 + 2 * corr_w_x_1 * sigma_w_1 * sigma_x_1
+    !                   * ( mu_x_1 - <x> ) )
+    !   + ( 1 - mixt_frac ) * ( ( mu_w_2 - <w> )
+    !                           * ( ( mu_x_2 - <x> )^2 + sigma_x_2^2 )
+    !                           + 2 * corr_w_x_2 * sigma_w_2 * sigma_x_2
+    !                             * ( mu_x_2 - <x> ) );
+    !
+    ! where mu_w_1 is the mean of w in the 1st PDF component, mu_w_2 is the mean
+    ! of w in the 2nd PDF component, mu_x_1 is the mean of x in the 1st PDF
+    ! component, mu_x_2 is the mean of x in the 2nd PDF component, sigma_w_1 is
+    ! the standard deviation of w in the 1st PDF component, sigma_w_2 is the
+    ! standard deviation of w in the 2nd PDF component, sigma_x_1 is the
+    ! standard deviation of x in the 1st PDF component, sigma_x_2 is the
+    ! standard deviation of x in the 2nd PDF component, corr_w_x_1 is the
+    ! correlation of w and x in the 1st PDF component, corr_w_x_2 is the
+    ! correlation of w and x in the 2nd PDF component, and mixt_frac is the
+    ! mixture fraction, which is the weight of the 1st PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        two,   & ! Variable(s)
+        one
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      wm,         & ! Mean of w (overall)                       [m/s]
+      xm,         & ! Mean of x (overall)                       [units vary]
+      w_1,        & ! Mean of w (1st PDF component)             [m/s]
+      w_2,        & ! Mean of w (2nd PDF component)             [m/s]
+      x_1,        & ! Mean of x (1st PDF component)             [units vary]
+      x_2,        & ! Mean of x (2nd PDF component)             [units vary]
+      varnce_w_1, & ! Variance of w (1st PDF component)         [m^2/s^2]
+      varnce_w_2, & ! Variance of w (2nd PDF component)         [m^2/s^2]
+      varnce_x_1, & ! Variance of x (1st PDF component)         [(units vary)^2]
+      varnce_x_2, & ! Variance of x (2nd PDF component)         [(units vary)^2]
+      corr_w_x_1, & ! Correlation of w and x (1st PDF comp.)    [-]
+      corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
+      mixt_frac     ! Mixture fraction                          [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  & 
+      wpxp2    ! <w'x'^2>                   [m/s (units vary)^2]
+
+
+    ! Calculate <w'x'^2> by integrating over the PDF.
+    wpxp2 = mixt_frac &
+            * ( ( w_1 - wm ) * ( ( x_1 - xm )**2 + varnce_x_1 ) &
+                + two * corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) &
+                  * ( x_1 - xm ) ) &
+            + ( one - mixt_frac ) &
+              * ( ( w_2 - wm ) * ( ( x_2 - xm )**2 + varnce_x_2 ) &
+                  + two * corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) &
+                    * ( x_2 - xm ) )
+
+
+    return
+
+  end function calc_wpxp2_pdf
+
+  !=============================================================================
   !=============================================================================
   elemental subroutine calc_cloud_frac_component( mean_chi_i, stdev_chi_i, &
                                                   chi_at_sat, &
