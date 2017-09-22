@@ -13,14 +13,14 @@ module new_pdf
 
   implicit none
 
-  public :: new_pdf_driver,        & ! Procedure(s)
-            calc_mixture_fraction, &
-            calc_setter_var_params
+  public :: new_pdf_driver,         & ! Procedure(s)
+            calc_mixture_fraction,  &
+            calc_setter_var_params, &
+            calc_coef_wp4_implicit
 
   private :: calc_responder_params,     & ! Procedure(s)
              calc_limits_F_x_responder, &
-             sort_roots,                &
-             calc_wp4_implicit
+             sort_roots
 
   private
 
@@ -101,8 +101,12 @@ module new_pdf
       sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
 
     real( kind = core_rknd ) :: &
-      coef_sigma_w_1_sqd, & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>      [-]
-      coef_sigma_w_2_sqd    ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>      [-]
+      coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
+      coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
+      coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
+      coef_sigma_rt_2_sqd,  & ! sigma_rt_2^2 = coef_sigma_rt_2_sqd * <rt'^2> [-]
+      coef_sigma_thl_1_sqd, & ! sigma_thl_1^2=coef_sigma_thl_1_sqd*<thl'^2>  [-]
+      coef_sigma_thl_2_sqd    ! sigma_thl_2^2=coef_sigma_thl_2_sqd*<thl'^2>  [-]
 
     real( kind = core_rknd ) :: &
       max_Skx2_pos_Skx_sgn_wpxp, &
@@ -185,10 +189,12 @@ module new_pdf
     F_rt = max_F_rt &
            + ( min_F_rt - max_F_rt ) * exp( -Skrt**2 / 200.0_core_rknd )
 
-    call calc_responder_params( rtm, rtp2, Skrt, sgn_wprtp,       & ! In
-                                F_rt, mixt_frac,                  & ! In
-                                mu_rt_1, mu_rt_2,                 & ! In
-                                sigma_rt_1_sqd, sigma_rt_2_sqd )    ! Out
+    call calc_responder_params( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
+                                F_rt, mixt_frac,                & ! In
+                                mu_rt_1, mu_rt_2,               & ! Out
+                                sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
+                                coef_sigma_rt_1_sqd,            & ! Out
+                                coef_sigma_rt_2_sqd             ) ! Out
 
     ! Calculate the upper limit of the magnitude of Skthl.
     if ( Skthl * sgn_wpthlp >= zero ) then
@@ -218,10 +224,12 @@ module new_pdf
     F_thl = max_F_thl &
             + ( min_F_thl - max_F_thl ) * exp( -Skthl**2 / 200.0_core_rknd )
 
-    call calc_responder_params( thlm, thlp2, Skthl, sgn_wpthlp,     & ! In
-                                F_thl, mixt_frac,                   & ! In
-                                mu_thl_1, mu_thl_2,                 & ! In
-                                sigma_thl_1_sqd, sigma_thl_2_sqd )    ! Out
+    call calc_responder_params( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
+                                F_thl, mixt_frac,                 & ! In
+                                mu_thl_1, mu_thl_2,               & ! Out
+                                sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                                coef_sigma_thl_1_sqd,             & ! Out
+                                coef_sigma_thl_2_sqd              ) ! Out
 
    
     return
@@ -517,18 +525,32 @@ module new_pdf
   ! becomes a single Gaussian when F_x = 0 (and Skx = 0).  This happens
   ! regardless of the value of zeta_x.
   !
-  ! The equations for the PDF component standard deviations can also be
-  ! written as:
+  ! The equations for the PDF component means and standard deviations can also
+  ! be written as:
   !
-  ! sigma_x_1 = coef_sigma_x_1 * sqrt( <x'^2> ); and
+  ! mu_x_1 = <x> + sqrt( F_x * ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> )
+  !                * sgn( <w'x'> );
   !
-  ! sigma_x_2 = coef_sigma_x_2 * sqrt( <x'^2> ); where
+  ! mu_x_2 = <x> - sqrt( F_x * ( mixt_frac / ( 1 - mixt_frac ) ) * <x'^2> )
+  !                * sgn( <w'x'> );
   !
-  ! coef_sigma_x_1 = sqrt( ( ( zeta_x + 1 ) * ( 1 - F_x ) )
-  !                        / ( ( zeta_x + 2 ) * mixt_frac ) ); and
+  ! sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
   !
-  ! coef_sigma_x_2 = sqrt( ( 1 - F_x )
-  !                        / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) ).
+  ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ); where
+  !
+  ! coef_sigma_x_1_sqd = ( ( zeta_x + 1 ) * ( 1 - F_x ) )
+  !                      / ( ( zeta_x + 2 ) * mixt_frac ); and
+  !
+  ! coef_sigma_x_2_sqd = ( 1 - F_x ) / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ).
+  !
+  ! The above equations can be substituted into an equation for a variable that
+  ! has been derived by integrating over the PDF.  Many variables like this are
+  ! used in parts of the predictive equation set.  These substitutions allow
+  ! some terms to solved implicitly or semi-implicitly in the predictive
+  ! equations.
+  !
+  !
+  ! Brian Griffin; September 2017.
   !
   !=============================================================================
   function calc_mixture_fraction( Skx, F_x, zeta_x, sgn_wpxp ) &
@@ -670,7 +692,7 @@ module new_pdf
 
     ! Calculate the standard deviation of x in the 1st PDF component.
     ! sigma_x_1 = sqrt( ( ( zeta_x + 1 ) * ( 1 - F_x ) )
-    !                   / ( ( zeta_x + 2 ) * mixt_frac ) * xp2 )
+    !                   / ( ( zeta_x + 2 ) * mixt_frac ) * <x'^2> )
     coef_sigma_x_1_sqd = ( ( zeta_x + one ) * ( one - F_x ) ) &
                          / ( ( zeta_x + two ) * mixt_frac )
 
@@ -680,7 +702,7 @@ module new_pdf
     ! sigma_x_2 = sqrt( ( mixt_frac * sigma_x_1^2 )
     !                   / ( ( 1 - mixt_frac ) * ( 1 + zeta_x ) ) )
     !           = sqrt( ( 1 - F_x )
-    !                   / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) * xp2 )
+    !                   / ( ( zeta_x + 2 ) * ( 1 - mixt_frac ) ) * <x'^2> )
     coef_sigma_x_2_sqd = ( one - F_x ) &
                          / ( ( zeta_x + two ) * ( one - mixt_frac ) )
 
@@ -731,7 +753,7 @@ module new_pdf
   !
   ! sigma_x_1^2
   ! = ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
-  !             - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
+  !       - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
   !     / ( 3 * mixt_frac * sqrt( F_x ) ) )
   !   * <x'^2>; and
   !
@@ -934,32 +956,53 @@ module new_pdf
   ! sigma_x_1 = sigma_x_2 = sqrt( <x'^2> ).  This means that the distribution
   ! becomes a single Gaussian when F_x = 0 (and Skx = 0).
   !
-  ! The equations for the PDF component standard deviations can also be
-  ! written as:
+  ! The equations for the PDF component means and standard deviations can also
+  ! be written as:
   !
-  ! sigma_x_1^2 = coef_sigma_x_1^2 * <x'^2>; and
+  ! mu_x_1 = <x> + sqrt( F_x * ( ( 1 - mixt_frac ) / mixt_frac ) * <x'^2> )
+  !                * sgn( <w'x'> );
   !
-  ! sigma_x_2^2 = coef_sigma_x_2^2 * <x'^2>; where
+  ! mu_x_2 = <x> - sqrt( F_x * ( mixt_frac / ( 1 - mixt_frac ) ) * <x'^2> )
+  !                * sgn( <w'x'> );
   !
-  ! coef_sigma_x_1
-  ! = sqrt( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
-  !           / ( 3 * mixt_frac * sqrt( F_x ) ) )
+  ! sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
+  !
+  ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ); where
+  !
+  ! coef_sigma_x_1_sqd
+  ! = ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+  !     - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
+  !   / ( 3 * mixt_frac * sqrt( F_x ) )
+  ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+  !   / ( 3 * mixt_frac * sqrt( F_x ) )
+  !   - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+  !   + 1; and
+  !
+  ! coef_sigma_x_2_sqd
+  ! = ( 1 - F_x ) / ( 1 - mixt_frac )
+  !   - mixt_frac / ( 1 - mixt_frac )
+  !     * ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+  !         / ( 3 * mixt_frac * sqrt( F_x ) )
   !         - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
-  !         + 1 ); and
+  !         + 1 )
+  ! = ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd ) / ( 1 - mixt_frac ).
   !
-  ! coef_sigma_x_2
-  ! = sqrt( ( 1 - F_x ) / ( 1 - mixt_frac )
-  !         - mixt_frac / ( 1 - mixt_frac )
-  !           * ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
-  !                 / ( 3 * mixt_frac * sqrt( F_x ) ) )
-  !               - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
-  !               + 1 ) ).
+  ! The above equations can be substituted into an equation for a variable that
+  ! has been derived by integrating over the PDF.  Many variables like this are
+  ! used in parts of the predictive equation set.  These substitutions allow
+  ! some terms to solved implicitly or semi-implicitly in the predictive
+  ! equations.
+  !
+  !
+  ! Brian Griffin; September 2017.
   !
   !=============================================================================
-  subroutine calc_responder_params( xm, xp2, Skx, sgn_wpxp,         & ! In
-                                    F_x, mixt_frac,                 & ! In
-                                    mu_x_1, mu_x_2,                 & ! In
-                                    sigma_x_1_sqd, sigma_x_2_sqd )    ! Out
+  subroutine calc_responder_params( xm, xp2, Skx, sgn_wpxp,       & ! In
+                                    F_x, mixt_frac,               & ! In
+                                    mu_x_1, mu_x_2,               & ! Out
+                                    sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
+                                    coef_sigma_x_1_sqd,           & ! Out
+                                    coef_sigma_x_2_sqd            ) ! Out
 
     ! Description:
     ! Calculates the PDF component means and the PDF component standard
@@ -996,51 +1039,64 @@ module new_pdf
       sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
       sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
 
-    ! Local Variables
-    real( kind = core_rknd ) :: &
-      coef_sigma_x_1, & !
-      coef_sigma_x_2    !
+    real( kind = core_rknd ), intent(out) :: &
+      coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+      coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
 
     if ( F_x > zero ) then
 
+       ! Calculate the mean of x in the 1st PDF component.
        mu_x_1 = xm + sqrt( F_x * ( ( one - mixt_frac ) / mixt_frac ) * xp2 ) &
                      * sgn_wpxp
 
+       ! Calculate the mean of x in the 2nd PDF component.
        mu_x_2 = xm - ( mixt_frac / ( one - mixt_frac ) ) * ( mu_x_1 - xm )
 
-       sigma_x_1_sqd &
-       = ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
-                   - ( one + mixt_frac ) * F_x**1.5 &
-                   + three * mixt_frac * sqrt( F_x ) ) &
-           / ( three * mixt_frac * sqrt( F_x ) ) ) &
-         * xp2
+       ! Calculate the variance of x in the 1st PDF component.
+       ! sigma_x_1^2
+       ! = ( ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+       !       - ( 1 + mixt_frac ) * F_x^1.5 + 3 * mixt_frac * sqrt( F_x ) )
+       !     / ( 3 * mixt_frac * sqrt( F_x ) ) ) * <x'^2>
+       ! = ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+       !     / ( 3 * mixt_frac * sqrt( F_x ) )
+       !     - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+       !     + 1 ) * <x'^2>
+       coef_sigma_x_1_sqd &
+       = sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
+         / ( three * mixt_frac * sqrt( F_x ) ) &
+         - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
+         + one
 
-       sigma_x_2_sqd = ( ( one - F_x ) / ( one - mixt_frac ) ) * xp2 &
-                       - ( mixt_frac / ( one - mixt_frac ) ) * sigma_x_1_sqd
+       sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
 
-       coef_sigma_x_1 &
-       = sqrt( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp &
-                 / ( three * mixt_frac * sqrt( F_x ) ) ) &
-               - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
-               + one )
+       ! Calculate the variance of x in the 2nd PDF component.
+       ! sigma_x_2^2
+       ! = ( ( 1 - F_x ) / ( 1 - mixt_frac )
+       !     - mixt_frac / ( 1 - mixt_frac )
+       !       * ( sqrt( mixt_frac * ( 1 - mixt_frac ) ) * Skx * sgn( <w'x'> )
+       !           / ( 3 * mixt_frac * sqrt( F_x ) )
+       !           - ( 1 + mixt_frac ) * F_x / ( 3 * mixt_frac )
+       !           + 1 ) ) * <x'^2>
+       ! = ( ( ( 1 - F_x ) - mixt_frac * coef_sigma_x_1_sqd )
+       !     / ( 1 - mixt_frac ) ) * <x'^2>
+       coef_sigma_x_2_sqd &
+       = ( ( one - F_x ) - mixt_frac * coef_sigma_x_1_sqd ) &
+         / ( one - mixt_frac )
 
-       coef_sigma_x_2 &
-       = sqrt( ( one - F_x ) / ( one - mixt_frac ) &
-               - mixt_frac / ( one - mixt_frac ) &
-                 * ( ( sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp&
-                       / ( three * mixt_frac * sqrt( F_x ) ) ) &
-                     - ( one + mixt_frac ) * F_x / ( three * mixt_frac ) &
-                     + one ) )
+       sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
 
     else ! F_x = 0
 
+       ! When F_x has a value of 0, the PDF becomes a single Gaussian.  This
+       ! only works when Skx = 0.  However, when Skx /= 0, the value of min_F_x
+       ! is greater than 0, preventing a problem where F_x = 0 but | Skx | > 0.
        mu_x_1 = xm
        mu_x_2 = xm
        sigma_x_1_sqd = xp2
        sigma_x_2_sqd = xp2
-       coef_sigma_x_1 = one
-       coef_sigma_x_2 = one
+       coef_sigma_x_1_sqd = one
+       coef_sigma_x_2_sqd = one
 
     endif ! F_x > 0
 
@@ -1300,8 +1356,9 @@ module new_pdf
   end function sort_roots
 
   !=============================================================================
-  function calc_wp4_implicit( mixt_frac, F_w, &
-                              coef_sigma_w_1_sqd, coef_sigma_w_2_sqd ) &
+  function calc_coef_wp4_implicit( mixt_frac, F_w, &
+                                   coef_sigma_w_1_sqd, &
+                                   coef_sigma_w_2_sqd ) &
   result( coef_wp4_implicit )
 
     ! Description:
@@ -1418,15 +1475,15 @@ module new_pdf
 
     return
 
-  end function calc_wp4_implicit
+  end function calc_coef_wp4_implicit
 
   !=============================================================================
-  !function calc_wpxp2_implicit
+  !function calc_coef_wpxp2_implicit
 
     
 
 
-  !end function calc_wpxp2_implicit
+  !end function calc_coef_wpxp2_implicit
 
   !=============================================================================
   !=============================================================================

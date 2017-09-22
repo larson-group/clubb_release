@@ -67,6 +67,16 @@ module pdf_parameter_tests
     ! Test 5
     ! Check that sigma_w_1 >= 0, sigma_w_2 >= 0, and 0 < mixt_frac < 1.
     !
+    ! Test 6
+    ! Check that mu_w_1 >= mu_w_2.
+    !
+    ! Test 7
+    ! Calculate <w'^4> as found by integrating over the PDF.  Then, calculate
+    ! <w'^4> according to the equation used to handle its calculation implicitly
+    ! as part of the <w'^3> turbulent advection term, which is of the form:
+    ! <w'^4> = coef_wp4_implicit * <w'^2>^2.  The two calculations of <w'^4>
+    ! should match numerically within a very small tolerance.
+    !
     ! In the second set of tests, the full PDF is called for each of the 10
     ! aforementioned input parameter sets.  The values of parameters F and zeta
     ! are set internally.  Each subroutine call produces values of mu_w_1,
@@ -74,12 +84,12 @@ module pdf_parameter_tests
     ! sigma_rt_1^2, sigma_rt_2^2, sigma_thl_1^2, sigma_thl_2^2, and mixt_frac.
     ! These values are evaluated by 13 tests.
     !
-    ! Test 6, Test 10, and Test 14 are analogous to Test 1 for w, rt, and
-    ! theta-l respectively.  Test 7, Test 11, and Test 15 are analogous to
-    ! Test 2 for w, rt, and theta-l respectively.  Test 8, Test 12, and Test 16
-    ! are analogous to Test 3 for w, rt, and theta-l, respectively.  Test 9,
-    ! Test 13, and Test 17 are analogous to Test 4 for w, rt, and theta-l,
-    ! respectively.  Test 18 is analogous to Test 5, but also checks that
+    ! Test 8, Test 12, and Test 16 are analogous to Test 1 for w, rt, and
+    ! theta-l respectively.  Test 9, Test 13, and Test 17 are analogous to
+    ! Test 2 for w, rt, and theta-l respectively.  Test 10, Test 14, and Test 18
+    ! are analogous to Test 3 for w, rt, and theta-l, respectively.  Test 11,
+    ! Test 15, and Test 19 are analogous to Test 4 for w, rt, and theta-l,
+    ! respectively.  Test 20 is analogous to Test 5, but also checks that
     ! sigma_rt_1 >= 0, sigma_rt_2 >= 0, sigma_thl_1 >= 0, and sigma_thl_2 >= 0.
 
     ! References:
@@ -102,6 +112,7 @@ module pdf_parameter_tests
 
     use new_pdf, only: &
         calc_setter_var_params, & ! Procedure(s)
+        calc_coef_wp4_implicit, &
         new_pdf_driver
 
     use original_pdf, only: &
@@ -190,6 +201,10 @@ module pdf_parameter_tests
       recalc_thlp3, & ! Recalculation of <thl'^3> using PDF parameters     [K^3]
       recalc_Skthl    ! Recalculation of Skthl using PDF parameters          [-]
 
+    real( kind = core_rknd ) :: &
+      coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2           [-]
+      wp4_implicit_calc    ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
+
     ! Tiny tolerance for acceptable numerical difference between two results.
     real( kind = core_rknd ), parameter :: &
       tol = 1.0e-8_core_rknd
@@ -206,13 +221,15 @@ module pdf_parameter_tests
       l_pass_test_9,  & ! Flag for passing test 9
       l_pass_test_10, & ! Flag for passing test 10
       l_pass_test_11, & ! Flag for passing test 11
-!      l_pass_test_12, & ! Flag for passing test 12
-!      l_pass_test_13, & ! Flag for passing test 13
-      l_pass_test_14, & ! Flag for passing test 14
-      l_pass_test_15, & ! Flag for passing test 15
-!      l_pass_test_16, & ! Flag for passing test 16
-!      l_pass_test_17, & ! Flag for passing test 17
-      l_pass_test_18    ! Flag for passing test 18
+      l_pass_test_12, & ! Flag for passing test 12
+      l_pass_test_13, & ! Flag for passing test 13
+!      l_pass_test_14, & ! Flag for passing test 14
+!      l_pass_test_15, & ! Flag for passing test 15
+      l_pass_test_16, & ! Flag for passing test 16
+      l_pass_test_17, & ! Flag for passing test 17
+!      l_pass_test_18, & ! Flag for passing test 18
+!      l_pass_test_19, & ! Flag for passing test 19
+      l_pass_test_20    ! Flag for passing test 20
 
     integer :: &
       num_failed_sets    ! Records the number of failed parameter sets
@@ -587,11 +604,21 @@ module pdf_parameter_tests
                                        sigma_w_2, mixt_frac, tol,    & ! In
                                        l_pass_test_1, l_pass_test_2, & ! Out
                                        l_pass_test_3, l_pass_test_4, & ! Out
-                                       l_pass_test_5 )                 ! Out
+                                       l_pass_test_5, l_pass_test_6  ) ! Out
 
+                ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
+                coef_wp4_implicit &
+                = calc_coef_wp4_implicit( mixt_frac, F_w, &
+                                          coef_sigma_w_1_sqd, &
+                                          coef_sigma_w_2_sqd )
+
+                wp4_implicit_calc = coef_wp4_implicit * wp2**2
+
+                l_pass_test_7 = .true.
 
                 if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                     .and. l_pass_test_4 .and. l_pass_test_5 ) then
+                     .and. l_pass_test_4 .and. l_pass_test_5 &
+                     .and. l_pass_test_6 .and. l_pass_test_7 ) then
                    ! All tests pass
                    num_failed_sets = num_failed_sets
                 else
@@ -658,11 +685,12 @@ module pdf_parameter_tests
                                     sigma_w_2, mixt_frac, tol,    & ! In
                                     l_pass_test_1, l_pass_test_2, & ! Out
                                     l_pass_test_3, l_pass_test_4, & ! Out
-                                    l_pass_test_5 )                 ! Out
+                                    l_pass_test_5, l_pass_test_6  ) ! Out
 
 
              if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-                  .and. l_pass_test_4 .and. l_pass_test_5 ) then
+                  .and. l_pass_test_4 .and. l_pass_test_5 &
+                  .and. l_pass_test_6 ) then
                 ! All tests pass
                 num_failed_sets = num_failed_sets
              else
@@ -716,40 +744,40 @@ module pdf_parameter_tests
        ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the
        ! PDF parameters that are output from the subroutine.
        call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                               sigma_w_2, mixt_frac, w_tol,   & ! In
+                               sigma_w_2, mixt_frac,          & ! In
                                recalc_wm, recalc_wp2,         & ! Out
                                recalc_wp3, recalc_Skw         ) ! Out
 
        ! Recalculate the values of <rtm>, <rt'^2>, <rt'^3>, and Skrt using the
        ! PDF parameters that are output from the subroutine.
        call recalc_single_var( rtm, mu_rt_1, mu_rt_2, sigma_rt_1, & ! In
-                               sigma_rt_2, mixt_frac, rt_tol,     & ! In
+                               sigma_rt_2, mixt_frac,             & ! In
                                recalc_rtm, recalc_rtp2,           & ! Out
                                recalc_rtp3, recalc_Skrt           ) ! Out
 
        ! Recalculate the values of <thlm>, <thl'^2>, <thl'^3>, and Skthl using
        ! the PDF parameters that are output from the subroutine.
        call recalc_single_var( thlm, mu_thl_1, mu_thl_2, sigma_thl_1, & ! In
-                               sigma_thl_2, mixt_frac, thl_tol,       & ! In
+                               sigma_thl_2, mixt_frac,                & ! In
                                recalc_thlm, recalc_thlp2,             & ! Out
                                recalc_thlp3, recalc_Skthl             ) ! Out
 
-       ! Test 6
+       ! Test 8
        ! Compare the original wm to its recalculated value.
        !    | ( <w>|_recalc - <w> ) / <w> |  <=  tol;
        ! which can be rewritten as:
        !    | <w>|_recalc - <w> |  <=  | <w> | * tol.
        if ( abs( recalc_wm - wm ) <= max( abs( wm ), w_tol ) * tol ) then
-          l_pass_test_6 = .true.
+          l_pass_test_8 = .true.
        else
-          l_pass_test_6 = .false.
-          write(fstderr,*) "Test 6 failed"
+          l_pass_test_8 = .false.
+          write(fstderr,*) "Test 8 failed"
           write(fstderr,*) "wm = ", wm
           write(fstderr,*) "recalc_wm = ", recalc_wm
           write(fstderr,*) ""
        endif
 
-       ! Test 7
+       ! Test 9
        ! Compare the original wp2 to its recalculated value.
        !    | ( <w'^2>|_recalc - <w'^2> ) / <w'^2> |  <=  tol;
        ! which can be rewritten as:
@@ -757,62 +785,62 @@ module pdf_parameter_tests
        ! and since <w'^2> is always positive:
        !    | <w'^2>|_recalc - <w'^2> |  <=  <w'^2> * tol.
        if ( abs( recalc_wp2 - wp2 ) <= max( wp2, w_tol_sqd ) * tol ) then
-          l_pass_test_7 = .true.
+          l_pass_test_9 = .true.
        else
-          l_pass_test_7 = .false.
-          write(fstderr,*) "Test 7 failed"
+          l_pass_test_9 = .false.
+          write(fstderr,*) "Test 9 failed"
           write(fstderr,*) "wp2 = ", wp2
           write(fstderr,*) "recalc_wp2 = ", recalc_wp2
           write(fstderr,*) ""
        endif
 
-       ! Test 8
+       ! Test 10
        ! Compare the original wp3 to its recalculated value.
        !    | ( <w'^3>|_recalc - <w'^3> ) / <w'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <w'^3>|_recalc - <w'^3> |  <=  | <w'^3> | * tol.
        if ( abs( recalc_wp3 - wp3 ) <= max( abs( wp3 ), w_tol**3 ) * tol ) then
-          l_pass_test_8 = .true.
+          l_pass_test_10 = .true.
        else
-          l_pass_test_8 = .false.
-          write(fstderr,*) "Test 8 failed"
+          l_pass_test_10 = .false.
+          write(fstderr,*) "Test 10 failed"
           write(fstderr,*) "wp3 = ", wp3
           write(fstderr,*) "recalc_wp3 = ", recalc_wp3
           write(fstderr,*) ""
        endif
 
-       ! Test 9
+       ! Test 11
        ! Compare the original Skw to its recalculated value.
        !    | ( Skw|_recalc - Skw ) / Skw |  <=  tol;
        ! which can be rewritten as:
        !    | Skw|_recalc - Skw |  <=  | Skw | * tol.
        if ( abs( recalc_Skw - Skw ) &
             <= max( abs( Skw ), 1.0e-3_core_rknd ) * tol ) then
-          l_pass_test_9 = .true.
+          l_pass_test_11 = .true.
        else
-          l_pass_test_9 = .false.
-          write(fstderr,*) "Test 9 failed"
+          l_pass_test_11 = .false.
+          write(fstderr,*) "Test 11 failed"
           write(fstderr,*) "Skw = ", Skw
           write(fstderr,*) "recalc_Skw = ", recalc_Skw
           write(fstderr,*) ""
        endif
 
-       ! Test 10
+       ! Test 12
        ! Compare the original rtm to its recalculated value.
        !    | ( <rt>|_recalc - <rt> ) / <rt> |  <=  tol;
        ! which can be rewritten as:
        !    | <rt>|_recalc - <rt> |  <=  | <rt> | * tol.
        if ( abs( recalc_rtm - rtm ) <= max( abs( rtm ), rt_tol ) * tol ) then
-          l_pass_test_10 = .true.
+          l_pass_test_12 = .true.
        else
-          l_pass_test_10 = .false.
-          write(fstderr,*) "Test 10 failed"
+          l_pass_test_12 = .false.
+          write(fstderr,*) "Test 12 failed"
           write(fstderr,*) "rtm = ", rtm
           write(fstderr,*) "recalc_rtm = ", recalc_rtm
           write(fstderr,*) ""
        endif
 
-       ! Test 11
+       ! Test 13
        ! Compare the original rtp2 to its recalculated value.
        !    | ( <rt'^2>|_recalc - <rt'^2> ) / <rt'^2> |  <=  tol;
        ! which can be rewritten as:
@@ -820,64 +848,64 @@ module pdf_parameter_tests
        ! and since <rt'^2> is always positive:
        !    | <rt'^2>|_recalc - <rt'^2> |  <=  <rt'^2> * tol.
        if ( abs( recalc_rtp2 - rtp2 ) <= max( rtp2, rt_tol**2 ) * tol ) then
-          l_pass_test_11 = .true.
+          l_pass_test_13 = .true.
        else
-          l_pass_test_11 = .false.
-          write(fstderr,*) "Test 11 failed"
+          l_pass_test_13 = .false.
+          write(fstderr,*) "Test 13 failed"
           write(fstderr,*) "rtp2 = ", rtp2
           write(fstderr,*) "recalc_rtp2 = ", recalc_rtp2
           write(fstderr,*) ""
        endif
 
-       ! Test 12
+       ! Test 14
        ! Compare the original rtp3 to its recalculated value.
        !    | ( <rt'^3>|_recalc - <rt'^3> ) / <rt'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
 !       if ( abs( recalc_rtp3 - rtp3 ) &
 !            <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
-!          l_pass_test_12 = .true.
+!          l_pass_test_14 = .true.
 !       else
-!          l_pass_test_12 = .false.
-!          write(fstderr,*) "Test 12 failed"
+!          l_pass_test_14 = .false.
+!          write(fstderr,*) "Test 14 failed"
 !          write(fstderr,*) "rtp3 = ", rtp3
 !          write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
 !          write(fstderr,*) ""
 !       endif
 
-       ! Test 13
+       ! Test 15
        ! Compare the original Skrt to its recalculated value.
        !    | ( Skrt|_recalc - Skrt ) / Skrt |  <=  tol;
        ! which can be rewritten as:
        !    | Skrt|_recalc - Skrt |  <=  | Skrt | * tol.
 !       if ( abs( recalc_Skrt - Skrt ) &
 !            <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
-!          l_pass_test_13 = .true.
+!          l_pass_test_15 = .true.
 !       else
-!          l_pass_test_13 = .false.
-!          write(fstderr,*) "Test 13 failed"
+!          l_pass_test_15 = .false.
+!          write(fstderr,*) "Test 15 failed"
 !          write(fstderr,*) "Skrt = ", Skrt
 !          write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
 !          write(fstderr,*) ""
 !       endif
 
-       ! Test 14
+       ! Test 16
        ! Compare the original thlm to its recalculated value.
        !    | ( <thl>|_recalc - <thl> ) / <thl> |  <=  tol;
        ! which can be rewritten as:
        !    | <thl>|_recalc - <thl> |  <=  | <thl> | * tol.
        if ( abs( recalc_thlm - thlm ) &
             <= max( abs( thlm ), thl_tol ) * tol ) then
-          l_pass_test_14 = .true.
+          l_pass_test_16 = .true.
        else
-          l_pass_test_14 = .false.
-          write(fstderr,*) "Test 14 failed"
+          l_pass_test_16 = .false.
+          write(fstderr,*) "Test 16 failed"
           write(fstderr,*) "thlm = ", thlm
           write(fstderr,*) "recalc_thlm = ", recalc_thlm
           write(fstderr,*) ""
        endif
 
-       ! Test 15
+       ! Test 17
        ! Compare the original thlp2 to its recalculated value.
        !    | ( <thl'^2>|_recalc - <thl'^2> ) / <thl'^2> |  <=  tol;
        ! which can be rewritten as:
@@ -885,48 +913,48 @@ module pdf_parameter_tests
        ! and since <thl'^2> is always positive:
        !    | <thl'^2>|_recalc - <thl'^2> |  <=  <thl'^2> * tol.
        if ( abs( recalc_thlp2 - thlp2 ) <= max( thlp2, thl_tol**2 ) * tol ) then
-          l_pass_test_15 = .true.
+          l_pass_test_17 = .true.
        else
-          l_pass_test_15 = .false.
-          write(fstderr,*) "Test 15 failed"
+          l_pass_test_17 = .false.
+          write(fstderr,*) "Test 17 failed"
           write(fstderr,*) "thlp2 = ", thlp2
           write(fstderr,*) "recalc_thlp2 = ", recalc_thlp2
           write(fstderr,*) ""
        endif
 
-       ! Test 16
+       ! Test 18
        ! Compare the original thlp3 to its recalculated value.
        !    | ( <thl'^3>|_recalc - <thl'^3> ) / <thl'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <thl'^3>|_recalc - <thl'^3> |  <=  | <thl'^3> | * tol.
 !       if ( abs( recalc_thlp3 - thlp3 ) &
 !            <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
-!          l_pass_test_16 = .true.
+!          l_pass_test_18 = .true.
 !       else
-!          l_pass_test_16 = .false.
-!          write(fstderr,*) "Test 16 failed"
+!          l_pass_test_18 = .false.
+!          write(fstderr,*) "Test 18 failed"
 !          write(fstderr,*) "thlp3 = ", thlp3
 !          write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
 !          write(fstderr,*) ""
 !       endif
 
-       ! Test 17
+       ! Test 19
        ! Compare the original Skthl to its recalculated value.
        !    | ( Skthl|_recalc - Skthl ) / Skthl |  <=  tol;
        ! which can be rewritten as:
        !    | Skthl|_recalc - Skthl |  <=  | Skthl | * tol.
 !       if ( abs( recalc_Skthl - Skthl ) &
 !            <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
-!          l_pass_test_17 = .true.
+!          l_pass_test_19 = .true.
 !       else
-!          l_pass_test_17 = .false.
-!          write(fstderr,*) "Test 17 failed"
+!          l_pass_test_19 = .false.
+!          write(fstderr,*) "Test 19 failed"
 !          write(fstderr,*) "Skthl = ", Skthl
 !          write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
 !          write(fstderr,*) ""
 !       endif
 
-       ! Test 18
+       ! Test 20
        ! Check that sigma_w_1, sigma_w_2, sigma_rt_1, sigma_rt_2, sigma_thl_1,
        ! and sigma_thl_2 have a value of at least zero, and that mixture
        ! fraction has a value between 0 and 1.
@@ -934,10 +962,10 @@ module pdf_parameter_tests
             .and. ( sigma_rt_1 >= zero ) .and. ( sigma_rt_2 >= zero ) &
             .and. ( sigma_thl_1 >= zero ) .and. ( sigma_thl_2 >= zero ) &
             .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
-          l_pass_test_18 = .true.
+          l_pass_test_20 = .true.
        else
-          l_pass_test_18 = .false.
-          write(fstderr,*) "Test 18 failed"
+          l_pass_test_20 = .false.
+          write(fstderr,*) "Test 20 failed"
           write(fstderr,*) "sigma_w_1 = ", sigma_w_1
           write(fstderr,*) "sigma_w_2 = ", sigma_w_2
           write(fstderr,*) "sigma_rt_1 = ", sigma_rt_1
@@ -949,13 +977,13 @@ module pdf_parameter_tests
        endif
 
 
-       if ( l_pass_test_6 .and. l_pass_test_7 &
-            .and. l_pass_test_8 .and. l_pass_test_9 &
+       if ( l_pass_test_8 .and. l_pass_test_9 &
             .and. l_pass_test_10 .and. l_pass_test_11 &
-!            .and. l_pass_test_12 .and. l_pass_test_13 &
-            .and. l_pass_test_14 .and. l_pass_test_15 &
-!            .and. l_pass_test_16 .and. l_pass_test_17 &
-            .and. l_pass_test_18 ) then
+            .and. l_pass_test_12 .and. l_pass_test_13 &
+!            .and. l_pass_test_14 .and. l_pass_test_15 &
+            .and. l_pass_test_16 .and. l_pass_test_17 &
+!            .and. l_pass_test_18 .and. l_pass_test_19 &
+            .and. l_pass_test_20 ) then
 
           ! All tests pass
           num_failed_sets = num_failed_sets
@@ -997,7 +1025,7 @@ module pdf_parameter_tests
                                sigma_w_2, mixt_frac, tol,    & ! In
                                l_pass_test_1, l_pass_test_2, & ! Out
                                l_pass_test_3, l_pass_test_4, & ! Out
-                               l_pass_test_5 )                 ! Out
+                               l_pass_test_5, l_pass_test_6  ) ! Out
 
     ! Description:
     ! Tests 1 through 5 as described above.  These tests are all applied to the
@@ -1038,7 +1066,8 @@ module pdf_parameter_tests
       l_pass_test_2, & ! Flag for passing test 2
       l_pass_test_3, & ! Flag for passing test 3
       l_pass_test_4, & ! Flag for passing test 4
-      l_pass_test_5    ! Flag for passing test 5
+      l_pass_test_5, & ! Flag for passing test 5
+      l_pass_test_6    ! Flag for passing test 6
 
     ! Local Variables
     real( kind = core_rknd ) :: &
@@ -1051,7 +1080,7 @@ module pdf_parameter_tests
     ! Recalculate the values of <wm>, <w'^2>, <w'^3>, and Skw using the PDF
     ! parameters that are output from the subroutine.
     call recalc_single_var( wm, mu_w_1, mu_w_2, sigma_w_1, & ! In
-                            sigma_w_2, mixt_frac, w_tol,   & ! In
+                            sigma_w_2, mixt_frac,          & ! In
                             recalc_wm, recalc_wp2,         & ! Out
                             recalc_wp3, recalc_Skw         ) ! Out
 
@@ -1126,11 +1155,23 @@ module pdf_parameter_tests
        l_pass_test_5 = .true.
     else
        l_pass_test_5 = .false.
-        write(fstderr,*) "Test 5 failed"
-        write(fstderr,*) "sigma_w_1 = ", sigma_w_1
-        write(fstderr,*) "sigma_w_2 = ", sigma_w_2
-        write(fstderr,*) "mixt_frac = ", mixt_frac
-        write(fstderr,*) ""
+       write(fstderr,*) "Test 5 failed"
+       write(fstderr,*) "sigma_w_1 = ", sigma_w_1
+       write(fstderr,*) "sigma_w_2 = ", sigma_w_2
+       write(fstderr,*) "mixt_frac = ", mixt_frac
+       write(fstderr,*) ""
+    endif
+
+    ! Test 6
+    ! Check that mu_w_1 >= mu_w_2
+    if ( mu_w_1 >= mu_w_2 ) then
+       l_pass_test_6 = .true.
+    else
+       l_pass_test_6 = .false.
+       write(fstderr,*) "Test 6 failed"
+       write(fstderr,*) "mu_w_1 = ", mu_w_1
+       write(fstderr,*) "mu_w_2 = ", mu_w_2
+       write(fstderr,*) ""
     endif
 
 
@@ -1140,7 +1181,7 @@ module pdf_parameter_tests
 
   !=============================================================================
   subroutine recalc_single_var( xm, mu_x_1, mu_x_2, sigma_x_1, & ! In
-                                sigma_x_2, mixt_frac, x_tol,   & ! In
+                                sigma_x_2, mixt_frac,          & ! In
                                 recalc_xm, recalc_xp2,         & ! Out
                                 recalc_xp3, recalc_Skx         ) ! Out
 
@@ -1159,8 +1200,7 @@ module pdf_parameter_tests
       mu_x_2,    & ! Mean of x (2nd PDF component)        [units vary]
       sigma_x_1, & ! Variance of x (1st PDF component)    [units vary]
       sigma_x_2, & ! Variance of x (2nd PDF component)    [units vary]
-      mixt_frac, & ! Mixture fraction                     [-]
-      x_tol        ! Tolerance value for x                [units vary]
+      mixt_frac    ! Mixture fraction                     [-]
 
     real( kind = core_rknd ), intent(out) :: &
       recalc_xm,  & ! Recalculation of <x> using PDF parameters    [units vary]
@@ -1181,7 +1221,7 @@ module pdf_parameter_tests
       + ( one - mixt_frac ) * ( mu_x_2 - xm ) &
         * ( ( mu_x_2 - xm )**2 + three * sigma_x_2**2 )
 
-    recalc_Skx = recalc_xp3 / max( recalc_xp2**1.5, x_tol**2 )
+    recalc_Skx = recalc_xp3 / max( recalc_xp2**1.5, epsilon( recalc_xp2 ) )
 
 
     return
