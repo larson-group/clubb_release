@@ -119,8 +119,9 @@ module pdf_parameter_tests
         ADG1_w_closure    ! Procedure(s)
 
     use pdf_closure_module, only: &
-        iiPDF_new,  & ! Variable(s)
-        iiPDF_ADG1
+        iiPDF_new,    & ! Variable(s)
+        iiPDF_ADG1,   &
+        calc_wp4_pdf    ! Procedure(s)
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
@@ -203,7 +204,8 @@ module pdf_parameter_tests
 
     real( kind = core_rknd ) :: &
       coef_wp4_implicit, & ! <w'^4> = coef_wp4_implicit * <w'^2>^2           [-]
-      wp4_implicit_calc    ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
+      wp4_implicit_calc, & ! <w'^4> calculated by coef_wp4_implicit eq [m^4/s^4]
+      wp4_pdf_calc         ! <w'^4> calculated by PDF                  [m^4/s^4]
 
     ! Tiny tolerance for acceptable numerical difference between two results.
     real( kind = core_rknd ), parameter :: &
@@ -606,6 +608,10 @@ module pdf_parameter_tests
                                        l_pass_test_3, l_pass_test_4, & ! Out
                                        l_pass_test_5, l_pass_test_6  ) ! Out
 
+                ! Calculate <w'^4> by integrating over the PDF.
+                wp4_pdf_calc = calc_wp4_pdf( wm, mu_w_1, mu_w_2, sigma_w_1**2, &
+                                             sigma_w_2**2, mixt_frac )
+
                 ! Calculate <w'^4> by <w'^4> = coef_wp4_implicit * <w'^2>^2.
                 coef_wp4_implicit &
                 = calc_coef_wp4_implicit( mixt_frac, F_w, &
@@ -614,7 +620,23 @@ module pdf_parameter_tests
 
                 wp4_implicit_calc = coef_wp4_implicit * wp2**2
 
-                l_pass_test_7 = .true.
+                ! Test 7
+                ! Compare the <w'^4> calculated by the PDF to its value
+                ! calculated by <w'^4> = wp4_implicit_calc * <w'^2>^2 (which was
+                ! derived from the PDF).
+                !    | ( <w'^4>|_pdf - <w'^4>|_impl ) / <w'^4>|_pdf |  <=  tol;
+                ! which can be rewritten as:
+                !    | <w'^4>|_pdf - <w'^4>|_impl |  <=  <w'^4>|_pdf * tol.
+                if ( abs( wp4_pdf_calc - wp4_implicit_calc ) &
+                     <= max( wp4_pdf_calc, w_tol**4 ) * tol ) then
+                   l_pass_test_7 = .true.
+                else
+                   l_pass_test_7 = .false.
+                   write(fstderr,*) "Test 7 failed"
+                   write(fstderr,*) "wp4 pdf = ", wp4_pdf_calc
+                   write(fstderr,*) "wp4 implicit calc = ", wp4_implicit_calc
+                   write(fstderr,*) ""
+                endif
 
                 if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
                      .and. l_pass_test_4 .and. l_pass_test_5 &
