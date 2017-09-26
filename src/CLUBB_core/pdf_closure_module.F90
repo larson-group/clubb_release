@@ -309,7 +309,8 @@ module pdf_closure_module
       varnce_sclr1, varnce_sclr2, & 
       alpha_sclr,  & 
       corr_sclr_thl_1, corr_sclr_thl_2, &
-      corr_sclr_rt_1, corr_sclr_rt_2
+      corr_sclr_rt_1, corr_sclr_rt_2, &
+      corr_w_sclr_1, corr_w_sclr_2
 
     logical :: &
       l_scalar_calc, &  ! True if sclr_dim > 0
@@ -482,31 +483,48 @@ module pdf_closure_module
 
       endif ! iiPDF_type
 
-      ! We include sub-plume correlation with corr_rt_thl_1 and corr_rt_thl_2.
+
+      ! Calculate the PDF component correlations.
+
+      ! Calculate the PDF component correlations of rt and thl.
       call calc_comp_corrs_binormal( rtpthlp, rtm, thlm, rt_1, rt_2, & ! In
                                      thl_1, thl_2, varnce_rt_1,      & ! In
                                      varnce_rt_2, varnce_thl_1,      & ! In
                                      varnce_thl_2, mixt_frac,        & ! In
                                      corr_rt_thl_1, corr_rt_thl_2    ) ! Out
 
-      ! ADG1 (and ADG2) defines corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
-      ! corr_w_thl_2 to all have a value of 0.
-      call calc_comp_corrs_binormal( wprtp, wm, rtm, w_1, w_2, & ! In
-                                     rt_1, rt_2, varnce_w_1,   & ! In
-                                     varnce_w_2, varnce_rt_1,  & ! In
-                                     varnce_rt_2, mixt_frac,   & ! In
-                                     corr_w_rt_1, corr_w_rt_2  ) ! Out
+      if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
 
-      call calc_comp_corrs_binormal( wpthlp, wm, thlm, w_1, w_2, & ! In
-                                     thl_1, thl_2, varnce_w_1,   & ! In
-                                     varnce_w_2, varnce_thl_1,   & ! In
-                                     varnce_thl_2, mixt_frac,    & ! In
-                                     corr_w_thl_1, corr_w_thl_2  ) ! Out
+         ! ADG1 and ADG2 define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
+         ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
+         corr_w_rt_1  = zero
+         corr_w_rt_2  = zero
+         corr_w_thl_1 = zero
+         corr_w_thl_2 = zero
+
+      else
+
+         ! Calculate the PDF component correlations of w and rt.
+         call calc_comp_corrs_binormal( wprtp, wm, rtm, w_1, w_2, & ! In
+                                        rt_1, rt_2, varnce_w_1,   & ! In
+                                        varnce_w_2, varnce_rt_1,  & ! In
+                                        varnce_rt_2, mixt_frac,   & ! In
+                                        corr_w_rt_1, corr_w_rt_2  ) ! Out
+
+         ! Calculate the PDF component correlations of w and thl.
+         call calc_comp_corrs_binormal( wpthlp, wm, thlm, w_1, w_2, & ! In
+                                        thl_1, thl_2, varnce_w_1,   & ! In
+                                        varnce_w_2, varnce_thl_1,   & ! In
+                                        varnce_thl_2, mixt_frac,    & ! In
+                                        corr_w_thl_1, corr_w_thl_2  ) ! Out
+
+      endif
 
       if ( l_scalar_calc ) then
          do i = 1, sclr_dim
 
-            ! Sub-plume correlation of passive scalar and theta_l.
+            ! Calculate the PDF component correlations of a passive scalar
+            ! and thl.
             call calc_comp_corrs_binormal( sclrpthlp(i), sclrm(i), thlm,  &! In
                                            sclr1(i), sclr2(i),            &! In
                                            thl_1, thl_2, varnce_sclr1(i), &! In
@@ -515,7 +533,8 @@ module pdf_closure_module
                                            corr_sclr_thl_1(i),            &! Out
                                            corr_sclr_thl_2(i)  )           ! Out
 
-            ! Sub-plume correlation of passive scalar and total water.
+            ! Calculate the PDF component correlations of a passive scalar
+            ! and rt.
             call calc_comp_corrs_binormal( sclrprtp(i), sclrm(i), rtm,   & ! In
                                            sclr1(i), sclr2(i),           & ! In
                                            rt_1, rt_2, varnce_sclr1(i),  & ! In
@@ -524,10 +543,32 @@ module pdf_closure_module
                                            corr_sclr_rt_1(i),            & ! Out
                                            corr_sclr_rt_2(i)  )            ! Out
 
+            if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+
+               ! ADG1 and ADG2 define all PDF component correlations involving w
+               ! to have a value of 0, so skip the calculation.
+               corr_w_sclr_1(i) = zero
+               corr_w_sclr_2(i) = zero
+
+            else
+
+               ! Calculate the PDF component correlations of w and a passive
+               ! scalar.
+               call calc_comp_corrs_binormal( wpsclrp(i), wm, sclrm(i),    &!In
+                                              w_1, w_2, sclr1(i),          &!In
+                                              sclr2(i), varnce_w_1,        &!In
+                                              varnce_w_2, varnce_sclr1(i), &!In
+                                              varnce_sclr2(i), mixt_frac,  &!In
+                                              corr_w_sclr_1(i),            &!Out
+                                              corr_w_sclr_2(i)  )           !Out
+
+            endif
+
          enddo ! i=1, sclr_dim
       endif ! l_scalar_calc
 
     endif  ! Widths non-zero
+
 
     ! Compute higher order moments (these are interactive)
     wp2rtp = calc_wp2xp_pdf( wm, rtm, w_1, w_2, rt_1, rt_2, varnce_w_1, &
