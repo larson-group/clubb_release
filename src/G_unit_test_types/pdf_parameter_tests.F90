@@ -115,7 +115,7 @@ module pdf_parameter_tests
         calc_coef_wp4_implicit, &
         new_pdf_driver
 
-    use original_pdf, only: &
+    use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure    ! Procedure(s)
 
     use pdf_closure_module, only: &

@@ -1,6 +1,6 @@
 ! $Id$
 !===============================================================================
-module original_pdf
+module adg1_adg2_3d_luhar_pdf
 
   ! Description:
   ! Contains code to calculate the PDF parameters using the Analytic Double
@@ -1243,4 +1243,4 @@ module original_pdf
 
   !=============================================================================
 
-end module original_pdf
+end module adg1_adg2_3d_luhar_pdf

@@ -111,7 +111,7 @@ module pdf_closure_module
     use new_pdf, only: &
         new_pdf_driver    ! Procedure(s)
 
-    use original_pdf, only: &
+    use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)
         ADG2_pdf_driver,     &
         Luhar_3D_pdf_driver
