@@ -361,6 +361,17 @@ module stats_zt_module
         icthl_1, &
         icthl_2
 
+    use stats_variables, only: &
+        iF_w, &
+        iF_rt, &
+        iF_thl, &
+        imin_F_w, &
+        imax_F_w, &
+        imin_F_rt, &
+        imax_F_rt, &
+        imin_F_thl, &
+        imax_F_thl
+
     use stats_variables, only: & 
         iwp2_zt, & 
         ithlp2_zt, & 
@@ -3789,6 +3800,86 @@ module stats_zt_module
                           var_units="kg/kg/K", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
+      case('F_w')
+        iF_w = k
+
+        call stat_assign( var_index=iF_w, var_name="F_w", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('F_rt')
+        iF_rt = k
+
+        call stat_assign( var_index=iF_rt, var_name="F_rt", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('F_thl')
+        iF_thl = k
+
+        call stat_assign( var_index=iF_thl, var_name="F_thl", &
+                          var_description="Parameter for the spread of the" &
+                          // " PDF component means of thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_w')
+        imin_F_w = k
+
+        call stat_assign( var_index=imin_F_w, var_name="min_F_w", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_w')
+        imax_F_w = k
+
+        call stat_assign( var_index=imax_F_w, var_name="max_F_w", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_w (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_rt')
+        imin_F_rt = k
+
+        call stat_assign( var_index=imin_F_rt, var_name="min_F_rt", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_rt')
+        imax_F_rt = k
+
+        call stat_assign( var_index=imax_F_rt, var_name="max_F_rt", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_rt (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('min_F_thl')
+        imin_F_thl = k
+
+        call stat_assign( var_index=imin_F_thl, var_name="min_F_thl", &
+                          var_description="Minimum allowable value of the" &
+                          // " parameter F_thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case('max_F_thl')
+        imax_F_thl = k
+
+        call stat_assign( var_index=imax_F_thl, var_name="max_F_thl", &
+                          var_description="Maximum allowable value of the" &
+                          // " parameter F_thl (new PDF)  [-]", &
+                          var_units="-", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
 
       case('wp2_zt')
         iwp2_zt = k

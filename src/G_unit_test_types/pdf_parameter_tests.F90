@@ -158,7 +158,17 @@ module pdf_parameter_tests
 
     real( kind = core_rknd ) :: &
       F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
-      zeta_w    ! Parameter for the PDF component variances of w             [-]
+      zeta_w, & ! Parameter for the PDF component variances of w             [-]
+      F_rt,   & ! Parameter for the spread of the PDF component means of rt  [-]
+      F_thl     ! Parameter for the spread of the PDF component means of thl [-]
+
+    real( kind = core_rknd ) :: &
+      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
+      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
+      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
+      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
+      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
+      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
     real( kind = core_rknd ), parameter :: &
       sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
@@ -741,13 +751,15 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,   & ! In
-                               Skw, Skrt, Skthl, wprtp, wpthlp,   & ! In
-                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
-                               mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
-                               sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
-                               sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
-                               sigma_thl_2_sqd, mixt_frac         ) ! Out
+          call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
+                               Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
+                               mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,        & ! Out
+                               mu_thl_1, mu_thl_2, sigma_w_1_sqd,       & ! Out
+                               sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
+                               sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
+                               sigma_thl_2_sqd, mixt_frac,              & ! Out
+                               F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
+                               min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
 
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 

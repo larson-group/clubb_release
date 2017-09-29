@@ -1852,6 +1852,15 @@ module advance_clubb_core_module
         iSkthl_zt,           &
         iSkw_velocity,       &
         igamma_Skw_fnc,      &
+        iF_w,                &
+        iF_rt,               &
+        iF_thl,              &
+        imin_F_w,            &
+        imax_F_w,            &
+        imin_F_rt,           &
+        imax_F_rt,           &
+        imin_F_thl,          &
+        imax_F_thl,          &
         ircp2,               &
         iwp4,                &
         ircm_refined,        &
@@ -2070,6 +2079,31 @@ module advance_clubb_core_module
       wp2sclrp_zm,    & ! w'^2 sclr' on momentum grid
       sclrm_zm          ! Passive scalar mean on momentum grid
 
+    ! Output from new PDF for recording statistics.
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
+      F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
+      F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
+      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
+      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
+      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
+      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
+      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
+
+    real( kind = core_rknd ) :: &
+      F_w_zm,       &
+      F_rt_zm,      &
+      F_thl_zm,     &
+      min_F_w_zm,   &
+      max_F_w_zm,   &
+      min_F_rt_zm,  &
+      max_F_rt_zm,  &
+      min_F_thl_zm, &
+      max_F_thl_zm
+
     ! The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
       pdf_params_zm_frz
@@ -2117,6 +2151,26 @@ module advance_clubb_core_module
       rtm_zm_frz, &
       thlm_zm_frz, &
       rc_coef_frz
+
+    real( kind = core_rknd ) :: &
+      F_w_frz,          &
+      F_rt_frz,         &
+      F_thl_frz,        &
+      min_F_w_frz,      &
+      max_F_w_frz,      &
+      min_F_rt_frz,     &
+      max_F_rt_frz,     &
+      min_F_thl_frz,    &
+      max_F_thl_frz,    &
+      F_w_zm_frz,       &
+      F_rt_zm_frz,      &
+      F_thl_zm_frz,     &
+      min_F_w_zm_frz,   &
+      max_F_w_zm_frz,   &
+      min_F_rt_zm_frz,  &
+      max_F_rt_zm_frz,  &
+      min_F_thl_zm_frz, &
+      max_F_thl_zm_frz
 
     real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
       wpsclrprtp_frz, &
@@ -2297,6 +2351,8 @@ module advance_clubb_core_module
           rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),            & ! intent(out)
           thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),       & ! intent(out)
           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),                   & ! intent(out)
+          F_w(k), F_rt(k), F_thl(k), min_F_w(k), max_F_w(k),          & ! intent(out)
+          min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
           err_code_pdf_closure,                                       & ! intent(out)
           wpsclrprtp(k,:), wpsclrp2(k,:), sclrpthvp_zt(k,:),          & ! intent(out)
           wpsclrpthlp(k,:), sclrprcp_zt(k,:), wp2sclrp(k,:),          & ! intent(out)
@@ -2316,6 +2372,19 @@ module advance_clubb_core_module
       end if
 
     end do ! k = 1, gr%nz, 1
+
+    ! Stats output
+    if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
+       call stat_update_var( iF_w, F_w, stats_zt )
+       call stat_update_var( iF_rt, F_rt, stats_zt )
+       call stat_update_var( iF_thl, F_thl, stats_zt )
+       call stat_update_var( imin_F_w, min_F_w, stats_zt )
+       call stat_update_var( imax_F_w, max_F_w, stats_zt )
+       call stat_update_var( imin_F_rt, min_F_rt, stats_zt )
+       call stat_update_var( imax_F_rt, max_F_rt, stats_zt )
+       call stat_update_var( imin_F_thl, min_F_thl, stats_zt )
+       call stat_update_var( imax_F_thl, max_F_thl, stats_zt )
+    endif
 
     if ( l_refine_grid_in_cloud ) then
 
@@ -2445,6 +2514,8 @@ module advance_clubb_core_module
             rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),                  & ! intent(out)
             thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),                   & ! intent(out)
             thlprcp(k), rcp2(k), pdf_params_zm(k),                            & ! intent(out)
+            F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,                & ! intent(out)
+            min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
             err_code_pdf_closure,                                             & ! intent(out)
             wpsclrprtp_zm(k,:), wpsclrp2_zm(k,:), sclrpthvp(k,:),             & ! intent(out)
             wpsclrpthlp_zm(k,:), sclrprcp(k,:), wp2sclrp_zm(k,:),             & ! intent(out)
@@ -2614,6 +2685,8 @@ module advance_clubb_core_module
             rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),      & ! intent(out)
             thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k), & ! intent(out)
             thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),                 & ! intent(out)
+            F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,               & ! intent(out)
+            min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
             err_code_pdf_closure,                                                 & ! intent(out)
             wpsclrprtp_frz(k,:), wpsclrp2_frz(k,:), sclrpthvp_zt_frz(k,:),        & ! intent(out)
             wpsclrpthlp_frz(k,:), sclrprcp_zt_frz(k,:), wp2sclrp_frz(k,:),        & ! intent(out)
@@ -2670,6 +2743,9 @@ module advance_clubb_core_module
               rcm_zm_frz(k), wpthvp_frz(k), wp2thvp_zm_frz(k), rtpthvp_frz(k),  & ! intent(out)
               thlpthvp_frz(k), wprcp_frz(k), wp2rcp_zm_frz(k), rtprcp_frz(k),   & ! intent(out)
               thlprcp_frz(k), rcp2_frz(k), pdf_params_zm_frz(k),                & ! intent(out)
+              F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz,            & ! intent(out)
+              max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,                 & ! intent(out)
+              min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)
               err_code_pdf_closure,                                             & ! intent(out)
               wpsclrprtp_zm_frz(k,:), wpsclrp2_zm_frz(k,:), sclrpthvp_frz(k,:), & ! intent(out)
               wpsclrpthlp_zm_frz(k,:), sclrprcp_frz(k,:), wp2sclrp_zm_frz(k,:), & ! intent(out)

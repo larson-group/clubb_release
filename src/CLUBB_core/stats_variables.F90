@@ -636,6 +636,20 @@ module stats_variables
 !$omp    icorr_w_thl_1, icorr_w_thl_2, icorr_rt_thl_1, icorr_rt_thl_2, &
 !$omp    icrt_1, icrt_2, icthl_1, icthl_2 )
 
+  integer, public :: &
+    iF_w = 0, &
+    iF_rt = 0, &
+    iF_thl = 0, &
+    imin_F_w = 0, &
+    imax_F_w = 0, &
+    imin_F_rt = 0, &
+    imax_F_rt = 0, &
+    imin_F_thl = 0, &
+    imax_F_thl = 0
+
+!$omp  threadprivate( iF_w, iF_rt, iF_thl, imin_F_w, imax_F_w, imin_F_rt, &
+!$omp                 imax_F_rt, imin_F_thl, imax_F_thl )
+
   integer, public :: & 
     iwp2_zt = 0, & 
     ithlp2_zt = 0, & 

@@ -54,6 +54,8 @@ module pdf_closure_module
                           rcm, wpthvp, wp2thvp, rtpthvp,            &
                           thlpthvp, wprcp, wp2rcp, rtprcp,          &
                           thlprcp, rcp2, pdf_params,                &
+                          F_w, F_rt, F_thl, min_F_w, max_F_w,       &
+                          min_F_rt, max_F_rt, min_F_thl, max_F_thl, &
                           err_code,                                 &
                           wpsclrprtp, wpsclrp2, sclrpthvp,          &
                           wpsclrpthlp, sclrprcp, wp2sclrp,          &
@@ -231,6 +233,20 @@ module pdf_closure_module
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
+
+    ! Parameters output only for recording statistics (new PDF).
+    real( kind = core_rknd ), intent(out) :: &
+      F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
+      F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
+      F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
+
+    real( kind = core_rknd ), intent(out) :: &
+      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
+      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
+      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
+      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
+      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
+      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
 
     integer, intent(out) :: & 
       err_code       ! Are the outputs usable numbers?
@@ -467,13 +483,15 @@ module pdf_closure_module
 
       elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-         call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
-                              Skw, Skrt, Skthl, wprtp, wpthlp, & ! In
-                              w_1, w_2, rt_1, rt_2,            & ! Out
-                              thl_1, thl_2, varnce_w_1,        & ! Out
-                              varnce_w_2, varnce_rt_1,         & ! Out
-                              varnce_rt_2, varnce_thl_1,       & ! Out
-                              varnce_thl_2, mixt_frac          ) ! Out
+         call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
+                              Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
+                              w_1, w_2, rt_1, rt_2,                    & ! Out
+                              thl_1, thl_2, varnce_w_1,                & ! Out
+                              varnce_w_2, varnce_rt_1,                 & ! Out
+                              varnce_rt_2, varnce_thl_1,               & ! Out
+                              varnce_thl_2, mixt_frac,                 & ! Out
+                              F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
+                              min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out          ) ! Out
 
          ! The variables alpha_rt and alpha_thl aren't used by the new PDF.
          ! However, they need to be set to a value to avoid being set to NaN and

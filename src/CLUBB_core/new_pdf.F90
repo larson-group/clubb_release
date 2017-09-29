@@ -35,7 +35,9 @@ module new_pdf
                              mu_thl_1, mu_thl_2, sigma_w_1_sqd,        & ! Out
                              sigma_w_2_sqd, sigma_rt_1_sqd,            & ! Out
                              sigma_rt_2_sqd, sigma_thl_1_sqd,          & ! Out
-                             sigma_thl_2_sqd, mixt_frac                ) ! Out
+                             sigma_thl_2_sqd, mixt_frac,               & ! Out
+                             F_w, F_rt, F_thl, min_F_w, max_F_w,       & ! Out
+                             min_F_rt, max_F_rt, min_F_thl, max_F_thl  ) ! Out
                              
 
     ! Description:
@@ -89,6 +91,20 @@ module new_pdf
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
+    ! Output only for recording statistics.
+    real( kind = core_rknd ), intent(out) :: &
+      F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
+      F_rt,  & ! Parameter for the spread of the PDF component means of rt   [-]
+      F_thl    ! Parameter for the spread of the PDF component means of thl  [-]
+
+    real( kind = core_rknd ), intent(out) :: &
+      min_F_w,   & ! Minimum allowable value of parameter F_w      [-]
+      max_F_w,   & ! Maximum allowable value of parameter F_w      [-]
+      min_F_rt,  & ! Minimum allowable value of parameter F_rt     [-]
+      max_F_rt,  & ! Maximum allowable value of parameter F_rt     [-]
+      min_F_thl, & ! Minimum allowable value of parameter F_thl    [-]
+      max_F_thl    ! Maximum allowable value of parameter F_thl    [-]
+
     ! Local Variables
     real( kind = core_rknd ) :: &
       sigma_w_1,  & ! Standard deviation of w (1st PDF component)      [m/s]
@@ -115,16 +131,7 @@ module new_pdf
       max_Skx2_neg_Skx_sgn_wpxp
 
     real( kind = core_rknd ) :: &
-      min_F_rt,  & !
-      max_F_rt,  & !
-      min_F_thl, & !
-      max_F_thl    !
-
-    real( kind = core_rknd ) :: &
-      F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
-      zeta_w, & ! Parameter for the PDF component variances of w             [-]
-      F_rt,   & ! Parameter for the spread of the PDF component means of rt  [-]
-      F_thl     ! Parameter for the spread of the PDF component means of thl [-]
+      zeta_w    ! Parameter for the PDF component variances of w             [-]
 
 
     Skw = Skw_in
@@ -142,6 +149,10 @@ module new_pdf
     else ! wpthlp < 0
        sgn_wpthlp = -one
     endif ! wpthlp >= 0
+
+
+    min_F_w = zero
+    max_F_w = one
 
     F_w = one - exp( -Skw**2 / 200.0_core_rknd )
     zeta_w = zero
