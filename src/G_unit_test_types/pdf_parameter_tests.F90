@@ -112,8 +112,10 @@ module pdf_parameter_tests
 
     use new_pdf, only: &
         calc_setter_var_params, & ! Procedure(s)
-        calc_coef_wp4_implicit, &
-        new_pdf_driver
+        calc_coef_wp4_implicit
+
+    use new_pdf_main, only: &
+        new_pdf_driver    ! Procedure(s)
 
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure    ! Procedure(s)

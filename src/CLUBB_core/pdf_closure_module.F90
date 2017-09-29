@@ -110,7 +110,7 @@ module pdf_closure_module
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type
 
-    use new_pdf, only: &
+    use new_pdf_main, only: &
         new_pdf_driver    ! Procedure(s)
 
     use adg1_adg2_3d_luhar_pdf, only: &
