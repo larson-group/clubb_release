@@ -413,7 +413,7 @@ module saturation
 ! Description:
 ! copy from "GFDL polysvp.F90" 
 !  Compute saturation vapor pressure with respect to liquid  by using 
-! function from Goff and Gatch (1946)
+! function from Goff and Gratch (1946)
 
 !  Polysvp returned in units of pa.
 !  T_in_K  is input in units of K.
@@ -425,19 +425,31 @@ module saturation
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Absolute temperature   [K]
 
     ! Output Variables
     real( kind = core_rknd ) :: esat  ! Saturation vapor pressure over water [Pa]
 
-    ! Goff Gatch equation, uncertain below -70 C
+    ! Local Variables
+    real( kind = core_rknd ), parameter :: & 
+       min_T_in_K = 203.15_core_rknd ! Lowest temperature at which Goff-Gratch is valid [K]
+
+    real( kind = core_rknd ) :: & 
+       T_in_K_clipped        ! Absolute temperature with minimum threshold applied [K]
+
+    ! Since the Goff-Gratch approximation is valid only down to -70 degrees Celsius,
+    !   we threshold the temperature.  This will yield a minimal saturation at
+    !   cold temperatures.
+    T_in_K_clipped = max( min_T_in_K, T_in_K )
+
+    ! Goff Gratch equation, uncertain below -70 C
       
-         esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K-1._core_rknd)+ &
-             5.02808_core_rknd*log10(373.16_core_rknd/T_in_K)- &
+         esat = 10._core_rknd**(-7.90298_core_rknd*(373.16_core_rknd/T_in_K_clipped-1._core_rknd)+ &
+             5.02808_core_rknd*log10(373.16_core_rknd/T_in_K_clipped)- &
              1.3816e-7_core_rknd*(10._core_rknd**(11.344_core_rknd &
-               *(1._core_rknd-T_in_K/373.16_core_rknd))-1._core_rknd)+ &
+               *(1._core_rknd-T_in_K_clipped/373.16_core_rknd))-1._core_rknd)+ &
              8.1328e-3_core_rknd*(10._core_rknd**(-3.49149_core_rknd &
-               *(373.16_core_rknd/T_in_K-1._core_rknd))-1._core_rknd)+ &
+               *(373.16_core_rknd/T_in_K_clipped-1._core_rknd))-1._core_rknd)+ &
              log10(1013.246_core_rknd))*100._core_rknd ! Known magic number
 
     return
@@ -664,8 +676,8 @@ module saturation
   elemental function sat_vapor_press_ice_gfdl( T_in_K ) result ( esati )
 ! Description:
 ! copy from "GFDL polysvp.F90" 
-!  Compute saturation vapor pressure with respect to liquid  by using 
-! function from Goff and Gatch (1946)
+!  Compute saturation vapor pressure with respect to liquid by using 
+! function from Goff and Gratch (1946)
 ! 
 !  Polysvp returned in units of pa.
 !  T_in_K is input in units of K.
@@ -677,17 +689,29 @@ module saturation
     implicit none
 
     ! Input Variables
-    real( kind = core_rknd ), intent(in) :: T_in_K   ! Temperature   [K]
+    real( kind = core_rknd ), intent(in) :: T_in_K   ! Absolute temperature   [K]
 
     ! Output Variables
     real( kind = core_rknd ) :: esati  ! Saturation vapor pressure over ice [Pa]
 
-    ! Goff Gatch equation (good down to -100 C)
+    ! Local Variables
+    real( kind = core_rknd ), parameter :: &
+       min_T_in_K = 173.15_core_rknd ! Lowest temperature at which Goff-Gratch is valid [K]
+
+    real( kind = core_rknd ) :: &
+       T_in_K_clipped        ! Absolute temperature with minimum threshold applied [K]
+
+    ! Since the Goff-Gratch ice approximation is valid only down to -100 degrees Celsius,
+    !   we threshold the temperature.  This will yield a minimal saturation at
+    !   cold temperatures.
+    T_in_K_clipped = max( min_T_in_K, T_in_K )
+
+    ! Goff Gratch equation (good down to -100 C)
 
     esati = 10._core_rknd**(-9.09718_core_rknd* &
-            (273.16_core_rknd/T_in_k-1._core_rknd)-3.56654_core_rknd* &
-          log10(273.16_core_rknd/T_in_k)+0.876793_core_rknd* &
-            (1._core_rknd-T_in_k/273.16_core_rknd)+ &
+            (273.16_core_rknd/T_in_K_clipped-1._core_rknd)-3.56654_core_rknd* &
+          log10(273.16_core_rknd/T_in_K_clipped)+0.876793_core_rknd* &
+            (1._core_rknd-T_in_K_clipped/273.16_core_rknd)+ &
           log10(6.1071_core_rknd))*100._core_rknd ! Known magic number
 
     return
