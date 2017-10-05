@@ -397,6 +397,19 @@ module pdf_closure_module
 
     err_code = clubb_no_error ! Initialize to the value for no errors
 
+    ! Initialize to 0 to prevent runtime error
+    if ( iiPDF_type /= iiPDF_new ) then
+       F_w = zero
+       F_rt = zero
+       F_thl = zero
+       min_F_w = zero
+       max_F_w = zero
+       min_F_rt = zero
+       max_F_rt = zero
+       min_F_thl = zero
+       max_F_thl = zero
+    endif ! iiPDF_type /= iiPDF_new
+
     ! If there is no variance in vertical velocity, then treat rt and theta-l as
     ! constant, as well.  Otherwise width parameters (e.g. varnce_w_1,
     ! varnce_w_2, etc.) are non-zero.
