@@ -14,6 +14,8 @@ module new_pdf_main
 
   public :: new_pdf_driver    ! Procedure(s)
 
+  private :: calc_responder_var    ! Procedure(s)
+
   private
 
   contains
@@ -152,6 +154,8 @@ module new_pdf_main
     F_w = one - exp( -Skw**2 / 200.0_core_rknd )
     zeta_w = zero
 
+    ! Calculate the PDF parameters, including mixture fraction, for the
+    ! setter variable, w.
     call calc_setter_var_params( wm, wp2, Skw, sgn_wp2,     & ! In
                                  F_w, zeta_w,               & ! In
                                  mu_w_1, mu_w_2, sigma_w_1, & ! Out
@@ -169,80 +173,138 @@ module new_pdf_main
 
     max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
-    ! Calculate the upper limit of the magnitude of Skrt.
-    if ( Skrt * sgn_wprtp >= zero ) then
-       if ( Skrt**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
-          if ( Skrt >= zero ) then
-             Skrt = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          else
-             Skrt = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          endif
-       endif ! Skrt^2 >= max_Skx2_pos_Skx_sgn_wpxp
-    else ! Skrt * sgn( <w'rt'> ) < 0
-       if ( Skrt**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
-          if ( Skrt >= zero ) then
-             Skrt = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          else
-             Skrt = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          endif
-       endif ! Skrt^2 >= max_Skx2_neg_Skx_sgn_wpxp
-    endif ! Skrt * sgn( <w'rt'> ) >= 0
+    ! Calculate the PDF parameters for responder variable rt.
+    call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
+                             max_Skx2_pos_Skx_sgn_wpxp,       & ! In
+                             max_Skx2_neg_Skx_sgn_wpxp,       & ! In
+                             Skrt,                            & ! In/Out
+                             mu_rt_1, mu_rt_2,                & ! Out
+                             sigma_rt_1_sqd, sigma_rt_2_sqd,  & ! Out
+                             coef_sigma_rt_1_sqd,             & ! Out
+                             coef_sigma_rt_2_sqd,             & ! Out
+                             F_rt, min_F_rt, max_F_rt         ) ! Out
 
-    call calc_limits_F_x_responder( mixt_frac, Skrt, sgn_wprtp, & ! In
-                                    max_Skx2_pos_Skx_sgn_wpxp,  & ! In
-                                    max_Skx2_neg_Skx_sgn_wpxp,  & ! In
-                                    min_F_rt, max_F_rt )          ! Out
-
-    ! F_rt must have a value between min_F_rt and max_F_rt.
-    F_rt = max_F_rt &
-           + ( min_F_rt - max_F_rt ) * exp( -Skrt**2 / 200.0_core_rknd )
-
-    call calc_responder_params( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
-                                F_rt, mixt_frac,                & ! In
-                                mu_rt_1, mu_rt_2,               & ! Out
-                                sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
-                                coef_sigma_rt_1_sqd,            & ! Out
-                                coef_sigma_rt_2_sqd             ) ! Out
-
-    ! Calculate the upper limit of the magnitude of Skthl.
-    if ( Skthl * sgn_wpthlp >= zero ) then
-       if ( Skthl**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
-          if ( Skthl >= zero ) then
-             Skthl = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          else
-             Skthl = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
-          endif
-       endif ! Skthl^2 >= max_Skx2_pos_Skx_sgn_wpxp
-    else ! Skthl * sgn( <w'thl'> ) < 0
-       if ( Skthl**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
-          if ( Skthl >= zero ) then
-             Skthl = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          else
-             Skthl = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
-          endif
-       endif ! Skthl^2 >= max_Skx2_neg_Skx_sgn_wpxp
-    endif ! Skthl * sgn( <w'thl'> ) >= 0
-
-    call calc_limits_F_x_responder( mixt_frac, Skthl, sgn_wpthlp, & ! In
-                                    max_Skx2_pos_Skx_sgn_wpxp,    & ! In
-                                    max_Skx2_neg_Skx_sgn_wpxp,    & ! In
-                                    min_F_thl, max_F_thl )          ! Out
-
-    ! F_thl must have a value between min_F_thl and max_F_thl.
-    F_thl = max_F_thl &
-            + ( min_F_thl - max_F_thl ) * exp( -Skthl**2 / 200.0_core_rknd )
-
-    call calc_responder_params( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
-                                F_thl, mixt_frac,                 & ! In
-                                mu_thl_1, mu_thl_2,               & ! Out
-                                sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
-                                coef_sigma_thl_1_sqd,             & ! Out
-                                coef_sigma_thl_2_sqd              ) ! Out
+    ! Calculate the PDF parameters for responder variable thl.
+    call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
+                             max_Skx2_pos_Skx_sgn_wpxp,          & ! In
+                             max_Skx2_neg_Skx_sgn_wpxp,          & ! In
+                             Skthl,                              & ! In/Out
+                             mu_thl_1, mu_thl_2,                 & ! Out
+                             sigma_thl_1_sqd, sigma_thl_2_sqd,   & ! Out
+                             coef_sigma_thl_1_sqd,               & ! Out
+                             coef_sigma_thl_2_sqd,               & ! Out
+                             F_thl, min_F_thl, max_F_thl         ) ! Out
 
    
     return
 
   end subroutine new_pdf_driver
+
+  !=============================================================================
+  subroutine calc_responder_var( xm, xp2, sgn_wpxp, mixt_frac, & ! In
+                                 max_Skx2_pos_Skx_sgn_wpxp,    & ! In
+                                 max_Skx2_neg_Skx_sgn_wpxp,    & ! In
+                                 Skx,                          & ! In/Out
+                                 mu_x_1, mu_x_2,               & ! Out
+                                 sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
+                                 coef_sigma_x_1_sqd,           & ! Out
+                                 coef_sigma_x_2_sqd,           & ! Out
+                                 F_x, min_F_x, max_F_x         ) ! Out
+
+    ! Description:
+    ! This is the sub-driver for a responder variable.  The upper limits of the
+    ! magnitude of Skx are calculated, and Skx is clipped when its magnitude
+    ! exceeds the upper limits.  The limits of the F_x parameter are calculated,
+    ! and the value of F_x is set within those limits.  Then, the PDF parameters
+    ! for responder variable x are calculated.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Variable(s)
+
+    use new_pdf, only: &
+        calc_limits_F_x_responder, & ! Procedure(s)
+        calc_responder_params
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      xm,        & ! Mean of x (overall)                  [units vary]
+      xp2,       & ! Variance of x (overall)              [(units vary)^2]
+      sgn_wpxp,  & ! Sign of the covariance of w and x    [-]
+      mixt_frac    ! Mixture fraction                     [-]
+
+    real( kind = core_rknd ), intent(in) :: &
+      max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
+      max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
+
+    ! Input/Output Variable
+    real( kind = core_rknd ), intent(inout) :: &
+      Skx    ! Skewness of x (overall)              [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_x_1,        & ! Mean of x (1st PDF component)        [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)        [units vary]
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)    [(units vary)^2]
+      sigma_x_2_sqd    ! Variance of x (2nd PDF component)    [(units vary)^2]
+
+    real( kind = core_rknd ), intent(out) :: &
+      coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>    [-]
+      coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>    [-]
+
+    ! Output only for recording statistics.
+    real( kind = core_rknd ), intent(out) :: &
+      F_x,     & ! Parameter for the spread of the PDF component means of x  [-]
+      min_F_x, & ! Minimum allowable value of parameter F_x                  [-]
+      max_F_x    ! Maximum allowable value of parameter F_x                  [-]
+
+
+    ! Calculate the upper limit of the magnitude of Skx.
+    if ( Skx * sgn_wpxp >= zero ) then
+       if ( Skx**2 >= max_Skx2_pos_Skx_sgn_wpxp ) then
+          if ( Skx >= zero ) then
+             Skx = sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          else
+             Skx = -sqrt( 0.99_core_rknd * max_Skx2_pos_Skx_sgn_wpxp )
+          endif
+       endif ! Skx^2 >= max_Skx2_pos_Skx_sgn_wpxp
+    else ! Skx * sgn( <w'x'> ) < 0
+       if ( Skx**2 >= max_Skx2_neg_Skx_sgn_wpxp ) then
+          if ( Skx >= zero ) then
+             Skx = sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          else
+             Skx = -sqrt( 0.99_core_rknd * max_Skx2_neg_Skx_sgn_wpxp )
+          endif
+       endif ! Skx^2 >= max_Skx2_neg_Skx_sgn_wpxp
+    endif ! Skx * sgn( <w'x'> ) >= 0
+
+    call calc_limits_F_x_responder( mixt_frac, Skx, sgn_wpxp,  & ! In
+                                    max_Skx2_pos_Skx_sgn_wpxp, & ! In
+                                    max_Skx2_neg_Skx_sgn_wpxp, & ! In
+                                    min_F_x, max_F_x )           ! Out
+
+    ! F_x must have a value between min_F_x and max_F_x.
+    F_x = max_F_x &
+          + ( min_F_x - max_F_x ) * exp( -Skx**2 / 200.0_core_rknd )
+
+    call calc_responder_params( xm, xp2, Skx, sgn_wpxp,       & ! In
+                                F_x, mixt_frac,               & ! In
+                                mu_x_1, mu_x_2,               & ! Out
+                                sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
+                                coef_sigma_x_1_sqd,           & ! Out
+                                coef_sigma_x_2_sqd            ) ! Out
+
+
+    return
+
+  end subroutine calc_responder_var
 
   !=============================================================================
 
