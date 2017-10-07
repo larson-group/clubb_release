@@ -51,7 +51,10 @@ module new_pdf_main
         zero
 
     use new_pdf, only: &
-        calc_setter_var_params    ! Procedure(s)
+        calc_setter_var_params,    & ! Procedure(s)
+        calc_coef_wp4_implicit,    &
+        calc_coef_wpxp2_implicit,  &
+        calc_coefs_wp2xp_semiimpl
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -136,6 +139,21 @@ module new_pdf_main
       zeta_w,   & ! Parameter for the PDF component variances of w           [-]
       zeta_rt,  & ! Parameter for the PDF component variances of rt          [-]
       zeta_thl    ! Parameter for the PDF component variances of thl         [-]
+
+    real ( kind = core_rknd ) :: &
+      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
+      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>  [-]
+      coef_wpthlp2_implicit    ! <w'thl'^2> = coef_wpthlp2_implicit*<thl'^2> [-]
+
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + coef_wp2rtp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>    [-]
+      coef_wp2rtp_explicit    ! Coefficient on the RHS                       [-]
+
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + coef_wp2thlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2thlp_implicit, & ! Coefficient that is multiplied by <w'thl'>  [-]
+      coef_wp2thlp_explicit    ! Coefficient on the RHS                      [-]
 
     logical, parameter :: &
       l_use_w_setter_var = .false. ! Flag to always use w as the setter variable
@@ -320,7 +338,52 @@ module new_pdf_main
 
     endif ! Find variable with the greatest magnitude of skewness.
 
-   
+
+    ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
+    coef_wp4_implicit &
+    = calc_coef_wp4_implicit( mixt_frac, F_w, &
+                              coef_sigma_w_1_sqd, &
+                              coef_sigma_w_2_sqd )
+
+    ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
+    coef_wprtp2_implicit &
+    = calc_coef_wpxp2_implicit( wp2, rtp2, wprtp, sgn_wprtp, &
+                                mixt_frac, F_w, F_rt, &
+                                coef_sigma_w_1_sqd, &
+                                coef_sigma_w_2_sqd, &
+                                coef_sigma_rt_1_sqd, &
+                                coef_sigma_rt_2_sqd  )
+
+    ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
+    coef_wpthlp2_implicit &
+    = calc_coef_wpxp2_implicit( wp2, thlp2, wpthlp, sgn_wpthlp, &
+                                mixt_frac, F_w, F_thl, &
+                                coef_sigma_w_1_sqd, &
+                                coef_sigma_w_2_sqd, &
+                                coef_sigma_thl_1_sqd, &
+                                coef_sigma_thl_2_sqd  )
+
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + coef_wp2rtp_explicit
+    call calc_coefs_wp2xp_semiimpl( wp2, rtp2, sgn_wprtp, & ! In
+                                    mixt_frac, F_w, F_rt, & ! In
+                                    coef_sigma_w_1_sqd,   & ! In
+                                    coef_sigma_w_2_sqd,   & ! In
+                                    coef_sigma_rt_1_sqd,  & ! In
+                                    coef_sigma_rt_2_sqd,  & ! In
+                                    coef_wp2rtp_implicit, & ! Out
+                                    coef_wp2rtp_explicit  ) ! Out
+
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + coef_wp2thlp_explicit
+    call calc_coefs_wp2xp_semiimpl( wp2, thlp2, sgn_wpthlp, & ! In
+                                    mixt_frac, F_w, F_thl,  & ! In
+                                    coef_sigma_w_1_sqd,     & ! In
+                                    coef_sigma_w_2_sqd,     & ! In
+                                    coef_sigma_thl_1_sqd,   & ! In
+                                    coef_sigma_thl_2_sqd,   & ! In
+                                    coef_wp2thlp_implicit,  & ! Out
+                                    coef_wp2thlp_explicit   ) ! Out
+
+
     return
 
   end subroutine new_pdf_driver
