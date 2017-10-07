@@ -900,7 +900,7 @@ module new_pdf
   subroutine calc_limits_F_x_responder( mixt_frac, Skx, sgn_wpxp,  & ! In
                                         max_Skx2_pos_Skx_sgn_wpxp, & ! In
                                         max_Skx2_neg_Skx_sgn_wpxp, & ! In
-                                        min_F, max_F )               ! Out
+                                        min_F_x, max_F_x )           ! Out
 
     ! Description:
     ! Calculates the minimum and maximum allowable values for F_x for a
@@ -930,13 +930,13 @@ module new_pdf
       sgn_wpxp     ! Sign of covariance of w and x    [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      max_Skx2_pos_Skx_sgn_wpxp, &
-      max_Skx2_neg_Skx_sgn_wpxp
+      max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
+      max_Skx2_neg_Skx_sgn_wpxp    ! Maximum Skx^2 when Skx*sgn(<w'x'>) < 0  [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      min_F, & ! Minimum allowable value of F    [-]
-      max_F    ! Maximum allowable value of F    [-]
+      min_F_x, & ! Minimum allowable value of F_x    [-]
+      max_F_x    ! Maximum allowable value of F_x    [-]
 
     ! Local Variables
     real( kind = core_rknd ) &
@@ -950,65 +950,66 @@ module new_pdf
       coef_D_2    ! Coef. D in Ax^3 + Bx^2 + Cx + D = 0 (2nd PDF comp. lim.) [-]
 
     complex( kind = core_rknd ), dimension(3) :: &
-      sqrt_F_roots_1, & ! Roots of sqrt(F) for sigma_x_1 term    [-]
-      sqrt_F_roots_2    ! Roots of sqrt(F) for sigma_x_2 term    [-]
+      sqrt_F_x_roots_1, & ! Roots of sqrt(F_x) for the sigma_x_1 term    [-]
+      sqrt_F_x_roots_2    ! Roots of sqrt(F_x) for the sigma_x_2 term    [-]
 
     real( kind = core_rknd ), dimension(3) :: &
-      sqrt_F_roots_1_sorted, & ! Sorted roots of sqrt(F) for sigma_x_1 term  [-]
-      sqrt_F_roots_2_sorted    ! Sorted roots of sqrt(F) for sigma_x_2 term  [-]
+      sqrt_F_x_roots_1_sorted, & ! Sorted roots of sqrt(F_x): sigma_x_1 term [-]
+      sqrt_F_x_roots_2_sorted    ! Sorted roots of sqrt(F_x): sigma_x_2 term [-]
 
     real( kind = core_rknd ) :: &
-      min_sqrt_F, & ! Minimum allowable value of sqrt(F)    [-]
-      max_sqrt_F    ! Maximum allowable value of sqrt(F)    [-]
+      min_sqrt_F_x, & ! Minimum allowable value of sqrt(F_x)    [-]
+      max_sqrt_F_x    ! Maximum allowable value of sqrt(F_x)    [-]
 
  
-    ! Set up the coefficients in the equation for the limit of sqrt(F) based on
-    ! the 1st PDF component standard deviation (sigma_x_1) being greater than or
-    ! equal to 0.  This equation has the form:
-    ! A * sqrt(F)^3 + B * sqrt(F)^2 + C * sqrt(F) + D = 0.
+    ! Set up the coefficients in the equation for the limit of sqrt(F_x) based
+    ! on the 1st PDF component standard deviation (sigma_x_1) being greater than
+    ! or equal to 0.  This equation has the form:
+    ! A * sqrt(F_x)^3 + B * sqrt(F_x)^2 + C * sqrt(F_x) + D = 0.
     coef_A_1 = -( one + mixt_frac )
     coef_B_1 = zero
     coef_C_1 = three * mixt_frac
     coef_D_1 = sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
 
-    ! Solve for the roots (values of sqrt(F)) that satisfy the above equation.
-    sqrt_F_roots_1 = cubic_solve( coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
+    ! Solve for the roots (values of sqrt(F_x)) that satisfy the above equation.
+    sqrt_F_x_roots_1 = cubic_solve( coef_A_1, coef_B_1, coef_C_1, coef_D_1 )
 
-    ! Set up the coefficients in the equation for the limit of sqrt(F) based on
-    ! the 2nd PDF component standard deviation (sigma_x_2) being greater than or
-    ! equal to 0.  This equation has the form:
-    ! A * sqrt(F)^3 + B * sqrt(F)^2 + C * sqrt(F) + D = 0.
+    ! Set up the coefficients in the equation for the limit of sqrt(F_x) based
+    ! on the 2nd PDF component standard deviation (sigma_x_2) being greater than
+    ! or equal to 0.  This equation has the form:
+    ! A * sqrt(F_x)^3 + B * sqrt(F_x)^2 + C * sqrt(F_x) + D = 0.
     coef_A_2 = -( two - mixt_frac )
     coef_B_2 = zero
     coef_C_2 = three * ( one - mixt_frac )
     coef_D_2 = -sqrt( mixt_frac * ( one - mixt_frac ) ) * Skx * sgn_wpxp
 
-    ! Solve for the roots (values of sqrt(F)) that satisfy the above equation.
-    sqrt_F_roots_2 = cubic_solve( coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
+    ! Solve for the roots (values of sqrt(F_x)) that satisfy the above equation.
+    sqrt_F_x_roots_2 = cubic_solve( coef_A_2, coef_B_2, coef_C_2, coef_D_2 )
 
 
-    ! Find the minimum and maximum allowable values of sqrt(F) based on Skx
+    ! Find the minimum and maximum allowable values of sqrt(F_x) based on Skx
     ! and sgn( <w'x'> ).
     if ( Skx * sgn_wpxp >= zero ) then
 
        if ( Skx**2 > max_Skx2_neg_Skx_sgn_wpxp ) then
 
-          sqrt_F_roots_2_sorted &
-          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+          sqrt_F_x_roots_2_sorted &
+          = sort_roots( real( sqrt_F_x_roots_2, kind = core_rknd ) )
 
-          min_sqrt_F = sqrt_F_roots_2_sorted(2)
-          max_sqrt_F = min( real( sqrt_F_roots_1(1), kind = core_rknd ), &
-                            sqrt_F_roots_2_sorted(3) )
+          min_sqrt_F_x = sqrt_F_x_roots_2_sorted(2)
+          max_sqrt_F_x = min( real( sqrt_F_x_roots_1(1), kind = core_rknd ), &
+                              sqrt_F_x_roots_2_sorted(3) )
 
        else ! Skx^2 <= max_Skx2_neg_Skx_sgn_wpxp
 
-          sqrt_F_roots_1_sorted &
-          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
-          sqrt_F_roots_2_sorted &
-          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+          sqrt_F_x_roots_1_sorted &
+          = sort_roots( real( sqrt_F_x_roots_1, kind = core_rknd ) )
+          sqrt_F_x_roots_2_sorted &
+          = sort_roots( real( sqrt_F_x_roots_2, kind = core_rknd ) )
 
-          min_sqrt_F = sqrt_F_roots_2_sorted(2)
-          max_sqrt_F = min( sqrt_F_roots_1_sorted(3), sqrt_F_roots_2_sorted(3) )
+          min_sqrt_F_x = sqrt_F_x_roots_2_sorted(2)
+          max_sqrt_F_x = min( sqrt_F_x_roots_1_sorted(3), &
+                              sqrt_F_x_roots_2_sorted(3) )
 
        endif ! Skx**2 > max_Skx2_neg_Skx_sgn_wpxp
 
@@ -1016,22 +1017,23 @@ module new_pdf
 
        if ( Skx**2 > max_Skx2_pos_Skx_sgn_wpxp ) then
 
-          sqrt_F_roots_1_sorted &
-          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
+          sqrt_F_x_roots_1_sorted &
+          = sort_roots( real( sqrt_F_x_roots_1, kind = core_rknd ) )
 
-          min_sqrt_F = sqrt_F_roots_1_sorted(2)
-          max_sqrt_F = min( real( sqrt_F_roots_2(1), kind = core_rknd ), &
-                            sqrt_F_roots_1_sorted(3) )
+          min_sqrt_F_x = sqrt_F_x_roots_1_sorted(2)
+          max_sqrt_F_x = min( real( sqrt_F_x_roots_2(1), kind = core_rknd ), &
+                              sqrt_F_x_roots_1_sorted(3) )
 
        else ! Skx^2 <= max_Skx2_pos_Skx_sgn_wpxp
 
-          sqrt_F_roots_1_sorted &
-          = sort_roots( real( sqrt_F_roots_1, kind = core_rknd ) )
-          sqrt_F_roots_2_sorted &
-          = sort_roots( real( sqrt_F_roots_2, kind = core_rknd ) )
+          sqrt_F_x_roots_1_sorted &
+          = sort_roots( real( sqrt_F_x_roots_1, kind = core_rknd ) )
+          sqrt_F_x_roots_2_sorted &
+          = sort_roots( real( sqrt_F_x_roots_2, kind = core_rknd ) )
 
-          min_sqrt_F = sqrt_F_roots_1_sorted(2)
-          max_sqrt_F = min( sqrt_F_roots_1_sorted(3), sqrt_F_roots_2_sorted(3) )
+          min_sqrt_F_x = sqrt_F_x_roots_1_sorted(2)
+          max_sqrt_F_x = min( sqrt_F_x_roots_1_sorted(3), &
+                              sqrt_F_x_roots_2_sorted(3) )
 
        endif ! Skx**2 > max_Skx2_pos_Skx_sgn_wpxp
 
@@ -1039,13 +1041,13 @@ module new_pdf
 
 
     ! The minimum and maximum are also limited by 0 and 1, respectively.
-    min_sqrt_F = max( min_sqrt_F, zero )
-    max_sqrt_F = min( max_sqrt_F, one )
+    min_sqrt_F_x = max( min_sqrt_F_x, zero )
+    max_sqrt_F_x = min( max_sqrt_F_x, one )
 
-    ! The minimum and maximum allowable values for F are the squares of the
-    ! minimum and maximum allowable values for sqrt(F).
-    min_F = min_sqrt_F**2
-    max_F = max_sqrt_F**2
+    ! The minimum and maximum allowable values for F_x are the squares of the
+    ! minimum and maximum allowable values for sqrt(F_x).
+    min_F_x = min_sqrt_F_x**2
+    max_F_x = max_sqrt_F_x**2
 
 
     return
@@ -1480,7 +1482,7 @@ module new_pdf
 
     ! Return Variable
     real ( kind = core_rknd ) :: &
-      coef_wpxp2_implicit
+      coef_wpxp2_implicit  ! Coef.: <w'x'^2> = coef_wpxp2_implicit * <x'^2>  [-]
 
     ! Local Variable
     real ( kind = core_rknd ) :: &
@@ -1764,9 +1766,10 @@ module new_pdf
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
     ! Output Variables
+    ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + coef_wp2xp_explicit
     real ( kind = core_rknd ), intent(out) :: &
-      coef_wp2xp_implicit, & !
-      coef_wp2xp_explicit    !
+      coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>      [-]
+      coef_wp2xp_explicit    ! Coefficient on the RHS                        [-]
 
     ! Local Variable
     real ( kind = core_rknd ) :: &

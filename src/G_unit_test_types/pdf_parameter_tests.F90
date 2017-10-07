@@ -237,12 +237,12 @@ module pdf_parameter_tests
       l_pass_test_11, & ! Flag for passing test 11
       l_pass_test_12, & ! Flag for passing test 12
       l_pass_test_13, & ! Flag for passing test 13
-!      l_pass_test_14, & ! Flag for passing test 14
-!      l_pass_test_15, & ! Flag for passing test 15
+      l_pass_test_14, & ! Flag for passing test 14
+      l_pass_test_15, & ! Flag for passing test 15
       l_pass_test_16, & ! Flag for passing test 16
       l_pass_test_17, & ! Flag for passing test 17
-!      l_pass_test_18, & ! Flag for passing test 18
-!      l_pass_test_19, & ! Flag for passing test 19
+      l_pass_test_18, & ! Flag for passing test 18
+      l_pass_test_19, & ! Flag for passing test 19
       l_pass_test_20    ! Flag for passing test 20
 
     integer :: &
@@ -353,8 +353,8 @@ module pdf_parameter_tests
           thlp2 = 0.1_core_rknd
           Skthl = -2.5_core_rknd
           thlp3 = Skthl * thlp2**1.5
-          wprtp = 5.0e-5_core_rknd
-          wpthlp = -5.0e-3_core_rknd
+          wprtp = -5.0e-5_core_rknd
+          wpthlp = 5.0e-3_core_rknd
        elseif ( iter_param_sets == 3 ) then
           write(fstdout,*) "PDF parameter set 3:"
           ! Large, positive skewness of w.
@@ -399,14 +399,14 @@ module pdf_parameter_tests
           wp3 = Skw * wp2**1.5
           rtm = 1.0e-2_core_rknd
           rtp2 = 2.0e-6_core_rknd
-          Skrt = 0.25_core_rknd
+          Skrt = -0.25_core_rknd
           rtp3 = Skrt * rtp2**1.5
           thlm = 305.0_core_rknd
           thlp2 = 0.2_core_rknd
           Skthl = -3.5_core_rknd
           thlp3 = Skthl * thlp2**1.5
           wprtp = 5.0e-5_core_rknd
-          wpthlp = -5.0e-3_core_rknd
+          wpthlp = 5.0e-3_core_rknd
        elseif ( iter_param_sets == 6 ) then
           write(fstdout,*) "PDF parameter set 6:"
           ! w, rt, and theta-l are all unskewed.
@@ -468,7 +468,7 @@ module pdf_parameter_tests
           wp3 = Skw * wp2**1.5
           rtm = 1.0e-2_core_rknd
           rtp2 = 2.0e-6_core_rknd
-          Skrt = 1.0_core_rknd
+          Skrt = -1.0_core_rknd
           rtp3 = Skrt * rtp2**1.5
           thlm = 305.0_core_rknd
           thlp2 = 0.7_core_rknd
@@ -520,9 +520,11 @@ module pdf_parameter_tests
           ! Calculate thlp3.
           thlp3 = Skthl * thlp2**1.5
           ! Use a random number to calculate the value of wprtp.
-          wprtp = rand10 * sqrt( wp2 ) * sqrt( rtp2 ) * sign( one, Skrt )
+          wprtp = rand10 * sqrt( wp2 ) * sqrt( rtp2 ) &
+                  * sign( one, Skw ) * sign( one, Skrt )
           ! Use a random number to calculate the value of wpthlp.
-          wpthlp = rand11 * sqrt( wp2 ) * sqrt( thlp2 ) * sign( one, Skthl )
+          wpthlp = rand11 * sqrt( wp2 ) * sqrt( thlp2 ) &
+                   * sign( one, Skw ) * sign( one, Skthl )
        endif ! iter_param_sets == index
 
        ! Print PDF parameters
@@ -898,32 +900,32 @@ module pdf_parameter_tests
        !    | ( <rt'^3>|_recalc - <rt'^3> ) / <rt'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
-!       if ( abs( recalc_rtp3 - rtp3 ) &
-!            <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
-!          l_pass_test_14 = .true.
-!       else
-!          l_pass_test_14 = .false.
-!          write(fstderr,*) "Test 14 failed"
-!          write(fstderr,*) "rtp3 = ", rtp3
-!          write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
-!          write(fstderr,*) ""
-!       endif
+       if ( abs( recalc_rtp3 - rtp3 ) &
+            <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
+          l_pass_test_14 = .true.
+       else
+          l_pass_test_14 = .false.
+          write(fstderr,*) "Test 14 failed"
+          write(fstderr,*) "rtp3 = ", rtp3
+          write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
+          write(fstderr,*) ""
+       endif
 
        ! Test 15
        ! Compare the original Skrt to its recalculated value.
        !    | ( Skrt|_recalc - Skrt ) / Skrt |  <=  tol;
        ! which can be rewritten as:
        !    | Skrt|_recalc - Skrt |  <=  | Skrt | * tol.
-!       if ( abs( recalc_Skrt - Skrt ) &
-!            <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
-!          l_pass_test_15 = .true.
-!       else
-!          l_pass_test_15 = .false.
-!          write(fstderr,*) "Test 15 failed"
-!          write(fstderr,*) "Skrt = ", Skrt
-!          write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
-!          write(fstderr,*) ""
-!       endif
+       if ( abs( recalc_Skrt - Skrt ) &
+            <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
+          l_pass_test_15 = .true.
+       else
+          l_pass_test_15 = .false.
+          write(fstderr,*) "Test 15 failed"
+          write(fstderr,*) "Skrt = ", Skrt
+          write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
+          write(fstderr,*) ""
+       endif
 
        ! Test 16
        ! Compare the original thlm to its recalculated value.
@@ -963,32 +965,32 @@ module pdf_parameter_tests
        !    | ( <thl'^3>|_recalc - <thl'^3> ) / <thl'^3> |  <=  tol;
        ! which can be rewritten as:
        !    | <thl'^3>|_recalc - <thl'^3> |  <=  | <thl'^3> | * tol.
-!       if ( abs( recalc_thlp3 - thlp3 ) &
-!            <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
-!          l_pass_test_18 = .true.
-!       else
-!          l_pass_test_18 = .false.
-!          write(fstderr,*) "Test 18 failed"
-!          write(fstderr,*) "thlp3 = ", thlp3
-!          write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
-!          write(fstderr,*) ""
-!       endif
+       if ( abs( recalc_thlp3 - thlp3 ) &
+            <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
+          l_pass_test_18 = .true.
+       else
+          l_pass_test_18 = .false.
+          write(fstderr,*) "Test 18 failed"
+          write(fstderr,*) "thlp3 = ", thlp3
+          write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
+          write(fstderr,*) ""
+       endif
 
        ! Test 19
        ! Compare the original Skthl to its recalculated value.
        !    | ( Skthl|_recalc - Skthl ) / Skthl |  <=  tol;
        ! which can be rewritten as:
        !    | Skthl|_recalc - Skthl |  <=  | Skthl | * tol.
-!       if ( abs( recalc_Skthl - Skthl ) &
-!            <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
-!          l_pass_test_19 = .true.
-!       else
-!          l_pass_test_19 = .false.
-!          write(fstderr,*) "Test 19 failed"
-!          write(fstderr,*) "Skthl = ", Skthl
-!          write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
-!          write(fstderr,*) ""
-!       endif
+       if ( abs( recalc_Skthl - Skthl ) &
+            <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
+          l_pass_test_19 = .true.
+       else
+          l_pass_test_19 = .false.
+          write(fstderr,*) "Test 19 failed"
+          write(fstderr,*) "Skthl = ", Skthl
+          write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
+          write(fstderr,*) ""
+       endif
 
        ! Test 20
        ! Check that sigma_w_1, sigma_w_2, sigma_rt_1, sigma_rt_2, sigma_thl_1,
@@ -1016,9 +1018,9 @@ module pdf_parameter_tests
        if ( l_pass_test_8 .and. l_pass_test_9 &
             .and. l_pass_test_10 .and. l_pass_test_11 &
             .and. l_pass_test_12 .and. l_pass_test_13 &
-!            .and. l_pass_test_14 .and. l_pass_test_15 &
+            .and. l_pass_test_14 .and. l_pass_test_15 &
             .and. l_pass_test_16 .and. l_pass_test_17 &
-!            .and. l_pass_test_18 .and. l_pass_test_19 &
+            .and. l_pass_test_18 .and. l_pass_test_19 &
             .and. l_pass_test_20 ) then
 
           ! All tests pass
