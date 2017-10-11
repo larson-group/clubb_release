@@ -38,7 +38,8 @@ module clubb_driver
 
     ! References:
     !   None
-    !-----------------------------------------------------------------------
+    !---------------------------------------------------------------------
+
 
     use grid_class, only: gr ! Variable(s)
 
@@ -525,6 +526,8 @@ module clubb_driver
     namelist /stats_setting/ &
       l_stats, fname_prefix, stats_tsamp, stats_tout, stats_fmt, &
          l_allow_small_stats_tout
+
+    
 
 !-----------------------------------------------------------------------
     ! Begin code
@@ -1435,12 +1438,12 @@ module clubb_driver
                                     hydromet_pdf_params )                       ! Intent(out)
 
          ! Calculate < rt'hm' >, < thl'hm' >, and < w'^2 hm' >.
-         call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet, &
-                                         mu_x_1_n, mu_x_2_n, &
-                                         sigma_x_1_n, sigma_x_2_n, &
-                                         corr_array_1_n, corr_array_2_n, &
-                                         pdf_params, hydromet_pdf_params, &
-                                         rtphmp_zt, thlphmp_zt, wp2hmp )
+         call hydrometeor_mixed_moments( gr%nz, pdf_dim, hydromet, &            ! Intent(in)
+                                         mu_x_1_n, mu_x_2_n, &                  ! Intent(in)
+                                         sigma_x_1_n, sigma_x_2_n, &            ! Intent(in)
+                                         corr_array_1_n, corr_array_2_n, &      ! Intent(in)
+                                         pdf_params, hydromet_pdf_params, &     ! Intent(in)
+                                         rtphmp_zt, thlphmp_zt, wp2hmp )        ! Intent(out)
 
       endif ! not microphys_scheme == "none"
 
@@ -1552,14 +1555,14 @@ module clubb_driver
 
       if ( l_stats_samp ) then
         ! Total microphysical tendency of vapor and cloud water mixing ratios
-        call stat_update_var( irvm_mc, rvm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( ircm_mc, rcm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt ) ! kg/kg/s
-        call stat_update_var( ithlm_mc, thlm_mc, stats_zt ) ! K/s
-        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm ) ! m*(kg/kg)/s^2
-        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm ) ! K*m/s^2
-        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm ) ! (kg/kg)^2/s
-        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm ) ! K^2/s
+        call stat_update_var( irvm_mc, rvm_mc, stats_zt )         ! kg/kg/s
+        call stat_update_var( ircm_mc, rcm_mc, stats_zt )         ! kg/kg/s
+        call stat_update_var( irtm_mc, rvm_mc+rcm_mc, stats_zt )  ! kg/kg/s
+        call stat_update_var( ithlm_mc, thlm_mc, stats_zt )       ! K/s
+        call stat_update_var( iwprtp_mc, wprtp_mc, stats_zm )     ! m*(kg/kg)/s^2
+        call stat_update_var( iwpthlp_mc, wpthlp_mc, stats_zm )   ! K*m/s^2
+        call stat_update_var( irtp2_mc, rtp2_mc, stats_zm )       ! (kg/kg)^2/s
+        call stat_update_var( ithlp2_mc, thlp2_mc, stats_zm )     ! K^2/s
         call stat_update_var( irtpthlp_mc, rtpthlp_mc, stats_zm ) ! K*(kg/kg)/s
       endif
 
@@ -1577,21 +1580,21 @@ module clubb_driver
         if ( l_silhs_rad ) then
 
           call silhs_radiation_driver &
-               ( gr%nz, lh_num_samples, pdf_dim, hydromet_dim, & !In
-                 time_current, time_initial, rho, rho_zm, & !In
-                 p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, & !In
-                 lh_clipped_vars, lh_sample_point_weights, hydromet, & !In
-                 err_code, & !inout
+               ( gr%nz, lh_num_samples, pdf_dim, hydromet_dim, &                   !In
+                 time_current, time_initial, rho, rho_zm, &                        !In
+                 p_in_Pa, exner, cloud_frac, ice_supersat_frac, X_nl_all_levs, &   !In
+                 lh_clipped_vars, lh_sample_point_weights, hydromet, &             !In
+                 err_code, &                                                       !inout
                  radht, Frad, Frad_SW_up, Frad_LW_up, Frad_SW_down, Frad_LW_down ) !out
 
         else
 
           call advance_clubb_radiation &
-               ( time_current, time_initial, rho, rho_zm, p_in_Pa, &! Intent(in)
+               ( time_current, time_initial, rho, rho_zm, p_in_Pa, &               ! Intent(in)
                  exner, cloud_frac, ice_supersat_frac, thlm, rtm, rcm, hydromet, & ! Intent(in)
-                 err_code, &                                    ! Intent(inout)
-                 radht, Frad, Frad_SW_up, Frad_LW_up, &         ! Intent(out)
-                 Frad_SW_down, Frad_LW_down )                   ! Intent(out)
+                 err_code, &                                                       ! Intent(inout)
+                 radht, Frad, Frad_SW_up, Frad_LW_up, &                            ! Intent(out)
+                 Frad_SW_down, Frad_LW_down )                                      ! Intent(out)
 
         end if ! l_silhs_rad
 
@@ -4924,3 +4927,6 @@ module clubb_driver
   !-----------------------------------------------------------------------
 
 end module clubb_driver
+
+
+
