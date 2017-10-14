@@ -1534,7 +1534,7 @@ module new_pdf
                                         coef_sigma_x_1_sqd,  & ! In
                                         coef_sigma_x_2_sqd,  & ! In
                                         coef_wp2xp_implicit, & ! Out
-                                        coef_wp2xp_explicit  ) ! Out
+                                        term_wp2xp_explicit  ) ! Out
 
     ! Description:
     ! The predictive equation for <w'x'> contains a turbulent advection term of
@@ -1663,7 +1663,7 @@ module new_pdf
     !
     ! This equation is of the form:
     !
-    ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + coef_wp2xp_explicit;
+    ! <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit;
     !
     ! where:
     !
@@ -1675,7 +1675,7 @@ module new_pdf
     !         + ( 1 - mixt_frac )
     !           * sqrt( coef_sigma_w_2_sqd * coef_sigma_x_2_sqd ) ); and
     !
-    ! coef_wp2xp_explicit
+    ! term_wp2xp_explicit
     ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_x )
     !   * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
     !   * ( F_w * ( ( 1 - mixt_frac ) / mixt_frac
@@ -1734,7 +1734,7 @@ module new_pdf
     ! = sqrt( mixt_frac * ( 1 - mixt_frac ) ) * sqrt( F_w ) * sqrt( <w'^2> )
     !   * ( ( 1 - mixt_frac ) / mixt_frac - mixt_frac / ( 1 - mixt_frac ) ); and
     !
-    ! coef_wp2xp_explicit
+    ! term_wp2xp_explicit
     ! = sqrt( mixt_frac * ( 1 - mixt_frac ) )
     !   * sqrt( F_x ) * sqrt( <x'^2> ) * <w'^2> * sgn( <w'x'> )
     !   * ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd ) ).
@@ -1766,17 +1766,17 @@ module new_pdf
       coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
 
     ! Output Variables
-    ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + coef_wp2xp_explicit
+    ! Coefs.: <w'^2 x'> = coef_wp2xp_implicit * <w'x'> + term_wp2xp_explicit
     real ( kind = core_rknd ), intent(out) :: &
-      coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>      [-]
-      coef_wp2xp_explicit    ! Coefficient on the RHS                        [-]
+      coef_wp2xp_implicit, & ! Coefficient that is multiplied by <w'x'>    [m/s]
+      term_wp2xp_explicit    ! Term that is on the RHS    [m^2/s^2 (units vary)]
 
     ! Local Variable
     real ( kind = core_rknd ) :: &
       coefs_factor    ! Factor involving coef_sigma_... coefficients         [-]
 
 
-    ! Calculate coef_wp2xp_implicit and coef_wp2xp_explicit.
+    ! Calculate coef_wp2xp_implicit and term_wp2xp_explicit.
     if ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
          .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) then
 
@@ -1791,7 +1791,7 @@ module new_pdf
        = sqrt( mixt_frac * ( one - mixt_frac ) ) &
          * two * sqrt( F_w ) * sqrt( wp2 ) * coefs_factor
 
-       coef_wp2xp_explicit &
+       term_wp2xp_explicit &
        = sqrt( mixt_frac * ( one - mixt_frac ) ) &
          * sqrt( F_x ) * sqrt( xp2 ) * wp2 * sgn_wpxp &
          * ( F_w * ( ( one - mixt_frac ) / mixt_frac &
@@ -1808,7 +1808,7 @@ module new_pdf
           * ( ( one - mixt_frac ) / mixt_frac &
               - mixt_frac / ( one - mixt_frac ) )
 
-       coef_wp2xp_explicit &
+       term_wp2xp_explicit &
        = sqrt( mixt_frac * ( one - mixt_frac ) ) &
          * sqrt( F_x ) * sqrt( xp2 ) * wp2 * sgn_wpxp &
          * ( coef_sigma_w_1_sqd - coef_sigma_w_2_sqd )

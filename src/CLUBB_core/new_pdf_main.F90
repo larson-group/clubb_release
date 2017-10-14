@@ -145,15 +145,15 @@ module new_pdf_main
       coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>  [-]
       coef_wpthlp2_implicit    ! <w'thl'^2> = coef_wpthlp2_implicit*<thl'^2> [-]
 
-    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + coef_wp2rtp_explicit
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
     real ( kind = core_rknd ) :: &
-      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>    [-]
-      coef_wp2rtp_explicit    ! Coefficient on the RHS                       [-]
+      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
+      term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
 
-    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + coef_wp2thlp_explicit
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
     real ( kind = core_rknd ) :: &
-      coef_wp2thlp_implicit, & ! Coefficient that is multiplied by <w'thl'>  [-]
-      coef_wp2thlp_explicit    ! Coefficient on the RHS                      [-]
+      coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
+      term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
     logical, parameter :: &
       l_use_w_setter_var = .false. ! Flag to always use w as the setter variable
@@ -363,7 +363,7 @@ module new_pdf_main
                                 coef_sigma_thl_1_sqd, &
                                 coef_sigma_thl_2_sqd  )
 
-    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + coef_wp2rtp_explicit
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
     call calc_coefs_wp2xp_semiimpl( wp2, rtp2, sgn_wprtp, & ! In
                                     mixt_frac, F_w, F_rt, & ! In
                                     coef_sigma_w_1_sqd,   & ! In
@@ -371,9 +371,9 @@ module new_pdf_main
                                     coef_sigma_rt_1_sqd,  & ! In
                                     coef_sigma_rt_2_sqd,  & ! In
                                     coef_wp2rtp_implicit, & ! Out
-                                    coef_wp2rtp_explicit  ) ! Out
+                                    term_wp2rtp_explicit  ) ! Out
 
-    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + coef_wp2thlp_explicit
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
     call calc_coefs_wp2xp_semiimpl( wp2, thlp2, sgn_wpthlp, & ! In
                                     mixt_frac, F_w, F_thl,  & ! In
                                     coef_sigma_w_1_sqd,     & ! In
@@ -381,7 +381,7 @@ module new_pdf_main
                                     coef_sigma_thl_1_sqd,   & ! In
                                     coef_sigma_thl_2_sqd,   & ! In
                                     coef_wp2thlp_implicit,  & ! Out
-                                    coef_wp2thlp_explicit   ) ! Out
+                                    term_wp2thlp_explicit   ) ! Out
 
 
     return
