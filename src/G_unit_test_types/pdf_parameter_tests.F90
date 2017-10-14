@@ -120,9 +120,14 @@ module pdf_parameter_tests
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_w_closure    ! Procedure(s)
 
+    use new_tsdadg_pdf, only: &
+        calc_setter_parameters, & ! Procedure(s) 
+        calc_L_x_Skx_fnc
+
     use pdf_closure_module, only: &
         iiPDF_new,    & ! Variable(s)
         iiPDF_ADG1,   &
+        iiPDF_TSDADG, &
         calc_wp4_pdf    ! Procedure(s)
 
     use mu_sigma_hm_tests, only: &
@@ -291,6 +296,15 @@ module pdf_parameter_tests
     integer :: &
       iter_sigma_sqd_w    ! Loop index for value of sigma_sqd_w (ADG1)
 
+    ! Variables for TSDADG
+    real( kind = core_rknd ) :: &
+      big_L_w_1, & ! Parameter for the spread of the 1st PDF comp. mean of w [-]
+      big_L_w_2    ! Parameter for the spread of the 2nd PDF comp. mean of w [-]
+
+    real( kind = core_rknd ) :: &
+      small_l_w_1, & ! Param. for the spread of the 1st PDF comp. mean of w  [-]
+      small_l_w_2    ! Param. for the spread of the 2nd PDF comp. mean of w  [-]
+
 
     write(fstdout,*) ""
     write(fstdout,*) "Performing PDF parameter values unit test"
@@ -304,7 +318,10 @@ module pdf_parameter_tests
     elseif ( test_PDF_type == iiPDF_ADG1 ) then
        write(fstdout,*) "Performing PDF parameter unit tests for ADG1"
        write(fstdout,*) ""
-    else ! test_PDF_type /= iiPDF_new .and. test_PDF_type /= iiPDF_ADG1
+    elseif ( test_PDF_type == iiPDF_TSDADG ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for TSDADG"
+       write(fstdout,*) ""
+    else ! All other values of test_PDF_type.
        write(fstderr,*) "The PDF parameter unit tests cannot be run for the " &
                         // "selected type of PDF."
        write(fstderr,*) "Selected type of PDF: ", test_PDF_type
@@ -742,6 +759,21 @@ module pdf_parameter_tests
 
           enddo ! iter_sigma_sqd_w = 1, num_sigma_sqd_w, 1
 
+       elseif ( test_PDF_type == iiPDF_TSDADG ) then
+
+          small_l_w_1 = 0.75_core_rknd
+          small_l_w_2 = 0.5_core_rknd
+
+          call calc_L_x_Skx_fnc( Skw, small_l_w_1, small_l_w_2, & ! In
+                                 big_L_w_1, big_L_w_2           ) ! Out
+
+          call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,     & ! In
+                                       big_L_w_1, big_L_w_2,      & ! In
+                                       mu_w_1, mu_w_2, sigma_w_1, & ! Out
+                                       sigma_w_2, mixt_frac,      & ! Out
+                                       coef_sigma_w_1_sqd,        & ! Out
+                                       coef_sigma_w_2_sqd         ) ! Out
+
        endif ! test_PDF_type
 
        !====================================================================
@@ -766,6 +798,11 @@ module pdf_parameter_tests
                                min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
 
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
+
+          ! Temporarily skip this step.
+          cycle
+
+       elseif ( test_PDF_type == iiPDF_TSDADG ) then
 
           ! Temporarily skip this step.
           cycle

@@ -18,7 +18,8 @@ module pdf_closure_module
     iiPDF_ADG1 = 1,     & ! ADG1 PDF
     iiPDF_ADG2 = 2,     & ! ADG2 PDF
     iiPDF_3D_Luhar = 3, & ! 3D Luhar PDF
-    iiPDF_new = 4         ! new PDF
+    iiPDF_new = 4,      & ! new PDF
+    iiPDF_TSDADG = 5      ! new TSDADG PDF
 
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
