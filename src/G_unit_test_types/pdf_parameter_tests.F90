@@ -99,6 +99,7 @@ module pdf_parameter_tests
         three,         & ! Constant(s)
         one,           &
         three_fourths, &
+        two_thirds,    &
         one_half,      &
         one_third,     &
         one_fourth,    &
@@ -304,6 +305,14 @@ module pdf_parameter_tests
     real( kind = core_rknd ) :: &
       small_l_w_1, & ! Param. for the spread of the 1st PDF comp. mean of w  [-]
       small_l_w_2    ! Param. for the spread of the 2nd PDF comp. mean of w  [-]
+
+    integer, parameter :: &
+      num_small_l_w_1 = 5,  & ! Number of different values of small_l_w_1 used
+      num_small_l_w_2 = 11    ! Number of different values of small_l_w_2 used
+
+    integer :: &
+      iter_small_l_w_1, & ! Loop index for value of small_l_w_1
+      iter_small_l_w_2    ! Loop index for value of small_l_w_2
 
 
     write(fstdout,*) ""
@@ -766,48 +775,66 @@ module pdf_parameter_tests
 
        elseif ( test_PDF_type == iiPDF_TSDADG ) then
 
-          small_l_w_1 = 0.75_core_rknd
-          small_l_w_2 = 0.5_core_rknd
+          do iter_small_l_w_1 = 1, num_small_l_w_1, 1
 
-          call calc_L_x_Skx_fnc( Skw, small_l_w_1, small_l_w_2, & ! In
-                                 big_L_w_1, big_L_w_2           ) ! Out
+            small_l_w_1 &
+            = two_thirds + one_third &
+                           * real( iter_small_l_w_1, kind = core_rknd ) &
+                             / real( num_small_l_w_1, kind = core_rknd )
 
-          call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         & ! In
-                                       big_L_w_1, big_L_w_2,          & ! In
-                                       mu_w_1, mu_w_2, sigma_w_1_sqd, & ! Out
-                                       sigma_w_2_sqd, mixt_frac,      & ! Out
-                                       coef_sigma_w_1_sqd,            & ! Out
-                                       coef_sigma_w_2_sqd             ) ! Out
+            do iter_small_l_w_2 = 1, num_small_l_w_2, 1
 
-          sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
-          sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+              small_l_w_2 = max( 0.1_core_rknd * real( iter_small_l_w_2 - 1, &
+                                                       kind = core_rknd ), &
+                                 5.0e-3_core_rknd )
 
-          ! Perform the tests for the "setter" variable, which is the
-          ! variable that is used to set the mixture fraction.  This is
-          ! always w for ADG1.
-          call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
-                                 mu_w_1, mu_w_2, sigma_w_1,    & ! In
-                                 sigma_w_2, mixt_frac, tol,    & ! In
-                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! In
-                                 l_pass_test_1, l_pass_test_2, & ! Out
-                                 l_pass_test_3, l_pass_test_4, & ! Out
-                                 l_pass_test_5, l_pass_test_6  ) ! Out
+              call calc_L_x_Skx_fnc( Skw, sgn_wp2,             & ! In
+                                     small_l_w_1, small_l_w_2, & ! In
+                                     big_L_w_1, big_L_w_2      ) ! Out
+
+              call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         &! In
+                                           big_L_w_1, big_L_w_2,          &! In
+                                           mu_w_1, mu_w_2, sigma_w_1_sqd, &! Out
+                                           sigma_w_2_sqd, mixt_frac,      &! Out
+                                           coef_sigma_w_1_sqd,            &! Out
+                                           coef_sigma_w_2_sqd             )! Out
+
+              sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
+              sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+
+              ! Perform the tests for the "setter" variable, which is the
+              ! variable that is used to set the mixture fraction.
+              call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                                     mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                     sigma_w_2, mixt_frac, tol,    & ! In
+                                     sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                     l_pass_test_1, l_pass_test_2, & ! Out
+                                     l_pass_test_3, l_pass_test_4, & ! Out
+                                     l_pass_test_5, l_pass_test_6  ) ! Out
 
 
-          if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
-               .and. l_pass_test_4 .and. l_pass_test_5 &
-               .and. l_pass_test_6 ) then
-             ! All tests pass
-             num_failed_sets = num_failed_sets
-          else
-             ! At least one test failed
-             num_failed_sets = num_failed_sets + 1
-             write(fstderr,*) "At least one test or check for the " &
-                              // "setting variable PDF failed for the " &
-                              // "following parameter set:  "
-             write(fstderr,*) "PDF parameter set index = ", iter_param_sets
-             write(fstderr,*) ""
-          endif
+              if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+                   .and. l_pass_test_4 .and. l_pass_test_5 &
+                   .and. l_pass_test_6 ) then
+                 ! All tests pass
+                 num_failed_sets = num_failed_sets
+              else
+                 ! At least one test failed
+                 num_failed_sets = num_failed_sets + 1
+                 write(fstderr,*) "At least one test or check for the " &
+                                  // "setting variable PDF failed for the " &
+                                  // "following parameter set:  "
+                 write(fstderr,*) "PDF parameter set index = ", iter_param_sets
+                 write(fstderr,*) "l_w_1 = ", small_l_w_1
+                 write(fstderr,*) "l_w_2 = ", small_l_w_2
+                 write(fstderr,*) "L_w_1 = ", big_L_w_1
+                 write(fstderr,*) "L_w_2 = ", big_L_w_2
+                 write(fstderr,*) ""
+              endif
+
+            enddo ! iter_small_l_w_2 = 1, num_small_l_w_2, 1
+
+          enddo ! iter_small_l_w_1 = 1, num_small_l_w_1, 1
 
        endif ! test_PDF_type
 

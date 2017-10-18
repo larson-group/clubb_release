@@ -164,8 +164,10 @@ module new_tsdadg_pdf
   !
   ! As previously stated, this method does not work for all combinations of
   ! L_x_1 and L_x_2, but rather only for a subregion of parameter space.  This
-  ! applies to l_x_1 and l_x_2, as well.  The recommended values are l_x_1 > 2/3
-  ! and 0 < l_x_2 < 1.
+  ! applies to l_x_1 and l_x_2, as well.  The conditions on l_x_1 and l_x_2 are:
+  !
+  ! l_x_1 > 2/3 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
+  ! 0 < l_x_1 < 1 and l_x_2 > 2/3; when Skx * sgn( <w'x'> ) < 0.
   !
   !
   ! Equations for PDF component standard deviations:
@@ -316,14 +318,18 @@ module new_tsdadg_pdf
   end subroutine calc_setter_parameters
 
   !=============================================================================
-  subroutine calc_L_x_Skx_fnc( Skx, small_l_x_1, small_l_x_2, & ! In
-                               big_L_x_1, big_L_x_2           ) ! Out
+  subroutine calc_L_x_Skx_fnc( Skx, sgn_wpxp,            & ! In
+                               small_l_x_1, small_l_x_2, & ! In
+                               big_L_x_1, big_L_x_2      ) ! Out
 
     ! Description:
     ! Calculates the values of big_L_x_1 and big_L_x_2 as functions of Skx.
 
     ! References:
     !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        zero    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -332,7 +338,8 @@ module new_tsdadg_pdf
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skx,         & ! Skewness of x (overall)                          [-]
+      Skx,         & ! Skewness of x (overall)                               [-]
+      sgn_wpxp,    & ! Sign of the covariance of w and x (overall)           [-]
       small_l_x_1, & ! Param. for the spread of the 1st PDF comp. mean of x  [-]
       small_l_x_2    ! Param. for the spread of the 2nd PDF comp. mean of x  [-]
 
@@ -346,10 +353,36 @@ module new_tsdadg_pdf
       factor_x
 
 
+    ! The values of L_x_1 and L_x_2 are calculated by skewness functions.
+    ! Those functions are:
+    !
+    ! L_x_1 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
+    ! L_x_2 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 ).
+    !
+    ! The conditions on l_x_1 and l_x_2 are:
+    !
+    ! l_x_1 > 2/3 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
+    ! 0 < l_x_1 < 1 and l_x_2 > 2/3; when Skx * sgn( <w'x'> ) < 0.
+    !
+    ! For simplicity, this can also be accomplished by setting l_x_1 > 2/3 and
+    ! 0 < l_x_2 < 1, and then using the following equations.
+    !
+    ! When Skx * sgn( <w'x'> ) >= 0:
+    ! L_x_1 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
+    ! L_x_2 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 );
+    !
+    ! otherwise, when Skx * sgn( <w'x'> ) < 0, switch l_x_1 and l_x_2:
+    ! L_x_1 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
+    ! L_x_2 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ).
     factor_x = abs( Skx ) / sqrt( 4.0_core_rknd + Skx**2 )
 
-    big_L_x_1 = small_l_x_1 * factor_x
-    big_L_x_2 = small_l_x_2 * factor_x
+    if ( Skx * sgn_wpxp >= zero ) then
+       big_L_x_1 = small_l_x_1 * factor_x
+       big_L_x_2 = small_l_x_2 * factor_x
+    else ! Skx * sgn_wpxp < 0
+       big_L_x_1 = small_l_x_2 * factor_x
+       big_L_x_2 = small_l_x_1 * factor_x
+    endif
 
 
     return
