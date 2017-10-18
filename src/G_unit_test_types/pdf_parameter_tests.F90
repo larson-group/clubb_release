@@ -65,7 +65,7 @@ module pdf_parameter_tests
     ! test can only be run when F_w > 0 or F_w = 0 with Skw = 0.
     !
     ! Test 5
-    ! Check that sigma_w_1 >= 0, sigma_w_2 >= 0, and 0 < mixt_frac < 1.
+    ! Check that sigma_w_1^2 >= 0, sigma_w_2^2 >= 0, and 0 < mixt_frac < 1.
     !
     ! Test 6
     ! Check that mu_w_1 >= mu_w_2.
@@ -630,11 +630,15 @@ module pdf_parameter_tests
                                              coef_sigma_w_1_sqd,        & ! Out
                                              coef_sigma_w_2_sqd         ) ! Out
 
+                sigma_w_1_sqd = sigma_w_1**2
+                sigma_w_2_sqd = sigma_w_2**2
+
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
                 call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
                                        mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                        sigma_w_2, mixt_frac, tol,    & ! In
+                                       sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                        l_pass_test_1, l_pass_test_2, & ! Out
                                        l_pass_test_3, l_pass_test_4, & ! Out
                                        l_pass_test_5, l_pass_test_6  ) ! Out
@@ -727,8 +731,8 @@ module pdf_parameter_tests
                                   mu_w_1, mu_w_2, w_1_n, w_2_n,           &! Out
                                   sigma_w_1_sqd, sigma_w_2_sqd, mixt_frac )! Out
 
-             sigma_w_1 = sqrt( sigma_w_1_sqd )
-             sigma_w_2 = sqrt( sigma_w_2_sqd )
+             sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
+             sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
 
              ! Perform the tests for the "setter" variable, which is the
              ! variable that is used to set the mixture fraction.  This is
@@ -736,6 +740,7 @@ module pdf_parameter_tests
              call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
                                     mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                     sigma_w_2, mixt_frac, tol,    & ! In
+                                    sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                     l_pass_test_1, l_pass_test_2, & ! Out
                                     l_pass_test_3, l_pass_test_4, & ! Out
                                     l_pass_test_5, l_pass_test_6  ) ! Out
@@ -767,12 +772,42 @@ module pdf_parameter_tests
           call calc_L_x_Skx_fnc( Skw, small_l_w_1, small_l_w_2, & ! In
                                  big_L_w_1, big_L_w_2           ) ! Out
 
-          call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,     & ! In
-                                       big_L_w_1, big_L_w_2,      & ! In
-                                       mu_w_1, mu_w_2, sigma_w_1, & ! Out
-                                       sigma_w_2, mixt_frac,      & ! Out
-                                       coef_sigma_w_1_sqd,        & ! Out
-                                       coef_sigma_w_2_sqd         ) ! Out
+          call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         & ! In
+                                       big_L_w_1, big_L_w_2,          & ! In
+                                       mu_w_1, mu_w_2, sigma_w_1_sqd, & ! Out
+                                       sigma_w_2_sqd, mixt_frac,      & ! Out
+                                       coef_sigma_w_1_sqd,            & ! Out
+                                       coef_sigma_w_2_sqd             ) ! Out
+
+          sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
+          sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+
+          ! Perform the tests for the "setter" variable, which is the
+          ! variable that is used to set the mixture fraction.  This is
+          ! always w for ADG1.
+          call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                                 mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                 sigma_w_2, mixt_frac, tol,    & ! In
+                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                 l_pass_test_1, l_pass_test_2, & ! Out
+                                 l_pass_test_3, l_pass_test_4, & ! Out
+                                 l_pass_test_5, l_pass_test_6  ) ! Out
+
+
+          if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+               .and. l_pass_test_4 .and. l_pass_test_5 &
+               .and. l_pass_test_6 ) then
+             ! All tests pass
+             num_failed_sets = num_failed_sets
+          else
+             ! At least one test failed
+             num_failed_sets = num_failed_sets + 1
+             write(fstderr,*) "At least one test or check for the " &
+                              // "setting variable PDF failed for the " &
+                              // "following parameter set:  "
+             write(fstderr,*) "PDF parameter set index = ", iter_param_sets
+             write(fstderr,*) ""
+          endif
 
        endif ! test_PDF_type
 
@@ -1098,6 +1133,7 @@ module pdf_parameter_tests
   subroutine setter_var_tests( wm, wp2, wp3, Skw,            & ! In
                                mu_w_1, mu_w_2, sigma_w_1,    & ! In
                                sigma_w_2, mixt_frac, tol,    & ! In
+                               sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                l_pass_test_1, l_pass_test_2, & ! Out
                                l_pass_test_3, l_pass_test_4, & ! Out
                                l_pass_test_5, l_pass_test_6  ) ! Out
@@ -1124,16 +1160,18 @@ module pdf_parameter_tests
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      wm,        & ! Mean of w (overall)                              [m/s]
-      wp2,       & ! Variance of w (overall)                          [m^2/s^2]
-      wp3,       & ! <w'^3>                                           [m^3/s^3]
-      Skw,       & ! Skewness of w (overall)                          [-]
-      mu_w_1,    & ! Mean of w (1st PDF component)                    [m/s]
-      mu_w_2,    & ! Mean of w (2nd PDF component)                    [m/s]
-      sigma_w_1, & ! Standard deviation of w (1st PDF component)      [m/s]
-      sigma_w_2, & ! Standard deviation of w (2nd PDF component)      [m/s]
-      mixt_frac, & ! Mixture fraction                                 [-]
-      tol          ! Tolerance for acceptable numerical difference    [-]
+      wm,            & ! Mean of w (overall)                           [m/s]
+      wp2,           & ! Variance of w (overall)                       [m^2/s^2]
+      wp3,           & ! <w'^3>                                        [m^3/s^3]
+      Skw,           & ! Skewness of w (overall)                       [-]
+      mu_w_1,        & ! Mean of w (1st PDF component)                 [m/s]
+      mu_w_2,        & ! Mean of w (2nd PDF component)                 [m/s]
+      sigma_w_1,     & ! Standard deviation of w (1st PDF component)   [m/s]
+      sigma_w_2,     & ! Standard deviation of w (2nd PDF component)   [m/s]
+      mixt_frac,     & ! Mixture fraction                              [-]
+      tol,           & ! Tolerance for acceptable numerical difference [-]
+      sigma_w_1_sqd, & ! Variance of w (1st PDF component)             [m^2/s^2]
+      sigma_w_2_sqd    ! Variance of w (2nd PDF component)             [m^2/s^2]
 
     ! Output Variables
     logical, intent(out) :: &
@@ -1223,16 +1261,16 @@ module pdf_parameter_tests
     endif
 
     ! Test 5
-    ! Check that sigma_w_1 and sigma_w_2 have a value of at least zero, and that
-    ! mixture fraction has a value between 0 and 1.
-    if ( ( sigma_w_1 >= zero ) .and. ( sigma_w_2 >= zero ) &
+    ! Check that sigma_w_1^2 and sigma_w_2^2 have a value of at least zero, and
+    ! that mixture fraction has a value between 0 and 1.
+    if ( ( sigma_w_1_sqd >= zero ) .and. ( sigma_w_2_sqd >= zero ) &
          .and. ( mixt_frac > zero ) .and. ( mixt_frac < one ) ) then
        l_pass_test_5 = .true.
     else
        l_pass_test_5 = .false.
        write(fstderr,*) "Test 5 failed"
-       write(fstderr,*) "sigma_w_1 = ", sigma_w_1
-       write(fstderr,*) "sigma_w_2 = ", sigma_w_2
+       write(fstderr,*) "sigma_w_1^2 = ", sigma_w_1_sqd
+       write(fstderr,*) "sigma_w_2^2 = ", sigma_w_2_sqd
        write(fstderr,*) "mixt_frac = ", mixt_frac
        write(fstderr,*) ""
     endif

@@ -199,12 +199,12 @@ module new_tsdadg_pdf
   !
   !
   !=============================================================================
-  subroutine calc_setter_parameters( xm, xp2, Skx, sgn_wpxp,    & ! In
-                                     big_L_x_1, big_L_x_2,      & ! In
-                                     mu_x_1, mu_x_2, sigma_x_1, & ! Out
-                                     sigma_x_2, mixt_frac,      & ! Out
-                                     coef_sigma_x_1_sqd,        & ! Out
-                                     coef_sigma_x_2_sqd         ) ! Out
+  subroutine calc_setter_parameters( xm, xp2, Skx, sgn_wpxp,        & ! In
+                                     big_L_x_1, big_L_x_2,          & ! In
+                                     mu_x_1, mu_x_2, sigma_x_1_sqd, & ! Out
+                                     sigma_x_2_sqd, mixt_frac,      & ! Out
+                                     coef_sigma_x_1_sqd,            & ! Out
+                                     coef_sigma_x_2_sqd             ) ! Out
 
     ! Description:
     ! Calculates the PDF component means, the PDF component standard deviations,
@@ -214,9 +214,10 @@ module new_tsdadg_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        four,  & ! Variable(s)
-        three, &
-        one,   &
+        four,     & ! Variable(s)
+        three,    &
+        one,      &
+        one_half, &
         eps
 
     use clubb_precision, only: &
@@ -235,11 +236,11 @@ module new_tsdadg_pdf
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
-      mu_x_1,    & ! Mean of x (1st PDF component)                  [units vary]
-      mu_x_2,    & ! Mean of x (2nd PDF component)                  [units vary]
-      sigma_x_1, & ! Standard deviation of x (1st PDF component)    [units vary]
-      sigma_x_2, & ! Standard deviation of x (2nd PDF component)    [units vary]
-      mixt_frac    ! Mixture fraction                                        [-]
+      mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
+      sigma_x_2_sqd, & ! Variance of x (2nd PDF component)      [(units vary)^2]
+      mixt_frac        ! Mixture fraction                b                   [-]
 
     real( kind = core_rknd ), intent(out) :: &
       coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
@@ -272,14 +273,22 @@ module new_tsdadg_pdf
     mu_x_2_nrmlized = -big_L_x_2 * sqrt_factor_minus_ov_plus * sgn_wpxp
 
     ! Calculate the mean of x in the 1st PDF component.
-    mu_x_1 = xm + mu_x_1_nrmlized * xp2
+    mu_x_1 = xm + mu_x_1_nrmlized * sqrt( xp2 )
 
     ! Calculate the mean of x in the 2nd PDF component.
-    mu_x_2 = xm + mu_x_2_nrmlized * xp2
+    mu_x_2 = xm + mu_x_2_nrmlized * sqrt( xp2 )
 
     ! Calculate the mixture fraction.
-    mixt_frac = one / ( one + abs( max( mu_x_1_nrmlized, eps ) &
-                                   / max( mu_x_2_nrmlized, eps ) ) )
+    if ( abs( mu_x_1_nrmlized ) >= eps &
+         .and. abs( mu_x_2_nrmlized ) >= eps ) then
+       mixt_frac = one / ( one + abs( mu_x_1_nrmlized / mu_x_2_nrmlized ) )
+    elseif ( abs( mu_x_1_nrmlized ) >= eps ) then
+       mixt_frac = one / ( one + abs( mu_x_1_nrmlized / eps ) )
+    elseif ( abs( mu_x_2_nrmlized ) >= eps ) then
+       mixt_frac = one / ( one + abs( eps / mu_x_2_nrmlized ) )
+    else ! abs( mu_x_1_nrmlized ) < eps and abs( mu_x_2_nrmlized ) < eps
+       mixt_frac = one_half
+    endif
 
     ! Calculate the standard deviation of x in the 1st PDF component.
     coef_sigma_x_1_sqd &
@@ -289,7 +298,7 @@ module new_tsdadg_pdf
         * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
-    sigma_x_1 = sqrt( coef_sigma_x_1_sqd * xp2 )
+    sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
 
     ! Calculate the standard deviation of x in the 2nd PDF component.
     coef_sigma_x_2_sqd & 
@@ -299,7 +308,7 @@ module new_tsdadg_pdf
         * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
-    sigma_x_2 = sqrt( coef_sigma_x_2_sqd * xp2 )
+    sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
 
 
     return
