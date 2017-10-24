@@ -102,7 +102,8 @@ module pdf_closure_module
         w_tol
 
     use parameters_model, only: &
-        sclr_dim    ! Number of passive scalar variables
+        mixt_frac_max_mag, & ! Variable(s)
+        sclr_dim             ! Number of passive scalar variables
 
     use parameters_tunable, only: & 
         beta, &  ! Variable(s)
@@ -411,195 +412,151 @@ module pdf_closure_module
        max_F_thl = zero
     endif ! iiPDF_type /= iiPDF_new
 
-    ! If there is no variance in vertical velocity, then treat rt and theta-l as
-    ! constant, as well.  Otherwise width parameters (e.g. varnce_w_1,
-    ! varnce_w_2, etc.) are non-zero.
-    if ( ( wp2 <= w_tol_sqd ) &
-         .and. ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) ) then
+    ! To avoid recomputing
+    sqrt_wp2 = sqrt( wp2 )
 
-      mixt_frac     = one_half
-      w_1           = wm
-      w_2           = wm
-      varnce_w_1    = zero
-      varnce_w_2    = zero
-      rt_1          = rtm
-      rt_2          = rtm
-      alpha_rt      = one_half
-      varnce_rt_1   = zero
-      varnce_rt_2   = zero
-      thl_1         = thlm
-      thl_2         = thlm
-      alpha_thl     = one_half
-      varnce_thl_1  = zero
-      varnce_thl_2  = zero
-      corr_w_rt_1   = zero
-      corr_w_rt_2   = zero
-      corr_w_thl_1  = zero
-      corr_w_thl_2  = zero
-      corr_rt_thl_1 = zero
-      corr_rt_thl_2 = zero
+    ! Select the PDF closure method for the two-component PDF used by CLUBB for
+    ! w, rt, theta-l, and passive scalar variables.
+    if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
-      if ( l_scalar_calc ) then
-        do i = 1, sclr_dim, 1
-          sclr1(i)           = sclrm(i)
-          sclr2(i)           = sclrm(i)
-          varnce_sclr1(i)    = zero
-          varnce_sclr2(i)    = zero
-          alpha_sclr(i)      = one_half
-          corr_sclr_rt_1(i)  = zero
-          corr_sclr_rt_2(i)  = zero
-          corr_sclr_thl_1(i) = zero
-          corr_sclr_thl_2(i) = zero
-        end do ! 1..sclr_dim
-      end if
+       call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
+                             Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
+                             sigma_sqd_w, mixt_frac_max_mag,          & ! In
+                             sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
+                             w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
+                             varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
+                             varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
+                             mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                             sclr1, sclr2, varnce_sclr1,              & ! Out
+                             varnce_sclr2, alpha_sclr )                 ! Out
 
-    else ! Width (standard deviation) parameters are non-zero
+    elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
 
-      ! To avoid recomputing
-      sqrt_wp2 = sqrt( wp2 )
+       call ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
+                             Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
+                             sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
+                             w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
+                             varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
+                             varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
+                             mixt_frac, alpha_rt, alpha_thl,          & ! Out
+                             sigma_sqd_w, sclr1, sclr2,               & ! Out
+                             varnce_sclr1, varnce_sclr2, alpha_sclr )   ! Out
 
-      if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
+    elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
 
-         call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
-                               wprtp, wpthlp, sqrt_wp2, sigma_sqd_w,    & ! In
-                               sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
-                               w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
-                               varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
-                               varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
-                               mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                               sclr1, sclr2, varnce_sclr1,              & ! Out
-                               varnce_sclr2, alpha_sclr )                 ! Out
+       call Luhar_3D_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
+                                 Skw, Skrt, Skthl, wprtp, wpthlp,      & ! In
+                                 w_1, w_2, rt_1, rt_2, thl_1, thl_2,   & ! Out
+                                 varnce_w_1, varnce_w_2, varnce_rt_1,  & ! Out
+                                 varnce_rt_2, varnce_thl_1,            & ! Out
+                                 varnce_thl_2, mixt_frac )               ! Out
 
-      elseif ( iiPDF_type == iiPDF_ADG2 ) then ! use ADG2
+      ! Set to default values when using the 3D_Luhar closure
+      alpha_thl = one_half
+      alpha_rt = one_half
 
-         call ADG2_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                               Skw, wprtp, wpthlp, sqrt_wp2,            & ! In
-                               sclrm, sclrp2, wpsclrp, l_scalar_calc,   & ! In
-                               w_1, w_2, rt_1, rt_2, thl_1, thl_2,      & ! Out
-                               varnce_w_1, varnce_w_2, varnce_rt_1,     & ! Out
-                               varnce_rt_2, varnce_thl_1, varnce_thl_2, & ! Out
-                               mixt_frac, alpha_rt, alpha_thl,          & ! Out
-                               sigma_sqd_w, sclr1, sclr2,               & ! Out
-                               varnce_sclr1, varnce_sclr2, alpha_sclr )   ! Out
+    elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-      elseif ( iiPDF_type == iiPDF_3D_Luhar ) then ! use 3D Luhar
+       call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
+                            Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
+                            w_1, w_2, rt_1, rt_2,                    & ! Out
+                            thl_1, thl_2, varnce_w_1,                & ! Out
+                            varnce_w_2, varnce_rt_1,                 & ! Out
+                            varnce_rt_2, varnce_thl_1,               & ! Out
+                            varnce_thl_2, mixt_frac,                 & ! Out
+                            F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
+                            min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
 
-         call Luhar_3D_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,      & ! In
-                                   Skw, Skrt, Skthl, wprtp, wpthlp,      & ! In
-                                   w_1, w_2, rt_1, rt_2, thl_1, thl_2,   & ! Out
-                                   varnce_w_1, varnce_w_2, varnce_rt_1,  & ! Out
-                                   varnce_rt_2, varnce_thl_1,            & ! Out
-                                   varnce_thl_2, mixt_frac )               ! Out
+       ! The variables alpha_rt and alpha_thl aren't used by the new PDF.
+       ! However, they need to be set to a value to avoid being set to NaN and
+       ! causing a runtime error.  They are set to their default values here.
+       alpha_rt = one_half
+       alpha_thl = one_half
 
-        ! Set to default values when using the 3D_Luhar closure
-        alpha_thl = one_half
-        alpha_rt = one_half
-
-      elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
-
-         call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                              Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
-                              w_1, w_2, rt_1, rt_2,                    & ! Out
-                              thl_1, thl_2, varnce_w_1,                & ! Out
-                              varnce_w_2, varnce_rt_1,                 & ! Out
-                              varnce_rt_2, varnce_thl_1,               & ! Out
-                              varnce_thl_2, mixt_frac,                 & ! Out
-                              F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
-                              min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out          ) ! Out
-
-         ! The variables alpha_rt and alpha_thl aren't used by the new PDF.
-         ! However, they need to be set to a value to avoid being set to NaN and
-         ! causing a runtime error.  They are set to their default values here.
-         alpha_rt = one_half
-         alpha_thl = one_half
-
-      endif ! iiPDF_type
+    endif ! iiPDF_type
 
 
-      ! Calculate the PDF component correlations.
+    ! Calculate the PDF component correlations.
 
-      ! Calculate the PDF component correlations of rt and thl.
-      call calc_comp_corrs_binormal( rtpthlp, rtm, thlm, rt_1, rt_2, & ! In
-                                     thl_1, thl_2, varnce_rt_1,      & ! In
-                                     varnce_rt_2, varnce_thl_1,      & ! In
-                                     varnce_thl_2, mixt_frac,        & ! In
-                                     corr_rt_thl_1, corr_rt_thl_2    ) ! Out
+    ! Calculate the PDF component correlations of rt and thl.
+    call calc_comp_corrs_binormal( rtpthlp, rtm, thlm, rt_1, rt_2, & ! In
+                                   thl_1, thl_2, varnce_rt_1,      & ! In
+                                   varnce_rt_2, varnce_thl_1,      & ! In
+                                   varnce_thl_2, mixt_frac,        & ! In
+                                   corr_rt_thl_1, corr_rt_thl_2    ) ! Out
 
-      if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+    if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
 
-         ! ADG1 and ADG2 define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
-         ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
-         corr_w_rt_1  = zero
-         corr_w_rt_2  = zero
-         corr_w_thl_1 = zero
-         corr_w_thl_2 = zero
+       ! ADG1 and ADG2 define corr_w_rt_1, corr_w_rt_2, corr_w_thl_1, and
+       ! corr_w_thl_2 to all have a value of 0, so skip the calculation.
+       corr_w_rt_1  = zero
+       corr_w_rt_2  = zero
+       corr_w_thl_1 = zero
+       corr_w_thl_2 = zero
 
-      else
+    else
 
-         ! Calculate the PDF component correlations of w and rt.
-         call calc_comp_corrs_binormal( wprtp, wm, rtm, w_1, w_2, & ! In
-                                        rt_1, rt_2, varnce_w_1,   & ! In
-                                        varnce_w_2, varnce_rt_1,  & ! In
-                                        varnce_rt_2, mixt_frac,   & ! In
-                                        corr_w_rt_1, corr_w_rt_2  ) ! Out
+       ! Calculate the PDF component correlations of w and rt.
+       call calc_comp_corrs_binormal( wprtp, wm, rtm, w_1, w_2, & ! In
+                                      rt_1, rt_2, varnce_w_1,   & ! In
+                                      varnce_w_2, varnce_rt_1,  & ! In
+                                      varnce_rt_2, mixt_frac,   & ! In
+                                      corr_w_rt_1, corr_w_rt_2  ) ! Out
 
-         ! Calculate the PDF component correlations of w and thl.
-         call calc_comp_corrs_binormal( wpthlp, wm, thlm, w_1, w_2, & ! In
-                                        thl_1, thl_2, varnce_w_1,   & ! In
-                                        varnce_w_2, varnce_thl_1,   & ! In
-                                        varnce_thl_2, mixt_frac,    & ! In
-                                        corr_w_thl_1, corr_w_thl_2  ) ! Out
+       ! Calculate the PDF component correlations of w and thl.
+       call calc_comp_corrs_binormal( wpthlp, wm, thlm, w_1, w_2, & ! In
+                                      thl_1, thl_2, varnce_w_1,   & ! In
+                                      varnce_w_2, varnce_thl_1,   & ! In
+                                      varnce_thl_2, mixt_frac,    & ! In
+                                      corr_w_thl_1, corr_w_thl_2  ) ! Out
 
-      endif
+    endif
 
-      if ( l_scalar_calc ) then
-         do i = 1, sclr_dim
+    if ( l_scalar_calc ) then
+       do i = 1, sclr_dim
 
-            ! Calculate the PDF component correlations of a passive scalar
-            ! and thl.
-            call calc_comp_corrs_binormal( sclrpthlp(i), sclrm(i), thlm,  &! In
-                                           sclr1(i), sclr2(i),            &! In
-                                           thl_1, thl_2, varnce_sclr1(i), &! In
-                                           varnce_sclr2(i), varnce_thl_1, &! In
-                                           varnce_thl_2, mixt_frac,       &! In
-                                           corr_sclr_thl_1(i),            &! Out
-                                           corr_sclr_thl_2(i)  )           ! Out
+          ! Calculate the PDF component correlations of a passive scalar and
+          ! thl.
+          call calc_comp_corrs_binormal( sclrpthlp(i), sclrm(i), thlm,  & ! In
+                                         sclr1(i), sclr2(i),            & ! In
+                                         thl_1, thl_2, varnce_sclr1(i), & ! In
+                                         varnce_sclr2(i), varnce_thl_1, & ! In
+                                         varnce_thl_2, mixt_frac,       & ! In
+                                         corr_sclr_thl_1(i),            & ! Out
+                                         corr_sclr_thl_2(i)  )            ! Out
 
-            ! Calculate the PDF component correlations of a passive scalar
-            ! and rt.
-            call calc_comp_corrs_binormal( sclrprtp(i), sclrm(i), rtm,   & ! In
-                                           sclr1(i), sclr2(i),           & ! In
-                                           rt_1, rt_2, varnce_sclr1(i),  & ! In
-                                           varnce_sclr2(i), varnce_rt_1, & ! In
-                                           varnce_rt_2, mixt_frac,       & ! In
-                                           corr_sclr_rt_1(i),            & ! Out
-                                           corr_sclr_rt_2(i)  )            ! Out
+          ! Calculate the PDF component correlations of a passive scalar and rt.
+          call calc_comp_corrs_binormal( sclrprtp(i), sclrm(i), rtm,   & ! In
+                                         sclr1(i), sclr2(i),           & ! In
+                                         rt_1, rt_2, varnce_sclr1(i),  & ! In
+                                         varnce_sclr2(i), varnce_rt_1, & ! In
+                                         varnce_rt_2, mixt_frac,       & ! In
+                                         corr_sclr_rt_1(i),            & ! Out
+                                         corr_sclr_rt_2(i)  )            ! Out
 
-            if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
+          if ( iiPDF_type == iiPDF_ADG1 .or. iiPDF_type == iiPDF_ADG2 ) then
 
-               ! ADG1 and ADG2 define all PDF component correlations involving w
-               ! to have a value of 0, so skip the calculation.
-               corr_w_sclr_1(i) = zero
-               corr_w_sclr_2(i) = zero
+             ! ADG1 and ADG2 define all PDF component correlations involving w
+             ! to have a value of 0, so skip the calculation.
+             corr_w_sclr_1(i) = zero
+             corr_w_sclr_2(i) = zero
 
-            else
+          else
 
-               ! Calculate the PDF component correlations of w and a passive
-               ! scalar.
-               call calc_comp_corrs_binormal( wpsclrp(i), wm, sclrm(i),    &!In
-                                              w_1, w_2, sclr1(i),          &!In
-                                              sclr2(i), varnce_w_1,        &!In
-                                              varnce_w_2, varnce_sclr1(i), &!In
-                                              varnce_sclr2(i), mixt_frac,  &!In
-                                              corr_w_sclr_1(i),            &!Out
-                                              corr_w_sclr_2(i)  )           !Out
+             ! Calculate the PDF component correlations of w and a passive
+             ! scalar.
+             call calc_comp_corrs_binormal( wpsclrp(i), wm, sclrm(i),    & ! In
+                                            w_1, w_2, sclr1(i),          & ! In
+                                            sclr2(i), varnce_w_1,        & ! In
+                                            varnce_w_2, varnce_sclr1(i), & ! In
+                                            varnce_sclr2(i), mixt_frac,  & ! In
+                                            corr_w_sclr_1(i),            & ! Out
+                                            corr_w_sclr_2(i)  )            ! Out
 
-            endif
+          endif
 
-         enddo ! i=1, sclr_dim
-      endif ! l_scalar_calc
-
-    endif  ! Widths non-zero
+       enddo ! i = 1, sclr_dim
+    endif ! l_scalar_calc
 
 
     ! Compute higher order moments (these are interactive)

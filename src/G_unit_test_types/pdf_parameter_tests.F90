@@ -119,7 +119,11 @@ module pdf_parameter_tests
         new_pdf_driver    ! Procedure(s)
 
     use adg1_adg2_3d_luhar_pdf, only: &
-        ADG1_w_closure    ! Procedure(s)
+        ADG1_w_closure,  & ! Procedure(s)
+        ADG1_pdf_driver
+
+    use sigma_sqd_w_module, only: &
+        compute_sigma_sqd_w    ! Procedure(s)
 
     use new_tsdadg_pdf, only: &
         calc_setter_parameters, & ! Procedure(s) 
@@ -130,6 +134,17 @@ module pdf_parameter_tests
         iiPDF_ADG1,   &
         iiPDF_TSDADG, &
         calc_wp4_pdf    ! Procedure(s)
+
+    use model_flags, only: &
+        l_gamma_Skw    ! Variable(s)
+
+    use parameters_model, only: &
+        sclr_dim    ! Variable(s)
+
+    use parameters_tunable, only: &
+        gamma_coef,  & ! Variable(s)
+        gamma_coefb, &
+        gamma_coefc
 
     use mu_sigma_hm_tests, only: &
         produce_seed    ! Procedure(s)
@@ -286,10 +301,13 @@ module pdf_parameter_tests
     ! Variables for ADG1
     real( kind = core_rknd ) :: &
       sqrt_wp2,          & ! Square root of w (ADG1)                       [m/s]
-      mixt_frac_max_mag, & ! Maximum magnitude of mixture fraction (ADG1)  [-]
-      w_1_n,             & ! Normalized mean of w (1st PDF comp.) (ADG1)   [-]
-      w_2_n,             & ! Normalized mean of w (2nd PDF comp.) (ADG1)   [-]
-      sigma_sqd_w          ! Width of individual w plumes (ADG1)           [-]
+      mixt_frac_max_mag, & ! Maximum magnitude of mixture fraction (ADG1)    [-]
+      w_1_n,             & ! Normalized mean of w (1st PDF comp.) (ADG1)     [-]
+      w_2_n,             & ! Normalized mean of w (2nd PDF comp.) (ADG1)     [-]
+      alpha_thl,         & ! Factor relating to normalized variance for th_l [-]
+      alpha_rt,          & ! Factor relating to normalized variance for r_t  [-]
+      gamma_Skw_fnc,     & ! Skewness function for tunable parameter gamma   [-]
+      sigma_sqd_w          ! Width of individual w plumes (ADG1)             [-]
 
     integer, parameter :: &
       num_sigma_sqd_w = 11  ! Number of diff. values of sigma_sqd_w used (ADG1)
@@ -313,6 +331,20 @@ module pdf_parameter_tests
     integer :: &
       iter_small_l_w_1, & ! Loop index for value of small_l_w_1
       iter_small_l_w_2    ! Loop index for value of small_l_w_2
+
+    ! Scalar variables
+    real( kind = core_rknd ), dimension(sclr_dim) :: &
+      sclrm,            & ! Mean of passive scalar (overall)        [units vary]
+      sclrp2,           & ! Variance of pass. scalar (overall)  [(units vary)^2]
+      wpsclrp,          & ! Covariance of w and pass. scalar  [m/s (units vary)]
+      mu_sclr_1,        & ! Mean of passive scalar (1st PDF comp.)  [units vary]
+      mu_sclr_2,        & ! Mean of passive scalar (2nd PDF comp.)  [units vary]
+      sigma_sclr_1_sqd, & ! Variance pass. sclr (1st PDF comp.) [(units vary)^2]
+      sigma_sclr_2_sqd, & ! Variance pass. sclr (2nd PDF comp.) [(units vary)^2]
+      alpha_sclr          ! Factor relating to normalized variance for sclr  [-]
+
+    logical, parameter :: &
+      l_scalar_calc = .false. ! Flag to perform calculations for passive scalars
 
 
     write(fstdout,*) ""
@@ -861,8 +893,38 @@ module pdf_parameter_tests
 
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 
-          ! Temporarily skip this step.
-          cycle
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the full PDF (the setting of sigma_sqd_w is " &
+                           // "handled the same way as in the model code)."
+          write(fstdout,*) ""
+
+          if ( l_gamma_Skw ) then
+             gamma_Skw_fnc = gamma_coefb &
+                             + ( gamma_coef - gamma_coefb ) &
+                               * exp( -one_half * ( Skw / gamma_coefc )**2 )
+          else
+             gamma_Skw_fnc = gamma_coef
+          endif
+
+          sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, &
+                                             rtp2, wpthlp, wprtp )
+
+          !print *, wm, rtm, thlm, wp2, rtp2, thlp2, &
+          !         Skw, wprtp, wpthlp, sqrt_wp2, &
+          !         sigma_sqd_w, mixt_frac_max_mag
+
+          call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,       & ! In
+                                Skw, wprtp, wpthlp, sqrt_wp2,          & ! In
+                                sigma_sqd_w, mixt_frac_max_mag,        & ! In
+                                sclrm, sclrp2, wpsclrp, l_scalar_calc, & ! In
+                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,      & ! Out
+                                mu_thl_1, mu_thl_2, sigma_w_1_sqd,     & ! Out
+                                sigma_w_2_sqd, sigma_rt_1_sqd,         & ! Out
+                                sigma_rt_2_sqd, sigma_thl_1_sqd,       & ! Out
+                                sigma_thl_2_sqd, mixt_frac, alpha_rt,  & ! Out
+                                alpha_thl, mu_sclr_1, mu_sclr_2,       & ! Out
+                                sigma_sclr_1_sqd, sigma_sclr_2_sqd,    & ! Out
+                                alpha_sclr                             ) ! Out
 
        elseif ( test_PDF_type == iiPDF_TSDADG ) then
 
@@ -994,37 +1056,48 @@ module pdf_parameter_tests
           write(fstderr,*) ""
        endif
 
-       ! Test 14
-       ! Compare the original rtp3 to its recalculated value.
-       !    | ( <rt'^3>|_recalc - <rt'^3> ) / <rt'^3> |  <=  tol;
-       ! which can be rewritten as:
-       !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
-       if ( abs( recalc_rtp3 - rtp3 ) &
-            <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
-          l_pass_test_14 = .true.
-       else
-          l_pass_test_14 = .false.
-          write(fstderr,*) "Test 14 failed"
-          write(fstderr,*) "rtp3 = ", rtp3
-          write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
-          write(fstderr,*) ""
-       endif
+       if ( test_PDF_type == iiPDF_new ) then
 
-       ! Test 15
-       ! Compare the original Skrt to its recalculated value.
-       !    | ( Skrt|_recalc - Skrt ) / Skrt |  <=  tol;
-       ! which can be rewritten as:
-       !    | Skrt|_recalc - Skrt |  <=  | Skrt | * tol.
-       if ( abs( recalc_Skrt - Skrt ) &
-            <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
-          l_pass_test_15 = .true.
+          ! Test 14
+          ! Compare the original rtp3 to its recalculated value.
+          !    | ( <rt'^3>|_recalc - <rt'^3> ) / <rt'^3> |  <=  tol;
+          ! which can be rewritten as:
+          !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
+          if ( abs( recalc_rtp3 - rtp3 ) &
+               <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
+             l_pass_test_14 = .true.
+          else
+             l_pass_test_14 = .false.
+             write(fstderr,*) "Test 14 failed"
+             write(fstderr,*) "rtp3 = ", rtp3
+             write(fstderr,*) "recalc_rtp3 = ", recalc_rtp3
+             write(fstderr,*) ""
+          endif
+
+          ! Test 15
+          ! Compare the original Skrt to its recalculated value.
+          !    | ( Skrt|_recalc - Skrt ) / Skrt |  <=  tol;
+          ! which can be rewritten as:
+          !    | Skrt|_recalc - Skrt |  <=  | Skrt | * tol.
+          if ( abs( recalc_Skrt - Skrt ) &
+               <= max( abs( Skrt ), 1.0e-3_core_rknd ) * tol ) then
+             l_pass_test_15 = .true.
+          else
+             l_pass_test_15 = .false.
+             write(fstderr,*) "Test 15 failed"
+             write(fstderr,*) "Skrt = ", Skrt
+             write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
+             write(fstderr,*) ""
+          endif
+
        else
-          l_pass_test_15 = .false.
-          write(fstderr,*) "Test 15 failed"
-          write(fstderr,*) "Skrt = ", Skrt
-          write(fstderr,*) "recalc_Skrt = ", recalc_Skrt
-          write(fstderr,*) ""
-       endif
+
+          ! Automatically set the pass test flags to true for PDF types that
+          ! don't necessarily preserve <rt'^3> and Skrt.
+          l_pass_test_14 = .true.
+          l_pass_test_15 = .true.
+
+       endif ! test_PDF_type
 
        ! Test 16
        ! Compare the original thlm to its recalculated value.
@@ -1059,37 +1132,48 @@ module pdf_parameter_tests
           write(fstderr,*) ""
        endif
 
-       ! Test 18
-       ! Compare the original thlp3 to its recalculated value.
-       !    | ( <thl'^3>|_recalc - <thl'^3> ) / <thl'^3> |  <=  tol;
-       ! which can be rewritten as:
-       !    | <thl'^3>|_recalc - <thl'^3> |  <=  | <thl'^3> | * tol.
-       if ( abs( recalc_thlp3 - thlp3 ) &
-            <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
-          l_pass_test_18 = .true.
-       else
-          l_pass_test_18 = .false.
-          write(fstderr,*) "Test 18 failed"
-          write(fstderr,*) "thlp3 = ", thlp3
-          write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
-          write(fstderr,*) ""
-       endif
+       if ( test_PDF_type == iiPDF_new ) then
 
-       ! Test 19
-       ! Compare the original Skthl to its recalculated value.
-       !    | ( Skthl|_recalc - Skthl ) / Skthl |  <=  tol;
-       ! which can be rewritten as:
-       !    | Skthl|_recalc - Skthl |  <=  | Skthl | * tol.
-       if ( abs( recalc_Skthl - Skthl ) &
-            <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
-          l_pass_test_19 = .true.
+          ! Test 18
+          ! Compare the original thlp3 to its recalculated value.
+          !    | ( <thl'^3>|_recalc - <thl'^3> ) / <thl'^3> |  <=  tol;
+          ! which can be rewritten as:
+          !    | <thl'^3>|_recalc - <thl'^3> |  <=  | <thl'^3> | * tol.
+          if ( abs( recalc_thlp3 - thlp3 ) &
+               <= max( abs( thlp3 ), thl_tol**3 ) * tol ) then
+             l_pass_test_18 = .true.
+          else
+             l_pass_test_18 = .false.
+             write(fstderr,*) "Test 18 failed"
+             write(fstderr,*) "thlp3 = ", thlp3
+             write(fstderr,*) "recalc_thlp3 = ", recalc_thlp3
+             write(fstderr,*) ""
+          endif
+
+          ! Test 19
+          ! Compare the original Skthl to its recalculated value.
+          !    | ( Skthl|_recalc - Skthl ) / Skthl |  <=  tol;
+          ! which can be rewritten as:
+          !    | Skthl|_recalc - Skthl |  <=  | Skthl | * tol.
+          if ( abs( recalc_Skthl - Skthl ) &
+               <= max( abs( Skthl ), 1.0e-3_core_rknd ) * tol ) then
+             l_pass_test_19 = .true.
+          else
+             l_pass_test_19 = .false.
+             write(fstderr,*) "Test 19 failed"
+             write(fstderr,*) "Skthl = ", Skthl
+             write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
+             write(fstderr,*) ""
+          endif
+
        else
-          l_pass_test_19 = .false.
-          write(fstderr,*) "Test 19 failed"
-          write(fstderr,*) "Skthl = ", Skthl
-          write(fstderr,*) "recalc_Skthl = ", recalc_Skthl
-          write(fstderr,*) ""
-       endif
+
+          ! Automatically set the pass test flags to true for PDF types that
+          ! don't necessarily preserve <thl'^3> and Skthl.
+          l_pass_test_18 = .true.
+          l_pass_test_19 = .true.
+
+       endif ! test_PDF_type
 
        ! Test 20
        ! Check that sigma_w_1, sigma_w_2, sigma_rt_1, sigma_rt_2, sigma_thl_1,
