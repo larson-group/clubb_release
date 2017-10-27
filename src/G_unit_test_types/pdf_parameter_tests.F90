@@ -909,10 +909,6 @@ module pdf_parameter_tests
           sigma_sqd_w = compute_sigma_sqd_w( gamma_Skw_fnc, wp2, thlp2, &
                                              rtp2, wpthlp, wprtp )
 
-          !print *, wm, rtm, thlm, wp2, rtp2, thlp2, &
-          !         Skw, wprtp, wpthlp, sqrt_wp2, &
-          !         sigma_sqd_w, mixt_frac_max_mag
-
           call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,       & ! In
                                 Skw, wprtp, wpthlp, sqrt_wp2,          & ! In
                                 sigma_sqd_w, mixt_frac_max_mag,        & ! In
