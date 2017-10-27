@@ -399,7 +399,16 @@ module pdf_closure_module
 
     err_code = clubb_no_error ! Initialize to the value for no errors
 
-    ! Initialize to 0 to prevent runtime error
+    ! Initialize to default values to prevent a runtime error
+    if ( ( iiPDF_type /= iiPDF_ADG1 ) .and. ( iiPDF_type /= iiPDF_ADG2 ) ) then
+       alpha_thl = one_half
+       alpha_rt = one_half
+       if ( l_scalar_calc ) then
+          alpha_sclr(1:sclr_dim) = one_half
+       endif ! l_scalar_calc
+    endif ! iiPDF_type /= iiPDF_ADG1 and iiPDF /= iiPDF_ADG2
+
+    ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new ) then
        F_w = zero
        F_rt = zero
@@ -417,6 +426,9 @@ module pdf_closure_module
 
     ! Select the PDF closure method for the two-component PDF used by CLUBB for
     ! w, rt, theta-l, and passive scalar variables.
+    ! Calculate the mixture fraction for the multivariate PDF, as well as both
+    ! PDF component means and both PDF component variances for each of w, rt,
+    ! theta-l, and passive scalar variables.
     if ( iiPDF_type == iiPDF_ADG1 ) then ! use ADG1
 
        call ADG1_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
@@ -451,10 +463,6 @@ module pdf_closure_module
                                  varnce_rt_2, varnce_thl_1,            & ! Out
                                  varnce_thl_2, mixt_frac )               ! Out
 
-      ! Set to default values when using the 3D_Luhar closure
-      alpha_thl = one_half
-      alpha_rt = one_half
-
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
        call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
@@ -466,12 +474,6 @@ module pdf_closure_module
                             varnce_thl_2, mixt_frac,                 & ! Out
                             F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                             min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
-
-       ! The variables alpha_rt and alpha_thl aren't used by the new PDF.
-       ! However, they need to be set to a value to avoid being set to NaN and
-       ! causing a runtime error.  They are set to their default values here.
-       alpha_rt = one_half
-       alpha_thl = one_half
 
     endif ! iiPDF_type
 
