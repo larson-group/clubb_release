@@ -441,6 +441,9 @@ module new_tsdadg_pdf
   ! 2/3 < l_x_1 < 1 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
   ! 0 < l_x_1 < 1 and 2/3 < l_x_2 < 1; when Skx * sgn( <w'x'> ) < 0.
   !
+  ! The condition that l_x_1 > 2/3 prevents a negative PDF component variance
+  ! when Skx = 0.
+  !
   !
   ! Equations for PDF component standard deviations:
   !
@@ -556,9 +559,11 @@ module new_tsdadg_pdf
     if ( abs( mu_x_1_nrmlized ) >= eps &
          .and. abs( mu_x_2_nrmlized ) >= eps ) then
        mixt_frac = one / ( one + abs( mu_x_1_nrmlized / mu_x_2_nrmlized ) )
-    elseif ( abs( mu_x_1_nrmlized ) >= eps ) then
+    elseif ( abs( mu_x_1_nrmlized ) >= eps &
+             .and. abs( mu_x_2_nrmlized ) < eps ) then
        mixt_frac = one / ( one + abs( mu_x_1_nrmlized / eps ) )
-    elseif ( abs( mu_x_2_nrmlized ) >= eps ) then
+    elseif ( abs( mu_x_1_nrmlized ) < eps &
+             .and. abs( mu_x_2_nrmlized ) >= eps ) then
        mixt_frac = one / ( one + abs( eps / mu_x_2_nrmlized ) )
     else ! abs( mu_x_1_nrmlized ) < eps and abs( mu_x_2_nrmlized ) < eps
        mixt_frac = one_half
@@ -623,7 +628,7 @@ module new_tsdadg_pdf
 
     ! Local Variable
     real( kind = core_rknd ) :: &
-      factor_x
+      Skx_fnc_factor
 
 
     ! The values of L_x_1 and L_x_2 are calculated by skewness functions.
@@ -647,14 +652,14 @@ module new_tsdadg_pdf
     ! otherwise, when Skx * sgn( <w'x'> ) < 0, switch l_x_1 and l_x_2:
     ! L_x_1 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
     ! L_x_2 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ).
-    factor_x = abs( Skx ) / sqrt( four + Skx**2 )
+    Skx_fnc_factor = abs( Skx ) / sqrt( four + Skx**2 )
 
     if ( Skx * sgn_wpxp >= zero ) then
-       big_L_x_1 = small_l_x_1 * factor_x
-       big_L_x_2 = small_l_x_2 * factor_x
+       big_L_x_1 = small_l_x_1 * Skx_fnc_factor
+       big_L_x_2 = small_l_x_2 * Skx_fnc_factor
     else ! Skx * sgn_wpxp < 0
-       big_L_x_1 = small_l_x_2 * factor_x
-       big_L_x_2 = small_l_x_1 * factor_x
+       big_L_x_1 = small_l_x_2 * Skx_fnc_factor
+       big_L_x_2 = small_l_x_1 * Skx_fnc_factor
     endif
 
 
