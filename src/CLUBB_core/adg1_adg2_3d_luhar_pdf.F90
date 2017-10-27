@@ -119,7 +119,7 @@ module adg1_adg2_3d_luhar_pdf
 
 
     ! If there is no variance in vertical velocity, then treat rt and theta-l as
-    ! constant, as well.  Otherwise width parameters (e.g. varnce_w_1,
+    ! single Gaussians.  Otherwise width parameters (e.g. varnce_w_1,
     ! varnce_w_2, etc.) are non-zero.
     if ( wp2 <= w_tol_sqd ) then
 
@@ -131,20 +131,20 @@ module adg1_adg2_3d_luhar_pdf
        rt_1         = rtm
        rt_2         = rtm
        alpha_rt     = one_half
-       varnce_rt_1  = zero
-       varnce_rt_2  = zero
+       varnce_rt_1  = rtp2
+       varnce_rt_2  = rtp2
        thl_1        = thlm
        thl_2        = thlm
        alpha_thl    = one_half
-       varnce_thl_1 = zero
-       varnce_thl_2 = zero
+       varnce_thl_1 = thlp2
+       varnce_thl_2 = thlp2
 
        if ( l_scalar_calc ) then
           do i = 1, sclr_dim, 1
              sclr_1(i)        = sclrm(i)
              sclr_2(i)        = sclrm(i)
-             varnce_sclr_1(i) = zero
-             varnce_sclr_2(i) = zero
+             varnce_sclr_1(i) = sclrp2(i)
+             varnce_sclr_2(i) = sclrp2(i)
              alpha_sclr(i)    = one_half
           enddo ! 1..sclr_dim
        endif
@@ -287,7 +287,7 @@ module adg1_adg2_3d_luhar_pdf
 
 
     ! If there is no variance in vertical velocity, then treat rt and theta-l as
-    ! constant, as well.  Otherwise width parameters (e.g. varnce_w_1,
+    ! single Gaussians.  Otherwise width parameters (e.g. varnce_w_1,
     ! varnce_w_2, etc.) are non-zero.
     if ( wp2 <= w_tol_sqd ) then
 
@@ -299,21 +299,21 @@ module adg1_adg2_3d_luhar_pdf
        rt_1         = rtm
        rt_2         = rtm
        alpha_rt     = one_half
-       varnce_rt_1  = zero
-       varnce_rt_2  = zero
+       varnce_rt_1  = rtp2
+       varnce_rt_2  = rtp2
        thl_1        = thlm
        thl_2        = thlm
        alpha_thl    = one_half
-       varnce_thl_1 = zero
-       varnce_thl_2 = zero
+       varnce_thl_1 = thlp2
+       varnce_thl_2 = thlp2
        sigma_sqd_w  = 0.99_core_rknd
 
        if ( l_scalar_calc ) then
           do i = 1, sclr_dim, 1
              sclr_1(i)        = sclrm(i)
              sclr_2(i)        = sclrm(i)
-             varnce_sclr_1(i) = zero
-             varnce_sclr_2(i) = zero
+             varnce_sclr_1(i) = sclrp2(i)
+             varnce_sclr_2(i) = sclrp2(i)
              alpha_sclr(i)    = one_half
           enddo ! 1..sclr_dim
        endif
