@@ -8,12 +8,284 @@ module new_tsdadg_pdf
 
   implicit none
 
-  public :: calc_setter_parameters, & ! Procedure(s)
+  public :: tsdadg_pdf_driver,      & ! Procedure(s)
+            calc_setter_parameters, &
             calc_L_x_Skx_fnc
+
+  private :: calc_respnder_parameters    ! Procedure(s)
 
   private  ! default scope
 
   contains
+
+  !=============================================================================
+  subroutine tsdadg_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,   & ! In
+                                Skw, Skrt, Skthl, wprtp, wpthlp,   & ! In
+                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
+                                mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
+                                sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
+                                sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
+                                sigma_thl_2_sqd, mixt_frac         ) ! Out
+
+
+    ! Description:
+    ! Selects which variable is used to set the mixture fraction for the PDF
+    ! ("the setter") and which variables are handled after that mixture fraction
+    ! has been set ("the responders").  Traditionally, w has been used to set
+    ! the PDF.  However, here, the variable with the greatest magnitude of
+    ! skewness is used to set the PDF.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one,     & ! Variable(s)
+        zero,    &
+        fstderr
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wm,     & ! Mean of w (overall)                [m/s]
+      rtm,    & ! Mean of rt (overall)               [kg/kg]
+      thlm,   & ! Mean of thl (overall)              [K]
+      wp2,    & ! Variance of w (overall)            [m^2/s^2]
+      rtp2,   & ! Variance of rt (overall)           [kg^2/kg^2]
+      thlp2,  & ! Variance of thl (overall)          [K^2]
+      Skw,    & ! Skewness of w (overall)            [-]
+      Skrt,   & ! Skewness of rt (overall)           [-]
+      Skthl,  & ! Skewness of thl (overall)          [-]
+      wprtp,  & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
+      wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_w_1,          & ! Mean of w (1st PDF component)        [m/s]
+      mu_w_2,          & ! Mean of w (2nd PDF component)        [m/s]
+      mu_rt_1,         & ! Mean of rt (1st PDF component)       [kg/kg]
+      mu_rt_2,         & ! Mean of rt (2nd PDF component)       [kg/kg]
+      mu_thl_1,        & ! Mean of thl (1st PDF component)      [K]
+      mu_thl_2,        & ! Mean of thl (2nd PDF component)      [K]
+      sigma_w_1_sqd,   & ! Variance of w (1st PDF component)    [m^2/s^2]
+      sigma_w_2_sqd,   & ! Variance of w (2nd PDF component)    [m^2/s^2]
+      sigma_rt_1_sqd,  & ! Variance of rt (1st PDF component)   [kg^2/kg^2]
+      sigma_rt_2_sqd,  & ! Variance of rt (2nd PDF component)   [kg^2/kg^2]
+      sigma_thl_1_sqd, & ! Variance of thl (1st PDF component)  [K^2]
+      sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
+      mixt_frac          ! Mixture fraction                     [-]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      big_L_w_1,   & ! Parameter for the 1st PDF comp. mean of w            [-]
+      big_L_w_2,   & ! Parameter for the 2nd PDF comp. mean of w (setter)   [-]
+      big_L_rt_1,  & ! Parameter for the 1st PDF comp. mean of rt           [-]
+      big_L_rt_2,  & ! Parameter for the 2nd PDF comp. mean of rt (setter)  [-]
+      big_L_thl_1, & ! Parameter for the 1st PDF comp. mean of thl          [-]
+      big_L_thl_2    ! Parameter for the 2nd PDF comp. mean of thl (setter) [-]
+
+    real( kind = core_rknd ) :: &
+      small_l_w_1,   & ! Param. for the 1st PDF comp. mean of w            [-]
+      small_l_w_2,   & ! Param. for the 2nd PDF comp. mean of w (setter)   [-]
+      small_l_rt_1,  & ! Param. for the 1st PDF comp. mean of rt           [-]
+      small_l_rt_2,  & ! Param. for the 2nd PDF comp. mean of rt (setter)  [-]
+      small_l_thl_1, & ! Param. for the 1st PDF comp. mean of thl          [-]
+      small_l_thl_2    ! Param. for the 2nd PDF comp. mean of thl (setter) [-]
+
+    real( kind = core_rknd ) :: &
+      sgn_wprtp,  & ! Sign of the covariance of w and rt (overall)     [-]
+      sgn_wpthlp    ! Sign of the covariance of w and thl (overall)    [-]
+
+    real( kind = core_rknd ), parameter :: &
+      sgn_wp2 = one   ! Sign of the variance of w (overall); always positive [-]
+
+    real( kind = core_rknd ) :: &
+      coef_sigma_w_1_sqd,   & ! sigma_w_1^2 = coef_sigma_w_1_sqd * <w'^2>    [-]
+      coef_sigma_w_2_sqd,   & ! sigma_w_2^2 = coef_sigma_w_2_sqd * <w'^2>    [-]
+      coef_sigma_rt_1_sqd,  & ! sigma_rt_1^2 = coef_sigma_rt_1_sqd * <rt'^2> [-]
+      coef_sigma_rt_2_sqd,  & ! sigma_rt_2^2 = coef_sigma_rt_2_sqd * <rt'^2> [-]
+      coef_sigma_thl_1_sqd, & ! sigma_thl_1^2=coef_sigma_thl_1_sqd*<thl'^2>  [-]
+      coef_sigma_thl_2_sqd    ! sigma_thl_2^2=coef_sigma_thl_2_sqd*<thl'^2>  [-]
+
+
+    ! Calculate sgn( <w'rt'> ).
+    if ( wprtp >= zero ) then
+       sgn_wprtp = one
+    else ! wprtp < 0
+       sgn_wprtp = -one
+    endif ! wprtp >= 0
+
+    ! Calculate sgn( <w'thl'> ).
+    if ( wpthlp >= zero ) then
+       sgn_wpthlp = one
+    else ! wpthlp < 0
+       sgn_wpthlp = -one
+    endif ! wpthlp >= 0
+
+    small_l_w_1 = 0.75_core_rknd
+    small_l_w_2 = 0.5_core_rknd
+    small_l_rt_1 = 0.75_core_rknd
+    small_l_rt_2 = 0.5_core_rknd
+    small_l_thl_1 = 0.75_core_rknd
+    small_l_thl_2 = 0.5_core_rknd
+
+    call calc_L_x_Skx_fnc( Skw, sgn_wp2,             & ! In
+                           small_l_w_1, small_l_w_2, & ! In
+                           big_L_w_1, big_L_w_2      ) ! Out
+
+    call calc_L_x_Skx_fnc( Skrt, sgn_wprtp,            & ! In
+                           small_l_rt_1, small_l_rt_2, & ! In
+                           big_L_rt_1, big_L_rt_2      ) ! Out
+
+    call calc_L_x_Skx_fnc( Skthl, sgn_wpthlp,            & ! In
+                           small_l_thl_1, small_l_thl_2, & ! In
+                           big_L_thl_1, big_L_thl_2      ) ! Out
+
+
+    ! The variable with the greatest magnitude of skewness will be the setter
+    ! variable and the other variables will be responder variables.
+    if ( abs( Skw ) >= abs( Skrt ) .and. abs( Skw ) >= abs( Skthl ) ) then
+
+       ! The variable w has the greatest magnitude of skewness.
+
+       call calc_setter_parameters( wm, wp2, Skw, sgn_wp2,         & ! In
+                                    big_L_w_1, big_L_w_2,          & ! In
+                                    mu_w_1, mu_w_2, sigma_w_1_sqd, & ! Out
+                                    sigma_w_2_sqd, mixt_frac,      & ! Out
+                                    coef_sigma_w_1_sqd,            & ! Out
+                                    coef_sigma_w_2_sqd             ) ! Out
+
+       call calc_respnder_parameters( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
+                                      mixt_frac, big_L_rt_1,          & ! In
+                                      mu_rt_1, mu_rt_2,               & ! Out
+                                      sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
+                                      coef_sigma_rt_1_sqd,            & ! Out
+                                      coef_sigma_rt_2_sqd             ) ! Out
+
+       call calc_respnder_parameters( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
+                                      mixt_frac, big_L_thl_1,           & ! In
+                                      mu_thl_1, mu_thl_2,               & ! Out
+                                      sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                                      coef_sigma_thl_1_sqd,             & ! Out
+                                      coef_sigma_thl_2_sqd              ) ! Out
+
+
+    elseif ( abs( Skrt ) > abs( Skw ) .and. abs( Skrt ) >= abs( Skthl ) ) then
+
+       ! The variable rt has the greatest magnitude of skewness.
+
+       call calc_setter_parameters( rtm, rtp2, Skrt, sgn_wprtp,       & ! In
+                                    big_L_rt_1, big_L_rt_2,           & ! In
+                                    mu_rt_1, mu_rt_2, sigma_rt_1_sqd, & ! Out
+                                    sigma_rt_2_sqd, mixt_frac,        & ! Out
+                                    coef_sigma_rt_1_sqd,              & ! Out
+                                    coef_sigma_rt_2_sqd               ) ! Out
+
+       call calc_respnder_parameters( wm, wp2, Skw, sgn_wp2,        & ! In
+                                      mixt_frac, big_L_w_1,         & ! In
+                                      mu_w_1, mu_w_2,               & ! Out
+                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
+                                      coef_sigma_w_1_sqd,           & ! Out
+                                      coef_sigma_w_2_sqd            ) ! Out
+
+       call calc_respnder_parameters( thlm, thlp2, Skthl, sgn_wpthlp,   & ! In
+                                      mixt_frac, big_L_thl_1,           & ! In
+                                      mu_thl_1, mu_thl_2,               & ! Out
+                                      sigma_thl_1_sqd, sigma_thl_2_sqd, & ! Out
+                                      coef_sigma_thl_1_sqd,             & ! Out
+                                      coef_sigma_thl_2_sqd              ) ! Out
+
+
+    else ! abs( Skthl ) > abs( Skw ) .and. abs( Skthl ) > abs( Skrt )
+
+       ! The variable thl has the greatest magnitude of skewness.
+
+       call calc_setter_parameters( thlm, thlp2, Skthl, sgn_wpthlp,      & ! In
+                                    big_L_thl_1, big_L_thl_2,            & ! In
+                                    mu_thl_1, mu_thl_2, sigma_thl_1_sqd, & ! Out
+                                    sigma_thl_2_sqd, mixt_frac,          & ! Out
+                                    coef_sigma_thl_1_sqd,                & ! Out
+                                    coef_sigma_thl_2_sqd                 ) ! Out
+
+       call calc_respnder_parameters( wm, wp2, Skw, sgn_wp2,        & ! In
+                                      mixt_frac, big_L_w_1,         & ! In
+                                      mu_w_1, mu_w_2,               & ! Out
+                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
+                                      coef_sigma_w_1_sqd,           & ! Out
+                                      coef_sigma_w_2_sqd            ) ! Out
+
+       call calc_respnder_parameters( rtm, rtp2, Skrt, sgn_wprtp,     & ! In
+                                      mixt_frac, big_L_rt_1,          & ! In
+                                      mu_rt_1, mu_rt_2,               & ! Out
+                                      sigma_rt_1_sqd, sigma_rt_2_sqd, & ! Out
+                                      coef_sigma_rt_1_sqd,            & ! Out
+                                      coef_sigma_rt_2_sqd             ) ! Out
+
+
+    endif ! Find variable with the greatest magnitude of skewness.
+
+
+    if ( sigma_w_1_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
+                        // "the 1st PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_w_1^2 (before clipping) = ", sigma_w_1_sqd
+       sigma_w_1_sqd = zero
+       coef_sigma_w_1_sqd = zero
+    endif ! sigma_w_1_sqd < 0
+
+    if ( sigma_w_2_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of w in " &
+                        // "the 2nd PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_w_2^2 (before clipping) = ", sigma_w_2_sqd
+       sigma_w_2_sqd = zero
+       coef_sigma_w_2_sqd = zero
+    endif ! sigma_w_2_sqd < 0
+
+    if ( sigma_rt_1_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
+                        // "the 1st PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_rt_1^2 (before clipping) = ", sigma_rt_1_sqd
+       sigma_rt_1_sqd = zero
+       coef_sigma_rt_1_sqd = zero
+    endif ! sigma_rt_1_sqd < 0
+
+    if ( sigma_rt_2_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of rt in " &
+                        // "the 2nd PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_rt_2^2 (before clipping) = ", sigma_rt_2_sqd
+       sigma_rt_2_sqd = zero
+       coef_sigma_rt_2_sqd = zero
+    endif ! sigma_rt_2_sqd < 0
+
+    if ( sigma_thl_1_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl in " &
+                        // "the 1st PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_thl_1^2 (before clipping) = ", sigma_thl_1_sqd
+       sigma_thl_1_sqd = zero
+       coef_sigma_thl_1_sqd = zero
+    endif ! sigma_thl_1_sqd < 0
+
+    if ( sigma_thl_2_sqd < zero ) then
+       write(fstderr,*) "WARNING:  New TSDADG PDF.  The variance of thl in " &
+                        // "the 2nd PDF component is negative and is being " &
+                        // "clipped to 0."
+       write(fstderr,*) "sigma_thl_2^2 (before clipping) = ", sigma_thl_2_sqd
+       sigma_thl_2_sqd = zero
+       coef_sigma_thl_2_sqd = zero
+    endif ! sigma_thl_2_sqd < 0
+
+
+    return
+
+  end subroutine tsdadg_pdf_driver
 
   !=============================================================================
   !
@@ -166,8 +438,8 @@ module new_tsdadg_pdf
   ! L_x_1 and L_x_2, but rather only for a subregion of parameter space.  This
   ! applies to l_x_1 and l_x_2, as well.  The conditions on l_x_1 and l_x_2 are:
   !
-  ! l_x_1 > 2/3 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
-  ! 0 < l_x_1 < 1 and l_x_2 > 2/3; when Skx * sgn( <w'x'> ) < 0.
+  ! 2/3 < l_x_1 < 1 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
+  ! 0 < l_x_1 < 1 and 2/3 < l_x_2 < 1; when Skx * sgn( <w'x'> ) < 0.
   !
   !
   ! Equations for PDF component standard deviations:
@@ -292,7 +564,7 @@ module new_tsdadg_pdf
        mixt_frac = one_half
     endif
 
-    ! Calculate the standard deviation of x in the 1st PDF component.
+    ! Calculate the variance of x in the 1st PDF component.
     coef_sigma_x_1_sqd &
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
@@ -302,7 +574,7 @@ module new_tsdadg_pdf
 
     sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
 
-    ! Calculate the standard deviation of x in the 2nd PDF component.
+    ! Calculate the variance of x in the 2nd PDF component.
     coef_sigma_x_2_sqd & 
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
@@ -329,7 +601,8 @@ module new_tsdadg_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero    ! Variable(s)
+        four, & ! Variable(s)
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -361,11 +634,11 @@ module new_tsdadg_pdf
     !
     ! The conditions on l_x_1 and l_x_2 are:
     !
-    ! l_x_1 > 2/3 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
-    ! 0 < l_x_1 < 1 and l_x_2 > 2/3; when Skx * sgn( <w'x'> ) < 0.
+    ! 2/3 < l_x_1 < 1 and 0 < l_x_2 < 1; when Skx * sgn( <w'x'> ) >= 0; and
+    ! 0 < l_x_1 < 1 and 2/3 < l_x_2 < 1; when Skx * sgn( <w'x'> ) < 0.
     !
-    ! For simplicity, this can also be accomplished by setting l_x_1 > 2/3 and
-    ! 0 < l_x_2 < 1, and then using the following equations.
+    ! For simplicity, this can also be accomplished by setting 2/3 < l_x_1 < 1
+    ! and 0 < l_x_2 < 1, and then using the following equations.
     !
     ! When Skx * sgn( <w'x'> ) >= 0:
     ! L_x_1 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
@@ -374,7 +647,7 @@ module new_tsdadg_pdf
     ! otherwise, when Skx * sgn( <w'x'> ) < 0, switch l_x_1 and l_x_2:
     ! L_x_1 = l_x_2 * abs( Skx ) / sqrt( 4 + Skx^2 ); and
     ! L_x_2 = l_x_1 * abs( Skx ) / sqrt( 4 + Skx^2 ).
-    factor_x = abs( Skx ) / sqrt( 4.0_core_rknd + Skx**2 )
+    factor_x = abs( Skx ) / sqrt( four + Skx**2 )
 
     if ( Skx * sgn_wpxp >= zero ) then
        big_L_x_1 = small_l_x_1 * factor_x
@@ -388,6 +661,207 @@ module new_tsdadg_pdf
     return
 
   end subroutine calc_L_x_Skx_fnc
+
+  !=============================================================================
+  !
+  ! DESCRIPTION OF THE METHOD FOR EACH RESPONDING VARIABLE
+  ! ======================================================
+  !
+  ! In order to find equations for the four PDF parameters for each responding
+  ! variable, which are mu_x_1, mu_x_2, sigma_x_1, and sigma_x_2 (where x stands
+  ! for a responding variable here), four equations are needed.  These four
+  ! equations are the equations for <x>, <x'^2>, and <x'^3> as found by
+  ! integrating over the PDF.  Additionally, one more equation, which involves
+  ! tunable parameter L_x_1, and which is used to help control the mean of the
+  ! 1st PDF component, is used in this equation set.  The four equations are:
+  !
+  ! <x> = mixt_frac * mu_x_1 + ( 1 - mixt_frac ) * mu_x_2;
+  !
+  ! <x'^2> = mixt_frac * ( ( mu_x_1 - <x> )^2 + sigma_x_1^2 )
+  !          + ( 1 - mixt_frac ) * ( ( mu_x_2 - <x> )^2 + sigma_x_2^2 );
+  !
+  ! <x'^3> = mixt_frac * ( mu_x_1 - <x> )
+  !                    * ( ( mu_x_1 - <x> )^2 + 3 * sigma_x_1^2 )
+  !          + ( 1 - mixt_frac ) * ( mu_x_2 - <x> )
+  !                              * ( ( mu_x_2 - <x> )^2 + 3 * sigma_x_2^2 ); and
+  !
+  ! mu_x_1 - <x> = L_x_1
+  !                * sqrt( ( 1 + Skx * sgn( <w'x'> ) / sqrt( 4 + Skx^2 ) )
+  !                        / ( 1 - Skx * sgn( <w'x'> ) / sqrt( 4 + Skx^2 ) ) )
+  !                * sqrt( <x'^2> ) * sgn( <w'x'> );
+  !
+  ! where 0 <= L_x_1 <= 1, Skx is the skewness of x, such that
+  ! Skx = <x'^3> / <x'^2>^(3/2), and sgn( <w'x'> ) is given by:
+  !
+  ! sgn( <w'x'> ) = |  1, when <w'x'> >= 0;
+  !                 | -1, when <w'x'> < 0.
+  !
+  ! The resulting equations for the four PDF parameters are:
+  !
+  ! mu_x_1 = <x> + L_x_1
+  !                * sqrt( ( 1 + Skx * sgn( <w'x'> ) / sqrt( 4 + Skx^2 ) )
+  !                        / ( 1 - Skx * sgn( <w'x'> ) / sqrt( 4 + Skx^2 ) ) )
+  !                * sqrt( <x'^2> ) * sgn( <w'x'> );
+  !
+  ! mu_x_2 = <x> - ( mixt_frac / ( 1 - mixt_frac ) ) * ( mu_x_1 - <x> );
+  !
+  ! sigma_x_1 = sqrt( ( 1 - mixt_frac * mu_x_1_nrmlized^2
+  !                     - ( 1 - mixt_frac ) * mu_x_2_nrmlized^2
+  !                     + ( 1 - mixt_frac )
+  !                       * ( Skx / ( 3 * mixt_frac * mu_x_1_nrmlized )
+  !                           - mu_x_1_nrmlized^2 / 3
+  !                           + mu_x_2_nrmlized^2 / 3 ) )
+  !                   * <x'^2> ); and
+  !
+  ! sigma_x_2 = sqrt( ( 1 - mixt_frac * mu_x_1_nrmlized^2
+  !                     - ( 1 - mixt_frac ) * mu_x_2_nrmlized^2
+  !                     - mixt_frac
+  !                       * ( Skx / ( 3 * mixt_frac * mu_x_1_nrmlized )
+  !                           - mu_x_1_nrmlized^2 / 3
+  !                           + mu_x_2_nrmlized^2 / 3 ) )
+  !                   * <x'^2> ); where
+  !
+  ! mu_x_1_nrmlized = ( mu_x_1 - <x> ) / sqrt( <x'^2> ); and
+  !
+  ! mu_x_2_nrmlized = ( mu_x_2 - <x> ) / sqrt( <x'^2> ).
+  !
+  !
+  ! Notes:
+  !
+  ! When L_x_1 = 0, mu_x_1 = mu_x_2 = <x>, sigma_x_1^2 = sigma_x_2^2 = <x'^2>,
+  ! and the distribution reduces to a single Gaussian.
+  !
+  !
+  ! Equations for PDF component standard deviations:
+  !
+  ! The equations for the PDF component standard deviations can also be written
+  ! as:
+  !
+  ! sigma_x_1 = sqrt( coef_sigma_x_1_sqd * <x'^2> ); and
+  !
+  ! sigma_x_2 = sqrt( coef_sigma_x_2_sqd * <x'^2> ); where
+  !
+  ! coef_sigma_x_1_sqd = 1 - mixt_frac * mu_x_1_nrmlized^2
+  !                      - ( 1 - mixt_frac ) * mu_x_2_nrmlized^2
+  !                      + ( 1 - mixt_frac )
+  !                        * ( Skx / ( 3 * mixt_frac * mu_x_1_nrmlized )
+  !                            - mu_x_1_nrmlized^2 / 3
+  !                            + mu_x_2_nrmlized^2 / 3 ); and
+  !
+  ! coef_sigma_x_2_sqd = 1 - mixt_frac * mu_x_1_nrmlized^2
+  !                      - ( 1 - mixt_frac ) * mu_x_2_nrmlized^2
+  !                      - mixt_frac
+  !                        * ( Skx / ( 3 * mixt_frac * mu_x_1_nrmlized )
+  !                            - mu_x_1_nrmlized^2 / 3
+  !                            + mu_x_2_nrmlized^2 / 3 ).
+  !
+  ! The above equations can be substituted into an equation for a variable that
+  ! has been derived by integrating over the PDF.  Many variables like this are
+  ! used in parts of the predictive equation set.  These substitutions allow
+  ! some terms to solved implicitly or semi-implicitly in the predictive
+  ! equations.
+  !
+  !
+  !=============================================================================
+  subroutine calc_respnder_parameters( xm, xp2, Skx, sgn_wpxp,       & ! In
+                                       mixt_frac, big_L_x_1,         & ! In
+                                       mu_x_1, mu_x_2,               & ! Out
+                                       sigma_x_1_sqd, sigma_x_2_sqd, & ! Out
+                                       coef_sigma_x_1_sqd,           & ! Out
+                                       coef_sigma_x_2_sqd            ) ! Out
+
+    ! Description:
+    ! Calculates the PDF component means, the PDF component standard deviations,
+    ! and the mixture fraction for the variable that sets the PDF.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        four,     & ! Variable(s)
+        three,    &
+        one,      &
+        eps
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      xm,        & ! Mean of x (overall)                            [units vary]
+      xp2,       & ! Variance of x (overall)                    [(units vary)^2]
+      Skx,       & ! Skewness of x                                           [-]
+      sgn_wpxp,  & ! Sign of the covariance of w and x (overall)             [-]
+      mixt_frac, & ! Mixture fraction                                        [-]
+      big_L_x_1    ! Parameter for the spread of the 1st PDF comp. mean of x [-]
+
+    ! Output Variables
+    real( kind = core_rknd ), intent(out) :: &
+      mu_x_1,        & ! Mean of x (1st PDF component)              [units vary]
+      mu_x_2,        & ! Mean of x (2nd PDF component)              [units vary]
+      sigma_x_1_sqd, & ! Variance of x (1st PDF component)      [(units vary)^2]
+      sigma_x_2_sqd    ! Variance of x (2nd PDF component)      [(units vary)^2]
+
+    real( kind = core_rknd ), intent(out) :: &
+      coef_sigma_x_1_sqd, & ! sigma_x_1^2 = coef_sigma_x_1_sqd * <x'^2>      [-]
+      coef_sigma_x_2_sqd    ! sigma_x_2^2 = coef_sigma_x_2_sqd * <x'^2>      [-]
+
+    ! Local Variables
+    real( kind = core_rknd ) :: &
+      mu_x_1_nrmlized, & ! Normalized mean of x (1st PDF component)          [-]
+      mu_x_2_nrmlized    ! Normalized mean of x (2nd PDF component)          [-]
+
+    real( kind = core_rknd ) :: &
+      factor_plus,               &
+      factor_minus,              &
+      sqrt_factor_plus_ov_minus
+
+
+    ! Calculate the factors in the PDF component mean equations.
+    factor_plus = one + Skx * sgn_wpxp / sqrt( four + Skx**2 )
+
+    factor_minus = one - Skx * sgn_wpxp / sqrt( four + Skx**2 )
+
+    sqrt_factor_plus_ov_minus = sqrt( factor_plus / factor_minus )
+
+    ! Calculate the normalized mean of x in the 1st PDF component.
+    mu_x_1_nrmlized = big_L_x_1 * sqrt_factor_plus_ov_minus * sgn_wpxp
+
+    ! Calculate the normalized mean of x in the 2nd PDF component.
+    mu_x_2_nrmlized = - ( mixt_frac / ( one - mixt_frac ) ) * mu_x_1_nrmlized
+
+    ! Calculate the mean of x in the 1st PDF component.
+    mu_x_1 = xm + mu_x_1_nrmlized * sqrt( xp2 )
+
+    ! Calculate the mean of x in the 2nd PDF component.
+    mu_x_2 = xm + mu_x_2_nrmlized * sqrt( xp2 )
+
+    ! Calculate the variance of x in the 1st PDF component.
+    coef_sigma_x_1_sqd &
+    = one - mixt_frac * mu_x_1_nrmlized**2 &
+      - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
+      + ( one - mixt_frac ) &
+        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+            - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
+
+    sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
+
+    ! Calculate the variance of x in the 2nd PDF component.
+    coef_sigma_x_2_sqd & 
+    = one - mixt_frac * mu_x_1_nrmlized**2 &
+      - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
+      - mixt_frac &
+        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+            - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
+
+    sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
+
+
+    return
+
+  end subroutine calc_respnder_parameters
 
   !=============================================================================
 
