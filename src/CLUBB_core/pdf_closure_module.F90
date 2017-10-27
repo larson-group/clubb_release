@@ -91,7 +91,6 @@ module pdf_closure_module
         ep,             & ! Rd / Rv;     ep  = 0.622            [-]
         ep1,            & ! (1.0-ep)/ep; ep1 = 0.61             [-]
         ep2,            & ! 1.0/ep;      ep2 = 1.61             [-]
-        w_tol_sqd,      & ! Tolerance for w'^2                  [m^2/s^2]
         rt_tol,         & ! Tolerance for r_t                   [kg/kg]
         thl_tol,        & ! Tolerance for th_l                  [K]
         T_freeze_K,     & ! Freezing point of water             [K]
@@ -119,6 +118,9 @@ module pdf_closure_module
         ADG1_pdf_driver,     & ! Procedure(s)
         ADG2_pdf_driver,     &
         Luhar_3D_pdf_driver
+
+    use new_tsdadg_pdf, only: &
+        tsdadg_pdf_driver    ! Procedure(s)
 
     use pdf_utilities, only: &
         calc_comp_corrs_binormal, & ! Procedure(s)
@@ -474,6 +476,16 @@ module pdf_closure_module
                             varnce_thl_2, mixt_frac,                 & ! Out
                             F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                             min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
+
+    elseif ( iiPDF_type == iiPDF_TSDADG ) then
+
+       call tsdadg_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, & ! In
+                               Skw, Skrt, Skthl, wprtp, wpthlp, & ! In
+                               w_1, w_2, rt_1, rt_2,            & ! Out
+                               thl_1, thl_2, varnce_w_1,        & ! Out
+                               varnce_w_2, varnce_rt_1,         & ! Out
+                               varnce_rt_2, varnce_thl_1,       & ! Out
+                               varnce_thl_2, mixt_frac          ) ! Out
 
     endif ! iiPDF_type
 

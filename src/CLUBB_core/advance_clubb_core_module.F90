@@ -1795,7 +1795,8 @@ module advance_clubb_core_module
         pdf_closure,                & ! Procedure(s)
         calc_vert_avg_cf_component, &
         iiPDF_3D_Luhar, & ! Variable(s)
-        iiPDF_new, &
+        iiPDF_new,      &
+        iiPDF_TSDADG,   &
         iiPDF_type
 
     use Skx_module, only: &
@@ -2228,7 +2229,8 @@ module advance_clubb_core_module
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
-    if ( iiPDF_type == iiPDF_3D_Luhar .or. iiPDF_type == iiPDF_new ) then
+    if ( ( iiPDF_type == iiPDF_3D_Luhar ) .or. ( iiPDF_type == iiPDF_new ) &
+         .or. ( iiPDF_type == iiPDF_TSDADG ) ) then
 
       Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
       Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
@@ -2250,7 +2252,7 @@ module advance_clubb_core_module
       Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
                                         rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
 
-    endif ! iiPDF_type == iiPDF_3D_Luhar or iiPDF_type == iiPDF_new
+    endif ! iiPDF_type
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
       call stat_update_var( iSkw_zt, Skw_zt, & ! In
@@ -2897,6 +2899,7 @@ module advance_clubb_core_module
           iiPDF_ADG2,     &
           iiPDF_3D_Luhar, &
           iiPDF_new,      &
+          iiPDF_TSDADG,   &
           iiPDF_type
 
 #ifdef MKL
@@ -3031,12 +3034,12 @@ module advance_clubb_core_module
 
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
-      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_new ) then
+      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_TSDADG ) then
          write(fstderr,*) "Error in setup_clubb_core."
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
          stop
-      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_new
+      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_TSDADG
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
       if ( iiPDF_type == iiPDF_ADG2 ) then
@@ -3073,6 +3076,19 @@ module advance_clubb_core_module
             stop
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_new
+
+      ! This also currently applies to the TSDADG PDF until it has been fully
+      ! implemented.
+      if ( iiPDF_type == iiPDF_TSDADG ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr,*) "Error in setup_clubb_core."
+            write(fstderr,*) "The new TSDADG PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            stop
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_TSDADG
 
       ! Check the option for the placement of the call to CLUBB's PDF.
       if ( ipdf_call_placement < ipdf_pre_advance_fields &
