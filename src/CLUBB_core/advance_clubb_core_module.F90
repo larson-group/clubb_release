@@ -6,19 +6,18 @@ module advance_clubb_core_module
 
 ! Description:
 !   The module containing the `core' of the CLUBB parameterization.
-!   A host model implementing CLUBB should only require this subroutine
-!   and the functions and subroutines it calls.
+!   It advances CLUBB's equations one model time step.
 !
 ! References:
+!  <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:overview_clubb" target="_blank">CLUBB overview from tech doc</a>
+!
 !  ``A PDF-Based Model for Boundary Layer Clouds. Part I:
 !    Method and Model Description'' Golaz, et al. (2002)
 !    JAS, Vol. 59, pp. 3540--3551.
 !
 !                         Copyright Notice:
 !
-!   This code and the source code it references are (C) 2006-2014
-!   Jean-Christophe Golaz, Vincent E. Larson, Brian M. Griffin,
-!   David P. Schanen, Adam J. Smith, and Michael J. Falk.
+!   This code and the source code it references are (C) 2006-2018.
 !
 !   The distribution of this code and derived works thereof
 !                   should include this notice.

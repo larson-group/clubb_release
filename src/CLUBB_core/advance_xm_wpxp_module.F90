@@ -59,6 +59,8 @@ module advance_xm_wpxp_module
     ! Advance the mean and flux terms by one timestep.
 
     ! References:
+    ! <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wpxp_eqns" target="_blank">Scalar flux eqns. from tech doc</a>
+    !
     ! Eqn. 16 & 17 on p. 3546 of
     ! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
     !   Method and Model Description'' Golaz, et al. (2002)

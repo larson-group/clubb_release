@@ -51,6 +51,8 @@ module advance_wp2_wp3_module
     ! Advance w'^2 and w'^3 one timestep.
 
     ! References:
+    ! <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp2_wp3_eqns" target="_blank">Eqns. for 2nd and 3rd vertical velocity moments from tech doc</a>
+    !
     ! Eqn. 12 & 18 on p. 3545--3546 of
     ! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
     !   Method and Model Description'' Golaz, et al. (2002)

@@ -58,9 +58,13 @@ module advance_xp2_xpyp_module
                                sclrp2, sclrprtp, sclrpthlp )
 
     ! Description:
-    ! Subprogram to diagnose variances by solving steady-state equations
+    ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
 
     ! References:
+    !   <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:xpyp_eqns" target="_blank">Scalar (co-)variance eqns. from tech doc</a>
+    !
+    !   <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:up2_vp2_eqns" target="_blank">Horz. turbulence eqns. from tech doc</a>
+    !  
     !   Eqn. 13, 14, 15  on p. 3545 of
     !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
     !     Method and Model Description'' Golaz, et al. (2002)
