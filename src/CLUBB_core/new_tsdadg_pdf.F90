@@ -495,6 +495,7 @@ module new_tsdadg_pdf
         three,    &
         one,      &
         one_half, &
+        zero,     &
         eps
 
     use clubb_precision, only: &
@@ -532,7 +533,8 @@ module new_tsdadg_pdf
       factor_plus,               &
       factor_minus,              &
       sqrt_factor_plus_ov_minus, &
-      sqrt_factor_minus_ov_plus
+      sqrt_factor_minus_ov_plus, &
+      mu_x_1_nrmlized_thresh
 
 
     ! Calculate the factors in the PDF component mean equations.
@@ -569,12 +571,21 @@ module new_tsdadg_pdf
        mixt_frac = one_half
     endif
 
+    ! Use a minimum magnitude value of mu_x_1_nrmlized in the denominator of a
+    ! term in the PDF component variance equations in order to prevent a
+    ! divide-by-zero error.
+    if ( mu_x_1_nrmlized >= zero ) then
+       mu_x_1_nrmlized_thresh = max( mu_x_1_nrmlized, eps )
+    else ! mu_x_1_nrmlized < 0
+       mu_x_1_nrmlized_thresh = min( mu_x_1_nrmlized, -eps )
+    endif ! mu_x_1_nrmlized >= 0
+
     ! Calculate the variance of x in the 1st PDF component.
     coef_sigma_x_1_sqd &
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
       + ( one - mixt_frac ) &
-        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+        * ( Skx / ( three * mixt_frac * mu_x_1_nrmlized_thresh ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
     sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
@@ -584,7 +595,7 @@ module new_tsdadg_pdf
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
       - mixt_frac &
-        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+        * ( Skx / ( three * mixt_frac * mu_x_1_nrmlized_thresh ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
     sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
@@ -783,9 +794,10 @@ module new_tsdadg_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        four,     & ! Variable(s)
-        three,    &
-        one,      &
+        four,  & ! Variable(s)
+        three, &
+        one,   &
+        zero,  &
         eps
 
     use clubb_precision, only: &
@@ -821,7 +833,8 @@ module new_tsdadg_pdf
     real( kind = core_rknd ) :: &
       factor_plus,               &
       factor_minus,              &
-      sqrt_factor_plus_ov_minus
+      sqrt_factor_plus_ov_minus, &
+      mu_x_1_nrmlized_thresh
 
 
     ! Calculate the factors in the PDF component mean equations.
@@ -843,12 +856,21 @@ module new_tsdadg_pdf
     ! Calculate the mean of x in the 2nd PDF component.
     mu_x_2 = xm + mu_x_2_nrmlized * sqrt( xp2 )
 
+    ! Use a minimum magnitude value of mu_x_1_nrmlized in the denominator of a
+    ! term in the PDF component variance equations in order to prevent a
+    ! divide-by-zero error.
+    if ( mu_x_1_nrmlized >= zero ) then
+       mu_x_1_nrmlized_thresh = max( mu_x_1_nrmlized, eps )
+    else ! mu_x_1_nrmlized < 0
+       mu_x_1_nrmlized_thresh = min( mu_x_1_nrmlized, -eps )
+    endif ! mu_x_1_nrmlized >= 0
+
     ! Calculate the variance of x in the 1st PDF component.
     coef_sigma_x_1_sqd &
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
       + ( one - mixt_frac ) &
-        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+        * ( Skx / ( three * mixt_frac * mu_x_1_nrmlized_thresh ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
     sigma_x_1_sqd = coef_sigma_x_1_sqd * xp2
@@ -858,7 +880,7 @@ module new_tsdadg_pdf
     = one - mixt_frac * mu_x_1_nrmlized**2 &
       - ( one - mixt_frac ) * mu_x_2_nrmlized**2 &
       - mixt_frac &
-        * ( Skx / ( three * mixt_frac * max( mu_x_1_nrmlized, eps ) ) &
+        * ( Skx / ( three * mixt_frac * mu_x_1_nrmlized_thresh ) &
             - mu_x_1_nrmlized**2 / three + mu_x_2_nrmlized**2 / three )
 
     sigma_x_2_sqd = coef_sigma_x_2_sqd * xp2
