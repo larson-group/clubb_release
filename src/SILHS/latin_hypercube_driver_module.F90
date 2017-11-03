@@ -482,7 +482,7 @@ module latin_hypercube_driver_module
   !   to other height levels
 
   ! References:
-  !   none
+  ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:vert_corr
   !-----------------------------------------------------------------------
 
     ! Included Modules

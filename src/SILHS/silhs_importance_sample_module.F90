@@ -37,6 +37,8 @@ module silhs_importance_sample_module
   !   Applies importance sampling to a single vertical level !
 
   ! References:
+  ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:importance_sampling
+  ! 
   !   clubb:ticket:736 !
   !-----------------------------------------------------------------------
 

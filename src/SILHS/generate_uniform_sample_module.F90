@@ -72,6 +72,8 @@ module generate_uniform_sample_module
   !   Generates a matrix X that contains a Latin Hypercube sample.
   !   The sample is uniformly distributed.
   ! References:
+  ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:lh_algorithm
+  !
   !   See Art B. Owen (2003), ``Quasi-Monte Carlo Sampling,"
   !      a chapter from SIGGRAPH 2003
   !-------------------------------------------------------------------------------
