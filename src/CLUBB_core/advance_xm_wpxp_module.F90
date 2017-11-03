@@ -59,7 +59,7 @@ module advance_xm_wpxp_module
     ! Advance the mean and flux terms by one timestep.
 
     ! References:
-    ! <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wpxp_eqns" target="_blank">Scalar flux eqns. from tech doc</a>
+    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wpxp_eqns
     !
     ! Eqn. 16 & 17 on p. 3546 of
     ! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
@@ -1237,6 +1237,8 @@ module advance_xm_wpxp_module
       + wpxp_term_tp_lhs( wp2(k), gr%invrs_dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
+      ! Reference:
+      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wpxp_pr
       lhs(m_k_mdiag,k_wpxp) & 
       = lhs(m_k_mdiag,k_wpxp) & 
       + wpxp_terms_ac_pr2_lhs( C7_Skw_fnc(k),  & 

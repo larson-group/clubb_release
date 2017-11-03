@@ -53,8 +53,7 @@ module latin_hypercube_driver_module
 !   of computing tendencies with a microphysics or radiation scheme.
 !
 ! References:
-!  <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:overview_silhs" 
-!          target="_blank">SILHS overview from tech doc</a>
+! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:overview_silhs
 !-------------------------------------------------------------------------------
 
     use array_index, only: &

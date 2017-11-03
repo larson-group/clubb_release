@@ -51,7 +51,7 @@ module advance_wp2_wp3_module
     ! Advance w'^2 and w'^3 one timestep.
 
     ! References:
-    ! <a href="https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp2_wp3_eqns" target="_blank">Eqns. for 2nd and 3rd vertical velocity moments from tech doc</a>
+    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp2_wp3_eqns
     !
     ! Eqn. 12 & 18 on p. 3545--3546 of
     ! ``A PDF-Based Model for Boundary Layer Clouds. Part I:
@@ -1315,6 +1315,8 @@ module advance_wp2_wp3_module
                          invrs_rho_ds_zm(k), gr%invrs_dzm(k) )
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
+      ! Reference:
+      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp2_pr 
       lhs(m_k_mdiag,k_wp2) & 
       = lhs(m_k_mdiag,k_wp2) & 
       + wp2_terms_ac_pr2_lhs( C5, wm_zt(kp1), wm_zt(k), gr%invrs_dzm(k)  )
@@ -1352,6 +1354,8 @@ module advance_wp2_wp3_module
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
       !        advection (ta) and turbulent production (tp) terms).
+      ! Reference:
+      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp2_pr 
       if ( l_tke_aniso ) then
         ! Add in this term if we're not assuming tke = 1.5 * wp2
         lhs(m_k_mdiag,k_wp2)  & 
@@ -1511,6 +1515,8 @@ module advance_wp2_wp3_module
       end if
 
       ! LHS accumulation (ac) term and pressure term 2 (pr2).
+      ! Reference:
+      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp3_pr 
       lhs(t_k_tdiag,k_wp3) & 
       = lhs(t_k_tdiag,k_wp3) & 
       + wp3_terms_ac_pr2_lhs( C11_Skw_fnc(k), & 
@@ -3601,6 +3607,8 @@ module advance_wp2_wp3_module
     ! a_3 = coef_sig_sqd_w - 3;
     !
     ! and thus:
+    !
+    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:wp4_diagnosis
     !
     ! w'^4 = (a_3 + 3) * (w'^2)^2  +  a_1 * ( (w'^3)^2 / w'^2 ).
     !

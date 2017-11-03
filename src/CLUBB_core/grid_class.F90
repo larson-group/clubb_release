@@ -134,7 +134,9 @@ module grid_class
   ! schemena, modified 6/11/2014 - Restructered code to add cubic/linear flag
 
   !  References:
-
+  !
+  !  https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:clubb_grid
+  !
   !  Section 3c, p. 3548 /Numerical discretization/ of:
   !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
   !     Method and Model Description'' Golaz, et al. (2002)
