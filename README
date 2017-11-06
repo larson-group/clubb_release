@@ -377,13 +377,18 @@ Several compilers allows for promotion of real variables without a "kind="
 statement to double precision at compile time through the use of a compiler
 flag.  This will not currently work with the numerical recipes subroutines
 referenced by the tuner because they use operator overloading (therefore you can
-only use tune_type = 2 when all real variables are promoted)
+only use tune_type = 2 when all real variables are promoted).
+It also fails to work with Morrison microphysics (clubb:ticket:585#comment:13).
 
 To do this:
 
 1. Do a clean_all.bash if have object files and programs from a prior compile.
 2. Edit compile.bash so that l_double_precision=true.
 3. ./compile.bash
+
+To set the precision of CLUBB's internal variables, in the 
+compile/config .bash file you wish to use, set -DCLUBB_REAL_TYPE=8 
+for double precision or -DCLUBB_REAL_TYPE=4 for single precision.
 
 -----------------------------------------------------------------------
 - (1.2) Building (i.e. compiling) for use in a host model:
