@@ -691,6 +691,7 @@ module stats_clubb_utilities
       write(fstderr,*) "Check the number of variables listed for vars_zt ",  &
                        "in the stats namelist, or change nvarmax_zt."
       write(fstderr,*) "nvarmax_zt = ", nvarmax_zt
+      write(fstderr,*) "number of variables in vars_zt = ", ntot
       stop "stats_init:  number of zt statistical variables exceeds limit"
     end if
 
@@ -819,10 +820,11 @@ module stats_clubb_utilities
 
       if ( ntot == nvarmax_lh_zt ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
-                         "vars_zt than allowed for by nvarmax_lh_zt."
+                         "vars_lh_zt than allowed for by nvarmax_lh_zt."
         write(fstderr,*) "Check the number of variables listed for vars_lh_zt ",  &
                          "in the stats namelist, or change nvarmax_lh_zt."
         write(fstderr,*) "nvarmax_lh_zt = ", nvarmax_lh_zt
+        write(fstderr,*) "number of variables in vars_lh_zt = ", ntot
         stop "stats_init:  number of lh_zt statistical variables exceeds limit"
       end if
 
@@ -882,10 +884,11 @@ module stats_clubb_utilities
       ntot = ivar - 1
       if ( ntot == nvarmax_lh_sfc ) then
         write(fstderr,*) "There are more statistical variables listed in ",  &
-                         "vars_zt than allowed for by nvarmax_lh_sfc."
+                         "vars_lh_sfc than allowed for by nvarmax_lh_sfc."
         write(fstderr,*) "Check the number of variables listed for vars_lh_sfc ",  &
                          "in the stats namelist, or change nvarmax_lh_sfc."
         write(fstderr,*) "nvarmax_lh_sfc = ", nvarmax_lh_sfc
+        write(fstderr,*) "number of variables in vars_lh_sfc = ", ntot
         stop "stats_init:  number of lh_sfc statistical variables exceeds limit"
       end if
 
@@ -1103,6 +1106,7 @@ module stats_clubb_utilities
       write(fstderr,*) "Check the number of variables listed for vars_zm ",  &
                        "in the stats namelist, or change nvarmax_zm."
       write(fstderr,*) "nvarmax_zm = ", nvarmax_zm
+      write(fstderr,*) "number of variables in vars_zm = ", ntot
       stop "stats_init:  number of zm statistical variables exceeds limit"
     end if
 
@@ -1208,6 +1212,7 @@ module stats_clubb_utilities
         write(fstderr,*) "Check the number of variables listed for vars_rad_zt ",  &
                          "in the stats namelist, or change nvarmax_rad_zt."
         write(fstderr,*) "nvarmax_rad_zt = ", nvarmax_rad_zt
+        write(fstderr,*) "number of variables in vars_rad_zt = ", ntot
         stop "stats_init:  number of rad_zt statistical variables exceeds limit"
       end if
 
@@ -1272,6 +1277,7 @@ module stats_clubb_utilities
         write(fstderr,*) "Check the number of variables listed for vars_rad_zm ",  &
                          "in the stats namelist, or change nvarmax_rad_zm."
         write(fstderr,*) "nvarmax_rad_zm = ", nvarmax_rad_zm
+        write(fstderr,*) "number of variables in vars_rad_zm = ", ntot
         stop "stats_init:  number of rad_zm statistical variables exceeds limit"
       end if
 
@@ -1339,6 +1345,7 @@ module stats_clubb_utilities
       write(fstderr,*) "Check the number of variables listed for vars_sfc ",  &
                        "in the stats namelist, or change nvarmax_sfc."
       write(fstderr,*) "nvarmax_sfc = ", nvarmax_sfc
+      write(fstderr,*) "number of variables in vars_sfc = ", ntot
       stop "stats_init:  number of sfc statistical variables exceeds limit"
     end if
 
