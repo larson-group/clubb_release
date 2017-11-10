@@ -188,12 +188,19 @@ idx_sigma_Nr_2_n = idx_count;
 units_corrector_type(idx_sigma_Nr_2_n) = 0;
 varname_clubb(idx_sigma_Nr_2_n,1:12) = 'sigma_Nr_2_n';
 
-% Correlation (within-component) of rt and thl (both PDF comps.), rrtthl (-).
+% corr_rt_thl_1 (-).
 idx_count = idx_count + 1;
-global idx_corr_rt_thl
-idx_corr_rt_thl = idx_count;
-units_corrector_type(idx_corr_rt_thl) = 0;
-varname_clubb(idx_corr_rt_thl,1:6) = 'rrtthl';
+global idx_corr_rt_thl_1
+idx_corr_rt_thl_1 = idx_count;
+units_corrector_type(idx_corr_rt_thl_1) = 0;
+varname_clubb(idx_corr_rt_thl_1,1:13) = 'corr_rt_thl_1';
+
+% corr_rt_thl_2 (-).
+idx_count = idx_count + 1;
+global idx_corr_rt_thl_2
+idx_corr_rt_thl_2 = idx_count;
+units_corrector_type(idx_corr_rt_thl_2) = 0;
+varname_clubb(idx_corr_rt_thl_2,1:13) = 'corr_rt_thl_2';
 
 % corr_chi_eta_1_ca (-).
 idx_count = idx_count + 1;
