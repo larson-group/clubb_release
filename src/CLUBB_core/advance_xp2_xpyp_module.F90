@@ -61,9 +61,9 @@ module advance_xp2_xpyp_module
     ! Prognose scalar variances, scalar covariances, and horizontal turbulence components.
 
     ! References:
-    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:xpyp_eqns
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xpyp_eqns
     !
-    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:up2_vp2_eqns
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_vp2_eqns
     !  
     !   Eqn. 13, 14, 15  on p. 3545 of
     !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
@@ -1013,7 +1013,7 @@ module advance_xp2_xpyp_module
       ! Note:  An "over-implicit" weighted time step is applied to this term
       !        (and to pressure term 1 for u'^2 and v'^2).
       ! Reference:
-      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:xp2_dp
+      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:xp2_dp
       lhs(k_mdiag,k)  & 
       = lhs(k_mdiag,k)  &
       + gamma_over_implicit_ts  &
@@ -1614,7 +1614,7 @@ module advance_xp2_xpyp_module
 
       ! RHS turbulent production (tp) term.
       ! Reference:
-      ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:up2_pr 
+      ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:up2_pr 
       rhs(k,1)  &
       = rhs(k,1)  &
       + ( one - C5 )  & 

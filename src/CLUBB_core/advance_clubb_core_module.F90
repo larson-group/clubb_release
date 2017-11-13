@@ -9,7 +9,7 @@ module advance_clubb_core_module
 !   It advances CLUBB's equations one model time step.
 !
 ! References:
-! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:overview_clubb
+! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:overview_clubb
 !
 !  ``A PDF-Based Model for Boundary Layer Clouds. Part I:
 !    Method and Model Description'' Golaz, et al. (2002)
@@ -168,7 +168,7 @@ module advance_clubb_core_module
     !   Subroutine to advance CLUBB one timestep
 
     ! References:
-    !   https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:overview_clubb
+    !   https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:overview_clubb
     !
     !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
     !     Method and Model Description'' Golaz, et al. (2002)

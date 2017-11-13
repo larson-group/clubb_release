@@ -135,7 +135,7 @@ module grid_class
 
   !  References:
   !
-  !  https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:clubb_grid
+  !  https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:clubb_grid
   !
   !  Section 3c, p. 3548 /Numerical discretization/ of:
   !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:

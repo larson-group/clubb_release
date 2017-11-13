@@ -26,7 +26,7 @@ module transform_to_pdf_module
 !   This subroutine transforms a uniform sample to a sample from CLUBB's PDF.
 
 ! References:
-!   https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:uniform2pdf
+!   https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:uniform2pdf
 !
 !   ``Supplying Local Microphysical Parameterizations with Information about
 !     Subgrid Variability: Latin Hypercube Sampling'', JAS Vol. 62,

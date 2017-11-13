@@ -74,7 +74,7 @@ module pdf_closure_module
 
     ! References:
     !   The shape of CLUBB's PDF is given by the expression in
-    !   https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:clubb_pdf
+    !   https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:clubb_pdf
 
     !   Eqn. 29, 30, 31, 32 & 33  on p. 3547 of
     !   ``A PDF-Based Model for Boundary Layer Clouds. Part I:
@@ -849,7 +849,7 @@ module pdf_closure_module
     ! where thv_ds is used as a reference value to approximate theta_l.
     !
     ! Reference:
-    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:anl_int_buoy_terms 
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_buoy_terms 
 
 
     rc_coef = Lv / (exner*Cp) - ep2 * thv_ds
@@ -917,7 +917,7 @@ module pdf_closure_module
 
     ! Compute mean cloud fraction and cloud water
     ! Reference:
-    ! https://www.larson-group.com/vlarson/protected/CLUBB-SILHS_overview.pdf#nameddest=url:anl_int_cloud_terms
+    ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:anl_int_cloud_terms
     cloud_frac = calc_cloud_frac(cloud_frac_1, cloud_frac_2, mixt_frac)
     rcm        = mixt_frac * rc_1         + (one-mixt_frac) * rc_2
     
