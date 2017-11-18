@@ -180,8 +180,8 @@ module morrison_microphys_module
         l_graupel
 
     use array_index, only:  & 
-        iirrm, iirsm, iirim, iirgm, &
-        iiNrm, iiNsm, iiNim, iiNgm
+        iirr, iirs, iiri, iirg, &
+        iiNr, iiNs, iiNi, iiNg
 
     use constants_clubb, only: &
         sec_per_day
@@ -668,38 +668,38 @@ module morrison_microphys_module
 
 
     ! Unpack hydrometeor arrays.
-    rrm = hydromet(:,iirrm)
+    rrm = hydromet(:,iirr)
 
-    rrm_r4 = hydromet_r4(:,iirrm)
-    Nrm_r4    = hydromet_r4(:,iiNrm)
+    rrm_r4 = hydromet_r4(:,iirr)
+    Nrm_r4    = hydromet_r4(:,iiNr)
 
-    rrm_mc_r4 = hydromet_mc_r4(:,iirrm)
-    Nrm_mc_r4    = hydromet_mc_r4(:,iiNrm)
+    rrm_mc_r4 = hydromet_mc_r4(:,iirr)
+    Nrm_mc_r4    = hydromet_mc_r4(:,iiNr)
 
     if ( l_ice_microphys ) then
 
-       rim  = hydromet(:,iirim)
-       rsm = hydromet(:,iirsm)
+       rim  = hydromet(:,iiri)
+       rsm = hydromet(:,iirs)
 
-       rim_r4  = hydromet_r4(:,iirim)
-       Nim_r4    = hydromet_r4(:,iiNim)
-       rsm_r4 = hydromet_r4(:,iirsm)
-       Nsm_r4 = hydromet_r4(:,iiNsm)
+       rim_r4  = hydromet_r4(:,iiri)
+       Nim_r4    = hydromet_r4(:,iiNi)
+       rsm_r4 = hydromet_r4(:,iirs)
+       Nsm_r4 = hydromet_r4(:,iiNs)
 
-       rim_mc_r4  = hydromet_mc_r4(:,iirim)
-       Nim_mc_r4    = hydromet_mc_r4(:,iiNim)
-       rsm_mc_r4 = hydromet_mc_r4(:,iirsm)
-       Nsm_mc_r4 = hydromet_mc_r4(:,iiNsm)
+       rim_mc_r4  = hydromet_mc_r4(:,iiri)
+       Nim_mc_r4    = hydromet_mc_r4(:,iiNi)
+       rsm_mc_r4 = hydromet_mc_r4(:,iirs)
+       Nsm_mc_r4 = hydromet_mc_r4(:,iiNs)
 
        if ( l_graupel ) then
 
-          rgm = hydromet(:,iirgm)
+          rgm = hydromet(:,iirg)
 
-          rgm_r4 = hydromet_r4(:,iirgm)
-          Ngm_r4 = hydromet_r4(:,iiNgm)
+          rgm_r4 = hydromet_r4(:,iirg)
+          Ngm_r4 = hydromet_r4(:,iiNg)
 
-          rgm_mc_r4 = hydromet_mc_r4(:,iirgm)
-          Ngm_mc_r4 = hydromet_mc_r4(:,iiNgm)
+          rgm_mc_r4 = hydromet_mc_r4(:,iirg)
+          Ngm_mc_r4 = hydromet_mc_r4(:,iiNg)
 
        else ! l_graupel disabled
 
@@ -808,31 +808,31 @@ module morrison_microphys_module
                             + real( rgm_sten, kind = core_rknd) )
 
     ! Pack hydrometeor arrays.
-    hydromet_r4(:,iirrm) = rrm_r4
-    hydromet_r4(:,iiNrm)    = Nrm_r4
+    hydromet_r4(:,iirr) = rrm_r4
+    hydromet_r4(:,iiNr)    = Nrm_r4
 
-    hydromet_mc_r4(:,iirrm) = rrm_mc_r4
-    hydromet_mc_r4(:,iiNrm)    = Nrm_mc_r4
+    hydromet_mc_r4(:,iirr) = rrm_mc_r4
+    hydromet_mc_r4(:,iiNr)    = Nrm_mc_r4
 
     if ( l_ice_microphys ) then
 
-       hydromet_r4(:,iirim)  = rim_r4
-       hydromet_r4(:,iiNim)    = Nim_r4
-       hydromet_r4(:,iirsm) = rsm_r4
-       hydromet_r4(:,iiNsm) = Nsm_r4
+       hydromet_r4(:,iiri)  = rim_r4
+       hydromet_r4(:,iiNi)    = Nim_r4
+       hydromet_r4(:,iirs) = rsm_r4
+       hydromet_r4(:,iiNs) = Nsm_r4
 
-       hydromet_mc_r4(:,iirim)  = rim_mc_r4
-       hydromet_mc_r4(:,iiNim)    = Nim_mc_r4
-       hydromet_mc_r4(:,iirsm) = rsm_mc_r4
-       hydromet_mc_r4(:,iiNsm) = Nsm_mc_r4
+       hydromet_mc_r4(:,iiri)  = rim_mc_r4
+       hydromet_mc_r4(:,iiNi)    = Nim_mc_r4
+       hydromet_mc_r4(:,iirs) = rsm_mc_r4
+       hydromet_mc_r4(:,iiNs) = Nsm_mc_r4
 
        if ( l_graupel ) then
 
-          hydromet_r4(:,iirgm) = rgm_r4
-          hydromet_r4(:,iiNgm) = Ngm_r4
+          hydromet_r4(:,iirg) = rgm_r4
+          hydromet_r4(:,iiNg) = Ngm_r4
 
-          hydromet_mc_r4(:,iirgm) = rgm_mc_r4
-          hydromet_mc_r4(:,iiNgm) = Ngm_mc_r4
+          hydromet_mc_r4(:,iirg) = rgm_mc_r4
+          hydromet_mc_r4(:,iiNg) = Ngm_mc_r4
 
        endif
 
@@ -874,7 +874,7 @@ module morrison_microphys_module
     ! Multiply by -1 so that negative is associated with falling precip
     morr_rain_vel_r4(:) = morr_rain_vel_r4(:) * (-1.0)
     do k = 1, nz, 1
-      hydromet_vel_zt(k,iirrm) = real( morr_rain_vel_r4(k), kind = core_rknd )
+      hydromet_vel_zt(k,iirr) = real( morr_rain_vel_r4(k), kind = core_rknd )
     end do
     
     if ( clubb_at_least_debug_level( 2 ) ) then

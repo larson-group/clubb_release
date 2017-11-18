@@ -27,14 +27,14 @@ module clubb_api_module
   use array_index, only : &
     hydromet_list, &
     hydromet_tol, & ! Tolerance values for all hydrometeors    [units vary]
-    iiNgm, & ! Hydrometeor array index for graupel concentration, Ng
-    iiNim, & ! Hydrometeor array index for ice concentration, Ni
-    iiNrm, & ! Hydrometeor array index for rain drop concentration, Nr
-    iiNsm, & ! Hydrometeor array index for snow concentration, Ns
-    iirgm, & ! Hydrometeor array index for graupel mixing ratio, rg
-    iirim, & ! Hydrometeor array index for ice mixing ratio, ri
-    iirrm, & ! Hydrometeor array index for rain water mixing ratio, rr
-    iirsm, & ! Hydrometeor array index for snow mixing ratio, rs
+    iiNg, & ! Hydrometeor array index for graupel concentration, Ng
+    iiNi, & ! Hydrometeor array index for ice concentration, Ni
+    iiNr, & ! Hydrometeor array index for rain drop concentration, Nr
+    iiNs, & ! Hydrometeor array index for snow concentration, Ns
+    iirg, & ! Hydrometeor array index for graupel mixing ratio, rg
+    iiri, & ! Hydrometeor array index for ice mixing ratio, ri
+    iirr, & ! Hydrometeor array index for rain water mixing ratio, rr
+    iirs, & ! Hydrometeor array index for snow mixing ratio, rs
     iiPDF_chi, &
     iiPDF_rr,  &
     iiPDF_w,   &
@@ -276,14 +276,14 @@ module clubb_api_module
         hydromet_list, &
         hydromet_tol, &
         hydromet_dim, &
-        iiNgm, &
-        iiNim, &
-        iiNrm, &
-        iiNsm, &
-        iirgm, &
-        iirim, &
-        iirrm, &
-        iirsm, &
+        iiNg, &
+        iiNi, &
+        iiNr, &
+        iiNs, &
+        iirg, &
+        iiri, &
+        iirr, &
+        iirs, &
         iisclr_rt, &
         iisclr_thl, &
         iisclr_CO2, &
@@ -300,7 +300,7 @@ module clubb_api_module
     setup_corr_varnce_array_api, &
     setup_pdf_parameters_api, &
     hydromet_pdf_parameter, &
-    ! lh_subcolumn_generator - SILHS API
+    ! generate_silhs_sample - SILHS API
     genrand_init_api, & ! if you are doing restarts)
     genrand_state, &
     genrand_srepr, &
@@ -1021,9 +1021,9 @@ contains
   !================================================================================================
 
   subroutine setup_pdf_indices_api( &
-    hydromet_dim, iirrm, iiNrm, &
-    iirim, iiNim, iirsm, iiNsm, &
-    iirgm, iiNgm )
+    hydromet_dim, iirr, iiNr, &
+    iiri, iiNi, iirs, iiNs, &
+    iirg, iiNg )
 
     use corr_varnce_module, only : setup_pdf_indices
 
@@ -1034,19 +1034,19 @@ contains
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrm,    & ! Index of rain water mixing ratio
-      iiNrm,       & ! Index of rain drop concentration
-      iirim,     & ! Index of ice mixing ratio
-      iiNim,       & ! Index of ice crystal concentration
-      iirsm,    & ! Index of snow mixing ratio
-      iiNsm,    & ! Index of snow flake concentration
-      iirgm, & ! Index of graupel mixing ratio
-      iiNgm    ! Index of graupel concentration
+      iirr,    & ! Index of rain water mixing ratio
+      iiNr,       & ! Index of rain drop concentration
+      iiri,     & ! Index of ice mixing ratio
+      iiNi,       & ! Index of ice crystal concentration
+      iirs,    & ! Index of snow mixing ratio
+      iiNs,    & ! Index of snow flake concentration
+      iirg, & ! Index of graupel mixing ratio
+      iiNg    ! Index of graupel concentration
 
     call setup_pdf_indices( &
-      hydromet_dim, iirrm, iiNrm, &
-      iirim, iiNim, iirsm, iiNsm, &
-      iirgm, iiNgm )
+      hydromet_dim, iirr, iiNr, &
+      iiri, iiNi, iirs, iiNs, &
+      iirg, iiNg )
   end subroutine setup_pdf_indices_api
 
   !================================================================================================

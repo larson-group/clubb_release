@@ -51,7 +51,7 @@ module parameters_silhs
   ! Flags for the SILHS sampling code 
   logical, public :: &
     l_lh_importance_sampling   = .true. ,&    ! Limit noise by performing importance sampling
-    l_Lscale_vert_avg          = .true. ,&    ! Calculate Lscale_vert_avg in lh_subcolumn_generator
+    l_Lscale_vert_avg          = .true. ,&    ! Calculate Lscale_vert_avg in generate_silhs_sample
     l_lh_straight_mc           = .false.,&    ! Use true Monte Carlo sampling with no Latin
                                               !  hypercube sampling and no importance sampling
     l_lh_clustered_sampling    = .true. ,&    ! Use the "new" SILHS importance sampling

@@ -7,12 +7,12 @@ module surface_varnce_module
 
   private ! Default to private
 
-  public :: surface_varnce
+  public :: calc_surface_varnce
 
   contains
 
   !=============================================================================
-  subroutine surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
+  subroutine calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, & 
                              um_sfc, vm_sfc, Lscale_up_sfc, wpsclrp_sfc, & 
                              wp2_sfc, up2_sfc, vp2_sfc, & 
                              thlp2_sfc, rtp2_sfc, rtpthlp_sfc, err_code, & 
@@ -423,7 +423,7 @@ module surface_varnce_module
 !       Joshua Fasching February 2008
        if ( err_code == clubb_var_equals_NaN ) then
 
-          write(fstderr,*) "Error in surface_varnce"
+          write(fstderr,*) "Error in calc_surface_varnce"
           write(fstderr,*) "Intent(in)"
 
           write(fstderr,*) "upwp_sfc = ", upwp_sfc
@@ -457,7 +457,7 @@ module surface_varnce_module
 
     return
 
-  end subroutine surface_varnce
+  end subroutine calc_surface_varnce
 
 !===============================================================================
 

@@ -89,9 +89,9 @@ module advance_microphys_module
     use array_index, only:  & 
         hydromet_list, & ! Names of the hydrometeor species
         hydromet_tol,  & ! Tolerance values for hydrometeor species
-        iirrm,         & ! Variable(s)
-        iirim,         &
-        iiNim
+        iirr,         & ! Variable(s)
+        iiri,         &
+        iiNi
 
     use stats_variables, only: & 
         stats_zt,  & ! Variable(s)
@@ -300,7 +300,7 @@ module advance_microphys_module
              ! corresponding thermodynamic grid levels, set K_hm to 0 starting
              ! at the vertical-level index of cloud_top_level.
              if ( cloud_top_level > 1 &
-                  .and. i /= iirim .and. i /= iiNim ) then
+                  .and. i /= iiri .and. i /= iiNi ) then
                 K_hm(cloud_top_level:gr%nz,i) = zero
              endif ! cloud_top_level > 1
              
@@ -381,7 +381,7 @@ module advance_microphys_module
       call stat_update_var( iNc_in_cloud, Nc_in_cloud, stats_zt )
     endif ! l_stats_samp
 
-    if ( l_stats_samp .and. iirrm > 0 ) then
+    if ( l_stats_samp .and. iirr > 0 ) then
 
       ! Rainfall rate (mm/day) is defined on thermodynamic levels.  The rainfall
       ! rate is given by the equation:
@@ -397,9 +397,9 @@ module advance_microphys_module
       ! Rainfall rate is defined as positive.  Since V_rr is always negative,
       ! the minus (-) sign is necessary.
       call stat_update_var( iprecip_rate_zt,  & 
-                            max( - ( hydromet(:,iirrm) &
-                                     * hydromet_vel_zt(:,iirrm) &
-                                     + hydromet_vel_covar_zt(:,iirrm) ), &
+                            max( - ( hydromet(:,iirr) &
+                                     * hydromet_vel_zt(:,iirr) &
+                                     + hydromet_vel_covar_zt(:,iirr) ), &
                                  zero ) &
                             * ( rho / rho_lw ) & 
                             * sec_per_day &
@@ -416,9 +416,9 @@ module advance_microphys_module
       ! It is generally a convention in meteorology to show Precipitation Flux
       ! as a positive downward quantity, so the minus (-) sign is necessary.
       call stat_update_var( iFprec,  & 
-                            max( - ( zt2zm( hydromet(:,iirrm) )  & 
-                                     * hydromet_vel(:,iirrm) &
-                                     + hydromet_vel_covar(:,iirrm) ), &
+                            max( - ( zt2zm( hydromet(:,iirr) )  & 
+                                     * hydromet_vel(:,iirr) &
+                                     + hydromet_vel_covar(:,iirr) ), &
                                  zero ) &
                             * rho_zm * Lv, stats_zm )
 
@@ -427,9 +427,9 @@ module advance_microphys_module
 
       if ( trim( microphys_scheme ) /= "morrison" ) then
         call stat_update_var_pt( iprecip_rate_sfc, 1,  & 
-                                 max( - ( hydromet(2,iirrm) &
-                                          * hydromet_vel_zt(2,iirrm) &
-                                          + hydromet_vel_covar_zt(2,iirrm) ), &
+                                 max( - ( hydromet(2,iirr) &
+                                          * hydromet_vel_zt(2,iirr) &
+                                          + hydromet_vel_covar_zt(2,iirr) ), &
                                       zero ) &
                                   * ( rho(2) / rho_lw ) & 
                                   * sec_per_day &
@@ -437,17 +437,17 @@ module advance_microphys_module
       endif ! microphys_scheme /= "morrison"
 
       call stat_update_var_pt( irain_flux_sfc, 1, & 
-                               max( - ( zt2zm( hydromet(:,iirrm), 1 )  & 
-                                        * hydromet_vel(1,iirrm) &
-                                        + hydromet_vel_covar(1,iirrm) ), &
+                               max( - ( zt2zm( hydromet(:,iirr), 1 )  & 
+                                        * hydromet_vel(1,iirr) &
+                                        + hydromet_vel_covar(1,iirr) ), &
                                     zero ) &
                                * rho_zm(1) * Lv, stats_sfc )
 
       ! Also store the value of surface rain water mixing ratio.
       call stat_update_var_pt( irrm_sfc, 1,  & 
-                               ( zt2zm( hydromet(:,iirrm), 1 ) ), stats_sfc )
+                               ( zt2zm( hydromet(:,iirr), 1 ) ), stats_sfc )
 
-    endif ! l_stats_samp and iirrm > 0
+    endif ! l_stats_samp and iirr > 0
 
     call stats_accumulate_hydromet( hydromet, rho_ds_zt )
 
@@ -610,8 +610,8 @@ module advance_microphys_module
     use array_index, only:  & 
         hydromet_list, & ! Variable(s)
         hydromet_tol,  &
-        iirrm,         &
-        iiNrm
+        iirr,         &
+        iiNr
 
     use stats_variables, only: & 
         iVrrprrp,     & ! Variable(s)
@@ -923,13 +923,13 @@ module advance_microphys_module
           if ( trim( hydromet_list(i) ) == "rrm" .and. iVrrprrp > 0 ) then
 
              ! Covariance of sedimentation velocity of r_r and r_r.
-             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirrm), &
+             call stat_update_var( iVrrprrp, hydromet_vel_covar(:,iirr), &
                                    stats_zm )
 
           elseif ( trim( hydromet_list(i) ) == "Nrm" .and. iVNrpNrp > 0 ) then
 
              ! Covariance of sedimentation velocity of N_r and N_r.
-             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNrm), stats_zm )
+             call stat_update_var( iVNrpNrp, hydromet_vel_covar(:,iiNr), stats_zm )
 
           endif
 
@@ -3224,7 +3224,7 @@ module advance_microphys_module
         hydromet_dim    ! Variable(s)
 
     use array_index, only:  & 
-        iirim    ! Variable(s)
+        iiri    ! Variable(s)
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -3253,11 +3253,11 @@ module advance_microphys_module
 
 
     ! Include cloud ice when the microphysics scheme includes ice mixing ratio.
-    if ( iirim > 0 ) then
-       rim = hydromet(:, iirim)
+    if ( iiri > 0 ) then
+       rim = hydromet(:, iiri)
     else
        rim = zero
-    endif ! iirim > 0
+    endif ! iiri > 0
 
     ! Start at the model upper boundary and loop downwards until cloud top is
     ! found or the model lower boundary is reached.

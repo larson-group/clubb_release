@@ -57,7 +57,7 @@ module numerical_check
     implicit none
 
     ! Constant Parameters
-    character(*), parameter :: proc_name = "compute_length"
+    character(*), parameter :: proc_name = "compute_mixing_length"
 
     ! Input Variables
     real( kind = core_rknd ), dimension(gr%nz), intent(in) ::  & 
@@ -487,7 +487,7 @@ module numerical_check
            err_code )
 !
 !       Description:This subroutine determines if any of the output
-!       variables for the surface_varnce subroutine carry values that
+!       variables for the calc_surface_varnce subroutine carry values that
 !       are nans.
 !
 !       Joshua Fasching February 2008
@@ -505,7 +505,7 @@ module numerical_check
     ! Constant Parameters
     ! Name of the subroutine calling the check
     character(len=*), parameter :: &
-      proc_name = "surface_varnce"
+      proc_name = "calc_surface_varnce"
 
     ! Input Variables
     real( kind = core_rknd ),intent(in) ::  & 

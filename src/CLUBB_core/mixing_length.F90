@@ -7,12 +7,12 @@ module mixing_length
 
   private ! Default Scope
 
-  public :: compute_length
+  public :: compute_mixing_length
 
   contains
 
   !=============================================================================
-  subroutine compute_length( thvm, thlm, rtm, em, Lscale_max, &
+  subroutine compute_mixing_length( thvm, thlm, rtm, em, Lscale_max, &
                              p_in_Pa, exner, thv_ds, mu, l_implemented, &
                              err_code, &
                              Lscale, Lscale_up, Lscale_down )
@@ -797,7 +797,7 @@ module mixing_length
 
     return
 
-  end subroutine compute_length
+  end subroutine compute_mixing_length
 
 !===============================================================================
 

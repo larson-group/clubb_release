@@ -2486,8 +2486,8 @@ module stats_clubb_utilities
       gr ! Variable(s)
 
     use array_index, only:  & 
-      iirrm, iirsm, iirim, iirgm, & ! Variable(s)
-      iiNrm, iiNsm, iiNim, iiNgm
+      iirr, iirs, iiri, iirg, & ! Variable(s)
+      iiNr, iiNs, iiNi, iiNg
 
     use stats_variables, only: &
       stats_sfc, & ! Variable(s)
@@ -2533,71 +2533,71 @@ module stats_clubb_utilities
 
     if ( l_stats_samp ) then
 
-      if ( iirrm > 0 ) then
-        call stat_update_var( irrm, hydromet(:,iirrm), stats_zt )
+      if ( iirr > 0 ) then
+        call stat_update_var( irrm, hydromet(:,iirr), stats_zt )
       end if
 
-      if ( iirsm > 0 ) then
-        call stat_update_var( irsm, hydromet(:,iirsm), stats_zt )
+      if ( iirs > 0 ) then
+        call stat_update_var( irsm, hydromet(:,iirs), stats_zt )
       end if
 
-      if ( iirim > 0 ) then
-        call stat_update_var( irim, hydromet(:,iirim), stats_zt )
+      if ( iiri > 0 ) then
+        call stat_update_var( irim, hydromet(:,iiri), stats_zt )
       end if
 
-      if ( iirgm > 0 ) then
+      if ( iirg > 0 ) then
         call stat_update_var( irgm,  & 
-                              hydromet(:,iirgm), stats_zt )
+                              hydromet(:,iirg), stats_zt )
       end if
 
-      if ( iiNim > 0 ) then
-        call stat_update_var( iNim, hydromet(:,iiNim), stats_zt )
+      if ( iiNi > 0 ) then
+        call stat_update_var( iNim, hydromet(:,iiNi), stats_zt )
       end if
 
-      if ( iiNrm > 0 ) then
-        call stat_update_var( iNrm, hydromet(:,iiNrm), stats_zt )
+      if ( iiNr > 0 ) then
+        call stat_update_var( iNrm, hydromet(:,iiNr), stats_zt )
       end if
 
-      if ( iiNsm > 0 ) then
-        call stat_update_var( iNsm, hydromet(:,iiNsm), stats_zt )
+      if ( iiNs > 0 ) then
+        call stat_update_var( iNsm, hydromet(:,iiNs), stats_zt )
       end if
 
-      if ( iiNgm > 0 ) then
-        call stat_update_var( iNgm, hydromet(:,iiNgm), stats_zt )
+      if ( iiNg > 0 ) then
+        call stat_update_var( iNgm, hydromet(:,iiNg), stats_zt )
       end if
 
       ! Snow Water Path
-      if ( iswp > 0 .and. iirsm > 0 ) then
+      if ( iswp > 0 .and. iirs > 0 ) then
 
         ! Calculate snow water path
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirsm), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirs), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iswp, 1, xtmp, stats_sfc )
 
-      end if ! iswp > 0 .and. iirsm > 0
+      end if ! iswp > 0 .and. iirs > 0
 
       ! Ice Water Path
-      if ( iiwp > 0 .and. iirim > 0 ) then
+      if ( iiwp > 0 .and. iiri > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirim), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iiri), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( iiwp, 1, xtmp, stats_sfc )
 
       end if
 
       ! Rain Water Path
-      if ( irwp > 0 .and. iirrm > 0 ) then
+      if ( irwp > 0 .and. iirr > 0 ) then
 
         xtmp &
         = vertical_integral &
                ( (gr%nz - 2 + 1), rho_ds_zt(2:gr%nz), &
-                 hydromet(2:gr%nz,iirrm), gr%invrs_dzt(2:gr%nz) )
+                 hydromet(2:gr%nz,iirr), gr%invrs_dzt(2:gr%nz) )
 
         call stat_update_var_pt( irwp, 1, xtmp, stats_sfc )
 
@@ -2622,8 +2622,8 @@ module stats_clubb_utilities
       gr ! Variable(s)
 
     use array_index, only:  & 
-      iirrm, iirsm, iirim, iirgm, & ! Variable(s)
-      iiNrm, iiNsm, iiNim, iiNgm
+      iirr, iirs, iiri, iirg, & ! Variable(s)
+      iiNr, iiNs, iiNi, iiNg
 
     use stats_variables, only: &
       ilh_rrm_mc, & ! Variable(s)
@@ -2687,36 +2687,36 @@ module stats_clubb_utilities
 
       call stat_update_var( ilh_Ncm_mc, lh_Ncm_mc, stats_lh_zt )
 
-      if ( iirrm > 0 ) then
-        call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirrm), stats_lh_zt )
+      if ( iirr > 0 ) then
+        call stat_update_var( ilh_rrm_mc, lh_hydromet_mc(:,iirr), stats_lh_zt )
       end if
 
-      if ( iirsm > 0 ) then
-        call stat_update_var( ilh_rsm_mc, lh_hydromet_mc(:,iirsm), stats_lh_zt )
+      if ( iirs > 0 ) then
+        call stat_update_var( ilh_rsm_mc, lh_hydromet_mc(:,iirs), stats_lh_zt )
       end if
 
-      if ( iirim > 0 ) then
-        call stat_update_var( ilh_rim_mc, lh_hydromet_mc(:,iirim), stats_lh_zt )
+      if ( iiri > 0 ) then
+        call stat_update_var( ilh_rim_mc, lh_hydromet_mc(:,iiri), stats_lh_zt )
       end if
 
-      if ( iirgm > 0 ) then
-        call stat_update_var( ilh_rgm_mc, lh_hydromet_mc(:,iirgm), stats_lh_zt )
+      if ( iirg > 0 ) then
+        call stat_update_var( ilh_rgm_mc, lh_hydromet_mc(:,iirg), stats_lh_zt )
       end if
 
-      if ( iiNim > 0 ) then
-        call stat_update_var( ilh_Nim_mc, lh_hydromet_mc(:,iiNim), stats_lh_zt )
+      if ( iiNi > 0 ) then
+        call stat_update_var( ilh_Nim_mc, lh_hydromet_mc(:,iiNi), stats_lh_zt )
       end if
 
-      if ( iiNrm > 0 ) then
-        call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNrm), stats_lh_zt )
+      if ( iiNr > 0 ) then
+        call stat_update_var( ilh_Nrm_mc, lh_hydromet_mc(:,iiNr), stats_lh_zt )
       end if
 
-      if ( iiNsm > 0 ) then
-        call stat_update_var( ilh_Nsm_mc, lh_hydromet_mc(:,iiNsm), stats_lh_zt )
+      if ( iiNs > 0 ) then
+        call stat_update_var( ilh_Nsm_mc, lh_hydromet_mc(:,iiNs), stats_lh_zt )
       end if
 
-      if ( iiNgm > 0 ) then
-        call stat_update_var( ilh_Ngm_mc, lh_hydromet_mc(:,iiNgm), stats_lh_zt )
+      if ( iiNg > 0 ) then
+        call stat_update_var( ilh_Ngm_mc, lh_hydromet_mc(:,iiNg), stats_lh_zt )
       end if
 
       call stat_update_var( iAKm, AKm, stats_lh_zt )

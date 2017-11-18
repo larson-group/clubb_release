@@ -82,8 +82,8 @@ module estimate_scm_microphys_module
       l_silhs_KK_convergence_adj_mean ! Variable(s)
 
     use array_index, only: &
-      iiNrm, & ! Variable(s)
-      iirrm, &
+      iiNr, & ! Variable(s)
+      iirr, &
       iiPDF_chi, &
       iiPDF_w
 
@@ -319,12 +319,12 @@ module estimate_scm_microphys_module
 
     ! Adjust the mean if l_silhs_KK_convergence_adj_mean is true
     if ( l_silhs_KK_convergence_adj_mean ) then
-      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirrm),           & ! intent(in)
-                                hydromet(:,iiNrm), hydromet,                     & ! intent(in)
+      call adjust_KK_src_means( dt, nz, exner, rcm, hydromet(:,iirr),           & ! intent(in)
+                                hydromet(:,iiNr), hydromet,                     & ! intent(in)
                                 microphys_stats_zt_avg, l_stats_samp,            & ! intent(in)
-                                lh_hydromet_vel(:,iirrm),                        & ! intent(inout)
-                                lh_hydromet_vel(:,iiNrm),                        & ! intent(inout)
-                                lh_hydromet_mc(:,iirrm), lh_hydromet_mc(:,iiNrm),& ! intent(out)
+                                lh_hydromet_vel(:,iirr),                        & ! intent(inout)
+                                lh_hydromet_vel(:,iiNr),                        & ! intent(inout)
+                                lh_hydromet_mc(:,iirr), lh_hydromet_mc(:,iiNr),& ! intent(out)
                                 lh_rvm_mc, lh_rcm_mc, lh_thlm_mc )                 ! intent(out)
     end if
 

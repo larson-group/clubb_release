@@ -446,9 +446,9 @@ module corr_varnce_module
   end function get_corr_var_index
 
   !-----------------------------------------------------------------------
-  subroutine setup_pdf_indices( hydromet_dim, iirrm, iiNrm, &
-                                iirim, iiNim, iirsm, iiNsm, &
-                                iirgm, iiNgm )
+  subroutine setup_pdf_indices( hydromet_dim, iirr, iiNr, &
+                                iiri, iiNi, iirs, iiNs, &
+                                iirg, iiNg )
 
     ! Description:
     !
@@ -465,14 +465,14 @@ module corr_varnce_module
       hydromet_dim    ! Total number of hydrometeor species.
 
     integer, intent(in) :: &
-      iirrm, & ! Index of rain water mixing ratio
-      iiNrm, & ! Index of rain drop concentration
-      iirim, & ! Index of ice mixing ratio
-      iiNim, & ! Index of ice crystal concentration
-      iirsm, & ! Index of snow mixing ratio
-      iiNsm, & ! Index of snow flake concentration
-      iirgm, & ! Index of graupel mixing ratio
-      iiNgm    ! Index of graupel concentration
+      iirr, & ! Index of rain water mixing ratio
+      iiNr, & ! Index of rain drop concentration
+      iiri, & ! Index of ice mixing ratio
+      iiNi, & ! Index of ice crystal concentration
+      iirs, & ! Index of snow mixing ratio
+      iiNs, & ! Index of snow flake concentration
+      iirg, & ! Index of graupel mixing ratio
+      iiNg    ! Index of graupel concentration
 
     ! Local Variables
     integer :: &
@@ -497,42 +497,42 @@ module corr_varnce_module
 
        do i = 1, hydromet_dim, 1
 
-          if ( i == iirrm ) then
+          if ( i == iirr ) then
              pdf_count = pdf_count + 1
              iiPDF_rr = pdf_count
           endif
 
-          if ( i == iiNrm ) then
+          if ( i == iiNr ) then
              pdf_count = pdf_count + 1
              iiPDF_Nr = pdf_count
           endif
 
-          if ( i == iirim ) then
+          if ( i == iiri ) then
              pdf_count = pdf_count + 1
              iiPDF_ri = pdf_count
           endif
 
-          if ( i == iiNim ) then
+          if ( i == iiNi ) then
              pdf_count = pdf_count + 1
              iiPDF_Ni = pdf_count
           endif
 
-          if ( i == iirsm ) then
+          if ( i == iirs ) then
              pdf_count = pdf_count + 1
              iiPDF_rs = pdf_count
           endif
 
-          if ( i == iiNsm ) then
+          if ( i == iiNs ) then
              pdf_count = pdf_count + 1
              iiPDF_Ns = pdf_count
           endif
 
-          if ( i == iirgm ) then
+          if ( i == iirg ) then
              pdf_count = pdf_count + 1
              iiPDF_rg = pdf_count
           endif
         
-          if ( i == iiNgm ) then
+          if ( i == iiNg ) then
              pdf_count = pdf_count + 1
              iiPDF_Ng = pdf_count
           endif   

@@ -111,10 +111,10 @@ module clubb_driver
 
     use array_index, only: iisclr_rt, iisclr_thl, iisclr_CO2, & ! Variables
       iiedsclr_rt, iiedsclr_thl, iiedsclr_CO2, &
-      iirim, iirsm, iirgm
+      iiri, iirs, iirg
 
     use microphys_driver, only: &
-        microphys_schemes  ! Procedure(s)
+        calc_microphys_scheme_tendcies  ! Procedure(s)
 
     use advance_microphys_module, only: &
         advance_microphys  ! Procedure(s)
@@ -191,7 +191,7 @@ module clubb_driver
       lh_sequence_length
 
     use latin_hypercube_driver_module, only: &
-      lh_subcolumn_generator, & ! Procedure(s)
+      generate_silhs_sample, & ! Procedure(s)
       stats_accumulate_lh, &
       latin_hypercube_2D_output, &
       clip_transform_silhs_output, &
@@ -485,7 +485,7 @@ module clubb_driver
       time_clubb_advance, & ! time spent in advance_clubb_core [s]
       time_clubb_pdf, & ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
       time_SILHS,    &  ! time needed to compute subcolumns [s]
-      time_microphys_scheme, &     ! time needed for microphys_schemes [s]
+      time_microphys_scheme, &     ! time needed for calc_microphys_scheme_tendcies [s]
       time_microphys_advance, &    ! time needed for advance_microphys [s]
       time_stop, time_start,  &    ! help variables to measure the time [s]
       time_total                ! control timer for the overall time spent in the main loop [s]
@@ -1360,14 +1360,14 @@ module clubb_driver
 
       ! Compute total water in ice phase mixing ratio
       rfrzm = zero
-      if ( iirim > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirim)
+      if ( iiri > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iiri)
       end if
-      if ( iirsm > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirsm)
+      if ( iirs > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirs)
       end if
-      if ( iirgm > 0 ) then
-        rfrzm = rfrzm + hydromet(:,iirgm)
+      if ( iirg > 0 ) then
+        rfrzm = rfrzm + hydromet(:,iirg)
       end if
 
       rcm_zm = zt2zm( rcm )
@@ -1460,7 +1460,7 @@ module clubb_driver
 
       if ( lh_microphys_type /= lh_microphys_disabled .or. l_silhs_rad ) then
 
-        call lh_subcolumn_generator &
+        call generate_silhs_sample &
              ( itime, pdf_dim, lh_num_samples, lh_sequence_length, gr%nz, & ! In
                l_calc_weights_all_levs_itime, & ! In
                pdf_params, gr%dzt, rcm, Lscale, & ! In
@@ -1496,14 +1496,14 @@ module clubb_driver
       ! Measure time in SILHS
       call cpu_time(time_stop)
       time_SILHS = time_SILHS + time_stop - time_start
-      call cpu_time(time_start) ! initialize timer for microphys_schemes
+      call cpu_time(time_start) ! initialize timer for calc_microphys_scheme_tendcies
       
       !----------------------------------------------------------------
       ! Compute Microphysics
       !----------------------------------------------------------------
 
       ! Call microphysics scheme and produce microphysics tendencies.
-      call microphys_schemes( dt_main, time_current, pdf_dim, runtype, & ! In
+      call calc_microphys_scheme_tendcies( dt_main, time_current, pdf_dim, runtype, & ! In
                               thlm, p_in_Pa, exner, rho, rho_zm, rtm, &      ! In
                               rcm, cloud_frac, wm_zt, wm_zm, wp2_zt, &       ! In
                               hydromet, Nc_in_cloud, &                       ! In
@@ -1522,7 +1522,7 @@ module clubb_driver
                               wprtp_mc, wpthlp_mc, rtp2_mc, &                ! Out
                               thlp2_mc, rtpthlp_mc )                         ! Out
 
-      ! Measure time in microphys_schemes
+      ! Measure time in calc_microphys_scheme_tendcies
       call cpu_time(time_stop)
       time_microphys_scheme = time_microphys_scheme + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for advance_microphys
@@ -1539,7 +1539,7 @@ module clubb_driver
                               K_hm, Ncm, Nc_in_cloud, rvm_mc, thlm_mc, & ! Inout
                               wphydrometp, wpNcp, err_code_microphys )   ! Out
 
-      ! Measure time in microphys_schemes
+      ! Measure time in calc_microphys_scheme_tendcies
       call cpu_time(time_stop)
       time_microphys_advance = time_microphys_advance + time_stop - time_start
       call cpu_time(time_start) ! initialize timer for the end part of the main loop
@@ -4316,7 +4316,7 @@ module clubb_driver
 
     use parameters_model, only: hydromet_dim ! Variable(s)
 
-    use array_index, only: iirsm, iirim ! Variable(s)
+    use array_index, only: iirs, iiri ! Variable(s)
 
     use grid_class, only: gr ! Instance of a type
 
@@ -4448,14 +4448,14 @@ module clubb_driver
 #ifdef radoffline /*This directive is needed for BUGSrad to work with CLUBB.*/
 
       ! Copy snow and ice
-      if ( iirsm > 0 ) then
-        rsm = hydromet(1:gr%nz,iirsm)
+      if ( iirs > 0 ) then
+        rsm = hydromet(1:gr%nz,iirs)
       else
         rsm = 0.0_core_rknd
       endif
 
-      if ( iirim > 0 ) then
-        rim = hydromet(1:gr%nz,iirim)
+      if ( iiri > 0 ) then
+        rim = hydromet(1:gr%nz,iiri)
       else
         rim = 0.0_core_rknd
       end if

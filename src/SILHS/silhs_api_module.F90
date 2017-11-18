@@ -94,7 +94,7 @@ module silhs_api_module
 #ifdef SILHS
 
   public  &
-    lh_subcolumn_generator_api, &
+    generate_silhs_sample_api, &
     stats_accumulate_lh_api, &
     est_kessler_microphys_api, &
     l_lh_importance_sampling, &
@@ -106,10 +106,10 @@ module silhs_api_module
 contains
 
   !================================================================================================
-  ! lh_subcolumn_generator - Generates sample points of moisture, temperature, et cetera.
+  ! generate_silhs_sample - Generates sample points of moisture, temperature, et cetera.
   !================================================================================================
 
-  subroutine lh_subcolumn_generator_api( &
+  subroutine generate_silhs_sample_api( &
     iter, pdf_dim, num_samples, sequence_length, nz, & ! In
     l_calc_weights_all_levs_itime, &
     pdf_params, delta_zm, rcm, Lscale, & ! In
@@ -119,7 +119,7 @@ contains
     X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
     lh_sample_point_weights ) ! Out
 
-    use latin_hypercube_driver_module, only : lh_subcolumn_generator
+    use latin_hypercube_driver_module, only : generate_silhs_sample
 
     use pdf_parameter_module, only: &
       pdf_parameter  ! Type
@@ -180,7 +180,7 @@ contains
     type(hydromet_pdf_parameter), dimension(nz), intent(in) :: &
       hydromet_pdf_params
 
-    call lh_subcolumn_generator( &
+    call generate_silhs_sample( &
       iter, pdf_dim, num_samples, sequence_length, nz, & ! In
       l_calc_weights_all_levs_itime, & ! In
       pdf_params, delta_zm, rcm, Lscale, & ! In
@@ -190,7 +190,7 @@ contains
       X_nl_all_levs, X_mixt_comp_all_levs, & ! Out
       lh_sample_point_weights ) ! Out
 
-  end subroutine lh_subcolumn_generator_api
+  end subroutine generate_silhs_sample_api
 
   !================================================================================================
   ! stats_accumulate_lh - Clips subcolumns from latin hypercube and creates stats.

@@ -3015,7 +3015,7 @@ module advance_wp2_wp3_module
 
     ! The value of w'^2 at the lower boundary will remain the same.
     ! When the lower boundary is at the surface, the surface value of
-    ! w'^2 is set in subroutine surface_varnce (surface_varnce_module.F).
+    ! w'^2 is set in subroutine calc_surface_varnce (surface_varnce_module.F).
 
     ! The value of w'^3 at the lower boundary will be 0.
  

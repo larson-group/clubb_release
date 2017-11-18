@@ -26,7 +26,7 @@ module mg_microphys_driver_module
       thlm2T_in_K
 
     use array_index, only:  &
-      iirim, iiNim
+      iiri, iiNi
 
     use constants_clubb, only: &
       T_freeze_K, &
@@ -385,7 +385,7 @@ module mg_microphys_driver_module
       if ( rcm_flip(icol,k) > 0._r8 ) then
         cldn_flip(icol,k) = liqcldf_flip(icol,k)
       else if ( rcm_flip(icol,k) < real( rc_tol, kind=r8 ) &
-                .and. hydromet_flip(icol,k,iirim) > real( rc_tol, kind=r8 ) ) then
+                .and. hydromet_flip(icol,k,iiri) > real( rc_tol, kind=r8 ) ) then
         cldn_flip(icol,k) = 1._r8
       else
         cldn_flip(icol,k) = 0._r8
@@ -423,8 +423,8 @@ module mg_microphys_driver_module
       ! Calculate aerosol activiation, dust size, and number for contact nucleation
       call microp_aero_ts &
          ( lchnk, ncols, real( dt, kind=r8), T_in_K_flip, unused_in, &              ! in
-         rvm_flip, rcm_flip, hydromet_flip(:,:,iirim), &                          ! in
-         Ncm_flip, hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip, &  ! in
+         rvm_flip, rcm_flip, hydromet_flip(:,:,iiri), &                          ! in
+         Ncm_flip, hydromet_flip(:,:,iiNi), p_in_Pa_flip, pdel_flip, cldn_flip, &  ! in
          liqcldf_flip, icecldf_flip, &                                              ! in
          cldo_flip, unused_in, unused_in, unused_in, unused_in, &                   ! in
          aer_mmr_flip, &
@@ -475,16 +475,16 @@ module mg_microphys_driver_module
     call mmicro_pcond                                                                        &! in
          ( sub_column,                                                                       &! in
            lchnk, ncols, real( dt, kind=r8), T_in_K_flip,                                    &! in
-           rvm_flip, rcm_flip, hydromet_flip(:,:,iirim),                                    &! in
-           Ncm_flip, hydromet_flip(:,:,iiNim), p_in_Pa_flip, pdel_flip, cldn_flip,            &
+           rvm_flip, rcm_flip, hydromet_flip(:,:,iiri),                                    &! in
+           Ncm_flip, hydromet_flip(:,:,iiNi), p_in_Pa_flip, pdel_flip, cldn_flip,            &
            liqcldf_flip, icecldf_flip,                                                        &! in
            cldo_flip,                                                                         &! in
            pdf_params_flip,                                                                   & ! in
            rate1ord_cw2pr_st_flip,                                                            &! out
            naai_flip, npccn_flip, rndst_flip, nacon_flip,                                     &! in
            tlat_flip, rvm_mc_flip,                                                            &! out
-           rcm_mc_flip, hydromet_mc_flip(:,:,iirim), Ncm_mc_flip,                           &! out
-           hydromet_mc_flip(:,:,iiNim), effc_flip,                                            &! out
+           rcm_mc_flip, hydromet_mc_flip(:,:,iiri), Ncm_mc_flip,                           &! out
+           hydromet_mc_flip(:,:,iiNi), effc_flip,                                            &! out
            effc_fn_flip, effi_flip, prect, preci,                                             &! out
            nevapr_flip, evapsnow_flip,                                                        &! out
            prain_flip, prodsnow_flip, cmeout_flip, deffi_flip, pgamrad_flip,                  &! out
@@ -579,7 +579,7 @@ module mg_microphys_driver_module
                                sec_per_day, stats_sfc )
 
      ! Snow water path is updated in stats_subs.F90
-     ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirsm) / max( 0.0001, cldfsnow ) * &
+     ! call stat_update_var_pt( iswp, 1, real( hydromet_mc(3,iirs) / max( 0.0001, cldfsnow ) * &
      !                          pdel_flip(nz-1) / gravit ), stats_sfc )
 
       ! Compute autoconversion

@@ -471,8 +471,8 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
         core_rknd,      & ! Variable(s)
@@ -1007,10 +1007,10 @@ module KK_microphys_module
     ! The implicit and explicit components used to calculate the covariances of
     ! hydrometeor sedimentation velocities and their associated hydrometeors
     ! (<V_rr'r_r'> and <V_Nr'N_r'>) are fed into the output arrays.
-    hydromet_vel_covar_zt_impc(:,iirrm) = Vrrprrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iirrm) = Vrrprrp_zt_expc
-    hydromet_vel_covar_zt_impc(:,iiNrm) = VNrpNrp_zt_impc
-    hydromet_vel_covar_zt_expc(:,iiNrm) = VNrpNrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iirr) = Vrrprrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iirr) = Vrrprrp_zt_expc
+    hydromet_vel_covar_zt_impc(:,iiNr) = VNrpNrp_zt_impc
+    hydromet_vel_covar_zt_expc(:,iiNr) = VNrpNrp_zt_expc
 
     ! Statistics
     if ( l_stats_samp ) then
@@ -1088,8 +1088,8 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1139,8 +1139,8 @@ module KK_microphys_module
     hydromet_vel(:,:) = zero
 
     ! Set up mean field variables for <r_r> and <N_r>.
-    rrm = hydromet(:,iirrm)
-    Nrm = hydromet(:,iiNrm)
+    rrm = hydromet(:,iirr)
+    Nrm = hydromet(:,iiNr)
 
     ! Set KK microphysics tendency adjustment flags
     l_src_adj_enabled  = .true.
@@ -1746,8 +1746,8 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use array_index, only: &
-        iirrm, & ! Constant(s)
-        iiNrm
+        iirr, & ! Constant(s)
+        iiNr
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1773,12 +1773,12 @@ module KK_microphys_module
     !!! Output mean hydrometeor tendencies and mean sedimentation velocities.
 
     ! Mean field tendencies.
-    hydromet_mc(:,iirrm) = rrm_mc
-    hydromet_mc(:,iiNrm) = Nrm_mc
+    hydromet_mc(:,iirr) = rrm_mc
+    hydromet_mc(:,iiNr) = Nrm_mc
 
     ! Sedimentation Velocities.
-    hydromet_vel(:,iirrm) = Vrr
-    hydromet_vel(:,iiNrm) = VNr
+    hydromet_vel(:,iirr) = Vrr
+    hydromet_vel(:,iiNr) = VNr
 
 
     return
@@ -1826,8 +1826,8 @@ module KK_microphys_module
         hydromet_pdf_parameter  ! Variable(s)      
 
     use array_index, only: &
-        iirrm,     & ! Variable(s)
-        iiNrm,     & 
+        iirr,     & ! Variable(s)
+        iiNr,     & 
         iiPDF_w,   & 
         iiPDF_chi, &
         iiPDF_eta, &
@@ -1964,23 +1964,23 @@ module KK_microphys_module
     sigma_Ncn_2_n = sigma_x_2_n(iiPDF_Ncn)
 
     ! Unpack variables from hydromet_pdf_params
-    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirrm)
-    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirrm)
-    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNrm)
-    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNrm)
+    mu_rr_1     = hydromet_pdf_params%mu_hm_1(iirr)
+    mu_rr_2     = hydromet_pdf_params%mu_hm_2(iirr)
+    mu_Nr_1     = hydromet_pdf_params%mu_hm_1(iiNr)
+    mu_Nr_2     = hydromet_pdf_params%mu_hm_2(iiNr)
     mu_Ncn_1    = hydromet_pdf_params%mu_Ncn_1
     mu_Ncn_2    = hydromet_pdf_params%mu_Ncn_2
-    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirrm)
-    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirrm)
-    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNrm)
-    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNrm)
+    sigma_rr_1  = hydromet_pdf_params%sigma_hm_1(iirr)
+    sigma_rr_2  = hydromet_pdf_params%sigma_hm_2(iirr)
+    sigma_Nr_1  = hydromet_pdf_params%sigma_hm_1(iiNr)
+    sigma_Nr_2  = hydromet_pdf_params%sigma_hm_2(iiNr)
     sigma_Ncn_1 = hydromet_pdf_params%sigma_Ncn_1
     sigma_Ncn_2 = hydromet_pdf_params%sigma_Ncn_2
 
-    rr_1          = hydromet_pdf_params%hm_1(iirrm)
-    rr_2          = hydromet_pdf_params%hm_2(iirrm)
-    Nr_1          = hydromet_pdf_params%hm_1(iiNrm)
-    Nr_2          = hydromet_pdf_params%hm_2(iiNrm)
+    rr_1          = hydromet_pdf_params%hm_1(iirr)
+    rr_2          = hydromet_pdf_params%hm_2(iirr)
+    Nr_1          = hydromet_pdf_params%hm_1(iiNr)
+    Nr_2          = hydromet_pdf_params%hm_2(iiNr)
     precip_frac   = hydromet_pdf_params%precip_frac
     precip_frac_1 = hydromet_pdf_params%precip_frac_1
     precip_frac_2 = hydromet_pdf_params%precip_frac_2

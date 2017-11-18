@@ -30,7 +30,7 @@ module latin_hypercube_driver_module
 
 #ifdef SILHS
   public :: latin_hypercube_2D_output, &
-    latin_hypercube_2D_close, stats_accumulate_lh, lh_subcolumn_generator, &
+    latin_hypercube_2D_close, stats_accumulate_lh, generate_silhs_sample, &
     copy_X_nl_into_hydromet_all_pts, clip_transform_silhs_output
 
   private :: stats_accumulate_uniform_lh
@@ -38,7 +38,7 @@ module latin_hypercube_driver_module
   contains
 
 !-------------------------------------------------------------------------------
-  subroutine lh_subcolumn_generator &
+  subroutine generate_silhs_sample &
              ( iter, pdf_dim, num_samples, sequence_length, nz, & ! In
                l_calc_weights_all_levs_itime, &
                pdf_params, delta_zm, rcm, Lscale, & ! In
@@ -188,7 +188,7 @@ module latin_hypercube_driver_module
     if ( .not. l_calc_weights_all_levs_itime ) then
     
       ! Generate a uniformly distributed sample at k_lh_start
-      call generate_uniform_k_lh_start &
+      call generate_uniform_sample_at_k_lh_start &
            ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
              pdf_params(k_lh_start), hydromet_pdf_params(k_lh_start), &          ! Intent(in)
              X_u_all_levs(k_lh_start,:,:), lh_sample_point_weights(1,:)  )             ! Intent(out)
@@ -211,7 +211,7 @@ module latin_hypercube_driver_module
       if ( l_calc_weights_all_levs_itime ) then
         ! moved inside the loop to apply importance sampling for each layer
         ! 
-        call generate_uniform_k_lh_start &
+        call generate_uniform_sample_at_k_lh_start &
           ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, & ! Intent(in)
             pdf_params(k), hydromet_pdf_params(k), &          ! Intent(in)
             X_u_all_levs(k,:,:), lh_sample_point_weights(k,:) )             ! Intent(out)
@@ -277,7 +277,7 @@ module latin_hypercube_driver_module
 
     if ( l_output_2D_lognormal_dist ) then
       ! Eric Raut removed lh_rt and lh_thl from call to output_2D_lognormal_dist_file
-      ! because they are no longer generated in lh_subcolumn_generator.
+      ! because they are no longer generated in generate_silhs_sample.
       call output_2D_lognormal_dist_file( nz, num_samples, pdf_dim, &
                                           real(X_nl_all_levs, kind = stat_rknd) )
     end if
@@ -318,15 +318,15 @@ module latin_hypercube_driver_module
 
     ! Stop the run if an error occurred
     if ( l_error ) then
-      stop "Fatal error in lh_subcolumn_generator"
+      stop "Fatal error in generate_silhs_sample"
     end if
 
     return
-  end subroutine lh_subcolumn_generator
+  end subroutine generate_silhs_sample
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine generate_uniform_k_lh_start &
+  subroutine generate_uniform_sample_at_k_lh_start &
              ( iter, pdf_dim, d_uniform_extra, num_samples, sequence_length, &
                pdf_params, hydromet_pdf_params, &
                X_u_k_lh_start, lh_sample_point_weights )
@@ -468,7 +468,7 @@ module latin_hypercube_driver_module
     end if ! l_lh_straight_mc
 
     return
-  end subroutine generate_uniform_k_lh_start
+  end subroutine generate_uniform_sample_at_k_lh_start
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -1724,14 +1724,14 @@ module latin_hypercube_driver_module
       stat_update_var_pt
 
     use array_index, only: &
-      iirrm, & ! Variables(s)
-      iirsm, & 
-      iirim, & 
-      iirgm, & 
-      iiNrm, &
-      iiNsm, &
-      iiNim, &
-      iiNgm, &
+      iirr, & ! Variables(s)
+      iirs, & 
+      iiri, & 
+      iirg, & 
+      iiNr, &
+      iiNs, &
+      iiNi, &
+      iiNg, &
       iiPDF_chi, &
       iiPDF_eta, &
       iiPDF_w,   &
@@ -1988,10 +1988,10 @@ module latin_hypercube_driver_module
       end if
 
       ! Compute the variance of rain water mixing ratio
-      if ( iirrm > 0 .and. ilh_rrp2_zt > 0 ) then
+      if ( iirr > 0 .and. ilh_rrp2_zt > 0 ) then
         lh_rrp2_zt = compute_sample_variance &
-                        ( nz, num_samples, hydromet_all_points(:,:,iirrm), &
-                          lh_sample_point_weights, lh_hydromet(:,iirrm) )
+                        ( nz, num_samples, hydromet_all_points(:,:,iirr), &
+                          lh_sample_point_weights, lh_hydromet(:,iirr) )
         call stat_update_var( ilh_rrp2_zt, lh_rrp2_zt, stats_lh_zt )
       end if
 
@@ -2012,37 +2012,37 @@ module latin_hypercube_driver_module
       end if
 
       ! Compute the variance of rain droplet number concentration
-      if ( iiNrm > 0 .and. ilh_Nrp2_zt > 0 ) then
-        lh_Nrp2_zt = compute_sample_variance( nz, num_samples, hydromet_all_points(:,:,iiNrm),&
-                                              lh_sample_point_weights, lh_hydromet(:,iiNrm) )
+      if ( iiNr > 0 .and. ilh_Nrp2_zt > 0 ) then
+        lh_Nrp2_zt = compute_sample_variance( nz, num_samples, hydromet_all_points(:,:,iiNr),&
+                                              lh_sample_point_weights, lh_hydromet(:,iiNr) )
         call stat_update_var( ilh_Nrp2_zt, lh_Nrp2_zt, stats_lh_zt )
       end if
 
       ! Averages of points being fed into the microphysics
       ! These are for diagnostic purposes, and are not needed for anything
-      if ( iirrm > 0 ) then
-        call stat_update_var( ilh_rrm, lh_hydromet(:,iirrm), stats_lh_zt )
+      if ( iirr > 0 ) then
+        call stat_update_var( ilh_rrm, lh_hydromet(:,iirr), stats_lh_zt )
       end if
-      if ( iiNrm > 0 ) then
-        call stat_update_var( ilh_Nrm, lh_hydromet(:,iiNrm), stats_lh_zt )
+      if ( iiNr > 0 ) then
+        call stat_update_var( ilh_Nrm, lh_hydromet(:,iiNr), stats_lh_zt )
       end if
-      if ( iirim > 0 ) then
-        call stat_update_var( ilh_rim, lh_hydromet(:,iirim), stats_lh_zt )
+      if ( iiri > 0 ) then
+        call stat_update_var( ilh_rim, lh_hydromet(:,iiri), stats_lh_zt )
       end if
-      if ( iiNim > 0 ) then
-        call stat_update_var( ilh_Nim, lh_hydromet(:,iiNim), stats_lh_zt )
+      if ( iiNi > 0 ) then
+        call stat_update_var( ilh_Nim, lh_hydromet(:,iiNi), stats_lh_zt )
       end if
-      if ( iirsm > 0 ) then
-        call stat_update_var( ilh_rsm, lh_hydromet(:,iirsm), stats_lh_zt )
+      if ( iirs > 0 ) then
+        call stat_update_var( ilh_rsm, lh_hydromet(:,iirs), stats_lh_zt )
       end if
-      if ( iiNsm > 0 ) then
-        call stat_update_var( ilh_Nsm, lh_hydromet(:,iiNsm), stats_lh_zt )
+      if ( iiNs > 0 ) then
+        call stat_update_var( ilh_Nsm, lh_hydromet(:,iiNs), stats_lh_zt )
       end if
-      if ( iirgm > 0 ) then
-        call stat_update_var( ilh_rgm, lh_hydromet(:,iirgm), stats_lh_zt )
+      if ( iirg > 0 ) then
+        call stat_update_var( ilh_rgm, lh_hydromet(:,iirg), stats_lh_zt )
       end if
-      if ( iiNgm > 0 ) then
-        call stat_update_var( ilh_Ngm, lh_hydromet(:,iiNgm), stats_lh_zt )
+      if ( iiNg > 0 ) then
+        call stat_update_var( ilh_Ngm, lh_hydromet(:,iiNg), stats_lh_zt )
       end if
 
     end if ! l_stats_samp
@@ -2286,14 +2286,14 @@ module latin_hypercube_driver_module
       hydromet_dim ! Variable
 
     use array_index, only: &
-      iirrm, & ! Variables
-      iirsm, & 
-      iirim, & 
-      iirgm, & 
-      iiNrm, &
-      iiNsm, &
-      iiNim, &
-      iiNgm, &
+      iirr, & ! Variables
+      iirs, & 
+      iiri, & 
+      iirg, & 
+      iiNr, &
+      iiNs, &
+      iiNi, &
+      iiNg, &
       iiPDF_rr, &
       iiPDF_rs, &
       iiPDF_ri, &
@@ -2331,42 +2331,42 @@ module latin_hypercube_driver_module
     do sample = 1, num_samples
       ! Copy the sample points into the temporary arrays
       do ivar = 1, hydromet_dim, 1
-        if ( ivar == iirrm .and. iiPDF_rr > 0 ) then
+        if ( ivar == iirr .and. iiPDF_rr > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_rr), kind = core_rknd )
 
-        else if ( ivar == iirsm .and. iiPDF_rs > 0 ) then
+        else if ( ivar == iirs .and. iiPDF_rs > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_rs), kind = core_rknd )
 
-        else if ( ivar == iirim .and. iiPDF_ri > 0 ) then
+        else if ( ivar == iiri .and. iiPDF_ri > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_ri), kind = core_rknd )
 
-        else if ( ivar == iirgm .and. iiPDF_rg > 0 ) then
+        else if ( ivar == iirg .and. iiPDF_rg > 0 ) then
           ! Use a sampled value of rain water mixing ratio
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_rg), kind = core_rknd )
 
-        else if ( ivar == iiNrm .and. iiPDF_Nr > 0 ) then
+        else if ( ivar == iiNr .and. iiPDF_Nr > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_Nr), kind = core_rknd )
 
-        else if ( ivar == iiNsm .and. iiPDF_Ns > 0 ) then
+        else if ( ivar == iiNs .and. iiPDF_Ns > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_Ns), kind = core_rknd )
 
-        else if ( ivar == iiNgm .and. iiPDF_Ng > 0 ) then
+        else if ( ivar == iiNg .and. iiPDF_Ng > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_Ng), kind = core_rknd )
 
-        else if ( ivar == iiNim .and. iiPDF_Ni > 0 ) then
+        else if ( ivar == iiNi .and. iiPDF_Ni > 0 ) then
           ! Use a sampled value of rain droplet number concentration
           hydromet_all_points(:,sample,ivar) = &
             real( X_nl_all_levs(:,sample,iiPDF_Ni), kind = core_rknd )

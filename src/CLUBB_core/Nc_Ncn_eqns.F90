@@ -92,7 +92,7 @@ module Nc_Ncn_eqns
   ! |  |                                                       |
   ! |  |                                                       |
   ! |  |                                                       |
-  ! |  |--(intent in)-------microphys_schemes-------------(intent in)
+  ! |  |--(intent in)-------calc_microphys_scheme_tendcies-------------(intent in)
   ! |  |                            |
   ! |  |                            |
   ! |  |                call a microphysics scheme

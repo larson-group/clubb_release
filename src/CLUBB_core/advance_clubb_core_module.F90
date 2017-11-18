@@ -309,10 +309,10 @@ module advance_clubb_core_module
       advance_xp2_xpyp     ! Computes variance terms
 
     use surface_varnce_module, only:  & 
-      surface_varnce ! Procedure
+      calc_surface_varnce ! Procedure
 
     use mixing_length, only: & 
-      compute_length ! Procedure
+      compute_mixing_length ! Procedure
 
     use advance_windm_edsclrm_module, only:  & 
       advance_windm_edsclrm  ! Procedure(s)
@@ -420,10 +420,10 @@ module advance_clubb_core_module
 
     ! Constant Parameters
     logical, parameter :: &
-      l_avg_Lscale = .false.    ! Lscale is calculated in subroutine compute_length; if l_avg_Lscale
-    ! is true, compute_length is called two additional times with
+      l_avg_Lscale = .false.    ! Lscale is calculated in subroutine compute_mixing_length; if l_avg_Lscale
+    ! is true, compute_mixing_length is called two additional times with
     ! perturbed values of rtm and thlm.  An average value of Lscale
-    ! from the three calls to compute_length is then calculated.
+    ! from the three calls to compute_mixing_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
 
     logical, parameter :: &
@@ -692,7 +692,7 @@ module advance_clubb_core_module
     real( kind = core_rknd ) :: newmu
 
     ! Flag to sample stats in a particular call to subroutine
-    ! generate_pdf_params.
+    ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
 
     !----- Begin Code -----
@@ -839,7 +839,7 @@ module advance_clubb_core_module
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
-       ! Sample stats in this call to subroutine generate_pdf_params for
+       ! Sample stats in this call to subroutine pdf_closure_driver for
        ! both of these options (ipdf_pre_advance_fields and
        ! ipdf_pre_post_advance_fields).
        if ( ipdf_call_placement == ipdf_pre_advance_fields ) then
@@ -852,8 +852,8 @@ module advance_clubb_core_module
        !#######                     CALL CLUBB's PDF                     #######
        !#######   AND OUTPUT PDF PARAMETERS AND INTEGRATED QUANTITITES   #######
        !########################################################################
-       !call generate_pdf_params( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
-       call generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
+       !call pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
+       call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
                                  wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
@@ -1025,12 +1025,12 @@ module advance_clubb_core_module
 
          endif
 
-         call compute_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
+         call compute_mixing_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
                               p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
                               err_code,                                            & ! intent(inout)
                               Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
 
-         call compute_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
+         call compute_mixing_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
                               p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
                               err_code,                                            & ! intent(inout)
                               Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
@@ -1091,12 +1091,12 @@ module advance_clubb_core_module
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
+        call compute_mixing_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down )                 ! intent(out)
 
-        call compute_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em, Lscale_max, &!intent(in)
+        call compute_mixing_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em, Lscale_max, &!intent(in)
                            p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down )                 ! intent(out)
@@ -1114,12 +1114,12 @@ module advance_clubb_core_module
       end if ! l_stats_samp
 
       ! ********** NOTE: **********
-      ! This call to compute_length must be last.  Otherwise, the values of
+      ! This call to compute_mixing_length must be last.  Otherwise, the values of
       ! Lscale_up and Lscale_down in stats will be based on perturbation length scales
       ! rather than the mean length scale.
   
       ! Diagnose CLUBB's turbulent mixing length scale.
-      call compute_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
+      call compute_mixing_length( thvm, thlm, rtm, em, Lscale_max,              & ! intent(in)
                            p_in_Pa, exner, thv_ds_zt, newmu, l_implemented, & ! intent(in)
                            err_code,                                     & ! intent(inout)
                            Lscale, Lscale_up, Lscale_down )                ! intent(out)
@@ -1222,7 +1222,7 @@ module advance_clubb_core_module
         end if
 
         ! Diagnose surface variances based on surface fluxes.
-        call surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
+        call calc_surface_varnce( upwp_sfc, vpwp_sfc, wpthlp_sfc, wprtp_sfc, &      ! intent(in)
                              um(2), vm(2), Lscale_up(2), wpsclrp_sfc,   &      ! intent(in)
                              wp2(1), up2(1), vp2(1),                    &      ! intent(out)
                              thlp2(1), rtp2(1), rtpthlp(1), err_code_surface,& ! intent(out)
@@ -1497,10 +1497,10 @@ module advance_clubb_core_module
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
-       ! Sample stats in this call to subroutine generate_pdf_params for
+       ! Sample stats in this call to subroutine pdf_closure_driver for
        ! ipdf_post_advance_fields, but not for ipdf_pre_post_advance_fields
        ! because stats were sampled during the first call to subroutine
-       ! generate_pdf_params.
+       ! pdf_closure_driver.
        if ( ipdf_call_placement == ipdf_post_advance_fields ) then
           l_samp_stats_in_pdf_call = .true.
        elseif ( ipdf_call_placement == ipdf_pre_post_advance_fields ) then
@@ -1514,7 +1514,7 @@ module advance_clubb_core_module
        ! Given CLUBB's prognosed moments, diagnose CLUBB's PDF parameters
        !   and quantities integrated over that PDF, including
        !   quantities related to clouds, buoyancy, and turbulent advection. 
-       call generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
+       call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
                                  wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
@@ -1720,8 +1720,8 @@ module advance_clubb_core_module
     end subroutine advance_clubb_core
 
   !=============================================================================
-  !subroutine generate_pdf_params( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
-  subroutine generate_pdf_params( dt, hydromet_dim, wprtp,       & ! Intent(in)
+  !subroutine pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
+  subroutine pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
                                   thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
                                   thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
                                   wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
@@ -1817,7 +1817,7 @@ module advance_clubb_core_module
         sat_mixrat_liq    ! Procedure(s)
 
     use array_index, only: &
-        iirrm    ! Variable(s)
+        iirr    ! Variable(s)
 
     use model_flags, only: &
         l_gamma_Skw,              & ! Variable(s)
@@ -2657,8 +2657,8 @@ module advance_clubb_core_module
       
       !Also added rain for completeness. storer-3/4/14
 
-      if ( iirrm > 0 ) then
-        rrm = hydromet(:,iirrm)
+      if ( iirr > 0 ) then
+        rrm = hydromet(:,iirr)
       else
         rrm = zero
       end if
@@ -2837,7 +2837,7 @@ module advance_clubb_core_module
 
     return
 
-  end subroutine generate_pdf_params
+  end subroutine pdf_closure_driver
 
   !=============================================================================
     subroutine setup_clubb_core & 

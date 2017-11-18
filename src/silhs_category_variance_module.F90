@@ -39,7 +39,7 @@ module silhs_category_variance_module
       irrm_mc_nonadj
 
     use array_index, only: &
-      iirrm, &
+      iirr, &
       iiPDF_chi
 
     use pdf_parameter_module, only: &
@@ -112,7 +112,7 @@ module silhs_category_variance_module
 
     else if ( .true. ) then
 
-      samples_all = lh_hydromet_mc_all(:,:,iirrm) ! Sample rrm_mc
+      samples_all = lh_hydromet_mc_all(:,:,iirr) ! Sample rrm_mc
 
     else ! .false.
       istat_var = irrm_mc_nonadj
