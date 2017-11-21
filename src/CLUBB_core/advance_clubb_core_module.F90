@@ -1798,6 +1798,7 @@ module advance_clubb_core_module
         iiPDF_3D_Luhar, & ! Variable(s)
         iiPDF_new,      &
         iiPDF_TSDADG,   &
+        iiPDF_LY93,     &
         iiPDF_type
 
     use Skx_module, only: &
@@ -2231,7 +2232,8 @@ module advance_clubb_core_module
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
     if ( ( iiPDF_type == iiPDF_3D_Luhar ) .or. ( iiPDF_type == iiPDF_new ) &
-         .or. ( iiPDF_type == iiPDF_TSDADG ) ) then
+         .or. ( iiPDF_type == iiPDF_TSDADG ) &
+         .or. ( iiPDF_type == iiPDF_LY93 ) ) then
 
       Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
       Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
@@ -2901,6 +2903,7 @@ module advance_clubb_core_module
           iiPDF_3D_Luhar, &
           iiPDF_new,      &
           iiPDF_TSDADG,   &
+          iiPDF_LY93,     &
           iiPDF_type
 
 #ifdef MKL
@@ -3035,12 +3038,12 @@ module advance_clubb_core_module
 
       ! Check for the type of two component normal (double Gaussian) PDF being
       ! used for w, rt, and theta-l (or w, chi, and eta).
-      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_TSDADG ) then
+      if ( iiPDF_type < iiPDF_ADG1 .or. iiPDF_type > iiPDF_LY93 ) then
          write(fstderr,*) "Error in setup_clubb_core."
          write(fstderr,*) "Unknown type of double Gaussian PDF selected."
          write(fstderr,*) "iiPDF_type = ", iiPDF_type
          stop
-      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_TSDADG
+      endif ! iiPDF_type < iiPDF_ADG1 or iiPDF_type > iiPDF_lY93
 
       ! The ADG2 and 3D Luhar PDFs can only be used as part of input fields.
       if ( iiPDF_type == iiPDF_ADG2 ) then
@@ -3090,6 +3093,18 @@ module advance_clubb_core_module
             stop
          endif ! .not. l_input_fields
       endif ! iiPDF_type == iiPDF_TSDADG
+
+      ! This also applies to Lewellen and Yoh (1993).
+      if ( iiPDF_type == iiPDF_LY93 ) then
+         if ( .not. l_input_fields ) then
+            write(fstderr,*) "Error in setup_clubb_core."
+            write(fstderr,*) "The Lewellen and Yoh PDF can only be used with" &
+                             // " input fields (l_input_fields = .true.)."
+            write(fstderr,*) "iiPDF_type = ", iiPDF_type
+            write(fstderr,*) "l_input_fields = ", l_input_fields
+            stop
+         endif ! .not. l_input_fields
+      endif ! iiPDF_type == iiPDF_LY93
 
       ! Check the option for the placement of the call to CLUBB's PDF.
       if ( ipdf_call_placement < ipdf_pre_advance_fields &

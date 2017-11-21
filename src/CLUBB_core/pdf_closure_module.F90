@@ -19,7 +19,8 @@ module pdf_closure_module
     iiPDF_ADG2 = 2,     & ! ADG2 PDF
     iiPDF_3D_Luhar = 3, & ! 3D Luhar PDF
     iiPDF_new = 4,      & ! new PDF
-    iiPDF_TSDADG = 5      ! new TSDADG PDF
+    iiPDF_TSDADG = 5,   & ! new TSDADG PDF
+    iiPDF_LY93 = 6        ! Lewellen and Yoh (1993)
 
   ! The selected two component normal PDF for w, rt, and theta-l.
   integer, parameter, public :: &
@@ -124,6 +125,9 @@ module pdf_closure_module
 
     use new_tsdadg_pdf, only: &
         tsdadg_pdf_driver    ! Procedure(s)
+
+    use LY93_pdf, only: &
+        LY93_driver    ! Procedure(s)
 
     use pdf_utilities, only: &
         calc_comp_corrs_binormal, & ! Procedure(s)
@@ -489,6 +493,16 @@ module pdf_closure_module
                                varnce_w_2, varnce_rt_1,         & ! Out
                                varnce_rt_2, varnce_thl_1,       & ! Out
                                varnce_thl_2, mixt_frac          ) ! Out
+
+    elseif ( iiPDF_type == iiPDF_LY93 ) then ! use LY93
+
+       call LY93_driver( wm, rtm, thlm, wp2, rtp2,  & ! In
+                         thlp2, Skw, Skrt, Skthl,   & ! In
+                         w_1, w_2, rt_1, rt_2,      & ! Out
+                         thl_1, thl_2, varnce_w_1,  & ! Out
+                         varnce_w_2, varnce_rt_1,   & ! Out
+                         varnce_rt_2, varnce_thl_1, & ! Out
+                         varnce_thl_2, mixt_frac    ) ! Out
 
     endif ! iiPDF_type
 

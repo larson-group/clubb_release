@@ -129,10 +129,16 @@ module pdf_parameter_tests
         calc_setter_parameters, & ! Procedure(s) 
         calc_L_x_Skx_fnc
 
+    use LY93_pdf, only: &
+        calc_mixt_frac_LY93, & ! Procedure(s)
+        calc_params_LY93,    &
+        LY93_driver
+
     use pdf_closure_module, only: &
         iiPDF_new,    & ! Variable(s)
         iiPDF_ADG1,   &
         iiPDF_TSDADG, &
+        iiPDF_LY93,   &
         calc_wp4_pdf    ! Procedure(s)
 
     use model_flags, only: &
@@ -288,6 +294,9 @@ module pdf_parameter_tests
       rand10, & ! Random number 10 used for PDF parameter set 10
       rand11    ! Random number 11 used for PDF parameter set 10
 
+    logical :: &
+      l_check_mu_w_1_gte_mu_w_2    ! Flag to check whether mu_w_1 >= mu_w_2
+
     integer, parameter :: &
       num_param_sets = 10, & ! Number of different PDF parameter sets used
       num_F_w = 11,        & ! Number of different values of F_w used
@@ -361,6 +370,9 @@ module pdf_parameter_tests
        write(fstdout,*) ""
     elseif ( test_PDF_type == iiPDF_TSDADG ) then
        write(fstdout,*) "Performing PDF parameter unit tests for TSDADG"
+       write(fstdout,*) ""
+    elseif ( test_PDF_type == iiPDF_LY93 ) then
+       write(fstdout,*) "Performing PDF parameter unit tests for LY93"
        write(fstdout,*) ""
     else ! All other values of test_PDF_type.
        write(fstderr,*) "The PDF parameter unit tests cannot be run for the " &
@@ -674,6 +686,8 @@ module pdf_parameter_tests
                 sigma_w_1_sqd = sigma_w_1**2
                 sigma_w_2_sqd = sigma_w_2**2
 
+                l_check_mu_w_1_gte_mu_w_2 = .true.
+
                 ! Perform the tests for the "setter" variable, which is the
                 ! variable that is used to set the mixture fraction.
                 call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
@@ -682,7 +696,8 @@ module pdf_parameter_tests
                                        sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                        l_pass_test_1, l_pass_test_2, & ! Out
                                        l_pass_test_3, l_pass_test_4, & ! Out
-                                       l_pass_test_5, l_pass_test_6  ) ! Out
+                                       l_pass_test_5, l_pass_test_6, & ! Out
+                                       l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
                 ! Calculate <w'^4> by integrating over the PDF.
                 wp4_pdf_calc = calc_wp4_pdf( wm, mu_w_1, mu_w_2, sigma_w_1**2, &
@@ -775,6 +790,8 @@ module pdf_parameter_tests
              sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
              sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
 
+             l_check_mu_w_1_gte_mu_w_2 = .true.
+
              ! Perform the tests for the "setter" variable, which is the
              ! variable that is used to set the mixture fraction.  This is
              ! always w for ADG1.
@@ -784,7 +801,8 @@ module pdf_parameter_tests
                                     sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                     l_pass_test_1, l_pass_test_2, & ! Out
                                     l_pass_test_3, l_pass_test_4, & ! Out
-                                    l_pass_test_5, l_pass_test_6  ) ! Out
+                                    l_pass_test_5, l_pass_test_6, & ! Out
+                                    l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
 
              if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
@@ -834,6 +852,8 @@ module pdf_parameter_tests
               sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
               sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
 
+              l_check_mu_w_1_gte_mu_w_2 = .true.
+
               ! Perform the tests for the "setter" variable, which is the
               ! variable that is used to set the mixture fraction.
               call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
@@ -842,7 +862,8 @@ module pdf_parameter_tests
                                      sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                      l_pass_test_1, l_pass_test_2, & ! Out
                                      l_pass_test_3, l_pass_test_4, & ! Out
-                                     l_pass_test_5, l_pass_test_6  ) ! Out
+                                     l_pass_test_5, l_pass_test_6, & ! Out
+                                     l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
 
               if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
@@ -867,6 +888,51 @@ module pdf_parameter_tests
             enddo ! iter_small_l_w_2 = 1, num_small_l_w_2, 1
 
           enddo ! iter_small_l_w_1 = 1, num_small_l_w_1, 1
+
+       elseif ( test_PDF_type == iiPDF_LY93 ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the setting variable (w is used here)."
+          write(fstdout,*) ""
+
+          mixt_frac = calc_mixt_frac_LY93( abs( Skw ) )
+
+          call calc_params_LY93( wm, wp2, Skw, mixt_frac,     & ! In
+                                 mu_w_1, mu_w_2,              & ! Out
+                                 sigma_w_1_sqd, sigma_w_2_sqd ) ! Out
+
+          sigma_w_1 = sqrt( max( sigma_w_1_sqd, zero ) )
+          sigma_w_2 = sqrt( max( sigma_w_2_sqd, zero ) )
+
+          l_check_mu_w_1_gte_mu_w_2 = .false.
+
+          ! Perform the tests for the "setter" variable, which is the variable
+          ! that is used to set the mixture fraction.
+          call setter_var_tests( wm, wp2, wp3, Skw,            & ! In
+                                 mu_w_1, mu_w_2, sigma_w_1,    & ! In
+                                 sigma_w_2, mixt_frac, tol,    & ! In
+                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! In
+                                 l_pass_test_1, l_pass_test_2, & ! Out
+                                 l_pass_test_3, l_pass_test_4, & ! Out
+                                 l_pass_test_5, l_pass_test_6, & ! Out
+                                 l_check_mu_w_1_gte_mu_w_2     ) ! Out
+
+
+          ! Note:  l_pass_test_6 -- LY93 doesn't necessarily make
+          !        mu_w_1 >= mu_w_2, so that test is thrown out.
+          if ( l_pass_test_1 .and. l_pass_test_2 .and. l_pass_test_3 &
+               .and. l_pass_test_4 .and. l_pass_test_5 ) then
+             ! All tests pass
+             num_failed_sets = num_failed_sets
+          else
+             ! At least one test failed
+             num_failed_sets = num_failed_sets + 1
+             write(fstderr,*) "At least one test or check for the " &
+                              // "setting variable PDF failed for the " &
+                              // "following parameter set:  "
+             write(fstderr,*) "PDF parameter set index = ", iter_param_sets
+             write(fstderr,*) ""
+          endif
 
        endif ! test_PDF_type
 
@@ -926,6 +992,20 @@ module pdf_parameter_tests
 
           ! Temporarily skip this step.
           cycle
+
+       elseif ( test_PDF_type == iiPDF_LY93 ) then
+
+          write(fstdout,*) "Running tests for the above parameter set for " &
+                           // "the full PDF."
+          write(fstdout,*) ""
+
+          call LY93_driver( wm, rtm, thlm, wp2, rtp2,          & ! In
+                            thlp2, Skw, Skrt, Skthl,           & ! In
+                            mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,  & ! Out
+                            mu_thl_1, mu_thl_2, sigma_w_1_sqd, & ! Out
+                            sigma_w_2_sqd, sigma_rt_1_sqd,     & ! Out
+                            sigma_rt_2_sqd, sigma_thl_1_sqd,   & ! Out
+                            sigma_thl_2_sqd, mixt_frac         ) ! Out
 
        endif ! test_PDF_type
 
@@ -1052,7 +1132,8 @@ module pdf_parameter_tests
           write(fstderr,*) ""
        endif
 
-       if ( test_PDF_type == iiPDF_new ) then
+       if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 14
           ! Compare the original rtp3 to its recalculated value.
@@ -1128,7 +1209,8 @@ module pdf_parameter_tests
           write(fstderr,*) ""
        endif
 
-       if ( test_PDF_type == iiPDF_new ) then
+       if ( ( test_PDF_type == iiPDF_new ) &
+            .or. ( test_PDF_type == iiPDF_LY93 ) ) then
 
           ! Test 18
           ! Compare the original thlp3 to its recalculated value.
@@ -1243,7 +1325,8 @@ module pdf_parameter_tests
                                sigma_w_1_sqd, sigma_w_2_sqd, & ! In
                                l_pass_test_1, l_pass_test_2, & ! Out
                                l_pass_test_3, l_pass_test_4, & ! Out
-                               l_pass_test_5, l_pass_test_6  ) ! Out
+                               l_pass_test_5, l_pass_test_6, & ! Out
+                               l_check_mu_w_1_gte_mu_w_2     ) ! Out
 
     ! Description:
     ! Tests 1 through 5 as described above.  These tests are all applied to the
@@ -1279,6 +1362,9 @@ module pdf_parameter_tests
       tol,           & ! Tolerance for acceptable numerical difference [-]
       sigma_w_1_sqd, & ! Variance of w (1st PDF component)             [m^2/s^2]
       sigma_w_2_sqd    ! Variance of w (2nd PDF component)             [m^2/s^2]
+
+    logical, intent(in) :: &
+      l_check_mu_w_1_gte_mu_w_2    ! Flag to check whether mu_w_1 >= mu_w_2
 
     ! Output Variables
     logical, intent(out) :: &
@@ -1382,16 +1468,20 @@ module pdf_parameter_tests
        write(fstderr,*) ""
     endif
 
-    ! Test 6
-    ! Check that mu_w_1 >= mu_w_2
-    if ( mu_w_1 >= mu_w_2 ) then
-       l_pass_test_6 = .true.
+    if ( l_check_mu_w_1_gte_mu_w_2 ) then
+       ! Test 6
+       ! Check that mu_w_1 >= mu_w_2
+       if ( mu_w_1 >= mu_w_2 ) then
+          l_pass_test_6 = .true.
+       else
+          l_pass_test_6 = .false.
+          write(fstderr,*) "Test 6 failed"
+          write(fstderr,*) "mu_w_1 = ", mu_w_1
+          write(fstderr,*) "mu_w_2 = ", mu_w_2
+          write(fstderr,*) ""
+       endif
     else
-       l_pass_test_6 = .false.
-       write(fstderr,*) "Test 6 failed"
-       write(fstderr,*) "mu_w_1 = ", mu_w_1
-       write(fstderr,*) "mu_w_2 = ", mu_w_2
-       write(fstderr,*) ""
+       l_pass_test_6 = .true.
     endif
 
 
