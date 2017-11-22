@@ -480,10 +480,11 @@ module clubb_driver
       
     ! coarse-grained timing budget of main time stepping loop
     real( kind = core_rknd ) :: & 
-      time_loop_init,  &	       ! time spent in the beginning part of the main loop [s]
+      time_loop_init,  &	   ! time spent in the beginning part of the main loop [s]
       time_loop_end, &             ! time spent in the end part of the main loop [s]
       time_clubb_advance, &        ! time spent in advance_clubb_core [s]
-      time_clubb_pdf, &            ! time spent in setup_pdf_parameters and hydrometeor_mixed_moments [s]
+      time_clubb_pdf, &      	   ! time spent in setup_pdf_parameters 
+				   !	and hydrometeor_mixed_moments [s]
       time_SILHS,    &             ! time needed to compute subcolumns [s]
       time_microphys_scheme, &     ! time needed for calc_microphys_scheme_tendcies [s]
       time_microphys_advance, &    ! time needed for advance_microphys [s]
@@ -4625,7 +4626,7 @@ module clubb_driver
     !---------------------------------------------------------------------------
 
     use stats_variables, only: &
-      iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & !--------------------------- Variables
+      iradht_LW, iradht_SW, iFrad_SW, iFrad_LW, iFrad_SW_up, & !------------------------ Variables
       iFrad_LW_up, iFrad_SW_down, iFrad_LW_down, iT_in_k_rad, ircil_rad, &
       io3l_rad, irsm_rad, ircm_in_cloud_rad, icloud_frac_rad, iice_supersat_frac_rad, &
       iradht_rad, iradht_LW_rad, iFrad_SW_rad, &
@@ -4634,23 +4635,23 @@ module clubb_driver
       ip_in_mb_rad, isp_humidity_rad
 
     use variables_radiation_module, only: &
-      radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & !------------------------- Variables
+      radht_LW, radht_SW, Frad_SW, Frad_LW, T_in_k, rcil, o3l, & !---------------------- Variables
       rsm_2d, rcm_in_cloud_2d, cloud_frac_2d, ice_supersat_frac_2d, radht_LW_2d, &
       radht_SW_2d, p_in_mb, sp_humidity, Frad_uLW, Frad_dLW, Frad_uSW, Frad_dSW, &
       fdswcl, fuswcl, fdlwcl, fulwcl
 
     use variables_diagnostic_module, only: &
-      radht, Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up !-------------------------- Variables
+      radht, Frad_LW_down, Frad_LW_up, Frad_SW_down, Frad_SW_up !----------------------- Variables
 
     use grid_class, only: &
-      flip !------------------------------------------------------------------------------- Prodecure(s)
+      flip !------------------------------------------------------------------------- Prodecure(s)
 
     use stats_variables, only: stats_zt, stats_zm, stats_rad_zt, stats_rad_zm !------------ Type
 
-    use stats_variables, only: l_stats_samp, l_output_rad_files !-------------------------- Variable(s)
+    use stats_variables, only: l_stats_samp, l_output_rad_files !--------------------- Variable(s)
 
     use stats_type_utilities, only: &
-      stat_update_var !-------------------------------------------------------------------- Procedure
+      stat_update_var !----------------------------------------------------------------- Procedure
 
     use clubb_model_settings, only: &
       extended_atmos_range_size, &

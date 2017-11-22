@@ -420,8 +420,8 @@ module advance_clubb_core_module
 
     ! Constant Parameters
     logical, parameter :: &
-      l_avg_Lscale = .false.    ! Lscale is calculated in subroutine compute_mixing_length; if l_avg_Lscale
-    ! is true, compute_mixing_length is called two additional times with
+      l_avg_Lscale = .false.    ! Lscale is calculated in subroutine compute_mixing_length 
+    ! if l_avg_Lscale is true, compute_mixing_length is called two additional times with
     ! perturbed values of rtm and thlm.  An average value of Lscale
     ! from the three calls to compute_mixing_length is then calculated.
     ! This reduces temporal noise in RICO, BOMEX, LBA, and other cases.
@@ -1025,12 +1025,12 @@ module advance_clubb_core_module
 
          endif
 
-         call compute_mixing_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,       & ! intent(in)
+         call compute_mixing_length( thvm, thlm_pert_1, rtm_pert_1, em, Lscale_max,& ! intent(in)
                               p_in_Pa, exner, thv_ds_zt, mu_pert_1, l_implemented, & ! intent(in)
                               err_code,                                            & ! intent(inout)
                               Lscale_pert_1, Lscale_up, Lscale_down )                ! intent(out)
 
-         call compute_mixing_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,       & ! intent(in)
+         call compute_mixing_length( thvm, thlm_pert_2, rtm_pert_2, em, Lscale_max,& ! intent(in)
                               p_in_Pa, exner, thv_ds_zt, mu_pert_2, l_implemented, & ! intent(in)
                               err_code,                                            & ! intent(inout)
                               Lscale_pert_2, Lscale_up, Lscale_down )                ! intent(out)
@@ -1091,13 +1091,15 @@ module advance_clubb_core_module
         mu_pert_neg_rt  = newmu * Lscale_mu_coef
 
         ! Call length with perturbed values of thl and rt
-        call compute_mixing_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, em, Lscale_max, &!intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_pos_rt, l_implemented, & !intent(in)
+        call compute_mixing_length( thvm, thlm_pert_pos_rt, rtm_pert_pos_rt, &	   !intent(in)
+			   em, Lscale_max, p_in_Pa, exner, thv_ds_zt, &		   !intent(in)
+			   mu_pert_pos_rt, l_implemented, & 			   !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_1, Lscale_up, Lscale_down )                 ! intent(out)
 
-        call compute_mixing_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, em, Lscale_max, &!intent(in)
-                           p_in_Pa, exner, thv_ds_zt, mu_pert_neg_rt, l_implemented, & !intent(in)
+        call compute_mixing_length( thvm, thlm_pert_neg_rt, rtm_pert_neg_rt, &	   !intent(in)
+			   em, Lscale_max, p_in_Pa, exner, thv_ds_zt, &		   !intent(in)
+			   mu_pert_neg_rt, l_implemented, & 			   !intent(in)
                            err_code, &                                             ! intent(inout)
                            Lscale_pert_2, Lscale_up, Lscale_down )                 ! intent(out)
       else
