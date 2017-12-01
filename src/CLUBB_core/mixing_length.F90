@@ -12,8 +12,9 @@ module mixing_length
   contains
 
   !=============================================================================
-  subroutine compute_mixing_length( thvm, thlm, rtm, em, Lscale_max, &
-                             p_in_Pa, exner, thv_ds, mu, l_implemented, &
+  subroutine compute_mixing_length( thvm, thlm, &
+                             rtm, em, Lscale_max, p_in_Pa, &
+                             exner, thv_ds, mu, l_implemented, &
                              err_code, &
                              Lscale, Lscale_up, Lscale_down )
     ! Description:
