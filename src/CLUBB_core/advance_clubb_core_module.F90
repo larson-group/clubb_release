@@ -1025,13 +1025,13 @@ module advance_clubb_core_module
 
          endif
 
-         call compute_mixing_length( thvm, thlm_pert_1,                            & !intent(in)   
-                              rtm_pert_1, em, Lscale_max, p_in_Pa,                 & !intent(in)     
+         call compute_mixing_length( thvm, thlm_pert_1,                            & !intent(in)
+                              rtm_pert_1, em, Lscale_max, p_in_Pa,                 & !intent(in)
                               exner, thv_ds_zt, mu_pert_1, l_implemented,          & !intent(in)
                               err_code,                                            & !intent(inout)
                               Lscale_pert_1, Lscale_up, Lscale_down )                !intent(out)
 
-         call compute_mixing_length( thvm, thlm_pert_2,                            & !intent(in)                  
+         call compute_mixing_length( thvm, thlm_pert_2,                            & !intent(in)
                               rtm_pert_2, em, Lscale_max, p_in_Pa,                 & !intent(in)
                               exner, thv_ds_zt, mu_pert_2, l_implemented,          & !intent(in)
                               err_code,                                            & !intent(inout)
