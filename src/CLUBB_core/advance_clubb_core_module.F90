@@ -1481,7 +1481,8 @@ module advance_clubb_core_module
          tau_factor = ( ( 1.0_core_rknd - C5 ) / C4 ) * tau_zm 
          Km_zm_denom_term = tau_factor * ( grav / T0 ) * & 
                               wpthvp / max( 10._core_rknd*w_tol_sqd, wp2 )
-         Km_zm = ( tau_factor * wp2 ) / ( 1.0_core_rknd - min( 0.9_core_rknd, Km_zm_denom_term ) )
+         Km_zm = c_K10 * ( tau_factor * wp2 ) / & 
+                           ( 1.0_core_rknd - min( 0.9_core_rknd, Km_zm_denom_term ) )
 
       else 
 
