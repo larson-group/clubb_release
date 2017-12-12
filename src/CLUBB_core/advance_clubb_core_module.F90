@@ -191,7 +191,8 @@ module advance_clubb_core_module
       zero_threshold, &
       three_halves, &
       one, &
-      unused_var
+      unused_var, &
+      grav
 
     use parameters_tunable, only: & 
       taumax, & ! Variable(s)
@@ -204,11 +205,13 @@ module advance_clubb_core_module
       gamma_coefc, &
       c_K10, &
       c_K10h, &
-      C1, C14
+      C1, C14, &
+      C5, C4
 
     use parameters_model, only: &
       sclr_dim, & ! Variable(s)
-      edsclr_dim
+      edsclr_dim, &
+      T0
 
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
@@ -592,7 +595,15 @@ module advance_clubb_core_module
 #endif
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      Km_zm, Kmh_zm
+      Km_zm, & ! Eddy diffusivity for momentum on zm grid levels [m^2/s] 
+      Kmh_zm   ! Eddy diffusivity for thermodynamic variables [m^2/s]
+
+    logical, parameter ::  &
+      l_use_buoy_mod_Km_zm = .false. ! .true. if we use a buoyancy-modified expression for Km_zm
+
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      tau_factor, &       ! factor that includes tau_zm in expression for Km_zm [s]
+      Km_zm_denom_term    ! term in denominator of Km_zm [-]
 
     !!! Output Variable
     ! Diagnostic, for if some calculation goes amiss.
@@ -1465,7 +1476,19 @@ module advance_clubb_core_module
       !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
       !----------------------------------------------------------------i
 
-      Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+      if ( l_use_buoy_mod_Km_zm ) then
+
+         tau_factor = ( ( 1.0_core_rknd - C5 ) / C4 ) * tau_zm 
+         Km_zm_denom_term = tau_factor * ( grav / T0 ) * & 
+                              wpthvp / max( 10._core_rknd*w_tol_sqd, wp2 )
+         Km_zm = ( tau_factor * wp2 ) / ( 1.0_core_rknd - min( 0.9_core_rknd, Km_zm_denom_term ) )
+
+      else 
+
+        Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
+
+      end if
+
       Kmh_zm = Kh_zm * c_K10h ! Coefficient for thermo
 
       if ( l_do_expldiff_rtm_thlm ) then
