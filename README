@@ -21,6 +21,9 @@ $Id$
 ********************************************************************************
 For a detailed description of the model code see:  
 
+Larson, V. E., 2017: CLUBB-SILHS: A parameterization of subgrid variability
+  in the atmosphere.  https://arxiv.org/pdf/1711.03675.pdf.
+
 Golaz, J.-C., V. E. Larson, and W. R. Cotton, 2002:  A PDF-Based Model for
   Boundary Layer Clouds. Part I: Method and Model Description.  J. Atmos. Sci.,
   59, 3540--3551.
@@ -38,7 +41,8 @@ model equations and finer details on how the discretization was done.
 The single column model executable ("clubb_standalone") runs a particular 
 case (e.g. BOMEX shallow nonprecipitating cumulus case) 
 and outputs statistical data in either Grid Analysis and
-Display System (GrADS) format or Network Common Data Form (netCDF) format.
+Display System (GrADS) format or Network Common Data Form (netCDF) format
+(if the --netcdf flag is used with the run script run_scm.bash).
 GrADS is both a data file format and a plotting program.  See
 <http://www.iges.org/grads/> for a description of GrADS.  NetCDF is a self 
 describing data file format that can be read by the GrADS plotting program, 
@@ -148,6 +152,10 @@ Once in the run_scripts directory, CLUBB is generally run using the
 run_scm.bash script. This script will run the CLUBB model for a single case,
 which can be specified on the command line. For example, to run the BOMEX case:
 user@computer run_scripts$ ./run_scm.bash bomex
+
+To list various run-time options --- such as settings for grid spacing,
+time step, stats output, and netcdf format --- type
+user@computer run_scripts$ ./run_scm.bash --help
 
 Other cases that you may run are listed in run_scripts/RUN_CASES.  The command
 line will output information relating to the case as it runs.  In addition,
