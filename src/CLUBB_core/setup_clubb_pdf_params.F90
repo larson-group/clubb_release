@@ -122,8 +122,7 @@ module setup_clubb_pdf_params
         clip_wphydrometp    ! Variables(s)
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        dp
+        core_rknd        ! Variable(s)
 
     use matrix_operations, only: &
         Cholesky_factor, & ! Procedure(s)
@@ -726,8 +725,7 @@ module setup_clubb_pdf_params
     !-----------------------------------------------------------------------
 
     use constants_clubb, only:  &
-        one,  & ! Constant(s)
-        zero
+        zero     ! Constant(s)
 
     use array_index, only: &
         hydromet_tol, &
@@ -959,8 +957,6 @@ module setup_clubb_pdf_params
 
     use constants_clubb, only:  &
         Ncn_tol,      &
-        w_tol,        & ! [m/s]
-        chi_tol, & ! [kg/kg]
         one,          &
         zero
 
@@ -1854,8 +1850,7 @@ module setup_clubb_pdf_params
         four,    & ! Constant(s)
         two,     &
         one,     &
-        zero,    &
-        fstderr
+        zero
 
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
@@ -2736,9 +2731,6 @@ module setup_clubb_pdf_params
 
     ! References:
     !-----------------------------------------------------------------------
-
-    use constants_clubb, only: &
-        zero          ! Constant
 
     use pdf_utilities, only: &
         corr_NN2NL, & ! Procedure(s)

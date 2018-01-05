@@ -74,10 +74,8 @@ module latin_hypercube_driver_module
 
     use constants_clubb, only: &
       fstderr, & ! Constant(s)
-      zero_threshold, &
       zero, &
-      one, &
-      cloud_frac_min
+      one
 
     use error_code, only: &
       clubb_at_least_debug_level ! Procedure
@@ -1067,8 +1065,7 @@ module latin_hypercube_driver_module
       core_rknd
 
     use constants_clubb, only: &
-      one,     &
-      zero, &      ! Constant(s)
+      one, &      ! Constant(s)
       fstderr
 
     implicit none
@@ -1737,9 +1734,8 @@ module latin_hypercube_driver_module
       iiPDF_w,   &
       iiPDF_Ncn
 
-    use constants_clubb, only: &
-      zero_threshold, &    ! Constant(s)
-      zero, &
+    use constants_clubb, only: & 
+      zero, &            ! Constant(s)
       one
 
     use clubb_precision, only: & 

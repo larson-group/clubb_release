@@ -118,7 +118,6 @@ module KK_Nrm_tendencies
         KK_Nrm_evap_nu
 
     use clubb_precision, only: &
-        time_precision, & ! Variable(s)
         core_rknd
 
     implicit none
@@ -265,7 +264,6 @@ module KK_Nrm_tendencies
         KK_Nrm_evap_nu  ! Variable(s)
 
     use clubb_precision, only: &
-        time_precision, & ! Variable(s)
         core_rknd
 
     implicit none

@@ -275,7 +275,6 @@ module output_netcdf
 !-------------------------------------------------------------------------------
     use netcdf, only: & 
       NF90_NOERR,   & ! Constants
-      NF90_FLOAT, & 
       NF90_DOUBLE, & 
       NF90_UNLIMITED
 

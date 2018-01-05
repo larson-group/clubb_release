@@ -93,8 +93,7 @@ module anl_erf
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        dp, & ! Constants
-        core_rknd
+        dp    ! Constants
 
     implicit none
 

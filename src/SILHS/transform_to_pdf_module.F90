@@ -415,9 +415,8 @@ module transform_to_pdf_module
       core_rknd, &    ! Constant(s)
       dp ! double precision
 
-    use constants_clubb, only: &
-      pi_dp,       &     ! Constant(s)
-      sqrt_2_dp,   &
+    use constants_clubb, only: &    
+      sqrt_2_dp,   &        ! Constant(s)
       sqrt_2pi_dp, &
       two_dp,      &
       one_dp,      &

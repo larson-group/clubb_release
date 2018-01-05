@@ -494,9 +494,6 @@ module output_grads
     use stat_file_module, only: & 
       stat_file ! Type
 
-    use clubb_precision, only:  & 
-      time_precision    ! Variable(s)
-
 !   use stat_file_module, only: &
 !     clubb_i, clubb_j ! Variable(s)
 

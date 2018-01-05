@@ -83,8 +83,7 @@ module KK_microphys_module
         hydromet_dim  ! Variable(s)
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+        core_rknd       ! Variable(s)
 
     use parameters_microphys, only: &
         l_silhs_KK_convergence_adj_mean ! Variable
@@ -475,8 +474,7 @@ module KK_microphys_module
         iiNr
 
     use clubb_precision, only: &
-        core_rknd,      & ! Variable(s)
-        time_precision
+        core_rknd        ! Variable(s)
 
     use stats_type_utilities, only: &
         stat_update_var ! Procedure(s)
@@ -1281,8 +1279,7 @@ module KK_microphys_module
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-        core_rknd, &  ! Variable(s)
-        time_precision
+        core_rknd  ! Variable(s)
 
     use constants_clubb, only: &
         Lv,           & ! Constant(s)

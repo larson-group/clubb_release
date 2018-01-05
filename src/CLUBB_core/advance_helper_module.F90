@@ -231,7 +231,6 @@ module advance_helper_module
 
     use constants_clubb, only: &
       grav, & ! Constant(s)
-      cloud_frac_min, &
       Lv, Cp, Rd, ep, &
       one
 
@@ -346,8 +345,7 @@ module advance_helper_module
     use constants_clubb, only: &
       one_fourth, &     ! Constant(s)
       one_third,  &
-      one,        &
-      five
+      one
 
     use interpolation, only: &
       linear_interp_factor ! Procedure
@@ -499,9 +497,6 @@ module advance_helper_module
 
     use fill_holes, only: &
       vertical_avg ! Procedure
-
-    use constants_clubb, only: &
-      one_half
 
     implicit none
 

@@ -85,8 +85,7 @@ module Skx_module
 
     use constants_clubb, only: &
       one, &
-      w_tol_sqd, &
-      eps
+      w_tol_sqd
 
     use clubb_precision, only: &
       core_rknd ! Variable(s)

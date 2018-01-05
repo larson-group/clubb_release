@@ -1427,9 +1427,7 @@ module silhs_importance_sample_module
 
     use constants_clubb, only: &
       one,  &    ! Constant(s)
-      two,  &
-      zero, &
-      fstderr
+      two
 
     use pdf_utilities, only: &
       compute_mean_binormal ! Procedure
@@ -1514,9 +1512,8 @@ module silhs_importance_sample_module
     use clubb_precision, only: &
       core_rknd             ! Precision
 
-    use constants_clubb, only: &
-      zero, &               ! Constant(s)
-      one, &
+    use constants_clubb, only: &      
+      one, &               ! Constant(s)
       fstderr
 
     use pdf_parameter_module, only: &

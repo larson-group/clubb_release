@@ -231,8 +231,7 @@ module variables_diagnostic_module
 !-----------------------------------------------------------------------
 
     use constants_clubb, only:  & 
-        em_min, & ! Constant(s)
-        zero
+        em_min    ! Constant(s)
 
     use parameters_model, only: & 
         hydromet_dim, & ! Variables

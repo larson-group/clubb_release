@@ -131,7 +131,7 @@ module output_2D_samples_module
     use output_netcdf, only: write_netcdf ! Procedure(s)
 #endif
 
-    use clubb_precision, only: stat_rknd, core_rknd ! Constant(s)
+    use clubb_precision, only: stat_rknd ! Constant(s)
 
     implicit none
 

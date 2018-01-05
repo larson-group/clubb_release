@@ -1137,10 +1137,6 @@ contains
 
     use fill_holes, only : fill_holes_driver
 
-    use constants_clubb, only: &
-      four_thirds,     &
-      rho_ice
-
     implicit none
 
     intrinsic :: trim
@@ -1400,12 +1396,6 @@ contains
     use parameters_tunable, only: &
       setup_parameters
 
-    use constants_clubb, only:  &
-      fstderr ! Variable(s)
-
-    use error_code, only:  &
-      clubb_var_out_of_bounds ! Variable(s)
-
     use parameter_indices, only:  &
       nparams ! Variable(s)
 
@@ -1577,19 +1567,11 @@ contains
 
     use setup_clubb_pdf_params, only : setup_pdf_parameters
 
-    use constants_clubb, only: &
-      one,            & ! Constant(s)
-      Ncn_tol,        &
-      cloud_frac_min
-
     use advance_windm_edsclrm_module, only: &
       xpwp_fnc
 
     use parameters_tunable, only: &
       c_K_hm
-
-    use clip_explicit, only: &
-      clip_wphydrometp    ! Variables(s)
 
     implicit none
 

@@ -31,8 +31,7 @@ module estimate_scm_microphys_module
 !-------------------------------------------------------------------------------
 
     use constants_clubb, only:  &
-      fstderr, &  ! Constant(s)
-      zero, &
+      zero, & ! Constant(s)
       unused_var
 
     use parameters_model, only: &
@@ -561,9 +560,7 @@ module estimate_scm_microphys_module
         core_rknd ! Variable(s)
 
     use constants_clubb, only: &
-        rr_tol, & ! Constant(s)
-        Nr_tol, &
-        zero
+        zero	! Constant
 
     use parameters_model, only: &
         hydromet_dim    ! Variable(s)
