@@ -706,6 +706,14 @@ module advance_clubb_core_module
     ! pdf_closure_driver.
     logical :: l_samp_stats_in_pdf_call
 
+    ! Variables associated with upgradient momentum contributions due to cumuli
+    real( kind = core_rknd ), dimension(gr%nz) :: &
+      Km_Skw_factor ! Factor, with value < 1, that reduces eddy diffusivity, Km_zm, in skewed layers
+    real( kind = core_rknd ),parameter :: &
+      Km_Skw_thresh = zero_threshold, &  ! Value of Skw at which Skw correction kicks in
+      Km_Skw_factor_efold = 0.5_core_rknd, & ! E-folding rate of exponential Skw correction
+      Km_Skw_factor_min   = 0.2_core_rknd    ! Minimum value of Km_Skw_factor
+
     !----- Begin Code -----
 
     ! Sanity checks
@@ -1478,12 +1486,16 @@ module advance_clubb_core_module
 
       if ( l_use_buoy_mod_Km_zm ) then
 
-         tau_factor = ( ( 1.0_core_rknd - C5 ) / C4 ) * tau_zm 
+         tau_factor = ( ( one - C5 ) / C4 ) * tau_zm 
          Km_zm_denom_term = tau_factor * ( grav / T0 ) * & 
                               wpthvp / max( 10._core_rknd*w_tol_sqd, wp2 )
          Km_zm = c_K10 * ( tau_factor * wp2 ) / & 
-                           ( 1.0_core_rknd - min( 0.9_core_rknd, Km_zm_denom_term ) )
-
+                           ( one - min( 0.9_core_rknd, Km_zm_denom_term ) )
+         ! Account for upgradient contribution due to cumuli
+         Km_Skw_factor = exp( - (Skw_zm - Km_Skw_thresh) / Km_Skw_factor_efold )
+         Km_Skw_factor = max( Km_Skw_factor_min, Km_Skw_factor )
+         Km_Skw_factor = min( one, Km_Skw_factor ) 
+         Km_zm = Km_zm * Km_Skw_factor
       else 
 
         Km_zm = Kh_zm * c_K10   ! Coefficient for momentum
