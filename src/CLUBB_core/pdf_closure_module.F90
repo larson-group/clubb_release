@@ -474,8 +474,8 @@ module pdf_closure_module
 
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
-       call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                            Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
+       call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
+                            Skrt, Skthl, wprtp, wpthlp, rtpthlp,     & ! In
                             w_1, w_2, rt_1, rt_2,                    & ! Out
                             thl_1, thl_2, varnce_w_1,                & ! Out
                             varnce_w_2, varnce_rt_1,                 & ! Out

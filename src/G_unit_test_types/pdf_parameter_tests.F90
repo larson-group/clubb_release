@@ -170,20 +170,21 @@ module pdf_parameter_tests
 
     ! Local Variables
     real( kind = core_rknd ) :: &
-      wm,     & ! Mean of w (overall)                [m/s]
-      rtm,    & ! Mean of rt (overall)               [kg/kg]
-      thlm,   & ! Mean of thl (overall)              [K]
-      wp2,    & ! Variance of w (overall)            [m^2/s^2]
-      rtp2,   & ! Variance of rt (overall)           [kg^2/kg^2]
-      thlp2,  & ! Variance of thl (overall)          [K^2]
-      wp3,    & ! <w'^3>                             [m^3/s^3]
-      rtp3,   & ! <rt'^3>                            [kg^3/kg^3]
-      thlp3,  & ! <thl'^3>                           [K^3]
-      Skw,    & ! Skewness of w (overall)            [-]
-      Skrt,   & ! Skewness of rt (overall)           [-]
-      Skthl,  & ! Skewness of thl (overall)          [-]
-      wprtp,  & ! Covariance of w and rt (overall)   [(m/s)kg/kg]
-      wpthlp    ! Covariance of w and thl (overall)  [(m/s)K]
+      wm,      & ! Mean of w (overall)                 [m/s]
+      rtm,     & ! Mean of rt (overall)                [kg/kg]
+      thlm,    & ! Mean of thl (overall)               [K]
+      wp2,     & ! Variance of w (overall)             [m^2/s^2]
+      rtp2,    & ! Variance of rt (overall)            [kg^2/kg^2]
+      thlp2,   & ! Variance of thl (overall)           [K^2]
+      wp3,     & ! <w'^3>                              [m^3/s^3]
+      rtp3,    & ! <rt'^3>                             [kg^3/kg^3]
+      thlp3,   & ! <thl'^3>                            [K^3]
+      Skw,     & ! Skewness of w (overall)             [-]
+      Skrt,    & ! Skewness of rt (overall)            [-]
+      Skthl,   & ! Skewness of thl (overall)           [-]
+      wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
+      wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
+      rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
 
     real( kind = core_rknd ) :: &
       F_w,    & ! Parameter for the spread of the PDF component means of w   [-]
@@ -597,6 +598,12 @@ module pdf_parameter_tests
                    * sign( one, Skw ) * sign( one, Skthl )
        endif ! iter_param_sets == index
 
+       if ( sign( one, wprtp ) * sign( one, wpthlp ) < zero ) then
+          rtpthlp = -0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
+       else
+          rtpthlp = 0.9_core_rknd * sqrt( rtp2 ) * sqrt( thlp2 )
+       endif
+
        ! Print PDF parameters
        write(fstdout,*) "wm = ", wm
        write(fstdout,*) "rtm = ", rtm
@@ -612,6 +619,7 @@ module pdf_parameter_tests
        write(fstdout,*) "thlp3 = ", thlp3
        write(fstdout,*) "wprtp = ", wprtp
        write(fstdout,*) "wpthlp = ", wpthlp
+       write(fstdout,*) "rtpthlp = ", rtpthlp
        write(fstdout,*) ""
 
        !====================================================================
@@ -947,8 +955,8 @@ module pdf_parameter_tests
                            // "values is handled internally)."
           write(fstdout,*) ""
 
-          call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2,         & ! In
-                               Skw, Skrt, Skthl, wprtp, wpthlp,         & ! In
+          call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
+                               Skrt, Skthl, wprtp, wpthlp, rtpthlp,     & ! In
                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,        & ! Out
                                mu_thl_1, mu_thl_2, sigma_w_1_sqd,       & ! Out
                                sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
