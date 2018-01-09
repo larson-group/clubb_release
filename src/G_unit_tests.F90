@@ -238,9 +238,9 @@ program G_unit_tests
      if ( pdf_parameter_unit_tests( iiPDF_TSDADG ) /= 0 ) then
         exit_code = 1
      endif
-     if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
-        exit_code = 1
-     endif
+!     if ( pdf_parameter_unit_tests( iiPDF_new ) /= 0 ) then
+!        exit_code = 1
+!     endif
   endif
 
   ! Stop with exit code if error found
