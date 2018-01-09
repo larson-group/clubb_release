@@ -172,7 +172,7 @@ module new_pdf_main
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
     logical, parameter :: &
-      l_use_w_setter_var = .false. ! Flag to always use w as the setter variable
+      l_use_w_setter_var = .true. ! Flag to always use w as the setter variable
 
 
     Skw = Skw_in
