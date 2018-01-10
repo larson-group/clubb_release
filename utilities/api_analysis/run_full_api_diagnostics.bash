@@ -131,6 +131,19 @@ else
     if [ -s "$sam_modules" ] || [ -s "$wrf_modules" ] || [ -s "$cam_modules" ] ; then
         echo "ERROR: A host model is circumventing the API." 
         echo "Please inspect the nightly test API Commitment Table."
+        echo "MODELS AT FAULT INCLUDE:"
+                if [ -s "$sam_modules" ] ; then
+                        echo " - SAM Model"
+                        cat sam_modules.txt             
+                fi
+                if [ -s "$wrf_modules" ] ; then 
+                        echo " - WRF Model"
+                        cat wrf_modules.txt
+                fi
+                if [ -s "$cam_modules" ] ; then
+                        echo " - CAM Model"
+                        cat cam_modules.txt
+                fi
         exitCode=1
     else 
         echo "All host models passed."
