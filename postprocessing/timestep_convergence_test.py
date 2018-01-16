@@ -12,60 +12,103 @@ def main():
     # Set directory to the location of this script
     os.chdir(os.path.dirname(sys.argv[0]))
 
-    #data = Dataset('../output/bomex_300_zt.nc', "r")
+    #data = Dataset('../output/bomex/bomex_300_sfc.nc', "r")
+    #pdb.set_trace() 
 
     #dir = '../output/'
-    caseName = 'dycoms2_rf01'
+    caseName = 'bomex'
 
-    variable = 'T_in_K'
+    ztVariable = 'T_in_K'
+    
+    sfcVariable = 'lwp'
+
+
 
     #listOfFilenames = findTimestepFiles(dir,caseName)
-    
-    listOfFilenames = ['../output/'+caseName+'_0p1_zt.nc', \
-                       '../output/'+caseName+'_0p2_zt.nc', \
-                       '../output/'+caseName+'_0p3_zt.nc', \
-                       '../output/'+caseName+'_0p5_zt.nc', \
-                       '../output/'+caseName+'_1_zt.nc', \
-                       '../output/'+caseName+'_2_zt.nc', \
-                       '../output/'+caseName+'_3_zt.nc', \
-                       '../output/'+caseName+'_5_zt.nc', \
-                       '../output/'+caseName+'_10_zt.nc', \
-                       '../output/'+caseName+'_20_zt.nc', \
-                       '../output/'+caseName+'_30_zt.nc', \
-                       '../output/'+caseName+'_60_zt.nc', \
-                       '../output/'+caseName+'_100_zt.nc', \
-                       '../output/'+caseName+'_150_zt.nc', \
-                       '../output/'+caseName+'_300_zt.nc']
+    dirRoot = '../output/bomex_restarted'
+    ztFilenameSuffix = 'zt.nc'
+    listOfZtFilenames = constructListOfFilenames(dirRoot,caseName,ztFilenameSuffix)
+    print listOfZtFilenames
+
+    numFiles = len(listOfZtFilenames)
+
+    sfcFilenameSuffix = 'sfc.nc'
+    listOfSfcFilenames = constructListOfFilenames(dirRoot,caseName,sfcFilenameSuffix)
 
     timestepArrayMinus1 = np.array([0.2, 0.3, 0.5, 1, 2, 3, 5, 10, 20, 30, 60, 100, 150, 300])
 
-    numFiles = len(listOfFilenames)
+    # Find number of vertical levels in netcdf file
+    data = Dataset( listOfZtFilenames[0], "r" )
+    altitudes = data.variables['altitude']
+    numAltitudes = len(altitudes)
+    
+    # Find number of time of outputs in each simulation
+    data = Dataset( listOfSfcFilenames[0], "r" )    
+    times = data.variables['time'][:]
+    #variableArray[:,idx] = data.variables[variable][numTimes-1,:,0,0]    
 
-    variableArray = extractVariableFromNetcdfFiles(variable, listOfFilenames, numFiles)
+    ztVariableArray = extractZtVariableFromNetcdfFiles(ztVariable, listOfZtFilenames, numFiles, numAltitudes)
 
-    rmseArray = computeRmseArray(variableArray, numFiles)
+    ztRmseArray = computeRmseArray(ztVariableArray, numFiles)
 
-    print listOfFilenames
+    convergenceExponent = np.polyfit( np.log(timestepArrayMinus1), np.log(ztRmseArray), 1 )[0]
 
-    print variableArray
+    print listOfZtFilenames
 
-    print rmseArray
+    print ztVariableArray
+
+    print ztRmseArray
+
+    sfcVariableArray = extractSfcVariableFromNetcdfFiles(sfcVariable, listOfSfcFilenames, numFiles, 1)
 
     fig = plt.figure()
     ax1 = fig.add_subplot(111)
     plt.title(caseName+' case')
     ax1.set_xlabel('Time step [s]')
-    ax1.set_ylabel('RMSE of ' + variable)
-    clubb_errors, = ax1.loglog(timestepArrayMinus1, rmseArray,'r.')
-    conv_1, = ax1.loglog(timestepArrayMinus1, (rmseArray[0]/timestepArrayMinus1[0])*timestepArrayMinus1,'k')
+    ax1.set_ylabel('RMSE of ' + ztVariable)
+    clubb_errors, = ax1.loglog(timestepArrayMinus1, ztRmseArray,'r.')
+    conv_1, = ax1.loglog(timestepArrayMinus1, (ztRmseArray[0]/timestepArrayMinus1[0])*timestepArrayMinus1,'k')
+    np.set_printoptions(precision=3)
+    ax1.text(0.05, 0.95, 'CLUBB convergence\n exponent\n ='+np.array_str(convergenceExponent), \
+        transform=ax1.transAxes, fontsize=14, verticalalignment='top')
     plt.legend([clubb_errors, conv_1], ['CLUBB convergence', 'Convergence rate of 1'])
     plt.show()
+#
+#    pdb.set_trace()
 
-    print np.polyfit( np.log(timestepArrayMinus1), np.log(rmseArray), 1 )
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111)
+    plt.title(caseName+' case')
+    ax2.set_xlabel('Time since beginning of simulation [s]')
+    ax2.set_ylabel(sfcVariable)
+    line = ax2.plot(times, sfcVariableArray)
+    #plt.legend(handles=[line])
+    plt.show()
+
 
     print("Finished!")
 
-    #pdb.set_trace()
+
+
+def constructListOfFilenames(dirRoot,caseName,filenameSuffix):
+
+    listOfFilenames = [dirRoot+'/'+caseName+'_0p1_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_0p2_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_0p3_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_0p5_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_1_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_2_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_3_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_5_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_10_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_20_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_30_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_60_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_100_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_150_'+filenameSuffix, \
+                       dirRoot+'/'+caseName+'_300_'+filenameSuffix]    
+
+    return listOfFilenames
 
 def computeRmseArray(variableArray, numColumns):
 
@@ -81,16 +124,14 @@ def computeRmseArray(variableArray, numColumns):
 
     return rmseArray
 
-def extractVariableFromNetcdfFiles(variable, listOfFilenames, numFiles):
+def extractZtVariableFromNetcdfFiles(variable, listOfFilenames, numFiles, numAltitudes):
     """ Pull one profile per netcdf file and glue them together in an array."""
 
     from netCDF4 import Dataset
     import numpy as np
-    
-    # Find dimensions of variables in netcdf file
-    data = Dataset( listOfFilenames[0], "r" )
-    altitudes = data.variables['altitude']
-    numAltitudes = len(altitudes)
+
+    # Find number of time steps in each simulation
+    data = Dataset( listOfFilenames[0], "r" )    
     times = data.variables['time']
     numTimes = len(times)    
         
@@ -104,6 +145,30 @@ def extractVariableFromNetcdfFiles(variable, listOfFilenames, numFiles):
             #pdb.set_trace() 
                                  
     return variableArray
+
+def extractSfcVariableFromNetcdfFiles(variable, listOfFilenames, numFiles, numAltitudes):
+    """ Pull one profile per netcdf file and glue them together in an array."""
+
+    from netCDF4 import Dataset
+    import numpy as np
+
+    # Find number of time steps in each simulation
+    data = Dataset( listOfFilenames[0], "r" )    
+    times = data.variables['time']
+    numTimes = len(times)    
+        
+    # Initialize array to hold values of variable
+    sfcVariableArray = np.zeros( (numTimes, numFiles) )
+    
+    for idx, fileName in enumerate(listOfFilenames):
+            data = Dataset(fileName, "r")
+            # Extract a profile at the last time step
+            #pdb.set_trace()
+            sfcVariableArray[:,idx] = data.variables[variable][0:numTimes,0,0,0]            
+            #pdb.set_trace() 
+                                 
+    return sfcVariableArray
+
 
 def findTimestepFiles(dir,caseName):
     """Create a list of netcdf files, with one filename per time step value."""
@@ -120,98 +185,3 @@ if __name__ == '__main__':
     main()
 
 
-"""
-data2 = Dataset('/home/wedowski/Downloads/gq/flags_true/camclubb711_L30_T600.cam.h0.0097-06-18-84585.nc', "r")
-data3 = Dataset('/home/wedowski/Downloads/gq/flags_true/camclubb713_L30_T600.cam.h0.0097-06-18-84585.nc', "r")
-
-# Grid cell altitudes
-lev = data.variables['lev'][:]
-nlev = len(data.dimensions['lev'])
-times = data.variables['time']
-ntimes = len(times)
-
-analytic = data.variables["PRCOAN"][0:ntimes,:,0,0]
-#analytic = data.variables["PRAOAN"][0:ntimes,:,0,0]
-gq = data.variables["PRCOGQ"][0:ntimes,:,0,0]
-silhs_ub = data.variables["PRC_UB"][0:ntimes,:,0,0]
-silhs = data.variables["PRCO"][0:ntimes,:,0,0]
-#silhs = data.variables["PRAO"][0:ntimes,:,0,0]
-#silhs_ub = data.variables["PRA_UB"][0:ntimes,:,0,0]
-
-
-analytic_2 = data2.variables["PRCOAN"][0:ntimes,:,0,0]
-gq_2 = data2.variables["PRCOGQ"][0:ntimes,:,0,0]
-silhs_ub_2 = data2.variables["PRC_UB"][0:ntimes,:,0,0]
-silhs_2 = data2.variables["PRCO"][0:ntimes,:,0,0]
-
-#analytic_2 = data2.variables["PRAOAN"][0:ntimes,:,0,0]
-#gq_2 = data2.variables["PRCOGQ"][0:ntimes,:,0,0]
-#silhs_ub_2 = data2.variables["PRA_UB"][0:ntimes,:,0,0]
-#silhs_2 = data2.variables["PRAO"][0:ntimes,:,0,0]
-
-analytic_3 = data3.variables["PRCOAN"][0:ntimes,:,0,0]
-gq_3 = data3.variables["PRCOGQ"][0:ntimes,:,0,0]
-silhs_ub_3 = data3.variables["PRC_UB"][0:ntimes,:,0,0]
-silhs_3 = data3.variables["PRCO"][0:ntimes,:,0,0]
-
-#analytic_2 = data2.variables["PRAOAN"][0:ntimes,:,0,0]
-#gq_2 = data2.variables["PRCOGQ"][0:ntimes,:,0,0]
-#silhs_ub_2 = data2.variables["PRA_UB"][0:ntimes,:,0,0]
-#silhs_2 = data2.variables["PRAO"][0:ntimes,:,0,0]
-
-blue_label  =  '100'
-black_label = '1000'
-green_label = '2000'
-
-fig, axarr = plt.subplots(1,4,sharex=True, sharey=True)
-fig.suptitle("Autoconversion rate", fontsize=20)
-plt.subplots_adjust(left=0.05,right=0.97,wspace=0.1)
-#plt.setp([a.get_xticklabels() for a in fig.axes[:-1]], visible=False)
-
-axarr[0].set_xlabel('Analytic (kg/kg/s)', fontsize=20)
-axarr[0].set_ylabel('SILHS (kg/kg/s)', fontsize=20)
-axarr[0].plot(0,0,'b.',label=blue_label)
-axarr[0].plot(0,0,'k.',label=black_label)
-axarr[0].plot(0,0,'g.',label=green_label)
-axarr[0].plot(analytic[:][:],gq[:][:],'b.')
-axarr[0].plot(analytic_2[:][:],gq_2[:][:],'k.')
-axarr[0].plot(analytic_3[:][:],gq_3[:][:],'g.')
-axarr[0].legend(numpoints=1, loc='upper left')
-axarr[0].ticklabel_format(style='sci', axis='x', scilimits=(-3,3))
-axarr[0].ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
-axarr[0].plot(axarr[0].get_xlim(),axarr[0].get_xlim(),'r')
-
-axarr[1].set_xlabel('Analytic (kg/kg/s)', fontsize=20)
-#axarr[1].set_ylabel('SILHS (kg/kg/s)', fontsize=20)
-axarr[1].plot(0,0,'b.',label=blue_label)
-axarr[1].plot(analytic[:][:],gq[:][:],'b.')
-axarr[1].legend(numpoints=1, loc='upper left')
-axarr[1].ticklabel_format(style='sci', axis='x', scilimits=(-3,3))
-axarr[1].ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
-axarr[1].plot(axarr[1].get_xlim(),axarr[1].get_xlim(),'r')
-
-axarr[2].set_xlabel('Analytic (kg/kg/s)', fontsize=20)
-#axarr[2].set_ylabel('SILHS (kg/kg/s)', fontsize=20)
-axarr[2].plot(0,0,'k.',label=black_label)
-axarr[2].plot(analytic_2[:][:],gq_2[:][:],'k.')
-axarr[2].legend(numpoints=1, loc='upper left')
-axarr[2].ticklabel_format(style='sci', axis='x', scilimits=(-3,3))
-axarr[2].ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
-axarr[2].plot(axarr[2].get_xlim(),axarr[2].get_xlim(),'r')
-
-axarr[3].set_xlabel('Analytic (kg/kg/s)', fontsize=20)
-#axarr[3].set_ylabel('SILHS (kg/kg/s)', fontsize=20)
-axarr[3].plot(0,0,'g.',label=green_label)
-axarr[3].plot(analytic_3[:][:],gq_3[:][:],'g.')
-axarr[3].legend(numpoints=1, loc='upper left')
-axarr[3].ticklabel_format(style='sci', axis='x', scilimits=(-3,3))
-axarr[3].ticklabel_format(style='sci', axis='y', scilimits=(-3,3))
-axarr[3].plot(axarr[3].get_xlim(),axarr[3].get_xlim(),'r')
-
-
-plt.show()
-
-data.close()
-data2.close()
-data3.close()
-"""
