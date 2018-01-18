@@ -310,7 +310,8 @@ module corr_cholesky_mtx_tests
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero ! Constant(s)
+        zero, & ! Constant(s)
+        eps
 
     use clubb_precision, only: &
         core_rknd
@@ -348,7 +349,7 @@ module corr_cholesky_mtx_tests
     ! the CLUBB code and the result obtained by hand
     do i = 1,n_var
        do j = 1, n_var
-          if ( comparison_result(i, j) /= zero ) then
+          if ( abs(comparison_result(i, j)) > eps ) then
              diff_matrix(i,j) = abs( (comparison_result(i,j)-obtained_result(i,j)) &
                                      / comparison_result(i,j) )
           else

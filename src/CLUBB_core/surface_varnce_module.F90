@@ -157,7 +157,7 @@ module surface_varnce_module
        ! Calculate surface friction velocity, u*.
        ustar = max( ( upwp_sfc**2 + vpwp_sfc**2 )**(one_fourth), ufmin )
 
-       if ( wpthlp_sfc /= zero ) then
+       if ( abs(wpthlp_sfc) > eps) then
 
           ! Find Monin-Obukhov Length (Andre et al., 1978, p. 1866).
           Lngth = - ( ustar**3 ) &

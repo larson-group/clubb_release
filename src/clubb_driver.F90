@@ -94,7 +94,7 @@ module clubb_driver
 
     use constants_clubb, only: &
       fstdout, fstderr, zero, one, & !--------------------------------------- Constant(s)
-      rt_tol, thl_tol, w_tol, w_tol_sqd
+      rt_tol, thl_tol, w_tol, w_tol_sqd, eps
 
     use error_code, only: &
       clubb_var_out_of_bounds,  & !------------------------------------------ Constants
@@ -1136,8 +1136,8 @@ module clubb_driver
 
       ! Ensure that iteration num, iinit, is an integer, so that model time is
       !   incremented correctly by iteration number at end of timestep
-      if ( mod( (time_restart-time_initial), &
-       real(dt_main, kind=time_precision) ) /= 0._time_precision ) then
+      if ( abs(mod((time_restart-time_initial),real(dt_main, kind=time_precision))) > &
+            real(eps, kind=time_precision) ) then
 
         write(fstderr,*) "Error: (time_restart-time_initial) ",  & 
           "is not a multiple of dt_main."

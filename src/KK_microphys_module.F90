@@ -1286,7 +1286,8 @@ module KK_microphys_module
         Cp,           &
         zero,         &
         rr_tol,       &
-        Nr_tol
+        Nr_tol,       &
+        eps
 
     use KK_Nrm_tendencies, only: &
         KK_Nrm_evap_local_mean, & ! Procedure(s)
@@ -1418,10 +1419,10 @@ module KK_microphys_module
 
        ! Recalcuate the net evaporation rate of <N_r> based on the net
        ! evaporation rate of <r_r>.
-       if ( KK_evap_tndcy /= rrm_evap_net .and. &
-            rrm > rr_tol .and. Nrm > Nr_tol ) then
-          Nrm_evap_net &
-          = KK_Nrm_evap_local_mean( rrm_evap_net, Nrm, rrm, dt )
+       if ( abs(KK_evap_tndcy-rrm_evap_net) > abs(KK_evap_tndcy+rrm_evap_net)*eps/2 &
+            .and. rrm > rr_tol &
+            .and. Nrm > Nr_tol ) then
+          Nrm_evap_net = KK_Nrm_evap_local_mean( rrm_evap_net, Nrm, rrm, dt )
        else
           Nrm_evap_net = KK_Nrm_evap_tndcy
        endif

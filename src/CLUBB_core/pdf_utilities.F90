@@ -1210,7 +1210,8 @@ module pdf_utilities
     use constants_clubb, only: &
         two,  & ! Constant(s)
         one,  &
-        zero 
+        zero, &
+        eps
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
@@ -1238,7 +1239,7 @@ module pdf_utilities
 
 
     ! Calculate overall variance of x, <x'^2>.
-    if ( sigma_x_1 == zero .and. sigma_x_2 == zero ) then
+    if ( abs(sigma_x_1) < eps .and. abs(sigma_x_2) < eps ) then
 
        ! The value of x is constant within both PDF components.
        xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
@@ -1247,7 +1248,7 @@ module pdf_utilities
              - x_mean**2
 
 
-    elseif ( sigma_x_1 == zero ) then
+    elseif ( abs(sigma_x_1) < eps ) then
 
        ! The value of x is constant within the 1st PDF component.
        xp2 = ( mixt_frac * x_frac_1 * mu_x_1**2 &
@@ -1257,7 +1258,7 @@ module pdf_utilities
              - x_mean**2
 
 
-    elseif ( sigma_x_2 == zero ) then
+    elseif ( abs(sigma_x_2) < eps ) then
 
        ! The value of x is constant within the 2nd PDF component.
        xp2 = ( mixt_frac * x_frac_1 &

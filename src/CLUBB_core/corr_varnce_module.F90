@@ -696,7 +696,7 @@ module corr_varnce_module
     !   None
     !---------------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr ! Constant(s)
+    use constants_clubb, only: fstderr, eps, one ! Constant(s)
 
     implicit none
 
@@ -726,7 +726,7 @@ module corr_varnce_module
         if (abs(corr_array_n(n_col, n_row) - corr_array_n(n_row, n_col)) > tol) then
           l_error = .true.
         end if
-        if (n_col == n_row .and. corr_array_n(n_col, n_row) /= 1.0_core_rknd) then
+        if (n_col == n_row .and. abs(corr_array_n(n_col, n_row)-one) > eps) then
           l_error = .true.
         end if
       end do

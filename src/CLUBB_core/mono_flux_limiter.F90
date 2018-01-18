@@ -691,7 +691,7 @@ module mono_flux_limiter
     endif
 
 
-    if ( any( wpxp_net_adjust(:) /= 0.0_core_rknd ) ) then
+    if ( any( abs(wpxp_net_adjust(:)) > eps ) ) then
 
        ! Reset the value of xm to compensate for the change to w'x'.
 

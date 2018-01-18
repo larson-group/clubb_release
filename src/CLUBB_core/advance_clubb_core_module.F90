@@ -192,7 +192,8 @@ module advance_clubb_core_module
       three_halves, &
       one, &
       unused_var, &
-      grav
+      grav, &
+      eps
 
     use parameters_tunable, only: & 
       taumax, & ! Variable(s)
@@ -738,8 +739,8 @@ module advance_clubb_core_module
     if ( l_stats .and. l_stats_samp ) then
       ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
       ! Therefore, wm must be zero or l_implemented must be true.
-      if ( l_implemented .or. ( all( wm_zt == 0._core_rknd ) .and. &
-           all( wm_zm == 0._core_rknd ) ) ) then
+       if ( l_implemented .or. ( all( abs(wm_zt) < eps ) .and. &
+           all( abs(wm_zm) < eps ) ) ) then
         ! Get the vertical integral of rtm and thlm before this function begins
         ! so that spurious source can be calculated
         rtm_integral_before  &
@@ -922,7 +923,9 @@ module advance_clubb_core_module
 
        ! Calculate sigma_sqd_w here in order to avoid having to pass it in
        ! and out of subroutine advance_clubb_core.
-       if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
+       if ( l_gamma_Skw .and. &
+            abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
+
           gamma_Skw_fnc = gamma_coefb + (gamma_coef-gamma_coefb) &
                 *exp( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm/gamma_coefc)**2 )
        else
@@ -1221,7 +1224,7 @@ module advance_clubb_core_module
       ! advance_xp2_xpyp or advance_wp2_wp3.
       ! Surface effects should not be included with any case where the lowest
       ! level is not the ground level.  Brian Griffin.  December 22, 2005.
-      if ( gr%zm(1) == sfc_elevation ) then
+      if ( abs(gr%zm(1)-sfc_elevation) <= abs(gr%zm(1)+sfc_elevation)*eps/2) then
 
         ! Reflect surface varnce changes in budget
         if ( l_stats_samp ) then
@@ -1696,8 +1699,8 @@ module advance_clubb_core_module
       if ( l_stats .and. l_stats_samp ) then
         ! Spurious source will only be calculated if rtm_ma and thlm_ma are zero.
         ! Therefore, wm must be zero or l_implemented must be true.
-        if ( l_implemented .or. ( all( wm_zt == 0._core_rknd ) .and. &
-            all( wm_zm == 0._core_rknd ) ) ) then
+        if ( l_implemented .or. &
+             (all( abs(wm_zt) < eps ) .and. all( abs(wm_zm) < eps ))) then
           ! Calculate the spurious source for rtm
           rtm_flux_top = rho_ds_zm(gr%nz) * wprtp(gr%nz)
 
@@ -1814,7 +1817,8 @@ module advance_clubb_core_module
         kappa,          &
         fstderr,        &
         zero,           &
-        zero_threshold
+        zero_threshold, &
+        eps
 
     use pdf_parameter_module, only: &
         pdf_parameter,   & ! Type
@@ -2315,7 +2319,7 @@ module advance_clubb_core_module
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw .and. ( gamma_coef /= gamma_coefb ) ) then
+    if ( l_gamma_Skw .and. abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
       !----------------------------------------------------------------
       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
       !----------------------------------------------------------------

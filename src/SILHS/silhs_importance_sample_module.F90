@@ -1171,7 +1171,8 @@ module silhs_importance_sample_module
       core_rknd       ! Constant
 
     use constants_clubb, only: &
-      zero            ! Constant
+      zero,         & ! Constant
+      eps
 
     implicit none
 
@@ -1223,7 +1224,7 @@ module silhs_importance_sample_module
     pdf_prob_var_frac_prod_sum = sum( cluster_real_probs(:) * cluster_variance_fractions(:) )
 
     ! Compute the prescribed probability for each cluster!
-    if ( pdf_prob_var_frac_prod_sum == zero ) then
+    if ( abs(pdf_prob_var_frac_prod_sum) < eps ) then
       ! No variance prescribed in clusters with non-zero PDF probability!
       ! Fall back to no importance sampling!
       cluster_prescribed_probs(:) = cluster_real_probs(:)
@@ -1237,7 +1238,7 @@ module silhs_importance_sample_module
       do icategory=1, num_categories_in_cluster(icluster)
         cat_idx = cluster_categories(icluster,icategory)
         ! Scale category probability based on the cluster probability
-        if ( cluster_real_probs(icluster) == zero ) then
+        if ( abs(cluster_real_probs(icluster)) < eps) then
           category_prescribed_probs(cat_idx) = zero
         else
           category_prescribed_probs(cat_idx) = ( category_real_probs(cat_idx) / &

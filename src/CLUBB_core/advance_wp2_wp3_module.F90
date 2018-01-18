@@ -103,7 +103,8 @@ module advance_wp2_wp3_module
     use constants_clubb, only:  & 
         fstderr,   & ! Variables
         one_third, &
-        w_tol_sqd
+        w_tol_sqd, &
+        eps
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -235,7 +236,7 @@ module advance_wp2_wp3_module
     else
       ! Calculate C_{1} and C_{11} as functions of skewness of w.
       ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-      if ( C11 /= C11b ) then
+      if ( abs(C11-C11b) > abs(C11+C11b)*eps/2 ) then
         C11_Skw_fnc(1:gr%nz) =  & 
           C11b + (C11-C11b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zt(1:gr%nz)/C11c)**2 )
       else
@@ -244,7 +245,7 @@ module advance_wp2_wp3_module
     end if ! l_use_C11_Richardson
 
     ! The if..then here is only for computational efficiency -dschanen 2 Sept 08
-    if ( C1 /= C1b ) then
+    if ( abs(C1-C1b) > abs(C1+C1b)*eps/2 ) then
       C1_Skw_fnc(1:gr%nz) =  & 
         C1b + (C1-C1b)*EXP( -(1.0_core_rknd/2.0_core_rknd) * (Skw_zm(1:gr%nz)/C1c)**2 )
     else

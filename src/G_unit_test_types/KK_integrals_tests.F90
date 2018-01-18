@@ -1134,7 +1134,8 @@ module KK_integrals_tests
 
     use constants_clubb, only: &
         zero_dp, & ! Constant(s)
-        fstdout
+        fstdout, &
+        eps
 
     use clubb_precision, only: &
         dp ! double precision
@@ -1162,7 +1163,7 @@ module KK_integrals_tests
     ! Percent difference between the result obtained for the integral using
     ! the CLUBB code and the result obtained for the same integral using the
     ! same code in MATLAB.
-    if ( comparison_result /= zero_dp ) then
+    if ( abs(comparison_result) > eps ) then
        percent_diff = 100.0_dp * abs( ( obtained_result - comparison_result ) &
                                       / comparison_result )
     else  ! Integral should have a value of 0.

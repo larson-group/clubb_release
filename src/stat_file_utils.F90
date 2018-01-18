@@ -22,7 +22,7 @@ module stat_file_utils
 !   None
 !----------------------------------------------------------------------
 
-    use constants_clubb, only: fstderr ! Variable(s)
+    use constants_clubb, only: fstderr, eps ! Variable(s)
 
     use parameters_model, only: PosInf ! Variable(s)
 
@@ -166,7 +166,8 @@ module stat_file_utils
     ! Do we need to interpolate?
     if ( out_nz /= file_nz ) then
       l_interpolate = .true.
-    else if ( any( faverage%z(:) /= out_heights(:) ) ) then
+    else if ( any( abs(faverage%z(:)-out_heights(:)) > &
+                   abs(faverage%z(:)+out_heights(:))*eps/2 ) ) then
       l_interpolate = .true.
     else
       l_interpolate = .false.

@@ -3151,7 +3151,8 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        two  ! Constant(s)
+        two, & ! Constant(s)
+        eps
 
     use interpolation, only : &
         binary_search, lin_interpolate_two_points  ! Function(s)
@@ -3211,12 +3212,6 @@ module advance_xp2_xpyp_module
       zt_high = gr%zt(k_high)
       um_high = um(k_high)
       vm_high = vm(k_high)
-    else if ( gr%zt(k_high) == gr%zt(k)+depth ) then
-      ! Current altitude + depth falls exactly on another grid level.
-      ! In this case, no interpolation is necessary.
-      zt_high = gr%zt(k_high)
-      um_high = um(k_high)
-      vm_high = vm(k_high)
     else ! Do an interpolation to find um & vm at current altitude + depth.
       zt_high = gr%zt(k)+depth
       um_high = lin_interpolate_two_points( zt_high, gr%zt(k_high), gr%zt(k_high-1), &
@@ -3236,12 +3231,6 @@ module advance_xp2_xpyp_module
     if ( k_low == 2 ) then
       ! Current altitude - depth is less than or exactly at grid level 2.
       ! Since grid level 1 is a ghost point, use the altitude at grid level 2
-      zt_low = gr%zt(k_low)
-      um_low = um(k_low)
-      vm_low = vm(k_low)
-    else if ( gr%zt(k_low) == gr%zt(k)-depth ) then
-      ! Current altitude - depth falls exactly on another grid level.
-      ! In this case, no interpolation is necessary.
       zt_low = gr%zt(k_low)
       um_low = um(k_low)
       vm_low = vm(k_low)

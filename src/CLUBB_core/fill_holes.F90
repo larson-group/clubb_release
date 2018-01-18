@@ -185,6 +185,9 @@ module fill_holes
     ! Dynamics", Durran (1999), p. 292.
     !-----------------------------------------------------------------------
 
+    use constants_clubb, only: &
+      eps
+
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -245,9 +248,7 @@ module fill_holes
     ! small that it falls within numerical round-off, return to the parent
     ! subroutine without altering the field in order to avoid divide-by-zero
     ! error.
-    !if ( abs(field_clipped_avg - threshold)  &
-    !      < threshold*epsilon(threshold) ) then
-    if ( abs(field_clipped_avg - threshold) == 0.0_core_rknd ) then
+    if ( abs(field_clipped_avg-threshold) <= abs(field_clipped_avg+threshold)*eps/2) then
       return
     endif
 
@@ -506,7 +507,8 @@ module fill_holes
 
     use constants_clubb, only: &
         one, & ! Variable(s)
-        zero
+        zero, &
+        eps
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -562,10 +564,10 @@ module fill_holes
 !    print *, "num_neg_hm = ", num_neg_hm
 
     ! There is no water substance at all to fill the hole
-    if ( total_mass == zero ) then
+    if ( abs(total_mass) < eps ) then
 
        if ( clubb_at_least_debug_level(2) ) then
-          print *, "Warning: One level hole filling was not successful! total_mass = 0"
+          print *, "Warning: One level hole filling was not successful! total_mass ~= 0"
        endif
 
        hm_one_lev_filled = hm_one_lev
@@ -599,7 +601,8 @@ module fill_holes
     ! Assertion checks (water substance conservation, non-negativity)
     if ( clubb_at_least_debug_level( 2 ) ) then
 
-       if ( sum( hm_one_lev ) /= sum(hm_one_lev_filled) ) then
+       if ( abs(sum( hm_one_lev ) - sum(hm_one_lev_filled)) > &
+            abs(sum( hm_one_lev ) + sum(hm_one_lev_filled)) * eps/2 ) then
           print *, "Warning: Hole filling was not conservative!"
        endif
 

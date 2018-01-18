@@ -715,7 +715,7 @@ module time_dependent_input
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use constants_clubb, only: fstderr ! Constant(s)
+    use constants_clubb, only: fstderr, eps ! Constant(s)
 
     implicit none
 
@@ -761,7 +761,8 @@ module time_dependent_input
       write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
 
-    else if ( real( time, kind = core_rknd ) == time_array(1) ) then
+     else if ( abs(real(time,kind=core_rknd)-time_array(1)) <= &
+               abs(real(time,kind=core_rknd)+time_array(1))*eps/2 ) then
 
       before_time = 1
       after_time = 2
@@ -775,7 +776,8 @@ module time_dependent_input
       write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
       
-    else if ( real( time, kind = core_rknd ) == time_array(nvar) ) then
+    else if ( abs(real(time,kind=core_rknd)-time_array(nvar)) <= &
+              abs(real(time,kind=core_rknd)+time_array(nvar))*eps/2 ) then
       
       before_time = nvar - 1
       after_time = nvar

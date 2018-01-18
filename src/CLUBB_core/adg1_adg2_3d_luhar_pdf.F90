@@ -1130,7 +1130,7 @@ module adg1_adg2_3d_luhar_pdf
           big_m_x = ( one + small_m_x**2 )**3 &
                     / ( ( three + small_m_x**2 )**2 * small_m_x**2 )
 
-       elseif ( Skx == zero ) then
+       elseif ( abs(Skx) < eps ) then
 
           ! Mixture fraction /= 0.5 because the variable with the largest
           ! magnitude of skewness has a skewness /= 0.  However, variable x has
@@ -1234,7 +1234,8 @@ module adg1_adg2_3d_luhar_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero    ! Constant(s)
+        zero,            & ! Constant(s)
+        eps
 
     use calc_roots, only: &
         cubic_solve,     & ! Procedure(s)
@@ -1281,8 +1282,8 @@ module adg1_adg2_3d_luhar_pdf
        ! The equation is a cubic equation.
        cubic_roots = cubic_solve( a_coef, b_coef, c_coef, d_coef )
 
-       if ( aimag( cubic_roots(2) ) == zero  &
-            .and. aimag( cubic_roots(3) ) == zero ) then
+       if ( abs(aimag( cubic_roots(2) )) < eps .and.  &
+            abs(aimag( cubic_roots(3) )) < eps ) then
 
           ! Find the maximum root of the three roots.
           max_root = max( real( cubic_roots(1), kind = core_rknd ), &

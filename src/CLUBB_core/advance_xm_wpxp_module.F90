@@ -97,7 +97,8 @@ module advance_xm_wpxp_module
         one, &
         one_half, &
         zero, &
-        zero_threshold
+        zero_threshold, &
+        eps
 
     use parameters_model, only: & 
         sclr_dim, &  ! Variable(s)
@@ -301,14 +302,14 @@ module advance_xm_wpxp_module
 
     ! Compute C6 and C7 as a function of Skw
     ! The if...then is just here to save compute time
-    if ( C6rt /= C6rtb ) then
+    if ( abs(C6rt-C6rtb) > abs(C6rt+C6rtb)*eps/2 ) then
       C6rt_Skw_fnc(1:gr%nz) = C6rtb + (C6rt-C6rtb) & 
         *EXP( -one_half * (Skw_zm(1:gr%nz)/C6rtc)**2 )
     else
       C6rt_Skw_fnc(1:gr%nz) = C6rtb
     endif
 
-    if ( C6thl /= C6thlb ) then
+    if ( abs(C6thl-C6thlb) > abs(C6thl+C6thlb)*eps/2 ) then
       C6thl_Skw_fnc(1:gr%nz) = C6thlb + (C6thl-C6thlb) & 
         *EXP( -one_half * (Skw_zm(1:gr%nz)/C6thlc)**2 )
     else
@@ -320,7 +321,7 @@ module advance_xm_wpxp_module
       ! New formulation based on Richardson number
       C7_Skw_fnc = Cx_fnc_Richardson
     else
-      if ( C7 /= C7b ) then
+      if ( abs(C7-C7b) > abs(C7+C7b)*eps/2 ) then
         C7_Skw_fnc(1:gr%nz) = C7b + (C7-C7b) & 
           *EXP( -one_half * (Skw_zm(1:gr%nz)/C7c)**2 )
       else
@@ -1970,7 +1971,8 @@ module advance_xm_wpxp_module
     use constants_clubb, only: &
         fstderr, & ! Constant(s)
         one, &
-        zero
+        zero, &
+        eps
 
     use fill_holes, only: &
         fill_holes_vertical ! Procedure
@@ -2438,7 +2440,7 @@ module advance_xm_wpxp_module
                      wpxp, wpxp_chnge ) ! In/Out
 
     ! Adjusting xm based on clipping for w'x'.
-    if ( any( wpxp_chnge /= zero ) .and. l_clip_turb_adv ) then
+    if ( any( abs(wpxp_chnge) > eps ) .and. l_clip_turb_adv ) then
       call xm_correction_wpxp_cl( solve_type, dt, wpxp_chnge, gr%invrs_dzt, &
                                   xm )
     endif

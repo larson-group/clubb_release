@@ -3078,10 +3078,9 @@ module inputfields
         ! match with an LES level altitude.
         clubb_var(k) = LES_tmp(exact_lev_idx(k))
       end if
-      if( adjustment /= 1.0_core_rknd ) then
-        clubb_var(k) = clubb_var(k) &
-                         * adjustment
-      end if
+
+      clubb_var(k) = clubb_var(k) * adjustment
+
     end do
 
     return

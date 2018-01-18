@@ -105,12 +105,6 @@ module cloud_feedback
   ! Just set ustar = 0.3
   ustar = 0.3_core_rknd
 
-  ! Get rid of a compiler warning
-  if ( runtype == "anything" .or. thlm_sfc == 1._core_rknd .or. rtm_sfc == 1._core_rknd .or. &
-       exner_sfc == 1._core_rknd .or. p_sfc == 1._core_rknd .or. T_sfc == 1._core_rknd ) then
-    ustar = 0.3_core_rknd
-  end if
-
   !--------------------------------------------------------------------------------
   ! Email way
   ! wprtp = value_from_forcings_file_in_W_m**2 / ( rho_sfc_flux * Lv )

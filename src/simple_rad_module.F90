@@ -189,7 +189,7 @@ module simple_rad_module
 
     use grid_class, only: zt2zm ! Procedure(s)
 
-    use constants_clubb, only: fstderr, Cp ! Variable(s)
+    use constants_clubb, only: fstderr, Cp, eps ! Variable(s)
 
     use error_code, only: clubb_rtm_level_not_found ! Variable(s)
 
@@ -250,7 +250,7 @@ module simple_rad_module
 
     do k = 1, gr%nz, 1
 
-      if ( F1 /= 0._core_rknd ) then
+      if ( F1 > eps ) then
         Frad_LW(k) = F0 * exp( -kappa * LWP(k) ) & 
                 + F1 * exp( -kappa * (LWP(1) - LWP(k)) )
 
@@ -282,13 +282,15 @@ module simple_rad_module
 
       ! Compute the Heaviside step function for z - z_i.
       do k = 1, gr%nz, 1
-        if ( gr%zm(k) - z_i  <  0.0_core_rknd ) then
+        !if gr%zm(k) > z_i
+        if ( gr%zm(k)-z_i < -eps ) then
           Heaviside(k) = 0.0_core_rknd
-        else if ( gr%zm(k) - z_i  ==  0.0_core_rknd ) then
-          Heaviside(k) = 0.5_core_rknd
-        else if ( gr%zm(k) - z_i  >  0.0_core_rknd ) then
+        !if gr%zm(k) < z_i
+        else if ( gr%zm(k)-z_i > eps) then
           Heaviside(k) = 1.0_core_rknd
-        end if
+        else !gr%zm(k) and z_i are equal within eps
+          Heaviside(k) = 0.5_core_rknd
+        end if       
       end do
 
       do k = 1, gr%nz, 1
