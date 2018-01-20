@@ -299,18 +299,9 @@ module interpolation
     ! The value being searched for
     real( kind = core_rknd ), intent(in) :: var
 
-    ! Local Variables
-
-    ! Has an index been found?
-    logical :: l_found
-
     ! Bounds of the search
     integer :: high
     integer :: low
-
-    ! Initialize local variables
-
-    l_found = .false.
 
     ! The initial value of low has been changed from 1 to 2 due to a problem
     ! that was occuring when var was close to the lower bound.
@@ -334,28 +325,26 @@ module interpolation
 
     high = n
 
-    ! This line is here to avoid a false compiler warning about "i" being used
-    ! uninitialized in this function.
-    i = (low + high) / 2
+    ! Ensure variable is within range of array and array has more than 1 element
+    if ( var < array(1) .or. var > array(n) .or. n < 2 ) then
+        i = -1
+        return
+    end if
 
-    do while( .not. l_found .and. low <= high )
+    ! Special case to cover var == array(1)
+    if ( var >= array(1) .and. var <= array(2) ) then
+        i = 2
+        return
+    end if
+
+
+    do while( low <= high )
 
       i = (low + high) / 2
 
       if ( var > array( i - 1 ) .and. var <= array( i ) ) then
 
-        l_found = .true.
-
-      elseif ( var == array(1) ) then
-
-        ! Special case where var falls exactly on the lowest value in the
-        ! array, which is array(1).  This case is not covered by the statement
-        ! above.
-        l_found = .true.
-        ! The value of "i" must be set to 2 because an interpolation is
-        ! performed in the subroutine that calls this function that uses
-        ! indices "i" and "i-1".
-        i = 2
+        return
 
       elseif ( var < array( i ) ) then
 
@@ -367,10 +356,10 @@ module interpolation
 
       endif
 
-    enddo  ! while ( ~l_found & low <= high )
+    enddo 
 
-    if ( .not. l_found ) i = -1
-
+    ! Code should not get to this point, but return -1 to be safe
+    i = -1
     return
 
   end function binary_search
