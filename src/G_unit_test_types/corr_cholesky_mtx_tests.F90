@@ -310,8 +310,8 @@ module corr_cholesky_mtx_tests
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero, & ! Constant(s)
-        eps
+        eps    ! Constant(s)
+        
 
     use clubb_precision, only: &
         core_rknd

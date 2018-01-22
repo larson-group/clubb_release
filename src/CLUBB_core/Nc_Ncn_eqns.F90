@@ -275,7 +275,6 @@ contains
 
     use constants_clubb, only: &
         one,            & ! Constant(s)
-        zero,           &
         cloud_frac_min, &
         eps
 

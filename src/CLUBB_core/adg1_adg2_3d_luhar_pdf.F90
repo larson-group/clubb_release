@@ -1234,9 +1234,8 @@ module adg1_adg2_3d_luhar_pdf
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero,            & ! Constant(s)
-        eps
-
+        eps                ! Constant(s)
+        
     use calc_roots, only: &
         cubic_solve,     & ! Procedure(s)
         quadratic_solve

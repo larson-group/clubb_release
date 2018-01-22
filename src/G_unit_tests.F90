@@ -119,8 +119,7 @@ program G_unit_tests
       fstdout  ! Constant(s)
 
   use pdf_closure_module, only: &
-      iiPDF_new,    & ! Variable(s)
-      iiPDF_ADG1,   &
+      iiPDF_ADG1,   & ! Variable(s)
       iiPDF_TSDADG, &
       iiPDF_LY93
 

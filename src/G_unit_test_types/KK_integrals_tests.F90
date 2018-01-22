@@ -1133,8 +1133,7 @@ module KK_integrals_tests
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        zero_dp, & ! Constant(s)
-        fstdout, &
+        fstdout, & ! Constant(s)
         eps
 
     use clubb_precision, only: &

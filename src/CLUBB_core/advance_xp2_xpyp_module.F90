@@ -3151,8 +3151,7 @@ module advance_xp2_xpyp_module
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        two, & ! Constant(s)
-        eps
+        two    ! Constant(s)
 
     use interpolation, only : &
         binary_search, lin_interpolate_two_points  ! Function(s)
