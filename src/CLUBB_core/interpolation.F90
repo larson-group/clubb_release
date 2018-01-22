@@ -271,7 +271,7 @@ module interpolation
   end function mono_cubic_interp
 
 !-------------------------------------------------------------------------------
-  pure integer function binary_search( n, array, var ) & 
+  integer function binary_search( n, array, var ) & 
     result( i )
 
     ! Description:
@@ -283,8 +283,14 @@ module interpolation
     !-----------------------------------------------------------------------
 
     use clubb_precision, only: &
-      core_rknd ! Variable(s)
+      core_rknd                  ! Variable(s)
 
+    use error_code, only: &
+      clubb_at_least_debug_level ! Procedure(s)
+
+    use constants_clubb, only: &
+      fstderr                    ! Variable(s)
+    
     implicit none
 
     ! Input Variables
@@ -327,6 +333,12 @@ module interpolation
 
     ! Ensure variable is within range of array and array has more than 1 element
     if ( var < array(1) .or. var > array(n) .or. n < 2 ) then
+        
+        if ( clubb_at_least_debug_level( 1 ) ) then
+            write(fstderr,*) "Variable is outside grid level range or ", &
+                            "only one grid level in array in function binary_search."
+        end if
+        
         i = -1
         return
     end if
@@ -342,15 +354,15 @@ module interpolation
 
       i = (low + high) / 2
 
-      if ( var > array( i - 1 ) .and. var <= array( i ) ) then
+      if ( var > array(i-1) .and. var <= array(i) ) then
 
         return
 
-      elseif ( var < array( i ) ) then
+      elseif ( var < array(i) ) then
 
         high = i - 1
 
-      elseif ( var > array( i ) ) then
+      elseif ( var > array(i) ) then
 
         low = i + 1
 
@@ -359,6 +371,10 @@ module interpolation
     enddo 
 
     ! Code should not get to this point, but return -1 to be safe
+    if ( clubb_at_least_debug_level( 1 ) ) then
+        write(fstderr,*) "Logic error in function binary_search."
+    end if
+
     i = -1
     return
 
