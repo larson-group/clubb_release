@@ -956,7 +956,8 @@ module pdf_parameter_tests
           write(fstdout,*) ""
 
           call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
-                               Skrt, Skthl, wprtp, wpthlp, rtpthlp,     & ! In
+                               wprtp, wpthlp, rtpthlp,                  & ! In
+                               Skrt, Skthl,                             & ! I/O
                                mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,        & ! Out
                                mu_thl_1, mu_thl_2, sigma_w_1_sqd,       & ! Out
                                sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
@@ -964,6 +965,11 @@ module pdf_parameter_tests
                                sigma_thl_2_sqd, mixt_frac,              & ! Out
                                F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                                min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
+
+          ! Recalculate <rt'^3> and <thl'^3> just in case Skrt and Skthl needed
+          ! to be clipped in new_pdf_driver.
+          rtp3 = Skrt * rtp2**1.5
+          thlp3 = Skthl * thlp2**1.5
 
        elseif ( test_PDF_type == iiPDF_ADG1 ) then
 
@@ -1149,7 +1155,7 @@ module pdf_parameter_tests
           ! which can be rewritten as:
           !    | <rt'^3>|_recalc - <rt'^3> |  <=  | <rt'^3> | * tol.
           if ( abs( recalc_rtp3 - rtp3 ) &
-               <= max( abs( rtp3 ), rt_tol**3 ) * tol ) then
+               <= max( abs( rtp3 ), 1.0e-15_core_rknd ) * tol ) then
              l_pass_test_14 = .true.
           else
              l_pass_test_14 = .false.

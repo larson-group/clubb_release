@@ -23,15 +23,16 @@ module new_pdf_main
   contains
 
   !=============================================================================
-  subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw_in,   & ! In
-                             Skrt_in, Skthl_in, wprtp, wpthlp, rtpthlp, & ! In
-                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,          & ! Out
-                             mu_thl_1, mu_thl_2, sigma_w_1_sqd,         & ! Out
-                             sigma_w_2_sqd, sigma_rt_1_sqd,             & ! Out
-                             sigma_rt_2_sqd, sigma_thl_1_sqd,           & ! Out
-                             sigma_thl_2_sqd, mixt_frac,                & ! Out
-                             F_w, F_rt, F_thl, min_F_w, max_F_w,        & ! Out
-                             min_F_rt, max_F_rt, min_F_thl, max_F_thl   ) ! Out
+  subroutine new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
+                             wprtp, wpthlp, rtpthlp,                  & ! In
+                             Skrt, Skthl,                             & ! In/Out
+                             mu_w_1, mu_w_2, mu_rt_1, mu_rt_2,        & ! Out
+                             mu_thl_1, mu_thl_2, sigma_w_1_sqd,       & ! Out
+                             sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
+                             sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
+                             sigma_thl_2_sqd, mixt_frac,              & ! Out
+                             F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
+                             min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
                              
 
     ! Description:
@@ -65,18 +66,24 @@ module new_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      wm,       & ! Mean of w (overall)                 [m/s]
-      rtm,      & ! Mean of rt (overall)                [kg/kg]
-      thlm,     & ! Mean of thl (overall)               [K]
-      wp2,      & ! Variance of w (overall)             [m^2/s^2]
-      rtp2,     & ! Variance of rt (overall)            [kg^2/kg^2]
-      thlp2,    & ! Variance of thl (overall)           [K^2]
-      Skw_in,   & ! Skewness of w (overall)             [-]
-      Skrt_in,  & ! Skewness of rt (overall)            [-]
-      Skthl_in, & ! Skewness of thl (overall)           [-]
-      wprtp,    & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
-      wpthlp,   & ! Covariance of w and thl (overall)   [(m/s)K]
-      rtpthlp     ! Covariance of rt and thl (overall)  [(kg/kg)K]
+      wm,      & ! Mean of w (overall)                 [m/s]
+      rtm,     & ! Mean of rt (overall)                [kg/kg]
+      thlm,    & ! Mean of thl (overall)               [K]
+      wp2,     & ! Variance of w (overall)             [m^2/s^2]
+      rtp2,    & ! Variance of rt (overall)            [kg^2/kg^2]
+      thlp2,   & ! Variance of thl (overall)           [K^2]
+      Skw,     & ! Skewness of w (overall)             [-]
+      wprtp,   & ! Covariance of w and rt (overall)    [(m/s)kg/kg]
+      wpthlp,  & ! Covariance of w and thl (overall)   [(m/s)K]
+      rtpthlp    ! Covariance of rt and thl (overall)  [(kg/kg)K]
+
+    ! Input/Output Variables
+    ! These variables are input/output because their values may be clipped.
+    ! Otherwise, as long as it is not necessary to clip them, their values
+    ! will stay the same.
+    real( kind = core_rknd ), intent(inout) :: &
+      Skrt,  & ! Skewness of rt (overall)            [-]
+      Skthl    ! Skewness of thl (overall)           [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -116,9 +123,6 @@ module new_pdf_main
       sigma_rt_2,  & ! Standard deviation of rt (2nd PDF component)     [kg/kg]
       sigma_thl_1, & ! Standard deviation of thl (1st PDF component)    [K]
       sigma_thl_2, & ! Standard deviation of thl (2nd PDF component)    [K]
-      Skw,         & ! Skewness of w (overall)                          [-]
-      Skrt,        & ! Skewness of rt (overall)                         [-]
-      Skthl,       & ! Skewness of thl (overall)                        [-]
       sgn_wprtp,   & ! Sign of the covariance of w and rt (overall)     [-]
       sgn_wpthlp     ! Sign of the covariance of w and thl (overall)    [-]
 
@@ -171,13 +175,12 @@ module new_pdf_main
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
 
+    real ( kind = core_rknd ) :: &
+      Skw_dummy
+
     logical, parameter :: &
       l_use_w_setter_var = .true. ! Flag to always use w as the setter variable
 
-
-    Skw = Skw_in
-    Skrt = Skrt_in
-    Skthl = Skthl_in
 
     ! Calculate sgn( <w'rt'> ).
     if ( wprtp >= zero ) then
@@ -295,12 +298,14 @@ module new_pdf_main
 
        max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
+       Skw_dummy = Skw
+
        ! Calculate the PDF parameters for responder variable w.
        call calc_responder_var( wm, wp2, sgn_wp2, mixt_frac,  & ! In
                                 0.1_core_rknd, one,           & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,    & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,    & ! In
-                                Skw,                          & ! In/Out
+                                Skw_dummy,                    & ! In/Out
                                 mu_w_1, mu_w_2,               & ! Out
                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
                                 coef_sigma_w_1_sqd,           & ! Out
@@ -347,12 +352,14 @@ module new_pdf_main
 
        max_Skx2_neg_Skx_sgn_wpxp = four * mixt_frac**2 / ( one - mixt_frac**2 )
 
+       Skw_dummy = Skw
+
        ! Calculate the PDF parameters for responder variable w.
        call calc_responder_var( wm, wp2, sgn_wp2, mixt_frac,  & ! In
                                 0.1_core_rknd, one,           & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,    & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,    & ! In
-                                Skw,                          & ! In/Out
+                                Skw_dummy,                    & ! In/Out
                                 mu_w_1, mu_w_2,               & ! Out
                                 sigma_w_1_sqd, sigma_w_2_sqd, & ! Out
                                 coef_sigma_w_1_sqd,           & ! Out

@@ -40,7 +40,7 @@ module pdf_closure_module
   !#######################################################################
   subroutine pdf_closure( hydromet_dim, p_in_Pa, exner, thv_ds, wm, &
                           wp2, wp3, sigma_sqd_w,                    &
-                          Skw, Skthl, Skrt, rtm, rtp2,              &
+                          Skw, Skthl_in, Skrt_in, rtm, rtp2,        &
                           wprtp, thlm, thlp2,                       &
                           wpthlp, rtpthlp, sclrm,                   &
                           wpsclrp, sclrp2, sclrprtp,                &
@@ -181,8 +181,8 @@ module pdf_closure_module
       wp2,         & ! w'^2                                       [m^2/s^2] 
       wp3,         & ! w'^3                                       [m^3/s^3]
       Skw,         & ! Skewness of w                              [-]
-      Skthl,       & ! Skewness of thl                            [-]
-      Skrt,        & ! Skewness of rt                             [-]
+      Skthl_in,    & ! Skewness of thl                            [-]
+      Skrt_in,     & ! Skewness of rt                             [-]
       rtm,         & ! Mean total water mixing ratio              [kg/kg]
       rtp2,        & ! r_t'^2                                     [(kg/kg)^2]
       wprtp,       & ! w'r_t'                                     [(kg/kg)(m/s)]
@@ -348,7 +348,10 @@ module pdf_closure_module
       tl1, tl2,  & 
       beta1, beta2
 
-    real( kind = core_rknd ) :: sqrt_wp2
+    real( kind = core_rknd ) :: &
+      sqrt_wp2, & ! Square root of wp2          [m/s]
+      Skthl,    & ! Skewness of thl             [-]
+      Skrt        ! Skewness of rt              [-]
 
     ! Thermodynamic quantity
 
@@ -430,6 +433,11 @@ module pdf_closure_module
        max_F_thl = zero
     endif ! iiPDF_type /= iiPDF_new
 
+    ! This allows for skewness to be clipped locally without passing the updated
+    ! value back out.
+    Skrt = Skrt_in
+    Skthl = Skthl_in
+
     ! To avoid recomputing
     sqrt_wp2 = sqrt( wp2 )
 
@@ -475,7 +483,8 @@ module pdf_closure_module
     elseif ( iiPDF_type == iiPDF_new ) then ! use new PDF
 
        call new_pdf_driver( wm, rtm, thlm, wp2, rtp2, thlp2, Skw,    & ! In
-                            Skrt, Skthl, wprtp, wpthlp, rtpthlp,     & ! In
+                            wprtp, wpthlp, rtpthlp,                  & ! In
+                            Skrt, Skthl,                             & ! In/Out
                             w_1, w_2, rt_1, rt_2,                    & ! Out
                             thl_1, thl_2, varnce_w_1,                & ! Out
                             varnce_w_2, varnce_rt_1,                 & ! Out
