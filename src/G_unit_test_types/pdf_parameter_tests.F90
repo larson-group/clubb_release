@@ -97,6 +97,7 @@ module pdf_parameter_tests
 
     use constants_clubb, only: &
         three,         & ! Constant(s)
+        two,           &
         one,           &
         three_fourths, &
         two_thirds,    &
@@ -591,11 +592,13 @@ module pdf_parameter_tests
           ! Calculate thlp3.
           thlp3 = Skthl * thlp2**1.5
           ! Use a random number to calculate the value of wprtp.
-          wprtp = rand10 * sqrt( wp2 ) * sqrt( rtp2 ) &
-                  * sign( one, Skw ) * sign( one, Skrt )
+          ! The random number term is the overall correlation of w and rt, and
+          ! its value can range from -1 to 1.
+          wprtp = ( two * rand10 - one ) * sqrt( wp2 ) * sqrt( rtp2 )
           ! Use a random number to calculate the value of wpthlp.
-          wpthlp = rand11 * sqrt( wp2 ) * sqrt( thlp2 ) &
-                   * sign( one, Skw ) * sign( one, Skthl )
+          ! The random number term is the overall correlation of w and thl, and
+          ! its value can range from -1 to 1.
+          wpthlp = ( two * rand11 - one ) * sqrt( wp2 ) * sqrt( thlp2 )
        endif ! iter_param_sets == index
 
        if ( sign( one, wprtp ) * sign( one, wpthlp ) < zero ) then

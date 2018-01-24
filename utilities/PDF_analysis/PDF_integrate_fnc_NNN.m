@@ -7,7 +7,7 @@ function PDF_integrate_fnc_NNL( a_exp, b_exp, c_exp )
 % INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
 %    ( x1 - x1_bar )^a ( x2 - x2_bar )^b ( x3 - x3_bar )^c
 %    P_i(x1,x2,x3) dx3 dx2 dx1;
-% where P_i(x1,x2,x3) is a trivariate normal PDF.  The individual marginals fo
+% where P_i(x1,x2,x3) is a trivariate normal PDF.  The individual marginals for
 % x1, x2, and x3 are both distributed normally.
 
 format long
