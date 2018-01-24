@@ -633,23 +633,20 @@ module precipitation_fraction
 
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
+
                 precip_frac_1(k) = one
-                if ( precip_frac(k) == one ) then
-                   precip_frac_2(k) = one
-                else
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
-             elseif ( precip_frac_1(k) > zero &
-                      .and. precip_frac_1(k) < precip_frac_tol ) then
+
+                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                   / ( one - mixt_frac(k) )
+
+             elseif ( precip_frac_1(k) > zero .and. precip_frac_1(k) < precip_frac_tol ) then
+
                 precip_frac_1(k) = precip_frac_tol
-                if ( precip_frac(k) == precip_frac_tol ) then
-                   precip_frac_2(k) = precip_frac_tol
-                else
-                   precip_frac_2(k) = ( precip_frac(k) &
-                                        - mixt_frac(k) * precip_frac_1(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
+
+                ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                   - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+                
              endif
 
           elseif ( precip_frac_2(k) > zero &
@@ -669,23 +666,20 @@ module precipitation_fraction
 
              ! Double check precip_frac_1
              if ( precip_frac_1(k) > one ) then
+
                 precip_frac_1(k) = one
-                if ( precip_frac(k) == one ) then
-                   precip_frac_2(k) = one
-                else
-                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
-             elseif ( precip_frac_1(k) > zero &
-                      .and. precip_frac_1(k) < precip_frac_tol ) then
+
+                precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                   / ( one - mixt_frac(k) )
+
+             elseif ( precip_frac_1(k) > zero .and. precip_frac_1(k) < precip_frac_tol ) then
+
                 precip_frac_1(k) = precip_frac_tol
-                if ( precip_frac(k) == precip_frac_tol ) then
-                   precip_frac_2(k) = precip_frac_tol
-                else
-                   precip_frac_2(k) = ( precip_frac(k) &
-                                        - mixt_frac(k) * precip_frac_1(k) ) &
-                                      / ( one - mixt_frac(k) )
-                endif
+
+                ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                   - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
              endif
 
           endif ! Special cases for precip_frac_2
@@ -830,23 +824,21 @@ module precipitation_fraction
 
                    ! Double check precip_frac_1
                    if ( precip_frac_1(k) > one ) then
+
                       precip_frac_1(k) = one
-                      if ( precip_frac(k) == one ) then
-                         precip_frac_2(k) = one
-                      else
-                         precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                            / ( one - mixt_frac(k) )
-                      endif
+
+                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                         / ( one - mixt_frac(k) )
+
                    elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                       precip_frac_1(k) = precip_frac_tol
-                      if ( precip_frac(k) == precip_frac_tol ) then
-                         precip_frac_2(k) = precip_frac_tol
-                      else
-                         precip_frac_2(k) &
-                         = ( precip_frac(k) &
-                             - mixt_frac(k) * precip_frac_1(k) ) &
-                           / ( one - mixt_frac(k) )
-                      endif
+
+                      ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                      precip_frac_2(k) = precip_frac_1(k) * &
+                                         ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                         - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                    endif
 
                 endif ! precip_frac_2(k) < precip_frac_tol
@@ -888,24 +880,20 @@ module precipitation_fraction
 
                    ! Double check precip_frac_2
                    if ( precip_frac_2(k) > one ) then
+
                       precip_frac_2(k) = one
-                      if ( precip_frac(k) == one ) then
-                         precip_frac_1(k) = one
-                      else
-                         precip_frac_1(k) &
-                         = ( precip_frac(k) - ( one - mixt_frac(k) ) ) &
-                           / mixt_frac(k)
-                      endif
+
+                      precip_frac_1(k) = ( ( precip_frac(k) - one ) + mixt_frac(k) ) &
+                                         / mixt_frac(k)
+
                    elseif ( precip_frac_2(k) < precip_frac_tol ) then
+
                       precip_frac_2(k) = precip_frac_tol
-                      if ( precip_frac(k) == precip_frac_tol ) then
-                         precip_frac_1(k) = precip_frac_tol
-                      else
-                         precip_frac_1(k) &
-                         = ( precip_frac(k) &
-                             - ( one - mixt_frac(k) ) * precip_frac_2(k) ) &
-                           / mixt_frac(k)
-                      endif
+
+                      ! fp = a*fp1+(1-a)*fp2 solving for fp1
+                      precip_frac_1(k) = ( precip_frac(k) - precip_frac_2(k) ) / mixt_frac(k) &
+                                         + precip_frac_2(k)
+
                    endif
 
                 endif ! precip_frac_1(k) < precip_frac_tol
@@ -947,22 +935,20 @@ module precipitation_fraction
 
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
+
                    precip_frac_1(k) = one
-                   if ( precip_frac(k) == one ) then
-                      precip_frac_2(k) = one
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                    precip_frac_1(k) = precip_frac_tol
-                   if ( precip_frac(k) == precip_frac_tol ) then
-                      precip_frac_2(k) = precip_frac_tol
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) &
-                                           - mixt_frac(k) * precip_frac_1(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                   precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                      - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                 endif
 
              elseif ( precip_frac_2(k) < precip_frac_tol ) then
@@ -978,22 +964,20 @@ module precipitation_fraction
 
                 ! Double check precip_frac_1
                 if ( precip_frac_1(k) > one ) then
+
                    precip_frac_1(k) = one
-                   if ( precip_frac(k) == one ) then
-                      precip_frac_2(k) = one
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   precip_frac_2(k) = ( precip_frac(k) - mixt_frac(k) ) &
+                                      / ( one - mixt_frac(k) )
+
                 elseif ( precip_frac_1(k) < precip_frac_tol ) then
+
                    precip_frac_1(k) = precip_frac_tol
-                   if ( precip_frac(k) == precip_frac_tol ) then
-                      precip_frac_2(k) = precip_frac_tol
-                   else
-                      precip_frac_2(k) = ( precip_frac(k) &
-                                           - mixt_frac(k) * precip_frac_1(k) ) &
-                                         / ( one - mixt_frac(k) )
-                   endif
+
+                   ! fp = a*fp1+(1-a)*fp2 solving for fp2
+                   precip_frac_2(k) = precip_frac_1(k) * ( ( ( precip_frac(k) / precip_frac_1(k)) &
+                                      - mixt_frac(k) ) / ( one - mixt_frac(k) ) )
+
                 endif
 
              endif ! Special cases for precip_frac_2
