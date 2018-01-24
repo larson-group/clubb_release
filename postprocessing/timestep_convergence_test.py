@@ -5,11 +5,13 @@ def main():
 
     from netCDF4 import Dataset
     import numpy as np
+    import matplotlib
     import matplotlib.pyplot as plt
     import os
     import sys
 
     # Set directory to the location of this script
+    # Typically the script is run from the CLUBB postprocessing directory
     os.chdir(os.path.dirname(sys.argv[0]))
 
     #data = Dataset('../output/bomex/bomex_300_sfc.nc', "r")
@@ -21,8 +23,6 @@ def main():
     ztVariable = 'T_in_K'
     
     sfcVariable = 'lwp'
-
-
 
     #listOfFilenames = findTimestepFiles(dir,caseName)
     dirRoot = '../output/bomex_restarted'
@@ -61,7 +61,8 @@ def main():
 
     sfcVariableArray = extractSfcVariableFromNetcdfFiles(sfcVariable, listOfSfcFilenames, numFiles, 1)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(4,3))
+    matplotlib.rcParams.update({'font.size': 18})
     ax1 = fig.add_subplot(111)
     plt.title(caseName+' case')
     ax1.set_xlabel('Time step [s]')
@@ -70,14 +71,14 @@ def main():
     conv_1, = ax1.loglog(timestepArrayMinus1, (ztRmseArray[0]/timestepArrayMinus1[0])*timestepArrayMinus1,'k')
     np.set_printoptions(precision=3)
     ax1.text(0.05, 0.95, 'CLUBB convergence\n exponent\n ='+np.array_str(convergenceExponent), \
-        transform=ax1.transAxes, fontsize=14, verticalalignment='top')
-    plt.legend([clubb_errors, conv_1], ['CLUBB convergence', 'Convergence rate of 1'])
+        transform=ax1.transAxes, fontsize=16, verticalalignment='top')
+    plt.legend([clubb_errors, conv_1], ['CLUBB convergence', 'Convergence rate of 1'], prop={'size': 16})
     plt.show()
 #
 #    pdb.set_trace()
 
     fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111)
+    ax2 = fig2.add_subplot(221)
     plt.title(caseName+' case')
     ax2.set_xlabel('Time since beginning of simulation [s]')
     ax2.set_ylabel(sfcVariable)
