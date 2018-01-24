@@ -78,7 +78,7 @@ def main():
 #    pdb.set_trace()
 
     fig2 = plt.figure()
-    ax2 = fig2.add_subplot(221)
+    ax2 = fig2.add_subplot(111)
     plt.title(caseName+' case')
     ax2.set_xlabel('Time since beginning of simulation [s]')
     ax2.set_ylabel(sfcVariable)
