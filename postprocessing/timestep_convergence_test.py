@@ -61,18 +61,20 @@ def main():
 
     sfcVariableArray = extractSfcVariableFromNetcdfFiles(sfcVariable, listOfSfcFilenames, numFiles, 1)
 
-    fig = plt.figure(figsize=(4,3))
+    fig = plt.figure(figsize=(8,6))
     matplotlib.rcParams.update({'font.size': 18})
     ax1 = fig.add_subplot(111)
+    #plt.title(caseName+' shallow cumulus case')
     plt.title(caseName+' case')
     ax1.set_xlabel('Time step [s]')
+    #ax1.set_ylabel('RMSE of Temperature  [K]')
     ax1.set_ylabel('RMSE of ' + ztVariable)
-    clubb_errors, = ax1.loglog(timestepArrayMinus1, ztRmseArray,'r.')
+    clubb_errors, = ax1.loglog(timestepArrayMinus1, ztRmseArray,'r.', markersize=14)
     conv_1, = ax1.loglog(timestepArrayMinus1, (ztRmseArray[0]/timestepArrayMinus1[0])*timestepArrayMinus1,'k')
     np.set_printoptions(precision=3)
-    ax1.text(0.05, 0.95, 'CLUBB convergence\n exponent\n ='+np.array_str(convergenceExponent), \
-        transform=ax1.transAxes, fontsize=16, verticalalignment='top')
-    plt.legend([clubb_errors, conv_1], ['CLUBB convergence', 'Convergence rate of 1'], prop={'size': 16})
+    ax1.text(0.95, 0.05, 'CLUBB convergence\n exponent\n ='+np.array_str(convergenceExponent), \
+        transform=ax1.transAxes, fontsize=16, verticalalignment='bottom', horizontalalignment='right')
+    plt.legend([clubb_errors, conv_1], ['CLUBB convergence', 'Convergence rate of 1'], loc=0, prop={'size': 16})
     plt.show()
 #
 #    pdb.set_trace()
