@@ -638,29 +638,42 @@ module pdf_closure_module
 
     ! Scalar Addition to higher order moments
     if ( l_scalar_calc ) then
-      do i=1, sclr_dim
+       do i = 1, sclr_dim
 
-        wp2sclrp(i)  = mixt_frac * ( (w_1-wm)**2+varnce_w_1 )*( sclr1(i)-sclrm(i) ) & 
-                     + (one-mixt_frac) * ( (w_2-wm)**2+varnce_w_2 ) * ( sclr2(i)-sclrm(i) )
+          wp2sclrp(i) = calc_wp2xp_pdf( wm, sclrm(i), w_1, w_2, sclr1(i), &
+                                        sclr2(i), varnce_w_1, varnce_w_2, &
+                                        varnce_sclr1(i), varnce_sclr2(i), &
+                                        corr_w_sclr_1(i), corr_w_sclr_2(i), &
+                                        mixt_frac )
 
-        wpsclrp2(i) = mixt_frac * ( w_1-wm ) * ( (sclr1(i)-sclrm(i))**2 + varnce_sclr1(i) )  & 
-                    + (one-mixt_frac) * ( w_2-wm ) * &
-                    ( (sclr2(i)-sclrm(i))**2 + varnce_sclr2(i) )
+          wpsclrp2(i) = calc_wpxp2_pdf( wm, sclrm(i), w_1, w_2, sclr1(i), &
+                                        sclr2(i), varnce_w_1, varnce_w_2, &
+                                        varnce_sclr1(i), varnce_sclr2(i), &
+                                        corr_w_sclr_1(i), corr_w_sclr_2(i), &
+                                        mixt_frac )
 
-        wpsclrprtp(i) = mixt_frac * ( w_1-wm ) * ( ( rt_1-rtm )*( sclr1(i)-sclrm(i) )  & 
-          + corr_sclr_rt_1(i)*sqrt( varnce_rt_1*varnce_sclr1(i) ) ) &
-          + ( one-mixt_frac )*( w_2-wm ) *  &
-            ( ( rt_2-rtm )*( sclr2(i)-sclrm(i) ) &
-              + corr_sclr_rt_2(i)*sqrt( varnce_rt_2*varnce_sclr2(i) ) )
+          wpsclrprtp(i) = calc_wpxpyp_pdf( wm, sclrm(i), rtm, w_1, w_2, &
+                                           sclr1(i), sclr2(i), rt_1, rt_2, &
+                                           varnce_w_1, varnce_w_2, &
+                                           varnce_sclr1(i), varnce_sclr2(i), &
+                                           varnce_rt_1, varnce_rt_2, &
+                                           corr_w_sclr_1(i), corr_w_sclr_2(i), &
+                                           corr_w_rt_1, corr_w_rt_2, &
+                                           corr_sclr_rt_1(i), &
+                                           corr_sclr_rt_2(i), mixt_frac )
 
-        wpsclrpthlp(i) = mixt_frac * ( w_1-wm ) * ( ( sclr1(i)-sclrm(i) )*( thl_1-thlm )  & 
-          + corr_sclr_thl_1(i)*sqrt( varnce_sclr1(i)*varnce_thl_1 ) ) & 
-          + ( one-mixt_frac ) * ( w_2-wm ) * &
-            ( ( sclr2(i)-sclrm(i) )*( thl_2-thlm ) &
-              + corr_sclr_thl_2(i)*sqrt( varnce_sclr2(i)*varnce_thl_2 ) )
+          wpsclrpthlp(i) = calc_wpxpyp_pdf( wm, sclrm(i), thlm, w_1, w_2, &
+                                            sclr1(i), sclr2(i), thl_1, &
+                                            thl_2, varnce_w_1, varnce_w_2, &
+                                            varnce_sclr1(i), varnce_sclr2(i), &
+                                            varnce_thl_1, varnce_thl_2, &
+                                            corr_w_sclr_1(i), &
+                                            corr_w_sclr_2(i), corr_w_thl_1, &
+                                            corr_w_thl_2, corr_sclr_thl_1(i), &
+                                            corr_sclr_thl_2(i), mixt_frac )
 
-      end do ! i=1, sclr_dim
-    end if ! l_scalar_calc
+       enddo ! i = 1, sclr_dim
+    endif ! l_scalar_calc
 
     ! Compute higher order moments that include theta_v.
 
