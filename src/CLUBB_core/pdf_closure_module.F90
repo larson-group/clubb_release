@@ -9,6 +9,7 @@ module pdf_closure_module
             calc_wp4_pdf, &
             calc_wp2xp_pdf, &
             calc_wpxp2_pdf, &
+            calc_wpxpyp_pdf, &
             calc_vert_avg_cf_component
 
   ! Options for the two component normal (double Gaussian) PDF type to use for
@@ -626,11 +627,13 @@ module pdf_closure_module
     endif
 
     if ( iwprtpthlp > 0 ) then
-      wprtpthlp = mixt_frac * ( w_1-wm )*( (rt_1-rtm)*(thl_1-thlm)  & 
-                + corr_rt_thl_1*sqrt( varnce_rt_1*varnce_thl_1 ) ) & 
-                + ( one-mixt_frac ) * ( w_2-wm )*( (rt_2-rtm)*(thl_2-thlm) & 
-                + corr_rt_thl_2*sqrt( varnce_rt_2*varnce_thl_2 ) )
-    end if
+       wprtpthlp = calc_wpxpyp_pdf( wm, rtm, thlm, w_1, w_2, rt_1, rt_2, &
+                                    thl_1, thl_2, varnce_w_1, varnce_w_2, &
+                                    varnce_rt_1, varnce_rt_2, varnce_thl_1, &
+                                    varnce_thl_2, corr_w_rt_1, corr_w_rt_2, &
+                                    corr_w_thl_1, corr_w_thl_2, corr_rt_thl_1, &
+                                    corr_rt_thl_2, mixt_frac )
+    endif
 
 
     ! Scalar Addition to higher order moments
@@ -1510,6 +1513,116 @@ module pdf_closure_module
   end function calc_wpxp2_pdf
 
   !=============================================================================
+  function calc_wpxpyp_pdf( wm, xm, ym, w_1, w_2, x_1, x_2, &
+                            y_1, y_2, varnce_w_1, varnce_w_2, &
+                            varnce_x_1, varnce_x_2, varnce_y_1, &
+                            varnce_y_2, corr_w_x_1, corr_w_x_2, &
+                            corr_w_y_1, corr_w_y_2, corr_x_y_1, &
+                            corr_x_y_2, mixt_frac ) &
+  result( wpxpyp )
+
+    ! Description:
+    ! Calculates <w'x'y'> by integrating over the PDF of w, x, and y.  The
+    ! integral is:
+    !
+    ! <w'x'y'>
+    ! = INT(-inf:inf) INT(-inf:inf) INT(-inf:inf)
+    !   ( w - <w> ) ( x - <x> ) ( y - <y> ) P(w,x,y) dy dx dw;
+    !
+    ! where <w> is the overall mean of w, <x> is the overall mean of x, <y> is
+    ! the overall mean of y, and P(w,x,y) is a two-component trivariate normal
+    ! distribution of w, x, and y.  The integrated equation is:
+    !
+    ! <w'x'y'>
+    ! = mixt_frac 
+    !   * ( ( mu_w_1 - <w> ) * ( mu_x_1 - <x> ) * ( mu_y_1 - <y> )
+    !       + corr_x_y_1 * sigma_x_1 * sigma_y_1 * ( mu_w_1 - <w> )
+    !       + corr_w_y_1 * sigma_w_1 * sigma_y_1 * ( mu_x_1 - <x> )
+    !       + corr_w_x_1 * sigma_w_1 * sigma_x_1 * ( mu_y_1 - <y> ) )
+    !   + ( 1 - mixt_frac )
+    !     * ( ( mu_w_2 - <w> ) * ( mu_x_2 - <x> ) * ( mu_y_2 - <y> )
+    !         + corr_x_y_2 * sigma_x_2 * sigma_y_2 * ( mu_w_2 - <w> )
+    !         + corr_w_y_2 * sigma_w_2 * sigma_y_2 * ( mu_x_2 - <x> )
+    !         + corr_w_x_2 * sigma_w_2 * sigma_x_2 * ( mu_y_2 - <y> ) );
+    !
+    ! where mu_w_1 is the mean of w in the 1st PDF component, mu_w_2 is the mean
+    ! of w in the 2nd PDF component, mu_x_1 is the mean of x in the 1st PDF
+    ! component, mu_x_2 is the mean of x in the 2nd PDF component, mu_y_1 is the
+    ! mean of y in the 1st PDF component, mu_y_2 is the mean of y in the 2nd PDF
+    ! component, sigma_w_1 is the standard deviation of w in the 1st PDF
+    ! component, sigma_w_2 is the standard deviation of w in the 2nd PDF
+    ! component, sigma_x_1 is the standard deviation of x in the 1st PDF
+    ! component, sigma_x_2 is the standard deviation of x in the 2nd PDF
+    ! component, sigma_y_1 is the standard deviation of y in the 1st PDF
+    ! component, sigma_y_2 is the standard deviation of y in the 2nd PDF
+    ! component, corr_w_x_1 is the correlation of w and x in the 1st PDF
+    ! component, corr_w_x_2 is the correlation of w and x in the 2nd PDF
+    ! component, corr_w_y_1 is the correlation of w and y in the 1st PDF
+    ! component, corr_w_y_2 is the correlation of w and y in the 2nd PDF
+    ! component, corr_x_y_1 is the correlation of x and y in the 1st PDF
+    ! component, corr_x_y_2 is the correlation of x and y in the 2nd PDF
+    ! component, and mixt_frac is the mixture fraction, which is the weight of
+    ! the 1st PDF component.
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use constants_clubb, only: &
+        one    ! Variable(s)
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) ::  &
+      wm,         & ! Mean of w (overall)                       [m/s]
+      xm,         & ! Mean of x (overall)                       [x units]
+      ym,         & ! Mean of y (overall)                       [y units]
+      w_1,        & ! Mean of w (1st PDF component)             [m/s]
+      w_2,        & ! Mean of w (2nd PDF component)             [m/s]
+      x_1,        & ! Mean of x (1st PDF component)             [x units]
+      x_2,        & ! Mean of x (2nd PDF component)             [x units]
+      y_1,        & ! Mean of y (1st PDF component)             [y units]
+      y_2,        & ! Mean of y (2nd PDF component)             [y units]
+      varnce_w_1, & ! Variance of w (1st PDF component)         [m^2/s^2]
+      varnce_w_2, & ! Variance of w (2nd PDF component)         [m^2/s^2]
+      varnce_x_1, & ! Variance of x (1st PDF component)         [(units vary)^2]
+      varnce_x_2, & ! Variance of x (2nd PDF component)         [(units vary)^2]
+      varnce_y_1, & ! Variance of y (1st PDF component)         [(units vary)^2]
+      varnce_y_2, & ! Variance of y (2nd PDF component)         [(units vary)^2]
+      corr_w_x_1, & ! Correlation of w and x (1st PDF comp.)    [-]
+      corr_w_x_2, & ! Correlation of w and x (2nd PDF comp.)    [-]
+      corr_w_y_1, & ! Correlation of w and y (1st PDF comp.)    [-]
+      corr_w_y_2, & ! Correlation of w and y (2nd PDF comp.)    [-]
+      corr_x_y_1, & ! Correlation of x and y (1st PDF comp.)    [-]
+      corr_x_y_2, & ! Correlation of x and y (2nd PDF comp.)    [-]
+      mixt_frac     ! Mixture fraction                          [-]
+
+    ! Return Variable
+    real( kind = core_rknd ) ::  & 
+      wpxpyp    ! <w'x'y'>                   [m/s (units vary)]
+
+
+    ! Calculate <w'x'y'> by integrating over the PDF.
+    wpxpyp &
+    = mixt_frac &
+      * ( ( w_1 - wm ) * ( x_1 - xm ) * ( y_1 - ym ) &
+          + corr_x_y_1 * sqrt( varnce_x_1 * varnce_y_1 ) * ( w_1 - wm ) &
+          + corr_w_y_1 * sqrt( varnce_w_1 * varnce_y_1 ) * ( x_1 - xm ) &
+          + corr_w_x_1 * sqrt( varnce_w_1 * varnce_x_1 ) * ( y_1 - ym ) ) &
+      + ( one - mixt_frac ) &
+        * ( ( w_2 - wm ) * ( x_2 - xm ) * ( y_2 - ym ) &
+            + corr_x_y_2 * sqrt( varnce_x_2 * varnce_y_2 ) * ( w_2 - wm ) &
+            + corr_w_y_2 * sqrt( varnce_w_2 * varnce_y_2 ) * ( x_2 - xm ) &
+            + corr_w_x_2 * sqrt( varnce_w_2 * varnce_x_2 ) * ( y_2 - ym ) )
+
+
+    return
+
+  end function calc_wpxpyp_pdf
+
   !=============================================================================
   elemental subroutine calc_cloud_frac_component( mean_chi_i, stdev_chi_i, &
                                                   chi_at_sat, &
