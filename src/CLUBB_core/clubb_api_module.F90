@@ -153,13 +153,17 @@ module clubb_api_module
     iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
     iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
     iC12, iC13, iC14, iC15, iC6rt_Lscale0, iC6thl_Lscale0, &
-    iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, ic_K2, inu2, &
-    ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, &
-    inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
+    iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
+    ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
+    inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, inu_hm, &
+    islope_coef_spread_DG_means_w, ipdf_component_stdev_factor_w, &
+    icoef_spread_DG_means_rt, icoef_spread_DG_means_thl, &
+    ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
     iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
-    ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
-    iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
-    ithlp2_rad_cloud_frac_thresh, iup2_vp2_factor
+    ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, &
+    iLscale_mu_coef, iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, &
+    ic_K10, ic_K10h, ithlp2_rad_coef, ithlp2_rad_cloud_frac_thresh, &
+    iup2_vp2_factor
 
   use pdf_parameter_module, only : &
 ! The CLUBB_CAM preprocessor directives are being commented out because this
@@ -259,13 +263,17 @@ module clubb_api_module
         iC6rt, iC6rtb, iC6rtc, iC6thl, iC6thlb, iC6thlc, &
         iC7, iC7b, iC7c, iC8, iC8b, iC10, iC11, iC11b, iC11c, &
         iC12, iC13, iC14, iC15, iC6rt_Lscale0, iC6thl_Lscale0, &
-        iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, ic_K2, inu2, &
-        ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, &
-        inu_hm, ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
+        iC7_Lscale0, iwpxp_L_thresh, ic_K, ic_K1, inu1, &
+        ic_K2, inu2, ic_K6, inu6, ic_K8, inu8, ic_K9, inu9, &
+        inu10, ic_K_hm, ic_K_hmb, iK_hm_min_coef, inu_hm, &
+        islope_coef_spread_DG_means_w, ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt, icoef_spread_DG_means_thl, &
+        ibeta, igamma_coef, igamma_coefb, igamma_coefc, ilmin_coef, &
         iomicron, izeta_vrnce_rat, iupsilon_precip_frac_rat, &
-        ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, iLscale_mu_coef, &
-        iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, ic_K10, ic_K10h, ithlp2_rad_coef, &
-        ithlp2_rad_cloud_frac_thresh, iup2_vp2_factor
+        ilambda0_stability_coef, imult_coef, itaumin, itaumax, imu, &
+        iLscale_mu_coef, iLscale_pert_coef, ialpha_corr, iSkw_denom_coef, &
+        ic_K10, ic_K10h, ithlp2_rad_coef, ithlp2_rad_cloud_frac_thresh, &
+        iup2_vp2_factor
 
 
 

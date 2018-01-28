@@ -59,6 +59,12 @@ module new_pdf_main
         calc_coef_wpxp2_implicit,  &
         calc_coefs_wp2xp_semiimpl
 
+    use parameters_tunable, only: &
+        slope_coef_spread_DG_means_w, & ! Variable(s)
+        pdf_component_stdev_factor_w, &
+        coef_spread_DG_means_rt, &
+        coef_spread_DG_means_thl
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -148,10 +154,7 @@ module new_pdf_main
       zeta_thl    ! Parameter for the PDF component variances of thl         [-]
 
     real ( kind = core_rknd ) :: &
-      coefficient_w, & ! Coefficient for w                                  [-]
-      lambda_w,      & ! Param. that increases or decreases Skw dependence  [-]
-      coef_rt,       & ! Coef.:  spread between the PDF comp. means of rt   [-]
-      coef_thl         ! Coef.:  spread between the PDF comp. means of thl  [-]
+      lambda_w    ! Param. that increases or decreases Skw dependence  [-]
 
     real ( kind = core_rknd ) :: &
       exp_factor_rt,   & ! Factor of the form 1 - exp{} that reduces F_rt   [-]
@@ -196,10 +199,7 @@ module new_pdf_main
        sgn_wpthlp = -one
     endif ! wpthlp >= 0
 
-    coefficient_w = 21.0_core_rknd 
     lambda_w = 0.5_core_rknd
-    coef_rt = 0.75_core_rknd
-    coef_thl = 0.75_core_rknd
 
     ! Calculate the adjusted (overall) correlation of rt and theta-l, and the
     ! value of exp_factor_rt.
@@ -222,10 +222,12 @@ module new_pdf_main
        ! The variable w has the greatest magnitude of skewness or the
        ! l_use_w_setter_var flag is enabled.
 
-       call calc_F_x_zeta_x_setter( Skw, sgn_wp2,            & ! In
-                                    coefficient_w, lambda_w, & ! In
-                                    F_w, zeta_w,             & ! Out
-                                    min_F_w, max_F_w         ) ! Out
+       call calc_F_x_zeta_x_setter( Skw, sgn_wp2,                 & ! In
+                                    slope_coef_spread_DG_means_w, & ! In
+                                    pdf_component_stdev_factor_w, & ! In
+                                    lambda_w,                     & ! In
+                                    F_w, zeta_w,                  & ! Out
+                                    min_F_w, max_F_w              ) ! Out
 
        ! Calculate the PDF parameters, including mixture fraction, for the
        ! setter variable, w.
@@ -248,7 +250,8 @@ module new_pdf_main
 
        ! Calculate the PDF parameters for responder variable rt.
        call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
-                                coef_rt, exp_factor_rt,          & ! In
+                                coef_spread_DG_means_rt,         & ! In
+                                exp_factor_rt,                   & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,       & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,       & ! In
                                 Skrt,                            & ! In/Out
@@ -260,7 +263,8 @@ module new_pdf_main
 
        ! Calculate the PDF parameters for responder variable thl.
        call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
-                                coef_thl, exp_factor_thl,           & ! In
+                                coef_spread_DG_means_thl,           & ! In
+                                exp_factor_thl,                     & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,          & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,          & ! In
                                 Skthl,                              & ! In/Out
@@ -274,10 +278,12 @@ module new_pdf_main
 
        ! The variable rt has the greatest magnitude of skewness.
 
-       call calc_F_x_zeta_x_setter( Skrt, sgn_wprtp,               & ! In
-                                    0.75_core_rknd, 0.1_core_rknd, & ! In
-                                    F_rt, zeta_rt,                 & ! Out
-                                    min_F_rt, max_F_rt             ) ! Out
+       call calc_F_x_zeta_x_setter( Skrt, sgn_wprtp,   & ! In
+                                    0.75_core_rknd,    & ! In
+                                    1.0_core_rknd,     & ! In 
+                                    0.1_core_rknd,     & ! In
+                                    F_rt, zeta_rt,     & ! Out
+                                    min_F_rt, max_F_rt ) ! Out
 
        ! Calculate the PDF parameters, including mixture fraction, for the
        ! setter variable, rt.
@@ -314,7 +320,8 @@ module new_pdf_main
 
        ! Calculate the PDF parameters for responder variable thl.
        call calc_responder_var( thlm, thlp2, sgn_wpthlp, mixt_frac, & ! In
-                                coef_thl, exp_factor_thl,           & ! In
+                                coef_spread_DG_means_thl,           & ! In
+                                exp_factor_thl,                     & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,          & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,          & ! In
                                 Skthl,                              & ! In/Out
@@ -328,10 +335,12 @@ module new_pdf_main
 
        ! The variable thl has the greatest magnitude of skewness.
 
-       call calc_F_x_zeta_x_setter( Skthl, sgn_wpthlp,             & ! In
-                                    0.75_core_rknd, 0.1_core_rknd, & ! In
-                                    F_thl, zeta_thl,               & ! Out
-                                    min_F_thl, max_F_thl           ) ! Out
+       call calc_F_x_zeta_x_setter( Skthl, sgn_wpthlp,   & ! In
+                                    0.75_core_rknd,      & ! In
+                                    1.0_core_rknd,       & ! In
+                                    0.1_core_rknd,       & ! In
+                                    F_thl, zeta_thl,     & ! Out
+                                    min_F_thl, max_F_thl ) ! Out
 
        ! Calculate the PDF parameters, including mixture fraction, for the
        ! setter variable, thl.
@@ -368,7 +377,8 @@ module new_pdf_main
 
        ! Calculate the PDF parameters for responder variable rt.
        call calc_responder_var( rtm, rtp2, sgn_wprtp, mixt_frac, & ! In
-                                coef_rt, exp_factor_rt,          & ! In
+                                coef_spread_DG_means_rt,         & ! In
+                                exp_factor_rt,                   & ! In
                                 max_Skx2_pos_Skx_sgn_wpxp,       & ! In
                                 max_Skx2_neg_Skx_sgn_wpxp,       & ! In
                                 Skrt,                            & ! In/Out
@@ -432,7 +442,8 @@ module new_pdf_main
 
   !=============================================================================
   subroutine calc_responder_var( xm, xp2, sgn_wpxp, mixt_frac, & ! In
-                                 coef_x, exp_factor_x,         & ! In
+                                 coef_spread_DG_means_x,       & ! In
+                                 exp_factor_x,                 & ! In
                                  max_Skx2_pos_Skx_sgn_wpxp,    & ! In
                                  max_Skx2_neg_Skx_sgn_wpxp,    & ! In
                                  Skx,                          & ! In/Out
@@ -466,12 +477,12 @@ module new_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      xm,           & ! Mean of x (overall)                         [units vary]
-      xp2,          & ! Variance of x (overall)                 [(units vary)^2]
-      sgn_wpxp,     & ! Sign of the covariance of w and x                    [-]
-      mixt_frac,    & ! Mixture fraction                                     [-]
-      coef_x,       & ! Coefficient:  spread betw. the PDF comp. means of x  [-]
-      exp_factor_x    ! Factor of the form 1 - exp{} that reduces F_x        [-]
+      xm,                     & ! Mean of x (overall)               [units vary]
+      xp2,                    & ! Variance of x (overall)       [(units vary)^2]
+      sgn_wpxp,               & ! Sign of the covariance of w and x          [-]
+      mixt_frac,              & ! Mixture fraction                           [-]
+      coef_spread_DG_means_x, & ! Coef.: spread betw. PDF comp. means of x   [-]
+      exp_factor_x              ! Factor of the form 1 - exp{}; reduces F_x  [-]
 
     real( kind = core_rknd ), intent(in) :: &
       max_Skx2_pos_Skx_sgn_wpxp, & ! Maximum Skx^2 when Skx*sgn(<w'x'>) >= 0 [-]
@@ -524,7 +535,8 @@ module new_pdf_main
                                     min_F_x, max_F_x )           ! Out
 
     ! F_x must have a value between min_F_x and max_F_x.
-    F_x = calc_F_x_responder( coef_x, exp_factor_x, min_F_x, max_F_x )
+    F_x = calc_F_x_responder( coef_spread_DG_means_x, exp_factor_x, &
+                              min_F_x, max_F_x )
 
     call calc_responder_params( xm, xp2, Skx, sgn_wpxp,       & ! In
                                 F_x, mixt_frac,               & ! In
@@ -539,10 +551,12 @@ module new_pdf_main
   end subroutine calc_responder_var
 
   !=============================================================================
-  subroutine calc_F_x_zeta_x_setter( Skx, sgn_wpxp,       & ! In
-                                     coefficient, lambda, & ! In
-                                     F_x, zeta_x,         & ! Out
-                                     min_F_x, max_F_x     ) ! Out
+  subroutine calc_F_x_zeta_x_setter( Skx, sgn_wpxp,                & ! In
+                                     slope_coef_spread_DG_means_x, & ! In
+                                     pdf_component_stdev_factor_x, & ! In
+                                     lambda,                       & ! In
+                                     F_x, zeta_x,                  & ! Out
+                                     min_F_x, max_F_x              ) ! Out
 
     ! Description:
     ! Calculates the values of F_x and zeta_x for the setter variable (which is
@@ -551,15 +565,17 @@ module new_pdf_main
     ! The value of F_x is calculated between 0 (min_F_x) and 1 (max_F_x).  The
     ! equation is:
     !
-    ! F_x = max_F_x + ( min_F_x - max_F_x ) * exp{ -|Skx|^lambda / coef };
+    ! F_x = max_F_x + ( min_F_x - max_F_x )
+    !                 * exp{ -|Skx|^lambda / slope_coef_spread_DG_means_x };
     !
     ! which reduces to:
     !
-    ! F_x = 1 - exp{ -|Skx|^lambda / coef };
+    ! F_x = 1 - exp{ -|Skx|^lambda / slope_coef_spread_DG_means_x };
     !
-    ! where lambda > 0 and coef > 0.  As |Skx| goes toward 0, the value of F_x
-    ! goes toward 0, and as |Skx| becomes large, the value of F_x goes toward 1.
-    ! When coef is small, the value of F_x tends toward 1, and when coef is
+    ! where lambda > 0 and slope_coef_spread_DG_means_x > 0.  As |Skx| goes
+    ! toward 0, the value of F_x goes toward 0, and as |Skx| becomes large, the
+    ! value of F_x goes toward 1.  When slope_coef_spread_DG_means_x is small,
+    ! the value of F_x tends toward 1, and when slope_coef_spread_DG_means_x is
     ! large, the value of F_x tends toward 0.  When lambda is small, the value
     ! of F_x is less dependent on Skx, and when lambda is large, the value of
     ! F_x is more dependent on Skx.
@@ -570,8 +586,27 @@ module new_pdf_main
     ! owing to numerical underflow or loss of precision, this equation can be
     ! rewritten as:
     !
-    ! F_x = min_F_x * exp{ -|Skx|^lambda / coef }
-    !       + max_F_x * ( 1 - exp{ -|Skx|^lambda / coef } ).
+    ! F_x
+    ! = min_F_x * exp{ -|Skx|^lambda / slope_coef_spread_DG_means_x }
+    !   + max_F_x * ( 1 - exp{ -|Skx|^lambda / slope_coef_spread_DG_means_x } ).
+    !
+    ! The value of zeta_x used to adjust the PDF component standard devations:
+    !
+    ! 1 + zeta_x = ( mixt_frac * sigma_x_1^2 )
+    !              / ( ( 1 - mixt_frac ) * sigma_x_2^2 );
+    !
+    ! where zeta_x > -1.  The sign of zeta_x is used to easily determine if
+    ! mixt_frac * sigma_x_1^2 is greater than ( 1 - mixt_frac ) * sigma_x_2^2
+    ! (when zeta_x is positive), mixt_frac * sigma_x_1^2 is less than
+    ! ( 1 - mixt_frac ) * sigma_x_2^2 (when zeta_x is negative), or
+    ! mixt_frac * sigma_x_1^2 is equal to ( 1 - mixt_frac ) * sigma_x_2^2 (when
+    ! zeta_x is 0).
+    !
+    ! In order to allow for a tunable parameter that is the pure ratio of
+    ! mixt_frac * sigma_x_1^2 to ( 1 - mixt_frac ) * sigma_x_2^2, zeta_x is
+    ! related to the parameter pdf_component_stdev_factor_x, where:
+    !
+    ! 1 + zeta_x = pdf_component_stdev_factor_x.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -587,10 +622,11 @@ module new_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      Skx,         & ! Skewness of x (overall)                             [-]
-      sgn_wpxp,    & ! Sign of the covariance of w and x                   [-]
-      coefficient, & ! Coefficient                                         [-]
-      lambda         ! Param. that increases or decreases Skx dependence   [-]
+      Skx,                          & ! Skewness of x (overall)              [-]
+      sgn_wpxp,                     & ! Sign of the covariance of w and x    [-]
+      slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
+      pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
+      lambda                          ! Param. for Skx dependence            [-]
 
     ! Output Variables
     real( kind = core_rknd ), intent(out) :: &
@@ -613,18 +649,19 @@ module new_pdf_main
     max_F_x = one
 
     ! F_x must have a value between min_F_x and max_F_x.
-    exp_Skx_interp_factor = exp( -abs(Skx)**lambda / coefficient )
+    exp_Skx_interp_factor &
+    = exp( -abs(Skx)**lambda / slope_coef_spread_DG_means_x )
 
     F_x = min_F_x * exp_Skx_interp_factor &
           + max_F_x * ( one - exp_Skx_interp_factor )
 
     ! The value of zeta_x must be greater than -1.
-    if ( Skx * sgn_wpxp >= zero ) then
-       zeta_x = lambda * abs( Skx )
-    else ! Skx * sgn( <w'x'> ) < 0
-       zeta_x = one / ( one + lambda * abs( Skx ) ) - one 
-    endif ! Skx * sgn( <w'x'> ) >= 0
-    zeta_x = 5.5_core_rknd
+    !if ( Skx * sgn_wpxp >= zero ) then
+    !   zeta_x = lambda * abs( Skx )
+    !else ! Skx * sgn( <w'x'> ) < 0
+    !   zeta_x = one / ( one + lambda * abs( Skx ) ) - one 
+    !endif ! Skx * sgn( <w'x'> ) >= 0
+    zeta_x = pdf_component_stdev_factor_x - one
 
 
     return
@@ -632,7 +669,8 @@ module new_pdf_main
   end subroutine calc_F_x_zeta_x_setter
 
   !=============================================================================
-  function calc_F_x_responder( coef_x, exp_factor_x, min_F_x, max_F_x ) &
+  function calc_F_x_responder( coef_spread_DG_means_x, exp_factor_x, &
+                               min_F_x, max_F_x ) &
   result( F_x )
 
     ! Description:
@@ -642,10 +680,12 @@ module new_pdf_main
     ! The value of F_x is calculated between min_F_x and max_F_x.  The equation
     ! is:
     !
-    ! F_x = min_F_x + ( max_F_x - min_F_x ) * coef_x * exp_factor_x;
+    ! F_x = min_F_x + ( max_F_x - min_F_x )
+    !                 * coef_spread_DG_means_x * exp_factor_x;
     !
-    ! where 0 <= coef_x <= 1.  As coef_x goes toward 0, the value of F_x goes
-    ! toward min_F_x, and as coef_x goes toward 1, the value of F_x goes toward
+    ! where 0 <= coef_spread_DG_means_x <= 1.  As coef_spread_DG_means_x
+    ! goes toward 0, the value of F_x goes toward min_F_x, and as
+    ! coef_spread_DG_means_x goes toward 1, the value of F_x goes toward
     ! max_F_x.  The exp_factor_x is a factor of the form 1 - exp{ }.  The range
     ! of values of exp_factor_x is 0 <= exp_factor_x <= 1.  Here, exp_factor_x
     ! is used to reduce the value of F_x under special conditions.
@@ -653,7 +693,8 @@ module new_pdf_main
     ! The equation for exp_factor_x depends on which responder variable is being
     ! solved for.  For rt, the F_rt equation is:
     !
-    ! F_rt = min_F_rt + ( max_F_rt - min_F_rt ) * coef_rt * exp_factor_rt;
+    ! F_rt = min_F_rt + ( max_F_rt - min_F_rt )
+    !                   * coef_spread_DG_means_rt * exp_factor_rt;
     !
     ! where exp_factor_rt is given by:
     !
@@ -683,7 +724,7 @@ module new_pdf_main
     !
     ! For theta-l, the F_thl equation is:
     !
-    ! F_thl = min_F_thl + ( max_F_thl - min_F_thl ) * coef_thl;
+    ! F_thl = min_F_thl + ( max_F_thl - min_F_thl ) * coef_spread_DG_means_thl;
     !
     ! where exp_factor_thl is set to 1 (1 - exp{-inf} = 1) because reducing
     ! F_thl through the use of exp_factor_thl is not desired for theta-l.
@@ -712,8 +753,8 @@ module new_pdf_main
     ! owing to numerical underflow or loss of precision, this equation can be
     ! rewritten as:
     !
-    ! F_x = min_F_x * ( 1 - coef_x * exp_factor_x )
-    !       + max_F_x * coef_x * exp_factor_x.
+    ! F_x = min_F_x * ( 1 - coef_spread_DG_means_x * exp_factor_x )
+    !       + max_F_x * coef_spread_DG_means_x * exp_factor_x.
 
     ! References:
     !-----------------------------------------------------------------------
@@ -728,10 +769,10 @@ module new_pdf_main
 
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
-      coef_x,       & ! Coefficient:  spread betw. the PDF comp. means of x  [-]
-      exp_factor_x, & ! Factor of the form 1 - exp{} that reduces F_x        [-]
-      min_F_x,      & ! Minimum allowable value of parameter F_x             [-]
-      max_F_x         ! Maximum allowable value of parameter F_x             [-]
+      coef_spread_DG_means_x, & ! Coef.: spread betw. PDF comp. means of x   [-]
+      exp_factor_x,           & ! Factor of the form 1 - exp{}; reduces F_x  [-]
+      min_F_x,                & ! Minimum allowable value of parameter F_x   [-]
+      max_F_x                   ! Maximum allowable value of parameter F_x   [-]
 
     ! Return Variable
     real( kind = core_rknd ) :: &
@@ -739,8 +780,8 @@ module new_pdf_main
 
 
     ! F_x must have a value between min_F_x and max_F_x.
-    F_x = min_F_x * ( one - coef_x * exp_factor_x ) &
-          + max_F_x * coef_x * exp_factor_x
+    F_x = min_F_x * ( one - coef_spread_DG_means_x * exp_factor_x ) &
+          + max_F_x * coef_spread_DG_means_x * exp_factor_x
 
 
     return

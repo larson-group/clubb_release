@@ -26,7 +26,7 @@ module parameter_indices
   private ! Default Scope
 
   integer, parameter, public ::  & 
-    nparams = 72 ! Total tunable parameters
+    nparams = 76 ! Total tunable parameters
 
 !***************************************************************
 !                    ***** IMPORTANT *****
@@ -92,29 +92,33 @@ module parameter_indices
     iK_hm_min_coef    = 49, & 
     inu_hm            = 50 
 
-  integer, parameter, public :: & 
-    igamma_coef                  = 51, & 
-    igamma_coefb                 = 52, & 
-    igamma_coefc                 = 53, & 
-    imu                          = 54, & 
-    ibeta                        = 55, & 
-    ilmin_coef                   = 56, &
-    iomicron                     = 57, &
-    izeta_vrnce_rat              = 58, &
-    iupsilon_precip_frac_rat     = 59, &
-    ilambda0_stability_coef      = 60, &
-    imult_coef                   = 61, &
-    itaumin                      = 62, &
-    itaumax                      = 63, &
-    iLscale_mu_coef              = 64, &
-    iLscale_pert_coef            = 65, &
-    ialpha_corr                  = 66, &
-    iSkw_denom_coef              = 67, &
-    ic_K10                       = 68, &
-    ic_K10h                      = 69, &
-    ithlp2_rad_coef              = 70, &
-    ithlp2_rad_cloud_frac_thresh = 71, &
-    iup2_vp2_factor              = 72
+  integer, parameter, public :: &
+    islope_coef_spread_DG_means_w = 51, &
+    ipdf_component_stdev_factor_w = 52, &
+    icoef_spread_DG_means_rt      = 53, &
+    icoef_spread_DG_means_thl     = 54, &
+    igamma_coef                   = 55, & 
+    igamma_coefb                  = 56, & 
+    igamma_coefc                  = 57, & 
+    imu                           = 58, & 
+    ibeta                         = 59, & 
+    ilmin_coef                    = 60, &
+    iomicron                      = 61, &
+    izeta_vrnce_rat               = 62, &
+    iupsilon_precip_frac_rat      = 63, &
+    ilambda0_stability_coef       = 64, &
+    imult_coef                    = 65, &
+    itaumin                       = 66, &
+    itaumax                       = 67, &
+    iLscale_mu_coef               = 68, &
+    iLscale_pert_coef             = 69, &
+    ialpha_corr                   = 70, &
+    iSkw_denom_coef               = 71, &
+    ic_K10                        = 72, &
+    ic_K10h                       = 73, &
+    ithlp2_rad_coef               = 74, &
+    ithlp2_rad_cloud_frac_thresh  = 75, &
+    iup2_vp2_factor               = 76
 
 
 end module parameter_indices
