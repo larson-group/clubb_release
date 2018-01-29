@@ -677,7 +677,7 @@ module clubb_driver
       call write_text( "---------          -----", l_write_to_file, iunit, '(4x,A24)')
       do j = 1, nparams, 1
         call write_text(params_list(j) // " = ", params(j), & 
-          l_write_to_file, iunit, '(A18,F27.20)')
+          l_write_to_file, iunit, '(A28,F27.20)')
       end do
 
       call write_text( "--------------------------------------------------", &
