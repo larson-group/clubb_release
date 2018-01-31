@@ -5,7 +5,7 @@ f_tol              = 1.0,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .false.,
-t_variables       = "rtm", "qtm",
+t_variables       = "rtm", "RTM",
 weight_var_nl     = 1.0,
 anneal_temp       = 100.,
 anneal_iter       = 100,
@@ -23,7 +23,7 @@ tune_type         = 0
 &cases
 ! DYCOMS II RF02 Drizzle
 hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_do_zt.ctl"
-les_stats_file_nl(1)    = "../les_data/dycoms2_rf02_do_coamps_sm.ctl"
+les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_dr_nosed/DYCOMS_RF02_128x128x96_dr_nosed.nc"
 run_file_nl(1)          = "dycoms2_rf02_do_hoc.in"
 z_i_nl(1)               = 2
 z_f_nl(1)               = 147
