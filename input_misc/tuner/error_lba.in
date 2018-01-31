@@ -1,15 +1,15 @@
 ! $Id$
 
 &stats
-f_tol              = 1.0,
+f_tol               = 1.0,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .false.,
-t_variables       = "rtm", "RTM",
-weight_var_nl     = 1.0,
-anneal_temp       = 100.,
-anneal_iter       = 100,
-tune_type         = 0
+t_variables       = "cloud_frac", "CLD", "rcm", "RCM",
+weight_var_nl       = 1.0,
+anneal_temp         = 100.,
+anneal_iter         = 100,
+tune_type           = 0
 /
 
 ! clubb_stats_file is the name of clubb stats file;  This should be the same as 
@@ -21,23 +21,23 @@ tune_type         = 0
 ! timestep_intvls_nl is the time interval(s) to tune for, in ordered pair form.
 
 &cases
-! DYCOMS II RF02 Drizzle
-hoc_stats_file_nl(1)    = "../output/dycoms2_rf02_ds_zt.ctl"
-les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_dr_sed/DYCOMS_RF02_128x128x96_dr_sed.nc"
-run_file_nl(1)          = "dycoms2_rf02_ds_hoc.in"
-z_i_nl(1)               = 2
-z_f_nl(1)               = 147
-timestep_intvls_nl(1,:) = 120, 360
+! LBA
+hoc_stats_file_nl(1)    = "../output/lba_zt.ctl"
+les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/LBA_128kmx128kmx128_1km_Morrison/LBA_128kmx128kmx128_1km_Morrison.nc"
+run_file_nl(1)          = "lba_hoc.in"
+z_i_nl(1)               = 3
+z_f_nl(1)               = 50
+timestep_intvls_nl(1,:) = 301, 360
 weight_case_nl(1)       = 1.0
 /
 
 &initspread
-C1                           = 0.41
+C1                           = 0.25
 C1b                          = 0.
 C1c                          = 0.
-C2rt                         = 0.
-C2thl                        = 0.
-C2rtthl                      = 0.
+C2rt                         = 0.25
+C2thl                        = 0.25
+C2rtthl                      = 0.25
 C2                           = 0.
 C2b                          = 0.
 C2c                          = 0.
@@ -49,13 +49,13 @@ C6rtc                        = 0.
 C6thl                        = 0.
 C6thlb                       = 0.
 C6thlc                       = 0.
-C7                           = 0.41
-C7b                          = 0.
+C7                           = 0.25
+C7b                          = 0.25
 C7c                          = 0.
 C8                           = 0.
 C8b                          = 0.
 C10                          = 0.
-C11                          = 0.41
+C11                          = 0.25
 C11b                         = 0.
 C11c                         = 0.
 C12                          = 0.

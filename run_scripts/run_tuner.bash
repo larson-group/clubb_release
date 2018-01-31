@@ -73,6 +73,7 @@ if [ $RUN_TYPE = 'single' ] ; then # Single Case.
    # RUN_CASE=gabls2
    # RUN_CASE=gabls3_night
    # RUN_CASE=jun25_altocu (Needs an error_jun25_altocu.in file before running)
+   # RUN_CASE=lba
    # RUN_CASE=nov11_altocu
    # RUN_CASE=rico
    # RUN_CASE=wangara 

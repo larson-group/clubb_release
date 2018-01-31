@@ -5,7 +5,7 @@ f_tol              = 1.0,
 l_results_stdout    = .true.,
 l_results_file      = .true.,
 l_stdout_on_invalid = .true.,
-t_variables       = "cloud_frac", "cf",
+t_variables       = "cloud_frac", "CLD",
 weight_var_nl     = 1.0,
 anneal_temp       = 100.,
 anneal_iter       = 100,
@@ -23,7 +23,7 @@ tune_type         = 0
 &cases
 ! GCSS ARM
 hoc_stats_file_nl(1)    = "../output/arm_zt.ctl"
-les_stats_file_nl(1)    = "../les_data/arm_coamps_sm.ctl"
+les_stats_file_nl(1)    = "../sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc"
 run_file_nl(1)          = "arm_hoc.in"
 z_i_nl(1)               = 2
 z_f_nl(1)               = 109
