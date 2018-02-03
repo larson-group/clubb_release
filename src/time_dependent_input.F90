@@ -575,10 +575,6 @@ module time_dependent_input
     call time_select( time, size(dimension_var%values), dimension_var%values, &
                                  before_time, after_time, time_frac )
 
-    if( time_frac == -1.0_core_rknd ) then
-      call clubb_debug(1,"times are not sorted in forcing")
-    endif
-
     ! Parse the values in t_dependent_forcing_data for CLUBB compatible forcing
     ! data.
     do i=2, nCols
@@ -761,12 +757,6 @@ module time_dependent_input
       write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
 
-     else if ( abs(real(time,kind=core_rknd)-time_array(1)) <= &
-               abs(real(time,kind=core_rknd)+time_array(1))*eps/2 ) then
-
-      before_time = 1
-      after_time = 2
-
     else if ( real( time, kind = core_rknd ) > time_array(nvar) ) then
 
       ! If time is greater than the highest value in time_array, an invalid
@@ -775,18 +765,23 @@ module time_dependent_input
       write(fstderr,*) "Selected time is after the last (end) time"
       write(fstderr,*) "at which data are available.  Cannot interpolate."
       stop
-      
-    else if ( abs(real(time,kind=core_rknd)-time_array(nvar)) <= &
-              abs(real(time,kind=core_rknd)+time_array(nvar))*eps/2 ) then
-      
-      before_time = nvar - 1
-      after_time = nvar
 
     else
 
       do k=1,nvar-1
 
-        if ( (real( time, kind = core_rknd ) > time_array(k)) .and. &
+        if( time_array(k) >= time_array(k+1) ) then
+
+            ! If times are not increasing then they aren't sorted properly.
+            write(fstderr,*) "In subroutine time_select:"
+            write(fstderr,*) "times are not sorted. Check (case)_surface.in "
+            write(fstderr,*) "and (case)_forcings.in, located in input/case_setups."
+            stop
+
+        end if 
+
+        if ( before_time == -999 .and. &
+             (real( time, kind = core_rknd ) >= time_array(k)) .and. &
              (real( time, kind = core_rknd ) <= time_array(k+1)) ) then
 
           before_time = k
