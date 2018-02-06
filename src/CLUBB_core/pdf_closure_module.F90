@@ -110,8 +110,7 @@ module pdf_closure_module
         sclr_dim             ! Number of passive scalar variables
 
     use parameters_tunable, only: & 
-        beta, &  ! Variable(s)
-        Skw_denom_coef
+        Skw_denom_coef ! Variable(s)
 
     use pdf_parameter_module, only:  &
         pdf_parameter  ! type

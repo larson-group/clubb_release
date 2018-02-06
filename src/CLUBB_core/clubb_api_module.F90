@@ -1578,9 +1578,6 @@ contains
     use advance_windm_edsclrm_module, only: &
       xpwp_fnc
 
-    use parameters_tunable, only: &
-      c_K_hm
-
     implicit none
 
     ! Input Variables

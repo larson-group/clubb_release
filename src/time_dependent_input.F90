@@ -711,7 +711,7 @@ module time_dependent_input
 
     use clubb_precision, only: time_precision, core_rknd ! Variable(s)
 
-    use constants_clubb, only: fstderr, eps ! Constant(s)
+    use constants_clubb, only: fstderr ! Constant(s)
 
     implicit none
 

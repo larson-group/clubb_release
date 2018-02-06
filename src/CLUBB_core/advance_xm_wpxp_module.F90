@@ -50,7 +50,7 @@ module advance_xm_wpxp_module
                               w_1_zm, w_2_zm, varnce_w_1_zm, varnce_w_2_zm, &
                               mixt_frac_zm, l_implemented, em, &
                               sclrpthvp, sclrm_forcing, sclrp2, exner, rcm, &
-                              p_in_Pa, cloud_frac, thvm, Cx_fnc_Richardson, &
+                              p_in_Pa, thvm, Cx_fnc_Richardson, &
                               rtm, wprtp, thlm, wpthlp, &
                               err_code, &
                               sclrm, wpsclrp )
@@ -219,7 +219,6 @@ module advance_xm_wpxp_module
       exner,           & ! Exner function                            [-]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac,      & ! Cloud fraction                            [-]
       thvm,            & ! Virutal potential temperature             [K]
       Cx_fnc_Richardson  ! Cx_fnc computed from Richardson_num       [-]
 
@@ -406,7 +405,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -480,7 +479,7 @@ module advance_xm_wpxp_module
                         C6thl_Skw_fnc, rho_ds_zm, rho_ds_zt, & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt, & ! Intent(in)
                         wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the th_l and w'th_l' equations.
@@ -565,7 +564,7 @@ module advance_xm_wpxp_module
                           C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  &  ! Intent(in)
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &  ! Intent(in)
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented, & ! Intent(in)
-                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, & ! Intent(in)
+                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, & ! Intent(in)
                           thvm, & ! Intent(in)
                           lhs ) ! Intent(out)
 
@@ -628,7 +627,7 @@ module advance_xm_wpxp_module
                         C6rt_Skw_fnc, rho_ds_zm, rho_ds_zt,  & ! Intent(in)
                         invrs_rho_ds_zm, invrs_rho_ds_zt,  & ! Intent(in)
                         dummy_1d, dummy_1d, l_implemented,  & ! Intent(in)
-                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, & ! Intent(in)
+                        em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm, & ! Intent(in)
                         lhs ) ! Intent(out)
 
       ! Compute the explicit portion of the r_t and w'r_t' equations.
@@ -876,7 +875,7 @@ module advance_xm_wpxp_module
                           C6x_Skw_fnc, rho_ds_zm, rho_ds_zt,  &
                           invrs_rho_ds_zm, invrs_rho_ds_zt,  &
                           wpxp_upper_lim, wpxp_lower_lim, l_implemented,  &
-                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm, &
+                          em, Lscale, thlm, exner, rtm, rcm, p_in_Pa, thvm, &
                           lhs )
 
     ! Description:
@@ -1012,7 +1011,6 @@ module advance_xm_wpxp_module
       rtm,             & ! total water mixing ratio, r_t             [-]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac,      & ! Cloud fraction                            [-]
       thvm,            & ! Virtual potential temperature             [K]
       wm_zm,           & ! w wind component on momentum levels       [m/s]
       wm_zt,           & ! w wind component on thermodynamic levels  [m/s]
@@ -1064,7 +1062,7 @@ module advance_xm_wpxp_module
 
     if ( l_stability_correct_Kh_N2_zm ) then
       Kh_N2_zm = Kh_zm / calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
-                                                    p_in_Pa, cloud_frac, thvm )
+                                                    p_in_Pa, thvm )
     else
       Kh_N2_zm = Kh_zm
     end if

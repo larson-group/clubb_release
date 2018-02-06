@@ -54,7 +54,7 @@ program jacobian
 
     integer :: entries ! Total tunable parameters
 
-    character(len=27), pointer :: name(:)
+    character(len=32), pointer :: name(:)
 
     real( kind = core_rknd ), pointer :: value(:)
 

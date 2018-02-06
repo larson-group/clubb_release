@@ -4097,7 +4097,7 @@ module clubb_driver
       l_compute_momentum_flux = .true.
       l_set_sclr_sfc_rtm_thlm = .true.
       l_fixed_flux            = .true.
-      call cloud_feedback_sfclyr( time_current, runtype, sfctype, &  ! Intent(in)
+      call cloud_feedback_sfclyr( time_current, sfctype, &  ! Intent(in)
                                   thlm(2), rtm(2), gr%zt(2),   &     ! Intent(in)
                                   ubar, p_sfc, T_sfc,            &   ! Intent(in)
                                   wpthlp_sfc, wprtp_sfc, ustar)      ! Intent(out)

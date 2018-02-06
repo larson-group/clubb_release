@@ -222,7 +222,7 @@ module new_pdf_main
        ! The variable w has the greatest magnitude of skewness or the
        ! l_use_w_setter_var flag is enabled.
 
-       call calc_F_x_zeta_x_setter( Skw, sgn_wp2,                 & ! In
+       call calc_F_x_zeta_x_setter( Skw,                          & ! In
                                     slope_coef_spread_DG_means_w, & ! In
                                     pdf_component_stdev_factor_w, & ! In
                                     lambda_w,                     & ! In
@@ -278,7 +278,7 @@ module new_pdf_main
 
        ! The variable rt has the greatest magnitude of skewness.
 
-       call calc_F_x_zeta_x_setter( Skrt, sgn_wprtp,   & ! In
+       call calc_F_x_zeta_x_setter( Skrt,              & ! In
                                     0.75_core_rknd,    & ! In
                                     1.0_core_rknd,     & ! In 
                                     0.1_core_rknd,     & ! In
@@ -335,7 +335,7 @@ module new_pdf_main
 
        ! The variable thl has the greatest magnitude of skewness.
 
-       call calc_F_x_zeta_x_setter( Skthl, sgn_wpthlp,   & ! In
+       call calc_F_x_zeta_x_setter( Skthl,               & ! In
                                     0.75_core_rknd,      & ! In
                                     1.0_core_rknd,       & ! In
                                     0.1_core_rknd,       & ! In
@@ -551,7 +551,7 @@ module new_pdf_main
   end subroutine calc_responder_var
 
   !=============================================================================
-  subroutine calc_F_x_zeta_x_setter( Skx, sgn_wpxp,                & ! In
+  subroutine calc_F_x_zeta_x_setter( Skx,                          & ! In
                                      slope_coef_spread_DG_means_x, & ! In
                                      pdf_component_stdev_factor_x, & ! In
                                      lambda,                       & ! In
@@ -623,7 +623,6 @@ module new_pdf_main
     ! Input Variables
     real( kind = core_rknd ), intent(in) :: &
       Skx,                          & ! Skewness of x (overall)              [-]
-      sgn_wpxp,                     & ! Sign of the covariance of w and x    [-]
       slope_coef_spread_DG_means_x, & ! Slope coef: spread PDF comp. means x [-]
       pdf_component_stdev_factor_x, & ! Param.: PDF comp. standard devs.; x  [-]
       lambda                          ! Param. for Skx dependence            [-]
@@ -656,11 +655,6 @@ module new_pdf_main
           + max_F_x * ( one - exp_Skx_interp_factor )
 
     ! The value of zeta_x must be greater than -1.
-    !if ( Skx * sgn_wpxp >= zero ) then
-    !   zeta_x = lambda * abs( Skx )
-    !else ! Skx * sgn( <w'x'> ) < 0
-    !   zeta_x = one / ( one + lambda * abs( Skx ) ) - one 
-    !endif ! Skx * sgn( <w'x'> ) >= 0
     zeta_x = pdf_component_stdev_factor_x - one
 
 

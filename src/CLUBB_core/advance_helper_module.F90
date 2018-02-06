@@ -158,8 +158,8 @@ module advance_helper_module
   end subroutine set_boundary_conditions_rhs
 
   !===============================================================================
-  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, p_in_Pa, &
-                                      cloud_frac, thvm ) &
+  function calc_stability_correction( thlm, Lscale, em, exner, rtm, rcm, &
+                                      p_in_Pa, thvm ) &
     result ( stability_correction )
   !
   ! Description:
@@ -193,7 +193,6 @@ module advance_helper_module
       rtm,             & ! total water mixing ratio, r_t             [kg/kg]
       rcm,             & ! cloud water mixing ratio, r_c             [kg/kg]
       p_in_Pa,         & ! Air pressure                              [Pa]
-      cloud_frac,      & ! Cloud fraction                            [-]
       thvm               ! Virtual potential temperature             [K]
 
     ! Result
@@ -205,8 +204,8 @@ module advance_helper_module
       lambda0_stability
 
     !------------ Begin Code --------------
-    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac, thvm )
+    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm )
+
     lambda0_stability = merge( lambda0_stability_coef, zero, brunt_vaisala_freq_sqd > zero )
 
     stability_correction = 1.0_core_rknd &
@@ -216,7 +215,7 @@ module advance_helper_module
   end function calc_stability_correction
 
   !===============================================================================
-  function calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, cloud_frac, thvm ) &
+  function calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm ) &
     result( brunt_vaisala_freq_sqd )
 
   ! Description:
@@ -261,7 +260,6 @@ module advance_helper_module
       rtm,     &  ! total water mixing ratio, r_t      [kg/kg]
       rcm,     &  ! cloud water mixing ratio, r_c      [kg/kg]
       p_in_Pa, &  ! Air pressure                       [Pa]
-      cloud_frac, & ! Cloud fraction                   [-]
       thvm        ! Virtual potential temperature      [K]
 
     ! Output Variables
@@ -324,7 +322,7 @@ module advance_helper_module
 
 !===============================================================================
   function compute_Cx_fnc_Richardson( thlm, um, vm, em, Lscale, exner, rtm, &
-                                      rcm, p_in_Pa, cloud_frac, thvm, rho_ds_zm ) &
+                                      rcm, p_in_Pa, thvm, rho_ds_zm ) &
     result( Cx_fnc_Richardson )
 
   ! Description:
@@ -390,7 +388,6 @@ module advance_helper_module
       rtm,     & ! total water mixing ratio, r_t                  [kg/kg]
       rcm,     & ! cloud water mixing ratio, r_c                  [kg/kg]
       p_in_Pa, & ! Air pressure                                   [Pa]
-      cloud_frac, & ! Cloud fraction                              [-]
       thvm,    & ! Virtual potential temperature                  [K]
       rho_ds_zm  ! Dry static density on momentum levels          [kg/m^3]
 
@@ -410,8 +407,7 @@ module advance_helper_module
 
   !-----------------------------------------------------------------------
     !----- Begin Code -----
-    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, &
-                                                          cloud_frac, thvm )
+    brunt_vaisala_freq_sqd = calc_brunt_vaisala_freq_sqd( thlm, exner, rtm, rcm, p_in_Pa, thvm )
 
     ! Statistics sampling
     if ( l_stats_samp ) then

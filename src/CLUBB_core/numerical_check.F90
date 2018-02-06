@@ -34,7 +34,7 @@ module numerical_check
 
   ! Abstraction of check_negative
   interface check_negative
-    module procedure check_negative_total, check_negative_index
+    module procedure check_negative_index!, check_negative_total
   end interface
 
 
@@ -885,51 +885,51 @@ module numerical_check
   end function is_nan_2d
 
 !------------------------------------------------------------------------
-  subroutine check_negative_total & 
-            ( var, varname, operation, err_code )
+!  subroutine check_negative_total & 
+!            ( var, varname, operation, err_code )
 !
 ! Description:
 !   Checks for negative values in the var array and reports them.
 !
 !-----------------------------------------------------------------------
-    use constants_clubb, only: & 
-        fstderr ! Variable(s)
-
-    use error_code, only:  & 
-        clubb_var_less_than_zero ! Variable(s)
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    implicit none
-
-    ! External
-    intrinsic :: any, present
-
-    ! Input Variables
-    real( kind = core_rknd ), intent(in), dimension(:) :: var
-
-    character(len=*), intent(in)::  & 
-    varname,     & ! Varible being examined
-    operation   ! Procedure calling check_zero
-
-    ! Optional In/Out Variable
-    integer, optional, intent(inout) :: err_code
-
-    if ( any( var < 0.0_core_rknd ) ) then
-
-      write(fstderr,*) varname, " < 0 in ", operation
-      if ( present( err_code ) ) then
-        if (err_code < clubb_var_less_than_zero ) then
-          err_code = clubb_var_less_than_zero
-        end if
-      end if
-
-    end if ! any ( var < 0 )
-
-    return
-
-  end subroutine check_negative_total
+!    use constants_clubb, only: & 
+!        fstderr ! Variable(s)
+!
+!    use error_code, only:  & 
+!        clubb_var_less_than_zero ! Variable(s)
+!
+!    use clubb_precision, only: &
+!      core_rknd ! Variable(s)
+!
+!    implicit none
+!
+!    ! External
+!    intrinsic :: any, present
+!
+!    ! Input Variables
+!    real( kind = core_rknd ), intent(in), dimension(:) :: var
+!
+!    character(len=*), intent(in)::  & 
+!    varname,     & ! Varible being examined
+!    operation   ! Procedure calling check_zero
+!
+!    ! Optional In/Out Variable
+!    integer, optional, intent(inout) :: err_code
+!
+!    if ( any( var < 0.0_core_rknd ) ) then
+!
+!      write(fstderr,*) varname, " < 0 in ", operation
+!      if ( present( err_code ) ) then
+!        if (err_code < clubb_var_less_than_zero ) then
+!          err_code = clubb_var_less_than_zero
+!        end if
+!      end if
+!
+!    end if ! any ( var < 0 )
+!
+!    return
+!
+!  end subroutine check_negative_total
 
 
 !------------------------------------------------------------------------

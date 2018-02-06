@@ -18,7 +18,7 @@ module cloud_feedback
   contains
 
   !----------------------------------------------------------------------
-  subroutine cloud_feedback_sfclyr( time, runtype, sfctype,                &
+  subroutine cloud_feedback_sfclyr( time, sfctype,                &
                                     thlm_sfc, rtm_sfc, lowest_level, &
                                     ubar, p_sfc, T_sfc,                &
                                     wpthlp_sfc, wprtp_sfc, ustar )
@@ -47,9 +47,6 @@ module cloud_feedback
   implicit none
 
   intrinsic :: max, sqrt
-
-  ! Input Variables
-  character(len=50), intent(in) :: runtype ! The case that is being run
 
   integer, intent(in) :: sfctype
 

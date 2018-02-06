@@ -205,224 +205,224 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine approx_w_corr( nz, pdf_dim, pdf_params, & ! Intent(in)
-                            rrm, Nrm, Ncnm, &
-                            stdev_w, sigma_rr_1, &
-                            sigma_Nr_1, sigma_Ncn_1, &
-                            corr_array) ! Intent(out)
-    ! Description:
-    ! Approximate the correlations of w with the hydrometeors.
-
-    ! References:
-    ! clubb:ticket:514
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
-
-    use pdf_parameter_module, only:  &
-        pdf_parameter  ! Type
-
-    use constants_clubb, only:  &
-        one,          & ! Constant(s)
-        rr_tol,       &
-        Nr_tol,       &
-        Ncn_tol,      &
-        w_tol,        & ! [m/s]
-        chi_tol    ! [kg/kg]
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      pdf_dim, & ! Number of diagnosed correlations
-      nz             ! Number of model vertical grid levels
-
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params    ! PDF parameters                         [units vary]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-      rrm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
-      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
-      Ncnm,            & ! Mean cloud nuclei conc., < N_cn >        [num/kg]
-      stdev_w            ! Standard deviation of w                              [m/s]
-
-    real( kind = core_rknd ), intent(in) :: &
-      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
-      sigma_Nr_1,    & ! Standard deviation of Nr (2nd PDF component)   [num/kg]
-      sigma_rr_1       ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), intent(out) :: &
-      corr_array
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(nz) :: &
-      corr_chi_w,       & ! Correlation between w and chi(s_mellor) (both components)       [-]
-      corr_wrr,      & ! Correlation between w and rr (both components)      [-]
-      corr_wNr,      & ! Correlation between w and Nr (both components)      [-]
-      corr_wNcn        ! Correlation between w and Ncn (both components)     [-]
-
-    real( kind = core_rknd ), dimension(nz) ::  &
-      wpchip_zt,   & ! Covariance of chi and w on the zt-grid    [(m/s)(kg/kg)]
-      wprrp_zt,  & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
-      wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
-      wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
-
-    real( kind = core_rknd ) :: &
-      chi_m,      & ! Mean of chi (s_mellor)                             [kg/kg]
-      stdev_chi     ! Standard deviation of chi (s_mellor)               [kg/kg]
-
-    integer :: k ! vertical loop iterator
-
-    ! ----- Begin Code -----
-
-    call approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
-                         wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
-
-    do k = 1, nz
-
-       chi_m &
-       = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%chi_1, &
-                    pdf_params(k)%chi_2 )
-
-       stdev_chi &
-       = sqrt( pdf_params(k)%mixt_frac &
-               * ( ( pdf_params(k)%chi_1 - chi_m )**2 &
-                     + pdf_params(k)%stdev_chi_1**2 ) &
-             + ( one - pdf_params(k)%mixt_frac ) &
-               * ( ( pdf_params(k)%chi_2 - chi_m )**2 &
-                     + pdf_params(k)%stdev_chi_2**2 ) &
-             )
-
-       corr_chi_w(k) &
-       = calc_w_corr( wpchip_zt(k), stdev_w(k), stdev_chi, &
-                      w_tol, chi_tol )
-
-       corr_wrr(k) &
-       = calc_w_corr( wprrp_zt(k), stdev_w(k), sigma_rr_1, w_tol, rr_tol )
-
-       corr_wNr(k) &
-       = calc_w_corr( wpNrp_zt(k), stdev_w(k), sigma_Nr_1, w_tol, Nr_tol )
-
-       corr_wNcn(k) &
-       = calc_w_corr( wpNcnp_zt(k), stdev_w(k), sigma_Ncn_1, w_tol, Ncn_tol )
-
-    enddo
-
-    call set_w_corr( nz, pdf_dim, & ! Intent(in)
-                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
-                         corr_array ) ! Intent(inout)
-
-  end subroutine approx_w_corr
+!  subroutine approx_w_corr( nz, pdf_dim, pdf_params, & ! Intent(in)
+!                            rrm, Nrm, Ncnm, &
+!                            stdev_w, sigma_rr_1, &
+!                            sigma_Nr_1, sigma_Ncn_1, &
+!                            corr_array) ! Intent(out)
+!    ! Description:
+!    ! Approximate the correlations of w with the hydrometeors.
+!
+!    ! References:
+!    ! clubb:ticket:514
+!    !-----------------------------------------------------------------------
+!
+!    use clubb_precision, only: &
+!        core_rknd ! Variable(s)
+!
+!    use pdf_parameter_module, only:  &
+!        pdf_parameter  ! Type
+!
+!    use constants_clubb, only:  &
+!        one,          & ! Constant(s)
+!        rr_tol,       &
+!        Nr_tol,       &
+!        Ncn_tol,      &
+!        w_tol,        & ! [m/s]
+!        chi_tol    ! [kg/kg]
+!
+!    implicit none
+!
+!    ! Input Variables
+!    integer, intent(in) :: &
+!      pdf_dim, & ! Number of diagnosed correlations
+!      nz             ! Number of model vertical grid levels
+!
+!    type(pdf_parameter), dimension(nz), intent(in) :: &
+!      pdf_params    ! PDF parameters                         [units vary]
+!
+!    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+!      rrm,          & ! Mean rain water mixing ratio, < r_r >    [kg/kg]
+!      Nrm,             & ! Mean rain drop concentration, < N_r >    [num/kg]
+!      Ncnm,            & ! Mean cloud nuclei conc., < N_cn >        [num/kg]
+!      stdev_w            ! Standard deviation of w                              [m/s]
+!
+!    real( kind = core_rknd ), intent(in) :: &
+!      sigma_Ncn_1,   & ! Standard deviation of Ncn (1st PDF component)  [num/kg]
+!      sigma_Nr_1,    & ! Standard deviation of Nr (2nd PDF component)   [num/kg]
+!      sigma_rr_1       ! Standard dev. of ln rr (1st PDF comp.) ip   [ln(kg/kg)]
+!
+!    ! Output Variables
+!    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), intent(out) :: &
+!      corr_array
+!
+!    ! Local Variables
+!    real( kind = core_rknd ), dimension(nz) :: &
+!      corr_chi_w,       & ! Correlation between w and chi(s_mellor) (both components)       [-]
+!      corr_wrr,      & ! Correlation between w and rr (both components)      [-]
+!      corr_wNr,      & ! Correlation between w and Nr (both components)      [-]
+!      corr_wNcn        ! Correlation between w and Ncn (both components)     [-]
+!
+!    real( kind = core_rknd ), dimension(nz) ::  &
+!      wpchip_zt,   & ! Covariance of chi and w on the zt-grid    [(m/s)(kg/kg)]
+!      wprrp_zt,  & ! Covariance of r_r and w on the zt-grid  [(m/s)(kg/kg)]
+!      wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid  [(m/s)(#/kg)]
+!      wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
+!
+!    real( kind = core_rknd ) :: &
+!      chi_m,      & ! Mean of chi (s_mellor)                             [kg/kg]
+!      stdev_chi     ! Standard deviation of chi (s_mellor)               [kg/kg]
+!
+!    integer :: k ! vertical loop iterator
+!
+!    ! ----- Begin Code -----
+!
+!    call approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
+!                         wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
+!
+!    do k = 1, nz
+!
+!       chi_m &
+!       = calc_mean( pdf_params(k)%mixt_frac, pdf_params(k)%chi_1, &
+!                    pdf_params(k)%chi_2 )
+!
+!       stdev_chi &
+!       = sqrt( pdf_params(k)%mixt_frac &
+!               * ( ( pdf_params(k)%chi_1 - chi_m )**2 &
+!                     + pdf_params(k)%stdev_chi_1**2 ) &
+!             + ( one - pdf_params(k)%mixt_frac ) &
+!               * ( ( pdf_params(k)%chi_2 - chi_m )**2 &
+!                     + pdf_params(k)%stdev_chi_2**2 ) &
+!             )
+!
+!       corr_chi_w(k) &
+!       = calc_w_corr( wpchip_zt(k), stdev_w(k), stdev_chi, &
+!                      w_tol, chi_tol )
+!
+!       corr_wrr(k) &
+!       = calc_w_corr( wprrp_zt(k), stdev_w(k), sigma_rr_1, w_tol, rr_tol )
+!
+!       corr_wNr(k) &
+!       = calc_w_corr( wpNrp_zt(k), stdev_w(k), sigma_Nr_1, w_tol, Nr_tol )
+!
+!       corr_wNcn(k) &
+!       = calc_w_corr( wpNcnp_zt(k), stdev_w(k), sigma_Ncn_1, w_tol, Ncn_tol )
+!
+!    enddo
+!
+!    call set_w_corr( nz, pdf_dim, & ! Intent(in)
+!                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
+!                         corr_array ) ! Intent(inout)
+!
+!  end subroutine approx_w_corr
 
 
   !-----------------------------------------------------------------------
-  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
-                             wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
-    ! Description:
-    ! Approximate the covariances of w with the hydrometeors using Eddy
-    ! diffusivity.
-
-    ! References:
-    ! clubb:ticket:514
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use grid_class, only: &
-        gr,  & ! Variable(s)
-        zm2zt,  & ! Procedure(s)
-        zt2zm
-
-    use pdf_parameter_module, only:  &
-        pdf_parameter  ! Type
-
-    use parameters_tunable, only: &
-        c_K_hm ! Variable(s)
-
-    use constants_clubb, only: &
-        one ! Constant(s)
-
-    use advance_windm_edsclrm_module, only: &
-        xpwp_fnc ! Procedure(s)
-
-    use variables_diagnostic_module, only: &
-        Kh_zm ! Variable(s)
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz          ! Number of model vertical grid levels
-
-    type(pdf_parameter), dimension(nz), intent(in) :: &
-      pdf_params    ! PDF parameters                         [units vary]
-
-    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
-      rrm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
-      Nrm,             & ! Mean rain drop concentration, < N_r >      [num/kg]
-      Ncnm               ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
-
-    ! Output Variables
-    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
-      wpchip_zt,   & ! Covariance of chi(s) and w on the zt-grid     [(m/s)(kg/kg)]
-      wprrp_zt,  & ! Covariance of r_r and w on the zt-grid   [(m/s)(kg/kg)]
-      wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid   [(m/s)(#/kg)]
-      wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
-
-    ! Local Variables
-    real( kind = core_rknd ), dimension(nz) ::  &
-      wpchip_zm,   & ! Covariance of chi(s) and w on the zm-grid     [(m/s)(kg/kg)]
-      wprrp_zm,  & ! Covariance of r_r and w on the zm-grid   [(m/s)(kg/kg)]
-      wpNrp_zm,  & ! Covariance of N_r and w on the zm-grid   [(m/s)(#/kg)]
-      wpNcnp_zm    ! Covariance of N_cn and w on the zm-grid  [(m/s)(#/kg)]
-
-    integer :: k ! vertical loop iterator
-
-    ! ----- Begin Code -----
-
-    ! calculate the covariances of w with the hydrometeors
-    do k = 1, nz
-      wpchip_zm(k) = pdf_params(k)%mixt_frac &
-                   * ( one - pdf_params(k)%mixt_frac ) &
-                   * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
-                   * ( pdf_params(k)%w_1 - pdf_params(k)%w_2 )
-    enddo
-
-! same for wpNrp
+!  subroutine approx_w_covar( nz, pdf_params, rrm, Nrm, Ncnm, & ! Intent(in)
+!                             wpchip_zt, wprrp_zt, wpNrp_zt, wpNcnp_zt ) ! Intent(out)
+!    ! Description:
+!    ! Approximate the covariances of w with the hydrometeors using Eddy
+!    ! diffusivity.
+!
+!    ! References:
+!    ! clubb:ticket:514
+!    !-----------------------------------------------------------------------
+!
+!    use clubb_precision, only: &
+!      core_rknd ! Variable(s)
+!
+!    use grid_class, only: &
+!        gr,  & ! Variable(s)
+!        zm2zt,  & ! Procedure(s)
+!        zt2zm
+!
+!    use pdf_parameter_module, only:  &
+!        pdf_parameter  ! Type
+!
+!    use parameters_tunable, only: &
+!        c_K_hm ! Variable(s)
+!
+!    use constants_clubb, only: &
+!        one ! Constant(s)
+!
+!    use advance_windm_edsclrm_module, only: &
+!        xpwp_fnc ! Procedure(s)
+!
+!    use variables_diagnostic_module, only: &
+!        Kh_zm ! Variable(s)
+!
+!    implicit none
+!
+!    ! Input Variables
+!    integer, intent(in) :: &
+!      nz          ! Number of model vertical grid levels
+!
+!    type(pdf_parameter), dimension(nz), intent(in) :: &
+!      pdf_params    ! PDF parameters                         [units vary]
+!
+!    real( kind = core_rknd ), dimension(nz), intent(in) ::  &
+!      rrm,          & ! Mean rain water mixing ratio, < r_r >      [kg/kg]
+!      Nrm,             & ! Mean rain drop concentration, < N_r >      [num/kg]
+!      Ncnm               ! Mean cloud nuclei concentration, < N_cn >  [num/kg]
+!
+!    ! Output Variables
+!    real( kind = core_rknd ), dimension(nz), intent(out) ::  &
+!      wpchip_zt,   & ! Covariance of chi(s) and w on the zt-grid     [(m/s)(kg/kg)]
+!      wprrp_zt,  & ! Covariance of r_r and w on the zt-grid   [(m/s)(kg/kg)]
+!      wpNrp_zt,  & ! Covariance of N_r and w on the zt-grid   [(m/s)(#/kg)]
+!      wpNcnp_zt    ! Covariance of N_cn and w on the zt-grid  [(m/s)(#/kg)]
+!
+!    ! Local Variables
+!    real( kind = core_rknd ), dimension(nz) ::  &
+!      wpchip_zm,   & ! Covariance of chi(s) and w on the zm-grid     [(m/s)(kg/kg)]
+!      wprrp_zm,  & ! Covariance of r_r and w on the zm-grid   [(m/s)(kg/kg)]
+!      wpNrp_zm,  & ! Covariance of N_r and w on the zm-grid   [(m/s)(#/kg)]
+!      wpNcnp_zm    ! Covariance of N_cn and w on the zm-grid  [(m/s)(#/kg)]
+!
+!    integer :: k ! vertical loop iterator
+!
+!    ! ----- Begin Code -----
+!
+!    ! calculate the covariances of w with the hydrometeors
+!    do k = 1, nz
+!      wpchip_zm(k) = pdf_params(k)%mixt_frac &
+!                   * ( one - pdf_params(k)%mixt_frac ) &
+!                   * ( pdf_params(k)%chi_1 - pdf_params(k)%chi_2 ) &
+!                   * ( pdf_params(k)%w_1 - pdf_params(k)%w_2 )
+!    enddo
+!
+!! same for wpNrp
+!!    wprrp_zm(1:nz-1) &
+!!    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
+!!                rrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
+!!                rrm(2:nz) / max( precip_frac(2:nz), eps ), &
+!!                gr%invrs_dzm(1:nz-1) )
+!
 !    wprrp_zm(1:nz-1) &
 !    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
-!                rrm(1:nz-1) / max( precip_frac(1:nz-1), eps ), &
-!                rrm(2:nz) / max( precip_frac(2:nz), eps ), &
+!                rrm(1:nz-1), rrm(2:nz), &
 !                gr%invrs_dzm(1:nz-1) )
-
-    wprrp_zm(1:nz-1) &
-    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
-                rrm(1:nz-1), rrm(2:nz), &
-                gr%invrs_dzm(1:nz-1) )
-
-    wpNrp_zm(1:nz-1) &
-    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
-                Nrm(1:nz-1), Nrm(2:nz), &
-                gr%invrs_dzm(1:nz-1) )
-
-    wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
-                                  Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
-
-    ! Boundary conditions; We are assuming constant flux at the top.
-    wprrp_zm(nz)  = wprrp_zm(nz-1)
-    wpNrp_zm(nz)  = wpNrp_zm(nz-1)
-    wpNcnp_zm(nz) = wpNcnp_zm(nz-1)
-
-    ! interpolate back to zt-grid
-    wpchip_zt   = zm2zt(wpchip_zm)
-    wprrp_zt  = zm2zt(wprrp_zm)
-    wpNrp_zt  = zm2zt(wpNrp_zm)
-    wpNcnp_zt = zm2zt(wpNcnp_zm)
-
-  end subroutine approx_w_covar
+!
+!    wpNrp_zm(1:nz-1) &
+!    = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), &
+!                Nrm(1:nz-1), Nrm(2:nz), &
+!                gr%invrs_dzm(1:nz-1) )
+!
+!    wpNcnp_zm(1:nz-1) = xpwp_fnc( -c_K_hm * Kh_zm(1:nz-1), Ncnm(1:nz-1), &
+!                                  Ncnm(2:nz), gr%invrs_dzm(1:nz-1) )
+!
+!    ! Boundary conditions; We are assuming constant flux at the top.
+!    wprrp_zm(nz)  = wprrp_zm(nz-1)
+!    wpNrp_zm(nz)  = wpNrp_zm(nz-1)
+!    wpNcnp_zm(nz) = wpNcnp_zm(nz-1)
+!
+!    ! interpolate back to zt-grid
+!    wpchip_zt   = zm2zt(wpchip_zm)
+!    wprrp_zt  = zm2zt(wprrp_zm)
+!    wpNrp_zt  = zm2zt(wpNrp_zm)
+!    wpNcnp_zt = zm2zt(wpNcnp_zm)
+!
+!  end subroutine approx_w_covar
 
   !-----------------------------------------------------------------------
   function calc_w_corr( wpxp, stdev_w, stdev_x, w_tol, x_tol )
@@ -910,101 +910,101 @@ module diagnose_correlations_module
 
 
   !-----------------------------------------------------------------------
-  subroutine set_w_corr( nz, pdf_dim, & ! Intent(in)
-                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
-                         corr_array ) ! Intent(inout)
-
-    ! Description:
-    ! Set the first row of corr_array to the according w-correlations.
-
-    ! References:
-    ! clubb:ticket:514
-    !-----------------------------------------------------------------------
-
-    use clubb_precision, only: &
-      core_rknd ! Variable(s)
-
-    use array_index, only: &
-      iiPDF_w,           & ! Variable(s)
-      iiPDF_chi,         &
-      iiPDF_rr,          &
-      iiPDF_Nr,          &
-      iiPDF_Ncn
-
-    implicit none
-
-    ! Input Variables
-    integer, intent(in) :: &
-      nz,          & ! Number of model vertical grid levels
-      pdf_dim   ! Number of Variables to be diagnosed
-
-    real( kind = core_rknd ), dimension(nz), intent(in) :: &
-      corr_chi_w,       & ! Correlation between chi (s) & w (both components)         [-]
-      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
-      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
-      corr_wNcn        ! Correlation between Ncn & w (both components)       [-]
-
-    ! Input/Output Variables
-    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), &
-    intent(inout) :: &
-      corr_array
-
-    ! ----- Begin Code -----
-
-      corr_array(iiPDF_w, iiPDF_chi, :) = corr_chi_w
-      corr_array(iiPDF_w, iiPDF_rr, :) = corr_wrr
-      corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
-      corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
-
-  end subroutine set_w_corr
+!  subroutine set_w_corr( nz, pdf_dim, & ! Intent(in)
+!                         corr_chi_w, corr_wrr, corr_wNr, corr_wNcn, &
+!                         corr_array ) ! Intent(inout)
+!
+!    ! Description:
+!    ! Set the first row of corr_array to the according w-correlations.
+!
+!    ! References:
+!    ! clubb:ticket:514
+!    !-----------------------------------------------------------------------
+!
+!    use clubb_precision, only: &
+!      core_rknd ! Variable(s)
+!
+!    use array_index, only: &
+!      iiPDF_w,           & ! Variable(s)
+!      iiPDF_chi,         &
+!      iiPDF_rr,          &
+!      iiPDF_Nr,          &
+!      iiPDF_Ncn
+!
+!    implicit none
+!
+!    ! Input Variables
+!    integer, intent(in) :: &
+!      nz,          & ! Number of model vertical grid levels
+!      pdf_dim   ! Number of Variables to be diagnosed
+!
+!    real( kind = core_rknd ), dimension(nz), intent(in) :: &
+!      corr_chi_w,       & ! Correlation between chi (s) & w (both components)         [-]
+!      corr_wrr,      & ! Correlation between rr & w (both components)        [-]
+!      corr_wNr,      & ! Correlation between Nr & w (both components)        [-]
+!      corr_wNcn        ! Correlation between Ncn & w (both components)       [-]
+!
+!    ! Input/Output Variables
+!    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim, nz), &
+!    intent(inout) :: &
+!      corr_array
+!
+!    ! ----- Begin Code -----
+!
+!      corr_array(iiPDF_w, iiPDF_chi, :) = corr_chi_w
+!      corr_array(iiPDF_w, iiPDF_rr, :) = corr_wrr
+!      corr_array(iiPDF_w, iiPDF_Nr, :) = corr_wNr
+!      corr_array(iiPDF_w, iiPDF_Ncn, :) = corr_wNcn
+!
+!  end subroutine set_w_corr
 
   !=============================================================================
-  subroutine unpack_correlations( pdf_dim, corr_array, & ! Intent(in)
-                                  corr_w_chi, corr_wrr, corr_wNr, corr_wNcn, &
-                                  corr_chi_eta, corr_chi_rr, corr_chi_Nr, corr_chi_Ncn, &
-                                  corr_eta_rr, corr_eta_Nr, corr_eta_Ncn, corr_rrNr )  
+!  subroutine unpack_correlations( pdf_dim, corr_array, & ! Intent(in)
+!                                  corr_w_chi, corr_wrr, corr_wNr, corr_wNcn, &
+!                                  corr_chi_eta, corr_chi_rr, corr_chi_Nr, corr_chi_Ncn, &
+!                                  corr_eta_rr, corr_eta_Nr, corr_eta_Ncn, corr_rrNr )  
+!
+!    ! Description:
+!
+!    ! References:
+!    !-----------------------------------------------------------------------
 
-    ! Description:
+!    use clubb_precision, only: &
+!        core_rknd ! Variable(s)
 
-    ! References:
-    !-----------------------------------------------------------------------
+!    use array_index, only: &
+!        iiPDF_w,        & ! Variable(s)
+!        iiPDF_chi,      &
+!        iiPDF_eta,      &
+!        iiPDF_rr,       &
+!        iiPDF_Nr,       &
+!        iiPDF_Ncn
 
-    use clubb_precision, only: &
-        core_rknd ! Variable(s)
+!    implicit none
 
-    use array_index, only: &
-        iiPDF_w,        & ! Variable(s)
-        iiPDF_chi,      &
-        iiPDF_eta,      &
-        iiPDF_rr,       &
-        iiPDF_Nr,       &
-        iiPDF_Ncn
+!    intrinsic :: max, sqrt, transpose
 
-    implicit none
+!    ! Input Variables
+!    integer, intent(in) :: &
+!      pdf_dim  ! number of diagnosed correlations
 
-    intrinsic :: max, sqrt, transpose
+!    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
+!      corr_array   ! Prescribed correlations
 
-    ! Input Variables
-    integer, intent(in) :: &
-      pdf_dim  ! number of diagnosed correlations
-
-    real( kind = core_rknd ), dimension(pdf_dim, pdf_dim), intent(in) :: &
-      corr_array   ! Prescribed correlations
-
-    ! Output variables
-    real( kind = core_rknd ), intent(out) :: &
-      corr_w_chi,     & ! Correlation between w and chi(s) (1st PDF component)     [-]
-      corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
-      corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
-      corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
-      corr_chi_eta,     & ! Correlation between chi(s) and eta(t) (1st PDF component)     [-]
-      corr_chi_rr,    & ! Correlation between chi(s) and rr (1st PDF component) ip [-]
-      corr_chi_Nr,    & ! Correlation between chi(s) and Nr (1st PDF component) ip [-]
-      corr_chi_Ncn,   & ! Correlation between chi(s) and Ncn (1st PDF component)   [-]
-      corr_eta_rr,    & ! Correlation between eta(t) and rr (1st PDF component) ip [-]
-      corr_eta_Nr,    & ! Correlation between eta(t) and Nr (1st PDF component) ip [-]
-      corr_eta_Ncn,   & ! Correlation between (t) and Ncn (1st PDF component)   [-]
-      corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
+!    ! Output variables
+!    real( kind = core_rknd ), intent(out) :: &
+!      corr_w_chi,     & ! Correlation between w and chi(s) (1st PDF component)     [-]
+!      corr_wrr,    & ! Correlation between w and rr (1st PDF component) ip [-]
+!      corr_wNr,    & ! Correlation between w and Nr (1st PDF component) ip [-]
+!      corr_wNcn,   & ! Correlation between w and Ncn (1st PDF component)   [-]
+!      corr_chi_eta,     & ! Correlation between chi(s) and eta(t) (1st PDF component)     [-]
+!      corr_chi_rr,    & ! Correlation between chi(s) and rr (1st PDF component) ip [-]
+!      corr_chi_Nr,    & ! Correlation between chi(s) and Nr (1st PDF component) ip [-]
+!      corr_chi_Ncn,   & ! Correlation between chi(s) and Ncn (1st PDF component)   [-]
+!      corr_eta_rr,    & ! Correlation between eta(t) and rr (1st PDF component) ip [-]
+!      corr_eta_Nr,    & ! Correlation between eta(t) and Nr (1st PDF component) ip [-]
+!      corr_eta_Ncn,   & ! Correlation between (t) and Ncn (1st PDF component)   [-]
+!      corr_rrNr      ! Correlation between rr & Nr (1st PDF component) ip  [-]
 
     ! ---- Begin Code ----
 
@@ -1021,20 +1021,20 @@ module diagnose_correlations_module
 !    corr_eta_Ncn = corr_array(iiPDF_eta, iiPDF_Ncn)
 !    corr_rrNr = corr_array(iiPDF_rr, iiPDF_Nr)
 
-    corr_w_chi   = corr_array(iiPDF_chi, iiPDF_w)
-    corr_wrr  = corr_array(iiPDF_rr, iiPDF_w)
-    corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
-    corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
-    corr_chi_eta   = corr_array(iiPDF_eta, iiPDF_chi)
-    corr_chi_rr  = corr_array(iiPDF_rr, iiPDF_chi)
-    corr_chi_Nr  = corr_array(iiPDF_Nr, iiPDF_chi)
-    corr_chi_Ncn = corr_array(iiPDF_Ncn, iiPDF_chi)
-    corr_eta_rr  = corr_array(iiPDF_rr, iiPDF_eta)
-    corr_eta_Nr  = corr_array(iiPDF_Nr, iiPDF_eta)
-    corr_eta_Ncn = corr_array(iiPDF_Ncn, iiPDF_eta)
-    corr_rrNr = corr_array(iiPDF_rr, iiPDF_Nr)
+!    corr_w_chi   = corr_array(iiPDF_chi, iiPDF_w)
+!    corr_wrr  = corr_array(iiPDF_rr, iiPDF_w)
+!    corr_wNr  = corr_array(iiPDF_Nr, iiPDF_w)
+!    corr_wNcn = corr_array(iiPDF_Ncn, iiPDF_w)
+!    corr_chi_eta   = corr_array(iiPDF_eta, iiPDF_chi)
+!    corr_chi_rr  = corr_array(iiPDF_rr, iiPDF_chi)
+!    corr_chi_Nr  = corr_array(iiPDF_Nr, iiPDF_chi)
+!    corr_chi_Ncn = corr_array(iiPDF_Ncn, iiPDF_chi)
+!    corr_eta_rr  = corr_array(iiPDF_rr, iiPDF_eta)
+!    corr_eta_Nr  = corr_array(iiPDF_Nr, iiPDF_eta)
+!    corr_eta_Ncn = corr_array(iiPDF_Ncn, iiPDF_eta)
+!    corr_rrNr = corr_array(iiPDF_rr, iiPDF_Nr)
 
-  end subroutine unpack_correlations
+!  end subroutine unpack_correlations
 
 !===============================================================================
 
