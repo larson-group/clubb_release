@@ -47,7 +47,8 @@ module error
     iamoeba = 0, & ! Numerical Recipes downhill simplex
     iamebsa = 1, & ! Numerical Recipes simulated annealing
     iesa    = 2, & ! ESA tuning type
-    iflags  = 3    ! Model flags "tuner"
+    iflags  = 3, & ! Model flags "tuner"
+    iploops = 4    ! Parameter loop tuning (loop over range of parameter vals.)
 
   ! Variables
   integer, public :: &
@@ -180,6 +181,14 @@ module error
 
     use mt95, only: genrand_real1 ! Procedure
 
+    ! These variables are only used for the parameter loop tuner.
+    ! They need to be changed to use different tunable parameters.
+    use parameter_indices, only: &
+        islope_coef_spread_DG_means_w, & ! Variable(s)
+        ipdf_component_stdev_factor_w, &
+        icoef_spread_DG_means_rt, &
+        icoef_spread_DG_means_thl
+
     use clubb_precision, only: &
       core_rknd ! Variable(s)
 
@@ -233,6 +242,30 @@ module error
 
     character(len=10), dimension(max_variables) :: &
       t_variables ! List of variables to be read from the GrADS output
+
+    ! Variables for parameter loops (ploops) tuner
+    integer :: &
+      num_var1, & ! Number of parameter values for variable 1
+      num_var2, & ! Number of parameter values for variable 2
+      num_var3, & ! Number of parameter values for variable 3
+      num_var4, & ! Number of parameter values for variable 4
+      num_runs    ! Total number of tuning runs
+
+    integer :: &
+      idx_var1, & ! Index of parameter value for variable 1
+      idx_var2, & ! Index of parameter value for variable 2
+      idx_var3, & ! Index of parameter value for variable 3
+      idx_var4, & ! Index of parameter value for variable 4
+      mod1,     & ! Remainder used to calculate idx_var1
+      mod2,     & ! Remainder used to calculate idx_var2
+      mod3,     & ! Remainder used to calculate idx_var3
+      mod4        ! Remainder used to calculate idx_var4
+
+    real( kind = core_rknd ), dimension(:), allocatable :: &
+      tune_var1, & ! Values of variable 1
+      tune_var2, & ! Values of variable 2
+      tune_var3, & ! Values of variable 3
+      tune_var4    ! Values of variable 4
 
     ! Namelists read from error.in
     namelist /stats/  & 
@@ -332,8 +365,62 @@ module error
 
       ! Setup the simplex
 
-      call read_param_spread( iunit, filename, params_index,  & 
-                              rtmp, ndim )
+      if ( tune_type /= iploops ) then
+
+         call read_param_spread( iunit, filename, params_index,  & 
+                                 rtmp, ndim )
+
+      else ! tune_type == iploops
+
+         ! Number of tunable parameters that are looped over.
+         ndim = 4
+         ! Initialize to 0.
+         params_index(1:nparams) = 0
+         ! Set the indices of the variables to be tuned.
+         params_index(1) = islope_coef_spread_DG_means_w
+         params_index(2) = ipdf_component_stdev_factor_w
+         params_index(3) = icoef_spread_DG_means_rt
+         params_index(4) = icoef_spread_DG_means_thl
+         ! Set to 0 (rtmp doesn't matter for parameter loops tuning).
+         rtmp(1:nparams) = 0.0_core_rknd
+
+         ! Number of parameter values to be looped over for each variable.
+         ! Must be at least 1.
+         ! var1 corresponds to the variable in params_index(1).
+         ! var2 corresponds to the variable in params_index(2).
+         ! var3 corresponds to the variable in params_index(3).
+         ! var4 corresponds to the variable in params_index(4).
+         num_var1 = 2
+         num_var2 = 3
+         num_var3 = 4
+         num_var4 = 5
+
+         ! Total number of tuning runs.
+         num_runs = num_var1 * num_var2 * num_var3 * num_var4 + 1
+
+         ! Allocate tunable variables.
+         allocate( tune_var1(num_var1), tune_var2(num_var2), &
+                   tune_var3(num_var3), tune_var4(num_var4) )
+
+         ! Initialize variables
+         tune_var1 = 0.0_core_rknd
+         tune_var2 = 0.0_core_rknd
+         tune_var3 = 0.0_core_rknd
+         tune_var4 = 0.0_core_rknd
+
+         ! Set parameter values for each variable.
+         ! The number of values for each variable must equal the num_var value
+         ! above.
+         ! var1 corresponds to the variable in params_index(1).
+         ! var2 corresponds to the variable in params_index(2).
+         ! var3 corresponds to the variable in params_index(3).
+         ! var4 corresponds to the variable in params_index(4).
+         tune_var1 = (/ 1.0, 28.0 /)
+         tune_var2 = (/ 1.0, 3.5, 7.5 /)
+         tune_var3 = (/ 0.05, 0.15, 0.25, 0.35 /)
+         tune_var4 = (/ 0.45, 0.55, 0.65, 0.75, 0.85 /)
+
+      endif
 
       if ( ndim == 0 .and. tune_type /= iflags ) then
         write(fstderr,*) "You must vary at least one parameter"
@@ -344,6 +431,11 @@ module error
         ! Numerical recipes simulated annealing or downhill simplex
         allocate( rand_vect(ndim), param_vals_matrix(ndim+1,ndim), & 
                   param_vals_spread(ndim), cost_fnc_vector(ndim+1) )
+
+      elseif ( tune_type == iploops ) then
+
+        allocate( param_vals_matrix(num_runs,ndim), & 
+                  param_vals_spread(ndim), cost_fnc_vector(num_runs) )
 
       else ! ESA algorithm or model flags
         allocate( param_vals_matrix(1,ndim), param_vals_spread(ndim), cost_fnc_vector(1) )
@@ -381,6 +473,67 @@ module error
         end do ! i..ndim+1
 
       end do ! j..ndim
+
+    elseif ( tune_type == iploops ) then
+
+       do i = 2, num_runs, 1
+
+          ! Calculate the parameter value index for variable 1.
+          if ( mod( i - 1, num_var2 * num_var3 * num_var4 ) > 0 ) then
+             mod1 = mod( ( ( i - 1 ) / ( num_var2 * num_var3 * num_var4 ) ) &
+                         + 1, num_var1 )
+          else
+             mod1 = mod( ( ( i - 1 ) / ( num_var2 * num_var3 * num_var4 ) ), &
+                         num_var1 )
+          endif
+
+          if ( mod1 > 0 ) then
+             idx_var1 = mod1
+          else
+             idx_var1 = num_var1
+          endif
+
+          ! Calculate the parameter value index for variable 2.
+          if ( mod( i - 1, num_var3 * num_var4 ) > 0 ) then
+             mod2 = mod( ( ( i - 1 ) / ( num_var3 * num_var4 ) ) + 1, num_var2 )
+          else
+             mod2 = mod( ( ( i - 1 ) / ( num_var3 * num_var4 ) ), num_var2 )
+          endif
+
+          if ( mod2 > 0 ) then
+             idx_var2 = mod2
+          else
+             idx_var2 = num_var2
+          endif
+
+          ! Calculate the parameter value index for variable 3.
+          if ( mod( i - 1, num_var4 ) > 0 ) then
+             mod3 = mod( ( ( i - 1 ) / num_var4 ) + 1, num_var3 )
+          else
+             mod3 = mod( ( ( i - 1 ) / num_var4 ), num_var3 )
+          endif
+          
+          if ( mod3 > 0 ) then
+             idx_var3 = mod3
+          else
+             idx_var3 = num_var3
+          endif
+
+          ! Calculate the parameter value index for variable 4.
+          mod4 = mod( i - 1, num_var4 )
+          if ( mod4 > 0 ) then
+             idx_var4 = mod4
+          else
+             idx_var4 = num_var4
+          endif
+
+          param_vals_matrix(i,1) = tune_var1(idx_var1)
+          param_vals_matrix(i,2) = tune_var2(idx_var2)
+          param_vals_matrix(i,3) = tune_var3(idx_var3)
+          param_vals_matrix(i,4) = tune_var4(idx_var4)
+
+       enddo ! i = 2, num_runs, 1
+
     end if
 
 
@@ -414,6 +567,12 @@ module error
         cost_fnc_vector(i) =  & 
              real(min_les_clubb_diff( real(param_vals_matrix(i,1:ndim))), kind = core_rknd )
       end do
+    elseif ( tune_type == iploops ) then
+       do i = 2, num_runs, 1
+           cost_fnc_vector(i) &
+           = real( min_les_clubb_diff( real( param_vals_matrix(i,1:ndim) ) ), &
+                   kind = core_rknd )
+       enddo
     end if
 
     ! Save tuning results in file if specified

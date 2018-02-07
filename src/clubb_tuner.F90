@@ -24,7 +24,8 @@ program clubb_tuner
     iamoeba, & ! Constants
     iamebsa, &
     iesa, &
-    iflags
+    iflags, &
+    iploops
 
   use constants_clubb, only: & 
     fstdout ! Variable
@@ -79,6 +80,10 @@ program clubb_tuner
       call logical_flags_driver( current_date, current_time )
       stop "Program exited normally"
 
+    case( iploops )
+      call param_loops_driver( )
+      write(fstdout,*) "All parameter sets have been run"
+
     case default
        stop "Unknown tuning type"
     end select
@@ -95,9 +100,17 @@ program clubb_tuner
     ! Query to see if we should exit the loop
     call write_text( "Run Complete.", l_save_tuning_run, file_unit )
 
-    write(unit=fstdout,fmt='(A)', advance='no')  & 
-      "Re-run with new parameters?(y/n) "
-    read(*,*) user_response
+    if ( tune_type /= iploops ) then
+       ! Prompt the user to re-run with new parameters.
+       write(unit=fstdout,fmt='(A)', advance='no')  & 
+         "Re-run with new parameters?(y/n) "
+       read(*,*) user_response
+    else
+       ! For the parameter loops tuner, automatically enter a response of "no".
+       ! This allows the tuner to be run in the background.
+       user_response = "n"
+    endif
+
     ! Save tuning results in file if specified
     if( l_save_tuning_run ) then
       write(file_unit,*) "Re-run with new parameters?(y/n) ", user_response
@@ -628,3 +641,47 @@ subroutine logical_flags_driver( current_date, current_time )
 
   return
 end subroutine logical_flags_driver
+  !------------------------------------------------------------------------
+  subroutine param_loops_driver( )
+
+    ! Description:
+    ! The parameters loops tuner allows the user to select (through hard-wired
+    ! coding) a few tunable parameters (up to 4) and define values to loop over
+    ! for each parameters.  This allows the tuner to loop through all of
+    ! parameter space to look for the lowest value of the cost function.
+    !
+    ! This tuner does not use random numbers or "downhill" tuning, etc.  It
+    ! loops over all of the defined values in parameter space, calculates the
+    ! cost function for each parameter set, and exits.  It does not do further
+    ! tuning.
+    !
+    ! The number of values and the values for each selected parameter are set
+    ! in subroutine tuner_init in error.F90.
+
+    !-----------------------------------------------------------------------
+
+    use error, only: &
+        ndim,              &
+        param_vals_matrix, &
+        cost_fnc_vector,   &
+        min_err
+
+    implicit none
+
+    ! Local Variables
+    integer :: &
+      min_idx    ! Index for parameter set with minimum value of cost function
+
+
+    min_idx = minloc( cost_fnc_vector, 1 )
+
+    ! Place the parameter set with the minimum value of the cost function in
+    ! the 1st row of the parameter array.
+    param_vals_matrix(1,1:ndim) = param_vals_matrix(min_idx,1:ndim)
+
+    min_err = cost_fnc_vector(min_idx)
+
+
+    return
+
+  end subroutine param_loops_driver
