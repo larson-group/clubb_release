@@ -46,12 +46,13 @@ module new_pdf_main
     !-----------------------------------------------------------------------
 
     use constants_clubb, only: &
-        four,    & ! Variable(s)
-        two,     &
-        one,     &
-        zero,    &
-        rt_tol,  &
-        thl_tol
+        four,                & ! Variable(s)
+        two,                 &
+        one,                 &
+        zero,                &
+        rt_tol,              &
+        thl_tol,             &
+        max_mag_correlation
 
     use new_pdf, only: &
         calc_setter_var_params,    & ! Procedure(s)
@@ -205,6 +206,8 @@ module new_pdf_main
     ! value of exp_factor_rt.
     if ( rtp2 >= rt_tol**2 .and. thlp2 >= thl_tol**2 ) then
        adj_corr_rt_thl = rtpthlp / sqrt( rtp2 * thlp2 ) * sgn_wprtp * sgn_wpthlp
+       adj_corr_rt_thl = min( max( adj_corr_rt_thl, -max_mag_correlation ), &
+                              max_mag_correlation )
        exp_factor_rt = one &
                        - exp( -0.2_core_rknd * ( adj_corr_rt_thl + one )**5 )
     else ! <rt'^2> < rt_tol^2 or <thl'^2> < thl_tol^2
