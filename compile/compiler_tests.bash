@@ -3,9 +3,9 @@
 ###############################################################################
 # compiler_tests.bash 
 # This script runs a set of compiler tests similar to the way the nightly tests
-# do. This script will run the g95, OracleSolarisStudio, and Intel compilers. Most of 
-# this script was taken directly from the nightly tests version, but combined
-# into one script.
+# do. This script will run the OracleSolarisStudio, Intel, pgroup, and gfortran
+# compilers. The nightly tests compile clubb using with each of these excluding 
+# OracleSolarisStudio.
 #
 # To execute the compiler tests:
 #   ./compiler_tests.bash
@@ -60,13 +60,13 @@ compile()
 {
 	case $1 in			  
 		"oracle" ) compiler="./config/linux_x86_64_oracle_debug.bash"
-		              ;;
+		      ;;
 		"ifort" ) compiler="./config/linux_x86_64_ifort.bash"
 			  ;;
-		"g95" ) compiler="./config/linux_x86_64_g95_optimize.bash"
-		        ;;
+		"pgroup" ) compiler="./config/linux_x86_64_pgroup.bash"
+		      ;;
 		"gfortran" ) compiler="./config/linux_x86_64_gfortran.bash"
-		        ;;
+		      ;;
 	esac
 
 	# Change to CLUBB's compile directory
@@ -92,13 +92,13 @@ echo "---------------------------------------" >> $outputFile
 clean
 compile ifort
 
-# Compile with g95
-echo -e "\ng95 Compiler Warnings/Errors:" >> $outputFile
+# Compile with pgroup
+echo -e "\nPortland Group Compiler Warnings/Errors:" >> $outputFile
 echo "-----------------------------" >> $outputFile
 clean
-compile g95
+compile pgroup
 
-# Compile with g95
+# Compile with gfortran
 echo -e "\nGNU Fortran Compiler Warnings/Errors:" >> $outputFile
 echo "-----------------------------" >> $outputFile
 clean
