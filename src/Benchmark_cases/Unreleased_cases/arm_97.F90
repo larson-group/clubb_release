@@ -86,11 +86,6 @@ module arm_97
       call time_select( time, size(time_sfc_given), time_sfc_given, &
                                    before_time, after_time, time_frac )
 
-      if( time_frac == -1.0_core_rknd ) then
-        call clubb_debug(1,"times is not sorted in arm_97_tndcy")
-      endif
-
-
       heat_flx = linear_interp_factor( time_frac, sens_ht_given(after_time), &
                                        sens_ht_given(before_time) )
       moisture_flx = linear_interp_factor( time_frac, latent_ht_given(after_time), &
