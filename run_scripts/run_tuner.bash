@@ -254,7 +254,7 @@ rm -f *'_hoc.in'
 echo "Running with the optimal parameter set"
 
 # The newest parameter file should have the optimal set
-PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters* | head -n 1` 
+PARAMS_FILE=`ls -t ../input/tunable_parameters/tunable_parameters_* | head -n 1` 
 
 # For the model flag tuning runs
 FLAGS_FILE=`ls -t ../input/tunable_parameters/configurable_model_flags* | head -n 1` 
