@@ -390,10 +390,10 @@ module error
          ! var2 corresponds to the variable in params_index(2).
          ! var3 corresponds to the variable in params_index(3).
          ! var4 corresponds to the variable in params_index(4).
-         num_var1 = 2
-         num_var2 = 3
-         num_var3 = 4
-         num_var4 = 5
+         num_var1 = 10
+         num_var2 = 10
+         num_var3 = 10
+         num_var4 = 10
 
          ! Total number of tuning runs.
          num_runs = num_var1 * num_var2 * num_var3 * num_var4 + 1
@@ -415,10 +415,14 @@ module error
          ! var2 corresponds to the variable in params_index(2).
          ! var3 corresponds to the variable in params_index(3).
          ! var4 corresponds to the variable in params_index(4).
-         tune_var1 = (/ 1.0, 28.0 /)
-         tune_var2 = (/ 1.0, 3.5, 7.5 /)
-         tune_var3 = (/ 0.05, 0.15, 0.25, 0.35 /)
-         tune_var4 = (/ 0.45, 0.55, 0.65, 0.75, 0.85 /)
+         tune_var1 = (/ 0.5, 1.0, 1.5, 2.0, 3.0, &
+                        4.0, 5.0, 7.5, 20.0, 45.0 /)
+         tune_var2 = (/ 0.25, 0.5, 1.0, 2.0, 3.0, &
+                        4.0, 5.0, 6.5, 8.0, 10.0 /)
+         tune_var3 = (/ 0.05, 0.15, 0.25, 0.35, 0.45, &
+                        0.55, 0.65, 0.75, 0.85, 0.95 /)
+         tune_var4 = (/ 0.05, 0.15, 0.25, 0.35, 0.45, &
+                        0.55, 0.65, 0.75, 0.85, 0.95 /)
 
       endif
 
@@ -1065,7 +1069,7 @@ module error
         "Parameter", "Initial", "Optimal"
 
     do i = 1, ndim, 1
-      write(unit=iunit,fmt='(A30,2F27.20)')  & 
+      write(unit=iunit,fmt='(A31,2F27.20)')  & 
         params_list(params_index(i))//" = ",  & 
         params(params_index(i)), param_vals_matrix(1,i)
     end do
