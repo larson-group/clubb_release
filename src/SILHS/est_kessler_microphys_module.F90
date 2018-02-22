@@ -36,9 +36,6 @@ module est_kessler_microphys_module
       zero_threshold, &
       zero
 
-    use anl_erf, only:  &
-      erf ! Procedure(s)
-
     use pdf_parameter_module, only:  &
       pdf_parameter  ! Type
 

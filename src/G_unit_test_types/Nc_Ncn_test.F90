@@ -38,9 +38,6 @@ module Nc_Ncn_test
         stdev_L2N,  & ! Procedure(s)
         corr_NL2NN
 
-    use anl_erf, only: &
-        erfc ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 

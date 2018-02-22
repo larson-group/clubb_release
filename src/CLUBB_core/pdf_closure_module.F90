@@ -137,10 +137,6 @@ module pdf_closure_module
     use array_index, only: &
         l_mix_rat_hm  ! Variable(s)
 
-    use anl_erf, only:  & 
-        erf ! Procedure(s)
-    ! The error function
-
     use numerical_check, only:  & 
         pdf_closure_check ! Procedure(s)
 
@@ -1701,9 +1697,6 @@ module pdf_closure_module
         one,      & ! 1
         one_half, & ! 1/2
         zero        ! 0
-
-    use anl_erf, only:  & 
-        erf ! Procedure(s) -- The error function
 
     use clubb_precision, only: &
         core_rknd     ! Precision

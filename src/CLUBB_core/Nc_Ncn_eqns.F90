@@ -771,9 +771,6 @@ contains
         chi_tol,  &
         Ncn_tol
 
-    use anl_erf, only: &
-        erfc  ! Procedure(s)
-
     use clubb_precision, only: &
         core_rknd  ! Variable(s)
 
@@ -893,9 +890,6 @@ contains
         one_half, &
         zero,     &
         chi_tol
-
-    use anl_erf, only: &
-        erfc  ! Procedure(s)
 
     use clubb_precision, only: &
         core_rknd  ! Variable(s)

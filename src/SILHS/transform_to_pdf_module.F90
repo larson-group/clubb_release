@@ -422,9 +422,6 @@ module transform_to_pdf_module
       one_dp,      &
       one_half_dp
 
-    use anl_erf, only: &
-      dp_erfc               ! Procedure
-
 #ifdef CLUBB_CAM
     ! Some compilers cannot handle 1.0/0.0, so in CAM we import their
     ! +Inf and -Inf constants. We REALLY should find a better way to
@@ -579,7 +576,7 @@ module transform_to_pdf_module
     ! slightly but did improve results.
     ! Eric Raut 23Aug14
     if ( l_apply_halley_method ) then
-      e = one_half_dp * dp_erfc(-z/sqrt_2_dp) - p
+      e = one_half_dp * erfc(-z/sqrt_2_dp) - p
       u = e * sqrt_2pi_dp * exp( (z**2) / two_dp )
       z = z - u / ( one_dp + z*u/two_dp )
     end if

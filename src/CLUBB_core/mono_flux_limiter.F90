@@ -1652,10 +1652,6 @@ module mono_flux_limiter
         sqrt_2pi, &
         sqrt_2
 
-    use anl_erf, only:  & 
-        erf ! Procedure(s)
-            ! The error function
-
     use stats_type_utilities, only:  &
         stat_update_var_pt  ! Procedure(s)
 
