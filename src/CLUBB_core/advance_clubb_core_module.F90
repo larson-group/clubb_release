@@ -945,17 +945,21 @@ module advance_clubb_core_module
     endif ! ipdf_call_placement == ipdf_post_advance_fields
 
     ! Compute the a3 coefficient (formula 25 in `Equations for CLUBB')
+    ! Note:  a3 has been modified because the wp3 turbulent advection term is
+    !        now discretized on its own.  This removes the "- 3" from the end.
 !   a3_coef = 3.0_core_rknd * sigma_sqd_w*sigma_sqd_w  &
 !      + 6.0_core_rknd*(1.0_core_rknd-sigma_sqd_w)*sigma_sqd_w  &
-!      + (1.0_core_rknd-sigma_sqd_w)*(1.0_core_rknd-sigma_sqd_w) &
-!      - 3.0_core_rknd
+!      + (1.0_core_rknd-sigma_sqd_w)*(1.0_core_rknd-sigma_sqd_w)
 
     ! This is a simplified version of the formula above.
-    a3_coef = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w )**2
+    ! Note:  a3 has been modified because the wp3 turbulent advection term is
+    !        now discretized on its own.
+    a3_coef = -2._core_rknd * ( 1._core_rknd - sigma_sqd_w )**2 + 3.0_core_rknd
 
     ! We found we obtain fewer spikes in wp3 when we clip a3 to be no greater
     ! than -1.4 -dschanen 4 Jan 2011
-    a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
+    !a3_coef = max( a3_coef, -1.4_core_rknd ) ! Known magic number
+    a3_coef = max( a3_coef, 1.6_core_rknd ) ! Known magic number
 
     a3_coef_zt = zm2zt( a3_coef )
 
