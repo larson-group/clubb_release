@@ -18,21 +18,21 @@ module model_flags
   private ! Default Scope
 
   logical, parameter, public ::  & 
-    l_pos_def                     = .false., & ! Flux limiting positive definite scheme on rtm
-    l_hole_fill                   = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
-    l_clip_semi_implicit          = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
-    l_clip_turb_adv               = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
-    l_gmres                       = .false., & ! Use GMRES iterative solver rather than LAPACK
-    l_sat_mixrat_lookup           = .false.    ! Use a lookup table for mixing length
+    l_pos_def            = .false., & ! Flux limiting positive definite scheme on rtm
+    l_hole_fill          = .true.,  & ! Hole filling pos def scheme on wp2,up2,rtp2,etc
+    l_clip_semi_implicit = .false., & ! Semi-implicit clipping scheme on wpthlp and wprtp
+    l_clip_turb_adv      = .false., & ! Corrects thlm/rtm when w'th_l'/w'r_t' is clipped
+    l_gmres              = .false., & ! Use GMRES iterative solver rather than LAPACK
+    l_sat_mixrat_lookup  = .false.    ! Use a lookup table for mixing length
                                       ! saturation vapor pressure calculations
 
   logical, parameter, public :: &
 #ifdef BYTESWAP_IO
-    l_byteswap_io   = .true.,  & ! Don't use the native byte ordering in GrADS output
+    l_byteswap_io = .true.,  & ! Don't use the native byte ordering in GrADS output
 #else
-    l_byteswap_io   = .false., & ! Use the native byte ordering in GrADS output
+    l_byteswap_io = .false., & ! Use the native byte ordering in GrADS output
 #endif
-    l_gamma_Skw     = .true.      ! Use a Skw dependent gamma parameter
+    l_gamma_Skw   = .true.     ! Use a Skw dependent gamma parameter
 
   logical, parameter, public :: &
     l_use_boussinesq = .false.  ! Flag to use the Boussinesq form of the
@@ -46,6 +46,12 @@ module model_flags
                                  ! is turned off.
 
 !$omp threadprivate( l_use_precip_frac )
+
+  logical, parameter, public :: &
+    l_use_explicit_turbulent_adv = .false.  ! Flag to use explicit turbulent
+                                            ! advection in higher-order
+                                            ! predictive equations (wp3, wpxp,
+                                            ! xp2, xpyp).
 
   ! These flags determine whether or not we want CLUBB to do diffusion
   !   on thlm and rtm and if a stability correction is applied

@@ -2263,7 +2263,7 @@ module advance_wp2_wp3_module
         !        term more numerically stable (see note above for LHS turbulent
         !        advection (ta) and turbulent production (tp) terms).
         if ( iwp3_tp > 0 ) then
-          tmp(1:5)  &
+          tmp(1:2)  &
           = gamma_over_implicit_ts  &
             * wp3_term_tp_lhs( wp2(k), wp2(km1), &
                                rho_ds_zm(k), rho_ds_zm(km1), &
@@ -2878,7 +2878,9 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).  Call stat_begin_update_pt.  Since
+        !        stat_begin_update_pt automatically subtracts the value sent in,
+        !        reverse the sign on the input value.
         lhs_fnc_output(1:5) &
         = wp3_term_ta_ADG1_lhs( wp2(k), wp2(km1), &
                                 a1(k), a1_zt(k), a1(km1), &
@@ -2888,7 +2890,7 @@ module advance_wp2_wp3_module
                                 invrs_rho_ds_zt(k), &
                                 gr%invrs_dzt(k), k )
         call stat_begin_update_pt( iwp3_ta, k, &
-                                   + ( one - gamma_over_implicit_ts )  &
+                                   - ( one - gamma_over_implicit_ts )  &
                                      * ( - lhs_fnc_output(1) * wp3(kp1)  &
                                          - lhs_fnc_output(2) * wp2(k)  &
                                          - lhs_fnc_output(3) * wp3(k)  &
@@ -2899,16 +2901,18 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        production (tp) term).  Call stat_begin_update_pt.  Since
+        !        stat_begin_update_pt automatically subtracts the value sent in,
+        !        reverse the sign on the input value.
         lhs_fnc_output(1:2) &
         = wp3_term_tp_lhs( wp2(k), wp2(km1), &
                            rho_ds_zm(k), rho_ds_zm(km1), &
                            invrs_rho_ds_zt(k), &
                            gr%invrs_dzt(k) )
         call stat_begin_update_pt( iwp3_tp, k, &
-                                   + ( one - gamma_over_implicit_ts )  &
-                                     * ( - lhs_fnc_output(2) * wp2(k)  &
-                                         - lhs_fnc_output(4) * wp2(km1) ), &
+                                   - ( one - gamma_over_implicit_ts )  &
+                                     * ( - lhs_fnc_output(1) * wp2(k)  &
+                                         - lhs_fnc_output(2) * wp2(km1) ), &
                                    stats_zt )
 
         ! w'^3 pressure term 3 (pr3) explicit (rhs) contribution
