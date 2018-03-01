@@ -2169,12 +2169,14 @@ module advance_xp2_xpyp_module
     ! Description:
     ! Turbulent advection of x_a'x_b':  implicit portion of the code.
     !
+    ! This semi-implicit discretization is specifically for the ADG1 PDF.
+    !
     ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
     !
     ! - (1/rho_ds) * d( rho_ds * w'x_a'x_b' )/dz.
     !
-    ! A substitution is made in order to close the turbulent advection term,
-    ! such that:
+    ! A substitution, which is specific to ADG1, is made in order to close the
+    ! turbulent advection term, such that:
     !
     ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
     !              + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )
@@ -2496,12 +2498,14 @@ module advance_xp2_xpyp_module
     ! Description:
     ! Turbulent advection of x_a'x_b':  explicit portion of the code.
     !
+    ! This semi-implicit discretization is specifically for the ADG1 PDF.
+    !
     ! The d(x_a'x_b')/dt equation contains a turbulent advection term:
     !
     ! - (1/rho_ds) * d( rho_ds * w'x_a'x_b' )/dz.
     !
-    ! A substitution is made in order to close the turbulent advection term,
-    ! such that:
+    ! A substitution, which is specific to ADG1, is made in order to close the
+    ! turbulent advection term, such that:
     !
     ! w'x_a'x_b' = (1/3)*beta * a_1 * ( w'^3 / w'^2 ) * x_a'x_b'
     !              + (1-(1/3)*beta) * (a_1)^2 * ( w'^3 / (w'^2)^2 )

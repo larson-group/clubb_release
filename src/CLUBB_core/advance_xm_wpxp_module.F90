@@ -2553,12 +2553,14 @@ module advance_xm_wpxp_module
     ! Description:
     ! Turbulent advection of w'x':  implicit portion of the code.
     !
+    ! This implicit discretization is specifically for the ADG1 PDF.
+    !
     ! The d(w'x')/dt equation contains a turbulent advection term:
     !
     ! - (1/rho_ds) * d( rho_ds * w'^2x' )/dz.
     !
-    ! A substitution is made in order to close the turbulent advection term,
-    ! such that:
+    ! A substitution, which is specific to ADG1, is made in order to close the
+    ! turbulent advection term, such that:
     !
     ! w'^2x' = a_1 * ( w'^3 / w'^2 ) * w'x',
     !
