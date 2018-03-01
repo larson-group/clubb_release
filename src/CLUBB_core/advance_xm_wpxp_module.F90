@@ -21,7 +21,8 @@ module advance_xm_wpxp_module
              xm_wpxp_solve, & 
              xm_wpxp_clipping_and_stats, &
              xm_term_ta_lhs, & 
-             wpxp_term_ta_lhs, & 
+             wpxp_term_ta_ADG1_lhs, & 
+             wpxp_term_ta_ADG1_lhs_upwind, & 
              wpxp_term_tp_lhs, & 
              wpxp_terms_ac_pr2_lhs, & 
              wpxp_term_pr1_lhs, & 
@@ -1214,20 +1215,21 @@ module advance_xm_wpxp_module
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  &
         + gamma_over_implicit_ts  &
-        * wpxp_term_ta_lhs( a1_zt(kp1), a1_zt(k),  & 
-                            wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                            rho_ds_zt(kp1), rho_ds_zt(k),  &
-                            invrs_rho_ds_zm(k),  &
-                            gr%invrs_dzm(k), k )
+        * wpxp_term_ta_ADG1_lhs( a1_zt(kp1), a1_zt(k),  & 
+                                 wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                 rho_ds_zt(kp1), rho_ds_zt(k),  &
+                                 invrs_rho_ds_zm(k),  &
+                                 gr%invrs_dzm(k), k )
       else
         lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  & 
         = lhs((/m_kp1_mdiag,m_k_mdiag,m_km1_mdiag/),k_wpxp)  &
         + gamma_over_implicit_ts  &
-        * wpxp_term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                   wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
-                                   gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
-                                   invrs_rho_ds_zm(k), &
-                                   rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1) )
+        * wpxp_term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                        wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                        wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                        gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                        rho_ds_zm(kp1), rho_ds_zm(k), &
+                                        rho_ds_zm(km1) )
       end if
 
       ! LHS turbulent production (tp) term.
@@ -1296,19 +1298,20 @@ module advance_xm_wpxp_module
           if ( .not. l_upwind_wpxp_ta ) then
             tmp(1:3)  &
             = gamma_over_implicit_ts  &
-            * wpxp_term_ta_lhs( a1_zt(kp1), a1_zt(k),  &
-                                wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k),  &
-                                invrs_rho_ds_zm(k),  &
-                                gr%invrs_dzm(k), k )
+            * wpxp_term_ta_ADG1_lhs( a1_zt(kp1), a1_zt(k),  &
+                                     wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                     rho_ds_zt(kp1), rho_ds_zt(k),  &
+                                     invrs_rho_ds_zm(k),  &
+                                     gr%invrs_dzm(k), k )
           else
             tmp(1:3)  &
             = gamma_over_implicit_ts  &
-            * wpxp_term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                       wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
-                                       gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
-                                       invrs_rho_ds_zm(k), &
-                                       rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1) )
+            * wpxp_term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                           wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                           wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                           gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                           rho_ds_zm(kp1), rho_ds_zm(k), &
+                                           rho_ds_zm(km1) )
           end if
 
           zmscr04(k) = - tmp(3)
@@ -1700,18 +1703,19 @@ module advance_xm_wpxp_module
         !        w'x' turbulent advection term, RHS = 0).  A weight of greater
         !        than 1 can be applied to make the term more numerically stable.
         lhs_fnc_output(1:3)  &
-        = wpxp_term_ta_lhs( a1_zt(kp1), a1_zt(k),  &
-                            wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                            rho_ds_zt(kp1), rho_ds_zt(k),  &
-                            invrs_rho_ds_zm(k),  &
-                            gr%invrs_dzm(k), k )
+        = wpxp_term_ta_ADG1_lhs( a1_zt(kp1), a1_zt(k),  &
+                                 wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                 rho_ds_zt(kp1), rho_ds_zt(k),  &
+                                 invrs_rho_ds_zm(k),  &
+                                 gr%invrs_dzm(k), k )
       else
         lhs_fnc_output(1:3)  &
-        = wpxp_term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                   wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
-                                   gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
-                                   invrs_rho_ds_zm(k), &
-                                   rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1) )
+        = wpxp_term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                        wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                        wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                        gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                        rho_ds_zm(kp1), rho_ds_zm(k), &
+                                        rho_ds_zm(km1) )
       endif
 
       rhs(k_wpxp)  &
@@ -1768,11 +1772,12 @@ module advance_xm_wpxp_module
 
         if ( l_upwind_wpxp_ta ) then ! Use upwind differencing
           lhs_fnc_output(1:3)  &
-          = wpxp_term_ta_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                     wp3_on_wp2(kp1), wp3_on_wp2(k), wp3_on_wp2(km1), &
-                                     gr%invrs_dzt(k), gr%invrs_dzt(kp1), &
-                                     invrs_rho_ds_zm(k), &
-                                     rho_ds_zm(kp1), rho_ds_zm(k), rho_ds_zm(km1) )
+          = wpxp_term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                          wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                          wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                          gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                          rho_ds_zm(kp1), rho_ds_zm(k), &
+                                          rho_ds_zm(km1) )
 
         else
           ! w'x' term ta is normally completely implicit.  However, there is a
@@ -1785,11 +1790,11 @@ module advance_xm_wpxp_module
           ! automatically subtracts the value sent in, reverse the sign on the
           ! input value.
           lhs_fnc_output(1:3)  &
-          = wpxp_term_ta_lhs( a1_zt(kp1), a1_zt(k),  &
-                              wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                              rho_ds_zt(kp1), rho_ds_zt(k),  &
-                              invrs_rho_ds_zm(k),  &
-                              gr%invrs_dzm(k), k )
+          = wpxp_term_ta_ADG1_lhs( a1_zt(kp1), a1_zt(k),  &
+                                   wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                   rho_ds_zt(kp1), rho_ds_zt(k),  &
+                                   invrs_rho_ds_zm(k),  &
+                                   gr%invrs_dzm(k), k )
         endif
 
         call stat_begin_update_pt( iwpxp_ta, k, &
@@ -2538,11 +2543,11 @@ module advance_xm_wpxp_module
   end function xm_term_ta_lhs
 
   !=============================================================================
-  pure function wpxp_term_ta_lhs( wp3_on_wp2_ztp1, wp3_on_wp2_zt, &
-                                  a1_ztp1, a1_zt, &
-                                  rho_ds_ztp1, rho_ds_zt, &
-                                  invrs_rho_ds_zm, &
-                                  invrs_dzm, level ) & 
+  pure function wpxp_term_ta_ADG1_lhs( wp3_on_wp2_ztp1, wp3_on_wp2_zt, &
+                                       a1_ztp1, a1_zt, &
+                                       rho_ds_ztp1, rho_ds_zt, &
+                                       invrs_rho_ds_zm, &
+                                       invrs_dzm, level ) & 
   result( lhs )
 
     ! Description:
@@ -2749,14 +2754,15 @@ module advance_xm_wpxp_module
 
 
     return
-  end function wpxp_term_ta_lhs
+  end function wpxp_term_ta_ADG1_lhs
 
   !=============================================================================
-  pure function wpxp_term_ta_lhs_upwind( a1_zm, a1_zm_p1, a1_zm_m1, &
-                                         wp3_on_wp2_p1, wp3_on_wp2, wp3_on_wp2_m1, &
-                                         invrs_dzt, invrs_dztkp1, &
-                                         invrs_rho_ds_zm, & 
-                                         rho_ds_zmp1, rho_ds_zm, rho_ds_zmm1 ) &
+  pure function wpxp_term_ta_ADG1_lhs_upwind( a1_zm, a1_zm_p1, a1_zm_m1, &
+                                              wp3_on_wp2_p1, wp3_on_wp2, &
+                                              wp3_on_wp2_m1, invrs_dzt, &
+                                              invrs_dztkp1, invrs_rho_ds_zm, & 
+                                              rho_ds_zmp1, rho_ds_zm, &
+                                              rho_ds_zmm1 ) &
   result( lhs )
 
     ! Description:
@@ -2826,7 +2832,7 @@ module advance_xm_wpxp_module
 
 
     return
-  end function wpxp_term_ta_lhs_upwind
+  end function wpxp_term_ta_ADG1_lhs_upwind
 
   !=============================================================================
   pure function wpxp_term_tp_lhs( wp2, invrs_dzm ) & 
