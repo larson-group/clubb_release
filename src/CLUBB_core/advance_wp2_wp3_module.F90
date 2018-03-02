@@ -20,6 +20,7 @@ module advance_wp2_wp3_module
              wp2_term_dp1_rhs, &
              wp2_term_pr3_rhs, & 
              wp2_term_pr1_rhs, & 
+             wp3_term_ta_new_pdf_lhs, &
              wp3_term_ta_ADG1_lhs, & 
              wp3_term_tp_lhs, & 
              wp3_terms_ac_pr2_lhs, & 
@@ -3562,6 +3563,129 @@ module advance_wp2_wp3_module
 
     return
   end function wp2_term_pr1_rhs
+
+  !=============================================================================
+  pure function wp3_term_ta_new_pdf_lhs( coef_wp4_implicit,   &
+                                         coef_wp4_implicitm1, &
+                                         wp2, wp2m1, rho_ds_zm, &
+                                         rho_ds_zmm1, invrs_rho_ds_zt, &
+                                         invrs_dzt ) &
+  result( lhs )
+
+    ! Description:
+    ! Turbulent advection of <w'^3>:  implicit portion of the code.
+    !
+    ! This implicit discretization is specifically for the new PDF.
+    !
+    ! The d<w'^3>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
+    !
+    ! A substitution, which is specific to the new PDF, is made in order to
+    ! close the turbulent advection term, such that:
+    !
+    ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
+    !
+    ! The calculation of coef_wp4_implicit is detailed in function
+    ! calc_coef_wp4_implicit, which is found in module new_pdf in new_pdf.F90.
+    !
+    ! The turbulent advection term is rewritten as:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wp4_implicit * <w'^2>^2 )/dz.
+    !
+    ! The <w'^2>^2 term is timestep split so that it can be expressed linearly
+    ! in terms of <w'^2> at the (t+1) timestep, such that:
+    !
+    ! ( <w'^2>(t+1) )^2 = <w'^2>(t) * <w'^2>(t+1);
+    !
+    ! which allows the turbulent advection term to be expressed implicitly as:
+    !
+    ! - (1/rho_ds)
+    !   * d( rho_ds * coef_wp4_implicit * <w'^2>(t) * <w'^2>(t+1) )/dz.
+    !
+    ! Note:  When the term is brought over to the left-hand side, the sign is
+    !        reversed and the leading "-" in front of all d[ ] / dz terms is
+    !        changed to a "+".
+    !
+    ! Timestep index (t) stands for the index of the current timestep, while
+    ! timestep index (t+1) stands for the index of the next timestep, which is
+    ! being advanced to in solving the d<w'^3>/dt and d<w'^2>/dt equations.
+    !
+    ! The implicit discretization of this term is as follows:
+    !
+    ! The values of <w'^3> are found on the thermodynamic levels, while the
+    ! values of <w'^2> are found on the momentum levels.  The values of
+    ! coef_wp4_implicit_zt are originally calculated by the PDF on the
+    ! thermodynamic levels.  They are interpolated to the intermediate momentum
+    ! levels as coef_wp4_implicit.  Additionally, the values of rho_ds_zm are
+    ! found on the momentum levels, and the values of invrs_rho_ds_zt are found
+    ! on the thermodynamic levels.  At the intermediate momentum levels, the
+    ! values of coef_wp4_implicit are multiplied by <w'^2>(t) * <w'^2>(t+1), and
+    ! the resulting product is also multiplied by rho_ds_zm.  This product is
+    ! referred to as G below.  Then, the derivative (d/dz) of that expression is
+    ! taken over the central thermodynamic level, where it is multiplied by
+    ! -invrs_rho_ds_zt.  This yields the desired result.  In this function,
+    ! the values of G are as follows:
+    !
+    ! G = rho_ds_zm * coef_wp4_implicit * <w'^2>(t) * <w'^2>(t+1).
+    !
+    ! -------coef_wp4_implicit_zt---------------------------------------- t(k+1)
+    !
+    ! =======coef_wp4_implicit(interp)=======wp2=========rho_ds_zm======= m(k)
+    !
+    ! -------coef_wp4_implicit_zt-----dG/dz-----invrs_rho_ds_zt----wp3--- t(k)
+    !
+    ! =======coef_wp4_implicitm1(interp)=====wp2m1=======rho_ds_zmm1===== m(k-1)
+    !
+    ! -------coef_wp4_implicit_zt---------------------------------------- t(k-1)
+    !
+    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is
+    ! used for momentum levels.
+    !
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: & 
+      k_mdiag   = 1, & ! Momentum superdiagonal index.
+      km1_mdiag = 2    ! Momentum subdiagonal index. 
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      coef_wp4_implicit,   & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-lev(k)   [-]
+      coef_wp4_implicitm1, & ! <w'^4>=coef_wp4_implicit*<w'^2>^2; m-lev(k-1) [-]
+      wp2,                 & ! w'^2(k)                                 [m^2/s^2]
+      wp2m1,               & ! w'^2(k-1)                               [m^2/s^2]
+      rho_ds_zm,           & ! Dry, static density at mom lev (k)       [kg/m^3]
+      rho_ds_zmm1,         & ! Dry, static density at mom lev (k-1)     [kg/m^3]
+      invrs_rho_ds_zt,     & ! Inv dry, static density @ thermo lev (k) [m^3/kg]
+      invrs_dzt              ! Inverse of grid spacing (k)              [1/m]
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(2) :: lhs
+
+
+    ! Momentum superdiagonal: [ x wp2(k,<t+1>) ]
+    lhs(k_mdiag) &
+    = + invrs_rho_ds_zt * invrs_dzt * rho_ds_zm * coef_wp4_implicit * wp2
+
+    ! Momentum subdiagonal: [ x wp2(k-1,<t+1>) ]
+    lhs(km1_mdiag) &
+    = - invrs_rho_ds_zt * invrs_dzt * rho_ds_zmm1 * coef_wp4_implicitm1 * wp2m1
+
+
+    return
+
+  end function wp3_term_ta_new_pdf_lhs
 
   !=============================================================================
   pure function wp3_term_ta_ADG1_lhs( wp2, wp2m1, &
