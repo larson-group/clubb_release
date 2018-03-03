@@ -25,6 +25,7 @@ module advance_wp2_wp3_module
              wp3_term_tp_lhs, & 
              wp3_terms_ac_pr2_lhs, & 
              wp3_term_pr1_lhs, & 
+             wp3_term_ta_explicit_rhs, &
              wp3_terms_bp1_pr2_rhs, & 
              wp3_term_pr1_rhs, &
              wp3_term_bp2_rhs
@@ -3596,7 +3597,7 @@ module advance_wp2_wp3_module
     ! The <w'^2>^2 term is timestep split so that it can be expressed linearly
     ! in terms of <w'^2> at the (t+1) timestep, such that:
     !
-    ! ( <w'^2>(t+1) )^2 = <w'^2>(t) * <w'^2>(t+1);
+    ! <w'^2>^2 = <w'^2>(t) * <w'^2>(t+1);
     !
     ! which allows the turbulent advection term to be expressed implicitly as:
     !
@@ -3730,8 +3731,8 @@ module advance_wp2_wp3_module
     ! be expressed linearly in terms of w'^2 and w'^3, respectively, at the
     ! (t+1) timestep, such that:
     !
-    ! ( w'^2(t+1) )^2 = w'^2(t) * w'^2(t+1);
-    ! ( w'^3(t+1) )^2 = w'^3(t) * w'^3(t+1);
+    ! (w'^2)^2 = w'^2(t) * w'^2(t+1);
+    ! (w'^3)^2 = w'^3(t) * w'^3(t+1);
     !
     ! which allows these terms to be expressed implicitly as:
     !
@@ -3964,7 +3965,7 @@ module advance_wp2_wp3_module
     ! The (w'^2)^2 terms are timestep split so that they can be expressed
     ! linearly in terms of w'^2 at the (t+1) timestep, such that:
     !
-    ! ( w'^2(t+1) )^2 = w'^2(t) * w'^2(t+1).
+    ! (w'^2)^2 = w'^2(t) * w'^2(t+1).
     !
     ! The term can now be expressed implicitly as:
     !
@@ -4208,6 +4209,81 @@ module advance_wp2_wp3_module
 
     return
   end function wp3_term_pr1_lhs
+
+  !=============================================================================
+  pure function wp3_term_ta_explicit_rhs( wp4, wp4m1, &
+                                          rho_ds_zm, rho_ds_zmm1, &
+                                          invrs_rho_ds_zt, &
+                                          invrs_dzt ) &
+  result( rhs )
+
+    ! Description:
+    ! Turbulent advection of <w'^3>:  explicit portion of the code.
+    !
+    ! This explicit discretization works generally for any PDF.
+    !
+    ! The d<w'^3>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
+    !
+    ! The explicit discretization of this term is as follows:
+    !
+    ! The values of <w'^3> are found on the thermodynamic levels, while the
+    ! values of <w'^4> are found on the momentum levels.  The values of
+    ! <w'^4>|_zt are originally calculated by the PDF on the thermodynamic
+    ! levels.  They are interpolated to the intermediate momentum levels as
+    ! <w'^4>.  Additionally, the values of rho_ds_zm are found on the momentum
+    ! levels, and the values of invrs_rho_ds_zt are found on the thermodynamic
+    ! levels.  At the intermediate momentum levels, the values of <w'^4> are
+    ! multiplied by rho_ds_zm.  Then, the derivative (d/dz) of that expression
+    ! is taken over the central thermodynamic level, where it is multiplied by
+    ! -invrs_rho_ds_zt.  This yields the desired result.
+    !
+    ! ---------wp4_zt---------------------------------------------------- t(k+1)
+    !
+    ! =========wp4(interp)===========rho_ds_zm=========================== m(k)
+    !
+    ! ---------wp4_zt-----d( rho_ds_zm * wp4 )/dz-----invrs_rho_ds_zt---- t(k)
+    !
+    ! =========wp4m1(interp)=========rho_ds_zmm1========================= m(k-1)
+    !
+    ! ---------wp4_zt---------------------------------------------------- t(k-1)
+    !
+    ! The vertical indices t(k+1), m(k), t(k), m(k-1), and t(k-1) correspond
+    ! with altitudes zt(k+1), zm(k), zt(k), zm(k-1), and zt(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is
+    ! used for momentum levels.
+    !
+    ! invrs_dzt(k) = 1 / ( zm(k) - zm(k-1) )
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wp4,             & ! <w'^4>(k)                                   [m^4/s^4]
+      wp4m1,           & ! <w'^4>(k-1)                                 [m^4/s^4]
+      rho_ds_zm,       & ! Dry, static density at momentum level (k)   [kg/m^3]
+      rho_ds_zmm1,     & ! Dry, static density at momentum level (k-1) [kg/m^3]
+      invrs_rho_ds_zt, & ! Inv dry, static density at thermo level (k) [m^3/kg]
+      invrs_dzt          ! Inverse of grid spacing (k)                 [1/m]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: rhs
+
+
+    rhs &
+    = - invrs_rho_ds_zt * invrs_dzt * ( rho_ds_zm * wp4 - rho_ds_zmm1 * wp4m1 )
+
+
+    return
+
+  end function wp3_term_ta_explicit_rhs
 
   !=============================================================================
   pure function wp3_terms_bp1_pr2_rhs( C11_Skw_fnc, thv_ds_zt, wp2thvp ) & 
