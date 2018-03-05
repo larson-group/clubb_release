@@ -20,6 +20,7 @@ module advance_xp2_xpyp_module
              term_ta_ADG1_lhs, & 
              term_ta_ADG1_lhs_upwind, & 
              term_ta_ADG1_rhs, & 
+             term_ta_explicit_rhs, &
              term_tp, & 
              term_dp1_lhs, & 
              term_dp1_rhs, & 
@@ -2658,6 +2659,91 @@ module advance_xp2_xpyp_module
 
     return
   end function term_ta_ADG1_rhs
+
+  !=============================================================================
+  pure function term_ta_explicit_rhs( wpxpypp1, wpxpyp, &
+                                      rho_ds_ztp1, rho_ds_zt, &
+                                      invrs_rho_ds_zm, &
+                                      invrs_dzm ) &
+  result( rhs )
+
+    ! Description:
+    ! Turbulent advection of <x'^2> and <x'y'>:  explicit portion of the code.
+    !
+    ! This explicit discretization works generally for any PDF.
+    !
+    ! The d<x'^2>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'x'^2> )/dz;
+    !
+    ! and the d<x'y'>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'x'y'> )/dz.
+    !
+    ! The value of <w'x'^2> is found by integrating over the multivariate PDF of
+    ! w and x, as detailed in function calc_wpxp2_pdf, which is found in module
+    ! pdf_closure_module in pdf_closure_module.F90.  Likewise, the value of
+    ! <w'x'y'> is found by integrating over the multivariate PDF of w, x, and y,
+    ! as detailed in function calc_wpxpyp_pdf, which is also found in module
+    ! pdf_closure_module in pdf_closure_module.F90.
+    !
+    ! When x and y are the same variable, <x'y'> reduces to <x'^2> and <w'x'y'>
+    ! reduces to <w'x'^2>.  The discretization and the code used in this
+    ! function will be written generally in terms of <x'y'> and <w'x'y'>, but
+    ! also applies to <x'^2> and <w'x'^2>.
+    !
+    ! The explicit discretization of this term is as follows:
+    !
+    ! The values of <x'y'> are found on the momentum levels, while the values of
+    ! <w'x'y'> are found on the thermodynamic levels, which is where they were
+    ! originally calculated by the PDF.  Additionally, the values of rho_ds_zt
+    ! are found on the thermodynamic levels, and the values of invrs_rho_ds_zm
+    ! are found on the momentum levels.  At the thermodynamic levels, the values
+    ! of <w'x'y'> are multiplied by rho_ds_zt.  Then, the derivative (d/dz) of
+    ! that expression is taken over the central momentum level, where it is
+    ! multiplied by -invrs_rho_ds_zm.  This yields the desired result.
+    !
+    ! ---------wpxpypp1-------rho_ds_ztp1-------------------------------- t(k+1)
+    !
+    ! =======xpyp=======d( rho_ds_zt * wpxpyp )/dz====invrs_rho_ds_zm==== m(k)
+    !
+    ! ---------wpxpyp---------rho_ds_zt---------------------------------- t(k)
+    !
+    ! The vertical indices t(k+1), m(k), and t(k) correspond with altitudes
+    ! zt(k+1), zm(k), and zt(k), respectively.  The letter "t" is used for
+    ! thermodynamic levels and the letter "m" is used for momentum levels.
+    !
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use clubb_precision, only: &
+        core_rknd ! Variable(s)
+
+    implicit none
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      wpxpypp1,        & ! <w'x'y'>(k+1)                 [m/s(x units)(y units)]
+      wpxpyp,          & ! <w'x'y'>(k)                   [m/s(x units)(y units)]
+      rho_ds_ztp1,     & ! Dry, static density at thermo. level (k+1)   [kg/m^3]
+      rho_ds_zt,       & ! Dry, static density at thermo. level (k)     [kg/m^3]
+      invrs_rho_ds_zm, & ! Inv dry, static density @ momentum level (k) [m^3/kg]
+      invrs_dzm          ! Inverse of grid spacing (k)                  [1/m]
+
+    ! Return Variable
+    real( kind = core_rknd ) :: rhs
+
+
+    rhs &
+    = - invrs_rho_ds_zm &
+        * invrs_dzm * ( rho_ds_ztp1 * wpxpypp1 - rho_ds_zt * wpxpyp )
+
+
+    return
+
+  end function term_ta_explicit_rhs
 
   !=============================================================================
   pure function term_tp( xamp1, xam, xbmp1, xbm,  & 
