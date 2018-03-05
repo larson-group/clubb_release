@@ -4226,6 +4226,10 @@ module advance_wp2_wp3_module
     !
     ! - (1/rho_ds) * d( rho_ds * <w'^4> )/dz.
     !
+    ! The value of <w'^4> is found by integrating over the PDF of w, as detailed
+    ! in function calc_wp4_pdf, which is found in module pdf_closure_module in
+    ! pdf_closure_module.F90.
+    !
     ! The explicit discretization of this term is as follows:
     !
     ! The values of <w'^3> are found on the thermodynamic levels, while the
