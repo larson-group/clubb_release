@@ -1464,7 +1464,7 @@ module advance_clubb_core_module
 
       call advance_wp2_wp3 &
            ( dt, sfc_elevation, sigma_sqd_w, wm_zm, wm_zt,      & ! intent(in)
-             a3_coef, a3_coef_zt, wp3_on_wp2,                   & ! intent(in)
+             a3_coef, a3_coef_zt, wp3_on_wp2, wp4,              & ! intent(in)
              wpthvp, wp2thvp, um, vm, upwp, vpwp,               & ! intent(in)
              up2, vp2, Kh_zm, Kh_zt, tau_zm, tau_zt, tau_C1_zm, & ! intent(in)
              Skw_zm, Skw_zt, rho_ds_zm, rho_ds_zt,              & ! intent(in)

@@ -137,6 +137,9 @@ module pdf_closure_module
     use array_index, only: &
         l_mix_rat_hm  ! Variable(s)
 
+    use model_flags, only: &
+        l_explicit_turbulent_adv_wp3    ! Variable(s)
+
     use numerical_check, only:  & 
         pdf_closure_check ! Procedure(s)
 
@@ -605,7 +608,7 @@ module pdf_closure_module
                               corr_w_thl_1, corr_w_thl_2, mixt_frac )
 
     ! Compute higher order moments (these are non-interactive diagnostics)
-    if ( iwp4 > 0 ) then
+    if ( l_explicit_turbulent_adv_wp3 .or. iwp4 > 0 ) then
        wp4 = calc_wp4_pdf( wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac )
     endif
 

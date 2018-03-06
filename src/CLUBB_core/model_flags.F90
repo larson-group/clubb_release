@@ -48,10 +48,13 @@ module model_flags
 !$omp threadprivate( l_use_precip_frac )
 
   logical, parameter, public :: &
-    l_use_explicit_turbulent_adv = .false.  ! Flag to use explicit turbulent
-                                            ! advection in higher-order
-                                            ! predictive equations (wp3, wpxp,
-                                            ! xp2, xpyp).
+    ! Flag to use explicit turbulent advection in the wp3 predictive equation.
+    l_explicit_turbulent_adv_wp3 = .false.,  &
+    ! Flag to use explicit turbulent advection in the wpxp predictive equation.
+    l_explicit_turbulent_adv_wpxp = .false., &
+    ! Flag to use explicit turbulent advection in the xp2 and xpyp predictive
+    ! equations.
+    l_explicit_turbulent_adv_xpyp = .false.
 
   ! These flags determine whether or not we want CLUBB to do diffusion
   !   on thlm and rtm and if a stability correction is applied
