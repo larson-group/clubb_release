@@ -1427,15 +1427,17 @@ module advance_clubb_core_module
       ! Advance the prognostic equations 
       !   for scalar variances and covariances,
       !   plus the horizontal wind variances by one time step, by one time step.
-      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,       & ! intent(in)
+      call advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm,         & ! intent(in)
                              wpthlp, wpthvp, um, vm, wp2, wp2_zt,     & ! intent(in)
                              wp3, upwp, vpwp, sigma_sqd_w, Skw_zm,    & ! intent(in)
+                             wprtp2, wpthlp2, wprtpthlp,              & ! intent(in)
                              Kh_zt, rtp2_forcing, thlp2_forcing,      & ! intent(in)
                              rtpthlp_forcing, rho_ds_zm, rho_ds_zt,   & ! intent(in)
                              invrs_rho_ds_zm, thv_ds_zm,              & ! intent(in)
                              Lscale, wp3_on_wp2, wp3_on_wp2_zt,       & ! intent(in)
                              l_iter_xp2_xpyp, dt,                     & ! intent(in)
-                             sclrm, wpsclrp,                          & ! intent(in) 
+                             sclrm, wpsclrp,                          & ! intent(in)
+                             wpsclrp2, wpsclrprtp, wpsclrpthlp,       & ! intent(in)
                              rtp2, thlp2, rtpthlp, up2, vp2,          & ! intent(inout)
                              err_code,                                & ! intent(inout)
                              sclrp2, sclrprtp, sclrpthlp              ) ! intent(inout)

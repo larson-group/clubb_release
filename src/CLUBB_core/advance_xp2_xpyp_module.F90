@@ -48,12 +48,14 @@ module advance_xp2_xpyp_module
   subroutine advance_xp2_xpyp( tau_zm, wm_zm, rtm, wprtp, thlm, &
                                wpthlp, wpthvp, um, vm, wp2, wp2_zt, &
                                wp3, upwp, vpwp, sigma_sqd_w, Skw_zm, &
+                               wprtp2, wpthlp2, wprtpthlp, &
                                Kh_zt, rtp2_forcing, thlp2_forcing, &
                                rtpthlp_forcing, rho_ds_zm, rho_ds_zt, &
                                invrs_rho_ds_zm, thv_ds_zm, &
                                Lscale, wp3_on_wp2, wp3_on_wp2_zt, &
                                l_iter, dt, &
-                               sclrm, wpsclrp, & 
+                               sclrm, wpsclrp, &
+                               wpsclrp2, wpsclrprtp, wpsclrpthlp, &
                                rtp2, thlp2, rtpthlp, up2, vp2,  & 
                                err_code, & 
                                sclrp2, sclrprtp, sclrpthlp )
@@ -187,6 +189,9 @@ module advance_xp2_xpyp_module
       vpwp,            & ! <v'w'> (momentum levels)              [m^2/s^2]
       sigma_sqd_w,     & ! sigma_sqd_w (momentum levels)         [-]
       Skw_zm,          & ! Skewness of w on momentum levels      [-]
+      wprtp2,          & ! <w'r_t'^2> (thermodynamic levels)     [m/s (kg/kg)^2]
+      wpthlp2,         & ! <w'th_l'^2> (thermodynamic levels)    [m/s K^2]
+      wprtpthlp,       & ! <w'r_t'th_l'> (thermodynamic levels)  [m/s (kg/kg) K]
       Kh_zt,           & ! Eddy diffusivity on thermo. levels    [m^2/s]
       rtp2_forcing,    & ! <r_t'^2> forcing (momentum levels)    [(kg/kg)^2/s]
       thlp2_forcing,   & ! <th_l'^2> forcing (momentum levels)   [K^2/s]
@@ -206,7 +211,11 @@ module advance_xp2_xpyp_module
 
     ! Passive scalar input
     real( kind = core_rknd ), intent(in), dimension(gr%nz, sclr_dim) ::  & 
-      sclrm, wpsclrp
+      sclrm,       & ! Mean value; pass. scalar (t-levs.) [{sclr units}]
+      wpsclrp,     & ! <w'sclr'> (momentum levels)        [m/s{sclr units}]
+      wpsclrp2,    & ! <w'sclr'^2> (thermodynamic levels) [m/s{sclr units}^2]
+      wpsclrprtp,  & ! <w'sclr'r_t'> (thermo. levels)     [m/s{sclr units)kg/kg]
+      wpsclrpthlp    ! <w'sclr'th_l'> (thermo. levels)    [m/s{sclr units}K]
 
     ! Input/Output variables
     ! An attribute of (inout) is also needed to import the value of the variances
@@ -365,20 +374,20 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'^2 *****!!!!!
 
     ! Implicit contributions to term rtp2
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, &  ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2, &          ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &  ! Intent(in)
-                       C2rt_1d, nu2_vert_res_dep, beta, &        ! Intent(in)
-                       lhs )                                     ! Intent(out)
+    call xp2_xpyp_lhs( xp2_xpyp_rtp2, dt, l_iter, wp3_on_wp2_zt, &  ! In
+                       wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw2, & ! In
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &     ! In
+                       C2rt_1d, nu2_vert_res_dep, beta, &           ! In
+                       lhs )                                        ! Out
 
 
-    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, &  ! Intent(in)
-                       wp2_zt, wprtp, wprtp_zt, wp3_on_wp2, &   ! Intent(in)
-                       wp3_on_wp2_zt, wprtp, wprtp_zt, &        ! Intent(in)
-                       rtm, rtm, rtp2, rtp2_forcing, &          ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
-                       C2rt_1d, tau_zm, rt_tol**2, beta, &      ! Intent(in)
-                       rhs )                                    ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_rtp2, dt, l_iter, a1, a1_zt, &        ! In
+                       wp2_zt, wprtp2, wprtp, wprtp_zt, wp3_on_wp2, & ! In
+                       wp3_on_wp2_zt, wprtp, wprtp_zt, &              ! In
+                       rtm, rtm, rtp2, rtp2_forcing, &                ! In
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &       ! In
+                       C2rt_1d, tau_zm, rt_tol**2, beta, &            ! In
+                       rhs )                                          ! Out
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtp2, 1, & ! Intent(in)
@@ -392,20 +401,20 @@ module advance_xp2_xpyp_module
     !!!!!***** th_l'^2 *****!!!!!
 
     ! Implicit contributions to term thlp2
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, & ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2, &         ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
-                       C2thl_1d, nu2_vert_res_dep, beta, &      ! Intent(in)
-                       lhs )                                    ! Intent(out)
+    call xp2_xpyp_lhs( xp2_xpyp_thlp2, dt, l_iter, wp3_on_wp2_zt, & ! In
+                       wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw2, & ! In
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &     ! In
+                       C2thl_1d, nu2_vert_res_dep, beta, &          ! In
+                       lhs )                                        ! Out
 
     ! Explicit contributions to thlp2
-    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, & ! Intent(in)
-                       wp2_zt, wpthlp, wpthlp_zt, wp3_on_wp2, & ! Intent(in)
-                       wp3_on_wp2_zt, wpthlp, wpthlp_zt, &      ! Intent(in)
-                       thlm, thlm, thlp2, thlp2_forcing, &      ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! Intent(in)
-                       C2thl_1d, tau_zm, thl_tol**2, beta, &    ! Intent(in)
-                       rhs )                                    ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_thlp2, dt, l_iter, a1, a1_zt, &          ! In
+                       wp2_zt, wpthlp2, wpthlp, wpthlp_zt, wp3_on_wp2, & ! In
+                       wp3_on_wp2_zt, wpthlp, wpthlp_zt, &               ! In
+                       thlm, thlm, thlp2, thlp2_forcing, &               ! In
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &          ! In
+                       C2thl_1d, tau_zm, thl_tol**2, beta, &             ! In
+                       rhs )                                             ! Out
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_thlp2, 1, & ! Intent(in)
@@ -420,20 +429,20 @@ module advance_xp2_xpyp_module
     !!!!!***** r_t'th_l' *****!!!!!
 
     ! Implicit contributions to term rtpthlp
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, & ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw2, &         ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
-                       C2rtthl_1d, nu2_vert_res_dep, beta, &    ! Intent(in)
-                       lhs )                                    ! Intent(out)
+    call xp2_xpyp_lhs( xp2_xpyp_rtpthlp, dt, l_iter, wp3_on_wp2_zt, & ! In
+                       wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw2, &   ! In
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &       ! In
+                       C2rtthl_1d, nu2_vert_res_dep, beta, &          ! In
+                       lhs )                                          ! Out
 
     ! Explicit contributions to rtpthlp
-    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &  ! Intent(in)
-                       wp2_zt, wprtp, wprtp_zt, wp3_on_wp2, &      ! Intent(in)
-                       wp3_on_wp2_zt, wpthlp, wpthlp_zt, &         ! Intent(in)
-                       rtm, thlm, rtpthlp, rtpthlp_forcing, &      ! Intent(in)
-                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &    ! Intent(in)
-                       C2rtthl_1d, tau_zm, zero_threshold, beta, & ! Intent(in)
-                       rhs )                                       ! Intent(out)
+    call xp2_xpyp_rhs( xp2_xpyp_rtpthlp, dt, l_iter, a1, a1_zt, &        ! In
+                       wp2_zt, wprtpthlp, wprtp, wprtp_zt, wp3_on_wp2, & ! In
+                       wp3_on_wp2_zt, wpthlp, wpthlp_zt, &               ! In
+                       rtm, thlm, rtpthlp, rtpthlp_forcing, &            ! In
+                       rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &          ! In
+                       C2rtthl_1d, tau_zm, zero_threshold, beta, &       ! In
+                       rhs )                                             ! Out
 
     ! Solve the tridiagonal system
     call xp2_xpyp_solve( xp2_xpyp_rtpthlp, 1, & ! Intent(in)
@@ -448,11 +457,11 @@ module advance_xp2_xpyp_module
     !!!!!***** u'^2 / v'^2 *****!!!!!
 
     ! Implicit contributions to term up2/vp2
-    call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, & ! Intent(in)
-                       a1, a1_zt, tau_zm, wm_zm, Kw9,  &        ! Intent(in)
-                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
-                       C4_C14_1d, nu9_vert_res_dep, beta, &     ! Intent(in)
-                       lhs )                                    ! Intent(out)
+    call xp2_xpyp_lhs( xp2_xpyp_up2_vp2, dt, l_iter, wp3_on_wp2_zt, & ! In
+                       wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw9, &   ! In
+                       rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &       ! In
+                       C4_C14_1d, nu9_vert_res_dep, beta, &           ! In
+                       lhs )                                          ! Out
 
     ! Explicit contributions to up2
     call xp2_xpyp_uv_rhs( xp2_xpyp_up2, dt, l_iter, a1, a1_zt, wp2, & ! Intent(in)
@@ -615,11 +624,11 @@ module advance_xp2_xpyp_module
 
       !!!!!***** sclr'^2, sclr'r_t', sclr'th_l' *****!!!!!
 
-      call xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, & ! Intent(in)
-                         a1, a1_zt, tau_zm, wm_zm, Kw2,         & ! Intent(in)
-                         rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, & ! Intent(in)
-                         C2sclr_1d, nu2_vert_res_dep, beta,     & ! Intent(in)
-                         lhs )                                    ! Intent(out)
+      call xp2_xpyp_lhs( xp2_xpyp_scalars, dt, l_iter, wp3_on_wp2_zt, & ! In
+                         wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw2, &   ! In
+                         rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm, &       ! In
+                         C2sclr_1d, nu2_vert_res_dep, beta, &           ! In
+                         lhs )                                          ! Out
 
 
       ! Explicit contributions to passive scalars
@@ -637,7 +646,7 @@ module advance_xp2_xpyp_module
         !!!!!***** sclr'^2 *****!!!!!
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrp2, dt, l_iter, a1, a1_zt, & ! In
-                           wp2_zt, wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
+                           wp2_zt, wpsclrp2(:,i), wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
                            wp3_on_wp2_zt, wpsclrp(:,i), wpsclrp_zt, & ! In
                            sclrm(:,i), sclrm(:,i), sclrp2(:,i), sclrp2_forcing, & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! In
@@ -658,7 +667,7 @@ module advance_xp2_xpyp_module
         endif
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrprtp, dt, l_iter, a1, a1_zt, & ! In
-                           wp2_zt, wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
+                           wp2_zt, wpsclrprtp(:,i), wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
                            wp3_on_wp2_zt, wprtp, wprtp_zt, & ! In
                            sclrm(:,i), rtm, sclrprtp(:,i), sclrprtp_forcing, & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, &  ! In
@@ -679,7 +688,7 @@ module advance_xp2_xpyp_module
         endif
 
         call xp2_xpyp_rhs( xp2_xpyp_sclrpthlp, dt, l_iter, a1, a1_zt, & ! In
-                           wp2_zt, wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
+                           wp2_zt, wpsclrpthlp(:,i), wpsclrp(:,i), wpsclrp_zt, wp3_on_wp2, & ! In
                            wp3_on_wp2_zt, wpthlp, wpthlp_zt, & ! In
                            sclrm(:,i), thlm, sclrpthlp(:,i), sclrpthlp_forcing, & ! In
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & ! In
@@ -852,8 +861,8 @@ module advance_xp2_xpyp_module
   end subroutine advance_xp2_xpyp
 
   !=============================================================================
-  subroutine xp2_xpyp_lhs( dt, l_iter, wp3_on_wp2_zt, wp3_on_wp2, &
-                           a1, a1_zt, tau_zm, wm_zm, Kw,  &
+  subroutine xp2_xpyp_lhs( solve_type, dt, l_iter, wp3_on_wp2_zt, &
+                           wp3_on_wp2, a1, a1_zt, tau_zm, wm_zm, Kw, &
                            rho_ds_zt, rho_ds_zm, invrs_rho_ds_zm,  &
                            Cn, nu, beta, lhs )
 
@@ -873,7 +882,8 @@ module advance_xp2_xpyp_module
         zero
 
     use model_flags, only: &
-        l_upwind_xpyp_ta ! Constant(s)
+        l_upwind_xpyp_ta,              & ! Constant(s)
+        l_explicit_turbulent_adv_xpyp
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -927,6 +937,8 @@ module advance_xp2_xpyp_module
       km1_mdiag = 3    ! Momentum subdiagonal index.
 
     ! Input Variables
+    integer, intent(in) :: solve_type
+
     real( kind = core_rknd ), intent(in) :: & 
       dt ! Timestep length                             [s]
 
@@ -978,38 +990,48 @@ module advance_xp2_xpyp_module
       + term_ma_zm_lhs( wm_zm(k), gr%invrs_dzm(k), k )
 
       ! LHS turbulent advection (ta) term.
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      !        The weight of the implicit portion of this term is controlled
-      !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-      !        expression below).  A factor is added to the right-hand side of
-      !        the equation in order to balance a weight that is not equal to 1,
-      !        such that:
-      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for in a predictive
-      !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-      !        portion of the term that gets treated implicitly, and RHS is the
-      !        portion of the term that is always treated explicitly.  A weight
-      !        of greater than 1 can be applied to make the term more
-      !        numerically stable.
-      if ( .not. l_upwind_xpyp_ta ) then
-        lhs(kp1_mdiag:km1_mdiag,k)  & 
-        = lhs(kp1_mdiag:km1_mdiag,k)  &
-        + gamma_over_implicit_ts  &
-        * term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                            rho_ds_zt(kp1), rho_ds_zt(k), &
-                            invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
-                            a1_zt(k), gr%invrs_dzm(k), beta, k )
-      else
-        lhs(kp1_mdiag:km1_mdiag,k)  & 
-        = lhs(kp1_mdiag:km1_mdiag,k)  &
-        + gamma_over_implicit_ts  &
-        * term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                   wp3_on_wp2(kp1), wp3_on_wp2(k), &
-                                   wp3_on_wp2(km1), gr%invrs_dzt(k), &
-                                   gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
-                                   rho_ds_zm(kp1), rho_ds_zm(k), &
-                                   rho_ds_zm(km1), beta )
-      end if
+      if ( ( .not. l_explicit_turbulent_adv_xpyp ) &
+           .or. ( solve_type == xp2_xpyp_up2_vp2 ) ) then
+
+         ! Note:  An "over-implicit" weighted time step is applied to this term.
+         !        The weight of the implicit portion of this term is controlled
+         !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in
+         !        the expression below).  A factor is added to the right-hand
+         !        side of the equation in order to balance a weight that is not
+         !        equal to 1, such that:
+         !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+         !        where X is the variable that is being solved for in a
+         !        predictive equation (x'^2 or x'y' in this case), y(t) is the
+         !        linearized portion of the term that gets treated implicitly,
+         !        and RHS is the portion of the term that is always treated
+         !        explicitly.  A weight of greater than 1 can be applied to make
+         !        the term more numerically stable.
+         if ( .not. l_upwind_xpyp_ta ) then
+
+            lhs(kp1_mdiag:km1_mdiag,k)  & 
+            = lhs(kp1_mdiag:km1_mdiag,k)  &
+            + gamma_over_implicit_ts  &
+            * term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                               rho_ds_zt(kp1), rho_ds_zt(k), &
+                               invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
+                               a1_zt(k), gr%invrs_dzm(k), beta, k )
+
+         else
+
+            lhs(kp1_mdiag:km1_mdiag,k)  & 
+            = lhs(kp1_mdiag:km1_mdiag,k)  &
+            + gamma_over_implicit_ts  &
+            * term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                       wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                       wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                       gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                       rho_ds_zm(kp1), rho_ds_zm(k), &
+                                       rho_ds_zm(km1), beta )
+
+         endif ! .not. l_upwind_xpyp_ta
+
+      endif ! ( .not. l_explicit_turbulent_adv_xpyp )
+            ! .or. ( solve_type == xp2_xpyp_up2_vp2 )
 
       ! LHS dissipation term 1 (dp1)
       ! (combined with pressure term 1 (pr1) for u'^2 and v'^2).
@@ -1071,24 +1093,30 @@ module advance_xp2_xpyp_module
         !        advection (ta) term).
         if ( irtp2_ta + ithlp2_ta + irtpthlp_ta + & 
              iup2_ta + ivp2_ta > 0 ) then
-          if ( .not. l_upwind_xpyp_ta ) then
-            tmp(1:3)  &
-            = gamma_over_implicit_ts  &
-            * term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                                rho_ds_zt(kp1), rho_ds_zt(k), &
-                                invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
-                                a1_zt(k), gr%invrs_dzm(k), beta, k )
+          if ( ( .not. l_explicit_turbulent_adv_xpyp ) &
+               .or. ( solve_type == xp2_xpyp_up2_vp2 ) ) then
+            if ( .not. l_upwind_xpyp_ta ) then
+              tmp(1:3)  &
+              = gamma_over_implicit_ts  &
+              * term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                  rho_ds_zt(kp1), rho_ds_zt(k), &
+                                  invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
+                                  a1_zt(k), gr%invrs_dzm(k), beta, k )
+            else
+              tmp(1:3)  &
+              = gamma_over_implicit_ts  &
+              * term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                         wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                         wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                         gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                         rho_ds_zm(kp1), rho_ds_zm(k), &
+                                         rho_ds_zm(km1), beta )
+            endif ! .not. l_upwind_xpyp_ta
           else
-             tmp(1:3)  &
-             = gamma_over_implicit_ts  &
-             * term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                        wp3_on_wp2(kp1), wp3_on_wp2(k), &
-                                        wp3_on_wp2(km1), gr%invrs_dzt(k), &
-                                        gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
-                                        rho_ds_zm(kp1), rho_ds_zm(k), &
-                                        rho_ds_zm(km1), beta )
-          end if
-
+            ! The turbulent advection term is being solved explicitly.
+            tmp(1:3) = zero
+          endif ! ( .not. l_explicit_turbulent_adv_xpyp )
+                ! .or. ( solve_type == xp2_xpyp_up2_vp2 )
           zmscr05(k) = -tmp(3)
           zmscr06(k) = -tmp(2)
           zmscr07(k) = -tmp(1)
@@ -1814,7 +1842,7 @@ module advance_xp2_xpyp_module
 
   !=============================================================================
   subroutine xp2_xpyp_rhs( solve_type, dt, l_iter, a1, a1_zt, &
-                           wp2_zt, wpxap, wpxap_zt, wp3_on_wp2, &
+                           wp2_zt, wpxpyp, wpxap, wpxap_zt, wp3_on_wp2, &
                            wp3_on_wp2_zt, wpxbp, wpxbp_zt, &
                            xam, xbm, xapxbp, xapxbp_forcing, &
                            rho_ds_zm, rho_ds_zt, invrs_rho_ds_zm, & 
@@ -1835,7 +1863,8 @@ module advance_xp2_xpyp_module
         zero
 
     use model_flags, only: &
-        l_upwind_xpyp_ta ! Constant(s)
+        l_upwind_xpyp_ta,              & ! Constant(s)
+        l_explicit_turbulent_adv_xpyp
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1879,6 +1908,7 @@ module advance_xp2_xpyp_module
       a1,              & ! sigma_sqd_w term a_1 (momentum levels)      [-]
       a1_zt,           & ! a_1 interpolated to thermodynamic levels    [-]
       wp2_zt,          & ! w'^2 interpolated to thermodynamic levels   [m^2/s^2]
+      wpxpyp,          & ! <w'x'y'> (thermo. levels)     [m/s{x units}{y units}]
       wpxap,           & ! w'x_a' (momentum levels)                    [m/s {x_am units}]
       wpxap_zt,        & ! w'x_a' interpolated to thermodynamic levels [m/s {x_am units}]
       wp3_on_wp2,      & ! w'^3 / w'^2 on momentum levels              [m/s]
@@ -1969,53 +1999,72 @@ module advance_xp2_xpyp_module
       kp1 = min( k+1, gr%nz )
 
       ! RHS turbulent advection (ta) term.
-      rhs(k,1)  & 
-      = rhs(k,1)  & 
-      + term_ta_ADG1_rhs( wp2_zt(kp1), wp2_zt(k), &
-                          wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                          rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
-                          a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), &
-                          wpxbp_zt(k), wpxap_zt(kp1), wpxap_zt(k), &
-                          gr%invrs_dzm(k), beta )
+      if ( l_explicit_turbulent_adv_xpyp ) then
 
-      ! RHS contribution from "over-implicit" weighted time step
-      ! for LHS turbulent advection (ta) term.
-      !
-      ! Note:  An "over-implicit" weighted time step is applied to this term.
-      !        The weight of the implicit portion of this term is controlled
-      !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in the
-      !        expression below).  A factor is added to the right-hand side of
-      !        the equation in order to balance a weight that is not equal to 1,
-      !        such that:
-      !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
-      !        where X is the variable that is being solved for in a predictive
-      !        equation (x'^2 or x'y' in this case), y(t) is the linearized
-      !        portion of the term that gets treated implicitly, and RHS is the
-      !        portion of the term that is always treated explicitly.  A weight
-      !        of greater than 1 can be applied to make the term more
-      !        numerically stable.
-      if ( .not. l_upwind_xpyp_ta ) then
-        lhs_fnc_output(1:3)  &
-        = term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                            rho_ds_zt(kp1), rho_ds_zt(k), &
-                            invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
-                            a1_zt(k), gr%invrs_dzm(k), beta, k )
+         ! The turbulent advection term is being solved explicitly.
+         rhs(k,1) & 
+         = rhs(k,1) &
+           + term_ta_explicit_rhs( wpxpyp(kp1), wpxpyp(k), &
+                                   rho_ds_zt(kp1), rho_ds_zt(k), &
+                                   invrs_rho_ds_zm(k), &
+                                   gr%invrs_dzm(k) )
+
       else
-        lhs_fnc_output(1:3)  &
-        = term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                   wp3_on_wp2(kp1), wp3_on_wp2(k), &
-                                   wp3_on_wp2(km1), gr%invrs_dzt(k), &
-                                   gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
-                                   rho_ds_zm(kp1), rho_ds_zm(k), &
-                                   rho_ds_zm(km1), beta )
-      endif
 
-      rhs(k,1)  &
-      = rhs(k,1)  &
-      + ( one - gamma_over_implicit_ts )  &
-      * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
-          - lhs_fnc_output(2) * xapxbp(k)  &
-          - lhs_fnc_output(3) * xapxbp(km1) )
+         ! The turbulent advection term is being solved implicitly
+         ! or semi-implicitly.
+         rhs(k,1)  & 
+         = rhs(k,1)  & 
+         + term_ta_ADG1_rhs( wp2_zt(kp1), wp2_zt(k), &
+                             wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                             rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
+                             a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), &
+                             wpxbp_zt(k), wpxap_zt(kp1), wpxap_zt(k), &
+                             gr%invrs_dzm(k), beta )
+
+         ! RHS contribution from "over-implicit" weighted time step
+         ! for LHS turbulent advection (ta) term.
+         !
+         ! Note:  An "over-implicit" weighted time step is applied to this term.
+         !        The weight of the implicit portion of this term is controlled
+         !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in
+         !        the expression below).  A factor is added to the right-hand
+         !        side of the equation in order to balance a weight that is not
+         !        equal to 1, such that:
+         !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
+         !        where X is the variable that is being solved for in a
+         !        predictive equation (x'^2 or x'y' in this case), y(t) is the
+         !        linearized portion of the term that gets treated implicitly,
+         !        and RHS is the portion of the term that is always treated
+         !        explicitly.  A weight of greater than 1 can be applied to make
+         !        the term more numerically stable.
+         if ( .not. l_upwind_xpyp_ta ) then
+
+            lhs_fnc_output(1:3)  &
+            = term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                rho_ds_zt(kp1), rho_ds_zt(k), &
+                                invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
+                                a1_zt(k), gr%invrs_dzm(k), beta, k )
+         else
+
+            lhs_fnc_output(1:3)  &
+            = term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                       wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                       wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                       gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                       rho_ds_zm(kp1), rho_ds_zm(k), &
+                                       rho_ds_zm(km1), beta )
+
+         endif ! .not. l_upwind_xpyp_ta
+
+         rhs(k,1) &
+         = rhs(k,1) &
+           + ( one - gamma_over_implicit_ts ) &
+             * ( - lhs_fnc_output(1) * xapxbp(kp1) &
+                 - lhs_fnc_output(2) * xapxbp(k) &
+                 - lhs_fnc_output(3) * xapxbp(km1) )
+
+      endif ! l_explicit_turbulent_adv_xpyp
 
       ! RHS turbulent production (tp) term.
       rhs(k,1)  & 
@@ -2052,43 +2101,67 @@ module advance_xp2_xpyp_module
 
         ! Statistics: explicit contributions for rtp2, thlp2, or rtpthlp.
 
-        ! x'y' term ta has both implicit and explicit components; call
-        ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
-        ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
-        call stat_begin_update_pt( ixapxbp_ta, k, &   ! Intent(in) 
-        -term_ta_ADG1_rhs( wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
-                           wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                           rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
-                           a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), &
-                           wpxbp_zt(k), wpxap_zt(kp1), wpxap_zt(k), &
-                           gr%invrs_dzm(k), beta ), &
-                                   stats_zm )         ! Intent(inout)
+        if ( l_explicit_turbulent_adv_xpyp ) then
 
-        ! Note:  An "over-implicit" weighted time step is applied to this term.
-        !        A weighting factor of greater than 1 may be used to make the
-        !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) term).
-        if ( .not. l_upwind_xpyp_ta ) then
-          lhs_fnc_output(1:3)  &
-          = term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
-                              rho_ds_zt(kp1), rho_ds_zt(k), &
-                              invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
-                              a1_zt(k), gr%invrs_dzm(k), beta, k )
+          ! The turbulent advection term is being solved explicitly.
+
+          ! The turbulent advection stats code is still set up in two parts,
+          ! so call stat_begin_update_pt.  The implicit portion of the stat,
+          ! which has a value of 0, will still be called later.  Since
+          ! stat_begin_update_pt automatically subtracts the value sent in,
+          ! reverse the sign on the input value.
+          call stat_begin_update_pt( ixapxbp_ta, k, &
+                   -term_ta_explicit_rhs( wpxpyp(kp1), wpxpyp(k), &
+                                          rho_ds_zt(kp1), rho_ds_zt(k), &
+                                          invrs_rho_ds_zm(k), &
+                                          gr%invrs_dzm(k) ), &
+                                     stats_zm )
+
         else
-          lhs_fnc_output(1:3)  &
-          = term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
-                                     wp3_on_wp2(kp1), wp3_on_wp2(k), &
-                                     wp3_on_wp2(km1), gr%invrs_dzt(k), &
-                                     gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
-                                     rho_ds_zm(kp1), rho_ds_zm(k), &
-                                     rho_ds_zm(km1), beta )
-        end if
-        call stat_modify_pt( ixapxbp_ta, k,  &            ! Intent(in)
-              + ( one - gamma_over_implicit_ts )  &       ! Intent(in)
-              * ( - lhs_fnc_output(1) * xapxbp(kp1)  &
-                  - lhs_fnc_output(2) * xapxbp(k)  &
-                  - lhs_fnc_output(3) * xapxbp(km1) ),  &
-                             stats_zm )                         ! Intent(inout)
+
+          ! The turbulent advection term is being solved implicitly
+          ! or semi-implicitly.
+
+          ! x'y' term ta has both implicit and explicit components; call
+          ! stat_begin_update_pt.  Since stat_begin_update_pt automatically
+          ! subtracts the value sent in, reverse the sign on term_ta_ADG1_rhs.
+          call stat_begin_update_pt( ixapxbp_ta, k, &   ! Intent(in) 
+          -term_ta_ADG1_rhs( wp2_zt(kp1), wp2_zt(k), &  ! Intent(in)
+                             wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                             rho_ds_zt(kp1), rho_ds_zt(k), invrs_rho_ds_zm(k), &
+                             a1_zt(kp1), a1(k), a1_zt(k), wpxbp_zt(kp1), &
+                             wpxbp_zt(k), wpxap_zt(kp1), wpxap_zt(k), &
+                             gr%invrs_dzm(k), beta ), &
+                                     stats_zm )         ! Intent(inout)
+
+          ! Note:  An "over-implicit" weighted time step is applied to this
+          !        term.  A weighting factor of greater than 1 may be used to
+          !        make the term more numerically stable (see note above for RHS
+          !        turbulent advection (ta) term).
+          if ( .not. l_upwind_xpyp_ta ) then
+            lhs_fnc_output(1:3) &
+            = term_ta_ADG1_lhs( wp3_on_wp2_zt(kp1), wp3_on_wp2_zt(k), &
+                                rho_ds_zt(kp1), rho_ds_zt(k), &
+                                invrs_rho_ds_zm(k), a1_zt(kp1), a1(k), &
+                                a1_zt(k), gr%invrs_dzm(k), beta, k )
+          else
+            lhs_fnc_output(1:3) &
+            = term_ta_ADG1_lhs_upwind( a1(k), a1(kp1), a1(km1), &
+                                       wp3_on_wp2(kp1), wp3_on_wp2(k), &
+                                       wp3_on_wp2(km1), gr%invrs_dzt(k), &
+                                       gr%invrs_dzt(kp1), invrs_rho_ds_zm(k), &
+                                       rho_ds_zm(kp1), rho_ds_zm(k), &
+                                       rho_ds_zm(km1), beta )
+          endif ! .not. l_upwind_xpyp_ta
+
+          call stat_modify_pt( ixapxbp_ta, k, &             ! Intent(in)
+                               + ( one - gamma_over_implicit_ts ) & ! Intent(in)
+                                 * ( - lhs_fnc_output(1) * xapxbp(kp1) &
+                                     - lhs_fnc_output(2) * xapxbp(k) &
+                                     - lhs_fnc_output(3) * xapxbp(km1) ), &
+                               stats_zm )                   ! Intent(inout)
+
+        endif ! l_explicit_turbulent_adv_xpyp
 
         ! x'y' term dp1 has both implicit and explicit components; call
         ! stat_begin_update_pt.  Since stat_begin_update_pt automatically

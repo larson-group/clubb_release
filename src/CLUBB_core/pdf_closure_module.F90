@@ -138,7 +138,8 @@ module pdf_closure_module
         l_mix_rat_hm  ! Variable(s)
 
     use model_flags, only: &
-        l_explicit_turbulent_adv_wp3    ! Variable(s)
+        l_explicit_turbulent_adv_wp3,  & ! Variable(s)
+        l_explicit_turbulent_adv_xpyp
 
     use numerical_check, only:  & 
         pdf_closure_check ! Procedure(s)
@@ -607,24 +608,24 @@ module pdf_closure_module
                               varnce_w_2, varnce_thl_1, varnce_thl_2, &
                               corr_w_thl_1, corr_w_thl_2, mixt_frac )
 
-    ! Compute higher order moments (these are non-interactive diagnostics)
+    ! Compute higher order moments (these may be interactive)
     if ( l_explicit_turbulent_adv_wp3 .or. iwp4 > 0 ) then
        wp4 = calc_wp4_pdf( wm, w_1, w_2, varnce_w_1, varnce_w_2, mixt_frac )
     endif
 
-    if ( iwprtp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. iwprtp2 > 0 ) then
        wprtp2 = calc_wpxp2_pdf( wm, rtm, w_1, w_2, rt_1, rt_2, varnce_w_1, &
                                 varnce_w_2, varnce_rt_1, varnce_rt_2, &
                                 corr_w_rt_1, corr_w_rt_2, mixt_frac )
     endif
 
-    if ( iwpthlp2 > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. iwpthlp2 > 0 ) then
        wpthlp2 = calc_wpxp2_pdf( wm, thlm, w_1, w_2, thl_1, thl_2, varnce_w_1, &
                                  varnce_w_2, varnce_thl_1, varnce_thl_2, &
                                  corr_w_thl_1, corr_w_thl_2, mixt_frac )
     endif
 
-    if ( iwprtpthlp > 0 ) then
+    if ( l_explicit_turbulent_adv_xpyp .or. iwprtpthlp > 0 ) then
        wprtpthlp = calc_wpxpyp_pdf( wm, rtm, thlm, w_1, w_2, rt_1, rt_2, &
                                     thl_1, thl_2, varnce_w_1, varnce_w_2, &
                                     varnce_rt_1, varnce_rt_2, varnce_thl_1, &

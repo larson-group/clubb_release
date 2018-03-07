@@ -1461,7 +1461,7 @@ module advance_xm_wpxp_module
       * diffusion_zt_lhs( rho_ds_zm(k) * ( Kh_N2_zm(k) +  constant_nu ),  &
           rho_ds_zm(km1) * ( Kh_N2_zm(km1) +  constant_nu ), zero_nu,  &
           gr%invrs_dzm(km1), gr%invrs_dzm(k), gr%invrs_dzt(k), k )
-  end if
+    endif
 
     call set_boundary_conditions_lhs( m_k_mdiag, k_wpxp_low, k_wpxp_high, lhs, &
                                   t_k_tdiag, k_xm)
@@ -1836,7 +1836,8 @@ module advance_xm_wpxp_module
 
         else
 
-          ! The turbulent advection term is being solved implicitly.
+          ! The turbulent advection term is being solved implicitly
+          ! or semi-implicitly.
 
           ! Note:  An "over-implicit" weighted time step is applied to this
           !        term.  A weighting factor of greater than 1 may be used to
