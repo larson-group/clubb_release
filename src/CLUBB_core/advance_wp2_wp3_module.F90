@@ -1306,7 +1306,7 @@ module advance_wp2_wp3_module
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
-      !        advection (ta) and turbulent production (tp) terms).
+      !        advection (ta) term).
       lhs(m_k_mdiag,k_wp2)  & 
       = lhs(m_k_mdiag,k_wp2)  &
       + gamma_over_implicit_ts  & 
@@ -1334,7 +1334,7 @@ module advance_wp2_wp3_module
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
-      !        advection (ta) and turbulent production (tp) terms).
+      !        advection (ta) term).
       ! Reference:
       ! https://arxiv.org/pdf/1711.03675v1.pdf#nameddest=url:wp2_pr 
       if ( l_tke_aniso ) then
@@ -1352,7 +1352,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 LHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         if ( iwp2_dp1 > 0 ) then
           zmscr01(k)  &
           = - gamma_over_implicit_ts  &
@@ -1415,7 +1415,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 LHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         if ( iwp2_pr1 > 0 .and. l_tke_aniso ) then
           zmscr12(k)  &
           = - gamma_over_implicit_ts  &
@@ -1453,19 +1453,20 @@ module advance_wp2_wp3_module
       ! LHS turbulent advection (ta) term.
       if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-         ! Note:  An "over-implicit" weighted time step is applied to these
-         !        terms.  The weight of the implicit portion of these terms is
-         !        controlled by the factor gamma_over_implicit_ts (abbreviated
-         !        "gamma" in the expression below).  A factor is added to the
-         !        right-hand side of the equation in order to balance a weight
-         !        that is not equal to 1, such that:
+         ! Note:  An "over-implicit" weighted time step is applied to this term.
+         !        The weight of the implicit portion of this term is controlled
+         !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in
+         !        the expression below).  A factor is added to the right-hand
+         !        side of the equation in order to balance a weight that is not
+         !        equal to 1, such that:
          !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
          !        where X is the variable that is being solved for in a
          !        predictive equation (w'^3 in this case), y(t) is the
-         !        linearized portion of the terms that gets treated implicitly,
-         !        and RHS is the portion of the terms that is always treated
-         !        explicitly.  A weight of greater than 1 can be applied to make
-         !        the terms more numerically stable.
+         !        linearized portion of the term that gets treated implicitly,
+         !        and RHS is the portion of the term that is always treated
+         !        explicitly (in the case of the w'^3 turbulent advection term,
+         !        RHS = 0).  A weight of greater than 1 can be applied to make
+         !        the term more numerically stable.
          wp3_term_ta_lhs_result(t_kp1_tdiag:t_km1_tdiag) &
          = wp3_term_ta_ADG1_lhs( wp2(k), wp2(km1), &
                                  a1(k), a1_zt(k), a1(km1), &
@@ -1487,6 +1488,7 @@ module advance_wp2_wp3_module
       endif ! .not. l_explicit_turbulent_adv_wp3
 
       ! LHS turbulent production (tp) term.
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
       wp3_term_tp_lhs_result((/t_k_mdiag,t_km1_mdiag/)) &
       = wp3_term_tp_lhs( wp2(k), wp2(km1), &
                          rho_ds_zm(k), rho_ds_zm(km1), &
@@ -1573,7 +1575,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_ta > 0 ) then
           if ( .not. l_explicit_turbulent_adv_wp3 ) then
             tmp(1:5) &
@@ -1599,7 +1601,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_tp > 0 ) then
           tmp(1:2)  &
           = gamma_over_implicit_ts  &
@@ -1638,7 +1640,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_pr1 > 0 ) then
           ztscr01(k)  &
           = - gamma_over_implicit_ts  &
@@ -1976,7 +1978,7 @@ module advance_wp2_wp3_module
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
-      !        advection (ta) and turbulent production (tp) terms).
+      !        advection (ta) term).
       lhs_a_csr(m_k_mdiag)  & 
       = lhs_a_csr(m_k_mdiag)  &
       + gamma_over_implicit_ts  & 
@@ -2004,7 +2006,7 @@ module advance_wp2_wp3_module
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 LHS turbulent
-      !        advection (ta) and turbulent production (tp) terms).
+      !        advection (ta) term).
       if ( l_tke_aniso ) then
         ! Add in this term if we're not assuming tke = 1.5 * wp2
         lhs_a_csr(m_k_mdiag)  & 
@@ -2020,7 +2022,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 LHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         if ( iwp2_dp1 > 0 ) then
           zmscr01(k)  &
           = - gamma_over_implicit_ts  &
@@ -2083,7 +2085,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 LHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         if ( iwp2_pr1 > 0 .and. l_tke_aniso ) then
           zmscr12(k)  &
           = - gamma_over_implicit_ts  &
@@ -2152,19 +2154,20 @@ module advance_wp2_wp3_module
       ! LHS turbulent advection (ta) term.
       if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-         ! Note:  An "over-implicit" weighted time step is applied to these
-         !        terms.  The weight of the implicit portion of these terms is
-         !        controlled by the factor gamma_over_implicit_ts (abbreviated
-         !        "gamma" in the expression below).  A factor is added to the
-         !        right-hand side of the equation in order to balance a weight
-         !        that is not equal to 1, such that:
+         ! Note:  An "over-implicit" weighted time step is applied to this term.
+         !        The weight of the implicit portion of this term is controlled
+         !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in
+         !        the expression below).  A factor is added to the right-hand
+         !        side of the equation in order to balance a weight that is not
+         !        equal to 1, such that:
          !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
          !        where X is the variable that is being solved for in a
          !        predictive equation (w'^3 in this case), y(t) is the
-         !        linearized portion of the terms that gets treated implicitly,
-         !        and RHS is the portion of the terms that is always treated
-         !        explicitly.  A weight of greater than 1 can be applied to make
-         !        the terms more numerically stable.
+         !        linearized portion of the term that gets treated implicitly,
+         !        and RHS is the portion of the term that is always treated
+         !        explicitly (in the case of the w'^3 turbulent advection term,
+         !        RHS = 0).  A weight of greater than 1 can be applied to make
+         !        the term more numerically stable.
          wp3_term_ta_lhs_result(t_kp1_tdiag:t_km1_tdiag:-1) &
          = wp3_term_ta_ADG1_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1),  &
@@ -2186,6 +2189,7 @@ module advance_wp2_wp3_module
       endif ! .not. l_explicit_turbulent_adv_wp3
 
       ! LHS turbulent production (tp) term.
+      ! Note:  An "over-implicit" weighted time step is applied to this term.
       wp3_term_tp_lhs_result((/t_k_mdiag,t_km1_mdiag/)) &
       = wp3_term_tp_lhs( wp2(k), wp2(km1), &
                          rho_ds_zm(k), rho_ds_zm(km1), &
@@ -2271,7 +2275,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_ta > 0 ) then
           if ( .not. l_explicit_turbulent_adv_wp3 ) then
             tmp(1:5)  &
@@ -2297,7 +2301,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_tp > 0 ) then
           tmp(1:2)  &
           = gamma_over_implicit_ts  &
@@ -2336,7 +2340,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for LHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         if ( iwp3_pr1 > 0 ) then
           ztscr01(k)  &
           = - gamma_over_implicit_ts  &
@@ -2653,7 +2657,7 @@ module advance_wp2_wp3_module
       ! Note:  An "over-implicit" weighted time step is applied to this term.
       !        A weighting factor of greater than 1 may be used to make the term
       !        more numerically stable (see note below for w'^3 RHS turbulent
-      !        advection (ta) and turbulent production (tp) terms).
+      !        advection (ta) term).
       lhs_fnc_output(1)  &
       = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
       rhs(k_wp2)  &
@@ -2689,7 +2693,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         lhs_fnc_output(1)  &
         = wp2_term_pr1_lhs( C4, tau1m(k) )
         rhs(k_wp2)  &
@@ -2732,8 +2736,7 @@ module advance_wp2_wp3_module
           ! Note:  An "over-implicit" weighted time step is applied to this
           !        term.  A weighting factor of greater than 1 may be used to
           !        make the term more numerically stable (see note below for
-          !        w'^3 RHS turbulent advection (ta) and turbulent
-          !        production (tp) terms).
+          !        w'^3 RHS turbulent advection (ta) term).
           lhs_fnc_output(1)  &
           = wp2_term_pr1_lhs( C4, tau1m(k) )
           call stat_modify_pt( iwp2_pr1, k, &
@@ -2758,7 +2761,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note below for w'^3 RHS
-        !        turbulent advection (ta) and turbulent production (tp) terms).
+        !        turbulent advection (ta) term).
         lhs_fnc_output(1)  &
         = wp2_term_dp1_lhs( C1_Skw_fnc(k), tau_C1_zm(k) )
         call stat_modify_pt( iwp2_dp1, k, &
@@ -2803,19 +2806,20 @@ module advance_wp2_wp3_module
          ! RHS contribution from "over-implicit" weighted time step
          ! for LHS turbulent advection (ta) term.
          !
-         ! Note:  An "over-implicit" weighted time step is applied to these
-         !        terms.  The weight of the implicit portion of these terms is
-         !        controlled by the factor gamma_over_implicit_ts (abbreviated
-         !        "gamma" in the expression below).  A factor is added to the
-         !        right-hand side of the equation in order to balance a weight
-         !        that is not equal to 1, such that:
+         ! Note:  An "over-implicit" weighted time step is applied to this term.
+         !        The weight of the implicit portion of this term is controlled
+         !        by the factor gamma_over_implicit_ts (abbreviated "gamma" in
+         !        the expression below).  A factor is added to the right-hand
+         !        side of the equation in order to balance a weight that is not
+         !        equal to 1, such that:
          !             -y(t) * [ gamma * X(t+1) + ( 1 - gamma ) * X(t) ] + RHS;
          !        where X is the variable that is being solved for in a
          !        predictive equation (w'^3 in this case), y(t) is the
-         !        linearized portion of the terms that gets treated implicitly,
-         !        and RHS is the portion of the terms that is always treated
-         !        explicitly.  A weight of greater than 1 can be applied to make
-         !        the terms more numerically stable.
+         !        linearized portion of the term that gets treated implicitly,
+         !        and RHS is the portion of the term that is always treated
+         !        explicitly (in the case of the w'^3 turbulent advection term,
+         !        RHS = 0).  A weight of greater than 1 can be applied to make
+         !        the term more numerically stable.
          wp3_term_ta_lhs_result(t_kp1_tdiag:t_km1_tdiag) &
          = wp3_term_ta_ADG1_lhs( wp2(k), wp2(km1),  &
                                  a1(k), a1_zt(k), a1(km1), &
@@ -3025,7 +3029,7 @@ module advance_wp2_wp3_module
         ! Note:  An "over-implicit" weighted time step is applied to this term.
         !        A weighting factor of greater than 1 may be used to make the
         !        term more numerically stable (see note above for RHS turbulent
-        !        advection (ta) and turbulent production (tp) terms).
+        !        advection (ta) term).
         lhs_fnc_output(1)  &
         = wp3_term_pr1_lhs( C8, C8b, tauw3t(k), Skw_zt(k) )
         call stat_modify_pt( iwp3_pr1, k,  &
