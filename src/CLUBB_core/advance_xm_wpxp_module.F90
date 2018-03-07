@@ -797,10 +797,12 @@ module advance_xm_wpxp_module
       write(fstderr,*) "Kh_zt = ", Kh_zt
       write(fstderr,*) "tau_C6_zm = ", tau_C6_zm
       write(fstderr,*) "Skw_zm = ", Skw_zm
+      write(fstderr,*) "wp2rtp = ", wp2rtp
       write(fstderr,*) "rtpthvp = ", rtpthvp
       write(fstderr,*) "rtm_forcing = ", rtm_forcing
       write(fstderr,*) "wprtp_forcing = ", wprtp_forcing
       write(fstderr,*) "rtm_ref = ", rtm_ref
+      write(fstderr,*) "wp2thlp = ", wp2thlp
       write(fstderr,*) "thlpthvp = ", thlpthvp
       write(fstderr,*) "thlm_forcing = ", thlm_forcing
       write(fstderr,*) "wpthlp_forcing = ", wpthlp_forcing
@@ -821,6 +823,7 @@ module advance_xm_wpxp_module
  
       if ( sclr_dim > 0 )  then
         write(fstderr,*) "sclrp2 = ", sclrp2
+        write(fstderr,*) "wp2sclrp = ", wp2sclrp
         write(fstderr,*) "sclrpthvp = ", sclrpthvp
         write(fstderr,*) "sclrm_forcing = ", sclrm_forcing
       end if
@@ -1761,14 +1764,14 @@ module advance_xm_wpxp_module
 
          endif ! .not. l_upwind_wpxp_ta
 
-      endif ! l_explicit_turbulent_adv_wpxp
+         rhs(k_wpxp)  &
+         = rhs(k_wpxp)  &
+           + ( one - gamma_over_implicit_ts ) &
+             * ( - lhs_fnc_output(1) * wpxp(kp1) &
+                 - lhs_fnc_output(2) * wpxp(k) &
+                 - lhs_fnc_output(3) * wpxp(km1) )
 
-      rhs(k_wpxp)  &
-        = rhs(k_wpxp)  &
-        + ( one - gamma_over_implicit_ts )  &
-        * ( - lhs_fnc_output(1) * wpxp(kp1)  &
-            - lhs_fnc_output(2) * wpxp(k)  &
-            - lhs_fnc_output(3) * wpxp(km1) )
+      endif ! l_explicit_turbulent_adv_wpxp
 
       ! RHS contribution from "over-implicit" weighted time step
       ! for LHS pressure term 1 (pr1).

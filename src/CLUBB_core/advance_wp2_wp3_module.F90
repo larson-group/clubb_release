@@ -356,6 +356,7 @@ module advance_wp2_wp3_module
         write(fstderr,*) "sigma_sqd_w = ", sigma_sqd_w
         write(fstderr,*) "wm_zm = ", wm_zm
         write(fstderr,*) "wm_zt = ", wm_zt
+        write(fstderr,*) "wp4 = ", wp4
         write(fstderr,*) "wpthvp = ", wpthvp
         write(fstderr,*) "wp2thvp = ", wp2thvp
         write(fstderr,*) "um = ", um
