@@ -66,6 +66,11 @@ module new_pdf_main
         coef_spread_DG_means_rt, &
         coef_spread_DG_means_thl
 
+    use model_flags, only: &
+        l_explicit_turbulent_adv_wp3,  & ! Variable(s)
+        l_explicit_turbulent_adv_wpxp, &
+        l_explicit_turbulent_adv_xpyp
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
@@ -394,49 +399,69 @@ module new_pdf_main
     endif ! Find variable with the greatest magnitude of skewness.
 
 
-    ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
-    coef_wp4_implicit &
-    = calc_coef_wp4_implicit( mixt_frac, F_w, &
-                              coef_sigma_w_1_sqd, &
-                              coef_sigma_w_2_sqd )
+    if ( .not. l_explicit_turbulent_adv_wp3 ) then
 
-    ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
-    coef_wprtp2_implicit &
-    = calc_coef_wpxp2_implicit( wp2, rtp2, wprtp, sgn_wprtp, &
-                                mixt_frac, F_w, F_rt, &
-                                coef_sigma_w_1_sqd, &
-                                coef_sigma_w_2_sqd, &
-                                coef_sigma_rt_1_sqd, &
-                                coef_sigma_rt_2_sqd  )
+       ! Turbulent advection of <w'^3> is being handled implicitly.
 
-    ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
-    coef_wpthlp2_implicit &
-    = calc_coef_wpxp2_implicit( wp2, thlp2, wpthlp, sgn_wpthlp, &
-                                mixt_frac, F_w, F_thl, &
-                                coef_sigma_w_1_sqd, &
-                                coef_sigma_w_2_sqd, &
-                                coef_sigma_thl_1_sqd, &
-                                coef_sigma_thl_2_sqd  )
+       ! <w'^4> = coef_wp4_implicit * <w'^2>^2.
+       coef_wp4_implicit &
+       = calc_coef_wp4_implicit( mixt_frac, F_w, &
+                                 coef_sigma_w_1_sqd, &
+                                 coef_sigma_w_2_sqd )
 
-    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
-    call calc_coefs_wp2xp_semiimpl( wp2, rtp2, sgn_wprtp, & ! In
-                                    mixt_frac, F_w, F_rt, & ! In
-                                    coef_sigma_w_1_sqd,   & ! In
-                                    coef_sigma_w_2_sqd,   & ! In
-                                    coef_sigma_rt_1_sqd,  & ! In
-                                    coef_sigma_rt_2_sqd,  & ! In
-                                    coef_wp2rtp_implicit, & ! Out
-                                    term_wp2rtp_explicit  ) ! Out
+    endif ! .not. l_explicit_turbulent_adv_wp3
 
-    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
-    call calc_coefs_wp2xp_semiimpl( wp2, thlp2, sgn_wpthlp, & ! In
-                                    mixt_frac, F_w, F_thl,  & ! In
-                                    coef_sigma_w_1_sqd,     & ! In
-                                    coef_sigma_w_2_sqd,     & ! In
-                                    coef_sigma_thl_1_sqd,   & ! In
-                                    coef_sigma_thl_2_sqd,   & ! In
-                                    coef_wp2thlp_implicit,  & ! Out
-                                    term_wp2thlp_explicit   ) ! Out
+    if ( .not. l_explicit_turbulent_adv_xpyp ) then
+
+       ! Turbulent advection of <rt'^2> and <thl'^2> is being handled
+       ! implicitly.
+
+       ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>
+       coef_wprtp2_implicit &
+       = calc_coef_wpxp2_implicit( wp2, rtp2, wprtp, sgn_wprtp, &
+                                   mixt_frac, F_w, F_rt, &
+                                   coef_sigma_w_1_sqd, &
+                                   coef_sigma_w_2_sqd, &
+                                   coef_sigma_rt_1_sqd, &
+                                   coef_sigma_rt_2_sqd  )
+
+       ! <w'thl'^2> = coef_wpthlp2_implicit * <thl'^2>
+       coef_wpthlp2_implicit &
+       = calc_coef_wpxp2_implicit( wp2, thlp2, wpthlp, sgn_wpthlp, &
+                                   mixt_frac, F_w, F_thl, &
+                                   coef_sigma_w_1_sqd, &
+                                   coef_sigma_w_2_sqd, &
+                                   coef_sigma_thl_1_sqd, &
+                                   coef_sigma_thl_2_sqd  )
+
+    endif ! .not. l_explicit_turbulent_adv_xpyp
+
+    if ( .not. l_explicit_turbulent_adv_wpxp ) then
+
+       ! Turbulent advection of <w'rt'> and <w'thl'> is being handled
+       ! semi-implicitly.
+
+       ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
+       call calc_coefs_wp2xp_semiimpl( wp2, rtp2, sgn_wprtp, & ! In
+                                       mixt_frac, F_w, F_rt, & ! In
+                                       coef_sigma_w_1_sqd,   & ! In
+                                       coef_sigma_w_2_sqd,   & ! In
+                                       coef_sigma_rt_1_sqd,  & ! In
+                                       coef_sigma_rt_2_sqd,  & ! In
+                                       coef_wp2rtp_implicit, & ! Out
+                                       term_wp2rtp_explicit  ) ! Out
+
+       ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
+       call calc_coefs_wp2xp_semiimpl( wp2, thlp2, sgn_wpthlp, & ! In
+                                       mixt_frac, F_w, F_thl,  & ! In
+                                       coef_sigma_w_1_sqd,     & ! In
+                                       coef_sigma_w_2_sqd,     & ! In
+                                       coef_sigma_thl_1_sqd,   & ! In
+                                       coef_sigma_thl_2_sqd,   & ! In
+                                       coef_wp2thlp_implicit,  & ! Out
+                                       term_wp2thlp_explicit   ) ! Out
+
+    endif ! .not. l_explicit_turbulent_adv_wpxp
 
 
     return
