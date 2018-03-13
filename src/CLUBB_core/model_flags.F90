@@ -99,7 +99,11 @@ module model_flags
   !-----------------------------------------------------------------------------
   ! Options that can be changed at runtime 
   ! The default values are chosen below and overwritten if desired by the user
-  !-----------------------------------------------------------------------------
+  !----------------------------------------------------------------------------- 
+
+  ! Flag to use high accuracy for the parabolic cylinder function
+  logical, public :: &
+    l_high_accuracy_parab_cyl_fnc = .false. 
 
   ! These flags determine whether we want to use an upwind differencing approximation 
   ! rather than a centered differencing for turbulent or mean advection terms.
@@ -271,6 +275,8 @@ module model_flags
     l_uv_nudge  = l_uv_nudge_in
 
     l_host_applies_sfc_fluxes = l_host_applies_sfc_fluxes_in
+
+    l_high_accuracy_parab_cyl_fnc = .false.
 
     ! Integers
 

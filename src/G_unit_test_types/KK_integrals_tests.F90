@@ -33,6 +33,9 @@ module KK_integrals_tests
     use clubb_precision, only: &
         dp ! double precision
 
+    use model_flags, only: &
+        l_high_accuracy_parab_cyl_fnc
+
     implicit none
 
     ! Output Vars
@@ -58,6 +61,9 @@ module KK_integrals_tests
 
     ! Initialize total number of mismatches.
     total_mismatches = 0
+
+    ! Use high accuracy for tests
+    l_high_accuracy_parab_cyl_fnc = .true.
 
     write(fstdout,'(A)') "Performing KK integrals tests"
     write(fstdout,'(A)') " "

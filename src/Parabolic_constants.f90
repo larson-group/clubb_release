@@ -29,9 +29,9 @@
     REAL(r8), PARAMETER :: onesix=.166666666666666666666666666667_r8! 1/6 
     REAL(r8), PARAMETER :: piquart=0.78539816339744830962_r8        ! pi/4
     REAL(r8), PARAMETER :: twoexp14=1.18920711500272106671749997_r8 ! 2**(1/4)
-    REAL(r8), PARAMETER :: epss=1.e-4_r8                           ! demanded accuracy 
     REAL(r8), PARAMETER :: dwarf=TINY(0.0_r8)*1000.0_r8             ! safe underflow limit
     REAL(r8), PARAMETER :: giant=HUGE(0.0_r8)/1000.0_r8             ! safe overflow limit
     REAL(r8), PARAMETER :: mac_tol=EPSILON(0.0_r8)                  ! machine-epsilon    
+    REAL(r8) :: epss                                                ! demanded accuracy
   ! End File constants
   END MODULE Parabolic_constants

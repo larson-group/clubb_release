@@ -108,6 +108,12 @@ module KK_utilities
     use clubb_precision, only: &
         dp ! double precision
 
+    use model_flags, only: &
+        l_high_accuracy_parab_cyl_fnc
+
+    use Parabolic_constants, only: &
+        epss
+
     implicit none
 
     ! External
@@ -135,6 +141,14 @@ module KK_utilities
     ! Where a is the order and x is the argument
 
     integer :: ierr ! Error condition
+
+    if ( l_high_accuracy_parab_cyl_fnc ) then
+        ! Use the original, high accuracy tolerance for the Parabolic cylinder function.
+        epss = 1.0e-15_dp
+    else
+        ! Use a faster computation of the Parabolic cylinder function.
+        epss = 1.0e-4_dp
+    endif
 
     if ( argument <= zero_dp ) then
       call parab( -order-one_half_dp, -argument, scaling, uaxx, vaxx, ierr )
