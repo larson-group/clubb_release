@@ -196,7 +196,7 @@ while true ; do
 			echo -e "\t-t, --timestep_test=LENGTH\tRun the case at specified timestep"
 			echo -e "\t-s, --stats=FILE\t\tSpecify the stats file to use"
 			echo -e "\t-p, --parameter_file\t\tSet the parameter file to use"
-			echo -e "\t-r, --performance_test\t\tDisable statistics output and set debug"
+			echo -e "\t-e, --performance_test\t\tDisable statistics output and set debug"
 			echo -e "\t\t\t\t\tlevel to 0 for performance testing"
 			echo -e "\t-o, --output_directory\t\tSpecify an output directory"
                         echo -e "\t--netcdf\t\tEnable NetCDF output"
