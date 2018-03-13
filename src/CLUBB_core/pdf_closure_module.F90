@@ -57,6 +57,7 @@ module pdf_closure_module
                           rcm, wpthvp, wp2thvp, rtpthvp,            &
                           thlpthvp, wprcp, wp2rcp, rtprcp,          &
                           thlprcp, rcp2, pdf_params,                &
+                          new_pdf_implct_coefs_terms,               &
                           F_w, F_rt, F_thl, min_F_w, max_F_w,       &
                           min_F_rt, max_F_rt, min_F_thl, max_F_thl, &
                           err_code,                                 &
@@ -116,7 +117,8 @@ module pdf_closure_module
         pdf_parameter  ! type
 
     use new_pdf_main, only: &
-        new_pdf_driver    ! Procedure(s)
+        new_pdf_driver,       & ! Procedure(s)
+        implicit_coefs_terms    ! Variable Type
 
     use adg1_adg2_3d_luhar_pdf, only: &
         ADG1_pdf_driver,     & ! Procedure(s)
@@ -244,6 +246,9 @@ module pdf_closure_module
 
     type(pdf_parameter), intent(out) :: & 
       pdf_params     ! pdf paramters         [units vary]
+
+    type(implicit_coefs_terms), intent(out) :: &
+      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
 
     ! Parameters output only for recording statistics (new PDF).
     real( kind = core_rknd ), intent(out) :: &
@@ -422,6 +427,15 @@ module pdf_closure_module
 
     ! Initialize to 0 to prevent a runtime error
     if ( iiPDF_type /= iiPDF_new ) then
+       new_pdf_implct_coefs_terms%coef_wp4_implicit = zero
+       new_pdf_implct_coefs_terms%coef_wprtp2_implicit = zero
+       new_pdf_implct_coefs_terms%coef_wpthlp2_implicit = zero
+       new_pdf_implct_coefs_terms%coef_wp2rtp_implicit = zero
+       new_pdf_implct_coefs_terms%term_wp2rtp_explicit = zero
+       new_pdf_implct_coefs_terms%coef_wp2thlp_implicit = zero
+       new_pdf_implct_coefs_terms%term_wp2thlp_explicit = zero
+       new_pdf_implct_coefs_terms%coef_wprtpthlp_implicit = zero
+       new_pdf_implct_coefs_terms%term_wprtpthlp_explicit = zero
        F_w = zero
        F_rt = zero
        F_thl = zero
@@ -490,6 +504,7 @@ module pdf_closure_module
                             varnce_w_2, varnce_rt_1,                 & ! Out
                             varnce_rt_2, varnce_thl_1,               & ! Out
                             varnce_thl_2, mixt_frac,                 & ! Out
+                            new_pdf_implct_coefs_terms,              & ! Out
                             F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                             min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
 

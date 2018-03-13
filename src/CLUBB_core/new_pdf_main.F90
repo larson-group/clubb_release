@@ -10,13 +10,41 @@ module new_pdf_main
   ! References:
   !-------------------------------------------------------------------------
 
+  use clubb_precision, only: &
+      core_rknd    ! Variable(s)
+
   implicit none
 
-  public :: new_pdf_driver    ! Procedure(s)
+  public :: new_pdf_driver,       & ! Procedure(s)
+            implicit_coefs_terms    ! Variable Type
 
   private :: calc_responder_var,     & ! Procedure(s)
              calc_F_x_zeta_x_setter, &
              calc_F_x_responder
+
+  type implicit_coefs_terms
+
+    real ( kind = core_rknd ) :: &
+      coef_wp4_implicit,     & ! <w'^4> = coef_wp4_implicit * <w'^2>^2       [-]
+      coef_wprtp2_implicit,  & ! <w'rt'^2> = coef_wprtp2_implicit * <rt'^2>  [-]
+      coef_wpthlp2_implicit    ! <w'thl'^2> = coef_wpthlp2_implicit*<thl'^2> [-]
+
+    ! <w'^2 rt'> = coef_wp2rtp_implicit * <w'rt'> + term_wp2rtp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2rtp_implicit, & ! Coefficient that is multiplied by <w'rt'>  [m/s]
+      term_wp2rtp_explicit    ! Term that is on the RHS          [m^2/s^2 kg/kg]
+
+    ! <w'^2 thl'> = coef_wp2thlp_implicit * <w'thl'> + term_wp2thlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
+      term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
+
+    ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
+      term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
+
+  end type implicit_coefs_terms
 
   private
 
@@ -31,6 +59,7 @@ module new_pdf_main
                              sigma_w_2_sqd, sigma_rt_1_sqd,           & ! Out
                              sigma_rt_2_sqd, sigma_thl_1_sqd,         & ! Out
                              sigma_thl_2_sqd, mixt_frac,              & ! Out
+                             new_pdf_implct_coefs_terms,              & ! Out
                              F_w, F_rt, F_thl, min_F_w, max_F_w,      & ! Out
                              min_F_rt, max_F_rt, min_F_thl, max_F_thl ) ! Out
                              
@@ -113,6 +142,9 @@ module new_pdf_main
       sigma_thl_2_sqd, & ! Variance of thl (2nd PDF component)  [K^2]
       mixt_frac          ! Mixture fraction                     [-]
 
+    type(implicit_coefs_terms), intent(out) :: &
+      new_pdf_implct_coefs_terms  ! Implicit coefs / explicit terms [units vary]
+
     ! Output only for recording statistics.
     real( kind = core_rknd ), intent(out) :: &
       F_w,   & ! Parameter for the spread of the PDF component means of w    [-]
@@ -183,6 +215,11 @@ module new_pdf_main
     real ( kind = core_rknd ) :: &
       coef_wp2thlp_implicit, & ! Coef. that is multiplied by <w'thl'>      [m/s]
       term_wp2thlp_explicit    ! Term that is on the RHS             [m^2/s^2 K]
+
+    ! <w'rt'thl'> = coef_wprtpthlp_implicit*<rt'thl'> + term_wprtpthlp_explicit
+    real ( kind = core_rknd ) :: &
+      coef_wprtpthlp_implicit, & ! Coef. that is multiplied by <rt'thl'>   [m/s]
+      term_wprtpthlp_explicit    ! Term that is on the RHS         [m/s(kg/kg)K]
 
     real ( kind = core_rknd ) :: &
       Skw_dummy
@@ -409,6 +446,11 @@ module new_pdf_main
                                  coef_sigma_w_1_sqd, &
                                  coef_sigma_w_2_sqd )
 
+    else ! l_explicit_turbulent_adv_wp3
+
+       ! Turbulent advection of <w'^3> is being handled explicitly.
+       coef_wp4_implicit = zero
+
     endif ! .not. l_explicit_turbulent_adv_wp3
 
     if ( .not. l_explicit_turbulent_adv_xpyp ) then
@@ -433,6 +475,13 @@ module new_pdf_main
                                    coef_sigma_w_2_sqd, &
                                    coef_sigma_thl_1_sqd, &
                                    coef_sigma_thl_2_sqd  )
+
+    else ! l_explicit_turbulent_adv_xpyp
+
+       ! Turbulent advection of <rt'^2> and <thl'^2> is being handled
+       ! explicitly.
+       coef_wprtp2_implicit = zero
+       coef_wpthlp2_implicit = zero
 
     endif ! .not. l_explicit_turbulent_adv_xpyp
 
@@ -461,7 +510,31 @@ module new_pdf_main
                                        coef_wp2thlp_implicit,  & ! Out
                                        term_wp2thlp_explicit   ) ! Out
 
+    else ! l_explicit_turbulent_adv_wpxp
+
+       ! Turbulent advection of <w'rt'> and <w'thl'> is being handled
+       ! explicitly.
+       coef_wp2rtp_implicit = zero
+       term_wp2rtp_explicit = zero
+       coef_wp2thlp_implicit = zero
+       term_wp2thlp_explicit = zero
+
     endif ! .not. l_explicit_turbulent_adv_wpxp
+
+    coef_wprtpthlp_implicit = zero
+    term_wprtpthlp_explicit = zero
+
+    ! Pack the implicit coefficients and explicit terms into a single type
+    ! variable for output.
+    new_pdf_implct_coefs_terms%coef_wp4_implicit = coef_wp4_implicit
+    new_pdf_implct_coefs_terms%coef_wprtp2_implicit = coef_wprtp2_implicit
+    new_pdf_implct_coefs_terms%coef_wpthlp2_implicit = coef_wpthlp2_implicit
+    new_pdf_implct_coefs_terms%coef_wp2rtp_implicit = coef_wp2rtp_implicit
+    new_pdf_implct_coefs_terms%term_wp2rtp_explicit = term_wp2rtp_explicit
+    new_pdf_implct_coefs_terms%coef_wp2thlp_implicit = coef_wp2thlp_implicit
+    new_pdf_implct_coefs_terms%term_wp2thlp_explicit = term_wp2thlp_explicit
+    new_pdf_implct_coefs_terms%coef_wprtpthlp_implicit = coef_wprtpthlp_implicit
+    new_pdf_implct_coefs_terms%term_wprtpthlp_explicit = term_wprtpthlp_explicit
 
 
     return

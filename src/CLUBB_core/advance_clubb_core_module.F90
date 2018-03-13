@@ -296,7 +296,10 @@ module advance_clubb_core_module
       wp3_on_wp2_zt
 
     use pdf_parameter_module, only: &
-      pdf_parameter ! Type
+        pdf_parameter ! Type
+
+    use new_pdf_main, only: &
+        implicit_coefs_terms    ! Variable Type
 
 #ifdef GFDL
     use advance_sclrm_Nd_module, only: &  ! h1g, 2010-06-16 begin mod
@@ -682,6 +685,9 @@ module advance_clubb_core_module
     type(pdf_parameter), dimension(gr%nz) :: &
       pdf_params_frz
 
+    type(implicit_coefs_terms), dimension(gr%nz) :: &
+      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+
     real( kind = core_rknd ), dimension(gr%nz)  :: &
       rtm_frz, &
       thlm_frz
@@ -877,39 +883,40 @@ module advance_clubb_core_module
        !########################################################################
        !call pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
        call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
-                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
-                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
-                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
-                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
-                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
-                                 sclrprtp, sclrpthlp,           & ! Intent(in)
-                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
-                                 rtm,                           & ! Intent(i/o)
+                                thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
+                                thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
+                                wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
+                                exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+                                wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
+                                sclrm, wpsclrp, sclrp2,        & ! Intent(in)
+                                sclrprtp, sclrpthlp,           & ! Intent(in)
+                                l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                rtm,                           & ! Intent(i/o)
 #ifdef GFDL
-                                 RH_crit(k, : , :),             & ! Intent(i/o)
-                                 do_liquid_only_in_clubb,       & ! Intent(in)
+                                RH_crit(k, : , :),             & ! Intent(i/o)
+                                do_liquid_only_in_clubb,       & ! Intent(in)
 #endif
-                                 rcm, cloud_frac,               & ! Intent(out)
-                                 ice_supersat_frac, wprcp,      & ! Intent(out)
-                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                 rtpthvp, thlpthvp,             & ! Intent(out)
-                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
-                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
-                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
-                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
-                                 cloud_frac_zm,                 & ! Intent(out)
-                                 ice_supersat_frac_zm,          & ! Intent(out)
-                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
-                                 rcm_supersat_adj,              & ! Intent(out)
-                                 wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
-                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
-                                 pdf_params, pdf_params_frz,    & ! Intent(out)
-                                 pdf_params_zm,                 & ! Intent(out)
-                                 err_code                       ) ! Intent(i/o)
+                                rcm, cloud_frac,               & ! Intent(out)
+                                ice_supersat_frac, wprcp,      & ! Intent(out)
+                                sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
+                                rtpthvp, thlpthvp,             & ! Intent(out)
+                                rcm_in_layer, cloud_cover,     & ! Intent(out)
+                                rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                cloud_frac_zm,                 & ! Intent(out)
+                                ice_supersat_frac_zm,          & ! Intent(out)
+                                rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                rcm_supersat_adj,              & ! Intent(out)
+                                wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
+                                wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
+                                pdf_params, pdf_params_frz,    & ! Intent(out)
+                                pdf_params_zm,                 & ! Intent(out)
+                                new_pdf_implct_coefs_terms,    & ! Intent(out)
+                                err_code                       ) ! Intent(i/o)
 
     endif ! ipdf_call_placement == ipdf_pre_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1571,39 +1578,40 @@ module advance_clubb_core_module
        !   and quantities integrated over that PDF, including
        !   quantities related to clouds, buoyancy, and turbulent advection. 
        call pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
-                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
-                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
-                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
-                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
-                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
-                                 sclrprtp, sclrpthlp,           & ! Intent(in)
-                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
-                                 rtm,                           & ! Intent(i/o)
+                                thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
+                                thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
+                                wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
+                                exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+                                wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
+                                sclrm, wpsclrp, sclrp2,        & ! Intent(in)
+                                sclrprtp, sclrpthlp,           & ! Intent(in)
+                                l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                rtm,                           & ! Intent(i/o)
 #ifdef GFDL
-                                 RH_crit(k, : , :),             & ! Intent(i/o)
-                                 do_liquid_only_in_clubb,       & ! Intent(in)
+                                RH_crit(k, : , :),             & ! Intent(i/o)
+                                do_liquid_only_in_clubb,       & ! Intent(in)
 #endif
-                                 rcm, cloud_frac,               & ! Intent(out)
-                                 ice_supersat_frac, wprcp,      & ! Intent(out)
-                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                 rtpthvp, thlpthvp,             & ! Intent(out)
-                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
-                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
-                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
-                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
-                                 cloud_frac_zm,                 & ! Intent(out)
-                                 ice_supersat_frac_zm,          & ! Intent(out)
-                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
-                                 rcm_supersat_adj,              & ! Intent(out)
-                                 wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
-                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
-                                 pdf_params, pdf_params_frz,    & ! Intent(out)
-                                 pdf_params_zm,                 & ! Intent(out)
-                                 err_code                       ) ! Intent(i/o)
+                                rcm, cloud_frac,               & ! Intent(out)
+                                ice_supersat_frac, wprcp,      & ! Intent(out)
+                                sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
+                                rtpthvp, thlpthvp,             & ! Intent(out)
+                                rcm_in_layer, cloud_cover,     & ! Intent(out)
+                                rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                cloud_frac_zm,                 & ! Intent(out)
+                                ice_supersat_frac_zm,          & ! Intent(out)
+                                rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                rcm_supersat_adj,              & ! Intent(out)
+                                wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
+                                wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
+                                pdf_params, pdf_params_frz,    & ! Intent(out)
+                                pdf_params_zm,                 & ! Intent(out)
+                                new_pdf_implct_coefs_terms,    & ! Intent(out)
+                                err_code                       ) ! Intent(i/o)
 
     endif ! ipdf_call_placement == ipdf_post_advance_fields
           ! or ipdf_call_placement == ipdf_pre_post_advance_fields
@@ -1778,39 +1786,40 @@ module advance_clubb_core_module
   !=============================================================================
   !subroutine pdf_closure_driver( dt, hydromet_dim, rtm, wprtp,  & ! Intent(in)
   subroutine pdf_closure_driver( dt, hydromet_dim, wprtp,       & ! Intent(in)
-                                  thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
-                                  thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
-                                  wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
-                                  exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
-                                  rfrzm, hydromet, wphydrometp,  & ! Intent(in)
-                                  wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
-                                  sclrm, wpsclrp, sclrp2,        & ! Intent(in)
-                                  sclrprtp, sclrpthlp,           & ! Intent(in)
-                                  l_samp_stats_in_pdf_call,      & ! Intent(in)
-                                  rtm,                           & ! Intent(i/o)
+                                 thlm, wpthlp, rtp2, rtp3,      & ! Intent(in)
+                                 thlp2, thlp3, rtpthlp, wp2,    & ! Intent(in)
+                                 wp3, wm_zm, wm_zt, p_in_Pa,    & ! Intent(in)
+                                 exner, thv_ds_zm, thv_ds_zt,   & ! Intent(in)
+                                 rfrzm, hydromet, wphydrometp,  & ! Intent(in)
+                                 wp2hmp, rtphmp_zt, thlphmp_zt, & ! Intent(in)
+                                 sclrm, wpsclrp, sclrp2,        & ! Intent(in)
+                                 sclrprtp, sclrpthlp,           & ! Intent(in)
+                                 l_samp_stats_in_pdf_call,      & ! Intent(in)
+                                 rtm,                           & ! Intent(i/o)
 #ifdef GFDL
-                                  RH_crit(k, : , :),             & ! Intent(i/o)
-                                  do_liquid_only_in_clubb,       & ! Intent(in)
+                                 RH_crit(k, : , :),             & ! Intent(i/o)
+                                 do_liquid_only_in_clubb,       & ! Intent(in)
 #endif
-                                  rcm, cloud_frac,               & ! Intent(out)
-                                  ice_supersat_frac, wprcp,      & ! Intent(out)
-                                  sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
-                                  rtpthvp, thlpthvp,             & ! Intent(out)
-                                  rcm_in_layer, cloud_cover,     & ! Intent(out)
-                                  rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
-                                  rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
-                                  wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
-                                  wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
-                                  rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
-                                  cloud_frac_zm,                 & ! Intent(out)
-                                  ice_supersat_frac_zm,          & ! Intent(out)
-                                  rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
-                                  rcm_supersat_adj,              & ! Intent(out)
-                                  wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
-                                  wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
-                                  pdf_params, pdf_params_frz,    & ! Intent(out)
-                                  pdf_params_zm,                 & ! Intent(out)
-                                  err_code                       ) ! Intent(i/o)
+                                 rcm, cloud_frac,               & ! Intent(out)
+                                 ice_supersat_frac, wprcp,      & ! Intent(out)
+                                 sigma_sqd_w, wpthvp, wp2thvp,  & ! Intent(out)
+                                 rtpthvp, thlpthvp,             & ! Intent(out)
+                                 rcm_in_layer, cloud_cover,     & ! Intent(out)
+                                 rcp2_zt, thlprcp, rc_coef,     & ! Intent(out)
+                                 rtm_frz, thlm_frz, sclrpthvp,  & ! Intent(out)
+                                 wp4, wp2rtp, wprtp2, wp2thlp,  & ! Intent(out)
+                                 wpthlp2, wprtpthlp, wp2rcp,    & ! Intent(out)
+                                 rtprcp, rcp2, Skw_velocity,    & ! Intent(out)
+                                 cloud_frac_zm,                 & ! Intent(out)
+                                 ice_supersat_frac_zm,          & ! Intent(out)
+                                 rtm_zm, thlm_zm, rcm_zm,       & ! Intent(out)
+                                 rcm_supersat_adj,              & ! Intent(out)
+                                 wp2sclrp, wpsclrp2, sclrprcp,  & ! Intent(out)
+                                 wpsclrprtp, wpsclrpthlp,       & ! Intent(out)
+                                 pdf_params, pdf_params_frz,    & ! Intent(out)
+                                 pdf_params_zm,                 & ! Intent(out)
+                                 new_pdf_implct_coefs_terms,    & ! Intent(out)
+                                 err_code                       ) ! Intent(i/o)
 
     use grid_class, only: &
         gr,    & ! Variable(s)
@@ -1857,6 +1866,9 @@ module advance_clubb_core_module
         iiPDF_TSDADG,   &
         iiPDF_LY93,     &
         iiPDF_type
+
+    use new_pdf_main, only: &
+        implicit_coefs_terms    ! Variable Type
 
     use Skx_module, only: &
         Skx_func,       & ! Procedure(s)
@@ -2067,6 +2079,9 @@ module advance_clubb_core_module
     type(pdf_parameter), dimension(gr%nz), intent(out) :: & 
       pdf_params_zm    ! PDF parameters   [units vary]
 
+    type(implicit_coefs_terms), dimension(gr%nz), intent(out) :: &
+      new_pdf_implct_coefs_terms  ! New PDF: impl coefs; expl terms [units vary]
+
     ! Diagnostic, for if some calculation goes amiss.
     integer, intent(inout) :: err_code
 
@@ -2163,6 +2178,11 @@ module advance_clubb_core_module
       max_F_rt_zm,  &
       min_F_thl_zm, &
       max_F_thl_zm
+
+    type(implicit_coefs_terms), dimension(gr%nz) :: &
+      new_pdf_implct_coefs_terms_zm,   &
+      new_pdf_implct_coefs_terms_frz,  &
+      newpdf_implct_coefs_terms_zmfrz
 
     ! The following variables are defined for use when l_use_ice_latent = .true.
     type(pdf_parameter), dimension(gr%nz) :: &
@@ -2413,6 +2433,7 @@ module advance_clubb_core_module
           rcm(k), wpthvp_zt(k), wp2thvp(k), rtpthvp_zt(k),            & ! intent(out)
           thlpthvp_zt(k), wprcp_zt(k), wp2rcp(k), rtprcp_zt(k),       & ! intent(out)
           thlprcp_zt(k), rcp2_zt(k), pdf_params(k),                   & ! intent(out)
+          new_pdf_implct_coefs_terms(k),                              & ! intent(out)
           F_w(k), F_rt(k), F_thl(k), min_F_w(k), max_F_w(k),          & ! intent(out)
           min_F_rt(k), max_F_rt(k), min_F_thl(k), max_F_thl(k),       & ! intent(out)
           err_code_pdf_closure,                                       & ! intent(out)
@@ -2576,6 +2597,7 @@ module advance_clubb_core_module
             rcm_zm(k), wpthvp(k), wp2thvp_zm(k), rtpthvp(k),                  & ! intent(out)
             thlpthvp(k), wprcp(k), wp2rcp_zm(k), rtprcp(k),                   & ! intent(out)
             thlprcp(k), rcp2(k), pdf_params_zm(k),                            & ! intent(out)
+            new_pdf_implct_coefs_terms_zm(k),                                 & ! intent(out)
             F_w_zm, F_rt_zm, F_thl_zm, min_F_w_zm, max_F_w_zm,                & ! intent(out)
             min_F_rt_zm, max_F_rt_zm, min_F_thl_zm, max_F_thl_zm,             & ! intent(out)
             err_code_pdf_closure,                                             & ! intent(out)
@@ -2747,6 +2769,7 @@ module advance_clubb_core_module
             rcm_frz(k), wpthvp_zt_frz(k), wp2thvp_frz(k), rtpthvp_zt_frz(k),      & ! intent(out)
             thlpthvp_zt_frz(k), wprcp_zt_frz(k), wp2rcp_frz(k), rtprcp_zt_frz(k), & ! intent(out)
             thlprcp_zt_frz(k), rcp2_zt_frz(k), pdf_params_frz(k),                 & ! intent(out)
+            new_pdf_implct_coefs_terms_frz(k),                                    & ! intent(out)
             F_w_frz, F_rt_frz, F_thl_frz, min_F_w_frz, max_F_w_frz,               & ! intent(out)
             min_F_rt_frz, max_F_rt_frz, min_F_thl_frz, max_F_thl_frz,             & ! intent(out)
             err_code_pdf_closure,                                                 & ! intent(out)
@@ -2805,6 +2828,7 @@ module advance_clubb_core_module
               rcm_zm_frz(k), wpthvp_frz(k), wp2thvp_zm_frz(k), rtpthvp_frz(k),  & ! intent(out)
               thlpthvp_frz(k), wprcp_frz(k), wp2rcp_zm_frz(k), rtprcp_frz(k),   & ! intent(out)
               thlprcp_frz(k), rcp2_frz(k), pdf_params_zm_frz(k),                & ! intent(out)
+              newpdf_implct_coefs_terms_zmfrz(k),                               & ! intent(out)
               F_w_zm_frz, F_rt_zm_frz, F_thl_zm_frz, min_F_w_zm_frz,            & ! intent(out)
               max_F_w_zm_frz, min_F_rt_zm_frz, max_F_rt_zm_frz,                 & ! intent(out)
               min_F_thl_zm_frz, max_F_thl_zm_frz,                               & ! intent(out)
