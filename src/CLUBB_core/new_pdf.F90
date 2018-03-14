@@ -1490,8 +1490,9 @@ module new_pdf
 
 
     ! Calculate coef_wpxp2_implicit.
-    if ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
-         .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) then
+    if ( ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd > zero &
+           .or. coef_sigma_w_2_sqd * coef_sigma_x_2_sqd > zero ) &
+         .and. ( wp2 * xp2 > zero ) ) then
 
        coefs_factor &
        = ( sqrt( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd ) &
@@ -1510,8 +1511,9 @@ module new_pdf
                / ( sqrt( wp2 ) * sqrt( xp2 ) ) &
              - two * sqrt( F_w ) * F_x * coefs_factor )
 
-    else ! coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
-         ! and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0
+    else ! ( coef_sigma_w_1_sqd * coef_sigma_x_1_sqd = 0
+         !   and coef_sigma_w_2_sqd * coef_sigma_x_2_sqd = 0 )
+         ! or wp2 * xp2 = 0
 
        coef_wpxp2_implicit &
        = sqrt( mixt_frac * ( one - mixt_frac ) ) * sqrt( wp2 ) * sqrt( F_w ) &
