@@ -1892,14 +1892,15 @@ module advance_clubb_core_module
         iirr    ! Variable(s)
 
     use model_flags, only: &
-        l_gamma_Skw,              & ! Variable(s)
-        l_call_pdf_closure_twice, &
-        l_trapezoidal_rule_zm,    &
-        l_trapezoidal_rule_zt,    &
-        l_use_cloud_cover,        &
-        l_use_ice_latent,         &
-        l_rcm_supersat_adj,       &
-        l_rtm_nudge
+        l_gamma_Skw,                  & ! Variable(s)
+        l_call_pdf_closure_twice,     &
+        l_trapezoidal_rule_zm,        &
+        l_trapezoidal_rule_zt,        &
+        l_use_cloud_cover,            &
+        l_use_ice_latent,             &
+        l_rcm_supersat_adj,           &
+        l_rtm_nudge,                  &
+        l_explicit_turbulent_adv_wp3
 
     use error_code, only: &
         clubb_at_least_debug_level, & ! Procedure(s)
@@ -2629,37 +2630,41 @@ module advance_clubb_core_module
       ! pdf_closure back to momentum grid.
       ! Since top momentum level is higher than top thermo level,
       ! Set variables at top momentum level to 0.
-
-      ! Only do this for wp4 and rcp2 if we're saving stats, since they are not
-      ! used elsewhere in the parameterization
-      if ( iwp4 > 0 ) then
-        wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
-        wp4(gr%nz)  = 0.0_core_rknd
-      end if
+      if ( l_explicit_turbulent_adv_wp3 .or. iwp4 > 0 ) then
+         wp4 = max( zt2zm( wp4_zt ), zero_threshold )  ! Pos. def. quantity
+         wp4(gr%nz) = zero
+         ! Set wp4 to 0 at the lowest momentum level (momentum level 1).
+         ! When the l_explicit_turbulent_adv_wp3 flag is enabled, wp4 (including
+         ! its value at momentum level 1) is used interactively in the code.
+         ! The value of wp4 at momentum level 1 is found by interpolation of
+         ! the values produced by the PDF for wp4_zt at thermodynamic levels
+         ! 1 and 2.  This value is unreliable at thermodynamic level 1.
+         wp4(1) = zero
+      endif
 
 #ifndef CLUBB_CAM
       ! CAM-CLUBB needs cloud water variance thus always compute this
       if ( ircp2 > 0 ) then
 #endif
-        rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
+         rcp2 = max( zt2zm( rcp2_zt ), zero_threshold )  ! Pos. def. quantity
 #ifndef CLUBB_CAM
-        rcp2(gr%nz) = 0.0_core_rknd
-      end if
+         rcp2(gr%nz) = zero
+      endif
 #endif
 
-      wpthvp            = zt2zm( wpthvp_zt )
+      wpthvp          = zt2zm( wpthvp_zt )
       wpthvp(gr%nz)   = 0.0_core_rknd
-      thlpthvp          = zt2zm( thlpthvp_zt )
+      thlpthvp        = zt2zm( thlpthvp_zt )
       thlpthvp(gr%nz) = 0.0_core_rknd
-      rtpthvp           = zt2zm( rtpthvp_zt )
+      rtpthvp         = zt2zm( rtpthvp_zt )
       rtpthvp(gr%nz)  = 0.0_core_rknd
-      wprcp             = zt2zm( wprcp_zt )
+      wprcp           = zt2zm( wprcp_zt )
       wprcp(gr%nz)    = 0.0_core_rknd
-      rc_coef           = zt2zm( rc_coef_zt )
+      rc_coef         = zt2zm( rc_coef_zt )
       rc_coef(gr%nz)  = 0.0_core_rknd
-      rtprcp            = zt2zm( rtprcp_zt )
+      rtprcp          = zt2zm( rtprcp_zt )
       rtprcp(gr%nz)   = 0.0_core_rknd
-      thlprcp           = zt2zm( thlprcp_zt )
+      thlprcp         = zt2zm( thlprcp_zt )
       thlprcp(gr%nz)  = 0.0_core_rknd
 
       ! Initialize variables to avoid uninitialized variables.
