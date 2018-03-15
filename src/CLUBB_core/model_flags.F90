@@ -56,6 +56,11 @@ module model_flags
     ! equations.
     l_explicit_turbulent_adv_xpyp = .false.
 
+  ! Flag to use the Larson and Golaz (2005) ansatz to explicitly calculate xp3
+  ! after calculating Skx using the ansatz.
+  logical, parameter, public :: &
+    l_use_xp3_LG_2005_ansatz = .true.
+
   ! These flags determine whether or not we want CLUBB to do diffusion
   !   on thlm and rtm and if a stability correction is applied
   logical, public :: &

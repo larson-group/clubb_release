@@ -223,7 +223,8 @@ module advance_clubb_core_module
       l_Lscale_plume_centered, &
       l_use_ice_latent, &
       l_gamma_Skw, &
-      l_damp_wp2_using_em
+      l_damp_wp2_using_em, &
+      l_use_xp3_LG_2005_ansatz
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -340,8 +341,9 @@ module advance_clubb_core_module
       report_error, &
       fatal_error
 
-    use Skx_module, only:  &
-      Skx_func    ! Procedure(s)
+    use Skx_module, only: &
+        Skx_func,           & ! Procedure(s)
+        xp3_LG_2005_ansatz
 
     use clip_explicit, only: & 
       clip_covars_denom ! Procedure(s)
@@ -634,6 +636,7 @@ module advance_clubb_core_module
     real( kind = core_rknd ), dimension(gr%nz) :: &
       gamma_Skw_fnc, & ! Gamma as a function of skewness          [-]
       sigma_sqd_w,   & ! PDF width parameter (momentum levels)    [-]
+      sigma_sqd_w_zt, & ! PDF width parameter (thermodynamic levels)    [-]
       sqrt_em_zt,    & ! sqrt( em ) on zt levels; where em is TKE [m/s] 
       Lscale_pert_1, Lscale_pert_2, & ! For avg. calculation of Lscale  [m]
       thlm_pert_1, thlm_pert_2, &     ! For avg. calculation of Lscale  [K]
@@ -1559,6 +1562,27 @@ module advance_clubb_core_module
       enddo
 #endif
 
+    ! Use the Larson and Golaz (2005) ansatz to explicitly calculate <rt'^3>
+    ! and <thl'^3>.
+    if ( l_use_xp3_LG_2005_ansatz ) then
+
+       Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+
+       wpthlp_zt = zm2zt( wpthlp )
+       wprtp_zt  = zm2zt( wprtp )
+       thlp2_zt  = max( zm2zt( thlp2 ), thl_tol**2 )
+       rtp2_zt   = max( zm2zt( rtp2 ), rt_tol**2 )
+
+       sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
+
+       thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
+                                   thlp2_zt, sigma_sqd_w_zt, thl_tol )
+
+       rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
+                                  rtp2_zt, sigma_sqd_w_zt, rt_tol )
+
+    endif ! l_use_LG_2005_ansatz
+
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
@@ -1857,24 +1881,17 @@ module advance_clubb_core_module
     use parameters_tunable, only: &
         gamma_coef,  & ! Variable(s)
         gamma_coefb, &
-        gamma_coefc, &
-        beta
+        gamma_coefc
 
     use pdf_closure_module, only: &
         pdf_closure,                & ! Procedure(s)
-        calc_vert_avg_cf_component, &
-        iiPDF_3D_Luhar, & ! Variable(s)
-        iiPDF_new,      &
-        iiPDF_TSDADG,   &
-        iiPDF_LY93,     &
-        iiPDF_type
+        calc_vert_avg_cf_component
 
     use new_pdf_main, only: &
         implicit_coefs_terms    ! Variable Type
 
     use Skx_module, only: &
-        Skx_func,       & ! Procedure(s)
-        LG_2005_ansatz
+        Skx_func    ! Procedure(s)
 
     use sigma_sqd_w_module, only: &
         compute_sigma_sqd_w    ! Procedure(s)
@@ -2096,8 +2113,6 @@ module advance_clubb_core_module
       rtp3_zm,       & ! rtp3 interpolated to momentum levels        [kg^3/kg^3]
       thlp2_zt,      & ! thlp2 interpolated to thermodynamic levels  [K^2]
       thlp3_zm,      & ! thlp3 interpolated to momentum levels       [K^3]
-      wprtp_zt,      & ! wprtp interpolated to thermodynamic levels  [m/s kg/kg]
-      wpthlp_zt,     & ! wpthlp interpolated to thermodynamic levels [m/s K]
       rtpthlp_zt,    & ! rtpthlp interp. to thermodynamic levels     [kg/kg K]
       gamma_Skw_fnc, & ! Gamma as a function of skewness             [-]
       Skw_zt,        & ! Skewness of w on thermodynamic levels       [-]
@@ -2292,69 +2307,47 @@ module advance_clubb_core_module
     call init_pdf_params( gr%nz, pdf_params_frz )
 
     !---------------------------------------------------------------------------
-    ! Interpolate wp3 to momentum levels, and wp2 to thermodynamic levels
-    ! and then compute Skw for m & t grid
+    ! Interpolate wp3, rtp3, and thlp3 to momentum levels, and wp2, rtp2, and
+    ! thlp2 to thermodynamic levels, and then compute Skw, Skrt, and Skthl for
+    ! both the momentum and thermodynamic grid levels.
     !---------------------------------------------------------------------------
 
-    wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
-    wp3_zm = zt2zm( wp3 )
+    wp2_zt   = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
+    wp3_zm   = zt2zm( wp3 )
+    thlp2_zt = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive definite quantity
     thlp3_zm = zt2zm( thlp3 )
-    rtp3_zm = zt2zm( rtp3 )
-
-    ! To calculate Skewness of thl, rt, will need interpolated values. 
-    wpthlp_zt  = zm2zt( wpthlp )
-    wprtp_zt   = zm2zt( wprtp )
-    thlp2_zt   = zm2zt( thlp2 )
-    rtp2_zt   = zm2zt( rtp2 )
-    sigma_sqd_w = zt2zm(sigma_sqd_w_zt)
+    rtp2_zt  = max( zm2zt( rtp2 ), rt_tol**2 ) ! Positive definite quantity
+    rtp3_zm  = zt2zm( rtp3 )
 
     Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
     Skw_zm(1:gr%nz) = Skx_func( wp2(1:gr%nz), wp3_zm(1:gr%nz), w_tol )
 
-    if ( ( iiPDF_type == iiPDF_3D_Luhar ) .or. ( iiPDF_type == iiPDF_new ) &
-         .or. ( iiPDF_type == iiPDF_TSDADG ) &
-         .or. ( iiPDF_type == iiPDF_LY93 ) ) then
+    Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
+    Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
 
-      Skthl_zt(1:gr%nz) = Skx_func( thlp2_zt(1:gr%nz), thlp3(1:gr%nz), thl_tol )
-      Skthl_zm(1:gr%nz) = Skx_func( thlp2(1:gr%nz), thlp3_zm(1:gr%nz), thl_tol )
-
-      Skrt_zt(1:gr%nz) = Skx_func( rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
-      Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
-
-    else ! ADG1 or ADG2
-
-      Skthl_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wpthlp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
-                                        thlp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), thl_tol )
-
-      Skthl_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wpthlp(1:gr%nz), wp2(1:gr%nz), &
-                                        thlp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz), thl_tol )
-
-      Skrt_zt(1:gr%nz) = LG_2005_ansatz( Skw_zt(1:gr%nz), wprtp_zt(1:gr%nz), wp2_zt(1:gr%nz), &
-                                        rtp2_zt(1:gr%nz), beta, sigma_sqd_w_zt(1:gr%nz), rt_tol )
-
-      Skrt_zm(1:gr%nz) = LG_2005_ansatz( Skw_zm(1:gr%nz), wprtp(1:gr%nz), wp2(1:gr%nz), &
-                                        rtp2(1:gr%nz), beta, sigma_sqd_w(1:gr%nz),rt_tol )
-
-    endif ! iiPDF_type
+    Skrt_zt(1:gr%nz) = Skx_func( rtp2_zt(1:gr%nz), rtp3(1:gr%nz), rt_tol )
+    Skrt_zm(1:gr%nz) = Skx_func( rtp2(1:gr%nz), rtp3_zm(1:gr%nz), rt_tol )
 
     if ( l_stats_samp .and. l_samp_stats_in_pdf_call ) then
-      call stat_update_var( iSkw_zt, Skw_zt, & ! In
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkw_zm, Skw_zm, &
-                            stats_zm ) ! In/Out
-      call stat_update_var( iSkthl_zt, Skthl_zt, &
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkthl_zm, Skthl_zm, &
-                            stats_zm ) ! In/Out
-      call stat_update_var( iSkrt_zt, Skrt_zt, &
-                            stats_zt ) ! In/Out
-      call stat_update_var( iSkrt_zm, Skrt_zm, &
-                            stats_zm ) ! In/Out
+       call stat_update_var( iSkw_zt, Skw_zt, & ! In
+                             stats_zt ) ! In/Out
+       call stat_update_var( iSkw_zm, Skw_zm, &
+                             stats_zm ) ! In/Out
+       call stat_update_var( iSkthl_zt, Skthl_zt, &
+                             stats_zt ) ! In/Out
+       call stat_update_var( iSkthl_zm, Skthl_zm, &
+                             stats_zm ) ! In/Out
+       call stat_update_var( iSkrt_zt, Skrt_zt, &
+                             stats_zt ) ! In/Out
+       call stat_update_var( iSkrt_zm, Skrt_zm, &
+                             stats_zm ) ! In/Out
     endif
 
     ! The right hand side of this conjunction is only for reducing cpu time,
     ! since the more complicated formula is mathematically equivalent
-    if ( l_gamma_Skw .and. abs(gamma_coef-gamma_coefb) > abs(gamma_coef+gamma_coefb)*eps/2) then
+    if ( l_gamma_Skw &
+         .and. abs( gamma_coef - gamma_coefb ) &
+               > abs( gamma_coef + gamma_coefb ) * eps/2 ) then
       !----------------------------------------------------------------
       ! Compute gamma as a function of Skw  - 14 April 06 dschanen
       !----------------------------------------------------------------

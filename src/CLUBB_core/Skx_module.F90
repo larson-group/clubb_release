@@ -139,8 +139,6 @@ module Skx_module
     Skx = nrmlzd_Skw * nrmlzd_corr_wx &
           * ( beta + ( one - beta ) * nrmlzd_corr_wx**2 )
 
-    Skx = 0._core_rknd
-
 
     return
 
@@ -148,7 +146,7 @@ module Skx_module
 
   !-----------------------------------------------------------------------------
   function xp3_LG_2005_ansatz( Skw_zt, wpxp_zt, wp2_zt, &
-                               xp2_zt, beta, sigma_sqd_w_zt, x_tol ) &
+                               xp2_zt, sigma_sqd_w_zt, x_tol ) &
   result( xp3 )
 
     ! Description:
@@ -165,7 +163,8 @@ module Skx_module
         three_halves    ! Variable(s)
 
     use parameters_tunable, only: &
-        Skw_denom_coef    ! Variable(s)
+        beta,           & ! Variable(s)
+        Skw_denom_coef
 
     use clubb_precision, only: &
         core_rknd ! Variable(s)
@@ -184,7 +183,6 @@ module Skx_module
       sigma_sqd_w_zt    ! Normalized variance of w (interp. to t-levs.)   [-]
 
     real( kind = core_rknd ), intent(in) :: &
-      beta,  & ! Tunable parameter              [-]
       x_tol    ! Minimum tolerance of x         [(x units)]
 
     ! Return Variable
