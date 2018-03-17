@@ -868,29 +868,6 @@ module advance_clubb_core_module
     newmu = mu
 #endif   
 
-    ! Use the Larson and Golaz (2005) ansatz to explicitly calculate <rt'^3>
-    ! and <thl'^3>.
-    if ( l_use_xp3_LG_2005_ansatz ) then
-
-       wp2_zt = max( zm2zt( wp2 ), w_tol_sqd ) ! Positive definite quantity
-
-       Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
-
-       wpthlp_zt = zm2zt( wpthlp )
-       wprtp_zt  = zm2zt( wprtp )
-       thlp2_zt  = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
-       rtp2_zt   = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
-
-       sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
-
-       thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
-                                   thlp2_zt, sigma_sqd_w_zt, thl_tol )
-
-       rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
-                                  rtp2_zt, sigma_sqd_w_zt, rt_tol )
-
-    endif ! l_use_LG_2005_ansatz
-
     if ( ipdf_call_placement == ipdf_pre_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
 
@@ -1584,6 +1561,27 @@ module advance_clubb_core_module
         call fill_holes_vertical(2,0.0_core_rknd,"zt",rho_ds_zt,rho_ds_zm,edsclrm(:,ixind))
       enddo
 #endif
+
+    ! Use the Larson and Golaz (2005) ansatz to explicitly calculate <rt'^3>
+    ! and <thl'^3>.
+    if ( l_use_xp3_LG_2005_ansatz ) then
+
+       Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+
+       wpthlp_zt = zm2zt( wpthlp )
+       wprtp_zt  = zm2zt( wprtp )
+       thlp2_zt  = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
+       rtp2_zt   = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
+
+       sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
+
+       thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
+                                   thlp2_zt, sigma_sqd_w_zt, thl_tol )
+
+       rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
+                                  rtp2_zt, sigma_sqd_w_zt, rt_tol )
+
+    endif ! l_use_LG_2005_ansatz
 
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then
