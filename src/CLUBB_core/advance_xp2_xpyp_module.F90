@@ -17,6 +17,7 @@ module advance_xp2_xpyp_module
              xp2_xpyp_uv_rhs, & 
              xp2_xpyp_rhs, & 
              xp2_xpyp_implicit_stats, & 
+             term_ta_new_pdf_lhs, &
              term_ta_ADG1_lhs, & 
              term_ta_ADG1_lhs_upwind, & 
              term_ta_ADG1_rhs, & 
@@ -2232,6 +2233,193 @@ module advance_xp2_xpyp_module
 
     return
   end subroutine xp2_xpyp_rhs
+
+  !=============================================================================
+  pure function term_ta_new_pdf_lhs( coef_wpxpyp_implicitp1, &
+                                     coef_wpxpyp_implicit, &
+                                     rho_ds_ztp1, rho_ds_zt, &
+                                     invrs_rho_ds_zm, &
+                                     invrs_dzm, level ) &
+  result( lhs )
+
+    ! Description:
+    ! Turbulent advection of <x'^2> and <x'y'>:  implicit portion of the code.
+    !
+    ! This implicit discretization is specifically for the new PDF.
+    !
+    ! The d<x'^2>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'x'^2> )/dz;
+    !
+    ! and the d<x'y'>/dt equation contains a turbulent advection term:
+    !
+    ! - (1/rho_ds) * d( rho_ds * <w'x'y'> )/dz.
+    !
+    ! A substitution, which is specific to the new PDF, is made in order to
+    ! close the <x'^2> turbulent advection term, such that:
+    !
+    ! <w'x'^2> = coef_wpxp2_implicit * <x'^2>.
+    !
+    ! The calculation of coef_wpxp2_implicit is detailed in function
+    ! calc_coef_wpxp2_implicit, which is found in module new_pdf in new_pdf.F90.
+    !
+    ! Another substitution, which is also specific to the new PDF, is made in
+    ! order to close the <x'y'> turbulent advection term, such that:
+    !
+    ! <w'x'y'> = coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit.
+    !
+    ! The calculation of both coef_wpxpyp_implicit and term_wpxpyp_explicit are
+    ! detailed in function calc_coefs_wpxpyp_semiimpl, which is found in module
+    ! new_pdf in new_pdf.F90.
+    !
+    ! The <x'^2> turbulent advection term is rewritten as:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wpxp2_implicit * <x'^2> )/dz;
+    !
+    ! and the <x'y'> turbulent advection term is rewritten as:
+    !
+    ! - (1/rho_ds)
+    !   * d( rho_ds * ( coef_wpxpyp_implicit * <x'y'> + term_wpxpyp_explicit ) )
+    !     /dz.
+    !
+    ! The variables <x'^2> and <x'y'> are both evaluated at the (t+1) timestep,
+    ! which allows the <x'^2> turbulent advection term to be expressed
+    ! implicitly as:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wpxp2_implicit * <x'^2>(t+1) )/dz;
+    !
+    ! and which allows the <x'y'> turbulent advection term to be expressed
+    ! semi-implicitly as:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wpxpyp_implicit * <x'y'>(t+1) )/dz
+    ! - (1/rho_ds) * d( rho_ds * term_wpxpyp_explicit )/dz.
+    !
+    ! The implicit portion of <x'y'> turbulent advection term is:
+    !
+    ! - (1/rho_ds) * d( rho_ds * coef_wpxpyp_implicit * <x'y'>(t+1) )/dz.
+    !
+    ! Note:  When the implicit term is brought over to the left-hand side, the
+    !        sign is reversed and the leading "-" in front of all implicit
+    !        d[ ] / dz terms is changed to a "+".
+    !
+    ! The timestep index (t+1) means that the value of <x'^2> or <x'y'> being
+    ! used is from the next timestep, which is being advanced to in solving the
+    ! d<x'^2>/dt or d<x'y'>/dt equation.
+    !
+    ! The explicit portion of the <x'y'> turbulent advection term is discretized
+    ! in the same manner as the entirely explicit turbulent advection option.
+    ! It can use the same code, which is found in function term_ta_explicit_rhs.
+    !
+    ! When x and y are the same variable, <x'y'> reduces to <x'^2> and <w'x'y'>
+    ! reduces to <w'x'^2>.  The discretization and the code used in this
+    ! function will be written generally in terms of <x'y'> and
+    ! coef_wpxpyp_implicit, but also applies to <x'^2> and coef_wpxp2_implicit.
+    !
+    ! The implicit discretization of this term is as follows:
+    !
+    ! The values of <x'y'> are found on the momentum levels, while the values of
+    ! coef_wpxpyp_implicit are found on the thermodynamic levels, which is where
+    ! they were originally calculated by the PDF.  Additionally, the values of
+    ! rho_ds_zt are found on the thermodynamic levels, and the values of
+    ! invrs_rho_ds_zm are found on the momentum levels.  The values of <x'y'>
+    ! are interpolated to the intermediate thermodynamic levels as <x'y'>|_zt.
+    ! At the thermodynamic levels, the values of coef_wpxpyp_implicit are
+    ! multiplied by <x'y'>|_zt, and their product is multiplied by rho_ds_zt.
+    ! Then, the derivative (d/dz) of that expression is taken over the central
+    ! momentum level, where it is multiplied by -invrs_rho_ds_zm.  This yields
+    ! the desired result.
+    !
+    ! =xpypp1============================================================ m(k+1)
+    !
+    ! -xpyp_zt(interp)-------coef_wpxpyp_implicitp1-------rho_ds_ztp1---- t(k+1)
+    !
+    ! =xpyp=d(rho_ds_zt*coef_wpxpyp_implicit*xpyp_zt)/dz=invrs_rho_ds_zm= m(k)
+    !
+    ! -xpyp_zt(interp)-------coef_wpxpyp_implicit---------rho_ds_zt------ t(k)
+    !
+    ! =xpypm1============================================================ m(k-1)
+    !
+    ! The vertical indices m(k+1), t(k+1), m(k), t(k), and m(k-1) correspond
+    ! with altitudes zm(k+1), zt(k+1), zm(k), zt(k), and zm(k-1), respectively.
+    ! The letter "t" is used for thermodynamic levels and the letter "m" is used
+    ! for momentum levels.
+    !
+    ! invrs_dzm(k) = 1 / ( zt(k+1) - zt(k) )
+
+    ! References:
+    !-----------------------------------------------------------------------
+
+    use grid_class, only:  & ! gr%weights_zm2zt
+        gr    ! Variable Type
+
+    use clubb_precision, only: &
+        core_rknd    ! Variable(s)
+
+    implicit none
+
+    ! Constant parameters
+    integer, parameter :: &
+      kp1_mdiag = 1, & ! Momentum superdiagonal index.
+      k_mdiag   = 2, & ! Momentum main diagonal index.
+      km1_mdiag = 3    ! Momentum subdiagonal index.
+
+    integer, parameter :: &
+      m_above = 1, & ! Index for upper momentum level grid weight.
+      m_below = 2    ! Index for lower momentum level grid weight.
+
+    ! Input Variables
+    real( kind = core_rknd ), intent(in) :: &
+      coef_wpxpyp_implicitp1, & ! Coef. of <x'y'> in <w'x'y'>; t-lev (k+1) [m/s]
+      coef_wpxpyp_implicit,   & ! Coef. of <x'y'> in <w'x'y'>; t-lev (k)   [m/s]
+      rho_ds_ztp1,            & ! Dry, static density at t-level (k+1)  [kg/m^3]
+      rho_ds_zt,              & ! Dry, static density at t-level (k)    [kg/m^3]
+      invrs_rho_ds_zm,        & ! Inv dry, static density @ m-level (k) [m^3/kg]
+      invrs_dzm                 ! Inverse of grid spacing (k)              [1/m]
+
+    integer, intent(in) :: &
+      level    ! Central momentum level (on which calculation occurs).
+
+    ! Return Variable
+    real( kind = core_rknd ), dimension(3) :: lhs
+
+    ! Local Variables
+    integer :: &
+      tkp1, & ! Thermodynamic level directly above central momentum level.
+      tk      ! Thermodynamic level directly below central momentum level.
+
+
+    ! Thermodynamic level (k+1) is between momentum level (k+1)
+    ! and momentum level (k).
+    tkp1 = level + 1
+
+    ! Thermodynamic level (k) is between momentum level (k)
+    ! and momentum level (k-1).
+    tk = level
+
+    ! Momentum superdiagonal: [ x xpyp(k+1,<t+1>) ]
+    lhs(kp1_mdiag) &
+    = invrs_rho_ds_zm * invrs_dzm &
+      * rho_ds_ztp1 * coef_wpxpyp_implicitp1 &
+      * gr%weights_zm2zt(m_above,tkp1)
+
+    ! Momentum main diagonal: [ x xpyp(k,<t+1>) ]
+    lhs(k_mdiag) &
+    = invrs_rho_ds_zm * invrs_dzm &
+      * ( rho_ds_ztp1 * coef_wpxpyp_implicitp1 &
+          * gr%weights_zm2zt(m_below,tkp1) &
+          - rho_ds_zt * coef_wpxpyp_implicit &
+            * gr%weights_zm2zt(m_above,tk) )
+
+    ! Momentum subdiagonal: [ x xpyp(k-1,<t+1>) ]
+    lhs(km1_mdiag) &
+    = - invrs_rho_ds_zm * invrs_dzm &
+        * rho_ds_zt * coef_wpxpyp_implicit &
+        * gr%weights_zm2zt(m_below,tk)
+
+
+    return
+
+  end function term_ta_new_pdf_lhs
 
   !=============================================================================
   pure function term_ta_ADG1_lhs( wp3_on_wp2_ztp1, wp3_on_wp2_zt, &
