@@ -210,9 +210,10 @@ module advance_clubb_core_module
       C5, C4
 
     use parameters_model, only: &
-      sclr_dim, & ! Variable(s)
-      edsclr_dim, &
-      T0
+        sclr_dim, & ! Variable(s)
+        edsclr_dim, &
+        T0, &
+        sclr_tol
 
     use model_flags, only: & 
       l_tke_aniso, &  ! Variable(s)
@@ -224,7 +225,7 @@ module advance_clubb_core_module
       l_use_ice_latent, &
       l_gamma_Skw, &
       l_damp_wp2_using_em, &
-      l_use_xp3_LG_2005_ansatz
+      l_advance_xp3
 
     use grid_class, only: & 
       gr,  & ! Variable(s)
@@ -310,31 +311,32 @@ module advance_clubb_core_module
 #endif
 
     use advance_xm_wpxp_module, only: & 
-      ! Variable(s) 
-      advance_xm_wpxp          ! Compute mean/flux terms
+        advance_xm_wpxp          ! Compute mean/flux terms
 
     use advance_xp2_xpyp_module, only: & 
-      ! Variable(s) 
-      advance_xp2_xpyp     ! Computes variance terms
+        advance_xp2_xpyp     ! Computes variance terms
 
     use surface_varnce_module, only:  & 
-      calc_surface_varnce ! Procedure
+        calc_surface_varnce ! Procedure
 
     use mixing_length, only: & 
-      compute_mixing_length ! Procedure
+        compute_mixing_length ! Procedure
 
     use advance_windm_edsclrm_module, only:  & 
-      advance_windm_edsclrm  ! Procedure(s)
+        advance_windm_edsclrm  ! Procedure(s)
 
     use saturation, only:  & 
-      ! Procedure
-      sat_mixrat_liq ! Saturation mixing ratio
+        ! Procedure
+        sat_mixrat_liq ! Saturation mixing ratio
 
     use advance_wp2_wp3_module, only:  & 
-      advance_wp2_wp3 ! Procedure
+        advance_wp2_wp3 ! Procedure
+
+    use advance_xp3_module, only: &
+        advance_xp3_simplified    ! Procedure(s)
 
     use clubb_precision, only:  & 
-      core_rknd ! Variable(s)
+        core_rknd ! Variable(s)
 
     use error_code, only :  & 
       clubb_at_least_debug_level, & ! Procedure(s)
@@ -660,13 +662,18 @@ module advance_clubb_core_module
       vpwp_cl_num       ! Instance of v'w' clipping (1st or 2nd).
 
     real( kind = core_rknd ), dimension(gr%nz) :: &
-      rcp2_zt,              & ! r_c'^2 (on thermo. grid)                   [kg^2/kg^2]
-      cloud_frac_zm,        & ! Cloud Fraction on momentum grid            [-]
-      ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid        [-]
-      rtm_zm,               & ! Total water mixing ratio                   [kg/kg]
-      thlm_zm,              & ! Liquid potential temperature               [kg/kg]
-      rcm_zm,               & ! Liquid water mixing ratio on momentum grid [kg/kg]
-      sign_rtpthlp            ! sign of the covariance rtpthlp             [-]
+      rcp2_zt,              & ! r_c'^2 (on thermo. grid)             [kg^2/kg^2]
+      cloud_frac_zm,        & ! Cloud Fraction on momentum grid      [-]
+      ice_supersat_frac_zm, & ! Ice Cloud Fraction on momentum grid  [-]
+      rtm_zm,               & ! Total water mixing ratio             [kg/kg]
+      thlm_zm,              & ! Liquid potential temperature         [kg/kg]
+      rcm_zm,               & ! Liquid water mixing ratio on m-levs. [kg/kg]
+      sign_rtpthlp,         & ! Sign of the covariance rtpthlp       [-]
+      wpsclrp_zt,           & ! Scalar flux on thermo. levels        [un. vary]
+      sclrp2_zt               ! Scalar variance on thermo.levels     [un. vary]
+
+    real( kind = core_rknd ), dimension(gr%nz,sclr_dim) :: &
+      sclrp3    ! <sclr'^3> (thermodynamic levels)    [un. vary]
 
     real( kind = core_rknd ) :: &
       rtm_integral_before, &
@@ -1504,10 +1511,76 @@ module advance_clubb_core_module
                               wprtp, wpthlp, upwp, vpwp, wpsclrp )        ! intent(inout)
 
       !----------------------------------------------------------------
+      ! Advance or otherwise calculate <thl'^3>, <rt'^3>, and
+      ! <sclr'^3>.
+      !----------------------------------------------------------------
+      if ( l_advance_xp3 ) then
+
+         ! Advance <rt'^3> one model timestep or calculate <rt'^3> using
+         ! a steady-state approximation.
+         call advance_xp3_simplified( dt, rtm, rtp2,              & ! In
+                                      wprtp, wprtp2,              & ! In
+                                      rho_ds_zm, invrs_rho_ds_zt, & ! In
+                                      tau_zt, rt_tol,             & ! In
+                                      rtp3                        ) ! In/Out
+
+         ! Advance <thl'^3> one model timestep or calculate <thl'^3> using
+         ! a steady-state approximation.
+         call advance_xp3_simplified( dt, thlm, thlp2,            & ! In
+                                      wpthlp, wpthlp2,            & ! In
+                                      rho_ds_zm, invrs_rho_ds_zt, & ! In
+                                      tau_zt, thl_tol,            & ! In
+                                      thlp3                       ) ! In/Out
+
+         ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using
+         ! a steady-state approximation.
+         do i = 1, sclr_dim, 1
+
+            call advance_xp3_simplified( dt, sclrm(:,i), sclrp2(:,i), & ! In
+                                         wpsclrp(:,i), wpsclrp2(:,i), & ! In
+                                         rho_ds_zm, invrs_rho_ds_zt,  & ! In
+                                         tau_zt, sclr_tol(i),         & ! In
+                                         sclrp3(:,i)                  ) ! In/Out
+
+         enddo ! i = 1, sclr_dim
+
+      else
+
+         ! Use the Larson and Golaz (2005) ansatz to calculate <rt'^3>,
+         ! <thl'^3>, and <sclr'^3>.
+         Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
+
+         wpthlp_zt = zm2zt( wpthlp )
+         wprtp_zt  = zm2zt( wprtp )
+         thlp2_zt  = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
+         rtp2_zt   = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
+
+         sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
+
+         thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
+                                     thlp2_zt, sigma_sqd_w_zt, thl_tol )
+
+         rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
+                                    rtp2_zt, sigma_sqd_w_zt, rt_tol )
+
+         do i = 1, sclr_dim, 1
+
+            wpsclrp_zt = zm2zt( wpsclrp(:,i) )
+            sclrp2_zt  = max( zm2zt( sclrp2(:,i) ), sclr_tol(i)**2 )
+
+            sclrp3(:,i) = xp3_LG_2005_ansatz( Skw_zt, wpsclrp_zt, wp2_zt, &
+                                              sclrp2_zt, sigma_sqd_w_zt, &
+                                              sclr_tol(i) )
+
+         enddo ! i = 1, sclr_dim
+
+      endif ! l_advance_xp3
+
+      !----------------------------------------------------------------
       ! Advance the horizontal mean winds (um, vm),
       !   the mean of the eddy-diffusivity scalars (i.e. edsclrm),
       !   and their fluxes (upwp, vpwp, wpedsclrp) by one time step.
-      !----------------------------------------------------------------i
+      !----------------------------------------------------------------
 
       if ( l_use_buoy_mod_Km_zm ) then
 
@@ -1562,27 +1635,6 @@ module advance_clubb_core_module
         call fill_holes_vertical(2,0.0_core_rknd,"zt",rho_ds_zt,rho_ds_zm,edsclrm(:,ixind))
       enddo
 #endif
-
-    ! Use the Larson and Golaz (2005) ansatz to explicitly calculate <rt'^3>
-    ! and <thl'^3>.
-    if ( l_use_xp3_LG_2005_ansatz ) then
-
-       Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
-
-       wpthlp_zt = zm2zt( wpthlp )
-       wprtp_zt  = zm2zt( wprtp )
-       thlp2_zt  = max( zm2zt( thlp2 ), thl_tol**2 ) ! Positive def. quantity
-       rtp2_zt   = max( zm2zt( rtp2 ), rt_tol**2 )   ! Positive def. quantity
-
-       sigma_sqd_w_zt = max( zm2zt( sigma_sqd_w ), zero_threshold )
-
-       thlp3 = xp3_LG_2005_ansatz( Skw_zt, wpthlp_zt, wp2_zt, &
-                                   thlp2_zt, sigma_sqd_w_zt, thl_tol )
-
-       rtp3 = xp3_LG_2005_ansatz( Skw_zt, wprtp_zt, wp2_zt, &
-                                  rtp2_zt, sigma_sqd_w_zt, rt_tol )
-
-    endif ! l_use_LG_2005_ansatz
 
     if ( ipdf_call_placement == ipdf_post_advance_fields &
          .or. ipdf_call_placement == ipdf_pre_post_advance_fields ) then

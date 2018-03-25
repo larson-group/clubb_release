@@ -20,12 +20,11 @@ module advance_xp3_module
   contains
 
   !=============================================================================
-  subroutine advance_xp3_simplified( dt, xm, xp2,     & ! Intent(in)
-                                     wpxp, wpxp2,     & ! Intent(in)
-                                     rho_ds_zm,       & ! Intent(in)
-                                     invrs_rho_ds_zt, & ! Intent(in)
-                                     tau_zt, x_tol,   & ! Intent(in)
-                                     xp3              ) ! Intent(inout)
+  subroutine advance_xp3_simplified( dt, xm, xp2,                & ! In
+                                     wpxp, wpxp2,                & ! In
+                                     rho_ds_zm, invrs_rho_ds_zt, & ! In
+                                     tau_zt, x_tol,              & ! In
+                                     xp3                         ) ! In/Out
 
     ! Description:
     ! Predicts the value of <x'^3> using a simplified form of the <x'^3>
