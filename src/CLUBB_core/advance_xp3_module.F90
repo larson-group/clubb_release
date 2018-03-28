@@ -18,6 +18,11 @@ module advance_xp3_module
 
   private ! default scope
 
+  integer, parameter, private :: &
+    xp3_rtp3 = 1,   & ! Named constant for solving rtp3
+    xp3_thlp3 = 2,  & ! Named constant for solving thlp3
+    xp3_sclrp3 = 3    ! Named constant for solving sclrp3
+
   contains
 
   !=============================================================================
@@ -89,29 +94,32 @@ module advance_xp3_module
 
     ! Advance <rt'^3> one model timestep or calculate <rt'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( dt, rtm, rtp2,              & ! In
-                                 wprtp, wprtp2,              & ! In
-                                 rho_ds_zm, invrs_rho_ds_zt, & ! In
-                                 tau_zt, rt_tol,             & ! In
-                                 rtp3                        ) ! In/Out
+    call advance_xp3_simplified( xp3_rtp3, dt, rtm, & ! Intent(in)
+                                 rtp2, wprtp,       & ! Intent(in)
+                                 wprtp2, rho_ds_zm, & ! Intent(in)
+                                 invrs_rho_ds_zt,   & ! Intent(in)
+                                 tau_zt, rt_tol,    & ! Intent(in)
+                                 rtp3               ) ! Intent(inout)
 
     ! Advance <thl'^3> one model timestep or calculate <thl'^3> using a
     ! steady-state approximation.
-    call advance_xp3_simplified( dt, thlm, thlp2,            & ! In
-                                 wpthlp, wpthlp2,            & ! In
-                                 rho_ds_zm, invrs_rho_ds_zt, & ! In
-                                 tau_zt, thl_tol,            & ! In
-                                 thlp3                       ) ! In/Out
+    call advance_xp3_simplified( xp3_thlp3, dt, thlm, & ! Intent(in)
+                                 thlp2, wpthlp,       & ! Intent(in)
+                                 wpthlp2, rho_ds_zm,  & ! Intent(in)
+                                 invrs_rho_ds_zt,     & ! Intent(in)
+                                 tau_zt, thl_tol,     & ! Intent(in)
+                                 thlp3                ) ! Intent(inout)
 
     ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using a
     ! steady-state approximation.
     do i = 1, sclr_dim, 1
 
-       call advance_xp3_simplified( dt, sclrm(:,i), sclrp2(:,i), & ! In
-                                    wpsclrp(:,i), wpsclrp2(:,i), & ! In
-                                    rho_ds_zm, invrs_rho_ds_zt,  & ! In
-                                    tau_zt, sclr_tol(i),         & ! In
-                                    sclrp3(:,i)                  ) ! In/Out
+       call advance_xp3_simplified( xp3_sclrp3, dt, sclrm(:,i), & ! In
+                                    sclrp2(:,i), wpsclrp(:,i),  & ! In
+                                    wpsclrp2(:,i), rho_ds_zm,   & ! In
+                                    invrs_rho_ds_zt,            & ! In
+                                    tau_zt, sclr_tol(i),        & ! In
+                                    sclrp3(:,i)                 ) ! In/Out
 
     enddo ! i = 1, sclr_dim
 
@@ -121,11 +129,12 @@ module advance_xp3_module
   end subroutine advance_xp3
 
   !=============================================================================
-  subroutine advance_xp3_simplified( dt, xm, xp2,                & ! In
-                                     wpxp, wpxp2,                & ! In
-                                     rho_ds_zm, invrs_rho_ds_zt, & ! In
-                                     tau_zt, x_tol,              & ! In
-                                     xp3                         ) ! In/Out
+  subroutine advance_xp3_simplified( solve_type, dt, xm, & ! Intent(in)
+                                     xp2, wpxp,          & ! Intent(in)
+                                     wpxp2, rho_ds_zm,   & ! Intent(in)
+                                     invrs_rho_ds_zt,    & ! Intent(in)
+                                     tau_zt, x_tol,      & ! Intent(in)
+                                     xp3                 ) ! Intent(inout)
 
     ! Description:
     ! Predicts the value of <x'^3> using a simplified form of the <x'^3>
@@ -235,12 +244,32 @@ module advance_xp3_module
         one,  & ! Variable(s)
         zero
 
+    use stats_type_utilities, only: &
+        stat_begin_update, & ! Procedure(s)
+        stat_end_update,   &
+        stat_update_var
+
+    use stats_variables, only: &
+        irtp3_bt,     & ! Variable(s)
+        irtp3_tp,     &
+        irtp3_ac,     &
+        irtp3_dp,     &
+        ithlp3_bt,    &
+        ithlp3_tp,    &
+        ithlp3_ac,    &
+        ithlp3_dp,    &
+        stats_zt,     &
+        l_stats_samp
+
     use clubb_precision, only: &
         core_rknd    ! Variable(s)
 
     implicit none
 
     ! Input Variables
+    integer, intent(in) :: &
+      solve_type    ! Flag for solving for rtp3, thlp3, or sclrp3
+
     real( kind = core_rknd ), intent(in) :: &
       dt                 ! Model timestep                            [s]
 
@@ -270,6 +299,12 @@ module advance_xp3_module
     integer :: &
       k, km1     ! Grid indices
 
+    integer :: &
+      ixp3_bt, & ! Budget statistics index for <x'^3> time tendency
+      ixp3_tp, & ! Budget statistics index for <x'^3> turbulent production
+      ixp3_ac, & ! Budget statistics index for <x'^3> accumulation
+      ixp3_dp    ! Budget statistics index for <x'^3> dissipation
+
     ! Coefficient in the <x'^3> turbulent dissipation term    [-]
     real( kind = core_rknd ), parameter :: &
       C_xp3_dissipation = 1.0_core_rknd
@@ -278,6 +313,36 @@ module advance_xp3_module
     logical, parameter :: &
       l_predict_xp3 = .false.
 
+
+    if ( l_stats_samp ) then
+
+       select case ( solve_type )
+       case( xp3_rtp3 )
+          ! Budget stats for rtp3
+          ixp3_bt = irtp3_bt
+          ixp3_tp = irtp3_tp
+          ixp3_ac = irtp3_ac
+          ixp3_dp = irtp3_dp
+       case( xp3_thlp3 )
+          ! Budget stats for thlp3
+          ixp3_bt = ithlp3_bt
+          ixp3_tp = ithlp3_tp
+          ixp3_ac = ithlp3_ac
+          ixp3_dp = ithlp3_dp
+       case default
+          ! Budgets aren't setup for the passive scalars
+          ixp3_bt = 0
+          ixp3_tp = 0
+          ixp3_ac = 0
+          ixp3_dp = 0
+       end select ! solve_type
+
+       if ( l_predict_xp3 ) then
+          call stat_begin_update( ixp3_bt, xp3 / dt, & ! Intent(in)
+                                  stats_zt           ) ! Intent(inout)
+       endif ! l_predict_xp3
+
+    endif ! l_stats_samp
 
     ! Initialize variables
     term_tp = zero
@@ -323,6 +388,20 @@ module advance_xp3_module
     ! Set Boundary Conditions
     xp3(1) = zero
     xp3(gr%nz) = zero
+
+    if ( l_stats_samp ) then
+
+       call stat_update_var( ixp3_tp, term_tp, stats_zt )
+       call stat_update_var( ixp3_ac, term_ac, stats_zt )
+       call stat_update_var( ixp3_dp, -(C_xp3_dissipation/tau_zt)*xp3, &
+                             stats_zt )
+
+       if ( l_predict_xp3 ) then
+          call stat_end_update( ixp3_bt, xp3 / dt, & ! Intent(in)
+                                stats_zt           ) ! Intent(inout)
+       endif ! l_predict_xp3
+
+    endif ! l_stats_samp
 
 
     return

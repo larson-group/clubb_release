@@ -218,6 +218,16 @@ module stats_zt_module
         iwp3_sdmp, &
         iwp3_cl
 
+    use stats_variables, only: &
+        irtp3_bt, &
+        irtp3_tp, &
+        irtp3_ac, &
+        irtp3_dp, &
+        ithlp3_bt, &
+        ithlp3_tp, &
+        ithlp3_ac, &
+        ithlp3_dp
+
     ! Monotonic flux limiter diagnostic variables
     use stats_variables, only: &
         ithlm_mfl_min, &
@@ -1808,6 +1818,81 @@ module stats_zt_module
         call stat_assign( var_index=iwp3_cl, var_name="wp3_cl", &
              var_description="wp3 budget: wp3 clipping term [m^{3} s^{-4}]", &
              var_units="m^{3} s^{-4}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_bt')
+        irtp3_bt = k
+
+        call stat_assign( var_index=irtp3_bt, var_name="rtp3_bt", &
+             var_description="rtp3 budget: rtp3 time tendency " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_tp')
+        irtp3_tp = k
+
+        call stat_assign( var_index=irtp3_tp, var_name="rtp3_tp", &
+             var_description="rtp3 budget: rtp3 turbulent production " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_ac')
+        irtp3_ac = k
+
+        call stat_assign( var_index=irtp3_ac, var_name="rtp3_ac", &
+             var_description="rtp3 budget: rtp3 accumulation " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('rtp3_dp')
+        irtp3_dp = k
+
+        call stat_assign( var_index=irtp3_dp, var_name="rtp3_dp", &
+             var_description="rtp3 budget: rtp3 dissipation " &
+                             // "[kg^{3} kg^{-3} s^{-1}]", &
+             var_units="kg^{3} kg^{-3} s^{-1}", l_silhs=.false., &
+             grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_bt')
+        ithlp3_bt = k
+
+        call stat_assign( var_index=ithlp3_bt, var_name="thlp3_bt", &
+             var_description="thlp3 budget: thlp3 time tendency " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_tp')
+        ithlp3_tp = k
+
+        call stat_assign( var_index=ithlp3_tp, var_name="thlp3_tp", &
+             var_description="thlp3 budget: thlp3 turbulent production " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_ac')
+        ithlp3_ac = k
+
+        call stat_assign( var_index=ithlp3_ac, var_name="thlp3_ac", &
+             var_description="thlp3 budget: thlp3 accumulation " &
+                             // "[K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
+        k = k + 1
+
+      case ('thlp3_dp')
+        ithlp3_dp = k
+
+        call stat_assign( var_index=ithlp3_dp, var_name="thlp3_dp", &
+             var_description="thlp3 budget: thlp3 dissipation [K^{3} s^{-1}]", &
+             var_units="K^{3} s^{-1}", l_silhs=.false., grid_kind=stats_zt )
         k = k + 1
 
       case ('rrm_bt')

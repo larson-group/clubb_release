@@ -397,6 +397,19 @@ module stats_variables
 !$omp   threadprivate(iwp3_bp2, iwp3_pr1, iwp3_pr2, iwp3_pr3, iwp3_dp1)
 !$omp   threadprivate(iwp3_sdmp, iwp3_cl)
 
+  integer, public :: &
+    irtp3_bt  = 0, &
+    irtp3_tp  = 0, &
+    irtp3_ac  = 0, &
+    irtp3_dp  = 0, &
+    ithlp3_bt = 0, &
+    ithlp3_tp = 0, &
+    ithlp3_ac = 0, &
+    ithlp3_dp = 0
+
+!$omp   threadprivate( irtp3_bt, irtp3_tp, irtp3_ac, irtp3_dp )
+!$omp   threadprivate( ithlp3_bt, ithlp3_tp, ithlp3_ac, ithlp3_dp )
+
   ! Rain mixing ratio budgets
   integer, public :: & 
      irrm_bt = 0, &
