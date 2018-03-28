@@ -333,7 +333,7 @@ module advance_clubb_core_module
         advance_wp2_wp3 ! Procedure
 
     use advance_xp3_module, only: &
-        advance_xp3_simplified    ! Procedure(s)
+        advance_xp3    ! Procedure(s)
 
     use clubb_precision, only:  & 
         core_rknd ! Variable(s)
@@ -1516,38 +1516,20 @@ module advance_clubb_core_module
       !----------------------------------------------------------------
       if ( l_advance_xp3 ) then
 
-         ! Advance <rt'^3> one model timestep or calculate <rt'^3> using
-         ! a steady-state approximation.
-         call advance_xp3_simplified( dt, rtm, rtp2,              & ! In
-                                      wprtp, wprtp2,              & ! In
-                                      rho_ds_zm, invrs_rho_ds_zt, & ! In
-                                      tau_zt, rt_tol,             & ! In
-                                      rtp3                        ) ! In/Out
-
-         ! Advance <thl'^3> one model timestep or calculate <thl'^3> using
-         ! a steady-state approximation.
-         call advance_xp3_simplified( dt, thlm, thlp2,            & ! In
-                                      wpthlp, wpthlp2,            & ! In
-                                      rho_ds_zm, invrs_rho_ds_zt, & ! In
-                                      tau_zt, thl_tol,            & ! In
-                                      thlp3                       ) ! In/Out
-
-         ! Advance <sclr'^3> one model timestep or calculate <sclr'^3> using
-         ! a steady-state approximation.
-         do i = 1, sclr_dim, 1
-
-            call advance_xp3_simplified( dt, sclrm(:,i), sclrp2(:,i), & ! In
-                                         wpsclrp(:,i), wpsclrp2(:,i), & ! In
-                                         rho_ds_zm, invrs_rho_ds_zt,  & ! In
-                                         tau_zt, sclr_tol(i),         & ! In
-                                         sclrp3(:,i)                  ) ! In/Out
-
-         enddo ! i = 1, sclr_dim
+         ! Advance <rt'^3>, <thl'^3>, and <sclr'^3> one model timestep using a
+         ! simplified form of the <x'^3> predictive equation.  The simplified
+         ! <x'^3> equation can either be advanced from its previous value or
+         ! calculated using a steady-state approximation.
+         call advance_xp3( dt, rtm, thlm, rtp2, thlp2, wprtp,  & ! Intent(in)
+                           wpthlp, wprtp2, wpthlp2, rho_ds_zm, & ! Intent(in)
+                           invrs_rho_ds_zt, tau_zt,            & ! Intent(in)
+                           sclrm, sclrp2, wpsclrp, wpsclrp2,   & ! Intent(in)
+                           rtp3, thlp3, sclrp3                 ) ! Intent(inout)
 
       else
 
-         ! Use the Larson and Golaz (2005) ansatz to calculate <rt'^3>,
-         ! <thl'^3>, and <sclr'^3>.
+         ! Use the Larson and Golaz (2005) ansatz for the ADG1 PDF to
+         ! calculate <rt'^3>, <thl'^3>, and <sclr'^3>.
          Skw_zt(1:gr%nz) = Skx_func( wp2_zt(1:gr%nz), wp3(1:gr%nz), w_tol )
 
          wpthlp_zt = zm2zt( wpthlp )
