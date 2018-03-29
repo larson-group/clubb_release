@@ -530,7 +530,7 @@ def calcTolerance(termUnits, timestep, termName):
         tol = Nr_tol
     elif termUnits == "(kg/kg)/s" or termUnits == "kg kg^{-1} s^{-1}": # kg/kg
         tol = rt_tol
-    elif termUnits == "(kg^2)/(kg^2 s)": 					        		 	 	 	 	 # kg^2/kg^2
+    elif termUnits == "(kg^2)/(kg^2 s)": 			       # kg^2/kg^2
         tol = rt_tol * rt_tol * 100 # Multiply by 100 because otherwise it's too small for tests to pass
     elif termUnits == "m s^{-2}":                                      # m/s
         tol = w_tol
@@ -548,6 +548,10 @@ def calcTolerance(termUnits, timestep, termName):
         tol = thl_tol * rt_tol
     elif termUnits == "(m K)/s^2":                                     # K m/s
         tol = thl_tol * w_tol
+    elif termUnits == "kg^{3} kg^{-3} s^{-1}": 		               # kg^3/kg^3
+        tol = rt_tol * rt_tol * rt_tol
+    elif termUnits == "K^{3} s^{-1}":                                  # K^3
+        tol = thl_tol * thl_tol * thl_tol
     else:
         sys.stderr.write("Error parsing units: " + termUnits + "\nCheck this script's calcTolerance method")
         sys.exit(1)
