@@ -1411,6 +1411,7 @@ module advance_clubb_core_module
                             mixt_frac_zm, l_implemented, em, wp2sclrp,       & ! intent(in)
                             sclrpthvp, sclrm_forcing, sclrp2, exner, rcm,    & ! intent(in)
                             p_in_Pa, thvm, Cx_fnc_Richardson,                & ! intent(in)
+                            new_pdf_implct_coefs_terms,                      & ! intent(in)
                             rtm, wprtp, thlm, wpthlp,                        & ! intent(inout)
                             err_code,                                        & ! intent(inout)
                             sclrm, wpsclrp )                                   ! intent(inout)
