@@ -67,6 +67,16 @@
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'qtpthlp', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'mpace_b_silhs_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtpthlp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
+       {'plotTitle' => 'rtp3', 'axisLabel' => 'rtp3 [(kg/kg)^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'qtp3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'mpace_b_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rtp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
+       {'plotTitle' => 'thlp3', 'axisLabel' => 'thlp3 [K^3]', 'type' => 'profile', 'lines' =>
+       [
+          {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'thlp3', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
+          {'filename' => 'mpace_b_silhs_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'thlp3', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
+       ]},
        {'plotTitle' => 'Vertical Wind Component, w (subsidence)', 'axisLabel' => 'wm [m/s]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/LES_files/mpace_b_coamps_sm.ctl', 'type' => 'les', 'name' => 'COAMPS-LES', 'expression' => 'wlsm', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
