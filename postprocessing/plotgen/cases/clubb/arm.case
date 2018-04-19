@@ -230,11 +230,6 @@
        [
           {'filename' => 'arm_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'tau_zm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'LW + SW radiative heating rate', 'axisLabel' => 'radht [K/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/ARM_96x96x110/GCSSARM_96x96x110_67m_40m_1s.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Correlation of w and \chi', 'axisLabel' => 'corr\_w\_chi\_i [-]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'arm_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_chi_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},

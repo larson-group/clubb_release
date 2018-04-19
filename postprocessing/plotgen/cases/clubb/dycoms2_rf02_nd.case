@@ -234,24 +234,6 @@
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RADQR / 86400', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'radht', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Precip Fraction', 'axisLabel' => 'precip\_frac [%]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_frac * 100', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Rain Water Mixing Ratio, r_r', 'axisLabel' => 'rrm [kg/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'QPL / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'rrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'rrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Rain Drop Concentration, N_r', 'axisLabel' => 'Nrm [num/kg]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => '(CONP * 1e+6) ./ RHO', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Nrm', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
-          {'filename' => '/home/matlabuser/plotgen/HOC_20051217/dycoms2_rf02_nd_zt.ctl', 'type' => 'dec17', 'name' => 'HOC 12/17/2005', 'expression' => 'Nrm', 'lineWidth' => '5', 'lineType' => '-.', 'lineColor' => '[ 0.63, 0.00, 0.79 ]'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nrm', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Cloud Droplet Concentration', 'axisLabel' => 'Ncm [num/kg]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/Chris_Golaz_best_ever/dycoms2_rf02_nd_zt.ctl', 'type' => 'bestever', 'name' => 'CLUBB r408 \"best-ever\"', 'expression' => 'Ncm .* cf', 'lineWidth' => '3', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.50, 0.00 ]'},
@@ -262,80 +244,20 @@
        [
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'Nc_in_cloud', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Covariance of w & r_r', 'axisLabel' => 'wprrp [(kg/kg) m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPRRP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_nd_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wprrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Covariance of w & N_r', 'axisLabel' => 'wpNrp [(num/kg) m/s]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'WPNRP', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_nd_zm.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'wpNrp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
        {'plotTitle' => 'Correlation of w and \chi', 'axisLabel' => 'corr\_w\_chi\_i [-]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_chi_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_chi_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation (in-precip) of w and r_r', 'axisLabel' => 'corr\_w\_rr\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_rr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_rr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation (in-precip) of w and N_r', 'axisLabel' => 'corr\_w\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation of w and N_{cn}', 'axisLabel' => 'corr\_w\_Ncn\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_w_Ncn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_w_Ncn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Correlation of \chi and \eta', 'axisLabel' => 'corr\_chi\_eta\_i [-]', 'type' => 'profile', 'lines' =>
        [
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_eta_1_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
           {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_eta_2_ca', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
-       {'plotTitle' => 'Correlation (in-precip) of \chi and r_r', 'axisLabel' => 'corr\_chi\_rr\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_rr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_rr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation (in-precip) of \chi and N_r', 'axisLabel' => 'corr\_chi\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation of \chi and N_{cn}', 'axisLabel' => 'corr\_chi\_Ncn\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_chi_Ncn_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_chi_Ncn_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Correlation (in-precip) of r_r and N_r', 'axisLabel' => 'corr\_rr\_Nr\_i [-]', 'type' => 'profile', 'lines' =>
-       [
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rr_Nr_1', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rr_Nr_2', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-#       {'plotTitle' => 'Correlation (in-precip) of ln r_r and ln N_r', 'axisLabel' => 'corr\_rr\_Nr\_i\_n [-]', 'type' => 'profile', 'lines' =>
-#       [
-#          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 1 {0}', 'expression' => 'corr_rr_Nr_1_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'},
-#          {'filename' => 'dycoms2_rf02_nd_zt.ctl', 'type' => 'auto', 'name' => 'PDF comp. 2 {0}', 'expression' => 'corr_rr_Nr_2_n', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-#       ]},
        {'plotTitle' => 'Liquid Water Path', 'axisLabel' => 'lwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
           {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'CWP / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
           {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'lwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Surface rainfall rate', 'axisLabel' => 'rain\_rate\_sfc [mm/day]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'PREC', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'precip_rate_sfc', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
-       ]},
-       {'plotTitle' => 'Rain Water Path', 'axisLabel' => 'rwp [kg/m^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
-       [
-          {'filename' => '/home/matlabuser/plotgen/sam_benchmark_runs/JULY_2017/DYCOMS_RF02_128x128x96_nodr_nosed/DYCOMS_RF02_128x128x96_nodr_nosed.nc', 'type' => 'les', 'name' => 'SAM-LES', 'expression' => 'RWP / 1000', 'lineWidth' => '5', 'lineType' => '-', 'lineColor' => '[ 0.00, 0.00, 0.00 ]'},
-          {'filename' => 'dycoms2_rf02_nd_sfc.ctl', 'type' => 'auto', 'name' => 'auto', 'expression' => 'rwp', 'lineWidth' => 'auto', 'lineType' => 'auto', 'lineColor' => 'auto'}
        ]},
        {'plotTitle' => 'Density-Weighted Vertically Averaged wp2', 'axisLabel' => 'wp2 [m^2/s^2]', 'type' => 'timeseries', 'startTime' => '1', 'lines' =>
        [
